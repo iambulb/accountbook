@@ -45,18 +45,19 @@
     const CAT_TYPES = [['expense','지출'],['income','수입'],['transfer','이체'],['event','경조사'],['travel','여행'],['loan','대출'],['subscription','구독'],['other','기타']];
     const CAT_TYPE_LABEL = Object.assign({}, ...CAT_TYPES.map(p=>({[p[0]]:p[1]})));
     const OLD_DEFAULT_CAT_NAMES = ['식사','교통','쇼핑','엔터','생활','의료','카페','기타']; // 구버전 기본 카테고리(삭제불가 판정용)
+    // 색상은 핸드오프 v2 팔레트(차분한 톤). 표시 시 13% 알파 tint로 옅게 쓰임(core.js catTileStyle).
     const DEFAULT_CATEGORY_DEFS = {
-      '식비':{type:'expense',icon:'🍚',color:'#ff8a3d'}, '배달':{type:'expense',icon:'🛵',color:'#ff6b3d'},
-      '카페':{type:'expense',icon:'☕',color:'#a1734b'}, '교통':{type:'expense',icon:'🚌',color:'#3182f6'},
-      '쇼핑':{type:'expense',icon:'🛍️',color:'#f04452'}, '생활용품':{type:'expense',icon:'🧴',color:'#1b9e5f'},
-      '주거':{type:'expense',icon:'🏠',color:'#7b68ee'}, '통신':{type:'expense',icon:'📱',color:'#00b8d4'},
-      '보험':{type:'expense',icon:'🛡️',color:'#868e96'}, '의료':{type:'expense',icon:'💊',color:'#00b8a3'},
-      '교육':{type:'expense',icon:'📚',color:'#5c7cfa'}, '문화생활':{type:'expense',icon:'🎬',color:'#9b59b6'},
-      '구독':{type:'expense',icon:'🔄',color:'#e84393'}, '경조사':{type:'expense',icon:'💐',color:'#f783ac'},
-      '여행':{type:'expense',icon:'✈️',color:'#22b8cf'},
-      '월급':{type:'income',icon:'💰',color:'#1b9e5f'}, '부수입':{type:'income',icon:'💵',color:'#37b24d'},
-      '용돈':{type:'income',icon:'🪙',color:'#f59f00'}, '환급':{type:'income',icon:'↩️',color:'#74c0fc'},
-      '이자':{type:'income',icon:'🏦',color:'#4263eb'}, '경조사비 수령':{type:'income',icon:'🎁',color:'#f06595'},
-      '기타':{type:'other',icon:'📦',color:'#8b95a1'}
+      '식비':{type:'expense',icon:'🍚',color:'#E08A3C'}, '배달':{type:'expense',icon:'🛵',color:'#D9743C'},
+      '카페':{type:'expense',icon:'☕',color:'#9C7558'}, '교통':{type:'expense',icon:'🚌',color:'#4C7FE0'},
+      '쇼핑':{type:'expense',icon:'🛍️',color:'#DB5F88'}, '생활용품':{type:'expense',icon:'🧴',color:'#2FAE8E'},
+      '주거':{type:'expense',icon:'🏠',color:'#8773DC'}, '통신':{type:'expense',icon:'📱',color:'#3FA7BA'},
+      '보험':{type:'expense',icon:'🛡️',color:'#8B95A1'}, '의료':{type:'expense',icon:'💊',color:'#2FAE8E'},
+      '교육':{type:'expense',icon:'📚',color:'#5C7CFA'}, '문화생활':{type:'expense',icon:'🎬',color:'#9576C8'},
+      '구독':{type:'expense',icon:'🔄',color:'#CC68A4'}, '경조사':{type:'expense',icon:'💐',color:'#DC7790'},
+      '여행':{type:'expense',icon:'✈️',color:'#43AEB3'},
+      '월급':{type:'income',icon:'💰',color:'#3182F6'}, '부수입':{type:'income',icon:'💵',color:'#2FAE8E'},
+      '용돈':{type:'income',icon:'🪙',color:'#E0A43C'}, '환급':{type:'income',icon:'↩️',color:'#3FA7BA'},
+      '이자':{type:'income',icon:'🏦',color:'#4C7FE0'}, '경조사비 수령':{type:'income',icon:'🎁',color:'#DC7790'},
+      '기타':{type:'other',icon:'📦',color:'#8B95A1'}
     };
     function buildDefaultCategories(){ const o={}; let i=0; for(const n of Object.keys(DEFAULT_CATEGORY_DEFS)){ const d=DEFAULT_CATEGORY_DEFS[n]; o[n]={ name:n, type:d.type, icon:d.icon, color:d.color, sortOrder:++i, isDefault:true, isActive:true, visibility:'full', owner:'공동' }; } return o; }

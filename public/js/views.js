@@ -140,13 +140,18 @@
       return h;
     }
 
+    const TX_SVG_KEY={ income:'wallet', expense:'card', transfer:'swap', prepaid_charge:'coin', prepaid_spend:'card', refund:'refund', point_earn:'coin', point_spend:'coin', balance_adjustment:'tag' };
     function txRowHtml(t){
       const e=TX_EFFECT[t.type]||{};
-      let sign='', cls='muted', ic=TYPE_ICON[t.type]||'•', icbg='var(--transfer)';
-      if(t.type==='expense'){ sign='-'; cls='red'; ic=catIcon(t.category); icbg=catColor(t.category); }
+      let sign='', cls='muted';
+      if(t.type==='expense'){ sign='-'; cls='red'; }
       else if(t.type==='prepaid_spend'||t.type==='point_spend'){ sign='-'; cls='red'; }
-      else if(t.type==='income'||t.type==='refund'||t.type==='point_earn'){ sign='+'; cls='green'; icbg='var(--income)'; }
-      else if(t.type==='prepaid_charge'){ sign=''; cls='blue'; icbg='var(--primary)'; }
+      else if(t.type==='income'||t.type==='refund'||t.type==='point_earn'){ sign='+'; cls='green'; }
+      else if(t.type==='prepaid_charge'){ sign=''; cls='blue'; }
+      // 아이콘 타일: 카테고리 거래 → 옅은 tint 타일 + 카테고리 라인 아이콘 / 그 외 → 중립 회색 타일 + 유형 아이콘
+      let tileStyle='', tileInner;
+      if(t.category && (getCat(t.category)||CAT_META[t.category])){ tileStyle=catTileStyle(t.category); tileInner=catSvgIcon(t.category); }
+      else { tileInner=svgWrap(CAT_SVG[TX_SVG_KEY[t.type]||'tag']); }
       let sub;
       if(e.debit&&e.credit) sub=acctName(t.from)+' → '+acctName(t.to);
       else if(t.type==='expense'||t.type==='income') sub=(t.category||TYPE_LABEL[t.type]);   // 시안: 카테고리 · 기록자 (계좌는 상세에서)
@@ -161,7 +166,7 @@
       const loanPill=t.loanId?'<span class="pill">🏦 대출</span>':'';
       const amtNum=Math.abs(Number(t.amount)||0).toLocaleString();
       return '<div class="tx" onclick="openTxSheet(\''+t.ownerUid+'\',\''+t.id+'\')">'+
-        '<div class="tx-ic" style="background:'+icbg+';color:#fff;">'+ic+'</div>'+
+        '<div class="tx-ic" style="'+tileStyle+'">'+tileInner+'</div>'+
         '<div class="tx-main"><div class="tx-title">'+escapeHtml(t.desc||'')+rec+cardPill+pbPill+giftPill+loanPill+'</div><div class="tx-sub">'+sub+'</div></div>'+
         '<div class="tx-amt '+cls+'">'+sign+'₩'+amtNum+'</div></div>';
     }
@@ -498,9 +503,9 @@
       h+='<div class="sech"><span class="l">카테고리별</span><span class="s">'+(+mo)+'월</span></div>';
       if(totCat>0){
         let segs = cats.length>6 ? cats.slice(0,5).concat([{name:'기타',val:cats.slice(5).reduce((s,c)=>s+c.val,0),etc:true}]) : cats;
-        let acc=0; const stops=segs.map(s=>{ const p0=acc/totCat*100, p1=(acc+s.val)/totCat*100; const col=s.etc?'#e7e8ec':catColor(s.name); acc+=s.val; return col+' '+p0.toFixed(2)+'% '+p1.toFixed(2)+'%'; });
+        let acc=0; const stops=segs.map(s=>{ const p0=acc/totCat*100, p1=(acc+s.val)/totCat*100; const col=s.etc?'var(--soft2)':catColor(s.name); acc+=s.val; return col+' '+p0.toFixed(2)+'% '+p1.toFixed(2)+'%'; });
         h+='<div class="donut-wrap"><div class="donut" style="background:conic-gradient('+stops.join(',')+')"><div class="ic"><b>'+shortAmt(totCat)+'</b><span>총지출</span></div></div>'+
-          '<div class="legend">'+segs.map(s=>'<div class="lgi"><i style="background:'+(s.etc?'#e7e8ec':catColor(s.name))+'"></i><span class="ln">'+escapeHtml(s.name)+'</span><span class="lp">'+Math.round(s.val/totCat*100)+'%</span></div>').join('')+'</div></div>';
+          '<div class="legend">'+segs.map(s=>'<div class="lgi"><i style="background:'+(s.etc?'var(--soft2)':catColor(s.name))+'"></i><span class="ln">'+escapeHtml(s.name)+'</span><span class="lp">'+Math.round(s.val/totCat*100)+'%</span></div>').join('')+'</div></div>';
       } else h+='<div class="empty" style="padding:24px;">이 달 지출 데이터가 없습니다</div>';
       // 최근 6개월 추이 막대
       const md={}; state.transactions.filter(isActual).forEach(t=>{ const mm=(t.date||'').substring(0,7); if(mm) md[mm]=(md[mm]||0)+(Number(t.amount)||0); });
@@ -550,8 +555,8 @@
       // 순자산 hero
       let h='<div class="assethero"><div class="k">순자산</div><div class="v">'+won(net)+'</div>'+
         '<div class="sp"><div><div class="kk">총자산</div><div class="vv">'+won(gross)+'</div></div>'+
-        '<div><div class="kk">카드대금</div><div class="vv">'+won(cardDebt)+'</div></div>'+
-        '<div style="margin-left:auto;display:flex;align-items:flex-end"><span class="pill" style="background:rgba(255,255,255,.14);color:#fff">계좌 '+accs.length+'개</span></div></div></div>';
+        '<div><div class="kk">카드대금</div><div class="vv'+(cardDebt<0?' red':'')+'">'+won(cardDebt)+'</div></div>'+
+        '<div style="margin-left:auto;display:flex;align-items:flex-end"><span class="pill" style="margin-left:0;">계좌 '+accs.length+'개</span></div></div></div>';
 
       // 입출금 · 현금
       h+=sechHtml('입출금 · 현금','openAcctSheet()');
@@ -609,7 +614,7 @@
       const prov=(a.provider&&a.provider!=='manual')?'<span class="pill">'+(PROVIDER_LABEL[a.provider]||a.provider)+'</span>':'';
       const vis=(a.visibility&&a.visibility!=='full')?'<span class="pill">'+(a.visibility==='private'?'개인':'잔액만')+'</span>':'';
       const sub=(ACCT_TYPE_LABEL[a.type]||a.type)+(a.owner?' · '+escapeHtml(a.owner):'');
-      return '<div class="acct" onclick="openAcctSheet(\''+a.id+'\')"><div class="acct-dot" style="background:'+(a.color||'#3182f6')+'">'+acctIcon(a.type)+'</div>'+
+      return '<div class="acct" onclick="openAcctSheet(\''+a.id+'\')"><div class="acct-dot">'+acctIcon(a.type)+'</div>'+
         '<div style="min-width:0;" class="acct-nm"><b>'+escapeHtml(a.name)+prov+vis+'</b><span>'+sub+'</span></div>'+
         '<div class="acct-bal '+(bal<0?'red':'')+'">'+won(bal)+'</div></div>';
     }
@@ -1010,7 +1015,7 @@
     function catManageRow(c){
       const inactive=c.isActive===false;
       return '<div class="acct" style="opacity:'+(inactive?'.5':'1')+';">'+
-        '<div class="acct-dot" style="background:'+(c.color||'#8b95a1')+'">'+(c.icon||'🏷️')+'</div>'+
+        '<div class="acct-dot" style="'+catTileStyle(c.name)+'">'+catSvgIcon(c.name)+'</div>'+
         '<div style="flex:1;min-width:0;" onclick="openCatEdit(\''+escapeHtml(c.name)+'\')"><div class="acct-name">'+escapeHtml(c.name)+'<span class="pill">'+(CAT_TYPE_LABEL[c.type]||c.type||'')+'</span>'+(c.isDefault?'<span class="pill">기본</span>':'')+(c.visibility==='private'?'<span class="pill">개인</span>':'')+'</div></div>'+
         '<div style="display:flex;align-items:center;gap:2px;">'+
           '<button class="icon-btn" style="width:30px;height:30px;font-size:13px;box-shadow:none;background:var(--line-soft);" onclick="moveCat(\''+escapeHtml(c.name)+'\',-1)">▲</button>'+

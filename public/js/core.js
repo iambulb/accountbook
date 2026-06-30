@@ -51,7 +51,51 @@
     function getCard(id){ return state.creditCards.find(c=>c.id===id); }
     function acctName(id){ const a=getAcct(id); return a?a.name:(id||''); }
     function catIcon(name){ const c=getCat(name); return c?c.icon:'🏷️'; }
-    function catColor(name){ const c=getCat(name); return c?c.color:'#8b95a1'; }
+    // ===== 카테고리 색/아이콘 (핸드오프 v2: 차분한 솔리드 + 13% 알파 tint + 라인 SVG) =====
+    // 기본 카테고리는 핸드오프 팔레트로 색을 오버라이드(저장값과 무관). 커스텀은 저장된 색 사용.
+    const CAT_META = {
+      '식비':{c:'#E08A3C',i:'food'}, '배달':{c:'#D9743C',i:'food'}, '카페':{c:'#9C7558',i:'cafe'},
+      '교통':{c:'#4C7FE0',i:'transit'}, '쇼핑':{c:'#DB5F88',i:'shop'}, '생활용품':{c:'#2FAE8E',i:'box'},
+      '주거':{c:'#8773DC',i:'home'}, '통신':{c:'#3FA7BA',i:'telecom'}, '보험':{c:'#8B95A1',i:'shield'},
+      '의료':{c:'#2FAE8E',i:'medical'}, '교육':{c:'#5C7CFA',i:'book'}, '문화생활':{c:'#9576C8',i:'culture'},
+      '구독':{c:'#CC68A4',i:'sub'}, '경조사':{c:'#DC7790',i:'gift'}, '여행':{c:'#43AEB3',i:'travel'},
+      '월급':{c:'#3182F6',i:'wallet'}, '부수입':{c:'#2FAE8E',i:'coin'}, '용돈':{c:'#E0A43C',i:'coin'},
+      '환급':{c:'#3FA7BA',i:'refund'}, '이자':{c:'#4C7FE0',i:'bank'}, '경조사비 수령':{c:'#DC7790',i:'gift'},
+      '기타':{c:'#8B95A1',i:'tag'}
+    };
+    const CAT_SVG = {
+      food:'<path d="M4 11h16"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M8 4c0 1.3-1 1.8-1 3M12 3.5c0 1.3-1 1.8-1 3"/>',
+      cafe:'<path d="M5 8h12v4a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5z"/><path d="M17 9h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 3.5V5M12 3.5V5"/>',
+      transit:'<rect x="6" y="3.5" width="12" height="12" rx="3"/><path d="M6 11h12"/><path d="M8 19l-1.5 2M16 19l1.5 2"/>',
+      shop:'<path d="M6 8h12l-1 12H7z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/>',
+      home:'<path d="M4 11l8-6 8 6"/><path d="M6 10v9h12v-9"/>',
+      telecom:'<rect x="7" y="3" width="10" height="18" rx="3"/><path d="M10.5 18h3"/>',
+      medical:'<circle cx="12" cy="12" r="8.5"/><path d="M12 8.3v7.4M8.3 12h7.4"/>',
+      culture:'<rect x="3.5" y="5" width="17" height="14" rx="2.5"/><path d="M3.5 9.5h17M3.5 14.5h17M8.5 5v14M15.5 5v14"/>',
+      sub:'<path d="M4 9a6 6 0 0 1 10-3.5L17 8"/><path d="M20 15a6 6 0 0 1-10 3.5L7 16"/><path d="M17 4v4h-4M7 20v-4h4"/>',
+      gift:'<rect x="4" y="9" width="16" height="11" rx="2"/><path d="M4 13h16M12 9v11"/><path d="M12 9C9.5 9 8.5 4.5 12 4.5S14.5 9 12 9z"/>',
+      travel:'<path d="M21 4L3 11l6 2.5L11 20l3-5 5-2z"/><path d="M9 13.5L14 9"/>',
+      box:'<path d="M4 8l8-4 8 4-8 4z"/><path d="M4 8v8l8 4 8-4V8M12 12v8"/>',
+      shield:'<path d="M12 3.5l6.5 2.5V11c0 4.5-2.8 7.3-6.5 9-3.7-1.7-6.5-4.5-6.5-9V6z"/>',
+      book:'<path d="M5 5a2 2 0 0 1 2-2h11v15H7a2 2 0 0 0-2 2z"/><path d="M18 18H7a2 2 0 0 0-2 2"/>',
+      wallet:'<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/><circle cx="16.5" cy="14" r="1.2"/>',
+      coin:'<circle cx="12" cy="12" r="8.5"/><path d="M8.5 9l1.8 4 1.7-4 1.7 4 1.8-4M8 13.2h8"/>',
+      refund:'<path d="M9 14l-4-4 4-4"/><path d="M5 10h9a5 5 0 0 1 0 10h-3"/>',
+      bank:'<path d="M4 9.5l8-5 8 5"/><path d="M5 9.5v9M19 9.5v9M9.5 10v8M14.5 10v8M3.5 19h17"/>',
+      tag:'<path d="M4 13l7 7 8-8V5h-7z"/><circle cx="15" cy="9" r="1.3"/>',
+      card:'<rect x="3" y="6" width="18" height="12" rx="3"/><path d="M3 10h18"/>',
+      cash:'<rect x="3" y="6.5" width="18" height="11" rx="2"/><circle cx="12" cy="12" r="2.3"/>',
+      swap:'<path d="M7 7h11l-3-3M17 17H6l3 3"/>'
+    };
+    function svgWrap(inner){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+(inner||CAT_SVG.tag)+'</svg>'; }
+    // hex(#rgb/#rrggbb) → rgba 문자열(알파 적용). var(--x)/rgb은 그대로 반환.
+    function hexA(hex, a){ if(!hex||hex[0]!=='#') return hex; let h=hex.slice(1); if(h.length===3) h=h.split('').map(x=>x+x).join(''); const n=parseInt(h,16); return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')'; }
+    // 카테고리 솔리드 색: 기본 카테고리는 핸드오프 팔레트, 그 외 저장값
+    function catColor(name){ if(CAT_META[name]) return CAT_META[name].c; const c=getCat(name); return c?c.color:'#8B95A1'; }
+    // 카테고리 라인 SVG(이름→아이콘 매핑, 미매칭은 tag). 색은 currentColor.
+    function catSvgIcon(name){ const m=CAT_META[name]; return svgWrap(CAT_SVG[m?m.i:'tag']); }
+    // 카테고리 tint 타일 인라인 스타일(배경=13% 알파, 글자=솔리드 색)
+    function catTileStyle(name){ const c=catColor(name); return 'background:'+hexA(c,.13)+';color:'+c+';'; }
     // 거래유형 → 카테고리 그룹(expense/income/null). 'other'(기타)는 양쪽 모두 노출
     function catTypeFor(txType){ if(['expense','prepaid_spend','point_spend'].includes(txType)) return 'expense'; if(['income','refund'].includes(txType)) return 'income'; return null; }
     function pickableCats(wantType){ return state.categories.filter(c=>canSee(c) && c.isActive!==false && (c.type===wantType||c.type==='other')).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)); }
