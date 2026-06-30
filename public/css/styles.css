@@ -231,6 +231,25 @@
     .amount-wrap { display:flex; align-items:baseline; gap:6px; border-bottom:2px solid var(--line); padding-bottom:8px; margin-bottom:20px; }
     .amount-wrap .cur { font-size:24px; font-weight:800; color:var(--sub); }
 
+    /* 시안 거래 입력: 큰 금액 + 키패드 + field 행 */
+    .amtbig { display:flex; align-items:baseline; gap:6px; padding:8px 2px; margin-bottom:6px; }
+    .amtbig .w { font-size:24px; font-weight:800; color:var(--sub); }
+    .amtbig-in { flex:1; min-width:0; border:none; background:transparent; font-size:38px; font-weight:800; text-align:right; letter-spacing:-.03em; color:var(--text); padding:0; }
+    .amtbig-in:focus { outline:none; }
+    .chips { display:flex; gap:8px; overflow-x:auto; padding:2px 0 8px; }
+    .chips::-webkit-scrollbar { display:none; }
+    .chips .chip { flex:none; }
+    .catdot { width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:6px; vertical-align:middle; flex:none; }
+    .chip .catdot { margin-right:5px; }
+    .txfield { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:13px 2px; border-top:1px solid var(--line); }
+    .txfield .k { font-size:13.5px; color:var(--sub); font-weight:600; flex:none; }
+    .txfield .txsel, .txfield .txin { border:none; background:transparent; font-size:14px; font-weight:700; color:var(--text); text-align:right; flex:1; min-width:0; font-family:inherit; padding:0; }
+    .txfield select.txsel { -webkit-appearance:none; appearance:none; }
+    .txfield .txin:focus, .txfield .txsel:focus { outline:none; }
+    .kp { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; margin:12px 0 6px; }
+    .kp button { padding:15px 0; font-size:21px; font-weight:700; color:var(--text); border-radius:12px; }
+    .kp button:active { background:var(--soft); }
+
     .cat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
     .cat-pick { padding:12px 4px; border-radius:14px; background:var(--soft); text-align:center; font-size:12px; font-weight:600; }
     .cat-pick .ce { width:34px; height:34px; border-radius:11px; margin:0 auto 5px; display:flex; align-items:center; justify-content:center; font-size:17px; color:#fff; }

@@ -56,7 +56,8 @@ firebase.js → constants.js → core.js → views.js → main.js
 
 | 그룹 | 함수 |
 |---|---|
-| 달력/거래 | `renderCalendar`(msum)·`calendarGridHtml`(월요일·색점)·`selectedDayHtml`/`selectDay`·`memberChipRow`·`setMemberFilterByUid`/`clearMemberFilter`·`openDaySheet`·`openTxSheet`·`renderTxDyn`·`renderCardPerfBlock` |
+| 달력/거래 | `renderCalendar`(msum)·`calendarGridHtml`(월요일·색점)·`selectedDayHtml`/`selectDay`·`memberChipRow`·`setMemberFilterByUid`/`clearMemberFilter`·`openDaySheet` |
+| 거래 입력 시트 | `openTxSheet`(시안 골격: `.amtbig`+키패드+칩+상세설정)·`renderTxDyn`·`catChipsHtml`/`pickCat`(칩)·`acctField`(계좌/이체 행)·`kpPress`/`kpDel`(키패드)·`renderCardPerfBlock`·`saveTx` |
 | 리포트 | `renderStats` |
 | 자산 | `renderAssets`·`openAcctSheet`·`openCardList`·`openSavingsSheet` |
 | 워크스페이스 | `openWorkspaceSheet`·`addPersonalWorkspace`·`openCreateGroupSheet`·`openJoinGroupSheet`·`openGroupManageSheet` |
