@@ -57,15 +57,15 @@ firebase.js → constants.js → core.js → views.js → main.js
 | 그룹 | 함수 |
 |---|---|
 | 달력/거래 | `renderCalendar`(msum)·`calendarGridHtml`(월요일·색점)·`selectedDayHtml`/`selectDay`·`memberChipRow`·`setMemberFilterByUid`/`clearMemberFilter`·`openDaySheet` |
-| 거래 입력 시트 | `openTxSheet`(시안 골격: `.amtbig`+키패드+칩+상세설정)·`renderTxDyn`·`catChipsHtml`/`pickCat`(칩)·`acctField`(계좌/이체 행)·`kpPress`/`kpDel`(키패드)·`renderCardPerfBlock`·`saveTx` |
-| 리포트 | `renderStats`(시안: 월네비+총지출+CSS도넛+6개월막대+멤버별바, 예산·목적별·선불 카드 유지)·`statsMonth`(월 이동)·`shortAmt`/`signComma`(표시 헬퍼). *Chart.js 제거 — 순수 CSS 차트* |
+| 거래 입력 시트 | `openTxSheet`(시안 골격: `.amtbig`+키패드+칩+상세설정)·`renderTxDyn`·`catChipsHtml`/`pickCat`(칩)·`acctField`(계좌/이체 행)·`consumerField`(**소비 대상** — 출금 수단과 분리, 멤버+공동)·`kpPress`/`kpDel`(키패드)·`renderCardPerfBlock`·`saveTx` |
+| 리포트 | `renderStats`(시안: 월네비+총지출+CSS도넛+6개월막대+**개인별/공동 지출 분리 바**(`t.user` 집계, `공동`은 별도 섹션), 예산·목적별·선불 카드 유지)·`statsMonth`(월 이동)·`shortAmt`/`signComma`(표시 헬퍼). *Chart.js 제거 — 순수 CSS 차트* |
 | 자산 | `renderAssets`(핸드오프 v2: 순자산 **흰 카드**(`.assethero`, 카드대금 빨강)+`.sech`/`.addbtn` 섹션+**중립 회색** 유형 SVG 계좌행+`.perfrow` 카드실적+`.bgrow` 적금)·`acctIcon`(유형별 라인 SVG)·`acctRowHtml`·`sechHtml`/`PLUS_SVG`(섹션 헤더 헬퍼)·`openAcctSheet`·`openCardList`·`openSavingsSheet` |
 | **카테고리 색/아이콘** (core.js) | `CAT_META`(기본 카테고리→핸드오프 솔리드 색+아이콘 키)·`CAT_SVG`(라인 SVG 라이브러리)·`catColor`(기본은 팔레트 오버라이드)·`catSvgIcon`/`catTileStyle`(13% tint 타일)·`hexA`/`svgWrap`. 거래행은 `txRowHtml`+`TX_SVG_KEY`로 카테고리=tint 타일/그 외=중립 타일 |
 | 워크스페이스 | `openWorkspaceSheet`·`addPersonalWorkspace`·`openCreateGroupSheet`·`openJoinGroupSheet`·`openGroupManageSheet` |
 | 더보기 | `renderMore`(시안: `.prow`+`.grid4`+`.lst`)·`gcell`/`lrow`(그리드·리스트 행 헬퍼)·`MORE_ICON`(SVG 아이콘 맵)·`goHome` |
 | 예산 | `openBudgetSheet`·`openBudgetDetail`·`openBudgetEdit` |
 | 카테고리 | `openCategorySheet`·`renderCatManage`·`openCatEdit` |
-| 정기결제 | `openRecurringList`·`viewRecurringTxs`·`openRecurringEdit`·`renderRecAccts`·`renderRecCardPerf` |
+| 정기결제 | `openRecurringList`·`viewRecurringTxs`·`openRecurringEdit`·`renderRecAccts`·`recConsumerField`(소비 대상)·`renderRecCardPerf` |
 | 구독 | `openSubscriptions`·`renderSubs`·`openSubDetail`·`openSubEdit` |
 | 목적별 | `openPurposeBooks`·`renderPBs`·`pbCard`·`openPbDetail`(탭)·`renderPbTxTab`·`openPbEdit` |
 | 정산(Step 9) | 거래시트 `renderSettleBlock`·`setSplitType`·`collectSettle`, 상세 `renderPbSettleTab`·`pbSettleBadge`, 송금 `openSettlePay`·`saveSettlementPayment`·`cancelSettlementPayment`, `openSettlementOverview` |
