@@ -469,15 +469,52 @@
     }
 
     // ===== 통계 =====
+    function statsMonth(d){ state.month=shiftMonth(state.month,d); renderStats(); }
+    function shortAmt(v){ v=Math.round(Math.abs(v)); if(v>=1e8) return (v/1e8).toFixed(1).replace(/\.0$/,'')+'억'; if(v>=1e4) return Math.round(v/1e4).toLocaleString()+'만'; return v.toLocaleString(); }
+    function signComma(v){ return (v<0?'−':'+')+fmtComma(Math.abs(v)); }
     function renderStats(){
       $('screenTitle').textContent='리포트';
-      const cm=monthStr(new Date()), list=monthTx(cm);
-      const actual=actualSpend(list), charge=sumBy(list,'prepaid_charge'), pspend=sumBy(list,'prepaid_spend')+sumBy(list,'point_spend'), inc=sumBy(list,'income');
-      let h='<div class="card"><div class="sec-title" style="margin:0 0 12px;">이번달 요약</div>'+
-        '<div class="summary"><div><div class="s-label">수입</div><div class="s-val green">'+won(inc)+'</div></div>'+
-        '<div><div class="s-label">실제소비</div><div class="s-val red">'+won(actual)+'</div></div>'+
-        '<div><div class="s-label">충전</div><div class="s-val blue">'+won(charge)+'</div></div></div>'+
-        '<div class="tx-sub" style="margin-top:10px;text-align:center;">선불·포인트 사용 '+won(pspend)+' · 미사용 충전잔액 '+won(prepaidTotal())+'</div></div>';
+      const m=state.month, list=monthTx(m);
+      const actual=actualSpend(list), inc=sumBy(list,'income'), bal=inc-actual;
+      const [yy,mo]=m.split('-');
+      // 월 네비
+      let h='<div class="monthlbl" style="padding-top:6px"><button onclick="statsMonth(-1)" aria-label="이전 달">‹</button><b>'+yy+'년 '+(+mo)+'월</b><button onclick="statsMonth(1)" aria-label="다음 달">›</button></div>';
+      // 총지출 카드 + 수입/잔액/전월 대비
+      const pActual=actualSpend(monthTx(shiftMonth(m,-1)));
+      let momHtml;
+      if(pActual>0){ const diff=(actual-pActual)/pActual*100, up=diff>=0; momHtml='<span style="color:'+(up?'var(--expense)':'var(--income)')+'">'+(up?'▲':'▼')+' '+Math.abs(diff).toFixed(1)+'%</span>'; }
+      else momHtml='<span style="color:var(--sub)">—</span>';
+      h+='<div class="card" style="margin-bottom:6px"><div style="font-size:12px;color:var(--sub);font-weight:700;margin-bottom:6px">이번 달 총지출</div>'+
+        '<div class="bigexp">₩ '+fmtComma(actual)+'</div>'+
+        '<div class="statrow">'+
+          '<div><div class="k">수입</div><div class="v" style="color:var(--income)">'+signComma(inc)+'</div></div>'+
+          '<div><div class="k">잔액</div><div class="v">'+signComma(bal)+'</div></div>'+
+          '<div style="margin-left:auto"><div class="k">전월 대비</div><div class="v">'+momHtml+'</div></div>'+
+        '</div></div>';
+      // 카테고리별 CSS 도넛 + 범례
+      const cd={}; list.filter(t=>isActual(t)&&t.category).forEach(t=>{ cd[t.category]=(cd[t.category]||0)+(Number(t.amount)||0); });
+      let cats=Object.keys(cd).map(k=>({name:k,val:cd[k]})).sort((a,b)=>b.val-a.val);
+      const totCat=cats.reduce((s,c)=>s+c.val,0);
+      h+='<div class="sech"><span class="l">카테고리별</span><span class="s">'+(+mo)+'월</span></div>';
+      if(totCat>0){
+        let segs = cats.length>6 ? cats.slice(0,5).concat([{name:'기타',val:cats.slice(5).reduce((s,c)=>s+c.val,0),etc:true}]) : cats;
+        let acc=0; const stops=segs.map(s=>{ const p0=acc/totCat*100, p1=(acc+s.val)/totCat*100; const col=s.etc?'#e7e8ec':catColor(s.name); acc+=s.val; return col+' '+p0.toFixed(2)+'% '+p1.toFixed(2)+'%'; });
+        h+='<div class="donut-wrap"><div class="donut" style="background:conic-gradient('+stops.join(',')+')"><div class="ic"><b>'+shortAmt(totCat)+'</b><span>총지출</span></div></div>'+
+          '<div class="legend">'+segs.map(s=>'<div class="lgi"><i style="background:'+(s.etc?'#e7e8ec':catColor(s.name))+'"></i><span class="ln">'+escapeHtml(s.name)+'</span><span class="lp">'+Math.round(s.val/totCat*100)+'%</span></div>').join('')+'</div></div>';
+      } else h+='<div class="empty" style="padding:24px;">이 달 지출 데이터가 없습니다</div>';
+      // 최근 6개월 추이 막대
+      const md={}; state.transactions.filter(isActual).forEach(t=>{ const mm=(t.date||'').substring(0,7); if(mm) md[mm]=(md[mm]||0)+(Number(t.amount)||0); });
+      const keys=[]; for(let i=5;i>=0;i--) keys.push(shiftMonth(m,-i));
+      const mxB=Math.max(1,...keys.map(k=>md[k]||0));
+      h+='<div class="sech"><span class="l">최근 6개월 추이</span></div><div class="bars6">'+
+        keys.map(k=>'<div class="b"><div class="bar'+(k===m?' on':'')+'" style="height:'+Math.round((md[k]||0)/mxB*100)+'%"></div><div class="bl">'+(+k.split('-')[1])+'월</div></div>').join('')+'</div>';
+      // 멤버별 지출 바
+      const ue={}; list.filter(isActual).forEach(t=>{ const u=t.user||'미지정'; ue[u]=(ue[u]||0)+(Number(t.amount)||0); });
+      const names=Array.from(new Set([...wsMemberNames(), ...Object.keys(ue)])).filter(n=>(ue[n]||0)>0).sort((a,b)=>(ue[b]||0)-(ue[a]||0));
+      if(names.length){
+        const mxM=Math.max(1,...names.map(n=>ue[n]||0)); const pal=['#f3b14e','#7fd1a6','#c8a6f0','#6a8dff','#ff9aa2','#5ad1e0'];
+        h+='<div class="sech"><span class="l">멤버별 지출</span></div>'+names.map((n,i)=>'<div class="mbar"><div class="top"><span>'+escapeHtml(n)+'</span><span>'+fmtComma(ue[n]||0)+'</span></div><div class="track"><div class="fill" style="width:'+Math.round((ue[n]||0)/mxM*100)+'%;background:'+pal[i%pal.length]+'"></div></div></div>').join('');
+      }
       const bgs=visibleBudgets();
       if(bgs.length){
         h+='<div class="card"><div class="row" style="margin-bottom:4px;"><div class="sec-title" style="margin:0;">예산</div><button class="link" onclick="openBudgetSheet()">관리</button></div>'+
@@ -491,30 +528,7 @@
       }
       const pa=prepaidAccounts().filter(canSee);
       if(pa.length) h+='<div class="card"><div class="sec-title" style="margin:0 0 8px;">선불·포인트 잔액</div>'+pa.map(a=>'<div class="row" style="padding:7px 2px;"><span>'+((a.provider&&a.provider!=='manual')?PROVIDER_LABEL[a.provider]+' · ':'')+escapeHtml(a.name)+'</span><b class="blue">'+won(accountBalance(a.id))+'</b></div>').join('')+'</div>';
-      h+='<div class="card"><div class="sec-title" style="margin:0 0 10px;">월별 실제소비 추세</div><div style="position:relative;height:240px;"><canvas id="cM"></canvas></div></div>'+
-        '<div class="card"><div class="sec-title" style="margin:0 0 10px;">이번달 카테고리</div><div style="position:relative;height:240px;"><canvas id="cC"></canvas></div></div>'+
-        '<div class="card"><div class="sec-title" style="margin:0 0 12px;">사용자별 실제소비 (이번달)</div><div id="cmpBox"></div></div>';
       $('content').innerHTML=h;
-      setTimeout(drawCharts, 60);
-    }
-    function drawCharts(){
-      if(!$('cM')||!$('cC')||!$('cmpBox')) return; // 타이머 실행 시점에 리포트 탭을 떠났으면 중단
-      const dark=state.theme==='dark'; const grid=dark?'rgba(255,255,255,.08)':'rgba(0,0,0,.06)'; const tick=dark?'#9aa0a6':'#8b95a1';
-      const md={}; state.transactions.filter(isActual).forEach(t=>{ const m=(t.date||'').substring(0,7); if(m) md[m]=(md[m]||0)+(Number(t.amount)||0); });
-      const mk=Object.keys(md).sort().slice(-6);
-      if(monthlyChart) monthlyChart.destroy();
-      monthlyChart=new Chart($('cM'),{ type:'bar', data:{ labels:mk, datasets:[{ data:mk.map(k=>md[k]), backgroundColor:'#3182f6', borderRadius:6 }] },
-        options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false},ticks:{color:tick}}, y:{grid:{color:grid},ticks:{color:tick}} } } });
-      const cd={}; monthTx(monthStr(new Date())).filter(t=>isActual(t)&&t.category).forEach(t=>{ cd[t.category]=(cd[t.category]||0)+(Number(t.amount)||0); });
-      const ck=Object.keys(cd);
-      if(categoryChart) categoryChart.destroy();
-      categoryChart=new Chart($('cC'),{ type:'doughnut', data:{ labels:ck, datasets:[{ data:ck.map(k=>cd[k]), backgroundColor:ck.map(catColor) }] },
-        options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{color:tick,boxWidth:12}}} } });
-      const ue={}; monthTx(monthStr(new Date())).filter(isActual).forEach(t=>{ const u=t.user||'미지정'; ue[u]=(ue[u]||0)+(Number(t.amount)||0); });
-      const names=Array.from(new Set([...wsMemberNames(), ...Object.keys(ue)]));
-      const mx=Math.max(1,...names.map(n=>ue[n]||0));
-      const palette=['#f04452','#3182f6','#1b9e5f','#f59f00','#9b59b6','#00b8d4'];
-      $('cmpBox').innerHTML = names.length ? names.map((n,i)=>'<div style="margin-bottom:12px;"><div class="row" style="font-size:13px;margin-bottom:6px;"><b>'+escapeHtml(n)+'</b><span>'+won(ue[n]||0)+'</span></div><div class="bar"><i style="width:'+((ue[n]||0)/mx*100)+'%;background:'+palette[i%palette.length]+'"></i></div></div>').join('') : '<div class="empty">데이터 없음</div>';
     }
 
     // ===== 자산 =====
