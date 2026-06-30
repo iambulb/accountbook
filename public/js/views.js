@@ -243,6 +243,7 @@
       sh._cpa  = t?t.cardPerformanceAmount:undefined;
       sh._cpr  = t?(t.cardPerformanceExcludedReason||''):'';
       sh._adjSign = (t&&t.type==='balance_adjustment'&&Number(t.amount)<0)?'-':'+';
+      sh._consumer = t?(t.user||state.userName||'공동'):(state.userName||'공동');
       sh._settle = t ? { inc:t.settlementIncluded===true, payer:t.payer||'', splitType:t.splitType||'equal',
         participants:Array.isArray(t.splitParticipants)?t.splitParticipants.slice():null, amounts:t.splitAmounts||null, memo:t.settlementMemo||'' } : null;
       highlightTypeSeg(); renderTxDyn(); renderSettleBlock();
@@ -264,6 +265,8 @@
     }
     function acctOptsHtml(sel){ return state.accounts.map(a=>'<option value="'+a.id+'"'+(a.id===sel?' selected':'')+'>'+escapeHtml(a.name)+' ('+(ACCT_TYPE_LABEL[a.type]||a.type)+')</option>').join(''); }
     function acctField(label,id,sel){ return '<div class="txfield"><span class="k">'+label+'</span><select class="txsel" id="'+id+'" onchange="renderCardPerfBlock()">'+acctOptsHtml(sel)+'</select></div>'; }
+    // 소비 대상(누구의 소비인가) — 출금 수단과 분리. 멤버 + '공동'(집세 등 공동 비용) 선택.
+    function consumerField(sel){ return '<div class="txfield"><span class="k">소비 대상</span><select class="txsel" id="sConsumer">'+ownerOptions(sel||'공동')+'</select></div>'; }
     // 시안: 카테고리 가로 칩(이름 + 카테고리 색 점)
     function catChipsHtml(){
       let cats=pickableCats(catTypeFor(sheetType));
@@ -278,6 +281,7 @@
     function guideNote(actual, text){ return '<div class="install-banner" style="background:'+(actual?'rgba(240,68,82,.1)':'var(--primary-weak)')+';color:'+(actual?'var(--expense)':'var(--primary)')+';">'+(actual?'🛒':'ℹ️')+' '+text+'</div>'; }
     function renderTxDyn(){
       const sh=$('sheet'); const fromV=sh._from, toV=sh._to;
+      if($('sConsumer')) sh._consumer=val('sConsumer'); // 유형 전환 시 소비 대상 선택 보존
       // 카테고리 칩(해당 유형만) → 별도 영역
       const catBox=$('sCatChips');
       if(catBox) catBox.innerHTML = (catTypeFor(sheetType)!==null) ? catChipsHtml() : '';
@@ -292,7 +296,7 @@
       else if(sheetType==='point_earn') h+=guideNote(false,'포인트 적립은 실제 소비가 아닙니다.');
       else if(sheetType==='balance_adjustment') h+=guideNote(false,'실제 잔액에 맞추는 보정 거래입니다. 실제 소비에 포함되지 않습니다.');
 
-      if(sheetType==='expense'){ h+=acctField('출금/결제 수단','sFrom',fromV); }
+      if(sheetType==='expense'){ h+=acctField('출금/결제 수단','sFrom',fromV)+consumerField(sh._consumer); }
       else if(sheetType==='income'){ h+=acctField('입금 대상','sTo',toV); }
       else if(sheetType==='refund'){ h+=acctField('환불 받는 계정','sTo',toV); }
       else if(sheetType==='point_earn'){ h+=acctField('적립 포인트 계정','sTo',toV); }
@@ -302,7 +306,7 @@
         h+=acctField(l1,'sFrom',fromV)+acctField(l2,'sTo',toV);
       }
       else if(sheetType==='prepaid_spend'||sheetType==='point_spend'){
-        h+=acctField(sheetType==='point_spend'?'사용 포인트 계정':'결제 선불수단','sFrom',fromV);
+        h+=acctField(sheetType==='point_spend'?'사용 포인트 계정':'결제 선불수단','sFrom',fromV)+consumerField(sh._consumer);
       }
       else if(sheetType==='balance_adjustment'){
         h+=acctField('대상 계정','sTo',toV);
@@ -422,7 +426,9 @@
       const iso=new Date(date+'T'+new Date().toTimeString().slice(0,8)).toISOString();
       const e=TX_EFFECT[sheetType]||{};
       const hasCat=catTypeFor(sheetType)!==null;
-      const tx={ type:sheetType, date:iso, user:state.userName, amount:rawAmount,
+      // 소비 대상(누구의 소비) — 지출/선불결제/포인트사용에서만 선택, 그 외엔 본인
+      const consumer = $('sConsumer') ? (val('sConsumer')||state.userName) : state.userName;
+      const tx={ type:sheetType, date:iso, user:consumer, amount:rawAmount,
         desc: desc||(hasCat?(sheetCat||TYPE_LABEL[sheetType]):TYPE_LABEL[sheetType]),
         isActualExpense: !!ACTUAL_DEFAULT[sheetType] };
       if(memo) tx.memo=memo;
@@ -513,12 +519,16 @@
       const mxB=Math.max(1,...keys.map(k=>md[k]||0));
       h+='<div class="sech"><span class="l">최근 6개월 추이</span></div><div class="bars6">'+
         keys.map(k=>'<div class="b"><div class="bar'+(k===m?' on':'')+'" style="height:'+Math.round((md[k]||0)/mxB*100)+'%"></div><div class="bl">'+(+k.split('-')[1])+'월</div></div>').join('')+'</div>';
-      // 멤버별 지출 바
+      // 소비 대상별 지출 — 개인별(용돈 등)과 공동 지출(집세 등)을 분리해서 표시
       const ue={}; list.filter(isActual).forEach(t=>{ const u=t.user||'미지정'; ue[u]=(ue[u]||0)+(Number(t.amount)||0); });
-      const names=Array.from(new Set([...wsMemberNames(), ...Object.keys(ue)])).filter(n=>(ue[n]||0)>0).sort((a,b)=>(ue[b]||0)-(ue[a]||0));
-      if(names.length){
-        const mxM=Math.max(1,...names.map(n=>ue[n]||0)); const pal=['#f3b14e','#7fd1a6','#c8a6f0','#6a8dff','#ff9aa2','#5ad1e0'];
-        h+='<div class="sech"><span class="l">멤버별 지출</span></div>'+names.map((n,i)=>'<div class="mbar"><div class="top"><span>'+escapeHtml(n)+'</span><span>'+fmtComma(ue[n]||0)+'</span></div><div class="track"><div class="fill" style="width:'+Math.round((ue[n]||0)/mxM*100)+'%;background:'+pal[i%pal.length]+'"></div></div></div>').join('');
+      const shared=ue['공동']||0;
+      const names=Array.from(new Set([...wsMemberNames(), ...Object.keys(ue)])).filter(n=>n!=='공동'&&(ue[n]||0)>0).sort((a,b)=>(ue[b]||0)-(ue[a]||0));
+      if(names.length||shared>0){
+        const mxM=Math.max(1,shared,...names.map(n=>ue[n]||0)); const pal=['#f3b14e','#7fd1a6','#c8a6f0','#6a8dff','#ff9aa2','#5ad1e0'];
+        const mbar=(label,amt,col)=>'<div class="mbar"><div class="top"><span>'+label+'</span><span>'+fmtComma(amt||0)+'</span></div><div class="track"><div class="fill" style="width:'+Math.round((amt||0)/mxM*100)+'%;background:'+col+'"></div></div></div>';
+        h+='<div class="sech"><span class="l">개인별 지출</span><span class="s">용돈 등</span></div>';
+        h+= names.length ? names.map((n,i)=>mbar(escapeHtml(n),ue[n]||0,pal[i%pal.length])).join('') : '<div class="empty" style="padding:16px;">개인 지출이 없습니다</div>';
+        if(shared>0) h+='<div class="sech"><span class="l">공동 지출</span><span class="s">집세 등</span></div>'+mbar('🤝 공동',shared,'var(--sub)');
       }
       const bgs=visibleBudgets();
       if(bgs.length){
@@ -1158,6 +1168,7 @@
     }
     function onRecTypeChange(){ renderRecAccts(); }
     function recAcctField(label,id,sel){ return '<div class="field"><label>'+label+'</label><select class="input" id="'+id+'" onchange="renderRecCardPerf()">'+acctOptsHtml(sel)+'</select></div>'; }
+    function recConsumerField(sel){ return '<div class="field"><label>소비 대상</label><select class="input" id="rConsumer">'+ownerOptions(sel||'공동')+'</select></div>'; }
     function recCatField(wantType, sel){
       const cats=state.categories.filter(c=>c.isActive!==false && (c.type===wantType||c.type==='other')).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
       return '<div class="field"><label>카테고리</label><select class="input" id="rCat" onchange="renderRecCardPerf()">'+cats.map(c=>'<option value="'+escapeHtml(c.name)+'"'+(c.name===sel?' selected':'')+'>'+c.icon+' '+escapeHtml(c.name)+'</option>').join('')+'</select></div>';
@@ -1165,13 +1176,14 @@
     function renderRecAccts(){
       const r=window._recEdit, t=val('rType');
       const fromV=r?(r.from||''):(state.accounts[0]?state.accounts[0].id:''), toV=r?(r.to||''):(state.accounts[1]?state.accounts[1].id:(state.accounts[0]?state.accounts[0].id:'')), catV=r?(r.category||''):'';
+      const consV=r?(r.user||state.userName||'공동'):(state.userName||'공동');
       let h='';
-      if(t==='expense'){ h+=recAcctField('출금/결제 수단','rFrom',fromV)+recCatField('expense',catV); }
+      if(t==='expense'){ h+=recAcctField('출금/결제 수단','rFrom',fromV)+recConsumerField(consV)+recCatField('expense',catV); }
       else if(t==='income'){ h+=recAcctField('입금 대상','rTo',toV)+recCatField('income',catV); }
       else if(t==='refund'){ h+=recAcctField('환불 받는 계정','rTo',toV)+recCatField('income',catV); }
       else if(t==='point_earn'){ h+=recAcctField('적립 포인트 계정','rTo',toV); }
       else if(t==='transfer'||t==='prepaid_charge'){ const l1=t==='prepaid_charge'?'충전 수단(카드/계좌)':'출금', l2=t==='prepaid_charge'?'충전 대상(선불/포인트)':'입금'; h+='<div class="form-2">'+recAcctField(l1,'rFrom',fromV)+recAcctField(l2,'rTo',toV)+'</div>'; }
-      else if(t==='prepaid_spend'||t==='point_spend'){ h+=recAcctField(t==='point_spend'?'사용 포인트 계정':'결제 선불수단','rFrom',fromV)+(catTypeFor(t)?recCatField('expense',catV):''); }
+      else if(t==='prepaid_spend'||t==='point_spend'){ h+=recAcctField(t==='point_spend'?'사용 포인트 계정':'결제 선불수단','rFrom',fromV)+recConsumerField(consV)+(catTypeFor(t)?recCatField('expense',catV):''); }
       else if(t==='balance_adjustment'){ h+=recAcctField('대상 계정','rTo',toV); }
       $('rAccts').innerHTML=h; renderRecCardPerf();
     }
@@ -1206,7 +1218,7 @@
         startDate: val('rStart')||todayStr(), endDate: val('rEnd')||null,
         day: (freq==='monthly')?Number(val('rDay')||1):((r&&r.day)||1),
         weekday: (freq==='weekly')?Number(val('rWeekday')||0):((r&&r.weekday)||0),
-        user: r?(r.user||state.userName):state.userName,
+        user: $('rConsumer')?(val('rConsumer')||state.userName):(r?(r.user||state.userName):state.userName),
         autoCreate: $('rAuto')?$('rAuto').classList.contains('on'):true,
         status: r?(ruleStatus(r)==='ended'?'active':ruleStatus(r)):'active',
         visibility: val('rVis'), memo: val('rMemo').trim(),
