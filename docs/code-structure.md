@@ -13,7 +13,7 @@
 | `js/constants.js` | ~54 | 라벨/아이콘 맵, 거래효과 테이블(`TX_EFFECT`), 계좌·제공사·구독·목적별 타입, 기본 카테고리(`buildDefaultCategories`) |
 | `js/core.js` | ~649 | 전역 `state`, 헬퍼, 테마, 인증, 워크스페이스 부트스트랩, 마이그레이션, RTDB 리스너, 시딩 |
 | `js/views.js` | ~1146 | 모든 화면·시트 렌더링(달력·리포트·자산·더보기 + 각종 시트), CSV 내보내기 |
-| `js/main.js` | ~7 | PWA 부트 — `beforeinstallprompt`, 서비스워커 등록, 테마 적용 |
+| `js/main.js` | ~70 | PWA 부트(`beforeinstallprompt`·SW 등록·테마) + **접근성 레이어**(`a11yDecorate` + MutationObserver·키보드 델리게이션·Esc·포커스 트랩) |
 | `sw.js` | ~84 | 서비스워커 — 앱 셸 캐시, 출처별 캐시 전략 |
 | `css/styles.css` | ~245 | 전체 스타일(라이트/다크 테마 CSS 변수) |
 | `icons/` | — | 앱 아이콘(`icon.svg`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`) |
@@ -43,8 +43,11 @@ firebase.js → constants.js → core.js → views.js → main.js
 | 테마 | `applyTheme`, `toggleTheme` |
 | 인증 | `setAuthMode`·`signup`·`login`·`logout`, `auth.onAuthStateChanged` |
 | 워크스페이스 | `enterApp`·`loadMyWorkspaces`·`createPersonalWorkspace`·`createGroupWorkspace`·`joinByCode`·`leaveWorkspace`·`switchWorkspace`·`resetWorkspaceState`·`updateWorkspaceChip`·`ownerOptions` |
+| 권한/공동 설정 | `isWsOwner`·`defaultVisibility`·`defaultOwnerName`·`saveWsSettings`, 소유자 동작 `renameWorkspace`·`transferOwnership`·`removeMember` (core); 화면 `openSharedSettings`·`collectPrivateItems`·`makeItemPublic`·`makeAllPublic` (views) |
 | 마이그레이션 | `migrateLegacyIfNeeded`(v2→v3), `migrateFixed`(고정지출→반복), `migrateAccounts/Categories/Budgets/Recurring` |
 | 리스너/시딩 | `setupListeners`·`attach`·`detachListeners`, `buildDefaultAccounts`, `maybeBoot`/`rerender` |
+| 실제소비/정산 | `isActual`·`actualSpend`, **정산(Step 9)** `settlementSplit`·`greedySettle`·`pbSettleSummary`(순수 계산) |
+| 대출 계산 | `loanCalc`(잔액·이자·월예상이자)·`loanSummary`·`loanPaymentsOf`·`visibleLoans` |
 
 > **경로 헬퍼 `wp(path)`** 가 핵심입니다 — `wp('transactions')` → `ws/{현재wsId}/transactions`. RTDB에 접근할 때는 항상 `wp()` 로 현재 워크스페이스에 네임스페이스를 거는 것이 규칙입니다.
 
@@ -61,7 +64,10 @@ firebase.js → constants.js → core.js → views.js → main.js
 | 카테고리 | `openCategorySheet`·`renderCatManage`·`openCatEdit` |
 | 정기결제 | `openRecurringList`·`viewRecurringTxs`·`openRecurringEdit`·`renderRecAccts`·`renderRecCardPerf` |
 | 구독 | `openSubscriptions`·`renderSubs`·`openSubDetail`·`openSubEdit` |
-| 목적별 | `openPurposeBooks`·`renderPBs`·`openPbDetail`·`openPbEdit` |
+| 목적별 | `openPurposeBooks`·`renderPBs`·`pbCard`·`openPbDetail`(탭)·`renderPbTxTab`·`openPbEdit` |
+| 정산(Step 9) | 거래시트 `renderSettleBlock`·`setSplitType`·`collectSettle`, 상세 `renderPbSettleTab`·`pbSettleBadge`, 송금 `openSettlePay`·`saveSettlementPayment`·`cancelSettlementPayment`, `openSettlementOverview` |
+| 경조사비 | `openGiftBook`·`setGiftTab`·`renderGiftLog/Planned/People`, 기록 `openGiftEdit`·`saveGiftEvent`(거래연결)·`deleteGiftEvent`, 예정 `openPlannedEdit`·`savePlanned`·`completePlanned`, 인맥 `openPersonEdit`·`savePerson`, 합계 `giftSummary`·`personGiftTotals` |
+| 대출/이자 | `openLoanBook`·`loanCard`·`openLoanDetail`·`openLoanEdit`·`saveLoan`·`deleteLoan`·`setLoanStatus`, 상환 `openLoanPayment`·`saveLoanPayment`(이자 거래연결)·`deleteLoanPayment` |
 | 내보내기 | `exportCSV` |
 
 ## 네비게이션 / 렌더 흐름
