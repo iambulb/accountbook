@@ -195,8 +195,43 @@
     .acct { display:flex; align-items:center; gap:12px; padding:12px 4px; }
     .acct + .acct { border-top:1px solid var(--line); }
     .acct-dot { width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; flex-shrink:0; }
+    .acct-dot svg { width:20px; height:20px; }
     .acct-name { font-weight:700; }
+    .acct-nm { flex:1; }
+    .acct-nm b { font-size:14.5px; font-weight:700; display:block; }
+    .acct-nm span { font-size:11.5px; color:var(--sub); font-weight:500; }
     .acct-bal { margin-left:auto; font-weight:800; letter-spacing:-.02em; }
+
+    /* 자산 hero (다크 카드 — 라이트/다크 공통 어둡게) */
+    .assethero { background:#16171c; color:#fff; border-radius:20px; padding:19px 20px; margin:6px 0 4px; }
+    .assethero .k { font-size:12px; color:#a7abb6; font-weight:600; margin-bottom:6px; }
+    .assethero .v { font-size:28px; font-weight:800; letter-spacing:-.03em; }
+    .assethero .sp { display:flex; gap:20px; margin-top:15px; padding-top:14px; border-top:1px solid rgba(255,255,255,.13); }
+    .assethero .sp .kk { font-size:10.5px; color:#a7abb6; font-weight:600; margin-bottom:3px; }
+    .assethero .sp .vv { font-size:13.5px; font-weight:700; }
+    [data-theme="dark"] .assethero { background:#0d0e11; border:1px solid #2a2c33; }
+
+    /* 섹션 헤더 추가 버튼 */
+    .addbtn { width:26px; height:26px; border-radius:50%; background:var(--soft); display:flex; align-items:center; justify-content:center; border:none; color:var(--text2); flex-shrink:0; }
+    .addbtn svg { width:15px; height:15px; }
+
+    /* 카드 실적 / 적금 진행 행 */
+    .perfrow { padding:13px 0; }
+    .perfrow + .perfrow { border-top:1px solid var(--line); }
+    .perftop { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:2px; }
+    .perftop b { font-size:14px; font-weight:700; }
+    .perftop .pct { font-size:12.5px; font-weight:800; }
+    .perfsub { font-size:11.5px; color:var(--sub); font-weight:500; }
+    .prog { height:8px; background:var(--soft2); border-radius:5px; overflow:hidden; margin:8px 0 6px; }
+    .prog .f { height:100%; border-radius:5px; background:var(--primary); }
+    .bgrow { padding:13px 0; }
+    .bgrow + .bgrow { border-top:1px solid var(--line); }
+    .bgtop { display:flex; align-items:center; gap:9px; margin-bottom:8px; }
+    .bgtop .ci { width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:800; flex:none; }
+    .bgtop .bn { flex:1; font-size:14px; font-weight:700; }
+    .bgtop .ba { font-size:12.5px; font-weight:700; color:var(--sub); }
+    .bgtrack { height:9px; background:var(--soft2); border-radius:6px; overflow:hidden; }
+    .bgfill { height:100%; border-radius:6px; }
 
     /* 더보기 메뉴 */
     .menu-item { display:flex; align-items:center; gap:13px; padding:15px 4px; font-size:14.5px; font-weight:600; }
