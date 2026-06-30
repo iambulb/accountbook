@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1">
+  <title>공유 가계부</title>
+  <meta name="description" content="개인·그룹 공유 가계부">
+  <meta name="theme-color" content="#3182f6">
+  <!-- iOS PWA (홈 화면에 추가 시 전체화면 앱처럼) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="가계부">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
+  <!--
+    ☁️ Netlify 배포: 이 public/ 폴더가 사이트 루트(netlify.toml publish="public") → / 에서 열림
+    Firebase: ① 이메일/비밀번호 로그인 ✅  ② Authentication > Authorized domains 에 배포 도메인 추가
+    RTDB 규칙: database.rules.json 내용을 콘솔 > Realtime Database > 규칙에 붙여넣고 게시 (자세한 모델은 docs/deploy/rules.md)
+      - 모든 가계부 데이터는 ws/{wsId} 아래에 분리 저장(개인/그룹 워크스페이스)
+      - ws/{wsId} 는 해당 워크스페이스 members 에 속한 uid 만 read/write
+      - users/codes/workspaces 는 합류·전환을 위해 로그인 사용자에게 열림
+    ※ SDK는 compat 빌드 필수
+  -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- 로그인 -->
+  <div id="authScreen" class="auth-wrap">
+    <img src="icons/icon.svg" class="auth-logo" alt="">
+    <h1>가계부</h1>
+    <p class="desc" id="authDesc">로그인하고 내 가계부를 시작하세요</p>
+    <div class="seg" id="authModeSeg">
+      <button id="modeLogin" class="on" onclick="setAuthMode('login')">로그인</button>
+      <button id="modeSignup" onclick="setAuthMode('signup')">회원가입</button>
+    </div>
+    <div class="field" id="nameField" style="display:none;"><label>이름(별명)</label><input type="text" id="authName" class="input" placeholder="가계부에 표시될 이름" autocomplete="nickname"></div>
+    <div class="field"><label>이메일</label><input type="email" id="authEmail" class="input" placeholder="your@email.com" autocomplete="username"></div>
+    <div class="field"><label>비밀번호</label><input type="password" id="authPassword" class="input" placeholder="6자 이상" autocomplete="current-password"></div>
+    <button class="btn" id="authSubmit" onclick="submitAuth()">로그인</button>
+  </div>
+
+  <!-- 앱 -->
+  <div id="app">
+    <div class="topbar">
+      <h2 id="screenTitle">달력</h2>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="ws-chip" id="wsChip" onclick="openWorkspaceSheet()">🏠 가계부</button>
+        <div class="icon-btn" onclick="toggleTheme()" id="themeBtn" title="테마">🌙</div>
+      </div>
+    </div>
+    <div class="content" id="content"></div>
+
+    <div class="tabbar">
+      <button class="tab on" data-tab="calendar" onclick="go('calendar')"><span class="ti">📅</span>달력</button>
+      <button class="tab" data-tab="stats" onclick="go('stats')"><span class="ti">📊</span>리포트</button>
+      <div class="fab-slot"><button class="fab" onclick="openTxSheet()">+</button></div>
+      <button class="tab" data-tab="assets" onclick="go('assets')"><span class="ti">🏦</span>자산</button>
+      <button class="tab" data-tab="more" onclick="go('more')"><span class="ti">☰</span>더보기</button>
+    </div>
+  </div>
+
+  <!-- 시트 -->
+  <div id="overlay" onclick="closeSheet()"></div>
+  <div id="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head"><h3 id="sheetTitle"></h3><button class="x" onclick="closeSheet()">✕</button></div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+    <script src="js/firebase.js"></script>
+  <script src="js/constants.js"></script>
+  <script src="js/core.js"></script>
+  <script src="js/views.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+# CLAUDE.md
+
+이 파일은 Claude(및 협업자)가 이 저장소에서 작업할 때 따라야 할 지침입니다. 작업 전후로 이 문서를 기준으로 삼고, **코드를 바꾸면 관련 문서도 같이 갱신**합니다.
+
+## 프로젝트 한눈 요약
+
+- **무엇**: 개인·그룹이 함께 쓰는 공유 가계부 **PWA**(웹앱). 그룹 초대코드로 가족·커플·모임이 같은 가계부를 실시간 공유.
+- **스택**: Vanilla JS(프레임워크·빌드 없음) + Firebase **Realtime Database** + **Auth(Email/Password)** + Chart.js. 서비스워커 PWA. Netlify 호스팅, PWABuilder TWA로 안드로이드 APK.
+- **📁 폴더 구조**: 웹 앱은 **`public/`** 아래(`public/index.html`, `public/js/`, `public/sw.js`, `public/css/styles.css`, `public/icons/`, `public/.well-known/`). 배포 설정(`firebase.json`·`netlify.toml`·`.firebaserc`·`database.rules.json`)은 **저장소 루트**. 문서는 루트 `README.md`·`CLAUDE.md` + `docs/`(배포 가이드는 `docs/deploy/`). Netlify는 `publish="public"`.
+
+전체 그림은 [docs/](docs/README.md) 의 문서들을 참고하세요.
+
+## 아키텍처 / 코딩 규칙
+
+- **워크스페이스 격리가 핵심**: 모든 가계부 데이터는 `ws/{wsId}/` 아래에 저장됩니다. RTDB에 접근할 땐 **항상 경로 헬퍼 `wp('...')`** 를 써서 현재 워크스페이스에 네임스페이스를 거세요(예: `wp('transactions')` → `ws/{wsId}/transactions`). 비멤버는 `ws/{wsId}` 를 read/write할 수 없습니다.
+- **모듈 시스템 없음 — 전역 함수 패턴**: 번들러가 없고, 모든 함수·상수가 전역(window) 스코프를 공유합니다. HTML `onclick` 에서 전역 함수를 직접 호출하므로, **새 함수는 호출되는 곳보다 먼저(위 파일에) 정의**하고 이름 충돌을 피하세요. 로드 순서: `firebase.js → constants.js → core.js → views.js → main.js`.
+- **Firebase compat SDK 필수**: `firebase-*-compat.js` 빌드를 사용합니다(모듈형 SDK 아님).
+- **RTDB 규칙은 순수 JSON**: `database.rules.json` 에는 주석·추가 키를 넣지 마세요. 멤버십(`workspaces` 쓰기)이 먼저 커밋된 뒤에야 `ws` 쓰기가 통과하므로, 합류·생성은 2단계로 처리합니다.
+- **단방향 렌더**: RTDB 리스너가 데이터를 받을 때마다 `rerender()` 로 현재 화면을 다시 그립니다. 상태는 전역 `state` 객체에 모읍니다.
+- **XSS 방지**: 사용자 입력은 `escapeHtml()` 후 `innerHTML` 에 넣습니다.
+- **언어/스타일**: 주석·UI 라벨·토스트·커밋 메시지는 **한국어**. 들여쓰기·압축 헬퍼 스타일은 기존 파일 관례를 따릅니다.
+
+## 문서 최신화 규칙
+
+작업으로 아래 변화가 생기면 **같은 PR/커밋에서 해당 문서를 갱신**하세요. 이게 이 저장소의 핵심 약속입니다.
+
+| 코드 변경 | 갱신할 문서 |
+|---|---|
+| 기능 추가·변경·제거 | [docs/features.md](docs/features.md) |
+| 데이터 구조·RTDB 경로·보안규칙 변경 | [docs/data-model.md](docs/data-model.md) **+** `database.rules.json` **+** [rules.md](docs/deploy/rules.md) |
+| 파일 추가/삭제·주요 함수 구조 변경 | [docs/code-structure.md](docs/code-structure.md) |
+| 아키텍처·배포·데이터 흐름 변경 | [docs/architecture.md](docs/architecture.md) |
+| 배포 절차·개발환경 변경 | [docs/development.md](docs/development.md) |
+| **모든 사용자 체감 변경** | [docs/CHANGELOG.md](docs/CHANGELOG.md) 의 `[Unreleased]` 에 한 줄 추가 |
+| 앱 셸에 캐시될 정적 파일 추가 | `public/sw.js` 의 `APP_SHELL` 배열 **+** `CACHE_VERSION` 올리기 |
+
+> 새 기능을 만들거나 변경할 때, 코드만 고치고 문서를 빠뜨리지 마세요. 문서가 코드와 어긋나면 그 자체가 버그입니다.
+
+## 자주 하는 작업
+
+- **로컬 실행**: `npx serve public` (정적 서버 필수, `file://` 금지).
+- **웹 배포**: `npx netlify-cli deploy --prod` — [NETLIFY.md](docs/deploy/netlify.md).
+- **DB 규칙 배포**: `npx firebase-tools deploy --only database` — [FIREBASE.md](docs/deploy/firebase.md).
+- **APK 만들기**: PWABuilder — [APK.md](docs/deploy/apk.md).
+- 콘솔 수동 설정(이메일 로그인 활성화·승인 도메인)은 CLI 불가 — [docs/development.md](docs/development.md) 체크리스트 참고.
+
+## 주의
+
+- `public/js/firebase.js` 에는 Firebase 웹 설정값(apiKey 등)이 들어 있습니다. 웹 클라이언트 키라 공개 자체는 정상이지만, **보안은 RTDB 규칙으로** 지켜집니다 — 규칙을 약화시키지 마세요.
+- 거래 타입을 추가하면 `constants.js` 의 `TYPE_LABEL`·`TYPE_ICON`·`TX_EFFECT`(잔액효과)·필요 시 `ACTUAL_DEFAULT`(통계 포함)를 함께 정의해야 합니다.

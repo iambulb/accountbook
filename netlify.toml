@@ -1,0 +1,36 @@
+# Netlify 배포 설정 (public/ 폴더를 사이트 루트로 배포)
+[build]
+  publish = "public"
+
+# index.html 은 항상 최신을 받도록 캐시 끔
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# 서비스워커도 항상 최신(업데이트 즉시 반영)
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# 웹 매니페스트 올바른 콘텐츠 타입 (PWABuilder/설치 검증용)
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json"
+
+# TWA(APK) 검증용 Digital Asset Links — JSON 으로 제공
+[[headers]]
+  for = "/.well-known/assetlinks.json"
+  [headers.values]
+    Content-Type = "application/json"
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# 기본 보안 헤더
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
