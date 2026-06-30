@@ -44,6 +44,7 @@ firebase.js → constants.js → core.js → views.js → main.js
 | 인증 | `setAuthMode`·`signup`·`login`·`logout`, `auth.onAuthStateChanged` |
 | 워크스페이스 | `enterApp`·`loadMyWorkspaces`·`createPersonalWorkspace`·`createGroupWorkspace`·`joinByCode`·`leaveWorkspace`·`switchWorkspace`·`resetWorkspaceState`·`updateWorkspaceChip`·`ownerOptions` |
 | 권한/공동 설정 | `isWsOwner`·`defaultVisibility`·`defaultOwnerName`·`saveWsSettings`, 소유자 동작 `renameWorkspace`·`transferOwnership`·`removeMember` (core); 화면 `openSharedSettings`·`collectPrivateItems`·`makeItemPublic`·`makeAllPublic` (views) |
+| 프로필 | `state.userPhotos`·`loadMemberPhotos`·`saveProfile`·`avatarColor` (core); `avatarHtml`·`resizeImageFile`·`openProfileSheet`·`pickProfilePhoto`·`removeProfilePhoto`·`onSaveProfile` (views) |
 | 마이그레이션 | `migrateLegacyIfNeeded`(v2→v3), `migrateFixed`(고정지출→반복), `migrateAccounts/Categories/Budgets/Recurring` |
 | 리스너/시딩 | `setupListeners`·`attach`·`detachListeners`, `buildDefaultAccounts`, `maybeBoot`/`rerender` |
 | 실제소비/정산 | `isActual`·`actualSpend`, **정산(Step 9)** `settlementSplit`·`greedySettle`·`pbSettleSummary`(순수 계산) |
