@@ -8,6 +8,10 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### UI 리디자인 (진행 중)
+- **달력 화면 시안 1:1 재현**: 멤버 칩 가로 스크롤(그룹, 컬러 그라데이션 아바타 `avatarGrad`)+멤버 필터(`state.memberFilter`), 상단 요약을 **연회색 msum 박스**(수입/실제소비/합계)+보조행(충전·선불·미사용)·예산 미니바 유지, **월요일 시작** 달력(`calendarGridHtml`)·콤팩트 셀·잉크 오늘 원형·주말 색, 셀 **카테고리 색 점**(텍스트 금액 제거), **선택일 인라인 거래**(`selectedDayHtml` `.sech`+squircle 거래행, 탭=`selectDay`), 거래행 sub를 `카테고리·기록자`로 간결화. `sw.js` `v3.10.0`.
+- **0단계 — 디자인 토큰·공용 컴포넌트**: 새 시안(잉크 모노톤)에 맞춰 `styles.css` 팔레트(라이트/다크)·타이포·radius·그림자와 공용 컴포넌트(`.card`·`.btn`·`.input`·`.chip`·`.seg`·`.tab/.tabbar`·`.fab`·`#sheet`·`.tx`·`.menu-item`·요약·progress·`.toast` 등)를 리스타일. 주색=잉크(블랙↔다크 반전), 수입=블루·지출=레드, 카드=soft 회색 박스, FAB=squircle. JS·구조 변경 없이 전 화면 리스킨. `sw.js` `CACHE_VERSION` `v3.8.0`. (다음: 크롬 SVG 아이콘 → 화면별 디테일)
+
 ### 추가
 - **프로필 사진 / 이름 + 그룹 멤버 프로필**: 더보기 프로필 줄(아바타·이름) 탭 → 내 프로필 시트(`openProfileSheet`)에서 **기기 사진으로 프로필 설정**(브라우저 캔버스로 256px JPEG 리사이즈 → base64로 `users/{uid}/photo` 저장)·삭제 + **별명(이름) 수정**(모든 워크스페이스 멤버 이름 비정규화 갱신). **그룹 관리 멤버 목록에 멤버 아바타** 표시(`avatarHtml`, 사진 없으면 이니셜 폴백). 멤버 사진은 `loadMemberPhotos`로 캐시. Firebase Storage·보안규칙 변경 없음. `sw.js` `CACHE_VERSION` `v3.7.0`.
 
