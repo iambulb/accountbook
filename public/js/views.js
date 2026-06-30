@@ -820,49 +820,61 @@
     function makeItemPublic(idx){ const it=(window._visPrivate||[])[idx]; if(!it) return; db.ref(wp(it.path)).update({ visibility:'full' }); toast('공개로 전환했어요'); setTimeout(openSharedSettings, 150); }
     function makeAllPublic(){ const list=window._visPrivate||[]; if(!list.length) return; confirmSheet(list.length+'개 항목을 모두 전체 공개로 바꿀까요?', ()=>{ list.forEach(it=>db.ref(wp(it.path)).update({ visibility:'full' })); toast('모두 공개로 전환'); setTimeout(openSharedSettings, 200); }); }
 
+    // 더보기 화면 시안 SVG 아이콘(라인). 텍스트 라벨이 있어 장식용.
+    const MORE_ICON={
+      budget:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 13a9 9 0 1 1 18 0" stroke-linecap="round"/><path d="M12 13l4-3" stroke-linecap="round"/></svg>',
+      sub:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 12a8 8 0 0 1 14-5l2 2M20 12a8 8 0 0 1-14 5l-2-2"/><path d="M18 4v5h-5M6 20v-5h5"/></svg>',
+      recurring:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4" stroke-linecap="round"/></svg>',
+      pb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v13H4z"/><path d="M4 7l2-3h5l2 3"/></svg>',
+      settle:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7h8M9 12h8M9 17h5"/><circle cx="5" cy="7" r="1.4"/><circle cx="5" cy="12" r="1.4"/><circle cx="5" cy="17" r="1.4"/></svg>',
+      gift:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="16" height="11" rx="1.5"/><path d="M4 13h16M12 9v11M12 9C9 9 8 4 12 4s3 5 0 5z"/></svg>',
+      loan:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-6 9 6M5 10v9h14v-9M3 19h18"/></svg>',
+      category:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>',
+      members:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11a3 3 0 1 0 6 0 3 3 0 0 0-6 0z"/><path d="M5 20c0-3 3-5 7-5s7 2 7 5"/><circle cx="18" cy="7" r="3"/></svg>',
+      lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/></svg>',
+      list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>',
+      download:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4M5 21h14"/></svg>',
+      moon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+      logout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5M20 12H9M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/></svg>',
+      chev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>'
+    };
+    function gcell(icon,label,fn,badge){ return '<button class="gcell" onclick="'+fn+'"><span class="gic">'+icon+(badge?'<span class="gbadge">'+badge+'</span>':'')+'</span><span class="glabel">'+escapeHtml(label)+'</span></button>'; }
+    function lrow(icon,label,fn,val){ return '<button class="lrow" onclick="'+fn+'"><span class="li">'+icon+'</span><span class="lt">'+label+'</span><span class="lv">'+(val||'')+'</span><span class="chev">'+MORE_ICON.chev+'</span></button>'; }
     function renderMore(){
       $('screenTitle').textContent='더보기';
+      const ws=state.wsMeta||{}; const isGroup=ws.type==='group'; const memCount=Object.keys(ws.members||{}).length;
       let h='';
       if(deferredPrompt) h+='<div class="install-banner" onclick="installApp()">📲 홈 화면에 앱으로 설치하기</div>';
-      const ws=state.wsMeta||{}; const isGroup=ws.type==='group'; const memCount=Object.keys(ws.members||{}).length;
-      h+='<div class="menu-group-title">현재 가계부</div><div class="card" style="padding:8px 10px;">';
-      h+='<div class="menu-item" onclick="openWorkspaceSheet()"><span class="mi-ic">'+(isGroup?'👥':'🏠')+'</span>'+escapeHtml(ws.name||'가계부')+
-         '<span class="pill">'+(isGroup?('그룹 '+memCount+'명'):'개인')+'</span><span class="chevron">전환 ›</span></div>';
-      if(isGroup) h+=menuItem('🔑','초대 코드 / 멤버 관리',"openGroupManageSheet('"+state.wsId+"')");
-      h+=menuItem('➕','그룹 만들기 / 참여','openWorkspaceSheet()');
+      // 프로필/워크스페이스 행
+      const wsSub = isGroup ? ('그룹 · 멤버 '+memCount+'명'+(ws.code?(' · 초대코드 '+escapeHtml(ws.code)):'')) : '개인 가계부';
+      h+='<div class="prow"><span class="av" style="background:'+avatarGrad(ws.name||state.wsId)+'"></span>'+
+         '<div class="pnm"><b>'+escapeHtml(ws.name||'가계부')+'</b><span>'+wsSub+'</span></div>'+
+         '<button class="cnt" onclick="openWorkspaceSheet()">전환</button></div>';
+      // 4열 기능 그리드
+      const activeSubs=(state.subscriptions||[]).filter(s=>s.status==='active').length;
+      h+='<div class="grid4">';
+      h+=gcell(MORE_ICON.budget,'예산','openBudgetSheet()');
+      h+=gcell(MORE_ICON.sub,'구독','openSubscriptions()', activeSubs||0);
+      h+=gcell(MORE_ICON.recurring,'정기결제','openRecurringList()');
+      h+=gcell(MORE_ICON.pb,'목적별','openPurposeBooks()');
+      h+=gcell(MORE_ICON.settle,'정산','openSettlementOverview()');
+      h+=gcell(MORE_ICON.gift,'경조사비','openGiftBook()');
+      h+=gcell(MORE_ICON.loan,'대출/이자','openLoanBook()');
+      h+=gcell(MORE_ICON.category,'카테고리','openCategorySheet()');
       h+='</div>';
-      h+='<div class="menu-group-title">거래 관리</div><div class="card" style="padding:8px 10px;">';
-      h+=menuItem('🧾','거래내역',"goHome('list')");
-      h+=menuItem('🔁','정기결제','openRecurringList()');
-      h+=menuItem('🏷️','카테고리','openCategorySheet()');
+      // 설정 리스트
+      h+='<div class="lst">';
+      if(isGroup) h+=lrow(MORE_ICON.members,'멤버 · 권한 관리',"openGroupManageSheet('"+state.wsId+"')", memCount+'명');
+      h+=lrow(MORE_ICON.lock,'권한 · 공동 설정','openSharedSettings()');
+      h+=lrow(MORE_ICON.list,'거래내역',"goHome('list')");
+      h+=lrow(MORE_ICON.download,'CSV 내보내기','exportCSV()');
+      h+=lrow(MORE_ICON.moon,'다크 모드','toggleTheme();renderMore()', state.theme==='dark'?'켜짐':'꺼짐');
+      h+=lrow(avatarHtml(state.uid, state.userName, 21), escapeHtml(state.userName)+' 님','openProfileSheet()','프로필');
+      h+=lrow(MORE_ICON.logout,'로그아웃','logout()');
       h+='</div>';
-      h+='<div class="menu-group-title">계획</div><div class="card" style="padding:8px 10px;">';
-      h+=menuItem('💵','예산','openBudgetSheet()');
-      h+=menuItem('🔔','구독','openSubscriptions()');
-      h+='</div>';
-      h+='<div class="menu-group-title">자산 / 결제</div><div class="card" style="padding:8px 10px;">';
-      h+=menuItem('🏦','결제수단',"go('assets')");
-      h+=menuItem('🔵','선불·포인트',"go('assets')");
-      h+=menuItem('💳','카드 실적','openCardList()');
-      h+=menuItem('🏧','대출 / 이자','openLoanBook()');
-      h+='</div>';
-      h+='<div class="menu-group-title">목적별</div><div class="card" style="padding:8px 10px;">';
-      h+=menuItem('📒','목적별 가계부','openPurposeBooks()')+menuItem('✈️','여행',"openPurposeBooks('travel')")+menuItem('👥','계모임',"openPurposeBooks('gathering')")+menuItem('💐','경조사비','openGiftBook()')+menuItem('🤝','정산','openSettlementOverview()');
-      h+='</div>';
-      h+='<div class="menu-group-title">데이터 / 설정</div><div class="card" style="padding:8px 10px;">';
-      h+=menuItem('📤','CSV 내보내기','exportCSV()');
-      h+='<div class="menu-item"><span class="mi-ic">🌙</span>다크모드<div class="switch '+(state.theme==='dark'?'on':'')+'" onclick="toggleTheme()"><i></i></div></div>';
-      h+=menuItem('🔒','권한 / 공동 설정','openSharedSettings()');
-      h+='</div>';
-      h+='<div class="card" style="padding:8px 10px;">';
-      h+='<div class="menu-item" onclick="openProfileSheet()"><span class="mi-ic" style="display:flex;">'+avatarHtml(state.uid, state.userName, 30)+'</span>'+escapeHtml(state.userName)+' 님<span class="chevron">프로필 ›</span></div>';
-      h+=menuItem('🚪','로그아웃','logout()');
-      h+='</div>';
-      h+='<p class="muted" style="text-align:center;font-size:12px;margin-top:18px;">가계부 v3 · '+escapeHtml(state.userName)+' 님</p>';
+      h+='<p class="muted" style="text-align:center;font-size:12px;margin-top:18px;">가계부 v3</p>';
       $('content').innerHTML=h;
     }
-    function menuItem(ic,label,fn){ return '<div class="menu-item" onclick="'+fn+'"><span class="mi-ic">'+ic+'</span>'+label+'<span class="chevron">›</span></div>'; }
-    function menuItemSoon(ic,label){ return '<div class="menu-item disabled" onclick="toast(\'곧 추가될 기능입니다\')"><span class="mi-ic">'+ic+'</span>'+label+'<span class="pill">예정</span></div>'; }
     function goHome(view){ state.homeView=view||'list'; go('calendar'); }
 
     // ===== 예산 =====
