@@ -7,6 +7,7 @@
       settlementPayments:[],   // 정산 송금 완료/취소 기록(Step 9) — per-uid
       loans:[], loanPayments:[],   // 대출/이자 관리 — flat
       wsSettings:{},   // 워크스페이스 공동 설정(기본 공개범위/소유자) — ws/{wsId}/settings
+      userPhotos:{},   // uid → 프로필 사진 data URL 캐시(users/{uid}/photo)
       budgets:[],
       month: monthStr(new Date()),
       selectedDate: ymd(new Date()),
@@ -143,8 +144,9 @@
           await db.ref('users/'+user.uid).update({ name:u.name, email:user.email||'', createdAt:u.createdAt||new Date().toISOString() });
         }
         state.userName=u.name;
+        state.userPhotos[state.uid]=u.photo||'';
         $('authScreen').style.display='none';
-        $('app').style.display='block';
+        $('app').style.display='flex';
         await migrateLegacyIfNeeded();
         await loadMyWorkspaces();
         if(!state.memberships.length){ await createPersonalWorkspace(true); await loadMyWorkspaces(); }
@@ -273,8 +275,37 @@
       setupListeners();
       updateWorkspaceChip();
       go('calendar');
+      loadMemberPhotos();   // 멤버 프로필 사진 캐시 채우기(비동기, 끝나면 rerender)
       if(!initial) toast((meta.name||'가계부')+'(으)로 전환했어요');
     }
+    // 현재 워크스페이스 멤버들의 프로필 사진을 users/{uid}/photo 에서 읽어 캐시
+    async function loadMemberPhotos(){
+      const m=(state.wsMeta&&state.wsMeta.members)||{};
+      const uids=Object.keys(m); if(!uids.length) return;
+      try{
+        await Promise.all(uids.map(uid=>db.ref('users/'+uid+'/photo').once('value').then(s=>{ state.userPhotos[uid]=s.val()||''; }).catch(()=>{})));
+        rerender();
+      }catch(e){}
+    }
+    // 프로필 저장: 사진(photoChange: undefined=유지 / ''=삭제 / dataURL=교체) + 이름(별명)
+    async function saveProfile(name, photoChange){
+      name=(name||'').trim()||state.userName;
+      const upd={ name };
+      if(photoChange!==undefined) upd.photo=photoChange||null;   // ''/null → 삭제
+      await db.ref('users/'+state.uid).update(upd);
+      // 이름 비정규화: 내가 속한 모든 워크스페이스의 멤버 이름 갱신
+      (state.memberships||[]).forEach(w=>{
+        db.ref('workspaces/'+w.id+'/members/'+state.uid+'/name').set(name).catch(()=>{});
+        if(w.members&&w.members[state.uid]) w.members[state.uid].name=name;
+      });
+      if(state.wsMeta&&state.wsMeta.members&&state.wsMeta.members[state.uid]) state.wsMeta.members[state.uid].name=name;
+      state.userName=name;
+      if(photoChange!==undefined) state.userPhotos[state.uid]=photoChange||'';
+      rerender();
+    }
+    // 이름/uid 해시 → 폴백 아바타 배경색
+    function avatarColor(s){ s=String(s||'?'); let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0;
+      const p=['#3182f6','#1b9e5f','#f04452','#f59f00','#9b59b6','#00b8d4','#e84393','#7b68ee']; return p[h%p.length]; }
 
     function resetWorkspaceState(){
       Object.assign(state, { transactions:[], accounts:[], categories:[], savings:[], recurring:[],
@@ -781,6 +812,7 @@
       state.tab=tab;
       document.querySelectorAll('.tabbar .tab').forEach(b=>b.classList.toggle('on', b.dataset.tab===tab));
       rerender();
+      const c=$('content'); if(c) c.scrollTop=0;   // 탭 전환 시 내용 스크롤 맨 위로
     }
     function rerender(){
       if(state.tab==='calendar') renderCalendar();
