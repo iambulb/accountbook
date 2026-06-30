@@ -4,6 +4,9 @@
       wsId:null, wsMeta:null, memberships:[],   // 현재 워크스페이스, 메타, 내 워크스페이스 목록
       transactions:[], accounts:[], categories:[], savings:[], recurring:[], creditCards:[], subscriptions:[], purposeBooks:[],
       people:[], giftEvents:[], plannedGiftEvents:[],
+      settlementPayments:[],   // 정산 송금 완료/취소 기록(Step 9) — per-uid
+      loans:[], loanPayments:[],   // 대출/이자 관리 — flat
+      wsSettings:{},   // 워크스페이스 공동 설정(기본 공개범위/소유자) — ws/{wsId}/settings
       budgets:[],
       month: monthStr(new Date()),
       selectedDate: ymd(new Date()),
@@ -58,14 +61,21 @@
 
     // ===== 시트 =====
     function openSheet(title, html){
+      const sh=$('sheet');
+      if(!sh.classList.contains('on')) sh._returnFocus=document.activeElement;  // 닫을 때 돌아갈 포커스
       $('sheetTitle').textContent=title;
       $('sheetBody').innerHTML=html;
       $('overlay').classList.add('on');
-      $('sheet').classList.add('on');
+      sh.classList.add('on');
+      // 다이얼로그로 포커스 이동(모바일 키보드 안 뜨도록 입력칸이 아닌 시트 컨테이너로)
+      setTimeout(()=>{ try{ sh.focus(); }catch(e){} }, 30);
     }
     function closeSheet(){
+      const sh=$('sheet');
       $('overlay').classList.remove('on');
-      $('sheet').classList.remove('on');
+      sh.classList.remove('on');
+      const rf=sh._returnFocus; sh._returnFocus=null;
+      if(rf && rf.focus){ try{ rf.focus(); }catch(e){} }
     }
     function confirmSheet(msg, onYes){
       openSheet('확인',
@@ -268,7 +278,7 @@
 
     function resetWorkspaceState(){
       Object.assign(state, { transactions:[], accounts:[], categories:[], savings:[], recurring:[],
-        creditCards:[], subscriptions:[], purposeBooks:[], people:[], giftEvents:[], plannedGiftEvents:[], budgets:[] });
+        creditCards:[], subscriptions:[], purposeBooks:[], people:[], giftEvents:[], plannedGiftEvents:[], settlementPayments:[], loans:[], loanPayments:[], wsSettings:{}, budgets:[] });
       seededAcc=seededCat=booted=migratedAcc=migratedCat=migratedBudget=migratedRec=false;
       recurringLogKeys=new Set();
       recv.tx=recv.acc=recv.cat=recv.rec=recv.log=false;
@@ -285,6 +295,38 @@
     function ownerOptions(selected){
       const opts=Array.from(new Set([...wsMemberNames(), '공동', selected].filter(Boolean)));
       return opts.map(o=>'<option'+(o===selected?' selected':'')+'>'+escapeHtml(o)+'</option>').join('');
+    }
+    // ===== 공동 설정(권한/기본값) =====
+    function isWsOwner(){ return state.wsMeta && state.wsMeta.ownerUid===state.uid; }
+    function defaultVisibility(){ return state.wsSettings && state.wsSettings.defaultVisibility==='private' ? 'private' : 'full'; }
+    function defaultOwnerName(){ const s=state.wsSettings&&state.wsSettings.defaultOwner; if(s==='me') return state.userName||'공동'; if(s==='common') return '공동'; return isGroupWs()?'공동':(state.userName||'공동'); }
+    function saveWsSettings(patch){ db.ref(wp('settings')).update(Object.assign({ updatedAt:new Date().toISOString() }, patch)); }
+    // 소유자 전용 워크스페이스 관리 (UI에서 권한 게이팅). workspaces/{wsId} 노드 직접 갱신.
+    async function renameWorkspace(wsId, name){
+      name=(name||'').trim(); if(!name) return;
+      await db.ref('workspaces/'+wsId+'/name').set(name);
+      const m=state.memberships.find(w=>w.id===wsId); if(m) m.name=name;
+      if(state.wsId===wsId && state.wsMeta){ state.wsMeta.name=name; updateWorkspaceChip(); }
+      toast('그룹 이름을 바꿨어요');
+    }
+    async function transferOwnership(wsId, uid){
+      const w=state.memberships.find(x=>x.id===wsId); if(!w) return;
+      const old=w.ownerUid;
+      const upd={};
+      upd['workspaces/'+wsId+'/ownerUid']=uid;
+      if(old) upd['workspaces/'+wsId+'/members/'+old+'/role']='member';
+      upd['workspaces/'+wsId+'/members/'+uid+'/role']='owner';
+      await db.ref().update(upd);
+      await loadMyWorkspaces();
+      if(state.wsId===wsId){ const m=state.memberships.find(x=>x.id===wsId); if(m) state.wsMeta=m; }
+      toast('소유자를 넘겼어요'); rerender();
+    }
+    async function removeMember(wsId, uid){
+      // 멤버에서 제거 → 해당 사용자는 ws/{wsId} 접근 차단. (상대 users/{uid}/ws 인덱스는 본인만 삭제 가능해 잔존하나 접근은 불가)
+      await db.ref('workspaces/'+wsId+'/members/'+uid).remove();
+      await loadMyWorkspaces();
+      if(state.wsId===wsId){ const m=state.memberships.find(x=>x.id===wsId); if(m) state.wsMeta=m; }
+      toast('멤버를 내보냈어요'); rerender();
     }
 
     // 새 워크스페이스 기본 계좌 (개인=내 계좌 1개 / 그룹=공동 자산)
@@ -357,6 +399,17 @@
       attach('plannedGiftEvents', s=>{
         const o=s.val()||{}; state.plannedGiftEvents=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender();
       });
+      attach('settlementPayments', s=>{   // 정산 송금 기록(per-uid: {uid}/{id})
+        const arr=[]; s.forEach(us=>{ us.forEach(ps=>{ arr.push(Object.assign({ownerUid:us.key,id:ps.key},ps.val())); }); });
+        state.settlementPayments=arr; rerender();
+      });
+      attach('loans', s=>{
+        const o=s.val()||{}; state.loans=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender();
+      });
+      attach('loanPayments', s=>{
+        const o=s.val()||{}; state.loanPayments=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender();
+      });
+      attach('settings', s=>{ state.wsSettings=s.val()||{}; rerender(); });
 
       migrateFixed();
     }
@@ -547,6 +600,94 @@
     // 실제 소비 / 선불·포인트 / 권한
     function isActual(t){ return t.isActualExpense!==undefined ? !!t.isActualExpense : !!ACTUAL_DEFAULT[t.type]; }
     function actualSpend(list){ return list.filter(isActual).reduce((s,t)=>s+(Number(t.amount)||0),0); }
+
+    // ===== 정산 계산 (Step 9) — 순수 함수, RTDB/DOM 미접근 =====
+    // 거래 1건의 분담 결과: { payer, participants:[이름], amounts:{이름:금액} }. 합계 = |amount| 보정.
+    function settlementSplit(t){
+      const amount=Math.abs(Number(t.amount)||0);
+      const payer=t.payer||t.user||'';
+      let parts=Array.isArray(t.splitParticipants)&&t.splitParticipants.length?t.splitParticipants.slice():[];
+      const type=t.splitType||'none';
+      if(type==='payer_only'){
+        const amounts={}; if(payer) amounts[payer]=amount; if(!parts.length&&payer) parts=[payer];
+        return { payer, participants:parts.length?parts:(payer?[payer]:[]), amounts };
+      }
+      if(type==='custom' && t.splitAmounts && typeof t.splitAmounts==='object'){
+        const amounts={}; let names=parts.length?parts:Object.keys(t.splitAmounts);
+        names.forEach(n=>{ amounts[n]=Math.round(Number(t.splitAmounts[n])||0); });
+        return { payer, participants:names, amounts };
+      }
+      // equal(기본): 균등 분배 후 나머지를 마지막 사람에게 더해 합계 보정
+      if(!parts.length) parts = payer?[payer]:[];
+      const n=parts.length||1, base=Math.floor(amount/n), amounts={};
+      parts.forEach((nm,i)=>{ amounts[nm]=base; });
+      if(parts.length){ amounts[parts[parts.length-1]] += amount - base*n; }
+      return { payer, participants:parts, amounts };
+    }
+    // balance>0 = 받을 사람, balance<0 = 보낼 사람. 단순 최소 송금 매칭(0 될 때까지 순차).
+    function greedySettle(balanceMap){
+      const cred=[], debt=[];
+      Object.keys(balanceMap).forEach(n=>{ const v=Math.round(balanceMap[n]); if(v>0) cred.push({n,v}); else if(v<0) debt.push({n,v:-v}); });
+      cred.sort((a,b)=>b.v-a.v); debt.sort((a,b)=>b.v-a.v);
+      const out=[]; let i=0,j=0;
+      while(i<debt.length && j<cred.length){
+        const pay=Math.min(debt[i].v, cred[j].v);
+        if(pay>0) out.push({ from:debt[i].n, to:cred[j].n, amount:pay });
+        debt[i].v-=pay; cred[j].v-=pay;
+        if(debt[i].v<=0) i++; if(cred[j].v<=0) j++;
+      }
+      return out;
+    }
+    // 목적별 가계부 정산 요약. settlementIncluded 거래 + 기록된 송금(paid)을 반영.
+    // 상태 기준: neededAmount=정산에 필요한 총 송금액(=greedy 제안 합), settledAmount=완료(paid)된 송금 합.
+    //   needed==0 → none / settled>=needed → settled / 0<settled<needed → partially_settled / settled==0 → unsettled
+    function pbSettleSummary(p){
+      const txs=state.transactions.filter(t=>t.purposeBookId===p.id && t.settlementIncluded===true);
+      const paid={}, owed={}, names=new Set((p.participants||[]));
+      txs.forEach(t=>{
+        const s=settlementSplit(t);
+        if(s.payer){ paid[s.payer]=(paid[s.payer]||0)+Math.abs(Number(t.amount)||0); names.add(s.payer); }
+        s.participants.forEach(nm=>{ owed[nm]=(owed[nm]||0)+(Number(s.amounts[nm])||0); names.add(nm); });
+      });
+      // 순수 잔액(송금 반영 전): paid - owed
+      const baseBalance={}; names.forEach(n=>{ baseBalance[n]=(paid[n]||0)-(owed[n]||0); });
+      const neededTransfers=greedySettle(baseBalance);
+      const neededAmount=neededTransfers.reduce((s,x)=>s+x.amount,0);
+      // 완료된 송금 반영 → 남은 잔액
+      const payments=state.settlementPayments.filter(x=>x.purposeBookId===p.id && x.status==='paid');
+      const settledAmount=payments.reduce((s,x)=>s+(Number(x.amount)||0),0);
+      const balance=Object.assign({}, baseBalance);
+      payments.forEach(x=>{ balance[x.fromPerson]=(balance[x.fromPerson]||0)+(Number(x.amount)||0); balance[x.toPerson]=(balance[x.toPerson]||0)-(Number(x.amount)||0); });
+      const suggestions=greedySettle(balance);
+      const perPerson=Array.from(names).map(n=>({ name:n, paid:Math.round(paid[n]||0), owed:Math.round(owed[n]||0), balance:Math.round(baseBalance[n]||0) }))
+        .sort((a,b)=>b.balance-a.balance);
+      const totalSpend=txs.reduce((s,t)=>s+Math.abs(Number(t.amount)||0),0);
+      const unsettledAmount=Math.max(0, neededAmount-settledAmount);
+      const status = neededAmount<=0 ? 'none' : (settledAmount>=neededAmount ? 'settled' : (settledAmount>0 ? 'partially_settled' : 'unsettled'));
+      const settledPct = neededAmount>0 ? Math.min(100, Math.round(settledAmount/neededAmount*100)) : 0;
+      return { perPerson, suggestions, payments, totalSpend, txCount:txs.length, neededAmount, settledAmount, unsettledAmount, settledPct, status, txs };
+    }
+    // ===== 대출/이자 계산 — 순수 함수 =====
+    function loanPaymentsOf(loan){ return state.loanPayments.filter(p=>p.loanId===loan.id); }
+    // 잔액 = 원금 - 상환한 원금 합 / 이자합 / 상환원금합
+    function loanCalc(loan){
+      const ps=loanPaymentsOf(loan);
+      const paidPrincipal=ps.reduce((s,p)=>s+(Number(p.principalAmount)||0),0);
+      const paidInterest=ps.reduce((s,p)=>s+(Number(p.interestAmount)||0),0);
+      const principal=Number(loan.principal)||0;
+      const balance=Math.max(0, principal-paidPrincipal);
+      // 월 예상 이자(단리, 참고용): 잔액 * 연이율% / 12
+      const monthlyInterest=Math.round(balance*((Number(loan.interestRate)||0)/100)/12);
+      const status = loan.status==='overdue' ? 'overdue' : (balance<=0 ? 'paid' : 'active');
+      return { principal, paidPrincipal, paidInterest, balance, monthlyInterest, status, payments:ps, totalPaid:paidPrincipal+paidInterest };
+    }
+    function visibleLoans(){ return state.loans.filter(canSee); }
+    function loanSummary(){
+      let borrowedBal=0, lentBal=0, interest=0;
+      visibleLoans().forEach(l=>{ const c=loanCalc(l); interest+=c.paidInterest; if(l.direction==='lent') lentBal+=c.balance; else borrowedBal+=c.balance; });
+      return { borrowedBal, lentBal, interest, count:visibleLoans().length };
+    }
+
     function prepaidAccounts(){ return state.accounts.filter(a=>PREPAID_TYPES.includes(a.type)); }
     function prepaidTotal(){ return prepaidAccounts().filter(canSee).reduce((s,a)=>s+accountBalance(a.id),0); }
     function canSee(item){ if((item.visibility||'full')!=='private') return true; return item.owner===state.userName || item.owner==='공동'; }
