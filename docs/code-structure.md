@@ -61,7 +61,7 @@ firebase.js → constants.js → core.js → views.js → main.js
 | 리포트 | `renderStats` |
 | 자산 | `renderAssets`·`openAcctSheet`·`openCardList`·`openSavingsSheet` |
 | 워크스페이스 | `openWorkspaceSheet`·`addPersonalWorkspace`·`openCreateGroupSheet`·`openJoinGroupSheet`·`openGroupManageSheet` |
-| 더보기 | `renderMore`·`menuItem`·`goHome` |
+| 더보기 | `renderMore`(시안: `.prow`+`.grid4`+`.lst`)·`gcell`/`lrow`(그리드·리스트 행 헬퍼)·`MORE_ICON`(SVG 아이콘 맵)·`goHome` |
 | 예산 | `openBudgetSheet`·`openBudgetDetail`·`openBudgetEdit` |
 | 카테고리 | `openCategorySheet`·`renderCatManage`·`openCatEdit` |
 | 정기결제 | `openRecurringList`·`viewRecurringTxs`·`openRecurringEdit`·`renderRecAccts`·`renderRecCardPerf` |
