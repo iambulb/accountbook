@@ -12,6 +12,7 @@
       month: monthStr(new Date()),
       selectedDate: ymd(new Date()),
       homeView:'calendar',
+      memberFilter:'',   // 달력 멤버 칩 필터(기록자 이름) — 그룹 전용
       filter:{ type:'', category:'', account:'', keyword:'' },
       theme: localStorage.getItem('theme') || 'light',
       tab:'calendar'
@@ -306,10 +307,15 @@
     // 이름/uid 해시 → 폴백 아바타 배경색
     function avatarColor(s){ s=String(s||'?'); let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0;
       const p=['#3182f6','#1b9e5f','#f04452','#f59f00','#9b59b6','#00b8d4','#e84393','#7b68ee']; return p[h%p.length]; }
+    // 이름/uid 해시 → 컬러 그라데이션(시안풍 아바타 배경)
+    function avatarGrad(s){ s=String(s||'?'); let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0;
+      const g=[['#6a8dff','#3f5bd6'],['#f3b14e','#e8862f'],['#7fd1a6','#3aa876'],['#c8a6f0','#9b6fe0'],['#ff9aa2','#f0606b'],['#5ad1e0','#26a7bd'],['#ffb86b','#f0883a'],['#a0c4ff','#5a8de0']];
+      const c=g[h%g.length]; return 'linear-gradient(135deg,'+c[0]+','+c[1]+')'; }
 
     function resetWorkspaceState(){
       Object.assign(state, { transactions:[], accounts:[], categories:[], savings:[], recurring:[],
         creditCards:[], subscriptions:[], purposeBooks:[], people:[], giftEvents:[], plannedGiftEvents:[], settlementPayments:[], loans:[], loanPayments:[], wsSettings:{}, budgets:[] });
+      state.memberFilter='';
       seededAcc=seededCat=booted=migratedAcc=migratedCat=migratedBudget=migratedRec=false;
       recurringLogKeys=new Set();
       recv.tx=recv.acc=recv.cat=recv.rec=recv.log=false;

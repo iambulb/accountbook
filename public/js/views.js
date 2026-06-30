@@ -1,7 +1,8 @@
 // ===== 홈(달력/목록) =====
     function renderCalendar(){
       $('screenTitle').textContent='달력';
-      const m=state.month, list=monthTx(m);
+      const m=state.month, allList=monthTx(m);
+      const list = state.memberFilter ? allList.filter(t=>(t.user||'')===state.memberFilter) : allList;
       const inc=sumBy(list,'income');
       const actual=actualSpend(list);
       const charge=sumBy(list,'prepaid_charge');
@@ -9,33 +10,34 @@
       const [y,mo]=m.split('-').map(Number);
       let html='';
 
-      html+='<div class="card">';
-      html+='<div class="month-nav"><button onclick="moveMonth(-1)">‹</button><span class="m">'+y+'.'+pad2(mo)+'</span><button onclick="moveMonth(1)">›</button></div>';
-      html+='<div class="summary">'+
-        '<div><div class="s-label">수입</div><div class="s-val green">'+won(inc)+'</div></div>'+
-        '<div><div class="s-label">실제소비</div><div class="s-val red">'+won(actual)+'</div></div>'+
-        '<div><div class="s-label">합계</div><div class="s-val">'+won(inc-actual)+'</div></div>'+
-      '</div>';
-      // 충전/선불사용 분리 안내 (소비로 착각 방지)
-      html+='<div class="row" style="margin-top:12px;font-size:12px;border-top:1px solid var(--line-soft);padding-top:12px;">'+
-        '<span class="muted">충전 <b class="blue">'+won(charge)+'</b></span>'+
-        '<span class="muted">선불·포인트 사용 <b>'+won(pspend)+'</b></span>'+
-        '<span class="muted">미사용 충전잔액 <b class="blue">'+won(prepaidTotal())+'</b></span></div>';
-      // 예산 미니바 (총예산, 실제소비 기준)
+      html+=memberChipRow();
+      // 시안 msum 형태 요약(연회색 박스, 수입/실제소비/합계 3칸)
+      html+='<div class="msum">'+
+        '<div><div class="k">수입</div><div class="v green">'+won(inc)+'</div></div>'+
+        '<div class="sep"></div>'+
+        '<div><div class="k">실제소비</div><div class="v red">'+won(actual)+'</div></div>'+
+        '<div class="sep"></div>'+
+        '<div><div class="k">합계</div><div class="v">'+won(inc-actual)+'</div></div></div>';
+      // 충전/선불 분리 보조행 + 예산 미니바 (우리 고유 정보 — 소비 착각 방지)
+      html+='<div class="submeta"><span class="muted">충전 <b class="blue">'+won(charge)+'</b></span><span class="muted">선불·포인트 <b>'+won(pspend)+'</b></span><span class="muted">미사용잔액 <b class="blue">'+won(prepaidTotal())+'</b></span></div>';
       const tb=totalMonthlyBudget();
       if(tb && m===monthStr(new Date())){
         const u=budgetUsage(tb), c=budgetColor(u.pct);
-        html+='<div style="margin-top:14px;"><div class="row" style="font-size:12px;"><span class="muted">이번달 예산</span><span style="color:'+c+';font-weight:700;">'+u.pct+'%'+(u.pct>=100?' 초과':'')+'</span></div>'+
+        html+='<div class="budgetmini"><div class="row" style="font-size:12px;"><span class="muted">이번달 예산</span><span style="color:'+c+';font-weight:700;">'+u.pct+'%'+(u.pct>=100?' 초과':'')+'</span></div>'+
           '<div class="bar"><i style="width:'+Math.min(u.pct,100)+'%;background:'+c+'"></i></div>'+
           '<div class="tx-sub" style="margin-top:6px;">'+won(u.used)+' / '+won(u.amount)+'</div></div>';
       }
-      html+='</div>';
 
       html+='<div class="seg"><button class="'+(state.homeView==='calendar'?'on':'')+'" onclick="setHomeView(\'calendar\')">달력</button>'+
         '<button class="'+(state.homeView==='list'?'on':'')+'" onclick="setHomeView(\'list\')">목록</button></div>';
 
-      if(state.homeView==='calendar') html+=calendarGridHtml(y,mo,list);
-      else html+=listHtml(list);
+      if(state.homeView==='calendar'){
+        html+='<div class="monthlbl"><button onclick="moveMonth(-1)">‹</button><b>'+y+'년 '+mo+'월</b><button onclick="moveMonth(1)">›</button></div>';
+        html+=calendarGridHtml(y,mo,list);
+        html+=selectedDayHtml(list);
+      } else {
+        html+=listHtml(list);
+      }
 
       // 다가오는 반복결제
       const upcoming=upcomingRecurring();
@@ -47,24 +49,66 @@
       $('content').innerHTML=html;
     }
     function setHomeView(v){ state.homeView=v; renderCalendar(); }
-    function moveMonth(d){ state.month=shiftMonth(state.month,d); renderCalendar(); }
+    function moveMonth(d){ state.month=shiftMonth(state.month,d);
+      // 인라인 선택일을 새 달에 맞춤(이번달이면 오늘, 아니면 1일)
+      state.selectedDate = (state.month===monthStr(new Date())) ? todayStr() : (state.month+'-01');
+      renderCalendar(); }
+    function selectDay(ds){ state.selectedDate=ds; renderCalendar(); }
     function setFilter(k,v){ state.filter[k]=v; renderCalendar(); }
+    // 달력 아래 선택일 거래 인라인(시안 sech + tx 행)
+    function selectedDayHtml(list){
+      const ds=state.selectedDate||todayStr(), dt=parseDate(ds);
+      const rows=list.filter(t=>(t.date||'').startsWith(ds)).sort((a,b)=>new Date(b.date)-new Date(a.date));
+      const gi=sumBy(rows,'income'), ge=sumBy(rows,'expense'), isToday=ds===todayStr();
+      let h='<div class="sech"><span class="l">'+(isToday?'오늘 · ':'')+(dt.getMonth()+1)+'월 '+dt.getDate()+'일 ('+WEEK[dt.getDay()]+')</span>'+
+        '<span class="s">'+(ge?'<span class="red">-'+ge.toLocaleString()+'</span>':'')+(gi?' <span class="green">+'+gi.toLocaleString()+'</span>':'')+'</span></div>';
+      h+= rows.length ? '<div>'+rows.map(txRowHtml).join('')+'</div>' : '<div class="empty">이 날 거래가 없습니다</div>';
+      h+='<button class="btn ghost" style="margin-top:8px;" onclick="openTxSheet(null,null,\''+ds+'\')">+ 이 날짜에 추가</button>';
+      return h;
+    }
+
+    // 달력 상단 멤버 칩(그룹 전용) — 기록자(t.user) 기준 필터
+    function memberChipRow(){
+      const ws=state.wsMeta||{};
+      if(ws.type!=='group') return '';
+      const members=ws.members||{}, uids=Object.keys(members);
+      if(uids.length<2) return '';
+      const cur=state.memberFilter;
+      let h='<div class="mrow">';
+      h+='<button class="mchip'+(cur===''?' on':'')+'" onclick="clearMemberFilter()"><span class="avatar" style="width:24px;height:24px;background:'+avatarGrad('all')+';"></span>전체</button>';
+      uids.forEach(uid=>{ const nm=members[uid].name||'멤버';
+        h+='<button class="mchip'+(cur===nm&&cur?' on':'')+'" onclick="setMemberFilterByUid(\''+uid+'\')">'+avatarHtml(uid, nm, 24)+escapeHtml(nm)+'</button>'; });
+      h+='</div>';
+      return h;
+    }
+    function clearMemberFilter(){ state.memberFilter=''; renderCalendar(); }
+    function setMemberFilterByUid(uid){ const mm=(state.wsMeta&&state.wsMeta.members)||{}; const name=(mm[uid]&&mm[uid].name)||''; state.memberFilter=(state.memberFilter===name&&name)?'':name; renderCalendar(); }
 
     function calendarGridHtml(y,mo,list){
+      // 일별 카테고리 색 점(시안풍) — 최대 3색
       const buckets={};
-      list.forEach(t=>{ const day=(t.date||'').substring(0,10); (buckets[day]=buckets[day]||{inc:0,exp:0}); if(t.type==='income')buckets[day].inc+=t.amount; else if(t.type==='expense')buckets[day].exp+=t.amount; });
-      const first=new Date(y,mo-1,1).getDay();
+      list.forEach(t=>{ const day=(t.date||'').substring(0,10); const b=(buckets[day]=buckets[day]||{colors:[]});
+        let col;
+        if(['expense','prepaid_spend','point_spend'].includes(t.type)) col=t.category?catColor(t.category):'var(--expense)';
+        else if(['income','refund','point_earn'].includes(t.type)) col=t.category?catColor(t.category):'var(--income)';
+        else col='var(--transfer)';
+        if(col && b.colors.indexOf(col)<0 && b.colors.length<3) b.colors.push(col);
+      });
+      // 월요일 시작(시안 1:1). WEEK 상수(getDay 인덱스)는 그대로 두고 헤더만 월~일로.
+      const HEAD=['월','화','수','목','금','토','일'];
+      const first=(new Date(y,mo-1,1).getDay()+6)%7;   // 월=0 오프셋
       const days=new Date(y,mo,0).getDate();
       const todayS=todayStr();
-      let h='<div class="card"><div class="cal-head">'+WEEK.map(w=>'<div>'+w+'</div>').join('')+'</div><div class="cal-grid">';
+      let h='<div class="calwrap"><div class="cal-head">'+HEAD.map((w,i)=>'<div class="'+(i===5?'sat':i===6?'sun':'')+'">'+w+'</div>').join('')+'</div><div class="cal-grid">';
       for(let i=0;i<first;i++) h+='<div class="cal-cell dim"></div>';
       for(let d=1;d<=days;d++){
         const ds=y+'-'+pad2(mo)+'-'+pad2(d);
+        const wd=new Date(y,mo-1,d).getDay();   // 0=일..6=토
+        const dcls='d'+(wd===0?' sun':(wd===6?' sat':''));
         const b=buckets[ds];
         const cls='cal-cell'+(ds===todayS?' today':'')+(ds===state.selectedDate?' sel':'');
-        h+='<div class="'+cls+'" onclick="openDaySheet(\''+ds+'\')"><div class="d">'+d+'</div>'+
-          (b&&b.inc?'<div class="ci">+'+shortNum(b.inc)+'</div>':'')+
-          (b&&b.exp?'<div class="ce">-'+shortNum(b.exp)+'</div>':'')+'</div>';
+        const dots=(b&&b.colors.length)?'<span class="dotrow">'+b.colors.map(c=>'<i style="background:'+c+'"></i>').join('')+'</span>':'';
+        h+='<div class="'+cls+'" onclick="selectDay(\''+ds+'\')"><div class="'+dcls+'">'+d+'</div>'+dots+'</div>';
       }
       h+='</div></div>';
       return h;
@@ -105,6 +149,7 @@
       else if(t.type==='prepaid_charge'){ sign=''; cls='blue'; icbg='var(--primary)'; }
       let sub;
       if(e.debit&&e.credit) sub=acctName(t.from)+' → '+acctName(t.to);
+      else if(t.type==='expense'||t.type==='income') sub=(t.category||TYPE_LABEL[t.type]);   // 시안: 카테고리 · 기록자 (계좌는 상세에서)
       else if(e.credit&&!e.debit) sub=acctName(t.to);
       else sub=(t.category?t.category+' · ':'')+acctName(t.from);
       if(!['expense','income','transfer'].includes(t.type)) sub=TYPE_LABEL[t.type]+' · '+sub;
@@ -161,19 +206,26 @@
         '<button data-tp="income" onclick="setSheetType(\'income\')">수입</button>'+
         '<button data-tp="transfer" onclick="setSheetType(\'transfer\')">이체</button>'+
         '<button data-tp="__ext__" onclick="setSheetType(\'__ext__\')">선불·포인트</button></div>';
-      h+='<div class="amount-wrap"><span class="cur">₩</span><input class="amount-input" id="sAmount" inputmode="numeric" placeholder="0" value="'+(amount?Number(amount).toLocaleString():'')+'" oninput="this.value=fmtComma(this.value)"></div>';
-      h+='<div class="field"><label>날짜</label><input type="date" class="input" id="sDate" value="'+date+'"></div>';
-      h+='<div id="sDyn"></div>';
-      h+='<div id="sCardPerf"></div>';
-      h+='<div class="field"><label>설명</label><input type="text" class="input" id="sDesc" placeholder="내용" value="'+escapeHtml(desc)+'"></div>';
-      h+='<details class="adv"'+(pbId?' open':'')+'><summary>상세 설정</summary>';
-      h+='<div class="field"><label>목적별 가계부</label><select class="input" id="sPb" onchange="renderSettleBlock()">'+
+      // 시안: 큰 금액 + 키패드 입력
+      h+='<div class="amtbig"><span class="w">₩</span><input id="sAmount" class="amtbig-in" readonly inputmode="none" placeholder="0" value="'+(amount?Number(amount).toLocaleString():'')+'"></div>';
+      h+='<div id="sCatChips"></div>';   // 카테고리 칩(유형별)
+      h+='<div id="sDyn"></div>';        // 계좌/이체 행
+      h+='<div class="txfield"><span class="k">날짜</span><input type="date" class="txin" id="sDate" value="'+date+'"></div>';
+      h+='<div class="txfield"><span class="k">설명</span><input type="text" class="txin" id="sDesc" placeholder="내용" value="'+escapeHtml(desc)+'"></div>';
+      // 숫자 키패드
+      h+='<div class="kp">'+
+        [1,2,3,4,5,6,7,8,9].map(n=>'<button onclick="kpPress(\''+n+'\')">'+n+'</button>').join('')+
+        '<button onclick="kpPress(\'00\')">00</button><button onclick="kpPress(\'0\')">0</button><button onclick="kpDel()" aria-label="지우기">⌫</button></div>';
+      // 우리 고유 기능 → 상세 설정 접기
+      h+='<details class="adv" id="sAdv"'+((pbId||settleInc)?' open':'')+'><summary>상세 설정</summary>';
+      h+='<div class="txfield"><span class="k">목적별 가계부</span><select class="txsel" id="sPb" onchange="renderSettleBlock()">'+
         '<option value="">연결 안 함</option>'+
         activePbs.map(p=>'<option value="'+p.id+'"'+(p.id===pbId?' selected':'')+'>'+(p.icon||'📒')+' '+escapeHtml(p.name)+'</option>').join('')+
         ((pbId && !activePbs.some(p=>p.id===pbId))?('<option value="'+pbId+'" selected>'+escapeHtml((t&&t.purposeBookName)||pbId)+' (비활성)</option>'):'')+
         '</select></div>';
       h+='<div id="sSettleBlock"></div>';
-      h+='<div class="field"><label>메모</label><textarea class="input" id="sMemo" placeholder="메모">'+escapeHtml(memo)+'</textarea></div>';
+      h+='<div id="sCardPerf"></div>';   // 카드 실적 포함
+      h+='<div class="txfield"><span class="k">메모</span><input type="text" class="txin" id="sMemo" placeholder="메모" value="'+escapeHtml(memo)+'"></div>';
       h+='</details>';
       h+='<button class="btn" onclick="saveTx()">'+(t?'수정':'저장')+'</button>';
       if(t) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteTx()">삭제</button>';
@@ -206,22 +258,28 @@
       });
     }
     function acctOptsHtml(sel){ return state.accounts.map(a=>'<option value="'+a.id+'"'+(a.id===sel?' selected':'')+'>'+escapeHtml(a.name)+' ('+(ACCT_TYPE_LABEL[a.type]||a.type)+')</option>').join(''); }
-    function acctField(label,id,sel){ return '<div class="field"><label>'+label+'</label><select class="input" id="'+id+'" onchange="renderCardPerfBlock()">'+acctOptsHtml(sel)+'</select></div>'; }
-    function catGridHtml(){
+    function acctField(label,id,sel){ return '<div class="txfield"><span class="k">'+label+'</span><select class="txsel" id="'+id+'" onchange="renderCardPerfBlock()">'+acctOptsHtml(sel)+'</select></div>'; }
+    // 시안: 카테고리 가로 칩(이름 + 카테고리 색 점)
+    function catChipsHtml(){
       let cats=pickableCats(catTypeFor(sheetType));
-      if(sheetCat && !cats.some(c=>c.name===sheetCat)){ // 편집 중 비활성/타유형 카테고리도 현재값은 표시
-        const cur=getCat(sheetCat)||{name:sheetCat,icon:'🏷️',color:'#8b95a1'}; cats=[cur,...cats];
-      } else if(!sheetCat && cats[0]) sheetCat=cats[0].name;
-      return '<div class="field"><label>카테고리</label><div class="cat-grid" id="sCatGrid">'+
-        cats.map(c=>'<div class="cat-pick '+(c.name===sheetCat?'on':'')+'" onclick="pickCat(\''+escapeHtml(c.name)+'\')"><div class="ce" style="background:'+(c.color||'#8b95a1')+'">'+(c.icon||'🏷️')+'</div>'+escapeHtml(c.name)+'</div>').join('')+
-        '</div></div>';
+      if(sheetCat && !cats.some(c=>c.name===sheetCat)){ const cur=getCat(sheetCat)||{name:sheetCat,color:'#8b95a1'}; cats=[cur,...cats]; }
+      else if(!sheetCat && cats[0]) sheetCat=cats[0].name;
+      return '<div class="chips">'+cats.map(c=>'<button class="chip'+(c.name===sheetCat?' on':'')+'" onclick="pickCat(\''+escapeHtml(c.name)+'\')"><span class="catdot" style="background:'+(c.color||'#8b95a1')+'"></span>'+escapeHtml(c.name)+'</button>').join('')+'</div>';
     }
+    function kpPress(d){ const el=$('sAmount'); if(!el) return; let cur=String(parseAmount(el.value)||'');
+      if(d==='00'){ if(!cur) return; cur+='00'; } else cur+=d;
+      cur=cur.replace(/^0+(?=\d)/,''); if(cur.length>12) return; el.value = cur?Number(cur).toLocaleString():''; }
+    function kpDel(){ const el=$('sAmount'); if(!el) return; let cur=String(parseAmount(el.value)||'').slice(0,-1); el.value=cur?Number(cur).toLocaleString():''; }
     function guideNote(actual, text){ return '<div class="install-banner" style="background:'+(actual?'rgba(240,68,82,.1)':'var(--primary-weak)')+';color:'+(actual?'var(--expense)':'var(--primary)')+';">'+(actual?'🛒':'ℹ️')+' '+text+'</div>'; }
     function renderTxDyn(){
       const sh=$('sheet'); const fromV=sh._from, toV=sh._to;
+      // 카테고리 칩(해당 유형만) → 별도 영역
+      const catBox=$('sCatChips');
+      if(catBox) catBox.innerHTML = (catTypeFor(sheetType)!==null) ? catChipsHtml() : '';
+      // 계좌/이체 행 + ext 서브칩 + 안내 → #sDyn
       let h='';
       if(EXT_TYPES.includes(sheetType)){
-        h+='<div class="chip-row" style="margin-bottom:14px;">'+EXT_TYPES.map(tp=>'<button class="chip '+(tp===sheetType?'on':'')+'" onclick="setExtType(\''+tp+'\')">'+TYPE_LABEL[tp]+'</button>').join('')+'</div>';
+        h+='<div class="chips" style="margin:2px 0 6px;">'+EXT_TYPES.map(tp=>'<button class="chip '+(tp===sheetType?'on':'')+'" onclick="setExtType(\''+tp+'\')">'+TYPE_LABEL[tp]+'</button>').join('')+'</div>';
       }
       if(sheetType==='prepaid_charge') h+=guideNote(false,'충전은 자산 이동이라 실제 소비에 포함되지 않습니다.');
       else if(sheetType==='prepaid_spend'||sheetType==='point_spend') h+=guideNote(true,'이 거래는 실제 소비에 포함됩니다.');
@@ -229,30 +287,30 @@
       else if(sheetType==='point_earn') h+=guideNote(false,'포인트 적립은 실제 소비가 아닙니다.');
       else if(sheetType==='balance_adjustment') h+=guideNote(false,'실제 잔액에 맞추는 보정 거래입니다. 실제 소비에 포함되지 않습니다.');
 
-      if(sheetType==='expense'){ h+=acctField('출금/결제 수단','sFrom',fromV)+catGridHtml(); }
-      else if(sheetType==='income'){ h+=acctField('입금 대상','sTo',toV)+catGridHtml(); }
-      else if(sheetType==='refund'){ h+=acctField('환불 받는 계정','sTo',toV)+catGridHtml(); }
+      if(sheetType==='expense'){ h+=acctField('출금/결제 수단','sFrom',fromV); }
+      else if(sheetType==='income'){ h+=acctField('입금 대상','sTo',toV); }
+      else if(sheetType==='refund'){ h+=acctField('환불 받는 계정','sTo',toV); }
       else if(sheetType==='point_earn'){ h+=acctField('적립 포인트 계정','sTo',toV); }
       else if(sheetType==='transfer'||sheetType==='prepaid_charge'){
         const l1=sheetType==='prepaid_charge'?'충전 수단(카드/계좌)':'출금';
         const l2=sheetType==='prepaid_charge'?'충전 대상(선불/포인트)':'입금';
-        h+='<div class="form-2">'+acctField(l1,'sFrom',fromV)+acctField(l2,'sTo',toV)+'</div>';
+        h+=acctField(l1,'sFrom',fromV)+acctField(l2,'sTo',toV);
       }
       else if(sheetType==='prepaid_spend'||sheetType==='point_spend'){
-        h+=acctField(sheetType==='point_spend'?'사용 포인트 계정':'결제 선불수단','sFrom',fromV)+catGridHtml();
+        h+=acctField(sheetType==='point_spend'?'사용 포인트 계정':'결제 선불수단','sFrom',fromV);
       }
       else if(sheetType==='balance_adjustment'){
         h+=acctField('대상 계정','sTo',toV);
-        h+='<div class="field"><label>조정 방향</label><select class="input" id="sAdjSign"><option value="+"'+(sh._adjSign!=='-'?' selected':'')+'>증가(+)</option><option value="-"'+(sh._adjSign==='-'?' selected':'')+'>감소(-)</option></select></div>';
+        h+='<div class="txfield"><span class="k">조정 방향</span><select class="txsel" id="sAdjSign"><option value="+"'+(sh._adjSign!=='-'?' selected':'')+'>증가(+)</option><option value="-"'+(sh._adjSign==='-'?' selected':'')+'>감소(-)</option></select></div>';
       }
       $('sDyn').innerHTML=h;
-      if($('sCatGrid')) pickCat(sheetCat,true);
+      if(catBox) pickCat(sheetCat,true);
       renderCardPerfBlock();
     }
     function pickCat(name, silent){
       sheetCat=name;
-      const grid=$('sCatGrid');
-      if(grid) [...grid.children].forEach(ch=>ch.classList.toggle('on', ch.textContent.trim().endsWith(name)));
+      const box=$('sCatChips');
+      if(box) [...box.querySelectorAll('.chip')].forEach(ch=>ch.classList.toggle('on', ch.textContent.trim()===name));
       if(!silent) renderCardPerfBlock();
     }
     function renderCardPerfBlock(){
@@ -270,6 +328,7 @@
         '<div id="sCprWrap" style="'+(inc?'display:none;':'')+'"><div class="field" style="margin-top:8px;"><label>실적 제외 사유</label><input class="input" id="sCpr" value="'+escapeHtml(sh._cpr||'')+'" placeholder="예: 선불충전 제외"></div></div>'+
         '<div class="tx-sub" style="margin-top:6px;">기본값: '+(defInc?'포함':'제외')+' · 직접 수정 가능</div></div>';
       sh._cpi=undefined; // 사용자가 토글하면 그 값 우선
+      const adv=$('sAdv'); if(adv) adv.open=true;   // 카드 실적 있으면 상세 설정 펼쳐 노출
     }
     function toggleCpiFields(){ const on=$('sCpi').classList.contains('on'); $('sCpiFields').style.display=on?'':'none'; $('sCprWrap').style.display=on?'none':''; }
 
@@ -679,7 +738,7 @@
       const photo = photoOverride!==undefined ? photoOverride : (state.userPhotos&&state.userPhotos[uid]);
       if(photo) return '<img class="avatar" src="'+photo+'" alt="" style="width:'+size+'px;height:'+size+'px;">';
       const ch=String(name||'?').trim().charAt(0)||'?';
-      return '<div class="avatar avatar-fallback" style="width:'+size+'px;height:'+size+'px;background:'+avatarColor(name||uid)+';font-size:'+Math.round(size*0.42)+'px;">'+escapeHtml(ch)+'</div>';
+      return '<div class="avatar avatar-fallback" style="width:'+size+'px;height:'+size+'px;background:'+avatarGrad(name||uid)+';font-size:'+Math.round(size*0.42)+'px;">'+escapeHtml(ch)+'</div>';
     }
     // 파일 → 중앙 정사각 크롭 → size px JPEG data URL
     function resizeImageFile(file, size, cb){
@@ -761,49 +820,61 @@
     function makeItemPublic(idx){ const it=(window._visPrivate||[])[idx]; if(!it) return; db.ref(wp(it.path)).update({ visibility:'full' }); toast('공개로 전환했어요'); setTimeout(openSharedSettings, 150); }
     function makeAllPublic(){ const list=window._visPrivate||[]; if(!list.length) return; confirmSheet(list.length+'개 항목을 모두 전체 공개로 바꿀까요?', ()=>{ list.forEach(it=>db.ref(wp(it.path)).update({ visibility:'full' })); toast('모두 공개로 전환'); setTimeout(openSharedSettings, 200); }); }
 
+    // 더보기 화면 시안 SVG 아이콘(라인). 텍스트 라벨이 있어 장식용.
+    const MORE_ICON={
+      budget:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 13a9 9 0 1 1 18 0" stroke-linecap="round"/><path d="M12 13l4-3" stroke-linecap="round"/></svg>',
+      sub:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 12a8 8 0 0 1 14-5l2 2M20 12a8 8 0 0 1-14 5l-2-2"/><path d="M18 4v5h-5M6 20v-5h5"/></svg>',
+      recurring:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4" stroke-linecap="round"/></svg>',
+      pb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v13H4z"/><path d="M4 7l2-3h5l2 3"/></svg>',
+      settle:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7h8M9 12h8M9 17h5"/><circle cx="5" cy="7" r="1.4"/><circle cx="5" cy="12" r="1.4"/><circle cx="5" cy="17" r="1.4"/></svg>',
+      gift:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="16" height="11" rx="1.5"/><path d="M4 13h16M12 9v11M12 9C9 9 8 4 12 4s3 5 0 5z"/></svg>',
+      loan:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-6 9 6M5 10v9h14v-9M3 19h18"/></svg>',
+      category:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>',
+      members:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11a3 3 0 1 0 6 0 3 3 0 0 0-6 0z"/><path d="M5 20c0-3 3-5 7-5s7 2 7 5"/><circle cx="18" cy="7" r="3"/></svg>',
+      lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/></svg>',
+      list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>',
+      download:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4M5 21h14"/></svg>',
+      moon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+      logout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5M20 12H9M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/></svg>',
+      chev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>'
+    };
+    function gcell(icon,label,fn,badge){ return '<button class="gcell" onclick="'+fn+'"><span class="gic">'+icon+(badge?'<span class="gbadge">'+badge+'</span>':'')+'</span><span class="glabel">'+escapeHtml(label)+'</span></button>'; }
+    function lrow(icon,label,fn,val){ return '<button class="lrow" onclick="'+fn+'"><span class="li">'+icon+'</span><span class="lt">'+label+'</span><span class="lv">'+(val||'')+'</span><span class="chev">'+MORE_ICON.chev+'</span></button>'; }
     function renderMore(){
       $('screenTitle').textContent='더보기';
+      const ws=state.wsMeta||{}; const isGroup=ws.type==='group'; const memCount=Object.keys(ws.members||{}).length;
       let h='';
       if(deferredPrompt) h+='<div class="install-banner" onclick="installApp()">📲 홈 화면에 앱으로 설치하기</div>';
-      const ws=state.wsMeta||{}; const isGroup=ws.type==='group'; const memCount=Object.keys(ws.members||{}).length;
-      h+='<div class="menu-group-title">현재 가계부</div><div class="card" style="padding:8px 10px;">';
-      h+='<div class="menu-item" onclick="openWorkspaceSheet()"><span class="mi-ic">'+(isGroup?'👥':'🏠')+'</span>'+escapeHtml(ws.name||'가계부')+
-         '<span class="pill">'+(isGroup?('그룹 '+memCount+'명'):'개인')+'</span><span class="chevron">전환 ›</span></div>';
-      if(isGroup) h+=menuItem('🔑','초대 코드 / 멤버 관리',"openGroupManageSheet('"+state.wsId+"')");
-      h+=menuItem('➕','그룹 만들기 / 참여','openWorkspaceSheet()');
+      // 프로필/워크스페이스 행
+      const wsSub = isGroup ? ('그룹 · 멤버 '+memCount+'명'+(ws.code?(' · 초대코드 '+escapeHtml(ws.code)):'')) : '개인 가계부';
+      h+='<div class="prow"><span class="av" style="background:'+avatarGrad(ws.name||state.wsId)+'"></span>'+
+         '<div class="pnm"><b>'+escapeHtml(ws.name||'가계부')+'</b><span>'+wsSub+'</span></div>'+
+         '<button class="cnt" onclick="openWorkspaceSheet()">전환</button></div>';
+      // 4열 기능 그리드
+      const activeSubs=(state.subscriptions||[]).filter(s=>s.status==='active').length;
+      h+='<div class="grid4">';
+      h+=gcell(MORE_ICON.budget,'예산','openBudgetSheet()');
+      h+=gcell(MORE_ICON.sub,'구독','openSubscriptions()', activeSubs||0);
+      h+=gcell(MORE_ICON.recurring,'정기결제','openRecurringList()');
+      h+=gcell(MORE_ICON.pb,'목적별','openPurposeBooks()');
+      h+=gcell(MORE_ICON.settle,'정산','openSettlementOverview()');
+      h+=gcell(MORE_ICON.gift,'경조사비','openGiftBook()');
+      h+=gcell(MORE_ICON.loan,'대출/이자','openLoanBook()');
+      h+=gcell(MORE_ICON.category,'카테고리','openCategorySheet()');
       h+='</div>';
-      h+='<div class="menu-group-title">거래 관리</div><div class="card" style="padding:8px 10px;">';
-      h+=menuItem('🧾','거래내역',"goHome('list')");
-      h+=menuItem('🔁','정기결제','openRecurringList()');
-      h+=menuItem('🏷️','카테고리','openCategorySheet()');
+      // 설정 리스트
+      h+='<div class="lst">';
+      if(isGroup) h+=lrow(MORE_ICON.members,'멤버 · 권한 관리',"openGroupManageSheet('"+state.wsId+"')", memCount+'명');
+      h+=lrow(MORE_ICON.lock,'권한 · 공동 설정','openSharedSettings()');
+      h+=lrow(MORE_ICON.list,'거래내역',"goHome('list')");
+      h+=lrow(MORE_ICON.download,'CSV 내보내기','exportCSV()');
+      h+=lrow(MORE_ICON.moon,'다크 모드','toggleTheme();renderMore()', state.theme==='dark'?'켜짐':'꺼짐');
+      h+=lrow(avatarHtml(state.uid, state.userName, 21), escapeHtml(state.userName)+' 님','openProfileSheet()','프로필');
+      h+=lrow(MORE_ICON.logout,'로그아웃','logout()');
       h+='</div>';
-      h+='<div class="menu-group-title">계획</div><div class="card" style="padding:8px 10px;">';
-      h+=menuItem('💵','예산','openBudgetSheet()');
-      h+=menuItem('🔔','구독','openSubscriptions()');
-      h+='</div>';
-      h+='<div class="menu-group-title">자산 / 결제</div><div class="card" style="padding:8px 10px;">';
-      h+=menuItem('🏦','결제수단',"go('assets')");
-      h+=menuItem('🔵','선불·포인트',"go('assets')");
-      h+=menuItem('💳','카드 실적','openCardList()');
-      h+=menuItem('🏧','대출 / 이자','openLoanBook()');
-      h+='</div>';
-      h+='<div class="menu-group-title">목적별</div><div class="card" style="padding:8px 10px;">';
-      h+=menuItem('📒','목적별 가계부','openPurposeBooks()')+menuItem('✈️','여행',"openPurposeBooks('travel')")+menuItem('👥','계모임',"openPurposeBooks('gathering')")+menuItem('💐','경조사비','openGiftBook()')+menuItem('🤝','정산','openSettlementOverview()');
-      h+='</div>';
-      h+='<div class="menu-group-title">데이터 / 설정</div><div class="card" style="padding:8px 10px;">';
-      h+=menuItem('📤','CSV 내보내기','exportCSV()');
-      h+='<div class="menu-item"><span class="mi-ic">🌙</span>다크모드<div class="switch '+(state.theme==='dark'?'on':'')+'" onclick="toggleTheme()"><i></i></div></div>';
-      h+=menuItem('🔒','권한 / 공동 설정','openSharedSettings()');
-      h+='</div>';
-      h+='<div class="card" style="padding:8px 10px;">';
-      h+='<div class="menu-item" onclick="openProfileSheet()"><span class="mi-ic" style="display:flex;">'+avatarHtml(state.uid, state.userName, 30)+'</span>'+escapeHtml(state.userName)+' 님<span class="chevron">프로필 ›</span></div>';
-      h+=menuItem('🚪','로그아웃','logout()');
-      h+='</div>';
-      h+='<p class="muted" style="text-align:center;font-size:12px;margin-top:18px;">가계부 v3 · '+escapeHtml(state.userName)+' 님</p>';
+      h+='<p class="muted" style="text-align:center;font-size:12px;margin-top:18px;">가계부 v3</p>';
       $('content').innerHTML=h;
     }
-    function menuItem(ic,label,fn){ return '<div class="menu-item" onclick="'+fn+'"><span class="mi-ic">'+ic+'</span>'+label+'<span class="chevron">›</span></div>'; }
-    function menuItemSoon(ic,label){ return '<div class="menu-item disabled" onclick="toast(\'곧 추가될 기능입니다\')"><span class="mi-ic">'+ic+'</span>'+label+'<span class="pill">예정</span></div>'; }
     function goHome(view){ state.homeView=view||'list'; go('calendar'); }
 
     // ===== 예산 =====
