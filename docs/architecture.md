@@ -19,7 +19,6 @@ graph TB
 
     subgraph CDN["🌐 CDN (cache-first)"]
         FBSDK["Firebase SDK 10.7 compat<br/>(gstatic.com)"]
-        CHART["Chart.js<br/>(jsdelivr.net)"]
     end
 
     subgraph Firebase["🔥 Firebase (money-bb658)"]
@@ -30,7 +29,6 @@ graph TB
     Shell -->|로그인/세션| AUTH
     CORE -->|".on('value') 실시간 구독<br/>ws/{wsId}/..."| RTDB
     Shell -.->|로드| FBSDK
-    VIEWS -.->|차트| CHART
     SW -.->|오프라인 셸| Shell
 
     classDef fb fill:#ffca28,stroke:#333,color:#000
@@ -109,7 +107,7 @@ graph TD
 | 자원 | 전략 | 이유 |
 |---|---|---|
 | Firebase RTDB / Auth (`firebaseio.com`, `firebasedatabase.app`, `googleapis.com`, `identitytoolkit`, `firebaseapp.com`) | **네트워크 전용** | 실시간 데이터·인증은 항상 최신 |
-| CDN 라이브러리 (Firebase SDK, Chart.js) | **cache-first** | 버전 고정, 거의 안 바뀜 |
+| CDN 라이브러리 (Firebase SDK) | **cache-first** | 버전 고정, 거의 안 바뀜 |
 | 앱 셸 (HTML/CSS/JS/아이콘) | **stale-while-revalidate** | 빠른 로딩 + 백그라운드 갱신, 오프라인 동작 |
 
 > 앱 셸에 새 파일을 추가하면 `sw.js` 의 `APP_SHELL` 목록과 `CACHE_VERSION` 을 함께 올려야 즉시 갱신됩니다.

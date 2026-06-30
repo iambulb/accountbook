@@ -21,7 +21,7 @@
     let seededAcc = false, seededCat = false, booted = false, migratedAcc = false, migratedCat = false, migratedBudget = false, migratedRec = false;
     let recurringLogKeys = new Set();
     const recv = { tx:false, acc:false, cat:false, rec:false, log:false };
-    let monthlyChart=null, categoryChart=null, deferredPrompt=null;
+    let deferredPrompt=null;
     // 시트 임시 상태
     let sheetTx = null;     // 편집중 {ownerUid,id} or null
     let sheetType = 'expense';

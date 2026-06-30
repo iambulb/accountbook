@@ -23,7 +23,7 @@
 
 | 영역 | 사용 기술 |
 |---|---|
-| 프런트엔드 | Vanilla JavaScript (프레임워크·빌드 없음), Chart.js |
+| 프런트엔드 | Vanilla JavaScript (프레임워크·빌드 없음), 순수 CSS 차트(외부 차트 라이브러리 없음) |
 | 백엔드 | Firebase **Realtime Database** + **Authentication**(Email/Password) — 서버리스 |
 | PWA | Web App Manifest + Service Worker(오프라인 앱 셸 캐시) |
 | 호스팅 / 패키징 | Netlify(웹) · PWABuilder TWA(안드로이드 APK) |
