@@ -532,46 +532,85 @@
     }
 
     // ===== 자산 =====
+    const PLUS_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+    function sechHtml(label, addAction, rightText){
+      const right = rightText ? '<span class="s">'+rightText+'</span>'
+        : (addAction ? '<button class="addbtn" aria-label="추가" onclick="'+addAction+'">'+PLUS_SVG+'</button>' : '');
+      return '<div class="sech"><span class="l">'+label+'</span>'+right+'</div>';
+    }
     function renderAssets(){
       $('screenTitle').textContent='자산';
       const accs=visibleAccounts();
-      let h='<div class="card" style="text-align:center;padding:22px;"><div class="muted" style="font-size:13px;">총 자산</div>'+
-        '<div style="font-size:30px;font-weight:800;margin:6px 0;">'+won(totalAssets())+'</div>'+
-        '<div style="font-size:12px;" class="muted">선불·포인트 미사용 잔액 <b class="blue">'+won(prepaidTotal())+'</b></div></div>';
+      const cashish=accs.filter(a=>a.type!=='credit_card' && !PREPAID_TYPES.includes(a.type) && a.type!=='other');
+      const prepaid=accs.filter(a=>PREPAID_TYPES.includes(a.type));
+      const others=accs.filter(a=>a.type==='other');
+      const cardDebt=accs.filter(a=>a.type==='credit_card').reduce((s,a)=>s+accountBalance(a.id),0); // 보통 음수
+      const net=totalAssets(), gross=net-cardDebt;
 
-      const groups=[['cash','계좌·현금','💵'],['card','카드','💳'],['prepaid','선불·포인트','🔵'],['other','기타','📦']];
-      groups.forEach(g=>{
-        const list=accs.filter(a=>acctGroup(a)===g[0]);
-        if(!list.length && g[0]!=='cash') return;
-        h+='<div class="row"><div class="sec-title">'+g[2]+' '+g[1]+'</div></div><div class="card">';
-        h+= list.length? list.map(acctRowHtml).join('') : '<div class="empty" style="padding:18px;">없음</div>';
-        h+='</div>';
-      });
-      h+='<div style="text-align:center;margin:2px 0 16px;"><button class="btn ghost sm" onclick="openAcctSheet()">+ 결제수단 추가</button></div>';
+      // 순자산 hero
+      let h='<div class="assethero"><div class="k">순자산</div><div class="v">'+won(net)+'</div>'+
+        '<div class="sp"><div><div class="kk">총자산</div><div class="vv">'+won(gross)+'</div></div>'+
+        '<div><div class="kk">카드대금</div><div class="vv">'+won(cardDebt)+'</div></div>'+
+        '<div style="margin-left:auto;display:flex;align-items:flex-end"><span class="pill" style="background:rgba(255,255,255,.14);color:#fff">계좌 '+accs.length+'개</span></div></div></div>';
 
-      if(state.creditCards.length){
-        h+='<div class="row"><div class="sec-title">💳 카드 실적</div><button class="link" onclick="openCardList()">전체</button></div>';
-        state.creditCards.filter(c=>canSee(getAcct(c.id)||{owner:''})).forEach(c=>{
+      // 입출금 · 현금
+      h+=sechHtml('입출금 · 현금','openAcctSheet()');
+      h+= cashish.length? cashish.map(acctRowHtml).join('') : '<div class="empty" style="padding:18px;">등록된 계좌가 없습니다</div>';
+
+      // 카드 실적
+      const cards=state.creditCards.filter(c=>canSee(getAcct(c.id)||{owner:''}));
+      if(cards.length){
+        h+=sechHtml('카드 실적', null, (new Date().getMonth()+1)+'월');
+        cards.forEach(c=>{
           const pf=cardPerformance(c), col=pf.pct>=100?'var(--income)':'var(--primary)';
-          h+='<div class="card" onclick="openCardList()"><div class="row"><b>'+escapeHtml(c.cardName||acctName(c.id))+'</b><span style="color:'+col+';font-weight:700;">'+(pf.target?pf.pct+'%':'목표 미설정')+'</span></div>'+
-            (pf.target?'<div class="bar"><i style="width:'+Math.min(pf.pct,100)+'%;background:'+col+'"></i></div><div class="tx-sub" style="margin-top:8px;">'+won(pf.sum)+' / '+won(pf.target)+(pf.remain>0?' · 남은 실적 '+won(pf.remain):' · 달성 ✅')+'</div>':'')+'</div>';
+          h+='<div class="perfrow" onclick="openAcctSheet(\''+c.id+'\')"><div class="perftop"><b>'+escapeHtml(c.cardName||acctName(c.id))+'</b>'+
+            '<span class="pct" style="color:'+col+'">'+(pf.target?pf.pct+'%':'목표 미설정')+'</span></div>'+
+            (pf.target?'<div class="prog"><div class="f" style="width:'+Math.min(pf.pct,100)+'%;background:'+col+'"></div></div>'+
+              '<div class="perfsub">'+won(pf.sum)+' / '+won(pf.target)+(pf.remain>0?' · '+won(pf.remain)+' 더 쓰면 실적 달성':' · 이번 달 실적 충족')+'</div>':'')+'</div>';
         });
       }
 
-      h+='<div class="row"><div class="sec-title">🎯 적금 목표</div><button class="link" onclick="openSavingsSheet()">+ 추가</button></div>';
-      h+= state.savings.length? state.savings.map(sv=>{ const p=sv.goal?Math.min(Math.round(sv.current/sv.goal*100),999):0;
-        return '<div class="card" onclick="openSavingsSheet(\''+sv.ownerUid+'\',\''+sv.id+'\')"><div class="row"><b>'+escapeHtml(sv.name)+'</b><span style="font-weight:700;">'+p+'%</span></div><div class="bar"><i style="width:'+Math.min(p,100)+'%"></i></div><div class="tx-sub" style="margin-top:8px;">'+won(sv.current)+' / '+won(sv.goal)+'</div></div>';
+      // 선불 · 포인트
+      if(prepaid.length){ h+=sechHtml('선불 · 포인트','openAcctSheet()'); h+=prepaid.map(acctRowHtml).join(''); }
+      // 기타
+      if(others.length){ h+=sechHtml('기타','openAcctSheet()'); h+=others.map(acctRowHtml).join(''); }
+
+      // 적금 목표
+      const SVC=['#22b8cf','#f04452','#3182f6','#1b9e5f','#7c3aed','#f5a623'];
+      h+=sechHtml('적금 목표','openSavingsSheet()');
+      h+= state.savings.length? state.savings.map((sv,i)=>{
+        const p=sv.goal?Math.min(Math.round(sv.current/sv.goal*100),999):0, col=SVC[i%SVC.length];
+        const ch=escapeHtml((sv.name||'·').charAt(0));
+        return '<div class="bgrow" onclick="openSavingsSheet(\''+sv.ownerUid+'\',\''+sv.id+'\')"><div class="bgtop"><span class="ci" style="background:'+col+'">'+ch+'</span>'+
+          '<span class="bn">'+escapeHtml(sv.name)+'</span><span class="ba">'+p+'%</span></div>'+
+          '<div class="bgtrack"><div class="bgfill" style="width:'+Math.min(p,100)+'%;background:'+col+'"></div></div>'+
+          '<div class="perfsub" style="margin-top:6px">'+won(sv.current)+' / '+won(sv.goal)+'</div></div>';
       }).join(''):'<div class="empty" style="padding:20px;">적금 목표가 없습니다</div>';
 
       $('content').innerHTML=h;
+    }
+    // 계좌 유형별 라인 아이콘(시안) — 색은 a.color 유지
+    function acctIcon(type){
+      const P={
+        bank:'<rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18"/>',
+        credit_card:'<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 9h18"/>',
+        debit_card:'<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 9h18"/>',
+        cash:'<path d="M3 8h18v9H3z"/><circle cx="12" cy="12.5" r="2"/>',
+        prepaid:'<circle cx="12" cy="12" r="9"/><path d="M9 12h6M12 9v6"/>',
+        point:'<circle cx="12" cy="12" r="9"/><path d="M9 8v8l6-8v8"/>',
+        e_wallet:'<rect x="3" y="6" width="18" height="12" rx="3"/><path d="M16 12h.01"/>',
+        gift_card:'<rect x="3" y="9" width="18" height="11" rx="2"/><path d="M3 9h18M12 9v11M12 9c-2-3-6-3-6 0M12 9c2-3 6-3 6 0"/>',
+        other:'<path d="M12 3l9 4v10l-9 4-9-4V7z"/><path d="M3 7l9 4 9-4"/>'
+      };
+      return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+(P[type]||P.bank)+'</svg>';
     }
     function acctRowHtml(a){
       const bal=accountBalance(a.id);
       const prov=(a.provider&&a.provider!=='manual')?'<span class="pill">'+(PROVIDER_LABEL[a.provider]||a.provider)+'</span>':'';
       const vis=(a.visibility&&a.visibility!=='full')?'<span class="pill">'+(a.visibility==='private'?'개인':'잔액만')+'</span>':'';
-      const initial=(a.owner==='공동'?'👥':((a.owner||'').charAt(0)||'₩'));
-      return '<div class="acct" onclick="openAcctSheet(\''+a.id+'\')"><div class="acct-dot" style="background:'+(a.color||'#3182f6')+'">'+initial+'</div>'+
-        '<div style="min-width:0;"><div class="acct-name">'+escapeHtml(a.name)+'<span class="pill">'+(ACCT_TYPE_LABEL[a.type]||a.type)+'</span>'+prov+vis+'</div><div class="tx-sub">'+escapeHtml(a.owner||'')+'</div></div>'+
+      const sub=(ACCT_TYPE_LABEL[a.type]||a.type)+(a.owner?' · '+escapeHtml(a.owner):'');
+      return '<div class="acct" onclick="openAcctSheet(\''+a.id+'\')"><div class="acct-dot" style="background:'+(a.color||'#3182f6')+'">'+acctIcon(a.type)+'</div>'+
+        '<div style="min-width:0;" class="acct-nm"><b>'+escapeHtml(a.name)+prov+vis+'</b><span>'+sub+'</span></div>'+
         '<div class="acct-bal '+(bal<0?'red':'')+'">'+won(bal)+'</div></div>';
     }
 
