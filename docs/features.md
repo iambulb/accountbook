@@ -137,6 +137,12 @@
 - **공동 기본값**: 새 항목 기본 공개범위(전체/개인)·기본 소유자(공동/나)를 `ws/{wsId}/settings`에 저장. 생성 폼이 `defaultVisibility`/`defaultOwnerName`로 기본값 적용.
 - **공개범위 개요**: 전 엔티티의 `visibility==='private'` 항목을 모아 보고 "공개로"·"전체 공개로 전환" 버튼으로 전환(`collectPrivateItems`·`makeItemPublic`·`makeAllPublic`).
 
+## 프로필 (사진 / 이름)
+
+- 더보기 프로필 줄 → **내 프로필**(`openProfileSheet`): 기기 사진으로 **프로필 사진 설정/삭제** + **별명(이름) 수정**.
+- 사진은 브라우저 캔버스로 **256px JPEG 리사이즈 후 base64**로 `users/{uid}/photo`에 저장(Firebase Storage 미사용). 이름 변경은 내가 속한 모든 워크스페이스의 멤버 이름에 반영(비정규화).
+- **그룹 멤버 프로필**: 그룹 관리 멤버 목록에 멤버 아바타 표시. 사진 없으면 이니셜 폴백(`avatarHtml`). 멤버 사진은 `loadMemberPhotos`로 캐시(`state.userPhotos`).
+
 ## 기타
 
 - **다크모드** 토글(localStorage 저장, `applyTheme`/`toggleTheme`).

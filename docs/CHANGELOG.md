@@ -8,6 +8,12 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 추가
+- **프로필 사진 / 이름 + 그룹 멤버 프로필**: 더보기 프로필 줄(아바타·이름) 탭 → 내 프로필 시트(`openProfileSheet`)에서 **기기 사진으로 프로필 설정**(브라우저 캔버스로 256px JPEG 리사이즈 → base64로 `users/{uid}/photo` 저장)·삭제 + **별명(이름) 수정**(모든 워크스페이스 멤버 이름 비정규화 갱신). **그룹 관리 멤버 목록에 멤버 아바타** 표시(`avatarHtml`, 사진 없으면 이니셜 폴백). 멤버 사진은 `loadMemberPhotos`로 캐시. Firebase Storage·보안규칙 변경 없음. `sw.js` `CACHE_VERSION` `v3.7.0`.
+
+### 수정
+- **모바일 화면 드래그/바운스 수정**: 문서(body) 스크롤 구조 → **앱셸 고정 레이아웃**으로 전환. 바깥 페이지를 뷰포트에 딱 맞게 잠그고(`body { overflow:hidden; overscroll-behavior:none }`, `#app` 세로 flex `100dvh`), **내용 영역(`.content`)만 내부 스크롤**(`overflow-y:auto; overscroll-behavior:contain`). 상단바·하단탭바는 flex 고정 행, 시트/로그인도 `100dvh` 기준. iOS 고무줄 오버스크롤·`100vh` 점프 해소. `sw.js` `CACHE_VERSION` `v3.6.0`.
+
 ### 접근성/UI
 - **접근성(A11y) 다듬기**: 화면 확대 허용(viewport `maximum-scale` 제거), 시트를 `role="dialog" aria-modal`로·Esc 닫기·포커스 이동/복원·포커스 트랩, 토스트 `aria-live`, 아이콘 버튼 `aria-label`(닫기·거래추가·테마·가계부전환), `<main>`/`<nav>`+탭 `aria-current`. `innerHTML` 재렌더에 대응하는 **중앙 A11y 레이어**(MutationObserver+델리게이션): 커스텀 토글에 `role="switch"`·`aria-checked`·키보드 활성화, `onclick` 달린 `div`에 `role="button"`·`tabindex`·Enter/Space 활성화, `.field` 라벨↔입력 연결. CSS: `:focus-visible` 링, 탭 타깃 ≥44px, `prefers-reduced-motion` 대응, `.sr-only`. `sw.js` `CACHE_VERSION` `v3.5.0`.
 
