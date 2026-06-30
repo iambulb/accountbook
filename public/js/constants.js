@@ -32,7 +32,15 @@
     const GIFT_EVENT_TYPES = [['wedding','결혼'],['funeral','장례'],['first_birthday','돌'],['birthday','생일'],['holiday','명절'],['graduation','졸업/입학'],['birth','출산'],['hospital_visit','병문안'],['housewarming','집들이'],['exam','시험'],['other','기타']];
     const GIFT_EVENT_LABEL = Object.assign({}, ...GIFT_EVENT_TYPES.map(p=>({[p[0]]:p[1]})));
     const GIFT_DIR_LABEL = { given:'줌', received:'받음' };
+    const GIFT_EVENT_ICON = { wedding:'💍', funeral:'🕯️', first_birthday:'🎂', birthday:'🎈', holiday:'🎁', graduation:'🎓', birth:'👶', hospital_visit:'🏥', housewarming:'🏠', exam:'✏️', other:'🎀' };
+    // 대출: 방향(빌림=내 빚 / 빌려줌=받을 돈) · 상태
+    const LOAN_DIR_LABEL = { borrowed:'빌림(대출)', lent:'빌려줌' };
+    const LOAN_STATUS_LABEL = { active:'상환중', paid:'완료', overdue:'연체' };
     const PLANNED_STATUS_LABEL = { planned:'예정', completed:'완료', cancelled:'취소' };
+    // 정산(Step 9): 분담 방식 / 거래 정산 상태 / 송금 기록 상태
+    const SPLIT_TYPE_LABEL = { none:'정산 안 함', equal:'균등 분할', custom:'직접 입력', payer_only:'결제자 부담' };
+    const SETTLE_STATUS_LABEL = { none:'-', unsettled:'미정산', partially_settled:'일부 정산', settled:'정산 완료' };
+    const PAYMENT_STATUS_LABEL = { pending:'대기', paid:'완료', cancelled:'취소' };
     const WEEK = ['일','월','화','수','목','금','토'];
     const CAT_TYPES = [['expense','지출'],['income','수입'],['transfer','이체'],['event','경조사'],['travel','여행'],['loan','대출'],['subscription','구독'],['other','기타']];
     const CAT_TYPE_LABEL = Object.assign({}, ...CAT_TYPES.map(p=>({[p[0]]:p[1]})));
