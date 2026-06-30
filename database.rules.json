@@ -44,6 +44,9 @@
     "savings":          { ".read": "auth != null", "$uid": { ".write": "auth != null && auth.uid === $uid" } },
     "recurring":        { ".read": "auth != null", "$uid": { ".write": "auth != null && auth.uid === $uid" } },
     "recurringLogs":    { ".read": "auth != null", "$uid": { ".write": "auth != null && auth.uid === $uid" } },
-    "fixedExpenses":    { ".read": "auth != null", "$uid": { ".write": "auth != null && auth.uid === $uid" } }
+    "fixedExpenses":    { ".read": "auth != null", "$uid": { ".write": "auth != null && auth.uid === $uid" } },
+    "settlementPayments": { ".read": "auth != null", "$uid": { ".write": "auth != null && auth.uid === $uid" } },
+    "loans":            { ".read": "auth != null", ".write": "auth != null" },
+    "loanPayments":     { ".read": "auth != null", ".write": "auth != null" }
   }
 }
