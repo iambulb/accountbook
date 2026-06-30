@@ -132,10 +132,13 @@
     }
 
     // ===== 테마 =====
+    // 시안 스타일 선형 해/달 아이콘(흑백 기반, currentColor)
+    const ICON_SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v1.5M12 19.5V21M4.2 4.2l1.1 1.1M18.7 18.7l1.1 1.1M3 12h1.5M19.5 12H21M4.2 19.8l1.1-1.1M18.7 5.3l1.1-1.1"/><circle cx="12" cy="12" r="4"/></svg>';
+    const ICON_MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
     function applyTheme(){
       document.documentElement.setAttribute('data-theme', state.theme);
-      const b=$('themeBtn'); if(b) b.textContent = state.theme==='dark'?'☀️':'🌙';
-      const meta=document.querySelector('meta[name=theme-color]'); if(meta) meta.content = state.theme==='dark'?'#16181d':'#3182f6';
+      const b=$('themeBtn'); if(b) b.innerHTML = state.theme==='dark'?ICON_SUN:ICON_MOON;
+      const meta=document.querySelector('meta[name=theme-color]'); if(meta) meta.content = state.theme==='dark'?'#16181d':'#ffffff';
     }
     function toggleTheme(){ state.theme = state.theme==='dark'?'light':'dark'; localStorage.setItem('theme', state.theme); applyTheme(); if(state.tab==='stats') renderStats(); }
 

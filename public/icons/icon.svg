@@ -1,14 +1,47 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#3182f6"/>
-      <stop offset="1" stop-color="#1b64da"/>
-    </linearGradient>
+    <radialGradient id="silver" cx="42%" cy="38%" r="70%">
+      <stop offset="0" stop-color="#F1F3F6"/>
+      <stop offset="0.55" stop-color="#D7DBE1"/>
+      <stop offset="1" stop-color="#BFC5CD"/>
+    </radialGradient>
   </defs>
-  <!-- maskable safe zone: keep art within center 80% -->
-  <rect width="512" height="512" fill="url(#g)"/>
-  <g fill="#ffffff">
-    <circle cx="256" cy="256" r="150" fill="none" stroke="#ffffff" stroke-width="26"/>
-    <text x="256" y="320" font-family="-apple-system, Segoe UI, Roboto, sans-serif" font-size="200" font-weight="700" text-anchor="middle">₩</text>
+  <!-- 흰 배경(앱 아이콘 안전영역) -->
+  <rect width="512" height="512" rx="112" fill="#FFFFFF"/>
+  <!-- 은화 -->
+  <circle cx="256" cy="256" r="184" fill="url(#silver)"/>
+  <circle cx="256" cy="256" r="184" fill="none" stroke="#AAB0B8" stroke-width="6"/>
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#FFFFFF" stroke-width="3" opacity=".6"/>
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#B4BAC2" stroke-width="2"/>
+  <!-- 고양이(흑) -->
+  <g fill="#1A2230">
+    <!-- 귀 -->
+    <path d="M190 236 L208 150 L262 210 Z"/>
+    <path d="M322 236 L304 150 L250 210 Z"/>
+    <!-- 머리 -->
+    <ellipse cx="256" cy="270" rx="96" ry="84"/>
+  </g>
+  <!-- 귀 안쪽(은색) -->
+  <g fill="#C7CCD3">
+    <path d="M214 218 L221 174 L246 210 Z"/>
+    <path d="M298 218 L291 174 L266 210 Z"/>
+  </g>
+  <!-- 눈(흰자 + 검은 눈동자) -->
+  <g>
+    <ellipse cx="219" cy="262" rx="14" ry="19" fill="#FFFFFF"/>
+    <ellipse cx="293" cy="262" rx="14" ry="19" fill="#FFFFFF"/>
+    <circle cx="221" cy="264" r="7" fill="#1A2230"/>
+    <circle cx="291" cy="264" r="7" fill="#1A2230"/>
+  </g>
+  <!-- 코 -->
+  <path d="M247 292 L265 292 L256 303 Z" fill="#C7CCD3"/>
+  <!-- 입 -->
+  <path d="M256 303 q-14 14 -26 4 M256 303 q14 14 26 4" fill="none" stroke="#C7CCD3" stroke-width="5" stroke-linecap="round"/>
+  <!-- 수염 -->
+  <g stroke="#5C6470" stroke-width="5" stroke-linecap="round">
+    <path d="M168 280 L226 288"/>
+    <path d="M166 304 L226 304"/>
+    <path d="M344 280 L286 288"/>
+    <path d="M346 304 L286 304"/>
   </g>
 </svg>
