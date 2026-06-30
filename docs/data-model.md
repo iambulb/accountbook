@@ -5,7 +5,7 @@
 ## RTDB 트리 구조
 
 ```
-users/{uid}            : { name, email, createdAt, activeWs, ws:{ {wsId}:true } }   // 내 워크스페이스 목록
+users/{uid}            : { name, email, photo(프로필 사진 base64 data URL), createdAt, activeWs, ws:{ {wsId}:true } }
 workspaces/{wsId}      : { name, type:'personal'|'group', code(그룹), ownerUid, createdAt,
                            members:{ {uid}:{ name, role:'owner'|'member', joinedAt } } }
 codes/{CODE}           : wsId            // 그룹 6자리 코드 → 워크스페이스 조회 인덱스
