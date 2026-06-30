@@ -94,7 +94,27 @@
       user:'<circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/>',
       flower:'<circle cx="12" cy="12" r="2.4"/><path d="M12 9.6V5M12 14.4V19M9.6 12H5M14.4 12H19M9.9 9.9 7 7M14.1 14.1 17 17M14.1 9.9 17 7M9.9 14.1 7 17"/>',
       people:'<circle cx="9" cy="9" r="3"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><circle cx="17" cy="10" r="2.4"/><path d="M15 19c0-2 1-3.5 2.5-4"/>',
-      check:'<path d="M5 12l5 5L20 7"/>'
+      check:'<path d="M5 12l5 5L20 7"/>',
+      // 가계부용 추가 라인 아이콘
+      paw:'<circle cx="6" cy="11" r="1.6"/><circle cx="10" cy="7.5" r="1.6"/><circle cx="14" cy="7.5" r="1.6"/><circle cx="18" cy="11" r="1.6"/><path d="M8.5 15.5c0-2 1.6-3.5 3.5-3.5s3.5 1.5 3.5 3.5c0 1.8-1.6 2.5-3.5 2.5s-3.5-.7-3.5-2.5z"/>',
+      car:'<path d="M4 13l1.5-4.5A2 2 0 0 1 7.4 7h9.2a2 2 0 0 1 1.9 1.5L20 13"/><path d="M3 13h18v4H3z"/><circle cx="7" cy="17.5" r="1.6"/><circle cx="17" cy="17.5" r="1.6"/>',
+      fuel:'<rect x="4" y="4" width="9" height="16" rx="2"/><path d="M4 11h9"/><path d="M13 8h3l2 2v6a2 2 0 0 1-4 0v-3h-1"/>',
+      scissors:'<circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><path d="M8 7.5L20 18M8 16.5L20 6"/>',
+      dumbbell:'<path d="M3 9v6M6 7v10M18 7v10M21 9v6M6 12h12"/>',
+      cart:'<path d="M3 4h2l2.2 11h10l2-7H6"/><circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/>',
+      shirt:'<path d="M8 4l4 2 4-2 4 3-2.5 3L16 9v11H8V9l-1.5.9L4 7z"/>',
+      baby:'<rect x="8" y="8" width="8" height="12" rx="3"/><path d="M9 12h6"/><path d="M10 8V6h4v2"/><path d="M11 4h2"/>',
+      gamepad:'<rect x="3" y="8" width="18" height="9" rx="4.5"/><path d="M7 11v3M5.5 12.5h3"/><circle cx="15.5" cy="12" r="1"/><circle cx="18" cy="14" r="1"/>',
+      music:'<path d="M9 17V5l10-2v12"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="15" r="2"/>',
+      ball:'<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5C9 7 9 17 12 20.5M12 3.5C15 7 15 17 12 20.5M3.7 9.5h16.6M3.7 14.5h16.6"/>',
+      bolt:'<path d="M13 3L5 13h6l-1 8 8-10h-6z"/>',
+      droplet:'<path d="M12 3.5c3.5 4 6 6.8 6 10a6 6 0 0 1-12 0c0-3.2 2.5-6 6-10z"/>',
+      piggy:'<path d="M4 12.5a6 6 0 0 1 6-5.5h3l3-2v3a6 6 0 0 1 1.8 3H21v3h-1.2l-1 1v2.5h-3V18H9v2.5H6V18a6 6 0 0 1-2-4.5z"/><circle cx="9" cy="11.5" r="1"/>',
+      trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+      doc:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 15h6M9 18h4"/>',
+      donate:'<path d="M12 7.5c2-2.5 5.5-.5 0 3.5-5.5-4-2-6 0-3.5z"/><path d="M3 14h3l3 2.5h4a1.4 1.4 0 0 0 0-2.8H9.5"/><path d="M3 14v6h3v-6"/>',
+      ticket:'<path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H6a2 2 0 0 1-2-2 2 2 0 0 0 0-4z"/><path d="M14 6v3M14 11v2M14 15v3"/>',
+      monitor:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M9 20h6M12 16v4"/>'
     };
     // 경조사 유형 → 라인 아이콘 키
     const GIFT_SVG_KEY = { wedding:'heart', funeral:'flower', first_birthday:'gift', birthday:'gift', holiday:'gift', graduation:'book', birth:'gift', hospital_visit:'medical', housewarming:'home', exam:'book', other:'gift' };
@@ -110,8 +130,13 @@
       let h=0, s=String(name||''); for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0;
       return CAT_FALLBACK[h % CAT_FALLBACK.length];
     }
-    // 카테고리 라인 SVG(이름→아이콘 매핑, 미매칭은 tag). 색은 currentColor.
-    function catSvgIcon(name){ const m=CAT_META[name]; return svgWrap(CAT_SVG[m?m.i:'tag']); }
+    // 카테고리 라인 SVG: 저장된 iconKey 우선 → 이름 기본 매핑(CAT_META) → tag. 색은 currentColor.
+    function catSvgIcon(name){
+      const c=getCat(name);
+      if(c && c.iconKey && CAT_SVG[c.iconKey]) return svgWrap(CAT_SVG[c.iconKey]);
+      const m=CAT_META[name];
+      return svgWrap(CAT_SVG[(m && CAT_SVG[m.i])?m.i:'tag']);
+    }
     // 카테고리 tint 타일 인라인 스타일(배경=13% 알파, 글자=솔리드 색)
     function catTileStyle(name){ const c=catColor(name); return 'background:'+hexA(c,.13)+';color:'+c+';'; }
     // 작은 카테고리 tint 타일(예산 등 컴팩트 행용)
@@ -128,6 +153,7 @@
     // ===== 시트 =====
     function openSheet(title, html){
       const sh=$('sheet');
+      state._sheetRefresh=null;   // 새 시트 열 때 이전 시트의 실시간 갱신 훅 해제(stale 방지)
       if(!sh.classList.contains('on')) sh._returnFocus=document.activeElement;  // 닫을 때 돌아갈 포커스
       $('sheetTitle').textContent=title;
       $('sheetBody').innerHTML=html;
@@ -138,6 +164,7 @@
     }
     function closeSheet(){
       const sh=$('sheet');
+      state._sheetRefresh=null;
       $('overlay').classList.remove('on');
       sh.classList.remove('on');
       const rf=sh._returnFocus; sh._returnFocus=null;
@@ -892,4 +919,7 @@
       else if(state.tab==='stats') renderStats();
       else if(state.tab==='assets') renderAssets();
       else if(state.tab==='more') renderMore();
+      // 열린 시트가 실시간 갱신 훅을 등록했으면 본문만 다시 그림
+      const sh=$('sheet');
+      if(sh && sh.classList.contains('on') && typeof state._sheetRefresh==='function') state._sheetRefresh();
     }

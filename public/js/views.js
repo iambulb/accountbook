@@ -979,7 +979,7 @@
       const b=id?state.budgets.find(x=>x.id===id):null;
       const expCats=state.categories.filter(c=>c.type==='expense'||c.type==='other').sort((a,b2)=>(a.sortOrder||0)-(b2.sortOrder||0));
       let h='<div class="field"><label>대상</label><select class="input" id="bgCat"><option value="">총예산(전체 지출)</option>'+
-        expCats.map(c=>'<option value="'+escapeHtml(c.name)+'"'+((b&&b.categoryName===c.name)?' selected':'')+'>'+c.icon+' '+escapeHtml(c.name)+'</option>').join('')+'</select></div>';
+        expCats.map(c=>'<option value="'+escapeHtml(c.name)+'"'+((b&&b.categoryName===c.name)?' selected':'')+'>'+escapeHtml(c.name)+'</option>').join('')+'</select></div>';
       h+='<div class="field"><label>예산 금액</label><input class="input" id="bgAmount" inputmode="numeric" value="'+(b?Number(b.amount).toLocaleString():'')+'" placeholder="0" oninput="this.value=fmtComma(this.value)"></div>';
       h+='<div class="form-2"><div class="field"><label>기간</label><select class="input" id="bgPeriod" onchange="onBudgetPeriodChange()">'+
         ['weekly','monthly','yearly','custom'].map(p=>'<option value="'+p+'"'+(((b&&b.periodType===p)||(!b&&p==='monthly'))?' selected':'')+'>'+PERIOD_LABEL[p]+'</option>').join('')+'</select></div>'+
@@ -1014,16 +1014,21 @@
 
     // ===== 카테고리 관리 =====
     let catFilter='all';
-    const CAT_PALETTE=['#ff8a3d','#3182f6','#f04452','#9b59b6','#1b9e5f','#00b8d4','#a1734b','#868e96','#f59f00','#e84393','#7b68ee','#22b8cf'];
+    const CAT_PALETTE=CAT_FALLBACK.concat(['#8B95A1']); // 핸드오프 차분한 톤(중복 없음) + 그레이
     function openCategorySheet(){ renderCatManage(); }
     function setCatFilter(t){ catFilter=t; renderCatManage(); }
     function renderCatManage(){
-      const filters=[['all','전체'],['expense','지출'],['income','수입'],['other','기타']];
-      let h='<div class="chip-row" style="margin-bottom:12px;">'+filters.map(f=>'<button class="chip '+(catFilter===f[0]?'on':'')+'" onclick="setCatFilter(\''+f[0]+'\')">'+f[1]+'</button>').join('')+'</div>';
-      h+='<button class="btn" onclick="openCatEdit()">+ 카테고리 추가</button>';
-      const cats=state.categories.filter(canSee).filter(c=> catFilter==='all'?true:(catFilter==='other'?!['expense','income'].includes(c.type):c.type===catFilter)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
-      h+='<div class="card" style="margin-top:12px;padding:6px 8px;">'+(cats.length?cats.map(catManageRow).join(''):'<div class="empty">카테고리가 없습니다</div>')+'</div>';
-      openSheet('카테고리 관리', h);
+      const build=()=>{
+        const filters=[['all','전체'],['expense','지출'],['income','수입'],['other','기타']];
+        let h='<div class="chip-row" style="margin-bottom:12px;">'+filters.map(f=>'<button class="chip '+(catFilter===f[0]?'on':'')+'" onclick="setCatFilter(\''+f[0]+'\')">'+f[1]+'</button>').join('')+'</div>';
+        h+='<button class="btn" onclick="openCatEdit()">+ 카테고리 추가</button>';
+        const cats=state.categories.filter(canSee).filter(c=> catFilter==='all'?true:(catFilter==='other'?!['expense','income'].includes(c.type):c.type===catFilter)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+        h+='<div class="card" style="margin-top:12px;padding:6px 8px;">'+(cats.length?cats.map(catManageRow).join(''):'<div class="empty">카테고리가 없습니다</div>')+'</div>';
+        return h;
+      };
+      openSheet('카테고리 관리', build());
+      // 순서변경·토글 등 RTDB 변경 시 본문만 실시간 갱신(스크롤 보존)
+      state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const st=b.scrollTop; b.innerHTML=build(); b.scrollTop=st; };
     }
     function catManageRow(c){
       const inactive=c.isActive===false;
@@ -1046,18 +1051,20 @@
       db.ref(wsRoot()).update(upd);
     }
     function toggleCatActive(name){ const c=getCat(name); if(!c) return; db.ref(wp('categories/'+name+'/isActive')).set(c.isActive===false); }
-    function pickCatColor(el){ window._catColor=el.dataset.color; document.querySelectorAll('#catColors button').forEach(b=>b.style.border='2px solid transparent'); el.style.border='2px solid var(--text)'; }
+    function pickCatColor(el){ window._catColor=el.dataset.color; document.querySelectorAll('#catColors .swatch').forEach(b=>b.classList.remove('on')); el.classList.add('on'); }
+    function pickCatIcon(el){ window._catIcon=el.dataset.key; document.querySelectorAll('#catIcons .icon-tile').forEach(b=>b.classList.remove('on')); el.classList.add('on'); }
     function openCatEdit(name){
       const c=name?getCat(name):null;
       const usedCount=name? state.transactions.filter(t=>t.category===name).length : 0;
       const canRename = !!c && !c.isDefault && usedCount===0;
       window._catColor = c?(c.color||CAT_PALETTE[0]):CAT_PALETTE[0];
+      window._catIcon = (c && c.iconKey && CAT_SVG[c.iconKey]) ? c.iconKey : ((c && CAT_META[c.name]) ? CAT_META[c.name].i : 'tag');
       let h='';
       if(c && !canRename) h+='<div class="field"><label>이름</label><input class="input" value="'+escapeHtml(c.name)+'" disabled><div class="tx-sub" style="margin-top:4px;">'+(c.isDefault?'기본 카테고리는 이름 변경 불가':'거래에 사용 중이라 이름 변경 불가(비활성화 권장)')+'</div></div>';
       else h+='<div class="field"><label>이름</label><input class="input" id="catName" value="'+escapeHtml(c?c.name:'')+'" placeholder="예: 반려동물"></div>';
-      h+='<div class="form-2"><div class="field"><label>유형</label><select class="input" id="catType">'+CAT_TYPES.map(p=>'<option value="'+p[0]+'"'+(((c&&c.type===p[0])||(!c&&p[0]==='expense'))?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div>'+
-        '<div class="field"><label>아이콘</label><input class="input" id="catIcon" maxlength="2" value="'+escapeHtml(c?(c.icon||''):'')+'" placeholder="🏷️"></div></div>';
-      h+='<label style="font-size:13px;font-weight:600;color:var(--sub);">색상</label><div class="chip-row" id="catColors" style="margin:8px 0 14px;">'+CAT_PALETTE.map(p=>'<button class="chip" style="background:'+p+';width:32px;height:32px;border-radius:50%;border:2px solid '+(p===window._catColor?'var(--text)':'transparent')+';" data-color="'+p+'" onclick="pickCatColor(this)"></button>').join('')+'</div>';
+      h+='<div class="field"><label>유형</label><select class="input" id="catType">'+CAT_TYPES.map(p=>'<option value="'+p[0]+'"'+(((c&&c.type===p[0])||(!c&&p[0]==='expense'))?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div>';
+      h+='<label style="font-size:13px;font-weight:600;color:var(--sub);">아이콘</label><div class="icon-grid" id="catIcons">'+Object.keys(CAT_SVG).map(k=>'<button type="button" class="icon-tile'+(k===window._catIcon?' on':'')+'" data-key="'+k+'" onclick="pickCatIcon(this)">'+svgWrap(CAT_SVG[k])+'</button>').join('')+'</div>';
+      h+='<label style="font-size:13px;font-weight:600;color:var(--sub);">색상</label><div class="swatch-grid" id="catColors">'+CAT_PALETTE.map(p=>'<button type="button" class="swatch'+(p===window._catColor?' on':'')+'" data-color="'+p+'" style="background:'+p+';" onclick="pickCatColor(this)"></button>').join('')+'</div>';
       h+='<div class="form-2"><div class="field"><label>공개 범위</label><select class="input" id="catVis">'+VISIBILITY.map(p=>'<option value="'+p[0]+'"'+(((c&&c.visibility===p[0])||(!c&&p[0]===defaultVisibility()))?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div>'+
         '<div class="field"><label>활성</label><select class="input" id="catActive"><option value="1"'+((!c||c.isActive!==false)?' selected':'')+'>활성</option><option value="0"'+((c&&c.isActive===false)?' selected':'')+'>비활성</option></select></div></div>';
       h+='<div class="field"><label>메모 (선택)</label><input class="input" id="catMemo" value="'+escapeHtml(c?(c.memo||''):'')+'" placeholder="메모"></div>';
@@ -1074,7 +1081,7 @@
       if((!c||renaming) && getCat(name)){ toast('이미 있는 카테고리', true); return; }
       const vis=val('catVis');
       const nowISO=new Date().toISOString();
-      const data={ name, type:val('catType'), icon:val('catIcon').trim()||'🏷️', color:window._catColor||'#8b95a1',
+      const data={ name, type:val('catType'), iconKey:window._catIcon||'tag', icon:(c&&c.icon)||'', color:window._catColor||'#8b95a1',
         visibility:vis, isActive: val('catActive')==='1', memo:val('catMemo').trim(),
         isDefault: c?!!c.isDefault:false,
         owner: c?(c.owner||(vis==='private'?state.userName:defaultOwnerName())):(vis==='private'?state.userName:defaultOwnerName()),
@@ -1171,7 +1178,7 @@
     function recConsumerField(sel){ return '<div class="field"><label>소비 대상</label><select class="input" id="rConsumer">'+ownerOptions(sel||'공동')+'</select></div>'; }
     function recCatField(wantType, sel){
       const cats=state.categories.filter(c=>c.isActive!==false && (c.type===wantType||c.type==='other')).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
-      return '<div class="field"><label>카테고리</label><select class="input" id="rCat" onchange="renderRecCardPerf()">'+cats.map(c=>'<option value="'+escapeHtml(c.name)+'"'+(c.name===sel?' selected':'')+'>'+c.icon+' '+escapeHtml(c.name)+'</option>').join('')+'</select></div>';
+      return '<div class="field"><label>카테고리</label><select class="input" id="rCat" onchange="renderRecCardPerf()">'+cats.map(c=>'<option value="'+escapeHtml(c.name)+'"'+(c.name===sel?' selected':'')+'>'+escapeHtml(c.name)+'</option>').join('')+'</select></div>';
     }
     function renderRecAccts(){
       const r=window._recEdit, t=val('rType');
@@ -1311,7 +1318,7 @@
       h+='<div class="form-2"><div class="field"><label>결제 주기</label><select class="input" id="subCycle">'+BILLING.map(b=>'<option value="'+b[0]+'"'+(((s&&s.billingCycle===b[0])||(!s&&b[0]==='monthly'))?' selected':'')+'>'+b[1]+'</option>').join('')+'</select></div>'+
         '<div class="field"><label>다음 결제일</label><input type="date" class="input" id="subNext" value="'+(s&&s.nextBillingDate?s.nextBillingDate:todayStr())+'"></div></div>';
       h+='<div class="form-2"><div class="field"><label>결제수단</label><select class="input" id="subAcct">'+acctOptsHtml(s?s.paymentAccountId:(state.accounts[0]?state.accounts[0].id:''))+'</select></div>'+
-        '<div class="field"><label>카테고리</label><select class="input" id="subCat">'+cats.map(c=>'<option value="'+escapeHtml(c.name)+'"'+(((s&&s.categoryName===c.name)||(!s&&c.name==='구독'))?' selected':'')+'>'+c.icon+' '+escapeHtml(c.name)+'</option>').join('')+'</select></div></div>';
+        '<div class="field"><label>카테고리</label><select class="input" id="subCat">'+cats.map(c=>'<option value="'+escapeHtml(c.name)+'"'+(((s&&s.categoryName===c.name)||(!s&&c.name==='구독'))?' selected':'')+'>'+escapeHtml(c.name)+'</option>').join('')+'</select></div></div>';
       h+='<details class="adv"><summary>상세 설정</summary>';
       h+='<div class="form-2"><div class="field"><label>서비스 유형</label><select class="input" id="subType">'+SUB_TYPES.map(t=>'<option value="'+t[0]+'"'+(((s&&s.subscriptionType===t[0])||(!s&&t[0]==='video'))?' selected':'')+'>'+t[1]+'</option>').join('')+'</select></div>'+
         '<div class="field"><label>결제 간격</label><input class="input" id="subInterval" inputmode="numeric" value="'+(s&&s.billingInterval?s.billingInterval:1)+'"></div></div>';
