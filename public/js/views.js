@@ -1,7 +1,8 @@
 // ===== 홈(달력/목록) =====
     function renderCalendar(){
       $('screenTitle').textContent='달력';
-      const m=state.month, list=monthTx(m);
+      const m=state.month, allList=monthTx(m);
+      const list = state.memberFilter ? allList.filter(t=>(t.user||'')===state.memberFilter) : allList;
       const inc=sumBy(list,'income');
       const actual=actualSpend(list);
       const charge=sumBy(list,'prepaid_charge');
@@ -9,33 +10,34 @@
       const [y,mo]=m.split('-').map(Number);
       let html='';
 
-      html+='<div class="card">';
-      html+='<div class="month-nav"><button onclick="moveMonth(-1)">‹</button><span class="m">'+y+'.'+pad2(mo)+'</span><button onclick="moveMonth(1)">›</button></div>';
-      html+='<div class="summary">'+
-        '<div><div class="s-label">수입</div><div class="s-val green">'+won(inc)+'</div></div>'+
-        '<div><div class="s-label">실제소비</div><div class="s-val red">'+won(actual)+'</div></div>'+
-        '<div><div class="s-label">합계</div><div class="s-val">'+won(inc-actual)+'</div></div>'+
-      '</div>';
-      // 충전/선불사용 분리 안내 (소비로 착각 방지)
-      html+='<div class="row" style="margin-top:12px;font-size:12px;border-top:1px solid var(--line-soft);padding-top:12px;">'+
-        '<span class="muted">충전 <b class="blue">'+won(charge)+'</b></span>'+
-        '<span class="muted">선불·포인트 사용 <b>'+won(pspend)+'</b></span>'+
-        '<span class="muted">미사용 충전잔액 <b class="blue">'+won(prepaidTotal())+'</b></span></div>';
-      // 예산 미니바 (총예산, 실제소비 기준)
+      html+=memberChipRow();
+      // 시안 msum 형태 요약(연회색 박스, 수입/실제소비/합계 3칸)
+      html+='<div class="msum">'+
+        '<div><div class="k">수입</div><div class="v green">'+won(inc)+'</div></div>'+
+        '<div class="sep"></div>'+
+        '<div><div class="k">실제소비</div><div class="v red">'+won(actual)+'</div></div>'+
+        '<div class="sep"></div>'+
+        '<div><div class="k">합계</div><div class="v">'+won(inc-actual)+'</div></div></div>';
+      // 충전/선불 분리 보조행 + 예산 미니바 (우리 고유 정보 — 소비 착각 방지)
+      html+='<div class="submeta"><span class="muted">충전 <b class="blue">'+won(charge)+'</b></span><span class="muted">선불·포인트 <b>'+won(pspend)+'</b></span><span class="muted">미사용잔액 <b class="blue">'+won(prepaidTotal())+'</b></span></div>';
       const tb=totalMonthlyBudget();
       if(tb && m===monthStr(new Date())){
         const u=budgetUsage(tb), c=budgetColor(u.pct);
-        html+='<div style="margin-top:14px;"><div class="row" style="font-size:12px;"><span class="muted">이번달 예산</span><span style="color:'+c+';font-weight:700;">'+u.pct+'%'+(u.pct>=100?' 초과':'')+'</span></div>'+
+        html+='<div class="budgetmini"><div class="row" style="font-size:12px;"><span class="muted">이번달 예산</span><span style="color:'+c+';font-weight:700;">'+u.pct+'%'+(u.pct>=100?' 초과':'')+'</span></div>'+
           '<div class="bar"><i style="width:'+Math.min(u.pct,100)+'%;background:'+c+'"></i></div>'+
           '<div class="tx-sub" style="margin-top:6px;">'+won(u.used)+' / '+won(u.amount)+'</div></div>';
       }
-      html+='</div>';
 
       html+='<div class="seg"><button class="'+(state.homeView==='calendar'?'on':'')+'" onclick="setHomeView(\'calendar\')">달력</button>'+
         '<button class="'+(state.homeView==='list'?'on':'')+'" onclick="setHomeView(\'list\')">목록</button></div>';
 
-      if(state.homeView==='calendar') html+=calendarGridHtml(y,mo,list);
-      else html+=listHtml(list);
+      if(state.homeView==='calendar'){
+        html+='<div class="monthlbl"><button onclick="moveMonth(-1)">‹</button><b>'+y+'년 '+mo+'월</b><button onclick="moveMonth(1)">›</button></div>';
+        html+=calendarGridHtml(y,mo,list);
+        html+=selectedDayHtml(list);
+      } else {
+        html+=listHtml(list);
+      }
 
       // 다가오는 반복결제
       const upcoming=upcomingRecurring();
@@ -47,24 +49,66 @@
       $('content').innerHTML=html;
     }
     function setHomeView(v){ state.homeView=v; renderCalendar(); }
-    function moveMonth(d){ state.month=shiftMonth(state.month,d); renderCalendar(); }
+    function moveMonth(d){ state.month=shiftMonth(state.month,d);
+      // 인라인 선택일을 새 달에 맞춤(이번달이면 오늘, 아니면 1일)
+      state.selectedDate = (state.month===monthStr(new Date())) ? todayStr() : (state.month+'-01');
+      renderCalendar(); }
+    function selectDay(ds){ state.selectedDate=ds; renderCalendar(); }
     function setFilter(k,v){ state.filter[k]=v; renderCalendar(); }
+    // 달력 아래 선택일 거래 인라인(시안 sech + tx 행)
+    function selectedDayHtml(list){
+      const ds=state.selectedDate||todayStr(), dt=parseDate(ds);
+      const rows=list.filter(t=>(t.date||'').startsWith(ds)).sort((a,b)=>new Date(b.date)-new Date(a.date));
+      const gi=sumBy(rows,'income'), ge=sumBy(rows,'expense'), isToday=ds===todayStr();
+      let h='<div class="sech"><span class="l">'+(isToday?'오늘 · ':'')+(dt.getMonth()+1)+'월 '+dt.getDate()+'일 ('+WEEK[dt.getDay()]+')</span>'+
+        '<span class="s">'+(ge?'<span class="red">-'+ge.toLocaleString()+'</span>':'')+(gi?' <span class="green">+'+gi.toLocaleString()+'</span>':'')+'</span></div>';
+      h+= rows.length ? '<div>'+rows.map(txRowHtml).join('')+'</div>' : '<div class="empty">이 날 거래가 없습니다</div>';
+      h+='<button class="btn ghost" style="margin-top:8px;" onclick="openTxSheet(null,null,\''+ds+'\')">+ 이 날짜에 추가</button>';
+      return h;
+    }
+
+    // 달력 상단 멤버 칩(그룹 전용) — 기록자(t.user) 기준 필터
+    function memberChipRow(){
+      const ws=state.wsMeta||{};
+      if(ws.type!=='group') return '';
+      const members=ws.members||{}, uids=Object.keys(members);
+      if(uids.length<2) return '';
+      const cur=state.memberFilter;
+      let h='<div class="mrow">';
+      h+='<button class="mchip'+(cur===''?' on':'')+'" onclick="clearMemberFilter()"><span class="avatar" style="width:24px;height:24px;background:'+avatarGrad('all')+';"></span>전체</button>';
+      uids.forEach(uid=>{ const nm=members[uid].name||'멤버';
+        h+='<button class="mchip'+(cur===nm&&cur?' on':'')+'" onclick="setMemberFilterByUid(\''+uid+'\')">'+avatarHtml(uid, nm, 24)+escapeHtml(nm)+'</button>'; });
+      h+='</div>';
+      return h;
+    }
+    function clearMemberFilter(){ state.memberFilter=''; renderCalendar(); }
+    function setMemberFilterByUid(uid){ const mm=(state.wsMeta&&state.wsMeta.members)||{}; const name=(mm[uid]&&mm[uid].name)||''; state.memberFilter=(state.memberFilter===name&&name)?'':name; renderCalendar(); }
 
     function calendarGridHtml(y,mo,list){
+      // 일별 카테고리 색 점(시안풍) — 최대 3색
       const buckets={};
-      list.forEach(t=>{ const day=(t.date||'').substring(0,10); (buckets[day]=buckets[day]||{inc:0,exp:0}); if(t.type==='income')buckets[day].inc+=t.amount; else if(t.type==='expense')buckets[day].exp+=t.amount; });
-      const first=new Date(y,mo-1,1).getDay();
+      list.forEach(t=>{ const day=(t.date||'').substring(0,10); const b=(buckets[day]=buckets[day]||{colors:[]});
+        let col;
+        if(['expense','prepaid_spend','point_spend'].includes(t.type)) col=t.category?catColor(t.category):'var(--expense)';
+        else if(['income','refund','point_earn'].includes(t.type)) col=t.category?catColor(t.category):'var(--income)';
+        else col='var(--transfer)';
+        if(col && b.colors.indexOf(col)<0 && b.colors.length<3) b.colors.push(col);
+      });
+      // 월요일 시작(시안 1:1). WEEK 상수(getDay 인덱스)는 그대로 두고 헤더만 월~일로.
+      const HEAD=['월','화','수','목','금','토','일'];
+      const first=(new Date(y,mo-1,1).getDay()+6)%7;   // 월=0 오프셋
       const days=new Date(y,mo,0).getDate();
       const todayS=todayStr();
-      let h='<div class="card"><div class="cal-head">'+WEEK.map(w=>'<div>'+w+'</div>').join('')+'</div><div class="cal-grid">';
+      let h='<div class="calwrap"><div class="cal-head">'+HEAD.map((w,i)=>'<div class="'+(i===5?'sat':i===6?'sun':'')+'">'+w+'</div>').join('')+'</div><div class="cal-grid">';
       for(let i=0;i<first;i++) h+='<div class="cal-cell dim"></div>';
       for(let d=1;d<=days;d++){
         const ds=y+'-'+pad2(mo)+'-'+pad2(d);
+        const wd=new Date(y,mo-1,d).getDay();   // 0=일..6=토
+        const dcls='d'+(wd===0?' sun':(wd===6?' sat':''));
         const b=buckets[ds];
         const cls='cal-cell'+(ds===todayS?' today':'')+(ds===state.selectedDate?' sel':'');
-        h+='<div class="'+cls+'" onclick="openDaySheet(\''+ds+'\')"><div class="d">'+d+'</div>'+
-          (b&&b.inc?'<div class="ci">+'+shortNum(b.inc)+'</div>':'')+
-          (b&&b.exp?'<div class="ce">-'+shortNum(b.exp)+'</div>':'')+'</div>';
+        const dots=(b&&b.colors.length)?'<span class="dotrow">'+b.colors.map(c=>'<i style="background:'+c+'"></i>').join('')+'</span>':'';
+        h+='<div class="'+cls+'" onclick="selectDay(\''+ds+'\')"><div class="'+dcls+'">'+d+'</div>'+dots+'</div>';
       }
       h+='</div></div>';
       return h;
@@ -105,6 +149,7 @@
       else if(t.type==='prepaid_charge'){ sign=''; cls='blue'; icbg='var(--primary)'; }
       let sub;
       if(e.debit&&e.credit) sub=acctName(t.from)+' → '+acctName(t.to);
+      else if(t.type==='expense'||t.type==='income') sub=(t.category||TYPE_LABEL[t.type]);   // 시안: 카테고리 · 기록자 (계좌는 상세에서)
       else if(e.credit&&!e.debit) sub=acctName(t.to);
       else sub=(t.category?t.category+' · ':'')+acctName(t.from);
       if(!['expense','income','transfer'].includes(t.type)) sub=TYPE_LABEL[t.type]+' · '+sub;
@@ -679,7 +724,7 @@
       const photo = photoOverride!==undefined ? photoOverride : (state.userPhotos&&state.userPhotos[uid]);
       if(photo) return '<img class="avatar" src="'+photo+'" alt="" style="width:'+size+'px;height:'+size+'px;">';
       const ch=String(name||'?').trim().charAt(0)||'?';
-      return '<div class="avatar avatar-fallback" style="width:'+size+'px;height:'+size+'px;background:'+avatarColor(name||uid)+';font-size:'+Math.round(size*0.42)+'px;">'+escapeHtml(ch)+'</div>';
+      return '<div class="avatar avatar-fallback" style="width:'+size+'px;height:'+size+'px;background:'+avatarGrad(name||uid)+';font-size:'+Math.round(size*0.42)+'px;">'+escapeHtml(ch)+'</div>';
     }
     // 파일 → 중앙 정사각 크롭 → size px JPEG data URL
     function resizeImageFile(file, size, cb){
