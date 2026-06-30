@@ -331,6 +331,8 @@
     .chips::-webkit-scrollbar { display:none; }
     .chips .chip { flex:none; }
     .catdot { width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:6px; vertical-align:middle; flex:none; }
+    .mtile { width:32px; height:32px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; flex:none; }
+    .mtile svg { width:18px; height:18px; }
     .chip .catdot { margin-right:5px; }
     .txfield { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:13px 2px; border-top:1px solid var(--line); }
     .txfield .k { font-size:13.5px; color:var(--sub); font-weight:600; flex:none; }
@@ -371,13 +373,17 @@
     .menu-item.disabled { opacity:.45; }
 
     /* 워크스페이스 칩 / 관리 */
-    .ws-chip { max-width:150px; height:34px; padding:0 13px; border-radius:20px; background:var(--soft); color:var(--text2);
-      font-size:12.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-flex; align-items:center; gap:6px; }
-    .ws-item { display:flex; align-items:center; gap:12px; padding:14px 12px; border-radius:14px; background:var(--soft); margin-bottom:8px; }
-    .ws-item.on { outline:2px solid var(--primary); background:var(--soft2); }
-    .ws-item .ws-ic { font-size:20px; }
-    .ws-item .ws-name { font-weight:700; }
+    .ws-chip { max-width:150px; height:36px; padding:0 14px; border-radius:20px; background:var(--soft); color:var(--text2);
+      font-size:12.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-flex; align-items:center; gap:7px; }
+    .ws-chip .dotk { width:16px; height:16px; border-radius:50%; background:var(--primary); flex:none; }
+    .ws-item { display:flex; align-items:center; gap:13px; padding:13px 8px; border-top:1px solid var(--line); }
+    .ws-item.on { background:transparent; }
+    .ws-item .ws-ic { width:44px; height:44px; border-radius:14px; background:var(--soft); color:var(--text); display:flex; align-items:center; justify-content:center; flex:none; }
+    .ws-item .ws-ic svg { width:22px; height:22px; }
+    .ws-item .ws-name { font-weight:700; font-size:15px; }
     .ws-item .ws-meta { font-size:12px; color:var(--sub); margin-top:2px; }
+    .ws-item .ws-ck { color:var(--primary); display:flex; flex:none; }
+    .ws-item .ws-ck svg { width:22px; height:22px; }
     .code-box { display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--soft); color:var(--text);
       border-radius:14px; padding:14px 16px; font-weight:800; font-size:22px; letter-spacing:3px; margin:10px 0; }
     .member-pill { display:inline-flex; align-items:center; gap:6px; background:var(--soft); border-radius:999px; padding:6px 12px; font-size:13px; font-weight:600; margin:0 6px 6px 0; }

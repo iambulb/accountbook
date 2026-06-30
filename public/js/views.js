@@ -523,7 +523,7 @@
       const bgs=visibleBudgets();
       if(bgs.length){
         h+='<div class="card"><div class="row" style="margin-bottom:4px;"><div class="sec-title" style="margin:0;">예산</div><button class="link" onclick="openBudgetSheet()">관리</button></div>'+
-          bgs.map(b=>{ const u=budgetUsage(b), c=budgetColor(u.pct); return '<div style="margin:10px 0;"><div class="row" style="font-size:13px;"><span>'+budgetTitle(b)+'</span><span style="color:'+c+';font-weight:700;">'+u.pct+'%'+(u.pct>=100?' 초과':'')+'</span></div><div class="bar"><i style="width:'+Math.min(u.pct,100)+'%;background:'+c+'"></i></div><div class="tx-sub" style="margin-top:4px;">'+won(u.used)+' / '+won(u.amount)+'</div></div>'; }).join('')+'</div>';
+          bgs.map(b=>{ const u=budgetUsage(b), c=budgetColor(u.pct); return '<div style="margin:10px 0;"><div class="row" style="font-size:13px;"><span>'+(b.categoryName?'<span class="catdot" style="background:'+catColor(b.categoryName)+'"></span>':'')+budgetTitle(b)+'</span><span style="color:'+c+';font-weight:700;">'+u.pct+'%'+(u.pct>=100?' 초과':'')+'</span></div><div class="bar"><i style="width:'+Math.min(u.pct,100)+'%;background:'+c+'"></i></div><div class="tx-sub" style="margin-top:4px;">'+won(u.used)+' / '+won(u.amount)+'</div></div>'; }).join('')+'</div>';
       }
       const pbsR=visiblePBs().filter(p=>(p.status||'active')==='active');
       if(pbsR.length){
@@ -711,12 +711,13 @@
       (state.memberships||[]).forEach(w=>{
         const on=w.id===cur, isGroup=w.type==='group', memCount=Object.keys(w.members||{}).length;
         h+='<div class="ws-item'+(on?' on':'')+'">'+
-            '<span class="ws-ic">'+(isGroup?'👥':'🏠')+'</span>'+
+            '<span class="ws-ic">'+svgWrap(isGroup?CAT_SVG.people:CAT_SVG.home)+'</span>'+
             '<div style="flex:1;min-width:0;" onclick="chooseWorkspace(\''+w.id+'\')">'+
-              '<div class="ws-name">'+escapeHtml(w.name||'가계부')+(on?' <span class="pill">사용중</span>':'')+'</div>'+
+              '<div class="ws-name">'+escapeHtml(w.name||'가계부')+'</div>'+
               '<div class="ws-meta">'+(isGroup?('그룹 · 멤버 '+memCount+'명'):'개인 전용')+'</div>'+
             '</div>'+
             (isGroup?'<button class="btn sm ghost" onclick="openGroupManageSheet(\''+w.id+'\')">관리</button>':'')+
+            (on?'<span class="ws-ck">'+svgWrap(CAT_SVG.check)+'</span>':'')+
           '</div>';
       });
       h+='<div class="form-2" style="margin-top:14px;">'+
@@ -852,7 +853,7 @@
       if(priv.length){
         h+='<button class="btn ghost" onclick="makeAllPublic()">전체 공개로 전환</button>';
         h+='<div class="card" style="padding:6px 10px;margin-top:8px;">'+priv.map((it,i)=>
-          '<div class="tx"><div class="tx-ic" style="background:var(--transfer);color:#fff;">'+it.icon+'</div>'+
+          '<div class="tx"><div class="tx-ic">'+svgWrap(CAT_SVG.tag)+'</div>'+
           '<div class="tx-main"><div class="tx-title">'+escapeHtml(it.label)+'</div><div class="tx-sub">'+it.typeLabel+'</div></div>'+
           '<button class="chip" onclick="makeItemPublic('+i+')">공개로</button></div>').join('')+'</div>';
       } else {
@@ -937,13 +938,15 @@
 
     // ===== 예산 =====
     const PERIOD_LABEL={ weekly:'주간', monthly:'월간', yearly:'연간', custom:'사용자지정' };
-    function budgetTitle(b){ return b.categoryName? (catIcon(b.categoryName)+' '+b.categoryName) : '🧮 총예산'; }
+    function budgetTitle(b){ return b.categoryName? escapeHtml(b.categoryName) : '총예산'; }
+    // 예산용 작은 라인 아이콘 타일(카테고리=tint, 총예산=중립 지갑)
+    function budgetTile(b){ return b.categoryName? catTileMini(b.categoryName) : '<span class="mtile" style="background:var(--soft);color:var(--text);">'+svgWrap(CAT_SVG.wallet)+'</span>'; }
     function openBudgetSheet(){
       const list=visibleBudgets().slice().sort((a,b)=>(a.categoryName?1:0)-(b.categoryName?1:0));
       let h='<button class="btn" onclick="openBudgetEdit()">+ 예산 추가</button><div style="margin-top:12px;">';
       if(!list.length) h+='<div class="empty">설정된 예산이 없습니다</div>';
       list.forEach(b=>{ const u=budgetUsage(b), c=budgetColor(u.pct);
-        h+='<div class="card"><div class="row" onclick="openBudgetEdit(\''+b.id+'\')"><b>'+budgetTitle(b)+' <span class="pill">'+(PERIOD_LABEL[b.periodType]||b.periodType)+'</span>'+(b.scope==='personal'?'<span class="pill">개인</span>':'')+'</b><span style="color:'+c+';font-weight:800;">'+u.pct+'%'+(u.pct>=100?' 초과':'')+'</span></div>'+
+        h+='<div class="card"><div class="row" onclick="openBudgetEdit(\''+b.id+'\')"><div style="display:flex;align-items:center;gap:11px;flex:1;min-width:0;">'+budgetTile(b)+'<b style="min-width:0;">'+budgetTitle(b)+' <span class="pill">'+(PERIOD_LABEL[b.periodType]||b.periodType)+'</span>'+(b.scope==='personal'?'<span class="pill">개인</span>':'')+'</b></div><span style="color:'+c+';font-weight:800;flex:none;">'+u.pct+'%'+(u.pct>=100?' 초과':'')+'</span></div>'+
           '<div class="bar"><i style="width:'+Math.min(u.pct,100)+'%;background:'+c+'"></i></div>'+
           '<div class="row" style="margin-top:8px;"><span class="tx-sub">'+won(u.used)+' / '+won(u.amount)+'</span><span class="tx-sub">남음 '+won(u.remain)+'</span></div>'+
           '<div class="link" style="margin-top:8px;font-size:13px;" onclick="openBudgetDetail(\''+b.id+'\')">포함된 거래 보기 ›</div></div>';
@@ -1096,7 +1099,8 @@
         const st=ruleStatus(r), nr=nextRunOf(r);
         const stBadge = st==='active'?'':'<span class="pill">'+(st==='paused'?'일시정지':'종료')+'</span>';
         const cls = (r.type==='income'||r.type==='refund'||r.type==='point_earn')?'green':(r.type==='prepaid_charge'?'blue':'red');
-        h+='<div class="card" style="opacity:'+(st==='active'?'1':'.6')+';"><div class="row" onclick="openRecurringEdit(\''+r.ownerUid+'\',\''+r.id+'\')"><b>'+escapeHtml(r.desc||'정기')+stBadge+'</b><span class="'+cls+'" style="font-weight:800;">'+won(r.amount)+'</span></div>'+
+        const rTile = r.category? catTileMini(r.category) : '<span class="mtile" style="background:var(--soft);color:var(--text);">'+svgWrap(CAT_SVG[TX_SVG_KEY[r.type]||'sub'])+'</span>';
+        h+='<div class="card" style="opacity:'+(st==='active'?'1':'.6')+';"><div class="row" onclick="openRecurringEdit(\''+r.ownerUid+'\',\''+r.id+'\')"><div style="display:flex;align-items:center;gap:11px;flex:1;min-width:0;">'+rTile+'<b style="min-width:0;">'+escapeHtml(r.desc||'정기')+stBadge+'</b></div><span class="'+cls+'" style="font-weight:800;flex:none;">'+won(r.amount)+'</span></div>'+
           '<div class="tx-sub" style="margin-top:6px;">'+TYPE_LABEL[r.type]+' · '+freqText(r)+(r.category?(' · '+escapeHtml(r.category)):'')+' · '+escapeHtml(acctName(r.from||r.to))+(nr&&st==='active'?(' · 다음 '+ymd(nr)):'')+'</div>';
         if(r.ownerUid===state.uid){
           h+='<div class="chip-row" style="margin-top:10px;">';
@@ -1577,6 +1581,7 @@
     let giftTab='log';
     function visibleGifts(){ return state.giftEvents.filter(canSee); }
     function giftEventIcon(t){ return GIFT_EVENT_ICON[t]||'🎀'; }
+    function giftSvgIcon(t){ return svgWrap(CAT_SVG[GIFT_SVG_KEY[t]||'gift']); }
     function giftSummary(){ let given=0,received=0; visibleGifts().forEach(g=>{ const a=Math.abs(Number(g.amount)||0); if(g.direction==='received') received+=a; else given+=a; }); return { given, received, count:visibleGifts().length }; }
     function personGiftTotals(pid, pname){ let given=0,received=0; visibleGifts().forEach(g=>{ if(g.personId===pid || (pname&&g.personName===pname)){ const a=Math.abs(Number(g.amount)||0); if(g.direction==='received') received+=a; else given+=a; } }); return { given, received }; }
 
@@ -1595,7 +1600,7 @@
     function giftRow(g){
       const given=g.direction!=='received', sign=given?'-':'+', cls=given?'red':'green';
       return '<div class="tx" onclick="openGiftEdit(\''+g.id+'\')">'+
-        '<div class="tx-ic" style="background:'+(given?'var(--expense)':'var(--income)')+';color:#fff;">'+giftEventIcon(g.eventType)+'</div>'+
+        '<div class="tx-ic">'+giftSvgIcon(g.eventType)+'</div>'+
         '<div class="tx-main"><div class="tx-title">'+escapeHtml(g.personName||'')+' <span class="pill">'+(GIFT_EVENT_LABEL[g.eventType]||g.eventType||'')+'</span>'+(g.linkedTransactionId?'<span class="pill">🧾</span>':'')+'</div>'+
         '<div class="tx-sub">'+(g.date||'')+' · '+(GIFT_DIR_LABEL[g.direction]||'')+(g.relation?(' · '+(REL_LABEL[g.relation]||g.relation)):'')+'</div></div>'+
         '<div class="tx-amt '+cls+'">'+sign+'₩'+Math.abs(Number(g.amount)||0).toLocaleString()+'</div></div>';
@@ -1612,7 +1617,7 @@
       if(!list.length) return h+'<div class="card"><div class="empty">예정된 경조사가 없습니다</div></div>';
       h+='<div class="card" style="padding:6px 10px;">'+list.map(pl=>{
         const st=pl.status||'planned';
-        return '<div class="tx"><div class="tx-ic" style="background:var(--primary);color:#fff;">'+giftEventIcon(pl.eventType)+'</div>'+
+        return '<div class="tx"><div class="tx-ic">'+giftSvgIcon(pl.eventType)+'</div>'+
           '<div class="tx-main" onclick="openPlannedEdit(\''+pl.id+'\')"><div class="tx-title">'+escapeHtml(pl.personName||'')+' <span class="pill">'+(GIFT_EVENT_LABEL[pl.eventType]||pl.eventType||'')+'</span> <span class="pill">'+(PLANNED_STATUS_LABEL[st]||st)+'</span></div>'+
           '<div class="tx-sub">'+(pl.date||'')+(pl.expectedAmount?(' · 예상 '+won(pl.expectedAmount)):'')+'</div></div>'+
           (st==='planned'?'<button class="chip" onclick="completePlanned(\''+pl.id+'\')">완료</button>':'')+'</div>';
@@ -1625,7 +1630,7 @@
       if(!list.length) return h+'<div class="card"><div class="empty">등록된 인맥이 없습니다</div></div>';
       h+='<div class="card" style="padding:6px 10px;">'+list.map(p=>{
         const t=personGiftTotals(p.id,p.name);
-        return '<div class="tx" onclick="openPersonEdit(\''+p.id+'\')"><div class="tx-ic" style="background:var(--transfer);color:#fff;">👤</div>'+
+        return '<div class="tx" onclick="openPersonEdit(\''+p.id+'\')"><div class="tx-ic">'+svgWrap(CAT_SVG.user)+'</div>'+
           '<div class="tx-main"><div class="tx-title">'+escapeHtml(p.name||'')+(p.relation?' <span class="pill">'+(REL_LABEL[p.relation]||p.relation)+'</span>':'')+'</div>'+
           '<div class="tx-sub">보냄 '+won(t.given)+' · 받음 '+won(t.received)+'</div></div></div>';
       }).join('')+'</div>';
@@ -1797,7 +1802,7 @@
     }
     function loanPaymentRow(l,p){
       const tot=(Number(p.principalAmount)||0)+(Number(p.interestAmount)||0);
-      return '<div class="tx" onclick="openLoanPayment(\''+l.id+'\',\''+p.id+'\')"><div class="tx-ic" style="background:var(--transfer);color:#fff;">💸</div>'+
+      return '<div class="tx" onclick="openLoanPayment(\''+l.id+'\',\''+p.id+'\')"><div class="tx-ic">'+svgWrap(CAT_SVG.coin)+'</div>'+
         '<div class="tx-main"><div class="tx-title">'+(p.date||'')+(p.linkedTransactionId?' <span class="pill">🧾</span>':'')+'</div>'+
         '<div class="tx-sub">원금 '+won(Number(p.principalAmount)||0)+' · 이자 '+won(Number(p.interestAmount)||0)+'</div></div>'+
         '<div class="tx-amt">'+won(tot)+'</div></div>';

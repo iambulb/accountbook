@@ -53,16 +53,20 @@
     function catIcon(name){ const c=getCat(name); return c?c.icon:'🏷️'; }
     // ===== 카테고리 색/아이콘 (핸드오프 v2: 차분한 솔리드 + 13% 알파 tint + 라인 SVG) =====
     // 기본 카테고리는 핸드오프 팔레트로 색을 오버라이드(저장값과 무관). 커스텀은 저장된 색 사용.
+    // 모든 색은 서로 중복되지 않는 차분한 톤(13% 알파 tint로 옅게 표시). 구버전 기본명(식사/생활/엔터/교육)도 포함.
     const CAT_META = {
-      '식비':{c:'#E08A3C',i:'food'}, '배달':{c:'#D9743C',i:'food'}, '카페':{c:'#9C7558',i:'cafe'},
-      '교통':{c:'#4C7FE0',i:'transit'}, '쇼핑':{c:'#DB5F88',i:'shop'}, '생활용품':{c:'#2FAE8E',i:'box'},
-      '주거':{c:'#8773DC',i:'home'}, '통신':{c:'#3FA7BA',i:'telecom'}, '보험':{c:'#8B95A1',i:'shield'},
-      '의료':{c:'#2FAE8E',i:'medical'}, '교육':{c:'#5C7CFA',i:'book'}, '문화생활':{c:'#9576C8',i:'culture'},
-      '구독':{c:'#CC68A4',i:'sub'}, '경조사':{c:'#DC7790',i:'gift'}, '여행':{c:'#43AEB3',i:'travel'},
-      '월급':{c:'#3182F6',i:'wallet'}, '부수입':{c:'#2FAE8E',i:'coin'}, '용돈':{c:'#E0A43C',i:'coin'},
-      '환급':{c:'#3FA7BA',i:'refund'}, '이자':{c:'#4C7FE0',i:'bank'}, '경조사비 수령':{c:'#DC7790',i:'gift'},
+      '식비':{c:'#E08A3C',i:'food'}, '배달':{c:'#E26B4E',i:'food'}, '식사':{c:'#C9952F',i:'food'},
+      '카페':{c:'#9C7558',i:'cafe'}, '용돈':{c:'#D8A93A',i:'coin'}, '교육':{c:'#7A8B2E',i:'book'},
+      '생활용품':{c:'#8AA13C',i:'box'}, '생활':{c:'#5FA85C',i:'box'}, '의료':{c:'#2FAE7A',i:'medical'},
+      '부수입':{c:'#2BA98C',i:'coin'}, '여행':{c:'#43AEB3',i:'travel'}, '통신':{c:'#3FA0BA',i:'telecom'},
+      '환급':{c:'#4AA3D8',i:'refund'}, '교통':{c:'#4C7FE0',i:'transit'}, '월급':{c:'#3182F6',i:'wallet'},
+      '이자':{c:'#5C6BE0',i:'bank'}, '주거':{c:'#8773DC',i:'home'}, '문화생활':{c:'#9B6FC8',i:'culture'},
+      '엔터':{c:'#B065C0',i:'culture'}, '구독':{c:'#CC68A4',i:'sub'}, '쇼핑':{c:'#DB5F88',i:'shop'},
+      '경조사':{c:'#DC7790',i:'gift'}, '경조사비 수령':{c:'#E06A6A',i:'gift'}, '보험':{c:'#6B7686',i:'shield'},
       '기타':{c:'#8B95A1',i:'tag'}
     };
+    // CAT_META에 없고 저장 색도 무효한 카테고리에 안정적으로 부여할 폴백 색(서로 구분되는 톤)
+    const CAT_FALLBACK = ['#E08A3C','#E26B4E','#C9952F','#9C7558','#8AA13C','#5FA85C','#2FAE7A','#2BA98C','#43AEB3','#3FA0BA','#4AA3D8','#4C7FE0','#5C6BE0','#8773DC','#9B6FC8','#B065C0','#CC68A4','#DB5F88','#DC7790','#E06A6A','#6B7686'];
     const CAT_SVG = {
       food:'<path d="M4 11h16"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M8 4c0 1.3-1 1.8-1 3M12 3.5c0 1.3-1 1.8-1 3"/>',
       cafe:'<path d="M5 8h12v4a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5z"/><path d="M17 9h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 3.5V5M12 3.5V5"/>',
@@ -85,17 +89,33 @@
       tag:'<path d="M4 13l7 7 8-8V5h-7z"/><circle cx="15" cy="9" r="1.3"/>',
       card:'<rect x="3" y="6" width="18" height="12" rx="3"/><path d="M3 10h18"/>',
       cash:'<rect x="3" y="6.5" width="18" height="11" rx="2"/><circle cx="12" cy="12" r="2.3"/>',
-      swap:'<path d="M7 7h11l-3-3M17 17H6l3 3"/>'
+      swap:'<path d="M7 7h11l-3-3M17 17H6l3 3"/>',
+      heart:'<path d="M12 20s-7-4.5-7-9.5A4 4 0 0 1 12 8a4 4 0 0 1 7 2.5C19 15.5 12 20 12 20z"/>',
+      user:'<circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/>',
+      flower:'<circle cx="12" cy="12" r="2.4"/><path d="M12 9.6V5M12 14.4V19M9.6 12H5M14.4 12H19M9.9 9.9 7 7M14.1 14.1 17 17M14.1 9.9 17 7M9.9 14.1 7 17"/>',
+      people:'<circle cx="9" cy="9" r="3"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><circle cx="17" cy="10" r="2.4"/><path d="M15 19c0-2 1-3.5 2.5-4"/>',
+      check:'<path d="M5 12l5 5L20 7"/>'
     };
+    // 경조사 유형 → 라인 아이콘 키
+    const GIFT_SVG_KEY = { wedding:'heart', funeral:'flower', first_birthday:'gift', birthday:'gift', holiday:'gift', graduation:'book', birth:'gift', hospital_visit:'medical', housewarming:'home', exam:'book', other:'gift' };
     function svgWrap(inner){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+(inner||CAT_SVG.tag)+'</svg>'; }
     // hex(#rgb/#rrggbb) → rgba 문자열(알파 적용). var(--x)/rgb은 그대로 반환.
     function hexA(hex, a){ if(!hex||hex[0]!=='#') return hex; let h=hex.slice(1); if(h.length===3) h=h.split('').map(x=>x+x).join(''); const n=parseInt(h,16); return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')'; }
-    // 카테고리 솔리드 색: 기본 카테고리는 핸드오프 팔레트, 그 외 저장값
-    function catColor(name){ if(CAT_META[name]) return CAT_META[name].c; const c=getCat(name); return c?c.color:'#8B95A1'; }
+    // 카테고리 솔리드 색: 기본 카테고리는 팔레트 오버라이드, 그 외엔 저장된 유효 색,
+    // 색이 없거나 무효하면 이름 해시로 폴백 색을 안정 부여(무효값이 conic-gradient/배경을 깨뜨리지 않게).
+    function isValidHex(c){ return typeof c==='string' && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(c); }
+    function catColor(name){
+      if(CAT_META[name]) return CAT_META[name].c;
+      const c=getCat(name); if(c && isValidHex(c.color)) return c.color;
+      let h=0, s=String(name||''); for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0;
+      return CAT_FALLBACK[h % CAT_FALLBACK.length];
+    }
     // 카테고리 라인 SVG(이름→아이콘 매핑, 미매칭은 tag). 색은 currentColor.
     function catSvgIcon(name){ const m=CAT_META[name]; return svgWrap(CAT_SVG[m?m.i:'tag']); }
     // 카테고리 tint 타일 인라인 스타일(배경=13% 알파, 글자=솔리드 색)
     function catTileStyle(name){ const c=catColor(name); return 'background:'+hexA(c,.13)+';color:'+c+';'; }
+    // 작은 카테고리 tint 타일(예산 등 컴팩트 행용)
+    function catTileMini(name){ return '<span class="mtile" style="'+catTileStyle(name)+'">'+catSvgIcon(name)+'</span>'; }
     // 거래유형 → 카테고리 그룹(expense/income/null). 'other'(기타)는 양쪽 모두 노출
     function catTypeFor(txType){ if(['expense','prepaid_spend','point_spend'].includes(txType)) return 'expense'; if(['income','refund'].includes(txType)) return 'income'; return null; }
     function pickableCats(wantType){ return state.categories.filter(c=>canSee(c) && c.isActive!==false && (c.type===wantType||c.type==='other')).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)); }
@@ -370,7 +390,7 @@
 
     function updateWorkspaceChip(){
       const el=$('wsChip'); if(!el||!state.wsMeta) return;
-      el.textContent = (state.wsMeta.type==='group'?'👥 ':'🏠 ')+(state.wsMeta.name||'가계부');
+      el.innerHTML = '<span class="dotk"></span>'+escapeHtml(state.wsMeta.name||'가계부');
     }
 
     function isGroupWs(){ return state.wsMeta && state.wsMeta.type==='group'; }
