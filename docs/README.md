@@ -12,6 +12,7 @@
 | [code-structure.md](code-structure.md) | **코드 구조** — 파일별 책임, 주요 함수 맵, 로드 순서·전역 의존 |
 | [development.md](development.md) | **개발환경 / 배포** — 로컬 실행, Firebase·Netlify·APK 배포 절차 링크, 체크리스트 |
 | [CHANGELOG.md](CHANGELOG.md) | **변경 이력** — 버전별 변경 사항 |
+| [redesign-todo.md](redesign-todo.md) | **UI 리디자인 작업 리스트** — 시안 적용 완료/잔여 화면, 보류된 결정 |
 
 ## 배포·설정 안내 (`docs/deploy/`)
 
