@@ -648,8 +648,8 @@
       h+='<div class="card" style="padding:6px 10px;margin:8px 0 4px;">';
       Object.keys(members).forEach(uid=>{
         const m=members[uid], self=uid===state.uid, isMemOwner=m.role==='owner';
-        h+='<div class="tx"><div class="tx-ic" style="background:var(--transfer);color:#fff;">'+(isMemOwner?'👑':'👤')+'</div>'+
-          '<div class="tx-main"><div class="tx-title">'+escapeHtml(m.name||'멤버')+(self?' (나)':'')+'</div><div class="tx-sub">'+(isMemOwner?'소유자':'멤버')+'</div></div>';
+        h+='<div class="tx">'+avatarHtml(uid, m.name, 38)+
+          '<div class="tx-main"><div class="tx-title">'+escapeHtml(m.name||'멤버')+(isMemOwner?' 👑':'')+(self?' (나)':'')+'</div><div class="tx-sub">'+(isMemOwner?'소유자':'멤버')+'</div></div>';
         if(isOwner && !self && !isMemOwner){
           h+='<span style="display:flex;gap:6px;"><button class="chip" onclick="doTransferOwner(\''+wsId+'\',\''+uid+'\')">소유자 지정</button>'+
              '<button class="chip" onclick="doRemoveMember(\''+wsId+'\',\''+uid+'\')">내보내기</button></span>';
@@ -671,6 +671,48 @@
       confirmSheet(last?'마지막 멤버예요. 나가면 이 그룹의 데이터가 모두 삭제됩니다. 계속할까요?':'이 그룹에서 나갈까요? (이 그룹 데이터에 더 이상 접근할 수 없어요)', ()=>leaveWorkspace(wsId));
     }
     function copyText(t){ if(navigator.clipboard && t){ navigator.clipboard.writeText(t).then(()=>toast('복사했어요')).catch(()=>toast(t)); } else toast(t||''); }
+
+    // ===== 프로필(사진/이름) =====
+    // 아바타: 사진 있으면 <img>, 없으면 이니셜 폴백. photoOverride 주면 캐시 대신 그 값 사용(미리보기용)
+    function avatarHtml(uid, name, size, photoOverride){
+      size=size||38;
+      const photo = photoOverride!==undefined ? photoOverride : (state.userPhotos&&state.userPhotos[uid]);
+      if(photo) return '<img class="avatar" src="'+photo+'" alt="" style="width:'+size+'px;height:'+size+'px;">';
+      const ch=String(name||'?').trim().charAt(0)||'?';
+      return '<div class="avatar avatar-fallback" style="width:'+size+'px;height:'+size+'px;background:'+avatarColor(name||uid)+';font-size:'+Math.round(size*0.42)+'px;">'+escapeHtml(ch)+'</div>';
+    }
+    // 파일 → 중앙 정사각 크롭 → size px JPEG data URL
+    function resizeImageFile(file, size, cb){
+      const r=new FileReader();
+      r.onload=()=>{ const img=new Image();
+        img.onload=()=>{ const c=document.createElement('canvas'); c.width=c.height=size; const ctx=c.getContext('2d');
+          const s=Math.min(img.width,img.height), sx=(img.width-s)/2, sy=(img.height-s)/2;
+          ctx.drawImage(img, sx, sy, s, s, 0, 0, size, size);
+          try{ cb(c.toDataURL('image/jpeg', 0.8)); }catch(e){ toast('이미지 처리 실패', true); } };
+        img.onerror=()=>toast('이미지를 읽을 수 없어요', true); img.src=r.result; };
+      r.onerror=()=>toast('파일을 읽을 수 없어요', true);
+      r.readAsDataURL(file);
+    }
+    function openProfileSheet(){
+      window._profilePhoto=undefined;   // undefined=유지 / ''=삭제 / dataURL=신규
+      let h='<div style="text-align:center;margin:6px 0 16px;">'+
+        '<div id="profAvatar" style="display:inline-flex;">'+avatarHtml(state.uid, state.userName, 96)+'</div>'+
+        '<div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">'+
+          '<button class="btn sm" onclick="pickProfilePhoto()">사진 변경</button>'+
+          '<button class="btn sm ghost" onclick="removeProfilePhoto()">사진 삭제</button></div></div>';
+      h+='<div class="field"><label>별명(이름)</label><input class="input" id="profName" value="'+escapeHtml(state.userName)+'" placeholder="가계부에 표시될 이름"></div>';
+      h+='<div class="tx-sub" style="margin:2px 2px 14px;">사진은 256px로 줄여 저장돼요. 같은 그룹 멤버에게 보입니다.</div>';
+      h+='<button class="btn" onclick="onSaveProfile()">저장</button>';
+      openSheet('내 프로필', h);
+    }
+    function pickProfilePhoto(){
+      const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
+      inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(!f) return;
+        resizeImageFile(f, 256, durl=>{ window._profilePhoto=durl; const a=$('profAvatar'); if(a) a.innerHTML='<img class="avatar" src="'+durl+'" alt="" style="width:96px;height:96px;">'; }); };
+      inp.click();
+    }
+    function removeProfilePhoto(){ window._profilePhoto=''; const a=$('profAvatar'); if(a) a.innerHTML=avatarHtml(state.uid, state.userName, 96, ''); }
+    function onSaveProfile(){ const name=val('profName').trim(); if(!name){ toast('이름을 입력하세요', true); return; } saveProfile(name, window._profilePhoto); toast('프로필을 저장했어요'); closeSheet(); }
 
     // ===== 권한 / 공동 설정 =====
     function openSharedSettings(){
@@ -754,7 +796,7 @@
       h+=menuItem('🔒','권한 / 공동 설정','openSharedSettings()');
       h+='</div>';
       h+='<div class="card" style="padding:8px 10px;">';
-      h+='<div class="menu-item"><span class="mi-ic">👤</span>'+escapeHtml(state.userName)+' 님<span class="chevron"></span></div>';
+      h+='<div class="menu-item" onclick="openProfileSheet()"><span class="mi-ic" style="display:flex;">'+avatarHtml(state.uid, state.userName, 30)+'</span>'+escapeHtml(state.userName)+' 님<span class="chevron">프로필 ›</span></div>';
       h+=menuItem('🚪','로그아웃','logout()');
       h+='</div>';
       h+='<p class="muted" style="text-align:center;font-size:12px;margin-top:18px;">가계부 v3 · '+escapeHtml(state.userName)+' 님</p>';
