@@ -92,12 +92,50 @@
 
 - 유형: 여행·모임/계·데이트/부부·가족·프로젝트·동아리·이벤트·공동지출·기타 (`PB_TYPES`).
 - 아이콘·이름·상태(진행중/완료/보관)·예산·기간(시작/종료).
-- **정산**(settlement) 활성화 플래그 — 그룹 비용 분담용.
+- 참여자 목록(`participants`)·**정산 사용**(`settlementEnabled`) 플래그.
 - 거래를 목적별 가계부에 연결. 리포트에서 사용 상위 3개 표시. 화면: `openPurposeBooks`.
+
+## 공동 지출 정산 (Settlement)
+
+목적별 가계부에서 **정산 사용**을 켠 경우, 그 안의 공동 지출을 정산할 수 있습니다.
+
+- **거래 입력 시 정산**(선택 PB가 `settlementEnabled`일 때만 노출): 정산 포함 토글 → 결제자·분담 방식(균등 분할/직접 입력/결제자 부담)·참여자·참여자별 부담 금액·메모. 거래에 `payer`·`splitType`·`splitParticipants`·`splitAmounts`·`settlementStatus` 저장. 함수 `renderSettleBlock`/`collectSettle`.
+- **정산 계산**(`pbSettleSummary`/`settlementSplit`/`greedySettle`): 참여자별 결제(paid)·부담(owed)·잔액(balance), 단순 최소 송금 제안(받을·보낼 순차 매칭).
+- **목적별 상세 [정산] 탭**(`renderPbSettleTab`): 요약(총 공동지출·대상 건수·미정산/완료 금액·완료율), 참여자별 잔액, 송금 제안+완료 처리, 완료 내역+취소, 정산 대상 거래.
+- **송금 완료**(`saveSettlementPayment`): `settlementPayments` 노드에 기록(기본은 상태만 관리). 옵션으로 실제 `transfer` 거래 동시 생성(실제소비 미포함).
+- 목적별 카드·더보기 `정산` 메뉴(`openSettlementOverview`)에서 상태 요약.
+- **중복 집계 방지**: 원본 결제 거래만 실제소비 1회 반영. 정산 송금은 `isActual`이 아니므로 통계·예산·리포트에 잡히지 않음.
+
+## 경조사비 관리 (Gift / 경조사)
+
+결혼·장례·돌·생일 등 경조사비를 주고받은 내역과 인맥을 관리합니다. 더보기 → 💐 경조사비(`openGiftBook`).
+
+- **요약**: 보냄 합계·받음 합계·순(받음−보냄). 3탭 — 기록/예정/인맥.
+- **기록**(`giftEvents`): 상대(이름)·관계(`REL_TYPES`)·경조사 유형(`GIFT_EVENT_TYPES`)·방향(줌=`given`/받음=`received`)·금액·날짜·메모. `openGiftEdit`/`saveGiftEvent`. 상대 이름은 **인맥 자동 등록·매칭**.
+- **가계부 거래 연결**(기본 ON): 줌 → `경조사` 지출, 받음 → `경조사비 수령` 수입 거래를 생성하고 `giftEventId`로 연결(거래 행에 🎁 배지). 토글 OFF면 장부 기록만. → **줌(지출)은 실제소비 1회 반영, 장부와 중복 집계 없음**.
+- **예정**(`plannedGiftEvents`): 다가올 경조사 등록(예상 금액·날짜·상태), `완료` 시 기록 입력 폼을 프리필. `openPlannedEdit`/`savePlanned`/`completePlanned`.
+- **인맥**(`people`): 관계·메모, 인맥별 보냄/받음 합계. `openPersonEdit`/`savePerson`.
+
+## 대출 / 이자 관리 (Loan)
+
+빌린 돈(내 빚)과 빌려준 돈, 이자·상환을 관리합니다. 더보기 → 🏧 대출/이자(`openLoanBook`).
+
+- **대출**(`loans`): 이름·방향(빌림 `borrowed`/빌려줌 `lent`)·상대/기관·원금·연이율(%)·시작/만기일·기본 상환계좌. `openLoanEdit`/`saveLoan`.
+- **상세**(`openLoanDetail`): 잔액·원금·누적 이자·상환률 바, **월 예상 이자(잔액×연이율/12, 단리)**, 상태(상환중/완료/연체). 계산은 `loanCalc`.
+- **상환 기록**(`loanPayments`): 원금 상환 + 이자 입력 → 잔액 자동 차감. `openLoanPayment`/`saveLoanPayment`.
+- **거래 연결**(기본 ON): **이자만** 실제 거래로 — 빌림 → `대출이자` 지출(실제소비), 빌려줌 → `이자` 수입. `loanId`로 연결(거래 행 🏦 배지). **원금 이동은 장부로만** 관리 → 가짜 계정·이중집계 없음, 실제소비/예산은 이자만 반영.
 
 ## 적금 목표 (Savings)
 
 - 이름·목표액·현재액, 진행률(%) 시각화. 사용자별 관리. 화면: `openSavingsSheet`.
+
+## 권한 / 공동 설정 (Permissions / Shared)
+
+더보기 → 🔒 권한/공동 설정(`openSharedSettings`).
+
+- **멤버/권한 관리**(소유자 전용, 그룹): `openGroupManageSheet`에서 그룹 이름 변경(`renameWorkspace`)·소유자 이전(`transferOwnership`)·멤버 내보내기(`removeMember`). 워크스페이스 `role`(owner/member)을 실제로 활용. **권한은 앱 UI에서만 게이팅**(보안규칙은 그룹 멤버 공동권한 유지). 멤버 내보내기는 상대의 `ws/{wsId}` 접근을 차단(상대의 `users/ws` 인덱스는 본인만 삭제 가능).
+- **공동 기본값**: 새 항목 기본 공개범위(전체/개인)·기본 소유자(공동/나)를 `ws/{wsId}/settings`에 저장. 생성 폼이 `defaultVisibility`/`defaultOwnerName`로 기본값 적용.
+- **공개범위 개요**: 전 엔티티의 `visibility==='private'` 항목을 모아 보고 "공개로"·"전체 공개로 전환" 버튼으로 전환(`collectPrivateItems`·`makeItemPublic`·`makeAllPublic`).
 
 ## 기타
 
@@ -105,4 +143,4 @@
 - **PWA 설치**: 홈 화면 추가 배너(`beforeinstallprompt` → `installApp`), 오프라인 앱 셸 캐시.
 - **토스트 알림**: 모든 사용자 동작 피드백(`toast`).
 
-> ℹ️ 더보기 메뉴에는 일부 "예정" 항목(대출, 경조사비, 정산, 권한/공동 설정)이 비활성으로 표시됩니다 — 데이터 모델·상수(`REL_TYPES`, `GIFT_EVENT_TYPES`, `people`/`giftEvents`)는 일부 준비되어 있으나 화면은 아직 미구현입니다.
+> ✅ 로드맵 기능이 모두 구현되었습니다(정산·경조사비·대출·권한/공동 설정 포함). 더보기 메뉴에 남은 "예정" 항목 없음.
