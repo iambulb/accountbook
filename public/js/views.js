@@ -206,19 +206,26 @@
         '<button data-tp="income" onclick="setSheetType(\'income\')">수입</button>'+
         '<button data-tp="transfer" onclick="setSheetType(\'transfer\')">이체</button>'+
         '<button data-tp="__ext__" onclick="setSheetType(\'__ext__\')">선불·포인트</button></div>';
-      h+='<div class="amount-wrap"><span class="cur">₩</span><input class="amount-input" id="sAmount" inputmode="numeric" placeholder="0" value="'+(amount?Number(amount).toLocaleString():'')+'" oninput="this.value=fmtComma(this.value)"></div>';
-      h+='<div class="field"><label>날짜</label><input type="date" class="input" id="sDate" value="'+date+'"></div>';
-      h+='<div id="sDyn"></div>';
-      h+='<div id="sCardPerf"></div>';
-      h+='<div class="field"><label>설명</label><input type="text" class="input" id="sDesc" placeholder="내용" value="'+escapeHtml(desc)+'"></div>';
-      h+='<details class="adv"'+(pbId?' open':'')+'><summary>상세 설정</summary>';
-      h+='<div class="field"><label>목적별 가계부</label><select class="input" id="sPb" onchange="renderSettleBlock()">'+
+      // 시안: 큰 금액 + 키패드 입력
+      h+='<div class="amtbig"><span class="w">₩</span><input id="sAmount" class="amtbig-in" readonly inputmode="none" placeholder="0" value="'+(amount?Number(amount).toLocaleString():'')+'"></div>';
+      h+='<div id="sCatChips"></div>';   // 카테고리 칩(유형별)
+      h+='<div id="sDyn"></div>';        // 계좌/이체 행
+      h+='<div class="txfield"><span class="k">날짜</span><input type="date" class="txin" id="sDate" value="'+date+'"></div>';
+      h+='<div class="txfield"><span class="k">설명</span><input type="text" class="txin" id="sDesc" placeholder="내용" value="'+escapeHtml(desc)+'"></div>';
+      // 숫자 키패드
+      h+='<div class="kp">'+
+        [1,2,3,4,5,6,7,8,9].map(n=>'<button onclick="kpPress(\''+n+'\')">'+n+'</button>').join('')+
+        '<button onclick="kpPress(\'00\')">00</button><button onclick="kpPress(\'0\')">0</button><button onclick="kpDel()" aria-label="지우기">⌫</button></div>';
+      // 우리 고유 기능 → 상세 설정 접기
+      h+='<details class="adv" id="sAdv"'+((pbId||settleInc)?' open':'')+'><summary>상세 설정</summary>';
+      h+='<div class="txfield"><span class="k">목적별 가계부</span><select class="txsel" id="sPb" onchange="renderSettleBlock()">'+
         '<option value="">연결 안 함</option>'+
         activePbs.map(p=>'<option value="'+p.id+'"'+(p.id===pbId?' selected':'')+'>'+(p.icon||'📒')+' '+escapeHtml(p.name)+'</option>').join('')+
         ((pbId && !activePbs.some(p=>p.id===pbId))?('<option value="'+pbId+'" selected>'+escapeHtml((t&&t.purposeBookName)||pbId)+' (비활성)</option>'):'')+
         '</select></div>';
       h+='<div id="sSettleBlock"></div>';
-      h+='<div class="field"><label>메모</label><textarea class="input" id="sMemo" placeholder="메모">'+escapeHtml(memo)+'</textarea></div>';
+      h+='<div id="sCardPerf"></div>';   // 카드 실적 포함
+      h+='<div class="txfield"><span class="k">메모</span><input type="text" class="txin" id="sMemo" placeholder="메모" value="'+escapeHtml(memo)+'"></div>';
       h+='</details>';
       h+='<button class="btn" onclick="saveTx()">'+(t?'수정':'저장')+'</button>';
       if(t) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteTx()">삭제</button>';
@@ -251,22 +258,28 @@
       });
     }
     function acctOptsHtml(sel){ return state.accounts.map(a=>'<option value="'+a.id+'"'+(a.id===sel?' selected':'')+'>'+escapeHtml(a.name)+' ('+(ACCT_TYPE_LABEL[a.type]||a.type)+')</option>').join(''); }
-    function acctField(label,id,sel){ return '<div class="field"><label>'+label+'</label><select class="input" id="'+id+'" onchange="renderCardPerfBlock()">'+acctOptsHtml(sel)+'</select></div>'; }
-    function catGridHtml(){
+    function acctField(label,id,sel){ return '<div class="txfield"><span class="k">'+label+'</span><select class="txsel" id="'+id+'" onchange="renderCardPerfBlock()">'+acctOptsHtml(sel)+'</select></div>'; }
+    // 시안: 카테고리 가로 칩(이름 + 카테고리 색 점)
+    function catChipsHtml(){
       let cats=pickableCats(catTypeFor(sheetType));
-      if(sheetCat && !cats.some(c=>c.name===sheetCat)){ // 편집 중 비활성/타유형 카테고리도 현재값은 표시
-        const cur=getCat(sheetCat)||{name:sheetCat,icon:'🏷️',color:'#8b95a1'}; cats=[cur,...cats];
-      } else if(!sheetCat && cats[0]) sheetCat=cats[0].name;
-      return '<div class="field"><label>카테고리</label><div class="cat-grid" id="sCatGrid">'+
-        cats.map(c=>'<div class="cat-pick '+(c.name===sheetCat?'on':'')+'" onclick="pickCat(\''+escapeHtml(c.name)+'\')"><div class="ce" style="background:'+(c.color||'#8b95a1')+'">'+(c.icon||'🏷️')+'</div>'+escapeHtml(c.name)+'</div>').join('')+
-        '</div></div>';
+      if(sheetCat && !cats.some(c=>c.name===sheetCat)){ const cur=getCat(sheetCat)||{name:sheetCat,color:'#8b95a1'}; cats=[cur,...cats]; }
+      else if(!sheetCat && cats[0]) sheetCat=cats[0].name;
+      return '<div class="chips">'+cats.map(c=>'<button class="chip'+(c.name===sheetCat?' on':'')+'" onclick="pickCat(\''+escapeHtml(c.name)+'\')"><span class="catdot" style="background:'+(c.color||'#8b95a1')+'"></span>'+escapeHtml(c.name)+'</button>').join('')+'</div>';
     }
+    function kpPress(d){ const el=$('sAmount'); if(!el) return; let cur=String(parseAmount(el.value)||'');
+      if(d==='00'){ if(!cur) return; cur+='00'; } else cur+=d;
+      cur=cur.replace(/^0+(?=\d)/,''); if(cur.length>12) return; el.value = cur?Number(cur).toLocaleString():''; }
+    function kpDel(){ const el=$('sAmount'); if(!el) return; let cur=String(parseAmount(el.value)||'').slice(0,-1); el.value=cur?Number(cur).toLocaleString():''; }
     function guideNote(actual, text){ return '<div class="install-banner" style="background:'+(actual?'rgba(240,68,82,.1)':'var(--primary-weak)')+';color:'+(actual?'var(--expense)':'var(--primary)')+';">'+(actual?'🛒':'ℹ️')+' '+text+'</div>'; }
     function renderTxDyn(){
       const sh=$('sheet'); const fromV=sh._from, toV=sh._to;
+      // 카테고리 칩(해당 유형만) → 별도 영역
+      const catBox=$('sCatChips');
+      if(catBox) catBox.innerHTML = (catTypeFor(sheetType)!==null) ? catChipsHtml() : '';
+      // 계좌/이체 행 + ext 서브칩 + 안내 → #sDyn
       let h='';
       if(EXT_TYPES.includes(sheetType)){
-        h+='<div class="chip-row" style="margin-bottom:14px;">'+EXT_TYPES.map(tp=>'<button class="chip '+(tp===sheetType?'on':'')+'" onclick="setExtType(\''+tp+'\')">'+TYPE_LABEL[tp]+'</button>').join('')+'</div>';
+        h+='<div class="chips" style="margin:2px 0 6px;">'+EXT_TYPES.map(tp=>'<button class="chip '+(tp===sheetType?'on':'')+'" onclick="setExtType(\''+tp+'\')">'+TYPE_LABEL[tp]+'</button>').join('')+'</div>';
       }
       if(sheetType==='prepaid_charge') h+=guideNote(false,'충전은 자산 이동이라 실제 소비에 포함되지 않습니다.');
       else if(sheetType==='prepaid_spend'||sheetType==='point_spend') h+=guideNote(true,'이 거래는 실제 소비에 포함됩니다.');
@@ -274,30 +287,30 @@
       else if(sheetType==='point_earn') h+=guideNote(false,'포인트 적립은 실제 소비가 아닙니다.');
       else if(sheetType==='balance_adjustment') h+=guideNote(false,'실제 잔액에 맞추는 보정 거래입니다. 실제 소비에 포함되지 않습니다.');
 
-      if(sheetType==='expense'){ h+=acctField('출금/결제 수단','sFrom',fromV)+catGridHtml(); }
-      else if(sheetType==='income'){ h+=acctField('입금 대상','sTo',toV)+catGridHtml(); }
-      else if(sheetType==='refund'){ h+=acctField('환불 받는 계정','sTo',toV)+catGridHtml(); }
+      if(sheetType==='expense'){ h+=acctField('출금/결제 수단','sFrom',fromV); }
+      else if(sheetType==='income'){ h+=acctField('입금 대상','sTo',toV); }
+      else if(sheetType==='refund'){ h+=acctField('환불 받는 계정','sTo',toV); }
       else if(sheetType==='point_earn'){ h+=acctField('적립 포인트 계정','sTo',toV); }
       else if(sheetType==='transfer'||sheetType==='prepaid_charge'){
         const l1=sheetType==='prepaid_charge'?'충전 수단(카드/계좌)':'출금';
         const l2=sheetType==='prepaid_charge'?'충전 대상(선불/포인트)':'입금';
-        h+='<div class="form-2">'+acctField(l1,'sFrom',fromV)+acctField(l2,'sTo',toV)+'</div>';
+        h+=acctField(l1,'sFrom',fromV)+acctField(l2,'sTo',toV);
       }
       else if(sheetType==='prepaid_spend'||sheetType==='point_spend'){
-        h+=acctField(sheetType==='point_spend'?'사용 포인트 계정':'결제 선불수단','sFrom',fromV)+catGridHtml();
+        h+=acctField(sheetType==='point_spend'?'사용 포인트 계정':'결제 선불수단','sFrom',fromV);
       }
       else if(sheetType==='balance_adjustment'){
         h+=acctField('대상 계정','sTo',toV);
-        h+='<div class="field"><label>조정 방향</label><select class="input" id="sAdjSign"><option value="+"'+(sh._adjSign!=='-'?' selected':'')+'>증가(+)</option><option value="-"'+(sh._adjSign==='-'?' selected':'')+'>감소(-)</option></select></div>';
+        h+='<div class="txfield"><span class="k">조정 방향</span><select class="txsel" id="sAdjSign"><option value="+"'+(sh._adjSign!=='-'?' selected':'')+'>증가(+)</option><option value="-"'+(sh._adjSign==='-'?' selected':'')+'>감소(-)</option></select></div>';
       }
       $('sDyn').innerHTML=h;
-      if($('sCatGrid')) pickCat(sheetCat,true);
+      if(catBox) pickCat(sheetCat,true);
       renderCardPerfBlock();
     }
     function pickCat(name, silent){
       sheetCat=name;
-      const grid=$('sCatGrid');
-      if(grid) [...grid.children].forEach(ch=>ch.classList.toggle('on', ch.textContent.trim().endsWith(name)));
+      const box=$('sCatChips');
+      if(box) [...box.querySelectorAll('.chip')].forEach(ch=>ch.classList.toggle('on', ch.textContent.trim()===name));
       if(!silent) renderCardPerfBlock();
     }
     function renderCardPerfBlock(){
@@ -315,6 +328,7 @@
         '<div id="sCprWrap" style="'+(inc?'display:none;':'')+'"><div class="field" style="margin-top:8px;"><label>실적 제외 사유</label><input class="input" id="sCpr" value="'+escapeHtml(sh._cpr||'')+'" placeholder="예: 선불충전 제외"></div></div>'+
         '<div class="tx-sub" style="margin-top:6px;">기본값: '+(defInc?'포함':'제외')+' · 직접 수정 가능</div></div>';
       sh._cpi=undefined; // 사용자가 토글하면 그 값 우선
+      const adv=$('sAdv'); if(adv) adv.open=true;   // 카드 실적 있으면 상세 설정 펼쳐 노출
     }
     function toggleCpiFields(){ const on=$('sCpi').classList.contains('on'); $('sCpiFields').style.display=on?'':'none'; $('sCprWrap').style.display=on?'none':''; }
 
