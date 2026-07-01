@@ -414,6 +414,76 @@
     .dotrow { display:flex; gap:3px; justify-content:center; height:6px; margin-top:4px; }
     .dotrow i { width:5px; height:5px; border-radius:50%; display:block; }
 
+    /* ===== 🐱 고양이집 (은화 경제 + 도트 아트) ===== */
+    .px { image-rendering:pixelated; display:block; }
+    /* 전역 dock 스트립 (topbar와 content 사이 상시 노출) */
+    .catdock { flex-shrink:0; background:var(--soft); border-bottom:1px solid var(--bd); }
+    .cd-strip { height:52px; display:flex; align-items:center; gap:10px; padding:0 14px; position:relative; overflow:hidden; }
+    .cd-floor { position:absolute; left:0; right:0; bottom:11px; height:1px; background:var(--bd); }
+    .cd-coin { display:inline-flex; align-items:center; gap:5px; background:var(--card); border:1px solid var(--bd); border-radius:20px; padding:4px 11px 4px 5px; font-size:12px; font-weight:800; color:var(--text); z-index:2; }
+    .cd-coin .cd-ci { width:16px; height:16px; flex:none; display:inline-flex; }
+    .cd-stage { flex:1; height:100%; position:relative; }
+    .cd-actor { position:absolute; bottom:9px; will-change:transform,left; }
+    .cd-empty { position:absolute; left:2px; bottom:16px; font-size:11.5px; font-weight:600; color:var(--sub); }
+    .cd-lbl { font-size:11px; font-weight:700; color:var(--sub); white-space:nowrap; z-index:2; }
+    .cd-exp { width:30px; height:30px; border-radius:9px; background:var(--card); border:1px solid var(--bd); display:flex; align-items:center; justify-content:center; color:var(--text2); flex:none; z-index:2; }
+    .cd-exp svg { width:16px; height:16px; }
+    /* 고양이집 시트 */
+    .coinbar { display:flex; justify-content:flex-end; margin:2px 0 8px; }
+    .coin { display:inline-flex; align-items:center; gap:6px; background:var(--soft); border:1px solid var(--bd); border-radius:20px; padding:5px 12px 5px 6px; font-size:13px; font-weight:800; color:var(--text); }
+    .coin .ci { width:20px; height:20px; flex:none; display:inline-flex; }
+    .coin small { font-size:10.5px; font-weight:700; color:var(--sub); }
+    .catseg { display:flex; background:var(--soft2); border-radius:13px; padding:4px; gap:4px; margin:2px 0 10px; }
+    .catseg button { flex:1; padding:9px 0; border-radius:10px; font-size:13px; font-weight:700; color:var(--sub); }
+    .catseg button.on { background:var(--card); color:var(--text); box-shadow:0 1px 4px rgba(0,0,0,.08); }
+    .subseg { display:flex; gap:8px; margin:8px 0 10px; }
+    .subseg button { padding:8px 16px; border-radius:11px; background:var(--soft); font-size:13px; font-weight:700; color:var(--text2); }
+    .subseg button.on { background:var(--primary); color:var(--card); }
+    /* 방(웹캠 정면 뷰) */
+    .catroom { position:relative; height:200px; border-radius:16px; overflow:hidden; border:1px solid var(--bd); margin:4px 0 6px; }
+    .cr-wall { position:absolute; inset:0; background:linear-gradient(180deg,color-mix(in srgb,var(--soft) 60%,var(--card)) 0%,var(--soft) 62%,var(--soft2) 62%,var(--soft2) 100%); }
+    .cr-base { position:absolute; left:0; right:0; bottom:38%; height:1px; background:var(--bd); }
+    .cr-cam { position:absolute; top:10px; left:12px; display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:800; color:var(--sub); background:var(--card); border:1px solid var(--bd); border-radius:20px; padding:4px 10px 4px 8px; z-index:2; }
+    .cr-cam i { width:6px; height:6px; border-radius:50%; background:var(--expense); flex:none; }
+    .cr-stage { position:absolute; left:0; right:0; bottom:0; height:38%; }
+    .catchips { display:flex; gap:10px; }
+    .catchip { flex:1; background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:10px 6px; text-align:center; }
+    .catchip .cn { font-size:11px; font-weight:700; margin-top:4px; }
+    /* 상점 카드 */
+    .shopcard { display:flex; align-items:center; gap:14px; background:var(--card); border:1px solid var(--bd); border-radius:18px; padding:14px; margin-bottom:11px; }
+    .shopcard .thumb { width:74px; height:74px; border-radius:15px; background:var(--soft); display:flex; align-items:center; justify-content:center; flex:none; position:relative; overflow:hidden; }
+    .shopcard .thumb .fl { position:absolute; left:0; right:0; bottom:14px; height:1px; background:var(--bd); }
+    .shopcard .meta { flex:1; min-width:0; }
+    .shopcard .meta b { font-size:15px; font-weight:800; display:flex; align-items:center; gap:6px; }
+    .shopcard .meta .desc { font-size:11.5px; color:var(--sub); font-weight:500; margin-top:3px; line-height:1.4; }
+    .shopcard .meta .price { display:inline-flex; align-items:center; gap:5px; font-size:13px; font-weight:800; margin-top:8px; }
+    .shopcard .meta .price .ci { width:17px; height:17px; display:inline-flex; }
+    .shopcard .act { flex:none; }
+    .buy { padding:10px 16px; border-radius:12px; background:var(--primary); color:var(--card); font-size:13px; font-weight:800; white-space:nowrap; }
+    .buy.dis { background:var(--soft); color:var(--sub); }
+    .owntag { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:800; color:var(--income); }
+    .owntag svg { width:15px; height:15px; }
+    .tagmini { font-size:9.5px; font-weight:800; padding:2px 6px; border-radius:6px; background:var(--soft2); color:var(--sub); }
+    .note { font-size:11.5px; color:var(--sub); font-weight:500; line-height:1.55; background:var(--card); border:1px solid var(--bd); border-left:3px solid var(--primary); border-radius:10px; padding:11px 13px; margin-top:4px; }
+    .note b { color:var(--text); font-weight:800; }
+    /* 미션 */
+    .coinhero { background:var(--card); border:1px solid var(--bd); border-radius:18px; padding:18px; display:flex; align-items:center; gap:14px; margin:4px 0 6px; }
+    .coinhero .ch-big { width:46px; height:46px; flex:none; display:inline-flex; }
+    .coinhero .k { font-size:11.5px; color:var(--sub); font-weight:700; margin-bottom:3px; }
+    .coinhero .v { font-size:26px; font-weight:800; letter-spacing:-.03em; }
+    .cmrow { display:flex; align-items:center; gap:13px; padding:13px 2px; }
+    .cmrow + .cmrow { border-top:1px solid var(--line); }
+    .cmrow .cmi { width:38px; height:38px; border-radius:12px; background:var(--soft); display:flex; align-items:center; justify-content:center; color:var(--text2); flex:none; }
+    .cmrow .cmi svg { width:20px; height:20px; }
+    .cmrow .cmm { flex:1; min-width:0; }
+    .cmrow .cmm b { font-size:14px; font-weight:700; display:block; }
+    .cmrow .cmm .rw { display:inline-flex; align-items:center; gap:4px; font-size:11.5px; font-weight:700; color:var(--sub); margin-top:3px; }
+    .cmrow .cmm .rw .ci { width:14px; height:14px; display:inline-flex; }
+    .claim { padding:9px 15px; border-radius:11px; background:var(--primary); color:var(--card); font-size:12.5px; font-weight:800; flex:none; }
+    .mdone { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:800; color:var(--sub); flex:none; }
+    .mdone svg { width:16px; height:16px; }
+    .prog-pill { font-size:12px; font-weight:800; color:var(--sub); flex:none; }
+
     /* ===== 접근성(A11y) ===== */
     /* 키보드 포커스에만 또렷한 링(마우스 클릭 시엔 안 보임) */
     :focus-visible { outline:2px solid var(--primary); outline-offset:2px; border-radius:6px; }
