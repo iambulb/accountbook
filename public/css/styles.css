@@ -99,8 +99,11 @@
       padding:12px 20px 8px;
     }
     .topbar h2 { font-size:21px; font-weight:800; letter-spacing:-.02em; }
-    .icon-btn { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:17px; background:var(--soft); color:var(--text2); }
+    .icon-btn { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:17px; background:var(--soft); color:var(--text2); position:relative; }
     .icon-btn svg { width:18px; height:18px; }
+    /* 펫캠 토글: 꺼짐 = 흐리게 + 대각선 슬래시 */
+    #petcamBtn.off { color:var(--sub); }
+    #petcamBtn.off::after { content:''; position:absolute; left:7px; right:7px; top:50%; height:2px; border-radius:2px; background:currentColor; transform:translateY(-1px) rotate(-25deg); }
 
     .card { background:var(--card); border:1px solid var(--bd); border-radius:var(--radius); padding:18px 20px; margin-bottom:14px; }
     .card.tap { transition:transform .08s; } .card.tap:active { transform:scale(.99); }
@@ -441,7 +444,7 @@
     .cd-coin { display:inline-flex; align-items:center; gap:5px; background:var(--card); border:1px solid var(--bd); border-radius:20px; padding:4px 11px 4px 5px; font-size:12px; font-weight:800; color:var(--text); z-index:2; }
     .cd-coin .cd-ci { width:16px; height:16px; flex:none; display:inline-flex; }
     .cd-stage { flex:1; height:100%; position:relative; }
-    .cd-actor { position:absolute; bottom:9px; will-change:transform,left; }
+    .cd-actor { position:absolute; left:0; bottom:9px; will-change:transform; }   /* 이동은 transform:translateX(합성 전용)로 → left 애니메이션 리페인트 깜빡임 방지 */
     /* PNG 스프라이트 걷기(288×48 6프레임, east) — CSS steps로 프레임 넘김. --fw=프레임수×표시폭 */
     .cspr { image-rendering:pixelated; background-repeat:no-repeat; background-position:0 0;
       background-image:var(--sheet); background-size:var(--fw) 100%;
@@ -504,29 +507,29 @@
     .miniroom .cr-props { pointer-events:none; }
     .miniroom .cr-cam { font-size:9px; padding:3px 8px 3px 6px; top:6px; left:8px; }
     /* 활성 슬롯 행(홈): 채워진 슬롯 + 잠금 슬롯(금화 확장) */
-    .slotrow { display:flex; gap:8px; margin:0 0 4px; }
+    .slotrow { display:flex; gap:8px; margin:0 0 4px; overflow-x:auto; padding-bottom:3px; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity; }
     .slot { width:46px; height:46px; border-radius:12px; border:1.5px dashed var(--bd); background:var(--soft); display:flex; align-items:center; justify-content:center; flex:none; overflow:hidden; }
     .slot.filled { border-style:solid; border-color:var(--bd); background:var(--card); }
     .slot.locked { border-style:solid; border-color:var(--bd); flex-direction:column; gap:1px; cursor:pointer; color:var(--sub); background:var(--soft); transition:transform .08s; }
     .slot.locked:active { transform:scale(.94); }
     .slot.locked .lockic { width:16px; height:16px; }
     .slot.locked .slotgold { display:inline-flex; align-items:center; gap:2px; font-size:10px; font-weight:800; color:var(--text); }
-    .catchips { display:flex; gap:10px; flex-wrap:wrap; }
-    .catchip { position:relative; flex:1; background:var(--card); border:1.5px solid var(--bd); border-radius:14px; padding:10px 6px; text-align:center; transition:transform .08s; cursor:pointer; }
+    .catchips { display:flex; gap:10px; flex-wrap:nowrap; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity; }
+    .catchip { position:relative; flex:0 0 80%; scroll-snap-align:center; background:var(--card); border:1.5px solid var(--bd); border-radius:14px; padding:10px 6px; text-align:center; transition:transform .08s; cursor:pointer; }
     .catchip .cn-edit { position:absolute; top:3px; right:3px; width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; border-radius:7px; color:var(--sub); background:var(--soft); }
     .catchip .cn-edit svg { width:12px; height:12px; }
     .catchip .cn-edit:active { transform:scale(.9); }
     .catchip:active { transform:scale(.96); }
     .catchip.on { border-color:var(--primary); }
-    .catchip .cn { font-size:11px; font-weight:700; margin-top:4px; }
+    .catchip .cn { font-size:13px; font-weight:700; margin-top:4px; }
     .catchip .cstate { font-size:9.5px; font-weight:800; margin-top:2px; color:var(--sub); }
     .catchip.on .cstate { color:var(--income); }
     /* 상점 카드 */
     .shopcard { display:flex; align-items:center; gap:14px; background:var(--card); border:1px solid var(--bd); border-radius:18px; padding:14px; margin-bottom:11px; }
-    .shopcard .thumb { width:74px; height:74px; border-radius:15px; background:var(--soft); display:flex; align-items:center; justify-content:center; flex:none; position:relative; overflow:hidden; }
+    .shopcard .thumb { width:86px; height:86px; border-radius:15px; background:var(--soft); display:flex; align-items:center; justify-content:center; flex:none; position:relative; overflow:hidden; }
     .shopcard .thumb .fl { position:absolute; left:0; right:0; bottom:14px; height:1px; background:var(--bd); }
     /* 상점 가구 썸네일 — 실제 크기와 무관하게 60px 상자에 맞춰(비율 유지) 적당히 표시 */
-    .shopcard .thumb .furnfit { width:60px; height:60px; display:flex; align-items:center; justify-content:center; }
+    .shopcard .thumb .furnfit { width:74px; height:74px; display:flex; align-items:center; justify-content:center; }
     .shopcard .thumb .furnfit .px { width:100%; height:100%; }
     .shopcard .meta { flex:1; min-width:0; }
     .shopcard .meta b { font-size:15px; font-weight:800; display:flex; align-items:center; gap:6px; }

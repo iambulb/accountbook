@@ -598,10 +598,13 @@
     // #catdock 은 index.html 셸의 #content 형제 → 리렌더 영향 없음(애니메이션 유지)
     // 스트립 전체가 탭 시 고양이집 시트를 여므로 별도 확장 뷰/라벨/버튼 없이 간소화.
     function dockMode(){ return localStorage.getItem('catDock')==='hidden'?'hidden':'strip'; }
-    function setDockMode(m){ localStorage.setItem('catDock', m); renderDock(); }
+    function setDockMode(m){ localStorage.setItem('catDock', m); renderDock(); updatePetcamBtn(); }
     function toggleDockHidden(){ setDockMode(dockMode()==='hidden'?'strip':'hidden'); if(state.tab==='more') renderMore(); }
     function dockHiddenLabel(){ return dockMode()==='hidden'?'숨김':'켬'; }
-    function initDock(){ renderDock(); }
+    // 상단바 펫캠 토글 버튼 상태(켜짐/꺼짐) 반영
+    function updatePetcamBtn(){ const b=$('petcamBtn'); if(!b) return; const on=dockMode()!=='hidden';
+      b.classList.toggle('off', !on); b.setAttribute('aria-pressed', on?'true':'false'); b.title = on?'펫캠 끄기':'펫캠 켜기'; }
+    function initDock(){ renderDock(); updatePetcamBtn(); }
     function renderDock(){
       const d=$('catdock'); if(!d) return;
       if(dockMode()==='hidden'){ d.className='catdock hidden'; d.innerHTML=''; stopWalk(); return; }
@@ -648,10 +651,13 @@
     // 활성 고양이를 dock 무대에 액터로 배치(없으면 안내)
     function renderDockCats(){
       const stage=$('cdStage'); if(!stage) return;
-      const cats=activeCats();
+      const cats=activeCats(); const list=cats.slice(0,slotCount());
       stage.dataset.hh=48;
-      if(!cats.length){ stage.innerHTML='<span class="cd-empty">고양이를 입양해 보세요</span>'; markCatDirty(); return; }
-      stage.innerHTML=cats.slice(0,slotCount()).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(12+i*54)+'px;">'+catActorHTML(id,48)+'</div>').join('');
+      const sig='c:'+list.join(',');   // 고양이 구성이 그대로면 DOM 재생성 금지(스프라이트 리로드·애니메이션 리셋 깜빡임 방지)
+      if(stage.dataset.sig===sig && stage.querySelector('.cd-actor')) return;
+      stage.dataset.sig=sig;
+      if(!list.length){ stage.innerHTML='<span class="cd-empty">고양이를 입양해 보세요</span>'; markCatDirty(); return; }
+      stage.innerHTML=list.map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(12+i*54)+'px;">'+catActorHTML(id,48)+'</div>').join('');
       markCatDirty();
     }
     // ---- 통합 걷기 엔진: 단일 rAF가 "지금 보이는 무대"(시트 방 또는 dock)만 애니메이션 ----
@@ -660,6 +666,8 @@
     // 걷기 스프라이트 애니메이션 주기(초): 발 놀림이 실제 이동속도에 맞도록 속도에 반비례 → 미끄러짐(무빙워크) 방지, 자연스러운 걸음.
     function walkDur(v, hh){ const stride=0.42*(hh||40), px=Math.max(0.001, v*58); return Math.max(0.45, Math.min(1.5, stride/px)).toFixed(2); }
     function setWalkDur(a){ if(a.spr){ const sc=a.el.querySelector('.cspr'); if(sc) sc.style.setProperty('--wdur', walkDur(a.v, a.hh)+'s'); } }
+    // 액터 위치/방향/상하바운스를 transform 하나로(레이아웃 left 대신 합성) — 깜빡임 방지. x는 정수 px 스냅.
+    function actorXform(a, y, dir){ return 'translate('+Math.round(a.x)+'px,'+Math.round(y||0)+'px) scaleX('+(dir!=null?dir:a.dir)+')'; }
     const _eng={ raf:0, stage:null, actors:[], last:0, dirty:false };
     function markCatDirty(){ _eng.dirty=true; }
     function stopWalk(){ _eng.actors=[]; _eng.stage=null; }
@@ -683,13 +691,13 @@
       // 스프라이트 고양이는 정사각(폭=높이), SVG 고양이는 가로세로비 ~26/14.
       return acts.map(el=>{ const id=el.getAttribute('data-cat'), spr=hasSprite(id), fw=!!(spr&&PET_SPRITES[id]&&PET_SPRITES[id].frontWalk);
         const v=0.18+Math.random()*0.24;   // 속도 폭을 조금 좁혀 걸음이 차분하게(주기는 walkDur로 이동속도에 맞춤)
-        const a={ el, id, spr, frontWalk:fw, x:parseFloat(el.style.left)||0, dir:Math.random()<0.5?-1:1,
+        const a={ el, id, spr, frontWalk:fw, x:(parseFloat(el.dataset.x)||parseFloat(el.style.left)||0), dir:Math.random()<0.5?-1:1,
         v:v, t:Math.random()*6, frame:0, fc:Math.random()*170, W, hh,
         sw:(spr?hh:Math.round(hh*26/14)), props, lift:0,
         mode:'roam', pause:0, goal:null, pose:null,
         // 유휴(그 자리에 멈춰 정면 보기) — 자주·오래 서서 정면을 보도록(poseDur에서 시간 늘림)
         idle:0.0032+Math.random()*0.005, turn:0.004+Math.random()*0.010, seek:0.005+Math.random()*0.009, cool:0 };
-        setWalkDur(a); return a; });
+        setWalkDur(a); el.style.left='0px'; el.dataset.x=Math.round(a.x); el.style.transform=actorXform(a,0,a.dir); return a; });
     }
     // 가구 종류별 포즈: 밥그릇=앉아 먹기, 방석=식빵, 캣타워=낮잠, 스크래처=앉기, 그 외=식빵
     function poseForItem(itemId){ return itemId==='bowl'?'sit':itemId==='cushion'?'loaf':itemId==='tower'?'sleep':itemId==='scratcher'?'sit':'loaf'; }
@@ -710,19 +718,19 @@
       const s=furnSpot(a, goal);
       a.mode='pause'; a.pose=s.pose; a.pause=s.dur; a.cool=1700; a.lift=s.lift||0;
       // 고양이 중심을 가구 그래픽 중앙(goal.x)에 맞춤(+옆 오프셋 dx). 캣타워/방석은 dx=0이라 정중앙에 앉음.
-      a.x=Math.max(2, Math.min(a.W-a.sw, goal.x - a.sw/2 + (s.dx||0))); a.el.style.left=Math.round(a.x)+'px';
+      a.x=Math.max(2, Math.min(a.W-a.sw, goal.x - a.sw/2 + (s.dx||0))); a.el.dataset.x=Math.round(a.x);
       const dir=a.spr?1:a.dir;
       if(a.spr){ const sp=a.el.querySelector('.cspr'); if(sp){ sp.style.setProperty('--idle','url('+sprStill(id,s.face)+')'); sp.classList.add('idle'); } }
       else a.el.innerHTML=catPose(id, s.pose, {h:a.hh});
-      a.el.style.transform='translate(0,'+(-Math.round(a.lift))+'px) scaleX('+dir+')';
+      a.el.style.transform=actorXform(a, -a.lift, dir);
     }
     function enterPose(a, id, pose){ a.mode='pause'; a.pose=pose; a.pause=poseDur(pose); a.cool=1400;
       if(a.spr){ const s=a.el.querySelector('.cspr');
         // 멈춰서 쉴 땐 항상 정면(south)을 본다. 이미지가 정방향이라 플립 없음(scaleX(1)).
         if(s){ s.style.setProperty('--idle','url('+sprStill(id,'south')+')'); s.classList.add('idle'); }
-        a.el.style.transform='translate(0,0) scaleX(1)'; }
+        a.el.style.transform=actorXform(a,0,1); }
       else { a.el.innerHTML=catPose(id, pose, {h:a.hh});
-        a.el.style.transform='translate(0,0) scaleX('+a.dir+')'; } }
+        a.el.style.transform=actorXform(a,0,a.dir); } }
     function stepActors(dt){
       _eng.actors.forEach(a=>{
         a.t+=dt*0.004; if(a.cool>0)a.cool-=dt; const id=a.el.getAttribute('data-cat');
@@ -747,8 +755,8 @@
         if(!a.spr){ a.fc+=dt; if(a.fc>170){ a.fc=0; a.frame^=1; a.el.innerHTML=catSide(id,a.frame,{h:a.hh}); } }   // 스프라이트는 CSS steps()가 프레임 처리
         // ⚠️ 픽셀 스프라이트는 위치를 정수 px로 스냅해야 함(서브픽셀 이동 시 nearest-neighbor 합성이 매 프레임 달라져 "번쩍번쩍" 깜빡임). 반올림으로 고정.
         const bob=Math.round(Math.sin(a.t*3)*1.2);
-        a.el.style.transform='translate(0,'+bob+'px) scaleX('+a.dir+')';
-        a.el.style.left=Math.round(a.x)+'px';
+        a.el.style.transform=actorXform(a,bob,a.dir);
+        a.el.dataset.x=Math.round(a.x);
       });
     }
     function catLoop(ts){
@@ -801,15 +809,18 @@
       h+=slotRow;
       if(!owned.length) h+='<div class="empty" style="padding:20px;">아직 고양이가 없어요. 상점에서 입양해 보세요 🐾</div>';
       else { h+='<div class="catchips">'+owned.map(id=>{ const on=isActiveCat(id);
-        return '<div class="catchip'+(on?' on':'')+'" role="button" tabindex="0" onclick="toggleActiveCat(\''+id+'\')">'+catFace(id,{h:90})+'<div class="cn">'+catNameSpan(id,catName(id))+'</div><div class="cstate">'+(on?'집에 있음':'대기')+'</div><button class="cn-edit" aria-label="이름 짓기" onclick="event.stopPropagation();openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></div>'; }).join('')+'</div>';
+        return '<div class="catchip'+(on?' on':'')+'" role="button" tabindex="0" onclick="toggleActiveCat(\''+id+'\')">'+catFace(id,{h:110})+'<div class="cn">'+catNameSpan(id,catName(id))+'</div><div class="cstate">'+(on?'집에 있음':'대기')+'</div><button class="cn-edit" aria-label="이름 짓기" onclick="event.stopPropagation();openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></div>'; }).join('')+'</div>';
         h+='<div class="hintline" style="margin-top:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>고양이를 탭해 집에 내보내거나 대기시켜요(최대 '+sc+'마리)'+(sc<MAX_SLOTS?' · 오른쪽 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장':'')+'.</div>'; }
       return h;
     }
     function mountRoomWalk(){
       const stage=$('crStage'); if(!stage) return;
-      const cats=activeCats();
+      const list=activeCats().slice(0,slotCount());
       stage.dataset.hh=64;
-      stage.innerHTML=cats.slice(0,slotCount()).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(20+i*64)+'px;">'+catActorHTML(id,64)+'</div>').join('');
+      const sig='c:'+list.join(',');   // 같은 고양이면 재생성 안 함(애니메이션 유지)
+      if(stage.dataset.sig===sig && stage.querySelector('.cd-actor')) return;
+      stage.dataset.sig=sig;
+      stage.innerHTML=list.map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(20+i*64)+'px;">'+catActorHTML(id,64)+'</div>').join('');
       markCatDirty();   // 통합 엔진이 시트 방 무대를 자동으로 잡아 애니메이션
     }
     let _shopSub='cats';
@@ -1103,6 +1114,13 @@
       const c=Math.floor((clientX-rc.left)/cw)+1, r=Math.floor((clientY-rc.top)/ch)+1;
       return { r:Math.min(12,Math.max(1,r)), c:Math.min(12,Math.max(1,c)) };
     }
+    // 드롭 좌상단 칸 = 포인터가 발자국 "가운데"에 오도록 보정(3칸 가로면 2번째 칸 기준). 격자 안으로 클램프.
+    function dropCell(grid, x, y, foot){
+      const p=cellFromPoint(grid, x, y);
+      let c=p.c-Math.floor((foot.w-1)/2), r=p.r-Math.floor((foot.h-1)/2);
+      c=Math.max(1, Math.min(13-foot.w, c)); r=Math.max(1, Math.min(13-foot.h, r));
+      return { r, c };
+    }
     // 빈 칸(그리드 배경) 탭 → 선택한 가구 배치(2×2는 그만큼 점유·겹침 방지)
     let _justDragged=false;
     function placeClick(e){
@@ -1112,8 +1130,7 @@
       if(itemRemaining(_selItem)<=0){ toast('배치할 수량이 없어요(상점에서 구매)', true); return; }
       // 밥·물그릇·화장실은 고양이 최대 마릿수(슬롯 수)만큼만 배치 가능
       if(CARE_ITEMS.indexOf(_selItem)>=0 && itemPlaced(_selItem)>=slotCount()){ toast('그 종류는 최대 '+slotCount()+'개까지 놓을 수 있어요(고양이 수 기준)', true); return; }
-      const foot=itemFoot(_selItem), p=cellFromPoint(grid, e.clientX, e.clientY);
-      const r=Math.min(13-foot.h, p.r), c=Math.min(13-foot.w, p.c);   // 발자국(w×h)이 격자를 넘지 않게 보정
+      const foot=itemFoot(_selItem), cell=dropCell(grid, e.clientX, e.clientY, foot), r=cell.r, c=cell.c;   // 포인터=발자국 가운데
       const placed=(state.game.home.placed)||{};
       if(!areaFree(r,c,foot.w,foot.h,placed,null)){ toast('그 자리엔 놓을 수 없어요(겹침)', true); return; }
       gameRef().child('home/placed/'+r+'_'+c).set({itemId:_selItem});
@@ -1132,8 +1149,8 @@
       const dx=e.clientX-_drag.sx, dy=e.clientY-_drag.sy;
       if(!_drag.moved){ if(Math.abs(dx)+Math.abs(dy)<6) return; _drag.moved=true; _drag.el.classList.add('drag'); }
       _drag.el.style.transform='translate('+dx+'px,'+dy+'px)';
-      const p=cellFromPoint(_drag.grid, e.clientX, e.clientY);
-      showDropPreview(p.r, p.c, _drag.foot, _drag.key);
+      const cell=dropCell(_drag.grid, e.clientX, e.clientY, _drag.foot);
+      showDropPreview(cell.r, cell.c, _drag.foot, _drag.key);
     }
     function giUp(e){
       if(!_drag) return; const d=_drag; _drag=null;
