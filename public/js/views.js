@@ -484,6 +484,7 @@
     function signComma(v){ return (v<0?'−':'+')+fmtComma(Math.abs(v)); }
     function renderStats(){
       $('screenTitle').textContent='리포트';
+      if(typeof markReportSeen==='function') markReportSeen();   // 🐱 주간 미션: 리포트 확인
       const m=state.month, list=monthTx(m);
       const actual=actualSpend(list), inc=sumBy(list,'income'), bal=inc-actual;
       const [yy,mo]=m.split('-');
@@ -964,7 +965,7 @@
       h+=gcell(MORE_ICON.gift,'경조사비','openGiftBook()');
       h+=gcell(MORE_ICON.loan,'대출/이자','openLoanBook()');
       h+=gcell(MORE_ICON.category,'카테고리','openCategorySheet()');
-      h+=gcell(MORE_ICON.cat,'고양이집','openCatHouse()');
+      h+=gcell(coinSvg({h:26}),'고양이집','openCatHouse()');
       h+='</div>';
       // 설정 리스트
       h+='<div class="lst">';
@@ -973,6 +974,7 @@
       h+=lrow(MORE_ICON.list,'거래내역',"goHome('list')");
       h+=lrow(MORE_ICON.download,'CSV 내보내기','exportCSV()');
       h+=lrow(MORE_ICON.moon,'다크 모드','toggleTheme();renderMore()', state.theme==='dark'?'켜짐':'꺼짐');
+      h+=lrow(MORE_ICON.cat,'고양이집 dock','toggleDockHidden()', (typeof dockHiddenLabel==='function'?dockHiddenLabel():''));
       h+=lrow(avatarHtml(state.uid, state.userName, 21), escapeHtml(state.userName)+' 님','openProfileSheet()','프로필');
       h+=lrow(MORE_ICON.logout,'로그아웃','logout()');
       h+='</div>';
