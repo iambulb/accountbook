@@ -1158,8 +1158,7 @@
       hideDropPreview();
       if(!d.moved){ openItemMenu(d.key); return; }        // 이동 안 했으면 = 탭 → 메뉴
       _justDragged=true; setTimeout(()=>{ _justDragged=false; }, 80);
-      const p=cellFromPoint(d.grid, e.clientX, e.clientY);
-      const r=Math.min(13-d.foot.h, p.r), c=Math.min(13-d.foot.w, p.c), newKey=r+'_'+c;
+      const cell=dropCell(d.grid, e.clientX, e.clientY, d.foot), r=cell.r, c=cell.c, newKey=r+'_'+c;
       const placed=(state.game.home.placed)||{};
       const resetEl=()=>{ d.el.style.transform=''; d.el.classList.remove('drag'); };
       if(newKey===d.key){ resetEl(); return; }
@@ -1182,7 +1181,7 @@
         const g=document.createElement('div'); g.className='palghost'; g.innerHTML=furnSvg(_pal.id,{h:44}); document.body.appendChild(g); _pal.ghost=g; }
       if(_pal.ghost){ _pal.ghost.style.left=e.clientX+'px'; _pal.ghost.style.top=e.clientY+'px'; }
       const grid=$('placeGrid'); if(!grid) return; const r=grid.getBoundingClientRect();
-      if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){ const p=cellFromPoint(grid,e.clientX,e.clientY); showDropPreview(p.r,p.c,_pal.foot,null); }
+      if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){ const cell=dropCell(grid,e.clientX,e.clientY,_pal.foot); showDropPreview(cell.r,cell.c,_pal.foot,null); }
       else hideDropPreview();
     }
     function palUp(e){
@@ -1194,7 +1193,7 @@
       if(!(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)) return;   // 그리드 밖에 놓으면 취소
       if(itemRemaining(d.id)<=0){ toast('남은 수량이 없어요', true); return; }
       if(CARE_ITEMS.indexOf(d.id)>=0 && itemPlaced(d.id)>=slotCount()){ toast('그 종류는 최대 '+slotCount()+'개까지 놓을 수 있어요', true); return; }
-      const p=cellFromPoint(grid,e.clientX,e.clientY); const rr=Math.min(13-d.foot.h,p.r), cc=Math.min(13-d.foot.w,p.c);
+      const cell=dropCell(grid,e.clientX,e.clientY,d.foot), rr=cell.r, cc=cell.c;
       const placed=(state.game.home.placed)||{};
       if(!areaFree(rr,cc,d.foot.w,d.foot.h,placed,null)){ toast('그 자리엔 놓을 수 없어요(겹침)', true); return; }
       gameRef().child('home/placed/'+rr+'_'+cc).set({itemId:d.id});

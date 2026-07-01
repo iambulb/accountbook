@@ -50,7 +50,7 @@
       overflow:hidden; overscroll-behavior:none;   /* 바깥 페이지 스크롤·고무줄 잠금(모바일 드래그 방지) */
     }
     button { font-family:inherit; cursor:pointer; border:none; background:none; color:inherit; touch-action:manipulation; }
-    input, select, textarea { font-family:inherit; font-size:16px; color:var(--text); }
+    input, select, textarea { font-family:inherit; font-size:16px; color:var(--text); min-width:0; max-width:100%; box-sizing:border-box; }
     .muted { color:var(--sub); }
     .red { color:var(--expense); }
     .green { color:var(--income); }
@@ -75,7 +75,7 @@
     }
     .input:focus { outline:none; border-color:var(--primary); }
     textarea.input { resize:none; min-height:60px; }
-    .who-select { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+    .who-select { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; margin-bottom:14px; }
     .who-btn { padding:16px; border:1.5px solid var(--bd); border-radius:14px; background:var(--card); font-weight:700; font-size:15px; transition:all .15s; }
     .who-btn.on { border-color:var(--primary); background:var(--soft2); color:var(--text); }
     .btn {
@@ -114,7 +114,7 @@
     .month-nav { display:flex; align-items:center; justify-content:center; gap:18px; margin-bottom:14px; }
     .month-nav .m { font-size:19px; font-weight:800; min-width:120px; text-align:center; letter-spacing:-.02em; }
     .month-nav button { font-size:20px; color:var(--sub); padding:4px 10px; }
-    .summary { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; text-align:center; }
+    .summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; text-align:center; }
     .summary .s-label { font-size:11px; color:var(--sub); font-weight:600; margin-bottom:4px; }
     .summary .s-val { font-size:15.5px; font-weight:800; letter-spacing:-.02em; }
     /* 시안 미니 요약 박스 */
@@ -136,7 +136,7 @@
 
     /* 달력 (시안: 콤팩트 셀, 카테고리 색 점) */
     .calwrap { margin-bottom:6px; }
-    .cal-head, .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); }
+    .cal-head, .cal-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); }
     .cal-head div { text-align:center; font-size:11.5px; color:var(--sub); padding:6px 0; font-weight:700; }
     .cal-head .sat { color:var(--income); }
     .cal-head .sun { color:var(--expense); }
@@ -298,7 +298,7 @@
     .mstack .ms-av { margin-left:-8px; display:inline-flex; border:2px solid var(--bg); border-radius:50%; }
     .mstack .ms-av:first-child { margin-left:0; }
     .mstack .ms-more { margin-left:-8px; min-width:26px; height:26px; padding:0 4px; border-radius:50%; background:var(--soft2); color:var(--text2); font-size:10px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; border:2px solid var(--bg); }
-    .grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:4px 2px; padding:8px 0 4px; }
+    .grid4 { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px 2px; padding:8px 0 4px; }
     .gcell { display:flex; flex-direction:column; align-items:center; gap:7px; padding:3px 0; transition:transform .08s; }
     .gic { width:58px; height:58px; border-radius:18px; background:var(--soft); display:flex; align-items:center; justify-content:center; color:var(--text); position:relative; }
     .gic svg { width:28px; height:28px; }
@@ -330,7 +330,7 @@
     .sheet-head { display:flex; align-items:center; justify-content:space-between; padding:8px 22px 12px; touch-action:none; }
     .sheet-head h3 { font-size:18px; font-weight:800; letter-spacing:-.02em; }
     .sheet-head .x { font-size:22px; color:var(--sub); padding:4px; }
-    .sheet-body { padding:0 22px 24px; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+    .sheet-body { padding:0 22px 24px; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
     .sheet-body { padding-bottom:calc(24px + env(safe-area-inset-bottom)); }
 
     /* 거래 유형 세그(지출/수입/이체) — 의미색 활성 */
@@ -358,7 +358,7 @@
     .mtile { width:32px; height:32px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; flex:none; }
     .mtile svg { width:18px; height:18px; }
     /* 카테고리 편집: 아이콘/색상 선택 그리드 */
-    .icon-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin:8px 0 14px; max-height:200px; overflow-y:auto; }
+    .icon-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:8px; margin:8px 0 14px; max-height:200px; overflow-y:auto; }
     .icon-tile { aspect-ratio:1; display:flex; align-items:center; justify-content:center; border-radius:12px; background:var(--soft); color:var(--text); border:2px solid transparent; }
     .icon-tile svg { width:22px; height:22px; }
     .icon-tile.on { border-color:var(--primary); color:var(--primary); }
@@ -371,11 +371,11 @@
     .txfield .txsel, .txfield .txin { border:none; background:transparent; font-size:14px; font-weight:700; color:var(--text); text-align:right; flex:1; min-width:0; font-family:inherit; padding:0; }
     .txfield select.txsel { -webkit-appearance:none; appearance:none; }
     .txfield .txin:focus, .txfield .txsel:focus { outline:none; }
-    .kp { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; margin:12px 0 6px; }
+    .kp { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:2px; margin:12px 0 6px; }
     .kp button { padding:15px 0; font-size:21px; font-weight:700; color:var(--text); border-radius:12px; touch-action:manipulation; -webkit-user-select:none; user-select:none; }
     .kp button:active { background:var(--soft); }
 
-    .cat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+    .cat-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
     .cat-pick { padding:12px 4px; border-radius:14px; background:var(--soft); text-align:center; font-size:12px; font-weight:600; }
     .cat-pick .ce { width:34px; height:34px; border-radius:11px; margin:0 auto 5px; display:flex; align-items:center; justify-content:center; font-size:17px; color:#fff; }
     .cat-pick.on { outline:2px solid var(--primary); }
@@ -389,7 +389,7 @@
     .toast.err { background:var(--expense); color:#fff; }
 
     .pill { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; background:var(--soft2); color:var(--sub); margin-left:6px; }
-    .form-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .form-2 { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; }
     .link { color:var(--primary); font-weight:700; font-size:14px; }
     .install-banner { display:flex; align-items:center; gap:10px; background:var(--soft); color:var(--text); padding:13px 14px; border-radius:14px; font-size:13px; font-weight:700; margin-bottom:12px; }
     .install-link { color:var(--sub); font-size:12px; font-weight:600; text-decoration:underline; text-underline-offset:2px; padding:4px; }
@@ -465,7 +465,7 @@
     .cd-room .cd-actor { bottom:2px; }
     .cr-floor { position:absolute; left:0; right:0; bottom:0; height:54%; background:var(--soft2); z-index:0; }
     /* 벽지 상점 */
-    .wallgrid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    .wallgrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
     .wallcard { background:var(--card); border:1.5px solid var(--bd); border-radius:14px; padding:10px; display:flex; flex-direction:column; gap:8px; }
     .wallcard.on { border-color:var(--primary); }
     .wallsw { height:46px; border-radius:10px; border:1px solid var(--bd); }
