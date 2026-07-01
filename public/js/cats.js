@@ -75,6 +75,52 @@
       ".....XBBXXBBX..XBBXXBBX...",
       "......XX..XX....XX..XX...."
     ];
+    // 포즈(측면, 오른쪽) — 앉기/식빵/낮잠. 가구 근처·유휴 시 사용.
+    const M_CAT_SIT = [
+      "............XX..XX..",
+      "...........XBBXXBBX.",
+      "...........XIBXXBIX.",
+      "...........XBBBBBBBX",
+      "...........XBBSSBBBX",
+      "...........XBBBBEEBX",
+      "...........XBBBBBBPX",
+      "...XX..XXXXLLLBBBBBX",
+      "..XBBXXBBBBBBBBBBBBX",
+      "..XBBBXBBSBBSBBBXXX.",
+      "..XBBBBBBBBBBBBBBX..",
+      "...XSBBBBBBBBBBBBX..",
+      "...XBBBBBBLLBLLBBX..",
+      "...XBBBBBBLLBLLBBX..",
+      "...XBBBBBBLLBLLBBX..",
+      "....XXXXXXLLXLLXX..."
+    ];
+    const M_CAT_LOAF = [
+      ".............XBBXXBBX.",
+      ".............XIBXXBIX.",
+      ".....XXXXXXXXXBBBBBBBX",
+      "....XBBBBBBBBBBBBBBBBX",
+      "...XBBBBBBBBBBBBBBEEBX",
+      "..XXBBBBSBBSBBBBBBBBPX",
+      ".XBSBBSBBBBBBBBBBBBBBX",
+      ".XBBBBBBBBBBBBBBBBBBBX",
+      "..XXBLLLLLLLLLLLLLBBX.",
+      "...XBLLLLLLLLLLLLLBBX.",
+      "....XXXXXXXXXXXXXXXX.."
+    ];
+    const M_CAT_SLEEP = [
+      "......................",
+      "...............XX.....",
+      "......XXXXXXXXXBBXXX..",
+      ".....XBBBBBBBBBBBXBBX.",
+      "....XBBBBBBBBBBBBBBBBX",
+      "....XBBBBSBBSBBBBBBBBX",
+      "...XBBBBBBBBBBBBBSSBBX",
+      "...XBBBBBBBBBBBBBBBBBX",
+      "..XBSBBBBBBBBBLLLBBBBX",
+      "..XBBBBBBBBBBBLLLBBBX.",
+      "...XXBBLLLLLLLLLLBBX..",
+      ".....XXXXXXXXXXXXXX..."
+    ];
     const M_COIN = [
       "...XXXXXX...",
       ".XXSSSSSSXX.",
@@ -101,24 +147,34 @@
       ".....XPPX.......","...XXXPPXXX.....","..XWWWWWWWWX....","..XWWWWWWWWX....","...XXPPXXX......",
       ".....XPPX.......",".....XPPX.......","....XXPPXX......","...XWWWWWWX.....","...XWWWWWWX.....","...XXXXXXXX....."
     ];
+    const M_SCRATCHER = [
+      "................",".....XXXXXX.....","....XWWWWWWX....","....XWWWWWWX....",".....XXPPXX.....",
+      "......XPPX......","......XPPX......","......XPPX......","......XPPX......","......XPPX......",
+      "......XPPX......","......XPPX......",".....XXPPXX.....","...XXWWWWWWXX...","..XWWWWWWWWWWX..","..XXXXXXXXXXXX.."
+    ];
     const CAT_PALS = {
       mackerel:{X:'#3b4048',B:'#9AA6B4',L:'#D8DDE3',S:'#6E7A8A',E:'#22242b',P:'#E08b9d',I:'#E6A9B4'},
       cheese:  {X:'#6b3f1c',B:'#E8974C',L:'#F6D6A6',S:'#CC7A33',E:'#3a2415',P:'#E08b9d',I:'#F0C8A0'},
-      calico:  {X:'#544e45',B:'#F3EFE8',L:'#FCFAF5',O:'#E8974C',K:'#3d3a40',S:'#c9c3ba',E:'#22242b',P:'#E08b9d',I:'#E6A9B4'}
+      calico:  {X:'#544e45',B:'#F3EFE8',L:'#FCFAF5',O:'#E8974C',K:'#3d3a40',S:'#c9c3ba',E:'#22242b',P:'#E08b9d',I:'#E6A9B4'},
+      black:   {X:'#181a1e',B:'#3a3d44',L:'#C9CCD2',S:'#2b2e34',E:'#F2C84B',P:'#E08b9d',I:'#7a5560'},  // 까망(턱시도, 노란 눈)
+      white:   {X:'#B9B4AA',B:'#F3EFE8',L:'#FCFAF5',S:'#DDD8CF',E:'#4C7FE0',P:'#E08b9d',I:'#E6A9B4'}   // 하양(파란 눈)
     };
     const COIN_PAL={X:'#6f7681',S:'#d6dbe1',D:'#a8afb8',A:'#4a4f57',E:'#d6dbe1',P:'#cf8f6c'};
-    const FURN_PALS={ cushion:{X:'#5b6470',C:'#a9b2be',D:'#868f9c'}, bowl:{X:'#5b6470',W:'#d0d6dd',F:'#d68b4a'}, tower:{X:'#6f4c28',W:'#c99a5f',P:'#8a6a3f'} };
+    const FURN_PALS={ cushion:{X:'#5b6470',C:'#a9b2be',D:'#868f9c'}, bowl:{X:'#5b6470',W:'#d0d6dd',F:'#d68b4a'}, tower:{X:'#6f4c28',W:'#c99a5f',P:'#8a6a3f'}, scratcher:{X:'#6f4c28',W:'#c99a5f',P:'#d8b98a'} };
 
     // 카탈로그(코드 상수) — 저장은 보유 id만
     const CAT_CATALOG = [
       { id:'mackerel', name:'고등어', price:45, desc:'쿨그레이 줄무늬. 차분하게 방을 돌아다녀요.' },
       { id:'cheese',   name:'치즈',   price:60, desc:'웜오렌지. 활발하게 뛰어다니는 개냥이.' },
-      { id:'calico',   name:'삼색',   price:90, desc:'흰+주황+먹. 도도하게 창가에 앉아요.' }
+      { id:'calico',   name:'삼색',   price:90, desc:'흰+주황+먹. 도도하게 창가에 앉아요.' },
+      { id:'black',    name:'까망',   price:70, desc:'노란 눈의 까만 고양이. 조용히 방을 지켜요.' },
+      { id:'white',    name:'하양',   price:80, desc:'파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요.' }
     ];
     const ITEM_CATALOG = [
       { id:'cushion', name:'방석',   price:15, size:1, desc:'고양이가 앉아 쉬는 자리.' },
       { id:'bowl',    name:'밥그릇', price:20, size:1, desc:'배치하면 고양이가 다가와요.' },
-      { id:'tower',   name:'캣타워', price:35, size:1, desc:'위층에 올라가 낮잠.' }
+      { id:'tower',   name:'캣타워', price:35, size:1, desc:'위층에 올라가 낮잠.' },
+      { id:'scratcher', name:'스크래처', price:18, size:1, desc:'기둥에 앉아 발톱을 갈아요.' }
     ];
     // 미션 정의(일일). reward=은화. check(ctx)=완료 여부(현재 워크스페이스 활동 읽어 판정)
     const DAILY_MISSIONS = [
@@ -147,8 +203,10 @@
     }
     function catFront(id, opt){ return pxSvg(id==='calico'?M_CALICO_FRONT:M_CAT_FRONT, CAT_PALS[id], opt); }
     function catSide(id, frame, opt){ return pxSvg(frame? M_CAT_SIDE_B:M_CAT_SIDE_A, CAT_PALS[id], opt); }
+    const POSE_M = { sit:M_CAT_SIT, loaf:M_CAT_LOAF, sleep:M_CAT_SLEEP };
+    function catPose(id, pose, opt){ return pxSvg(POSE_M[pose]||M_CAT_SIDE_A, CAT_PALS[id], opt); }
     function coinSvg(opt){ return pxSvg(M_COIN, COIN_PAL, opt); }
-    function furnSvg(id, opt){ const M={cushion:M_CUSHION,bowl:M_BOWL,tower:M_TOWER}[id]; return pxSvg(M, FURN_PALS[id], opt); }
+    function furnSvg(id, opt){ const M={cushion:M_CUSHION,bowl:M_BOWL,tower:M_TOWER,scratcher:M_SCRATCHER}[id]; return pxSvg(M, FURN_PALS[id], opt); }
     function catName(id){ const c=CAT_CATALOG.find(x=>x.id===id); return c?c.name:id; }
 
     // ---- 날짜 키(KST 롤오버) ----
@@ -299,18 +357,25 @@
       const acts=Array.from(stage.querySelectorAll('.cd-actor')); if(!acts.length) return [];
       const W=stage.clientWidth||160, hh=+stage.dataset.hh||30, sw=Math.round(hh*26/14);
       const hasRoom = stage.id==='crStage' || !!stage.closest('.cd-room');
-      const props = hasRoom ? placedList().map(p=>((p.c-0.5)/12*W)) : [];
-      return acts.map(el=>({ el, x:parseFloat(el.style.left)||0, dir:1, v:0.22+Math.random()*0.28, t:Math.random()*6, frame:0, fc:0, W, hh, sw, props, mode:'roam', pause:0, goal:0 }));
+      const props = hasRoom ? placedList().map(p=>({ x:(p.c-0.5)/12*W, itemId:p.itemId })) : [];
+      return acts.map(el=>({ el, x:parseFloat(el.style.left)||0, dir:1, v:0.22+Math.random()*0.28, t:Math.random()*6, frame:0, fc:0, W, hh, sw, props, mode:'roam', pause:0, goal:null, pose:null }));
     }
+    // 가구 종류별 포즈: 밥그릇=앉아 먹기, 방석=식빵, 캣타워=낮잠, 스크래처=앉기, 그 외=식빵
+    function poseForItem(itemId){ return itemId==='bowl'?'sit':itemId==='cushion'?'loaf':itemId==='tower'?'sleep':itemId==='scratcher'?'sit':'loaf'; }
+    function poseDur(pose){ return pose==='sleep'?(3200+Math.random()*2500):(1300+Math.random()*1800); }
+    function enterPose(a, id, pose){ a.mode='pause'; a.pose=pose; a.pause=poseDur(pose); a.el.innerHTML=catPose(id, pose, {h:a.hh}); a.el.style.transform='translate(0,0) scaleX('+a.dir+')'; }
     function stepActors(dt){
       _eng.actors.forEach(a=>{
         a.t+=dt*0.004; const id=a.el.getAttribute('data-cat');
-        if(a.mode==='pause'){ a.pause-=dt; a.el.style.transform='translate(0,0) scaleX('+a.dir+')'; if(a.pause<=0) a.mode='roam'; return; }
+        if(a.mode==='pause'){ a.pause-=dt; if(a.pause<=0){ a.mode='roam'; a.fc=999; } return; }   // 포즈 유지, 끝나면 걷기 복귀
+        // 유휴: 가끔 그 자리에서 식빵/앉기
+        if(a.mode==='roam' && Math.random()<0.0025){ enterPose(a, id, Math.random()<0.5?'loaf':'sit'); return; }
+        // 가구로 이동 결정
         if(a.mode==='roam' && a.props.length && Math.random()<0.004){ a.goal=a.props[Math.floor(Math.random()*a.props.length)]; a.mode='goal'; }
-        if(a.mode==='goal'){ a.dir=(a.goal>a.x)?1:-1; if(Math.abs(a.goal-a.x)<4){ a.mode='pause'; a.pause=1100+Math.random()*1600; a.el.style.transform='translate(0,0) scaleX('+a.dir+')'; return; } }
+        if(a.mode==='goal' && a.goal){ a.dir=(a.goal.x>a.x)?1:-1; if(Math.abs(a.goal.x-a.x)<5){ enterPose(a, id, poseForItem(a.goal.itemId)); a.goal=null; return; } }
         a.x += a.dir*a.v*dt*0.06;
         const max=a.W-a.sw;
-        if(a.x<2){ a.x=2; a.dir=1; if(a.mode==='goal')a.mode='roam'; } else if(a.x>max){ a.x=max; a.dir=-1; if(a.mode==='goal')a.mode='roam'; }
+        if(a.x<2){ a.x=2; a.dir=1; if(a.mode==='goal'){a.mode='roam';a.goal=null;} } else if(a.x>max){ a.x=max; a.dir=-1; if(a.mode==='goal'){a.mode='roam';a.goal=null;} }
         a.fc+=dt; if(a.fc>170){ a.fc=0; a.frame^=1; a.el.innerHTML=catSide(id,a.frame,{h:a.hh}); }
         const bob=Math.sin(a.t*3)*1.2;
         a.el.style.transform='translate(0,'+bob.toFixed(1)+'px) scaleX('+a.dir+')';
