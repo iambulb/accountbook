@@ -66,6 +66,7 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 | 뽑기(펫알) 오픈 결과 | `catFace(id,{h})` | `south.png`(정면) | `catFront` SVG |
 
 - **걷는 표시**는 `catActorHTML`, **정지 정면 썸네일**은 `catFace`가 `hasSprite(id)`로 PNG/SVG를 자동 분기한다.
+- ⚠️ **CSS `--sheet`/`--idle`에 넣는 스프라이트 경로는 반드시 절대 URL**(`assetUrl()` = `new URL(p, document.baseURI).href`)로 만든다. 상대경로(`assets/pets/…`)를 그대로 넣으면 `styles.css`의 `background-image:var(--sheet)`가 **스타일시트 위치(`/css/`) 기준**으로 해석해 `/css/assets/…` 404 → 고양이가 안 보인다.
 - 새 표시 위치를 만들 때도 이 둘 중 하나를 쓴다. `catFace` PNG는 `.catpx`(pixelated) `<img>`로 렌더된다.
 - (함수 이름에 `cat`이 남아 있는 건 역사적 이유. 대상은 모든 네발 동물이다.)
 

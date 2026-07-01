@@ -331,8 +331,12 @@
     // 처리 규칙은 docs/pet-asset-pipeline.md("Pet Asset Pipeline") 참고. 시트 있는 동물은 CSS steps()로 걷기.
     // 쉴 때는 stills(south=앞/north=뒤/east=우/west=좌) 중 하나를 무작위로 보여준다(정면·후면·옆 보기).
     const CAT_FACES = ['south','north','east','west'];
+    // ⚠️ 스프라이트 경로는 반드시 절대 URL로 만든다. `--sheet:url(assets/…)`를 상대경로로 두면
+    // styles.css 안의 `background-image:var(--sheet)`가 스타일시트 위치(/css/) 기준으로 해석해
+    // `/css/assets/…` 404 → 고양이가 안 보인다. document.baseURI 기준 절대 URL로 고정.
+    function assetUrl(p){ try{ return new URL(p, document.baseURI).href; }catch(e){ return p; } }
     function sprStills(id){ return 'assets/pets/'+id; }
-    function sprStill(id, face){ return sprStills(id)+'/'+face+'.png'; }
+    function sprStill(id, face){ return assetUrl(sprStills(id)+'/'+face+'.png'); }
     const PET_SPRITES = {
       cat_mackerel:{ walk:'assets/pets/cat_mackerel/walk.png', frames:6, stills:true },
       cat_cheese:  { walk:'assets/pets/cat_cheese/walk.png',   frames:6, stills:true },
@@ -349,7 +353,7 @@
     function catActorHTML(id, h){
       const sp=PET_SPRITES[id];
       if(sp){ const s=Math.round(h); const rm=reducedMotion();
-        return '<div class="cspr'+(rm?' idle':'')+'" style="width:'+s+'px;height:'+s+'px;--sheet:url('+sp.walk+');--idle:url('+sprStill(id,'south')+');--fw:'+(s*sp.frames)+'px;"></div>'; }
+        return '<div class="cspr'+(rm?' idle':'')+'" style="width:'+s+'px;height:'+s+'px;--sheet:url('+assetUrl(sp.walk)+');--idle:url('+sprStill(id,'south')+');--fw:'+(s*sp.frames)+'px;"></div>'; }
       return catSide(id, 0, {h:h});
     }
     // 정면 썸네일(걷지 않는 표시용: 상점 카드·보유 칩·뽑기 결과 등).
@@ -369,6 +373,14 @@
     function furnSvg(id, opt){ const M={cushion:M_CUSHION,bowl:M_BOWL,tower:M_TOWER,scratcher:M_SCRATCHER}[id]; return pxSvg(M, FURN_PALS[id], opt); }
     // 가구 표시 배율(ITEM_CATALOG.size) — 캣타워·스크래처=2(크게), 방석=0.7·밥그릇=0.5(작게)
     function furnScale(id){ const it=ITEM_CATALOG.find(x=>x.id===id); return (it&&it.size)||1; }
+    // 방(dock·홈)에서의 가구 렌더 높이(px) — 발자국 세로 칸수(footH)에 비례해 키움(캣타워 6칸=제일 큼, 스크래처 2칸, 방석·밥그릇 1칸).
+    // 고양이 상호작용(캣타워 3층 올라가기 등)이 맞아떨어지도록 렌더·엔진(fh)이 같은 값을 쓴다. depth(뒤로 갈수록) 작게.
+    function furnRoomH(id, isDock, depth){
+      const foot=itemFoot(id);
+      const mult = foot.h>1 ? foot.h : (id==='bowl'?0.8:1);   // 멀티셀=칸수, 1×1=밥그릇<방석
+      const unit = isDock ? (8 - depth*2.5) : (12 - depth*3.5);  // 칸당 픽셀(앞>뒤) — 캣타워가 고양이보다 크게
+      return Math.max(4, Math.round(unit*mult));
+    }
     function catName(id){ const c=PET_CATALOG.find(x=>x.id===id); return c?c.name:id; }
 
     // ---- 날짜 키(KST 롤오버) ----
@@ -511,7 +523,7 @@
       const box=$('cdProps'); if(!box) return;
       // 원근: 뒤(행 큰 값)일수록 위로·작게, 앞(행 작은 값)일수록 아래로·크게(크기차는 완만하게). 앞 가구가 뒤 가구를 덮도록 뒤부터 그린다.
       box.innerHTML=placedList().sort((a,b)=>b.r-a.r).map(p=>{ const foot=itemFoot(p.itemId); const x=((p.c-0.5+(foot.w-1)/2)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(2+depth*22).toFixed(0);
-        return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:Math.round((22-depth*6)*furnScale(p.itemId))})+'</div>'; }).join('');
+        return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:furnRoomH(p.itemId, true, depth)})+'</div>'; }).join('');
     }
     // 활성 고양이를 dock 무대에 액터로 배치(없으면 안내)
     function renderDockCats(){
@@ -540,8 +552,8 @@
       const hasRoom = stage.id==='crStage' || !!stage.closest('.cd-room');
       const isDock = stage.id!=='crStage';
       // 가구 위치(발자국 중앙 x) + 렌더 높이(fh) — 상호작용 시 올라갈 높이 계산에 사용
-      const props = hasRoom ? placedList().map(p=>{ const foot=itemFoot(p.itemId), depth=(p.r-1)/11, scale=furnScale(p.itemId);
-        const fh=Math.round((isDock?(22-depth*6):(28-depth*8))*scale);
+      const props = hasRoom ? placedList().map(p=>{ const foot=itemFoot(p.itemId), depth=(p.r-1)/11;
+        const fh=furnRoomH(p.itemId, isDock, depth);   // 렌더 높이와 동일 → 캣타워 층 lift가 실제 높이에 맞음
         return { x:(p.c-0.5+(foot.w-1)/2)/12*W, itemId:p.itemId, fh }; }) : [];
       // 고양이마다 성격(속도·유휴빈도·방향전환·가구선호)을 랜덤 부여 → 개별적으로 움직임
       // 스프라이트 고양이는 정사각(폭=높이), SVG 고양이는 가로세로비 ~26/14.
@@ -560,7 +572,7 @@
     // 캣타워=3층 중 한 층에 올라가 정면 보며 쉼 / 방석=위에 잠시 / 밥그릇=뒤에서 앉기 / 스크래처=옆에서 잠시
     function furnSpot(a, goal){
       const it=goal.itemId, fh=goal.fh||a.hh;
-      if(it==='tower'){ const frac=[0.24,0.55,0.86][Math.floor(Math.random()*3)];   // 3층 발판 높이
+      if(it==='tower'){ const frac=[0.30,0.62,0.92][Math.floor(Math.random()*3)];   // 3층 발판 높이(바닥/중간/꼭대기 발판)
         return { lift:Math.round(fh*frac), face:'south', dx:0, pose:'sit', dur:2600+Math.random()*3600 }; }
       if(it==='cushion') return { lift:Math.round(fh*0.4), face:'south', dx:0, pose:'loaf', dur:2000+Math.random()*3000 };
       if(it==='bowl')    return { lift:Math.round(fh*0.15), face:'south', dx:0, pose:'sit', dur:2000+Math.random()*2600 };
@@ -640,7 +652,7 @@
       const cats=activeCats();
       // 배치된 가구를 방 바닥에 매핑(c→가로, r→앞뒤 깊이)
       const props=placedList().sort((a,b)=>b.r-a.r).map(p=>{ const foot=itemFoot(p.itemId); const x=((p.c-0.5+(foot.w-1)/2)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(3+depth*30).toFixed(0);
-        return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:Math.round((28-depth*8)*furnScale(p.itemId))})+'</div>'; }).join('');
+        return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:furnRoomH(p.itemId, false, depth)})+'</div>'; }).join('');
       let h='<div class="catroom" id="catRoom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div><span class="cr-cam"><i></i>LIVE · 우리집</span><div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div></div>';
       const owned=ownedCatList();
       h+='<div class="sech"><span class="l">우리집 고양이</span><span class="s">'+cats.length+' / 3 활성</span></div>';

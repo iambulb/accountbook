@@ -8,6 +8,13 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 수정 — 🐛 스프라이트 고양이가 dock·방·상점 어디서도 안 보이던 문제(실제 원인)
+- **`--sheet`/`--idle` 상대경로 → 절대 URL로 고정**: `catActorHTML`가 `--sheet:url(assets/pets/…)`를 **상대경로**로 넣으면, `styles.css`의 `.cspr{background-image:var(--sheet)}`가 그 URL을 **스타일시트 위치(`/css/`) 기준**으로 해석해 `/css/assets/pets/…`를 요청 → **404 → 배경 없음 → 고양이 전부 안 보임**(dock·홈 방 공통). `assetUrl(p)=new URL(p, document.baseURI).href`로 **문서 기준 절대 URL**을 만들어 `--sheet`·`--idle`(및 `sprStill`)에 사용하도록 수정. 크롬 헤드리스로 재현·검증(수정 전 `/css/assets/…` 404 → 수정 후 `/assets/…` 200). *직전 "새 SW 자동 새로고침"은 유효한 개선이지만 이 버그의 원인은 캐시가 아니라 URL 해석이었음.* `sw.js` `v3.52.0`.
+
+### 변경 — 🐈 방·dock 가구 크기를 발자국(칸)에 비례해 키움(상호작용용)
+- **홈·캠(dock) 방의 가구 렌더 크기를 발자국 세로 칸수에 비례**: 기존엔 캣타워·스크래처가 표시배율(`furnScale`)이 같아 방에서 **같은 높이**로 보였는데, 이제 `furnRoomH(id,isDock,depth)`가 **footH 칸수에 비례**(캣타워 6 > 스크래처 2 > 방석·밥그릇 1)해 렌더 → 캣타워가 확실히 제일 크고 고양이보다 커서 **3층 상호작용**이 자연스럽게 맞음(홈 캣타워 ~72px, 고양이 46px). 밥그릇<방석 유지, 뒤(depth)로 갈수록 작게.
+- **상호작용 높이 일치**: 걷기 엔진의 가구 높이(`fh`)를 렌더와 **동일한 `furnRoomH`**로 계산 → 캣타워 3층 발판 `lift`(≈0.30/0.62/0.92 높이)가 실제 렌더 높이에 맞아떨어짐. `sw.js` `v3.51.0`.
+
 ### 추가 — 🌀 카오스(cat_chaos) 고양이 추가
 - **카오스 고양이 추가**: `imple_pixel_art_chaos_cat_dark_grey_and_brown_swir.zip`(`Walk/east` 옆걷기 + 8방향 rotations)을 처리해 `public/assets/pets/cat_chaos/`에 `walk.png`(288×48) + 정지 4방향 생성. `PET_CATALOG`에 `cat_chaos`(종=cat, 이름=카오스, 85 은화) + `PET_SPRITES`·`CAT_TIER`(전설 등급) 등록 → dock·방·상점·보유칩·뽑기 어디서나 스프라이트로 표시. **이제 고양이 7종**(고등어·치즈·삼색·하양·턱시도·까망·카오스). `sw.js` `v3.50.0`.
 
