@@ -667,7 +667,8 @@
     function walkDur(v, hh){ const stride=0.42*(hh||40), px=Math.max(0.001, v*58); return Math.max(0.45, Math.min(1.5, stride/px)).toFixed(2); }
     function setWalkDur(a){ if(a.spr){ const sc=a.el.querySelector('.cspr'); if(sc) sc.style.setProperty('--wdur', walkDur(a.v, a.hh)+'s'); } }
     // 액터 위치/방향/상하바운스를 transform 하나로(레이아웃 left 대신 합성) — 깜빡임 방지. x는 정수 px 스냅.
-    function actorXform(a, y, dir){ return 'translate3d('+Math.round(a.x)+'px,'+Math.round(y||0)+'px,0) scaleX('+(dir!=null?dir:a.dir)+')'; }
+    // 위치는 left로 이동(합성 레이어 안 씀). transform은 방향 뒤집기(scaleX)+상호작용 올림(lift)만 — 값이 바뀔 때만 설정.
+    function actorXform(a, ty, dir){ const t=Math.round(ty||0); return (t?'translateY('+t+'px) ':'')+'scaleX('+(dir!=null?dir:a.dir)+')'; }
     const _eng={ raf:0, stage:null, actors:[], last:0, dirty:false };
     function markCatDirty(){ _eng.dirty=true; }
     function stopWalk(){ _eng.actors=[]; _eng.stage=null; }
@@ -691,15 +692,13 @@
       // 스프라이트 고양이는 정사각(폭=높이), SVG 고양이는 가로세로비 ~26/14.
       return acts.map(el=>{ const id=el.getAttribute('data-cat'), spr=hasSprite(id), fw=!!(spr&&PET_SPRITES[id]&&PET_SPRITES[id].frontWalk);
         const v=0.14+Math.random()*0.18;   // 속도 폭을 조금 좁혀 걸음이 차분하게(주기는 walkDur로 이동속도에 맞춤)
-        const a={ el, id, spr, frontWalk:fw, x:(parseFloat(el.dataset.x)||parseFloat(el.style.left)||0), dir:Math.random()<0.5?-1:1,
+        const a={ el, id, spr, frontWalk:fw, x:(parseFloat(el.style.left)||0), dir:Math.random()<0.5?-1:1, _pdir:0,
         v:v, t:Math.random()*6, frame:0, fc:Math.random()*170, W, hh,
         sw:(spr?hh:Math.round(hh*26/14)), props, lift:0,
         mode:'roam', pause:0, goal:null, pose:null,
         // 유휴(그 자리에 멈춰 정면 보기) — 자주·오래 서서 정면을 보도록(poseDur에서 시간 늘림)
         idle:0.0032+Math.random()*0.005, turn:0.004+Math.random()*0.010, seek:0.005+Math.random()*0.009, cool:0 };
-        setWalkDur(a); el.style.left='0px'; el.dataset.x=Math.round(a.x); el.style.transform=actorXform(a,0,a.dir);
-        // 스프라이트 걷기 프레임을 JS가 직접 넘김(CSS steps 애니메이션 비활성 → 루프 빈 프레임/합성 리페인트 깜빡임 없음). frontWalk는 정지스틸이라 제외.
-        if(spr && !fw){ a.sc=el.querySelector('.cspr'); if(a.sc){ a.sc.classList.add('jsw'); a.sc.style.backgroundPositionX='0px'; } a.frame=0; a.fstep=0; }
+        setWalkDur(a); el.style.left=Math.round(a.x)+'px'; el.style.transform='scaleX('+a.dir+')'; a._pdir=a.dir;   // 위치=left, 걷기=CSS(카드와 동일). frame 구동/레이어 강제 없음
         return a; });
     }
     // 가구 종류별 포즈: 밥그릇=앉아 먹기, 방석=식빵, 캣타워=낮잠, 스크래처=앉기, 그 외=식빵
@@ -711,7 +710,8 @@
       const it=goal.itemId, fh=goal.fh||a.hh;
       // 가구 상호작용 머무는 시간을 10배로(캣타워 26~62초 등) — 오래 자리 잡고 쉼
       if(it==='tower'){ const frac=[0.30,0.62,0.92][Math.floor(Math.random()*3)];   // 3층 발판 높이(바닥/중간/꼭대기 발판)
-        return { lift:Math.round(fh*frac), face:'south', dx:0, pose:'sit', dur:26000+Math.random()*36000 }; }
+        // 캣타워는 일반 상호작용(기본 22~48초)의 5배 오래 머무름(약 1.8~4분)
+        return { lift:Math.round(fh*frac), face:'south', dx:0, pose:'sit', dur:110000+Math.random()*130000 }; }
       if(it==='cushion') return { lift:Math.round(fh*0.4), face:'south', dx:0, pose:'loaf', dur:20000+Math.random()*30000 };
       if(it==='bowl')    return { lift:Math.round(fh*0.15), face:'south', dx:0, pose:'sit', dur:20000+Math.random()*26000 };
       if(it==='scratcher') return { lift:0, face:(Math.random()<0.5?'east':'west'), dx:Math.round(a.sw*0.6)*(Math.random()<0.5?1:-1), pose:'sit', dur:18000+Math.random()*28000 };
@@ -722,27 +722,28 @@
       const s=furnSpot(a, goal);
       a.mode='pause'; a.pose=s.pose; a.pause=s.dur; a.cool=1700; a.lift=s.lift||0;
       // 고양이 중심을 가구 그래픽 중앙(goal.x)에 맞춤(+옆 오프셋 dx). 캣타워/방석은 dx=0이라 정중앙에 앉음.
-      a.x=Math.max(2, Math.min(a.W-a.sw, goal.x - a.sw/2 + (s.dx||0))); a.el.dataset.x=Math.round(a.x);
+      a.x=Math.max(2, Math.min(a.W-a.sw, goal.x - a.sw/2 + (s.dx||0))); a.el.style.left=Math.round(a.x)+'px';
       const dir=a.spr?1:a.dir;
-      if(a.spr){ const sp=a.el.querySelector('.cspr'); if(sp){ sp.style.setProperty('--idle','url('+sprStill(id,s.face)+')'); sp.style.backgroundPositionX=''; sp.classList.add('idle'); } }
+      if(a.spr){ const sp=a.el.querySelector('.cspr'); if(sp){ sp.style.setProperty('--idle','url('+sprStill(id,s.face)+')'); sp.classList.add('idle'); } }
       else a.el.innerHTML=catPose(id, s.pose, {h:a.hh});
-      a.el.style.transform=actorXform(a, -a.lift, dir);
+      a.el.style.transform=actorXform(a, -a.lift, dir); a._pdir=dir;   // 정적 transform(lift+flip). 위치는 left
     }
     function enterPose(a, id, pose){ a.mode='pause'; a.pose=pose; a.pause=poseDur(pose); a.cool=1400;
       if(a.spr){ const s=a.el.querySelector('.cspr');
         // 멈춰서 쉴 땐 항상 정면(south)을 본다. 이미지가 정방향이라 플립 없음(scaleX(1)).
-        if(s){ s.style.setProperty('--idle','url('+sprStill(id,'south')+')'); s.style.backgroundPositionX=''; s.classList.add('idle'); }
-        a.el.style.transform=actorXform(a,0,1); }
+        if(s){ s.style.setProperty('--idle','url('+sprStill(id,'south')+')'); s.classList.add('idle'); }
+        a.el.style.transform='scaleX(1)'; a._pdir=1; }
       else { a.el.innerHTML=catPose(id, pose, {h:a.hh});
-        a.el.style.transform=actorXform(a,0,a.dir); } }
+        a.el.style.transform='scaleX('+a.dir+')'; a._pdir=a.dir; } }
     function stepActors(dt){
       _eng.actors.forEach(a=>{
         a.t+=dt*0.004; if(a.cool>0)a.cool-=dt; const id=a.el.getAttribute('data-cat');
         if(a.mode==='pause'){ a.pause-=dt; if(a.pause<=0){ a.mode='roam'; a.fc=999; a.dir=Math.random()<0.5?-1:1; a.lift=0;   // 내려와 재출발
           if(a.spr){ const s=a.el.querySelector('.cspr'); if(s){
-            // 이동 재개: 보통 고양이는 옆 걷기 시트로(.idle 제거), frontWalk 고양이는 옆(east) 정지스틸로 방향만 맞춤
+            // 이동 재개: 보통 고양이는 CSS 걷기 시트로(.idle 제거), frontWalk 고양이는 옆(east) 정지스틸로 방향만 맞춤
             if(a.frontWalk){ s.style.setProperty('--idle','url('+sprStill(id,'east')+')'); s.classList.add('idle'); }
-            else { s.classList.remove('idle'); a.frame=0; a.fstep=0; s.style.backgroundPositionX='0px'; } } } } return; }   // 포즈 유지 후 재출발(프레임 0부터)
+            else s.classList.remove('idle'); } }
+          a.el.style.transform='scaleX('+a.dir+')'; a._pdir=a.dir; } return; }   // 재출발: lift 해제·방향 반영, 걷기는 CSS
         // 유휴 제스처(그 자리 앉기/식빵/낮잠) — 쿨다운 후에만
         if(a.mode==='roam' && a.cool<=0 && Math.random()<a.idle){ enterPose(a, id, ['loaf','sit','sleep'][Math.floor(Math.random()*3)]); return; }
         // 가끔 방향 전환(개별)
@@ -756,14 +757,11 @@
         a.x += a.dir*a.v*dt*0.06;
         const max=a.W-a.sw;
         if(a.x<2){ a.x=2; a.dir=1; if(a.mode==='goal'){a.mode='roam';a.goal=null;} } else if(a.x>max){ a.x=max; a.dir=-1; if(a.mode==='goal'){a.mode='roam';a.goal=null;} }
-        if(!a.spr){ a.fc+=dt; if(a.fc>170){ a.fc=0; a.frame^=1; a.el.innerHTML=catSide(id,a.frame,{h:a.hh}); } }   // SVG 폴백: 2프레임 교대
-        else if(a.sc){ // 스프라이트: 이동 속도에 맞춰 프레임 0~5를 JS가 직접 넘김(빈 6번째 프레임 절대 없음)
-          const per=Math.max(70, parseFloat(walkDur(a.v,a.hh))*1000/6);
-          a.fstep+=dt; if(a.fstep>=per){ a.fstep-=per; a.frame=(a.frame+1)%6; a.sc.style.backgroundPositionX=(-a.frame*a.hh)+'px'; } }
-        // ⚠️ 픽셀 스프라이트는 위치를 정수 px로 스냅(서브픽셀 이동 시 매 프레임 리샘플 → 깜빡임). 반올림 고정.
-        const bob=Math.round(Math.sin(a.t*3)*1.2);
-        a.el.style.transform=actorXform(a,bob,a.dir);
-        a.el.dataset.x=Math.round(a.x);
+        if(!a.spr){ a.fc+=dt; if(a.fc>170){ a.fc=0; a.frame^=1; a.el.innerHTML=catSide(id,a.frame,{h:a.hh}); } }   // SVG 폴백: 2프레임 교대(스프라이트는 CSS csprWalk가 처리)
+        // 위치는 left(정수 px)로만 이동 → 합성 레이어/매프레임 transform 없이 평범하게 그림(깜빡임 원인 제거).
+        a.el.style.left=Math.round(a.x)+'px';
+        // 방향(뒤집기)은 바뀔 때만 transform 설정(매 프레임 X)
+        if(a.dir!==a._pdir){ a._pdir=a.dir; a.el.style.transform='scaleX('+a.dir+')'; }
       });
     }
     function catLoop(ts){
@@ -782,8 +780,9 @@
     function renderCatHouse(){
       if(!state.game) state.game=normalizeGame(null);   // 스냅샷 도착 전 안전 가드
       const build=()=>{
-        let h='<div class="coinbar"><span class="coin"><span class="ci">'+goldSvg({h:20})+'</span>'+gold().toLocaleString()+'<small>금화</small></span><span class="coin"><span class="ci">'+coinSvg({h:20})+'</span>'+coins().toLocaleString()+'<small>은화</small></span></div>';
-        h+='<div class="catseg">'+[['home','홈'],['shop','상점'],['place','배치'],['mission','미션']].map(t=>'<button class="'+(_catTab===t[0]?'on':'')+'" onclick="setCatTab(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div>';
+        // 상단(금화·은화 + 홈/상점/배치/미션 탭)은 스크롤해도 고정(sticky), 그 아래 콘텐츠만 스크롤
+        let h='<div class="cathead"><div class="coinbar"><span class="coin"><span class="ci">'+goldSvg({h:20})+'</span>'+gold().toLocaleString()+'<small>금화</small></span><span class="coin"><span class="ci">'+coinSvg({h:20})+'</span>'+coins().toLocaleString()+'<small>은화</small></span></div>';
+        h+='<div class="catseg">'+[['home','홈'],['shop','상점'],['place','배치'],['mission','미션']].map(t=>'<button class="'+(_catTab===t[0]?'on':'')+'" onclick="setCatTab(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div></div>';
         if(_catTab==='home') h+=catHomeHtml();
         else if(_catTab==='shop') h+=catShopHtml();
         else if(_catTab==='place') h+=catPlaceHtml();

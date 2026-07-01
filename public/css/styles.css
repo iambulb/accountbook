@@ -461,16 +461,13 @@
     .cd-coin { display:inline-flex; align-items:center; gap:5px; background:var(--card); border:1px solid var(--bd); border-radius:20px; padding:4px 11px 4px 5px; font-size:12px; font-weight:800; color:var(--text); z-index:2; }
     .cd-coin .cd-ci { width:16px; height:16px; flex:none; display:inline-flex; }
     .cd-stage { flex:1; height:100%; position:relative; }
-    /* 이동은 transform:translate3d(합성 전용)로 → left 리페인트 깜빡임 방지. backface-hidden으로 iOS 사파리 합성 깜빡임 차단 */
-    .cd-actor { position:absolute; left:0; bottom:9px; will-change:transform; -webkit-backface-visibility:hidden; backface-visibility:hidden; }
-    /* PNG 스프라이트 걷기(288×48 6프레임, east) — 프레임은 JS(무대) 또는 CSS steps(카드). translateZ(0)으로 배경-애니메이션을 자기 레이어로 격리(부모 이동 합성과 분리) */
+    /* ⚠️ 이동 액터엔 강제 합성 레이어(will-change/translateZ/backface)를 절대 쓰지 않는다 — iOS/크롬에서 이동+배경애니 겹칠 때 레이어가 순간 드롭돼 "사라졌다 보였다" 깜빡임 발생. 위치는 left(평범한 페인트)로만 이동. */
+    .cd-actor { position:absolute; left:0; bottom:9px; }
+    /* PNG 스프라이트 걷기(288×48 6프레임, east) — 걷기는 CSS steps(카드·무대 동일). 레이어 강제 없음 */
     .cspr { image-rendering:pixelated; background-repeat:no-repeat; background-position:0 0;
       background-image:var(--sheet); background-size:var(--fw) 100%;
-      transform:translateZ(0); -webkit-backface-visibility:hidden; backface-visibility:hidden;
       animation:csprWalk var(--wdur,.72s) steps(6) infinite; }
     .cspr.idle { background-image:var(--idle); background-size:100% 100%; background-position:0 0; animation:none; }
-    /* 무대(이동하는) 액터: CSS 걷기 애니메이션 끄고 프레임을 JS가 구동(빈 프레임·레이어 리페인트 깜빡임 방지). background-position은 JS가 설정 */
-    .cspr.jsw { animation:none; }
     @keyframes csprWalk { from { background-position-x:0; } to { background-position-x:calc(-1 * var(--fw)); } }
     @media (prefers-reduced-motion: reduce) { .cspr { animation:none; } }
     .cd-empty { position:absolute; left:2px; bottom:16px; font-size:11.5px; font-weight:600; color:var(--sub); }
@@ -493,7 +490,9 @@
     .wallmeta { display:flex; align-items:center; justify-content:space-between; }
     .wallmeta b { font-size:13.5px; font-weight:800; }
     .wallcard .buy, .wallcard .owntag { align-self:flex-start; }
-    /* 고양이집 시트 */
+    /* 고양이집 시트 — 상단(금화/은화 + 탭)은 sticky로 고정, 아래 콘텐츠만 스크롤 */
+    .cathead { position:sticky; top:0; z-index:6; background:var(--card); margin:0 -22px; padding:2px 22px 2px; }
+    .cathead::after { content:""; position:absolute; left:0; right:0; bottom:-10px; height:10px; background:linear-gradient(var(--card),transparent); pointer-events:none; }
     .coinbar { display:flex; justify-content:flex-end; gap:10px; margin:2px 0 8px; }
     .coin { display:inline-flex; align-items:center; gap:6px; background:var(--soft); border:1px solid var(--bd); border-radius:20px; padding:5px 12px 5px 6px; font-size:13px; font-weight:800; color:var(--text); }
     .coin .ci { width:20px; height:20px; flex:none; display:inline-flex; }
