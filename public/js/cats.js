@@ -160,7 +160,34 @@
       white:   {X:'#B9B4AA',B:'#F3EFE8',L:'#FCFAF5',S:'#DDD8CF',E:'#4C7FE0',P:'#E08b9d',I:'#E6A9B4'}   // 하양(파란 눈)
     };
     const COIN_PAL={X:'#6f7681',S:'#d6dbe1',D:'#a8afb8',A:'#4a4f57',E:'#d6dbe1',P:'#cf8f6c'};
+    const GOLD_PAL={X:'#8a6a1e',S:'#F4D06B',D:'#caa23a',A:'#7a5a12',E:'#fff0b8',P:'#cf8f6c'};   // 금화(은화와 동형, 금색)
     const FURN_PALS={ cushion:{X:'#5b6470',C:'#a9b2be',D:'#868f9c'}, bowl:{X:'#5b6470',W:'#d0d6dd',F:'#d68b4a'}, tower:{X:'#6f4c28',W:'#c99a5f',P:'#8a6a3f'}, scratcher:{X:'#6f4c28',W:'#c99a5f',P:'#d8b98a'} };
+    // ---- 펫알/랜덤박스 도트 ----
+    const M_EGG = [
+      "...XXXXXXXX...","..XWWWWWWWWX..",".XWWWWWWWWWWX.","XWWWWWWWWWWWWX","XWWWWWWWWWWWWX",
+      "XWWWWRROOWWWWX","XWWWWWWWWYWWWX","XWWWWWWWWYWWWX","XWWWWWWGGWWWWX","XWWWWWWBWWSSWX",
+      "XWWWWWWBWWSSWX","XWWWWWWWWWSSWX","XWWWWWWPWWSSWX","XWWWWWWWWSSWWX",".XWWWWWWWSSWX.",
+      ".XWWWWWWWSSWX.","..XWWWWWWWWX..","...XWWWWWWX..."
+    ];
+    const M_EGG_C1 = [
+      "...XXXXXXXX...","..XWWWWWWWWX..",".XWWWWWWWWWWX.","XWWWWWWXWWWWWX","XWWWWWXWWWWWWX",
+      "XWWWWRRXOWWWWX","XWWWWWXWWYWWWX","XWWWWWWWWYWWWX","XWWWWWWGGWWWWX","XWWWWWWBWWSSWX",
+      "XWWWWWWBWWSSWX","XWWWWWWWWWSSWX","XWWWWWWPWWSSWX","XWWWWWWWWSSWWX",".XWWWWWWWSSWX.",
+      ".XWWWWWWWSSWX.","..XWWWWWWWWX..","...XWWWWWWX..."
+    ];
+    const M_EGG_C2 = [
+      "...XXXXXXXX...","..XWWWWWWWWX..",".XWWWWWWWWWWX.","XWWWWWWXWWWWWX","XWWWWWXWWWWWWX",
+      "XWWWWRRXOWWWWX","XWWWWWXWWYWWWX","XWWWWWWWXYWWWX","XWWWWWWGGWWWWX","XWWWWWWXWWSSWX",
+      "XWWWWXWBWWSSWX","XWWWWWWWXWSSWX","XWWWWWXPWWSSWX","XWWWWWWWWXSWWX",".XWWWWWXWSSWX.",
+      ".XWWWWWWWSSWX.","..XWWWWWWWWX..","...XWWWWWWX..."
+    ];
+    const M_BOX = [
+      ".....XRRRRX.....",".....XRKKRX.....","..XXXXRRRRXXXX..",".XWWWWWRRWWWWWX.",".XRRRRRRRRRRRRX.",
+      ".XWWWWWRRWWWWWX.","..XWWWWRRWWWWX..","..XWWWWRRWWWWX..","..XWWWWWWWWWWX..","..XWDDWRRWWWWX..",
+      "..XWMMMRRWWWWX..","..XWDMDRRWKKWX..","..XWMMMRRWKWWX..","..XWMDMRRWWWWX..","..XWWWWRRWWWWX..","...XXXXXXXXXX..."
+    ];
+    const EGG_PAL={X:'#c9c2b0',W:'#FBFBFD',S:'#E7E3DA',R:'#F04452',O:'#F0883C',Y:'#F2C84B',G:'#2FAE7A',B:'#3182F6',P:'#9B6FC8'};
+    const BOX_PAL={X:'#c7ccd3',W:'#FBFBFD',R:'#E23B4E',K:'#9e2530',D:'#3a3d44',M:'#aeb4bd',C:'#e6e9ee'};
 
     // 카탈로그(코드 상수) — 저장은 보유 id만
     const CAT_CATALOG = [
@@ -218,6 +245,9 @@
     const POSE_M = { sit:M_CAT_SIT, loaf:M_CAT_LOAF, sleep:M_CAT_SLEEP };
     function catPose(id, pose, opt){ return pxSvg(POSE_M[pose]||M_CAT_SIDE_A, CAT_PALS[id], opt); }
     function coinSvg(opt){ return pxSvg(M_COIN, COIN_PAL, opt); }
+    function goldSvg(opt){ return pxSvg(M_COIN, GOLD_PAL, opt); }
+    function eggSvg(stage, opt){ return pxSvg(stage>=2?M_EGG_C2:(stage>=1?M_EGG_C1:M_EGG), EGG_PAL, opt); }
+    function boxSvg(opt){ return pxSvg(M_BOX, BOX_PAL, opt); }
     function furnSvg(id, opt){ const M={cushion:M_CUSHION,bowl:M_BOWL,tower:M_TOWER,scratcher:M_SCRATCHER}[id]; return pxSvg(M, FURN_PALS[id], opt); }
     function catName(id){ const c=CAT_CATALOG.find(x=>x.id===id); return c?c.name:id; }
 
@@ -233,11 +263,12 @@
     // ---- 게임 상태/경제 ----
     function gameRef(){ return db.ref('users/'+state.uid+'/game'); }
     function normalizeGame(g){ g=g||{}; return {
-      coins: Number(g.coins)||0,
+      coins: Number(g.coins)||0, gold: Number(g.gold)||0,
       owned:{ cats:(g.owned&&g.owned.cats)||{}, items:(g.owned&&g.owned.items)||{}, wallpapers:(g.owned&&g.owned.wallpapers)||{} },
       home:{ active:(g.home&&g.home.active)||[], placed:(g.home&&g.home.placed)||{}, wallpaper:(g.home&&g.home.wallpaper)||'default' },
       missions: g.missions||{}, progress: g.progress||{}, codes: g.codes||{}
     }; }
+    function gold(){ return (state.game&&state.game.gold)||0; }
     function initCatGame(){
       if(!state.uid) return;
       if(state._gameRef){ try{ state._gameRef.off(); }catch(e){} }
@@ -428,7 +459,7 @@
     function renderCatHouse(){
       if(!state.game) state.game=normalizeGame(null);   // 스냅샷 도착 전 안전 가드
       const build=()=>{
-        let h='<div class="coinbar"><span class="coin"><span class="ci">'+coinSvg({h:20})+'</span>'+coins().toLocaleString()+'<small>은화</small></span></div>';
+        let h='<div class="coinbar"><span class="coin"><span class="ci">'+goldSvg({h:20})+'</span>'+gold().toLocaleString()+'<small>금화</small></span><span class="coin"><span class="ci">'+coinSvg({h:20})+'</span>'+coins().toLocaleString()+'<small>은화</small></span></div>';
         h+='<div class="catseg">'+[['home','홈'],['shop','상점'],['place','배치'],['mission','미션']].map(t=>'<button class="'+(_catTab===t[0]?'on':'')+'" onclick="setCatTab(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div>';
         if(_catTab==='home') h+=catHomeHtml();
         else if(_catTab==='shop') h+=catShopHtml();
@@ -464,7 +495,22 @@
     let _shopSub='cats';
     function setShopSub(s){ _shopSub=s; renderCatHouse(); }
     function catShopHtml(){
-      let h='<div class="subseg"><button class="'+(_shopSub==='cats'?'on':'')+'" onclick="setShopSub(\'cats\')">고양이</button><button class="'+(_shopSub==='furn'?'on':'')+'" onclick="setShopSub(\'furn\')">가구</button><button class="'+(_shopSub==='wall'?'on':'')+'" onclick="setShopSub(\'wall\')">벽지</button></div>';
+      let h='<div class="subseg"><button class="'+(_shopSub==='cats'?'on':'')+'" onclick="setShopSub(\'cats\')">고양이</button><button class="'+(_shopSub==='furn'?'on':'')+'" onclick="setShopSub(\'furn\')">가구</button><button class="'+(_shopSub==='wall'?'on':'')+'" onclick="setShopSub(\'wall\')">벽지</button><button class="'+(_shopSub==='event'?'on':'')+'" onclick="setShopSub(\'event\')">이벤트</button></div>';
+      if(_shopSub==='event'){
+        const enough=coins()>=GACHA_PRICE;
+        const gacha=[['egg','펫알','알을 열면 고양이가 랜덤으로! 등급이 높을수록 귀해요.', eggSvg(0,{h:56})],
+                     ['box','랜덤박스','상자를 열면 가구·구조물이 랜덤으로 나와요.', boxSvg({h:56})]];
+        h+=gacha.map(([k,nm,desc,art])=>{
+          const act=enough?'<button class="buy" aria-label="'+nm+' 구매('+GACHA_PRICE+' 은화)" onclick="openGacha(\''+k+'\')">구매</button>':'<button class="buy dis" disabled>'+(GACHA_PRICE-coins())+' 부족</button>';
+          return '<div class="shopcard"><div class="thumb">'+art+'</div>'+
+            '<div class="meta"><b>'+nm+'</b><div class="desc">'+desc+'</div>'+
+            '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+GACHA_PRICE+'</span></div>'+
+            '<div class="act">'+act+'</div></div>';
+        }).join('');
+        h+='<div class="ratebox">'+TIERS.map(t=>'<span class="ratechip"><b class="tier-'+t.id+'">'+t.name+'</b> '+t.p+'%</span>').join('')+'</div>';
+        h+='<div class="note">열 때마다 <b>금화 1개</b> 지급. 이미 보유한 고양이는 <b>'+DUP_REFUND+' 은화</b>로 환급돼요.</div>';
+        return h;
+      }
       if(_shopSub==='wall'){
         const cur=currentWall();
         h+='<div class="wallgrid">'+WALLPAPER_CATALOG.map(w=>{
@@ -530,6 +576,52 @@
       }).then(res=>{ if(res.committed) toast(w.name+' 벽지 적용! 🎨'); });
     }
     function applyWall(id){ if(!ownsWall(id)){ toast('먼저 구매하세요', true); return; } gameRef().child('home/wallpaper').set(id); toast('벽지를 적용했어요'); }
+
+    // ================= 이벤트: 뽑기(가챠) =================
+    // 등급/확률(합 100). color=이름 텍스트/후광 색, limited는 CSS 레인보우.
+    const TIERS = [
+      { id:'normal',   name:'일반', p:60,  color:'#FFFFFF' },
+      { id:'uncommon', name:'고급', p:20,  color:'#2FAE7A' },
+      { id:'rare',     name:'희귀', p:15,  color:'#3182F6' },
+      { id:'epic',     name:'특별', p:3.8, color:'#9B6FC8' },
+      { id:'legend',   name:'전설', p:1,   color:'#E0A43C' },
+      { id:'limited',  name:'한정', p:0.2, color:'#ff5fa2' }
+    ];
+    const TIER_ORDER = TIERS.map(t=>t.id);   // 높은 등급이 비면 한 단계씩 낮춰 대체할 때 사용
+    function tierInfo(id){ return TIERS.find(t=>t.id===id)||TIERS[0]; }
+    // 테스트 배정(등급당 1) — 펫알=고양이 / 랜덤박스=가구
+    const CAT_TIER  = { mackerel:'normal', cheese:'uncommon', calico:'rare', black:'epic', white:'legend' };
+    const ITEM_TIER = { cushion:'normal', bowl:'uncommon', scratcher:'rare', tower:'epic' };
+    function rollTier(){ const r=Math.random()*100; let acc=0; for(const t of TIERS){ acc+=t.p; if(r<acc) return t.id; } return 'normal'; }
+    // 등급 롤 → 해당 등급 풀에서 랜덤. 비면 한 단계 아래로 내려가며 탐색.
+    function rollFromPool(tierMap){
+      let ti=TIER_ORDER.indexOf(rollTier());
+      for(; ti>=0; ti--){ const tier=TIER_ORDER[ti]; const pool=Object.keys(tierMap).filter(k=>tierMap[k]===tier);
+        if(pool.length) return { id:pool[Math.floor(Math.random()*pool.length)], tier }; }
+      // 아래로도 없으면 위로
+      for(ti=0; ti<TIER_ORDER.length; ti++){ const tier=TIER_ORDER[ti]; const pool=Object.keys(tierMap).filter(k=>tierMap[k]===tier); if(pool.length) return { id:pool[Math.floor(Math.random()*pool.length)], tier }; }
+      return null;
+    }
+    const GACHA_PRICE=100, DUP_REFUND=30;
+    // 구매+롤(원자적): 은화-100, 금화+1, 지급(신규 고양이/가구 or 중복 환급). 성공 시 연출.
+    function openGacha(kind){
+      if(coins()<GACHA_PRICE){ toast((GACHA_PRICE-coins())+' 은화 부족', true); return; }
+      const res = rollFromPool(kind==='egg'?CAT_TIER:ITEM_TIER); if(!res) return;
+      const dup = kind==='egg' && ownsCat(res.id);
+      gameRef().transaction(g=>{
+        g=normalizeGame(g);
+        if(g.coins<GACHA_PRICE) return g;
+        g.coins-=GACHA_PRICE; g.gold=(g.gold||0)+1;
+        if(kind==='egg'){
+          if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; if(g.home.active.length<3 && g.home.active.indexOf(res.id)<0) g.home.active.push(res.id); }
+          else { g.coins+=DUP_REFUND; }
+        } else {
+          g.owned.items[res.id]=g.owned.items[res.id]||{qty:0,boughtAt:new Date().toISOString()};
+          g.owned.items[res.id].qty=(Number(g.owned.items[res.id].qty)||0)+1;
+        }
+        return g;
+      }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup); });
+    }
     let _selItem=null;
     function selItem(id){ _selItem=(_selItem===id?null:id); renderCatHouse(); }
     function placeCell(r,c){
@@ -566,3 +658,49 @@
       h+='<div class="note" style="margin-top:12px;"><b>은화</b>로 상점에서 고양이·가구를 사세요. 일일은 자정, 주간은 월요일(KST) 초기화됩니다.</div>';
       return h;
     }
+
+    // ================= 뽑기 오픈 연출(#catFx 풀스크린) =================
+    let _fx=null;
+    function itemName(kind,id){ return kind==='egg'?catName(id):((ITEM_CATALOG.find(x=>x.id===id)||{}).name||id); }
+    function fxParticles(n,cls){ let s=''; for(let i=0;i<(n||14);i++){ const a=(i/(n||14))*360+Math.random()*30, d=60+Math.random()*90; const dx=Math.round(Math.cos(a*Math.PI/180)*d), dy=Math.round(Math.sin(a*Math.PI/180)*d); const del=(Math.random()*0.12).toFixed(2); s+='<span class="'+(cls||'fx-particle')+'" style="--dx:'+dx+'px;--dy:'+dy+'px;animation-delay:'+del+'s"></span>'; } return s; }
+    function fxConfetti(){ const cols=['#F04452','#F0883C','#F2C84B','#2FAE7A','#3182F6','#9B6FC8']; let s=''; for(let i=0;i<24;i++){ const x=Math.round(Math.random()*100), r=Math.round(Math.random()*360), del=(Math.random()*0.5).toFixed(2), dur=(1+Math.random()*0.8).toFixed(2); s+='<span class="fx-conf" style="left:'+x+'%;background:'+cols[i%6]+';--r:'+r+'deg;animation-delay:'+del+'s;animation-duration:'+dur+'s"></span>'; } return s; }
+    function runGachaFx(kind, res, dup){
+      const fx=$('catFx'); if(!fx){ toast((kind==='egg'?'펫알':'랜덤박스')+' 획득!'); return; }
+      _fx={ kind, res, dup, stage:0 };
+      if(reducedMotion()){ fxReveal(); return; }   // 모션 최소화: 바로 결과
+      const art = kind==='egg'? eggSvg(0,{h:150}) : boxSvg({h:150});
+      const hint = kind==='egg'? '알을 탭해서 깨보세요! (3번)' : '상자를 탭해서 열어보세요!';
+      fx.innerHTML='<div class="fx-scrim"></div><div class="fx-stage">'+
+        '<div class="fx-item pop '+(kind==='egg'?'fx-egg':'fx-box')+'" id="fxItem" role="button" aria-label="'+hint+'" onclick="fxTap()">'+art+'</div>'+
+        '<div class="fx-hint" id="fxHint">'+hint+'</div></div>';
+      fx.className='fx on';
+    }
+    function fxTap(){
+      if(!_fx) return; const it=$('fxItem'); if(!it) return;
+      if(_fx.kind==='egg'){
+        _fx.stage++;
+        if(_fx.stage>=3){ fxBurst(); setTimeout(fxReveal, 360); return; }
+        it.innerHTML=eggSvg(_fx.stage,{h:150}); it.classList.remove('shake'); void it.offsetWidth; it.classList.add('shake');
+      } else { fxBurst(true); it.classList.add('fx-open'); setTimeout(fxReveal, 480); }
+    }
+    function fxBurst(big){
+      const st=$('catFx').querySelector('.fx-stage'); if(!st) return;
+      const it=$('fxItem'); if(it) it.style.visibility='hidden';
+      st.insertAdjacentHTML('beforeend','<div class="fx-flash"></div>'+(big?'<div class="fx-rays"></div>':'')+fxParticles(big?20:14));
+      const h=$('fxHint'); if(h) h.remove();
+    }
+    function fxReveal(){
+      if(!_fx) return; const fx=$('catFx'); const t=tierInfo(_fx.res.tier);
+      const art=_fx.kind==='egg'?catFront(_fx.res.id,{h:118}):furnSvg(_fx.res.id,{h:104});
+      fx.innerHTML='<div class="fx-scrim"></div><div class="fx-reveal tier-'+t.id+'">'+
+        '<div class="fx-halo"></div><div class="fx-rays slow"></div>'+
+        '<div class="fx-art pop">'+art+'</div>'+
+        '<div class="fx-tier">'+t.name+'</div>'+
+        '<div class="fx-name">'+escapeHtml(itemName(_fx.kind,_fx.res.id))+'</div>'+
+        '<div class="fx-reward"><span class="rw"><span class="ci">'+goldSvg({h:18})+'</span>+1 금화</span>'+
+          (_fx.dup?'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>+'+DUP_REFUND+' 은화 (중복)</span>':'')+'</div>'+
+        '<button class="btn" onclick="closeFx()">확인</button>'+
+        '<div class="fx-confetti">'+fxConfetti()+'</div></div>';
+      fx.className='fx on reveal';
+    }
+    function closeFx(){ const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx=null; }

@@ -955,16 +955,16 @@
       $('screenTitle').textContent='더보기';
       const ws=state.wsMeta||{}; const isGroup=ws.type==='group'; const memCount=Object.keys(ws.members||{}).length;
       let h='<div class="more-wrap">';
-      // 상단: 내 프로필(크게)
+      // 상단: 내 프로필 — 아바타 44 + 이름(flex) + 편집 chevron(우측)
       h+='<div class="prow" onclick="openProfileSheet()">'+
-         avatarHtml(state.uid, state.userName, 56)+
+         avatarHtml(state.uid, state.userName, 44)+
          '<div class="pnm"><b>'+escapeHtml(state.userName||'사용자')+'</b><span>내 프로필</span></div>'+
          '<span class="editk">'+MORE_ICON.chev+'</span></div>';
-      // 그 아래: 현재 가계부/그룹(작게) + 멤버 아바타 + 전환
+      // 그 아래: 현재 가계부/그룹 — 아바타 44 + 이름(flex) + 멤버 아바타 + 전환(우측)
       const wsSub = isGroup ? ('그룹 · 멤버 '+memCount+'명') : '개인 가계부';
       const canEditWs = !isGroup || isWsOwner();
       h+='<div class="grow"'+(canEditWs?' onclick="openWsProfileSheet()"':'')+'>'+
-         wsAvatarHtml(ws.name, ws.photo, 36)+
+         wsAvatarHtml(ws.name, ws.photo, 44)+
          '<div class="gnm"><b>'+escapeHtml(ws.name||'가계부')+'</b><span>'+wsSub+'</span></div>'+
          (isGroup?memberAvatarStack(ws, 26):'')+
          '<button class="cnt" onclick="event.stopPropagation();openWorkspaceSheet()">전환</button></div>';
