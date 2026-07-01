@@ -8,6 +8,13 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 추가 — 🍚 다마고치: 사료·물 소비 + 급여/배변 루프 + 화장실·물그릇 + 은화 벌기
+- **소비 아이템(사료·물)**: 상점에 **소비 탭** 신설, `CONSUM_CATALOG`(사료·물, 각 **1 은화**, **배치 불가**) 구매(`buyConsum`) — `game.consum:{food,water}`에 수량 저장. 아이콘 `M_FOOD`/`M_WATER`.
+- **물그릇·펫 화장실 가구 추가**: `ITEM_CATALOG`에 `waterbowl`(1×1)·`litterbox`(2×2). 밥그릇 기본 이미지에서 **밥(F) 제거**(빈 그릇 `M_BOWL`), 채움 변형 `M_BOWL_FOOD`/`M_WATERBOWL_WATER` 신설.
+- **급여(홈 탭)**: 홈 화면에서 **밥그릇/물그릇을 탭**(`feedBowl`)하면 사료/물 1 소모 후 `placed[key].filledAt=now`로 채움 — 이미지도 밥/물이 채워짐(`furnRoomSvg`가 채움 상태 반영, `isFilled` 3시간 이내).
+- **배변 정산(다마고치)**: 채운 지 **3시간 뒤 그릇이 비워지고**(`reconcilePets`, 멱등), **비운 그릇 하나당 `home.poops`+1** → 화장실 위에 작은 똥(`M_POOP`)으로 표시(화장실당 최대 5개, 라운드로빈 분배). 앱 켜둔 동안 60초마다·스냅샷·홈 렌더 시 정산.
+- **똥 수거 = 은화**: 똥을 탭하면 **+2 은화**(`collectPoop`, `POOP_REWARD`) + 작은 획득 연출(`.poopfx` 떠오르는 +2). 가끔 앱에 들어와 상호작용해 은화를 버는 컨셉. `sw.js` `v3.53.0`.
+
 ### 수정 — 🐛 스프라이트 고양이가 dock·방·상점 어디서도 안 보이던 문제(실제 원인)
 - **`--sheet`/`--idle` 상대경로 → 절대 URL로 고정**: `catActorHTML`가 `--sheet:url(assets/pets/…)`를 **상대경로**로 넣으면, `styles.css`의 `.cspr{background-image:var(--sheet)}`가 그 URL을 **스타일시트 위치(`/css/`) 기준**으로 해석해 `/css/assets/pets/…`를 요청 → **404 → 배경 없음 → 고양이 전부 안 보임**(dock·홈 방 공통). `assetUrl(p)=new URL(p, document.baseURI).href`로 **문서 기준 절대 URL**을 만들어 `--sheet`·`--idle`(및 `sprStill`)에 사용하도록 수정. 크롬 헤드리스로 재현·검증(수정 전 `/css/assets/…` 404 → 수정 후 `/assets/…` 200). *직전 "새 SW 자동 새로고침"은 유효한 개선이지만 이 버그의 원인은 캐시가 아니라 URL 해석이었음.* `sw.js` `v3.52.0`.
 

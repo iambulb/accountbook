@@ -139,9 +139,38 @@
       "................","...XXXXXXXX.....","..XCCCCCCCCX....",".XCCCCCCCCCCX...",
       ".XCDDDDDDDDCX...","..XXCCCCCCXX....","....XXXXXX......"
     ];
+    // 밥그릇: 기본은 빈 그릇(밥 이미지 제거). 홈에서 탭해 사료를 채우면 M_BOWL_FOOD로 표시.
     const M_BOWL = [
-      "................",".....FF.FF......","...XXFFFFFXX....","..XWWWWWWWWWX...",
-      "..XWWWWWWWWWX...","...XWWWWWWWX....","....XXXXXXX.....","................"
+      "................","................","...XXXXXXXXX....","..XWWWWWWWWWWX..",
+      "..XWWWWWWWWWWX..","...XWWWWWWWWX...","....XXXXXXXX....","................"
+    ];
+    const M_BOWL_FOOD = [
+      "................",".....FFFFF......","...XFFFFFFFX....","..XWFFFFFFFWX...",
+      "..XWWWWWWWWWWX..","...XWWWWWWWWX...","....XXXXXXXX....","................"
+    ];
+    // 물그릇 채움(물=A). 빈 물그릇은 M_BOWL(회색)로 표시.
+    const M_WATERBOWL_WATER = [
+      "................","................","...XXXXXXXXX....","..XAAAAAAAAAAX..",
+      "..XAAAAAAAAAAX..","...XAAAAAAAAX...","....XXXXXXXX....","................"
+    ];
+    // 펫 화장실(2×2): 모래 트레이. 비운 그릇 수만큼 똥이 쌓임.
+    const M_LITTER = [
+      "................","................","................","................",
+      "..XXXXXXXXXXXX..",".XWSSSSSSSSSSWX.",".XWSSSSSSSSSSWX.",".XWSSSSSSSSSSWX.",
+      ".XWSSSSSSSSSSWX.",".XWSSSSSSSSSSWX.",".XWWWWWWWWWWWWX.","..XXXXXXXXXXXX..",
+      "................","................","................","................"
+    ];
+    const M_POOP = [
+      "........","...XX...","..XKKX..",".XKKKKX.",".XKKKKX.","..XKKX..","...XX...","........"
+    ];
+    // 소비 아이템 아이콘(상점 소비 탭)
+    const M_FOOD = [
+      "............","............",".....FF.....","....FFFF....","...FFFFFF...",
+      "..FFFFFFFF..","..FDFFFFDF..","..FFFFFFFF..","...FFFFFF...","............"
+    ];
+    const M_WATER = [
+      "............",".....A......",".....A......","....AAA.....","...AAAAA....",
+      "..AAAAAAA...","..AAAAAAA...","...AAAAA....","....AAA.....","............"
     ];
     // 캣타워: 3층(발판 3개) 세로형. 비율 11×22 ≈ 3:6칸. 고양이가 각 층 발판에 올라가 쉼.
     const M_TOWER = [
@@ -182,7 +211,10 @@
     };
     const COIN_PAL={X:'#6f7681',S:'#d6dbe1',D:'#a8afb8',A:'#4a4f57',E:'#d6dbe1',P:'#cf8f6c'};
     const GOLD_PAL={X:'#8a6a1e',S:'#F4D06B',D:'#caa23a',A:'#7a5a12',E:'#fff0b8',P:'#cf8f6c'};   // 금화(은화와 동형, 금색)
-    const FURN_PALS={ cushion:{X:'#5b6470',C:'#a9b2be',D:'#868f9c'}, bowl:{X:'#5b6470',W:'#d0d6dd',F:'#d68b4a'}, tower:{X:'#6f4c28',W:'#c99a5f',P:'#8a6a3f'}, scratcher:{X:'#6f4c28',W:'#c99a5f',P:'#d8b98a'} };
+    const FURN_PALS={ cushion:{X:'#5b6470',C:'#a9b2be',D:'#868f9c'}, bowl:{X:'#5b6470',W:'#d0d6dd',F:'#d68b4a'}, waterbowl:{X:'#5b6470',W:'#d0d6dd',A:'#5aa9e6'}, tower:{X:'#6f4c28',W:'#c99a5f',P:'#8a6a3f'}, scratcher:{X:'#6f4c28',W:'#c99a5f',P:'#d8b98a'}, litterbox:{X:'#8a8f98',W:'#c9ced6',S:'#e6dcc3'} };
+    const POOP_PAL={X:'#4a3218',K:'#7a5230'};
+    const FOOD_PAL={F:'#d68b4a',D:'#a5642a'};
+    const WATER_PAL={A:'#5aa9e6',D:'#3f86c4'};
     // ---- 펫알/랜덤박스 도트 ----
     // 알: 실제 달걀처럼 위는 좁고(뾰족) 아래가 넓고 둥글게. 중앙에 크고 두꺼운 무지개(R→P) 물음표(위 방향 유지). S=우측 그림자.
     const M_EGG = [
@@ -284,10 +316,19 @@
     // size = 표시 배율(1=기본). footW×footH = 배치 격자 점유(가로×세로 칸). 캣타워=3×6(세로 큼), 스크래처=2×2, 방석·밥그릇=1×1(작게, 밥그릇<방석). itemFoot()/furnScale()로 배치·방·상점에 반영.
     const ITEM_CATALOG = [
       { id:'cushion', name:'방석',   price:15, size:0.6,  footW:1, footH:1, desc:'고양이가 위에 잠시 올라가 쉬어요.' },
-      { id:'bowl',    name:'밥그릇', price:20, size:0.45, footW:1, footH:1, desc:'고양이가 뒤에서 앉아 먹어요.' },
+      { id:'bowl',    name:'밥그릇', price:20, size:0.45, footW:1, footH:1, desc:'홈에서 탭해 사료를 채워요(3시간 뒤 비워짐).' },
+      { id:'waterbowl', name:'물그릇', price:20, size:0.45, footW:1, footH:1, desc:'홈에서 탭해 물을 채워요(3시간 뒤 비워짐).' },
       { id:'tower',   name:'캣타워', price:35, size:2,    footW:3, footH:6, desc:'3층 발판 — 한 층에 올라가 쉬어요.' },
-      { id:'scratcher', name:'스크래처', price:18, size:2, footW:2, footH:2, desc:'옆에서 잠시 머물며 발톱을 갈아요.' }
+      { id:'scratcher', name:'스크래처', price:18, size:2, footW:2, footH:2, desc:'옆에서 잠시 머물며 발톱을 갈아요.' },
+      { id:'litterbox', name:'화장실', price:25, size:1, footW:2, footH:2, desc:'비운 그릇 수만큼 똥이 쌓여요. 탭해 치우면 은화!' }
     ];
+    // 소비 아이템(배치 불가) — 홈에서 밥그릇/물그릇을 탭해 채울 때 소모. 상점 "소비" 탭에서 구매.
+    const CONSUM_CATALOG = [
+      { id:'food',  name:'사료', price:1, M:'M_FOOD',  desc:'밥그릇을 탭해 채울 때 1개 소모.' },
+      { id:'water', name:'물',   price:1, M:'M_WATER', desc:'물그릇을 탭해 채울 때 1개 소모.' }
+    ];
+    const FILL_MS = 3*60*60*1000;   // 그릇이 채워진 뒤 비워지기까지(3시간)
+    const POOP_REWARD = 2;          // 똥 하나 치우면 얻는 은화
     // 벽지(방 배경) — 구매 후 적용. default는 기본 제공.
     const WALLPAPER_CATALOG = [
       { id:'default', name:'기본',  price:0,  css:'linear-gradient(180deg,color-mix(in srgb,var(--soft) 55%,var(--card)) 0%,var(--soft) 100%)' },
@@ -370,14 +411,23 @@
     function eggSvg(stage, opt){ return pxSvg(stage>=2?M_EGG_C2:(stage>=1?M_EGG_C1:M_EGG), EGG_PAL, opt); }
     function boxSvg(opt){ return pxSvg(M_BOX, BOX_PAL, opt); }
     function pawSvg(opt){ return pxSvg(M_PAW, PAW_PAL, opt); }
-    function furnSvg(id, opt){ const M={cushion:M_CUSHION,bowl:M_BOWL,tower:M_TOWER,scratcher:M_SCRATCHER}[id]; return pxSvg(M, FURN_PALS[id], opt); }
+    // 상점·팔레트·격자용 대표 아트(물그릇은 물 채운 파란 그릇으로 구분 표시)
+    function furnSvg(id, opt){ const M={cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER}[id]; return pxSvg(M, FURN_PALS[id], opt); }
+    // 방(홈·dock)용 — 채움 상태 반영: 밥그릇=빈/사료, 물그릇=빈(회색)/물.
+    function furnRoomSvg(itemId, key, opt){
+      if(itemId==='bowl')      return pxSvg(isFilled(key)?M_BOWL_FOOD:M_BOWL, FURN_PALS.bowl, opt);
+      if(itemId==='waterbowl') return pxSvg(isFilled(key)?M_WATERBOWL_WATER:M_BOWL, FURN_PALS.waterbowl, opt);
+      return furnSvg(itemId, opt);
+    }
+    function poopSvg(opt){ return pxSvg(M_POOP, POOP_PAL, opt); }
+    function consumSvg(id, opt){ return id==='food'?pxSvg(M_FOOD,FOOD_PAL,opt):pxSvg(M_WATER,WATER_PAL,opt); }
     // 가구 표시 배율(ITEM_CATALOG.size) — 캣타워·스크래처=2(크게), 방석=0.7·밥그릇=0.5(작게)
     function furnScale(id){ const it=ITEM_CATALOG.find(x=>x.id===id); return (it&&it.size)||1; }
     // 방(dock·홈)에서의 가구 렌더 높이(px) — 발자국 세로 칸수(footH)에 비례해 키움(캣타워 6칸=제일 큼, 스크래처 2칸, 방석·밥그릇 1칸).
     // 고양이 상호작용(캣타워 3층 올라가기 등)이 맞아떨어지도록 렌더·엔진(fh)이 같은 값을 쓴다. depth(뒤로 갈수록) 작게.
     function furnRoomH(id, isDock, depth){
       const foot=itemFoot(id);
-      const mult = foot.h>1 ? foot.h : (id==='bowl'?0.8:1);   // 멀티셀=칸수, 1×1=밥그릇<방석
+      const mult = foot.h>1 ? foot.h : ((id==='bowl'||id==='waterbowl')?0.8:1);   // 멀티셀=칸수, 1×1=그릇<방석
       const unit = isDock ? (8 - depth*2.5) : (12 - depth*3.5);  // 칸당 픽셀(앞>뒤) — 캣타워가 고양이보다 크게
       return Math.max(4, Math.round(unit*mult));
     }
@@ -404,7 +454,8 @@
     function normalizeGame(g){ g=g||{}; return migratePetIds({
       coins: Number(g.coins)||0, gold: Number(g.gold)||0,
       owned:{ cats:(g.owned&&g.owned.cats)||{}, items:(g.owned&&g.owned.items)||{}, wallpapers:(g.owned&&g.owned.wallpapers)||{} },
-      home:{ active:(g.home&&g.home.active)||[], placed:(g.home&&g.home.placed)||{}, wallpaper:(g.home&&g.home.wallpaper)||'default' },
+      consum:{ food:Number(g.consum&&g.consum.food)||0, water:Number(g.consum&&g.consum.water)||0 },
+      home:{ active:(g.home&&g.home.active)||[], placed:(g.home&&g.home.placed)||{}, wallpaper:(g.home&&g.home.wallpaper)||'default', poops:Number(g.home&&g.home.poops)||0 },
       missions: g.missions||{}, progress: g.progress||{}, codes: g.codes||{}
     }); }
     function gold(){ return (state.game&&state.game.gold)||0; }
@@ -412,8 +463,11 @@
       if(!state.uid) return;
       if(state._gameRef){ try{ state._gameRef.off(); }catch(e){} }
       state._gameRef=gameRef();
-      state._gameRef.on('value', s=>{ state.game=normalizeGame(s.val()); onGameChange(); });
+      state._gameRef.on('value', s=>{ state.game=normalizeGame(s.val()); onGameChange(); reconcilePets(); });
       startCatLoop();   // 통합 걷기 엔진(단일 rAF, 보이는 무대만 애니메이션)
+      // 앱을 켜둔 동안에도 그릇 3시간 만료→똥 정산이 돌도록 주기 점검(다마고치)
+      if(state._petTimer) clearInterval(state._petTimer);
+      state._petTimer=setInterval(reconcilePets, 60000);
     }
     function onGameChange(){
       updateDockCoins();
@@ -649,11 +703,23 @@
       if(_catTab==='home') setTimeout(mountRoomWalk, 30);
     }
     function catHomeHtml(){
+      reconcilePets();   // 3시간 지난 그릇 비우고 똥 정산(멱등)
       const cats=activeCats();
-      // 배치된 가구를 방 바닥에 매핑(c→가로, r→앞뒤 깊이)
-      const props=placedList().sort((a,b)=>b.r-a.r).map(p=>{ const foot=itemFoot(p.itemId); const x=((p.c-0.5+(foot.w-1)/2)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(3+depth*30).toFixed(0);
-        return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:furnRoomH(p.itemId, false, depth)})+'</div>'; }).join('');
+      // 똥을 화장실들에 분배(라운드로빈, 화장실당 최대 5개 표시)
+      const litters=placedList().filter(p=>p.itemId==='litterbox');
+      const CAP=5, poopN=litters.length?Math.min((state.game.home.poops)||0, litters.length*CAP):0;
+      const poopByKey={}; for(let i=0;i<poopN;i++){ const lk=litters[i%litters.length].key; (poopByKey[lk]=poopByKey[lk]||[]).push(i/litters.length|0); }
+      // 배치된 가구를 방 바닥에 매핑(c→가로, r→앞뒤 깊이). 그릇=탭 급여, 화장실=똥 수거.
+      const props=placedList().sort((a,b)=>b.r-a.r).map(p=>{ const foot=itemFoot(p.itemId); const x=((p.c-0.5+(foot.w-1)/2)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(3+depth*30).toFixed(0); const fh=furnRoomH(p.itemId,false,depth);
+        const tap=(p.itemId==='bowl'||p.itemId==='waterbowl');
+        let inner=tap? furnRoomSvg(p.itemId,p.key,{h:fh}) : furnSvg(p.itemId,{h:fh});
+        if(p.itemId==='litterbox'){ const slots=poopByKey[p.key]||[]; const ph=Math.max(6,Math.round(fh*0.3));
+          inner+=slots.map(s=>'<span class="poop" onclick="collectPoop(event)" style="left:'+(20+(s%3)*26)+'%;top:'+(30+((s/3|0)*20))+'%;height:'+ph+'px" title="치우기 +'+POOP_REWARD+' 은화">'+poopSvg({h:ph})+'</span>').join(''); }
+        return '<div class="cr-prop'+(tap?' cr-tap':'')+(p.itemId==='litterbox'?' cr-litter':'')+'" style="left:'+x+'%;bottom:'+bottom+'px;"'+(tap?' onclick="feedBowl(\''+p.key+'\')"':'')+'>'+inner+'</div>'; }).join('');
       let h='<div class="catroom" id="catRoom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div><span class="cr-cam"><i></i>LIVE · 우리집</span><div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div></div>';
+      // 안내: 그릇 채우기 / 똥 수거
+      const poops=(state.game.home.poops)||0;
+      h+='<div class="hintline" style="margin:8px 0 0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>밥·물 그릇을 탭해 채우고(3시간 뒤 비워짐), 쌓인 <b>똥을 탭해 치우면 +'+POOP_REWARD+' 은화</b>'+(poops&&!litters.length?' · 화장실을 놓아야 똥을 치울 수 있어요':'')+'.</div>';
       const owned=ownedCatList();
       h+='<div class="sech"><span class="l">우리집 고양이</span><span class="s">'+cats.length+' / 3 활성</span></div>';
       if(!owned.length) h+='<div class="empty" style="padding:20px;">아직 고양이가 없어요. 상점에서 입양해 보세요 🐾</div>';
@@ -672,7 +738,19 @@
     let _shopSub='cats';
     function setShopSub(s){ _shopSub=s; renderCatHouse(); }
     function catShopHtml(){
-      let h='<div class="subseg"><button class="'+(_shopSub==='cats'?'on':'')+'" onclick="setShopSub(\'cats\')">고양이</button><button class="'+(_shopSub==='furn'?'on':'')+'" onclick="setShopSub(\'furn\')">가구</button><button class="'+(_shopSub==='wall'?'on':'')+'" onclick="setShopSub(\'wall\')">벽지</button><button class="'+(_shopSub==='event'?'on':'')+'" onclick="setShopSub(\'event\')">이벤트</button></div>';
+      let h='<div class="subseg"><button class="'+(_shopSub==='cats'?'on':'')+'" onclick="setShopSub(\'cats\')">고양이</button><button class="'+(_shopSub==='furn'?'on':'')+'" onclick="setShopSub(\'furn\')">가구</button><button class="'+(_shopSub==='consum'?'on':'')+'" onclick="setShopSub(\'consum\')">소비</button><button class="'+(_shopSub==='wall'?'on':'')+'" onclick="setShopSub(\'wall\')">벽지</button><button class="'+(_shopSub==='event'?'on':'')+'" onclick="setShopSub(\'event\')">이벤트</button></div>';
+      if(_shopSub==='consum'){
+        h+=CONSUM_CATALOG.map(c=>{
+          const enough=coins()>=c.price;
+          const act=enough?'<button class="buy" aria-label="'+c.name+' 구매('+c.price+' 은화)" onclick="buyConsum(\''+c.id+'\')">구매</button>':'<button class="buy dis" disabled>부족</button>';
+          return '<div class="shopcard"><div class="thumb"><span class="furnfit">'+consumSvg(c.id,{fit:true})+'</span></div>'+
+            '<div class="meta"><b>'+c.name+' <span class="tagmini">소비</span></b><div class="desc">'+c.desc+'</div>'+
+            '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+c.price+'</span></div>'+
+            '<div class="act">'+act+'<span class="qty">보유 '+consumQty(c.id)+'</span></div></div>';
+        }).join('');
+        h+='<div class="note"><b>소비 아이템</b>은 배치할 수 없어요. 홈 화면에서 <b>밥그릇·물그릇을 탭</b>하면 사료·물을 1개 써서 채워집니다(3시간 뒤 비워짐).</div>';
+        return h;
+      }
       if(_shopSub==='event'){
         const enough=coins()>=GACHA_PRICE;
         const gacha=[['egg','펫알','알을 열면 고양이가 랜덤으로! 등급이 높을수록 귀해요.', eggSvg(0,{h:56})],
@@ -743,6 +821,54 @@
         g.owned.items[id].qty=(Number(g.owned.items[id].qty)||0)+1; return g;
       }).then(res=>{ if(res.committed) toast(it.name+' 구매! 배치 탭에서 놓아보세요'); });
     }
+    // ===== 🍚💧 다마고치: 사료·물 소비 / 급여 / 배변 / 똥 수거 =====
+    function consumQty(id){ return (state.game&&state.game.consum&&Number(state.game.consum[id]))||0; }
+    // 소비 아이템 구매(1은화, 배치 불가)
+    function buyConsum(id){
+      const c=CONSUM_CATALOG.find(x=>x.id===id); if(!c) return;
+      if(coins()<c.price){ toast((c.price-coins())+' 은화 부족', true); return; }
+      gameRef().transaction(g=>{ g=normalizeGame(g); if(g.coins<c.price) return g;
+        g.coins-=c.price; g.consum[id]=(Number(g.consum[id])||0)+1; return g;
+      }).then(res=>{ if(res.committed) toast(c.name+' +1'); });
+    }
+    // 채워진 상태인지(채운 뒤 3시간 이내)
+    function isFilled(key){ const p=(state.game&&state.game.home.placed&&state.game.home.placed[key]); return !!(p&&p.filledAt&&(Date.now()-p.filledAt)<FILL_MS); }
+    // 홈에서 밥/물 그릇 탭 → 사료/물 1 소모하고 채움(이미 차 있으면 무시)
+    function feedBowl(key){
+      const p=(state.game&&state.game.home.placed&&state.game.home.placed[key]); if(!p) return;
+      const id=p.itemId; if(id!=='bowl'&&id!=='waterbowl') return;
+      if(isFilled(key)){ toast('아직 남아 있어요'); return; }
+      const need=id==='bowl'?'food':'water', nm=id==='bowl'?'사료':'물';
+      if(consumQty(need)<=0){ toast(nm+'가 없어요 · 상점 소비 탭에서 구매', true); return; }
+      gameRef().transaction(g=>{ g=normalizeGame(g);
+        if((Number(g.consum[need])||0)<=0 || !g.home.placed[key]) return g;
+        g.consum[need]-=1; g.home.placed[key].filledAt=Date.now(); return g;
+      }).then(r=>{ if(r&&r.committed) toast(id==='bowl'?'밥을 채웠어요 🍚':'물을 채웠어요 💧'); });
+    }
+    // 채워진 지 3시간 지난 그릇을 비우고, 비운 개수만큼 똥을 쌓는다(멱등: filledAt 지우면 재발동 안 함)
+    function reconcilePets(){
+      const g=state.game; if(!g||!g.home) return;
+      const placed=g.home.placed||{}, now=Date.now();
+      let expired=0; Object.keys(placed).forEach(k=>{ const e=placed[k]; if(e&&e.filledAt&&(now-e.filledAt)>=FILL_MS) expired++; });
+      if(!expired) return;
+      gameRef().transaction(gg=>{ gg=normalizeGame(gg); const pl=gg.home.placed||{}, n=Date.now(); let poop=0;
+        Object.keys(pl).forEach(k=>{ const e=pl[k]; if(e&&e.filledAt&&(n-e.filledAt)>=FILL_MS){ e.filledAt=null; poop++; } });
+        if(poop) gg.home.poops=(Number(gg.home.poops)||0)+poop;
+        return gg;
+      });
+    }
+    // 똥 수거 → 은화 +2, 작은 획득 연출
+    function collectPoop(e){
+      if(e){ e.stopPropagation(); }
+      const x=e?e.clientX:innerWidth/2, y=e?e.clientY:innerHeight/2;
+      gameRef().transaction(g=>{ g=normalizeGame(g); if((Number(g.home.poops)||0)<=0) return g;
+        g.home.poops=(Number(g.home.poops)||0)-1; g.coins+=POOP_REWARD; return g;
+      }).then(r=>{ if(r&&r.committed) poopFx(x,y); });
+    }
+    function poopFx(x,y){ const el=document.createElement('div'); el.className='poopfx';
+      el.innerHTML='<span class="pi">'+coinSvg({h:14})+'</span>+'+POOP_REWARD;
+      el.style.left=x+'px'; el.style.top=y+'px'; document.body.appendChild(el);
+      setTimeout(()=>{ el.remove(); }, 950); }
     // 벽지 구매(구매 시 자동 적용) / 적용
     function buyWall(id){
       const w=WALLPAPER_CATALOG.find(x=>x.id===id); if(!w) return;

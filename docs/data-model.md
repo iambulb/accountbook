@@ -10,7 +10,8 @@ users/{uid}            : { name, email, photo(프로필 사진 base64 data URL),
                              coins,                                  // 은화 잔액(정수)
                              gold,                                   // 금화(뽑기 오픈마다 +1)
                              owned:{ cats:{ {catId}:{boughtAt} }, items:{ {itemId}:{boughtAt,qty} }, wallpapers:{ {wallId}:{boughtAt} } },
-                             home:{ active:[catId…], placed:{ {slotId}:{itemId,x,y} }, wallpaper:wallId },  // 적용 벽지
+                             consum:{ food, water },                 // 소비 아이템 보유 수(사료·물, 각 1은화). 배치 불가, 그릇 채울 때 소모
+                             home:{ active:[catId…], placed:{ {"r_c"}:{itemId, filledAt?} }, wallpaper:wallId, poops },  // filledAt=밥/물 채운 시각(ms, 3h 뒤 비워지며 poops+1) · poops=미수거 똥 수(탭 시 +2은화)
                              missions:{ {periodKey}:{ {missionId}:{claimed,reward,at} } },  // periodKey=KST 일자 2026-07-01
                              codes:{ {code}:{reward,at} }             // 사용한 프로모/치트 코드(사용자별 1회, 예: showmethemoney→999)
                            } }
