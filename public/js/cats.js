@@ -122,11 +122,18 @@
     ];
     // 미션 정의(일일). reward=은화. check(ctx)=완료 여부(현재 워크스페이스 활동 읽어 판정)
     const DAILY_MISSIONS = [
-      { id:'record', name:'오늘 거래 1건 기록', reward:5, icon:'<path d="M12 4v16M8 8l4-4 4 4"/><rect x="4" y="18" width="16" height="3" rx="1"/>',
+      { id:'record', period:'day', name:'오늘 거래 1건 기록', reward:5, icon:'<path d="M12 4v16M8 8l4-4 4 4"/><rect x="4" y="18" width="16" height="3" rx="1"/>',
         check:()=> (state.transactions||[]).some(t=>(t.date||'').slice(0,10)===kstDayKey()) },
-      { id:'attend', name:'출석 체크', reward:2, icon:'<path d="M5 12l4 4L19 6"/>',
+      { id:'attend', period:'day', name:'출석 체크', reward:2, icon:'<path d="M5 12l4 4L19 6"/>',
         check:()=> true }   // 앱 진입 = 완료(멱등 수령)
     ];
+    const WEEKLY_MISSIONS = [
+      { id:'week5', period:'week', name:'이번 주 5일 이상 기록', reward:20, icon:'<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/>',
+        prog:()=> recordDaysThisWeek()+' / 5일', check:()=> recordDaysThisWeek()>=5 },
+      { id:'report', period:'week', name:'리포트 확인', reward:10, icon:'<path d="M5 20V11M12 20V5M19 20v-6"/>',
+        check:()=> reportSeenThisWeek() }
+    ];
+    const ALL_MISSIONS = DAILY_MISSIONS.concat(WEEKLY_MISSIONS);
 
     // ---- 픽셀 렌더 ----
     function pxSvg(map, pal, opt){
@@ -144,8 +151,14 @@
     function furnSvg(id, opt){ const M={cushion:M_CUSHION,bowl:M_BOWL,tower:M_TOWER}[id]; return pxSvg(M, FURN_PALS[id], opt); }
     function catName(id){ const c=CAT_CATALOG.find(x=>x.id===id); return c?c.name:id; }
 
-    // ---- 날짜 키(KST 자정 롤오버) ----
+    // ---- 날짜 키(KST 롤오버) ----
     function kstDayKey(){ const d=new Date(Date.now()+9*3600000); return d.toISOString().slice(0,10); }   // 2026-07-01
+    function kstWeekKey(){ const d=new Date(Date.now()+9*3600000); const mon=(d.getUTCDay()+6)%7; d.setUTCDate(d.getUTCDate()-mon); return 'W'+d.toISOString().slice(0,10); } // 그 주 월요일(KST)
+    // 이번 주(월~) 현재 워크스페이스에서 기록한 서로 다른 날 수
+    function recordDaysThisWeek(){ const wk=kstWeekKey().slice(1); const days={}; (state.transactions||[]).forEach(t=>{ const d=(t.date||'').slice(0,10); if(!d) return; const kd=weekKeyOf(d); if(kd===kstWeekKey()) days[d]=1; }); return Object.keys(days).length; }
+    function weekKeyOf(dateStr){ const d=new Date(dateStr+'T00:00:00Z'); const mon=(d.getUTCDay()+6)%7; d.setUTCDate(d.getUTCDate()-mon); return 'W'+d.toISOString().slice(0,10); }
+    function reportSeenThisWeek(){ const p=(state.game&&state.game.progress[kstWeekKey()])||{}; return !!p.reportSeen; }
+    function markReportSeen(){ if(!state.uid||!state.game) return; if(reportSeenThisWeek()) return; gameRef().child('progress/'+kstWeekKey()+'/reportSeen').set(true); }
 
     // ---- 게임 상태/경제 ----
     function gameRef(){ return db.ref('users/'+state.uid+'/game'); }
@@ -153,7 +166,7 @@
       coins: Number(g.coins)||0,
       owned:{ cats:(g.owned&&g.owned.cats)||{}, items:(g.owned&&g.owned.items)||{} },
       home:{ active:(g.home&&g.home.active)||[], placed:(g.home&&g.home.placed)||{} },
-      missions: g.missions||{}
+      missions: g.missions||{}, progress: g.progress||{}
     }; }
     function initCatGame(){
       if(!state.uid) return;
@@ -164,38 +177,51 @@
     }
     function onGameChange(){
       updateDockCoins();
+      renderDockProps();
       renderDockCats();
       if(state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh();
     }
     function coins(){ return (state.game&&state.game.coins)||0; }
     function ownsCat(id){ return !!(state.game&&state.game.owned.cats[id]); }
     function activeCats(){ const a=(state.game&&state.game.home.active)||[]; return a.filter(ownsCat); }
+    function ownedCatList(){ return CAT_CATALOG.filter(c=>ownsCat(c.id)).map(c=>c.id); }
+    function isActiveCat(id){ return activeCats().indexOf(id)>=0; }
+    // 활성 슬롯 토글(집에 내보내기 / 대기) — 최대 3마리
+    function toggleActiveCat(id){
+      if(!ownsCat(id)) return;
+      const a=activeCats().slice(), i=a.indexOf(id);
+      if(i>=0) a.splice(i,1);
+      else { if(a.length>=3){ toast('최대 3마리까지 내보낼 수 있어요', true); return; } a.push(id); }
+      gameRef().child('home/active').set(a);
+    }
 
     // 미션 지급(원자적·멱등): 게임 노드 트랜잭션 1회로 "수령 기록 + 은화 지급"을 동시에.
     // 같은 날 같은 미션은 이미 claimed면 변화 없음 → 중복 지급 불가.
-    function missionClaimed(id){ const key=kstDayKey(); const day=(state.game&&state.game.missions[key])||{}; return !!(day[id]&&day[id].claimed); }
-    function grantMission(id, reward){
-      const key=kstDayKey();
+    function missionKey(m){ return m.period==='week'?kstWeekKey():kstDayKey(); }
+    function missionClaimed(m){ const key=missionKey(m); const pd=(state.game&&state.game.missions[key])||{}; return !!(pd[m.id]&&pd[m.id].claimed); }
+    function grantMission(m){
+      const key=missionKey(m);
       return gameRef().transaction(g=>{
         g=normalizeGame(g);
         g.missions[key]=g.missions[key]||{};
-        if(g.missions[key][id] && g.missions[key][id].claimed) return g;   // 이미 수령 → 무변화
-        g.missions[key][id]={ claimed:true, reward:reward, at:new Date().toISOString() };
-        g.coins += reward;
+        if(g.missions[key][m.id] && g.missions[key][m.id].claimed) return g;   // 이미 수령 → 무변화
+        g.missions[key][m.id]={ claimed:true, reward:m.reward, at:new Date().toISOString() };
+        g.coins += m.reward;
         return g;
       });
     }
     // 미션 수동 수령(완료 판정 후)
     function claimMission(id){
-      const m=DAILY_MISSIONS.find(x=>x.id===id); if(!m) return;
-      if(missionClaimed(id)){ toast('이미 수령했어요'); return; }
+      const m=ALL_MISSIONS.find(x=>x.id===id); if(!m) return;
+      if(missionClaimed(m)){ toast('이미 수령했어요'); return; }
       if(!m.check()){ toast('아직 완료되지 않았어요', true); return; }
-      grantMission(id, m.reward).then(res=>{ if(res.committed) toast('+'+m.reward+' 은화 획득! 🐾'); });
+      grantMission(m).then(res=>{ if(res.committed) toast('+'+m.reward+' 은화 획득! 🐾'); });
     }
     // 출석 자동 수령(진입 시 1회, 멱등)
     function autoClaimAttend(){
-      if(!state.game || missionClaimed('attend')) return;
-      grantMission('attend', 2);
+      const m=DAILY_MISSIONS.find(x=>x.id==='attend');
+      if(!state.game || missionClaimed(m)) return;
+      grantMission(m);
     }
 
     // 고양이 구매(원자적, 잔액 음수 방지)
@@ -212,26 +238,47 @@
       }).then(res=>{ if(res.committed) toast(c.name+' 입양 완료! 🐾'); });
     }
 
-    // ================= 전역 dock (접힌 스트립) =================
+    // ================= 전역 dock (스트립 / 방 / 숨김) =================
     // #catdock 은 index.html 셸의 #content 형제 → 리렌더 영향 없음(애니메이션 유지)
-    function initDock(){
+    const COL_DN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10l4-4 4 4M8 14l4 4 4-4"/></svg>';
+    const COL_UP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 14l-4 4-4-4M16 10l-4-4-4 4"/></svg>';
+    function dockMode(){ return localStorage.getItem('catDock')||'strip'; }
+    function setDockMode(m){ localStorage.setItem('catDock', m); renderDock(); }
+    function toggleDockExpand(e){ if(e&&e.stopPropagation) e.stopPropagation(); setDockMode(dockMode()==='room'?'strip':'room'); }
+    function toggleDockHidden(){ setDockMode(dockMode()==='hidden'?'strip':'hidden'); if(state.tab==='more') renderMore(); }
+    function dockHiddenLabel(){ return dockMode()==='hidden'?'숨김':'켬'; }
+    function initDock(){ renderDock(); }
+    function renderDock(){
       const d=$('catdock'); if(!d) return;
+      const m=dockMode();
+      if(m==='hidden'){ d.className='catdock hidden'; d.innerHTML=''; stopWalk(); return; }
       d.className='catdock';
-      d.innerHTML='<div class="cd-strip" onclick="openCatHouse()"><div class="cd-floor"></div>'+
-        '<span class="cd-coin"><span class="cd-ci">'+coinSvg({h:16})+'</span><b id="cdCoins">0</b></span>'+
-        '<div class="cd-stage" id="cdStage"></div>'+
-        '<span class="cd-lbl">고양이집</span>'+
-        '<button class="cd-exp" aria-label="고양이집 열기">'+
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></div>';
-      updateDockCoins(); renderDockCats();
+      const coin='<span class="cd-coin" onclick="openCatHouse()"><span class="cd-ci">'+coinSvg({h:16})+'</span><b id="cdCoins">0</b></span>';
+      if(m==='room'){
+        d.innerHTML='<div class="cd-room"><div class="cr-wall"></div><div class="cr-base"></div>'+
+          '<span class="cr-cam"><i></i>LIVE · 우리집</span>'+coin.replace('cd-coin','cd-coin cd-coin-abs')+
+          '<button class="cd-exp cd-collapse" onclick="toggleDockExpand(event)" aria-label="접기">'+COL_UP+'</button>'+
+          '<div class="cr-props" id="cdProps"></div><div class="cr-stage" id="cdStage" onclick="openCatHouse()"></div></div>';
+      } else {
+        d.innerHTML='<div class="cd-strip"><div class="cd-floor"></div>'+coin+
+          '<div class="cd-stage" id="cdStage" onclick="openCatHouse()"></div>'+
+          '<span class="cd-lbl" onclick="openCatHouse()">고양이집</span>'+
+          '<button class="cd-exp" onclick="toggleDockExpand(event)" aria-label="펼치기">'+COL_DN+'</button></div>';
+      }
+      updateDockCoins(); renderDockProps(); renderDockCats();
     }
     function updateDockCoins(){ const el=$('cdCoins'); if(el) el.textContent=coins().toLocaleString(); }
-    // 활성 고양이를 스트립에 액터로 배치(없으면 안내)
+    function renderDockProps(){
+      const box=$('cdProps'); if(!box) return;
+      box.innerHTML=placedList().map(p=>{ const x=((p.c-0.5)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(3+depth*26).toFixed(0);
+        return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:(18+depth*10).toFixed(0)})+'</div>'; }).join('');
+    }
+    // 활성 고양이를 dock 무대에 액터로 배치(없으면 안내)
     function renderDockCats(){
       const stage=$('cdStage'); if(!stage) return;
-      const cats=activeCats();
+      const cats=activeCats(), room=dockMode()==='room', hh=room?40:30, gap=room?52:26;
       if(!cats.length){ stage.innerHTML='<span class="cd-empty">고양이를 입양해 보세요</span>'; stopWalk(); return; }
-      stage.innerHTML=cats.slice(0,3).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" data-dir="1" style="left:'+(10+i*26)+'px;">'+catSide(id,0,{h:30})+'</div>').join('');
+      stage.innerHTML=cats.slice(0,3).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" data-dir="1" style="left:'+(10+i*gap)+'px;">'+catSide(id,0,{h:hh})+'</div>').join('');
       startWalkIfNeeded();
     }
     // ---- 걷기 루프(보일 때만, reduced-motion 존중) ----
@@ -243,8 +290,8 @@
       if(document.hidden || reducedMotion()) return;
       const acts=Array.from(stage.querySelectorAll('.cd-actor'));
       if(!acts.length) return;
-      const W=stage.clientWidth||160;
-      _walk.actors=acts.map(el=>({ el, x:parseFloat(el.style.left)||0, dir:1, v:0.25+Math.random()*0.25, t:Math.random()*6, frame:0, fc:0, W }));
+      const W=stage.clientWidth||160, room=dockMode()==='room', hh=room?40:30, sw=Math.round(hh*26/14);
+      _walk.actors=acts.map(el=>({ el, x:parseFloat(el.style.left)||0, dir:1, v:0.25+Math.random()*0.25, t:Math.random()*6, frame:0, fc:0, W, hh, sw }));
       _walk.last=0; _walk.raf=requestAnimationFrame(walkTick);
     }
     function stopWalk(){ if(_walk.raf){ cancelAnimationFrame(_walk.raf); _walk.raf=0; } _walk.actors=[]; }
@@ -252,10 +299,10 @@
       if(!_walk.last) _walk.last=ts; const dt=Math.min(50, ts-_walk.last); _walk.last=ts;
       _walk.actors.forEach(a=>{
         a.x += a.dir*a.v*dt*0.06;
-        const max=(a.W||160)-30;
+        const max=(a.W||160)-(a.sw||48);
         if(a.x<2){ a.x=2; a.dir=1; } else if(a.x>max){ a.x=max; a.dir=-1; }
         a.t+=dt*0.004; const bob=Math.sin(a.t*3)*1.2;
-        a.fc+=dt; if(a.fc>170){ a.fc=0; a.frame^=1; const id=a.el.getAttribute('data-cat'); a.el.innerHTML=catSide(id,a.frame,{h:30}); }
+        a.fc+=dt; if(a.fc>170){ a.fc=0; a.frame^=1; const id=a.el.getAttribute('data-cat'); a.el.innerHTML=catSide(id,a.frame,{h:a.hh||30}); }
         a.el.style.transform='translate(0,'+bob.toFixed(1)+'px) scaleX('+a.dir+')';
         a.el.style.left=a.x.toFixed(1)+'px';
       });
@@ -287,9 +334,12 @@
       const props=placedList().map(p=>{ const x=((p.c-0.5)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(3+depth*30).toFixed(0);
         return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:(20+depth*10).toFixed(0)})+'</div>'; }).join('');
       let h='<div class="catroom" id="catRoom"><div class="cr-wall"></div><div class="cr-base"></div><span class="cr-cam"><i></i>LIVE · 우리집</span><div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div></div>';
+      const owned=ownedCatList();
       h+='<div class="sech"><span class="l">우리집 고양이</span><span class="s">'+cats.length+' / 3 활성</span></div>';
-      if(!cats.length) h+='<div class="empty" style="padding:20px;">아직 고양이가 없어요. 상점에서 입양해 보세요 🐾</div>';
-      else h+='<div class="catchips">'+cats.map(id=>'<div class="catchip">'+catFront(id,{h:44})+'<div class="cn">'+catName(id)+'</div></div>').join('')+'</div>';
+      if(!owned.length) h+='<div class="empty" style="padding:20px;">아직 고양이가 없어요. 상점에서 입양해 보세요 🐾</div>';
+      else { h+='<div class="catchips">'+owned.map(id=>{ const on=isActiveCat(id);
+        return '<button class="catchip'+(on?' on':'')+'" onclick="toggleActiveCat(\''+id+'\')">'+catFront(id,{h:44})+'<div class="cn">'+catName(id)+'</div><div class="cstate">'+(on?'집에 있음':'대기')+'</div></button>'; }).join('')+'</div>';
+        h+='<div class="hintline" style="margin-top:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>고양이를 탭해 집에 내보내거나 대기시켜요(최대 3마리).</div>'; }
       return h;
     }
     function mountRoomWalk(){
@@ -380,19 +430,21 @@
       return '<div class="editwrap"><div class="grid12">'+cells+'</div><div class="palette">'+pal+'</div>'+
         '<div class="hintline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>가구를 골라 빈 칸을 탭해 놓고, 놓인 가구를 탭하면 회수돼요.</div></div>';
     }
+    function missionRow(m){
+      const claimed=missionClaimed(m), ok=m.check();
+      let right;
+      if(claimed) right='<span class="mdone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>수령완료</span>';
+      else if(ok) right='<button class="claim" onclick="claimMission(\''+m.id+'\')">수령</button>';
+      else right='<span class="prog-pill">'+(m.prog?m.prog():'진행 중')+'</span>';
+      return '<div class="cmrow"><span class="cmi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+m.icon+'</svg></span>'+
+        '<div class="cmm"><b>'+m.name+'</b><span class="rw"><span class="ci">'+coinSvg({h:14})+'</span>+'+m.reward+(claimed?' · 수령완료':(ok?' · 완료':(m.prog?' · '+m.prog():'')))+'</span></div>'+right+'</div>';
+    }
     function catMissionHtml(){
-      const key=kstDayKey(), done=state.game.missions[key]||{};
       let h='<div class="coinhero"><span class="ch-big">'+coinSvg({h:44})+'</span><div><div class="k">보유 은화</div><div class="v">'+coins().toLocaleString()+'</div></div></div>';
       h+='<div class="sech"><span class="l">일일 미션</span><span class="s">자정 초기화</span></div>';
-      h+=DAILY_MISSIONS.map(m=>{
-        const claimed=!!(done[m.id]&&done[m.id].claimed), ok=m.check();
-        let right;
-        if(claimed) right='<span class="mdone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>수령완료</span>';
-        else if(ok) right='<button class="claim" onclick="claimMission(\''+m.id+'\')">수령</button>';
-        else right='<span class="prog-pill">진행 중</span>';
-        return '<div class="cmrow"><span class="cmi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+m.icon+'</svg></span>'+
-          '<div class="cmm"><b>'+m.name+'</b><span class="rw"><span class="ci">'+coinSvg({h:14})+'</span>+'+m.reward+(claimed?' · 수령완료':(ok?' · 완료':''))+'</span></div>'+right+'</div>';
-      }).join('');
-      h+='<div class="note" style="margin-top:12px;"><b>은화</b>로 상점에서 고양이를 입양하세요. 미션은 매일 자정(KST) 초기화됩니다.</div>';
+      h+=DAILY_MISSIONS.map(missionRow).join('');
+      h+='<div class="sech"><span class="l">주간 미션</span><span class="s">월요일 초기화</span></div>';
+      h+=WEEKLY_MISSIONS.map(missionRow).join('');
+      h+='<div class="note" style="margin-top:12px;"><b>은화</b>로 상점에서 고양이·가구를 사세요. 일일은 자정, 주간은 월요일(KST) 초기화됩니다.</div>';
       return h;
     }

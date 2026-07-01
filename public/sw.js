@@ -1,5 +1,5 @@
 /* 공유 가계부 서비스워커 — 오프라인 앱 셸 캐시 */
-const CACHE_VERSION = 'gglee-budget-v3.22.0';
+const CACHE_VERSION = 'gglee-budget-v3.23.0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -12,6 +12,7 @@ const APP_SHELL = [
   './js/main.js',
   './manifest.webmanifest',
   './icons/icon.svg',
+  './icons/coin.svg',
   './icons/icon-192.png',
   './icons/icon-512.png'
 ];
