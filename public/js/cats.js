@@ -261,7 +261,8 @@
       { id:'cat_cheese',   species:'cat', name:'치즈',   price:60, desc:'웜오렌지. 활발하게 뛰어다니는 개냥이.' },
       { id:'cat_calico',   species:'cat', name:'삼색',   price:90, desc:'흰+주황+먹. 도도하게 창가에 앉아요.' },
       { id:'cat_black',    species:'cat', name:'까망',   price:70, desc:'노란 눈의 까만 고양이. 조용히 방을 지켜요.' },
-      { id:'cat_white',    species:'cat', name:'하양',   price:80, desc:'파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요.' }
+      { id:'cat_white',    species:'cat', name:'하양',   price:80, desc:'파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요.' },
+      { id:'cat_tuxedo',   species:'cat', name:'턱시도', price:75, desc:'검은 정장에 하얀 셔츠·발. 단정하게 걸어다녀요.' }
     ];
     // 구 id(고양이 전용 시절) → 신 id. RTDB 보유/활성 데이터 하위호환(normalizeGame에서 적용).
     const PET_ID_MIGRATE = { mackerel:'cat_mackerel', cheese:'cat_cheese', calico:'cat_calico', black:'cat_black', white:'cat_white' };
@@ -320,7 +321,8 @@
       cat_mackerel:{ walk:'assets/pets/cat_mackerel/walk.png', frames:6, stills:true },
       cat_cheese:  { walk:'assets/pets/cat_cheese/walk.png',   frames:6, stills:true },
       // 하양: export에 옆보기(east) 걷기가 없어 정면(south) 걷기 6프레임으로 시트 구성 → 걸을 때 정면 보기, 쉴 때 4방향 정지.
-      cat_white:   { walk:'assets/pets/cat_white/walk.png',    frames:6, stills:true }
+      cat_white:   { walk:'assets/pets/cat_white/walk.png',    frames:6, stills:true },
+      cat_tuxedo:  { walk:'assets/pets/cat_tuxedo/walk.png',   frames:6, stills:true }
     };
     function hasSprite(id){ return !!PET_SPRITES[id]; }
     // 걷기 무대 액터 1개의 내부 마크업 — 시트 있으면 스프라이트 div, 없으면 SVG 프레임0.
@@ -707,7 +709,7 @@
     const TIER_ORDER = TIERS.map(t=>t.id);   // 높은 등급이 비면 한 단계씩 낮춰 대체할 때 사용
     function tierInfo(id){ return TIERS.find(t=>t.id===id)||TIERS[0]; }
     // 테스트 배정(등급당 1) — 펫알=고양이 / 랜덤박스=가구
-    const CAT_TIER  = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'legend' };
+    const CAT_TIER  = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'legend', cat_tuxedo:'limited' };
     const ITEM_TIER = { cushion:'normal', bowl:'uncommon', scratcher:'rare', tower:'epic' };
     // ---- 개발자 모드(canel94@gmail.com 전용): 확률·구성 로컬 오버라이드 ----
     const DEV_EMAIL='canel94@gmail.com';

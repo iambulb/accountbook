@@ -8,6 +8,9 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 추가 — 🤵 턱시도(cat_tuxedo) 고양이 스프라이트
+- **턱시도 고양이 추가**: `simple_pixel_art_tuxedo_cat_black_body_with_white.zip`을 처리해 `public/assets/pets/cat_tuxedo/`에 `walk.png`(288×48, 6프레임) + 정지 4방향 생성. 이 zip은 8방향 rotations와 **옆보기(east) 걷기**(`Walk-<hash>/east`)를 포함해 **정상적인 옆걷기 시트**로 구성(하양과 달리 정면 걷기 아님). `PET_CATALOG`에 `cat_tuxedo`(종=cat, 이름=턱시도, 75 은화) + `PET_SPRITES`·`CAT_TIER`(한정 등급) 등록 → dock·방·상점·보유칩·뽑기 어디서나 스프라이트로 표시. `sw.js` `v3.43.0`(APP_SHELL에 `cat_tuxedo/` walk+4방향 추가). *기존 SVG 까망(`cat_black`)과는 별개의 고양이.*
+
 ### 변경 — 🐾 고양이 전용 → "모든 네발 동물" 에셋 파이프라인 일반화
 - **경로 `assets/cats/` → `assets/pets/<id>/`**: 동물 에셋을 종 구분되는 폴더로 이관. id를 **`<species>_<색>`** 로 변경(`mackerel`→`cat_mackerel`, `cheese`→`cat_cheese` 등, 예정 강아지=`dog_corgi`). 원본 zip은 `assets/pets/_zips/`.
 - **변수 일반화**: `CAT_CATALOG`→**`PET_CATALOG`**, `CAT_SPRITES`→**`PET_SPRITES`**. `PET_CATALOG` 각 항목에 **`species`**(cat/dog/rabbit…) 필드 추가(향후 분류·필터용). `CAT_PALS`·`CAT_TIER` 키도 새 id로 정렬.

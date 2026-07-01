@@ -14,6 +14,7 @@ metadata.json                                       # size/frames/directions 정
 ```
 - 규격은 `metadata.json`의 `size`(48×48)를 신뢰. 없으면 48px로 가정.
 - `animations.Walk.east`가 있으면 그 6프레임으로 `walk.png`를 만든다. **없으면**(rotations만 있는 zip) 기존 `walk.png`가 있으면 유지, 없으면 사용자에게 걷기 시트를 요청.
+- 걷기 폴더 이름이 `Walk`가 아니라 **`Walk-<hash>`** 로 나오기도 하고(예 턱시도), 한 zip에 `Walk/south`와 `Walk-<hash>/east`가 함께 있을 수 있다 → **east(옆보기)를 우선** 사용. rotations도 4방향 외 대각선(north-east 등)이 더 있을 수 있으나 **south/north/east/west 4장만** 쓴다.
 - 중복 상태(`<folder>_2`, "(copy)")는 무시하고 **primary(첫 상태)만** 사용.
 - ⚠️ 일부 템플릿(예 chibi)은 걷기 프레임이 `Walk/east`가 아니라 `Walk/south` 등 **다른 방향**으로 나온다. 스프라이트 엔진은 east(옆) 기준으로 좌우 이동·플립하므로, east가 없으면 방향을 확인해 별도 처리(옆 걷기 시트 필요)하거나 사용자에게 알린다.
 
@@ -39,6 +40,7 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 | simple_pixel_art_cat_grey_mackerel_tabby_with_dark.zip | `cat_mackerel` | cat |
 | simple_pixel_art_cat_orange_tabby_chubby_with_crea.zip | `cat_cheese` | cat |
 | chibi_pixel_art_white_cat_pale_blue_eyes_sleepy_fa.zip | `cat_white` | cat (Walk이 east 없이 south만 있어 정면 걷기 시트로 구성) |
+| simple_pixel_art_tuxedo_cat_black_body_with_white.zip | `cat_tuxedo` | cat (8방향 rotations + `Walk-<hash>/east` 옆걷기 → 정상 옆보기 시트) |
 
 새 zip이 오면: 사용자가 id를 지정하면 그걸 쓰고, 없으면 종·색에서 합리적 slug(`<species>_<색>`)를 만들어 **이 표에 한 줄 추가**한다.
 
