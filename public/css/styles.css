@@ -532,11 +532,28 @@
     .cr-prop .px { display:block; }
     /* 격자 배치 에디터 (12×12) */
     .editwrap { background:var(--card); border:1px solid var(--bd); border-radius:18px; padding:14px; margin-top:2px; }
-    .grid12 { display:grid; grid-template-columns:repeat(12,1fr); gap:2px; margin-bottom:12px; }
-    .gc { aspect-ratio:1; border-radius:4px; background:var(--soft); border:1px dashed var(--bd); display:flex; align-items:center; justify-content:center; box-sizing:border-box; overflow:hidden; }
-    .gc.fill { background:var(--soft2); border:1px solid transparent; color:var(--text2); }
-    .gc .gsc { display:flex; align-items:center; justify-content:center; width:100%; height:100%; transform-origin:center center; }
-    .gc.fill .px { width:88%; height:88%; }
+    /* 배치 격자: 절대좌표 + 드래그 가능한 가구. 배경 라인으로 12×12 표시 */
+    .grid12 { position:relative; width:100%; aspect-ratio:1; margin-bottom:12px; border-radius:8px; overflow:hidden; background:var(--soft);
+      background-image:linear-gradient(var(--bd) 1px, transparent 1px), linear-gradient(90deg, var(--bd) 1px, transparent 1px);
+      background-size:calc(100%/12) calc(100%/12); }
+    .gitem { position:absolute; box-sizing:border-box; display:flex; align-items:center; justify-content:center; padding:1px; cursor:grab; touch-action:none; z-index:2; will-change:transform; }
+    .gitem.drag { cursor:grabbing; opacity:.92; z-index:50; }
+    .gitem .gsc { display:flex; align-items:center; justify-content:center; width:100%; height:100%; transform-origin:center center; }
+    .gitem .px { width:100%; height:100%; }
+    .gdrop { position:absolute; box-sizing:border-box; border:2px solid var(--primary); background:color-mix(in srgb,var(--primary) 20%,transparent); border-radius:6px; z-index:1; pointer-events:none; }
+    .gdrop.bad { border-color:var(--expense); background:color-mix(in srgb,var(--expense) 20%,transparent); }
+    .gdrop[hidden] { display:none; }
+    /* 배치 가구 탭 메뉴(회수/판매) */
+    .gimenu-scrim { position:fixed; inset:0; z-index:90; background:rgba(10,10,18,.42); display:flex; align-items:center; justify-content:center; animation:fxfade .18s ease; }
+    .gimenu { background:var(--card); border:1px solid var(--bd); border-radius:18px; padding:16px; width:min(300px,86vw); display:flex; flex-direction:column; gap:8px; box-shadow:0 16px 44px rgba(0,0,0,.32); }
+    .gimenu .gih { display:flex; align-items:center; gap:10px; font-size:15px; font-weight:800; padding-bottom:8px; border-bottom:1px solid var(--line); }
+    .gimenu .gih .px { height:32px; width:auto; }
+    .gib { display:flex; flex-direction:column; align-items:flex-start; gap:2px; padding:12px 14px; border-radius:12px; background:var(--soft); text-align:left; }
+    .gib b { font-size:14.5px; font-weight:800; }
+    .gib span { font-size:11px; color:var(--sub); font-weight:600; }
+    .gib.sell { background:color-mix(in srgb,var(--primary) 12%,var(--card)); }
+    .gib.sell b { color:var(--primary); }
+    .gib.ghost { background:transparent; align-items:center; color:var(--sub); font-weight:700; padding:8px; }
     .palette { display:flex; gap:10px; }
     .pitem { flex:1; border-radius:14px; background:var(--soft); border:1.5px solid transparent; display:flex; flex-direction:column; align-items:center; gap:5px; padding:11px 4px 9px; color:var(--text2); }
     .pitem.on { border-color:var(--primary); background:var(--card); color:var(--text); }
