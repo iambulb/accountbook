@@ -8,6 +8,15 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 수정 — 🐱 하양(`cat_white`) 옆걷기 시트로 교체 (frontWalk 해제)
+- 하양은 기존 export에 옆(east) 걷기가 없어 정면 이미지로 옆이동하던 것을, **`Walk/east` 옆걷기 6프레임이 포함된 zip으로 재취득**해 `walk.png`(288×48)·4방향 정지를 재생성하고 `PET_SPRITES`의 `frontWalk` 플래그를 해제. 이제 옆으로 자연스럽게 걷는다. `sw.js` `v3.80.0`. → 12종 전부 east 옆걷기 보유.
+
+### 추가 — 🐱 고양이 '복슬이'(`cat_fluffy`) 추가 (총 12종)
+- 복슬복슬한 흰 고양이(파란 눈)를 `simple_pixel_art_white_cat_fluffy_fur_pale_blue_ey.zip`에서 스프라이트로 추가(`Walk/east` 옆걷기 정상, 희귀 등급·200 은화). `PET_CATALOG`·`PET_SPRITES`·`CAT_TIER`·`sw.js` APP_SHELL 반영. `sw.js` `v3.79.0`.
+
+### 변경 — 🏷️ 상점 펫 분류 태그를 품종 → 종(species)으로 통일
+- 상점 카드에서 펫 이름 오른쪽 태그가 이전엔 품종(샴·벵갈·코숏 등)을 보여줬으나, 이제 **종 라벨**(고양이/강아지/토끼, `SPECIES_LABEL`)만 표시. 데이터의 `PET_CATALOG.breed` 필드도 **제거**. (앞으로 펫 이름은 zip 내용 기반으로 센스껏 작명 — [pet-asset-pipeline.md](pet-asset-pipeline.md) 규칙화.)
+
 ### 수정 — 🪑 방 가구 원근 가림 반대로 되던 문제 + 캣타워 상호작용 5배
 - **앞 가구가 뒤 가구에 가려지던 z-index 버그**: 밥·물그릇/화장실(`.cr-prop.cr-tap`/`.cr-litter`)의 고정 `z-index:2`가 깊이 순서를 무시해 **뒤에 둔 그릇이 앞의 캣타워를 덮던** 문제 — `propMarkup`에서 **앞줄(frontRow) 기준 depth z-index**를 인라인 부여해 앞 가구가 항상 뒤를 가리도록 정정(뒤 z=2·앞 캣타워 z=12 검증). dock·홈·미니프리뷰 공통.
 - **캣타워 상호작용 5배**: 고양이가 캣타워에 올라가 머무는 시간을 일반 상호작용(기본 22~48초)의 **5배(약 1.8~4분)** 로. `sw.js` `v3.78.0`.

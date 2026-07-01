@@ -32,21 +32,33 @@ for i in range(6):
 sheet.save("walk.png")   # rotations 4장은 그대로 복사
 ```
 
-## id 매핑 (종·색 구분)
+## id·이름 매핑 (종·색 구분)
 zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다. id는 **`<species>_<색·품종>`** 형태로 종이 구분되게 짓는다(예: `cat_calico`, `dog_corgi`, `rabbit_lop`). 이 표를 유지한다.
 
-| zip 파일명 | id | species |
-|---|---|---|
-| simple_pixel_art_cat_grey_mackerel_tabby_with_dark.zip | `cat_mackerel` | cat |
-| simple_pixel_art_cat_orange_tabby_chubby_with_crea.zip | `cat_cheese` | cat |
-| chibi_pixel_art_white_cat_pale_blue_eyes_sleepy_fa.zip | `cat_white` | cat (Walk이 east 없이 south만 있어 정면 걷기 시트로 구성) |
-| simple_pixel_art_tuxedo_cat_black_body_with_white.zip | `cat_tuxedo` | cat (8방향 rotations + `Walk-<hash>/east` 옆걷기 → 정상 옆보기 시트) |
-| chibi_pixel_art_tortoiseshell_cat_mixed_black_and.zip | `cat_calico` | cat (토터셸 삼색·코숏, `Walk/east` 옆걷기. 이전 `simple_pixel_art_calico_...` 대체) |
-| simple_pixel_art_cat_black_yellow_eyes_extra_round.zip | `cat_black` | cat (`Walk/east` 옆걷기 + 4방향 → 기존 SVG 까망을 스프라이트로 교체) |
-| imple_pixel_art_chaos_cat_dark_grey_and_brown_swir.zip | `cat_chaos` | cat (신규 · `Walk/east` 옆걷기 + 8방향 rotations) |
-| hibi_pixel_art_siamese_cat_cream_body_with_dark_fa.zip | `cat_siamese` | cat (신규 · `Walk/east` 옆걷기 + 8방향 rotations) |
+- **표시 이름(`PET_CATALOG.name`)은 zip 파일명·`metadata.json`의 캐릭터 설명을 근거로 개발자가 센스껏 짓는다**(한국어, 2~4자 권장, 기존 이름과 겹치지 않게). 사용자가 이름을 따로 지정하지 않으면 이 방식으로 자동 작명한다. 예: `white cat, fluffy fur` → `복슬이`.
+- **품종(샴·벵갈·코숏 등)은 더 이상 데이터·UI에 넣지 않는다.** 상점 카드의 분류 태그는 품종이 아니라 **종(species) 라벨**(`SPECIES_LABEL`: cat→`고양이`, dog→`강아지`, rabbit→`토끼`)만 표시한다. (구 `PET_CATALOG.breed` 필드는 제거됨.)
 
-새 zip이 오면: 사용자가 id를 지정하면 그걸 쓰고, 없으면 종·색에서 합리적 slug(`<species>_<색>`)를 만들어 **이 표에 한 줄 추가**한다.
+| zip 파일명 | id | name | 비고 |
+|---|---|---|---|
+| simple_pixel_art_cat_grey_mackerel_tabby_with_dark.zip | `cat_mackerel` | 고등어 | `Walk/east` |
+| simple_pixel_art_cat_orange_tabby_chubby_with_crea.zip | `cat_cheese` | 치즈 | `Walk/east` |
+| chibi_pixel_art_tortoiseshell_cat_mixed_black_and.zip | `cat_calico` | 삼색 | 토터셸 삼색, `Walk/east`. 이전 `simple_pixel_art_calico_...` 대체 |
+| simple_pixel_art_cat_black_yellow_eyes_extra_round.zip | `cat_black` | 까망 | `Walk/east` + 4방향 |
+| chibi_pixel_art_white_cat_pale_blue_eyes_sleepy_fa.zip | `cat_white` | 하양 | `Walk/east` 옆걷기 재취득 완료(구 `frontWalk` 해제). `Walk-<hash>/south`도 있으나 east 우선 |
+| simple_pixel_art_white_cat_fluffy_fur_pale_blue_ey.zip | `cat_fluffy` | 복슬이 | 복슬한 흰 고양이, `Walk/east` 옆걷기 정상 |
+| simple_pixel_art_tuxedo_cat_black_body_with_white.zip | `cat_tuxedo` | 턱시도 | 8방향 rotations + `Walk-<hash>/east` |
+| simple_pixel_art_chaos_cat_dark_grey_and_brown_swir.zip | `cat_chaos` | 카오스 | `Walk/east` + 8방향 |
+| hibi_pixel_art_siamese_cat_cream_body_with_dark_fa.zip | `cat_siamese` | 샴 | `Walk/east` + 8방향 |
+| chibi_pixel_art_golden_cat_a_few_simple_round_spot.zip | `cat_bengal` | 벵갈 | `Walk/east` |
+| chibi_pixel_art_grey_cat_small_folded-down_ears_ro.zip | `cat_fold` | 폴드 | 접힌 귀, `Walk/east` |
+| chibi_pixel_art_white_cat_one_blue_eye_one_amber_e.zip | `cat_bora` | 보라 | 오드아이, `Walk/east` |
+
+새 zip이 오면: 사용자가 id를 지정하면 그걸 쓰고, 없으면 종·색에서 합리적 slug(`<species>_<색>`)를 만들어 **이 표에 한 줄 추가**하고, 이름은 위 규칙대로 센스껏 짓는다.
+
+### ⚠️ 옆걷기(east) 없는 펫 — 이미지 재취득 대상
+`animations/Walk/east`(옆보기 걷기)가 **없는** zip은 `walk.png`가 정면이 되어 `frontWalk:true`로 처리(이동 중 옆 정지스틸만 보이고 걷기 애니 없음). 그런 펫은 옆걷기 포함 zip으로 다시 받아 재생성하고 `frontWalk`를 해제한다.
+
+**현재 재취득 대상: 없음** — 12종 전부 `Walk/east` 옆걷기 보유. (과거 `cat_white`가 south만 있었으나 east 시트로 재취득 완료.) 새 펫 추가 시 east 유무를 확인해 이 목록을 갱신한다.
 
 ## 코드 반영 (에셋만 넣고 끝내지 말 것)
 1. `js/cats.js`의 `PET_SPRITES`에 `<id>:{ walk:'assets/pets/<id>/walk.png', frames:6, stills:true }` 추가.
