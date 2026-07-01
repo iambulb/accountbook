@@ -312,7 +312,8 @@
       { id:'cat_black',    species:'cat', name:'까망',   price:400,  desc:'노란 눈의 까만 고양이. 조용히 방을 지켜요.' },
       { id:'cat_white',    species:'cat', name:'하양',   price:800,  desc:'파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요.' },
       { id:'cat_tuxedo',   species:'cat', name:'턱시도', price:1500, desc:'검은 정장에 하얀 셔츠·발. 단정하게 걸어다녀요.' },
-      { id:'cat_chaos',    species:'cat', name:'카오스', price:800,  desc:'다크그레이+브라운 소용돌이 무늬. 종잡을 수 없이 쏘다녀요.' }
+      { id:'cat_chaos',    species:'cat', name:'카오스', price:800,  desc:'다크그레이+브라운 소용돌이 무늬. 종잡을 수 없이 쏘다녀요.' },
+      { id:'cat_siamese',  species:'cat', name:'샴',     price:1500, desc:'크림빛 몸에 짙은 포인트. 우아하게 방을 누벼요.' }
     ];
     // 구 id(고양이 전용 시절) → 신 id. RTDB 보유/활성 데이터 하위호환(normalizeGame에서 적용).
     const PET_ID_MIGRATE = { mackerel:'cat_mackerel', cheese:'cat_cheese', calico:'cat_calico', black:'cat_black', white:'cat_white' };
@@ -387,18 +388,23 @@
       cat_cheese:  { walk:'assets/pets/cat_cheese/walk.png',   frames:6, stills:true },
       cat_calico:  { walk:'assets/pets/cat_calico/walk.png',   frames:6, stills:true },
       // 하양: export에 옆보기(east) 걷기가 없어 정면(south) 걷기 6프레임으로 시트 구성 → 걸을 때 정면 보기, 쉴 때 4방향 정지.
-      cat_white:   { walk:'assets/pets/cat_white/walk.png',    frames:6, stills:true },
+      cat_white:   { walk:'assets/pets/cat_white/walk.png',    frames:6, stills:true, frontWalk:true },   // export에 옆(east) 걷기가 없어 walk.png가 정면 → 이동 중엔 east 정지스틸로 옆을 보게(frontWalk)
       cat_tuxedo:  { walk:'assets/pets/cat_tuxedo/walk.png',   frames:6, stills:true },
       cat_black:   { walk:'assets/pets/cat_black/walk.png',    frames:6, stills:true },
-      cat_chaos:   { walk:'assets/pets/cat_chaos/walk.png',    frames:6, stills:true }
+      cat_chaos:   { walk:'assets/pets/cat_chaos/walk.png',    frames:6, stills:true },
+      cat_siamese: { walk:'assets/pets/cat_siamese/walk.png',  frames:6, stills:true }
     };
     function hasSprite(id){ return !!PET_SPRITES[id]; }
     // 걷기 무대 액터 1개의 내부 마크업 — 시트 있으면 스프라이트 div, 없으면 SVG 프레임0.
     // reduced-motion이면 처음부터 정지 이미지(south=앞)로 고정.
     function catActorHTML(id, h){
       const sp=PET_SPRITES[id];
-      if(sp){ const s=Math.round(h); const rm=reducedMotion();
-        return '<div class="cspr'+(rm?' idle':'')+'" style="width:'+s+'px;height:'+s+'px;--sheet:url('+assetUrl(sp.walk)+');--idle:url('+sprStill(id,'south')+');--fw:'+(s*sp.frames)+'px;"></div>'; }
+      if(sp){ const s=Math.round(h); const rm=reducedMotion(); const fw=sp.frontWalk;
+        // frontWalk 고양이는 walk.png가 정면이라 걷기 시트를 애니메이션하지 않고 항상 정지 스틸(.idle)로 둔다.
+        //  - 이동 중엔 east(옆) 스틸을 보여주고 scaleX로 방향을 뒤집음, 정지/reduced-motion이면 south(정면).
+        const idleOn = rm || fw;
+        const face = (fw && !rm) ? 'east' : 'south';
+        return '<div class="cspr'+(idleOn?' idle':'')+'" style="width:'+s+'px;height:'+s+'px;--sheet:url('+assetUrl(sp.walk)+');--idle:url('+sprStill(id,face)+');--fw:'+(s*sp.frames)+'px;"></div>'; }
       return catSide(id, 0, {h:h});
     }
     // 정면 썸네일(걷지 않는 표시용: 상점 카드·보유 칩·뽑기 결과 등).
@@ -432,7 +438,7 @@
     function furnRoomH(id, isDock, depth){
       const foot=itemFoot(id);
       const mult = foot.h>1 ? foot.h : ((id==='bowl'||id==='waterbowl')?0.8:1);   // 멀티셀=칸수, 1×1=그릇<방석
-      const unit = isDock ? (8 - depth*2.5) : (12 - depth*3.5);  // 칸당 픽셀(앞>뒤) — 캣타워가 고양이보다 크게
+      const unit = isDock ? (9 - depth*4) : (13 - depth*6);  // 칸당 픽셀(앞>뒤) — 위에서 내려다보는 원근(뒤로 갈수록 더 작게)
       return Math.max(4, Math.round(unit*mult));
     }
     function catName(id){ const c=PET_CATALOG.find(x=>x.id===id); return c?c.name:id; }
@@ -601,12 +607,13 @@
     // 배치물 하나의 마크업(그릇=탭 급여·채움 반영, 화장실=똥 수거). isDock이면 dock 크기.
     function propMarkup(p, isDock){
       const foot=itemFoot(p.itemId); const x=((p.c-0.5+(foot.w-1)/2)/12*100).toFixed(1);
-      const depth=(p.r-1)/11; const bottom=(isDock?(2+depth*22):(3+depth*30)).toFixed(0); const fh=furnRoomH(p.itemId,isDock,depth);
+      // bottom을 방 높이의 %로(앞 행=바닥 앞끝, 뒤 행=바닥 뒤끝) → 배치 처음/끝이 실제 바닥에 반영되고 미니 프리뷰에서도 비율 유지
+      const depth=(p.r-1)/11; const bottom=(isDock?(3+depth*40):(3+depth*50)).toFixed(1); const fh=furnRoomH(p.itemId,isDock,depth);
       const tap=(p.itemId==='bowl'||p.itemId==='waterbowl');
       let inner=tap? furnRoomSvg(p.itemId,p.key,{h:fh}) : furnSvg(p.itemId,{h:fh});
       if(p.itemId==='litterbox'){ const slots=p._poops||[]; const ph=Math.max(6,Math.round(fh*0.32));
         inner+=slots.map(s=>'<span class="poop" onclick="collectPoop(event)" style="left:'+(20+(s%3)*26)+'%;top:'+(30+((s/3|0)*20))+'%;height:'+ph+'px" title="치우기 +'+POOP_REWARD+' 은화">'+poopSvg({h:ph})+'</span>').join(''); }
-      return '<div class="cr-prop'+(tap?' cr-tap':'')+(p.itemId==='litterbox'?' cr-litter':'')+'" style="left:'+x+'%;bottom:'+bottom+'px;"'+(tap?' onclick="event.stopPropagation();feedBowl(\''+p.key+'\')"':'')+'>'+inner+'</div>';
+      return '<div class="cr-prop'+(tap?' cr-tap':'')+(p.itemId==='litterbox'?' cr-litter':'')+'" style="left:'+x+'%;bottom:'+bottom+'%;"'+(tap?' onclick="event.stopPropagation();feedBowl(\''+p.key+'\')"':'')+'>'+inner+'</div>';
     }
     // 우측 상단 "일괄 돌보기" 버튼(밥·물 채우고 똥 치우기) — dock·홈 공용
     function batchBtnHtml(){ return '<button class="cr-batch" onclick="event.stopPropagation();batchCare(this)" aria-label="일괄 돌보기: 밥·물 채우고 똥 치우기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 20c0-3.6 3.4-5.5 7.5-5.5s7.5 1.9 7.5 5.5"/><circle cx="8" cy="8.5" r="1.5"/><circle cx="16" cy="8.5" r="1.5"/><circle cx="12" cy="6.5" r="1.6"/></svg>돌보기</button>'; }
@@ -630,6 +637,9 @@
     // ---- 통합 걷기 엔진: 단일 rAF가 "지금 보이는 무대"(시트 방 또는 dock)만 애니메이션 ----
     // 고양이는 방/시트에 배치된 가구로 가끔 다가가 잠시 머문다(상호작용). 스트립엔 가구가 없어 자유 배회.
     function reducedMotion(){ try{ return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } }
+    // 걷기 스프라이트 애니메이션 주기(초): 발 놀림이 실제 이동속도에 맞도록 속도에 반비례 → 미끄러짐(무빙워크) 방지, 자연스러운 걸음.
+    function walkDur(v, hh){ const stride=0.42*(hh||40), px=Math.max(0.001, v*58); return Math.max(0.45, Math.min(1.5, stride/px)).toFixed(2); }
+    function setWalkDur(a){ if(a.spr){ const sc=a.el.querySelector('.cspr'); if(sc) sc.style.setProperty('--wdur', walkDur(a.v, a.hh)+'s'); } }
     const _eng={ raf:0, stage:null, actors:[], last:0, dirty:false };
     function markCatDirty(){ _eng.dirty=true; }
     function stopWalk(){ _eng.actors=[]; _eng.stage=null; }
@@ -650,17 +660,19 @@
         return { x:(p.c-0.5+(foot.w-1)/2)/12*W, itemId:p.itemId, fh }; }) : [];
       // 고양이마다 성격(속도·유휴빈도·방향전환·가구선호)을 랜덤 부여 → 개별적으로 움직임
       // 스프라이트 고양이는 정사각(폭=높이), SVG 고양이는 가로세로비 ~26/14.
-      return acts.map(el=>{ const id=el.getAttribute('data-cat'), spr=hasSprite(id);
-        return { el, id, spr, x:parseFloat(el.style.left)||0, dir:Math.random()<0.5?-1:1,
-        v:0.16+Math.random()*0.34, t:Math.random()*6, frame:0, fc:Math.random()*170, W, hh,
+      return acts.map(el=>{ const id=el.getAttribute('data-cat'), spr=hasSprite(id), fw=!!(spr&&PET_SPRITES[id]&&PET_SPRITES[id].frontWalk);
+        const v=0.18+Math.random()*0.24;   // 속도 폭을 조금 좁혀 걸음이 차분하게(주기는 walkDur로 이동속도에 맞춤)
+        const a={ el, id, spr, frontWalk:fw, x:parseFloat(el.style.left)||0, dir:Math.random()<0.5?-1:1,
+        v:v, t:Math.random()*6, frame:0, fc:Math.random()*170, W, hh,
         sw:(spr?hh:Math.round(hh*26/14)), props, lift:0,
         mode:'roam', pause:0, goal:null, pose:null,
-        // 유휴(그 자리 정지·뒤돌아보기) 빈도를 조금 높여 "가만히 있거나 뒤돌아보는" 모습이 자주 보이게
-        idle:0.003+Math.random()*0.006, turn:0.004+Math.random()*0.012, seek:0.002+Math.random()*0.006, cool:0 }; });
+        // 유휴(그 자리에 멈춰 정면 보기) — 자주·오래 서서 정면을 보도록(poseDur에서 시간 늘림)
+        idle:0.0032+Math.random()*0.005, turn:0.004+Math.random()*0.010, seek:0.002+Math.random()*0.006, cool:0 };
+        setWalkDur(a); return a; });
     }
     // 가구 종류별 포즈: 밥그릇=앉아 먹기, 방석=식빵, 캣타워=낮잠, 스크래처=앉기, 그 외=식빵
     function poseForItem(itemId){ return itemId==='bowl'?'sit':itemId==='cushion'?'loaf':itemId==='tower'?'sleep':itemId==='scratcher'?'sit':'loaf'; }
-    function poseDur(pose){ return pose==='sleep'?(3200+Math.random()*2800):(1200+Math.random()*2000); }
+    function poseDur(pose){ return pose==='sleep'?(4000+Math.random()*3500):(2800+Math.random()*3200); }   // 정면으로 가만히 있는 시간을 더 길게
     // 가구별 상호작용 자리: 올라갈 높이(lift px)·바라보는 방향(face)·옆 오프셋(dx)·포즈·머무는 시간(ms)
     // 캣타워=3층 중 한 층에 올라가 정면 보며 쉼 / 방석=위에 잠시 / 밥그릇=뒤에서 앉기 / 스크래처=옆에서 잠시
     function furnSpot(a, goal){
@@ -670,7 +682,7 @@
       if(it==='cushion') return { lift:Math.round(fh*0.4), face:'south', dx:0, pose:'loaf', dur:2000+Math.random()*3000 };
       if(it==='bowl')    return { lift:Math.round(fh*0.15), face:'south', dx:0, pose:'sit', dur:2000+Math.random()*2600 };
       if(it==='scratcher') return { lift:0, face:(Math.random()<0.5?'east':'west'), dx:Math.round(a.sw*0.6)*(Math.random()<0.5?1:-1), pose:'sit', dur:1800+Math.random()*2800 };
-      return { lift:0, face:CAT_FACES[Math.floor(Math.random()*4)], dx:0, pose:'loaf', dur:1500+Math.random()*2000 };
+      return { lift:0, face:'south', dx:0, pose:'loaf', dur:2200+Math.random()*2600 };
     }
     // 가구에 도착 → 자리 잡고 머무름(랜덤 시간). 스프라이트는 해당 방향 정지, SVG는 포즈. lift로 발판/방석 위로 올림.
     function enterInteract(a, id, goal){
@@ -684,9 +696,8 @@
     }
     function enterPose(a, id, pose){ a.mode='pause'; a.pose=pose; a.pause=poseDur(pose); a.cool=1400;
       if(a.spr){ const s=a.el.querySelector('.cspr');
-        // 스프라이트 고양이는 멈춰서 앞/뒤/좌/우 중 하나를 본다(정지 4방향). 이미지가 올바른 방향이라 플립 없음.
-        const f=CAT_FACES[Math.floor(Math.random()*4)];
-        if(s){ s.style.setProperty('--idle','url('+sprStill(id,f)+')'); s.classList.add('idle'); }
+        // 멈춰서 쉴 땐 항상 정면(south)을 본다. 이미지가 정방향이라 플립 없음(scaleX(1)).
+        if(s){ s.style.setProperty('--idle','url('+sprStill(id,'south')+')'); s.classList.add('idle'); }
         a.el.style.transform='translate(0,0) scaleX(1)'; }
       else { a.el.innerHTML=catPose(id, pose, {h:a.hh});
         a.el.style.transform='translate(0,0) scaleX('+a.dir+')'; } }
@@ -694,13 +705,16 @@
       _eng.actors.forEach(a=>{
         a.t+=dt*0.004; if(a.cool>0)a.cool-=dt; const id=a.el.getAttribute('data-cat');
         if(a.mode==='pause'){ a.pause-=dt; if(a.pause<=0){ a.mode='roam'; a.fc=999; a.dir=Math.random()<0.5?-1:1; a.lift=0;   // 내려와 재출발
-          if(a.spr){ const s=a.el.querySelector('.cspr'); if(s) s.classList.remove('idle'); } } return; }   // 포즈 유지 후 랜덤 방향으로 재출발
+          if(a.spr){ const s=a.el.querySelector('.cspr'); if(s){
+            // 이동 재개: 보통 고양이는 옆 걷기 시트로(.idle 제거), frontWalk 고양이는 옆(east) 정지스틸로 방향만 맞춤
+            if(a.frontWalk){ s.style.setProperty('--idle','url('+sprStill(id,'east')+')'); s.classList.add('idle'); }
+            else s.classList.remove('idle'); } } } return; }   // 포즈 유지 후 재출발
         // 유휴 제스처(그 자리 앉기/식빵/낮잠) — 쿨다운 후에만
         if(a.mode==='roam' && a.cool<=0 && Math.random()<a.idle){ enterPose(a, id, ['loaf','sit','sleep'][Math.floor(Math.random()*3)]); return; }
         // 가끔 방향 전환(개별)
         if(a.mode==='roam' && Math.random()<a.turn){ a.dir*=-1; }
-        // 가끔 속도 변화(개별)
-        if(a.mode==='roam' && Math.random()<0.003){ a.v=0.16+Math.random()*0.34; }
+        // 가끔 속도 변화(개별) — 바뀐 속도에 맞춰 걷기 주기도 갱신(미끄러짐 방지)
+        if(a.mode==='roam' && Math.random()<0.003){ a.v=0.18+Math.random()*0.24; setWalkDur(a); }
         // 가구로 이동 결정(가구 있을 때, 쿨다운 후)
         if(a.mode==='roam' && a.props.length && a.cool<=0 && Math.random()<a.seek){ a.goal=a.props[Math.floor(Math.random()*a.props.length)]; a.mode='goal'; }
         if(a.mode==='goal' && a.goal){ a.dir=(a.goal.x>a.x)?1:-1; if(Math.abs(a.goal.x-a.x)<5){ enterInteract(a, id, a.goal); a.goal=null; return; } }
@@ -968,7 +982,7 @@
     const TIER_ORDER = TIERS.map(t=>t.id);   // 높은 등급이 비면 한 단계씩 낮춰 대체할 때 사용
     function tierInfo(id){ return TIERS.find(t=>t.id===id)||TIERS[0]; }
     // 테스트 배정(등급당 1) — 펫알=고양이 / 랜덤박스=가구
-    const CAT_TIER  = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'legend', cat_tuxedo:'limited', cat_chaos:'legend' };
+    const CAT_TIER  = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'epic', cat_tuxedo:'legend', cat_chaos:'legend', cat_siamese:'limited' };
     const ITEM_TIER = { cushion:'normal', bowl:'uncommon', scratcher:'rare', tower:'epic' };
     // 등급별 상점 가격(은화) — 확률(60/20/15/3.8/1/0.2%)에 맞춰 등급이 오를수록 약 2배씩.
     // 알 100은화(+금화1·중복 30은화 환급) 대비, 흔한 등급은 알보다 싸게·희귀 등급은 비싸게 → 직접구매 vs 뽑기 선택 성립.
@@ -1139,7 +1153,10 @@
       const grid='<div class="grid12" id="placeGrid" onclick="placeClick(event)">'+items+'<div class="gdrop" id="gdrop" hidden></div></div>';
       const pal=ITEM_CATALOG.map(it=>{ const foot=itemFoot(it.id);
         return '<button class="pitem'+(_selItem===it.id?' on':'')+'" onclick="selItem(\''+it.id+'\')">'+furnSvg(it.id,{h:Math.round(20*furnScale(it.id))})+'<span>'+it.name+'</span><span class="pq">'+foot.w+'×'+foot.h+' · 남은 '+itemRemaining(it.id)+'</span></button>'; }).join('');
-      return '<div class="editwrap">'+grid+'<div class="palette">'+pal+'</div>'+
+      // 미니 웹캠 프리뷰: 현재 배치를 실제 방 뷰로 보여줘 방향 헷갈림 방지(표시 전용)
+      const plist=placedList().sort((a,b)=>b.r-a.r); distributePoops(plist);
+      const preview='<div class="miniroom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div><span class="cr-cam"><i></i>미리보기</span><div class="cr-props">'+plist.map(p=>propMarkup(p,true)).join('')+'</div></div>';
+      return '<div class="editwrap">'+preview+'<div class="hintline" style="margin:0 0 8px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="13" rx="2"/><path d="M8 20h8"/></svg>위 미리보기가 실제 방 모습이에요. 격자 <b>윗줄=방 앞(아래)</b>, <b>아랫줄=방 뒤(위)</b>.</div>'+grid+'<div class="palette">'+pal+'</div>'+
         '<div class="hintline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>가구를 골라 빈 칸을 탭해 배치 · 놓인 가구는 <b>드래그로 이동</b>, <b>탭하면 회수/판매</b>. 캣타워는 3×6, 스크래처는 2×2 칸을 차지해요.</div></div>';
     }
     function missionRow(m){
