@@ -546,13 +546,14 @@
     .catchip { position:relative; flex:0 0 112px; width:112px; box-sizing:border-box; background:var(--card); border:1.5px solid var(--bd); border-radius:16px; padding:8px 8px 10px; text-align:center; transition:transform .08s, border-color .12s, background .12s; cursor:pointer; }
     .catchip .cpic { width:100%; aspect-ratio:1; background:var(--soft); border-radius:12px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
     .catchip .cpic .cspr, .catchip .cpic .catpx, .catchip .cpic .px { display:block; }
-    .catchip .cn-edit { position:absolute; top:5px; right:5px; width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; border-radius:7px; color:var(--sub); background:color-mix(in srgb,var(--card) 70%,transparent); }
+    .catchip .cn-edit { position:absolute; top:5px; right:5px; z-index:2; transform:translateZ(0); width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; border-radius:7px; color:var(--sub); background:color-mix(in srgb,var(--card) 70%,transparent); }
     .catchip .cn-edit svg { width:12px; height:12px; }
     .catchip .cn-edit:active { transform:scale(.9); }
     .catchip:active { transform:scale(.96); }
     .catchip.on { border-color:var(--primary); background:color-mix(in srgb,var(--primary) 8%,var(--card)); }
     .catchip.on .cpic { background:color-mix(in srgb,var(--primary) 14%,var(--soft)); }
-    .catchip .csel { position:absolute; top:5px; left:5px; width:22px; height:22px; border-radius:50%; background:var(--primary); color:#fff; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(0,0,0,.25); }
+    /* 걷기 스프라이트(.cspr)는 translateZ 합성 레이어라, 체크 배지도 같은 레이어로 올려(z-index+translateZ) iOS에서 스프라이트에 가려지지 않게 항상 위에 그린다. */
+    .catchip .csel { position:absolute; top:5px; left:5px; z-index:2; transform:translateZ(0); width:22px; height:22px; border-radius:50%; background:var(--primary); color:#fff; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(0,0,0,.25); }
     .catchip .csel svg { width:13px; height:13px; }
     .catchip .cn { font-size:13px; font-weight:700; margin-top:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .catchip .cstate { font-size:9.5px; font-weight:800; margin-top:2px; color:var(--sub); }
@@ -570,6 +571,14 @@
     .shopcard .meta .price { display:inline-flex; align-items:center; gap:5px; font-size:13px; font-weight:800; margin-top:8px; }
     .shopcard .meta .price .ci { width:17px; height:17px; display:inline-flex; }
     .shopcard .act { flex:none; }
+    /* 상점 펫 카드 선택(미리보기) — 탭하면 강조되고 썸네일이 옆으로 걷는 스프라이트로 바뀐다. */
+    .shopcard.petpick { cursor:pointer; transition:border-color .12s, background .12s, transform .08s; }
+    .shopcard.petpick:active { transform:scale(.99); }
+    .shopcard.petpick.sel { border-color:var(--primary); background:color-mix(in srgb,var(--primary) 8%,var(--card)); }
+    .shopcard.petpick.sel .thumb { background:color-mix(in srgb,var(--primary) 14%,var(--soft)); }
+    .shopcard .thumb .cspr { display:block; }
+    .shopcard .thumb .psel { position:absolute; top:5px; left:5px; z-index:2; transform:translateZ(0); width:22px; height:22px; border-radius:50%; background:var(--primary); color:#fff; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(0,0,0,.25); }
+    .shopcard .thumb .psel svg { width:13px; height:13px; }
     .buy { padding:10px 16px; border-radius:12px; background:var(--primary); color:var(--card); font-size:13px; font-weight:800; white-space:nowrap; }
     .buy.dis { background:var(--soft); color:var(--sub); }
     .owntag { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:800; color:var(--income); }
