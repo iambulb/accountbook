@@ -431,6 +431,7 @@
 
     /* ===== 🐱 고양이집 (은화 경제 + 도트 아트) ===== */
     .px { image-rendering:pixelated; display:block; }
+    .catpx { image-rendering:pixelated; display:block; } /* 스프라이트 고양이 정면 썸네일(south.png) — 상점·보유칩·뽑기 공통 */
     /* 전역 dock 스트립 (topbar와 content 사이 상시 노출) */
     .catdock { flex-shrink:0; background:var(--soft); border-bottom:1px solid var(--bd); }
     .cd-strip { height:52px; display:flex; align-items:center; gap:10px; padding:0 14px; position:relative; overflow:hidden; }
@@ -604,17 +605,31 @@
     .fx-item.fx-tremble { animation:fxtremble .09s linear infinite; }
     .fx-item.fx-ajar { transform:translateY(-6px) rotate(-3deg); }
     .fx-leak { position:absolute; left:50%; top:50%; width:130px; height:130px; transform:translate(-50%,-50%) scale(.3); border-radius:50%; z-index:1;
-      background:radial-gradient(circle, currentColor 0%, color-mix(in srgb, currentColor 40%, transparent) 42%, transparent 70%); opacity:0; filter:blur(2px);
+      background:radial-gradient(circle, #fff 0%, currentColor 22%, color-mix(in srgb, currentColor 40%, transparent) 46%, transparent 72%); opacity:0; filter:blur(2px);
+      box-shadow:0 0 calc(26px * var(--lk,1)) calc(6px * var(--lk,1)) currentColor;
       animation:fxleak .7s ease-out forwards; }
     .fx-leak.rainbow { background:conic-gradient(#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8,#F04452); animation:fxleak .7s ease-out forwards, fxspin 1.4s linear infinite; }
+    /* 깨진 알 껍질 조각 — 튀어나가 옆에 흩어져 앉는다(알 전용) */
+    .fx-shell { position:absolute; left:50%; top:48%; width:13px; height:10px; z-index:2;
+      background:#FBFBFD; border:1.5px solid #c9c2b0; border-radius:48% 48% 60% 60% / 62% 62% 45% 45%;
+      transform:translate(-50%,-50%) scale(.4); opacity:0; filter:drop-shadow(0 2px 3px rgba(0,0,0,.3));
+      animation:fxshell .8s cubic-bezier(.2,.85,.3,1) forwards; }
+    .fx-shell.big { width:22px; height:16px; }
     .fx-paw { position:absolute; left:50%; top:54%; z-index:3; transform:translate(150px,-50%) rotate(-18deg); }
     .fx-paw .px { height:66px; filter:drop-shadow(0 4px 8px rgba(0,0,0,.4)); }
     .fx-paw.tap { animation:fxpaw .5s cubic-bezier(.3,.7,.3,1); }
     @keyframes fxpreshake { 0%,100%{transform:translateX(0) rotate(0)} 25%{transform:translateX(-3px) rotate(-2deg)} 75%{transform:translateX(3px) rotate(2deg)} }
     @keyframes fxhit { 0%{transform:translateX(0) rotate(0)} 20%{transform:translateX(10px) rotate(6deg)} 45%{transform:translateX(-8px) rotate(-5deg)} 70%{transform:translateX(5px) rotate(3deg)} 100%{transform:translateX(0) rotate(0)} }
     @keyframes fxtremble { 0%,100%{transform:translate(0,0)} 25%{transform:translate(-2px,1px)} 50%{transform:translate(2px,-1px)} 75%{transform:translate(-1px,-1px)} }
-    @keyframes fxleak { 0%{opacity:0;transform:translate(-50%,-50%) scale(.3)} 55%{opacity:.95} 100%{opacity:1;transform:translate(-50%,-50%) scale(2.3)} }
+    @keyframes fxleak { 0%{opacity:0;transform:translate(-50%,-50%) scale(.3)} 55%{opacity:.95} 100%{opacity:1;transform:translate(-50%,-50%) scale(calc(2 * var(--lk,1)))} }
     @keyframes fxpaw { 0%{transform:translate(150px,-50%) rotate(-18deg)} 42%{transform:translate(14px,-50%) rotate(-6deg)} 58%{transform:translate(30px,-50%) rotate(-10deg)} 100%{transform:translate(150px,-50%) rotate(-18deg)} }
+    /* 껍질 조각: 위로 튀었다가 좌우·아래로 흩어져 놓인다 */
+    @keyframes fxshell {
+      0%{ opacity:0; transform:translate(-50%,-50%) rotate(0) scale(.4); }
+      18%{ opacity:1; }
+      55%{ transform:translate(calc(-50% + var(--sx) * .72), calc(-50% - 26px)) rotate(calc(var(--sr) * .6)) scale(var(--ss)); }
+      100%{ opacity:1; transform:translate(calc(-50% + var(--sx)), calc(-50% + var(--sy))) rotate(var(--sr)) scale(var(--ss)); }
+    }
 
     /* ===== 접근성(A11y) ===== */
     /* 키보드 포커스에만 또렷한 링(마우스 클릭 시엔 안 보임) */

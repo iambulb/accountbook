@@ -12,6 +12,7 @@
 - **걷다 멈춰서 앞/뒤/옆 보며 쉬기(정지 4방향)**: 스프라이트 고양이가 유휴 상태(`enterPose`)에 들어가면 이전엔 단일 `idle.png` 한 장만 보였는데, 이제 PixelLab `rotations`의 **south(앞)·north(뒤)·east(우)·west(좌) 4방향 정지 이미지 중 하나를 무작위**로 보여줌(`CAT_SPRITES.stills`, `--idle` 동적 지정). 정지 이미지는 이미 올바른 방향이라 **플립하지 않음**(`scaleX(1)`). `reduced-motion`에서는 처음부터 south(앞) 정지로 고정.
 - **치즈(cheese) 고양이 PNG 스프라이트 걷기 추가**: PixelLab zip의 `Walk/east` 6프레임을 이어 붙인 `walk.png`(288×48) + 4방향 정지로 치즈도 고등어처럼 CSS `steps(6)` 걷기·4방향 쉬기 지원(`CAT_SPRITES.cheese`). 고등어(mackerel)도 4방향 정지를 새로 받아 `idle.png` 단일 장 → 4방향으로 소급 교체.
 - **PixelLab zip 자동처리 파이프라인 문서화**: `public/assets/cats/_zips/`에 zip을 넣으면 따르는 규칙을 [docs/cat-asset-pipeline.md](cat-asset-pipeline.md)로 정리하고 `CLAUDE.md`에 등록. 원본 zip은 `_zips/`에 보관하며 APP_SHELL 캐시엔 넣지 않음. `sw.js` `v3.39.0`(치즈 walk+4방향·고등어 4방향 추가, `idle.png` 제거).
+- **스프라이트 고양이 아트를 모든 표시 위치에 일관 적용**: 걷는 무대(dock·방)뿐 아니라 **상점 카드·보유 고양이 칩·뽑기(펫알) 결과 썸네일**도 스프라이트 고양이는 `south.png`(정면 PNG)로 보이도록 단일 진입 함수 `catFace(id,{h})` 신설(`hasSprite`로 PNG/SVG 자동 분기, `.catpx` `<img>`). 이전엔 이 세 곳이 항상 SVG 정면만 그려 치즈·고등어도 옛 도트로 보였음. 파이프라인 문서에 "모든 표시 위치에 일관 적용(catActorHTML/catFace만 사용)" 규칙 추가.
 
 ### 변경 — 🏷️ "고양이집"→"알뜰샵" 개칭 + 은화 아이콘 둥글게 + 앱 대표 아이콘 교체
 - **게임화 기능 이름 `고양이집` → `알뜰샵`**: 시트 제목(`openSheet`), 더보기 그리드 셀, 설정의 `dock` 항목 라벨을 모두 `알뜰샵`으로 변경(기능 동작 동일).

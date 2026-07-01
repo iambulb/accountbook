@@ -47,6 +47,19 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여하고
    (단, `_zips/`와 원본 zip은 캐시에 넣지 않음)
 3. `docs/features.md` 고양이 목록 갱신, `docs/CHANGELOG.md` `[Unreleased]`에 기록.
 
+## ★ 모든 표시 위치에 일관 적용 (필수)
+고양이 아트는 **정해진 두 진입 함수만** 거치게 해서, 새 고양이를 추가하거나 아트를 바꿔도 **dock·방·상점·보유목록·뽑기 결과 어디서나 자동으로 같은 그림**이 나오게 한다. 개별 화면에서 `catFront`/`catSide`를 직접 부르지 말 것.
+
+| 표시 위치 | 진입 함수 | 스프라이트 고양이 | SVG 고양이 |
+|---|---|---|---|
+| dock 스트립·알뜰샵 홈 방(걸어다님) | `catActorHTML(id,h)` | `walk.png` steps() 걷기 + 쉴 때 4방향 정지 | SVG 옆/포즈 |
+| 상점 카드 썸네일 | `catFace(id,{h})` | `south.png`(정면) | `catFront` SVG |
+| 보유 고양이 칩(집에 내보내기) | `catFace(id,{h})` | `south.png`(정면) | `catFront` SVG |
+| 뽑기(펫알) 오픈 결과 | `catFace(id,{h})` | `south.png`(정면) | `catFront` SVG |
+
+- **걷는 표시**는 `catActorHTML`, **정지 정면 썸네일**은 `catFace`가 `hasSprite(id)`로 PNG/SVG를 자동 분기한다.
+- 새 표시 위치를 만들 때도 이 둘 중 하나를 쓴다. `catFace` PNG는 `.catpx`(pixelated) `<img>`로 렌더된다.
+
 ## 걷기/쉬기 상태 (cats.js 통합 엔진)
 스프라이트 고양이는 단일 rAF 엔진(`catLoop`/`stepActors`)의 액터로 배치되어 두 상태를 오간다.
 - **걷기(roam/goal)**: `walk.png`를 CSS `steps(6)`로 재생하며 좌우 이동. 서쪽 이동이면 `scaleX(-1)`로 뒤집음(시트는 east 기준).

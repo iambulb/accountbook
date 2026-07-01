@@ -164,31 +164,90 @@
     const GOLD_PAL={X:'#8a6a1e',S:'#F4D06B',D:'#caa23a',A:'#7a5a12',E:'#fff0b8',P:'#cf8f6c'};   // 금화(은화와 동형, 금색)
     const FURN_PALS={ cushion:{X:'#5b6470',C:'#a9b2be',D:'#868f9c'}, bowl:{X:'#5b6470',W:'#d0d6dd',F:'#d68b4a'}, tower:{X:'#6f4c28',W:'#c99a5f',P:'#8a6a3f'}, scratcher:{X:'#6f4c28',W:'#c99a5f',P:'#d8b98a'} };
     // ---- 펫알/랜덤박스 도트 ----
+    // 알: 위가 좁고 아래가 둥근 달걀 실루엣. 중앙에 크고 두꺼운 무지개(R→P) 물음표. S=우측 그림자.
     const M_EGG = [
-      "...XXXXXXXX...","..XWWWWWWWWX..",".XWWWWWWWWWWX.","XWWWWWWWWWWWWX","XWWWWWWWWWWWWX",
-      "XWWWWRROOWWWWX","XWWWWWWWWYWWWX","XWWWWWWWWYWWWX","XWWWWWWGGWWWWX","XWWWWWWBWWSSWX",
-      "XWWWWWWBWWSSWX","XWWWWWWWWWSSWX","XWWWWWWPWWSSWX","XWWWWWWWWSSWWX",".XWWWWWWWSSWX.",
-      ".XWWWWWWWSSWX.","..XWWWWWWWWX..","...XWWWWWWX..."
+      "......XX......",
+      ".....XWWX.....",
+      "....XWWWWX....",
+      "...XWWWWWWX...",
+      "..XWWWWWWWWX..",
+      "..XWWRRRRWWX..",
+      ".XWWRRRRRRWWX.",
+      ".XWWRRWWOOWWX.",
+      "XWWWWWWOOOWWSX",
+      "XWWWWWYYYWWWSX",
+      "XWWWWGGGWWWWSX",
+      "XWWWWWGGWWWWSX",
+      ".XWWWWBBWWWSX.",
+      ".XWWWWWWWWWSX.",
+      "..XWWWPPWWWX..",
+      "...XWWWWWWX...",
+      "....XWWWWX....",
+      ".....XXXX....."
     ];
+    // 균열1: 위쪽에 잔금이 생김
     const M_EGG_C1 = [
-      "...XXXXXXXX...","..XWWWWWWWWX..",".XWWWWWWWWWWX.","XWWWWWWXWWWWWX","XWWWWWXWWWWWWX",
-      "XWWWWRRXOWWWWX","XWWWWWXWWYWWWX","XWWWWWWWWYWWWX","XWWWWWWGGWWWWX","XWWWWWWBWWSSWX",
-      "XWWWWWWBWWSSWX","XWWWWWWWWWSSWX","XWWWWWWPWWSSWX","XWWWWWWWWSSWWX",".XWWWWWWWSSWX.",
-      ".XWWWWWWWSSWX.","..XWWWWWWWWX..","...XWWWWWWX..."
+      "......XX......",
+      ".....XWWX.....",
+      "....XWXWWX....",
+      "...XWWXWWWX...",
+      "..XWWWWWWWWX..",
+      "..XWWRRRRWWX..",
+      ".XWWRRRRRRWWX.",
+      ".XWWRRWWOOWWX.",
+      "XWWWWWWOOOWWSX",
+      "XWWWWWYYYWWWSX",
+      "XWWWWGGGWWWWSX",
+      "XWWWWWGGWWWWSX",
+      ".XWWWWBBWWWSX.",
+      ".XWWWWWWWWWSX.",
+      "..XWWWPPWWWX..",
+      "...XWWWWWWX...",
+      "....XWWWWX....",
+      ".....XXXX....."
     ];
+    // 균열2: 금이 번지고 조각이 떨어질 듯
     const M_EGG_C2 = [
-      "...XXXXXXXX...","..XWWWWWWWWX..",".XWWWWWWWWWWX.","XWWWWWWXWWWWWX","XWWWWWXWWWWWWX",
-      "XWWWWRRXOWWWWX","XWWWWWXWWYWWWX","XWWWWWWWXYWWWX","XWWWWWWGGWWWWX","XWWWWWWXWWSSWX",
-      "XWWWWXWBWWSSWX","XWWWWWWWXWSSWX","XWWWWWXPWWSSWX","XWWWWWWWWXSWWX",".XWWWWWXWSSWX.",
-      ".XWWWWWWWSSWX.","..XWWWWWWWWX..","...XWWWWWWX..."
+      "......XX......",
+      ".....XWWX.....",
+      "....XWXWWX....",
+      "...XWWXWWWX...",
+      "..XWWWWXWWWX..",
+      "..XWWRRRRWWX..",
+      ".XXWRRRRRRWWX.",
+      ".XWWRRWWOOWWX.",
+      "XWWWWWWOOOWXSX",
+      "XWWWWWYYYWWWSX",
+      "XWWWWGGGWWWWSX",
+      "XWWWWWGGWWWWSX",
+      ".XWWWWBBWWWSX.",
+      ".XWWWWWWWWWSX.",
+      "..XWWWPPWWWX..",
+      "...XWWWWWWX...",
+      "....XWWWWX....",
+      ".....XXXX....."
     ];
+    // 박스: 위에 뚜껑(C=윗면, L=앞면), 아래에 몸체(W). 앞면 중앙에 알과 같은 무지개 물음표.
     const M_BOX = [
-      ".....XRRRRX.....",".....XRKKRX.....","..XXXXRRRRXXXX..",".XWWWWWRRWWWWWX.",".XRRRRRRRRRRRRX.",
-      ".XWWWWWRRWWWWWX.","..XWWWWRRWWWWX..","..XWWWWRRWWWWX..","..XWWWWWWWWWWX..","..XWDDWRRWWWWX..",
-      "..XWMMMRRWWWWX..","..XWDMDRRWKKWX..","..XWMMMRRWKWWX..","..XWMDMRRWWWWX..","..XWWWWRRWWWWX..","...XXXXXXXXXX..."
+      "................",
+      "....XXXXXXXX....",
+      "..XXCCCCCCCCXX..",
+      ".XCCCCCCCCCCCCX.",
+      "XXXXXXXXXXXXXXXX",
+      "XLLLLLLLLLLLLLLX",
+      "XXXXXXXXXXXXXXXX",
+      ".XWWWWRRRRWWWWX.",
+      ".XWWWRRWWOOWWWX.",
+      ".XWWWWWWWOOWWWX.",
+      ".XWWWWWWYYWWWWX.",
+      ".XWWWWWGGWWWWWX.",
+      ".XWWWWWBBWWWWWX.",
+      ".XWWWWWWWWWWWWX.",
+      ".XWWWWWPPWWWWWX.",
+      ".XXXXXXXXXXXXXX."
     ];
     const EGG_PAL={X:'#c9c2b0',W:'#FBFBFD',S:'#E7E3DA',R:'#F04452',O:'#F0883C',Y:'#F2C84B',G:'#2FAE7A',B:'#3182F6',P:'#9B6FC8'};
-    const BOX_PAL={X:'#c7ccd3',W:'#FBFBFD',R:'#E23B4E',K:'#9e2530',D:'#3a3d44',M:'#aeb4bd',C:'#e6e9ee'};
+    const BOX_PAL={X:'#b9c0cb',W:'#FBFBFD',C:'#cdd5e4',L:'#b7c0d4',R:'#F04452',O:'#F0883C',Y:'#F2C84B',G:'#2FAE7A',B:'#3182F6',P:'#9B6FC8'};
     // 은화 속 검은 고양이의 앞발(특별↑ 연출에서 톡 건드림)
     const M_PAW = [
       "...XXXXX..","..XBBBBBX.",".XBBBBBBBX",".XBPBPBPBX",".XBBBBBBBX",".XBBPPBBBX",".XBBPPBBBX","..XBBBBBX.","...XXXXX.."
@@ -267,6 +326,13 @@
         return '<div class="cspr'+(rm?' idle':'')+'" style="width:'+s+'px;height:'+s+'px;--sheet:url('+sp.walk+');--idle:url('+sprStill(id,'south')+');--fw:'+(s*sp.frames)+'px;"></div>'; }
       return catSide(id, 0, {h:h});
     }
+    // 정면 썸네일(걷지 않는 표시용: 상점 카드·보유 칩·뽑기 결과 등).
+    // 스프라이트 고양이는 south(정면) PNG, 없으면 SVG 매트릭스로 자동 분기.
+    // ★ 고양이를 추가/수정할 땐 정면 표시는 반드시 catFace를 거쳐야 dock·방·상점·보유목록·뽑기 어디서나 같은 아트가 나온다.
+    function catFace(id, opt){ opt=opt||{}; const h=opt.h||48;
+      if(hasSprite(id)){ const s=Math.round(h);
+        return '<img class="catpx" src="'+sprStill(id,'south')+'" alt="" width="'+s+'" height="'+s+'" loading="lazy">'; }
+      return catFront(id, opt); }
     const POSE_M = { sit:M_CAT_SIT, loaf:M_CAT_LOAF, sleep:M_CAT_SLEEP };
     function catPose(id, pose, opt){ return pxSvg(POSE_M[pose]||M_CAT_SIDE_A, CAT_PALS[id], opt); }
     function coinSvg(opt){ return pxSvg(M_COIN, COIN_PAL, opt); }
@@ -408,8 +474,9 @@
     // 배치 가구를 무대 바닥에 배경으로(가로=열, 앞뒤 깊이=행)
     function renderDockProps(){
       const box=$('cdProps'); if(!box) return;
-      box.innerHTML=placedList().map(p=>{ const x=((p.c-0.5)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(2+depth*22).toFixed(0);
-        return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:(16+depth*10).toFixed(0)})+'</div>'; }).join('');
+      // 원근: 뒤(행 큰 값)일수록 위로·작게, 앞(행 작은 값)일수록 아래로·크게. 앞 가구가 뒤 가구를 덮도록 뒤부터 그린다.
+      box.innerHTML=placedList().sort((a,b)=>b.r-a.r).map(p=>{ const x=((p.c-0.5)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(2+depth*22).toFixed(0);
+        return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:(26-depth*10).toFixed(0)})+'</div>'; }).join('');
     }
     // 활성 고양이를 dock 무대에 액터로 배치(없으면 안내)
     function renderDockCats(){
@@ -444,7 +511,8 @@
         v:0.16+Math.random()*0.34, t:Math.random()*6, frame:0, fc:Math.random()*170, W, hh,
         sw:(spr?hh:Math.round(hh*26/14)), props,
         mode:'roam', pause:0, goal:null, pose:null,
-        idle:0.0015+Math.random()*0.004, turn:0.004+Math.random()*0.012, seek:0.002+Math.random()*0.006, cool:0 }; });
+        // 유휴(그 자리 정지·뒤돌아보기) 빈도를 조금 높여 "가만히 있거나 뒤돌아보는" 모습이 자주 보이게
+        idle:0.003+Math.random()*0.006, turn:0.004+Math.random()*0.012, seek:0.002+Math.random()*0.006, cool:0 }; });
     }
     // 가구 종류별 포즈: 밥그릇=앉아 먹기, 방석=식빵, 캣타워=낮잠, 스크래처=앉기, 그 외=식빵
     function poseForItem(itemId){ return itemId==='bowl'?'sit':itemId==='cushion'?'loaf':itemId==='tower'?'sleep':itemId==='scratcher'?'sit':'loaf'; }
@@ -511,14 +579,14 @@
     function catHomeHtml(){
       const cats=activeCats();
       // 배치된 가구를 방 바닥에 매핑(c→가로, r→앞뒤 깊이)
-      const props=placedList().map(p=>{ const x=((p.c-0.5)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(3+depth*30).toFixed(0);
-        return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:(20+depth*10).toFixed(0)})+'</div>'; }).join('');
+      const props=placedList().sort((a,b)=>b.r-a.r).map(p=>{ const x=((p.c-0.5)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(3+depth*30).toFixed(0);
+        return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:(32-depth*12).toFixed(0)})+'</div>'; }).join('');
       let h='<div class="catroom" id="catRoom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div><span class="cr-cam"><i></i>LIVE · 우리집</span><div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div></div>';
       const owned=ownedCatList();
       h+='<div class="sech"><span class="l">우리집 고양이</span><span class="s">'+cats.length+' / 3 활성</span></div>';
       if(!owned.length) h+='<div class="empty" style="padding:20px;">아직 고양이가 없어요. 상점에서 입양해 보세요 🐾</div>';
       else { h+='<div class="catchips">'+owned.map(id=>{ const on=isActiveCat(id);
-        return '<button class="catchip'+(on?' on':'')+'" onclick="toggleActiveCat(\''+id+'\')">'+catFront(id,{h:44})+'<div class="cn">'+catName(id)+'</div><div class="cstate">'+(on?'집에 있음':'대기')+'</div></button>'; }).join('')+'</div>';
+        return '<button class="catchip'+(on?' on':'')+'" onclick="toggleActiveCat(\''+id+'\')">'+catFace(id,{h:44})+'<div class="cn">'+catName(id)+'</div><div class="cstate">'+(on?'집에 있음':'대기')+'</div></button>'; }).join('')+'</div>';
         h+='<div class="hintline" style="margin-top:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>고양이를 탭해 집에 내보내거나 대기시켜요(최대 3마리).</div>'; }
       return h;
     }
@@ -571,7 +639,7 @@
           if(owned) act='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>보유</span>';
           else if(enough) act='<button class="buy" aria-label="'+c.name+' 구매('+c.price+' 은화)" onclick="buyCat(\''+c.id+'\')">구매</button>';
           else act='<button class="buy dis" disabled>'+(c.price-coins())+' 부족</button>';
-          return '<div class="shopcard"><div class="thumb"><div class="fl"></div>'+catFront(c.id,{h:56})+'</div>'+
+          return '<div class="shopcard"><div class="thumb"><div class="fl"></div>'+catFace(c.id,{h:56})+'</div>'+
             '<div class="meta"><b>'+c.name+' <span class="tagmini">코숏</span></b><div class="desc">'+c.desc+'</div>'+
             '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+c.price+'</span></div>'+
             '<div class="act">'+act+'</div></div>';
@@ -731,10 +799,28 @@
         it.innerHTML=eggSvg(_fx.stage,{h:150}); it.classList.remove('shake'); void it.offsetWidth; it.classList.add('shake');
       } else { _fx.busy=true; fxClimax(); }
     }
-    // 오픈 직전 연출: (흔들림) → [특별↑: 검은 고양이 앞발로 톡 → 추가 흔들림] → 등급색 빛 새어나옴 → 버스트 → 등장
+    // 깨진 껍질 조각(알 전용): 좌우로 튀어나가 아래·옆에 흩어져 놓인다. 큰 조각 2개 + 잔조각.
+    function fxShells(){
+      let s=''; const n=7;
+      for(let i=0;i<n;i++){
+        const side=(i%2)?1:-1;
+        const sx=(side*(48+Math.random()*94)).toFixed(0);   // 좌우로 흩어짐
+        const sy=(24+Math.random()*74).toFixed(0);          // 아래로 떨어져 옆에 놓임
+        const sr=(side*(30+Math.random()*170)).toFixed(0);
+        const big=i<2;
+        const sc=(big?1:0.5+Math.random()*0.35).toFixed(2);
+        const del=(Math.random()*0.09).toFixed(2);
+        s+='<span class="fx-shell'+(big?' big':'')+'" style="--sx:'+sx+'px;--sy:'+sy+'px;--sr:'+sr+'deg;--ss:'+sc+';animation-delay:'+del+'s"></span>';
+      }
+      return s;
+    }
+    // 오픈 직전 연출: (흔들림) → [특별↑: 검은 고양이 앞발로 톡 → 추가 흔들림] → 등급색 빛 새어나옴(등급↑ 강함) → 버스트(알=껍질 조각 튐) → 등장
     function fxClimax(){
       const fx=$('catFx'), st=fx&&fx.querySelector('.fx-stage'), it=$('fxItem'); if(!st||!it) return;
       const t=tierInfo(_fx.res.tier), epic=['epic','legend','limited'].indexOf(_fx.res.tier)>=0, lim=_fx.res.tier==='limited';
+      const rank=Math.max(0, TIER_ORDER.indexOf(_fx.res.tier));   // 0(일반)~5(한정)
+      const lk=(1+rank*0.15).toFixed(2);                          // 등급 높을수록 빛이 크고 밝게
+      const isEgg=_fx.kind==='egg';
       const hint=$('fxHint'); if(hint) hint.remove();
       it.classList.add('fx-preshake');
       let t0=680;
@@ -747,20 +833,21 @@
       setTimeout(()=>{
         it.classList.remove('fx-preshake','fx-hit'); void it.offsetWidth; it.classList.add('fx-tremble');
         if(_fx.kind==='box') it.classList.add('fx-ajar');
-        st.insertAdjacentHTML('beforeend','<div class="fx-leak'+(lim?' rainbow':'')+'" style="color:'+t.color+'"></div>');
+        // 껍질 사이로 새어나오는 빛 — 등급색(한정은 무지개), 등급 높을수록 크고 밝게
+        st.insertAdjacentHTML('beforeend','<div class="fx-leak'+(lim?' rainbow':'')+'" style="color:'+t.color+';--lk:'+lk+'"></div>');
       }, t0);
-      setTimeout(()=>{ fxBurst(epic); }, t0+700);
-      setTimeout(fxReveal, t0+700+320);
+      setTimeout(()=>{ fxBurst(epic, isEgg); }, t0+700);
+      setTimeout(fxReveal, t0+700+(isEgg?560:320));   // 알은 껍질 조각이 옆으로 흩어져 앉을 시간을 조금 더 준다
     }
-    function fxBurst(big){
+    function fxBurst(big, isEgg){
       const st=$('catFx').querySelector('.fx-stage'); if(!st) return;
       const it=$('fxItem'); if(it) it.style.visibility='hidden';
-      st.insertAdjacentHTML('beforeend','<div class="fx-flash"></div>'+(big?'<div class="fx-rays"></div>':'')+fxParticles(big?20:14));
+      st.insertAdjacentHTML('beforeend','<div class="fx-flash"></div>'+(big?'<div class="fx-rays"></div>':'')+(isEgg?fxShells():'')+fxParticles(big?20:14));
       const h=$('fxHint'); if(h) h.remove();
     }
     function fxReveal(){
       if(!_fx) return; const fx=$('catFx'); const t=tierInfo(_fx.res.tier);
-      const art=_fx.kind==='egg'?catFront(_fx.res.id,{h:118}):furnSvg(_fx.res.id,{h:104});
+      const art=_fx.kind==='egg'?catFace(_fx.res.id,{h:118}):furnSvg(_fx.res.id,{h:104});
       fx.innerHTML='<div class="fx-scrim"></div><div class="fx-reveal tier-'+t.id+'">'+
         '<div class="fx-halo"></div><div class="fx-rays slow"></div>'+
         '<div class="fx-art pop">'+art+'</div>'+
