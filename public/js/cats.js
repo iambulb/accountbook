@@ -668,6 +668,16 @@
     function setWalkDur(a){ if(a.spr){ const sc=a.el.querySelector('.cspr'); if(sc) sc.style.setProperty('--wdur', walkDur(a.v, a.hh)+'s'); } }
     // 액터 위치/방향/상하바운스를 transform 하나로(레이아웃 left 대신 합성) — 깜빡임 방지. x는 정수 px 스냅.
     function actorXform(a, y, dir){ return 'translate3d('+Math.round(a.x)+'px,'+Math.round(y||0)+'px,0) scaleX('+(dir!=null?dir:a.dir)+')'; }
+    // ⚠️ 핵심 불변식(INVARIANT): "정면(south) 이미지로 이동 금지".
+    // 스프라이트 액터의 이동/정지 비주얼(.cspr)은 반드시 아래 두 함수로만 바꾼다 — 모든 상태 전환(roam·pause)과
+    // 재빌드(buildActors)가 이 두 함수를 거치게 해, DOM 재사용으로 남은 정지스틸(.idle)이 이동 중에 보이는 버그를 원천 차단한다.
+    //  · actorShowMoving: 이동 표현. 일반=옆(east) 걷기 시트 재생, frontWalk(=east 걷기 없음)=east 정지스틸(정면 걷기 금지).
+    //  · actorShowStill : 그 자리에 멈춰 face(south/east/west/north) 정지스틸(쉼·포즈·가구 상호작용). 이동 아님.
+    function actorShowMoving(a){ if(!a.spr) return; const s=a.el.querySelector('.cspr'); if(!s) return;
+      if(a.frontWalk){ s.classList.remove('jsw'); s.style.setProperty('--idle','url('+sprStill(a.id,'east')+')'); s.style.backgroundPositionX=''; s.classList.add('idle'); }
+      else { s.classList.remove('idle'); s.classList.add('jsw'); a.sc=s; s.style.backgroundPositionX=(-((a.frame||0))*a.hh)+'px'; } }
+    function actorShowStill(a, face){ if(!a.spr) return; const s=a.el.querySelector('.cspr'); if(!s) return;
+      s.style.setProperty('--idle','url('+sprStill(a.id,face)+')'); s.style.backgroundPositionX=''; s.classList.add('idle'); }
     const _eng={ raf:0, stage:null, actors:[], last:0, dirty:false };
     function markCatDirty(){ _eng.dirty=true; }
     function stopWalk(){ _eng.actors=[]; _eng.stage=null; }
@@ -698,8 +708,9 @@
         // 유휴(그 자리에 멈춰 정면 보기) — 자주·오래 서서 정면을 보도록(poseDur에서 시간 늘림)
         idle:0.0032+Math.random()*0.005, turn:0.004+Math.random()*0.010, seek:0.005+Math.random()*0.009, cool:0 };
         setWalkDur(a); el.style.left='0px'; el.dataset.x=Math.round(a.x); el.style.transform=actorXform(a,0,a.dir);
-        // 스프라이트 걷기 프레임을 JS가 직접 넘김(CSS steps 애니메이션 비활성 → 루프 빈 프레임/합성 리페인트 깜빡임 없음). frontWalk는 정지스틸이라 제외.
-        if(spr && !fw){ a.sc=el.querySelector('.cspr'); if(a.sc){ a.sc.classList.add('jsw'); a.sc.style.backgroundPositionX='0px'; } a.frame=0; a.fstep=0; }
+        // 액터는 항상 'roam'(이동)으로 시작한다. DOM 재사용(markCatDirty·무대 재부착)으로 남아 있던 정지스틸(.idle)을
+        // 반드시 이동 표시로 초기화 → "정면 이미지로 이동" 버그 원천 차단. 스프라이트 걷기 프레임은 JS가 직접 넘긴다.
+        a.frame=0; a.fstep=0; actorShowMoving(a);
         return a; });
     }
     // 가구 종류별 포즈: 밥그릇=앉아 먹기, 방석=식빵, 캣타워=낮잠, 스크래처=앉기, 그 외=식빵
@@ -724,25 +735,21 @@
       // 고양이 중심을 가구 그래픽 중앙(goal.x)에 맞춤(+옆 오프셋 dx). 캣타워/방석은 dx=0이라 정중앙에 앉음.
       a.x=Math.max(2, Math.min(a.W-a.sw, goal.x - a.sw/2 + (s.dx||0))); a.el.dataset.x=Math.round(a.x);
       const dir=a.spr?1:a.dir;
-      if(a.spr){ const sp=a.el.querySelector('.cspr'); if(sp){ sp.style.setProperty('--idle','url('+sprStill(id,s.face)+')'); sp.style.backgroundPositionX=''; sp.classList.add('idle'); } }
+      if(a.spr) actorShowStill(a, s.face);
       else a.el.innerHTML=catPose(id, s.pose, {h:a.hh});
       a.el.style.transform=actorXform(a, -a.lift, dir);
     }
     function enterPose(a, id, pose){ a.mode='pause'; a.pose=pose; a.pause=poseDur(pose); a.cool=1400;
-      if(a.spr){ const s=a.el.querySelector('.cspr');
-        // 멈춰서 쉴 땐 항상 정면(south)을 본다. 이미지가 정방향이라 플립 없음(scaleX(1)).
-        if(s){ s.style.setProperty('--idle','url('+sprStill(id,'south')+')'); s.style.backgroundPositionX=''; s.classList.add('idle'); }
-        a.el.style.transform=actorXform(a,0,1); }
+      if(a.spr){ // 멈춰서 쉴 땐 항상 정면(south)을 본다. 이미지가 정방향이라 플립 없음(scaleX(1)).
+        actorShowStill(a, 'south'); a.el.style.transform=actorXform(a,0,1); }
       else { a.el.innerHTML=catPose(id, pose, {h:a.hh});
         a.el.style.transform=actorXform(a,0,a.dir); } }
     function stepActors(dt){
       _eng.actors.forEach(a=>{
         a.t+=dt*0.004; if(a.cool>0)a.cool-=dt; const id=a.el.getAttribute('data-cat');
         if(a.mode==='pause'){ a.pause-=dt; if(a.pause<=0){ a.mode='roam'; a.fc=999; a.dir=Math.random()<0.5?-1:1; a.lift=0;   // 내려와 재출발
-          if(a.spr){ const s=a.el.querySelector('.cspr'); if(s){
-            // 이동 재개: 보통 고양이는 옆 걷기 시트로(.idle 제거), frontWalk 고양이는 옆(east) 정지스틸로 방향만 맞춤
-            if(a.frontWalk){ s.style.setProperty('--idle','url('+sprStill(id,'east')+')'); s.classList.add('idle'); }
-            else { s.classList.remove('idle'); a.frame=0; a.fstep=0; s.style.backgroundPositionX='0px'; } } } } return; }   // 포즈 유지 후 재출발(프레임 0부터)
+          // 이동 재개: 정면 이미지로 이동 금지 — 일반=옆 걷기 시트, frontWalk=east 정지스틸(actorShowMoving로 일원화)
+          a.frame=0; a.fstep=0; actorShowMoving(a); } return; }   // 포즈 유지 후 재출발(프레임 0부터)
         // 유휴 제스처(그 자리 앉기/식빵/낮잠) — 쿨다운 후에만
         if(a.mode==='roam' && a.cool<=0 && Math.random()<a.idle){ enterPose(a, id, ['loaf','sit','sleep'][Math.floor(Math.random()*3)]); return; }
         // 가끔 방향 전환(개별)
