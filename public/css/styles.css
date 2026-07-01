@@ -373,6 +373,7 @@
     .form-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     .link { color:var(--primary); font-weight:700; font-size:14px; }
     .install-banner { display:flex; align-items:center; gap:10px; background:var(--soft); color:var(--text); padding:13px 14px; border-radius:14px; font-size:13px; font-weight:700; margin-bottom:12px; }
+    .install-link { color:var(--sub); font-size:12px; font-weight:600; text-decoration:underline; text-underline-offset:2px; padding:4px; }
 
     /* 상세 설정 접기/펼치기 (입력 화면 공통) */
     details.adv { margin:6px 0 14px; border-top:1px solid var(--line); padding-top:6px; }
@@ -426,20 +427,6 @@
     .cd-actor { position:absolute; bottom:9px; will-change:transform,left; }
     .cd-empty { position:absolute; left:2px; bottom:16px; font-size:11.5px; font-weight:600; color:var(--sub); }
     .catdock.hidden { display:none; }
-    .cd-lbl { font-size:11px; font-weight:700; color:var(--sub); white-space:nowrap; z-index:2; }
-    .cd-exp { width:30px; height:30px; border-radius:9px; background:var(--card); border:1px solid var(--bd); display:flex; align-items:center; justify-content:center; color:var(--text2); flex:none; z-index:2; }
-    .cd-exp svg { width:16px; height:16px; }
-    /* dock 확장(방) 모드 */
-    .cd-room { position:relative; height:150px; overflow:hidden; }
-    .cd-room .cr-wall { position:absolute; inset:0; background:linear-gradient(180deg,color-mix(in srgb,var(--soft) 60%,var(--card)) 0%,var(--soft) 62%,var(--soft2) 62%,var(--soft2) 100%); }
-    .cd-room .cr-base { position:absolute; left:0; right:0; bottom:38%; height:1px; background:var(--bd); }
-    .cd-room .cr-cam { position:absolute; top:9px; left:12px; display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:800; color:var(--sub); background:var(--card); border:1px solid var(--bd); border-radius:20px; padding:4px 10px 4px 8px; z-index:2; }
-    .cd-room .cr-cam i { width:6px; height:6px; border-radius:50%; background:var(--expense); flex:none; }
-    .cd-room .cr-props { position:absolute; inset:0; z-index:1; }
-    .cd-room .cr-stage { position:absolute; left:0; right:0; bottom:0; height:38%; z-index:2; }
-    .cd-room .cd-actor { bottom:2px; }
-    .cd-coin-abs { position:absolute; top:9px; right:52px; }
-    .cd-collapse { position:absolute; top:9px; right:12px; }
     /* 고양이집 시트 */
     .coinbar { display:flex; justify-content:flex-end; margin:2px 0 8px; }
     .coin { display:inline-flex; align-items:center; gap:6px; background:var(--soft); border:1px solid var(--bd); border-radius:20px; padding:5px 12px 5px 6px; font-size:13px; font-weight:800; color:var(--text); }

@@ -946,7 +946,6 @@
       $('screenTitle').textContent='더보기';
       const ws=state.wsMeta||{}; const isGroup=ws.type==='group'; const memCount=Object.keys(ws.members||{}).length;
       let h='';
-      if(deferredPrompt) h+='<div class="install-banner" onclick="installApp()">📲 홈 화면에 앱으로 설치하기</div>';
       // 프로필/워크스페이스 행
       const wsSub = isGroup ? ('그룹 · 멤버 '+memCount+'명'+(ws.code?(' · 초대코드 '+escapeHtml(ws.code)):'')) : '개인 가계부';
       const canEditWs = !isGroup || isWsOwner();
@@ -966,19 +965,15 @@
       h+=gcell(MORE_ICON.loan,'대출/이자','openLoanBook()');
       h+=gcell(MORE_ICON.category,'카테고리','openCategorySheet()');
       h+=gcell(coinSvg({h:26}),'고양이집','openCatHouse()');
+      h+=gcell(MORE_ICON.gear,'설정','openSettingsSheet()');
       h+='</div>';
-      // 설정 리스트
+      // 계정 리스트(설정 세부는 설정 시트로 이동)
       h+='<div class="lst">';
-      if(isGroup) h+=lrow(MORE_ICON.members,'멤버 · 권한 관리',"openGroupManageSheet('"+state.wsId+"')", memCount+'명');
-      h+=lrow(MORE_ICON.lock,'권한 · 공동 설정','openSharedSettings()');
-      h+=lrow(MORE_ICON.list,'거래내역',"goHome('list')");
-      h+=lrow(MORE_ICON.download,'CSV 내보내기','exportCSV()');
-      h+=lrow(MORE_ICON.moon,'다크 모드','toggleTheme();renderMore()', state.theme==='dark'?'켜짐':'꺼짐');
-      h+=lrow(MORE_ICON.cat,'고양이집 dock','toggleDockHidden()', (typeof dockHiddenLabel==='function'?dockHiddenLabel():''));
       h+=lrow(avatarHtml(state.uid, state.userName, 21), escapeHtml(state.userName)+' 님','openProfileSheet()','프로필');
       h+=lrow(MORE_ICON.logout,'로그아웃','logout()');
       h+='</div>';
-      h+='<p class="muted" style="text-align:center;font-size:12px;margin-top:18px;">가계부 v3</p>';
+      if(deferredPrompt) h+='<p style="text-align:center;margin-top:18px;"><button class="install-link" onclick="installApp()">홈 화면에 앱 설치</button></p>';
+      h+='<p class="muted" style="text-align:center;font-size:12px;margin-top:'+(deferredPrompt?'8px':'18px')+';">가계부 v3</p>';
       $('content').innerHTML=h;
     }
     function goHome(view){ state.homeView=view||'list'; go('calendar'); }

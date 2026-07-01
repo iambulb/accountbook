@@ -173,11 +173,10 @@
       if(state._gameRef){ try{ state._gameRef.off(); }catch(e){} }
       state._gameRef=gameRef();
       state._gameRef.on('value', s=>{ state.game=normalizeGame(s.val()); onGameChange(); });
-      document.addEventListener('visibilitychange', ()=>{ if(document.hidden) stopWalk(); else startWalkIfNeeded(); });
+      startCatLoop();   // 통합 걷기 엔진(단일 rAF, 보이는 무대만 애니메이션)
     }
     function onGameChange(){
       updateDockCoins();
-      renderDockProps();
       renderDockCats();
       if(state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh();
     }
@@ -210,6 +209,15 @@
         return g;
       });
     }
+    // 프로모/치트 코드 — 코드 입력 시 은화 지급(반복 입력 가능)
+    const PROMO_CODES = { showmethemoney: 999 };
+    function redeemCode(code){
+      const key=(code||'').trim().toLowerCase();
+      const reward=PROMO_CODES[key];
+      if(!reward){ toast('올바르지 않은 코드예요', true); return; }
+      gameRef().transaction(g=>{ g=normalizeGame(g); g.coins += reward; return g; })
+        .then(res=>{ if(res.committed) toast('+'+reward.toLocaleString()+' 은화 획득! 🐾'); });
+    }
     // 미션 수동 수령(완료 판정 후)
     function claimMission(id){
       const m=ALL_MISSIONS.find(x=>x.id===id); if(!m) return;
@@ -238,76 +246,75 @@
       }).then(res=>{ if(res.committed) toast(c.name+' 입양 완료! 🐾'); });
     }
 
-    // ================= 전역 dock (스트립 / 방 / 숨김) =================
+    // ================= 전역 dock (얇은 스트립 / 숨김) =================
     // #catdock 은 index.html 셸의 #content 형제 → 리렌더 영향 없음(애니메이션 유지)
-    const COL_DN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10l4-4 4 4M8 14l4 4 4-4"/></svg>';
-    const COL_UP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 14l-4 4-4-4M16 10l-4-4-4 4"/></svg>';
-    function dockMode(){ return localStorage.getItem('catDock')||'strip'; }
+    // 스트립 전체가 탭 시 고양이집 시트를 여므로 별도 확장 뷰/라벨/버튼 없이 간소화.
+    function dockMode(){ return localStorage.getItem('catDock')==='hidden'?'hidden':'strip'; }
     function setDockMode(m){ localStorage.setItem('catDock', m); renderDock(); }
-    function toggleDockExpand(e){ if(e&&e.stopPropagation) e.stopPropagation(); setDockMode(dockMode()==='room'?'strip':'room'); }
     function toggleDockHidden(){ setDockMode(dockMode()==='hidden'?'strip':'hidden'); if(state.tab==='more') renderMore(); }
     function dockHiddenLabel(){ return dockMode()==='hidden'?'숨김':'켬'; }
     function initDock(){ renderDock(); }
     function renderDock(){
       const d=$('catdock'); if(!d) return;
-      const m=dockMode();
-      if(m==='hidden'){ d.className='catdock hidden'; d.innerHTML=''; stopWalk(); return; }
+      if(dockMode()==='hidden'){ d.className='catdock hidden'; d.innerHTML=''; stopWalk(); return; }
       d.className='catdock';
-      const coin='<span class="cd-coin" onclick="openCatHouse()"><span class="cd-ci">'+coinSvg({h:16})+'</span><b id="cdCoins">0</b></span>';
-      if(m==='room'){
-        d.innerHTML='<div class="cd-room"><div class="cr-wall"></div><div class="cr-base"></div>'+
-          '<span class="cr-cam"><i></i>LIVE · 우리집</span>'+coin.replace('cd-coin','cd-coin cd-coin-abs')+
-          '<button class="cd-exp cd-collapse" onclick="toggleDockExpand(event)" aria-label="접기">'+COL_UP+'</button>'+
-          '<div class="cr-props" id="cdProps"></div><div class="cr-stage" id="cdStage" onclick="openCatHouse()"></div></div>';
-      } else {
-        d.innerHTML='<div class="cd-strip"><div class="cd-floor"></div>'+coin+
-          '<div class="cd-stage" id="cdStage" onclick="openCatHouse()"></div>'+
-          '<span class="cd-lbl" onclick="openCatHouse()">고양이집</span>'+
-          '<button class="cd-exp" onclick="toggleDockExpand(event)" aria-label="펼치기">'+COL_DN+'</button></div>';
-      }
-      updateDockCoins(); renderDockProps(); renderDockCats();
+      d.innerHTML='<div class="cd-strip" onclick="openCatHouse()"><div class="cd-floor"></div>'+
+        '<span class="cd-coin"><span class="cd-ci">'+coinSvg({h:16})+'</span><b id="cdCoins">0</b></span>'+
+        '<div class="cd-stage" id="cdStage"></div></div>';
+      updateDockCoins(); renderDockCats();
     }
     function updateDockCoins(){ const el=$('cdCoins'); if(el) el.textContent=coins().toLocaleString(); }
-    function renderDockProps(){
-      const box=$('cdProps'); if(!box) return;
-      box.innerHTML=placedList().map(p=>{ const x=((p.c-0.5)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(3+depth*26).toFixed(0);
-        return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:(18+depth*10).toFixed(0)})+'</div>'; }).join('');
-    }
     // 활성 고양이를 dock 무대에 액터로 배치(없으면 안내)
     function renderDockCats(){
       const stage=$('cdStage'); if(!stage) return;
-      const cats=activeCats(), room=dockMode()==='room', hh=room?40:30, gap=room?52:26;
-      if(!cats.length){ stage.innerHTML='<span class="cd-empty">고양이를 입양해 보세요</span>'; stopWalk(); return; }
-      stage.innerHTML=cats.slice(0,3).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" data-dir="1" style="left:'+(10+i*gap)+'px;">'+catSide(id,0,{h:hh})+'</div>').join('');
-      startWalkIfNeeded();
+      const cats=activeCats();
+      stage.dataset.hh=30;
+      if(!cats.length){ stage.innerHTML='<span class="cd-empty">고양이를 입양해 보세요</span>'; markCatDirty(); return; }
+      stage.innerHTML=cats.slice(0,3).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(10+i*26)+'px;">'+catSide(id,0,{h:30})+'</div>').join('');
+      markCatDirty();
     }
-    // ---- 걷기 루프(보일 때만, reduced-motion 존중) ----
-    const _walk={ raf:0, actors:[], last:0 };
+    // ---- 통합 걷기 엔진: 단일 rAF가 "지금 보이는 무대"(시트 방 또는 dock)만 애니메이션 ----
+    // 고양이는 방/시트에 배치된 가구로 가끔 다가가 잠시 머문다(상호작용). 스트립엔 가구가 없어 자유 배회.
     function reducedMotion(){ try{ return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } }
-    function startWalkIfNeeded(){
-      const stage=$('cdStage'); if(!stage) return;
-      stopWalk();
-      if(document.hidden || reducedMotion()) return;
-      const acts=Array.from(stage.querySelectorAll('.cd-actor'));
-      if(!acts.length) return;
-      const W=stage.clientWidth||160, room=dockMode()==='room', hh=room?40:30, sw=Math.round(hh*26/14);
-      _walk.actors=acts.map(el=>({ el, x:parseFloat(el.style.left)||0, dir:1, v:0.25+Math.random()*0.25, t:Math.random()*6, frame:0, fc:0, W, hh, sw }));
-      _walk.last=0; _walk.raf=requestAnimationFrame(walkTick);
+    const _eng={ raf:0, stage:null, actors:[], last:0, dirty:false };
+    function markCatDirty(){ _eng.dirty=true; }
+    function stopWalk(){ _eng.actors=[]; _eng.stage=null; }
+    function activeStage(){
+      const sheetOpen=$('sheet')&&$('sheet').classList.contains('on');
+      if(sheetOpen && _catTab==='home'){ const s=$('crStage'); if(s) return s; }
+      if(dockMode()!=='hidden'){ const s=$('cdStage'); if(s) return s; }
+      return null;
     }
-    function stopWalk(){ if(_walk.raf){ cancelAnimationFrame(_walk.raf); _walk.raf=0; } _walk.actors=[]; }
-    function walkTick(ts){
-      if(!_walk.last) _walk.last=ts; const dt=Math.min(50, ts-_walk.last); _walk.last=ts;
-      _walk.actors.forEach(a=>{
+    function buildActors(stage){
+      const acts=Array.from(stage.querySelectorAll('.cd-actor')); if(!acts.length) return [];
+      const W=stage.clientWidth||160, hh=+stage.dataset.hh||30, sw=Math.round(hh*26/14);
+      const hasRoom = stage.id==='crStage' || !!stage.closest('.cd-room');
+      const props = hasRoom ? placedList().map(p=>((p.c-0.5)/12*W)) : [];
+      return acts.map(el=>({ el, x:parseFloat(el.style.left)||0, dir:1, v:0.22+Math.random()*0.28, t:Math.random()*6, frame:0, fc:0, W, hh, sw, props, mode:'roam', pause:0, goal:0 }));
+    }
+    function stepActors(dt){
+      _eng.actors.forEach(a=>{
+        a.t+=dt*0.004; const id=a.el.getAttribute('data-cat');
+        if(a.mode==='pause'){ a.pause-=dt; a.el.style.transform='translate(0,0) scaleX('+a.dir+')'; if(a.pause<=0) a.mode='roam'; return; }
+        if(a.mode==='roam' && a.props.length && Math.random()<0.004){ a.goal=a.props[Math.floor(Math.random()*a.props.length)]; a.mode='goal'; }
+        if(a.mode==='goal'){ a.dir=(a.goal>a.x)?1:-1; if(Math.abs(a.goal-a.x)<4){ a.mode='pause'; a.pause=1100+Math.random()*1600; a.el.style.transform='translate(0,0) scaleX('+a.dir+')'; return; } }
         a.x += a.dir*a.v*dt*0.06;
-        const max=(a.W||160)-(a.sw||48);
-        if(a.x<2){ a.x=2; a.dir=1; } else if(a.x>max){ a.x=max; a.dir=-1; }
-        a.t+=dt*0.004; const bob=Math.sin(a.t*3)*1.2;
-        a.fc+=dt; if(a.fc>170){ a.fc=0; a.frame^=1; const id=a.el.getAttribute('data-cat'); a.el.innerHTML=catSide(id,a.frame,{h:a.hh||30}); }
+        const max=a.W-a.sw;
+        if(a.x<2){ a.x=2; a.dir=1; if(a.mode==='goal')a.mode='roam'; } else if(a.x>max){ a.x=max; a.dir=-1; if(a.mode==='goal')a.mode='roam'; }
+        a.fc+=dt; if(a.fc>170){ a.fc=0; a.frame^=1; a.el.innerHTML=catSide(id,a.frame,{h:a.hh}); }
+        const bob=Math.sin(a.t*3)*1.2;
         a.el.style.transform='translate(0,'+bob.toFixed(1)+'px) scaleX('+a.dir+')';
         a.el.style.left=a.x.toFixed(1)+'px';
       });
-      _walk.raf=requestAnimationFrame(walkTick);
     }
+    function catLoop(ts){
+      const dt=_eng.last?Math.min(50,ts-_eng.last):16; _eng.last=ts;
+      const stage=activeStage();
+      if(stage!==_eng.stage || _eng.dirty){ _eng.stage=stage; _eng.dirty=false; _eng.actors= stage? buildActors(stage):[]; }
+      if(stage && _eng.actors.length && !document.hidden && !reducedMotion()) stepActors(dt);
+      _eng.raf=requestAnimationFrame(catLoop);
+    }
+    function startCatLoop(){ if(!_eng.raf) _eng.raf=requestAnimationFrame(catLoop); }
 
     // ================= 고양이집 시트 (홈 · 상점 · 미션) =================
     let _catTab='home';
@@ -345,29 +352,9 @@
     function mountRoomWalk(){
       const stage=$('crStage'); if(!stage) return;
       const cats=activeCats();
-      stage.innerHTML=cats.slice(0,3).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" data-dir="1" style="left:'+(20+i*46)+'px;">'+catSide(id,0,{h:46})+'</div>').join('');
-      // 시트 열려있는 동안만 방 걷기(스트립 루프는 잠시 이 stage로 대체)
-      _roomStage=stage; startRoomWalk();
-    }
-    let _roomStage=null; const _rw={raf:0,actors:[],last:0};
-    function startRoomWalk(){
-      if(_rw.raf){ cancelAnimationFrame(_rw.raf); _rw.raf=0; }
-      if(!_roomStage||document.hidden||reducedMotion()) return;
-      const acts=Array.from(_roomStage.querySelectorAll('.cd-actor')); if(!acts.length) return;
-      const W=_roomStage.clientWidth||300;
-      _rw.actors=acts.map(el=>({el,x:parseFloat(el.style.left)||0,dir:1,v:0.2+Math.random()*0.3,t:Math.random()*6,frame:0,fc:0,W,sz:46}));
-      _rw.last=0; _rw.raf=requestAnimationFrame(roomTick);
-    }
-    function roomTick(ts){
-      if(!$('sheet')||!$('sheet').classList.contains('on')||_catTab!=='home'){ _rw.raf=0; return; }  // 시트 닫히면 정지
-      if(!_rw.last)_rw.last=ts; const dt=Math.min(50,ts-_rw.last); _rw.last=ts;
-      _rw.actors.forEach(a=>{ a.x+=a.dir*a.v*dt*0.06; const max=(a.W||300)-46;
-        if(a.x<4){a.x=4;a.dir=1;} else if(a.x>max){a.x=max;a.dir=-1;}
-        a.t+=dt*0.004; const bob=Math.sin(a.t*3)*1.6;
-        a.fc+=dt; if(a.fc>170){a.fc=0;a.frame^=1;const id=a.el.getAttribute('data-cat');a.el.innerHTML=catSide(id,a.frame,{h:46});}
-        a.el.style.transform='translate(0,'+bob.toFixed(1)+'px) scaleX('+a.dir+')'; a.el.style.left=a.x.toFixed(1)+'px';
-      });
-      _rw.raf=requestAnimationFrame(roomTick);
+      stage.dataset.hh=46;
+      stage.innerHTML=cats.slice(0,3).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(20+i*46)+'px;">'+catSide(id,0,{h:46})+'</div>').join('');
+      markCatDirty();   // 통합 엔진이 시트 방 무대를 자동으로 잡아 애니메이션
     }
     let _shopSub='cats';
     function setShopSub(s){ _shopSub=s; renderCatHouse(); }
