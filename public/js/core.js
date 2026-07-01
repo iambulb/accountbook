@@ -417,7 +417,9 @@
 
     function updateWorkspaceChip(){
       const el=$('wsChip'); if(!el||!state.wsMeta) return;
-      el.innerHTML = '<span class="dotk"></span>'+escapeHtml(state.wsMeta.name||'가계부');
+      const p=state.wsMeta.photo;
+      const badge = p ? '<img src="'+p+'" alt="" style="width:16px;height:16px;border-radius:50%;object-fit:cover;flex:none;">' : '<span class="dotk"></span>';
+      el.innerHTML = badge+escapeHtml(state.wsMeta.name||'가계부');
     }
 
     function isGroupWs(){ return state.wsMeta && state.wsMeta.type==='group'; }
@@ -439,6 +441,18 @@
       const m=state.memberships.find(w=>w.id===wsId); if(m) m.name=name;
       if(state.wsId===wsId && state.wsMeta){ state.wsMeta.name=name; updateWorkspaceChip(); }
       toast('그룹 이름을 바꿨어요');
+    }
+    // 가계부 프로필 저장: 이름 + 사진(photoChange: undefined=유지 / ''=삭제 / dataURL=교체)
+    // workspaces/{wsId} 는 멤버면 쓰기 가능(규칙) — 별도 규칙 변경 불필요
+    async function saveWsProfile(name, photoChange){
+      const wsId=state.wsId; if(!wsId) return;
+      name=(name||'').trim(); if(!name) return;
+      const upd={}; upd['workspaces/'+wsId+'/name']=name;
+      if(photoChange!==undefined) upd['workspaces/'+wsId+'/photo']=photoChange||null;
+      await db.ref().update(upd);
+      const apply=o=>{ if(!o) return; o.name=name; if(photoChange!==undefined) o.photo=photoChange||''; };
+      apply(state.wsMeta); apply(state.memberships.find(x=>x.id===wsId));
+      updateWorkspaceChip(); rerender();
     }
     async function transferOwnership(wsId, uid){
       const w=state.memberships.find(x=>x.id===wsId); if(!w) return;
