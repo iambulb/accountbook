@@ -721,9 +721,9 @@
       (state.memberships||[]).forEach(w=>{
         const on=w.id===cur, isGroup=w.type==='group', memCount=Object.keys(w.members||{}).length;
         h+='<div class="ws-item'+(on?' on':'')+'">'+
-            '<span class="ws-ic">'+(w.photo?'<img src="'+w.photo+'" alt="" style="width:44px;height:44px;border-radius:14px;object-fit:cover;">':svgWrap(isGroup?CAT_SVG.people:CAT_SVG.home))+'</span>'+
+            '<span class="ws-ic">'+wsAvatarHtml(w.name, w.photo, 44)+'</span>'+
             '<div style="flex:1;min-width:0;" onclick="chooseWorkspace(\''+w.id+'\')">'+
-              '<div class="ws-name">'+escapeHtml(w.name||'가계부')+'</div>'+
+              '<div class="ws-name" style="display:flex;align-items:center;gap:8px;"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(w.name||'가계부')+'</span>'+(isGroup?memberAvatarStack(w,20):'')+'</div>'+
               '<div class="ws-meta">'+(isGroup?('그룹 · 멤버 '+memCount+'명'):'개인 전용')+'</div>'+
             '</div>'+
             (isGroup?'<button class="btn sm ghost" onclick="openGroupManageSheet(\''+w.id+'\')">관리</button>':'')+

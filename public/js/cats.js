@@ -466,7 +466,7 @@
     function reportSeenThisWeek(){ const p=(state.game&&state.game.progress[kstWeekKey()])||{}; return !!p.reportSeen; }
     function markReportSeen(){ if(!state.uid||!state.game) return; if(reportSeenThisWeek()) return; gameRef().child('progress/'+kstWeekKey()+'/reportSeen').set(true); }
     // 활성 슬롯(집에 내보내기): 기본 3, 금화 SLOT_PRICE로 1칸 확장(최대 MAX_SLOTS).
-    const BASE_SLOTS=3, MAX_SLOTS=4, SLOT_PRICE=100;
+    const BASE_SLOTS=3, MAX_SLOTS=20, SLOT_PRICE=100;   // 100금화로 1칸씩 확장, 최대 20. 슬롯 행 가로 스크롤.
 
     // ---- 게임 상태/경제 ----
     function gameRef(){ return db.ref('users/'+state.uid+'/game'); }
@@ -524,9 +524,10 @@
       gameRef().transaction(g=>{
         g=normalizeGame(g);
         if(g.gold<SLOT_PRICE || g.home.slots>=MAX_SLOTS) return g;   // 재검증
-        g.gold-=SLOT_PRICE; g.home.slots=MAX_SLOTS;
+        const c=Math.min(MAX_SLOTS, Math.max(BASE_SLOTS, Number(g.home.slots)||BASE_SLOTS));
+        g.gold-=SLOT_PRICE; g.home.slots=c+1;   // +1칸씩
         return g;
-      }).then(res=>{ if(res.committed) toast('슬롯 확장 완료! 🐾 '+MAX_SLOTS+'마리까지 내보낼 수 있어요'); });
+      }).then(res=>{ if(res.committed) toast('슬롯 +1 확장! 🐾'); });
     }
 
     // 미션 지급(원자적·멱등): 게임 노드 트랜잭션 1회로 "수령 기록 + 은화 지급"을 동시에.
@@ -800,7 +801,7 @@
       h+=slotRow;
       if(!owned.length) h+='<div class="empty" style="padding:20px;">아직 고양이가 없어요. 상점에서 입양해 보세요 🐾</div>';
       else { h+='<div class="catchips">'+owned.map(id=>{ const on=isActiveCat(id);
-        return '<div class="catchip'+(on?' on':'')+'" role="button" tabindex="0" onclick="toggleActiveCat(\''+id+'\')">'+catFace(id,{h:44})+'<div class="cn">'+catNameSpan(id,catName(id))+'</div><div class="cstate">'+(on?'집에 있음':'대기')+'</div><button class="cn-edit" aria-label="이름 짓기" onclick="event.stopPropagation();openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></div>'; }).join('')+'</div>';
+        return '<div class="catchip'+(on?' on':'')+'" role="button" tabindex="0" onclick="toggleActiveCat(\''+id+'\')">'+catFace(id,{h:90})+'<div class="cn">'+catNameSpan(id,catName(id))+'</div><div class="cstate">'+(on?'집에 있음':'대기')+'</div><button class="cn-edit" aria-label="이름 짓기" onclick="event.stopPropagation();openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></div>'; }).join('')+'</div>';
         h+='<div class="hintline" style="margin-top:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>고양이를 탭해 집에 내보내거나 대기시켜요(최대 '+sc+'마리)'+(sc<MAX_SLOTS?' · 오른쪽 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장':'')+'.</div>'; }
       return h;
     }
@@ -829,7 +830,7 @@
       }
       if(_shopSub==='event'){
         const enough=coins()>=GACHA_PRICE;
-        const gacha=[['egg','펫알','알을 열면 고양이가 랜덤으로! 등급이 높을수록 귀해요.', eggSvg(0,{h:56})],
+        const gacha=[['egg','펫알','알을 열면 고양이가 랜덤으로! 등급이 높을수록 귀해요.', eggSvg(0,{h:66})],
                      ['box','랜덤박스','상자를 열면 가구·구조물이 랜덤으로 나와요.', boxSvg({h:56})]];
         h+=gacha.map(([k,nm,desc,art])=>{
           const act=enough?'<button class="buy" aria-label="'+nm+' 구매('+GACHA_PRICE+' 은화)" onclick="openGacha(\''+k+'\')">구매</button>':'<button class="buy dis" disabled>'+(GACHA_PRICE-coins())+' 부족</button>';
@@ -865,7 +866,7 @@
           if(owned) act='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>보유</span>';
           else if(enough) act='<button class="buy" aria-label="'+c.name+' 구매('+c.price+' 은화)" onclick="buyCat(\''+c.id+'\')">구매</button>';
           else act='<button class="buy dis" disabled>'+(c.price-coins())+' 부족</button>';
-          return '<div class="shopcard"><div class="thumb"><div class="fl"></div>'+catFace(c.id,{h:56})+'</div>'+
+          return '<div class="shopcard"><div class="thumb"><div class="fl"></div>'+catFace(c.id,{h:72})+'</div>'+
             '<div class="meta"><b>'+catNameSpan(c.id,c.name)+' <span class="tagmini">'+(c.breed||'코숏')+'</span></b><div class="desc">'+c.desc+'</div>'+
             '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+c.price+'</span></div>'+
             '<div class="act">'+act+'</div></div>';
@@ -1150,6 +1151,38 @@
       const up={}; up[d.key]=null; up[newKey]={itemId:id};
       gameRef().child('home/placed').update(up);          // 이동 커밋 → 리스너가 재렌더
     }
+    // ---- 팔레트 항목을 그리드로 드래그해 새로 배치(탭하면 선택 토글) ----
+    let _pal=null;
+    function palDown(e, id){
+      e.preventDefault();
+      _pal={ id, foot:itemFoot(id), moved:false, sx:e.clientX, sy:e.clientY, ghost:null };
+      window.addEventListener('pointermove', palMove); window.addEventListener('pointerup', palUp); window.addEventListener('pointercancel', palUp);
+    }
+    function palMove(e){
+      if(!_pal) return;
+      if(!_pal.moved){ if(Math.abs(e.clientX-_pal.sx)+Math.abs(e.clientY-_pal.sy)<6) return; _pal.moved=true;
+        if(itemRemaining(_pal.id)<=0){ toast(catFurnName(_pal.id)+' 남은 수량이 없어요(상점에서 구매)', true); _pal=null; window.removeEventListener('pointermove',palMove); window.removeEventListener('pointerup',palUp); window.removeEventListener('pointercancel',palUp); return; }
+        const g=document.createElement('div'); g.className='palghost'; g.innerHTML=furnSvg(_pal.id,{h:44}); document.body.appendChild(g); _pal.ghost=g; }
+      if(_pal.ghost){ _pal.ghost.style.left=e.clientX+'px'; _pal.ghost.style.top=e.clientY+'px'; }
+      const grid=$('placeGrid'); if(!grid) return; const r=grid.getBoundingClientRect();
+      if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){ const p=cellFromPoint(grid,e.clientX,e.clientY); showDropPreview(p.r,p.c,_pal.foot,null); }
+      else hideDropPreview();
+    }
+    function palUp(e){
+      if(!_pal) return; const d=_pal; _pal=null;
+      window.removeEventListener('pointermove',palMove); window.removeEventListener('pointerup',palUp); window.removeEventListener('pointercancel',palUp);
+      if(d.ghost) d.ghost.remove(); hideDropPreview();
+      if(!d.moved){ selItem(d.id); return; }   // 이동 없이 탭 → 선택 토글(빈 칸 탭 배치도 계속 가능)
+      const grid=$('placeGrid'); if(!grid) return; const r=grid.getBoundingClientRect();
+      if(!(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)) return;   // 그리드 밖에 놓으면 취소
+      if(itemRemaining(d.id)<=0){ toast('남은 수량이 없어요', true); return; }
+      if(CARE_ITEMS.indexOf(d.id)>=0 && itemPlaced(d.id)>=slotCount()){ toast('그 종류는 최대 '+slotCount()+'개까지 놓을 수 있어요', true); return; }
+      const p=cellFromPoint(grid,e.clientX,e.clientY); const rr=Math.min(13-d.foot.h,p.r), cc=Math.min(13-d.foot.w,p.c);
+      const placed=(state.game.home.placed)||{};
+      if(!areaFree(rr,cc,d.foot.w,d.foot.h,placed,null)){ toast('그 자리엔 놓을 수 없어요(겹침)', true); return; }
+      gameRef().child('home/placed/'+rr+'_'+cc).set({itemId:d.id});
+    }
+    function catFurnName(id){ const it=ITEM_CATALOG.find(x=>x.id===id); return it?it.name:id; }
     function showDropPreview(r,c,foot,key){
       const g=$('gdrop'); if(!g) return; const placed=(state.game.home.placed)||{};
       const rr=Math.min(13-foot.h,Math.max(1,r)), cc=Math.min(13-foot.w,Math.max(1,c));
@@ -1193,13 +1226,13 @@
       // 배치된 가구를 격자 위 절대좌표로(발자국 크기만큼 영역 차지). 드래그=이동, 탭=회수/판매.
       const items=Object.keys(placed).map(key=>{ const pr=key.split('_'), r=+pr[0], c=+pr[1], id=placed[key].itemId, foot=itemFoot(id);
         const left=((c-1)/12*100).toFixed(3), top=((r-1)/12*100).toFixed(3), w=(foot.w/12*100).toFixed(3), h=(foot.h/12*100).toFixed(3);
-        const multi=(foot.w>1||foot.h>1);
-        const scale=(multi?1:furnScale(id)).toFixed(2);   // 멀티셀은 발자국을 꽉 채우고, 1×1은 작게(밥그릇<방석)
+        // 배치칸(발자국)에 꽉 차게 그림
         return '<div class="gitem" style="left:'+left+'%;top:'+top+'%;width:'+w+'%;height:'+h+'%" onpointerdown="giDown(event,\''+key+'\')" onclick="event.stopPropagation()">'+
-          '<span class="gsc" style="transform:scale('+scale+')">'+furnSvg(id,{fit:true})+'</span></div>'; }).join('');
+          '<span class="gsc">'+furnSvg(id,{fit:true})+'</span></div>'; }).join('');
       const grid='<div class="grid12" id="placeGrid" onclick="placeClick(event)">'+items+'<div class="gdrop" id="gdrop" hidden></div></div>';
+      // 팔레트 항목을 그리드로 바로 드래그해 배치(탭하면 선택). 아이콘은 크게.
       const pal=ITEM_CATALOG.map(it=>{ const foot=itemFoot(it.id);
-        return '<button class="pitem'+(_selItem===it.id?' on':'')+'" onclick="selItem(\''+it.id+'\')">'+furnSvg(it.id,{h:Math.round(20*furnScale(it.id))})+'<span>'+it.name+'</span><span class="pq">'+foot.w+'×'+foot.h+' · 남은 '+itemRemaining(it.id)+'</span></button>'; }).join('');
+        return '<button class="pitem'+(_selItem===it.id?' on':'')+'" onpointerdown="palDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selItem(\''+it.id+'\')"><span class="pic">'+furnSvg(it.id,{h:34})+'</span><span>'+it.name+'</span><span class="pq">'+foot.w+'×'+foot.h+' · 남은 '+itemRemaining(it.id)+'</span></button>'; }).join('');
       // 미니 웹캠 프리뷰: 현재 배치를 실제 방 뷰로 보여줘 방향 헷갈림 방지(표시 전용)
       const plist=placedList().sort((a,b)=>a.r-b.r); distributePoops(plist);
       const preview='<div class="miniroom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div><span class="cr-cam"><i></i>미리보기</span><div class="cr-props">'+plist.map(p=>propMarkup(p,true)).join('')+'</div></div>';
