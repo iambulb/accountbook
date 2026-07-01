@@ -302,14 +302,17 @@
 
     // 카탈로그(코드 상수) — 저장은 보유 id만. id는 종·색 구분(예: cat_calico, dog_corgi), species는 분류/필터용.
     // 새 동물(네발 짐승) 처리 규칙은 docs/pet-asset-pipeline.md 참고.
+    // 가격(은화)은 등급·확률에 맞춰 재산정 — 등급이 오를수록 대략 2배씩(TIER_PRICE 참고).
+    // 알(펫알) 100은화로 열면 금화+1·중복 30은화 환급이라, 흔한 등급은 알보다 싸게·희귀는 알보다 비싸게 잡아
+    // "직접 구매 vs 뽑기" 선택지가 성립하도록 함. 가격은 CAT_TIER→TIER_PRICE로 산정(normalizePrices).
     const PET_CATALOG = [
-      { id:'cat_mackerel', species:'cat', name:'고등어', price:45, desc:'쿨그레이 줄무늬. 차분하게 방을 돌아다녀요.' },
-      { id:'cat_cheese',   species:'cat', name:'치즈',   price:60, desc:'웜오렌지. 활발하게 뛰어다니는 개냥이.' },
-      { id:'cat_calico',   species:'cat', name:'삼색',   price:90, desc:'흰+주황+먹. 도도하게 창가에 앉아요.' },
-      { id:'cat_black',    species:'cat', name:'까망',   price:70, desc:'노란 눈의 까만 고양이. 조용히 방을 지켜요.' },
-      { id:'cat_white',    species:'cat', name:'하양',   price:80, desc:'파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요.' },
-      { id:'cat_tuxedo',   species:'cat', name:'턱시도', price:75, desc:'검은 정장에 하얀 셔츠·발. 단정하게 걸어다녀요.' },
-      { id:'cat_chaos',    species:'cat', name:'카오스', price:85, desc:'다크그레이+브라운 소용돌이 무늬. 종잡을 수 없이 쏘다녀요.' }
+      { id:'cat_mackerel', species:'cat', name:'고등어', price:50,   desc:'쿨그레이 줄무늬. 차분하게 방을 돌아다녀요.' },
+      { id:'cat_cheese',   species:'cat', name:'치즈',   price:100,  desc:'웜오렌지. 활발하게 뛰어다니는 개냥이.' },
+      { id:'cat_calico',   species:'cat', name:'삼색',   price:200,  desc:'흰+주황+먹. 도도하게 창가에 앉아요.' },
+      { id:'cat_black',    species:'cat', name:'까망',   price:400,  desc:'노란 눈의 까만 고양이. 조용히 방을 지켜요.' },
+      { id:'cat_white',    species:'cat', name:'하양',   price:800,  desc:'파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요.' },
+      { id:'cat_tuxedo',   species:'cat', name:'턱시도', price:1500, desc:'검은 정장에 하얀 셔츠·발. 단정하게 걸어다녀요.' },
+      { id:'cat_chaos',    species:'cat', name:'카오스', price:800,  desc:'다크그레이+브라운 소용돌이 무늬. 종잡을 수 없이 쏘다녀요.' }
     ];
     // 구 id(고양이 전용 시절) → 신 id. RTDB 보유/활성 데이터 하위호환(normalizeGame에서 적용).
     const PET_ID_MIGRATE = { mackerel:'cat_mackerel', cheese:'cat_cheese', calico:'cat_calico', black:'cat_black', white:'cat_white' };
@@ -329,6 +332,7 @@
     ];
     const FILL_MS = 3*60*60*1000;   // 그릇이 채워진 뒤 비워지기까지(3시간)
     const POOP_REWARD = 2;          // 똥 하나 치우면 얻는 은화
+    const CARE_ITEMS = ['bowl','waterbowl','litterbox'];   // 고양이 수(slotCount)만큼만 배치 허용
     // 벽지(방 배경) — 구매 후 적용. default는 기본 제공.
     const WALLPAPER_CATALOG = [
       { id:'default', name:'기본',  price:0,  css:'linear-gradient(180deg,color-mix(in srgb,var(--soft) 55%,var(--card)) 0%,var(--soft) 100%)' },
@@ -441,6 +445,8 @@
     function weekKeyOf(dateStr){ const d=new Date(dateStr+'T00:00:00Z'); const mon=(d.getUTCDay()+6)%7; d.setUTCDate(d.getUTCDate()-mon); return 'W'+d.toISOString().slice(0,10); }
     function reportSeenThisWeek(){ const p=(state.game&&state.game.progress[kstWeekKey()])||{}; return !!p.reportSeen; }
     function markReportSeen(){ if(!state.uid||!state.game) return; if(reportSeenThisWeek()) return; gameRef().child('progress/'+kstWeekKey()+'/reportSeen').set(true); }
+    // 활성 슬롯(집에 내보내기): 기본 3, 금화 SLOT_PRICE로 1칸 확장(최대 MAX_SLOTS).
+    const BASE_SLOTS=3, MAX_SLOTS=4, SLOT_PRICE=100;
 
     // ---- 게임 상태/경제 ----
     function gameRef(){ return db.ref('users/'+state.uid+'/game'); }
@@ -455,7 +461,7 @@
       coins: Number(g.coins)||0, gold: Number(g.gold)||0,
       owned:{ cats:(g.owned&&g.owned.cats)||{}, items:(g.owned&&g.owned.items)||{}, wallpapers:(g.owned&&g.owned.wallpapers)||{} },
       consum:{ food:Number(g.consum&&g.consum.food)||0, water:Number(g.consum&&g.consum.water)||0 },
-      home:{ active:(g.home&&g.home.active)||[], placed:(g.home&&g.home.placed)||{}, wallpaper:(g.home&&g.home.wallpaper)||'default', poops:Number(g.home&&g.home.poops)||0 },
+      home:{ active:(g.home&&g.home.active)||[], placed:(g.home&&g.home.placed)||{}, wallpaper:(g.home&&g.home.wallpaper)||'default', poops:Number(g.home&&g.home.poops)||0, slots:Math.min(MAX_SLOTS, Math.max(BASE_SLOTS, Number(g.home&&g.home.slots)||BASE_SLOTS)) },
       missions: g.missions||{}, progress: g.progress||{}, codes: g.codes||{}
     }); }
     function gold(){ return (state.game&&state.game.gold)||0; }
@@ -481,13 +487,26 @@
     function activeCats(){ const a=(state.game&&state.game.home.active)||[]; return a.filter(ownsCat); }
     function ownedCatList(){ return PET_CATALOG.filter(c=>ownsCat(c.id)).map(c=>c.id); }
     function isActiveCat(id){ return activeCats().indexOf(id)>=0; }
-    // 활성 슬롯 토글(집에 내보내기 / 대기) — 최대 3마리
+    // 집에 내보낼 수 있는 활성 슬롯: 기본 3, 금화 100으로 1칸 확장(최대 4).
+    function slotCount(){ return Math.min(MAX_SLOTS, Math.max(BASE_SLOTS, (state.game&&state.game.home.slots)||BASE_SLOTS)); }
+    // 활성 슬롯 토글(집에 내보내기 / 대기) — 최대 slotCount()마리
     function toggleActiveCat(id){
       if(!ownsCat(id)) return;
-      const a=activeCats().slice(), i=a.indexOf(id);
+      const a=activeCats().slice(), i=a.indexOf(id), max=slotCount();
       if(i>=0) a.splice(i,1);
-      else { if(a.length>=3){ toast('최대 3마리까지 내보낼 수 있어요', true); return; } a.push(id); }
+      else { if(a.length>=max){ toast('최대 '+max+'마리까지 내보낼 수 있어요', true); return; } a.push(id); }
       gameRef().child('home/active').set(a);
+    }
+    // 활성 슬롯 확장 구매(금화 SLOT_PRICE, 원자적·멱등). 첫 금화 소비처.
+    function buySlot(){
+      if(slotCount()>=MAX_SLOTS){ toast('이미 슬롯을 모두 열었어요'); return; }
+      if(gold()<SLOT_PRICE){ toast('금화 '+(SLOT_PRICE-gold())+' 부족', true); return; }
+      gameRef().transaction(g=>{
+        g=normalizeGame(g);
+        if(g.gold<SLOT_PRICE || g.home.slots>=MAX_SLOTS) return g;   // 재검증
+        g.gold-=SLOT_PRICE; g.home.slots=MAX_SLOTS;
+        return g;
+      }).then(res=>{ if(res.committed) toast('슬롯 확장 완료! 🐾 '+MAX_SLOTS+'마리까지 내보낼 수 있어요'); });
     }
 
     // 미션 지급(원자적·멱등): 게임 노드 트랜잭션 1회로 "수령 기록 + 은화 지급"을 동시에.
@@ -547,7 +566,7 @@
         g=normalizeGame(g);
         if(g.coins<c.price || g.owned.cats[id]) return g;      // 재검증
         g.coins-=c.price; g.owned.cats[id]={boughtAt:new Date().toISOString()};
-        if(g.home.active.length<3 && g.home.active.indexOf(id)<0) g.home.active.push(id);
+        if(g.home.active.length<(g.home.slots||BASE_SLOTS) && g.home.active.indexOf(id)<0) g.home.active.push(id);
         return g;
       }).then(res=>{ if(res.committed) toast(c.name+' 입양 완료! 🐾'); });
     }
@@ -568,16 +587,36 @@
       d.innerHTML='<div class="cd-room" onclick="openCatHouse()">'+
         '<div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div>'+
         '<span class="cd-coin"><span class="cd-ci">'+coinSvg({h:16})+'</span><b id="cdCoins">0</b></span>'+
+        batchBtnHtml()+
         '<div class="cr-props" id="cdProps"></div><div class="cr-stage" id="cdStage"></div></div>';
       updateDockCoins(); renderDockProps(); renderDockCats();
     }
     function updateDockCoins(){ const el=$('cdCoins'); if(el) el.textContent=coins().toLocaleString(); }
+    // 방/dock 공용: 똥을 화장실들에 라운드로빈 분배(각 화장실 객체에 _poops 슬롯 배열 부여, 최대 5개)
+    function distributePoops(list){
+      const litters=list.filter(p=>p.itemId==='litterbox'); litters.forEach(l=>{ l._poops=[]; });
+      const n=litters.length?Math.min((state.game.home.poops)||0, litters.length*5):0;
+      for(let i=0;i<n;i++) litters[i%litters.length]._poops.push(i/litters.length|0);
+    }
+    // 배치물 하나의 마크업(그릇=탭 급여·채움 반영, 화장실=똥 수거). isDock이면 dock 크기.
+    function propMarkup(p, isDock){
+      const foot=itemFoot(p.itemId); const x=((p.c-0.5+(foot.w-1)/2)/12*100).toFixed(1);
+      const depth=(p.r-1)/11; const bottom=(isDock?(2+depth*22):(3+depth*30)).toFixed(0); const fh=furnRoomH(p.itemId,isDock,depth);
+      const tap=(p.itemId==='bowl'||p.itemId==='waterbowl');
+      let inner=tap? furnRoomSvg(p.itemId,p.key,{h:fh}) : furnSvg(p.itemId,{h:fh});
+      if(p.itemId==='litterbox'){ const slots=p._poops||[]; const ph=Math.max(6,Math.round(fh*0.32));
+        inner+=slots.map(s=>'<span class="poop" onclick="collectPoop(event)" style="left:'+(20+(s%3)*26)+'%;top:'+(30+((s/3|0)*20))+'%;height:'+ph+'px" title="치우기 +'+POOP_REWARD+' 은화">'+poopSvg({h:ph})+'</span>').join(''); }
+      return '<div class="cr-prop'+(tap?' cr-tap':'')+(p.itemId==='litterbox'?' cr-litter':'')+'" style="left:'+x+'%;bottom:'+bottom+'px;"'+(tap?' onclick="event.stopPropagation();feedBowl(\''+p.key+'\')"':'')+'>'+inner+'</div>';
+    }
+    // 우측 상단 "일괄 돌보기" 버튼(밥·물 채우고 똥 치우기) — dock·홈 공용
+    function batchBtnHtml(){ return '<button class="cr-batch" onclick="event.stopPropagation();batchCare(this)" aria-label="일괄 돌보기: 밥·물 채우고 똥 치우기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 20c0-3.6 3.4-5.5 7.5-5.5s7.5 1.9 7.5 5.5"/><circle cx="8" cy="8.5" r="1.5"/><circle cx="16" cy="8.5" r="1.5"/><circle cx="12" cy="6.5" r="1.6"/></svg>돌보기</button>'; }
     // 배치 가구를 무대 바닥에 배경으로(가로=열, 앞뒤 깊이=행)
     function renderDockProps(){
       const box=$('cdProps'); if(!box) return;
-      // 원근: 뒤(행 큰 값)일수록 위로·작게, 앞(행 작은 값)일수록 아래로·크게(크기차는 완만하게). 앞 가구가 뒤 가구를 덮도록 뒤부터 그린다.
-      box.innerHTML=placedList().sort((a,b)=>b.r-a.r).map(p=>{ const foot=itemFoot(p.itemId); const x=((p.c-0.5+(foot.w-1)/2)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(2+depth*22).toFixed(0);
-        return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:furnRoomH(p.itemId, true, depth)})+'</div>'; }).join('');
+      reconcilePets();   // 캠 화면에서도 3시간 만료→똥 정산
+      // 원근: 뒤(행 큰 값)일수록 위로·작게, 앞(행 작은 값)일수록 아래로·크게. 앞 가구가 뒤 가구를 덮도록 뒤부터.
+      const list=placedList().sort((a,b)=>b.r-a.r); distributePoops(list);
+      box.innerHTML=list.map(p=>propMarkup(p,true)).join('');
     }
     // 활성 고양이를 dock 무대에 액터로 배치(없으면 안내)
     function renderDockCats(){
@@ -585,7 +624,7 @@
       const cats=activeCats();
       stage.dataset.hh=34;
       if(!cats.length){ stage.innerHTML='<span class="cd-empty">고양이를 입양해 보세요</span>'; markCatDirty(); return; }
-      stage.innerHTML=cats.slice(0,3).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(12+i*40)+'px;">'+catActorHTML(id,34)+'</div>').join('');
+      stage.innerHTML=cats.slice(0,slotCount()).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(12+i*40)+'px;">'+catActorHTML(id,34)+'</div>').join('');
       markCatDirty();
     }
     // ---- 통합 걷기 엔진: 단일 rAF가 "지금 보이는 무대"(시트 방 또는 dock)만 애니메이션 ----
@@ -705,34 +744,34 @@
     function catHomeHtml(){
       reconcilePets();   // 3시간 지난 그릇 비우고 똥 정산(멱등)
       const cats=activeCats();
-      // 똥을 화장실들에 분배(라운드로빈, 화장실당 최대 5개 표시)
-      const litters=placedList().filter(p=>p.itemId==='litterbox');
-      const CAP=5, poopN=litters.length?Math.min((state.game.home.poops)||0, litters.length*CAP):0;
-      const poopByKey={}; for(let i=0;i<poopN;i++){ const lk=litters[i%litters.length].key; (poopByKey[lk]=poopByKey[lk]||[]).push(i/litters.length|0); }
-      // 배치된 가구를 방 바닥에 매핑(c→가로, r→앞뒤 깊이). 그릇=탭 급여, 화장실=똥 수거.
-      const props=placedList().sort((a,b)=>b.r-a.r).map(p=>{ const foot=itemFoot(p.itemId); const x=((p.c-0.5+(foot.w-1)/2)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(3+depth*30).toFixed(0); const fh=furnRoomH(p.itemId,false,depth);
-        const tap=(p.itemId==='bowl'||p.itemId==='waterbowl');
-        let inner=tap? furnRoomSvg(p.itemId,p.key,{h:fh}) : furnSvg(p.itemId,{h:fh});
-        if(p.itemId==='litterbox'){ const slots=poopByKey[p.key]||[]; const ph=Math.max(6,Math.round(fh*0.3));
-          inner+=slots.map(s=>'<span class="poop" onclick="collectPoop(event)" style="left:'+(20+(s%3)*26)+'%;top:'+(30+((s/3|0)*20))+'%;height:'+ph+'px" title="치우기 +'+POOP_REWARD+' 은화">'+poopSvg({h:ph})+'</span>').join(''); }
-        return '<div class="cr-prop'+(tap?' cr-tap':'')+(p.itemId==='litterbox'?' cr-litter':'')+'" style="left:'+x+'%;bottom:'+bottom+'px;"'+(tap?' onclick="feedBowl(\''+p.key+'\')"':'')+'>'+inner+'</div>'; }).join('');
-      let h='<div class="catroom" id="catRoom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div><span class="cr-cam"><i></i>LIVE · 우리집</span><div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div></div>';
+      // 배치된 가구를 방 바닥에 매핑. 그릇=탭 급여·채움 반영, 화장실=똥 수거(공용 헬퍼).
+      const list=placedList().sort((a,b)=>b.r-a.r); distributePoops(list);
+      const litters=list.filter(p=>p.itemId==='litterbox');
+      const props=list.map(p=>propMarkup(p,false)).join('');
+      let h='<div class="catroom" id="catRoom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div><span class="cr-cam"><i></i>LIVE · 우리집</span>'+batchBtnHtml()+'<div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div></div>';
       // 안내: 그릇 채우기 / 똥 수거
       const poops=(state.game.home.poops)||0;
       h+='<div class="hintline" style="margin:8px 0 0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>밥·물 그릇을 탭해 채우고(3시간 뒤 비워짐), 쌓인 <b>똥을 탭해 치우면 +'+POOP_REWARD+' 은화</b>'+(poops&&!litters.length?' · 화장실을 놓아야 똥을 치울 수 있어요':'')+'.</div>';
       const owned=ownedCatList();
-      h+='<div class="sech"><span class="l">우리집 고양이</span><span class="s">'+cats.length+' / 3 활성</span></div>';
+      const sc=slotCount();
+      h+='<div class="sech"><span class="l">우리집 고양이</span><span class="s">'+cats.length+' / '+sc+' 활성</span></div>';
+      // 활성 슬롯 표시: 채워진 슬롯 + (미확장 시) 오른쪽에 잠금 슬롯 — 탭하면 금화 SLOT_PRICE로 확장
+      let slotRow='<div class="slotrow">';
+      for(let i=0;i<sc;i++){ const cid=cats[i]; slotRow+='<div class="slot'+(cid?' filled':'')+'">'+(cid?catFace(cid,{h:38}):'')+'</div>'; }
+      if(sc<MAX_SLOTS) slotRow+='<button class="slot locked" onclick="buySlot()" aria-label="고양이 슬롯 확장(금화 '+SLOT_PRICE+')"><svg class="lockic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span class="slotgold">'+goldSvg({h:13})+SLOT_PRICE+'</span></button>';
+      slotRow+='</div>';
+      h+=slotRow;
       if(!owned.length) h+='<div class="empty" style="padding:20px;">아직 고양이가 없어요. 상점에서 입양해 보세요 🐾</div>';
       else { h+='<div class="catchips">'+owned.map(id=>{ const on=isActiveCat(id);
         return '<button class="catchip'+(on?' on':'')+'" onclick="toggleActiveCat(\''+id+'\')">'+catFace(id,{h:44})+'<div class="cn">'+catName(id)+'</div><div class="cstate">'+(on?'집에 있음':'대기')+'</div></button>'; }).join('')+'</div>';
-        h+='<div class="hintline" style="margin-top:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>고양이를 탭해 집에 내보내거나 대기시켜요(최대 3마리).</div>'; }
+        h+='<div class="hintline" style="margin-top:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>고양이를 탭해 집에 내보내거나 대기시켜요(최대 '+sc+'마리)'+(sc<MAX_SLOTS?' · 오른쪽 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장':'')+'.</div>'; }
       return h;
     }
     function mountRoomWalk(){
       const stage=$('crStage'); if(!stage) return;
       const cats=activeCats();
       stage.dataset.hh=46;
-      stage.innerHTML=cats.slice(0,3).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(20+i*46)+'px;">'+catActorHTML(id,46)+'</div>').join('');
+      stage.innerHTML=cats.slice(0,slotCount()).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(20+i*46)+'px;">'+catActorHTML(id,46)+'</div>').join('');
       markCatDirty();   // 통합 엔진이 시트 방 무대를 자동으로 잡아 애니메이션
     }
     let _shopSub='cats';
@@ -869,6 +908,42 @@
       el.innerHTML='<span class="pi">'+coinSvg({h:14})+'</span>+'+POOP_REWARD;
       el.style.left=x+'px'; el.style.top=y+'px'; document.body.appendChild(el);
       setTimeout(()=>{ el.remove(); }, 950); }
+    // 은화 카운터(연출 도착점): 시트 열려 있으면 시트 은화칩, 아니면 dock 은화칩
+    function coinTarget(){
+      const open=$('sheet')&&$('sheet').classList.contains('on');
+      if(open){ const c=document.querySelector('#sheetBody .coinbar .coin:last-child'); if(c) return c; }
+      return document.querySelector('#catdock .cd-coin');
+    }
+    // 은화가 (x,y)에서 카운터로 날아 들어가는 연출 + 카운터 톡 튀기
+    function coinFlyFx(x,y,n){
+      const target=coinTarget(); if(!target) return;
+      const tr=target.getBoundingClientRect(), tx=tr.left+tr.width/2, ty=tr.top+tr.height/2;
+      const k=Math.max(1,Math.min(8,n));
+      for(let i=0;i<k;i++){ const el=document.createElement('div'); el.className='coinfly'; el.innerHTML=coinSvg({h:15});
+        const ox=x+(Math.random()*26-13), oy=y+(Math.random()*14-7);
+        el.style.left=ox+'px'; el.style.top=oy+'px';
+        el.style.setProperty('--tx',(tx-ox).toFixed(0)+'px'); el.style.setProperty('--ty',(ty-oy).toFixed(0)+'px');
+        el.style.animationDelay=(i*0.05).toFixed(2)+'s'; document.body.appendChild(el);
+        setTimeout(()=>{ el.remove(); }, 760+i*50); }
+      setTimeout(()=>{ target.classList.add('bump'); setTimeout(()=>target.classList.remove('bump'),320); }, 400);
+    }
+    // 일괄 돌보기: 빈 그릇을 사료/물로 채우고, 쌓인 똥을 모두 치워 은화 획득(카운터로 날아가는 연출)
+    function batchCare(btnEl){
+      if(!state.game){ return; }
+      const before=coins(), poopsNow=(state.game.home.poops)||0;
+      gameRef().transaction(g=>{ g=normalizeGame(g); const pl=g.home.placed||{}, now=Date.now();
+        Object.keys(pl).forEach(k=>{ const e=pl[k]; if(!e) return; const filled=e.filledAt&&(now-e.filledAt)<FILL_MS;
+          if(!filled){ if(e.itemId==='bowl'&&g.consum.food>0){ g.consum.food-=1; e.filledAt=now; }
+            else if(e.itemId==='waterbowl'&&g.consum.water>0){ g.consum.water-=1; e.filledAt=now; } } });
+        const poops=Number(g.home.poops)||0; if(poops>0){ g.coins+=poops*POOP_REWARD; g.home.poops=0; }
+        return g;
+      }).then(r=>{ if(!r||!r.committed) return;
+        const nowCoins=(r.snapshot&&r.snapshot.val()&&r.snapshot.val().coins)||before, gained=nowCoins-before;
+        let x=innerWidth/2, y=160; if(btnEl&&btnEl.getBoundingClientRect){ const b=btnEl.getBoundingClientRect(); x=b.left+b.width/2; y=b.top+b.height/2; }
+        if(gained>0){ coinFlyFx(x,y, Math.min(8, poopsNow||1)); toast('돌봄 완료 · +'+gained+' 은화 🪙'); }
+        else toast('돌봄 완료 🐾 (채울 밥/물이 없거나 이미 가득)');
+      });
+    }
     // 벽지 구매(구매 시 자동 적용) / 적용
     function buyWall(id){
       const w=WALLPAPER_CATALOG.find(x=>x.id===id); if(!w) return;
@@ -895,6 +970,11 @@
     // 테스트 배정(등급당 1) — 펫알=고양이 / 랜덤박스=가구
     const CAT_TIER  = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'legend', cat_tuxedo:'limited', cat_chaos:'legend' };
     const ITEM_TIER = { cushion:'normal', bowl:'uncommon', scratcher:'rare', tower:'epic' };
+    // 등급별 상점 가격(은화) — 확률(60/20/15/3.8/1/0.2%)에 맞춰 등급이 오를수록 약 2배씩.
+    // 알 100은화(+금화1·중복 30은화 환급) 대비, 흔한 등급은 알보다 싸게·희귀 등급은 비싸게 → 직접구매 vs 뽑기 선택 성립.
+    // CAT_TIER를 단일 소스로 삼아 PET_CATALOG.price를 산정(새 고양이도 등급만 지정하면 자동 가격).
+    const TIER_PRICE = { normal:50, uncommon:100, rare:200, epic:400, legend:800, limited:1500 };
+    PET_CATALOG.forEach(c=>{ const t=CAT_TIER[c.id]; if(t&&TIER_PRICE[t]!=null) c.price=TIER_PRICE[t]; });
     // ---- 개발자 모드(canel94@gmail.com 전용): 확률·구성 로컬 오버라이드 ----
     const DEV_EMAIL='canel94@gmail.com';
     function isDev(){ return (state.userEmail||'').toLowerCase()===DEV_EMAIL; }
@@ -927,7 +1007,7 @@
         if(g.coins<GACHA_PRICE) return g;
         g.coins-=GACHA_PRICE; g.gold=(g.gold||0)+1;
         if(kind==='egg'){
-          if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; if(g.home.active.length<3 && g.home.active.indexOf(res.id)<0) g.home.active.push(res.id); }
+          if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; if(g.home.active.length<(g.home.slots||BASE_SLOTS) && g.home.active.indexOf(res.id)<0) g.home.active.push(res.id); }
           else { g.coins+=DUP_REFUND; }
         } else {
           g.owned.items[res.id]=g.owned.items[res.id]||{qty:0,boughtAt:new Date().toISOString()};
@@ -968,6 +1048,8 @@
       const grid=$('placeGrid'); if(!grid) return;
       if(!_selItem){ toast('놓을 가구를 먼저 선택하세요'); return; }
       if(itemRemaining(_selItem)<=0){ toast('배치할 수량이 없어요(상점에서 구매)', true); return; }
+      // 밥·물그릇·화장실은 고양이 최대 마릿수(슬롯 수)만큼만 배치 가능
+      if(CARE_ITEMS.indexOf(_selItem)>=0 && itemPlaced(_selItem)>=slotCount()){ toast('그 종류는 최대 '+slotCount()+'개까지 놓을 수 있어요(고양이 수 기준)', true); return; }
       const foot=itemFoot(_selItem), p=cellFromPoint(grid, e.clientX, e.clientY);
       const r=Math.min(13-foot.h, p.r), c=Math.min(13-foot.w, p.c);   // 발자국(w×h)이 격자를 넘지 않게 보정
       const placed=(state.game.home.placed)||{};
