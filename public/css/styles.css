@@ -535,6 +535,7 @@
     .grid12 { display:grid; grid-template-columns:repeat(12,1fr); gap:2px; margin-bottom:12px; }
     .gc { aspect-ratio:1; border-radius:4px; background:var(--soft); border:1px dashed var(--bd); display:flex; align-items:center; justify-content:center; box-sizing:border-box; overflow:hidden; }
     .gc.fill { background:var(--soft2); border:1px solid transparent; color:var(--text2); }
+    .gc .gsc { display:flex; align-items:center; justify-content:center; width:100%; height:100%; transform-origin:center center; }
     .gc.fill .px { width:88%; height:88%; }
     .palette { display:flex; gap:10px; }
     .pitem { flex:1; border-radius:14px; background:var(--soft); border:1.5px solid transparent; display:flex; flex-direction:column; align-items:center; gap:5px; padding:11px 4px 9px; color:var(--text2); }
@@ -565,12 +566,16 @@
     .fx-item.shake { animation:fxshake .3s ease; }
     .fx-item.fx-open { animation:fxopen .45s ease forwards; }
     .fx-hint { position:relative; z-index:2; color:#fff; font-size:14px; font-weight:800; opacity:.9; animation:fxblink 1s ease-in-out infinite; }
-    .fx-flash { position:absolute; left:50%; top:50%; width:20px; height:20px; transform:translate(-50%,-50%); border-radius:50%; background:#fff; box-shadow:0 0 60px 40px #fff; animation:fxflash .5s ease-out forwards; z-index:1; }
-    .fx-rays { position:absolute; left:50%; top:50%; width:520px; height:520px; transform:translate(-50%,-50%); z-index:0;
-      background:conic-gradient(from 0deg, rgba(255,255,255,.22) 0 6deg, transparent 6deg 30deg); border-radius:50%; animation:fxspin 6s linear infinite; }
-    .fx-rays.slow { width:420px; height:420px; opacity:.5; }
-    .fx-particle { position:absolute; left:50%; top:50%; width:8px; height:8px; border-radius:50%; background:#F2C84B; z-index:2;
-      animation:fxpart .6s ease-out forwards; }
+    /* 열림 순간 빛 — 은은하게(강한 흰 폭광 대신 부드러운 블룸) */
+    .fx-flash { position:absolute; left:50%; top:50%; width:18px; height:18px; transform:translate(-50%,-50%); border-radius:50%;
+      background:radial-gradient(circle, rgba(255,255,255,.9) 0 38%, transparent 72%); box-shadow:0 0 18px 5px rgba(255,255,255,.3); animation:fxflash .5s ease-out forwards; z-index:1; }
+    /* 회전 광선 — 각진 도트 느낌으로 두껍고 은은하게(스텝 회전) */
+    .fx-rays { position:absolute; left:50%; top:50%; width:520px; height:520px; transform:translate(-50%,-50%); z-index:0; image-rendering:pixelated;
+      background:conic-gradient(from 0deg, rgba(255,255,255,.13) 0 7deg, transparent 7deg 45deg); border-radius:50%; animation:fxspin 7s steps(24) infinite; opacity:.7; }
+    .fx-rays.slow { width:420px; height:420px; opacity:.4; }
+    /* 튀는 빛 입자 — 둥근 점 대신 각진 픽셀 조각 */
+    .fx-particle { position:absolute; left:50%; top:50%; width:5px; height:5px; border-radius:0; background:rgba(242,200,75,.85); image-rendering:pixelated; z-index:2;
+      animation:fxpart .6s steps(5) forwards; }
     .fx-reveal { animation:fxfade .3s ease; }
     .fx-halo { position:absolute; left:50%; top:44%; width:230px; height:230px; transform:translate(-50%,-50%); border-radius:50%; z-index:0;
       background:radial-gradient(circle, currentColor 0%, transparent 62%); opacity:.30; }
@@ -594,7 +599,7 @@
     @keyframes fxfloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
     @keyframes fxshake { 0%,100%{transform:translateX(0) rotate(0)} 25%{transform:translateX(-6px) rotate(-4deg)} 75%{transform:translateX(6px) rotate(4deg)} }
     @keyframes fxblink { 0%,100%{opacity:.55} 50%{opacity:1} }
-    @keyframes fxflash { from{opacity:1;transform:translate(-50%,-50%) scale(.3)} to{opacity:0;transform:translate(-50%,-50%) scale(3)} }
+    @keyframes fxflash { from{opacity:.75;transform:translate(-50%,-50%) scale(.3)} to{opacity:0;transform:translate(-50%,-50%) scale(2.4)} }
     @keyframes fxspin { to{transform:translate(-50%,-50%) rotate(360deg)} }
     @keyframes fxpart { to{ transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.3); opacity:0; } }
     @keyframes fxopen { to{ transform:translateY(-40px) scale(1.1) rotate(6deg); opacity:0; } }
@@ -604,11 +609,17 @@
     .fx-item.fx-hit { animation:fxhit .34s ease; }
     .fx-item.fx-tremble { animation:fxtremble .09s linear infinite; }
     .fx-item.fx-ajar { transform:translateY(-6px) rotate(-3deg); }
-    .fx-leak { position:absolute; left:50%; top:50%; width:130px; height:130px; transform:translate(-50%,-50%) scale(.3); border-radius:50%; z-index:1;
-      background:radial-gradient(circle, #fff 0%, currentColor 22%, color-mix(in srgb, currentColor 40%, transparent) 46%, transparent 72%); opacity:0; filter:blur(2px);
-      box-shadow:0 0 calc(26px * var(--lk,1)) calc(6px * var(--lk,1)) currentColor;
-      animation:fxleak .7s ease-out forwards; }
-    .fx-leak.rainbow { background:conic-gradient(#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8,#F04452); animation:fxleak .7s ease-out forwards, fxspin 1.4s linear infinite; }
+    /* 껍질 사이로 새어나오는 빛 — 매끈한 원형 강광 대신 등급색 계단식(블록) 링으로 은은하게. 등급↑=조금 더 밝게(--lk) */
+    .fx-leak { position:absolute; left:50%; top:50%; width:130px; height:130px; transform:translate(-50%,-50%) scale(.3); border-radius:50%; z-index:1; image-rendering:pixelated;
+      background:radial-gradient(circle,
+        color-mix(in srgb, currentColor 80%, transparent) 0 22%,
+        transparent 22% 30%,
+        color-mix(in srgb, currentColor 42%, transparent) 30% 50%,
+        transparent 50% 60%,
+        color-mix(in srgb, currentColor 20%, transparent) 60% 78%,
+        transparent 78%);
+      opacity:0; filter:blur(.5px); animation:fxleak .7s ease-out forwards; }
+    .fx-leak.rainbow { background:conic-gradient(#F04452 0 60deg,#F0883C 60deg 120deg,#F2C84B 120deg 180deg,#2FAE7A 180deg 240deg,#3182F6 240deg 300deg,#9B6FC8 300deg 360deg); animation:fxleak .7s ease-out forwards, fxspin 2.4s steps(12) infinite; }
     /* 깨진 알 껍질 조각 — 튀어나가 옆에 흩어져 앉는다(알 전용) */
     .fx-shell { position:absolute; left:50%; top:48%; width:13px; height:10px; z-index:2;
       background:#FBFBFD; border:1.5px solid #c9c2b0; border-radius:48% 48% 60% 60% / 62% 62% 45% 45%;
@@ -621,7 +632,7 @@
     @keyframes fxpreshake { 0%,100%{transform:translateX(0) rotate(0)} 25%{transform:translateX(-3px) rotate(-2deg)} 75%{transform:translateX(3px) rotate(2deg)} }
     @keyframes fxhit { 0%{transform:translateX(0) rotate(0)} 20%{transform:translateX(10px) rotate(6deg)} 45%{transform:translateX(-8px) rotate(-5deg)} 70%{transform:translateX(5px) rotate(3deg)} 100%{transform:translateX(0) rotate(0)} }
     @keyframes fxtremble { 0%,100%{transform:translate(0,0)} 25%{transform:translate(-2px,1px)} 50%{transform:translate(2px,-1px)} 75%{transform:translate(-1px,-1px)} }
-    @keyframes fxleak { 0%{opacity:0;transform:translate(-50%,-50%) scale(.3)} 55%{opacity:.95} 100%{opacity:1;transform:translate(-50%,-50%) scale(calc(2 * var(--lk,1)))} }
+    @keyframes fxleak { 0%{opacity:0;transform:translate(-50%,-50%) scale(.3)} 55%{opacity:.6} 100%{opacity:.5;transform:translate(-50%,-50%) scale(calc(1.7 * var(--lk,1)))} }
     @keyframes fxpaw { 0%{transform:translate(150px,-50%) rotate(-18deg)} 42%{transform:translate(14px,-50%) rotate(-6deg)} 58%{transform:translate(30px,-50%) rotate(-10deg)} 100%{transform:translate(150px,-50%) rotate(-18deg)} }
     /* 껍질 조각: 위로 튀었다가 좌우·아래로 흩어져 놓인다 */
     @keyframes fxshell {
