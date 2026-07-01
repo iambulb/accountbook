@@ -450,12 +450,12 @@
     .cd-empty { position:absolute; left:2px; bottom:16px; font-size:11.5px; font-weight:600; color:var(--sub); }
     .catdock.hidden { display:none; }
     /* dock = 컴팩트 웹캠 방(벽지 배경 + 가구 + 걷는 고양이) */
-    .cd-room { position:relative; height:96px; overflow:hidden; cursor:pointer; }
+    .cd-room { position:relative; height:70px; overflow:hidden; cursor:pointer; }   /* 세로 축소: 휑한 벽지 최소화 */
     .cd-room .cr-wall { position:absolute; inset:0; z-index:0; }
-    .cd-room .cr-floor { position:absolute; left:0; right:0; bottom:0; height:52%; background:var(--soft2); z-index:0; }
-    .cd-room .cr-base { position:absolute; left:0; right:0; bottom:52%; height:1px; background:var(--bd); z-index:1; }
+    .cd-room .cr-floor { position:absolute; left:0; right:0; bottom:0; height:66%; background:var(--soft2); z-index:0; }
+    .cd-room .cr-base { position:absolute; left:0; right:0; bottom:66%; height:1px; background:var(--bd); z-index:1; }
     .cd-room .cr-props { position:absolute; inset:0; z-index:1; }
-    .cd-room .cr-stage { position:absolute; left:0; right:0; bottom:0; height:52%; z-index:2; pointer-events:none; }
+    .cd-room .cr-stage { position:absolute; left:0; right:0; bottom:0; height:66%; z-index:2; pointer-events:none; }
     .cd-room .cd-coin { position:absolute; top:9px; left:12px; z-index:3; }
     .cd-room .cd-actor { bottom:2px; }
     .cr-floor { position:absolute; left:0; right:0; bottom:0; height:58%; background:var(--soft2); z-index:0; }
