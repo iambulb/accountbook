@@ -8,6 +8,12 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 개선 — 📲 앱 설치(PWA) 고도화 — iOS 사파리에서도 보이게 + 플랫폼별 안내
+- **iOS 사파리에서 설치 버튼이 아예 안 보이던 문제**: 기존엔 `deferredPrompt`(크롬 전용 `beforeinstallprompt`)가 있을 때만 노출 → 사파리는 이 이벤트가 없어 영영 안 보임. **설치 안 됐으면 항상 노출**(`canInstallApp` = `!isStandalone()`)로 바꾸고 눈에 띄는 **CTA 버튼**(⬇ 홈 화면에 앱 설치)으로 교체(기존 작은 밑줄 링크 → `.install-cta`).
+- **탭 동작 플랫폼 분기**: 크롬/안드로이드 = **네이티브 설치 프롬프트**(`deferredPrompt.prompt()`), iOS/기타 = **수동 안내 시트**(`openInstallGuide`) — 앱 아이콘 + 3단계(**공유 → 홈 화면에 추가 → 추가**) 그림 안내, iOS 전용 주의(사파리에서만 가능) 포함.
+- **설치 상태 반영**: `appinstalled` 이벤트에서 프롬프트 정리 + 토스트 + 재렌더, **이미 설치(스탠드얼론) 시 버튼 숨김**(`display-mode:standalone`·`navigator.standalone`). iPadOS(데스크톱 UA+터치)도 iOS로 감지.
+- 검토: 매니페스트(name·icons 192/512/maskable·`display:standalone`·start_url·theme)·iOS 메타(`apple-mobile-web-app-*`·`apple-touch-icon`)는 이미 적정. `sw.js` `v3.73.0`.
+
 ### 변경 — 🐈 이동속도 소폭 감속 + 가구 상호작용 시간 10배
 - **이동속도 하향**: 액터 속도 `0.18~0.42` → `0.14~0.32`(약 23%↓, 걷기 주기 walkDur가 자동으로 맞춰 발 미끄러짐 없음).
 - **상호작용 시간 10배**: 가구에 다가가 머무는 시간을 10배로(`furnSpot` dur) — 캣타워 ≈26~62초, 방석·밥그릇·스크래처도 ×10로 오래 자리 잡고 쉼. `sw.js` `v3.73.0`.
