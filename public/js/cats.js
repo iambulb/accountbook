@@ -313,7 +313,7 @@
       { id:'cat_white',    species:'cat', name:'하양',   price:800,  desc:'파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요.' },
       { id:'cat_tuxedo',   species:'cat', name:'턱시도', price:1500, desc:'검은 정장에 하얀 셔츠·발. 단정하게 걸어다녀요.' },
       { id:'cat_chaos',    species:'cat', name:'카오스', price:800,  desc:'다크그레이+브라운 소용돌이 무늬. 종잡을 수 없이 쏘다녀요.' },
-      { id:'cat_siamese',  species:'cat', name:'샴',     price:1500, desc:'크림빛 몸에 짙은 포인트. 우아하게 방을 누벼요.' }
+      { id:'cat_siamese',  species:'cat', breed:'샴', name:'샴',     price:1500, desc:'크림빛 몸에 짙은 포인트. 우아하게 방을 누벼요.' }
     ];
     // 구 id(고양이 전용 시절) → 신 id. RTDB 보유/활성 데이터 하위호환(normalizeGame에서 적용).
     const PET_ID_MIGRATE = { mackerel:'cat_mackerel', cheese:'cat_cheese', calico:'cat_calico', black:'cat_black', white:'cat_white' };
@@ -778,7 +778,7 @@
       h+=slotRow;
       if(!owned.length) h+='<div class="empty" style="padding:20px;">아직 고양이가 없어요. 상점에서 입양해 보세요 🐾</div>';
       else { h+='<div class="catchips">'+owned.map(id=>{ const on=isActiveCat(id);
-        return '<button class="catchip'+(on?' on':'')+'" onclick="toggleActiveCat(\''+id+'\')">'+catFace(id,{h:44})+'<div class="cn">'+catName(id)+'</div><div class="cstate">'+(on?'집에 있음':'대기')+'</div></button>'; }).join('')+'</div>';
+        return '<button class="catchip'+(on?' on':'')+'" onclick="toggleActiveCat(\''+id+'\')">'+catFace(id,{h:44})+'<div class="cn" style="color:'+catTierColor(id)+'">'+catName(id)+'</div><div class="cstate">'+(on?'집에 있음':'대기')+'</div></button>'; }).join('')+'</div>';
         h+='<div class="hintline" style="margin-top:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>고양이를 탭해 집에 내보내거나 대기시켜요(최대 '+sc+'마리)'+(sc<MAX_SLOTS?' · 오른쪽 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장':'')+'.</div>'; }
       return h;
     }
@@ -844,7 +844,7 @@
           else if(enough) act='<button class="buy" aria-label="'+c.name+' 구매('+c.price+' 은화)" onclick="buyCat(\''+c.id+'\')">구매</button>';
           else act='<button class="buy dis" disabled>'+(c.price-coins())+' 부족</button>';
           return '<div class="shopcard"><div class="thumb"><div class="fl"></div>'+catFace(c.id,{h:56})+'</div>'+
-            '<div class="meta"><b>'+c.name+' <span class="tagmini">코숏</span></b><div class="desc">'+c.desc+'</div>'+
+            '<div class="meta"><b><span style="color:'+catTierColor(c.id)+'">'+c.name+'</span> <span class="tagmini">'+(c.breed||'코숏')+'</span></b><div class="desc">'+c.desc+'</div>'+
             '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+c.price+'</span></div>'+
             '<div class="act">'+act+'</div></div>';
         }).join('');
@@ -982,6 +982,8 @@
     ];
     const TIER_ORDER = TIERS.map(t=>t.id);   // 높은 등급이 비면 한 단계씩 낮춰 대체할 때 사용
     function tierInfo(id){ return TIERS.find(t=>t.id===id)||TIERS[0]; }
+    // 동물 이름을 등급 색으로 표기. 일반(흰색)은 밝은 배경에서 안 보이므로 기본 잉크색 사용.
+    function catTierColor(id){ const t=CAT_TIER[id]||'normal'; return t==='normal' ? 'var(--text)' : tierInfo(t).color; }
     // 테스트 배정(등급당 1) — 펫알=고양이 / 랜덤박스=가구
     const CAT_TIER  = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'epic', cat_tuxedo:'legend', cat_chaos:'legend', cat_siamese:'limited' };
     const ITEM_TIER = { cushion:'normal', bowl:'uncommon', scratcher:'rare', tower:'epic' };
