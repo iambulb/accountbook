@@ -514,14 +514,20 @@
     .slot.locked:active { transform:scale(.94); }
     .slot.locked .lockic { width:16px; height:16px; }
     .slot.locked .slotgold { display:inline-flex; align-items:center; gap:2px; font-size:10px; font-weight:800; color:var(--text); }
-    .catchips { display:flex; gap:10px; flex-wrap:nowrap; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity; }
-    .catchip { position:relative; flex:0 0 80%; scroll-snap-align:center; background:var(--card); border:1.5px solid var(--bd); border-radius:14px; padding:10px 6px; text-align:center; transition:transform .08s; cursor:pointer; }
-    .catchip .cn-edit { position:absolute; top:3px; right:3px; width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; border-radius:7px; color:var(--sub); background:var(--soft); }
+    .catchips { display:flex; gap:10px; flex-wrap:nowrap; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch; }
+    /* 적당한 세로 카드(고정폭). 이미지 영역엔 고양이를 꽉 차게, 아래엔 이름+상태 */
+    .catchip { position:relative; flex:0 0 112px; width:112px; box-sizing:border-box; background:var(--card); border:1.5px solid var(--bd); border-radius:16px; padding:8px 8px 10px; text-align:center; transition:transform .08s, border-color .12s, background .12s; cursor:pointer; }
+    .catchip .cpic { width:100%; aspect-ratio:1; background:var(--soft); border-radius:12px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .catchip .cpic .cspr, .catchip .cpic .catpx, .catchip .cpic .px { display:block; }
+    .catchip .cn-edit { position:absolute; top:5px; right:5px; width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; border-radius:7px; color:var(--sub); background:color-mix(in srgb,var(--card) 70%,transparent); }
     .catchip .cn-edit svg { width:12px; height:12px; }
     .catchip .cn-edit:active { transform:scale(.9); }
     .catchip:active { transform:scale(.96); }
-    .catchip.on { border-color:var(--primary); }
-    .catchip .cn { font-size:13px; font-weight:700; margin-top:4px; }
+    .catchip.on { border-color:var(--primary); background:color-mix(in srgb,var(--primary) 8%,var(--card)); }
+    .catchip.on .cpic { background:color-mix(in srgb,var(--primary) 14%,var(--soft)); }
+    .catchip .csel { position:absolute; top:5px; left:5px; width:22px; height:22px; border-radius:50%; background:var(--primary); color:#fff; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(0,0,0,.25); }
+    .catchip .csel svg { width:13px; height:13px; }
+    .catchip .cn { font-size:13px; font-weight:700; margin-top:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .catchip .cstate { font-size:9.5px; font-weight:800; margin-top:2px; color:var(--sub); }
     .catchip.on .cstate { color:var(--income); }
     /* 상점 카드 */

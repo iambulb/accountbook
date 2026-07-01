@@ -8,6 +8,13 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 수정 — 📱 바텀시트 가로 넘침(사파리) 수정 — 정산·경조사비·대출·구독 입력창
+- **하단 입력 시트가 화면보다 옆으로 넘쳐 가로 스크롤이 생기던 문제**(사파리 특히): 원인은 **grid 트랙(`1fr`)·날짜/숫자 input이 콘텐츠 최소폭 아래로 줄지 않아** 2열 폼이 넘치던 것. 전 시트 공통 수정 —
+  - 폼 grid를 **`minmax(0,1fr)`** 로(모든 `grid-template-columns` 1fr→minmax(0,1fr)) → 칸이 콘텐츠보다 좁아도 줄어듦.
+  - **input/select/textarea에 `min-width:0; max-width:100%; box-sizing:border-box`** → 날짜·숫자 인풋이 컨테이너를 밀어내지 않음.
+  - **`.sheet-body`에 `overflow-x:hidden`**(가로 스크롤 방지 안전망). 내부 `.chips`/`.slotrow`/`.catchips`의 의도된 가로 스크롤은 그대로.
+  - iPhone 폭(375px) 헤드리스 검증: 날짜 2개·숫자 2개 2열 폼에서 **가로 넘침 0**(문서·시트 스크롤 없음, 잘림 없음). `sw.js` `v3.68.0`.
+
 ### 수정 — 🐈 걷기 깜빡임 원인 수정(transform 이동) + 멀티셀 가운데 기준 배치
 - **깜빡임 근본 수정**: 액터 위치를 매 프레임 `left`(레이아웃 속성)로 바꾸며 자식 `.cspr` 배경 애니메이션이 도는 구조가 원인 — **위치를 `transform:translateX`(합성 전용)로 이동**(`actorXform`, x·bob 정수 스냅, `left`는 0 고정)해 리페인트 깜빡임 제거. `enterPose`/`enterInteract`도 x를 유지하도록 통일.
 - **DOM 재생성 억제**: `renderDockCats`/`mountRoomWalk`가 게임 데이터 변경마다 무대 innerHTML을 통째로 재생성(스프라이트 리로드·애니메이션 리셋)하던 것을 **고양이 구성이 같으면 재생성 안 함**(dataset.sig 가드).
