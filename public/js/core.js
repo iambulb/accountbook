@@ -248,6 +248,7 @@
         let active=u.activeWs;
         if(!active || !state.memberships.some(w=>w.id===active)) active=state.memberships[0].id;
         await switchWorkspace(active, true);
+        try{ initDock(); initCatGame(); setTimeout(autoClaimAttend, 800); }catch(e){ console.warn('cat game init', e); }   // 🐱 은화·고양이 dock
       }catch(e){ toast(e.message||'로그인 처리 중 오류', true); }
     }
 

@@ -13,6 +13,7 @@
 | `js/constants.js` | ~54 | 라벨/아이콘 맵, 거래효과 테이블(`TX_EFFECT`), 계좌·제공사·구독·목적별 타입, 기본 카테고리(`buildDefaultCategories`) |
 | `js/core.js` | ~649 | 전역 `state`, 헬퍼, 테마, 인증, 워크스페이스 부트스트랩, 마이그레이션, RTDB 리스너, 시딩 |
 | `js/views.js` | ~1146 | 모든 화면·시트 렌더링(달력·리포트·자산·더보기 + 각종 시트), CSV 내보내기 |
+| `js/cats.js` | ~250 | 🐱 고양이집 — 은화 경제(`users/{uid}/game`), 도트 아트(`pxSvg`+매트릭스), 전역 dock(`#catdock` 걷는 고양이 rAF), 고양이집 시트(홈·상점·미션), 카탈로그 상수 |
 | `js/main.js` | ~70 | PWA 부트(`beforeinstallprompt`·SW 등록·테마) + **접근성 레이어**(`a11yDecorate` + MutationObserver·키보드 델리게이션·Esc·포커스 트랩) |
 | `sw.js` | ~84 | 서비스워커 — 앱 셸 캐시, 출처별 캐시 전략 |
 | `css/styles.css` | ~245 | 전체 스타일(라이트/다크 테마 CSS 변수) |
@@ -27,7 +28,7 @@
 `index.html` 하단 script 태그 순서:
 
 ```
-firebase.js → constants.js → core.js → views.js → main.js
+firebase.js → constants.js → core.js → views.js → cats.js → main.js
 ```
 
 - **모듈 시스템 없음**: 모든 함수·상수가 전역(window) 스코프를 공유합니다. `views.js` 가 `core.js` 의 `state`·헬퍼를 직접 참조하고, HTML `onclick="openTxSheet()"` 처럼 전역 함수를 직접 호출합니다.

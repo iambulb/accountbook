@@ -5,7 +5,13 @@
 ## RTDB 트리 구조
 
 ```
-users/{uid}            : { name, email, photo(프로필 사진 base64 data URL), createdAt, activeWs, ws:{ {wsId}:true } }
+users/{uid}            : { name, email, photo(프로필 사진 base64 data URL), createdAt, activeWs, ws:{ {wsId}:true },
+                           game:{ 🐱 고양이집(개인 전역, 워크스페이스 무관)
+                             coins,                                  // 은화 잔액(정수)
+                             owned:{ cats:{ {catId}:{boughtAt} }, items:{ {itemId}:{boughtAt,qty} } },
+                             home:{ active:[catId…], placed:{ {slotId}:{itemId,x,y} } },
+                             missions:{ {periodKey}:{ {missionId}:{claimed,reward,at} } }  // periodKey=KST 일자 2026-07-01
+                           } }
 workspaces/{wsId}      : { name, photo(가계부 사진 base64 data URL, 선택), type:'personal'|'group', code(그룹), ownerUid, createdAt,
                            members:{ {uid}:{ name, role:'owner'|'member', joinedAt } } }
 codes/{CODE}           : wsId            // 그룹 6자리 코드 → 워크스페이스 조회 인덱스
