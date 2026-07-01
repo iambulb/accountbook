@@ -41,7 +41,7 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 | simple_pixel_art_cat_orange_tabby_chubby_with_crea.zip | `cat_cheese` | cat |
 | chibi_pixel_art_white_cat_pale_blue_eyes_sleepy_fa.zip | `cat_white` | cat (Walk이 east 없이 south만 있어 정면 걷기 시트로 구성) |
 | simple_pixel_art_tuxedo_cat_black_body_with_white.zip | `cat_tuxedo` | cat (8방향 rotations + `Walk-<hash>/east` 옆걷기 → 정상 옆보기 시트) |
-| simple_pixel_art_calico_cat_white_with_orange_three.zip | `cat_calico` | cat (8방향 rotations + `Walk/east` 옆걷기 → 기존 SVG 삼색을 스프라이트로 교체) |
+| chibi_pixel_art_tortoiseshell_cat_mixed_black_and.zip | `cat_calico` | cat (토터셸 삼색·코숏, `Walk/east` 옆걷기. 이전 `simple_pixel_art_calico_...` 대체) |
 | simple_pixel_art_cat_black_yellow_eyes_extra_round.zip | `cat_black` | cat (`Walk/east` 옆걷기 + 4방향 → 기존 SVG 까망을 스프라이트로 교체) |
 | imple_pixel_art_chaos_cat_dark_grey_and_brown_swir.zip | `cat_chaos` | cat (신규 · `Walk/east` 옆걷기 + 8방향 rotations) |
 | hibi_pixel_art_siamese_cat_cream_body_with_dark_fa.zip | `cat_siamese` | cat (신규 · `Walk/east` 옆걷기 + 8방향 rotations) |

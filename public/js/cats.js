@@ -308,7 +308,7 @@
     const PET_CATALOG = [
       { id:'cat_mackerel', species:'cat', name:'고등어', price:50,   desc:'쿨그레이 줄무늬. 차분하게 방을 돌아다녀요.' },
       { id:'cat_cheese',   species:'cat', name:'치즈',   price:100,  desc:'웜오렌지. 활발하게 뛰어다니는 개냥이.' },
-      { id:'cat_calico',   species:'cat', name:'삼색',   price:200,  desc:'흰+주황+먹. 도도하게 창가에 앉아요.' },
+      { id:'cat_calico',   species:'cat', breed:'코숏', name:'삼색', price:200,  desc:'검정·주황 어우러진 삼색(토터셸). 도도하게 창가에 앉아요.' },
       { id:'cat_black',    species:'cat', name:'까망',   price:400,  desc:'노란 눈의 까만 고양이. 조용히 방을 지켜요.' },
       { id:'cat_white',    species:'cat', name:'하양',   price:800,  desc:'파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요.' },
       { id:'cat_tuxedo',   species:'cat', name:'턱시도', price:1500, desc:'검은 정장에 하얀 셔츠·발. 단정하게 걸어다녀요.' },
@@ -445,8 +445,11 @@
     const ROOM_H = { tower:6.2, scratcher:2.9, litterbox:1.5, cushion:1, bowl:0.8, waterbowl:0.8 };
     function furnRoomH(id, isDock, depth){
       const mult = ROOM_H[id] || 1;
-      // 근거리(depth 0)는 크게, 원거리(depth 1)는 조금만 작게 — 멀어도 너무 작지 않게(원근 완화).
-      const unit = isDock ? (11 - depth*2) : (16 - depth*3);
+      // 근거리(depth 0)는 크게. 원거리 축소폭은 크기에 비례 — 작은 가구(방석·그릇)는 멀어도 덜 작게(완만),
+      // 캣타워처럼 큰 가구는 멀수록 더 작게(원근 강하게).
+      const base = isDock ? 11 : 16;
+      const shrink = (isDock ? 2 : 3) + Math.max(0, mult-1) * (isDock ? 0.6 : 1.0);
+      const unit = base - depth*shrink;
       return Math.max(4, Math.round(unit*mult));
     }
     function catName(id){ const o=state.game&&state.game.owned&&state.game.owned.cats&&state.game.owned.cats[id]; if(o&&o.name) return o.name; const c=PET_CATALOG.find(x=>x.id===id); return c?c.name:id; }
@@ -540,15 +543,17 @@
     }
     // 프로모/치트 코드 — 코드 입력 시 은화 지급(사용자별 1회, 게임 노드에 사용 기록)
     const PROMO_CODES = { showmethemoney: 999 };
+    const REUSABLE_CODES = { showmethemoney: true };   // 중복 사용 허용 코드(그 외 일반 코드는 사용자당 1회)
     function redeemCode(code){
       const key=(code||'').trim().toLowerCase();
       const reward=PROMO_CODES[key];
       if(!reward){ toast('올바르지 않은 코드예요', true); return; }
+      const reusable=!!REUSABLE_CODES[key];
       let already=false;
       gameRef().transaction(g=>{
         g=normalizeGame(g);
-        if(g.codes[key]){ already=true; return g; }   // 이미 사용 → 무변화
-        g.codes[key]={ reward:reward, at:new Date().toISOString() };
+        if(!reusable && g.codes[key]){ already=true; return g; }   // 재사용 불가 코드만 1회 제한
+        g.codes[key]={ reward:reward, at:new Date().toISOString(), n:((g.codes[key]&&Number(g.codes[key].n))||0)+1 };
         g.coins += reward;
         return g;
       }).then(res=>{
@@ -619,7 +624,7 @@
       const x=((p.c-1)/12*100).toFixed(2);
       const frontRow=p.r + foot.h - 1;   // 발자국에서 가장 앞(가까운) 줄에 바닥을 둠 → 가구가 위로 뜨지 않음
       // 반전: 격자 윗줄(작은 r)=방 뒤(멀리, 위·작게), 아랫줄(큰 r)=방 앞(가까이, 아래·크게)
-      const depth=(12-frontRow)/11; const bottom=(isDock?(3+depth*40):(3+depth*50)).toFixed(1); const fh=furnRoomH(p.itemId,isDock,depth);
+      const depth=(12-frontRow)/11; const bottom=(isDock?(3+depth*38):(3+depth*46)).toFixed(1); const fh=furnRoomH(p.itemId,isDock,depth);
       const tap=(p.itemId==='bowl'||p.itemId==='waterbowl');
       let inner=tap? furnRoomSvg(p.itemId,p.key,{h:fh}) : furnSvg(p.itemId,{h:fh});
       if(p.itemId==='litterbox'){ const slots=p._poops||[]; const ph=Math.max(6,Math.round(fh*0.32));
@@ -640,9 +645,9 @@
     function renderDockCats(){
       const stage=$('cdStage'); if(!stage) return;
       const cats=activeCats();
-      stage.dataset.hh=34;
+      stage.dataset.hh=40;
       if(!cats.length){ stage.innerHTML='<span class="cd-empty">고양이를 입양해 보세요</span>'; markCatDirty(); return; }
-      stage.innerHTML=cats.slice(0,slotCount()).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(12+i*40)+'px;">'+catActorHTML(id,34)+'</div>').join('');
+      stage.innerHTML=cats.slice(0,slotCount()).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(12+i*46)+'px;">'+catActorHTML(id,40)+'</div>').join('');
       markCatDirty();
     }
     // ---- 통합 걷기 엔진: 단일 rAF가 "지금 보이는 무대"(시트 방 또는 dock)만 애니메이션 ----
@@ -796,8 +801,8 @@
     function mountRoomWalk(){
       const stage=$('crStage'); if(!stage) return;
       const cats=activeCats();
-      stage.dataset.hh=46;
-      stage.innerHTML=cats.slice(0,slotCount()).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(20+i*46)+'px;">'+catActorHTML(id,46)+'</div>').join('');
+      stage.dataset.hh=58;
+      stage.innerHTML=cats.slice(0,slotCount()).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(20+i*58)+'px;">'+catActorHTML(id,58)+'</div>').join('');
       markCatDirty();   // 통합 엔진이 시트 방 무대를 자동으로 잡아 애니메이션
     }
     let _shopSub='cats';
