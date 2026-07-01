@@ -8,8 +8,8 @@
 users/{uid}            : { name, email, photo(프로필 사진 base64 data URL), createdAt, activeWs, ws:{ {wsId}:true },
                            game:{ 🐱 고양이집(개인 전역, 워크스페이스 무관)
                              coins,                                  // 은화 잔액(정수)
-                             owned:{ cats:{ {catId}:{boughtAt} }, items:{ {itemId}:{boughtAt,qty} } },
-                             home:{ active:[catId…], placed:{ {slotId}:{itemId,x,y} } },
+                             owned:{ cats:{ {catId}:{boughtAt} }, items:{ {itemId}:{boughtAt,qty} }, wallpapers:{ {wallId}:{boughtAt} } },
+                             home:{ active:[catId…], placed:{ {slotId}:{itemId,x,y} }, wallpaper:wallId },  // 적용 벽지
                              missions:{ {periodKey}:{ {missionId}:{claimed,reward,at} } },  // periodKey=KST 일자 2026-07-01
                              codes:{ {code}:{reward,at} }             // 사용한 프로모/치트 코드(사용자별 1회, 예: showmethemoney→999)
                            } }

@@ -418,8 +418,10 @@
 
     function updateWorkspaceChip(){
       const el=$('wsChip'); if(!el||!state.wsMeta) return;
-      const p=state.wsMeta.photo;
-      const badge = p ? '<img src="'+p+'" alt="" style="width:16px;height:16px;border-radius:50%;object-fit:cover;flex:none;">' : '<span class="dotk"></span>';
+      // 현재 그룹/가계부 프로필: 사진 있으면 사진, 없으면 이름 이니셜 아바타(점 대신)
+      const badge = (typeof wsAvatarHtml==='function')
+        ? wsAvatarHtml(state.wsMeta.name, state.wsMeta.photo, 20)
+        : (state.wsMeta.photo ? '<img src="'+state.wsMeta.photo+'" alt="" style="width:20px;height:20px;border-radius:50%;object-fit:cover;flex:none;">' : '<span class="dotk"></span>');
       el.innerHTML = badge+escapeHtml(state.wsMeta.name||'가계부');
     }
 

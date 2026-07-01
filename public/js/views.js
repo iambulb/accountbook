@@ -954,20 +954,20 @@
     function renderMore(){
       $('screenTitle').textContent='더보기';
       const ws=state.wsMeta||{}; const isGroup=ws.type==='group'; const memCount=Object.keys(ws.members||{}).length;
-      let h='';
-      // 상단: 내 프로필(사용자)
+      let h='<div class="more-wrap">';
+      // 상단: 내 프로필(크게)
       h+='<div class="prow" onclick="openProfileSheet()">'+
-         avatarHtml(state.uid, state.userName, 52)+
-         '<div class="pnm"><b>'+escapeHtml(state.userName||'사용자')+' <span class="pill">편집</span></b><span>내 프로필</span></div></div>';
+         avatarHtml(state.uid, state.userName, 56)+
+         '<div class="pnm"><b>'+escapeHtml(state.userName||'사용자')+'</b><span>내 프로필</span></div>'+
+         '<span class="editk">'+MORE_ICON.chev+'</span></div>';
       // 그 아래: 현재 가계부/그룹(작게) + 멤버 아바타 + 전환
       const wsSub = isGroup ? ('그룹 · 멤버 '+memCount+'명') : '개인 가계부';
       const canEditWs = !isGroup || isWsOwner();
-      h+='<div class="grow">'+
-         '<div class="grow-l"'+(canEditWs?' onclick="openWsProfileSheet()"':'')+'>'+
-           wsAvatarHtml(ws.name, ws.photo, 34)+
-           '<div class="gnm"><b>'+escapeHtml(ws.name||'가계부')+'</b><span>'+wsSub+'</span></div></div>'+
+      h+='<div class="grow"'+(canEditWs?' onclick="openWsProfileSheet()"':'')+'>'+
+         wsAvatarHtml(ws.name, ws.photo, 36)+
+         '<div class="gnm"><b>'+escapeHtml(ws.name||'가계부')+'</b><span>'+wsSub+'</span></div>'+
          (isGroup?memberAvatarStack(ws, 26):'')+
-         '<button class="cnt" onclick="openWorkspaceSheet()">전환</button></div>';
+         '<button class="cnt" onclick="event.stopPropagation();openWorkspaceSheet()">전환</button></div>';
       // 4열 기능 그리드
       const activeSubs=(state.subscriptions||[]).filter(s=>s.status==='active').length;
       h+='<div class="grid4">';
@@ -982,10 +982,12 @@
       h+=gcell(coinSvg({h:26}),'고양이집','openCatHouse()');
       h+=gcell(MORE_ICON.gear,'설정','openSettingsSheet()');
       h+='</div>';
-      // 로그아웃(가운데) — 홈 화면 설치 링크 위
-      h+='<div style="text-align:center;margin-top:26px;"><button class="btn ghost sm" onclick="logout()">로그아웃</button></div>';
-      if(deferredPrompt) h+='<p style="text-align:center;margin-top:12px;"><button class="install-link" onclick="installApp()">홈 화면에 앱 설치</button></p>';
-      h+='<p class="muted" style="text-align:center;font-size:12px;margin-top:'+(deferredPrompt?'8px':'12px')+';">가계부 v3</p>';
+      // 하단 고정: 로그아웃(가운데) → 홈 화면 설치 링크 → 버전
+      h+='<div class="more-foot">';
+      h+='<button class="btn ghost sm" onclick="logout()">로그아웃</button>';
+      if(deferredPrompt) h+='<button class="install-link" onclick="installApp()" style="margin-top:12px;">홈 화면에 앱 설치</button>';
+      h+='<p class="muted" style="font-size:12px;margin-top:10px;">가계부 v3</p>';
+      h+='</div></div>';   // .more-foot / .more-wrap
       $('content').innerHTML=h;
     }
     function goHome(view){ state.homeView=view||'list'; go('calendar'); }

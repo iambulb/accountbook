@@ -176,6 +176,18 @@
       { id:'tower',   name:'캣타워', price:35, size:1, desc:'위층에 올라가 낮잠.' },
       { id:'scratcher', name:'스크래처', price:18, size:1, desc:'기둥에 앉아 발톱을 갈아요.' }
     ];
+    // 벽지(방 배경) — 구매 후 적용. default는 기본 제공.
+    const WALLPAPER_CATALOG = [
+      { id:'default', name:'기본',  price:0,  css:'linear-gradient(180deg,color-mix(in srgb,var(--soft) 55%,var(--card)) 0%,var(--soft) 100%)' },
+      { id:'sky',     name:'하늘',  price:25, css:'linear-gradient(180deg,#bfe3ff 0%,#e9f5ff 100%)' },
+      { id:'sakura',  name:'벚꽃',  price:30, css:'linear-gradient(180deg,#ffdcea 0%,#fff1f6 100%)' },
+      { id:'mint',    name:'민트',  price:25, css:'linear-gradient(180deg,#c9ede0 0%,#eefaf4 100%)' },
+      { id:'night',   name:'별밤',  price:40, css:'linear-gradient(180deg,#2a2e57 0%,#525891 100%)' },
+      { id:'peach',   name:'살구',  price:20, css:'linear-gradient(180deg,#ffe4cf 0%,#fff4ea 100%)' }
+    ];
+    function wallCss(id){ const w=WALLPAPER_CATALOG.find(x=>x.id===id); return (w||WALLPAPER_CATALOG[0]).css; }
+    function ownsWall(id){ return id==='default' || !!(state.game&&state.game.owned.wallpapers[id]); }
+    function currentWall(){ return (state.game&&state.game.home.wallpaper)||'default'; }
     // 미션 정의(일일). reward=은화. check(ctx)=완료 여부(현재 워크스페이스 활동 읽어 판정)
     const DAILY_MISSIONS = [
       { id:'record', period:'day', name:'오늘 거래 1건 기록', reward:5, icon:'<path d="M12 4v16M8 8l4-4 4 4"/><rect x="4" y="18" width="16" height="3" rx="1"/>',
@@ -222,8 +234,8 @@
     function gameRef(){ return db.ref('users/'+state.uid+'/game'); }
     function normalizeGame(g){ g=g||{}; return {
       coins: Number(g.coins)||0,
-      owned:{ cats:(g.owned&&g.owned.cats)||{}, items:(g.owned&&g.owned.items)||{} },
-      home:{ active:(g.home&&g.home.active)||[], placed:(g.home&&g.home.placed)||{} },
+      owned:{ cats:(g.owned&&g.owned.cats)||{}, items:(g.owned&&g.owned.items)||{}, wallpapers:(g.owned&&g.owned.wallpapers)||{} },
+      home:{ active:(g.home&&g.home.active)||[], placed:(g.home&&g.home.placed)||{}, wallpaper:(g.home&&g.home.wallpaper)||'default' },
       missions: g.missions||{}, progress: g.progress||{}, codes: g.codes||{}
     }; }
     function initCatGame(){
@@ -235,6 +247,8 @@
     }
     function onGameChange(){
       updateDockCoins();
+      const dw=$('catdock'); const wall=dw&&dw.querySelector('.cr-wall'); if(wall) wall.style.background=wallCss(currentWall());
+      renderDockProps();
       renderDockCats();
       if(state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh();
     }
@@ -326,19 +340,27 @@
       const d=$('catdock'); if(!d) return;
       if(dockMode()==='hidden'){ d.className='catdock hidden'; d.innerHTML=''; stopWalk(); return; }
       d.className='catdock';
-      d.innerHTML='<div class="cd-strip" onclick="openCatHouse()"><div class="cd-floor"></div>'+
+      // 웹캠 정면 방: 벽지(배경) + 바닥 + 배치 가구(배경) + 걷는 고양이
+      d.innerHTML='<div class="cd-room" onclick="openCatHouse()">'+
+        '<div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div>'+
         '<span class="cd-coin"><span class="cd-ci">'+coinSvg({h:16})+'</span><b id="cdCoins">0</b></span>'+
-        '<div class="cd-stage" id="cdStage"></div></div>';
-      updateDockCoins(); renderDockCats();
+        '<div class="cr-props" id="cdProps"></div><div class="cr-stage" id="cdStage"></div></div>';
+      updateDockCoins(); renderDockProps(); renderDockCats();
     }
     function updateDockCoins(){ const el=$('cdCoins'); if(el) el.textContent=coins().toLocaleString(); }
+    // 배치 가구를 무대 바닥에 배경으로(가로=열, 앞뒤 깊이=행)
+    function renderDockProps(){
+      const box=$('cdProps'); if(!box) return;
+      box.innerHTML=placedList().map(p=>{ const x=((p.c-0.5)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(2+depth*22).toFixed(0);
+        return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:(16+depth*10).toFixed(0)})+'</div>'; }).join('');
+    }
     // 활성 고양이를 dock 무대에 액터로 배치(없으면 안내)
     function renderDockCats(){
       const stage=$('cdStage'); if(!stage) return;
       const cats=activeCats();
-      stage.dataset.hh=30;
+      stage.dataset.hh=34;
       if(!cats.length){ stage.innerHTML='<span class="cd-empty">고양이를 입양해 보세요</span>'; markCatDirty(); return; }
-      stage.innerHTML=cats.slice(0,3).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(10+i*26)+'px;">'+catSide(id,0,{h:30})+'</div>').join('');
+      stage.innerHTML=cats.slice(0,3).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(12+i*40)+'px;">'+catSide(id,0,{h:34})+'</div>').join('');
       markCatDirty();
     }
     // ---- 통합 걷기 엔진: 단일 rAF가 "지금 보이는 무대"(시트 방 또는 dock)만 애니메이션 ----
@@ -358,20 +380,28 @@
       const W=stage.clientWidth||160, hh=+stage.dataset.hh||30, sw=Math.round(hh*26/14);
       const hasRoom = stage.id==='crStage' || !!stage.closest('.cd-room');
       const props = hasRoom ? placedList().map(p=>({ x:(p.c-0.5)/12*W, itemId:p.itemId })) : [];
-      return acts.map(el=>({ el, x:parseFloat(el.style.left)||0, dir:1, v:0.22+Math.random()*0.28, t:Math.random()*6, frame:0, fc:0, W, hh, sw, props, mode:'roam', pause:0, goal:null, pose:null }));
+      // 고양이마다 성격(속도·유휴빈도·방향전환·가구선호)을 랜덤 부여 → 개별적으로 움직임
+      return acts.map(el=>({ el, x:parseFloat(el.style.left)||0, dir:Math.random()<0.5?-1:1,
+        v:0.16+Math.random()*0.34, t:Math.random()*6, frame:0, fc:Math.random()*170, W, hh, sw, props,
+        mode:'roam', pause:0, goal:null, pose:null,
+        idle:0.0015+Math.random()*0.004, turn:0.004+Math.random()*0.012, seek:0.002+Math.random()*0.006, cool:0 }));
     }
     // 가구 종류별 포즈: 밥그릇=앉아 먹기, 방석=식빵, 캣타워=낮잠, 스크래처=앉기, 그 외=식빵
     function poseForItem(itemId){ return itemId==='bowl'?'sit':itemId==='cushion'?'loaf':itemId==='tower'?'sleep':itemId==='scratcher'?'sit':'loaf'; }
-    function poseDur(pose){ return pose==='sleep'?(3200+Math.random()*2500):(1300+Math.random()*1800); }
-    function enterPose(a, id, pose){ a.mode='pause'; a.pose=pose; a.pause=poseDur(pose); a.el.innerHTML=catPose(id, pose, {h:a.hh}); a.el.style.transform='translate(0,0) scaleX('+a.dir+')'; }
+    function poseDur(pose){ return pose==='sleep'?(3200+Math.random()*2800):(1200+Math.random()*2000); }
+    function enterPose(a, id, pose){ a.mode='pause'; a.pose=pose; a.pause=poseDur(pose); a.cool=1400; a.el.innerHTML=catPose(id, pose, {h:a.hh}); a.el.style.transform='translate(0,0) scaleX('+a.dir+')'; }
     function stepActors(dt){
       _eng.actors.forEach(a=>{
-        a.t+=dt*0.004; const id=a.el.getAttribute('data-cat');
-        if(a.mode==='pause'){ a.pause-=dt; if(a.pause<=0){ a.mode='roam'; a.fc=999; } return; }   // 포즈 유지, 끝나면 걷기 복귀
-        // 유휴: 가끔 그 자리에서 식빵/앉기
-        if(a.mode==='roam' && Math.random()<0.0025){ enterPose(a, id, Math.random()<0.5?'loaf':'sit'); return; }
-        // 가구로 이동 결정
-        if(a.mode==='roam' && a.props.length && Math.random()<0.004){ a.goal=a.props[Math.floor(Math.random()*a.props.length)]; a.mode='goal'; }
+        a.t+=dt*0.004; if(a.cool>0)a.cool-=dt; const id=a.el.getAttribute('data-cat');
+        if(a.mode==='pause'){ a.pause-=dt; if(a.pause<=0){ a.mode='roam'; a.fc=999; a.dir=Math.random()<0.5?-1:1; } return; }   // 포즈 유지 후 랜덤 방향으로 재출발
+        // 유휴 제스처(그 자리 앉기/식빵/낮잠) — 쿨다운 후에만
+        if(a.mode==='roam' && a.cool<=0 && Math.random()<a.idle){ enterPose(a, id, ['loaf','sit','sleep'][Math.floor(Math.random()*3)]); return; }
+        // 가끔 방향 전환(개별)
+        if(a.mode==='roam' && Math.random()<a.turn){ a.dir*=-1; }
+        // 가끔 속도 변화(개별)
+        if(a.mode==='roam' && Math.random()<0.003){ a.v=0.16+Math.random()*0.34; }
+        // 가구로 이동 결정(가구 있을 때, 쿨다운 후)
+        if(a.mode==='roam' && a.props.length && a.cool<=0 && Math.random()<a.seek){ a.goal=a.props[Math.floor(Math.random()*a.props.length)]; a.mode='goal'; }
         if(a.mode==='goal' && a.goal){ a.dir=(a.goal.x>a.x)?1:-1; if(Math.abs(a.goal.x-a.x)<5){ enterPose(a, id, poseForItem(a.goal.itemId)); a.goal=null; return; } }
         a.x += a.dir*a.v*dt*0.06;
         const max=a.W-a.sw;
@@ -415,7 +445,7 @@
       // 배치된 가구를 방 바닥에 매핑(c→가로, r→앞뒤 깊이)
       const props=placedList().map(p=>{ const x=((p.c-0.5)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(3+depth*30).toFixed(0);
         return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:(20+depth*10).toFixed(0)})+'</div>'; }).join('');
-      let h='<div class="catroom" id="catRoom"><div class="cr-wall"></div><div class="cr-base"></div><span class="cr-cam"><i></i>LIVE · 우리집</span><div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div></div>';
+      let h='<div class="catroom" id="catRoom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div><span class="cr-cam"><i></i>LIVE · 우리집</span><div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div></div>';
       const owned=ownedCatList();
       h+='<div class="sech"><span class="l">우리집 고양이</span><span class="s">'+cats.length+' / 3 활성</span></div>';
       if(!owned.length) h+='<div class="empty" style="padding:20px;">아직 고양이가 없어요. 상점에서 입양해 보세요 🐾</div>';
@@ -434,7 +464,23 @@
     let _shopSub='cats';
     function setShopSub(s){ _shopSub=s; renderCatHouse(); }
     function catShopHtml(){
-      let h='<div class="subseg"><button class="'+(_shopSub==='cats'?'on':'')+'" onclick="setShopSub(\'cats\')">고양이</button><button class="'+(_shopSub==='furn'?'on':'')+'" onclick="setShopSub(\'furn\')">가구</button></div>';
+      let h='<div class="subseg"><button class="'+(_shopSub==='cats'?'on':'')+'" onclick="setShopSub(\'cats\')">고양이</button><button class="'+(_shopSub==='furn'?'on':'')+'" onclick="setShopSub(\'furn\')">가구</button><button class="'+(_shopSub==='wall'?'on':'')+'" onclick="setShopSub(\'wall\')">벽지</button></div>';
+      if(_shopSub==='wall'){
+        const cur=currentWall();
+        h+='<div class="wallgrid">'+WALLPAPER_CATALOG.map(w=>{
+          const owned=ownsWall(w.id), applied=cur===w.id;
+          let act;
+          if(applied) act='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>적용됨</span>';
+          else if(owned) act='<button class="buy ghost" onclick="applyWall(\''+w.id+'\')">적용</button>';
+          else if(coins()>=w.price) act='<button class="buy" aria-label="'+w.name+' 벽지 구매('+w.price+' 은화)" onclick="buyWall(\''+w.id+'\')">구매</button>';
+          else act='<button class="buy dis" disabled>'+(w.price-coins())+' 부족</button>';
+          const price=w.price?('<span class="price"><span class="ci">'+coinSvg({h:15})+'</span>'+w.price+'</span>'):'<span class="price" style="color:var(--sub)">무료</span>';
+          return '<div class="wallcard'+(applied?' on':'')+'"><div class="wallsw" style="background:'+w.css+'"></div>'+
+            '<div class="wallmeta"><b>'+w.name+'</b>'+price+'</div>'+act+'</div>';
+        }).join('')+'</div>';
+        h+='<div class="note"><b>벽지</b> 구매하면 바로 적용돼요. 보유한 벽지는 <b>적용</b>으로 언제든 바꿀 수 있어요.</div>';
+        return h;
+      }
       if(_shopSub==='cats'){
         h+=CAT_CATALOG.map(c=>{
           const owned=ownsCat(c.id), enough=coins()>=c.price;
@@ -474,6 +520,16 @@
         g.owned.items[id].qty=(Number(g.owned.items[id].qty)||0)+1; return g;
       }).then(res=>{ if(res.committed) toast(it.name+' 구매! 배치 탭에서 놓아보세요'); });
     }
+    // 벽지 구매(구매 시 자동 적용) / 적용
+    function buyWall(id){
+      const w=WALLPAPER_CATALOG.find(x=>x.id===id); if(!w) return;
+      if(ownsWall(id)){ applyWall(id); return; }
+      if(coins()<w.price){ toast((w.price-coins())+' 은화 부족', true); return; }
+      gameRef().transaction(g=>{ g=normalizeGame(g); if(g.coins<w.price||g.owned.wallpapers[id]) return g;
+        g.coins-=w.price; g.owned.wallpapers[id]={boughtAt:new Date().toISOString()}; g.home.wallpaper=id; return g;
+      }).then(res=>{ if(res.committed) toast(w.name+' 벽지 적용! 🎨'); });
+    }
+    function applyWall(id){ if(!ownsWall(id)){ toast('먼저 구매하세요', true); return; } gameRef().child('home/wallpaper').set(id); toast('벽지를 적용했어요'); }
     let _selItem=null;
     function selItem(id){ _selItem=(_selItem===id?null:id); renderCatHouse(); }
     function placeCell(r,c){
