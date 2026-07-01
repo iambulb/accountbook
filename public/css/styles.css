@@ -395,6 +395,21 @@
     .link { color:var(--primary); font-weight:700; font-size:14px; }
     .install-banner { display:flex; align-items:center; gap:10px; background:var(--soft); color:var(--text); padding:13px 14px; border-radius:14px; font-size:13px; font-weight:700; margin-bottom:12px; }
     .install-link { color:var(--sub); font-size:12px; font-weight:600; text-decoration:underline; text-underline-offset:2px; padding:4px; }
+    /* 앱 설치 CTA(더보기 하단, 항상 노출) */
+    .install-cta { display:inline-flex; align-items:center; gap:8px; margin-top:12px; padding:11px 18px; border-radius:14px; background:var(--primary); color:var(--card); font-size:13.5px; font-weight:800; transition:opacity .15s; }
+    .install-cta svg { width:17px; height:17px; }
+    .install-cta:active { opacity:.85; }
+    /* 앱 설치 안내 시트 */
+    .inst-hero { display:flex; align-items:center; gap:14px; margin:4px 0 18px; }
+    .inst-app-ic { border-radius:15px; box-shadow:var(--shadow); flex:none; image-rendering:auto; }
+    .inst-title { font-size:17px; font-weight:800; letter-spacing:-.02em; }
+    .inst-sub { font-size:12.5px; color:var(--sub); font-weight:600; margin-top:3px; line-height:1.45; }
+    .inst-steps { list-style:none; display:flex; flex-direction:column; gap:10px; counter-reset:st; padding:0; }
+    .inst-steps li { position:relative; display:flex; align-items:center; gap:11px; padding:12px 14px 12px 46px; background:var(--soft); border-radius:14px; font-size:13.5px; font-weight:600; line-height:1.4; }
+    .inst-steps li::before { counter-increment:st; content:counter(st); position:absolute; left:12px; top:50%; transform:translateY(-50%); width:24px; height:24px; border-radius:50%; background:var(--primary); color:var(--card); font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; }
+    .inst-steps .inst-ic { flex:none; width:22px; height:22px; color:var(--text2); display:inline-flex; }
+    .inst-steps .inst-ic svg { width:22px; height:22px; }
+    .inst-steps b { font-weight:800; color:var(--text); }
 
     /* 상세 설정 접기/펼치기 (입력 화면 공통) */
     details.adv { margin:6px 0 14px; border-top:1px solid var(--line); padding-top:6px; }
@@ -446,10 +461,12 @@
     .cd-coin { display:inline-flex; align-items:center; gap:5px; background:var(--card); border:1px solid var(--bd); border-radius:20px; padding:4px 11px 4px 5px; font-size:12px; font-weight:800; color:var(--text); z-index:2; }
     .cd-coin .cd-ci { width:16px; height:16px; flex:none; display:inline-flex; }
     .cd-stage { flex:1; height:100%; position:relative; }
-    .cd-actor { position:absolute; left:0; bottom:9px; will-change:transform; }   /* 이동은 transform:translateX(합성 전용)로 → left 애니메이션 리페인트 깜빡임 방지 */
-    /* PNG 스프라이트 걷기(288×48 6프레임, east) — CSS steps로 프레임 넘김. --fw=프레임수×표시폭 */
+    /* 이동은 transform:translate3d(합성 전용)로 → left 리페인트 깜빡임 방지. backface-hidden으로 iOS 사파리 합성 깜빡임 차단 */
+    .cd-actor { position:absolute; left:0; bottom:9px; will-change:transform; -webkit-backface-visibility:hidden; backface-visibility:hidden; }
+    /* PNG 스프라이트 걷기(288×48 6프레임, east) — 프레임은 JS(무대) 또는 CSS steps(카드). translateZ(0)으로 배경-애니메이션을 자기 레이어로 격리(부모 이동 합성과 분리) */
     .cspr { image-rendering:pixelated; background-repeat:no-repeat; background-position:0 0;
       background-image:var(--sheet); background-size:var(--fw) 100%;
+      transform:translateZ(0); -webkit-backface-visibility:hidden; backface-visibility:hidden;
       animation:csprWalk var(--wdur,.72s) steps(6) infinite; }
     .cspr.idle { background-image:var(--idle); background-size:100% 100%; background-position:0 0; animation:none; }
     /* 무대(이동하는) 액터: CSS 걷기 애니메이션 끄고 프레임을 JS가 구동(빈 프레임·레이어 리페인트 깜빡임 방지). background-position은 JS가 설정 */

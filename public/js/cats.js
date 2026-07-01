@@ -667,7 +667,7 @@
     function walkDur(v, hh){ const stride=0.42*(hh||40), px=Math.max(0.001, v*58); return Math.max(0.45, Math.min(1.5, stride/px)).toFixed(2); }
     function setWalkDur(a){ if(a.spr){ const sc=a.el.querySelector('.cspr'); if(sc) sc.style.setProperty('--wdur', walkDur(a.v, a.hh)+'s'); } }
     // 액터 위치/방향/상하바운스를 transform 하나로(레이아웃 left 대신 합성) — 깜빡임 방지. x는 정수 px 스냅.
-    function actorXform(a, y, dir){ return 'translate('+Math.round(a.x)+'px,'+Math.round(y||0)+'px) scaleX('+(dir!=null?dir:a.dir)+')'; }
+    function actorXform(a, y, dir){ return 'translate3d('+Math.round(a.x)+'px,'+Math.round(y||0)+'px,0) scaleX('+(dir!=null?dir:a.dir)+')'; }
     const _eng={ raf:0, stage:null, actors:[], last:0, dirty:false };
     function markCatDirty(){ _eng.dirty=true; }
     function stopWalk(){ _eng.actors=[]; _eng.stage=null; }

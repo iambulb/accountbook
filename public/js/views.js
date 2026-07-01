@@ -986,10 +986,34 @@
       // 하단 고정: 로그아웃(가운데) → 홈 화면 설치 링크 → 버전
       h+='<div class="more-foot">';
       h+='<button class="btn ghost sm" onclick="logout()">로그아웃</button>';
-      if(deferredPrompt) h+='<button class="install-link" onclick="installApp()" style="margin-top:12px;">홈 화면에 앱 설치</button>';
+      // 설치 안 됐으면 항상 노출(iOS 사파리 포함) — 탭 시 크롬=네이티브 프롬프트, iOS/그외=수동 안내 시트
+      if(canInstallApp()) h+='<button class="install-cta" onclick="installApp()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M5 21h14"/></svg>홈 화면에 앱 설치</button>';
       h+='<p class="muted" style="font-size:12px;margin-top:10px;">알뜰집 v3</p>';
       h+='</div></div>';   // .more-foot / .more-wrap
       $('content').innerHTML=h;
+    }
+    // 앱 설치 안내(수동) — iOS 사파리는 beforeinstallprompt가 없어 '홈 화면에 추가'를 직접 안내. 그 외 브라우저도 폴백.
+    function openInstallGuide(){
+      const ios=isIOS();
+      const share='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M8.5 7.5 12 4l3.5 3.5"/><path d="M6 12v6a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-6"/></svg>';
+      const plus='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/></svg>';
+      const check='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>';
+      let steps;
+      if(ios){
+        steps='<ol class="inst-steps">'+
+          '<li><span class="inst-ic">'+share+'</span>사파리 메뉴의 <b>공유</b> 버튼을 탭</li>'+
+          '<li><span class="inst-ic">'+plus+'</span>목록에서 <b>홈 화면에 추가</b> 선택</li>'+
+          '<li><span class="inst-ic">'+check+'</span>오른쪽 위 <b>추가</b>를 탭하면 끝!</li>'+
+          '</ol><div class="install-banner" style="margin-top:14px;">ℹ️ iPhone·iPad는 <b>사파리</b>에서만 홈 화면 추가가 가능해요(크롬 등 다른 앱은 지원 안 함).</div>';
+      } else {
+        steps='<ol class="inst-steps">'+
+          '<li><span class="inst-ic">'+share+'</span>브라우저 <b>메뉴</b>(⋮ 또는 공유)를 열기</li>'+
+          '<li><span class="inst-ic">'+plus+'</span><b>앱 설치</b> 또는 <b>홈 화면에 추가</b> 선택</li>'+
+          '<li><span class="inst-ic">'+check+'</span>설치를 확인하면 끝!</li></ol>';
+      }
+      const h='<div class="inst-hero"><img src="icons/icon-192.png" alt="" width="60" height="60" class="inst-app-ic"><div><div class="inst-title">알뜰집을 홈 화면에</div><div class="inst-sub">앱처럼 전체화면으로 더 빠르게 실행돼요</div></div></div>'+
+        steps+'<button class="btn" onclick="closeSheet()" style="margin-top:16px;">확인</button>';
+      openSheet('앱 설치', h);
     }
     function goHome(view){ state.homeView=view||'list'; go('calendar'); }
     // 설정 시트 — 더보기 하단 설정 항목 모음 + 코드 입력

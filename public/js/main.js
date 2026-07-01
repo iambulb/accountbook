@@ -1,6 +1,19 @@
-// ===== PWA =====
+// ===== PWA 설치 =====
+    // 이미 홈화면 앱으로 실행 중인가(설치됨)
+    function isStandalone(){ try{ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }catch(e){ return false; } }
+    // iOS(사파리는 beforeinstallprompt 미지원 → 수동 '홈 화면에 추가' 안내 필요). iPadOS도 감지.
+    function isIOS(){ const ua=navigator.userAgent||''; return /iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua) && (navigator.maxTouchPoints||0)>1); }
+    // 설치 안내를 노출할지: 아직 설치 안 됐으면(스탠드얼론 아님) 노출 — Chrome=네이티브 프롬프트, iOS/그외=수동 안내
+    function canInstallApp(){ return !isStandalone(); }
+    // 크롬 계열: 설치 프롬프트를 잡아둔다(사용자 탭 시 실행)
     window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredPrompt=e; if(state.tab==='more') renderMore(); });
-    function installApp(){ if(!deferredPrompt) return; deferredPrompt.prompt(); deferredPrompt.userChoice.finally(()=>{ deferredPrompt=null; renderMore(); }); }
+    // 설치 완료 → 프롬프트 정리 + 안내 숨김 + 알림
+    window.addEventListener('appinstalled', ()=>{ deferredPrompt=null; try{ toast('앱이 설치됐어요 🎉'); }catch(e){} if(state.tab==='more') renderMore(); });
+    // 설치 실행: 네이티브 프롬프트가 있으면 바로, 없으면(iOS/사파리 등) 수동 안내 시트
+    function installApp(){
+      if(deferredPrompt){ const p=deferredPrompt; deferredPrompt=null; p.prompt(); p.userChoice.finally(()=>{ if(state.tab==='more') renderMore(); }); return; }
+      openInstallGuide();
+    }
     if('serviceWorker' in navigator){
       // 새 서비스워커가 제어를 넘겨받으면(sw.js의 skipWaiting+clients.claim) 한 번 자동 새로고침 →
       // 최신 코드/에셋을 즉시 반영(구 cats.js가 옮겨진 assets 경로를 404로 물어 고양이가 안 보이던 문제 방지).
