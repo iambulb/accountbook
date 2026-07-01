@@ -807,14 +807,14 @@
       h+='<div class="hintline" style="margin:8px 0 0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>밥·물 그릇을 탭해 채우고(3시간 뒤 비워짐), 쌓인 <b>똥을 탭해 치우면 +'+POOP_REWARD+' 은화</b>'+(poops&&!litters.length?' · 화장실을 놓아야 똥을 치울 수 있어요':'')+'.</div>';
       const owned=ownedCatList();
       const sc=slotCount();
-      h+='<div class="sech"><span class="l">우리집 고양이</span><span class="s">'+cats.length+' / '+sc+' 활성</span></div>';
+      h+='<div class="sech"><span class="l">우리집 펫</span><span class="s">'+cats.length+' / '+sc+' 활성</span></div>';
       // 활성 슬롯 표시: 채워진 슬롯 + (미확장 시) 오른쪽에 잠금 슬롯 — 탭하면 금화 SLOT_PRICE로 확장
       let slotRow='<div class="slotrow">';
       for(let i=0;i<sc;i++){ const cid=cats[i]; slotRow+='<div class="slot'+(cid?' filled':'')+'">'+(cid?catFace(cid,{h:38}):'')+'</div>'; }
       if(sc<MAX_SLOTS) slotRow+='<button class="slot locked" onclick="buySlot()" aria-label="고양이 슬롯 확장(금화 '+SLOT_PRICE+')"><svg class="lockic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span class="slotgold">'+goldSvg({h:13})+SLOT_PRICE+'</span></button>';
       slotRow+='</div>';
       h+=slotRow;
-      if(!owned.length) h+='<div class="empty" style="padding:20px;">아직 고양이가 없어요. 상점에서 입양해 보세요 🐾</div>';
+      if(!owned.length) h+='<div class="empty" style="padding:20px;">아직 펫이 없어요. 상점에서 입양해 보세요 🐾</div>';
       else { h+='<div class="catchips">'+owned.map(id=>{ const on=isActiveCat(id);
         // 이미지 영역엔 고양이를 꽉 차게(선택 시 옆으로 걷는 스프라이트, 아니면 정면 정지). 아래엔 이름 + 상태. 선택되면 체크 배지.
         const art=on?catActorHTML(id,96):catFace(id,{h:96});
@@ -825,7 +825,7 @@
           '<button class="cn-edit" aria-label="이름 짓기" onclick="event.stopPropagation();openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
           (on?'<span class="csel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>':'')+
         '</div>'; }).join('')+'</div>';
-        h+='<div class="hintline" style="margin-top:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>고양이를 탭해 집에 내보내거나 대기시켜요(최대 '+sc+'마리)'+(sc<MAX_SLOTS?' · 오른쪽 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장':'')+'.</div>'; }
+        h+='<div class="hintline" style="margin-top:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>펫을 탭해 집에 내보내거나 대기시켜요(최대 '+sc+'마리)'+(sc<MAX_SLOTS?' · 오른쪽 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장':'')+'.</div>'; }
       return h;
     }
     function mountRoomWalk(){
@@ -840,6 +840,9 @@
     }
     let _shopSub='cats';
     function setShopSub(s){ _shopSub=s; renderCatHouse(); }
+    // 상점에서 미리보기로 "선택"한 펫 — 선택하면 카드가 강조되고 썸네일이 옆으로 걷는 스프라이트(우리집 펫 카드와 동일)로 바뀐다.
+    let _shopSelCat=null;
+    function selectShopCat(id){ _shopSelCat=(_shopSelCat===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     function catShopHtml(){
       let h='<div class="subseg"><button class="'+(_shopSub==='cats'?'on':'')+'" onclick="setShopSub(\'cats\')">고양이</button><button class="'+(_shopSub==='furn'?'on':'')+'" onclick="setShopSub(\'furn\')">가구</button><button class="'+(_shopSub==='consum'?'on':'')+'" onclick="setShopSub(\'consum\')">소비</button><button class="'+(_shopSub==='wall'?'on':'')+'" onclick="setShopSub(\'wall\')">벽지</button><button class="'+(_shopSub==='event'?'on':'')+'" onclick="setShopSub(\'event\')">이벤트</button></div>';
       if(_shopSub==='consum'){
@@ -887,17 +890,20 @@
       }
       if(_shopSub==='cats'){
         h+=PET_CATALOG.map(c=>{
-          const owned=ownsCat(c.id), enough=coins()>=c.price;
+          const owned=ownsCat(c.id), enough=coins()>=c.price, sel=_shopSelCat===c.id;
           let act;
           if(owned) act='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>보유</span>';
-          else if(enough) act='<button class="buy" aria-label="'+c.name+' 구매('+c.price+' 은화)" onclick="buyCat(\''+c.id+'\')">구매</button>';
+          else if(enough) act='<button class="buy" aria-label="'+c.name+' 구매('+c.price+' 은화)" onclick="event.stopPropagation();buyCat(\''+c.id+'\')">구매</button>';
           else act='<button class="buy dis" disabled>'+(c.price-coins())+' 부족</button>';
-          return '<div class="shopcard"><div class="thumb"><div class="fl"></div>'+catFace(c.id,{h:72})+'</div>'+
+          // 선택하면 우리집 펫 카드처럼 옆으로 걷는 스프라이트로, 아니면 정면 정지 썸네일. 선택 시 체크 배지.
+          const art=sel?catActorHTML(c.id,72):catFace(c.id,{h:72});
+          return '<div class="shopcard petpick'+(sel?' sel':'')+'" role="button" tabindex="0" aria-pressed="'+sel+'" onclick="selectShopCat(\''+c.id+'\')"><div class="thumb"><div class="fl"></div>'+art+
+            (sel?'<span class="psel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>':'')+'</div>'+
             '<div class="meta"><b>'+catNameSpan(c.id,c.name)+' <span class="tagmini">'+(c.breed||'코숏')+'</span></b><div class="desc">'+c.desc+'</div>'+
             '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+c.price+'</span></div>'+
             '<div class="act">'+act+'</div></div>';
         }).join('');
-        h+='<div class="note"><b>중복 소유</b> 고양이는 종당 1마리. 구매하면 자동으로 집에 들어와 걸어다녀요.</div>';
+        h+='<div class="note">펫을 <b>탭하면 선택</b>돼요 — 카드가 강조되고 미리보기 펫이 <b>옆으로 걸어다녀요</b>. <b>중복 소유</b> 펫은 종당 1마리, 구매하면 자동으로 집에 들어와 걸어다녀요.</div>';
       } else {
         h+=ITEM_CATALOG.map(it=>{
           const enough=coins()>=it.price;
