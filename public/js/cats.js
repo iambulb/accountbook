@@ -218,7 +218,7 @@
     // ---- 펫알/랜덤박스 도트 ----
     // 알: 실제 달걀처럼 위는 좁고(뾰족) 아래가 넓고 둥글게. 중앙에 크고 두꺼운 무지개(R→P) 물음표(위 방향 유지). S=우측 그림자.
     const M_EGG = [
-      "......XX......",
+      ".....XXXX.....",
       ".....XWWX.....",
       "....XWWWWX....",
       "...XWWWWWWX...",
@@ -237,7 +237,7 @@
     ];
     // 균열1: 위쪽(뾰족한 끝)에 잔금이 생김
     const M_EGG_C1 = [
-      "......XX......",
+      ".....XXXX.....",
       ".....XWWX.....",
       "....XWXWWX....",
       "...XWWXWWWX...",
@@ -256,7 +256,7 @@
     ];
     // 균열2: 금이 번지고 조각이 떨어질 듯
     const M_EGG_C2 = [
-      "......XX......",
+      ".....XXXX.....",
       ".....XWXX.....",
       "....XWXWWX....",
       "...XWWXWWWX...",
@@ -697,7 +697,10 @@
         mode:'roam', pause:0, goal:null, pose:null,
         // 유휴(그 자리에 멈춰 정면 보기) — 자주·오래 서서 정면을 보도록(poseDur에서 시간 늘림)
         idle:0.0032+Math.random()*0.005, turn:0.004+Math.random()*0.010, seek:0.005+Math.random()*0.009, cool:0 };
-        setWalkDur(a); el.style.left='0px'; el.dataset.x=Math.round(a.x); el.style.transform=actorXform(a,0,a.dir); return a; });
+        setWalkDur(a); el.style.left='0px'; el.dataset.x=Math.round(a.x); el.style.transform=actorXform(a,0,a.dir);
+        // 스프라이트 걷기 프레임을 JS가 직접 넘김(CSS steps 애니메이션 비활성 → 루프 빈 프레임/합성 리페인트 깜빡임 없음). frontWalk는 정지스틸이라 제외.
+        if(spr && !fw){ a.sc=el.querySelector('.cspr'); if(a.sc){ a.sc.classList.add('jsw'); a.sc.style.backgroundPositionX='0px'; } a.frame=0; a.fstep=0; }
+        return a; });
     }
     // 가구 종류별 포즈: 밥그릇=앉아 먹기, 방석=식빵, 캣타워=낮잠, 스크래처=앉기, 그 외=식빵
     function poseForItem(itemId){ return itemId==='bowl'?'sit':itemId==='cushion'?'loaf':itemId==='tower'?'sleep':itemId==='scratcher'?'sit':'loaf'; }
@@ -720,14 +723,14 @@
       // 고양이 중심을 가구 그래픽 중앙(goal.x)에 맞춤(+옆 오프셋 dx). 캣타워/방석은 dx=0이라 정중앙에 앉음.
       a.x=Math.max(2, Math.min(a.W-a.sw, goal.x - a.sw/2 + (s.dx||0))); a.el.dataset.x=Math.round(a.x);
       const dir=a.spr?1:a.dir;
-      if(a.spr){ const sp=a.el.querySelector('.cspr'); if(sp){ sp.style.setProperty('--idle','url('+sprStill(id,s.face)+')'); sp.classList.add('idle'); } }
+      if(a.spr){ const sp=a.el.querySelector('.cspr'); if(sp){ sp.style.setProperty('--idle','url('+sprStill(id,s.face)+')'); sp.style.backgroundPositionX=''; sp.classList.add('idle'); } }
       else a.el.innerHTML=catPose(id, s.pose, {h:a.hh});
       a.el.style.transform=actorXform(a, -a.lift, dir);
     }
     function enterPose(a, id, pose){ a.mode='pause'; a.pose=pose; a.pause=poseDur(pose); a.cool=1400;
       if(a.spr){ const s=a.el.querySelector('.cspr');
         // 멈춰서 쉴 땐 항상 정면(south)을 본다. 이미지가 정방향이라 플립 없음(scaleX(1)).
-        if(s){ s.style.setProperty('--idle','url('+sprStill(id,'south')+')'); s.classList.add('idle'); }
+        if(s){ s.style.setProperty('--idle','url('+sprStill(id,'south')+')'); s.style.backgroundPositionX=''; s.classList.add('idle'); }
         a.el.style.transform=actorXform(a,0,1); }
       else { a.el.innerHTML=catPose(id, pose, {h:a.hh});
         a.el.style.transform=actorXform(a,0,a.dir); } }
@@ -738,7 +741,7 @@
           if(a.spr){ const s=a.el.querySelector('.cspr'); if(s){
             // 이동 재개: 보통 고양이는 옆 걷기 시트로(.idle 제거), frontWalk 고양이는 옆(east) 정지스틸로 방향만 맞춤
             if(a.frontWalk){ s.style.setProperty('--idle','url('+sprStill(id,'east')+')'); s.classList.add('idle'); }
-            else s.classList.remove('idle'); } } } return; }   // 포즈 유지 후 재출발
+            else { s.classList.remove('idle'); a.frame=0; a.fstep=0; s.style.backgroundPositionX='0px'; } } } } return; }   // 포즈 유지 후 재출발(프레임 0부터)
         // 유휴 제스처(그 자리 앉기/식빵/낮잠) — 쿨다운 후에만
         if(a.mode==='roam' && a.cool<=0 && Math.random()<a.idle){ enterPose(a, id, ['loaf','sit','sleep'][Math.floor(Math.random()*3)]); return; }
         // 가끔 방향 전환(개별)
@@ -752,8 +755,11 @@
         a.x += a.dir*a.v*dt*0.06;
         const max=a.W-a.sw;
         if(a.x<2){ a.x=2; a.dir=1; if(a.mode==='goal'){a.mode='roam';a.goal=null;} } else if(a.x>max){ a.x=max; a.dir=-1; if(a.mode==='goal'){a.mode='roam';a.goal=null;} }
-        if(!a.spr){ a.fc+=dt; if(a.fc>170){ a.fc=0; a.frame^=1; a.el.innerHTML=catSide(id,a.frame,{h:a.hh}); } }   // 스프라이트는 CSS steps()가 프레임 처리
-        // ⚠️ 픽셀 스프라이트는 위치를 정수 px로 스냅해야 함(서브픽셀 이동 시 nearest-neighbor 합성이 매 프레임 달라져 "번쩍번쩍" 깜빡임). 반올림으로 고정.
+        if(!a.spr){ a.fc+=dt; if(a.fc>170){ a.fc=0; a.frame^=1; a.el.innerHTML=catSide(id,a.frame,{h:a.hh}); } }   // SVG 폴백: 2프레임 교대
+        else if(a.sc){ // 스프라이트: 이동 속도에 맞춰 프레임 0~5를 JS가 직접 넘김(빈 6번째 프레임 절대 없음)
+          const per=Math.max(70, parseFloat(walkDur(a.v,a.hh))*1000/6);
+          a.fstep+=dt; if(a.fstep>=per){ a.fstep-=per; a.frame=(a.frame+1)%6; a.sc.style.backgroundPositionX=(-a.frame*a.hh)+'px'; } }
+        // ⚠️ 픽셀 스프라이트는 위치를 정수 px로 스냅(서브픽셀 이동 시 매 프레임 리샘플 → 깜빡임). 반올림 고정.
         const bob=Math.round(Math.sin(a.t*3)*1.2);
         a.el.style.transform=actorXform(a,bob,a.dir);
         a.el.dataset.x=Math.round(a.x);
@@ -1149,6 +1155,7 @@
       e.stopPropagation(); e.preventDefault();
       const grid=$('placeGrid'); if(!grid) return; const el=e.currentTarget;
       _drag={ key, el, grid, sx:e.clientX, sy:e.clientY, moved:false, foot:itemFoot(placedItemId(key)) };
+      document.body.classList.add('dragging');   // 드래그 중 뒤 화면 스크롤 잠금
       try{ el.setPointerCapture(e.pointerId); }catch(_){}
       el.onpointermove=giMove; el.onpointerup=giUp; el.onpointercancel=giUp;
     }
@@ -1162,6 +1169,7 @@
     }
     function giUp(e){
       if(!_drag) return; const d=_drag; _drag=null;
+      document.body.classList.remove('dragging');
       d.el.onpointermove=null; d.el.onpointerup=null; d.el.onpointercancel=null;
       hideDropPreview();
       if(!d.moved){ openItemMenu(d.key); return; }        // 이동 안 했으면 = 탭 → 메뉴
@@ -1180,6 +1188,7 @@
     function palDown(e, id){
       e.preventDefault();
       _pal={ id, foot:itemFoot(id), moved:false, sx:e.clientX, sy:e.clientY, ghost:null };
+      document.body.classList.add('dragging');   // 팔레트에서 격자로 끌 때 뒤 화면 스크롤 잠금
       window.addEventListener('pointermove', palMove); window.addEventListener('pointerup', palUp); window.addEventListener('pointercancel', palUp);
     }
     function palMove(e){
@@ -1194,6 +1203,7 @@
     }
     function palUp(e){
       if(!_pal) return; const d=_pal; _pal=null;
+      document.body.classList.remove('dragging');
       window.removeEventListener('pointermove',palMove); window.removeEventListener('pointerup',palUp); window.removeEventListener('pointercancel',palUp);
       if(d.ghost) d.ghost.remove(); hideDropPreview();
       if(e.type==='pointercancel') return;      // 가로 스크롤 등으로 취소 → 배치·선택 안 함
