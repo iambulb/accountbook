@@ -1,7 +1,15 @@
 // ===== PWA =====
     window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredPrompt=e; if(state.tab==='more') renderMore(); });
     function installApp(){ if(!deferredPrompt) return; deferredPrompt.prompt(); deferredPrompt.userChoice.finally(()=>{ deferredPrompt=null; renderMore(); }); }
-    if('serviceWorker' in navigator){ window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+    if('serviceWorker' in navigator){
+      // 새 서비스워커가 제어를 넘겨받으면(sw.js의 skipWaiting+clients.claim) 한 번 자동 새로고침 →
+      // 최신 코드/에셋을 즉시 반영(구 cats.js가 옮겨진 assets 경로를 404로 물어 고양이가 안 보이던 문제 방지).
+      // 최초 설치(이전 controller 없음)에선 새로고침하지 않음(불필요한 리로드 방지).
+      const _hadController = !!navigator.serviceWorker.controller;
+      let _swRefreshing=false;
+      navigator.serviceWorker.addEventListener('controllerchange', ()=>{ if(_swRefreshing || !_hadController) return; _swRefreshing=true; location.reload(); });
+      window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+    }
 
     // ===== 접근성(A11y) 레이어 =====
     // innerHTML 으로 매번 새로 그려지므로, 템플릿을 일일이 고치지 않고 한 곳에서 ARIA/키보드 접근성을 입힌다.

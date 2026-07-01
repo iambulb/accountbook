@@ -260,12 +260,12 @@
     ];
     // 구 id(고양이 전용 시절) → 신 id. RTDB 보유/활성 데이터 하위호환(normalizeGame에서 적용).
     const PET_ID_MIGRATE = { mackerel:'cat_mackerel', cheese:'cat_cheese', calico:'cat_calico', black:'cat_black', white:'cat_white' };
-    // size = 표시 배율(1=기본). 캣타워·스크래처는 크게(2), 방석·밥그릇은 작게(밥그릇<방석). furnScale()로 상점·팔레트·방·격자에 일관 반영.
+    // size = 표시 배율(1=기본). foot = 배치 격자 점유(N×N칸). 캣타워·스크래처는 2×2·크게, 방석·밥그릇은 1×1·작게(밥그릇<방석). furnScale()·itemFoot()로 상점·팔레트·방·격자에 일관 반영.
     const ITEM_CATALOG = [
-      { id:'cushion', name:'방석',   price:15, size:0.6,  desc:'고양이가 앉아 쉬는 자리.' },
-      { id:'bowl',    name:'밥그릇', price:20, size:0.45, desc:'배치하면 고양이가 다가와요.' },
-      { id:'tower',   name:'캣타워', price:35, size:2,    desc:'위층에 올라가 낮잠.' },
-      { id:'scratcher', name:'스크래처', price:18, size:2, desc:'기둥에 앉아 발톱을 갈아요.' }
+      { id:'cushion', name:'방석',   price:15, size:0.6,  foot:1, desc:'고양이가 앉아 쉬는 자리.' },
+      { id:'bowl',    name:'밥그릇', price:20, size:0.45, foot:1, desc:'배치하면 고양이가 다가와요.' },
+      { id:'tower',   name:'캣타워', price:35, size:2,    foot:2, desc:'위층에 올라가 낮잠.' },
+      { id:'scratcher', name:'스크래처', price:18, size:2, foot:2, desc:'기둥에 앉아 발톱을 갈아요.' }
     ];
     // 벽지(방 배경) — 구매 후 적용. default는 기본 제공.
     const WALLPAPER_CATALOG = [
@@ -488,7 +488,7 @@
     function renderDockProps(){
       const box=$('cdProps'); if(!box) return;
       // 원근: 뒤(행 큰 값)일수록 위로·작게, 앞(행 작은 값)일수록 아래로·크게(크기차는 완만하게). 앞 가구가 뒤 가구를 덮도록 뒤부터 그린다.
-      box.innerHTML=placedList().sort((a,b)=>b.r-a.r).map(p=>{ const x=((p.c-0.5)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(2+depth*22).toFixed(0);
+      box.innerHTML=placedList().sort((a,b)=>b.r-a.r).map(p=>{ const foot=itemFoot(p.itemId); const x=((p.c-0.5+(foot-1)/2)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(2+depth*22).toFixed(0);
         return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:Math.round((22-depth*6)*furnScale(p.itemId))})+'</div>'; }).join('');
     }
     // 활성 고양이를 dock 무대에 액터로 배치(없으면 안내)
@@ -592,7 +592,7 @@
     function catHomeHtml(){
       const cats=activeCats();
       // 배치된 가구를 방 바닥에 매핑(c→가로, r→앞뒤 깊이)
-      const props=placedList().sort((a,b)=>b.r-a.r).map(p=>{ const x=((p.c-0.5)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(3+depth*30).toFixed(0);
+      const props=placedList().sort((a,b)=>b.r-a.r).map(p=>{ const foot=itemFoot(p.itemId); const x=((p.c-0.5+(foot-1)/2)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(3+depth*30).toFixed(0);
         return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:Math.round((28-depth*8)*furnScale(p.itemId))})+'</div>'; }).join('');
       let h='<div class="catroom" id="catRoom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div><span class="cr-cam"><i></i>LIVE · 우리집</span><div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div></div>';
       const owned=ownedCatList();
@@ -753,21 +753,126 @@
     }
     let _selItem=null;
     function selItem(id){ _selItem=(_selItem===id?null:id); renderCatHouse(); }
-    function placeCell(r,c){
-      const key=r+'_'+c; const placed=(state.game.home.placed)||{};
-      if(placed[key]){ gameRef().child('home/placed/'+key).remove(); toast('회수했어요'); return; }
+    const ITEM_SELL = 10;   // 기구물 판매가(은화)
+    function itemFoot(id){ const it=ITEM_CATALOG.find(x=>x.id===id); return (it&&it.foot)||1; }
+    function placedItemId(key){ const p=(state.game&&state.game.home.placed)||{}; return p[key]&&p[key].itemId; }
+    // 배치된 가구가 점유하는 칸 집합("r_c") — ignoreKey는 이동 중 자기 자신 제외
+    function occupiedCells(placed, ignoreKey){
+      const occ={}; Object.keys(placed||{}).forEach(k=>{ if(k===ignoreKey) return;
+        const pr=k.split('_'), r=+pr[0], c=+pr[1], f=itemFoot(placed[k].itemId);
+        for(let dr=0;dr<f;dr++)for(let dc=0;dc<f;dc++) occ[(r+dr)+'_'+(c+dc)]=1; });
+      return occ;
+    }
+    // (r,c)에서 foot×foot가 격자 안에 들어가고 다른 가구와 안 겹치는지
+    function areaFree(r,c,foot,placed,ignoreKey){
+      if(r<1||c<1||r+foot-1>12||c+foot-1>12) return false;
+      const occ=occupiedCells(placed, ignoreKey);
+      for(let dr=0;dr<foot;dr++)for(let dc=0;dc<foot;dc++) if(occ[(r+dr)+'_'+(c+dc)]) return false;
+      return true;
+    }
+    // 화면 좌표 → 격자 칸(1~12)
+    function cellFromPoint(grid, clientX, clientY){
+      const rc=grid.getBoundingClientRect(), cw=rc.width/12, ch=rc.height/12;
+      const c=Math.floor((clientX-rc.left)/cw)+1, r=Math.floor((clientY-rc.top)/ch)+1;
+      return { r:Math.min(12,Math.max(1,r)), c:Math.min(12,Math.max(1,c)) };
+    }
+    // 빈 칸(그리드 배경) 탭 → 선택한 가구 배치(2×2는 그만큼 점유·겹침 방지)
+    let _justDragged=false;
+    function placeClick(e){
+      if(_justDragged) return;                          // 드래그 직후 발생하는 click 무시
+      const grid=$('placeGrid'); if(!grid) return;
       if(!_selItem){ toast('놓을 가구를 먼저 선택하세요'); return; }
       if(itemRemaining(_selItem)<=0){ toast('배치할 수량이 없어요(상점에서 구매)', true); return; }
-      gameRef().child('home/placed/'+key).set({itemId:_selItem});
+      const foot=itemFoot(_selItem), p=cellFromPoint(grid, e.clientX, e.clientY);
+      const r=Math.min(13-foot, p.r), c=Math.min(13-foot, p.c);   // 발자국이 격자를 넘지 않게 보정
+      const placed=(state.game.home.placed)||{};
+      if(!areaFree(r,c,foot,placed,null)){ toast('그 자리엔 놓을 수 없어요(겹침)', true); return; }
+      gameRef().child('home/placed/'+r+'_'+c).set({itemId:_selItem});
+    }
+    // ---- 드래그 이동 ----
+    let _drag=null;
+    function giDown(e, key){
+      e.stopPropagation(); e.preventDefault();
+      const grid=$('placeGrid'); if(!grid) return; const el=e.currentTarget;
+      _drag={ key, el, grid, sx:e.clientX, sy:e.clientY, moved:false, foot:itemFoot(placedItemId(key)) };
+      try{ el.setPointerCapture(e.pointerId); }catch(_){}
+      el.onpointermove=giMove; el.onpointerup=giUp; el.onpointercancel=giUp;
+    }
+    function giMove(e){
+      if(!_drag) return;
+      const dx=e.clientX-_drag.sx, dy=e.clientY-_drag.sy;
+      if(!_drag.moved){ if(Math.abs(dx)+Math.abs(dy)<6) return; _drag.moved=true; _drag.el.classList.add('drag'); }
+      _drag.el.style.transform='translate('+dx+'px,'+dy+'px)';
+      const p=cellFromPoint(_drag.grid, e.clientX, e.clientY);
+      showDropPreview(p.r, p.c, _drag.foot, _drag.key);
+    }
+    function giUp(e){
+      if(!_drag) return; const d=_drag; _drag=null;
+      d.el.onpointermove=null; d.el.onpointerup=null; d.el.onpointercancel=null;
+      hideDropPreview();
+      if(!d.moved){ openItemMenu(d.key); return; }        // 이동 안 했으면 = 탭 → 메뉴
+      _justDragged=true; setTimeout(()=>{ _justDragged=false; }, 80);
+      const p=cellFromPoint(d.grid, e.clientX, e.clientY);
+      const r=Math.min(13-d.foot, p.r), c=Math.min(13-d.foot, p.c), newKey=r+'_'+c;
+      const placed=(state.game.home.placed)||{};
+      const resetEl=()=>{ d.el.style.transform=''; d.el.classList.remove('drag'); };
+      if(newKey===d.key){ resetEl(); return; }
+      if(!areaFree(r,c,d.foot,placed,d.key)){ toast('그 자리엔 놓을 수 없어요(겹침)', true); resetEl(); return; }
+      const id=placed[d.key]&&placed[d.key].itemId; if(!id){ resetEl(); return; }
+      const up={}; up[d.key]=null; up[newKey]={itemId:id};
+      gameRef().child('home/placed').update(up);          // 이동 커밋 → 리스너가 재렌더
+    }
+    function showDropPreview(r,c,foot,key){
+      const g=$('gdrop'); if(!g) return; const placed=(state.game.home.placed)||{};
+      const rr=Math.min(13-foot,Math.max(1,r)), cc=Math.min(13-foot,Math.max(1,c));
+      const ok=areaFree(rr,cc,foot,placed,key);
+      g.hidden=false; g.className='gdrop'+(ok?'':' bad');
+      g.style.left=((cc-1)/12*100)+'%'; g.style.top=((rr-1)/12*100)+'%';
+      g.style.width=(foot/12*100)+'%'; g.style.height=(foot/12*100)+'%';
+    }
+    function hideDropPreview(){ const g=$('gdrop'); if(g) g.hidden=true; }
+    // ---- 배치된 가구 탭 → 회수/판매 메뉴 ----
+    function openItemMenu(key){
+      closeItemMenu();
+      const placed=(state.game.home.placed)||{}, p=placed[key]; if(!p) return;
+      const it=ITEM_CATALOG.find(x=>x.id===p.itemId)||{};
+      const wrap=document.createElement('div'); wrap.id='giMenu'; wrap.className='gimenu-scrim';
+      wrap.onclick=function(e){ if(e.target===wrap) closeItemMenu(); };
+      wrap.innerHTML='<div class="gimenu"><div class="gih">'+furnSvg(p.itemId,{h:34})+'<b>'+escapeHtml(it.name||p.itemId)+'</b></div>'+
+        '<button class="gib" onclick="retrievePlaced(\''+key+'\')"><b>회수</b><span>인벤토리로 되돌려요(보유 유지)</span></button>'+
+        '<button class="gib sell" onclick="sellPlaced(\''+key+'\')"><b>판매</b><span>+'+ITEM_SELL+' 은화 · 보유에서 제거</span></button>'+
+        '<button class="gib ghost" onclick="closeItemMenu()">닫기</button></div>';
+      document.body.appendChild(wrap);
+    }
+    function closeItemMenu(){ const m=$('giMenu'); if(m) m.remove(); }
+    function retrievePlaced(key){ gameRef().child('home/placed/'+key).remove(); closeItemMenu(); toast('회수했어요(인벤토리로)'); }
+    function sellPlaced(key){
+      const placed=(state.game.home.placed)||{}, p=placed[key]; if(!p){ closeItemMenu(); return; }
+      const id=p.itemId;
+      gameRef().transaction(g=>{
+        g=normalizeGame(g);
+        if(!g.home.placed[key]) return g;                 // 이미 없음(중복 방지)
+        delete g.home.placed[key];
+        const inv=g.owned.items[id];
+        if(inv){ inv.qty=Math.max(0,(Number(inv.qty)||0)-1); if(inv.qty<=0) delete g.owned.items[id]; }
+        g.coins += ITEM_SELL;
+        return g;
+      }).then(r=>{ if(r&&r.committed) toast('+'+ITEM_SELL+' 은화에 판매했어요'); });
+      closeItemMenu();
     }
     function catPlaceHtml(){
       const placed=(state.game.home.placed)||{};
-      let cells='';
-      for(let r=1;r<=12;r++)for(let c=1;c<=12;c++){ const key=r+'_'+c, it=placed[key];
-        cells+='<div class="gc'+(it?' fill':'')+'" onclick="placeCell('+r+','+c+')">'+(it?'<span class="gsc" style="transform:scale('+(furnScale(it.itemId)/2).toFixed(2)+')">'+furnSvg(it.itemId,{fit:true})+'</span>':'')+'</div>'; }
-      const pal=ITEM_CATALOG.map(it=>'<button class="pitem'+(_selItem===it.id?' on':'')+'" onclick="selItem(\''+it.id+'\')">'+furnSvg(it.id,{h:Math.round(20*furnScale(it.id))})+'<span>'+it.name+'</span><span class="pq">남은 '+itemRemaining(it.id)+'</span></button>').join('');
-      return '<div class="editwrap"><div class="grid12">'+cells+'</div><div class="palette">'+pal+'</div>'+
-        '<div class="hintline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>가구를 골라 빈 칸을 탭해 놓고, 놓인 가구를 탭하면 회수돼요.</div></div>';
+      // 배치된 가구를 격자 위 절대좌표로(발자국 크기만큼 영역 차지). 드래그=이동, 탭=회수/판매.
+      const items=Object.keys(placed).map(key=>{ const pr=key.split('_'), r=+pr[0], c=+pr[1], id=placed[key].itemId, foot=itemFoot(id);
+        const left=((c-1)/12*100).toFixed(3), top=((r-1)/12*100).toFixed(3), sz=(foot/12*100).toFixed(3);
+        const scale=Math.min(1, furnScale(id)/foot).toFixed(2);   // 발자국 안에서의 표시 크기(밥그릇<방석)
+        return '<div class="gitem" style="left:'+left+'%;top:'+top+'%;width:'+sz+'%;height:'+sz+'%" onpointerdown="giDown(event,\''+key+'\')" onclick="event.stopPropagation()">'+
+          '<span class="gsc" style="transform:scale('+scale+')">'+furnSvg(id,{fit:true})+'</span></div>'; }).join('');
+      const grid='<div class="grid12" id="placeGrid" onclick="placeClick(event)">'+items+'<div class="gdrop" id="gdrop" hidden></div></div>';
+      const pal=ITEM_CATALOG.map(it=>{ const foot=itemFoot(it.id);
+        return '<button class="pitem'+(_selItem===it.id?' on':'')+'" onclick="selItem(\''+it.id+'\')">'+furnSvg(it.id,{h:Math.round(20*furnScale(it.id))})+'<span>'+it.name+'</span><span class="pq">'+foot+'×'+foot+' · 남은 '+itemRemaining(it.id)+'</span></button>'; }).join('');
+      return '<div class="editwrap">'+grid+'<div class="palette">'+pal+'</div>'+
+        '<div class="hintline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>가구를 골라 빈 칸을 탭해 배치 · 놓인 가구는 <b>드래그로 이동</b>, <b>탭하면 회수/판매</b>. 캣타워·스크래처는 2×2 칸을 차지해요.</div></div>';
     }
     function missionRow(m){
       const claimed=missionClaimed(m), ok=m.check();
