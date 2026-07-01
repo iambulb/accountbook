@@ -10,7 +10,8 @@ users/{uid}            : { name, email, photo(프로필 사진 base64 data URL),
                              coins,                                  // 은화 잔액(정수)
                              owned:{ cats:{ {catId}:{boughtAt} }, items:{ {itemId}:{boughtAt,qty} } },
                              home:{ active:[catId…], placed:{ {slotId}:{itemId,x,y} } },
-                             missions:{ {periodKey}:{ {missionId}:{claimed,reward,at} } }  // periodKey=KST 일자 2026-07-01
+                             missions:{ {periodKey}:{ {missionId}:{claimed,reward,at} } },  // periodKey=KST 일자 2026-07-01
+                             codes:{ {code}:{reward,at} }             // 사용한 프로모/치트 코드(사용자별 1회, 예: showmethemoney→999)
                            } }
 workspaces/{wsId}      : { name, photo(가계부 사진 base64 data URL, 선택), type:'personal'|'group', code(그룹), ownerUid, createdAt,
                            members:{ {uid}:{ name, role:'owner'|'member', joinedAt } } }

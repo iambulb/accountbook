@@ -821,6 +821,14 @@
       r.onerror=()=>toast('파일을 읽을 수 없어요', true);
       r.readAsDataURL(file);
     }
+    // 그룹 멤버 아바타 겹침 나열(최대 5, 초과 시 +N)
+    function memberAvatarStack(ws, size){
+      const m=(ws&&ws.members)||{}; const uids=Object.keys(m); if(!uids.length) return '';
+      const max=5; let h='<div class="mstack">';
+      uids.slice(0,max).forEach(uid=>{ h+='<span class="ms-av">'+avatarHtml(uid, m[uid]&&m[uid].name, size||26)+'</span>'; });
+      if(uids.length>max) h+='<span class="ms-more">+'+(uids.length-max)+'</span>';
+      return h+'</div>';
+    }
     function openProfileSheet(){
       window._profilePhoto=undefined;   // undefined=유지 / ''=삭제 / dataURL=신규
       let h='<div style="text-align:center;margin:6px 0 16px;">'+
@@ -937,6 +945,7 @@
       download:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4M5 21h14"/></svg>',
       moon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
       logout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5M20 12H9M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/></svg>',
+      gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>',
       chev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>',
       cat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l2 4M19 4l-2 4"/><path d="M5 8c-1 2-1 5 0 7 1.6 3 4 4 7 4s5.4-1 7-4c1-2 1-5 0-7"/><path d="M9.5 12h.01M14.5 12h.01M12 14l-1 1h2z"/></svg>'
     };
@@ -946,12 +955,18 @@
       $('screenTitle').textContent='더보기';
       const ws=state.wsMeta||{}; const isGroup=ws.type==='group'; const memCount=Object.keys(ws.members||{}).length;
       let h='';
-      // 프로필/워크스페이스 행
-      const wsSub = isGroup ? ('그룹 · 멤버 '+memCount+'명'+(ws.code?(' · 초대코드 '+escapeHtml(ws.code)):'')) : '개인 가계부';
+      // 상단: 내 프로필(사용자)
+      h+='<div class="prow" onclick="openProfileSheet()">'+
+         avatarHtml(state.uid, state.userName, 52)+
+         '<div class="pnm"><b>'+escapeHtml(state.userName||'사용자')+' <span class="pill">편집</span></b><span>내 프로필</span></div></div>';
+      // 그 아래: 현재 가계부/그룹(작게) + 멤버 아바타 + 전환
+      const wsSub = isGroup ? ('그룹 · 멤버 '+memCount+'명') : '개인 가계부';
       const canEditWs = !isGroup || isWsOwner();
-      h+='<div class="prow"><div style="display:flex;align-items:center;gap:13px;flex:1;min-width:0;"'+(canEditWs?' onclick="openWsProfileSheet()"':'')+'>'+
-         wsAvatarHtml(ws.name, ws.photo, 52)+
-         '<div class="pnm"><b>'+escapeHtml(ws.name||'가계부')+(canEditWs?' <span class="pill">편집</span>':'')+'</b><span>'+wsSub+'</span></div></div>'+
+      h+='<div class="grow">'+
+         '<div class="grow-l"'+(canEditWs?' onclick="openWsProfileSheet()"':'')+'>'+
+           wsAvatarHtml(ws.name, ws.photo, 34)+
+           '<div class="gnm"><b>'+escapeHtml(ws.name||'가계부')+'</b><span>'+wsSub+'</span></div></div>'+
+         (isGroup?memberAvatarStack(ws, 26):'')+
          '<button class="cnt" onclick="openWorkspaceSheet()">전환</button></div>';
       // 4열 기능 그리드
       const activeSubs=(state.subscriptions||[]).filter(s=>s.status==='active').length;
@@ -967,16 +982,32 @@
       h+=gcell(coinSvg({h:26}),'고양이집','openCatHouse()');
       h+=gcell(MORE_ICON.gear,'설정','openSettingsSheet()');
       h+='</div>';
-      // 계정 리스트(설정 세부는 설정 시트로 이동)
-      h+='<div class="lst">';
-      h+=lrow(avatarHtml(state.uid, state.userName, 21), escapeHtml(state.userName)+' 님','openProfileSheet()','프로필');
-      h+=lrow(MORE_ICON.logout,'로그아웃','logout()');
-      h+='</div>';
-      if(deferredPrompt) h+='<p style="text-align:center;margin-top:18px;"><button class="install-link" onclick="installApp()">홈 화면에 앱 설치</button></p>';
-      h+='<p class="muted" style="text-align:center;font-size:12px;margin-top:'+(deferredPrompt?'8px':'18px')+';">가계부 v3</p>';
+      // 로그아웃(가운데) — 홈 화면 설치 링크 위
+      h+='<div style="text-align:center;margin-top:26px;"><button class="btn ghost sm" onclick="logout()">로그아웃</button></div>';
+      if(deferredPrompt) h+='<p style="text-align:center;margin-top:12px;"><button class="install-link" onclick="installApp()">홈 화면에 앱 설치</button></p>';
+      h+='<p class="muted" style="text-align:center;font-size:12px;margin-top:'+(deferredPrompt?'8px':'12px')+';">가계부 v3</p>';
       $('content').innerHTML=h;
     }
     function goHome(view){ state.homeView=view||'list'; go('calendar'); }
+    // 설정 시트 — 더보기 하단 설정 항목 모음 + 코드 입력
+    function openSettingsSheet(){
+      const ws=state.wsMeta||{}, isGroup=ws.type==='group', memCount=Object.keys(ws.members||{}).length;
+      let h='<div class="lst">';
+      if(isGroup) h+=lrow(MORE_ICON.members,'멤버 · 권한 관리',"openGroupManageSheet('"+state.wsId+"')", memCount+'명');
+      h+=lrow(MORE_ICON.lock,'권한 · 공동 설정','openSharedSettings()');
+      h+=lrow(MORE_ICON.list,'거래내역',"closeSheet();goHome('list')");
+      h+=lrow(MORE_ICON.download,'CSV 내보내기','exportCSV()');
+      h+=lrow(MORE_ICON.moon,'다크 모드','toggleTheme();openSettingsSheet()', state.theme==='dark'?'켜짐':'꺼짐');
+      h+=lrow(MORE_ICON.cat,'고양이집 dock','toggleDockHidden();openSettingsSheet()', (typeof dockHiddenLabel==='function'?dockHiddenLabel():''));
+      h+='</div>';
+      // 코드 입력(프로모/치트 코드)
+      h+='<div class="sec-title" style="margin-top:22px;">코드 입력</div>';
+      h+='<div class="card" style="padding:14px;"><div class="row" style="gap:8px;">'+
+         '<input class="input" id="promoCode" placeholder="코드를 입력하세요" autocomplete="off" autocapitalize="off" spellcheck="false" style="flex:1;" onkeydown="if(event.key===\'Enter\'){event.preventDefault();submitPromoCode();}">'+
+         '<button class="btn sm" style="flex:none;" onclick="submitPromoCode()">확인</button></div></div>';
+      openSheet('설정', h);
+    }
+    function submitPromoCode(){ const el=$('promoCode'); if(!el) return; redeemCode(el.value); el.value=''; }
 
     // ===== 예산 =====
     const PERIOD_LABEL={ weekly:'주간', monthly:'월간', yearly:'연간', custom:'사용자지정' };

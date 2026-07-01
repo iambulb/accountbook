@@ -166,7 +166,7 @@
       coins: Number(g.coins)||0,
       owned:{ cats:(g.owned&&g.owned.cats)||{}, items:(g.owned&&g.owned.items)||{} },
       home:{ active:(g.home&&g.home.active)||[], placed:(g.home&&g.home.placed)||{} },
-      missions: g.missions||{}, progress: g.progress||{}
+      missions: g.missions||{}, progress: g.progress||{}, codes: g.codes||{}
     }; }
     function initCatGame(){
       if(!state.uid) return;
@@ -209,14 +209,24 @@
         return g;
       });
     }
-    // 프로모/치트 코드 — 코드 입력 시 은화 지급(반복 입력 가능)
+    // 프로모/치트 코드 — 코드 입력 시 은화 지급(사용자별 1회, 게임 노드에 사용 기록)
     const PROMO_CODES = { showmethemoney: 999 };
     function redeemCode(code){
       const key=(code||'').trim().toLowerCase();
       const reward=PROMO_CODES[key];
       if(!reward){ toast('올바르지 않은 코드예요', true); return; }
-      gameRef().transaction(g=>{ g=normalizeGame(g); g.coins += reward; return g; })
-        .then(res=>{ if(res.committed) toast('+'+reward.toLocaleString()+' 은화 획득! 🐾'); });
+      let already=false;
+      gameRef().transaction(g=>{
+        g=normalizeGame(g);
+        if(g.codes[key]){ already=true; return g; }   // 이미 사용 → 무변화
+        g.codes[key]={ reward:reward, at:new Date().toISOString() };
+        g.coins += reward;
+        return g;
+      }).then(res=>{
+        if(!res.committed) return;
+        if(already) toast('이미 사용한 코드예요', true);
+        else toast('+'+reward.toLocaleString()+' 은화 획득! 🐾');
+      });
     }
     // 미션 수동 수령(완료 판정 후)
     function claimMission(id){
@@ -365,7 +375,7 @@
           const owned=ownsCat(c.id), enough=coins()>=c.price;
           let act;
           if(owned) act='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>보유</span>';
-          else if(enough) act='<button class="buy" onclick="buyCat(\''+c.id+'\')">구매</button>';
+          else if(enough) act='<button class="buy" aria-label="'+c.name+' 구매('+c.price+' 은화)" onclick="buyCat(\''+c.id+'\')">구매</button>';
           else act='<button class="buy dis" disabled>'+(c.price-coins())+' 부족</button>';
           return '<div class="shopcard"><div class="thumb"><div class="fl"></div>'+catFront(c.id,{h:56})+'</div>'+
             '<div class="meta"><b>'+c.name+' <span class="tagmini">코숏</span></b><div class="desc">'+c.desc+'</div>'+
@@ -376,7 +386,7 @@
       } else {
         h+=ITEM_CATALOG.map(it=>{
           const enough=coins()>=it.price;
-          const act=enough?'<button class="buy" onclick="buyItem(\''+it.id+'\')">구매</button>':'<button class="buy dis" disabled>'+(it.price-coins())+' 부족</button>';
+          const act=enough?'<button class="buy" aria-label="'+it.name+' 구매('+it.price+' 은화)" onclick="buyItem(\''+it.id+'\')">구매</button>':'<button class="buy dis" disabled>'+(it.price-coins())+' 부족</button>';
           return '<div class="shopcard"><div class="thumb">'+furnSvg(it.id,{h:52})+'</div>'+
             '<div class="meta"><b>'+it.name+'</b><div class="desc">'+it.desc+'</div>'+
             '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+it.price+'</span></div>'+
