@@ -121,18 +121,19 @@
       "...XXBBLLLLLLLLLLBBX..",
       ".....XXXXXXXXXXXXXX..."
     ];
+    // 은화(코인) — 좌우 대칭 원형(양쪽 모두 둥글게), 중앙에 고양이 얼굴. X=외곽 S=밝은림 A=면 D=바닥그림자 E=눈 P=코
     const M_COIN = [
-      "...XXXXXX...",
-      ".XXSSSSSSXX.",
+      "....XXXX....",
+      "..XXSSSSXX..",
       ".XSSSSSSSSX.",
-      "XSSAA.AASSX.",
-      "XSSAAAAAASX.",
-      "XSSAEAAEASX.",
-      "XSSAAPPAASX.",
-      "XSSAAAAAASX.",
+      "XSSAA..AASSX",
+      "XSAAAAAAAASX",
+      "XSAAEAAEAASX",
+      "XSAAAPPAAASX",
+      "XSSAAAAAASSX",
       ".XSDDDDDDSX.",
-      ".XXSSSSSSXX.",
-      "...XXXXXX..."
+      "..XXSSSSXX..",
+      "....XXXX...."
     ];
     const M_CUSHION = [
       "................","...XXXXXXXX.....","..XCCCCCCCCX....",".XCCCCCCCCCCX...",
@@ -493,7 +494,7 @@
         else h+=catMissionHtml();
         return h;
       };
-      openSheet('고양이집', build());
+      openSheet('알뜰샵', build());
       state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const st=b.scrollTop; b.innerHTML=build(); b.scrollTop=st; if(_catTab==='home') mountRoomWalk(); };
       if(_catTab==='home') setTimeout(mountRoomWalk, 30);
     }

@@ -979,14 +979,14 @@
       h+=gcell(MORE_ICON.gift,'경조사비','openGiftBook()');
       h+=gcell(MORE_ICON.loan,'대출/이자','openLoanBook()');
       h+=gcell(MORE_ICON.category,'카테고리','openCategorySheet()');
-      h+=gcell(coinSvg({h:26}),'고양이집','openCatHouse()');
+      h+=gcell(coinSvg({h:26}),'알뜰샵','openCatHouse()');
       h+=gcell(MORE_ICON.gear,'설정','openSettingsSheet()');
       h+='</div>';
       // 하단 고정: 로그아웃(가운데) → 홈 화면 설치 링크 → 버전
       h+='<div class="more-foot">';
       h+='<button class="btn ghost sm" onclick="logout()">로그아웃</button>';
       if(deferredPrompt) h+='<button class="install-link" onclick="installApp()" style="margin-top:12px;">홈 화면에 앱 설치</button>';
-      h+='<p class="muted" style="font-size:12px;margin-top:10px;">가계부 v3</p>';
+      h+='<p class="muted" style="font-size:12px;margin-top:10px;">알뜰집 v3</p>';
       h+='</div></div>';   // .more-foot / .more-wrap
       $('content').innerHTML=h;
     }
@@ -1000,7 +1000,7 @@
       h+=lrow(MORE_ICON.list,'거래내역',"closeSheet();goHome('list')");
       h+=lrow(MORE_ICON.download,'CSV 내보내기','exportCSV()');
       h+=lrow(MORE_ICON.moon,'다크 모드','toggleTheme();openSettingsSheet()', state.theme==='dark'?'켜짐':'꺼짐');
-      h+=lrow(MORE_ICON.cat,'고양이집 dock','toggleDockHidden();openSettingsSheet()', (typeof dockHiddenLabel==='function'?dockHiddenLabel():''));
+      h+=lrow(MORE_ICON.cat,'알뜰샵 dock','toggleDockHidden();openSettingsSheet()', (typeof dockHiddenLabel==='function'?dockHiddenLabel():''));
       // 개발자 모드(canel94@gmail.com 전용)
       if(typeof isDev==='function' && isDev()){
         h+=lrow(MORE_ICON.gear,'개발자 모드','toggleDevMode();openSettingsSheet()', devOn()?'켜짐':'꺼짐');

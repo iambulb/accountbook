@@ -1,5 +1,5 @@
-/* 공유 가계부 서비스워커 — 오프라인 앱 셸 캐시 */
-const CACHE_VERSION = 'gglee-budget-v3.35.0';
+/* 알뜰집(Eggarden) 서비스워커 — 오프라인 앱 셸 캐시 */
+const CACHE_VERSION = 'gglee-budget-v3.37.0';
 const APP_SHELL = [
   './',
   './index.html',
