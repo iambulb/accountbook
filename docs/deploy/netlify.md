@@ -4,7 +4,7 @@
 firebase와 동일하게 `npx` 로 쓰며, **로그인(브라우저)만 본인이** 하면 이후 배포는 한 줄입니다.
 
 ```bash
-cd <프로젝트 루트>     # 이 저장소를 받은 폴더 (예: C:/gglee/gglee/accountbook)
+cd <프로젝트 루트>     # 이 저장소를 받은 폴더 (예: C:/eggarden)
 
 # 최초 1회: 로그인 (브라우저 열림 — 본인이 직접)
 npx netlify-cli login

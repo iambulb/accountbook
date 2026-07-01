@@ -248,17 +248,23 @@
     }
     function catFront(id, opt){ return pxSvg(id==='calico'?M_CALICO_FRONT:M_CAT_FRONT, CAT_PALS[id], opt); }
     function catSide(id, frame, opt){ return pxSvg(frame? M_CAT_SIDE_B:M_CAT_SIDE_A, CAT_PALS[id], opt); }
-    // ---- PNG 스프라이트 시트(PixelLab) — 걷기 6프레임(288×48, east) + 정지 1장(48×48) ----
-    // design_sample/files/claude-code-cat-dock-prompt.md 사양. 시트 있는 고양이는 CSS steps()로 걷기.
+    // ---- PNG 스프라이트 시트(PixelLab) — 걷기 6프레임(288×48, east) + 정지 4방향(48×48) ----
+    // 처리 규칙은 docs/cat-asset-pipeline.md("Cat Asset Pipeline") 참고. 시트 있는 고양이는 CSS steps()로 걷기.
+    // 쉴 때는 stills(south=앞/north=뒤/east=우/west=좌) 중 하나를 무작위로 보여준다(정면·후면·옆 보기).
+    const CAT_FACES = ['south','north','east','west'];
+    function sprStills(id){ return 'assets/cats/'+id; }
+    function sprStill(id, face){ return sprStills(id)+'/'+face+'.png'; }
     const CAT_SPRITES = {
-      mackerel:{ walk:'assets/cats/mackerel/walk.png', idle:'assets/cats/mackerel/idle.png', frames:6 }
+      mackerel:{ walk:'assets/cats/mackerel/walk.png', frames:6, stills:true },
+      cheese:  { walk:'assets/cats/cheese/walk.png',   frames:6, stills:true }
     };
     function hasSprite(id){ return !!CAT_SPRITES[id]; }
-    // 걷기 무대 액터 1개의 내부 마크업 — 시트 있으면 스프라이트 div, 없으면 SVG 프레임0
+    // 걷기 무대 액터 1개의 내부 마크업 — 시트 있으면 스프라이트 div, 없으면 SVG 프레임0.
+    // reduced-motion이면 처음부터 정지 이미지(south=앞)로 고정.
     function catActorHTML(id, h){
       const sp=CAT_SPRITES[id];
-      if(sp){ const s=Math.round(h);
-        return '<div class="cspr" style="width:'+s+'px;height:'+s+'px;--sheet:url('+sp.walk+');--idle:url('+sp.idle+');--fw:'+(s*sp.frames)+'px;"></div>'; }
+      if(sp){ const s=Math.round(h); const rm=reducedMotion();
+        return '<div class="cspr'+(rm?' idle':'')+'" style="width:'+s+'px;height:'+s+'px;--sheet:url('+sp.walk+');--idle:url('+sprStill(id,'south')+');--fw:'+(s*sp.frames)+'px;"></div>'; }
       return catSide(id, 0, {h:h});
     }
     const POSE_M = { sit:M_CAT_SIT, loaf:M_CAT_LOAF, sleep:M_CAT_SLEEP };
@@ -444,9 +450,13 @@
     function poseForItem(itemId){ return itemId==='bowl'?'sit':itemId==='cushion'?'loaf':itemId==='tower'?'sleep':itemId==='scratcher'?'sit':'loaf'; }
     function poseDur(pose){ return pose==='sleep'?(3200+Math.random()*2800):(1200+Math.random()*2000); }
     function enterPose(a, id, pose){ a.mode='pause'; a.pose=pose; a.pause=poseDur(pose); a.cool=1400;
-      if(a.spr){ const s=a.el.querySelector('.cspr'); if(s) s.classList.add('idle'); }   // 스프라이트=정지(idle.png)
-      else a.el.innerHTML=catPose(id, pose, {h:a.hh});
-      a.el.style.transform='translate(0,0) scaleX('+a.dir+')'; }
+      if(a.spr){ const s=a.el.querySelector('.cspr');
+        // 스프라이트 고양이는 멈춰서 앞/뒤/좌/우 중 하나를 본다(정지 4방향). 이미지가 올바른 방향이라 플립 없음.
+        const f=CAT_FACES[Math.floor(Math.random()*4)];
+        if(s){ s.style.setProperty('--idle','url('+sprStill(id,f)+')'); s.classList.add('idle'); }
+        a.el.style.transform='translate(0,0) scaleX(1)'; }
+      else { a.el.innerHTML=catPose(id, pose, {h:a.hh});
+        a.el.style.transform='translate(0,0) scaleX('+a.dir+')'; } }
     function stepActors(dt){
       _eng.actors.forEach(a=>{
         a.t+=dt*0.004; if(a.cool>0)a.cool-=dt; const id=a.el.getAttribute('data-cat');

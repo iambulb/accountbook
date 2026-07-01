@@ -19,7 +19,7 @@
    - 아이콘·매니페스트는 이미 PWABuilder 기준(PNG 192·512 + maskable)으로 맞춰 두었습니다.
 3. **Package For Stores → Android** 선택.
 4. 옵션 입력:
-   - **Package ID**: 고유 식별자. 예) `com.gglee.budget` (한번 정하면 바꾸지 마세요)
+   - **Package ID**: 고유 식별자. 예) `com.eggarden.app` (한번 정하면 바꾸지 마세요)
    - **App name**: `가계부`
    - **Signing key**: `Create new` (PWABuilder가 새 키스토어 생성)
 5. **Download** → ZIP 안에 다음이 들어 있습니다:

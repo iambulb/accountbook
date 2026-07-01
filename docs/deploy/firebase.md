@@ -9,7 +9,7 @@
 설정 파일은 만들어 두었습니다: [firebase.json](../../firebase.json), [.firebaserc](../../.firebaserc)
 
 ```bash
-cd <프로젝트 루트>     # 이 저장소를 받은 폴더 (예: C:/gglee/gglee/accountbook)
+cd <프로젝트 루트>     # 이 저장소를 받은 폴더 (예: C:/eggarden)
 
 # 최초 1회: 구글 계정 로그인 (브라우저가 열립니다 — 본인이 직접 해야 함)
 npx firebase-tools login

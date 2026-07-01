@@ -92,7 +92,7 @@ sequenceDiagram
 
 ## 서비스워커 캐시 전략
 
-`public/sw.js` (현재 버전 `gglee-budget-v3.0.1`). 출처별로 전략이 다릅니다.
+`public/sw.js` (버전 문자열 예: `eggarden-v3.38.0`). 출처별로 전략이 다릅니다.
 
 ```mermaid
 graph TD

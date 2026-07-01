@@ -8,6 +8,11 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 추가 — 🐈 고양이 4방향 쉬기 + 치즈 스프라이트 + zip 파이프라인 규칙화
+- **걷다 멈춰서 앞/뒤/옆 보며 쉬기(정지 4방향)**: 스프라이트 고양이가 유휴 상태(`enterPose`)에 들어가면 이전엔 단일 `idle.png` 한 장만 보였는데, 이제 PixelLab `rotations`의 **south(앞)·north(뒤)·east(우)·west(좌) 4방향 정지 이미지 중 하나를 무작위**로 보여줌(`CAT_SPRITES.stills`, `--idle` 동적 지정). 정지 이미지는 이미 올바른 방향이라 **플립하지 않음**(`scaleX(1)`). `reduced-motion`에서는 처음부터 south(앞) 정지로 고정.
+- **치즈(cheese) 고양이 PNG 스프라이트 걷기 추가**: PixelLab zip의 `Walk/east` 6프레임을 이어 붙인 `walk.png`(288×48) + 4방향 정지로 치즈도 고등어처럼 CSS `steps(6)` 걷기·4방향 쉬기 지원(`CAT_SPRITES.cheese`). 고등어(mackerel)도 4방향 정지를 새로 받아 `idle.png` 단일 장 → 4방향으로 소급 교체.
+- **PixelLab zip 자동처리 파이프라인 문서화**: `public/assets/cats/_zips/`에 zip을 넣으면 따르는 규칙을 [docs/cat-asset-pipeline.md](cat-asset-pipeline.md)로 정리하고 `CLAUDE.md`에 등록. 원본 zip은 `_zips/`에 보관하며 APP_SHELL 캐시엔 넣지 않음. `sw.js` `v3.39.0`(치즈 walk+4방향·고등어 4방향 추가, `idle.png` 제거).
+
 ### 변경 — 🏷️ "고양이집"→"알뜰샵" 개칭 + 은화 아이콘 둥글게 + 앱 대표 아이콘 교체
 - **게임화 기능 이름 `고양이집` → `알뜰샵`**: 시트 제목(`openSheet`), 더보기 그리드 셀, 설정의 `dock` 항목 라벨을 모두 `알뜰샵`으로 변경(기능 동작 동일).
 - **은화(코인) 아이콘 오른쪽을 둥글게**: `M_COIN` 외곽선이 왼쪽만 둥글고 오른쪽은 세로로 평평하던 문제 — 중심(5.5) 기준 **좌우 대칭 원형**으로 매트릭스 재작성(양쪽 모두 둥글게), 고양이 얼굴(눈·코)도 중앙 정렬. 정적 `icons/coin.svg`(로그인/인앱)도 동일 매트릭스로 재생성.
@@ -17,7 +22,8 @@
 - **고등어(mackerel) 고양이를 PNG 스프라이트 시트 기반 걷기로 교체**: `design_sample/files/`의 PixelLab 에셋(`cat_mackerel_walk.png` 288×48 6프레임 east + `cat_mackerel_idle.png` 48×48)을 `public/assets/cats/mackerel/`에 넣고, dock·방 무대에서 고등어는 **CSS `steps(6)` 스프라이트 애니메이션**(`.cspr`)으로 걷도록 함(md 지시서 방식). 좌우 이동·방향 전환(`scaleX`)·유휴/가구 상호작용은 기존 통합 rAF 엔진 유지, 정지·포즈 시 `idle.png`로 전환(`.cspr.idle`). 시트가 없는 다른 고양이(치즈·삼색·까망·하양)는 기존 SVG 매트릭스 2프레임 걷기를 그대로 사용(`catActorHTML`가 시트 유무로 분기, `CAT_SPRITES`). `prefers-reduced-motion`에서 걷기 정지. `sw.js` `v3.35.0`(APP_SHELL에 walk/idle PNG 추가).
 
 ### 변경 — 앱 이름을 "알뜰집"(코드/영문 Eggarden)으로 변경
-- **앱 이름·로그인 화면 제목을 `알뜰집`으로 변경**: 브라우저 탭 제목(`<title>`), 설명 메타, iOS 홈화면 이름(`apple-mobile-web-app-title`), PWA 매니페스트(`name`·`short_name`·`description`), 로그인 화면 제목(`<h1>`), 더보기 하단 버전 표기(`가계부 v3`→`알뜰집 v3`)를 모두 **`알뜰집`** 으로 통일. **영문/코드 표기가 필요한 경우 `Eggarden`** 사용(예: `sw.js` 주석). 일반 명사 "가계부"(기능 설명·"내 가계부"·"개인 가계부" 등)는 유지. *코드 식별자·프로젝트명(`gglee`)의 `eggarden` 리네이밍은 프로젝트 이름 변경 시 함께 진행 예정.* `sw.js` `v3.36.0`.
+- **앱 이름·로그인 화면 제목을 `알뜰집`으로 변경**: 브라우저 탭 제목(`<title>`), 설명 메타, iOS 홈화면 이름(`apple-mobile-web-app-title`), PWA 매니페스트(`name`·`short_name`·`description`), 로그인 화면 제목(`<h1>`), 더보기 하단 버전 표기(`가계부 v3`→`알뜰집 v3`)를 모두 **`알뜰집`** 으로 통일. **영문/코드 표기가 필요한 경우 `Eggarden`** 사용(예: `sw.js` 주석). 일반 명사 "가계부"(기능 설명·"내 가계부"·"개인 가계부" 등)는 유지. **영문/코드 표기가 필요한 경우 `Eggarden`** 사용. `sw.js` `v3.36.0`.
+- **프로젝트 코드 식별자 `gglee` → `eggarden` 리네이밍**: 서비스워커 캐시 프리픽스 `CACHE_VERSION` `gglee-budget-*` → **`eggarden-v3.38.0`**(활성화 시 구 `gglee-budget-*` 캐시 자동 삭제). 문서의 프로젝트 경로 예시·아키텍처 캐시명·APK 패키지 예시(`com.gglee.budget`→`com.eggarden.app`)·README 파일트리 루트(`accountbook/`→`eggarden/`)도 정리. **Firebase 프로젝트 ID `money-bb658`는 실제 라이브 백엔드라 변경하지 않음**(변경 시 새 프로젝트 생성+데이터 마이그레이션 필요). 물리적 폴더명·GitHub 저장소명은 세션/외부에서 수동 변경 필요. `sw.js` `v3.38.0`.
 
 ### 추가 — 🛠️ 개발자 모드(펫알·박스 확률/구성 조작, canel94@gmail.com 전용)
 - **개발자 전용 뽑기 튜닝 패널**: 특정 계정(`canel94@gmail.com`)으로 로그인한 경우에만 **설정 시트에 "개발자 모드" 토글**이 나타나고, 켜면 **"펫알 · 박스 설정"** 항목이 열려 뽑기 구성을 실시간으로 조작할 수 있음(`isDev`/`devOn`/`toggleDevMode`, `openDevGacha`). ① **등급 확률(%)** 을 등급별로 수정(합이 100이 아니어도 총합 기준 비율로 반영, `effTiers`/`rollTier` 정규화), ② **펫알=고양이별 등급**·**랜덤박스=가구별 등급** 재배정(`effCatTier`/`effItemTier` → `openGacha`에 반영), ③ **연출 테스트(무료)** — 등급 버튼으로 은화 소모/지급 없이 오픈 연출만 재생(`devPreview`, 특별+ 앞발 톡 육안 검증용). 설정은 **해당 기기(브라우저) localStorage**(`catDev`/`catDevCfg`)에만 저장 — RTDB·보안규칙 변경 없음, 다른 사용자·기기엔 영향 없음. 기본값 초기화 지원. `sw.js` `v3.33.0`.

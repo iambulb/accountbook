@@ -1,6 +1,6 @@
-# 💰 공유 가계부 (Shared Account Book)
+# 💰 알뜰집 (Eggarden)
 
-개인·그룹이 **함께 쓰는** 가계부 웹앱(PWA). 그룹 초대코드 하나로 가족·커플·모임이 같은 가계부를 실시간으로 공유합니다.
+**알뜰집**(영문·코드명 **Eggarden**)은 개인·그룹이 **함께 쓰는** 공유 가계부 웹앱(PWA)입니다. 그룹 초대코드 하나로 가족·커플·모임이 같은 가계부를 실시간으로 공유합니다.
 
 ![stack](https://img.shields.io/badge/JS-Vanilla-f7df1e) ![firebase](https://img.shields.io/badge/Firebase-RTDB%20%2B%20Auth-ffca28) ![pwa](https://img.shields.io/badge/PWA-installable-5a0fc8) ![deploy](https://img.shields.io/badge/Deploy-Netlify-00c7b7)
 
@@ -43,7 +43,7 @@ npx serve public       # http://localhost:3000 (아무 정적 서버나 가능)
 ## 📁 폴더 구조
 
 ```
-accountbook/
+eggarden/
 ├── public/                   # 👉 정적 사이트 루트 (Netlify publish 대상)
 │   ├── index.html            # 앱 셸
 │   ├── manifest.webmanifest

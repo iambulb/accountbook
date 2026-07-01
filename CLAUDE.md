@@ -4,7 +4,7 @@
 
 ## 프로젝트 한눈 요약
 
-- **무엇**: 개인·그룹이 함께 쓰는 공유 가계부 **PWA**(웹앱). 그룹 초대코드로 가족·커플·모임이 같은 가계부를 실시간 공유.
+- **무엇**: **알뜰집**(영문·코드명 **Eggarden**) — 개인·그룹이 함께 쓰는 공유 가계부 **PWA**(웹앱). 그룹 초대코드로 가족·커플·모임이 같은 가계부를 실시간 공유. *일반 명사 "가계부"는 그대로 쓰되, 앱 제목·브랜드는 `알뜰집`, 영문/코드는 `Eggarden`.*
 - **스택**: Vanilla JS(프레임워크·빌드 없음) + Firebase **Realtime Database** + **Auth(Email/Password)** + Chart.js. 서비스워커 PWA. Netlify 호스팅, PWABuilder TWA로 안드로이드 APK.
 - **📁 폴더 구조**: 웹 앱은 **`public/`** 아래(`public/index.html`, `public/js/`, `public/sw.js`, `public/css/styles.css`, `public/icons/`, `public/.well-known/`). 배포 설정(`firebase.json`·`netlify.toml`·`.firebaserc`·`database.rules.json`)은 **저장소 루트**. 문서는 루트 `README.md`·`CLAUDE.md` + `docs/`(배포 가이드는 `docs/deploy/`). Netlify는 `publish="public"`.
 
@@ -49,3 +49,4 @@
 
 - `public/js/firebase.js` 에는 Firebase 웹 설정값(apiKey 등)이 들어 있습니다. 웹 클라이언트 키라 공개 자체는 정상이지만, **보안은 RTDB 규칙으로** 지켜집니다 — 규칙을 약화시키지 마세요.
 - 거래 타입을 추가하면 `constants.js` 의 `TYPE_LABEL`·`TYPE_ICON`·`TX_EFFECT`(잔액효과)·필요 시 `ACTUAL_DEFAULT`(통계 포함)를 함께 정의해야 합니다.
+- 고양이 에셋: PixelLab zip을 처리할 땐 [docs/cat-asset-pipeline.md](docs/cat-asset-pipeline.md) 의 "Cat Asset Pipeline"을 따른다(zip은 `public/assets/cats/_zips/`, 산출은 `walk.png`+정지 4방향, `CAT_SPRITES`·`sw.js` APP_SHELL 갱신).
