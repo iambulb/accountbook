@@ -58,9 +58,10 @@
 
     /* ===== 로그인 ===== */
     .auth-wrap {
-      max-width:var(--maxw); margin:0 auto; height:100vh; height:100dvh; overflow-y:auto; background:var(--bg);
-      display:flex; flex-direction:column; justify-content:center; padding:32px 36px 44px;
+      max-width:var(--maxw); margin:0 auto; height:100vh; height:100dvh; overflow-y:auto; overflow-x:hidden; background:var(--bg);
+      display:flex; flex-direction:column; justify-content:center; padding:32px 36px 44px; scrollbar-width:none;
     }
+    .auth-wrap::-webkit-scrollbar { display:none; }
     .auth-logo { width:64px; height:64px; border-radius:20px; margin:0 auto 22px; display:block; }
     .auth-wrap h1 { font-size:26px; font-weight:700; text-align:center; margin-bottom:8px; letter-spacing:-.03em; }
     .auth-wrap .desc { text-align:center; color:var(--sub); margin-bottom:24px; font-size:13.5px; font-weight:500; line-height:1.5; }
@@ -89,8 +90,9 @@
     /* ===== 앱 셸 (뷰포트에 딱 맞는 세로 컬럼, 내용만 내부 스크롤) ===== */
     #app { display:none; flex-direction:column; max-width:var(--maxw); margin:0 auto;
       height:100vh; height:100dvh; background:var(--bg); position:relative; overflow:hidden; }
-    .content { flex:1 1 auto; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
-      overscroll-behavior:contain; padding:14px 20px 40px; }
+    .content { flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch;
+      overscroll-behavior:contain; padding:14px 20px 40px; scrollbar-width:none; }
+    .content::-webkit-scrollbar { display:none; }   /* 세로 스크롤바가 우측 여백을 잠식하지 않도록 숨김(좌우 대칭) */
     .topbar {
       flex-shrink:0; z-index:20; background:var(--bg);
       display:flex; align-items:center; justify-content:space-between;
