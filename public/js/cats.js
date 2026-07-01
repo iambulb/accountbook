@@ -809,7 +809,15 @@
       h+=slotRow;
       if(!owned.length) h+='<div class="empty" style="padding:20px;">아직 고양이가 없어요. 상점에서 입양해 보세요 🐾</div>';
       else { h+='<div class="catchips">'+owned.map(id=>{ const on=isActiveCat(id);
-        return '<div class="catchip'+(on?' on':'')+'" role="button" tabindex="0" onclick="toggleActiveCat(\''+id+'\')">'+catFace(id,{h:110})+'<div class="cn">'+catNameSpan(id,catName(id))+'</div><div class="cstate">'+(on?'집에 있음':'대기')+'</div><button class="cn-edit" aria-label="이름 짓기" onclick="event.stopPropagation();openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></div>'; }).join('')+'</div>';
+        // 이미지 영역엔 고양이를 꽉 차게(선택 시 옆으로 걷는 스프라이트, 아니면 정면 정지). 아래엔 이름 + 상태. 선택되면 체크 배지.
+        const art=on?catActorHTML(id,96):catFace(id,{h:96});
+        return '<div class="catchip'+(on?' on':'')+'" role="button" tabindex="0" aria-pressed="'+on+'" onclick="toggleActiveCat(\''+id+'\')">'+
+          '<div class="cpic">'+art+'</div>'+
+          '<div class="cn">'+catNameSpan(id,catName(id))+'</div>'+
+          '<div class="cstate">'+(on?'집에 있음':'대기')+'</div>'+
+          '<button class="cn-edit" aria-label="이름 짓기" onclick="event.stopPropagation();openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
+          (on?'<span class="csel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>':'')+
+        '</div>'; }).join('')+'</div>';
         h+='<div class="hintline" style="margin-top:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>고양이를 탭해 집에 내보내거나 대기시켜요(최대 '+sc+'마리)'+(sc<MAX_SLOTS?' · 오른쪽 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장':'')+'.</div>'; }
       return h;
     }
