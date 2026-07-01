@@ -8,6 +8,9 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 변경 — 🐱 고등어 고양이 PNG 스프라이트 걷기(PixelLab 시트)
+- **고등어(mackerel) 고양이를 PNG 스프라이트 시트 기반 걷기로 교체**: `design_sample/files/`의 PixelLab 에셋(`cat_mackerel_walk.png` 288×48 6프레임 east + `cat_mackerel_idle.png` 48×48)을 `public/assets/cats/mackerel/`에 넣고, dock·방 무대에서 고등어는 **CSS `steps(6)` 스프라이트 애니메이션**(`.cspr`)으로 걷도록 함(md 지시서 방식). 좌우 이동·방향 전환(`scaleX`)·유휴/가구 상호작용은 기존 통합 rAF 엔진 유지, 정지·포즈 시 `idle.png`로 전환(`.cspr.idle`). 시트가 없는 다른 고양이(치즈·삼색·까망·하양)는 기존 SVG 매트릭스 2프레임 걷기를 그대로 사용(`catActorHTML`가 시트 유무로 분기, `CAT_SPRITES`). `prefers-reduced-motion`에서 걷기 정지. `sw.js` `v3.35.0`(APP_SHELL에 walk/idle PNG 추가).
+
 ### 변경 — 앱 이름을 "냥계부"로 변경
 - **앱 이름·로그인 화면 제목을 `냥계부`로 변경**: 브라우저 탭 제목(`<title>`), iOS 홈화면 이름(`apple-mobile-web-app-title`), PWA 매니페스트(`name`·`short_name`), 로그인 화면 제목(`<h1>`)을 모두 `가계부`/`공유 가계부` → **`냥계부`** 로 통일. `sw.js` `v3.34.0`.
 

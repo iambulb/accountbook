@@ -1,5 +1,5 @@
 /* 공유 가계부 서비스워커 — 오프라인 앱 셸 캐시 */
-const CACHE_VERSION = 'gglee-budget-v3.34.0';
+const CACHE_VERSION = 'gglee-budget-v3.35.0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -14,7 +14,9 @@ const APP_SHELL = [
   './icons/icon.svg',
   './icons/coin.svg',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './assets/cats/mackerel/walk.png',
+  './assets/cats/mackerel/idle.png'
 ];
 
 // CDN(라이브러리)은 cache-first 로 따로 보관

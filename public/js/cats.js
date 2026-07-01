@@ -247,6 +247,19 @@
     }
     function catFront(id, opt){ return pxSvg(id==='calico'?M_CALICO_FRONT:M_CAT_FRONT, CAT_PALS[id], opt); }
     function catSide(id, frame, opt){ return pxSvg(frame? M_CAT_SIDE_B:M_CAT_SIDE_A, CAT_PALS[id], opt); }
+    // ---- PNG 스프라이트 시트(PixelLab) — 걷기 6프레임(288×48, east) + 정지 1장(48×48) ----
+    // design_sample/files/claude-code-cat-dock-prompt.md 사양. 시트 있는 고양이는 CSS steps()로 걷기.
+    const CAT_SPRITES = {
+      mackerel:{ walk:'assets/cats/mackerel/walk.png', idle:'assets/cats/mackerel/idle.png', frames:6 }
+    };
+    function hasSprite(id){ return !!CAT_SPRITES[id]; }
+    // 걷기 무대 액터 1개의 내부 마크업 — 시트 있으면 스프라이트 div, 없으면 SVG 프레임0
+    function catActorHTML(id, h){
+      const sp=CAT_SPRITES[id];
+      if(sp){ const s=Math.round(h);
+        return '<div class="cspr" style="width:'+s+'px;height:'+s+'px;--sheet:url('+sp.walk+');--idle:url('+sp.idle+');--fw:'+(s*sp.frames)+'px;"></div>'; }
+      return catSide(id, 0, {h:h});
+    }
     const POSE_M = { sit:M_CAT_SIT, loaf:M_CAT_LOAF, sleep:M_CAT_SLEEP };
     function catPose(id, pose, opt){ return pxSvg(POSE_M[pose]||M_CAT_SIDE_A, CAT_PALS[id], opt); }
     function coinSvg(opt){ return pxSvg(M_COIN, COIN_PAL, opt); }
@@ -397,7 +410,7 @@
       const cats=activeCats();
       stage.dataset.hh=34;
       if(!cats.length){ stage.innerHTML='<span class="cd-empty">고양이를 입양해 보세요</span>'; markCatDirty(); return; }
-      stage.innerHTML=cats.slice(0,3).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(12+i*40)+'px;">'+catSide(id,0,{h:34})+'</div>').join('');
+      stage.innerHTML=cats.slice(0,3).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(12+i*40)+'px;">'+catActorHTML(id,34)+'</div>').join('');
       markCatDirty();
     }
     // ---- 통합 걷기 엔진: 단일 rAF가 "지금 보이는 무대"(시트 방 또는 dock)만 애니메이션 ----
@@ -414,23 +427,30 @@
     }
     function buildActors(stage){
       const acts=Array.from(stage.querySelectorAll('.cd-actor')); if(!acts.length) return [];
-      const W=stage.clientWidth||160, hh=+stage.dataset.hh||30, sw=Math.round(hh*26/14);
+      const W=stage.clientWidth||160, hh=+stage.dataset.hh||30;
       const hasRoom = stage.id==='crStage' || !!stage.closest('.cd-room');
       const props = hasRoom ? placedList().map(p=>({ x:(p.c-0.5)/12*W, itemId:p.itemId })) : [];
       // 고양이마다 성격(속도·유휴빈도·방향전환·가구선호)을 랜덤 부여 → 개별적으로 움직임
-      return acts.map(el=>({ el, x:parseFloat(el.style.left)||0, dir:Math.random()<0.5?-1:1,
-        v:0.16+Math.random()*0.34, t:Math.random()*6, frame:0, fc:Math.random()*170, W, hh, sw, props,
+      // 스프라이트 고양이는 정사각(폭=높이), SVG 고양이는 가로세로비 ~26/14.
+      return acts.map(el=>{ const id=el.getAttribute('data-cat'), spr=hasSprite(id);
+        return { el, id, spr, x:parseFloat(el.style.left)||0, dir:Math.random()<0.5?-1:1,
+        v:0.16+Math.random()*0.34, t:Math.random()*6, frame:0, fc:Math.random()*170, W, hh,
+        sw:(spr?hh:Math.round(hh*26/14)), props,
         mode:'roam', pause:0, goal:null, pose:null,
-        idle:0.0015+Math.random()*0.004, turn:0.004+Math.random()*0.012, seek:0.002+Math.random()*0.006, cool:0 }));
+        idle:0.0015+Math.random()*0.004, turn:0.004+Math.random()*0.012, seek:0.002+Math.random()*0.006, cool:0 }; });
     }
     // 가구 종류별 포즈: 밥그릇=앉아 먹기, 방석=식빵, 캣타워=낮잠, 스크래처=앉기, 그 외=식빵
     function poseForItem(itemId){ return itemId==='bowl'?'sit':itemId==='cushion'?'loaf':itemId==='tower'?'sleep':itemId==='scratcher'?'sit':'loaf'; }
     function poseDur(pose){ return pose==='sleep'?(3200+Math.random()*2800):(1200+Math.random()*2000); }
-    function enterPose(a, id, pose){ a.mode='pause'; a.pose=pose; a.pause=poseDur(pose); a.cool=1400; a.el.innerHTML=catPose(id, pose, {h:a.hh}); a.el.style.transform='translate(0,0) scaleX('+a.dir+')'; }
+    function enterPose(a, id, pose){ a.mode='pause'; a.pose=pose; a.pause=poseDur(pose); a.cool=1400;
+      if(a.spr){ const s=a.el.querySelector('.cspr'); if(s) s.classList.add('idle'); }   // 스프라이트=정지(idle.png)
+      else a.el.innerHTML=catPose(id, pose, {h:a.hh});
+      a.el.style.transform='translate(0,0) scaleX('+a.dir+')'; }
     function stepActors(dt){
       _eng.actors.forEach(a=>{
         a.t+=dt*0.004; if(a.cool>0)a.cool-=dt; const id=a.el.getAttribute('data-cat');
-        if(a.mode==='pause'){ a.pause-=dt; if(a.pause<=0){ a.mode='roam'; a.fc=999; a.dir=Math.random()<0.5?-1:1; } return; }   // 포즈 유지 후 랜덤 방향으로 재출발
+        if(a.mode==='pause'){ a.pause-=dt; if(a.pause<=0){ a.mode='roam'; a.fc=999; a.dir=Math.random()<0.5?-1:1;
+          if(a.spr){ const s=a.el.querySelector('.cspr'); if(s) s.classList.remove('idle'); } } return; }   // 포즈 유지 후 랜덤 방향으로 재출발
         // 유휴 제스처(그 자리 앉기/식빵/낮잠) — 쿨다운 후에만
         if(a.mode==='roam' && a.cool<=0 && Math.random()<a.idle){ enterPose(a, id, ['loaf','sit','sleep'][Math.floor(Math.random()*3)]); return; }
         // 가끔 방향 전환(개별)
@@ -443,7 +463,7 @@
         a.x += a.dir*a.v*dt*0.06;
         const max=a.W-a.sw;
         if(a.x<2){ a.x=2; a.dir=1; if(a.mode==='goal'){a.mode='roam';a.goal=null;} } else if(a.x>max){ a.x=max; a.dir=-1; if(a.mode==='goal'){a.mode='roam';a.goal=null;} }
-        a.fc+=dt; if(a.fc>170){ a.fc=0; a.frame^=1; a.el.innerHTML=catSide(id,a.frame,{h:a.hh}); }
+        if(!a.spr){ a.fc+=dt; if(a.fc>170){ a.fc=0; a.frame^=1; a.el.innerHTML=catSide(id,a.frame,{h:a.hh}); } }   // 스프라이트는 CSS steps()가 프레임 처리
         const bob=Math.sin(a.t*3)*1.2;
         a.el.style.transform='translate(0,'+bob.toFixed(1)+'px) scaleX('+a.dir+')';
         a.el.style.left=a.x.toFixed(1)+'px';
@@ -495,7 +515,7 @@
       const stage=$('crStage'); if(!stage) return;
       const cats=activeCats();
       stage.dataset.hh=46;
-      stage.innerHTML=cats.slice(0,3).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(20+i*46)+'px;">'+catSide(id,0,{h:46})+'</div>').join('');
+      stage.innerHTML=cats.slice(0,3).map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(20+i*46)+'px;">'+catActorHTML(id,46)+'</div>').join('');
       markCatDirty();   // 통합 엔진이 시트 방 무대를 자동으로 잡아 애니메이션
     }
     let _shopSub='cats';

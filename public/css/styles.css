@@ -439,6 +439,13 @@
     .cd-coin .cd-ci { width:16px; height:16px; flex:none; display:inline-flex; }
     .cd-stage { flex:1; height:100%; position:relative; }
     .cd-actor { position:absolute; bottom:9px; will-change:transform,left; }
+    /* PNG 스프라이트 걷기(288×48 6프레임, east) — CSS steps로 프레임 넘김. --fw=프레임수×표시폭 */
+    .cspr { image-rendering:pixelated; background-repeat:no-repeat; background-position:0 0;
+      background-image:var(--sheet); background-size:var(--fw) 100%;
+      animation:csprWalk .72s steps(6) infinite; }
+    .cspr.idle { background-image:var(--idle); background-size:100% 100%; background-position:0 0; animation:none; }
+    @keyframes csprWalk { from { background-position-x:0; } to { background-position-x:calc(-1 * var(--fw)); } }
+    @media (prefers-reduced-motion: reduce) { .cspr { animation:none; } }
     .cd-empty { position:absolute; left:2px; bottom:16px; font-size:11.5px; font-weight:600; color:var(--sub); }
     .catdock.hidden { display:none; }
     /* dock = 컴팩트 웹캠 방(벽지 배경 + 가구 + 걷는 고양이) */
