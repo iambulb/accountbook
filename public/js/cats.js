@@ -608,7 +608,8 @@
     function propMarkup(p, isDock){
       const foot=itemFoot(p.itemId); const x=((p.c-0.5+(foot.w-1)/2)/12*100).toFixed(1);
       // bottom을 방 높이의 %로(앞 행=바닥 앞끝, 뒤 행=바닥 뒤끝) → 배치 처음/끝이 실제 바닥에 반영되고 미니 프리뷰에서도 비율 유지
-      const depth=(p.r-1)/11; const bottom=(isDock?(3+depth*40):(3+depth*50)).toFixed(1); const fh=furnRoomH(p.itemId,isDock,depth);
+      // 반전: 격자 윗줄(작은 r)=방 뒤(멀리, 위·작게), 아랫줄(큰 r)=방 앞(가까이, 아래·크게)
+      const depth=(12-p.r)/11; const bottom=(isDock?(3+depth*40):(3+depth*50)).toFixed(1); const fh=furnRoomH(p.itemId,isDock,depth);
       const tap=(p.itemId==='bowl'||p.itemId==='waterbowl');
       let inner=tap? furnRoomSvg(p.itemId,p.key,{h:fh}) : furnSvg(p.itemId,{h:fh});
       if(p.itemId==='litterbox'){ const slots=p._poops||[]; const ph=Math.max(6,Math.round(fh*0.32));
@@ -622,7 +623,7 @@
       const box=$('cdProps'); if(!box) return;
       reconcilePets();   // 캠 화면에서도 3시간 만료→똥 정산
       // 원근: 뒤(행 큰 값)일수록 위로·작게, 앞(행 작은 값)일수록 아래로·크게. 앞 가구가 뒤 가구를 덮도록 뒤부터.
-      const list=placedList().sort((a,b)=>b.r-a.r); distributePoops(list);
+      const list=placedList().sort((a,b)=>a.r-b.r); distributePoops(list);
       box.innerHTML=list.map(p=>propMarkup(p,true)).join('');
     }
     // 활성 고양이를 dock 무대에 액터로 배치(없으면 안내)
@@ -655,7 +656,7 @@
       const hasRoom = stage.id==='crStage' || !!stage.closest('.cd-room');
       const isDock = stage.id!=='crStage';
       // 가구 위치(발자국 중앙 x) + 렌더 높이(fh) — 상호작용 시 올라갈 높이 계산에 사용
-      const props = hasRoom ? placedList().map(p=>{ const foot=itemFoot(p.itemId), depth=(p.r-1)/11;
+      const props = hasRoom ? placedList().map(p=>{ const foot=itemFoot(p.itemId), depth=(12-p.r)/11;   // 반전: propMarkup과 동일 매핑
         const fh=furnRoomH(p.itemId, isDock, depth);   // 렌더 높이와 동일 → 캣타워 층 lift가 실제 높이에 맞음
         return { x:(p.c-0.5+(foot.w-1)/2)/12*W, itemId:p.itemId, fh }; }) : [];
       // 고양이마다 성격(속도·유휴빈도·방향전환·가구선호)을 랜덤 부여 → 개별적으로 움직임
@@ -759,7 +760,7 @@
       reconcilePets();   // 3시간 지난 그릇 비우고 똥 정산(멱등)
       const cats=activeCats();
       // 배치된 가구를 방 바닥에 매핑. 그릇=탭 급여·채움 반영, 화장실=똥 수거(공용 헬퍼).
-      const list=placedList().sort((a,b)=>b.r-a.r); distributePoops(list);
+      const list=placedList().sort((a,b)=>a.r-b.r); distributePoops(list);
       const litters=list.filter(p=>p.itemId==='litterbox');
       const props=list.map(p=>propMarkup(p,false)).join('');
       let h='<div class="catroom" id="catRoom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div><span class="cr-cam"><i></i>LIVE · 우리집</span>'+batchBtnHtml()+'<div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div></div>';
@@ -1154,10 +1155,9 @@
       const pal=ITEM_CATALOG.map(it=>{ const foot=itemFoot(it.id);
         return '<button class="pitem'+(_selItem===it.id?' on':'')+'" onclick="selItem(\''+it.id+'\')">'+furnSvg(it.id,{h:Math.round(20*furnScale(it.id))})+'<span>'+it.name+'</span><span class="pq">'+foot.w+'×'+foot.h+' · 남은 '+itemRemaining(it.id)+'</span></button>'; }).join('');
       // 미니 웹캠 프리뷰: 현재 배치를 실제 방 뷰로 보여줘 방향 헷갈림 방지(표시 전용)
-      const plist=placedList().sort((a,b)=>b.r-a.r); distributePoops(plist);
+      const plist=placedList().sort((a,b)=>a.r-b.r); distributePoops(plist);
       const preview='<div class="miniroom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div><span class="cr-cam"><i></i>미리보기</span><div class="cr-props">'+plist.map(p=>propMarkup(p,true)).join('')+'</div></div>';
-      return '<div class="editwrap">'+preview+'<div class="hintline" style="margin:0 0 8px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="13" rx="2"/><path d="M8 20h8"/></svg>위 미리보기가 실제 방 모습이에요. 격자 <b>윗줄=방 앞(아래)</b>, <b>아랫줄=방 뒤(위)</b>.</div>'+grid+'<div class="palette">'+pal+'</div>'+
-        '<div class="hintline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>가구를 골라 빈 칸을 탭해 배치 · 놓인 가구는 <b>드래그로 이동</b>, <b>탭하면 회수/판매</b>. 캣타워는 3×6, 스크래처는 2×2 칸을 차지해요.</div></div>';
+      return '<div class="editwrap">'+preview+grid+'<div class="palette">'+pal+'</div></div>';
     }
     function missionRow(m){
       const claimed=missionClaimed(m), ok=m.check();
