@@ -8,6 +8,22 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 변경 — 🐾 고양이 전용 → "모든 네발 동물" 에셋 파이프라인 일반화
+- **경로 `assets/cats/` → `assets/pets/<id>/`**: 동물 에셋을 종 구분되는 폴더로 이관. id를 **`<species>_<색>`** 로 변경(`mackerel`→`cat_mackerel`, `cheese`→`cat_cheese` 등, 예정 강아지=`dog_corgi`). 원본 zip은 `assets/pets/_zips/`.
+- **변수 일반화**: `CAT_CATALOG`→**`PET_CATALOG`**, `CAT_SPRITES`→**`PET_SPRITES`**. `PET_CATALOG` 각 항목에 **`species`**(cat/dog/rabbit…) 필드 추가(향후 분류·필터용). `CAT_PALS`·`CAT_TIER` 키도 새 id로 정렬.
+- **id 하위호환 마이그레이션**: `id`는 RTDB 저장 키라, 기존 사용자의 보유(`owned.cats`)·활성(`home.active`)에 남은 구 id를 `PET_ID_MIGRATE`(구→신)로 `normalizeGame` 읽기 시 자동 이관(다음 쓰기에 영구 반영) — **보유 고양이 유실 없음**. 개발자 뽑기 설정도 알려진 id만 반영하도록 `effCatTier` 가드.
+- **문서 일반화**: `docs/cat-asset-pipeline.md` → **`docs/pet-asset-pipeline.md`**("Pet Asset Pipeline")로 개칭·일반화(zip 규격/시트 합치기/4방향/상태머신 로직은 동일 유지, Walk 방향이 east가 아닌 경우 주의 추가), `CLAUDE.md` 등록 문구를 "동물 에셋"으로 갱신. zip 규격/상태머신 로직은 동물 무관 동일.
+
+### 추가 — 🐈‍⬛ 하양(파란 눈) 고양이 PNG 스프라이트
+- **하양(`cat_white`) 고양이를 PixelLab 스프라이트로 추가**: `chibi_pixel_art_white_cat_pale_blue_eyes_sleepy_fa.zip`을 처리해 `public/assets/pets/cat_white/`에 `walk.png`(288×48, 6프레임) + 정지 4방향(south/north/east/west) 생성. `PET_SPRITES`에 `cat_white` 등록 → dock·방·상점·보유칩·뽑기 결과 어디서나 스프라이트로 표시(기존 SVG 하양 대체). export에 **옆보기(east) 걷기가 없어 정면(south) 걷기 6프레임**으로 시트를 구성(걸을 때 정면, 쉴 때 4방향 정지). `sw.js` `v3.42.0`(APP_SHELL에 `cat_white/` walk+4방향 추가; 이전 `assets/cats/*` 잘못된 경로도 `assets/pets/cat_*`로 정정).
+
+### 변경 — 🥚 펫알·랜덤박스 도트 리디자인 + 원근 수정 + 껍질 깨짐 연출 강화
+- **펫알(알) 도트 재디자인**: 위가 좁고 아래가 둥근 **달걀 실루엣**으로 `M_EGG`(및 균열1·2)를 다시 그림. 중앙에 **크고 두꺼운 무지개(R→O→Y→G→B→P) 물음표**를 새로 넣고, 우측에 은은한 그림자(S)로 볼륨감. 균열 단계(`M_EGG_C1`/`C2`)는 위쪽부터 잔금이 번지도록 재작성.
+- **랜덤박스 도트 재디자인**: 뚜껑(윗면 `C`+앞면 `L`)과 몸체(`W`)로 **뚜껑/밑부분을 또렷하게** 정리. 상자에 그려져 있던 **고양이 얼굴을 제거**하고, 앞면 중앙에 **알과 같은 무지개 물음표**를 넣음(`M_BOX`·`BOX_PAL` 재작성 — 기존 리본/보 `R/K/D/M` 제거).
+- **상단 웹캠 방 기구물 원근 수정**: 배치 가구가 **뒤(행이 클수록)일수록 작게·위로, 앞일수록 크게·아래로** 보이도록 크기 계산을 반전(`renderDockProps`·`catHomeHtml`). 앞 가구가 뒤 가구를 가리도록 **뒤→앞 순서로 그림**(깊이 정렬). 걷는 고양이의 **정지·뒤돌아보기(4방향 쉬기)** 가 더 자주 보이도록 유휴 빈도 상향.
+- **알 껍질 깨짐 연출 리얼화**: 절정에서 **껍질 조각이 좌우로 튀어나가 아래·옆에 흩어져 앉는** 연출 추가(`fxShells`·`.fx-shell`, 알 전용, 큰 조각 2 + 잔조각). 알은 조각이 자리 잡을 시간을 조금 더 줌.
+- **깨질 때 새어나오는 빛을 등급에 맞춰 연출**: 껍질 사이 누광(`fx-leak`)을 **등급색 + 흰 코어**로 바꾸고, **등급이 높을수록 빛이 크고 밝게**(`--lk` 배율, 후광 `box-shadow`)—한정은 기존 무지개 유지. `sw.js` `v3.40.0`.
+
 ### 추가 — 🐈 고양이 4방향 쉬기 + 치즈 스프라이트 + zip 파이프라인 규칙화
 - **걷다 멈춰서 앞/뒤/옆 보며 쉬기(정지 4방향)**: 스프라이트 고양이가 유휴 상태(`enterPose`)에 들어가면 이전엔 단일 `idle.png` 한 장만 보였는데, 이제 PixelLab `rotations`의 **south(앞)·north(뒤)·east(우)·west(좌) 4방향 정지 이미지 중 하나를 무작위**로 보여줌(`CAT_SPRITES.stills`, `--idle` 동적 지정). 정지 이미지는 이미 올바른 방향이라 **플립하지 않음**(`scaleX(1)`). `reduced-motion`에서는 처음부터 south(앞) 정지로 고정.
 - **치즈(cheese) 고양이 PNG 스프라이트 걷기 추가**: PixelLab zip의 `Walk/east` 6프레임을 이어 붙인 `walk.png`(288×48) + 4방향 정지로 치즈도 고등어처럼 CSS `steps(6)` 걷기·4방향 쉬기 지원(`CAT_SPRITES.cheese`). 고등어(mackerel)도 4방향 정지를 새로 받아 `idle.png` 단일 장 → 4방향으로 소급 교체.

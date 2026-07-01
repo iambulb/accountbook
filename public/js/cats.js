@@ -154,11 +154,11 @@
       "......XPPX......","......XPPX......",".....XXPPXX.....","...XXWWWWWWXX...","..XWWWWWWWWWWX..","..XXXXXXXXXXXX.."
     ];
     const CAT_PALS = {
-      mackerel:{X:'#3b4048',B:'#9AA6B4',L:'#D8DDE3',S:'#6E7A8A',E:'#22242b',P:'#E08b9d',I:'#E6A9B4'},
-      cheese:  {X:'#6b3f1c',B:'#E8974C',L:'#F6D6A6',S:'#CC7A33',E:'#3a2415',P:'#E08b9d',I:'#F0C8A0'},
-      calico:  {X:'#544e45',B:'#F3EFE8',L:'#FCFAF5',O:'#E8974C',K:'#3d3a40',S:'#c9c3ba',E:'#22242b',P:'#E08b9d',I:'#E6A9B4'},
-      black:   {X:'#181a1e',B:'#3a3d44',L:'#C9CCD2',S:'#2b2e34',E:'#F2C84B',P:'#E08b9d',I:'#7a5560'},  // 까망(턱시도, 노란 눈)
-      white:   {X:'#B9B4AA',B:'#F3EFE8',L:'#FCFAF5',S:'#DDD8CF',E:'#4C7FE0',P:'#E08b9d',I:'#E6A9B4'}   // 하양(파란 눈)
+      cat_mackerel:{X:'#3b4048',B:'#9AA6B4',L:'#D8DDE3',S:'#6E7A8A',E:'#22242b',P:'#E08b9d',I:'#E6A9B4'},
+      cat_cheese:  {X:'#6b3f1c',B:'#E8974C',L:'#F6D6A6',S:'#CC7A33',E:'#3a2415',P:'#E08b9d',I:'#F0C8A0'},
+      cat_calico:  {X:'#544e45',B:'#F3EFE8',L:'#FCFAF5',O:'#E8974C',K:'#3d3a40',S:'#c9c3ba',E:'#22242b',P:'#E08b9d',I:'#E6A9B4'},
+      cat_black:   {X:'#181a1e',B:'#3a3d44',L:'#C9CCD2',S:'#2b2e34',E:'#F2C84B',P:'#E08b9d',I:'#7a5560'},  // 까망(턱시도, 노란 눈)
+      cat_white:   {X:'#B9B4AA',B:'#F3EFE8',L:'#FCFAF5',S:'#DDD8CF',E:'#4C7FE0',P:'#E08b9d',I:'#E6A9B4'}   // 하양(파란 눈)
     };
     const COIN_PAL={X:'#6f7681',S:'#d6dbe1',D:'#a8afb8',A:'#4a4f57',E:'#d6dbe1',P:'#cf8f6c'};
     const GOLD_PAL={X:'#8a6a1e',S:'#F4D06B',D:'#caa23a',A:'#7a5a12',E:'#fff0b8',P:'#cf8f6c'};   // 금화(은화와 동형, 금색)
@@ -254,14 +254,17 @@
     ];
     const PAW_PAL={X:'#181a1e',B:'#2b2e34',P:'#E08b9d'};
 
-    // 카탈로그(코드 상수) — 저장은 보유 id만
-    const CAT_CATALOG = [
-      { id:'mackerel', name:'고등어', price:45, desc:'쿨그레이 줄무늬. 차분하게 방을 돌아다녀요.' },
-      { id:'cheese',   name:'치즈',   price:60, desc:'웜오렌지. 활발하게 뛰어다니는 개냥이.' },
-      { id:'calico',   name:'삼색',   price:90, desc:'흰+주황+먹. 도도하게 창가에 앉아요.' },
-      { id:'black',    name:'까망',   price:70, desc:'노란 눈의 까만 고양이. 조용히 방을 지켜요.' },
-      { id:'white',    name:'하양',   price:80, desc:'파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요.' }
+    // 카탈로그(코드 상수) — 저장은 보유 id만. id는 종·색 구분(예: cat_calico, dog_corgi), species는 분류/필터용.
+    // 새 동물(네발 짐승) 처리 규칙은 docs/pet-asset-pipeline.md 참고.
+    const PET_CATALOG = [
+      { id:'cat_mackerel', species:'cat', name:'고등어', price:45, desc:'쿨그레이 줄무늬. 차분하게 방을 돌아다녀요.' },
+      { id:'cat_cheese',   species:'cat', name:'치즈',   price:60, desc:'웜오렌지. 활발하게 뛰어다니는 개냥이.' },
+      { id:'cat_calico',   species:'cat', name:'삼색',   price:90, desc:'흰+주황+먹. 도도하게 창가에 앉아요.' },
+      { id:'cat_black',    species:'cat', name:'까망',   price:70, desc:'노란 눈의 까만 고양이. 조용히 방을 지켜요.' },
+      { id:'cat_white',    species:'cat', name:'하양',   price:80, desc:'파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요.' }
     ];
+    // 구 id(고양이 전용 시절) → 신 id. RTDB 보유/활성 데이터 하위호환(normalizeGame에서 적용).
+    const PET_ID_MIGRATE = { mackerel:'cat_mackerel', cheese:'cat_cheese', calico:'cat_calico', black:'cat_black', white:'cat_white' };
     const ITEM_CATALOG = [
       { id:'cushion', name:'방석',   price:15, size:1, desc:'고양이가 앉아 쉬는 자리.' },
       { id:'bowl',    name:'밥그릇', price:20, size:1, desc:'배치하면 고양이가 다가와요.' },
@@ -305,23 +308,25 @@
       const wh = opt.fit ? 'width="100%" height="100%"' : sz;
       return '<svg class="px '+(opt.cls||'')+'" viewBox="0 0 '+cols+' '+rows+'" '+wh+' shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet">'+r+'</svg>';
     }
-    function catFront(id, opt){ return pxSvg(id==='calico'?M_CALICO_FRONT:M_CAT_FRONT, CAT_PALS[id], opt); }
+    function catFront(id, opt){ return pxSvg(id==='cat_calico'?M_CALICO_FRONT:M_CAT_FRONT, CAT_PALS[id], opt); }
     function catSide(id, frame, opt){ return pxSvg(frame? M_CAT_SIDE_B:M_CAT_SIDE_A, CAT_PALS[id], opt); }
     // ---- PNG 스프라이트 시트(PixelLab) — 걷기 6프레임(288×48, east) + 정지 4방향(48×48) ----
-    // 처리 규칙은 docs/cat-asset-pipeline.md("Cat Asset Pipeline") 참고. 시트 있는 고양이는 CSS steps()로 걷기.
+    // 처리 규칙은 docs/pet-asset-pipeline.md("Pet Asset Pipeline") 참고. 시트 있는 동물은 CSS steps()로 걷기.
     // 쉴 때는 stills(south=앞/north=뒤/east=우/west=좌) 중 하나를 무작위로 보여준다(정면·후면·옆 보기).
     const CAT_FACES = ['south','north','east','west'];
-    function sprStills(id){ return 'assets/cats/'+id; }
+    function sprStills(id){ return 'assets/pets/'+id; }
     function sprStill(id, face){ return sprStills(id)+'/'+face+'.png'; }
-    const CAT_SPRITES = {
-      mackerel:{ walk:'assets/cats/mackerel/walk.png', frames:6, stills:true },
-      cheese:  { walk:'assets/cats/cheese/walk.png',   frames:6, stills:true }
+    const PET_SPRITES = {
+      cat_mackerel:{ walk:'assets/pets/cat_mackerel/walk.png', frames:6, stills:true },
+      cat_cheese:  { walk:'assets/pets/cat_cheese/walk.png',   frames:6, stills:true },
+      // 하양: export에 옆보기(east) 걷기가 없어 정면(south) 걷기 6프레임으로 시트 구성 → 걸을 때 정면 보기, 쉴 때 4방향 정지.
+      cat_white:   { walk:'assets/pets/cat_white/walk.png',    frames:6, stills:true }
     };
-    function hasSprite(id){ return !!CAT_SPRITES[id]; }
+    function hasSprite(id){ return !!PET_SPRITES[id]; }
     // 걷기 무대 액터 1개의 내부 마크업 — 시트 있으면 스프라이트 div, 없으면 SVG 프레임0.
     // reduced-motion이면 처음부터 정지 이미지(south=앞)로 고정.
     function catActorHTML(id, h){
-      const sp=CAT_SPRITES[id];
+      const sp=PET_SPRITES[id];
       if(sp){ const s=Math.round(h); const rm=reducedMotion();
         return '<div class="cspr'+(rm?' idle':'')+'" style="width:'+s+'px;height:'+s+'px;--sheet:url('+sp.walk+');--idle:url('+sprStill(id,'south')+');--fw:'+(s*sp.frames)+'px;"></div>'; }
       return catSide(id, 0, {h:h});
@@ -341,7 +346,7 @@
     function boxSvg(opt){ return pxSvg(M_BOX, BOX_PAL, opt); }
     function pawSvg(opt){ return pxSvg(M_PAW, PAW_PAL, opt); }
     function furnSvg(id, opt){ const M={cushion:M_CUSHION,bowl:M_BOWL,tower:M_TOWER,scratcher:M_SCRATCHER}[id]; return pxSvg(M, FURN_PALS[id], opt); }
-    function catName(id){ const c=CAT_CATALOG.find(x=>x.id===id); return c?c.name:id; }
+    function catName(id){ const c=PET_CATALOG.find(x=>x.id===id); return c?c.name:id; }
 
     // ---- 날짜 키(KST 롤오버) ----
     function kstDayKey(){ const d=new Date(Date.now()+9*3600000); return d.toISOString().slice(0,10); }   // 2026-07-01
@@ -354,12 +359,19 @@
 
     // ---- 게임 상태/경제 ----
     function gameRef(){ return db.ref('users/'+state.uid+'/game'); }
-    function normalizeGame(g){ g=g||{}; return {
+    // 보유(owned.cats)·활성(home.active)에 남아있는 구 id를 신 id로 이관(하위호환). 다음 쓰기 때 영구 반영.
+    function migratePetIds(o){
+      const m=PET_ID_MIGRATE, cats={};
+      Object.keys(o.owned.cats).forEach(k=>{ cats[m[k]||k]=o.owned.cats[k]; }); o.owned.cats=cats;
+      const seen={}; o.home.active=(o.home.active||[]).map(k=>m[k]||k).filter(k=>{ if(seen[k]) return false; seen[k]=1; return true; });
+      return o;
+    }
+    function normalizeGame(g){ g=g||{}; return migratePetIds({
       coins: Number(g.coins)||0, gold: Number(g.gold)||0,
       owned:{ cats:(g.owned&&g.owned.cats)||{}, items:(g.owned&&g.owned.items)||{}, wallpapers:(g.owned&&g.owned.wallpapers)||{} },
       home:{ active:(g.home&&g.home.active)||[], placed:(g.home&&g.home.placed)||{}, wallpaper:(g.home&&g.home.wallpaper)||'default' },
       missions: g.missions||{}, progress: g.progress||{}, codes: g.codes||{}
-    }; }
+    }); }
     function gold(){ return (state.game&&state.game.gold)||0; }
     function initCatGame(){
       if(!state.uid) return;
@@ -378,7 +390,7 @@
     function coins(){ return (state.game&&state.game.coins)||0; }
     function ownsCat(id){ return !!(state.game&&state.game.owned.cats[id]); }
     function activeCats(){ const a=(state.game&&state.game.home.active)||[]; return a.filter(ownsCat); }
-    function ownedCatList(){ return CAT_CATALOG.filter(c=>ownsCat(c.id)).map(c=>c.id); }
+    function ownedCatList(){ return PET_CATALOG.filter(c=>ownsCat(c.id)).map(c=>c.id); }
     function isActiveCat(id){ return activeCats().indexOf(id)>=0; }
     // 활성 슬롯 토글(집에 내보내기 / 대기) — 최대 3마리
     function toggleActiveCat(id){
@@ -439,7 +451,7 @@
 
     // 고양이 구매(원자적, 잔액 음수 방지)
     function buyCat(id){
-      const c=CAT_CATALOG.find(x=>x.id===id); if(!c) return;
+      const c=PET_CATALOG.find(x=>x.id===id); if(!c) return;
       if(ownsCat(id)){ toast('이미 보유한 고양이예요'); return; }
       if(coins()<c.price){ toast((c.price-coins())+' 은화 부족', true); return; }
       gameRef().transaction(g=>{
@@ -474,9 +486,9 @@
     // 배치 가구를 무대 바닥에 배경으로(가로=열, 앞뒤 깊이=행)
     function renderDockProps(){
       const box=$('cdProps'); if(!box) return;
-      // 원근: 뒤(행 큰 값)일수록 위로·작게, 앞(행 작은 값)일수록 아래로·크게. 앞 가구가 뒤 가구를 덮도록 뒤부터 그린다.
+      // 원근: 뒤(행 큰 값)일수록 위로·작게, 앞(행 작은 값)일수록 아래로·크게(크기차는 완만하게). 앞 가구가 뒤 가구를 덮도록 뒤부터 그린다.
       box.innerHTML=placedList().sort((a,b)=>b.r-a.r).map(p=>{ const x=((p.c-0.5)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(2+depth*22).toFixed(0);
-        return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:(26-depth*10).toFixed(0)})+'</div>'; }).join('');
+        return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:(22-depth*6).toFixed(0)})+'</div>'; }).join('');
     }
     // 활성 고양이를 dock 무대에 액터로 배치(없으면 안내)
     function renderDockCats(){
@@ -580,7 +592,7 @@
       const cats=activeCats();
       // 배치된 가구를 방 바닥에 매핑(c→가로, r→앞뒤 깊이)
       const props=placedList().sort((a,b)=>b.r-a.r).map(p=>{ const x=((p.c-0.5)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(3+depth*30).toFixed(0);
-        return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:(32-depth*12).toFixed(0)})+'</div>'; }).join('');
+        return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:(28-depth*8).toFixed(0)})+'</div>'; }).join('');
       let h='<div class="catroom" id="catRoom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div><span class="cr-cam"><i></i>LIVE · 우리집</span><div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div></div>';
       const owned=ownedCatList();
       h+='<div class="sech"><span class="l">우리집 고양이</span><span class="s">'+cats.length+' / 3 활성</span></div>';
@@ -633,7 +645,7 @@
         return h;
       }
       if(_shopSub==='cats'){
-        h+=CAT_CATALOG.map(c=>{
+        h+=PET_CATALOG.map(c=>{
           const owned=ownsCat(c.id), enough=coins()>=c.price;
           let act;
           if(owned) act='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>보유</span>';
@@ -695,7 +707,7 @@
     const TIER_ORDER = TIERS.map(t=>t.id);   // 높은 등급이 비면 한 단계씩 낮춰 대체할 때 사용
     function tierInfo(id){ return TIERS.find(t=>t.id===id)||TIERS[0]; }
     // 테스트 배정(등급당 1) — 펫알=고양이 / 랜덤박스=가구
-    const CAT_TIER  = { mackerel:'normal', cheese:'uncommon', calico:'rare', black:'epic', white:'legend' };
+    const CAT_TIER  = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'legend' };
     const ITEM_TIER = { cushion:'normal', bowl:'uncommon', scratcher:'rare', tower:'epic' };
     // ---- 개발자 모드(canel94@gmail.com 전용): 확률·구성 로컬 오버라이드 ----
     const DEV_EMAIL='canel94@gmail.com';
@@ -705,7 +717,7 @@
     function devCfg(){ try{ return JSON.parse(localStorage.getItem('catDevCfg')||'null')||{}; }catch(e){ return {}; } }
     function saveDevCfg(c){ localStorage.setItem('catDevCfg', JSON.stringify(c)); }
     function effTiers(){ const c=devOn()&&devCfg().tiers; if(!c) return TIERS; return TIERS.map(t=>({ id:t.id, name:t.name, color:t.color, p:(c[t.id]!=null?Number(c[t.id]):t.p) })); }
-    function effCatTier(){ return devOn()? Object.assign({},CAT_TIER,devCfg().catTier||{}) : CAT_TIER; }
+    function effCatTier(){ if(!devOn()) return CAT_TIER; const ov=devCfg().catTier||{}, r={}; Object.keys(CAT_TIER).forEach(k=>{ r[k]=(ov[k]!=null?ov[k]:CAT_TIER[k]); }); return r; }   // 알려진 id만(구 dev 설정의 잔여 키 무시)
     function effItemTier(){ return devOn()? Object.assign({},ITEM_TIER,devCfg().itemTier||{}) : ITEM_TIER; }
     // 확률은 합이 100이 아니어도 총합 기준 비율로 적용(개발 편의)
     function rollTier(){ const arr=effTiers(); const total=arr.reduce((s,t)=>s+(Number(t.p)||0),0)||1; const r=Math.random()*total; let acc=0; for(const t of arr){ acc+=(Number(t.p)||0); if(r<acc) return t.id; } return arr[0].id; }
@@ -873,7 +885,7 @@
       h+='<div class="sec-title" style="margin-top:18px;">등급 확률(%)</div>';
       h+=TIERS.map(t=>'<div class="row" style="padding:5px 2px;"><span><b class="tier-'+t.id+'">'+t.name+'</b></span><input class="input" style="width:96px;text-align:right;" inputmode="decimal" id="dp_'+t.id+'" value="'+(tp[t.id]!=null?tp[t.id]:t.p)+'"></div>').join('');
       h+='<div class="sec-title" style="margin-top:18px;">펫알 — 고양이 등급</div>';
-      h+=CAT_CATALOG.map(c=>'<div class="row" style="padding:5px 2px;"><span>'+c.name+'</span><select class="input" style="width:120px;" id="dc_'+c.id+'">'+tierOpt(ct[c.id])+'</select></div>').join('');
+      h+=PET_CATALOG.map(c=>'<div class="row" style="padding:5px 2px;"><span>'+c.name+'</span><select class="input" style="width:120px;" id="dc_'+c.id+'">'+tierOpt(ct[c.id])+'</select></div>').join('');
       h+='<div class="sec-title" style="margin-top:18px;">랜덤박스 — 가구 등급</div>';
       h+=ITEM_CATALOG.map(i=>'<div class="row" style="padding:5px 2px;"><span>'+i.name+'</span><select class="input" style="width:120px;" id="di_'+i.id+'">'+tierOpt(it[i.id])+'</select></div>').join('');
       h+='<button class="btn" style="margin-top:14px;" onclick="saveDevGacha()">저장</button>';
@@ -883,7 +895,7 @@
     function saveDevGacha(){
       const c={ tiers:{}, catTier:{}, itemTier:{} };
       TIERS.forEach(t=>{ const v=parseFloat(val('dp_'+t.id)); if(!isNaN(v)) c.tiers[t.id]=v; });
-      CAT_CATALOG.forEach(x=>{ c.catTier[x.id]=val('dc_'+x.id); });
+      PET_CATALOG.forEach(x=>{ c.catTier[x.id]=val('dc_'+x.id); });
       ITEM_CATALOG.forEach(x=>{ c.itemTier[x.id]=val('di_'+x.id); });
       saveDevCfg(c); toast('개발자 설정을 저장했어요'); closeSheet();
     }
@@ -892,6 +904,6 @@
     function devPreview(kind, tierId){
       const map = kind==='egg'? effCatTier() : effItemTier();
       let id = Object.keys(map).find(k=>map[k]===tierId);
-      if(!id) id = kind==='egg' ? (Object.keys(map)[0]||'mackerel') : (Object.keys(map)[0]||'cushion');
+      if(!id) id = kind==='egg' ? (Object.keys(map)[0]||'cat_mackerel') : (Object.keys(map)[0]||'cushion');
       closeSheet(); _fx=null; runGachaFx(kind, { id, tier:tierId }, false);
     }

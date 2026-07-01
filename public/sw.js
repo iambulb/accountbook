@@ -1,5 +1,5 @@
 /* 알뜰집(Eggarden) 서비스워커 — 오프라인 앱 셸 캐시 */
-const CACHE_VERSION = 'eggarden-v3.39.0';
+const CACHE_VERSION = 'eggarden-v3.42.0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -15,16 +15,21 @@ const APP_SHELL = [
   './icons/coin.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  './assets/cats/mackerel/walk.png',
-  './assets/cats/mackerel/south.png',
-  './assets/cats/mackerel/north.png',
-  './assets/cats/mackerel/east.png',
-  './assets/cats/mackerel/west.png',
-  './assets/cats/cheese/walk.png',
-  './assets/cats/cheese/south.png',
-  './assets/cats/cheese/north.png',
-  './assets/cats/cheese/east.png',
-  './assets/cats/cheese/west.png'
+  './assets/pets/cat_mackerel/walk.png',
+  './assets/pets/cat_mackerel/south.png',
+  './assets/pets/cat_mackerel/north.png',
+  './assets/pets/cat_mackerel/east.png',
+  './assets/pets/cat_mackerel/west.png',
+  './assets/pets/cat_cheese/walk.png',
+  './assets/pets/cat_cheese/south.png',
+  './assets/pets/cat_cheese/north.png',
+  './assets/pets/cat_cheese/east.png',
+  './assets/pets/cat_cheese/west.png',
+  './assets/pets/cat_white/walk.png',
+  './assets/pets/cat_white/south.png',
+  './assets/pets/cat_white/north.png',
+  './assets/pets/cat_white/east.png',
+  './assets/pets/cat_white/west.png'
 ];
 
 // CDN(라이브러리)은 cache-first 로 따로 보관

@@ -49,4 +49,4 @@
 
 - `public/js/firebase.js` 에는 Firebase 웹 설정값(apiKey 등)이 들어 있습니다. 웹 클라이언트 키라 공개 자체는 정상이지만, **보안은 RTDB 규칙으로** 지켜집니다 — 규칙을 약화시키지 마세요.
 - 거래 타입을 추가하면 `constants.js` 의 `TYPE_LABEL`·`TYPE_ICON`·`TX_EFFECT`(잔액효과)·필요 시 `ACTUAL_DEFAULT`(통계 포함)를 함께 정의해야 합니다.
-- 고양이 에셋: PixelLab zip을 처리할 땐 [docs/cat-asset-pipeline.md](docs/cat-asset-pipeline.md) 의 "Cat Asset Pipeline"을 따른다(zip은 `public/assets/cats/_zips/`, 산출은 `walk.png`+정지 4방향, `CAT_SPRITES`·`sw.js` APP_SHELL 갱신).
+- 동물 에셋: PixelLab zip(고양이·강아지 등 네발 동물)을 처리할 땐 [docs/pet-asset-pipeline.md](docs/pet-asset-pipeline.md) 의 "Pet Asset Pipeline"을 따른다(zip은 `public/assets/pets/_zips/`, id는 `<species>_<색>` 예 `cat_calico`·`dog_corgi`, 산출은 `assets/pets/<id>/`의 `walk.png`+정지 4방향, `PET_CATALOG`(species)·`PET_SPRITES`·`sw.js` APP_SHELL 갱신, id 변경 시 `PET_ID_MIGRATE`로 하위호환).
