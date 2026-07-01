@@ -1256,6 +1256,9 @@
       h+='<div class="sec-title">연출 테스트(무료)</div>';
       h+='<div class="tx-sub" style="margin:0 2px 6px;">펫알</div><div class="chip-row">'+TIERS.map(t=>'<button class="chip" onclick="devPreview(\'egg\',\''+t.id+'\')"><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
       h+='<div class="tx-sub" style="margin:8px 2px 6px;">랜덤박스</div><div class="chip-row">'+TIERS.map(t=>'<button class="chip" onclick="devPreview(\'box\',\''+t.id+'\')"><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
+      h+='<div class="sec-title" style="margin-top:18px;">다마고치 테스트(즉시)</div>';
+      h+='<div class="note" style="margin-bottom:8px;">3시간을 기다리지 않고 급여·배변·수거를 바로 확인. 순서: <b>사료·물 +10</b> → 홈에서 그릇 채우기(또는 <b>그릇 다 채우기</b>) → <b>그릇 만료→똥</b> → 똥 탭/일괄 돌보기.</div>';
+      h+='<div class="chip-row"><button class="chip" onclick="devGiveConsum()">사료·물 +10</button><button class="chip" onclick="devFillAll()">그릇 다 채우기</button><button class="chip" onclick="devExpireBowls()">그릇 만료→똥</button><button class="chip" onclick="devAddPoop()">똥 +3</button><button class="chip" onclick="devAddCoins()">은화 +100</button></div>';
       h+='<div class="sec-title" style="margin-top:18px;">등급 확률(%)</div>';
       h+=TIERS.map(t=>'<div class="row" style="padding:5px 2px;"><span><b class="tier-'+t.id+'">'+t.name+'</b></span><input class="input" style="width:96px;text-align:right;" inputmode="decimal" id="dp_'+t.id+'" value="'+(tp[t.id]!=null?tp[t.id]:t.p)+'"></div>').join('');
       h+='<div class="sec-title" style="margin-top:18px;">펫알 — 고양이 등급</div>';
@@ -1281,3 +1284,9 @@
       if(!id) id = kind==='egg' ? (Object.keys(map)[0]||'cat_mackerel') : (Object.keys(map)[0]||'cushion');
       closeSheet(); _fx=null; runGachaFx(kind, { id, tier:tierId }, false);
     }
+    // ---- 다마고치 테스트(개발자 전용, 즉시) ----
+    function devGiveConsum(){ if(!isDev())return; gameRef().transaction(g=>{ g=normalizeGame(g); g.consum.food+=10; g.consum.water+=10; return g; }).then(r=>{ if(r&&r.committed) toast('사료·물 +10'); }); }
+    function devFillAll(){ if(!isDev())return; gameRef().transaction(g=>{ g=normalizeGame(g); const now=Date.now(); Object.keys(g.home.placed||{}).forEach(k=>{ const e=g.home.placed[k]; if(e&&(e.itemId==='bowl'||e.itemId==='waterbowl')) e.filledAt=now; }); return g; }).then(r=>{ if(r&&r.committed) toast('모든 그릇 채움 🍚💧'); }); }
+    function devExpireBowls(){ if(!isDev())return; gameRef().transaction(g=>{ g=normalizeGame(g); const pl=g.home.placed||{}; let poop=0; Object.keys(pl).forEach(k=>{ const e=pl[k]; if(e&&e.filledAt&&(e.itemId==='bowl'||e.itemId==='waterbowl')){ e.filledAt=null; poop++; } }); if(poop) g.home.poops=(Number(g.home.poops)||0)+poop; return g; }).then(r=>{ if(r&&r.committed) toast('채워진 그릇 만료 → 똥 생성'); }); }
+    function devAddPoop(){ if(!isDev())return; gameRef().transaction(g=>{ g=normalizeGame(g); g.home.poops=(Number(g.home.poops)||0)+3; return g; }).then(r=>{ if(r&&r.committed) toast('똥 +3'); }); }
+    function devAddCoins(){ if(!isDev())return; gameRef().transaction(g=>{ g=normalizeGame(g); g.coins+=100; return g; }).then(r=>{ if(r&&r.committed) toast('은화 +100'); }); }
