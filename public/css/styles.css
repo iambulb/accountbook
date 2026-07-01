@@ -510,7 +510,10 @@
     .slot.locked .lockic { width:16px; height:16px; }
     .slot.locked .slotgold { display:inline-flex; align-items:center; gap:2px; font-size:10px; font-weight:800; color:var(--text); }
     .catchips { display:flex; gap:10px; flex-wrap:wrap; }
-    .catchip { flex:1; background:var(--card); border:1.5px solid var(--bd); border-radius:14px; padding:10px 6px; text-align:center; transition:transform .08s; }
+    .catchip { position:relative; flex:1; background:var(--card); border:1.5px solid var(--bd); border-radius:14px; padding:10px 6px; text-align:center; transition:transform .08s; cursor:pointer; }
+    .catchip .cn-edit { position:absolute; top:3px; right:3px; width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; border-radius:7px; color:var(--sub); background:var(--soft); }
+    .catchip .cn-edit svg { width:12px; height:12px; }
+    .catchip .cn-edit:active { transform:scale(.9); }
     .catchip:active { transform:scale(.96); }
     .catchip.on { border-color:var(--primary); }
     .catchip .cn { font-size:11px; font-weight:700; margin-top:4px; }
@@ -555,11 +558,12 @@
     .prog-pill { font-size:12px; font-weight:800; color:var(--sub); flex:none; }
     /* 방에 배치된 가구 */
     .cr-props { position:absolute; left:0; right:0; bottom:0; top:0; z-index:1; }
-    .cr-prop { position:absolute; transform:translateX(-50%); color:var(--text2); }
+    /* 앵커=배치칸 좌측하단: 가로 중앙정렬 안 함(left=칸 좌측 edge), bottom이 바닥 기준 */
+    .cr-prop { position:absolute; transform:translateX(0); transform-origin:left bottom; color:var(--text2); }
     .cr-prop .px { display:block; }
     /* 다마고치: 탭 가능한 그릇 / 화장실 위 똥 / 똥 수거 획득 연출 */
     .cr-prop.cr-tap { cursor:pointer; z-index:2; }
-    .cr-prop.cr-tap:active { transform:translateX(-50%) scale(.92); }
+    .cr-prop.cr-tap:active { transform:scale(.92); }
     .cr-prop.cr-litter { z-index:2; }
     .cr-prop .poop { position:absolute; transform:translate(-50%,-50%); cursor:pointer; z-index:3; filter:drop-shadow(0 1px 1px rgba(0,0,0,.35)); animation:poopIn .2s ease; }
     .cr-prop .poop:active { transform:translate(-50%,-50%) scale(.8); }

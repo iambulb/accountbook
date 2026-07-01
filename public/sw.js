@@ -1,5 +1,5 @@
 /* 알뜰집(Eggarden) 서비스워커 — 오프라인 앱 셸 캐시 */
-const CACHE_VERSION = 'eggarden-v3.57.0';
+const CACHE_VERSION = 'eggarden-v3.58.0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -54,7 +54,22 @@ const APP_SHELL = [
   './assets/pets/cat_siamese/south.png',
   './assets/pets/cat_siamese/north.png',
   './assets/pets/cat_siamese/east.png',
-  './assets/pets/cat_siamese/west.png'
+  './assets/pets/cat_siamese/west.png',
+  './assets/pets/cat_bengal/walk.png',
+  './assets/pets/cat_bengal/south.png',
+  './assets/pets/cat_bengal/north.png',
+  './assets/pets/cat_bengal/east.png',
+  './assets/pets/cat_bengal/west.png',
+  './assets/pets/cat_fold/walk.png',
+  './assets/pets/cat_fold/south.png',
+  './assets/pets/cat_fold/north.png',
+  './assets/pets/cat_fold/east.png',
+  './assets/pets/cat_fold/west.png',
+  './assets/pets/cat_bora/walk.png',
+  './assets/pets/cat_bora/south.png',
+  './assets/pets/cat_bora/north.png',
+  './assets/pets/cat_bora/east.png',
+  './assets/pets/cat_bora/west.png'
 ];
 
 // CDN(라이브러리)은 cache-first 로 따로 보관

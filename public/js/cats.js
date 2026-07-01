@@ -313,7 +313,10 @@
       { id:'cat_white',    species:'cat', name:'하양',   price:800,  desc:'파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요.' },
       { id:'cat_tuxedo',   species:'cat', name:'턱시도', price:1500, desc:'검은 정장에 하얀 셔츠·발. 단정하게 걸어다녀요.' },
       { id:'cat_chaos',    species:'cat', name:'카오스', price:800,  desc:'다크그레이+브라운 소용돌이 무늬. 종잡을 수 없이 쏘다녀요.' },
-      { id:'cat_siamese',  species:'cat', breed:'샴', name:'샴',     price:1500, desc:'크림빛 몸에 짙은 포인트. 우아하게 방을 누벼요.' }
+      { id:'cat_siamese',  species:'cat', breed:'샴', name:'샴',     price:1500, desc:'크림빛 몸에 짙은 포인트. 우아하게 방을 누벼요.' },
+      { id:'cat_bengal',   species:'cat', breed:'벵갈', name:'벵갈',  price:100,  desc:'골든빛 몸에 동글동글 반점. 야무지게 돌아다녀요.' },
+      { id:'cat_fold',     species:'cat', breed:'스코티시폴드', name:'폴드', price:200, desc:'접힌 귀가 매력. 얌전히 자리를 지켜요.' },
+      { id:'cat_bora',     species:'cat', breed:'코숏', name:'보라',  price:400,  desc:'한쪽은 파랑·한쪽은 호박색 오드아이. 신비롭게 거닐어요.' }
     ];
     // 구 id(고양이 전용 시절) → 신 id. RTDB 보유/활성 데이터 하위호환(normalizeGame에서 적용).
     const PET_ID_MIGRATE = { mackerel:'cat_mackerel', cheese:'cat_cheese', calico:'cat_calico', black:'cat_black', white:'cat_white' };
@@ -392,7 +395,10 @@
       cat_tuxedo:  { walk:'assets/pets/cat_tuxedo/walk.png',   frames:6, stills:true },
       cat_black:   { walk:'assets/pets/cat_black/walk.png',    frames:6, stills:true },
       cat_chaos:   { walk:'assets/pets/cat_chaos/walk.png',    frames:6, stills:true },
-      cat_siamese: { walk:'assets/pets/cat_siamese/walk.png',  frames:6, stills:true }
+      cat_siamese: { walk:'assets/pets/cat_siamese/walk.png',  frames:6, stills:true },
+      cat_bengal:  { walk:'assets/pets/cat_bengal/walk.png',   frames:6, stills:true },
+      cat_fold:    { walk:'assets/pets/cat_fold/walk.png',     frames:6, stills:true },
+      cat_bora:    { walk:'assets/pets/cat_bora/walk.png',     frames:6, stills:true }
     };
     function hasSprite(id){ return !!PET_SPRITES[id]; }
     // 걷기 무대 액터 1개의 내부 마크업 — 시트 있으면 스프라이트 div, 없으면 SVG 프레임0.
@@ -435,13 +441,15 @@
     function furnScale(id){ const it=ITEM_CATALOG.find(x=>x.id===id); return (it&&it.size)||1; }
     // 방(dock·홈)에서의 가구 렌더 높이(px) — 발자국 세로 칸수(footH)에 비례해 키움(캣타워 6칸=제일 큼, 스크래처 2칸, 방석·밥그릇 1칸).
     // 고양이 상호작용(캣타워 3층 올라가기 등)이 맞아떨어지도록 렌더·엔진(fh)이 같은 값을 쓴다. depth(뒤로 갈수록) 작게.
+    // 방 렌더 높이 배율(실물감) — 캣타워 제일 큼, 스크래처는 고양이 키만큼, 화장실=낮은 상자, 방석·그릇 작게.
+    const ROOM_H = { tower:6.2, scratcher:2.9, litterbox:1.5, cushion:1, bowl:0.8, waterbowl:0.8 };
     function furnRoomH(id, isDock, depth){
-      const foot=itemFoot(id);
-      const mult = foot.h>1 ? foot.h : ((id==='bowl'||id==='waterbowl')?0.8:1);   // 멀티셀=칸수, 1×1=그릇<방석
-      const unit = isDock ? (9 - depth*4) : (13 - depth*6);  // 칸당 픽셀(앞>뒤) — 위에서 내려다보는 원근(뒤로 갈수록 더 작게)
+      const mult = ROOM_H[id] || 1;
+      // 근거리(depth 0)는 크게, 원거리(depth 1)는 조금만 작게 — 멀어도 너무 작지 않게(원근 완화).
+      const unit = isDock ? (11 - depth*2) : (16 - depth*3);
       return Math.max(4, Math.round(unit*mult));
     }
-    function catName(id){ const c=PET_CATALOG.find(x=>x.id===id); return c?c.name:id; }
+    function catName(id){ const o=state.game&&state.game.owned&&state.game.owned.cats&&state.game.owned.cats[id]; if(o&&o.name) return o.name; const c=PET_CATALOG.find(x=>x.id===id); return c?c.name:id; }
 
     // ---- 날짜 키(KST 롤오버) ----
     function kstDayKey(){ const d=new Date(Date.now()+9*3600000); return d.toISOString().slice(0,10); }   // 2026-07-01
@@ -606,10 +614,12 @@
     }
     // 배치물 하나의 마크업(그릇=탭 급여·채움 반영, 화장실=똥 수거). isDock이면 dock 크기.
     function propMarkup(p, isDock){
-      const foot=itemFoot(p.itemId); const x=((p.c-0.5+(foot.w-1)/2)/12*100).toFixed(1);
-      // bottom을 방 높이의 %로(앞 행=바닥 앞끝, 뒤 행=바닥 뒤끝) → 배치 처음/끝이 실제 바닥에 반영되고 미니 프리뷰에서도 비율 유지
+      const foot=itemFoot(p.itemId);
+      // 앵커=배치칸 "좌측하단". x는 발자국 좌측 edge(가운데 정렬 X, CSS translateX(0)), 바닥은 발자국 앞줄(front row) 기준.
+      const x=((p.c-1)/12*100).toFixed(2);
+      const frontRow=p.r + foot.h - 1;   // 발자국에서 가장 앞(가까운) 줄에 바닥을 둠 → 가구가 위로 뜨지 않음
       // 반전: 격자 윗줄(작은 r)=방 뒤(멀리, 위·작게), 아랫줄(큰 r)=방 앞(가까이, 아래·크게)
-      const depth=(12-p.r)/11; const bottom=(isDock?(3+depth*40):(3+depth*50)).toFixed(1); const fh=furnRoomH(p.itemId,isDock,depth);
+      const depth=(12-frontRow)/11; const bottom=(isDock?(3+depth*40):(3+depth*50)).toFixed(1); const fh=furnRoomH(p.itemId,isDock,depth);
       const tap=(p.itemId==='bowl'||p.itemId==='waterbowl');
       let inner=tap? furnRoomSvg(p.itemId,p.key,{h:fh}) : furnSvg(p.itemId,{h:fh});
       if(p.itemId==='litterbox'){ const slots=p._poops||[]; const ph=Math.max(6,Math.round(fh*0.32));
@@ -656,9 +666,10 @@
       const hasRoom = stage.id==='crStage' || !!stage.closest('.cd-room');
       const isDock = stage.id!=='crStage';
       // 가구 위치(발자국 중앙 x) + 렌더 높이(fh) — 상호작용 시 올라갈 높이 계산에 사용
-      const props = hasRoom ? placedList().map(p=>{ const foot=itemFoot(p.itemId), depth=(12-p.r)/11;   // 반전: propMarkup과 동일 매핑
+      const props = hasRoom ? placedList().map(p=>{ const foot=itemFoot(p.itemId), depth=(12-(p.r+foot.h-1))/11;   // propMarkup과 동일(앞줄 기준)
         const fh=furnRoomH(p.itemId, isDock, depth);   // 렌더 높이와 동일 → 캣타워 층 lift가 실제 높이에 맞음
-        return { x:(p.c-0.5+(foot.w-1)/2)/12*W, itemId:p.itemId, fh }; }) : [];
+        // 가구는 좌측하단 앵커라 그림이 발자국 왼쪽에 그려짐 → 상호작용 x도 좌측(첫 칸 근처)으로 맞춤
+        return { x:(p.c-0.2)/12*W, itemId:p.itemId, fh }; }) : [];
       // 고양이마다 성격(속도·유휴빈도·방향전환·가구선호)을 랜덤 부여 → 개별적으로 움직임
       // 스프라이트 고양이는 정사각(폭=높이), SVG 고양이는 가로세로비 ~26/14.
       return acts.map(el=>{ const id=el.getAttribute('data-cat'), spr=hasSprite(id), fw=!!(spr&&PET_SPRITES[id]&&PET_SPRITES[id].frontWalk);
@@ -668,7 +679,7 @@
         sw:(spr?hh:Math.round(hh*26/14)), props, lift:0,
         mode:'roam', pause:0, goal:null, pose:null,
         // 유휴(그 자리에 멈춰 정면 보기) — 자주·오래 서서 정면을 보도록(poseDur에서 시간 늘림)
-        idle:0.0032+Math.random()*0.005, turn:0.004+Math.random()*0.010, seek:0.002+Math.random()*0.006, cool:0 };
+        idle:0.0032+Math.random()*0.005, turn:0.004+Math.random()*0.010, seek:0.005+Math.random()*0.009, cool:0 };
         setWalkDur(a); return a; });
     }
     // 가구 종류별 포즈: 밥그릇=앉아 먹기, 방석=식빵, 캣타워=낮잠, 스크래처=앉기, 그 외=식빵
@@ -778,7 +789,7 @@
       h+=slotRow;
       if(!owned.length) h+='<div class="empty" style="padding:20px;">아직 고양이가 없어요. 상점에서 입양해 보세요 🐾</div>';
       else { h+='<div class="catchips">'+owned.map(id=>{ const on=isActiveCat(id);
-        return '<button class="catchip'+(on?' on':'')+'" onclick="toggleActiveCat(\''+id+'\')">'+catFace(id,{h:44})+'<div class="cn" style="color:'+catTierColor(id)+'">'+catName(id)+'</div><div class="cstate">'+(on?'집에 있음':'대기')+'</div></button>'; }).join('')+'</div>';
+        return '<div class="catchip'+(on?' on':'')+'" role="button" tabindex="0" onclick="toggleActiveCat(\''+id+'\')">'+catFace(id,{h:44})+'<div class="cn">'+catNameSpan(id,catName(id))+'</div><div class="cstate">'+(on?'집에 있음':'대기')+'</div><button class="cn-edit" aria-label="이름 짓기" onclick="event.stopPropagation();openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></div>'; }).join('')+'</div>';
         h+='<div class="hintline" style="margin-top:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>고양이를 탭해 집에 내보내거나 대기시켜요(최대 '+sc+'마리)'+(sc<MAX_SLOTS?' · 오른쪽 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장':'')+'.</div>'; }
       return h;
     }
@@ -844,7 +855,7 @@
           else if(enough) act='<button class="buy" aria-label="'+c.name+' 구매('+c.price+' 은화)" onclick="buyCat(\''+c.id+'\')">구매</button>';
           else act='<button class="buy dis" disabled>'+(c.price-coins())+' 부족</button>';
           return '<div class="shopcard"><div class="thumb"><div class="fl"></div>'+catFace(c.id,{h:56})+'</div>'+
-            '<div class="meta"><b><span style="color:'+catTierColor(c.id)+'">'+c.name+'</span> <span class="tagmini">'+(c.breed||'코숏')+'</span></b><div class="desc">'+c.desc+'</div>'+
+            '<div class="meta"><b>'+catNameSpan(c.id,c.name)+' <span class="tagmini">'+(c.breed||'코숏')+'</span></b><div class="desc">'+c.desc+'</div>'+
             '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+c.price+'</span></div>'+
             '<div class="act">'+act+'</div></div>';
         }).join('');
@@ -982,10 +993,32 @@
     ];
     const TIER_ORDER = TIERS.map(t=>t.id);   // 높은 등급이 비면 한 단계씩 낮춰 대체할 때 사용
     function tierInfo(id){ return TIERS.find(t=>t.id===id)||TIERS[0]; }
-    // 동물 이름을 등급 색으로 표기. 일반(흰색)은 밝은 배경에서 안 보이므로 기본 잉크색 사용.
+    // 동물 이름을 등급 색으로 표기. 일반(흰색)은 밝은 배경에서 안 보이므로 기본 잉크색, 한정은 무지개(.tier-limited).
     function catTierColor(id){ const t=CAT_TIER[id]||'normal'; return t==='normal' ? 'var(--text)' : tierInfo(t).color; }
+    function catNameSpan(id, name){ const t=CAT_TIER[id]||'normal'; const n=escapeHtml(name);
+      if(t==='limited') return '<span class="tier-limited">'+n+'</span>';
+      return '<span style="color:'+catTierColor(id)+'">'+n+'</span>'; }
+    // 고양이 이름 변경(개별) — owned.cats[id].name에 저장. 등급색은 catNameSpan로 유지.
+    function openRenameCat(id){
+      closeRename();
+      const wrap=document.createElement('div'); wrap.id='renameCat'; wrap.className='gimenu-scrim';
+      wrap.onclick=function(e){ if(e.target===wrap) closeRename(); };
+      wrap.innerHTML='<div class="gimenu"><div class="gih">'+catFace(id,{h:34})+'<b>이름 짓기</b></div>'+
+        '<input class="input" id="renameInput" maxlength="12" value="'+escapeHtml(catName(id))+'" placeholder="고양이 이름(최대 12자)" style="width:100%;box-sizing:border-box;margin-bottom:4px;">'+
+        '<button class="gib sell" onclick="saveRenameCat(\''+id+'\')"><b>저장</b></button>'+
+        '<button class="gib ghost" onclick="closeRename()">취소</button></div>';
+      document.body.appendChild(wrap);
+      setTimeout(function(){ const i=$('renameInput'); if(i){ i.focus(); i.select(); } }, 40);
+    }
+    function closeRename(){ const m=$('renameCat'); if(m) m.remove(); }
+    function saveRenameCat(id){
+      const v=((val('renameInput')||'').trim()).slice(0,12);
+      gameRef().transaction(g=>{ g=normalizeGame(g); if(!g.owned.cats[id]) return g; if(v) g.owned.cats[id].name=v; else delete g.owned.cats[id].name; return g; })
+        .then(r=>{ if(r&&r.committed) toast(v?('이름: '+v):'기본 이름으로'); });
+      closeRename();
+    }
     // 테스트 배정(등급당 1) — 펫알=고양이 / 랜덤박스=가구
-    const CAT_TIER  = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'epic', cat_tuxedo:'legend', cat_chaos:'legend', cat_siamese:'limited' };
+    const CAT_TIER  = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'epic', cat_tuxedo:'legend', cat_chaos:'legend', cat_siamese:'limited', cat_bengal:'uncommon', cat_fold:'rare', cat_bora:'epic' };
     const ITEM_TIER = { cushion:'normal', bowl:'uncommon', scratcher:'rare', tower:'epic' };
     // 등급별 상점 가격(은화) — 확률(60/20/15/3.8/1/0.2%)에 맞춰 등급이 오를수록 약 2배씩.
     // 알 100은화(+금화1·중복 30은화 환급) 대비, 흔한 등급은 알보다 싸게·희귀 등급은 비싸게 → 직접구매 vs 뽑기 선택 성립.
@@ -1257,7 +1290,7 @@
         '<div class="fx-halo"></div><div class="fx-rays slow"></div>'+
         '<div class="fx-art pop">'+art+'</div>'+
         '<div class="fx-tier">'+t.name+'</div>'+
-        '<div class="fx-name">'+escapeHtml(itemName(_fx.kind,_fx.res.id))+'</div>'+
+        '<div class="fx-name">'+(_fx.kind==='egg'?catNameSpan(_fx.res.id,catName(_fx.res.id)):escapeHtml(itemName(_fx.kind,_fx.res.id)))+'</div>'+
         '<div class="fx-reward"><span class="rw"><span class="ci">'+goldSvg({h:18})+'</span>+1 금화</span>'+
           (_fx.dup?'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>+'+DUP_REFUND+' 은화 (중복)</span>':'')+'</div>'+
         '<button class="btn" onclick="closeFx()">확인</button>'+
