@@ -8,6 +8,9 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 변경 — 🐱 삼색(cat_calico) 고양이 SVG → PNG 스프라이트 교체
+- **삼색 고양이를 PixelLab 스프라이트로 교체**: `simple_pixel_art_calico_cat_white_with_orange_three.zip`(8방향 rotations + `Walk/east` 옆걷기)을 처리해 `public/assets/pets/cat_calico/`에 `walk.png`(288×48, 6프레임) + 정지 4방향 생성. `PET_SPRITES`에 `cat_calico` 등록 → 기존 SVG 매트릭스 삼색을 스프라이트로 대체(정상 옆보기 걷기 + 4방향 쉬기). 이제 스프라이트 고양이는 **고등어·치즈·삼색·하양·턱시도 5종**, SVG는 까망만 남음. 카탈로그·가격·등급(rare) 변경 없음. `sw.js` `v3.44.0`.
+
 ### 추가 — 🤵 턱시도(cat_tuxedo) 고양이 스프라이트
 - **턱시도 고양이 추가**: `simple_pixel_art_tuxedo_cat_black_body_with_white.zip`을 처리해 `public/assets/pets/cat_tuxedo/`에 `walk.png`(288×48, 6프레임) + 정지 4방향 생성. 이 zip은 8방향 rotations와 **옆보기(east) 걷기**(`Walk-<hash>/east`)를 포함해 **정상적인 옆걷기 시트**로 구성(하양과 달리 정면 걷기 아님). `PET_CATALOG`에 `cat_tuxedo`(종=cat, 이름=턱시도, 75 은화) + `PET_SPRITES`·`CAT_TIER`(한정 등급) 등록 → dock·방·상점·보유칩·뽑기 어디서나 스프라이트로 표시. `sw.js` `v3.43.0`(APP_SHELL에 `cat_tuxedo/` walk+4방향 추가). *기존 SVG 까망(`cat_black`)과는 별개의 고양이.*
 

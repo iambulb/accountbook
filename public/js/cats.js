@@ -320,6 +320,7 @@
     const PET_SPRITES = {
       cat_mackerel:{ walk:'assets/pets/cat_mackerel/walk.png', frames:6, stills:true },
       cat_cheese:  { walk:'assets/pets/cat_cheese/walk.png',   frames:6, stills:true },
+      cat_calico:  { walk:'assets/pets/cat_calico/walk.png',   frames:6, stills:true },
       // 하양: export에 옆보기(east) 걷기가 없어 정면(south) 걷기 6프레임으로 시트 구성 → 걸을 때 정면 보기, 쉴 때 4방향 정지.
       cat_white:   { walk:'assets/pets/cat_white/walk.png',    frames:6, stills:true },
       cat_tuxedo:  { walk:'assets/pets/cat_tuxedo/walk.png',   frames:6, stills:true }

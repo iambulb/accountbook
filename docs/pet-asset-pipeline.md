@@ -41,6 +41,7 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 | simple_pixel_art_cat_orange_tabby_chubby_with_crea.zip | `cat_cheese` | cat |
 | chibi_pixel_art_white_cat_pale_blue_eyes_sleepy_fa.zip | `cat_white` | cat (Walk이 east 없이 south만 있어 정면 걷기 시트로 구성) |
 | simple_pixel_art_tuxedo_cat_black_body_with_white.zip | `cat_tuxedo` | cat (8방향 rotations + `Walk-<hash>/east` 옆걷기 → 정상 옆보기 시트) |
+| simple_pixel_art_calico_cat_white_with_orange_three.zip | `cat_calico` | cat (8방향 rotations + `Walk/east` 옆걷기 → 기존 SVG 삼색을 스프라이트로 교체) |
 
 새 zip이 오면: 사용자가 id를 지정하면 그걸 쓰고, 없으면 종·색에서 합리적 slug(`<species>_<색>`)를 만들어 **이 표에 한 줄 추가**한다.
 
