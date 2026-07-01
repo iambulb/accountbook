@@ -76,9 +76,10 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 
 ## 걷기/쉬기 상태 (cats.js 통합 엔진)
 스프라이트 동물은 단일 rAF 엔진(`catLoop`/`stepActors`)의 액터로 배치되어 두 상태를 오간다.
-- **걷기(roam/goal)**: `walk.png`를 CSS `steps(6)`로 재생하며 좌우 이동. 서쪽 이동이면 `scaleX(-1)`로 뒤집음(시트는 east 기준).
-- **쉬기(pause)**: `enterPose`에서 `stills` 4방향(south=앞/north=뒤/east=우/west=좌) 중 하나를 무작위로 `--idle`에 지정하고 `.cspr.idle`로 애니메이션을 끔. 정지 이미지는 이미 올바른 방향이라 **플립하지 않음**(`scaleX(1)`).
+- **걷기(roam/goal)**: `.cspr`(한 프레임 창, `overflow:hidden`) 안쪽 필름 `.csprf`(288×48 스트립)를 CSS `steps(6)` + `transform:translateX`(`@keyframes csprFilm`)로 밀어 재생하며 좌우 이동. 서쪽 이동이면 `scaleX(-1)`로 뒤집음(시트는 east 기준).
+  - ⚠️ **깜빡임 방지 핵심**: 걷는 액터는 이동·프레임전환을 **전부 `transform`(합성)** 으로 한다. `background-position` 프레임 애니는 **금지**(합성 안 되고 매 프레임 메인스레드 리페인트 → 이동 페인트와 경쟁해 iOS/크롬에서 프레임 드롭·"순간 사라짐" 발생). 액터 위치는 `setXform`이 `translate3d`로만 옮기고 `left`/`top`은 건드리지 않는다.
+- **쉬기(pause)**: `enterPose`/`enterInteract`에서 `stills` 4방향(south=앞/north=뒤/east=우/west=좌) 중 하나를 `--idle`에 지정하고 `.cspr.idle`로 필름을 숨긴 뒤 그 스틸을 창 배경으로 보여줌. 정지 이미지는 이미 올바른 방향이라 **플립하지 않음**(`scaleX(1)`).
 - **reduced-motion**: `catActorHTML`이 처음부터 `.idle`(south=앞)로 고정, 이동·걷기 정지.
 
 ## 규격 상수
-- 프레임 48px, 6프레임, 시트폭 288px. 걷기 duration 0.72s (`styles.css`의 `.cspr` `csprWalk`와 일치).
+- 프레임 48px, 6프레임, 시트폭 288px. 걷기 duration 0.72s (`styles.css`의 `.csprf` `csprFilm`과 일치).

@@ -461,15 +461,22 @@
     .cd-coin { display:inline-flex; align-items:center; gap:5px; background:var(--card); border:1px solid var(--bd); border-radius:20px; padding:4px 11px 4px 5px; font-size:12px; font-weight:800; color:var(--text); z-index:2; }
     .cd-coin .cd-ci { width:16px; height:16px; flex:none; display:inline-flex; }
     .cd-stage { flex:1; height:100%; position:relative; }
-    /* ⚠️ 이동 액터엔 강제 합성 레이어(will-change/translateZ/backface)를 절대 쓰지 않는다 — iOS/크롬에서 이동+배경애니 겹칠 때 레이어가 순간 드롭돼 "사라졌다 보였다" 깜빡임 발생. 위치는 left(평범한 페인트)로만 이동. */
-    .cd-actor { position:absolute; left:0; bottom:9px; }
-    /* PNG 스프라이트 걷기(288×48 6프레임, east) — 걷기는 CSS steps(카드·무대 동일). 레이어 강제 없음 */
-    .cspr { image-rendering:pixelated; background-repeat:no-repeat; background-position:0 0;
-      background-image:var(--sheet); background-size:var(--fw) 100%;
-      animation:csprWalk var(--wdur,.72s) steps(6) infinite; }
-    .cspr.idle { background-image:var(--idle); background-size:100% 100%; background-position:0 0; animation:none; }
-    @keyframes csprWalk { from { background-position-x:0; } to { background-position-x:calc(-1 * var(--fw)); } }
-    @media (prefers-reduced-motion: reduce) { .cspr { animation:none; } }
+    /* ⚠️ 걷는 고양이 깜빡임(iOS/크롬 "잠깐 사라짐")의 근본 원인:
+       이동 액터에서 "위치 변경"과 "background-position 프레임 애니"가 둘 다 메인스레드 페인트라,
+       매 프레임 두 페인트가 경쟁하다 iOS/크롬이 한 프레임을 드롭 → 빈(투명) 프레임이 새어 나옴.
+       카드(정지)는 페인트원이 bg-position 하나뿐이라 안 깜빡였다(그게 결정적 차이).
+       해결: 이동도(translate3d) 프레임전환도(필름 translateX) 전부 transform=합성 → 걷는 동안 메인스레드 페인트 0. */
+    .cd-actor { position:absolute; left:0; bottom:9px; will-change:transform; }   /* 이동은 transform:translate3d(합성). left는 0 고정 */
+    /* .cspr = 한 프레임 크기의 창(overflow로 자름). 걷기 프레임은 안쪽 필름(.csprf)을 transform으로 밀어 재생(bg-position 아님) */
+    .cspr { position:relative; overflow:hidden; image-rendering:pixelated; }
+    .cspr.idle { background-image:var(--idle); background-size:100% 100%; background-repeat:no-repeat; }   /* 쉴 때: 정지 스틸을 창 배경으로 */
+    .cspr.idle .csprf { display:none; }   /* 쉴 땐 걷기 필름 숨김·정지 */
+    /* 필름 = 6프레임(288×48) 가로 스트립. translateX(합성)로 프레임 이동 — bg-position 페인트 대체 */
+    .csprf { position:absolute; left:0; top:0; height:100%; width:var(--fw); image-rendering:pixelated;
+      background-image:var(--sheet); background-size:100% 100%; background-repeat:no-repeat;
+      will-change:transform; animation:csprFilm var(--wdur,.72s) steps(6) infinite; }
+    @keyframes csprFilm { from { transform:translateX(0); } to { transform:translateX(calc(-1 * var(--fw))); } }
+    @media (prefers-reduced-motion: reduce) { .csprf { animation:none; } }
     .cd-empty { position:absolute; left:2px; bottom:16px; font-size:11.5px; font-weight:600; color:var(--sub); }
     .catdock.hidden { display:none; }
     /* dock = 컴팩트 웹캠 방(벽지 배경 + 가구 + 걷는 고양이) */

@@ -410,7 +410,7 @@
         //  - 이동 중엔 east(옆) 스틸을 보여주고 scaleX로 방향을 뒤집음, 정지/reduced-motion이면 south(정면).
         const idleOn = rm || fw;
         const face = (fw && !rm) ? 'east' : 'south';
-        return '<div class="cspr'+(idleOn?' idle':'')+'" style="width:'+s+'px;height:'+s+'px;--sheet:url('+assetUrl(sp.walk)+');--idle:url('+sprStill(id,face)+');--fw:'+(s*sp.frames)+'px;"></div>'; }
+        return '<div class="cspr'+(idleOn?' idle':'')+'" style="width:'+s+'px;height:'+s+'px;--sheet:url('+assetUrl(sp.walk)+');--idle:url('+sprStill(id,face)+');--fw:'+(s*sp.frames)+'px;"><i class="csprf"></i></div>'; }
       return catSide(id, 0, {h:h});
     }
     // 정면 썸네일(걷지 않는 표시용: 상점 카드·보유 칩·뽑기 결과 등).
@@ -632,11 +632,14 @@
       const frontRow=p.r + foot.h - 1;   // 발자국에서 가장 앞(가까운) 줄에 바닥을 둠 → 가구가 위로 뜨지 않음
       // 반전: 격자 윗줄(작은 r)=방 뒤(멀리, 위·작게), 아랫줄(큰 r)=방 앞(가까이, 아래·크게)
       const depth=(12-frontRow)/11; const bottom=(isDock?(3+depth*38):(3+depth*46)).toFixed(1); const fh=furnRoomH(p.itemId,isDock,depth);
+      // 원근 가림: 앞(frontRow 큰 값)일수록 z-index를 높여 앞 가구가 뒤 가구를 덮게 한다.
+      // (밥·물그릇/화장실의 고정 z-index:2가 이 깊이 순서를 깨뜨리던 문제 → 인라인 z-index로 덮어씀)
+      const z=Math.max(1, Math.round(frontRow));
       const tap=(p.itemId==='bowl'||p.itemId==='waterbowl');
       let inner=tap? furnRoomSvg(p.itemId,p.key,{h:fh}) : furnSvg(p.itemId,{h:fh});
       if(p.itemId==='litterbox'){ const slots=p._poops||[]; const ph=Math.max(6,Math.round(fh*0.32));
         inner+=slots.map(s=>'<span class="poop" onclick="collectPoop(event)" style="left:'+(20+(s%3)*26)+'%;top:'+(30+((s/3|0)*20))+'%;height:'+ph+'px" title="치우기 +'+POOP_REWARD+' 은화">'+poopSvg({h:ph})+'</span>').join(''); }
-      return '<div class="cr-prop'+(tap?' cr-tap':'')+(p.itemId==='litterbox'?' cr-litter':'')+'" style="left:'+x+'%;bottom:'+bottom+'%;"'+(tap?' onclick="event.stopPropagation();feedBowl(\''+p.key+'\')"':'')+'>'+inner+'</div>';
+      return '<div class="cr-prop'+(tap?' cr-tap':'')+(p.itemId==='litterbox'?' cr-litter':'')+'" style="left:'+x+'%;bottom:'+bottom+'%;z-index:'+z+';"'+(tap?' onclick="event.stopPropagation();feedBowl(\''+p.key+'\')"':'')+'>'+inner+'</div>';
     }
     // 우측 상단 "일괄 돌보기" 버튼(밥·물 채우고 똥 치우기) — dock·홈 공용
     function batchBtnHtml(){ return '<button class="cr-batch" onclick="event.stopPropagation();batchCare(this)" aria-label="일괄 돌보기: 밥·물 채우고 똥 치우기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 20c0-3.6 3.4-5.5 7.5-5.5s7.5 1.9 7.5 5.5"/><circle cx="8" cy="8.5" r="1.5"/><circle cx="16" cy="8.5" r="1.5"/><circle cx="12" cy="6.5" r="1.6"/></svg>돌보기</button>'; }
@@ -666,9 +669,10 @@
     // 걷기 스프라이트 애니메이션 주기(초): 발 놀림이 실제 이동속도에 맞도록 속도에 반비례 → 미끄러짐(무빙워크) 방지, 자연스러운 걸음.
     function walkDur(v, hh){ const stride=0.42*(hh||40), px=Math.max(0.001, v*58); return Math.max(0.45, Math.min(1.5, stride/px)).toFixed(2); }
     function setWalkDur(a){ if(a.spr){ const sc=a.el.querySelector('.cspr'); if(sc) sc.style.setProperty('--wdur', walkDur(a.v, a.hh)+'s'); } }
-    // 액터 위치/방향/상하바운스를 transform 하나로(레이아웃 left 대신 합성) — 깜빡임 방지. x는 정수 px 스냅.
-    // 위치는 left로 이동(합성 레이어 안 씀). transform은 방향 뒤집기(scaleX)+상호작용 올림(lift)만 — 값이 바뀔 때만 설정.
-    function actorXform(a, ty, dir){ const t=Math.round(ty||0); return (t?'translateY('+t+'px) ':'')+'scaleX('+(dir!=null?dir:a.dir)+')'; }
+    // 액터의 위치(x)·올림(lift)·방향(scaleX)을 transform 하나로 — 전부 합성(메인스레드 페인트 0)이라 걸을 때 깜빡이지 않음.
+    // ⚠️ left/top은 절대 매 프레임 건드리지 않는다(레이아웃·페인트 유발). x는 정수 px 스냅.
+    function setXform(a, dir, lift){ const d=(dir!=null?dir:a.dir), t=Math.round(-(lift!=null?lift:(a.lift||0)));
+      a.el.style.transform='translate3d('+Math.round(a.x)+'px,'+t+'px,0) scaleX('+d+')'; }
     const _eng={ raf:0, stage:null, actors:[], last:0, dirty:false };
     function markCatDirty(){ _eng.dirty=true; }
     function stopWalk(){ _eng.actors=[]; _eng.stage=null; }
@@ -698,7 +702,7 @@
         mode:'roam', pause:0, goal:null, pose:null,
         // 유휴(그 자리에 멈춰 정면 보기) — 자주·오래 서서 정면을 보도록(poseDur에서 시간 늘림)
         idle:0.0032+Math.random()*0.005, turn:0.004+Math.random()*0.010, seek:0.005+Math.random()*0.009, cool:0 };
-        setWalkDur(a); el.style.left=Math.round(a.x)+'px'; el.style.transform='scaleX('+a.dir+')'; a._pdir=a.dir;   // 위치=left, 걷기=CSS(카드와 동일). frame 구동/레이어 강제 없음
+        setWalkDur(a); el.style.left='0px'; setXform(a); a._pdir=a.dir;   // 위치·올림·방향 전부 transform(합성). left는 0 고정 → 걷는 동안 메인스레드 페인트 0
         return a; });
     }
     // 가구 종류별 포즈: 밥그릇=앉아 먹기, 방석=식빵, 캣타워=낮잠, 스크래처=앉기, 그 외=식빵
@@ -722,19 +726,20 @@
       const s=furnSpot(a, goal);
       a.mode='pause'; a.pose=s.pose; a.pause=s.dur; a.cool=1700; a.lift=s.lift||0;
       // 고양이 중심을 가구 그래픽 중앙(goal.x)에 맞춤(+옆 오프셋 dx). 캣타워/방석은 dx=0이라 정중앙에 앉음.
-      a.x=Math.max(2, Math.min(a.W-a.sw, goal.x - a.sw/2 + (s.dx||0))); a.el.style.left=Math.round(a.x)+'px';
+      a.x=Math.max(2, Math.min(a.W-a.sw, goal.x - a.sw/2 + (s.dx||0)));
       const dir=a.spr?1:a.dir;
       if(a.spr){ const sp=a.el.querySelector('.cspr'); if(sp){ sp.style.setProperty('--idle','url('+sprStill(id,s.face)+')'); sp.classList.add('idle'); } }
       else a.el.innerHTML=catPose(id, s.pose, {h:a.hh});
-      a.el.style.transform=actorXform(a, -a.lift, dir); a._pdir=dir;   // 정적 transform(lift+flip). 위치는 left
+      setXform(a, dir); a._pdir=dir;   // 위치+lift(위에서 설정)+flip을 정적 transform 하나로
     }
     function enterPose(a, id, pose){ a.mode='pause'; a.pose=pose; a.pause=poseDur(pose); a.cool=1400;
+      a.lift=0;
       if(a.spr){ const s=a.el.querySelector('.cspr');
         // 멈춰서 쉴 땐 항상 정면(south)을 본다. 이미지가 정방향이라 플립 없음(scaleX(1)).
         if(s){ s.style.setProperty('--idle','url('+sprStill(id,'south')+')'); s.classList.add('idle'); }
-        a.el.style.transform='scaleX(1)'; a._pdir=1; }
+        setXform(a, 1); a._pdir=1; }
       else { a.el.innerHTML=catPose(id, pose, {h:a.hh});
-        a.el.style.transform='scaleX('+a.dir+')'; a._pdir=a.dir; } }
+        setXform(a, a.dir); a._pdir=a.dir; } }
     function stepActors(dt){
       _eng.actors.forEach(a=>{
         a.t+=dt*0.004; if(a.cool>0)a.cool-=dt; const id=a.el.getAttribute('data-cat');
@@ -743,7 +748,7 @@
             // 이동 재개: 보통 고양이는 CSS 걷기 시트로(.idle 제거), frontWalk 고양이는 옆(east) 정지스틸로 방향만 맞춤
             if(a.frontWalk){ s.style.setProperty('--idle','url('+sprStill(id,'east')+')'); s.classList.add('idle'); }
             else s.classList.remove('idle'); } }
-          a.el.style.transform='scaleX('+a.dir+')'; a._pdir=a.dir; } return; }   // 재출발: lift 해제·방향 반영, 걷기는 CSS
+          setXform(a); a._pdir=a.dir; } return; }   // 재출발: lift 해제·방향 반영, 걷기는 필름(csprFilm)
         // 유휴 제스처(그 자리 앉기/식빵/낮잠) — 쿨다운 후에만
         if(a.mode==='roam' && a.cool<=0 && Math.random()<a.idle){ enterPose(a, id, ['loaf','sit','sleep'][Math.floor(Math.random()*3)]); return; }
         // 가끔 방향 전환(개별)
@@ -757,11 +762,9 @@
         a.x += a.dir*a.v*dt*0.06;
         const max=a.W-a.sw;
         if(a.x<2){ a.x=2; a.dir=1; if(a.mode==='goal'){a.mode='roam';a.goal=null;} } else if(a.x>max){ a.x=max; a.dir=-1; if(a.mode==='goal'){a.mode='roam';a.goal=null;} }
-        if(!a.spr){ a.fc+=dt; if(a.fc>170){ a.fc=0; a.frame^=1; a.el.innerHTML=catSide(id,a.frame,{h:a.hh}); } }   // SVG 폴백: 2프레임 교대(스프라이트는 CSS csprWalk가 처리)
-        // 위치는 left(정수 px)로만 이동 → 합성 레이어/매프레임 transform 없이 평범하게 그림(깜빡임 원인 제거).
-        a.el.style.left=Math.round(a.x)+'px';
-        // 방향(뒤집기)은 바뀔 때만 transform 설정(매 프레임 X)
-        if(a.dir!==a._pdir){ a._pdir=a.dir; a.el.style.transform='scaleX('+a.dir+')'; }
+        if(!a.spr){ a.fc+=dt; if(a.fc>170){ a.fc=0; a.frame^=1; a.el.innerHTML=catSide(id,a.frame,{h:a.hh}); } }   // SVG 폴백: 2프레임 교대(스프라이트는 필름 csprFilm이 처리)
+        // 이동·방향을 transform 하나로(translate3d+scaleX) — 전부 합성, 매 프레임 페인트 0 → 깜빡임 근본 제거
+        setXform(a); a._pdir=a.dir;
       });
     }
     function catLoop(ts){
