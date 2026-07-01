@@ -483,6 +483,24 @@
     .mdone { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:800; color:var(--sub); flex:none; }
     .mdone svg { width:16px; height:16px; }
     .prog-pill { font-size:12px; font-weight:800; color:var(--sub); flex:none; }
+    /* 방에 배치된 가구 */
+    .cr-props { position:absolute; left:0; right:0; bottom:0; top:0; z-index:1; }
+    .cr-prop { position:absolute; transform:translateX(-50%); color:var(--text2); }
+    .cr-prop .px { display:block; }
+    /* 격자 배치 에디터 (12×12) */
+    .editwrap { background:var(--card); border:1px solid var(--bd); border-radius:18px; padding:14px; margin-top:2px; }
+    .grid12 { display:grid; grid-template-columns:repeat(12,1fr); gap:2px; margin-bottom:12px; }
+    .gc { aspect-ratio:1; border-radius:4px; background:var(--soft); border:1px dashed var(--bd); display:flex; align-items:center; justify-content:center; box-sizing:border-box; overflow:hidden; }
+    .gc.fill { background:var(--soft2); border:1px solid transparent; color:var(--text2); }
+    .gc.fill .px { width:88%; height:88%; }
+    .palette { display:flex; gap:10px; }
+    .pitem { flex:1; border-radius:14px; background:var(--soft); border:1.5px solid transparent; display:flex; flex-direction:column; align-items:center; gap:5px; padding:11px 4px 9px; color:var(--text2); }
+    .pitem.on { border-color:var(--primary); background:var(--card); color:var(--text); }
+    .pitem span { font-size:10.5px; font-weight:700; }
+    .pitem .pq { font-size:9.5px; font-weight:800; color:var(--sub); }
+    .hintline { display:flex; align-items:center; gap:7px; font-size:11.5px; font-weight:600; color:var(--sub); margin-top:12px; padding:0 2px; }
+    .hintline svg { width:15px; height:15px; flex:none; }
+    .qty { font-size:11.5px; font-weight:700; color:var(--sub); margin-top:6px; display:block; text-align:right; }
 
     /* ===== 접근성(A11y) ===== */
     /* 키보드 포커스에만 또렷한 링(마우스 클릭 시엔 안 보임) */

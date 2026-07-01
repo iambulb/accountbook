@@ -4,67 +4,76 @@
 
     // ---- 픽셀 매트릭스 (도트 아트) ----
     // 고양이 정면(코숏) — 귀·눈·코·줄무늬·가슴털·꼬리. X=외곽 B=몸 L=밝은털 S=줄무늬 E=눈 P=코 I=귀안
+    // 정면 앉은 고양이(코숏, 상점/칩) — design_sample 스타일: 둥근 몸+뾰족 귀(핑크 안쪽)+큰 눈+가슴털+타비
     const M_CAT_FRONT = [
-      "..XX....XX......",
-      ".XIIX..XIIX.....",
-      ".XBBBBBBBBX.....",
-      ".XBSBBBBSBX.....",
-      ".XBBBBBBBBX.....",
-      ".XBEBBBBEBX.....",
-      ".XBBBPPBBBX.....",
-      ".XBBBBBBBBX.....",
-      ".XBBSBBSBBX.....",
-      ".XBBBBBBBBXX....",
-      ".XBLLLLLLBBBX...",
-      ".XBLLLLLLBBBBX..",
-      ".XBLLLLLLBBBX...",
-      ".XBBLLLLBBBXX...",
-      ".XXBBBBBBXX.....",
-      "..XXXXXXXX......"
+      "....XX......XX....",
+      "...XIIXXXXXXIIX...",
+      "...XBBBBSSBBBBX...",
+      "..XBBBSBBBBSBBBX..",
+      "..XBBBBBBBBBBBBX..",
+      "..XBBSEEBBEESBBX..",
+      "..XBBBEEBBEEBBBX..",
+      "...XBBBBPPBBBBXXX.",
+      "..XBBBLLLLLLBBBBBX",
+      "..XBBBLLLLLLBBBSBX",
+      "..XBBBLLLLLLBBBBBX",
+      "..XBBBLLLLLLBBBBBX",
+      "..XBBBLLLLLLBBBXX.",
+      "...XBBLLLLLLBBX...",
+      "....XXLLXXLLXX....",
+      "......XX..XX......"
     ];
-    // 삼색(칼리코) — 흰 바탕 + 주황(O)/먹(K) 패치
+    // 삼색(칼리코) 정면 — 흰 바탕 + 주황(O)/먹(K) 패치(타비 대신)
     const M_CALICO_FRONT = [
-      "..OO....KK......",
-      ".OIIO..KIIK.....",
-      ".XOOBBBBKKX.....",
-      ".XBSBBBBSKX.....",
-      ".XBBBBBBBBX.....",
-      ".XBEBBBBEBX.....",
-      ".XBBBPPBBBX.....",
-      ".XBBBBBBBBX.....",
-      ".XBBOBBKBBX.....",
-      ".XBBBBBBKBXX....",
-      ".XBLLLLLKBBBX...",
-      ".XBLLLLLLBBBBX..",
-      ".XBLLLLLLBBBX...",
-      ".XBBLLLLBBBXX...",
-      ".XXBBBBBBXX.....",
-      "..XXXXXXXX......"
+      "....XX......XX....",
+      "...XKKX....XOOX...",
+      "...XIIXXXXXXIIX...",
+      "...XKKKBBBBBBBX...",
+      "..XBKKKKBBBBBBBX..",
+      "..XBKKKBBBBOOOBX..",
+      "..XBBBEEBBEEOOBX..",
+      "..XBBBEEBBEEOOBX..",
+      "...XBBBBPPBBBBXXX.",
+      "..XBBBLLLLLOOOBBBX",
+      "..XBBBLLLLLOOOBKBX",
+      "..XBBBLLLLLOOOBBBX",
+      "..XBBBLLLLLOOOBBBX",
+      "..XBBBLLLLLLBBBXX.",
+      "...XBBLLLLLLBBX...",
+      "....XXLLXXLLXX...."
     ];
-    // 고양이 측면(걷기) 프레임 2종 — 앞을 보고 좌우로 걷는 실루엣. 다리만 교차로 달라짐.
+    // 측면 걷기 2프레임(오른쪽 바라봄) — 4다리·올린 꼬리·타비 줄무늬. 다리만 교차.
     const M_CAT_SIDE_A = [
-      "............XX..",
-      "...XX......XIIX.",
-      "..XIIX....XBBBBX",
-      "..XBBBXXXXXBEBBX",
-      ".XBBBBBBBBBBBBBX",
-      ".XBBBBBBBBBBBBBX",
-      ".XBLLLLLLLLLBBX.",
-      ".XBLLLLLLLLLBX..",
-      ".XXBBXXBBXXBXX..",
-      "..XX...XX..XX..."
+      "...XX............XX..XX...",
+      "..XXX...........XIBXXBIX..",
+      ".XXX............XBBXXBBX..",
+      ".XSX............XBBSBBBBX.",
+      ".XSX.XXXXXXXXXXXBBBBSBBBBX",
+      ".XSXXBBSBSBSBSBSBBBBBEEBBX",
+      ".XSXBBBBSBSBSBSBBBBBBBBBPX",
+      ".XSXBBBBBBBBBBBBBBBBBBBBBX",
+      ".XXXBBBBBBBBBBBBBBBBBBBBBX",
+      "...XBBLLLLLLLLLLBBBBBBBBX.",
+      "....XBLLLLLLLLLLBBXXXXXX..",
+      ".....XXBBBBXXXXXXBBBBX....",
+      "......XBBBBX....XBBBBX....",
+      ".......XXXX......XXXX....."
     ];
     const M_CAT_SIDE_B = [
-      "............XX..",
-      "...XX......XIIX.",
-      "..XIIX....XBBBBX",
-      "..XBBBXXXXXBEBBX",
-      ".XBBBBBBBBBBBBBX",
-      ".XBBBBBBBBBBBBBX",
-      ".XBLLLLLLLLLBBX.",
-      ".XBLLLLLLLLLBX..",
-      ".XBXXBBXXBBXXBX.",
-      "...XX..XX..XX..."
+      "...XX............XX..XX...",
+      "..XXX...........XIBXXBIX..",
+      ".XXX............XBBXXBBX..",
+      ".XSX............XBBSBBBBX.",
+      ".XSX.XXXXXXXXXXXBBBBSBBBBX",
+      ".XSXXBBSBSBSBSBSBBBBBEEBBX",
+      ".XSXBBBBSBSBSBSBBBBBBBBBPX",
+      ".XSXBBBBBBBBBBBBBBBBBBBBBX",
+      ".XXXBBBBBBBBBBBBBBBBBBBBBX",
+      "...XBBLLLLLLLLLLBBBBBBBBX.",
+      "....XBLLLLLLLLLLBBXXXXXX..",
+      ".....XBBXXBBXXXXBBXXBBX...",
+      ".....XBBXXBBX..XBBXXBBX...",
+      "......XX..XX....XX..XX...."
     ];
     const M_COIN = [
       "...XXXXXX...",
@@ -261,9 +270,10 @@
       if(!state.game) state.game=normalizeGame(null);   // 스냅샷 도착 전 안전 가드
       const build=()=>{
         let h='<div class="coinbar"><span class="coin"><span class="ci">'+coinSvg({h:20})+'</span>'+coins().toLocaleString()+'<small>은화</small></span></div>';
-        h+='<div class="catseg">'+[['home','홈'],['shop','상점'],['mission','미션']].map(t=>'<button class="'+(_catTab===t[0]?'on':'')+'" onclick="setCatTab(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div>';
+        h+='<div class="catseg">'+[['home','홈'],['shop','상점'],['place','배치'],['mission','미션']].map(t=>'<button class="'+(_catTab===t[0]?'on':'')+'" onclick="setCatTab(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div>';
         if(_catTab==='home') h+=catHomeHtml();
         else if(_catTab==='shop') h+=catShopHtml();
+        else if(_catTab==='place') h+=catPlaceHtml();
         else h+=catMissionHtml();
         return h;
       };
@@ -273,7 +283,10 @@
     }
     function catHomeHtml(){
       const cats=activeCats();
-      let h='<div class="catroom" id="catRoom"><div class="cr-wall"></div><div class="cr-base"></div><span class="cr-cam"><i></i>LIVE · 우리집</span><div class="cr-stage" id="crStage"></div></div>';
+      // 배치된 가구를 방 바닥에 매핑(c→가로, r→앞뒤 깊이)
+      const props=placedList().map(p=>{ const x=((p.c-0.5)/12*100).toFixed(1); const depth=(p.r-1)/11; const bottom=(3+depth*30).toFixed(0);
+        return '<div class="cr-prop" style="left:'+x+'%;bottom:'+bottom+'px;">'+furnSvg(p.itemId,{h:(20+depth*10).toFixed(0)})+'</div>'; }).join('');
+      let h='<div class="catroom" id="catRoom"><div class="cr-wall"></div><div class="cr-base"></div><span class="cr-cam"><i></i>LIVE · 우리집</span><div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div></div>';
       h+='<div class="sech"><span class="l">우리집 고양이</span><span class="s">'+cats.length+' / 3 활성</span></div>';
       if(!cats.length) h+='<div class="empty" style="padding:20px;">아직 고양이가 없어요. 상점에서 입양해 보세요 🐾</div>';
       else h+='<div class="catchips">'+cats.map(id=>'<div class="catchip">'+catFront(id,{h:44})+'<div class="cn">'+catName(id)+'</div></div>').join('')+'</div>';
@@ -306,21 +319,66 @@
       });
       _rw.raf=requestAnimationFrame(roomTick);
     }
+    let _shopSub='cats';
+    function setShopSub(s){ _shopSub=s; renderCatHouse(); }
     function catShopHtml(){
-      let h='<div class="subseg"><button class="on">고양이</button></div>';
-      h+=CAT_CATALOG.map(c=>{
-        const owned=ownsCat(c.id), enough=coins()>=c.price;
-        let act;
-        if(owned) act='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>보유</span>';
-        else if(enough) act='<button class="buy" onclick="buyCat(\''+c.id+'\')">구매</button>';
-        else act='<button class="buy dis" disabled>'+(c.price-coins())+' 부족</button>';
-        return '<div class="shopcard"><div class="thumb"><div class="fl"></div>'+catFront(c.id,{h:56})+'</div>'+
-          '<div class="meta"><b>'+c.name+' <span class="tagmini">코숏</span></b><div class="desc">'+c.desc+'</div>'+
-          '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+c.price+'</span></div>'+
-          '<div class="act">'+act+'</div></div>';
-      }).join('');
-      h+='<div class="note"><b>중복 소유</b> 고양이는 종당 1마리. 구매하면 자동으로 집에 들어와 걸어다녀요.</div>';
+      let h='<div class="subseg"><button class="'+(_shopSub==='cats'?'on':'')+'" onclick="setShopSub(\'cats\')">고양이</button><button class="'+(_shopSub==='furn'?'on':'')+'" onclick="setShopSub(\'furn\')">가구</button></div>';
+      if(_shopSub==='cats'){
+        h+=CAT_CATALOG.map(c=>{
+          const owned=ownsCat(c.id), enough=coins()>=c.price;
+          let act;
+          if(owned) act='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>보유</span>';
+          else if(enough) act='<button class="buy" onclick="buyCat(\''+c.id+'\')">구매</button>';
+          else act='<button class="buy dis" disabled>'+(c.price-coins())+' 부족</button>';
+          return '<div class="shopcard"><div class="thumb"><div class="fl"></div>'+catFront(c.id,{h:56})+'</div>'+
+            '<div class="meta"><b>'+c.name+' <span class="tagmini">코숏</span></b><div class="desc">'+c.desc+'</div>'+
+            '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+c.price+'</span></div>'+
+            '<div class="act">'+act+'</div></div>';
+        }).join('');
+        h+='<div class="note"><b>중복 소유</b> 고양이는 종당 1마리. 구매하면 자동으로 집에 들어와 걸어다녀요.</div>';
+      } else {
+        h+=ITEM_CATALOG.map(it=>{
+          const enough=coins()>=it.price;
+          const act=enough?'<button class="buy" onclick="buyItem(\''+it.id+'\')">구매</button>':'<button class="buy dis" disabled>'+(it.price-coins())+' 부족</button>';
+          return '<div class="shopcard"><div class="thumb">'+furnSvg(it.id,{h:52})+'</div>'+
+            '<div class="meta"><b>'+it.name+'</b><div class="desc">'+it.desc+'</div>'+
+            '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+it.price+'</span></div>'+
+            '<div class="act">'+act+'<span class="qty">보유 '+itemQty(it.id)+'</span></div></div>';
+        }).join('');
+        h+='<div class="note"><b>수량 허용</b> 가구는 여러 개 살 수 있어요. 구매 후 <b>배치</b> 탭에서 격자에 놓습니다.</div>';
+      }
       return h;
+    }
+    // ---- 가구 인벤토리/배치 ----
+    function itemQty(id){ const it=state.game&&state.game.owned.items[id]; return it?(Number(it.qty)||0):0; }
+    function placedList(){ const p=(state.game&&state.game.home.placed)||{}; return Object.keys(p).map(k=>({key:k, r:+k.split('_')[0], c:+k.split('_')[1], itemId:p[k].itemId})); }
+    function itemPlaced(id){ return placedList().filter(x=>x.itemId===id).length; }
+    function itemRemaining(id){ return itemQty(id)-itemPlaced(id); }
+    function buyItem(id){
+      const it=ITEM_CATALOG.find(x=>x.id===id); if(!it) return;
+      if(coins()<it.price){ toast((it.price-coins())+' 은화 부족', true); return; }
+      gameRef().transaction(g=>{ g=normalizeGame(g); if(g.coins<it.price) return g;
+        g.coins-=it.price; g.owned.items[id]=g.owned.items[id]||{qty:0,boughtAt:new Date().toISOString()};
+        g.owned.items[id].qty=(Number(g.owned.items[id].qty)||0)+1; return g;
+      }).then(res=>{ if(res.committed) toast(it.name+' 구매! 배치 탭에서 놓아보세요'); });
+    }
+    let _selItem=null;
+    function selItem(id){ _selItem=(_selItem===id?null:id); renderCatHouse(); }
+    function placeCell(r,c){
+      const key=r+'_'+c; const placed=(state.game.home.placed)||{};
+      if(placed[key]){ gameRef().child('home/placed/'+key).remove(); toast('회수했어요'); return; }
+      if(!_selItem){ toast('놓을 가구를 먼저 선택하세요'); return; }
+      if(itemRemaining(_selItem)<=0){ toast('배치할 수량이 없어요(상점에서 구매)', true); return; }
+      gameRef().child('home/placed/'+key).set({itemId:_selItem});
+    }
+    function catPlaceHtml(){
+      const placed=(state.game.home.placed)||{};
+      let cells='';
+      for(let r=1;r<=12;r++)for(let c=1;c<=12;c++){ const key=r+'_'+c, it=placed[key];
+        cells+='<div class="gc'+(it?' fill':'')+'" onclick="placeCell('+r+','+c+')">'+(it?furnSvg(it.itemId,{fit:true}):'')+'</div>'; }
+      const pal=ITEM_CATALOG.map(it=>'<button class="pitem'+(_selItem===it.id?' on':'')+'" onclick="selItem(\''+it.id+'\')">'+furnSvg(it.id,{h:26})+'<span>'+it.name+'</span><span class="pq">남은 '+itemRemaining(it.id)+'</span></button>').join('');
+      return '<div class="editwrap"><div class="grid12">'+cells+'</div><div class="palette">'+pal+'</div>'+
+        '<div class="hintline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>가구를 골라 빈 칸을 탭해 놓고, 놓인 가구를 탭하면 회수돼요.</div></div>';
     }
     function catMissionHtml(){
       const key=kstDayKey(), done=state.game.missions[key]||{};
