@@ -63,7 +63,6 @@
       let h='<div class="sech"><span class="l">'+(isToday?'오늘 · ':'')+(dt.getMonth()+1)+'월 '+dt.getDate()+'일 ('+WEEK[dt.getDay()]+')</span>'+
         '<span class="s">'+(ge?'<span class="red">-'+ge.toLocaleString()+'</span>':'')+(gi?' <span class="green">+'+gi.toLocaleString()+'</span>':'')+'</span></div>';
       h+= rows.length ? '<div>'+rows.map(txRowHtml).join('')+'</div>' : '<div class="empty">이 날 거래가 없습니다</div>';
-      h+='<button class="btn ghost" style="margin-top:8px;" onclick="openTxSheet(null,null,\''+ds+'\')">+ 이 날짜에 추가</button>';
       return h;
     }
 
@@ -542,7 +541,7 @@
           ranked.map(r=>{ const c=budgetColor(r.u.pct); return '<div style="margin:10px 0;"><div class="row" style="font-size:13px;"><span>'+(r.p.icon||'📒')+' '+escapeHtml(r.p.name)+'</span><span>'+won(r.u.used)+(r.p.budgetAmount?(' / '+won(r.u.amount)):'')+'</span></div>'+(r.p.budgetAmount?('<div class="bar"><i style="width:'+Math.min(r.u.pct,100)+'%;background:'+c+'"></i></div>'):'')+'</div>'; }).join('')+'</div>';
       }
       const pa=prepaidAccounts().filter(canSee);
-      if(pa.length) h+='<div class="card"><div class="sec-title" style="margin:0 0 8px;">선불·포인트 잔액</div>'+pa.map(a=>'<div class="row" style="padding:7px 2px;"><span>'+((a.provider&&a.provider!=='manual')?PROVIDER_LABEL[a.provider]+' · ':'')+escapeHtml(a.name)+'</span><b class="blue">'+won(accountBalance(a.id))+'</b></div>').join('')+'</div>';
+      if(pa.length) h+='<div class="card" style="margin-top:22px;"><div class="sec-title" style="margin:0 0 8px;">선불·포인트 잔액</div>'+pa.map(a=>'<div class="row" style="padding:7px 2px;"><span>'+((a.provider&&a.provider!=='manual')?PROVIDER_LABEL[a.provider]+' · ':'')+escapeHtml(a.name)+'</span><b class="blue">'+won(accountBalance(a.id))+'</b></div>').join('')+'</div>';
       $('content').innerHTML=h;
     }
 
@@ -721,7 +720,7 @@
       (state.memberships||[]).forEach(w=>{
         const on=w.id===cur, isGroup=w.type==='group', memCount=Object.keys(w.members||{}).length;
         h+='<div class="ws-item'+(on?' on':'')+'">'+
-            '<span class="ws-ic">'+svgWrap(isGroup?CAT_SVG.people:CAT_SVG.home)+'</span>'+
+            '<span class="ws-ic">'+(w.photo?'<img src="'+w.photo+'" alt="" style="width:44px;height:44px;border-radius:14px;object-fit:cover;">':svgWrap(isGroup?CAT_SVG.people:CAT_SVG.home))+'</span>'+
             '<div style="flex:1;min-width:0;" onclick="chooseWorkspace(\''+w.id+'\')">'+
               '<div class="ws-name">'+escapeHtml(w.name||'가계부')+'</div>'+
               '<div class="ws-meta">'+(isGroup?('그룹 · 멤버 '+memCount+'명'):'개인 전용')+'</div>'+
@@ -842,6 +841,38 @@
     function removeProfilePhoto(){ window._profilePhoto=''; const a=$('profAvatar'); if(a) a.innerHTML=avatarHtml(state.uid, state.userName, 96, ''); }
     function onSaveProfile(){ const name=val('profName').trim(); if(!name){ toast('이름을 입력하세요', true); return; } saveProfile(name, window._profilePhoto); toast('프로필을 저장했어요'); closeSheet(); }
 
+    // ===== 가계부(워크스페이스) 프로필: 이름 + 사진 =====
+    // 사진 있으면 <img>, 없으면 이름 이니셜 그라데이션. photoOverride: 미리보기용
+    function wsAvatarHtml(name, photo, size, photoOverride){
+      size=size||52;
+      const p = photoOverride!==undefined ? photoOverride : photo;
+      if(p) return '<img class="avatar" src="'+p+'" alt="" style="width:'+size+'px;height:'+size+'px;">';
+      const ch=String(name||'가').trim().charAt(0)||'가';
+      return '<div class="avatar avatar-fallback" style="width:'+size+'px;height:'+size+'px;background:'+avatarGrad(name||'ws')+';font-size:'+Math.round(size*0.42)+'px;">'+escapeHtml(ch)+'</div>';
+    }
+    function openWsProfileSheet(){
+      const ws=state.wsMeta||{}, isGroup=ws.type==='group';
+      if(isGroup && !isWsOwner()){ toast('그룹 이름·사진은 소유자만 변경할 수 있어요', true); return; }
+      window._wsPhoto=undefined;   // undefined=유지 / ''=삭제 / dataURL=신규
+      let h='<div style="text-align:center;margin:6px 0 16px;">'+
+        '<div id="wsAvatar" style="display:inline-flex;">'+wsAvatarHtml(ws.name, ws.photo, 96)+'</div>'+
+        '<div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">'+
+          '<button class="btn sm" onclick="pickWsPhoto()">사진 변경</button>'+
+          '<button class="btn sm ghost" onclick="removeWsPhoto()">사진 삭제</button></div></div>';
+      h+='<div class="field"><label>가계부 이름</label><input class="input" id="wsName" value="'+escapeHtml(ws.name||'')+'" placeholder="예: 우리집 가계부"></div>';
+      h+='<div class="tx-sub" style="margin:2px 2px 14px;">사진은 256px로 줄여 저장돼요.'+(isGroup?' 그룹 멤버 모두에게 보입니다.':'')+'</div>';
+      h+='<button class="btn" onclick="onSaveWsProfile()">저장</button>';
+      openSheet('가계부 프로필', h);
+    }
+    function pickWsPhoto(){
+      const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
+      inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(!f) return;
+        resizeImageFile(f, 256, durl=>{ window._wsPhoto=durl; const a=$('wsAvatar'); if(a) a.innerHTML='<img class="avatar" src="'+durl+'" alt="" style="width:96px;height:96px;">'; }); };
+      inp.click();
+    }
+    function removeWsPhoto(){ window._wsPhoto=''; const a=$('wsAvatar'); if(a) a.innerHTML=wsAvatarHtml((state.wsMeta||{}).name, '', 96, ''); }
+    function onSaveWsProfile(){ const name=val('wsName').trim(); if(!name){ toast('이름을 입력하세요', true); return; } saveWsProfile(name, window._wsPhoto); toast('가계부 프로필을 저장했어요'); closeSheet(); }
+
     // ===== 권한 / 공동 설정 =====
     function openSharedSettings(){
       const ws=state.wsMeta||{}, isGroup=ws.type==='group', owner=isWsOwner();
@@ -916,8 +947,10 @@
       if(deferredPrompt) h+='<div class="install-banner" onclick="installApp()">📲 홈 화면에 앱으로 설치하기</div>';
       // 프로필/워크스페이스 행
       const wsSub = isGroup ? ('그룹 · 멤버 '+memCount+'명'+(ws.code?(' · 초대코드 '+escapeHtml(ws.code)):'')) : '개인 가계부';
-      h+='<div class="prow"><span class="av" style="background:'+avatarGrad(ws.name||state.wsId)+'"></span>'+
-         '<div class="pnm"><b>'+escapeHtml(ws.name||'가계부')+'</b><span>'+wsSub+'</span></div>'+
+      const canEditWs = !isGroup || isWsOwner();
+      h+='<div class="prow"><div style="display:flex;align-items:center;gap:13px;flex:1;min-width:0;"'+(canEditWs?' onclick="openWsProfileSheet()"':'')+'>'+
+         wsAvatarHtml(ws.name, ws.photo, 52)+
+         '<div class="pnm"><b>'+escapeHtml(ws.name||'가계부')+(canEditWs?' <span class="pill">편집</span>':'')+'</b><span>'+wsSub+'</span></div></div>'+
          '<button class="cnt" onclick="openWorkspaceSheet()">전환</button></div>';
       // 4열 기능 그리드
       const activeSubs=(state.subscriptions||[]).filter(s=>s.status==='active').length;
