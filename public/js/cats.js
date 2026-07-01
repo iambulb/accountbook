@@ -188,6 +188,11 @@
     ];
     const EGG_PAL={X:'#c9c2b0',W:'#FBFBFD',S:'#E7E3DA',R:'#F04452',O:'#F0883C',Y:'#F2C84B',G:'#2FAE7A',B:'#3182F6',P:'#9B6FC8'};
     const BOX_PAL={X:'#c7ccd3',W:'#FBFBFD',R:'#E23B4E',K:'#9e2530',D:'#3a3d44',M:'#aeb4bd',C:'#e6e9ee'};
+    // 은화 속 검은 고양이의 앞발(특별↑ 연출에서 톡 건드림)
+    const M_PAW = [
+      "...XXXXX..","..XBBBBBX.",".XBBBBBBBX",".XBPBPBPBX",".XBBBBBBBX",".XBBPPBBBX",".XBBPPBBBX","..XBBBBBX.","...XXXXX.."
+    ];
+    const PAW_PAL={X:'#181a1e',B:'#2b2e34',P:'#E08b9d'};
 
     // 카탈로그(코드 상수) — 저장은 보유 id만
     const CAT_CATALOG = [
@@ -248,6 +253,7 @@
     function goldSvg(opt){ return pxSvg(M_COIN, GOLD_PAL, opt); }
     function eggSvg(stage, opt){ return pxSvg(stage>=2?M_EGG_C2:(stage>=1?M_EGG_C1:M_EGG), EGG_PAL, opt); }
     function boxSvg(opt){ return pxSvg(M_BOX, BOX_PAL, opt); }
+    function pawSvg(opt){ return pxSvg(M_PAW, PAW_PAL, opt); }
     function furnSvg(id, opt){ const M={cushion:M_CUSHION,bowl:M_BOWL,tower:M_TOWER,scratcher:M_SCRATCHER}[id]; return pxSvg(M, FURN_PALS[id], opt); }
     function catName(id){ const c=CAT_CATALOG.find(x=>x.id===id); return c?c.name:id; }
 
@@ -676,12 +682,33 @@
       fx.className='fx on';
     }
     function fxTap(){
-      if(!_fx) return; const it=$('fxItem'); if(!it) return;
+      if(!_fx||_fx.busy) return; const it=$('fxItem'); if(!it) return;
       if(_fx.kind==='egg'){
         _fx.stage++;
-        if(_fx.stage>=3){ fxBurst(); setTimeout(fxReveal, 360); return; }
+        if(_fx.stage>=3){ _fx.busy=true; fxClimax(); return; }
         it.innerHTML=eggSvg(_fx.stage,{h:150}); it.classList.remove('shake'); void it.offsetWidth; it.classList.add('shake');
-      } else { fxBurst(true); it.classList.add('fx-open'); setTimeout(fxReveal, 480); }
+      } else { _fx.busy=true; fxClimax(); }
+    }
+    // 오픈 직전 연출: (흔들림) → [특별↑: 검은 고양이 앞발로 톡 → 추가 흔들림] → 등급색 빛 새어나옴 → 버스트 → 등장
+    function fxClimax(){
+      const fx=$('catFx'), st=fx&&fx.querySelector('.fx-stage'), it=$('fxItem'); if(!st||!it) return;
+      const t=tierInfo(_fx.res.tier), epic=['epic','legend','limited'].indexOf(_fx.res.tier)>=0, lim=_fx.res.tier==='limited';
+      const hint=$('fxHint'); if(hint) hint.remove();
+      it.classList.add('fx-preshake');
+      let t0=680;
+      if(epic){
+        setTimeout(()=>{ st.insertAdjacentHTML('beforeend','<div class="fx-paw" id="fxPaw">'+pawSvg({h:66})+'</div>'); const p=$('fxPaw'); if(p){ void p.offsetWidth; p.classList.add('tap'); } }, 460);
+        setTimeout(()=>{ it.classList.remove('fx-preshake'); void it.offsetWidth; it.classList.add('fx-hit'); }, 660);
+        setTimeout(()=>{ const p=$('fxPaw'); if(p) p.remove(); it.classList.remove('fx-hit'); }, 980);
+        t0=1120;
+      }
+      setTimeout(()=>{
+        it.classList.remove('fx-preshake','fx-hit'); void it.offsetWidth; it.classList.add('fx-tremble');
+        if(_fx.kind==='box') it.classList.add('fx-ajar');
+        st.insertAdjacentHTML('beforeend','<div class="fx-leak'+(lim?' rainbow':'')+'" style="color:'+t.color+'"></div>');
+      }, t0);
+      setTimeout(()=>{ fxBurst(epic); }, t0+700);
+      setTimeout(fxReveal, t0+700+320);
     }
     function fxBurst(big){
       const st=$('catFx').querySelector('.fx-stage'); if(!st) return;
