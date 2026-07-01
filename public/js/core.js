@@ -154,6 +154,9 @@
     function openSheet(title, html){
       const sh=$('sheet');
       state._sheetRefresh=null;   // 새 시트 열 때 이전 시트의 실시간 갱신 훅 해제(stale 방지)
+      // 드래그로 닫혔을 때 남은 인라인 스타일 초기화(다시 정상 위치에서 올라오도록)
+      sh.style.transition=''; sh.style.transform=''; { const ov=$('overlay'); if(ov) ov.style.opacity=''; }
+      setupSheetDrag();
       if(!sh.classList.contains('on')) sh._returnFocus=document.activeElement;  // 닫을 때 돌아갈 포커스
       $('sheetTitle').textContent=title;
       $('sheetBody').innerHTML=html;
@@ -161,6 +164,27 @@
       sh.classList.add('on');
       // 다이얼로그로 포커스 이동(모바일 키보드 안 뜨도록 입력칸이 아닌 시트 컨테이너로)
       setTimeout(()=>{ try{ sh.focus(); }catch(e){} }, 30);
+    }
+    // 시트 상단(핸들·헤더)을 아래로 드래그하면 따라 내려오고, 충분히 내리면 닫힘(살짝이면 제자리 복귀). 1회만 바인딩.
+    function setupSheetDrag(){
+      if(state._sheetDragInit) return; const sh=$('sheet'); if(!sh) return; state._sheetDragInit=true;
+      const grips=[sh.querySelector('.sheet-handle'), sh.querySelector('.sheet-head')].filter(Boolean);
+      let sy=0, dy=0, on=false;
+      function move(e){ if(!on) return; dy=e.clientY-sy; if(dy<0) dy=0;
+        sh.style.transform='translateX(-50%) translateY('+dy+'px)';
+        const ov=$('overlay'); if(ov) ov.style.opacity=String(Math.max(0,1-dy/420)); }
+      function up(){ if(!on) return; on=false;
+        window.removeEventListener('pointermove',move); window.removeEventListener('pointerup',up); window.removeEventListener('pointercancel',up);
+        sh.style.transition=''; const ov=$('overlay'); if(ov) ov.style.opacity='';
+        const h=sh.getBoundingClientRect().height||600;
+        if(dy>Math.min(150,h*0.3)){ sh.style.transform='translateX(-50%) translateY(100%)'; closeSheet(); }   // 충분히 내리면 닫힘(다음 openSheet에서 인라인 초기화)
+        else { sh.style.transform=''; }   // 살짝이면 제자리 복귀(.on 유지 → 트랜지션으로 되올라감)
+      }
+      grips.forEach(g=>g.addEventListener('pointerdown',function(e){
+        if(e.target.closest('.x')) return;   // 닫기(X) 버튼은 클릭으로 처리
+        on=true; dy=0; sy=e.clientY; sh.style.transition='none';
+        window.addEventListener('pointermove',move); window.addEventListener('pointerup',up); window.addEventListener('pointercancel',up);
+      }));
     }
     function closeSheet(){
       const sh=$('sheet');

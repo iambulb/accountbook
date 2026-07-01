@@ -947,7 +947,8 @@
       logout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5M20 12H9M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/></svg>',
       gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>',
       chev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>',
-      cat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l2 4M19 4l-2 4"/><path d="M5 8c-1 2-1 5 0 7 1.6 3 4 4 7 4s5.4-1 7-4c1-2 1-5 0-7"/><path d="M9.5 12h.01M14.5 12h.01M12 14l-1 1h2z"/></svg>'
+      cat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l2 4M19 4l-2 4"/><path d="M5 8c-1 2-1 5 0 7 1.6 3 4 4 7 4s5.4-1 7-4c1-2 1-5 0-7"/><path d="M9.5 12h.01M14.5 12h.01M12 14l-1 1h2z"/></svg>',
+      cam:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="12" height="10" rx="2"/><path d="M15 10.5l6-3v9l-6-3z"/></svg>'
     };
     function gcell(icon,label,fn,badge){ return '<button class="gcell" onclick="'+fn+'"><span class="gic">'+icon+(badge?'<span class="gbadge">'+badge+'</span>':'')+'</span><span class="glabel">'+escapeHtml(label)+'</span></button>'; }
     function lrow(icon,label,fn,val){ return '<button class="lrow" onclick="'+fn+'"><span class="li">'+icon+'</span><span class="lt">'+label+'</span><span class="lv">'+(val||'')+'</span><span class="chev">'+MORE_ICON.chev+'</span></button>'; }
@@ -1000,7 +1001,7 @@
       h+=lrow(MORE_ICON.list,'거래내역',"closeSheet();goHome('list')");
       h+=lrow(MORE_ICON.download,'CSV 내보내기','exportCSV()');
       h+=lrow(MORE_ICON.moon,'다크 모드','toggleTheme();openSettingsSheet()', state.theme==='dark'?'켜짐':'꺼짐');
-      h+=lrow(MORE_ICON.cat,'알뜰샵 dock','toggleDockHidden();openSettingsSheet()', (typeof dockHiddenLabel==='function'?dockHiddenLabel():''));
+      h+=lrow(MORE_ICON.cam,'펫캠','toggleDockHidden();openSettingsSheet()', (typeof dockHiddenLabel==='function'?dockHiddenLabel():''));
       // 개발자 모드(canel94@gmail.com 전용)
       if(typeof isDev==='function' && isDev()){
         h+=lrow(MORE_ICON.gear,'개발자 모드','toggleDevMode();openSettingsSheet()', devOn()?'켜짐':'꺼짐');

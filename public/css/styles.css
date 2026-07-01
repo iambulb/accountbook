@@ -321,8 +321,10 @@
       max-height:92vh; max-height:92dvh; display:flex; flex-direction:column; box-shadow:var(--shadow-lg);
     }
     #sheet.on { transform:translateX(-50%) translateY(0); }
-    .sheet-handle { width:38px; height:4px; border-radius:3px; background:var(--line); margin:10px auto 4px; flex-shrink:0; }
-    .sheet-head { display:flex; align-items:center; justify-content:space-between; padding:8px 22px 12px; }
+    /* 상단(핸들·헤더)을 잡고 아래로 드래그하면 시트가 닫힘 → 세로 제스처를 스크롤로 뺏기지 않게 touch-action 차단 */
+    .sheet-handle { width:38px; height:4px; border-radius:3px; background:var(--line); margin:10px auto 4px; flex-shrink:0; cursor:grab; touch-action:none; }
+    .sheet-handle:active { cursor:grabbing; }
+    .sheet-head { display:flex; align-items:center; justify-content:space-between; padding:8px 22px 12px; touch-action:none; }
     .sheet-head h3 { font-size:18px; font-weight:800; letter-spacing:-.02em; }
     .sheet-head .x { font-size:22px; color:var(--sub); padding:4px; }
     .sheet-body { padding:0 22px 24px; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
@@ -450,7 +452,7 @@
     .cd-empty { position:absolute; left:2px; bottom:16px; font-size:11.5px; font-weight:600; color:var(--sub); }
     .catdock.hidden { display:none; }
     /* dock = 컴팩트 웹캠 방(벽지 배경 + 가구 + 걷는 고양이) */
-    .cd-room { position:relative; height:70px; overflow:hidden; cursor:pointer; }   /* 세로 축소: 휑한 벽지 최소화 */
+    .cd-room { position:relative; height:110px; overflow:hidden; cursor:pointer; }   /* 캠 세로 확장(고양이 크게 보이도록) */
     .cd-room .cr-wall { position:absolute; inset:0; z-index:0; }
     .cd-room .cr-floor { position:absolute; left:0; right:0; bottom:0; height:66%; background:var(--soft2); z-index:0; }
     .cd-room .cr-base { position:absolute; left:0; right:0; bottom:66%; height:1px; background:var(--bd); z-index:1; }
