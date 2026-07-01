@@ -1194,7 +1194,7 @@
     function palMove(e){
       if(!_pal) return;
       if(!_pal.moved){ if(Math.abs(e.clientX-_pal.sx)+Math.abs(e.clientY-_pal.sy)<6) return; _pal.moved=true;
-        if(itemRemaining(_pal.id)<=0){ toast(catFurnName(_pal.id)+' 남은 수량이 없어요(상점에서 구매)', true); _pal=null; window.removeEventListener('pointermove',palMove); window.removeEventListener('pointerup',palUp); window.removeEventListener('pointercancel',palUp); return; }
+        if(itemRemaining(_pal.id)<=0){ toast(catFurnName(_pal.id)+' 남은 수량이 없어요(상점에서 구매)', true); _pal=null; document.body.classList.remove('dragging'); window.removeEventListener('pointermove',palMove); window.removeEventListener('pointerup',palUp); window.removeEventListener('pointercancel',palUp); return; }
         const g=document.createElement('div'); g.className='palghost'; g.innerHTML=furnSvg(_pal.id,{h:44}); document.body.appendChild(g); _pal.ghost=g; }
       if(_pal.ghost){ _pal.ghost.style.left=e.clientX+'px'; _pal.ghost.style.top=e.clientY+'px'; }
       const grid=$('placeGrid'); if(!grid) return; const r=grid.getBoundingClientRect();
