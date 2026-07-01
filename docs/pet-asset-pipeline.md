@@ -43,6 +43,7 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 | simple_pixel_art_tuxedo_cat_black_body_with_white.zip | `cat_tuxedo` | cat (8방향 rotations + `Walk-<hash>/east` 옆걷기 → 정상 옆보기 시트) |
 | simple_pixel_art_calico_cat_white_with_orange_three.zip | `cat_calico` | cat (8방향 rotations + `Walk/east` 옆걷기 → 기존 SVG 삼색을 스프라이트로 교체) |
 | simple_pixel_art_cat_black_yellow_eyes_extra_round.zip | `cat_black` | cat (`Walk/east` 옆걷기 + 4방향 → 기존 SVG 까망을 스프라이트로 교체) |
+| imple_pixel_art_chaos_cat_dark_grey_and_brown_swir.zip | `cat_chaos` | cat (신규 · `Walk/east` 옆걷기 + 8방향 rotations) |
 
 새 zip이 오면: 사용자가 id를 지정하면 그걸 쓰고, 없으면 종·색에서 합리적 slug(`<species>_<색>`)를 만들어 **이 표에 한 줄 추가**한다.
 

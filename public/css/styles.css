@@ -496,6 +496,9 @@
     .shopcard { display:flex; align-items:center; gap:14px; background:var(--card); border:1px solid var(--bd); border-radius:18px; padding:14px; margin-bottom:11px; }
     .shopcard .thumb { width:74px; height:74px; border-radius:15px; background:var(--soft); display:flex; align-items:center; justify-content:center; flex:none; position:relative; overflow:hidden; }
     .shopcard .thumb .fl { position:absolute; left:0; right:0; bottom:14px; height:1px; background:var(--bd); }
+    /* 상점 가구 썸네일 — 실제 크기와 무관하게 60px 상자에 맞춰(비율 유지) 적당히 표시 */
+    .shopcard .thumb .furnfit { width:60px; height:60px; display:flex; align-items:center; justify-content:center; }
+    .shopcard .thumb .furnfit .px { width:100%; height:100%; }
     .shopcard .meta { flex:1; min-width:0; }
     .shopcard .meta b { font-size:15px; font-weight:800; display:flex; align-items:center; gap:6px; }
     .shopcard .meta .desc { font-size:11.5px; color:var(--sub); font-weight:500; margin-top:3px; line-height:1.4; }
