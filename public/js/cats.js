@@ -690,7 +690,7 @@
       // 고양이마다 성격(속도·유휴빈도·방향전환·가구선호)을 랜덤 부여 → 개별적으로 움직임
       // 스프라이트 고양이는 정사각(폭=높이), SVG 고양이는 가로세로비 ~26/14.
       return acts.map(el=>{ const id=el.getAttribute('data-cat'), spr=hasSprite(id), fw=!!(spr&&PET_SPRITES[id]&&PET_SPRITES[id].frontWalk);
-        const v=0.18+Math.random()*0.24;   // 속도 폭을 조금 좁혀 걸음이 차분하게(주기는 walkDur로 이동속도에 맞춤)
+        const v=0.14+Math.random()*0.18;   // 속도 폭을 조금 좁혀 걸음이 차분하게(주기는 walkDur로 이동속도에 맞춤)
         const a={ el, id, spr, frontWalk:fw, x:(parseFloat(el.dataset.x)||parseFloat(el.style.left)||0), dir:Math.random()<0.5?-1:1,
         v:v, t:Math.random()*6, frame:0, fc:Math.random()*170, W, hh,
         sw:(spr?hh:Math.round(hh*26/14)), props, lift:0,
@@ -709,12 +709,13 @@
     // 캣타워=3층 중 한 층에 올라가 정면 보며 쉼 / 방석=위에 잠시 / 밥그릇=뒤에서 앉기 / 스크래처=옆에서 잠시
     function furnSpot(a, goal){
       const it=goal.itemId, fh=goal.fh||a.hh;
+      // 가구 상호작용 머무는 시간을 10배로(캣타워 26~62초 등) — 오래 자리 잡고 쉼
       if(it==='tower'){ const frac=[0.30,0.62,0.92][Math.floor(Math.random()*3)];   // 3층 발판 높이(바닥/중간/꼭대기 발판)
-        return { lift:Math.round(fh*frac), face:'south', dx:0, pose:'sit', dur:2600+Math.random()*3600 }; }
-      if(it==='cushion') return { lift:Math.round(fh*0.4), face:'south', dx:0, pose:'loaf', dur:2000+Math.random()*3000 };
-      if(it==='bowl')    return { lift:Math.round(fh*0.15), face:'south', dx:0, pose:'sit', dur:2000+Math.random()*2600 };
-      if(it==='scratcher') return { lift:0, face:(Math.random()<0.5?'east':'west'), dx:Math.round(a.sw*0.6)*(Math.random()<0.5?1:-1), pose:'sit', dur:1800+Math.random()*2800 };
-      return { lift:0, face:'south', dx:0, pose:'loaf', dur:2200+Math.random()*2600 };
+        return { lift:Math.round(fh*frac), face:'south', dx:0, pose:'sit', dur:26000+Math.random()*36000 }; }
+      if(it==='cushion') return { lift:Math.round(fh*0.4), face:'south', dx:0, pose:'loaf', dur:20000+Math.random()*30000 };
+      if(it==='bowl')    return { lift:Math.round(fh*0.15), face:'south', dx:0, pose:'sit', dur:20000+Math.random()*26000 };
+      if(it==='scratcher') return { lift:0, face:(Math.random()<0.5?'east':'west'), dx:Math.round(a.sw*0.6)*(Math.random()<0.5?1:-1), pose:'sit', dur:18000+Math.random()*28000 };
+      return { lift:0, face:'south', dx:0, pose:'loaf', dur:22000+Math.random()*26000 };
     }
     // 가구에 도착 → 자리 잡고 머무름(랜덤 시간). 스프라이트는 해당 방향 정지, SVG는 포즈. lift로 발판/방석 위로 올림.
     function enterInteract(a, id, goal){
@@ -747,7 +748,7 @@
         // 가끔 방향 전환(개별)
         if(a.mode==='roam' && Math.random()<a.turn){ a.dir*=-1; }
         // 가끔 속도 변화(개별) — 바뀐 속도에 맞춰 걷기 주기도 갱신(미끄러짐 방지)
-        if(a.mode==='roam' && Math.random()<0.003){ a.v=0.18+Math.random()*0.24; setWalkDur(a); }
+        if(a.mode==='roam' && Math.random()<0.003){ a.v=0.14+Math.random()*0.18; setWalkDur(a); }
         // 가구로 이동 결정(가구 있을 때, 쿨다운 후)
         if(a.mode==='roam' && a.props.length && a.cool<=0 && Math.random()<a.seek){ a.goal=a.props[Math.floor(Math.random()*a.props.length)]; a.mode='goal'; }
         // 가구 도착 판정은 "고양이 중심"(a.x+sw/2) 기준 → 가구 그래픽 중앙(goal.x)에 정확히 서게
