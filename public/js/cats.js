@@ -598,7 +598,18 @@
     // 테스트 배정(등급당 1) — 펫알=고양이 / 랜덤박스=가구
     const CAT_TIER  = { mackerel:'normal', cheese:'uncommon', calico:'rare', black:'epic', white:'legend' };
     const ITEM_TIER = { cushion:'normal', bowl:'uncommon', scratcher:'rare', tower:'epic' };
-    function rollTier(){ const r=Math.random()*100; let acc=0; for(const t of TIERS){ acc+=t.p; if(r<acc) return t.id; } return 'normal'; }
+    // ---- 개발자 모드(canel94@gmail.com 전용): 확률·구성 로컬 오버라이드 ----
+    const DEV_EMAIL='canel94@gmail.com';
+    function isDev(){ return (state.userEmail||'').toLowerCase()===DEV_EMAIL; }
+    function devOn(){ return isDev() && localStorage.getItem('catDev')==='1'; }
+    function toggleDevMode(){ if(!isDev()) return; localStorage.setItem('catDev', devOn()?'0':'1'); }
+    function devCfg(){ try{ return JSON.parse(localStorage.getItem('catDevCfg')||'null')||{}; }catch(e){ return {}; } }
+    function saveDevCfg(c){ localStorage.setItem('catDevCfg', JSON.stringify(c)); }
+    function effTiers(){ const c=devOn()&&devCfg().tiers; if(!c) return TIERS; return TIERS.map(t=>({ id:t.id, name:t.name, color:t.color, p:(c[t.id]!=null?Number(c[t.id]):t.p) })); }
+    function effCatTier(){ return devOn()? Object.assign({},CAT_TIER,devCfg().catTier||{}) : CAT_TIER; }
+    function effItemTier(){ return devOn()? Object.assign({},ITEM_TIER,devCfg().itemTier||{}) : ITEM_TIER; }
+    // 확률은 합이 100이 아니어도 총합 기준 비율로 적용(개발 편의)
+    function rollTier(){ const arr=effTiers(); const total=arr.reduce((s,t)=>s+(Number(t.p)||0),0)||1; const r=Math.random()*total; let acc=0; for(const t of arr){ acc+=(Number(t.p)||0); if(r<acc) return t.id; } return arr[0].id; }
     // 등급 롤 → 해당 등급 풀에서 랜덤. 비면 한 단계 아래로 내려가며 탐색.
     function rollFromPool(tierMap){
       let ti=TIER_ORDER.indexOf(rollTier());
@@ -612,7 +623,7 @@
     // 구매+롤(원자적): 은화-100, 금화+1, 지급(신규 고양이/가구 or 중복 환급). 성공 시 연출.
     function openGacha(kind){
       if(coins()<GACHA_PRICE){ toast((GACHA_PRICE-coins())+' 은화 부족', true); return; }
-      const res = rollFromPool(kind==='egg'?CAT_TIER:ITEM_TIER); if(!res) return;
+      const res = rollFromPool(kind==='egg'?effCatTier():effItemTier()); if(!res) return;
       const dup = kind==='egg' && ownsCat(res.id);
       gameRef().transaction(g=>{
         g=normalizeGame(g);
@@ -731,3 +742,38 @@
       fx.className='fx on reveal';
     }
     function closeFx(){ const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx=null; }
+
+    // ================= 개발자 패널: 펫알/박스 확률·구성 =================
+    function openDevGacha(){
+      if(!isDev()) return;
+      const cfg=devCfg(), tp=cfg.tiers||{}, ct=effCatTier(), it=effItemTier();
+      const tierOpt=(cur)=>TIERS.map(t=>'<option value="'+t.id+'"'+(cur===t.id?' selected':'')+'>'+t.name+'</option>').join('');
+      let h='<div class="note">개발자 전용 · 이 기기(브라우저)에만 적용됩니다. 확률 합이 100이 아니어도 비율로 반영돼요.</div>';
+      h+='<div class="sec-title">연출 테스트(무료)</div>';
+      h+='<div class="tx-sub" style="margin:0 2px 6px;">펫알</div><div class="chip-row">'+TIERS.map(t=>'<button class="chip" onclick="devPreview(\'egg\',\''+t.id+'\')"><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
+      h+='<div class="tx-sub" style="margin:8px 2px 6px;">랜덤박스</div><div class="chip-row">'+TIERS.map(t=>'<button class="chip" onclick="devPreview(\'box\',\''+t.id+'\')"><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
+      h+='<div class="sec-title" style="margin-top:18px;">등급 확률(%)</div>';
+      h+=TIERS.map(t=>'<div class="row" style="padding:5px 2px;"><span><b class="tier-'+t.id+'">'+t.name+'</b></span><input class="input" style="width:96px;text-align:right;" inputmode="decimal" id="dp_'+t.id+'" value="'+(tp[t.id]!=null?tp[t.id]:t.p)+'"></div>').join('');
+      h+='<div class="sec-title" style="margin-top:18px;">펫알 — 고양이 등급</div>';
+      h+=CAT_CATALOG.map(c=>'<div class="row" style="padding:5px 2px;"><span>'+c.name+'</span><select class="input" style="width:120px;" id="dc_'+c.id+'">'+tierOpt(ct[c.id])+'</select></div>').join('');
+      h+='<div class="sec-title" style="margin-top:18px;">랜덤박스 — 가구 등급</div>';
+      h+=ITEM_CATALOG.map(i=>'<div class="row" style="padding:5px 2px;"><span>'+i.name+'</span><select class="input" style="width:120px;" id="di_'+i.id+'">'+tierOpt(it[i.id])+'</select></div>').join('');
+      h+='<button class="btn" style="margin-top:14px;" onclick="saveDevGacha()">저장</button>';
+      h+='<button class="btn ghost" style="margin-top:8px;" onclick="resetDevGacha()">기본값으로 초기화</button>';
+      openSheet('개발자 · 펫알/박스', h);
+    }
+    function saveDevGacha(){
+      const c={ tiers:{}, catTier:{}, itemTier:{} };
+      TIERS.forEach(t=>{ const v=parseFloat(val('dp_'+t.id)); if(!isNaN(v)) c.tiers[t.id]=v; });
+      CAT_CATALOG.forEach(x=>{ c.catTier[x.id]=val('dc_'+x.id); });
+      ITEM_CATALOG.forEach(x=>{ c.itemTier[x.id]=val('di_'+x.id); });
+      saveDevCfg(c); toast('개발자 설정을 저장했어요'); closeSheet();
+    }
+    function resetDevGacha(){ localStorage.removeItem('catDevCfg'); toast('기본값으로 초기화'); openDevGacha(); }
+    // 연출만 미리보기(은화 소모·지급 없음)
+    function devPreview(kind, tierId){
+      const map = kind==='egg'? effCatTier() : effItemTier();
+      let id = Object.keys(map).find(k=>map[k]===tierId);
+      if(!id) id = kind==='egg' ? (Object.keys(map)[0]||'mackerel') : (Object.keys(map)[0]||'cushion');
+      closeSheet(); _fx=null; runGachaFx(kind, { id, tier:tierId }, false);
+    }
