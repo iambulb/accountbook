@@ -356,7 +356,7 @@
     .amtbig { display:flex; align-items:baseline; gap:6px; padding:8px 14px; margin-bottom:6px; }
     .amtbig .w { font-size:24px; font-weight:800; color:var(--sub); }
     .amtbig-in { flex:1; min-width:0; border:none; background:transparent; font-size:38px; font-weight:800; text-align:right; letter-spacing:-.03em; color:var(--text); padding:0; }
-    .amtbig-in:focus { outline:none; }
+    .amtbig-in:focus { outline:none; box-shadow:0 3px 0 -1px var(--primary); caret-color:var(--primary); }
     .chips { display:flex; gap:8px; overflow-x:auto; padding:2px 0 8px; }
     .chips::-webkit-scrollbar { display:none; }
     .chips .chip { flex:none; }

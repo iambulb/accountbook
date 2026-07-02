@@ -8,6 +8,15 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 변경 — ⌨️ 거래 금액을 물리 키보드로 입력(데스크톱)
+- **컴퓨터에서 지출 등 금액 입력 시 마우스로 화면 키패드를 누르지 않아도 되도록**, 금액칸(`#sAmount`)에 물리 키보드 입력을 지원. 숫자→입력, Backspace→삭제, Enter→저장, 붙여넣기(숫자만 추출) 지원(`kpKey`/`kpPaste`).
+- 모바일은 기존대로 화면 키패드 유지(OS 소프트키보드가 뜨지 않게 `readonly`·`inputmode:none` 유지, 물리 키는 `keydown`으로 라우팅). 데스크톱(`pointer:fine`)에선 시트가 열릴 때 금액칸에 자동 포커스 + 포커스 밑줄 표시. (예산·정기·구독 금액칸은 이미 키보드 입력 가능)
+- `sw.js` `v3.86.0`.
+
+### 변경 — 🏷️ 앱 이름 '알뜰' → '알뜰' + 앱 아이콘을 로그인 펫알 아이콘으로 통일
+- 앱 이름(브랜드)을 **알뜰 → 알뜰**로 전부 변경(타이틀·매니페스트 `name`/`short_name`·애플 웹앱 타이틀·로그인 제목·설치 안내·설정 버전 표기 등). **영문/코드명은 그대로 `Eggarden`**, 상점 이름 `알뜰샵`은 변경하지 않음.
+- 앱 아이콘(`icon.svg`·`icon-192`·`icon-512`·`icon-maskable-512`)을 **로그인 로고와 같은 '뜰 위의 펫알'(알 속 고양이 얼굴 + 잔디·꽃)** 도트 아트로 교체(정사각·하늘 배경 풀블리드).
+
 ### 추가 — 🐱 고양이 '초코'(`cat_choco`) 추가 (총 13종) + 📄 펫 목록 문서
 - 초콜릿빛 갈색+크림 입가·가슴의 고양이를 `simple_pixel_art_chocolate_brown_cat_cream_muzzle.zip`에서 스프라이트로 추가(`Walk/east` 옆걷기 정상, 고급 등급·100 은화). `PET_CATALOG`·`PET_SPRITES`·`CAT_TIER`·`sw.js` APP_SHELL 반영. `sw.js` `v3.85.0`.
 - **구현된 펫 전체 목록 문서**([docs/pet-list.md](pet-list.md)) 추가 — 펫별 id·종·등급·가격·**이미지 폴더 경로**·아트·설명 표 + 폴더 구조(`walk.png`+4방향)·코드 진입점 정리.
@@ -260,8 +269,8 @@
 ### 변경 — 🐱 고등어 고양이 PNG 스프라이트 걷기(PixelLab 시트)
 - **고등어(mackerel) 고양이를 PNG 스프라이트 시트 기반 걷기로 교체**: `design_sample/files/`의 PixelLab 에셋(`cat_mackerel_walk.png` 288×48 6프레임 east + `cat_mackerel_idle.png` 48×48)을 `public/assets/cats/mackerel/`에 넣고, dock·방 무대에서 고등어는 **CSS `steps(6)` 스프라이트 애니메이션**(`.cspr`)으로 걷도록 함(md 지시서 방식). 좌우 이동·방향 전환(`scaleX`)·유휴/가구 상호작용은 기존 통합 rAF 엔진 유지, 정지·포즈 시 `idle.png`로 전환(`.cspr.idle`). 시트가 없는 다른 고양이(치즈·삼색·까망·하양)는 기존 SVG 매트릭스 2프레임 걷기를 그대로 사용(`catActorHTML`가 시트 유무로 분기, `CAT_SPRITES`). `prefers-reduced-motion`에서 걷기 정지. `sw.js` `v3.35.0`(APP_SHELL에 walk/idle PNG 추가).
 
-### 변경 — 앱 이름을 "알뜰집"(코드/영문 Eggarden)으로 변경
-- **앱 이름·로그인 화면 제목을 `알뜰집`으로 변경**: 브라우저 탭 제목(`<title>`), 설명 메타, iOS 홈화면 이름(`apple-mobile-web-app-title`), PWA 매니페스트(`name`·`short_name`·`description`), 로그인 화면 제목(`<h1>`), 더보기 하단 버전 표기(`가계부 v3`→`알뜰집 v3`)를 모두 **`알뜰집`** 으로 통일. **영문/코드 표기가 필요한 경우 `Eggarden`** 사용(예: `sw.js` 주석). 일반 명사 "가계부"(기능 설명·"내 가계부"·"개인 가계부" 등)는 유지. **영문/코드 표기가 필요한 경우 `Eggarden`** 사용. `sw.js` `v3.36.0`.
+### 변경 — 앱 이름을 "알뜰"(코드/영문 Eggarden)으로 변경
+- **앱 이름·로그인 화면 제목을 `알뜰`으로 변경**: 브라우저 탭 제목(`<title>`), 설명 메타, iOS 홈화면 이름(`apple-mobile-web-app-title`), PWA 매니페스트(`name`·`short_name`·`description`), 로그인 화면 제목(`<h1>`), 더보기 하단 버전 표기(`가계부 v3`→`알뜰 v3`)를 모두 **`알뜰`** 으로 통일. **영문/코드 표기가 필요한 경우 `Eggarden`** 사용(예: `sw.js` 주석). 일반 명사 "가계부"(기능 설명·"내 가계부"·"개인 가계부" 등)는 유지. **영문/코드 표기가 필요한 경우 `Eggarden`** 사용. `sw.js` `v3.36.0`.
 - **프로젝트 코드 식별자 `gglee` → `eggarden` 리네이밍**: 서비스워커 캐시 프리픽스 `CACHE_VERSION` `gglee-budget-*` → **`eggarden-v3.38.0`**(활성화 시 구 `gglee-budget-*` 캐시 자동 삭제). 문서의 프로젝트 경로 예시·아키텍처 캐시명·APK 패키지 예시(`com.gglee.budget`→`com.eggarden.app`)·README 파일트리 루트(`accountbook/`→`eggarden/`)도 정리. **Firebase 프로젝트 ID `money-bb658`는 실제 라이브 백엔드라 변경하지 않음**(변경 시 새 프로젝트 생성+데이터 마이그레이션 필요). 물리적 폴더명·GitHub 저장소명은 세션/외부에서 수동 변경 필요. `sw.js` `v3.38.0`.
 
 ### 추가 — 🛠️ 개발자 모드(펫알·박스 확률/구성 조작, canel94@gmail.com 전용)

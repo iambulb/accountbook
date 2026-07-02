@@ -211,7 +211,8 @@
         '<button data-tp="transfer" onclick="setSheetType(\'transfer\')">이체</button>'+
         '<button data-tp="__ext__" onclick="setSheetType(\'__ext__\')">선불·포인트</button></div>';
       // 시안: 큰 금액 + 키패드 입력
-      h+='<div class="amtbig"><span class="w">₩</span><input id="sAmount" class="amtbig-in" readonly inputmode="none" placeholder="0" value="'+(amount?Number(amount).toLocaleString():'')+'"></div>';
+      // 금액: 모바일은 화면 키패드(OS 키보드 안 뜨게 readonly+inputmode none), 데스크톱은 물리 키보드로 직접 입력(keydown 라우팅).
+      h+='<div class="amtbig"><span class="w">₩</span><input id="sAmount" class="amtbig-in" readonly inputmode="none" aria-label="금액" placeholder="0" onkeydown="kpKey(event)" onpaste="kpPaste(event)" value="'+(amount?Number(amount).toLocaleString():'')+'"></div>';
       h+='<div id="sCatChips"></div>';   // 카테고리 칩(유형별)
       h+='<div id="sDyn"></div>';        // 계좌/이체 행
       h+='<div class="txfield"><span class="k">날짜</span><input type="date" class="txin" id="sDate" value="'+date+'"></div>';
@@ -246,6 +247,8 @@
       sh._settle = t ? { inc:t.settlementIncluded===true, payer:t.payer||'', splitType:t.splitType||'equal',
         participants:Array.isArray(t.splitParticipants)?t.splitParticipants.slice():null, amounts:t.splitAmounts||null, memo:t.settlementMemo||'' } : null;
       highlightTypeSeg(); renderTxDyn(); renderSettleBlock();
+      // 데스크톱(마우스/물리키보드 환경)에선 금액칸에 포커스를 줘 바로 숫자를 타이핑할 수 있게(모바일은 화면 키패드 유지 위해 포커스 안 줌).
+      try{ if(window.matchMedia && window.matchMedia('(pointer: fine)').matches){ setTimeout(function(){ const a=$('sAmount'); if(a){ a.focus(); const v=a.value||''; try{ a.setSelectionRange(v.length, v.length); }catch(_){} } }, 60); } }catch(_){ }
     }
     function setSheetType(tp){
       if(tp==='__ext__'){ if(!EXT_TYPES.includes(sheetType)) sheetType='prepaid_spend'; }
@@ -277,6 +280,13 @@
       if(d==='00'){ if(!cur) return; cur+='00'; } else cur+=d;
       cur=cur.replace(/^0+(?=\d)/,''); if(cur.length>12) return; el.value = cur?Number(cur).toLocaleString():''; }
     function kpDel(){ const el=$('sAmount'); if(!el) return; let cur=String(parseAmount(el.value)||'').slice(0,-1); el.value=cur?Number(cur).toLocaleString():''; }
+    // 물리 키보드로 금액 입력(데스크톱): 숫자→kpPress, 백스페이스→kpDel, Enter→저장. readonly라 OS 소프트키보드는 안 뜸.
+    function kpKey(e){ const k=e.key;
+      if(k>='0'&&k<='9'){ e.preventDefault(); kpPress(k); }
+      else if(k==='Backspace'||k==='Delete'){ e.preventDefault(); kpDel(); }
+      else if(k==='Enter'){ e.preventDefault(); if(typeof saveTx==='function') saveTx(); } }
+    function kpPaste(e){ e.preventDefault(); const dt=e.clipboardData||window.clipboardData; const txt=dt?dt.getData('text'):'';
+      const digits=String(txt||'').replace(/[^0-9]/g,'').replace(/^0+(?=\d)/,'').slice(0,12); const el=$('sAmount'); if(el) el.value=digits?Number(digits).toLocaleString():''; }
     function guideNote(actual, text){ return '<div class="install-banner" style="background:'+(actual?'rgba(240,68,82,.1)':'var(--primary-weak)')+';color:'+(actual?'var(--expense)':'var(--primary)')+';">'+(actual?'🛒':'ℹ️')+' '+text+'</div>'; }
     function renderTxDyn(){
       const sh=$('sheet'); const fromV=sh._from, toV=sh._to;
@@ -988,7 +998,7 @@
       h+='<button class="btn ghost sm" onclick="logout()">로그아웃</button>';
       // 설치 안 됐으면 항상 노출(iOS 사파리 포함) — 탭 시 크롬=네이티브 프롬프트, iOS/그외=수동 안내 시트
       if(canInstallApp()) h+='<button class="install-cta" onclick="installApp()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M5 21h14"/></svg>홈 화면에 앱 설치</button>';
-      h+='<p class="muted" style="font-size:12px;margin-top:10px;">알뜰집 v3</p>';
+      h+='<p class="muted" style="font-size:12px;margin-top:10px;">알뜰 v3</p>';
       h+='</div></div>';   // .more-foot / .more-wrap
       $('content').innerHTML=h;
     }
@@ -1011,7 +1021,7 @@
           '<li><span class="inst-ic">'+plus+'</span><b>앱 설치</b> 또는 <b>홈 화면에 추가</b> 선택</li>'+
           '<li><span class="inst-ic">'+check+'</span>설치를 확인하면 끝!</li></ol>';
       }
-      const h='<div class="inst-hero"><img src="icons/icon-192.png" alt="" width="60" height="60" class="inst-app-ic"><div><div class="inst-title">알뜰집을 홈 화면에</div><div class="inst-sub">앱처럼 전체화면으로 더 빠르게 실행돼요</div></div></div>'+
+      const h='<div class="inst-hero"><img src="icons/icon-192.png" alt="" width="60" height="60" class="inst-app-ic"><div><div class="inst-title">알뜰을 홈 화면에</div><div class="inst-sub">앱처럼 전체화면으로 더 빠르게 실행돼요</div></div></div>'+
         steps+'<button class="btn" onclick="closeSheet()" style="margin-top:16px;">확인</button>';
       openSheet('앱 설치', h);
     }
