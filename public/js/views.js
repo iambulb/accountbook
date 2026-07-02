@@ -1445,7 +1445,7 @@
       if(typeof isDev==='function' && isDev()){
         h+=lrow(MORE_ICON.gear,'개발자 모드','toggleDevMode();openSettingsSheet()', devOn()?'켜짐':'꺼짐');
         if(devOn()) h+=lrow(MORE_ICON.gift,'펫알 · 박스 설정','closeSheet();openDevGacha()');
-        if(devOn()) h+=lrow(MORE_ICON.cat||MORE_ICON.gift,'펫 (추가 · 수정 · 삭제)','closeSheet();openDevPetManager()');
+        if(devOn()) h+=lrow((typeof goldSvg==='function'?goldSvg({h:21}):MORE_ICON.cat),'펫 (추가 · 수정 · 삭제)','closeSheet();openDevPetManager()');
       }
       h+='</div>';
       // 코드 입력(프로모/치트 코드)

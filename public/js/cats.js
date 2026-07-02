@@ -980,8 +980,11 @@
       const list=allPetsForDev(), sel=state._devPetSel, selPet=sel?list.find(p=>p.id===sel):null;
       let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 10px;line-height:1.5;">펫을 선택해 <b>수정/삭제</b>하거나 <b>추가</b>로 새 펫(zip)을 올려요. 삭제=앱에서 숨김(이미지 보존)이라 <b>복구</b> 가능.</p>';
       h+='<div class="petmg-list">'+list.map(p=>{ const on=p.id===sel; const tag=(SPECIES_LABEL[p.species]||p.species); const tn=((typeof TIERS!=='undefined'&&TIERS.find(t=>t.id===p.tier))||{}).name||p.tier;
-        return '<button class="petmg-row'+(on?' sel':'')+(p.deleted?' del':'')+'" onclick="devSelectPet(\''+p.id+'\')"><span class="pm-nm">'+escapeHtml(p.name||p.id)+'</span>'+
-          '<span class="pm-meta">'+escapeHtml(tag)+' · '+escapeHtml(tn)+(p.runtime?' · 런타임':'')+(p.deleted?' · 삭제됨':'')+'</span></button>'; }).join('')+'</div>';
+        const art=on?catActorHTML(p.id,52):catFace(p.id,{h:52});   // 선택 시 옆으로 걷는 스프라이트, 아니면 정면 썸네일
+        return '<button class="petmg-row'+(on?' sel':'')+(p.deleted?' del':'')+'" onclick="devSelectPet(\''+p.id+'\')">'+
+          '<span class="pm-thumb">'+art+'</span>'+
+          '<span class="pm-txt"><span class="pm-nm">'+escapeHtml(p.name||p.id)+'</span>'+
+          '<span class="pm-meta">'+escapeHtml(tag)+' · '+escapeHtml(tn)+(p.runtime?' · 런타임':'')+(p.deleted?' · 삭제됨':'')+'</span></span></button>'; }).join('')+'</div>';
       const dr = (selPet&&selPet.deleted) ? '<button class="btn" onclick="restorePet(\''+sel+'\')">복구</button>'
         : '<button class="btn danger"'+(sel?'':' disabled')+(sel?' onclick="deletePetSoft(\''+sel+'\')"':'')+'>삭제</button>';
       h+='<div class="petmg-btns"><button class="btn ghost" onclick="openDevPetAdd()">추가</button>'+
@@ -1127,7 +1130,10 @@
       // 방 높이 → depth 1(맨 뒤)에서 발이 올라가는 최대 px(rise). 가구 바닥 매핑(bottom%=3+depth*46/38)과 같은 척도라 같은 행에 서면 발높이가 맞는다.
       const roomEl = stage.closest('.catroom') || stage.closest('.cd-room');
       const roomH = (roomEl && roomEl.clientHeight) || (isDock?110:244);
-      const riseMax = roomH*(isDock?0.24:0.30);   // 발 올림(원근) 폭을 줄여 펫이 바닥에 붙게(맨 앞=depth0=바닥, 뒤로도 과하게 안 뜸). 앞뒤 대비는 크기(scale)로 유지
+      // 위에서 내려다보는(탑다운) 느낌: 맨 앞(depth0)=바닥 앞끝, 맨 뒤(depth1)=바닥 뒤끝(벽지 경계)에 닿게.
+      // depth1 발높이 ≈ base + riseMax 이므로, 바닥 세로비(홈 cr-floor 54%·dock 66%)에 맞춰 뒤 펫이 벽에 닿도록 폭을 키움.
+      // (발밑 여백 상쇄 pad는 깊이와 무관하게 적용되어 맨 앞은 여전히 바닥에 붙음 — 뜨는 문제 재발 없음.)
+      const riseMax = roomH*(isDock?0.62:0.54);
       // 가구 위치(발자국 중앙 x)·렌더 높이(fh)·깊이(depth) — 상호작용 시 올라갈 높이·앞뒤 정렬(가림)에 사용
       const props = hasRoom ? placedList().map(p=>{ const foot=itemFoot(p.itemId), depth=(12-(p.r+foot.h-1))/11;   // propMarkup과 동일(앞줄 기준)
         const fh=furnRoomH(p.itemId, isDock, depth);   // 렌더 높이와 동일 → 캣타워 층 lift가 실제 높이에 맞음
