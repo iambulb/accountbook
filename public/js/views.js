@@ -571,6 +571,20 @@
         h+='<div class="donut-wrap"><div class="donut" style="background:conic-gradient('+stops.join(',')+')"><div class="ic"><b>'+shortAmt(totCat)+'</b><span>총지출</span></div></div>'+
           '<div class="legend">'+segs.map(s=>'<div class="lgi"><i style="background:'+(s.etc?'var(--soft2)':catColor(s.name))+'"></i><span class="ln">'+escapeHtml(s.name)+'</span><span class="lp">'+Math.round(s.val/totCat*100)+'%</span></div>').join('')+'</div></div>';
       } else h+='<div class="empty" style="padding:24px;">이 달 지출 데이터가 없습니다</div>';
+      // 💡 인사이트: 전월 대비 가장 크게 늘어난 카테고리(의미 있는 금액만)
+      const pcd={}; monthTx(shiftMonth(m,-1)).filter(t=>isActual(t)&&t.category).forEach(t=>{ pcd[t.category]=(pcd[t.category]||0)+(Number(t.amount)||0); });
+      let topInc=null; cats.forEach(c=>{ const prev=pcd[c.name]||0; if(prev>=10000){ const d=(c.val-prev)/prev; if(d>=0.3 && (!topInc||d>topInc.d)) topInc={name:c.name,d:d}; } });
+      if(topInc) h+='<div class="tx-sub" style="margin:2px 2px 10px;">💡 이번 달 <b>'+escapeHtml(topInc.name)+'</b> 지출이 지난달보다 <b>'+Math.round(topInc.d*100)+'%</b> 늘었어요.</div>';
+      // 통화별(해외통화 있을 때만) — 이번 달 실지출을 통화로 그룹(sumByCurrency 재사용)
+      const byCur=sumByCurrency(list.filter(isActual)); const curCodes=Object.keys(byCur);
+      if(curCodes.some(c=>c!=='KRW')){
+        const totCurKrw=curCodes.reduce((s2,c)=>s2+byCur[c].krw,0)||1;
+        const curOrder=curCodes.sort((a,b)=>byCur[b].krw-byCur[a].krw);
+        h+='<div class="sech"><span class="l">통화별</span><span class="s">'+(+mo)+'월</span></div>';
+        h+='<div class="card">'+curOrder.map(c=>{ const pct=Math.round(byCur[c].krw/totCurKrw*100);
+          return '<div style="margin:9px 0;"><div class="row" style="font-size:13px;"><span>'+escapeHtml(curInfo(c).name)+'</span><span><b>'+escapeHtml(fmtForeign(byCur[c].foreign,c))+'</b>'+(c!=='KRW'?' <span class="tx-sub">'+won(byCur[c].krw)+'</span>':'')+'</span></div><div class="bar"><i style="width:'+pct+'%;background:var(--primary)"></i></div></div>';
+        }).join('')+'</div>';
+      }
       // 최근 6개월 추이 막대
       const md={}; state.transactions.filter(isActual).forEach(t=>{ const mm=(t.date||'').substring(0,7); if(mm) md[mm]=(md[mm]||0)+(Number(t.amount)||0); });
       const keys=[]; for(let i=5;i>=0;i--) keys.push(shiftMonth(m,-i));
@@ -591,7 +605,7 @@
       const bgs=visibleBudgets();
       if(bgs.length){
         h+='<div class="card"><div class="row" style="margin-bottom:4px;"><div class="sec-title" style="margin:0;">예산</div><button class="link" onclick="openBudgetSheet()">관리</button></div>'+
-          bgs.map(b=>{ const u=budgetUsage(b), c=budgetColor(u.pct); return '<div style="margin:10px 0;"><div class="row" style="font-size:13px;"><span>'+(b.categoryName?'<span class="catdot" style="background:'+catColor(b.categoryName)+'"></span>':'')+budgetTitle(b)+'</span><span style="color:'+c+';font-weight:700;">'+u.pct+'%'+(u.pct>=100?' 초과':'')+'</span></div><div class="bar"><i style="width:'+Math.min(u.pct,100)+'%;background:'+c+'"></i></div><div class="tx-sub" style="margin-top:4px;">'+won(u.used)+' / '+won(u.amount)+'</div></div>'; }).join('')+'</div>';
+          bgs.map(b=>{ const u=budgetUsage(b), c=budgetColor(u.pct); return '<div style="margin:10px 0;"><div class="row" style="font-size:13px;"><span>'+(b.categoryName?'<span class="catdot" style="background:'+catColor(b.categoryName)+'"></span>':'')+budgetTitle(b)+'</span><span style="color:'+c+';font-weight:700;">'+u.pct+'%'+(u.pct>=100?' 초과':(b.alertEnabled!==false&&u.pct>=(b.alertThreshold||80)?' ⚠️':''))+'</span></div><div class="bar"><i style="width:'+Math.min(u.pct,100)+'%;background:'+c+'"></i></div><div class="tx-sub" style="margin-top:4px;">'+won(u.used)+' / '+won(u.amount)+'</div></div>'; }).join('')+'</div>';
       }
       const pbsR=visiblePBs().filter(p=>(p.status||'active')==='active');
       if(pbsR.length){
