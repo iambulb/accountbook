@@ -547,9 +547,9 @@
     // ===== 할일(투두) 모드 화면 =====
     let _todoFilter='all', _todoSel=null;
     function setTodoFilter(f){ _todoFilter=f; renderTodoList(); }
-    function nextDue(ds, rep){ const d=parseDate(ds); d.setDate(d.getDate()+(rep==='weekly'?7:1)); return ymd(d); }
+    // nextDue/dueDiffDays는 js/util.js(순수함수·단위테스트)로 이관됨 — 전역으로 사용.
     function todoDueBadge(t){ if(!t.dueDate) return ''; const today=ymd(new Date());
-      const a=new Date(t.dueDate+'T00:00:00'), b=new Date(today+'T00:00:00'); const diff=Math.round((a-b)/86400000);
+      const diff=dueDiffDays(t.dueDate, today);
       let txt,cls; if(diff<0){ txt=(-diff)+'일 지남'; cls='over'; } else if(diff===0){ txt='오늘'; cls='today'; } else if(diff===1){ txt='내일'; cls='soon'; } else { txt='D-'+diff; cls=diff<=3?'soon':''; }
       return '<span class="tdue '+cls+'">'+txt+'</span>'; }
     function todoRow(t){

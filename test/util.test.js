@@ -74,6 +74,25 @@ test('computeSettleAmounts: custom 값 우선, 값 없으면 균등 폴백', () 
   assert.deepStrictEqual(U.computeSettleAmounts('custom', ['a', 'b'], 1000, {}), { a: 500, b: 500 });
 });
 
+test('addDays: 월/연 경계 넘김', () => {
+  assert.strictEqual(U.addDays('2026-07-01', 1), '2026-07-02');
+  assert.strictEqual(U.addDays('2026-07-31', 1), '2026-08-01');   // 월 경계
+  assert.strictEqual(U.addDays('2026-12-31', 1), '2027-01-01');   // 연 경계
+  assert.strictEqual(U.addDays('2026-03-01', -1), '2026-02-28');
+});
+
+test('nextDue: 매일=+1일, 매주=+7일', () => {
+  assert.strictEqual(U.nextDue('2026-07-01', 'daily'), '2026-07-02');
+  assert.strictEqual(U.nextDue('2026-07-01', 'weekly'), '2026-07-08');
+  assert.strictEqual(U.nextDue('2026-07-28', 'weekly'), '2026-08-04');
+});
+
+test('dueDiffDays: 마감 D-day 계산', () => {
+  assert.strictEqual(U.dueDiffDays('2026-07-05', '2026-07-01'), 4);   // D-4
+  assert.strictEqual(U.dueDiffDays('2026-07-01', '2026-07-01'), 0);   // 오늘
+  assert.strictEqual(U.dueDiffDays('2026-06-29', '2026-07-01'), -2);  // 2일 지남
+});
+
 test('personKey: 멤버는 uid, 레거시/공동은 이름', () => {
   assert.strictEqual(U.personKey({ userUid: 'uid_123', user: '철수' }), 'uid_123');   // uid 우선
   assert.strictEqual(U.personKey({ user: '철수' }), '철수');                            // 레거시(uid 없음)
