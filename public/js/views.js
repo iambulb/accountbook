@@ -559,16 +559,48 @@
     function setTodoScope(s){ state._todoScope=(s==='group'?'group':'personal'); state._todoFriend=null; _todoFilter='all'; try{localStorage.setItem('todoScope',state._todoScope);}catch(e){} rerender(); }
     function todoScopeSeg(){ const g=state._todoScope==='group';
       return '<div class="seg todoseg"><button class="'+(g?'':'on')+'" onclick="setTodoScope(\'personal\')">개인</button><button class="'+(g?'on':'')+'" onclick="setTodoScope(\'group\')">그룹</button></div>'; }
+    // 개인 탭에서 친구(공유자)를 보고 있는지 = 읽기전용
+    function todoReadOnly(){ return state._todoScope==='personal' && !!state._todoFriend && state._todoFriend!==state.uid; }
+    function setTodoFriend(uid){ state._todoFriend=(uid===state.uid?null:uid); renderTodoList(); }
+    function todoMemberName(uid){ const m=(state.wsMeta&&state.wsMeta.members)||{}; return (uid===state.uid)?(state.userName||'나'):((m[uid]&&m[uid].name)||''); }
+    // 공유 친구 스트립(그룹 전용): 나 + 공유 ON 친구, 최근 등록순. 우측에 내 공유 토글.
+    function todoFriendStrip(){
+      const ws=state.wsMeta||{}; if(ws.type!=='group') return '';
+      const mem=ws.members||{}; const meUid=state.uid; const view=todoViewUid();
+      const order=friendTodoOrder(state.todos, Object.keys(mem), state.todoShare, meUid, todoMemberName);
+      const shareOn=!!(state.todoShare&&state.todoShare[meUid]);
+      const av=order.map(function(uid){ const nm=todoMemberName(uid); const sel=(uid===view)?' sel':'';
+        const label=(uid===meUid)?'나':escapeHtml(nm||'멤버');
+        return '<button class="tdfr'+sel+'" onclick="setTodoFriend(\''+uid+'\')" aria-label="'+escapeHtml(nm||'멤버')+' 할일 보기">'+avatarHtml(uid,nm,40)+'<span class="tdfrnm">'+label+'</span></button>'; }).join('');
+      return '<div class="tdfriends"><div class="tdfr-scroll">'+av+'</div>'+
+        '<button class="tdshare'+(shareOn?' on':'')+'" onclick="openTodoShareSheet()" aria-label="내 할일 공유 설정">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+(shareOn?'<circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8l7.4-4.3M8.3 13.2l7.4 4.3"/>':'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0"/>')+'</svg>'+
+        '<span>'+(shareOn?'공유중':'비공개')+'</span></button></div>';
+    }
+    function openTodoShareSheet(){
+      const uid=state.uid; const on=!!(state.todoShare&&state.todoShare[uid]);
+      let h='<p class="muted" style="margin:2px 2px 14px;line-height:1.55;">개인 할일을 같은 그룹 친구에게 공개할지 정해요. 켜면 친구의 <b>할일 · 개인</b> 화면 상단에 내 프로필이 뜨고, 내 개인 할일을 볼 수 있어요(읽기전용).</p>';
+      h+='<div class="lst">'+lrow(MORE_ICON.share,'내 할일 공유','toggleTodoShare()', on?'켜짐':'꺼짐')+'</div>';
+      openSheet('할일 공유', h);
+    }
+    function toggleTodoShare(){ const uid=state.uid; if(!uid) return; const on=!!(state.todoShare&&state.todoShare[uid]);
+      db.ref(wp('todoShare/'+uid)).set(!on); toast(!on?'할일을 공유합니다':'공유를 껐습니다'); openTodoShareSheet(); }
     // nextDue/dueDiffDays는 js/util.js(순수함수·단위테스트)로 이관됨 — 전역으로 사용.
     function todoDueBadge(t){ if(!t.dueDate) return ''; const today=ymd(new Date());
       const diff=dueDiffDays(t.dueDate, today);
       let txt,cls; if(diff<0){ txt=(-diff)+'일 지남'; cls='over'; } else if(diff===0){ txt='오늘'; cls='today'; } else if(diff===1){ txt='내일'; cls='soon'; } else { txt='D-'+diff; cls=diff<=3?'soon':''; }
       return '<span class="tdue '+cls+'">'+txt+'</span>'; }
-    function todoRow(t){
+    function todoRow(t, ro){
       const who=(t.assignedUid||t.assignedName)?'<span class="tdwho">'+(t.assignedUid?avatarHtml(t.assignedUid,t.assignedName||'',20):'<span class="tdname">'+escapeHtml(t.assignedName)+'</span>')+'</span>':'';
-      return '<div class="tdrow">'+
-        '<button class="tdchk'+(t.done?' on':'')+'" onclick="event.stopPropagation();toggleTodo(\''+t.id+'\')" aria-label="'+(t.done?'완료 취소':'완료 처리')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></button>'+
-        '<span class="tdtitle'+(t.done?' done':'')+'" onclick="openTodoEdit(\''+t.id+'\')">'+escapeHtml(t.title||'')+(t.repeat&&t.repeat!=='none'?' <span class="pill">🔁</span>':'')+(t.purposeBookId?' <span class="pill">📍</span>':'')+'</span>'+
+      const chkSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>';
+      const chk=ro
+        ? '<span class="tdchk'+(t.done?' on':'')+'" aria-hidden="true">'+chkSvg+'</span>'
+        : '<button class="tdchk'+(t.done?' on':'')+'" onclick="event.stopPropagation();toggleTodo(\''+t.id+'\')" aria-label="'+(t.done?'완료 취소':'완료 처리')+'">'+chkSvg+'</button>';
+      const titleTag=ro
+        ? '<span class="tdtitle'+(t.done?' done':'')+'">'
+        : '<span class="tdtitle'+(t.done?' done':'')+'" onclick="openTodoEdit(\''+t.id+'\')">';
+      return '<div class="tdrow">'+chk+
+        titleTag+escapeHtml(t.title||'')+(t.repeat&&t.repeat!=='none'?' <span class="pill">🔁</span>':'')+(t.purposeBookId?' <span class="pill">📍</span>':'')+'</span>'+
         todoDueBadge(t)+who+'</div>';
     }
     function renderTodoList(){
@@ -584,11 +616,14 @@
       open.sort((a,b)=>{ const ad=a.dueDate||'9999-99', bd=b.dueDate||'9999-99'; if(ad!==bd) return ad<bd?-1:1; return (a.sortOrder||0)-(b.sortOrder||0); });
       const done=base.filter(t=>t.done).sort((a,b)=>(b.doneAt||'').localeCompare(a.doneAt||''));
       const chips=isGroup?[['all','전체'],['mine','내 담당'],['today','오늘'],['week','이번주']]:[['all','전체'],['today','오늘'],['week','이번주']];
+      const ro=todoReadOnly();
       let h=todoScopeSeg();
+      if(!isGroup) h+=todoFriendStrip();
+      if(ro) h+='<div class="tdrobar">👀 '+escapeHtml(todoMemberName(state._todoFriend)||'친구')+'님의 할일 · 읽기전용 <button class="lnk" onclick="setTodoFriend(\''+state.uid+'\')">내 할일로</button></div>';
       h+='<div class="chip-row" style="margin:6px 0 12px;">'+chips.map(c=>'<button class="chip'+(_todoFilter===c[0]?' on':'')+'" onclick="setTodoFilter(\''+c[0]+'\')">'+c[1]+'</button>').join('')+'</div>';
-      const emptyMsg=isGroup?'그룹 할일이 없어요 — 아래 ＋ 로 담당을 나눠보세요':'개인 할일이 없어요 — 아래 ＋ 로 추가하세요';
-      h+='<div class="card" style="padding:4px 12px;">'+(open.length?open.map(todoRow).join(''):'<div class="empty" style="padding:26px 6px;">'+emptyMsg+'</div>')+'</div>';
-      if(done.length){ h+='<div class="sech"><span class="l">완료</span><span class="s">'+done.length+'개</span></div><div class="card" style="padding:4px 12px;">'+done.slice(0,20).map(todoRow).join('')+'</div>'; }
+      const emptyMsg=ro?'공유된 할일이 없어요':(isGroup?'그룹 할일이 없어요 — 아래 ＋ 로 담당을 나눠보세요':'개인 할일이 없어요 — 아래 ＋ 로 추가하세요');
+      h+='<div class="card" style="padding:4px 12px;">'+(open.length?open.map(t=>todoRow(t,ro)).join(''):'<div class="empty" style="padding:26px 6px;">'+emptyMsg+'</div>')+'</div>';
+      if(done.length){ h+='<div class="sech"><span class="l">완료</span><span class="s">'+done.length+'개</span></div><div class="card" style="padding:4px 12px;">'+done.slice(0,20).map(t=>todoRow(t,ro)).join('')+'</div>'; }
       $('content').innerHTML=h;
     }
     function todoMoveMonth(d){ state.month=shiftMonth(state.month,d); renderTodoCalendar(); }
@@ -608,15 +643,16 @@
         h+='<div class="'+cls+'" onclick="todoSelDay(\''+ds+'\')"><div class="'+dcls+'">'+d+'</div>'+dot+'</div>';
       }
       h+='</div></div>';
+      const ro=todoReadOnly();
       const dayT=base.filter(t=>t.dueDate===sel).sort((a,b)=>(a.done?1:0)-(b.done?1:0));
       h+='<div class="sech"><span class="l">'+(+sel.split('-')[1])+'월 '+(+sel.split('-')[2])+'일</span><span class="s">'+dayT.length+'개</span></div>';
-      h+='<div class="card" style="padding:4px 12px;">'+(dayT.length?dayT.map(todoRow).join(''):'<div class="empty" style="padding:22px 6px;">이 날 할일이 없어요</div>')+'</div>';
+      h+='<div class="card" style="padding:4px 12px;">'+(dayT.length?dayT.map(t=>todoRow(t,ro)).join(''):'<div class="empty" style="padding:22px 6px;">이 날 할일이 없어요</div>')+'</div>';
       $('content').innerHTML=h;
     }
-    function renderTodoDone(){ const done=scopedTodos().filter(t=>t.done).sort((a,b)=>(b.doneAt||'').localeCompare(a.doneAt||''));
+    function renderTodoDone(){ const ro=todoReadOnly(); const done=scopedTodos().filter(t=>t.done).sort((a,b)=>(b.doneAt||'').localeCompare(a.doneAt||''));
       let h=todoScopeSeg();
       h+='<div class="sech"><span class="l">완료</span><span class="s">'+done.length+'개</span></div>';
-      h+='<div class="card" style="padding:4px 12px;">'+(done.length?done.map(todoRow).join(''):'<div class="empty" style="padding:26px 6px;">완료한 할일이 아직 없어요</div>')+'</div>';
+      h+='<div class="card" style="padding:4px 12px;">'+(done.length?done.map(t=>todoRow(t,ro)).join(''):'<div class="empty" style="padding:26px 6px;">완료한 할일이 아직 없어요</div>')+'</div>';
       $('content').innerHTML=h; }
     function toggleTodo(id){ const t=(state.todos||[]).find(x=>x.id===id); if(!t) return; const now=new Date().toISOString();
       const firstReward=!t.rewardClaimed;   // 할일당 은화 1회(멱등)
@@ -633,6 +669,7 @@
       }
     }
     function openTodoEdit(id, presetPb){
+      if(!id) state._todoFriend=null;   // 새 할일은 항상 내 목록으로(친구 읽기전용 뷰였어도)
       const t=id?(state.todos||[]).find(x=>x.id===id):null;
       // 스코프: 편집=기존 할일 값, 신규=현재 세그먼트. 개인은 담당자 없음(소유자=나), 그룹은 담당배정.
       const scope=t?todoScope(t):(state._todoScope==='group'?'group':'personal');
@@ -1159,7 +1196,10 @@
       gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>',
       chev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>',
       cat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l2 4M19 4l-2 4"/><path d="M5 8c-1 2-1 5 0 7 1.6 3 4 4 7 4s5.4-1 7-4c1-2 1-5 0-7"/><path d="M9.5 12h.01M14.5 12h.01M12 14l-1 1h2z"/></svg>',
-      cam:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="12" height="10" rx="2"/><path d="M15 10.5l6-3v9l-6-3z"/></svg>'
+      cam:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="12" height="10" rx="2"/><path d="M15 10.5l6-3v9l-6-3z"/></svg>',
+      share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8l7.4-4.3M8.3 13.2l7.4 4.3"/></svg>',
+      report:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M8 16v-4M12 16V8M16 16v-6"/></svg>',
+      repeat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14-5l2 2M20 12a8 8 0 0 1-14 5l-2-2"/><path d="M18 4v5h-5M6 20v-5h5"/></svg>'
     };
     function gcell(icon,label,fn,badge){ return '<button class="gcell" onclick="'+fn+'"><span class="gic">'+icon+(badge?'<span class="gbadge">'+badge+'</span>':'')+'</span><span class="glabel">'+escapeHtml(label)+'</span></button>'; }
     function lrow(icon,label,fn,val){ return '<button class="lrow" onclick="'+fn+'"><span class="li">'+icon+'</span><span class="lt">'+label+'</span><span class="lv">'+(val||'')+'</span><span class="chev">'+MORE_ICON.chev+'</span></button>'; }

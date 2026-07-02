@@ -466,6 +466,19 @@
     .tdname { font-size:11px; color:var(--sub); font-weight:700; }
     .tdue { flex:none; font-size:11px; font-weight:800; color:var(--sub); }
     .tdue.today { color:var(--primary); } .tdue.soon { color:#E0883C; } .tdue.over { color:var(--expense); }
+    /* 할일 공유 친구 스트립 + 내 공유 토글 + 읽기전용 바 */
+    .tdfriends { display:flex; align-items:flex-start; gap:8px; margin:2px 0 10px; }
+    .tdfr-scroll { display:flex; gap:12px; overflow-x:auto; flex:1; padding:2px 2px 4px; }
+    .tdfr { flex:none; display:flex; flex-direction:column; align-items:center; gap:4px; background:none; border:none; padding:0; cursor:pointer; width:48px; }
+    .tdfr .avatar { border:2px solid transparent; box-sizing:border-box; }
+    .tdfr.sel .avatar { border-color:var(--primary); }
+    .tdfrnm { font-size:10.5px; font-weight:700; color:var(--sub); max-width:48px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .tdfr.sel .tdfrnm { color:var(--text); }
+    .tdshare { flex:none; display:inline-flex; flex-direction:column; align-items:center; gap:2px; background:var(--soft); border:none; border-radius:12px; padding:6px 9px; color:var(--sub); cursor:pointer; font-size:10px; font-weight:800; }
+    .tdshare svg { width:18px; height:18px; }
+    .tdshare.on { background:var(--soft2); color:var(--primary); }
+    .tdrobar { display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--sub); background:var(--soft); border-radius:10px; padding:8px 12px; margin:2px 0 10px; }
+    .tdrobar .lnk { margin-left:auto; background:none; border:none; color:var(--primary); font-weight:800; font-size:12.5px; cursor:pointer; }
     .ws-chip { max-width:150px; height:36px; padding:0 14px; border-radius:20px; background:var(--soft); color:var(--text2);
       font-size:12.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-flex; align-items:center; gap:7px; }
     .ws-chip .dotk { width:16px; height:16px; border-radius:50%; background:var(--primary); flex:none; }

@@ -59,7 +59,25 @@
   function dueDiffDays(dueYmd, todayYmd) { const a = new Date(dueYmd + 'T00:00:00'), b = new Date(todayYmd + 'T00:00:00'); return Math.round((a - b) / 86400000); }
   // 할일 스코프: 누락(레거시)은 담당배정형 그룹 할일로 취급.
   function todoScope(t) { return (t && t.scope === 'personal') ? 'personal' : 'group'; }
-  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope };
+  // 공유 친구 스트립 정렬: 나(meUid) 항상 맨 앞, 이어서 '공유 ON'인 멤버를 각자 개인 할일 최신 createdAt 내림차순(동률/없음은 이름순).
+  function friendTodoOrder(todos, memberUids, shareMap, meUid, nameOf) {
+    const latest = {};
+    (todos || []).forEach(function (t) {
+      if (!t || t.scope !== 'personal') return;
+      const o = t.ownerUid || t.createdByUid; if (!o) return;
+      const c = t.createdAt || '';
+      if (!latest[o] || c > latest[o]) latest[o] = c;
+    });
+    const nm = typeof nameOf === 'function' ? nameOf : function () { return ''; };
+    const friends = (memberUids || []).filter(function (u) { return u !== meUid && shareMap && shareMap[u] === true; });
+    friends.sort(function (a, b) {
+      const la = latest[a] || '', lb = latest[b] || '';
+      if (la !== lb) return la < lb ? 1 : -1;                 // 최신 먼저
+      return String(nm(a)).localeCompare(String(nm(b)));      // 폴백: 이름순
+    });
+    return [meUid].concat(friends);
+  }
+  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);
