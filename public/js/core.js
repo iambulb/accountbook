@@ -1039,7 +1039,10 @@
       const c=$('content'); if(c) c.scrollTop=0;   // 탭 전환 시 내용 스크롤 맨 위로
     }
     // 랜딩 '오늘 홈'으로 (상단 로고=홈 버튼). 바텀 탭 아님.
-    function goHome(){ state.view='home'; try{ localStorage.setItem('view','home'); }catch(e){}
+    // 토글: 이미 홈이면 한 번 더 누르면 직전 모드 화면으로 닫힘.
+    function goHome(){
+      if(state.view==='home'){ go(state.tab || (state.mode==='todo'?'todo':'calendar')); return; }
+      state.view='home'; try{ localStorage.setItem('view','home'); }catch(e){}
       rerender(); const c=$('content'); if(c) c.scrollTop=0; }
     // 홈 카드 딥링크: 모드 세팅 + 해당 탭으로 진입.
     function goto(mode, tab){
