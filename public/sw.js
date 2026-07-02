@@ -1,5 +1,5 @@
 /* 알뜰(Eggarden) 서비스워커 — 오프라인 앱 셸 캐시 */
-const CACHE_VERSION = 'eggarden-v3.87.0';
+const CACHE_VERSION = 'eggarden-v3.89.0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -14,6 +14,7 @@ const APP_SHELL = [
   './icons/icon.svg',
   './icons/coin.svg',
   './icons/egg-garden.svg',
+  './icons/wordmark-altteul.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './assets/pets/cat_mackerel/walk.png',

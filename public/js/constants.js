@@ -58,6 +58,7 @@
       '월급':{type:'income',icon:'💰',color:'#3182F6'}, '부수입':{type:'income',icon:'💵',color:'#2BA98C'},
       '용돈':{type:'income',icon:'🪙',color:'#D8A93A'}, '환급':{type:'income',icon:'↩️',color:'#4AA3D8'},
       '이자':{type:'income',icon:'🏦',color:'#5C6BE0'}, '경조사비 수령':{type:'income',icon:'🎁',color:'#E06A6A'},
-      '기타':{type:'other',icon:'📦',color:'#8B95A1'}
+      '기타':{type:'other',icon:'📦',color:'#8B95A1'},
+      '곗돈':{type:'transfer',icon:'🤝',color:'#4C7FE0'}
     };
     function buildDefaultCategories(){ const o={}; let i=0; for(const n of Object.keys(DEFAULT_CATEGORY_DEFS)){ const d=DEFAULT_CATEGORY_DEFS[n]; o[n]={ name:n, type:d.type, icon:d.icon, color:d.color, sortOrder:++i, isDefault:true, isActive:true, visibility:'full', owner:'공동' }; } return o; }

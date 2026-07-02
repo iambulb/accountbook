@@ -1,6 +1,5 @@
 // ===== 홈(달력/목록) =====
     function renderCalendar(){
-      $('screenTitle').textContent='달력';
       const m=state.month, allList=monthTx(m);
       const list = state.memberFilter ? allList.filter(t=>(t.user||'')===state.memberFilter) : allList;
       const inc=sumBy(list,'income');
@@ -152,7 +151,7 @@
       if(t.category && (getCat(t.category)||CAT_META[t.category])){ tileStyle=catTileStyle(t.category); tileInner=catSvgIcon(t.category); }
       else { tileInner=svgWrap(CAT_SVG[TX_SVG_KEY[t.type]||'tag']); }
       let sub;
-      if(e.debit&&e.credit) sub=acctName(t.from)+' → '+acctName(t.to);
+      if(e.debit&&e.credit) sub=(t.category&&t.category!=='기타'?t.category+' · ':'')+acctName(t.from)+' → '+acctName(t.to);
       else if(t.type==='expense'||t.type==='income') sub=(t.category||TYPE_LABEL[t.type]);   // 시안: 카테고리 · 기록자 (계좌는 상세에서)
       else if(e.credit&&!e.debit) sub=acctName(t.to);
       else sub=(t.category?t.category+' · ':'')+acctName(t.from);
@@ -493,7 +492,6 @@
     function shortAmt(v){ v=Math.round(Math.abs(v)); if(v>=1e8) return (v/1e8).toFixed(1).replace(/\.0$/,'')+'억'; if(v>=1e4) return Math.round(v/1e4).toLocaleString()+'만'; return v.toLocaleString(); }
     function signComma(v){ return (v<0?'−':'+')+fmtComma(Math.abs(v)); }
     function renderStats(){
-      $('screenTitle').textContent='리포트';
       if(typeof markReportSeen==='function') markReportSeen();   // 🐱 주간 미션: 리포트 확인
       const m=state.month, list=monthTx(m);
       const actual=actualSpend(list), inc=sumBy(list,'income'), bal=inc-actual;
@@ -564,7 +562,6 @@
       return '<div class="sech"><span class="l">'+label+'</span>'+right+'</div>';
     }
     function renderAssets(){
-      $('screenTitle').textContent='자산';
       const accs=visibleAccounts();
       const cashish=accs.filter(a=>a.type!=='credit_card' && !PREPAID_TYPES.includes(a.type) && a.type!=='other');
       const prepaid=accs.filter(a=>PREPAID_TYPES.includes(a.type));
@@ -963,7 +960,6 @@
     function gcell(icon,label,fn,badge){ return '<button class="gcell" onclick="'+fn+'"><span class="gic">'+icon+(badge?'<span class="gbadge">'+badge+'</span>':'')+'</span><span class="glabel">'+escapeHtml(label)+'</span></button>'; }
     function lrow(icon,label,fn,val){ return '<button class="lrow" onclick="'+fn+'"><span class="li">'+icon+'</span><span class="lt">'+label+'</span><span class="lv">'+(val||'')+'</span><span class="chev">'+MORE_ICON.chev+'</span></button>'; }
     function renderMore(){
-      $('screenTitle').textContent='더보기';
       const ws=state.wsMeta||{}; const isGroup=ws.type==='group'; const memCount=Object.keys(ws.members||{}).length;
       let h='<div class="more-wrap">';
       // 상단: 내 프로필 — 아바타 44 + 이름(flex) + 편집 chevron(우측)

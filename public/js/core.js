@@ -142,7 +142,7 @@
     // 작은 카테고리 tint 타일(예산 등 컴팩트 행용)
     function catTileMini(name){ return '<span class="mtile" style="'+catTileStyle(name)+'">'+catSvgIcon(name)+'</span>'; }
     // 거래유형 → 카테고리 그룹(expense/income/null). 'other'(기타)는 양쪽 모두 노출
-    function catTypeFor(txType){ if(['expense','prepaid_spend','point_spend'].includes(txType)) return 'expense'; if(['income','refund'].includes(txType)) return 'income'; return null; }
+    function catTypeFor(txType){ if(['expense','prepaid_spend','point_spend'].includes(txType)) return 'expense'; if(['income','refund'].includes(txType)) return 'income'; if(txType==='transfer') return 'transfer'; return null; }
     function pickableCats(wantType){ return state.categories.filter(c=>canSee(c) && c.isActive!==false && (c.type===wantType||c.type==='other')).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)); }
 
     function toast(msg, err){
