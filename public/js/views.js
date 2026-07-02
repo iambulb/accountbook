@@ -547,6 +547,18 @@
     // ===== 할일(투두) 모드 화면 =====
     let _todoFilter='all', _todoSel=null;
     function setTodoFilter(f){ _todoFilter=f; renderTodoList(); }
+    // 개인 탭에서 보고 있는 대상(친구 uid 또는 나)
+    function todoViewUid(){ return state._todoFriend || state.uid; }
+    // 현재 세그먼트(개인/그룹) + 보는 대상에 해당하는 할일만
+    function scopedTodos(){
+      const all=state.todos||[];
+      if(state._todoScope==='group') return all.filter(t=>todoScope(t)==='group');
+      const vu=todoViewUid();
+      return all.filter(t=>todoScope(t)==='personal' && (t.ownerUid||t.createdByUid)===vu);
+    }
+    function setTodoScope(s){ state._todoScope=(s==='group'?'group':'personal'); state._todoFriend=null; _todoFilter='all'; try{localStorage.setItem('todoScope',state._todoScope);}catch(e){} rerender(); }
+    function todoScopeSeg(){ const g=state._todoScope==='group';
+      return '<div class="seg todoseg"><button class="'+(g?'':'on')+'" onclick="setTodoScope(\'personal\')">개인</button><button class="'+(g?'on':'')+'" onclick="setTodoScope(\'group\')">그룹</button></div>'; }
     // nextDue/dueDiffDays는 js/util.js(순수함수·단위테스트)로 이관됨 — 전역으로 사용.
     function todoDueBadge(t){ if(!t.dueDate) return ''; const today=ymd(new Date());
       const diff=dueDiffDays(t.dueDate, today);
@@ -560,17 +572,22 @@
         todoDueBadge(t)+who+'</div>';
     }
     function renderTodoList(){
-      const all=state.todos||[]; const meUid=state.uid; const today=ymd(new Date());
+      const meUid=state.uid; const today=ymd(new Date());
       const we=new Date(); we.setDate(we.getDate()+7); const weekEnd=ymd(we);
-      let open=all.filter(t=>!t.done);
+      const isGroup=state._todoScope==='group';
+      if(!isGroup && _todoFilter==='mine') _todoFilter='all';   // 개인 탭엔 '내 담당' 필터 없음
+      const base=scopedTodos();
+      let open=base.filter(t=>!t.done);
       if(_todoFilter==='mine') open=open.filter(t=>t.assignedUid===meUid);
       else if(_todoFilter==='today') open=open.filter(t=>t.dueDate&&t.dueDate<=today);
       else if(_todoFilter==='week') open=open.filter(t=>t.dueDate&&t.dueDate<=weekEnd);
       open.sort((a,b)=>{ const ad=a.dueDate||'9999-99', bd=b.dueDate||'9999-99'; if(ad!==bd) return ad<bd?-1:1; return (a.sortOrder||0)-(b.sortOrder||0); });
-      const done=all.filter(t=>t.done).sort((a,b)=>(b.doneAt||'').localeCompare(a.doneAt||''));
-      const chips=[['all','전체'],['mine','내 할일'],['today','오늘'],['week','이번주']];
-      let h='<div class="chip-row" style="margin:6px 0 12px;">'+chips.map(c=>'<button class="chip'+(_todoFilter===c[0]?' on':'')+'" onclick="setTodoFilter(\''+c[0]+'\')">'+c[1]+'</button>').join('')+'</div>';
-      h+='<div class="card" style="padding:4px 12px;">'+(open.length?open.map(todoRow).join(''):'<div class="empty" style="padding:26px 6px;">할 일이 없어요 — 아래 ＋ 로 추가하세요</div>')+'</div>';
+      const done=base.filter(t=>t.done).sort((a,b)=>(b.doneAt||'').localeCompare(a.doneAt||''));
+      const chips=isGroup?[['all','전체'],['mine','내 담당'],['today','오늘'],['week','이번주']]:[['all','전체'],['today','오늘'],['week','이번주']];
+      let h=todoScopeSeg();
+      h+='<div class="chip-row" style="margin:6px 0 12px;">'+chips.map(c=>'<button class="chip'+(_todoFilter===c[0]?' on':'')+'" onclick="setTodoFilter(\''+c[0]+'\')">'+c[1]+'</button>').join('')+'</div>';
+      const emptyMsg=isGroup?'그룹 할일이 없어요 — 아래 ＋ 로 담당을 나눠보세요':'개인 할일이 없어요 — 아래 ＋ 로 추가하세요';
+      h+='<div class="card" style="padding:4px 12px;">'+(open.length?open.map(todoRow).join(''):'<div class="empty" style="padding:26px 6px;">'+emptyMsg+'</div>')+'</div>';
       if(done.length){ h+='<div class="sech"><span class="l">완료</span><span class="s">'+done.length+'개</span></div><div class="card" style="padding:4px 12px;">'+done.slice(0,20).map(todoRow).join('')+'</div>'; }
       $('content').innerHTML=h;
     }
@@ -578,9 +595,11 @@
     function todoSelDay(ds){ _todoSel=ds; renderTodoCalendar(); }
     function renderTodoCalendar(){
       const m=state.month, parts=m.split('-'), y=+parts[0], mo=+parts[1];
-      const byDay={}; (state.todos||[]).forEach(t=>{ if(!t.done && t.dueDate && t.dueDate.slice(0,7)===m) byDay[t.dueDate]=(byDay[t.dueDate]||0)+1; });
+      const base=scopedTodos();
+      const byDay={}; base.forEach(t=>{ if(!t.done && t.dueDate && t.dueDate.slice(0,7)===m) byDay[t.dueDate]=(byDay[t.dueDate]||0)+1; });
       const HEAD=['월','화','수','목','금','토','일']; const first=(new Date(y,mo-1,1).getDay()+6)%7; const days=new Date(y,mo,0).getDate(); const todayS=todayStr(); const sel=_todoSel||todayS;
-      let h='<div class="monthlbl"><button onclick="todoMoveMonth(-1)" aria-label="이전 달">‹</button><b>'+y+'년 '+mo+'월</b><button onclick="todoMoveMonth(1)" aria-label="다음 달">›</button></div>';
+      let h=todoScopeSeg();
+      h+='<div class="monthlbl"><button onclick="todoMoveMonth(-1)" aria-label="이전 달">‹</button><b>'+y+'년 '+mo+'월</b><button onclick="todoMoveMonth(1)" aria-label="다음 달">›</button></div>';
       h+='<div class="calwrap"><div class="cal-head">'+HEAD.map(function(w,i){ return '<div class="'+(i===5?'sat':i===6?'sun':'')+'">'+w+'</div>'; }).join('')+'</div><div class="cal-grid">';
       for(let i=0;i<first;i++) h+='<div class="cal-cell dim"></div>';
       for(let d=1;d<=days;d++){ const ds=y+'-'+pad2(mo)+'-'+pad2(d); const wd=new Date(y,mo-1,d).getDay(); const dcls='d'+(wd===0?' sun':(wd===6?' sat':''));
@@ -589,13 +608,14 @@
         h+='<div class="'+cls+'" onclick="todoSelDay(\''+ds+'\')"><div class="'+dcls+'">'+d+'</div>'+dot+'</div>';
       }
       h+='</div></div>';
-      const dayT=(state.todos||[]).filter(t=>t.dueDate===sel).sort((a,b)=>(a.done?1:0)-(b.done?1:0));
+      const dayT=base.filter(t=>t.dueDate===sel).sort((a,b)=>(a.done?1:0)-(b.done?1:0));
       h+='<div class="sech"><span class="l">'+(+sel.split('-')[1])+'월 '+(+sel.split('-')[2])+'일</span><span class="s">'+dayT.length+'개</span></div>';
       h+='<div class="card" style="padding:4px 12px;">'+(dayT.length?dayT.map(todoRow).join(''):'<div class="empty" style="padding:22px 6px;">이 날 할일이 없어요</div>')+'</div>';
       $('content').innerHTML=h;
     }
-    function renderTodoDone(){ const done=(state.todos||[]).filter(t=>t.done).sort((a,b)=>(b.doneAt||'').localeCompare(a.doneAt||''));
-      let h='<div class="sech"><span class="l">완료</span><span class="s">'+done.length+'개</span></div>';
+    function renderTodoDone(){ const done=scopedTodos().filter(t=>t.done).sort((a,b)=>(b.doneAt||'').localeCompare(a.doneAt||''));
+      let h=todoScopeSeg();
+      h+='<div class="sech"><span class="l">완료</span><span class="s">'+done.length+'개</span></div>';
       h+='<div class="card" style="padding:4px 12px;">'+(done.length?done.map(todoRow).join(''):'<div class="empty" style="padding:26px 6px;">완료한 할일이 아직 없어요</div>')+'</div>';
       $('content').innerHTML=h; }
     function toggleTodo(id){ const t=(state.todos||[]).find(x=>x.id===id); if(!t) return; const now=new Date().toISOString();

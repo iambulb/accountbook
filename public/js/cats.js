@@ -895,6 +895,33 @@
         // 이동·방향·깊이를 transform 하나로(translate3d+scale) — 전부 합성, 매 프레임 페인트 0 → 깜빡임 근본 제거
         applyDepth(a); setXform(a); a._pdir=a.dir;
       });
+      separatePets();   // 같은 배치칸(열·행) 겹침 방지
+    }
+    // 배치칸 기반 겹침 방지: 두 펫이 같은 칸(같은 열 && 같은 행/깊이)이면 이동 중인 펫을 밀어내고 멀어지는 방향으로 전환.
+    // 열=x(W/12 폭), 행=depth(1/11 단위). 열이 같아도 행(깊이)이 다르면 앞뒤로 겹쳐 보이는 것이라 허용(원근·가림 유지).
+    function separatePets(){
+      const acts=_eng.actors; if(acts.length<2) return;
+      const colW=(acts[0].W||160)/12, rowD=1/11, moved=[];
+      const mov=a=>(a.mode==='roam'||a.mode==='goal');   // 이동 가능(멈춤/드래그는 자리 유지 — 가구 점유가 별도 처리)
+      for(let i=0;i<acts.length;i++) for(let j=i+1;j<acts.length;j++){
+        const a=acts[i], b=acts[j];
+        if(a.mode==='drag'||b.mode==='drag') continue;
+        const dcx=(a.x+a.sw/2)-(b.x+b.sw/2), ddp=(a.depth||0)-(b.depth||0);
+        if(Math.abs(dcx)>=colW || Math.abs(ddp)>=rowD) continue;   // 다른 칸 → 통과(다른 행이면 앞뒤 겹침 허용)
+        const aMov=mov(a), bMov=mov(b); if(!aMov && !bMov) continue;   // 둘 다 멈춤이면 밀지 않음
+        // 더 적게 움직여 칸을 벗어나는 축(열/행)으로 분리
+        const needX=colW-Math.abs(dcx), needD=rowD-Math.abs(ddp);
+        if(needX/colW <= needD/rowD){   // 열(x)로 분리
+          const sx=(dcx>=0?1:-1), share=(aMov&&bMov)?0.5:1, push=(needX+0.6)*share;
+          if(aMov){ a.x=Math.max(2,Math.min(a.W-a.sw, a.x+sx*push)); a.dir=sx; moved.push(a); }        // b에서 멀어지는 방향으로 전환
+          if(bMov){ b.x=Math.max(2,Math.min(b.W-b.sw, b.x-sx*push)); b.dir=-sx; moved.push(b); }
+        } else {   // 행(depth)으로 분리
+          const sd=(ddp>=0?1:-1), share=(aMov&&bMov)?0.5:1, push=(needD+0.004)*share;
+          if(aMov){ a.depth=Math.max(0,Math.min(1, a.depth+sd*push)); a.vz=Math.abs(a.vz||0.0002)*sd; moved.push(a); }
+          if(bMov){ b.depth=Math.max(0,Math.min(1, b.depth-sd*push)); b.vz=-Math.abs(b.vz||0.0002)*sd; moved.push(b); }
+        }
+      }
+      moved.forEach(a=>{ applyDepth(a); setXform(a); a._pdir=a.dir; });   // 밀린 펫만 트랜스폼 갱신
     }
     function catLoop(ts){
       const dt=_eng.last?Math.min(50,ts-_eng.last):16; _eng.last=ts;

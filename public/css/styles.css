@@ -452,6 +452,8 @@
     .modeseg { display:inline-flex; background:var(--soft); border-radius:13px; padding:3px; gap:2px; }
     .modeseg button { border:none; background:transparent; font-size:12px; font-weight:800; color:var(--sub); padding:6px 9px; border-radius:10px; cursor:pointer; white-space:nowrap; }
     .modeseg button.on { background:var(--card); color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,.1); }
+    /* 할일(투두) 개인/그룹 세그먼트 — 상단 여백만 조정(.seg 재사용) */
+    .seg.todoseg { margin:4px 0 10px; }
     /* 할일(투두) 목록 행 */
     .tdrow { display:flex; align-items:center; gap:10px; padding:11px 2px; }
     .tdrow + .tdrow { border-top:1px solid var(--line-soft); }
