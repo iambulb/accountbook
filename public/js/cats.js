@@ -619,6 +619,7 @@
     function buyCat(id){
       const c=PET_CATALOG.find(x=>x.id===id); if(!c) return;
       if(ownsCat(id)){ toast('이미 보유한 고양이예요'); return; }
+      if(isGachaOnlyCat(id)){ toast('이 등급은 펫알(가챠)로만 얻을 수 있어요'); setShopSub('event'); return; }
       if(coins()<c.price){ toast((c.price-coins())+' 은화 부족', true); return; }
       gameRef().transaction(g=>{
         g=normalizeGame(g);
@@ -915,8 +916,8 @@
             '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+GACHA_PRICE+'</span></div>'+
             '<div class="act">'+act+'</div></div>';
         }).join('');
-        h+='<div class="ratebox">'+TIERS.map(t=>'<span class="ratechip"><b class="tier-'+t.id+'">'+t.name+'</b> '+t.p+'%</span>').join('')+'</div>';
-        h+='<div class="note">열 때마다 <b>금화 1개</b> 지급. 이미 보유한 고양이는 <b>'+DUP_REFUND+' 은화</b>로 환급돼요.</div>';
+        h+='<div class="note">열 때마다 <b>금화 1개</b> 지급. 이미 보유한 고양이는 <b>'+DUP_REFUND+' 은화</b>로 환급돼요. <b>특별 등급 이상</b>은 펫알로만 나와요.</div>';
+        h+=gachaInfoHtml();
         return h;
       }
       if(_shopSub==='wall'){
@@ -936,18 +937,25 @@
         return h;
       }
       if(_shopSub==='cats'){
-        h+=PET_CATALOG.map(c=>{
-          const owned=ownsCat(c.id), enough=coins()>=c.price, sel=_shopSelCat===c.id;
-          let act;
-          if(owned) act='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>보유</span>';
-          else if(enough) act='<button class="buy" aria-label="'+c.name+' 구매('+c.price+' 은화)" onclick="event.stopPropagation();buyCat(\''+c.id+'\')">구매</button>';
-          else act='<button class="buy dis" disabled>'+(c.price-coins())+' 부족</button>';
+        const owntag='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>보유</span>';
+        // 등급 낮은 것부터 높은 순으로 정렬. 특별(epic) 이상은 상점 직접 구매 불가 → 펫알(가챠) 전용 표기.
+        const cats=PET_CATALOG.slice().sort((a,b)=>tierRank(petTierOf(a.id))-tierRank(petTierOf(b.id)));
+        h+=cats.map(c=>{
+          const owned=ownsCat(c.id), sel=_shopSelCat===c.id, gachaOnly=isGachaOnlyCat(c.id), enough=coins()>=c.price;
+          let act, priceHtml;
+          if(gachaOnly){
+            priceHtml='<span class="price gachaonly">🥚 펫알 전용</span>';
+            act= owned ? owntag : '<button class="buy ghost" aria-label="'+c.name+'은 펫알에서 뽑기" onclick="event.stopPropagation();setShopSub(\'event\')">펫알 뽑기</button>';
+          } else {
+            priceHtml='<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+c.price+'</span>';
+            act= owned ? owntag : (enough ? '<button class="buy" aria-label="'+c.name+' 구매('+c.price+' 은화)" onclick="event.stopPropagation();buyCat(\''+c.id+'\')">구매</button>' : '<button class="buy dis" disabled>'+(c.price-coins())+' 부족</button>');
+          }
           // 선택하면 우리집 펫 카드처럼 옆으로 걷는 스프라이트로, 아니면 정면 정지 썸네일. 선택 시 체크 배지.
           const art=sel?catActorHTML(c.id,72):catFace(c.id,{h:72});
           return '<div class="shopcard petpick'+(sel?' sel':'')+'" role="button" tabindex="0" aria-pressed="'+sel+'" onclick="selectShopCat(\''+c.id+'\')"><div class="thumb"><div class="fl"></div>'+art+
             (sel?'<span class="psel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>':'')+'</div>'+
             '<div class="meta"><b>'+catNameSpan(c.id,c.name)+' <span class="tagmini">'+speciesLabel(c.id)+'</span></b><div class="desc">'+c.desc+'</div>'+
-            '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+c.price+'</span></div>'+
+            priceHtml+'</div>'+
             '<div class="act">'+act+'</div></div>';
         }).join('');
         h+='<div class="note">펫을 <b>탭하면 선택</b>돼요 — 카드가 강조되고 미리보기 펫이 <b>옆으로 걸어다녀요</b>. <b>중복 소유</b> 펫은 종당 1마리, 구매하면 자동으로 집에 들어와 걸어다녀요.</div>';
@@ -1126,6 +1134,20 @@
     function effTiers(){ const c=devOn()&&devCfg().tiers; if(!c) return TIERS; return TIERS.map(t=>({ id:t.id, name:t.name, color:t.color, p:(c[t.id]!=null?Number(c[t.id]):t.p) })); }
     function effCatTier(){ if(!devOn()) return CAT_TIER; const ov=devCfg().catTier||{}, r={}; Object.keys(CAT_TIER).forEach(k=>{ r[k]=(ov[k]!=null?ov[k]:CAT_TIER[k]); }); return r; }   // 알려진 id만(구 dev 설정의 잔여 키 무시)
     function effItemTier(){ return devOn()? Object.assign({},ITEM_TIER,devCfg().itemTier||{}) : ITEM_TIER; }
+    // 등급 랭크(낮을수록 흔함). 특별(epic) 이상은 상점 직접 구매 불가 — 펫알(가챠) 전용.
+    function tierRank(tier){ return Math.max(0, TIER_ORDER.indexOf(tier||'normal')); }
+    function petTierOf(id){ return effCatTier()[id]||'normal'; }
+    function isGachaOnlyCat(id){ return tierRank(petTierOf(id)) >= tierRank('epic'); }
+    // 이벤트 하단: 펫알·랜덤박스 구성(등급별 목록)과 확률을 접이식으로 표시.
+    function gachaInfoHtml(){
+      const tiers=effTiers(), catBy=effCatTier(), itemBy=effItemTier();
+      const secRows=(items,byMap,key)=> tiers.map(t=>{ const ns=items.filter(x=>byMap[x.id]===t.id).map(x=>x[key]); if(!ns.length) return '';
+        return '<div class="gi-row"><b class="tier-'+t.id+'">'+t.name+'</b><span class="gi-p">'+t.p+'%</span><span class="gi-list">'+escapeHtml(ns.join(', '))+'</span></div>'; }).join('');
+      return '<details class="gacha-info"><summary>📋 펫알·랜덤박스 구성·확률 보기</summary><div class="gi-body">'+
+        '<div class="gi-sec"><div class="gi-h">🥚 펫알 · 고양이</div>'+secRows(PET_CATALOG,catBy,'name')+'</div>'+
+        '<div class="gi-sec"><div class="gi-h">🎁 랜덤박스 · 가구</div>'+secRows(ITEM_CATALOG,itemBy,'name')+'</div>'+
+        '</div></details>';
+    }
     // 확률은 합이 100이 아니어도 총합 기준 비율로 적용(개발 편의)
     function rollTier(){ const arr=effTiers(); const total=arr.reduce((s,t)=>s+(Number(t.p)||0),0)||1; const r=Math.random()*total; let acc=0; for(const t of arr){ acc+=(Number(t.p)||0); if(r<acc) return t.id; } return arr[0].id; }
     // 등급 롤 → 해당 등급 풀에서 랜덤. 비면 한 단계 아래로 내려가며 탐색.

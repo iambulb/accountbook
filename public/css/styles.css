@@ -676,6 +676,19 @@
     /* 뽑기 확률표 */
     .ratebox { display:flex; flex-wrap:wrap; gap:6px 12px; padding:10px 2px 2px; }
     .ratechip { font-size:11.5px; font-weight:700; color:var(--sub); }
+    /* 펫알 전용(특별 이상) 가격 표기 + 이벤트 하단 구성·확률 접이식 */
+    .price.gachaonly { color:#9B6FC8; font-weight:800; font-size:12.5px; }
+    .gacha-info { margin-top:12px; border:1px solid var(--bd); border-radius:12px; background:var(--card); overflow:hidden; }
+    .gacha-info summary { list-style:none; cursor:pointer; padding:9px 12px; font-size:12.5px; font-weight:700; color:var(--sub); display:flex; align-items:center; gap:6px; }
+    .gacha-info summary::-webkit-details-marker { display:none; }
+    .gacha-info[open] summary { border-bottom:1px solid var(--line); }
+    .gi-body { padding:8px 12px 10px; display:flex; flex-direction:column; gap:11px; }
+    .gi-sec { display:flex; flex-direction:column; gap:3px; }
+    .gi-h { font-size:12px; font-weight:800; margin-bottom:2px; }
+    .gi-row { display:flex; align-items:baseline; gap:8px; font-size:11.5px; line-height:1.4; }
+    .gi-row b { flex:none; width:34px; font-weight:800; }
+    .gi-p { flex:none; width:38px; color:var(--sub); font-weight:700; }
+    .gi-list { flex:1; min-width:0; color:var(--text2); }
     /* 등급 색(텍스트) — 한정은 레인보우 */
     .tier-normal { color:var(--text); } [data-theme="dark"] .tier-normal { color:#fff; }
     .tier-uncommon { color:#2FAE7A; } .tier-rare { color:#3182F6; } .tier-epic { color:#9B6FC8; } .tier-legend { color:#E0A43C; }
