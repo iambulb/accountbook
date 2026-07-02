@@ -1,5 +1,5 @@
 /* 알뜰집(Eggarden) 서비스워커 — 오프라인 앱 셸 캐시 */
-const CACHE_VERSION = 'eggarden-v3.84.0';
+const CACHE_VERSION = 'eggarden-v3.85.0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -75,7 +75,12 @@ const APP_SHELL = [
   './assets/pets/cat_fluffy/south.png',
   './assets/pets/cat_fluffy/north.png',
   './assets/pets/cat_fluffy/east.png',
-  './assets/pets/cat_fluffy/west.png'
+  './assets/pets/cat_fluffy/west.png',
+  './assets/pets/cat_choco/walk.png',
+  './assets/pets/cat_choco/south.png',
+  './assets/pets/cat_choco/north.png',
+  './assets/pets/cat_choco/east.png',
+  './assets/pets/cat_choco/west.png'
 ];
 
 // CDN(라이브러리)은 cache-first 로 따로 보관
