@@ -1311,7 +1311,7 @@
       h+=lrow(MORE_ICON.download,'CSV 내보내기','exportCSV()');
       h+=lrow(MORE_ICON.moon,'다크 모드','toggleTheme();openSettingsSheet()', state.theme==='dark'?'켜짐':'꺼짐');
       h+=lrow(MORE_ICON.cam,'펫캠','toggleDockHidden();openSettingsSheet()', (typeof dockHiddenLabel==='function'?dockHiddenLabel():''));
-      // 개발자 모드(canel94@gmail.com 전용)
+      // 개발자 모드(등록된 개발자 이메일 전용 — cats.js DEV_EMAILS)
       if(typeof isDev==='function' && isDev()){
         h+=lrow(MORE_ICON.gear,'개발자 모드','toggleDevMode();openSettingsSheet()', devOn()?'켜짐':'꺼짐');
         if(devOn()) h+=lrow(MORE_ICON.gift,'펫알 · 박스 설정','closeSheet();openDevGacha()');

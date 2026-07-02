@@ -1399,9 +1399,9 @@
     // CAT_TIER를 단일 소스로 삼아 PET_CATALOG.price를 산정(새 고양이도 등급만 지정하면 자동 가격).
     const TIER_PRICE = { normal:50, uncommon:100, rare:200, epic:400, legend:800, limited:1500 };
     PET_CATALOG.forEach(c=>{ const t=CAT_TIER[c.id]; if(t&&TIER_PRICE[t]!=null) c.price=TIER_PRICE[t]; });
-    // ---- 개발자 모드(canel94@gmail.com 전용): 확률·구성 로컬 오버라이드 ----
-    const DEV_EMAIL='canel94@gmail.com';
-    function isDev(){ return (state.userEmail||'').toLowerCase()===DEV_EMAIL; }
+    // ---- 개발자 모드(등록된 개발자 이메일 전용): 확률·구성 로컬 오버라이드 ----
+    const DEV_EMAILS=['canel94@gmail.com','gusrufl@naver.com'];   // 소문자로 등록(비교 시 소문자화)
+    function isDev(){ return DEV_EMAILS.indexOf((state.userEmail||'').toLowerCase())>=0; }
     function devOn(){ return isDev() && localStorage.getItem('catDev')==='1'; }
     function toggleDevMode(){ if(!isDev()) return; localStorage.setItem('catDev', devOn()?'0':'1'); }
     function devCfg(){ try{ return JSON.parse(localStorage.getItem('catDevCfg')||'null')||{}; }catch(e){ return {}; } }
