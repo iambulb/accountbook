@@ -12,7 +12,9 @@ users/{uid}            : { name, email, photo(프로필 사진 base64 data URL),
                              owned:{ cats:{ {catId}:{boughtAt} }, items:{ {itemId}:{boughtAt,qty} }, wallpapers:{ {wallId}:{boughtAt} } },
                              consum:{ food, water, egg, box, rainbow_egg, rainbow_box },  // 🎒 가방(보유 소비 아이템 수): 사료·물(그릇 채움) + 펫알·랜덤박스(일반 확률 오픈) + 무지개알·무지개박스(특별↑ 오픈)
                              home:{ active:[catId…], placed:{ {"r_c"}:{itemId, filledAt?} }, wallpaper:wallId, poops, slots },  // filledAt=밥/물 채운 시각(ms, 3h 뒤 비워지며 poops+1) · poops=미수거 똥 수(탭 시 +2은화) · slots=활성 슬롯 수(기본3·금화로 확장)
-                             missions:{ {periodKey}:{ {missionId}:{claimed,reward,at} } },  // periodKey=KST 일자 2026-07-01
+                             missions:{ {periodKey}:{ {missionId}:{claimed,reward,at} } },  // periodKey=KST 일자 2026-07-01(day)·주(week)·once. 일일/주간/업적 수령 기록(멱등)
+                             customMissions:{ {id}:{ title, coinReward, active, createdAt, order } },  // 🎯 내 미션(커스텀 습관) 정의
+                             missionLogs:{ {missionId}:{ "YYYY-MM-DD":{ done, paid, at } } },  // 내 미션 체크인 로그(날짜키=하루1회 멱등, paid=최초 지급 표시 → 재체크 재지급 방지)
                              gifts:[ { type:'coins'|'consum', key?, qty, code, at } … ],  // 🎁 선물함(코드 보상 대기 목록) — 받기(claimGift) 시 은화는 coins로, 아이템은 consum(가방)으로
                              codes:{ {code}:{at, n} }                 // 사용한 프로모/치트 코드(일반 1회·개발자 무한). n=사용 횟수
                            } }

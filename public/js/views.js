@@ -987,6 +987,52 @@
     function deleteSavings(ownerUid,id){ confirmSheet('이 적금 목표를 삭제할까요?', ()=>{ db.ref(wp('savings/'+ownerUid+'/'+id)).remove(); toast('삭제되었습니다'); }); }
 
     // ===== 더보기 =====
+    // ===== 오늘 홈(랜딩 대시보드) — 오늘 할 것(미션·할일·가계부 한 줄)을 한 화면에 =====
+    function homeMissionRow(o){
+      const chk='<button class="tdchk'+(o.done?' on':'')+'" onclick="'+o.onclick+'" aria-label="'+escapeHtml(o.name)+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></button>';
+      return '<div class="hmrow">'+chk+'<span class="hmname'+(o.done?' done':'')+'">'+escapeHtml(o.name)+'</span>'+
+        (o.done?'<span class="hmok">완료</span>':'<span class="hmrw"><span class="ci">'+coinSvg({h:14})+'</span>+'+o.reward+'</span>')+'</div>';
+    }
+    function renderHome(){
+      const c=$('content'); if(!c) return;
+      const hh=new Date().getHours(); const greet=hh<11?'좋은 아침이에요':(hh<18?'오늘도 알뜰하게':'오늘 하루 마무리해요');
+      const daily=(typeof DAILY_MISSIONS!=='undefined')?DAILY_MISSIONS:[];
+      const customs=(typeof customMissionList==='function')?customMissionList():[];
+      const mrows=daily.map(function(m){ return { name:m.name, reward:m.reward, done:missionClaimed(m), onclick:"homeMissionTap('"+m.id+"')" }; })
+        .concat(customs.map(function(m){ return { name:m.title, reward:m.coinReward||2, done:customCheckedToday(m.id), onclick:"toggleCustomMissionToday('"+m.id+"')" }; }));
+      const st=(typeof todayMissionState==='function')?todayMissionState(mrows.map(function(r){return r.done;})):{done:0,total:mrows.length,pct:0,allDone:false};
+      const today=ymd(new Date());
+      const dueTop=((typeof scopedTodos==='function')?scopedTodos():[]).filter(function(t){ return !t.done && t.dueDate && t.dueDate<=today; })
+        .sort(function(a,b){ return (a.dueDate||'').localeCompare(b.dueDate||''); }).slice(0,4);
+      const todaySpend=(typeof actualSpend==='function')?actualSpend((state.transactions||[]).filter(function(t){return (t.date||'').slice(0,10)===today;})):0;
+      const monthSpend=(typeof actualSpend==='function'&&typeof monthTx==='function')?actualSpend(monthTx(state.month)):0;
+      const missionsDone = st.total===0 || st.allDone, noTodos = dueTop.length===0;
+
+      let h='<div class="homewrap">';
+      h+='<div class="card homehero"><div class="hh-l"><div class="hh-greet">'+greet+', '+escapeHtml(state.userName||'')+'님</div>'+
+        '<div class="hh-sub">오늘 미션 '+st.done+'/'+st.total+'</div></div>'+
+        '<div class="hh-coin"><span class="ci">'+coinSvg({h:20})+'</span><b>'+coins().toLocaleString()+'</b></div></div>';
+      if(missionsDone && noTodos){
+        h+='<div class="card homedone"><div class="hd-emoji">🐱</div><div class="hd-tit">오늘 할 거 다 했어요</div>'+
+          '<div class="hd-sub">고양이도 만족스러워해요. 내일 또 만나요!</div>'+
+          '<button class="btn ghost" onclick="openCatHouse()">알뜰샵 둘러보기</button></div>';
+      } else {
+        if(mrows.length){
+          const col=(typeof budgetColor==='function')?(st.allDone?'var(--income)':budgetColor(100-st.pct)):'var(--income)';
+          h+='<div class="card"><div class="sech" style="margin-top:0;"><span class="l">오늘 미션</span><button class="link" onclick="openCatHouse(\'mission\')">미션 전체</button></div>'+
+            '<div class="hbar"><i style="width:'+st.pct+'%;background:'+col+'"></i></div>'+mrows.map(homeMissionRow).join('')+'</div>';
+        }
+        if(dueTop.length){
+          h+='<div class="card"><div class="sech" style="margin-top:0;"><span class="l">오늘·임박 할일</span><button class="link" onclick="goto(\'todo\')">전체 보기</button></div>'+
+            dueTop.map(function(t){ return todoRow(t,false); }).join('')+'</div>';
+        }
+        h+='<div class="card homeledger" role="button" tabindex="0" onclick="goto(\'ledger\')"><div class="hl-row"><span class="hl-k">오늘 지출</span><span class="hl-v">₩'+todaySpend.toLocaleString()+'</span></div>'+
+          '<div class="hl-row sub"><span class="hl-k">이번달 지출</span><span class="hl-v">₩'+monthSpend.toLocaleString()+'</span></div></div>';
+      }
+      h+='</div>';
+      c.innerHTML=h;
+    }
+
     // ===== 워크스페이스(가계부/그룹) 관리 UI =====
     function openWorkspaceSheet(){
       const cur=state.wsId;

@@ -435,7 +435,9 @@
       { id:'ach_budget', period:'once', name:'첫 예산 설정',        reward:15, icon:'<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 12h8"/>', check:()=> (state.budgets||[]).length>0 },
       { id:'ach_settle', period:'once', name:'첫 정산 거래',        reward:25, icon:'<path d="M7 8h10M7 12h10M7 16h6"/>', check:()=> (state.transactions||[]).some(t=>t.settlementIncluded===true) },
       { id:'ach_todo1',  period:'once', name:'첫 할일 완료',        reward:10, icon:'<circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.7 2.7L16.5 9"/>', check:()=> (state.todos||[]).some(t=>t.rewardClaimed||t.done) },
-      { id:'ach_todo10', period:'once', name:'할일 10개 완료',      reward:30, icon:'<path d="M4 6l1.5 1.5L8 5M4 12l1.5 1.5L8 11M4 18l1.5 1.5L8 17M12 6h8M12 12h8M12 18h8"/>', check:()=> (state.todos||[]).filter(t=>t.rewardClaimed).length>=10 }
+      { id:'ach_todo10', period:'once', name:'할일 10개 완료',      reward:30, icon:'<path d="M4 6l1.5 1.5L8 5M4 12l1.5 1.5L8 11M4 18l1.5 1.5L8 17M12 6h8M12 12h8M12 18h8"/>', check:()=> (state.todos||[]).filter(t=>t.rewardClaimed).length>=10 },
+      { id:'ach_custom1', period:'once', name:'첫 내 미션 만들기',   reward:10, icon:'<path d="M12 5v14M5 12h14"/>', check:()=> Object.keys((state.game&&state.game.customMissions)||{}).length>0 },
+      { id:'ach_custom7', period:'once', name:'내 미션 7일 연속',    reward:30, icon:'<path d="M12 3s5 4 5 9a5 5 0 1 1-10 0c0-2 1-3.5 2-4 0 2 1 3 2 3 0-3 -1-6 -1-8z"/>', check:()=> (typeof customMissionList==='function') && customMissionList().some(m=> missionStreak(missionLogDoneDates(m.id), kstDayKey()).best>=7 ) }
     ];
     const ALL_MISSIONS = DAILY_MISSIONS.concat(WEEKLY_MISSIONS).concat(ACHIEVEMENTS);
 
@@ -579,6 +581,46 @@
     function gameRef(){ return db.ref('users/'+state.uid+'/game'); }
     const TODO_REWARD=2;   // 할일 완료 시 은화(할일당 1회, todos.rewardClaimed로 멱등)
     function grantTodoCoins(){ if(!state.uid) return; gameRef().transaction(function(g){ g=normalizeGame(g); g.coins=(g.coins||0)+TODO_REWARD; return g; }); }
+
+    // ===== 내 미션(커스텀 습관) — 개인 전역 game 트리. 일일 미션 경제(멱등 체크인)에 흡수 =====
+    const CUSTOM_MISSION_REWARD=2;   // 커스텀 미션 1일 최초 체크인 은화(소액 고정)
+    function customMissionList(){ const cm=(state.game&&state.game.customMissions)||{};
+      return Object.keys(cm).map(id=>Object.assign({id},cm[id])).filter(m=>m.active!==false)
+        .sort((a,b)=>(a.order||0)-(b.order||0)||String(a.createdAt||'').localeCompare(String(b.createdAt||''))); }
+    function missionLogDoneDates(id){ const lg=(state.game&&state.game.missionLogs&&state.game.missionLogs[id])||{};
+      return Object.keys(lg).filter(d=>lg[d]&&lg[d].done); }
+    function customCheckedToday(id){ const lg=(state.game&&state.game.missionLogs&&state.game.missionLogs[id])||{}; const e=lg[kstDayKey()]; return !!(e&&e.done); }
+    // 오늘 체크인 토글: 최초 done 전환 때만 은화 지급(paid 플래그로 멱등 — 해제→재체크 재지급 없음).
+    function toggleCustomMissionToday(id){
+      if(!state.uid) return; const day=kstDayKey();
+      gameRef().transaction(g=>{ g=normalizeGame(g);
+        const cm=g.customMissions[id]; if(!cm||cm.active===false) return g;
+        g.missionLogs[id]=g.missionLogs[id]||{};
+        const cur=g.missionLogs[id][day]||null, isDone=!!(cur&&cur.done);
+        if(isDone){ g.missionLogs[id][day]={ done:false, paid:!!(cur&&cur.paid), at:(cur&&cur.at)||new Date().toISOString() }; }
+        else { const paid=!!(cur&&cur.paid); g.missionLogs[id][day]={ done:true, paid:true, at:new Date().toISOString() };
+          if(!paid) g.coins=(g.coins||0)+(Number(cm.coinReward)||CUSTOM_MISSION_REWARD); }
+        return g;
+      }).then(res=>{ if(res&&res.committed){ const on=customCheckedToday(id); if(on) toast('오늘 완료! 🐾'); } });
+    }
+    // 내 미션 추가/수정 시트(제목만 받는 가벼운 시트)
+    function openCustomMissionEdit(id){
+      const cm=id?((state.game.customMissions||{})[id]):null;
+      let h='<div class="field"><label>미션 이름</label><input class="input" id="cmTitle" value="'+escapeHtml((cm&&cm.title)||'')+'" placeholder="예: 물 2L 마시기" maxlength="24"></div>';
+      h+='<p class="muted" style="font-size:12px;margin:2px 2px 12px;">매일 체크하면 <b>+'+CUSTOM_MISSION_REWARD+' 은화</b>. 오늘 홈·미션 탭에서 체크할 수 있어요.</p>';
+      h+='<button class="btn" onclick="saveCustomMission('+(id?("'"+id+"'"):'')+')">'+(id?'저장':'추가')+'</button>';
+      if(id) h+='<button class="btn ghost" style="margin-top:8px;" onclick="deleteCustomMission(\''+id+'\')">삭제</button>';
+      openSheet(id?'내 미션 수정':'내 미션 추가', h);
+    }
+    function saveCustomMission(id){
+      const title=(val('cmTitle')||'').trim(); if(!title){ toast('이름을 입력하세요', true); return; }
+      if(id){ gameRef().child('customMissions/'+id+'/title').set(title); }
+      else { const ref=gameRef().child('customMissions').push();
+        ref.set({ title, coinReward:CUSTOM_MISSION_REWARD, active:true, createdAt:new Date().toISOString(), order:Date.now() }); }
+      toast(id?'저장했어요':'내 미션을 추가했어요'); closeSheet();
+    }
+    function deleteCustomMission(id){ confirmSheet('이 내 미션을 삭제할까요? (기록도 함께 사라져요)', ()=>{
+      gameRef().child('customMissions/'+id).remove(); gameRef().child('missionLogs/'+id).remove(); toast('삭제했어요'); closeSheet(); }); }
     // 보유(owned.cats)·활성(home.active)에 남아있는 구 id를 신 id로 이관(하위호환). 다음 쓰기 때 영구 반영.
     function migratePetIds(o){
       const m=PET_ID_MIGRATE, cats={};
@@ -592,6 +634,8 @@
       consum:{ food:Number(g.consum&&g.consum.food)||0, water:Number(g.consum&&g.consum.water)||0, egg:Number(g.consum&&g.consum.egg)||0, box:Number(g.consum&&g.consum.box)||0, rainbow_egg:Number(g.consum&&g.consum.rainbow_egg)||0, rainbow_box:Number(g.consum&&g.consum.rainbow_box)||0 },
       home:{ active:(g.home&&g.home.active)||[], placed:(g.home&&g.home.placed)||{}, wallpaper:(g.home&&g.home.wallpaper)||'default', poops:Number(g.home&&g.home.poops)||0, slots:Math.min(MAX_SLOTS, Math.max(BASE_SLOTS, Number(g.home&&g.home.slots)||BASE_SLOTS)) },
       missions: g.missions||{}, progress: g.progress||{}, codes: g.codes||{},
+      customMissions: g.customMissions||{},   // 내 미션(커스텀 습관): {id:{title,coinReward,active,createdAt,order}}
+      missionLogs: g.missionLogs||{},          // 체크인 로그: {missionId:{'YYYY-MM-DD':{done,paid,at}}}
       gifts: normalizeGifts(g.gifts)   // 선물함(코드 보상 대기 목록)
     }); }
     // 선물함 목록을 항상 배열로 정규화(RTDB가 객체로 돌려줄 수 있어 방어)
@@ -612,6 +656,7 @@
       const dw=$('catdock'); const wall=dw&&dw.querySelector('.cr-wall'); if(wall) wall.style.background=wallCss(currentWall());
       renderDockProps();
       renderDockCats();
+      if(state.view==='home' && typeof renderHome==='function') renderHome();   // 홈의 미션·은화 즉시 반영
       if(state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh();
     }
     function coins(){ return (state.game&&state.game.coins)||0; }
@@ -771,6 +816,13 @@
       if(missionClaimed(m)){ toast('이미 수령했어요'); return; }
       if(!m.check()){ toast('아직 완료되지 않았어요', true); return; }
       grantMission(m).then(res=>{ if(res.committed) toast('+'+m.reward+' 은화 획득! 🐾'); });
+    }
+    // 오늘 홈에서 일일 미션 행 탭: 이미 수령=무시 / 완료됨=수령 / 미완료=해당 행동으로 딥링크.
+    function homeMissionTap(id){
+      const m=DAILY_MISSIONS.find(x=>x.id===id); if(!m) return;
+      if(missionClaimed(m)) return;
+      if(m.check()){ claimMission(id); return; }
+      if(id==='record' && typeof goto==='function'){ goto('ledger'); if(typeof openTxSheet==='function') openTxSheet(); }
     }
     // 출석 자동 수령(진입 시 1회, 멱등)
     function autoClaimAttend(){
@@ -1723,10 +1775,24 @@
       return '<div class="cmrow"><span class="cmi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+m.icon+'</svg></span>'+
         '<div class="cmm"><b>'+m.name+'</b><span class="rw"><span class="ci">'+coinSvg({h:14})+'</span>+'+m.reward+(claimed?' · 수령완료':(ok?' · 완료':(m.prog?' · '+m.prog():'')))+'</span></div>'+right+'</div>';
     }
+    // 내 미션(커스텀) 행: 오늘 체크 원 + 이름 + 🔥연속 + 최근7일 점. 이름 탭=수정 시트.
+    function customMissionRow(cm){
+      const done=customCheckedToday(cm.id), dates=missionLogDoneDates(cm.id);
+      const st=(typeof missionStreak==='function')?missionStreak(dates, kstDayKey()):{current:0};
+      const dots=(typeof weekDotsData==='function'?weekDotsData(dates, kstDayKey()):[]).map(d=>'<i class="cmdot'+(d.filled?' on':'')+'"></i>').join('');
+      return '<div class="cmrow custom">'+
+        '<button class="tdchk'+(done?' on':'')+'" onclick="event.stopPropagation();toggleCustomMissionToday(\''+cm.id+'\')" aria-label="'+(done?'오늘 완료 취소':'오늘 완료')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></button>'+
+        '<div class="cmm" onclick="openCustomMissionEdit(\''+cm.id+'\')"><b>'+escapeHtml(cm.title||'')+'</b>'+
+          '<span class="rw">'+(st.current>0?'🔥 '+st.current+'일 · ':'')+'<span class="ci">'+coinSvg({h:14})+'</span>+'+(cm.coinReward||CUSTOM_MISSION_REWARD)+'</span></div>'+
+        '<span class="cmdots" aria-hidden="true">'+dots+'</span></div>';
+    }
     function catMissionHtml(){
       let h='<div class="coinhero"><span class="ch-big">'+coinSvg({h:44})+'</span><div><div class="k">보유 은화</div><div class="v">'+coins().toLocaleString()+'</div></div></div>';
       h+='<div class="sech"><span class="l">일일 미션</span><span class="s">자정 초기화</span></div>';
       h+=DAILY_MISSIONS.map(missionRow).join('');
+      h+='<div class="sech"><span class="l">내 미션</span><button class="link" onclick="openCustomMissionEdit()">+ 추가</button></div>';
+      const mine=customMissionList();
+      h+= mine.length ? mine.map(customMissionRow).join('') : '<div class="note" style="margin:2px 0 4px;">매일 체크할 나만의 습관을 추가해요. 체크하면 은화가 쌓여요.</div>';
       h+='<div class="sech"><span class="l">주간 미션</span><span class="s">월요일 초기화</span></div>';
       h+=WEEKLY_MISSIONS.map(missionRow).join('');
       h+='<div class="sech"><span class="l">업적</span><span class="s">한 번만</span></div>';

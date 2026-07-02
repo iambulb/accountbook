@@ -80,6 +80,8 @@ firebase.js → constants.js → util.js → core.js → views.js → cats.js �
 ## 모드(가계부/할일) · 네비게이션 / 렌더 흐름
 
 - **모드 토글**(core.js): `setMode('ledger'|'todo')`(localStorage) → `applyMode` → `renderTabBar`(모드별 `_TABSETS`)·`updateModeToggle`·기본 탭 이동. FAB는 `fabAdd()`가 모드 분기(`openTxSheet`/`openTodoEdit`).
+- **오늘 홈(랜딩)**: `state.view`('home'|'mode', `localStorage('view')`). `renderHome`(views.js)가 오늘 미션·할일·가계부 한 줄을 조합 — `homeMissionRow`/`homeMissionTap`(일일 딥링크). 진입/복귀 `goHome`·`goto(mode,tab)`(core.js), `rerender()`가 `view==='home'`이면 `renderHome` 후 종료(바텀탭바는 `body.home-view`로 숨김).
+- **내 미션(커스텀 습관, cats.js)**: `customMissionList`/`customMissionRow`·`toggleCustomMissionToday`(멱등 지급)·`openCustomMissionEdit`/`saveCustomMission`/`deleteCustomMission`·`missionLogDoneDates`/`customCheckedToday`. 순수헬퍼 `missionStreak`/`weekDotsData`/`todayMissionState`(util.js).
 - 탭 전환은 `go(tab)` — 가계부(달력/리포트/자산/더보기)·할일(할일/캘린더/완료/더보기). `rerender()`가 `state.tab`으로 해당 `render*` 호출(더보기 `renderMore`는 `state.mode`로 그리드 분기).
 - 시트(모달)는 `openSheet(title, html)` / `closeSheet()`, 확인 다이얼로그는 `confirmSheet(msg, onYes)`.
 - RTDB 리스너가 데이터를 받을 때마다 `rerender()` 로 현재 화면을 다시 그립니다(단방향: 데이터 변경 → 전체 재렌더).

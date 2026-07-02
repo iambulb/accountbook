@@ -77,7 +77,31 @@
     });
     return [meUid].concat(friends);
   }
-  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder };
+
+  // ===== 미션(습관) 순수 헬퍼 — 오늘 홈·미션 탭 공용. 날짜는 'YYYY-MM-DD'(KST 키) 문자열, addDays 재사용. =====
+  // 체크인 로그 날짜 배열 → 연속 기록(current: 오늘 또는 어제부터 이어진 일수 / best: 전체 최장 연속).
+  function missionStreak(logDates, today) {
+    var set = {}; (logDates || []).forEach(function (d) { if (d) set[String(d).slice(0, 10)] = true; });
+    var cur = 0, anchor = set[today] ? today : (set[addDays(today, -1)] ? addDays(today, -1) : null);
+    if (anchor) { var d = anchor; while (set[d]) { cur++; d = addDays(d, -1); } }
+    var days = Object.keys(set).sort(), best = 0, run = 0, prev = null;
+    days.forEach(function (dd) { if (prev && addDays(prev, 1) === dd) run++; else run = 1; if (run > best) best = run; prev = dd; });
+    return { current: cur, best: best };
+  }
+  // 최근 7일(today-6 … today) 점 스트립: [{date, filled}].
+  function weekDotsData(logDates, today) {
+    var set = {}; (logDates || []).forEach(function (d) { if (d) set[String(d).slice(0, 10)] = true; });
+    var out = []; for (var i = 6; i >= 0; i--) { var dt = addDays(today, -i); out.push({ date: dt, filled: !!set[dt] }); }
+    return out;
+  }
+  // 오늘 미션 완료 상태(일일+커스텀 합산). doneFlags=[bool] → {done,total,pct,allDone}.
+  function todayMissionState(doneFlags) {
+    var arr = (doneFlags || []).map(Boolean);
+    var total = arr.length, done = arr.filter(Boolean).length;
+    return { done: done, total: total, pct: total ? Math.round(done / total * 100) : 0, allDone: total > 0 && done === total };
+  }
+
+  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);

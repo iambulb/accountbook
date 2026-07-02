@@ -50,7 +50,7 @@
   <!-- 앱 -->
   <div id="app">
     <div class="topbar">
-      <div class="brand"><img src="icons/icon.svg" class="brand-ic" alt=""><img src="icons/wordmark-altteul.svg" class="brand-wm" alt="알뜰"></div>
+      <div class="brand" role="button" tabindex="0" onclick="goHome()" aria-label="오늘 홈"><img src="icons/icon.svg" class="brand-ic" alt=""><img src="icons/wordmark-altteul.svg" class="brand-wm" alt="알뜰"></div>
       <div style="display:flex;align-items:center;gap:8px;">
         <div class="modeseg" id="modeSeg" role="tablist" aria-label="가계부/할일 전환">
           <button type="button" data-mode="ledger" class="on" onclick="setMode('ledger')">가계부</button>

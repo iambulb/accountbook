@@ -17,6 +17,7 @@
       theme: localStorage.getItem('theme') || 'light',
       tab:'calendar',
       mode: (localStorage.getItem('mode')==='todo' ? 'todo' : 'ledger'),   // 가계부(ledger) / 할일(todo) 모드
+      view: (localStorage.getItem('view')==='mode' ? 'mode' : 'home'),     // 랜딩 '오늘 홈'(home) / 모드 화면(mode) — 모드는 아님(두 모드 그대로)
       todos:[], todoShare:{},   // 할일 목록 / 멤버별 개인 할일 공유 플래그(ws/{wsId}/todoShare/{uid})
       _todoScope: (localStorage.getItem('todoScope')==='group' ? 'group' : 'personal'),   // 할일 세그먼트: 개인/그룹
       _todoFriend: null   // 개인 탭에서 보고 있는 친구 uid(null/내 uid=나)
@@ -978,12 +979,27 @@
 
     // ===== 렌더 라우팅 =====
     function go(tab){
+      state.view='mode'; try{ localStorage.setItem('view','mode'); }catch(e){}   // 탭 이동 = 모드 화면
       state.tab=tab;
       document.querySelectorAll('.tabbar .tab').forEach(b=>b.classList.toggle('on', b.dataset.tab===tab));
       rerender();
       const c=$('content'); if(c) c.scrollTop=0;   // 탭 전환 시 내용 스크롤 맨 위로
     }
+    // 랜딩 '오늘 홈'으로 (상단 로고=홈 버튼). 바텀 탭 아님.
+    function goHome(){ state.view='home'; try{ localStorage.setItem('view','home'); }catch(e){}
+      rerender(); const c=$('content'); if(c) c.scrollTop=0; }
+    // 홈 카드 딥링크: 모드 세팅 + 해당 탭으로 진입.
+    function goto(mode, tab){
+      if(mode){ state.mode=(mode==='todo'?'todo':'ledger'); try{ localStorage.setItem('mode',state.mode); }catch(e){} renderTabBar(); updateModeToggle(); }
+      go(tab || (state.mode==='todo'?'todo':'calendar'));
+    }
     function rerender(){
+      document.body.classList.toggle('home-view', state.view==='home');   // 홈에선 바텀 탭바 숨김(CSS)
+      if(state.view==='home'){
+        if(typeof renderHome==='function') renderHome();
+        const sh0=$('sheet'); if(sh0 && sh0.classList.contains('on') && typeof state._sheetRefresh==='function') state._sheetRefresh();
+        return;
+      }
       if(state.tab==='calendar') renderCalendar();
       else if(state.tab==='stats') renderStats();
       else if(state.tab==='assets') renderAssets();
@@ -1015,5 +1031,9 @@
         : '<button class="tab'+(state.tab===it[0]?' on':'')+'" data-tab="'+it[0]+'" onclick="go(\''+it[0]+'\')"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+(_TABICON[it[0]]||'')+'</svg>'+it[1]+'</button>'; }).join('');
     }
     function updateModeToggle(){ const seg=$('modeSeg'); if(seg) Array.prototype.forEach.call(seg.children,function(b){ b.classList.toggle('on', b.dataset.mode===state.mode); }); }
-    function applyMode(){ renderTabBar(); updateModeToggle(); go(state.mode==='todo'?'todo':'calendar'); }
-    function setMode(m){ m=(m==='todo')?'todo':'ledger'; state.mode=m; try{ localStorage.setItem('mode',m); }catch(e){} applyMode(); }
+    function applyMode(){ renderTabBar(); updateModeToggle();
+      if(state.view==='home') goHome();                          // 부팅/전환 시 홈 유지
+      else go(state.mode==='todo'?'todo':'calendar'); }
+    function setMode(m){ m=(m==='todo')?'todo':'ledger'; state.mode=m; try{ localStorage.setItem('mode',m); }catch(e){}
+      state.view='mode'; try{ localStorage.setItem('view','mode'); }catch(e){}   // 모드 토글 = 모드 화면 진입
+      applyMode(); }

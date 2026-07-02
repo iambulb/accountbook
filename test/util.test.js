@@ -130,3 +130,28 @@ test('personKey: 멤버는 uid, 레거시/공동은 이름', () => {
   assert.strictEqual(U.personKey({ userUid: '공동', user: '공동' }), '공동');           // 공동은 uid로 안 침
   assert.strictEqual(U.personKey({}), '미지정');
 });
+
+test('missionStreak: 오늘까지 연속·최장 연속', () => {
+  assert.deepStrictEqual(U.missionStreak(['2026-07-01','2026-07-02','2026-07-03'], '2026-07-03'), { current: 3, best: 3 });
+  // 오늘 미체크지만 어제까지 이어짐 → current는 어제 기준 유지
+  assert.deepStrictEqual(U.missionStreak(['2026-07-01','2026-07-02'], '2026-07-03'), { current: 2, best: 2 });
+  // 결번(7/2 빠짐) → current는 오늘(7/3)만, best는 최장 1
+  assert.deepStrictEqual(U.missionStreak(['2026-07-01','2026-07-03'], '2026-07-03'), { current: 1, best: 1 });
+  // 이틀 전까지만 → 오늘도 어제도 없음 → current 0
+  assert.deepStrictEqual(U.missionStreak(['2026-06-30','2026-07-01'], '2026-07-03'), { current: 0, best: 2 });
+  assert.deepStrictEqual(U.missionStreak([], '2026-07-03'), { current: 0, best: 0 });
+});
+
+test('weekDotsData: 최근 7일 채움/빈', () => {
+  const d = U.weekDotsData(['2026-07-03','2026-06-30'], '2026-07-03');
+  assert.strictEqual(d.length, 7);
+  assert.strictEqual(d[6].date, '2026-07-03'); assert.strictEqual(d[6].filled, true);   // 오늘
+  assert.strictEqual(d[0].date, '2026-06-27'); assert.strictEqual(d[0].filled, false);  // 6일 전
+  assert.strictEqual(d[3].date, '2026-06-30'); assert.strictEqual(d[3].filled, true);
+});
+
+test('todayMissionState: N/M·완료율·전체완료', () => {
+  assert.deepStrictEqual(U.todayMissionState([true, false, true]), { done: 2, total: 3, pct: 67, allDone: false });
+  assert.deepStrictEqual(U.todayMissionState([true, true]), { done: 2, total: 2, pct: 100, allDone: true });
+  assert.deepStrictEqual(U.todayMissionState([]), { done: 0, total: 0, pct: 0, allDone: false });
+});

@@ -264,6 +264,33 @@
     .switch.on > i { left:21px; }
 
     /* 하단 탭바 + FAB */
+    /* ===== 오늘 홈(랜딩) ===== */
+    body.home-view .tabbar { display:none; }   /* 홈에선 바텀 탭바 숨김(랜딩 화면) */
+    .brand { cursor:pointer; }
+    .homewrap { padding:14px 16px calc(24px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:12px; }
+    .homehero { display:flex; align-items:center; justify-content:space-between; padding:16px 18px; }
+    .homehero .hh-greet { font-size:16px; font-weight:800; letter-spacing:-.02em; }
+    .homehero .hh-sub { font-size:12.5px; color:var(--sub); font-weight:600; margin-top:3px; }
+    .homehero .hh-coin { display:inline-flex; align-items:center; gap:5px; font-size:17px; font-weight:800; }
+    .homehero .hh-coin .ci { width:20px; height:20px; display:inline-flex; }
+    .hbar { height:8px; border-radius:5px; background:var(--soft2); overflow:hidden; margin:2px 0 10px; }
+    .hbar i { display:block; height:100%; border-radius:5px; transition:width .3s; }
+    .hmrow { display:flex; align-items:center; gap:12px; padding:9px 2px; }
+    .hmrow .hmname { flex:1; min-width:0; font-size:14.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .hmrow .hmname.done { color:var(--sub); text-decoration:line-through; }
+    .hmrow .hmrw { flex:none; display:inline-flex; align-items:center; gap:3px; font-size:12.5px; font-weight:800; color:var(--sub); }
+    .hmrow .hmrw .ci { width:14px; height:14px; display:inline-flex; }
+    .hmrow .hmok { flex:none; font-size:12px; font-weight:800; color:var(--income); }
+    .homedone { text-align:center; padding:26px 18px; }
+    .homedone .hd-emoji { font-size:40px; }
+    .homedone .hd-tit { font-size:17px; font-weight:800; margin-top:6px; }
+    .homedone .hd-sub { font-size:13px; color:var(--sub); font-weight:500; margin:6px 0 14px; }
+    .homeledger { cursor:pointer; }
+    .homeledger .hl-row { display:flex; align-items:center; justify-content:space-between; }
+    .homeledger .hl-row.sub { margin-top:6px; }
+    .homeledger .hl-k { font-size:13.5px; font-weight:700; color:var(--sub); }
+    .homeledger .hl-row:not(.sub) .hl-v { font-size:17px; font-weight:800; }
+    .homeledger .hl-row.sub .hl-v { font-size:13.5px; font-weight:700; color:var(--sub); }
     .tabbar {
       flex-shrink:0;
       width:100%; background:var(--card);
@@ -653,6 +680,11 @@
     .coinhero .k { font-size:11.5px; color:var(--sub); font-weight:700; margin-bottom:3px; }
     .coinhero .v { font-size:26px; font-weight:800; letter-spacing:-.03em; }
     .cmrow { display:flex; align-items:center; gap:13px; padding:13px 2px; }
+    /* 내 미션(커스텀) 행: 체크 원(.tdchk 재사용) + 이름/보상 + 최근7일 점 */
+    .cmrow.custom .cmm { flex:1; min-width:0; cursor:pointer; }
+    .cmrow.custom .cmdots { display:inline-flex; gap:3px; flex:none; }
+    .cmdot { width:6px; height:6px; border-radius:50%; background:var(--soft2); display:block; }
+    .cmdot.on { background:var(--income); }
     .cmrow + .cmrow { border-top:1px solid var(--line); }
     .cmrow .cmi { width:38px; height:38px; border-radius:12px; background:var(--soft); display:flex; align-items:center; justify-content:center; color:var(--text2); flex:none; }
     .cmrow .cmi svg { width:20px; height:20px; }
