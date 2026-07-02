@@ -513,7 +513,9 @@
     .cd-room .cr-base { position:absolute; left:0; right:0; bottom:66%; height:1px; background:var(--bd); z-index:1; }
     .cd-room .cr-props { position:absolute; inset:0; z-index:1; }
     .cd-room .cr-stage { position:absolute; left:0; right:0; bottom:0; height:66%; z-index:2; pointer-events:none; }
-    .cd-room .cd-coin { position:absolute; top:9px; left:12px; z-index:3; }
+    .cd-room .cd-coin { position:absolute; top:9px; left:12px; z-index:3; cursor:pointer; }
+    .cd-coin.tap { animation:coinpress .18s ease; }
+    @keyframes coinpress { 40%{ transform:scale(.84); } 100%{ transform:scale(1); } }
     .cd-room .cd-actor { bottom:2px; }
     .cr-floor { position:absolute; left:0; right:0; bottom:0; height:54%; background:var(--soft2); z-index:0; }
     /* 벽지 상점 */
