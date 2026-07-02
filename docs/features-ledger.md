@@ -50,7 +50,7 @@
 핵심 — 모든 가계부 데이터는 워크스페이스 단위로 격리됩니다. (공통 기반이라 [features.md](features.md#공통-기반)에도 요약)
 
 - **개인 가계부**: `type:'personal'`, 멤버 1명. 가입 시 자동 생성(`createPersonalWorkspace`).
-- **그룹 가계부**: `type:'group'` + **6자리 초대코드**. 코드를 아는 사람은 즉시 멤버로 합류(`joinByCode`). 그룹 안에서는 서로의 거래까지 공동으로 읽고 씁니다.
+- **그룹**: `type:'group'` + **6자리 초대코드**. 코드를 아는 사람은 즉시 멤버로 합류(`joinByCode`). 그룹 안에서는 서로의 거래까지 공동으로 읽고 씁니다.
 - **멤버 역할**: owner(👑) / member(👤). 관리는 그룹 관리 시트(`openGroupManageSheet`).
 - **전환**: 상단 워크스페이스 칩 또는 더보기 → 가계부 전환(`switchWorkspace`).
 - **나가기/정리**: 마지막 멤버가 나가면 워크스페이스·코드까지 삭제(`leaveWorkspace`).

@@ -517,37 +517,22 @@
     // 선물함 아이콘 — 랜덤박스 도트(M_BOX) 그대로, 색만 선물상자(빨강 몸체+금 리본)로 다시 칠함.
     const GIFT_PAL={X:'#a83f52',W:'#e35d76',C:'#f2c84b',L:'#e0a43c',R:'#f2c84b',O:'#f2c84b',Y:'#f2c84b',G:'#f2c84b',B:'#f2c84b',P:'#f2c84b'};
     function giftSvg(opt){ return pxSvg(M_BOX, GIFT_PAL, opt); }
-    // 더보기 그리드용 도트/픽셀 아트 아이콘(11×11) — 단색 currentColor라 라이트/다크 자동 대응(코인·선물함처럼 픽셀 감성).
-    const MORE_PX = {
-      bag:[      // 가방(백팩+앞주머니+버클)
-        "...XXXXX...","..X.....X..",".XXXXXXXXX.",".X.......X.",".X.XXXXX.X.",".X.X...X.X.",".X.X.X.X.X.",".X.X...X.X.",".X.XXXXX.X.",".X.......X.",".XXXXXXXXX."],
-      gear:[     // 설정(톱니+가운데 구멍)
-        "..X.....X..","..X.....X..","XXXXXXXXXXX","X.........X","X..XXXXX..X","X..X...X..X","X..XXXXX..X","X.........X","XXXXXXXXXXX","..X.....X..","..X.....X.."],
-      budget:[   // 예산(동전 더미)
-        "...........","..XXXXXXX..",".X.......X.","..XXXXXXX..","..XXXXXXX..",".X.......X.","..XXXXXXX..",".X.......X.","..XXXXXXX..","...........","..........."],
-      sub:[      // 구독(알림 벨)
-        ".....X.....","....XXX....","...XXXXX...","...XXXXX...","..XXXXXXX..","..XXXXXXX..",".XXXXXXXXX.","XXXXXXXXXXX","XXXXXXXXXXX",".....X.....","..........."],
-      recurring:[// 정기결제(달력)
-        "..X.....X..","..X.....X..",".XXXXXXXXX.",".XXXXXXXXX.",".X.......X.",".X.X.X.X.X.",".X.......X.",".X.X.X.X.X.",".X.......X.",".XXXXXXXXX.","..........."],
-      pb:[       // 목적별(펼친 책)
-        "...........",".XX.....XX.",".XXX...XXX.",".XXXX.XXXX.",".XXXXXXXXX.",".XXXX.XXXX.",".XXXX.XXXX.",".XXXX.XXXX.",".XXXXXXXXX.","...........","..........."],
-      settle:[   // 정산(저울)
-        ".....X.....",".XXXXXXXXX.","X....X....X","X....X....X","XX...X...XX",".X...X...X.","..X..X..X..","..XX.X.XX..",".....X.....","...XXXXX...","..........."],
-      giftEvt:[  // 경조사비(하트 봉투)
-        "...........",".XXXXXXXXX.",".XX.....XX.",".X.XX.XX.X.",".X..X.X..X.",".X.......X.",".X.XX.XX.X.",".X.XXXXX.X.",".X..XXX..X.",".XXXXXXXXX.","..........."],
-      loan:[     // 대출/이자(은행 건물)
-        ".....X.....","....XXX....","...XXXXX...","..XXXXXXX..",".XXXXXXXXX.","XXXXXXXXXXX","X.X.X.X.X.X","X.X.X.X.X.X","X.X.X.X.X.X","XXXXXXXXXXX","..........."],
-      category:[ // 카테고리(태그)
-        "...........","....XXXXXX.","...XX....X.","..X.X....X.",".X..X....X.","X...X....X.",".X..X....X.","..X.X....X.","...XX....X.","....XXXXXX.","..........."],
-      share:[    // 할일 공유(두 사람)
-        "..XX...XX..",".XXXX.XXXX.",".XXXX.XXXX.","..XX...XX..","...........",".X.......X.","XXX.....XXX","XXXX...XXXX","XXXXX.XXXXX","XXXXX.XXXXX","..........."],
-      report:[   // 완료 리포트(막대 그래프)
-        "...........","........XX.","........XX.",".....XX.XX.",".....XX.XX.","..XX.XX.XX.","..XX.XX.XX.","..XX.XX.XX.",".XXXXXXXXXX","...........","..........."],
-      repeat:[   // 반복 할일(순환 화살표)
-        "...XXXXX...","..XX...XX..",".XX.....XX.",".X.......X.","XX.......X.","X..........","X.........X",".X.......X.",".XX....XXX.","..XXXXX.X..","........X.."]
-    };
-    const MPX_PAL={X:'currentColor'};
-    function mIcon(name, opt){ const m=MORE_PX[name]; return m?pxSvg(m, MPX_PAL, opt||{h:26}):''; }
+    // 🎒 가방(더보기) 아이콘 — 갈색 가죽 가방(플랩+버클)을 도트/픽셀 아트로. D=진갈 외곽, B=몸체, L=플랩, M=금 버클.
+    const M_BAG = [
+      "..D.....D..",
+      "..D.....D..",
+      ".DDDDDDDDD.",
+      ".DBBBBBBBD.",
+      ".DBBBBBBBD.",
+      ".DLLLLLLLD.",
+      ".DLLLLLLLD.",
+      ".DLLMMMLLD.",
+      ".DLLLLLLLD.",
+      ".DDDDDDDDD.",
+      "..........."
+    ];
+    const BAG_PAL={D:'#6e4a2a',B:'#a06a38',L:'#c88a4e',M:'#e8c85a'};
+    function bagSvg(opt){ return pxSvg(M_BAG, BAG_PAL, opt); }
     function pawSvg(opt){ return pxSvg(M_PAW, PAW_PAL, opt); }
     // 상점·팔레트·격자용 대표 아트(물그릇은 물 채운 파란 그릇으로 구분 표시)
     function furnSvg(id, opt){ const M={cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT}[id]; return pxSvg(M, FURN_PALS[id], opt); }

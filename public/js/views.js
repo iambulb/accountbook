@@ -990,7 +990,7 @@
     // ===== 워크스페이스(가계부/그룹) 관리 UI =====
     function openWorkspaceSheet(){
       const cur=state.wsId;
-      let h='<p class="muted" style="font-size:13px;margin:2px 2px 12px;">개인 가계부와 그룹 가계부를 분리해서 쓸 수 있어요. 그룹은 코드로 친구와 함께 사용합니다.</p>';
+      let h='<p class="muted" style="font-size:13px;margin:2px 2px 12px;">개인 가계부와 그룹을 분리해서 쓸 수 있어요. 그룹은 코드로 친구와 함께 사용합니다.</p>';
       h+='<div class="menu-group-title">내 가계부</div>';
       (state.memberships||[]).forEach(w=>{
         const on=w.id===cur, isGroup=w.type==='group', memCount=Object.keys(w.members||{}).length;
@@ -1066,7 +1066,7 @@
     function memberName(wsId, uid){ const w=(state.memberships||[]).find(x=>x.id===wsId); return (w&&w.members&&w.members[uid]&&w.members[uid].name)||'멤버'; }
     function doRenameWs(wsId){ const n=val('grpRename').trim(); if(!n){ toast('이름을 입력하세요', true); return; } renameWorkspace(wsId, n).then(()=>openGroupManageSheet(wsId)); }
     function doTransferOwner(wsId, uid){ confirmSheet('"'+memberName(wsId,uid)+'"님에게 소유자를 넘길까요? 넘기면 나는 일반 멤버가 됩니다.', ()=>{ transferOwnership(wsId, uid).then(()=>openGroupManageSheet(wsId)); }); }
-    function doRemoveMember(wsId, uid){ confirmSheet('"'+memberName(wsId,uid)+'"님을 그룹에서 내보낼까요? 이 가계부에 더 이상 접근할 수 없게 됩니다.', ()=>{ removeMember(wsId, uid).then(()=>openGroupManageSheet(wsId)); }); }
+    function doRemoveMember(wsId, uid){ confirmSheet('"'+memberName(wsId,uid)+'"님을 그룹에서 내보낼까요? 이 그룹에 더 이상 접근할 수 없게 됩니다.', ()=>{ removeMember(wsId, uid).then(()=>openGroupManageSheet(wsId)); }); }
     function confirmLeave(wsId){
       const w=(state.memberships||[]).find(x=>x.id===wsId);
       const last=w && Object.keys(w.members||{}).length<=1;
@@ -1247,28 +1247,27 @@
          '<button class="cnt" onclick="event.stopPropagation();openWorkspaceSheet()">전환</button></div>';
       // 4열 기능 그리드 — 할일 모드면 할일 전용, 아니면 가계부 전용(알뜰샵·설정은 공용)
       h+='<div class="grid4">';
-      // 아이콘은 전부 도트/픽셀 아트(cats.js mIcon, 단색 currentColor). 알뜰샵=코인·선물함=선물상자(컬러 픽셀).
-      const mi=(n)=>(typeof mIcon==='function'?mIcon(n,{h:26}):'');
+      // 기본 메뉴 아이콘은 라인 SVG(MORE_ICON) 유지. 알뜰샵=코인·선물함=선물상자·가방=갈색 가방(픽셀 아트).
       if(state.mode==='todo'){
-        h+=gcell(mi('share'),'할일 공유','openTodoShareSheet()');
-        h+=gcell(mi('report'),'완료 리포트','openTodoReport()');
-        h+=gcell(mi('repeat'),'반복 할일','openRepeatTodos()');
-        h+=gcell(mi('pb'),'목적별','openPurposeBooks()');
+        h+=gcell(MORE_ICON.share,'할일 공유','openTodoShareSheet()');
+        h+=gcell(MORE_ICON.report,'완료 리포트','openTodoReport()');
+        h+=gcell(MORE_ICON.repeat,'반복 할일','openRepeatTodos()');
+        h+=gcell(MORE_ICON.pb,'목적별','openPurposeBooks()');
       } else {
         const activeSubs=(state.subscriptions||[]).filter(s=>s.status==='active').length;
-        h+=gcell(mi('budget'),'예산','openBudgetSheet()');
-        h+=gcell(mi('sub'),'구독','openSubscriptions()', activeSubs||0);
-        h+=gcell(mi('recurring'),'정기결제','openRecurringList()');
-        h+=gcell(mi('pb'),'목적별','openPurposeBooks()');
-        h+=gcell(mi('settle'),'정산','openSettlementOverview()');
-        h+=gcell(mi('giftEvt'),'경조사비','openGiftBook()');
-        h+=gcell(mi('loan'),'대출/이자','openLoanBook()');
-        h+=gcell(mi('category'),'카테고리','openCategorySheet()');
+        h+=gcell(MORE_ICON.budget,'예산','openBudgetSheet()');
+        h+=gcell(MORE_ICON.sub,'구독','openSubscriptions()', activeSubs||0);
+        h+=gcell(MORE_ICON.recurring,'정기결제','openRecurringList()');
+        h+=gcell(MORE_ICON.pb,'목적별','openPurposeBooks()');
+        h+=gcell(MORE_ICON.settle,'정산','openSettlementOverview()');
+        h+=gcell(MORE_ICON.gift,'경조사비','openGiftBook()');
+        h+=gcell(MORE_ICON.loan,'대출/이자','openLoanBook()');
+        h+=gcell(MORE_ICON.category,'카테고리','openCategorySheet()');
       }
       h+=gcell(coinSvg({h:26}),'알뜰샵','openCatHouse()');
       h+=gcell(giftSvg({h:26}),'선물함','openGiftbox()', (typeof giftCount==='function'?giftCount():0));
-      h+=gcell(mi('bag'),'가방','openBag()');
-      h+=gcell(mi('gear'),'설정','openSettingsSheet()');
+      h+=gcell((typeof bagSvg==='function'?bagSvg({h:26}):''),'가방','openBag()');
+      h+=gcell(MORE_ICON.gear,'설정','openSettingsSheet()');
       h+='</div>';
       // 하단 고정: 로그아웃(가운데) → 홈 화면 설치 링크 → 버전
       h+='<div class="more-foot">';
