@@ -746,9 +746,22 @@
       rainbow_egg:{ name:'무지개알',  icon:o=>rainbowEggSvg(o),   use:'rb_egg' },  // 특별↑ 확률 오픈
       rainbow_box:{ name:'무지개박스',icon:o=>rainbowBoxSvg(o),   use:'rb_box' }
     };
-    // 선물 1건의 아이콘/이름
-    function giftView(gf){ if(gf.type==='coins') return { icon:coinSvg({h:30}), name:(gf.qty||0).toLocaleString()+' 은화' };
-      const m=CONSUM_META[gf.key]||{name:gf.key,icon:()=>''}; return { icon:m.icon({h:34}), name:m.name+' '+(gf.qty||1)+'개' }; }
+    // 선물 1건의 아이콘/이름(+선택적 메시지)
+    function giftView(gf){ if(gf.type==='coins') return { icon:coinSvg({h:30}), name:(gf.qty||0).toLocaleString()+' 은화', msg:gf.msg||'' };
+      const m=CONSUM_META[gf.key]||{name:gf.key,icon:()=>''}; return { icon:m.icon({h:34}), name:m.name+' '+(gf.qty||1)+'개', msg:gf.msg||'' }; }
+    // 🎉 회원가입 축하 선물 — 신규 계정 첫 진입 시 1회(멱등: users/{uid}/welcomeGift 플래그). 은화100 + 펫알1 + 축하 메시지.
+    function grantWelcomeGift(){
+      if(!state.uid || typeof db==='undefined' || !db) return;
+      db.ref('users/'+state.uid+'/welcomeGift').transaction(cur=> cur ? undefined : true).then(r=>{
+        if(!(r && r.committed && r.snapshot && r.snapshot.val()===true)) return;   // 이미 지급됐으면 중단
+        const now=new Date().toISOString();
+        gameRef().transaction(g=>{ g=normalizeGame(g);
+          g.gifts.push({ type:'coins',  qty:100, msg:'알뜰 회원가입을 축하 선물이에요! 🎉', at:now });
+          g.gifts.push({ type:'consum', key:'egg', qty:1, at:now });
+          return g;
+        }).then(()=>{ if(typeof toast==='function') toast('🎁 회원가입 축하 선물이 선물함에 도착했어요!'); });
+      }).catch(()=>{});
+    }
     function openGiftbox(){
       const build=()=>{
         const gifts=(state.game&&state.game.gifts)||[];
@@ -756,7 +769,7 @@
         if(!gifts.length){ h+='<div class="empty" style="padding:30px 12px;">받을 선물이 없어요. 설정 → 코드 입력으로 보상을 받아보세요 🎁</div>'; }
         else {
           h+='<div class="hintline" style="margin:2px 0 10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>받으면 은화는 잔액으로, 아이템은 <b>가방</b>으로 들어가요.</div>';
-          h+=gifts.map((gf,i)=>{ const v=giftView(gf); return '<div class="giftrow"><span class="gfic">'+v.icon+'</span><b class="gfnm">'+escapeHtml(v.name)+'</b><button class="buy" onclick="claimGift('+i+')">받기</button></div>'; }).join('');
+          h+=gifts.map((gf,i)=>{ const v=giftView(gf); return '<div class="giftrow"><span class="gfic">'+v.icon+'</span><span class="gftx"><b class="gfnm">'+escapeHtml(v.name)+'</b>'+(v.msg?'<span class="gfmsg">'+escapeHtml(v.msg)+'</span>':'')+'</span><button class="buy" onclick="claimGift('+i+')">받기</button></div>'; }).join('');
           h+='<button class="btn" style="margin-top:12px;" onclick="claimAllGifts()">모두 받기</button>';
         }
         h+='</div>'; return h;
@@ -1152,8 +1165,8 @@
         const a={ el, id, spr, frontWalk:fw, x:(parseFloat(el.style.left)||0), dir:Math.random()<0.5?-1:1, _pdir:0,
         v:v, t:Math.random()*6, frame:0, fc:Math.random()*170, W, hh:ah,
         sw:(spr?ah:Math.round(ah*26/14)), props, lift:0,
-        depth:Math.random(), vz:0, riseMax:riseMax, _z:0, flee:0,   // 앞뒤(깊이) 원근 + 도망 타이머(큰 펫 회피)
-        mode:'roam', pause:0, goal:null, pose:null, resKey:null, resFloor:null, parked:false,
+        depth:Math.random(), vz:0, riseMax:riseMax, _z:0,   // 앞뒤(깊이) 원근
+        mode:'roam', pause:0, goal:null, pose:null, resKey:null, resFloor:null,
         // 유휴(그 자리에 멈춰 정면 보기) — 자주·오래 서서 정면을 보도록(poseDur에서 시간 늘림)
         idle:0.0032+Math.random()*0.005, turn:0.004+Math.random()*0.010, seek:0.005+Math.random()*0.009, cool:0 };
         a.footPad=(typeof _footPad!=='undefined'&&_footPad[id]!=null?_footPad[id]:null); if(spr) measureFootPad(id,function(fp){ a.footPad=fp; setXform(a); });
@@ -1206,34 +1219,22 @@
       _eng.actors.forEach(a=>{
         if(a.mode==='drag') return;   // 손으로 집어 든 펫은 엔진이 건드리지 않음(드래그가 위치 제어)
         a.t+=dt*0.004; if(a.cool>0)a.cool-=dt; if(a.dcool>0)a.dcool-=dt; const id=a.el.getAttribute('data-cat');
-        if(a.mode==='pause'){ a.pause-=dt; if(a.pause<=0){ a.mode='roam'; a.fc=999; a.dir=Math.random()<0.5?-1:1; a.lift=0; a.parked=false; releaseRes(a);   // 내려와 재출발(자리 반납)
+        if(a.mode==='pause'){ a.pause-=dt; if(a.pause<=0){ a.mode='roam'; a.fc=999; a.dir=Math.random()<0.5?-1:1; a.lift=0; releaseRes(a);   // 내려와 재출발(자리 반납)
           // 이동 재개: 정면 이미지로 이동 금지 — actorShowMoving으로 일원화(일반=CSS 필름, frontWalk=east 정지스틸)
           actorShowMoving(a); setXform(a); a._pdir=a.dir; } return; }   // 재출발: lift 해제·방향 반영, 걷기는 필름(csprFilm)
-        // 🐈 겁먹고 도망: 나보다 3배 이상 큰 펫이 주변 1칸 이내로 오면 뒤돌아 반대방향으로 살짝 도망(잠깐 빠르게)
-        if(a.flee>0){ a.flee-=dt; if(a.flee<=0) setWalkDur(a); }   // 도망 종료 시 걸음속도 원복
-        if(a.mode==='roam' && a.flee<=0){ const colW=a.W/12, rowD=1/11;
-          for(let k=0;k<_eng.actors.length;k++){ const b=_eng.actors[k];
-            if(b===a || (b.hh||0) < (a.hh||1)*3) continue;   // 나보다 3배 이상 큰 펫만(크기=렌더 높이 hh 기준)
-            if(Math.abs((a.x+a.sw/2)-(b.x+b.sw/2))<colW*1.3 && Math.abs((a.depth||0)-(b.depth||0))<rowD*1.6){   // 주변 1칸 이내
-              a.dir=((a.x+a.sw/2)>=(b.x+b.sw/2))?1:-1; a.dcool=FLIP_COOL;   // 큰 펫 반대 방향으로 뒤돎(쿨다운 부여로 즉시 재뒤집힘 방지)
-              a.flee=700+Math.random()*400; a.cool=Math.max(a.cool,300);   // 잠깐(0.7~1.1초) 도망(유휴/가구탐색 억제)
-              if(a.spr){ const sc=a.el.querySelector('.cspr'); if(sc) sc.style.setProperty('--wdur', walkDur(a.v*2, a.hh)+'s'); }   // 빨라진 속도에 걸음 맞춤(미끄러짐 방지)
-              break; } }
-        }
-        const fleeing=a.flee>0;
-        // 유휴 제스처(그 자리 앉기/식빵/낮잠) — 쿨다운 후에만(도망 중엔 멈추지 않음)
-        if(a.mode==='roam' && !fleeing && a.cool<=0 && Math.random()<a.idle){ enterPose(a, id, ['loaf','sit','sleep'][Math.floor(Math.random()*3)]); return; }
-        // 가끔 방향 전환(개별) — 도망 중엔 방향 유지(큰 펫 반대)
-        if(a.mode==='roam' && !fleeing && (a.dcool||0)<=0 && Math.random()<a.turn){ a.dir*=-1; a.dcool=FLIP_COOL; }
+        // 유휴 제스처(그 자리 앉기/식빵/낮잠) — 쿨다운 후에만
+        if(a.mode==='roam' && a.cool<=0 && Math.random()<a.idle){ enterPose(a, id, ['loaf','sit','sleep'][Math.floor(Math.random()*3)]); return; }
+        // 가끔 방향 전환(개별) — 쿨다운 지나야(연속 뒤집힘=춤 방지)
+        if(a.mode==='roam' && (a.dcool||0)<=0 && Math.random()<a.turn){ a.dir*=-1; a.dcool=FLIP_COOL; }
         // 가끔 속도 변화(개별) — 바뀐 속도에 맞춰 걷기 주기도 갱신(미끄러짐 방지)
         if(a.mode==='roam' && Math.random()<0.003){ a.v=0.14+Math.random()*0.18; setWalkDur(a); }
-        // 앞뒤(깊이) 배회 — 가끔 앞/뒤 속도를 새로 정하고 천천히 이동해 가까워졌다 멀어졌다(원근·가림 변화). 도망 중엔 직진.
-        if(a.mode==='roam' && !fleeing){
+        // 앞뒤(깊이) 배회 — 가끔 앞/뒤 속도를 새로 정하고 천천히 이동해 가까워졌다 멀어졌다(원근·가림 변화).
+        if(a.mode==='roam'){
           if(a.cool<=0 && Math.random()<0.006) a.vz=(Math.random()*2-1)*0.0002;   // depth/ms (약 5초에 전체 범위)
           if(a.vz){ a.depth+=a.vz*dt; if(a.depth<=0){a.depth=0;a.vz=Math.abs(a.vz);} else if(a.depth>=1){a.depth=1;a.vz=-Math.abs(a.vz);} }
         }
-        // 가구로 이동 결정(가구 있을 때, 쿨다운 후) — 도망 중엔 가구 탐색 안 함
-        if(a.mode==='roam' && !fleeing && a.props.length && a.cool<=0 && Math.random()<a.seek){
+        // 가구로 이동 결정(가구 있을 때, 쿨다운 후)
+        if(a.mode==='roam' && a.props.length && a.cool<=0 && Math.random()<a.seek){
           const avail=a.props.filter(p=>occupantsOf(p.key,a).n < (p.itemId==='tower'?3:1));   // 빈 가구만(캣타워는 남은 층 있으면)
           if(avail.length){ const g=avail[Math.floor(Math.random()*avail.length)]; a.resKey=g.key;
             if(g.itemId==='tower'){ const used=occupantsOf(g.key,a).floors; a.resFloor=[0,1,2].find(f=>!used[f]); if(a.resFloor==null) a.resFloor=0; } else a.resFloor=null;
@@ -1241,8 +1242,7 @@
         // 가구 도착: "고양이 중심"(a.x+sw/2) 기준으로 가구 중앙(goal.x)에 섬. 깊이도 가구 쪽으로 맞춰 걸어감.
         // ⚠️ x에 다 왔는데 깊이 수렴을 기다리며 방향이 매 프레임 뒤집혀 "제자리 좌우 춤"추던 버그 → x 도착 시 위치를 스냅하고 방향을 고정한 채 대기.
         if(a.mode==='goal' && a.goal){ const cx=a.x+a.sw/2, dxr=a.goal.x-cx, nearX=Math.abs(dxr)<6;
-          a.parked=nearX;   // x 도착=주차 상태 → separatePets가 밀지 않음(밀림↔스냅 반복으로 인한 제자리 좌우 춤 방지)
-          if(!nearX) a.dir=(dxr>0)?1:-1;   // 멀 때만 방향 갱신(가까우면 고정 → 좌우 버벅/춤 방지)
+          if(!nearX) a.dir=(dxr>0)?1:-1;   // 멀 때만 방향 갱신(가까우면 고정 → 좌우 버벅/춤 방지). goal 펫은 separatePets 대상 아님(가구로 가는 중 안 막힘)
           if(a.goal.depth!=null){ const dd=a.goal.depth-a.depth; a.depth+=Math.sign(dd)*Math.min(Math.abs(dd), 0.004*dt); }   // 깊이 빠르게 수렴(대기 시간 최소화)
           const nearD=Math.abs((a.goal.depth==null?a.depth:a.goal.depth)-a.depth)<0.03;
           if(nearX){ a.x=a.goal.x-a.sw/2;   // x 도착 → 위치 스냅(오버슈트로 인한 좌우 떨림 제거)
@@ -1250,7 +1250,7 @@
             applyDepth(a); setXform(a, a.dir); a._pdir=a.dir; return;   // 깊이 수렴까지 그 자리에서 정지(이동·방향전환 없음)
           }
         }
-        a.x += a.dir*(fleeing?a.v*2:a.v)*dt*0.06;   // 도망 중엔 2배 빠르게
+        a.x += a.dir*a.v*dt*0.06;
         const max=a.W-a.sw;
         if(a.x<2){ a.x=2; if(a.dir<0 && (a.dcool||0)<=0){ a.dir=1; a.dcool=FLIP_COOL; } if(a.mode==='goal'){a.mode='roam';a.goal=null;releaseRes(a);} }
         else if(a.x>max){ a.x=max; if(a.dir>0 && (a.dcool||0)<=0){ a.dir=-1; a.dcool=FLIP_COOL; } if(a.mode==='goal'){a.mode='roam';a.goal=null;releaseRes(a);} }
@@ -1265,13 +1265,13 @@
     function separatePets(){
       const acts=_eng.actors; if(acts.length<2) return;
       const colW=(acts[0].W||160)/12, rowD=1/11, moved=[];
-      const mov=a=>((a.mode==='roam'||a.mode==='goal')&&!a.parked);   // 이동 가능(멈춤/드래그/주차(가구 도착)는 자리 유지 → 밀림·방향뒤집힘 없음)
+      const mov=a=>(a.mode==='roam');   // 자유 로밍 펫만 분리 대상 — goal(가구로 가는)·pause(앉은)·drag는 겹침분리에 관여 안 함(가구로 가는 펫이 다른 펫에 안 막히고 겹쳐 지나감)
       for(let i=0;i<acts.length;i++) for(let j=i+1;j<acts.length;j++){
         const a=acts[i], b=acts[j];
         if(a.mode==='drag'||b.mode==='drag') continue;
         const dcx=(a.x+a.sw/2)-(b.x+b.sw/2), ddp=(a.depth||0)-(b.depth||0);
         if(Math.abs(dcx)>=colW || Math.abs(ddp)>=rowD) continue;   // 다른 칸 → 통과(다른 행이면 앞뒤 겹침 허용)
-        const aMov=mov(a), bMov=mov(b); if(!aMov && !bMov) continue;   // 둘 다 멈춤이면 밀지 않음
+        const aMov=mov(a), bMov=mov(b); if(!aMov || !bMov) continue;   // 둘 다 로밍일 때만 분리(한쪽이 가구로 가거나 앉았으면 통과)
         // 더 적게 움직여 칸을 벗어나는 축(열/행)으로 분리
         const needX=colW-Math.abs(dcx), needD=rowD-Math.abs(ddp);
         if(needX/colW <= needD/rowD){   // 열(x)로 분리
