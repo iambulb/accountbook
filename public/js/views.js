@@ -545,8 +545,9 @@
     function shortAmt(v){ v=Math.round(Math.abs(v)); if(v>=1e8) return (v/1e8).toFixed(1).replace(/\.0$/,'')+'억'; if(v>=1e4) return Math.round(v/1e4).toLocaleString()+'만'; return v.toLocaleString(); }
     function signComma(v){ return (v<0?'−':'+')+fmtComma(Math.abs(v)); }
     // ===== 할일(투두) 모드 화면 =====
-    let _todoFilter='all';
+    let _todoFilter='all', _todoSel=null;
     function setTodoFilter(f){ _todoFilter=f; renderTodoList(); }
+    function nextDue(ds, rep){ const d=parseDate(ds); d.setDate(d.getDate()+(rep==='weekly'?7:1)); return ymd(d); }
     function todoDueBadge(t){ if(!t.dueDate) return ''; const today=ymd(new Date());
       const a=new Date(t.dueDate+'T00:00:00'), b=new Date(today+'T00:00:00'); const diff=Math.round((a-b)/86400000);
       let txt,cls; if(diff<0){ txt=(-diff)+'일 지남'; cls='over'; } else if(diff===0){ txt='오늘'; cls='today'; } else if(diff===1){ txt='내일'; cls='soon'; } else { txt='D-'+diff; cls=diff<=3?'soon':''; }
@@ -573,19 +574,49 @@
       if(done.length){ h+='<div class="sech"><span class="l">완료</span><span class="s">'+done.length+'개</span></div><div class="card" style="padding:4px 12px;">'+done.slice(0,20).map(todoRow).join('')+'</div>'; }
       $('content').innerHTML=h;
     }
-    function renderTodoCalendar(){ $('content').innerHTML='<div class="sech"><span class="l">할일 캘린더</span></div><div class="card" style="text-align:center;padding:34px 18px;color:var(--sub);">마감일을 달력으로 보는 화면 준비 중.</div>'; }
+    function todoMoveMonth(d){ state.month=shiftMonth(state.month,d); renderTodoCalendar(); }
+    function todoSelDay(ds){ _todoSel=ds; renderTodoCalendar(); }
+    function renderTodoCalendar(){
+      const m=state.month, parts=m.split('-'), y=+parts[0], mo=+parts[1];
+      const byDay={}; (state.todos||[]).forEach(t=>{ if(!t.done && t.dueDate && t.dueDate.slice(0,7)===m) byDay[t.dueDate]=(byDay[t.dueDate]||0)+1; });
+      const HEAD=['월','화','수','목','금','토','일']; const first=(new Date(y,mo-1,1).getDay()+6)%7; const days=new Date(y,mo,0).getDate(); const todayS=todayStr(); const sel=_todoSel||todayS;
+      let h='<div class="monthlbl"><button onclick="todoMoveMonth(-1)" aria-label="이전 달">‹</button><b>'+y+'년 '+mo+'월</b><button onclick="todoMoveMonth(1)" aria-label="다음 달">›</button></div>';
+      h+='<div class="calwrap"><div class="cal-head">'+HEAD.map(function(w,i){ return '<div class="'+(i===5?'sat':i===6?'sun':'')+'">'+w+'</div>'; }).join('')+'</div><div class="cal-grid">';
+      for(let i=0;i<first;i++) h+='<div class="cal-cell dim"></div>';
+      for(let d=1;d<=days;d++){ const ds=y+'-'+pad2(mo)+'-'+pad2(d); const wd=new Date(y,mo-1,d).getDay(); const dcls='d'+(wd===0?' sun':(wd===6?' sat':''));
+        const n=byDay[ds]||0; const cls='cal-cell'+(ds===todayS?' today':'')+(ds===sel?' sel':'');
+        const dot=n?'<span class="dotrow"><i style="background:var(--primary)"></i>'+(n>1?'<span style="font-size:9px;font-weight:800;color:var(--primary);margin-left:2px;">'+n+'</span>':'')+'</span>':'';
+        h+='<div class="'+cls+'" onclick="todoSelDay(\''+ds+'\')"><div class="'+dcls+'">'+d+'</div>'+dot+'</div>';
+      }
+      h+='</div></div>';
+      const dayT=(state.todos||[]).filter(t=>t.dueDate===sel).sort((a,b)=>(a.done?1:0)-(b.done?1:0));
+      h+='<div class="sech"><span class="l">'+(+sel.split('-')[1])+'월 '+(+sel.split('-')[2])+'일</span><span class="s">'+dayT.length+'개</span></div>';
+      h+='<div class="card" style="padding:4px 12px;">'+(dayT.length?dayT.map(todoRow).join(''):'<div class="empty" style="padding:22px 6px;">이 날 할일이 없어요</div>')+'</div>';
+      $('content').innerHTML=h;
+    }
     function renderTodoDone(){ const done=(state.todos||[]).filter(t=>t.done).sort((a,b)=>(b.doneAt||'').localeCompare(a.doneAt||''));
       let h='<div class="sech"><span class="l">완료</span><span class="s">'+done.length+'개</span></div>';
       h+='<div class="card" style="padding:4px 12px;">'+(done.length?done.map(todoRow).join(''):'<div class="empty" style="padding:26px 6px;">완료한 할일이 아직 없어요</div>')+'</div>';
       $('content').innerHTML=h; }
-    function toggleTodo(id){ const t=(state.todos||[]).find(x=>x.id===id); if(!t) return; const now=new Date().toISOString(); const done=!t.done;
-      db.ref(wp('todos/'+id)).update({ done:done, doneAt:done?now:'', doneByUid:done?(state.uid||''):'', updatedAt:now }); }
-    function openTodoEdit(id){
+    function toggleTodo(id){ const t=(state.todos||[]).find(x=>x.id===id); if(!t) return; const now=new Date().toISOString();
+      if(!t.done && t.repeat && t.repeat!=='none' && t.dueDate){
+        db.ref(wp('todos/'+id)).update({ dueDate:nextDue(t.dueDate,t.repeat), doneByUid:(state.uid||''), lastDoneAt:now, updatedAt:now });
+        toast('완료! 다음 '+(t.repeat==='weekly'?'주':'일')+'로 넘겼어요');
+      } else {
+        const done=!t.done; db.ref(wp('todos/'+id)).update({ done:done, doneAt:done?now:'', doneByUid:done?(state.uid||''):'', updatedAt:now });
+      }
+    }
+    function openTodoEdit(id, presetPb){
       const t=id?(state.todos||[]).find(x=>x.id===id):null;
       const asel=t?(t.assignedUid||'공동'):(state.uid||'공동');
+      const rep=t?(t.repeat||'none'):'none';
+      const pbSel=t?(t.purposeBookId||''):(presetPb||'');
+      const pbs=(state.purposeBooks||[]).filter(p=>(p.status||'active')!=='archived');
       let h='<div class="field"><label>할 일</label><input class="input" id="tdTitle" value="'+escapeHtml(t?(t.title||''):'')+'" placeholder="예: 장보기, 항공권 예약"></div>';
       h+='<div class="form-2"><div class="field"><label>담당자</label><select class="input" id="tdAssign">'+ownerOptions(asel)+'</select></div>'+
         '<div class="field"><label>마감일</label><input type="date" class="input" id="tdDue" value="'+(t&&t.dueDate?t.dueDate:'')+'"></div></div>';
+      h+='<div class="form-2"><div class="field"><label>반복</label><select class="input" id="tdRepeat">'+[['none','반복 없음'],['daily','매일'],['weekly','매주']].map(function(o){ return '<option value="'+o[0]+'"'+(rep===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
+        '<div class="field"><label>가계부 연결</label><select class="input" id="tdPb"><option value="">연결 안 함</option>'+pbs.map(function(p){ return '<option value="'+p.id+'"'+(pbSel===p.id?' selected':'')+'>'+(p.icon||'📒')+' '+escapeHtml(p.name)+'</option>'; }).join('')+'</select></div></div>';
       h+='<div class="field"><label>메모 (선택)</label><input class="input" id="tdNote" value="'+escapeHtml(t?(t.note||''):'')+'" placeholder="메모"></div>';
       h+='<button class="btn" onclick="saveTodo('+(id?'\''+id+'\'':'null')+')">'+(t?'수정':'추가')+'</button>';
       if(t) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteTodo(\''+id+'\')">삭제</button>';
@@ -600,13 +631,20 @@
       const key=id||('todo_'+Date.now());
       const data={ title:title, note:val('tdNote').trim(), dueDate:val('tdDue')||'',
         assignedUid:assignedUid, assignedName:assignedName,
-        repeat:(t&&t.repeat)||'none', purposeBookId:(t&&t.purposeBookId)||'',
+        repeat:($('tdRepeat')?val('tdRepeat'):'none')||'none', purposeBookId:($('tdPb')?val('tdPb'):'')||'',
         done:t?!!t.done:false, doneAt:t?(t.doneAt||''):'', doneByUid:t?(t.doneByUid||''):'', rewardClaimed:t?!!t.rewardClaimed:false,
         createdByUid:t?(t.createdByUid||state.uid||''):(state.uid||''), createdAt:t?(t.createdAt||now):now, updatedAt:now,
         sortOrder:t?(t.sortOrder!=null?t.sortOrder:Date.now()):Date.now() };
       db.ref(wp('todos/'+key)).set(data); toast(t?'수정되었습니다':'추가되었습니다'); closeSheet();
     }
     function deleteTodo(id){ confirmSheet('이 할일을 삭제할까요?', ()=>{ db.ref(wp('todos/'+id)).remove(); toast('삭제되었습니다'); closeSheet(); }); }
+    // 목적별 가계부(여행 등) 상세에 붙이는 연결된 할일 요약 카드
+    function pbTodoSummaryHtml(pbId){ const list=(state.todos||[]).filter(t=>t.purposeBookId===pbId); if(!list.length && true){ /* 없으면 추가 버튼만 */ }
+      const doneN=list.filter(t=>t.done).length;
+      let h='<div class="sech"><span class="l">할일</span><span class="s">'+(list.length?(doneN+' / '+list.length+' 완료'):'')+'</span></div>';
+      h+='<div class="card" style="padding:4px 12px;">'+(list.length?list.slice().sort((a,b)=>(a.done?1:0)-(b.done?1:0)).map(todoRow).join(''):'<div class="empty" style="padding:18px 6px;">연결된 할일이 없어요</div>')+'</div>';
+      h+='<button class="btn ghost" style="margin-top:8px;" onclick="openTodoEdit(null,\''+pbId+'\')">＋ 이 여행에 할일 추가</button>';
+      return h; }
     function renderStats(){
       if(typeof markReportSeen==='function') markReportSeen();   // 🐱 주간 미션: 리포트 확인
       const m=state.month, list=monthTx(m);
@@ -1691,6 +1729,7 @@
         h+='<div class="chip-row">'+[['tx','거래'],['settle','정산']].map(o=>'<button class="chip '+(pbDetailTab===o[0]?'on':'')+'" onclick="setPbDetailTab(\''+p.id+'\',\''+o[0]+'\')">'+o[1]+'</button>').join('')+'</div>';
       }
       h+= (settleOn && pbDetailTab==='settle') ? renderPbSettleTab(p) : renderPbTxTab(p,u);
+      if(pbDetailTab!=='settle') h+=pbTodoSummaryHtml(p.id);   // 연결된 할일(여행 준비물 등)
       h+='<button class="btn ghost" onclick="openPbEdit(\''+p.id+'\')">설정 수정</button>';
       openSheet(p.name, h);
     }
