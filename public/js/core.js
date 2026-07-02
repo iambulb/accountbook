@@ -235,7 +235,7 @@
       $('modeSignup').classList.toggle('on', m==='signup');
       $('nameField').style.display = m==='signup'?'block':'none';
       $('authSubmit').textContent = m==='signup'?'회원가입':'로그인';
-      $('authDesc').textContent = m==='signup'?'계정을 만들고 나만의 가계부를 시작하세요':'로그인하고 내 가계부를 시작하세요';
+      $('authDesc').textContent = m==='signup'?'가입하고 오늘도 알뜰하게~':'로그인하고 오늘도 알뜰하게~';
     }
     function submitAuth(){ authMode==='signup'?signup():login(); }
     function signup(){
