@@ -12,12 +12,13 @@
 ```
 1) public/assets/pets/_zips/ 에 zip 넣기
 2) python tools/build_pets.py     # 에셋 생성 + pets.json 에 stub 추가, "확정 필요" 출력
-3) tools/pets.json 에서 그 항목의 name·tier(·desc) 확정
+3) tools/pets.json 에서 그 항목의 name·tier·scale(·desc) 확정
 4) python tools/build_pets.py     # cats.js·sw.js·문서 자동 갱신 + CACHE_VERSION 상향
 5) 커밋
 ```
 - `--force` 에셋 강제 재생성 / `--check` 생성 결과가 현재와 다르면 종료코드 1(수정 안 함, 사전점검용).
 - `price`는 넣지 않는다(= `tier`+`TIER_PRICE`로 파생). `frontWalk`는 zip에 `Walk/east`가 없으면 스크립트가 자동 `true` 설정.
+- **`scale`(크기 배율, 기본 1.0 = 고양이 기준)**: 종별 몸집을 반영한다(예: 호랑이 `5`, 곰 `4`, 강아지 `1.5`, 토끼 `0.8`, 거북이 `0.9`, 새 `0.6`). `PET_SPRITES[id].scale`로 생성되고 `petScale()`이 읽는다. **걷는 무대(웹캠 dock 방·알뜰샵 홈 방)에서 렌더 높이 = 기준높이 × scale**로 반영(무대 밖으로 안 나가게 상한 클램프 — dock 96px·홈 200px). 상점/보유칩/뽑기 썸네일은 초상 프레임이라 균일 유지. 새 stub은 `scale:1`로 생기니 큰 동물이면 값만 올린다.
 - 폐기된 원본 zip(펫으로 만들지 않을 것)은 `pets.json`의 `ignoreZips`에 넣어 인제스트에서 제외한다.
 - `id`는 RTDB 저장 키다. stub의 제안 id를 바꾸려면 **에셋 생성 전에**(2단계 출력 후) `pets.json`의 `id`를 고치고 폴더명도 맞춘 뒤 재실행(하위호환은 `PET_ID_MIGRATE`).
 - `CAT_PALS`(SVG 폴백 팔레트)·`PET_ID_MIGRATE`는 스프라이트 없는 펫/‑id 변경 시에만 쓰는 **수동 유지** 항목(마커 밖).
@@ -73,6 +74,7 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 | chibi_pixel_art_white_cat_one_blue_eye_one_amber_e.zip | `cat_bora` | 보라 | Walk/east 옆걷기 정상 |
 | simple_pixel_art_chocolate_brown_cat_cream_muzzle.zip | `cat_choco` | 초코 | Walk/east 옆걷기 정상 |
 | simple_pixel_art_orange_tabby_kitten_a_few_cheese.zip | `cat_kitten` | 아깽이 | Walk/east 옆걷기 정상 |
+| simple_pixel_art_pink_sphynx_cat_hairless_wrinkled.zip | `cat_pink` | 스핑크스 | Walk/east 옆걷기 정상 |
 <!-- @gen:end -->
 
 새 zip이 오면: 사용자가 id를 지정하면 그걸 쓰고, 없으면 종·색에서 합리적 slug(`<species>_<색>`)를 만들어 **이 표에 한 줄 추가**하고, 이름은 위 규칙대로 센스껏 짓는다.
@@ -80,13 +82,13 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 ### ⚠️ 옆걷기(east) 없는 펫 — 이미지 재취득 대상
 `animations/Walk/east`(옆보기 걷기)가 **없는** zip은 `walk.png`가 정면이 되어 `frontWalk:true`로 처리(이동 중 옆 정지스틸만 보이고 걷기 애니 없음). 그런 펫은 옆걷기 포함 zip으로 다시 받아 재생성하고 `frontWalk`를 해제한다.
 
-**현재 재취득 대상: 없음** — <!--@gen:cats-count-->14<!--@gen:end-->종 전부 `Walk/east` 옆걷기 보유. (과거 `cat_white`가 south만 있었으나 east 시트로 재취득 완료.) 새 펫 추가 시 east 유무를 확인해 이 목록을 갱신한다.
+**현재 재취득 대상: 없음** — <!--@gen:cats-count-->15<!--@gen:end-->종 전부 `Walk/east` 옆걷기 보유. (과거 `cat_white`가 south만 있었으나 east 시트로 재취득 완료.) 새 펫 추가 시 east 유무를 확인해 이 목록을 갱신한다.
 
 ## ✅ 펫 추가 체크리스트 (에셋만 넣고 끝내지 말 것 — 코드+문서 함께 반영)
 > **규칙**: 펫을 추가/변경/제거하면 아래 코드 **3곳**과 문서 **3곳**을 같은 커밋에서 모두 갱신한다. 하나라도 빠지면 미완성으로 본다. (이 규칙은 `CLAUDE.md`의 "문서 최신화 규칙" 표 — *기능 추가·변경·제거 → features.md*, *모든 사용자 체감 변경 → CHANGELOG* — 의 펫 전용 상세판이다.)
 
 **코드**
-1. `js/cats.js` `PET_SPRITES`에 `<id>:{ walk:'assets/pets/<id>/walk.png', frames:6, stills:true }` 추가(옆걷기 없으면 `frontWalk:true`).
+1. `js/cats.js` `PET_SPRITES`에 `<id>:{ walk:'assets/pets/<id>/walk.png', frames:6, stills:true }` 추가(옆걷기 없으면 `frontWalk:true`, 고양이보다 크면 `scale:<배율>`).
    - `PET_CATALOG`에 `{ id, species, name, price, desc }` 한 줄 추가(이름은 zip 내용 기반 센스껏, 품종은 안 넣음).
    - `CAT_TIER`에 `<id>:'<등급>'` 추가(가격은 `TIER_PRICE`로 자동 산정). SVG 폴백이 필요하면 `CAT_PALS[<id>]`.
 2. `sw.js` `APP_SHELL`에 `assets/pets/<id>/`의 `walk.png` + `south/north/east/west.png`(4방향) 추가 → `CACHE_VERSION` 상향. (`_zips/`·원본 zip은 캐시에 넣지 않음)

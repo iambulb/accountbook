@@ -343,12 +343,13 @@
       { id:'cat_fluffy', species:'cat', name:'복슬이', price:200, desc:'복슬복슬한 털에 파란 눈. 나른하게 졸며 방을 거닐어요.' },
       { id:'cat_tuxedo', species:'cat', name:'턱시도', price:800, desc:'검은 정장에 하얀 셔츠·발. 단정하게 걸어다녀요.' },
       { id:'cat_chaos', species:'cat', name:'카오스', price:800, desc:'다크그레이+브라운 소용돌이 무늬. 종잡을 수 없이 쏘다녀요.' },
-      { id:'cat_siamese', species:'cat', name:'샴', price:1500, desc:'크림빛 몸에 짙은 포인트. 우아하게 방을 누벼요.' },
+      { id:'cat_siamese', species:'cat', name:'샴', price:800, desc:'크림빛 몸에 짙은 포인트. 우아하게 방을 누벼요.' },
       { id:'cat_bengal', species:'cat', name:'벵갈', price:100, desc:'골든빛 몸에 동글동글 반점. 야무지게 돌아다녀요.' },
       { id:'cat_fold', species:'cat', name:'폴드', price:200, desc:'접힌 귀가 매력. 얌전히 자리를 지켜요.' },
       { id:'cat_bora', species:'cat', name:'보라', price:400, desc:'한쪽은 파랑·한쪽은 호박색 오드아이. 신비롭게 거닐어요.' },
       { id:'cat_choco', species:'cat', name:'초코', price:100, desc:'초콜릿빛 갈색 털에 크림색 입가·가슴. 느긋하게 방을 거닐어요.' },
-      { id:'cat_kitten', species:'cat', name:'아깽이', price:50, desc:'치즈빛 오렌지 태비 아기고양이. 뒤뚱뒤뚱 방을 쏘다녀요.' }
+      { id:'cat_kitten', species:'cat', name:'아깽이', price:50, desc:'치즈빛 오렌지 태비 아기고양이. 뒤뚱뒤뚱 방을 쏘다녀요.' },
+      { id:'cat_pink', species:'cat', name:'스핑크스', price:800, desc:'털 없는 분홍빛 주름 피부. 도도하게 방을 누벼요.' }
     ];
     // @gen:end
     // 종(species) → 상점 분류 라벨. 품종(샴·벵갈 등)은 표시하지 않고 종만 노출.
@@ -447,10 +448,15 @@
       cat_fold:{ walk:'assets/pets/cat_fold/walk.png', frames:6, stills:true },
       cat_bora:{ walk:'assets/pets/cat_bora/walk.png', frames:6, stills:true },
       cat_choco:{ walk:'assets/pets/cat_choco/walk.png', frames:6, stills:true },
-      cat_kitten:{ walk:'assets/pets/cat_kitten/walk.png', frames:6, stills:true }
+      cat_kitten:{ walk:'assets/pets/cat_kitten/walk.png', frames:6, stills:true, scale:0.5 },
+      cat_pink:{ walk:'assets/pets/cat_pink/walk.png', frames:6, stills:true }
     };
     // @gen:end
     function hasSprite(id){ return !!PET_SPRITES[id]; }
+    // 펫별 크기 배율(고양이=1.0 기준). PET_SPRITES[id].scale 로 생성(tools/pets.json 의 scale). 예: 호랑이 5, 곰 4, 강아지 1.5, 토끼 0.8.
+    function petScale(id){ const sp=PET_SPRITES[id]; const s=sp&&Number(sp.scale); return (s&&s>0)?s:1; }
+    // 걷는 무대(dock 방·홈 방)에서 실제 렌더 높이(px). base=고양이 기준, cap=무대에 맞춘 상한(큰 동물도 방 밖으로 안 나가게), floor=최소.
+    function petActorPx(id, base, cap){ const raw=base*petScale(id); const lo=Math.round(base*0.55); return Math.max(lo, Math.min(Math.round(raw), cap)); }
     // 걷기 무대 액터 1개의 내부 마크업 — 시트 있으면 스프라이트 div, 없으면 SVG 프레임0.
     // reduced-motion이면 처음부터 정지 이미지(south=앞)로 고정.
     function catActorHTML(id, h){
@@ -711,7 +717,7 @@
       if(stage.dataset.sig===sig && stage.querySelector('.cd-actor')) return;
       stage.dataset.sig=sig;
       if(!list.length){ stage.innerHTML='<span class="cd-empty">고양이를 입양해 보세요</span>'; markCatDirty(); return; }
-      stage.innerHTML=list.map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(12+i*54)+'px;">'+catActorHTML(id,48)+'</div>').join('');
+      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,48,96); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(12+i*54)+'px;">'+catActorHTML(id,s)+'</div>'; }).join('');
       markCatDirty();
     }
     // ---- 통합 걷기 엔진: 단일 rAF가 "지금 보이는 무대"(시트 방 또는 dock)만 애니메이션 ----
@@ -757,9 +763,10 @@
       // 스프라이트 고양이는 정사각(폭=높이), SVG 고양이는 가로세로비 ~26/14.
       return acts.map(el=>{ const id=el.getAttribute('data-cat'), spr=hasSprite(id), fw=!!(spr&&PET_SPRITES[id]&&PET_SPRITES[id].frontWalk);
         const v=0.14+Math.random()*0.18;   // 속도 폭을 조금 좁혀 걸음이 차분하게(주기는 walkDur로 이동속도에 맞춤)
+        const ah=+el.dataset.hh||hh;   // 펫별 렌더 높이(크기 배율 반영). 없으면 무대 기본값.
         const a={ el, id, spr, frontWalk:fw, x:(parseFloat(el.style.left)||0), dir:Math.random()<0.5?-1:1, _pdir:0,
-        v:v, t:Math.random()*6, frame:0, fc:Math.random()*170, W, hh,
-        sw:(spr?hh:Math.round(hh*26/14)), props, lift:0,
+        v:v, t:Math.random()*6, frame:0, fc:Math.random()*170, W, hh:ah,
+        sw:(spr?ah:Math.round(ah*26/14)), props, lift:0,
         mode:'roam', pause:0, goal:null, pose:null, resKey:null, resFloor:null,
         // 유휴(그 자리에 멈춰 정면 보기) — 자주·오래 서서 정면을 보도록(poseDur에서 시간 늘림)
         idle:0.0032+Math.random()*0.005, turn:0.004+Math.random()*0.010, seek:0.005+Math.random()*0.009, cool:0 };
@@ -905,7 +912,7 @@
       const sig='c:'+list.join(',');   // 같은 고양이면 재생성 안 함(애니메이션 유지)
       if(stage.dataset.sig===sig && stage.querySelector('.cd-actor')) return;
       stage.dataset.sig=sig;
-      stage.innerHTML=list.map((id,i)=>'<div class="cd-actor" data-cat="'+id+'" style="left:'+(20+i*64)+'px;">'+catActorHTML(id,64)+'</div>').join('');
+      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,64,200); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+catActorHTML(id,s)+'</div>'; }).join('');
       markCatDirty();   // 통합 엔진이 시트 방 무대를 자동으로 잡아 애니메이션
     }
     let _shopSub='cats';
@@ -1140,7 +1147,7 @@
     }
     // 테스트 배정(등급당 1) — 펫알=고양이 / 랜덤박스=가구
     // @gen:pet-tier — 자동생성(tools/build_pets.py). tools/pets.json 의 tier 편집 후 재실행.
-    const CAT_TIER = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'epic', cat_fluffy:'rare', cat_tuxedo:'legend', cat_chaos:'legend', cat_siamese:'limited', cat_bengal:'uncommon', cat_fold:'rare', cat_bora:'epic', cat_choco:'uncommon', cat_kitten:'normal' };
+    const CAT_TIER = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'epic', cat_fluffy:'rare', cat_tuxedo:'legend', cat_chaos:'legend', cat_siamese:'legend', cat_bengal:'uncommon', cat_fold:'rare', cat_bora:'epic', cat_choco:'uncommon', cat_kitten:'normal', cat_pink:'legend' };
     // @gen:end
     const ITEM_TIER = { cushion:'normal', bowl:'uncommon', scratcher:'rare', tower:'epic' };
     // 등급별 상점 가격(은화) — 확률(60/20/15/3.8/1/0.2%)에 맞춰 등급이 오를수록 약 2배씩.

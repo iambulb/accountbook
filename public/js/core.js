@@ -463,9 +463,15 @@
     function isGroupWs(){ return state.wsMeta && state.wsMeta.type==='group'; }
     function wsMemberNames(){ const m=(state.wsMeta&&state.wsMeta.members)||{}; return Object.keys(m).map(k=>m[k].name).filter(Boolean); }
     // 소유자 선택 옵션: 현재 워크스페이스 멤버 + 공동 (+ 기존 값 보존)
+    function ownerName(uid){ const m=(state.wsMeta&&state.wsMeta.members)||{}; return (m[uid]&&m[uid].name)||uid; }
+    function defaultOwnerUid(){ const s=state.wsSettings&&state.wsSettings.defaultOwner; if(s==='me') return state.uid; if(s==='common') return '공동'; return isGroupWs()?'공동':state.uid; }
+    // 소비 대상 옵션: 값=멤버 uid(표시=이름) + 공동. selected는 uid|'공동'|레거시 이름(옵션으로 보존).
     function ownerOptions(selected){
-      const opts=Array.from(new Set([...wsMemberNames(), '공동', selected].filter(Boolean)));
-      return opts.map(o=>'<option'+(o===selected?' selected':'')+'>'+escapeHtml(o)+'</option>').join('');
+      const m=(state.wsMeta&&state.wsMeta.members)||{}, uids=Object.keys(m);
+      let h=uids.map(u=>'<option value="'+u+'"'+(u===selected?' selected':'')+'>'+escapeHtml(m[u].name||'멤버')+'</option>').join('');
+      h+='<option value="공동"'+(selected==='공동'?' selected':'')+'>공동</option>';
+      if(selected && selected!=='공동' && !uids.includes(selected)) h+='<option value="'+escapeHtml(selected)+'" selected>'+escapeHtml(selected)+'</option>';
+      return h;
     }
     // ===== 공동 설정(권한/기본값) =====
     function isWsOwner(){ return state.wsMeta && state.wsMeta.ownerUid===state.uid; }

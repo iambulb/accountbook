@@ -73,3 +73,11 @@ test('computeSettleAmounts: custom 값 우선, 값 없으면 균등 폴백', () 
   // custom 지정값 없음 → equal 폴백
   assert.deepStrictEqual(U.computeSettleAmounts('custom', ['a', 'b'], 1000, {}), { a: 500, b: 500 });
 });
+
+test('personKey: 멤버는 uid, 레거시/공동은 이름', () => {
+  assert.strictEqual(U.personKey({ userUid: 'uid_123', user: '철수' }), 'uid_123');   // uid 우선
+  assert.strictEqual(U.personKey({ user: '철수' }), '철수');                            // 레거시(uid 없음)
+  assert.strictEqual(U.personKey({ user: '공동' }), '공동');                            // 공동
+  assert.strictEqual(U.personKey({ userUid: '공동', user: '공동' }), '공동');           // 공동은 uid로 안 침
+  assert.strictEqual(U.personKey({}), '미지정');
+});

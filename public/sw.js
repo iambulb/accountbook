@@ -1,5 +1,5 @@
 /* 알뜰(Eggarden) 서비스워커 — 오프라인 앱 셸 캐시 */
-const CACHE_VERSION = 'eggarden-v3.104.1';
+const CACHE_VERSION = 'eggarden-v3.106.2';
 const APP_SHELL = [
   './',
   './index.html',
@@ -89,6 +89,11 @@ const APP_SHELL = [
   './assets/pets/cat_kitten/north.png',
   './assets/pets/cat_kitten/east.png',
   './assets/pets/cat_kitten/west.png',
+  './assets/pets/cat_pink/walk.png',
+  './assets/pets/cat_pink/south.png',
+  './assets/pets/cat_pink/north.png',
+  './assets/pets/cat_pink/east.png',
+  './assets/pets/cat_pink/west.png',
   // @gen:end
 ];
 

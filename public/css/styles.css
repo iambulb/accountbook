@@ -364,13 +364,20 @@
     .amtbig-in:focus { outline:none; box-shadow:0 3px 0 -1px var(--primary); caret-color:var(--primary); }
     /* 해외통화: 금액 옆 통화 선택 + 환율/환산 미리보기 */
     .amtbig .amt-cur { border:none; background:var(--soft); border-radius:10px; font-size:15px; font-weight:800; color:var(--text); padding:6px 8px; -webkit-appearance:none; appearance:none; cursor:pointer; }
-    .fxrow { margin:2px 0 8px; }
-    .fxrow-in { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:14px; font-weight:700; }
-    .fxrow .fxrate { width:96px; border:1px solid var(--bd); border-radius:8px; padding:6px 8px; font-size:14px; font-weight:800; text-align:right; background:var(--card); color:var(--text); }
-    .fxrow .fxk { color:var(--sub); font-weight:700; }
-    .fxrow .fxconv { margin-left:auto; font-weight:800; }
-    .fxrow .fxrefresh { border:none; background:var(--soft); border-radius:8px; padding:5px 8px; font-size:13px; cursor:pointer; }
-    .fxrow #sFxStat { color:var(--primary); font-weight:700; }
+    /* 해외통화 환율 행 — 앱 폼 스타일(소프트 카드 + 아이콘버튼)과 통일 */
+    .fxrow { margin:2px 14px 10px; background:var(--soft); border-radius:12px; padding:10px 12px; }
+    .fxrow-in { display:flex; align-items:center; gap:8px; font-size:14px; font-weight:700; }
+    .fxrow .fxrate { flex:1; min-width:0; border:1px solid var(--bd); border-radius:9px; padding:8px 10px; font-size:15px; font-weight:800; text-align:right; background:var(--card); color:var(--text); }
+    .fxrow .fxrate:focus { outline:none; border-color:var(--primary); }
+    .fxrow .fxk { color:var(--sub); font-weight:700; white-space:nowrap; }
+    .fxrow .fxrefresh { flex:none; width:36px; height:36px; border-radius:10px; border:1px solid var(--bd); background:var(--card); color:var(--primary); display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
+    .fxrow .fxrefresh svg { width:18px; height:18px; }
+    .fxrow .fxrefresh:active { transform:scale(.92); }
+    .fxrow .fxrefresh.spin svg { animation:fxspin .8s linear infinite; }
+    @keyframes fxspin { to { transform:rotate(360deg); } }
+    .fxconv-row { display:flex; align-items:baseline; justify-content:space-between; margin-top:8px; }
+    .fxconv-row .fxconv { font-size:17px; font-weight:800; color:var(--text); letter-spacing:-.02em; }
+    .fxrow #sFxStat { color:var(--primary); font-weight:700; font-size:12px; margin-top:4px; min-height:15px; }
     .tx-fx { display:block; font-size:11px; color:var(--sub); font-weight:700; margin-top:1px; }
     .chips { display:flex; gap:8px; overflow-x:auto; padding:2px 0 8px; }
     .chips::-webkit-scrollbar { display:none; }

@@ -53,7 +53,7 @@ def load_reg():
 def save_reg(reg):
     # pets 배열은 한 항목 한 줄로 보기 좋게 직렬화
     def petline(p):
-        keys = ["id","species","name","tier","desc","zip","frontWalk"]
+        keys = ["id","species","name","tier","scale","desc","zip","frontWalk"]
         parts = [f'"{k}": {json.dumps(p.get(k), ensure_ascii=False)}' for k in keys if k in p]
         return "    { " + ", ".join(parts) + " }"
     body = ",\n".join(petline(p) for p in reg["pets"])
@@ -113,6 +113,12 @@ def slugify(zipname):
     base = "cat_" + (tok[0] if tok else "new")
     return base
 
+# 새끼(아기)면 기본 크기 배율 0.5. zip 파일명에서 아기 키워드 감지(이후 개발자가 pets.json에서 직접 수정하면 그 값이 우선).
+_BABY_KW = ("kitten","baby","cub","puppy","pup","chick","calf","foal","joey","kit","fawn","piglet","duckling")
+def is_baby(zipname):
+    toks = re.findall(r"[a-z]+", zipname.lower())
+    return any(k in toks for k in _BABY_KW)
+
 # ---------- 코드젠 ----------
 def replace_between(text, name, new_block):
     """마커 사이만 교체. HTML주석형(<!--@gen:NAME-->…<!--@gen:end-->, 인라인/블록 공용)과
@@ -143,7 +149,9 @@ def gen_sprites(reg):
     for i,p in enumerate(reg["pets"]):
         comma = "" if i==len(reg["pets"])-1 else ","
         fw = ", frontWalk:true" if p.get("frontWalk") else ""
-        lines.append(f"      {p['id']}:{{ walk:'assets/pets/{p['id']}/walk.png', frames:6, stills:true{fw} }}{comma}")
+        sc = p.get("scale")
+        scStr = f", scale:{sc}" if (sc and float(sc)!=1) else ""
+        lines.append(f"      {p['id']}:{{ walk:'assets/pets/{p['id']}/walk.png', frames:6, stills:true{scStr}{fw} }}{comma}")
     return "    const PET_SPRITES = {\n" + "\n".join(lines) + "\n    };"
 
 def gen_tier(reg):
@@ -162,8 +170,9 @@ def gen_names(reg): return "·".join(p["name"] for p in reg["pets"])
 def gen_pet_list_table(reg):
     rows = []
     for i,p in enumerate(reg["pets"],1):
+        sc = float(p.get("scale") or 1)
         rows.append(f"| {i} | {p['name']} | `{p['id']}` | {reg['speciesLabel'].get(p['species'],p['species'])} | "
-                    f"{TIER_KO.get(p['tier'],p['tier'])} | {price_of(reg,p)} | `public/assets/pets/{p['id']}/` | "
+                    f"{sc:g}× | {TIER_KO.get(p['tier'],p['tier'])} | {price_of(reg,p)} | `public/assets/pets/{p['id']}/` | "
                     f"{'PNG 스프라이트 6프레임(정면걷기)' if p.get('frontWalk') else 'PNG 스프라이트 6프레임'} | {p['desc']} |")
     return "\n".join(rows)
 
@@ -187,9 +196,10 @@ def main():
             if not z.endswith(".zip") or z in known_zips: continue
             sid = slugify(z); n=sid; k=2
             while n in existing_ids: n=f"{sid}{k}"; k+=1
-            stub = {"id":n,"species":"cat","name":"(미정)","tier":"normal","desc":"","zip":z,"frontWalk":False}
+            baby = is_baby(z); sc = 0.5 if baby else 1
+            stub = {"id":n,"species":"cat","name":"(미정)","tier":"normal","scale":sc,"desc":"","zip":z,"frontWalk":False}
             reg["pets"].append(stub); existing_ids.add(n); newly.append(stub)
-            print(f"＋ 새 zip 인제스트: {z} → id 제안 '{n}' (name/tier 확정 필요)")
+            print(f"＋ 새 zip 인제스트: {z} → id 제안 '{n}'"+(" · 새끼 감지 → scale 0.5" if baby else "")+" (name/tier 확정 필요)")
 
         # 2) 에셋 생성(없으면; --force면 전부)
         for p in reg["pets"]:

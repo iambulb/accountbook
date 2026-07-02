@@ -243,7 +243,7 @@
       sh._cpa  = t?t.cardPerformanceAmount:undefined;
       sh._cpr  = t?(t.cardPerformanceExcludedReason||''):'';
       sh._adjSign = (t&&t.type==='balance_adjustment'&&Number(t.amount)<0)?'-':'+';
-      sh._consumer = t?(t.user||state.userName||'공동'):(state.userName||'공동');
+      sh._consumer = t?(t.userUid||t.user||'공동'):defaultOwnerUid();
       sh._settle = t ? { inc:t.settlementIncluded===true, payer:t.payer||'', splitType:t.splitType||'equal',
         participants:Array.isArray(t.splitParticipants)?t.splitParticipants.slice():null, amounts:t.splitAmounts||null, memo:t.settlementMemo||'' } : null;
       highlightTypeSeg(); renderTxDyn(); renderSettleBlock();
@@ -484,10 +484,13 @@
       const e=TX_EFFECT[sheetType]||{};
       const hasCat=catTypeFor(sheetType)!==null;
       // 소비 대상(누구의 소비) — 지출/선불결제/포인트사용에서만 선택, 그 외엔 본인
-      const consumer = $('sConsumer') ? (val('sConsumer')||state.userName) : state.userName;
+      const _csel = $('sConsumer') ? (val('sConsumer')||defaultOwnerUid()) : defaultOwnerUid();
+      const _cmem = (state.wsMeta&&state.wsMeta.members)||{};
+      const consumer = _csel==='공동' ? '공동' : (_cmem[_csel] ? (_cmem[_csel].name||state.userName) : (_csel===state.uid?(state.userName||'공동'):_csel));
       const tx={ type:sheetType, date:iso, user:consumer, amount:rawAmount,
         desc: desc||(hasCat?(sheetCat||TYPE_LABEL[sheetType]):TYPE_LABEL[sheetType]),
         isActualExpense: !!ACTUAL_DEFAULT[sheetType] };
+      if(_cmem[_csel] || _csel===state.uid) tx.userUid=_csel;   // 멤버 소비대상은 uid 병행 저장(동명이인/개명 견고)
       if(curCode!=='KRW'){ tx.currency=curCode; tx.foreignAmount=foreign; tx.fxRate=sheetRate(); tx.fxSource=($('sheet')._fxSource||'manual'); tx.fxDate=date; }
       if(memo) tx.memo=memo;
       if(sheetType==='balance_adjustment'){ tx.to=val('sTo'); if(val('sAdjSign')==='-') tx.amount=-rawAmount; }
@@ -592,14 +595,16 @@
       h+='<div class="sech"><span class="l">최근 6개월 추이</span></div><div class="bars6">'+
         keys.map(k=>'<div class="b"><div class="bar'+(k===m?' on':'')+'" style="height:'+Math.round((md[k]||0)/mxB*100)+'%"></div><div class="bl">'+(+k.split('-')[1])+'월</div></div>').join('')+'</div>';
       // 소비 대상별 지출 — 개인별(용돈 등)과 공동 지출(집세 등)을 분리해서 표시
-      const ue={}; list.filter(isActual).forEach(t=>{ const u=t.user||'미지정'; ue[u]=(ue[u]||0)+(Number(t.amount)||0); });
+      const ue={}; list.filter(isActual).forEach(t=>{ const k=personKey(t); ue[k]=(ue[k]||0)+(Number(t.amount)||0); });
       const shared=ue['공동']||0;
-      const names=Array.from(new Set([...wsMemberNames(), ...Object.keys(ue)])).filter(n=>n!=='공동'&&(ue[n]||0)>0).sort((a,b)=>(ue[b]||0)-(ue[a]||0));
-      if(names.length||shared>0){
-        const mxM=Math.max(1,shared,...names.map(n=>ue[n]||0)); const pal=['#f3b14e','#7fd1a6','#c8a6f0','#6a8dff','#ff9aa2','#5ad1e0'];
+      const _pm=(state.wsMeta&&state.wsMeta.members)||{};
+      const pKeys=Object.keys(ue).filter(k=>k!=='공동'&&(ue[k]||0)>0).sort((a,b)=>(ue[b]||0)-(ue[a]||0));
+      const pLabel=(k)=>escapeHtml((_pm[k]&&_pm[k].name)||k);
+      if(pKeys.length||shared>0){
+        const mxM=Math.max(1,shared,...pKeys.map(k=>ue[k]||0)); const pal=['#f3b14e','#7fd1a6','#c8a6f0','#6a8dff','#ff9aa2','#5ad1e0'];
         const mbar=(label,amt,col)=>'<div class="mbar"><div class="top"><span>'+label+'</span><span>'+fmtComma(amt||0)+'</span></div><div class="track"><div class="fill" style="width:'+Math.round((amt||0)/mxM*100)+'%;background:'+col+'"></div></div></div>';
         h+='<div class="sech"><span class="l">개인별 지출</span><span class="s">용돈 등</span></div>';
-        h+= names.length ? names.map((n,i)=>mbar(escapeHtml(n),ue[n]||0,pal[i%pal.length])).join('') : '<div class="empty" style="padding:16px;">개인 지출이 없습니다</div>';
+        h+= pKeys.length ? pKeys.map((k,i)=>mbar(pLabel(k),ue[k]||0,pal[i%pal.length])).join('') : '<div class="empty" style="padding:16px;">개인 지출이 없습니다</div>';
         if(shared>0) h+='<div class="sech"><span class="l">공동 지출</span><span class="s">집세 등</span></div>'+mbar('🤝 공동',shared,'var(--sub)');
       }
       const bgs=visibleBudgets();
