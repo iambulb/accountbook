@@ -24,6 +24,11 @@
       ".write": "auth != null"
     },
 
+    "catalogPets": {
+      ".read": "auth != null",
+      "$id": { ".write": "auth != null && auth.token.email === 'canel94@gmail.com'" }
+    },
+
     "workspaces": {
       ".read": "auth != null",
       "$wsId": {

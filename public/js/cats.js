@@ -716,10 +716,12 @@
       eggmoneyna:     { type:'consum', key:'egg',  qty:10, label:'펫알 10개' }
     };
     function redeemCode(code){
-      const key=(code||'').trim().toLowerCase();
+      let key=(code||'').trim().toLowerCase();
+      let atUnlimited=false;
+      if(key.charAt(0)==='@'){ key=key.slice(1); atUnlimited=true; }   // 코드 앞 @ = 무제한 사용(각 코드의 @버전)
       const def=PROMO_CODES[key];
       if(!def){ toast('올바르지 않은 코드예요', true); return; }
-      const dev=(typeof isDev==='function' && isDev());   // 개발자는 무제한, 일반은 1회
+      const dev=(typeof isDev==='function' && isDev()) || atUnlimited;   // 개발자 또는 @코드 = 무제한, 일반은 1회
       let already=false;
       gameRef().transaction(g=>{
         g=normalizeGame(g);
@@ -855,61 +857,75 @@
     // 정적 파이프라인(tools/build_pets.py)과 별개 트랙. 이미지=data URL로 저장하므로 재배포·SW캐시 불필요.
     // 저장: catalogPets/{id}={ name, species, speciesLabel?, tier, scale, frontWalk, walk, south, north, east, west, by, at }.
     // 병합: PET_CATALOG(배열)·PET_SPRITES·CAT_TIER·SPECIES_LABEL에 밀어넣어 상점·가챠·방 어디서나 정적 펫과 동일 취급.
-    const _runtimeIds=new Set();
+    // catalogPets/{id} 레코드는 (a) 신규 런타임 펫(이미지 포함) 또는 (b) 정적 펫 오버라이드(이름·등급·디자인·삭제)로 둘 다 겸함.
+    //  · 정적 원본(STATIC_*)을 1회 스냅샷 → 스냅샷마다 "정적 base + catalog 오버라이드"로 재구성(멱등).
+    //  · deleted:true = 소프트 삭제(이미지·정의 유지, 상점/가챠/목록에서 숨김). 개발자 펫 관리 화면에서 복구 가능.
+    const STATIC_CATALOG=[], STATIC_SPRITES={}, STATIC_TIER={}, STATIC_SPECIES={}; let _staticCaptured=false;
+    let _deletedPets={};   // 소프트 삭제된 펫 {id:{id,name,species,tier,...}} — dev 관리 화면 표시용
     function catalogRef(){ return db.ref('catalogPets'); }
-    function mergeRuntimePet(p){ if(!p||!p.id) return; const id=p.id;
-      const tier=p.tier||'normal', price=(typeof TIER_PRICE!=='undefined'&&TIER_PRICE[tier])||50;
-      const entry={ id, species:p.species||'cat', name:p.name||id, price, desc:p.desc||'', runtime:true };
-      const ci=PET_CATALOG.findIndex(x=>x.id===id); if(ci>=0) PET_CATALOG[ci]=entry; else PET_CATALOG.push(entry);
-      PET_SPRITES[id]={ walk:p.walk||'', frames:6, stills:true, scale:Number(p.scale)||1, frontWalk:!!p.frontWalk, runtime:true,
-        urls:{ walk:p.walk, south:p.south, north:p.north, east:p.east, west:p.west } };
-      CAT_TIER[id]=tier;
-      if(p.speciesLabel && p.species) SPECIES_LABEL[p.species]=p.speciesLabel;
-      _runtimeIds.add(id);
+    function captureStatic(){ if(_staticCaptured) return; _staticCaptured=true;
+      PET_CATALOG.forEach(c=>STATIC_CATALOG.push(Object.assign({},c)));
+      Object.keys(PET_SPRITES).forEach(k=>STATIC_SPRITES[k]=Object.assign({},PET_SPRITES[k]));
+      Object.keys(CAT_TIER).forEach(k=>STATIC_TIER[k]=CAT_TIER[k]);
+      Object.keys(SPECIES_LABEL).forEach(k=>STATIC_SPECIES[k]=SPECIES_LABEL[k]); }
+    function isRuntimePet(id){ return !STATIC_TIER[id]; }   // 정적에 없으면 런타임 신규
+    function applyCatalog(recs){ recs=recs||{};
+      // 1) 정적 base로 리셋
+      PET_CATALOG.length=0; STATIC_CATALOG.forEach(c=>PET_CATALOG.push(Object.assign({},c)));
+      Object.keys(PET_SPRITES).forEach(k=>delete PET_SPRITES[k]); Object.keys(STATIC_SPRITES).forEach(k=>PET_SPRITES[k]=Object.assign({},STATIC_SPRITES[k]));
+      Object.keys(CAT_TIER).forEach(k=>delete CAT_TIER[k]); Object.keys(STATIC_TIER).forEach(k=>CAT_TIER[k]=STATIC_TIER[k]);
+      Object.keys(SPECIES_LABEL).forEach(k=>delete SPECIES_LABEL[k]); Object.keys(STATIC_SPECIES).forEach(k=>SPECIES_LABEL[k]=STATIC_SPECIES[k]);
+      _deletedPets={};
+      // 2) catalog 레코드 적용(신규/오버라이드/삭제)
+      Object.keys(recs).forEach(id=>{ const r=recs[id]||{}; const isNew=isRuntimePet(id);
+        if(isNew && !r.walk && !r.deleted) return;   // 이미지 없는 신규는 무시
+        // 스프라이트
+        let sp = isNew ? { frames:6, stills:true } : Object.assign({}, STATIC_SPRITES[id]);
+        if(r.walk) sp.urls={ walk:r.walk, south:r.south, north:r.north, east:r.east, west:r.west };   // (재)업로드 디자인
+        if(r.scale!=null) sp.scale=Number(r.scale)||1;
+        if(r.frontWalk!=null) sp.frontWalk=!!r.frontWalk;
+        if(isNew){ sp.runtime=true; sp.walk=sp.walk||''; }
+        PET_SPRITES[id]=sp;
+        const tier = r.tier || CAT_TIER[id] || 'normal'; CAT_TIER[id]=tier;
+        const ci=PET_CATALOG.findIndex(x=>x.id===id);
+        const base = ci>=0 ? PET_CATALOG[ci] : { id, species:'cat', name:id, desc:'' };
+        if(r.speciesLabel && (r.species||base.species)) SPECIES_LABEL[r.species||base.species]=r.speciesLabel;
+        const entry={ id, species:r.species||base.species||'cat', name:r.name||base.name||id,
+          price:(TIER_PRICE[tier]||50), desc:(r.desc!=null?r.desc:(base.desc||'')), runtime:isNew };
+        if(ci>=0) PET_CATALOG[ci]=entry; else PET_CATALOG.push(entry);
+        if(r.deleted){ _deletedPets[id]=Object.assign({tier}, entry, {deleted:true});   // 목록에서 숨김(스프라이트·등급은 유지 → 보유 펫 렌더 가능)
+          const di=PET_CATALOG.findIndex(x=>x.id===id); if(di>=0) PET_CATALOG.splice(di,1); }
+      });
+      PET_CATALOG.forEach(c=>{ const t=CAT_TIER[c.id]; if(t&&TIER_PRICE[t]!=null) c.price=TIER_PRICE[t]; });   // 가격 재산정
     }
-    function unmergeRuntimePet(id){ const ci=PET_CATALOG.findIndex(x=>x.id===id); if(ci>=0) PET_CATALOG.splice(ci,1);
-      delete PET_SPRITES[id]; delete CAT_TIER[id]; _runtimeIds.delete(id); }
     function watchCatalogPets(){ if(typeof db==='undefined'||!db) return;
+      captureStatic();
       if(state._catalogRef){ try{ state._catalogRef.off(); }catch(e){} }
       state._catalogRef=catalogRef();
-      state._catalogRef.on('value', s=>{ const v=s.val()||{}, seen=new Set(Object.keys(v));
-        Array.from(_runtimeIds).forEach(id=>{ if(!seen.has(id)) unmergeRuntimePet(id); });   // 삭제 반영
-        Object.keys(v).forEach(id=>{ const p=v[id]||{}; p.id=id; mergeRuntimePet(p); });
+      state._catalogRef.on('value', s=>{ applyCatalog(s.val()||{});
         markCatDirty();
         if(typeof renderDockCats==='function') renderDockCats();
         if(state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh();
       }, ()=>{});   // 읽기 실패(규칙 미배포 등)는 조용히 무시
     }
-    function deleteRuntimePet(id){ confirmSheet('이 런타임 펫을 삭제할까요? (모든 사용자에게서 사라져요)', ()=>{ catalogRef().child(id).remove(); toast('삭제했어요'); closeSheet(); }); }
+    // 모든 펫(활성+삭제) — dev 관리 화면용. {id,name,species,tier,deleted}
+    function allPetsForDev(){ const out=PET_CATALOG.map(c=>({ id:c.id, name:c.name, species:c.species, tier:CAT_TIER[c.id]||'normal', runtime:!!c.runtime, deleted:false }));
+      Object.keys(_deletedPets).forEach(id=>{ const d=_deletedPets[id]; out.push({ id, name:d.name, species:d.species, tier:d.tier||'normal', runtime:!!d.runtime, deleted:true }); });
+      return out.sort((a,b)=> (a.deleted-b.deleted) || tierRank(a.tier)-tierRank(b.tier) || String(a.name).localeCompare(String(b.name))); }
+    function setPetDeleted(id, del){ catalogRef().child(id+'/deleted').set(!!del); }
+    function deletePetSoft(id){ confirmSheet('이 펫을 삭제할까요? 앱에서 숨겨지고(이미지는 보존) 개발자 화면에서 복구할 수 있어요.', ()=>{ setPetDeleted(id,true); toast('삭제(숨김) 처리했어요'); if(state._devPetSel===id) state._devPetSel=null; if(typeof openDevPetManager==='function') openDevPetManager(); }); }
+    function restorePet(id){ setPetDeleted(id,false); toast('복구했어요'); if(typeof openDevPetManager==='function') openDevPetManager(); }
 
-    // ---- dev: 앱에서 zip 업로드로 펫 추가 ----
+    // ---- dev: 펫 관리(목록·추가·수정·삭제/복구) + zip 처리 ----
+    let _devPetTarget=null;   // 수정 대상 id(null=신규 추가)
     function loadJSZip(){ if(window.JSZip) return Promise.resolve(window.JSZip);
       return new Promise((res,rej)=>{ const s=document.createElement('script');
         s.src='https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'; s.onload=()=>res(window.JSZip); s.onerror=()=>rej(new Error('JSZip 로드 실패')); document.head.appendChild(s); }); }
     function _blobToImg(blob){ return new Promise((res,rej)=>{ const u=URL.createObjectURL(blob); const im=new Image();
       im.onload=()=>{ URL.revokeObjectURL(u); res(im); }; im.onerror=()=>{ URL.revokeObjectURL(u); rej(new Error('이미지 로드 실패')); }; im.src=u; }); }
-    function openDevPetAdd(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
-      const tierOpts=(typeof TIERS!=='undefined'?TIERS:[{id:'normal',name:'일반'}]).map(t=>'<option value="'+t.id+'">'+t.name+'</option>').join('');
-      let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 12px;line-height:1.5;">PixelLab export <b>zip</b>을 올리고 이름·분류·등급·크기만 정하면 추가됩니다. 앱에서 바로 처리(옆걷기 시트+4방향 생성)해 <b>모든 사용자</b>에게 반영돼요(개발자 전용).</p>';
-      h+='<div class="field"><label>zip 파일</label><input type="file" id="dpZip" accept=".zip,application/zip" class="input"></div>';
-      h+='<div class="field"><label>이름</label><input class="input" id="dpName" placeholder="예: 고랑이" maxlength="16"></div>';
-      h+='<div class="field"><label>분류 라벨(상점 태그)</label><input class="input" id="dpSpeciesLabel" placeholder="예: 호랑이" maxlength="8"></div>';
-      h+='<div class="field"><label>분류 코드(species)</label><input class="input" id="dpSpecies" value="cat" placeholder="cat/dog/tiger…" maxlength="12"></div>';
-      h+='<div class="row" style="gap:8px;"><div class="field" style="flex:1;"><label>등급</label><select class="input" id="dpTier">'+tierOpts+'</select></div>'+
-         '<div class="field" style="flex:1;"><label>크기(배율)</label><input class="input" id="dpScale" type="number" step="0.1" min="0.3" value="1"></div></div>';
-      h+='<button class="btn" id="dpBtn" onclick="submitDevPet()">추가</button>';
-      // 이미 올라온 런타임 펫 목록(삭제용)
-      const rt=PET_CATALOG.filter(c=>c.runtime);
-      if(rt.length){ h+='<div class="sech" style="margin-top:16px;"><span class="l">업로드된 런타임 펫</span></div>';
-        h+=rt.map(c=>'<div class="lrow"><span class="lt">'+escapeHtml(c.name)+' <span class="pill">'+escapeHtml((SPECIES_LABEL[c.species]||c.species))+'</span></span><button class="lnk" onclick="deleteRuntimePet(\''+c.id+'\')">삭제</button></div>').join(''); }
-      openSheet('펫 추가(zip)', h);
-    }
-    function submitDevPet(){
-      const fi=$('dpZip'), file=fi&&fi.files&&fi.files[0];
-      if(!file){ toast('zip 파일을 선택하세요', true); return; }
-      const name=(val('dpName')||'').trim(); if(!name){ toast('이름을 입력하세요', true); return; }
-      const btn=$('dpBtn'); if(btn){ btn.disabled=true; btn.textContent='처리 중…'; }
-      loadJSZip().then(JSZip=>JSZip.loadAsync(file)).then(zip=>{
+    // zip → {walk,south,north,east,west,frontWalk} data URL(브라우저 canvas 합성)
+    function _processPetZip(file){
+      return loadJSZip().then(JSZip=>JSZip.loadAsync(file)).then(zip=>{
         const names=Object.keys(zip.files);
         let frameNames=names.filter(n=>/\/Walk\/east\/frame_\d+\.png$/i.test(n)).sort(); let frontWalk=false;
         if(frameNames.length<6){ const s=names.filter(n=>/\/Walk\/south\/frame_\d+\.png$/i.test(n)).sort(); if(s.length>=6){ frameNames=s; frontWalk=true; } }
@@ -923,15 +939,54 @@
             return k ? zip.files[k].async('base64').then(b=>'data:image/png;base64,'+b) : Promise.resolve(walk); }))
             .then(rots=>({ walk, south:rots[0], north:rots[1], east:rots[2], west:rots[3], frontWalk }));
         });
-      }).then(art=>{
-        const id='rt_'+Date.now().toString(36);
-        const pet={ id, name, species:(val('dpSpecies')||'cat').trim()||'cat', speciesLabel:(val('dpSpeciesLabel')||'').trim(),
-          tier:val('dpTier')||'normal', scale:Number(val('dpScale'))||1, frontWalk:art.frontWalk,
-          walk:art.walk, south:art.south, north:art.north, east:art.east, west:art.west, by:state.userEmail||'', at:new Date().toISOString() };
-        return catalogRef().child(id).set(pet);
-      }).then(()=>{ toast(name+' 추가 완료! 🐾'); closeSheet(); })
-        .catch(e=>{ toast('추가 실패: '+((e&&e.message)||e), true); const b=$('dpBtn'); if(b){ b.disabled=false; b.textContent='추가'; } });
+      });
     }
+    function _petFormHtml(pre){ pre=pre||{};
+      const tierOpts=(typeof TIERS!=='undefined'?TIERS:[{id:'normal',name:'일반'}]).map(t=>'<option value="'+t.id+'"'+(pre.tier===t.id?' selected':'')+'>'+t.name+'</option>').join('');
+      let h='<div class="field"><label>zip 파일'+(pre.id?' <span class="pill">재업로드 시에만 디자인 교체</span>':'')+'</label><input type="file" id="dpZip" accept=".zip,application/zip" class="input"></div>';
+      h+='<div class="field"><label>이름</label><input class="input" id="dpName" value="'+escapeHtml(pre.name||'')+'" placeholder="예: 고랑이" maxlength="16"></div>';
+      h+='<div class="field"><label>분류 라벨(상점 태그)</label><input class="input" id="dpSpeciesLabel" value="'+escapeHtml(pre.speciesLabel||'')+'" placeholder="예: 호랑이" maxlength="8"></div>';
+      h+='<div class="field"><label>분류 코드(species)</label><input class="input" id="dpSpecies" value="'+escapeHtml(pre.species||'cat')+'" placeholder="cat/dog/tiger…" maxlength="12"></div>';
+      h+='<div class="row" style="gap:8px;"><div class="field" style="flex:1;"><label>등급</label><select class="input" id="dpTier">'+tierOpts+'</select></div>'+
+         '<div class="field" style="flex:1;"><label>크기(배율)</label><input class="input" id="dpScale" type="number" step="0.1" min="0.3" value="'+(pre.scale||1)+'"></div></div>';
+      return h; }
+    function devPetInfo(id){ const c=PET_CATALOG.find(x=>x.id===id)||_deletedPets[id]; if(!c) return null; const sp=PET_SPRITES[id]||{};
+      return { id, name:c.name, species:c.species, speciesLabel:(SPECIES_LABEL[c.species]||''), tier:CAT_TIER[id]||'normal', scale:sp.scale||1 }; }
+    function openDevPetAdd(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; } _devPetTarget=null;
+      let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 12px;line-height:1.5;">PixelLab export <b>zip</b>을 올리고 이름·분류·등급·크기만 정하면 추가됩니다. 앱에서 바로 처리(옆걷기 시트+4방향 생성)해 <b>모든 사용자</b>에게 반영돼요.</p>';
+      h+=_petFormHtml({})+'<button class="btn" id="dpBtn" onclick="submitDevPet()">추가</button>';
+      openSheet('펫 추가', h); }
+    function openDevPetEdit(id){ if(!(typeof isDev==='function'&&isDev())) return; const p=devPetInfo(id); if(!p){ toast('펫을 찾을 수 없어요',true); return; } _devPetTarget=id;
+      let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 12px;line-height:1.5;">이름·분류·등급·크기를 바꾸고, <b>zip을 다시 올리면 디자인</b>도 교체돼요. (정적 펫도 앱에서 오버라이드됩니다)</p>';
+      h+=_petFormHtml(p)+'<button class="btn" id="dpBtn" onclick="submitDevPet()">저장</button>';
+      openSheet('펫 수정 · '+escapeHtml(p.name||id), h); }
+    function submitDevPet(){
+      const name=(val('dpName')||'').trim(); if(!name){ toast('이름을 입력하세요', true); return; }
+      const fi=$('dpZip'), file=fi&&fi.files&&fi.files[0], editing=!!_devPetTarget;
+      if(!editing && !file){ toast('zip 파일을 선택하세요', true); return; }
+      const btn=$('dpBtn'); if(btn){ btn.disabled=true; btn.textContent='처리 중…'; }
+      const fields={ name, species:(val('dpSpecies')||'cat').trim()||'cat', speciesLabel:(val('dpSpeciesLabel')||'').trim(),
+        tier:val('dpTier')||'normal', scale:Number(val('dpScale'))||1, by:state.userEmail||'', at:new Date().toISOString() };
+      const p = file ? _processPetZip(file) : Promise.resolve(null);
+      p.then(art=>{ if(art){ fields.walk=art.walk; fields.south=art.south; fields.north=art.north; fields.east=art.east; fields.west=art.west; fields.frontWalk=art.frontWalk; }
+        const id=editing?_devPetTarget:('rt_'+Date.now().toString(36)); const ref=catalogRef().child(id);
+        return editing ? ref.update(fields) : ref.set(fields);
+      }).then(()=>{ toast((editing?'저장':'추가')+' 완료! 🐾'); closeSheet(); })
+        .catch(e=>{ toast((editing?'저장':'추가')+' 실패: '+((e&&e.message)||e), true); const b=$('dpBtn'); if(b){ b.disabled=false; b.textContent=editing?'저장':'추가'; } });
+    }
+    function devSelectPet(id){ state._devPetSel=(state._devPetSel===id?null:id); openDevPetManager(); }
+    // 개발자 펫 관리: 전체 목록(삭제된 펫=회색·"삭제됨") + 선택 후 [추가][수정][삭제/복구]
+    function openDevPetManager(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
+      const list=allPetsForDev(), sel=state._devPetSel, selPet=sel?list.find(p=>p.id===sel):null;
+      let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 10px;line-height:1.5;">펫을 선택해 <b>수정/삭제</b>하거나 <b>추가</b>로 새 펫(zip)을 올려요. 삭제=앱에서 숨김(이미지 보존)이라 <b>복구</b> 가능.</p>';
+      h+='<div class="petmg-list">'+list.map(p=>{ const on=p.id===sel; const tag=(SPECIES_LABEL[p.species]||p.species); const tn=((typeof TIERS!=='undefined'&&TIERS.find(t=>t.id===p.tier))||{}).name||p.tier;
+        return '<button class="petmg-row'+(on?' sel':'')+(p.deleted?' del':'')+'" onclick="devSelectPet(\''+p.id+'\')"><span class="pm-nm">'+escapeHtml(p.name||p.id)+'</span>'+
+          '<span class="pm-meta">'+escapeHtml(tag)+' · '+escapeHtml(tn)+(p.runtime?' · 런타임':'')+(p.deleted?' · 삭제됨':'')+'</span></button>'; }).join('')+'</div>';
+      const dr = (selPet&&selPet.deleted) ? '<button class="btn" onclick="restorePet(\''+sel+'\')">복구</button>'
+        : '<button class="btn danger"'+(sel?'':' disabled')+(sel?' onclick="deletePetSoft(\''+sel+'\')"':'')+'>삭제</button>';
+      h+='<div class="petmg-btns"><button class="btn ghost" onclick="openDevPetAdd()">추가</button>'+
+         '<button class="btn"'+(sel?'':' disabled')+(sel?' onclick="openDevPetEdit(\''+sel+'\')"':'')+'>수정</button>'+dr+'</div>';
+      openSheet('펫 관리', h); }
 
     // ================= 전역 dock (얇은 스트립 / 숨김) =================
     // #catdock 은 index.html 셸의 #content 형제 → 리렌더 영향 없음(애니메이션 유지)
@@ -1237,7 +1292,7 @@
       e.preventDefault();   // 캠 이미지가 선택/네이티브 드래그되는 것 방지
       const stage=el.parentElement, sx=e.clientX; let started=false, lastX=e.clientX;
       const begin=()=>{ started=true; _petDrag=a; a.mode='drag'; a.goal=null; if(typeof releaseRes==='function') releaseRes(a);
-        a.lift=Math.round((a.hh||40)*0.3); a.el.classList.add('cdgrab');
+        a.lift=0; a.el.classList.add('cdgrab');   // 드래그 중에도 발이 바닥/커서에 붙게 — 들어올림 제거(집기 피드백은 그림자 cdgrab). setXform이 발밑 여백도 상쇄
         if(a.spr) actorShowStill(a,'south'); setXform(a, a.spr?1:a.dir);
       };
       const mv=(ev)=>{ if(!started){ if(Math.abs(ev.clientX-sx)>3||Math.abs(ev.clientY-e.clientY)>3) begin(); else return; }   // 살짝만 끌어도 바로 집힘(꾹 누를 필요 없음)
@@ -1583,7 +1638,7 @@
     const TIER_PRICE = { normal:50, uncommon:100, rare:200, epic:400, legend:800, limited:1500 };
     PET_CATALOG.forEach(c=>{ const t=CAT_TIER[c.id]; if(t&&TIER_PRICE[t]!=null) c.price=TIER_PRICE[t]; });
     // ---- 개발자 모드(등록된 개발자 이메일 전용): 확률·구성 로컬 오버라이드 ----
-    const DEV_EMAILS=['canel94@gmail.com','gusrufl@naver.com'];   // 소문자로 등록(비교 시 소문자화)
+    const DEV_EMAILS=['canel94@gmail.com'];   // 소문자로 등록(비교 시 소문자화)
     function isDev(){ return DEV_EMAILS.indexOf((state.userEmail||'').toLowerCase())>=0; }
     function devOn(){ return isDev() && localStorage.getItem('catDev')==='1'; }
     function toggleDevMode(){ if(!isDev()) return; localStorage.setItem('catDev', devOn()?'0':'1'); }

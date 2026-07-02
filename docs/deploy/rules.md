@@ -54,3 +54,5 @@ users/{uid}/{friends,friendReqs} : 친구 관계·요청   // 당사자 두 명�
 | uidA → `users/uidB/friendReqs/uidA` 쓰기(친구 요청) | 허용(당사자) |
 | uidA → `users/uidB/friends/uidA` 쓰기(수락) | 허용(당사자) |
 | 비로그인 read | 거부 |
+
+- **`catalogPets`**: 런타임 펫(앱 dev zip 업로드). 읽기=로그인 전체, 쓰기=개발자 이메일(`auth.token.email` 화이트리스트)만. 규칙 변경 후 `npx firebase-tools deploy --only database` 로 배포해야 업로드가 동작한다.
