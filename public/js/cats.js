@@ -1341,7 +1341,11 @@
         return h;
       };
       openSheet('알뜰샵', build());
-      state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const st=b.scrollTop; b.innerHTML=build(); b.scrollTop=st; if(_catTab==='home') mountRoomWalk(); };
+      state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const st=b.scrollTop;
+        const chips=b.querySelector('.catchips'); const chipsL=chips?chips.scrollLeft:0;   // 우리집 펫 카드(가로 스크롤 strip) 위치 보존 — 선택 시 재렌더로 첫 카드로 튀지 않게
+        b.innerHTML=build(); b.scrollTop=st;
+        const nchips=b.querySelector('.catchips'); if(nchips) nchips.scrollLeft=chipsL;
+        if(_catTab==='home') mountRoomWalk(); };
       if(_catTab==='home') setTimeout(mountRoomWalk, 30);
     }
     function catHomeHtml(){

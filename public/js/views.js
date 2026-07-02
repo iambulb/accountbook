@@ -1410,7 +1410,7 @@
         h+=gcell(MORE_ICON.share,'할일 공유','openTodoShareSheet()');
         h+=gcell(MORE_ICON.report,'완료 리포트','openTodoReport()');
         h+=gcell(MORE_ICON.repeat,'반복 할일','openRepeatTodos()');
-        h+=gcell(MORE_ICON.pb,'목적별','openPurposeBooks()');
+        // 목적별(가계부)은 할일 모드 더보기에서 숨김 — 가계부 모드에서만 노출
       } else {
         const activeSubs=(state.subscriptions||[]).filter(s=>s.status==='active').length;
         h+=gcell(MORE_ICON.budget,'예산','openBudgetSheet()');
