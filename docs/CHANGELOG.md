@@ -8,6 +8,10 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 문서 — 📚 기능 문서를 가계부/할일 두 모드로 분리 + 전체 최신화
+- `features.md`를 **개요/인덱스**로 재편(두 모드·모드 토글·탭바·알뜰샵·공통 기반) + 신규 **[features-ledger.md](features-ledger.md)**(가계부 상세)·**[features-todo.md](features-todo.md)**(할일 상세) 추가.
+- `architecture.md`(로드 순서·다이어그램에 `util.js`·`cats.js`·두 모드 반영), `data-model.md`(RTDB 트리에 `todos`/`todoShare`/`loans`/`settings` 등·ERD에 TODO), `code-structure.md`(파일 줄수·할일 함수맵·모드 네비·펫 15종), `README.md`(문서 목차) 최신화. `CLAUDE.md` 문서 규칙 표에 모드별 문서 반영. (코드 변경 없음)
+
 ### 추가 — ✅ 할일 개인/그룹 분리 + 공유 친구 + 할일 전용 더보기 (S1~S5)
 - 할일을 **개인(프로필별)** 과 **그룹(담당 배정형)** 으로 나눔 — 할일 화면 상단 **[개인 | 그룹] 세그먼트**. `todos`에 `scope`/`ownerUid` 추가(누락은 그룹 하위호환).
 - **공유 친구 스트립**: 설정에서 **내 할일 공유** on/off(`ws/{wsId}/todoShare/{uid}`). 켠 친구가 개인 탭 상단에 **최근 등록순**으로 뜨고, 탭하면 그 친구 할일을 **읽기전용**으로 열람.

@@ -34,7 +34,7 @@
 
 | 코드 변경 | 갱신할 문서 |
 |---|---|
-| 기능 추가·변경·제거 | [docs/features.md](docs/features.md) |
+| 기능 추가·변경·제거 | [docs/features.md](docs/features.md)(개요) **+** 가계부=[docs/features-ledger.md](docs/features-ledger.md) / 할일=[docs/features-todo.md](docs/features-todo.md) 중 해당 모드 문서 |
 | 데이터 구조·RTDB 경로·보안규칙 변경 | [docs/data-model.md](docs/data-model.md) **+** `database.rules.json` **+** [rules.md](docs/deploy/rules.md) |
 | 파일 추가/삭제·주요 함수 구조 변경 | [docs/code-structure.md](docs/code-structure.md) |
 | 아키텍처·배포·데이터 흐름 변경 | [docs/architecture.md](docs/architecture.md) |

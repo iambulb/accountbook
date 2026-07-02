@@ -11,9 +11,11 @@ graph TB
         subgraph Shell["앱 셸 (index.html)"]
             FB["firebase.js<br/>초기화"]
             CONST["constants.js<br/>라벨·기본값·TX_EFFECT"]
+            UTIL["util.js<br/>순수 계산 유틸(테스트)"]
             CORE["core.js<br/>상태·인증·워크스페이스·리스너"]
-            VIEWS["views.js<br/>화면·시트 렌더"]
-            MAIN["main.js<br/>PWA 부트"]
+            VIEWS["views.js<br/>화면·시트 렌더(가계부/할일)"]
+            CATS["cats.js<br/>알뜰샵·펫·은화 경제"]
+            MAIN["main.js<br/>PWA 부트·접근성"]
         end
     end
 
@@ -35,7 +37,8 @@ graph TB
     class AUTH,RTDB fb
 ```
 
-- **모듈 로드 순서**(`index.html` script 태그): `firebase.js → constants.js → core.js → views.js → main.js`. 모든 함수는 전역(window) 스코프를 공유하며, HTML `onclick` 속성에서 직접 호출합니다. 자세한 내용은 [code-structure.md](code-structure.md).
+- **모듈 로드 순서**(`index.html` script 태그): `firebase.js → constants.js → util.js → core.js → views.js → cats.js → main.js`. 모든 함수는 전역(window) 스코프를 공유하며, HTML `onclick` 속성에서 직접 호출합니다. 자세한 내용은 [code-structure.md](code-structure.md).
+- **두 모드**: 상단 모드 토글(`setMode`)로 **가계부**([features-ledger.md](features-ledger.md))와 **할일**([features-todo.md](features-todo.md)) 화면을 오갑니다 — 하단 탭바(`renderTabBar`)와 본문(`rerender`)이 모드별로 전환되고, 데이터는 같은 `ws/{wsId}` 아래에 공존합니다.
 - **compat SDK 필수**: `firebase-*-compat.js` 빌드를 사용합니다(모듈형 아님).
 
 ## 배포 다이어그램
@@ -92,7 +95,7 @@ sequenceDiagram
 
 ## 서비스워커 캐시 전략
 
-`public/sw.js` (버전 문자열 예: `eggarden-v3.38.0`). 출처별로 전략이 다릅니다.
+`public/sw.js` (버전 문자열 예: `eggarden-v3.121.0`). 출처별로 전략이 다릅니다.
 
 ```mermaid
 graph TD

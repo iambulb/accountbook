@@ -29,6 +29,12 @@ ws/{wsId}/             : 가계부 데이터 (아래 노드들)
   ├─ people/{id}
   ├─ giftEvents/{id}
   ├─ plannedGiftEvents/{id}
+  ├─ loans/{id}                  // 대출/이자
+  ├─ loanPayments/{id}           // 대출 상환 기록
+  ├─ todos/{id}                  // 할일(개인/그룹 — scope 필드로 구분)
+  ├─ todoShare/{uid}             // 개인 할일 공유 on/off(멤버별)
+  ├─ settings                    // 워크스페이스 공동 설정(기본 공개범위/소유자)
+  ├─ catDeleted/{name}           // 삭제한 기본 카테고리 툼스톤(재시딩 방지)
   ├─ transactions/{uid}/{id}     // 사용자별로 분리 저장
   ├─ savings/{uid}/{id}
   ├─ recurring/{uid}/{id}
@@ -54,10 +60,13 @@ erDiagram
     WORKSPACE ||--o{ SUBSCRIPTION : "ws/{wsId}"
     WORKSPACE ||--o{ PURPOSEBOOK : "ws/{wsId}"
     WORKSPACE ||--o{ SAVINGS : "ws/{wsId}"
+    WORKSPACE ||--o{ TODO : "ws/{wsId} (개인/그룹)"
     ACCOUNT ||--o{ TRANSACTION : "from / to"
     CATEGORY ||--o{ TRANSACTION : "category"
     PURPOSEBOOK ||--o{ TRANSACTION : "purposeBookId"
+    PURPOSEBOOK ||--o{ TODO : "purposeBookId (여행 준비)"
     RECURRING ||--o{ TRANSACTION : "recurringId (자동생성)"
+    MEMBER ||--o{ TODO : "assignedUid / ownerUid"
 ```
 
 ## 핵심 엔티티 필드

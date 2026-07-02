@@ -8,16 +8,16 @@
 
 | 파일 | 줄 수* | 책임 |
 |---|---|---|
-| `index.html` | ~86 | 앱 셸 — 로그인 화면, 상단바, 탭바, 시트/오버레이 컨테이너, SDK·모듈 로드 |
+| `index.html` | ~95 | 앱 셸 — 로그인 화면, 상단바(**모드 토글**·워크스페이스 칩·펫캠·테마), 탭바, 시트/오버레이 컨테이너, SDK·모듈 로드 |
 | `js/firebase.js` | ~17 | `firebaseConfig` + Firebase 초기화(`auth`, `db`). SDK 미로드 시 폴백 화면 |
 | `js/constants.js` | ~54 | 라벨/아이콘 맵, 거래효과 테이블(`TX_EFFECT`), 계좌·제공사·구독·목적별 타입, 기본 카테고리(`buildDefaultCategories`) |
 | `js/util.js` | ~60 | **순수 계산 유틸**(돈/통화/정산): `won`·`fmtComma`·`parseAmount`·`curInfo`·`fmtForeign`·`krwFromForeign`·`sumByCurrency`·`computeSettleAmounts`·`personKey`·`addDays`·`nextDue`·`dueDiffDays`·`todoScope`·`friendTodoOrder`·`CURRENCIES`. 브라우저 전역 + Node `module.exports` 듀얼 → `test/`에서 단위 테스트(16케이스). |
-| `js/core.js` | ~649 | 전역 `state`, 헬퍼, 테마, 인증, 워크스페이스 부트스트랩, 마이그레이션, RTDB 리스너, 시딩 |
-| `js/views.js` | ~1146 | 모든 화면·시트 렌더링(달력·리포트·자산·더보기 + 각종 시트), CSV 내보내기 |
-| `js/cats.js` | ~360 | 🐱 알뜰샵(구 고양이집) — 은화 경제(`users/{uid}/game`: coins/owned/home/missions/progress/codes), 도트 아트(`pxSvg`+매트릭스, 고양이 8종 걷기2+정면+포즈 `catPose`(sit/loaf/sleep), 가구 7종+펫하우스 `M_PETHOUSE`), **PNG 스프라이트 걷기+정면 쉬기**(`PET_SPRITES`/`catActorHTML`: 고양이 8종 전부(…·카오스·샴)=PixelLab 288×48 6프레임 시트 `.cspr` CSS steps, **이동=옆 걷기 시트만·정지/가구쉼=south 정면**, 주기 `walkDur`(`--wdur`)로 이동속도 매칭, `frontWalk`(하양)은 이동 중 east 정지스틸, 시트 없는 동물은 SVG 매트릭스 폴백 — 에셋 `assets/pets/<id>/`, 카탈로그 `PET_CATALOG`(species), id 하위호환 `PET_ID_MIGRATE`, 처리 규칙 `docs/pet-asset-pipeline.md`), 단일 rAF 걷기 엔진(`buildActors`/`stepActors` 가구별 상호작용 `poseForItem`), 전역 dock(`#catdock` 웹캠 방: 벽지+가구 배경), 알뜰샵 시트(홈·상점(고양이/가구/벽지/이벤트)·배치(**꾹 눌러 롱프레스 드래그** `beginLongPress`/`giDown`/`palDown`, `furnSpot` 가구별 상호작용)·미션), 벽지(`WALLPAPER_CATALOG`), **뽑기**(`TIERS`/`rollFromPool`/`openGacha`, 펫알·랜덤박스, 오픈 연출 `runGachaFx`+`#catFx`), 금화(`GOLD_PAL`/`goldSvg`, 소비처=슬롯 확장), **활성 슬롯**(`home.slots` 기본3·`slotCount`/`buySlot` 금화100로 4칸 확장), **등급 가격**(`TIER_PRICE`가 `CAT_TIER` 기준 `PET_CATALOG.price` 산정), 품종 라벨(`PET_CATALOG.breed`, 기본 코숏)·이름 등급색(`catTierColor`), 프로모(`redeemCode`), **개발자 모드**(`isDev`/`devOn`/`openDevGacha`: canel94@gmail.com 전용 확률·구성 오버라이드, localStorage), 카탈로그 상수 |
-| `js/main.js` | ~70 | PWA 부트(`beforeinstallprompt`·SW 등록·테마) + **접근성 레이어**(`a11yDecorate` + MutationObserver·키보드 델리게이션·Esc·포커스 트랩) |
-| `sw.js` | ~84 | 서비스워커 — 앱 셸 캐시, 출처별 캐시 전략 |
-| `css/styles.css` | ~245 | 전체 스타일(라이트/다크 테마 CSS 변수) |
+| `js/core.js` | ~1019 | 전역 `state`, 헬퍼, 테마, 인증, 워크스페이스 부트스트랩, 마이그레이션, RTDB 리스너, 시딩, **모드/탭바**(`setMode`·`renderTabBar`·`fabAdd`) |
+| `js/views.js` | ~2326 | 모든 화면·시트 렌더링 — **가계부**(달력·리포트·자산·더보기 + 각종 시트) + **할일**(목록·캘린더·완료·공유·리포트), CSV 내보내기 |
+| `js/cats.js` | ~360 | 🐱 알뜰샵(구 고양이집) — 은화 경제(`users/{uid}/game`: coins/owned/home/missions/progress/codes), 도트 아트(`pxSvg`+매트릭스, 고양이 15종 걷기2+정면+포즈 `catPose`(sit/loaf/sleep), 가구 7종+펫하우스 `M_PETHOUSE`), **PNG 스프라이트 걷기+정면 쉬기**(`PET_SPRITES`/`catActorHTML`: 고양이 15종 전부(…·카오스·샴)=PixelLab 288×48 6프레임 시트 `.cspr` CSS steps, **이동=옆 걷기 시트만·정지/가구쉼=south 정면**, 주기 `walkDur`(`--wdur`)로 이동속도 매칭, `frontWalk`(하양)은 이동 중 east 정지스틸, 시트 없는 동물은 SVG 매트릭스 폴백 — 에셋 `assets/pets/<id>/`, 카탈로그 `PET_CATALOG`(species), id 하위호환 `PET_ID_MIGRATE`, 처리 규칙 `docs/pet-asset-pipeline.md`), 단일 rAF 걷기 엔진(`buildActors`/`stepActors` 가구별 상호작용 `poseForItem`), 전역 dock(`#catdock` 웹캠 방: 벽지+가구 배경), 알뜰샵 시트(홈·상점(고양이/가구/벽지/이벤트)·배치(**꾹 눌러 롱프레스 드래그** `beginLongPress`/`giDown`/`palDown`, `furnSpot` 가구별 상호작용)·미션), 벽지(`WALLPAPER_CATALOG`), **뽑기**(`TIERS`/`rollFromPool`/`openGacha`, 펫알·랜덤박스, 오픈 연출 `runGachaFx`+`#catFx`), 금화(`GOLD_PAL`/`goldSvg`, 소비처=슬롯 확장), **활성 슬롯**(`home.slots` 기본3·`slotCount`/`buySlot` 금화100로 4칸 확장), **등급 가격**(`TIER_PRICE`가 `CAT_TIER` 기준 `PET_CATALOG.price` 산정), 품종 라벨(`PET_CATALOG.breed`, 기본 코숏)·이름 등급색(`catTierColor`), 프로모(`redeemCode`), **개발자 모드**(`isDev`/`devOn`/`openDevGacha`: canel94@gmail.com 전용 확률·구성 오버라이드, localStorage), 카탈로그 상수 |
+| `js/main.js` | ~86 | PWA 부트(`beforeinstallprompt`·SW 등록·테마) + **접근성 레이어**(`a11yDecorate` + MutationObserver·키보드 델리게이션·Esc·포커스 트랩) |
+| `sw.js` | ~166 | 서비스워커 — 앱 셸 캐시(펫 에셋 포함, `@gen` 마커), 출처별 캐시 전략 |
+| `css/styles.css` | ~894 | 전체 스타일(라이트/다크 테마 CSS 변수) |
 | `icons/` | — | 앱 아이콘(`icon.svg`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`) |
 | `manifest.webmanifest` | — | PWA 매니페스트(이름·아이콘·display) |
 | `.well-known/assetlinks.json` | — | TWA(APK) 도메인 검증 |
@@ -75,10 +75,12 @@ firebase.js → constants.js → util.js → core.js → views.js → cats.js �
 | 경조사비 | `openGiftBook`·`setGiftTab`·`renderGiftLog/Planned/People`, 기록 `openGiftEdit`·`saveGiftEvent`(거래연결)·`deleteGiftEvent`, 예정 `openPlannedEdit`·`savePlanned`·`completePlanned`, 인맥 `openPersonEdit`·`savePerson`, 합계 `giftSummary`·`personGiftTotals` |
 | 대출/이자 | `openLoanBook`·`loanCard`·`openLoanDetail`·`openLoanEdit`·`saveLoan`·`deleteLoan`·`setLoanStatus`, 상환 `openLoanPayment`·`saveLoanPayment`(이자 거래연결)·`deleteLoanPayment` |
 | 내보내기 | `exportCSV` |
+| **할일(투두)** | `renderTodoList`/`renderTodoCalendar`/`renderTodoDone`·`todoRow`/`todoDueBadge`·`scopedTodos`/`setTodoScope`/`todoScopeSeg`·공유 친구 `todoFriendStrip`/`friendTodoOrder`/`setTodoFriend`/`todoReadOnly`/`openTodoShareSheet`/`toggleTodoShare`·CRUD `openTodoEdit`/`saveTodo`/`deleteTodo`/`toggleTodo`·더보기 시트 `openTodoReport`/`openRepeatTodos`·PB연동 `pbTodoSummaryHtml`. 상세 [features-todo.md](features-todo.md) |
 
-## 네비게이션 / 렌더 흐름
+## 모드(가계부/할일) · 네비게이션 / 렌더 흐름
 
-- 탭 전환은 `go(tab)`(달력/리포트/자산/더보기) — 해당 `render*` 호출.
+- **모드 토글**(core.js): `setMode('ledger'|'todo')`(localStorage) → `applyMode` → `renderTabBar`(모드별 `_TABSETS`)·`updateModeToggle`·기본 탭 이동. FAB는 `fabAdd()`가 모드 분기(`openTxSheet`/`openTodoEdit`).
+- 탭 전환은 `go(tab)` — 가계부(달력/리포트/자산/더보기)·할일(할일/캘린더/완료/더보기). `rerender()`가 `state.tab`으로 해당 `render*` 호출(더보기 `renderMore`는 `state.mode`로 그리드 분기).
 - 시트(모달)는 `openSheet(title, html)` / `closeSheet()`, 확인 다이얼로그는 `confirmSheet(msg, onYes)`.
 - RTDB 리스너가 데이터를 받을 때마다 `rerender()` 로 현재 화면을 다시 그립니다(단방향: 데이터 변경 → 전체 재렌더).
 
