@@ -117,8 +117,19 @@
   function homeBadgeShow(view, total) { return view !== 'home' && (total | 0) > 0; }
   // 오늘 홈에서 그릴 카드 종류: 남은 게 있으면 'sections', 다 했으면 'done', 애초에 없던 날이면 'empty'.
   function homeCardKind(pending) { var p = pending || {}; if ((p.total | 0) > 0) return 'sections'; return p.any ? 'done' : 'empty'; }
+  // ---- 배지 DOM 반영(doc 주입식) — 전역 document를 참조하지 않고 인자로 받은 doc만 조작 → util은 앰비언트 의존 없이 jsdom으로 단위 테스트 가능. core가 document를 넘겨 호출. ----
+  function applyHomeBadge(doc, view, total) {
+    if (!doc) return; var b = doc.querySelector('.brand .home-badge');
+    if (b) b.hidden = !homeBadgeShow(view, total);
+  }
+  function applyTodoTabDot(doc, todos) {
+    if (!doc) return; var tt = doc.querySelector('.tabbar .tab[data-tab="todo"]'); if (!tt) return;
+    var dot = tt.querySelector('.tabdot');
+    if ((todos | 0) > 0) { if (!dot) { dot = doc.createElement('span'); dot.className = 'tabdot'; dot.setAttribute('aria-label', '오늘 할 일 있음'); tt.appendChild(dot); } }
+    else if (dot) { dot.remove(); }
+  }
 
-  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind };
+  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);

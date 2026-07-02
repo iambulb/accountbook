@@ -1051,12 +1051,8 @@
     //  · 할일 탭 점: 오늘/지난 미완료 할일(todos>0)이 있을 때(할일 모드에서만 그 탭이 존재).
     function updateHomeBadge(){
       var pend = (typeof todayPendingNow==='function') ? todayPendingNow() : { total:0, todos:0 };
-      var b=document.querySelector('.brand .home-badge');
-      if(b) b.hidden = !(typeof homeBadgeShow==='function' ? homeBadgeShow(state.view, pend.total) : (state.view!=='home'&&pend.total>0));
-      var tt=document.querySelector('.tabbar .tab[data-tab="todo"]');
-      if(tt){ var dot=tt.querySelector('.tabdot');
-        if((pend.todos|0)>0){ if(!dot){ dot=document.createElement('span'); dot.className='tabdot'; dot.setAttribute('aria-label','오늘 할 일 있음'); tt.appendChild(dot); } }
-        else if(dot){ dot.remove(); } }
+      if(typeof applyHomeBadge==='function') applyHomeBadge(document, state.view, pend.total);   // 로고 점(util, jsdom 테스트됨)
+      if(typeof applyTodoTabDot==='function') applyTodoTabDot(document, pend.todos);              // 할일 탭 점(util, jsdom 테스트됨)
     }
     function rerender(){
       document.body.classList.toggle('home-view', state.view==='home');   // 홈에선 바텀 탭바 숨김(CSS)

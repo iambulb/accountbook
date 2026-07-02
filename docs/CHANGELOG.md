@@ -36,6 +36,7 @@
 - **수정**: 로고=홈 `goHome`가 views.js의 거래내역 딥링크 `goHome(view)`와 전역 충돌해(로드 순서상 후자가 이김) 로고·부팅이 오늘 홈 대신 가계부 달력으로 가던 문제 → 딥링크를 `goLedgerList`로 개명해 해소.
 - 오늘 남은 일 순수 계산 `todayPending`(util.js) 이관 + 단위테스트. `sw.js` `v3.127.2`.
 - **추가**: **할일 탭 점 배지**(할일 모드 `todo` 탭에 오늘/지난 미완료 있으면 점, `updateHomeBadge`가 rerender·`renderTabBar`에서 갱신). 렌더 결정 순수 헬퍼 `homeBadgeShow`/`homeCardKind`(util.js) 이관 + 단위테스트(총 22케이스). `sw.js` `v3.129.1`.
+- **테스트**: 배지 DOM 반영을 **doc 주입식** `applyHomeBadge`/`applyTodoTabDot`(util.js)로 분리하고 `updateHomeBadge`가 호출 → **jsdom 노드 레벨 DOM 테스트** 추가(로고 점 표시/숨김·탭 점 생성·멱등·제거·탭 없을 때 안전). `jsdom` devDependency 도입, 총 25케이스. `sw.js` `v3.132.1`.
 
 ### 수정 — 🐾 캠 펫이 위로 뜨던 것 + 멈춰서 좌우로 '춤추던' 버그
 - **바닥에 붙게**: 원근 발-올림 폭(`riseMax`)을 축소(dock 0.42→0.24·홈 0.52→0.30 of 방높이) + `.cd-room .cd-actor` 바닥 오프셋 0으로 → **맨 앞(depth 0) 펫 발바닥이 캠 최하단에 닿고**, 뒤쪽도 과하게 뜨지 않음(앞뒤 대비는 크기 `scale`로 유지). 세로 드래그=깊이(앞↔뒤) 조작도 그대로.
