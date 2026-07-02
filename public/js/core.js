@@ -285,6 +285,35 @@
       beforeAuth(email).then(()=>auth.signInWithEmailAndPassword(email,pw)).catch(e=>toast(e.message, true));
     }
     function logout(){ confirmSheet('로그아웃하시겠습니까?', ()=>auth.signOut()); }   // 아이디저장·자동로그인 토글은 유지(localStorage)
+    // 비밀번호 변경(내 프로필) — 현재 비번으로 재인증 후 변경(requires-recent-login 방지)
+    function changePassword(){
+      const cur=val('pwCur'), np=val('pwNew'), np2=val('pwNew2');
+      if(!cur||!np){ toast('현재·새 비밀번호를 입력하세요', true); return; }
+      if(np.length<6){ toast('새 비밀번호는 6자 이상이어야 합니다', true); return; }
+      if(np!==np2){ toast('새 비밀번호가 서로 달라요', true); return; }
+      const u=auth.currentUser; if(!u||!u.email){ toast('로그인이 필요해요', true); return; }
+      const cred=firebase.auth.EmailAuthProvider.credential(u.email, cur);
+      u.reauthenticateWithCredential(cred)
+        .then(()=>u.updatePassword(np))
+        .then(()=>{ toast('비밀번호를 변경했어요'); closeSheet(); })
+        .catch(e=>{ const c=e&&e.code;
+          toast(c==='auth/wrong-password'?'현재 비밀번호가 틀려요':(c==='auth/weak-password'?'비밀번호는 6자 이상이어야 합니다':(e.message||'변경 실패')), true); });
+    }
+    // 로그인 도움(아이디=이메일 안내 + 비밀번호 재설정 메일) — 로그인 화면에서 진입
+    function openLoginHelpSheet(){
+      let pre=''; try{ pre=(val('authEmail')||localStorage.getItem('auth_savedEmail')||''); }catch(e){}
+      let h='<p class="muted" style="font-size:13px;line-height:1.6;margin:2px 2px 14px;">아이디는 <b>가입할 때 쓴 이메일</b>이에요. 비밀번호가 기억나지 않으면 아래에 이메일을 넣고 <b>재설정 메일</b>을 받으세요.</p>';
+      h+='<div class="field"><label>이메일</label><input class="input" id="resetEmail" type="email" autocomplete="username" placeholder="your@email.com" value="'+escapeHtml(pre)+'"></div>';
+      h+='<button class="btn" onclick="sendPasswordReset()">비밀번호 재설정 메일 보내기</button>';
+      openSheet('로그인 도움', h);
+    }
+    function sendPasswordReset(){
+      const email=(val('resetEmail')||'').trim(); if(!email){ toast('이메일을 입력하세요', true); return; }
+      auth.sendPasswordResetEmail(email)
+        .then(()=>{ toast('재설정 메일을 보냈어요. 메일함을 확인하세요'); closeSheet(); })
+        .catch(e=>{ const c=e&&e.code;
+          toast(c==='auth/user-not-found'?'가입되지 않은 이메일이에요':(c==='auth/invalid-email'?'이메일 형식이 올바르지 않아요':(e.message||'전송 실패')), true); });
+    }
 
     auth.onAuthStateChanged(user=>{
       if(user){ enterApp(user); }

@@ -128,13 +128,11 @@
 
 - 이름·목표액·현재액, 진행률(%) 시각화. 사용자별 관리. 화면: `openSavingsSheet`.
 
-## 권한 / 공동 설정 (Permissions / Shared)
+## 권한 / 공동 (Permissions / Shared)
 
-더보기 → 🔒 권한/공동 설정(`openSharedSettings`).
-
-- **멤버/권한 관리**(소유자 전용, 그룹): `openGroupManageSheet`에서 그룹 이름 변경(`renameWorkspace`)·소유자 이전(`transferOwnership`)·멤버 내보내기(`removeMember`). **권한은 앱 UI에서만 게이팅**(보안규칙은 그룹 멤버 공동권한 유지).
-- **공동 기본값**: 새 항목 기본 공개범위(전체/개인)·기본 소유자(공동/나)를 `ws/{wsId}/settings`에 저장. 생성 폼이 `defaultVisibility`/`defaultOwnerName`로 반영.
-- **공개범위 개요**: 전 엔티티의 `visibility==='private'` 항목을 모아 "공개로"·"전체 공개로 전환"(`collectPrivateItems`·`makeItemPublic`·`makeAllPublic`).
+- **멤버/권한 관리**(소유자 전용, 그룹): 설정 → **멤버 · 권한 관리**(`openGroupManageSheet`)에서 그룹 이름 변경(`renameWorkspace`)·소유자 이전(`transferOwnership`)·멤버 내보내기(`removeMember`). **권한은 앱 UI에서만 게이팅**(보안규칙은 그룹 멤버 공동권한 유지).
+- **항목별 공개범위/소유자**: 계좌·카테고리·예산·구독·목적별·경조사비·대출·거래 등 **생성 폼마다 공개범위(전체/개인)·소유자 선택**이 있고, 기본값은 `defaultVisibility`/`defaultOwnerName`/`defaultOwnerUid`가 정한다(`ws/{wsId}/settings`의 `wsSettings`가 있으면 그 값, 없으면 폴백: 공개범위=전체, 소유자=그룹은 공동·개인은 본인).
+- *(제거됨)* 별도 **'권한 · 공동 설정' 화면**(`openSharedSettings`, 기본값 변경 UI·개인전용 항목 일괄 공개)은 멤버·권한 관리와 중복·저가치라 삭제. 워크스페이스 기본값(`wsSettings`) 저장 구조와 항목별 선택은 그대로 유지.
 
 ## 카테고리
 

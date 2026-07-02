@@ -54,6 +54,7 @@ CLI로 자동화되지 않는 항목입니다(Identity Platform 설정).
 
 - [ ] **Authentication → Sign-in method → 이메일/비밀번호 → 사용 설정**
 - [ ] **Authentication → Settings → Authorized domains** 에 배포 도메인 추가(예: `내사이트.netlify.app`)
+- [ ] **Authentication → Templates → 비밀번호 재설정** 이메일 템플릿 활성화(발신자·언어 확인) — 로그인 화면 '아이디·비밀번호 찾기'의 재설정 메일(`sendPasswordResetEmail`)이 실제 발송되려면 필요. 승인 도메인에 배포 도메인이 있어야 링크가 열림.
 - [ ] **Realtime Database → 규칙** 에 `database.rules.json` 게시(또는 `firebase-tools deploy --only database`)
 
 ## 배포 후 갱신 흐름

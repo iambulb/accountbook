@@ -685,9 +685,43 @@
       h+='<div class="card" style="padding:4px 12px;">'+(rows.length?rows.map(function(x){ return friendTodoRow(x.uid,x.t); }).join(''):'<div class="empty" style="padding:24px 6px;">아직 등록한 할일이 없어요</div>')+'</div>';
       $('content').innerHTML=h;
     }
-    // 스토리 뷰어 — H2에서 구현. H1에선 자리표시자.
-    function openMyStory(){ toast('스토리 준비 중'); }
-    function openFriendStory(uid){ toast('스토리 준비 중'); }
+    // ===== 풀스크린 스토리 뷰어 =====
+    let _story=null, _storyTimer=0;
+    function storyTodos(uid){ const list=(uid===state.uid?(state.myTodos||[]):(state.friendTodosByUid[uid]||[])).slice();
+      list.sort(function(a,b){ return (a.createdAt||'').localeCompare(b.createdAt||''); }); return list; }   // 오래된→최신 순 재생
+    function ensureStoryEl(){ let el=$('storyView'); if(!el){ el=document.createElement('div'); el.id='storyView'; el.className='storyview'; el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true'); document.body.appendChild(el); } return el; }
+    function openMyStory(){ _openStory([state.uid], 0); }
+    function openFriendStory(uid){
+      const pub=Object.keys(state.friends||{}).filter(function(u){ return state.friendPub && state.friendPub[u]; });
+      const order=friendFeedOrder(state.friendTodosByUid, pub, ymd(new Date())).map(function(r){ return r.uid; }).filter(function(u){ return storyTodos(u).length; });
+      const i=order.indexOf(uid); if(i<0){ toast('아직 등록한 할일이 없어요'); return; }
+      _openStory(order, i); }
+    function _openStory(uids, fi){ uids=(uids||[]).filter(function(u){ return storyTodos(u).length; }); if(!uids.length){ toast('아직 등록한 할일이 없어요'); return; }
+      _story={ uids:uids, fi:Math.max(0,Math.min(fi,uids.length-1)), ti:0 };
+      document.body.classList.add('story-open'); document.addEventListener('keydown', _storyKey); renderStory(); }
+    function closeStory(){ if(_storyTimer){ clearTimeout(_storyTimer); _storyTimer=0; } _story=null;
+      document.body.classList.remove('story-open'); document.removeEventListener('keydown', _storyKey);
+      const el=$('storyView'); if(el) el.classList.remove('on'); rerender(); }   // rerender=열람 링 갱신
+    function _storyKey(e){ if(!_story) return; if(e.key==='Escape') closeStory(); else if(e.key==='ArrowRight') storyNext(); else if(e.key==='ArrowLeft') storyPrev(); }
+    function storyNext(){ if(!_story) return; const uid=_story.uids[_story.fi], n=storyTodos(uid).length;
+      if(_story.ti<n-1){ _story.ti++; } else if(_story.fi<_story.uids.length-1){ _story.fi++; _story.ti=0; } else { closeStory(); return; } renderStory(); }
+    function storyPrev(){ if(!_story) return; if(_story.ti>0){ _story.ti--; } else if(_story.fi>0){ _story.fi--; _story.ti=Math.max(0, storyTodos(_story.uids[_story.fi]).length-1); } renderStory(); }
+    function renderStory(){
+      if(!_story) return; const el=ensureStoryEl(); const uid=_story.uids[_story.fi], list=storyTodos(uid), t=list[_story.ti]||{}, nm=friendDisplayName(uid), me=(uid===state.uid);
+      markStorySeen(uid, latestCreatedAt(list));
+      const bars=list.map(function(_,i){ return '<span class="sv-bar'+(i<_story.ti?' done':'')+(i===_story.ti?' cur':'')+'"><i></i></span>'; }).join('');
+      const rt=(typeof relTime==='function')?relTime(t.createdAt, Date.now()):'';
+      let h='<div class="sv-top"><div class="sv-bars">'+bars+'</div>'+
+        '<div class="sv-head">'+avatarHtml(uid,nm,32)+'<b>'+(me?'내 스토리':escapeHtml(nm))+'</b><span class="sv-time">'+rt+'</span><button class="sv-x" onclick="closeStory()" aria-label="닫기">✕</button></div></div>';
+      h+='<div class="sv-body"><div class="sv-card"><div class="sv-title'+(t.done?' done':'')+'">'+escapeHtml(t.title||'(제목 없음)')+'</div>'+
+        (t.dueDate?'<div class="sv-due">'+todoDueBadge(t)+'</div>':'')+(t.note?'<div class="sv-note">'+escapeHtml(t.note)+'</div>':'')+(t.done?'<div class="sv-doneflag">✓ 완료</div>':'')+'</div>'+
+        (me?'<button class="btn" style="margin-top:14px;" onclick="closeStory();openTodoEdit()">＋ 할일 추가</button>':'')+'</div>';
+      h+='<button class="sv-zone left" onclick="storyPrev()" aria-label="이전"></button><button class="sv-zone right" onclick="storyNext()" aria-label="다음"></button>';
+      el.innerHTML=h; el.classList.add('on');
+      if(_storyTimer){ clearTimeout(_storyTimer); _storyTimer=0; }
+      const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if(!reduce) _storyTimer=setTimeout(storyNext, 4200);   // 자동 넘김(4.2s)
+    }
     // nextDue/dueDiffDays는 js/util.js(순수함수·단위테스트)로 이관됨 — 전역으로 사용.
     function todoDueBadge(t){ if(!t.dueDate) return ''; const today=ymd(new Date());
       const diff=dueDiffDays(t.dueDate, today);
