@@ -452,6 +452,18 @@
     .modeseg { display:inline-flex; background:var(--soft); border-radius:13px; padding:3px; gap:2px; }
     .modeseg button { border:none; background:transparent; font-size:12px; font-weight:800; color:var(--sub); padding:6px 9px; border-radius:10px; cursor:pointer; white-space:nowrap; }
     .modeseg button.on { background:var(--card); color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,.1); }
+    /* 할일(투두) 목록 행 */
+    .tdrow { display:flex; align-items:center; gap:10px; padding:11px 2px; }
+    .tdrow + .tdrow { border-top:1px solid var(--line-soft); }
+    .tdchk { flex:none; width:24px; height:24px; border-radius:50%; border:2px solid var(--bd); background:var(--card); color:transparent; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
+    .tdchk svg { width:14px; height:14px; }
+    .tdchk.on { background:var(--primary); border-color:var(--primary); color:#fff; }
+    .tdtitle { flex:1; min-width:0; font-size:14.5px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
+    .tdtitle.done { text-decoration:line-through; color:var(--sub); font-weight:500; }
+    .tdwho { flex:none; display:inline-flex; }
+    .tdname { font-size:11px; color:var(--sub); font-weight:700; }
+    .tdue { flex:none; font-size:11px; font-weight:800; color:var(--sub); }
+    .tdue.today { color:var(--primary); } .tdue.soon { color:#E0883C; } .tdue.over { color:var(--expense); }
     .ws-chip { max-width:150px; height:36px; padding:0 14px; border-radius:20px; background:var(--soft); color:var(--text2);
       font-size:12.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-flex; align-items:center; gap:7px; }
     .ws-chip .dotk { width:16px; height:16px; border-radius:50%; background:var(--primary); flex:none; }

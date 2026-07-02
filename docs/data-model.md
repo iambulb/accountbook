@@ -89,6 +89,9 @@ erDiagram
 ### creditCards/{id}
 `cardName`, `cardCompany`, `monthlyPerformanceTarget`, `performancePeriodType`(calendar_month/custom), `performanceStartDay`, `includePrepaidCharge`, `excludedCategories[]`, `defaultIncluded`, `visibility`, `memo`.
 
+### todos/{id}  (공유 할일 — flat `ws/{wsId}/todos/{id}`)
+`title`, `note`, `assignedUid`(담당 멤버 uid, 공동/미배정은 빈값)·`assignedName`(표시용), `dueDate`(YYYY-MM-DD), `done`·`doneAt`·`doneByUid`, `repeat`(none/daily/weekly), `purposeBookId`(여행 등 연결), `rewardClaimed`(완료 은화 1회 지급 멱등), `createdByUid`, `sortOrder`, `createdAt`·`updatedAt`. 워크스페이스 멤버가 공동 편집(RTDB `ws` 규칙으로 커버, 규칙 변경 없음).
+
 ### categories/{name}
 `name`, `type`(expense/income/transfer/other 등), `icon`(이모지), `color`, `sortOrder`, `isDefault`, `isActive`, `visibility`(full/private), `owner`. 기본 카테고리는 `buildDefaultCategories` 시딩(신규 기본은 `migrateCategories`가 기존 사용자에도 자동 추가). **기본 카테고리도 수정·삭제 가능**하며, 삭제한 기본은 `ws/{wsId}/catDeleted/{name}=true` 툼스톤으로 표시해 재시딩되지 않음(같은 이름 재생성 시 툼스톤 해제).
 

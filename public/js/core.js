@@ -581,6 +581,9 @@
       attach('purposeBooks', s=>{
         const o=s.val()||{}; state.purposeBooks=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender();
       });
+      attach('todos', s=>{
+        const o=s.val()||{}; state.todos=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender();
+      });
       attach('people', s=>{
         const o=s.val()||{}; state.people=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender();
       });
