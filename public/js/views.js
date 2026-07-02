@@ -599,11 +599,17 @@
       h+='<div class="card" style="padding:4px 12px;">'+(done.length?done.map(todoRow).join(''):'<div class="empty" style="padding:26px 6px;">완료한 할일이 아직 없어요</div>')+'</div>';
       $('content').innerHTML=h; }
     function toggleTodo(id){ const t=(state.todos||[]).find(x=>x.id===id); if(!t) return; const now=new Date().toISOString();
+      const firstReward=!t.rewardClaimed;   // 할일당 은화 1회(멱등)
       if(!t.done && t.repeat && t.repeat!=='none' && t.dueDate){
-        db.ref(wp('todos/'+id)).update({ dueDate:nextDue(t.dueDate,t.repeat), doneByUid:(state.uid||''), lastDoneAt:now, updatedAt:now });
-        toast('완료! 다음 '+(t.repeat==='weekly'?'주':'일')+'로 넘겼어요');
+        const upd={ dueDate:nextDue(t.dueDate,t.repeat), doneByUid:(state.uid||''), lastDoneAt:now, updatedAt:now };
+        if(firstReward) upd.rewardClaimed=true;
+        db.ref(wp('todos/'+id)).update(upd);
+        const nxt='다음 '+(t.repeat==='weekly'?'주':'일')+'로 넘겼어요';
+        if(firstReward && typeof grantTodoCoins==='function'){ grantTodoCoins(); toast('완료! +2 은화 · '+nxt); } else toast('완료! '+nxt);
       } else {
-        const done=!t.done; db.ref(wp('todos/'+id)).update({ done:done, doneAt:done?now:'', doneByUid:done?(state.uid||''):'', updatedAt:now });
+        const done=!t.done; const upd={ done:done, doneAt:done?now:'', doneByUid:done?(state.uid||''):'', updatedAt:now };
+        if(done && firstReward){ upd.rewardClaimed=true; db.ref(wp('todos/'+id)).update(upd); if(typeof grantTodoCoins==='function'){ grantTodoCoins(); toast('완료! +2 은화 🐾'); } }
+        else db.ref(wp('todos/'+id)).update(upd);
       }
     }
     function openTodoEdit(id, presetPb){

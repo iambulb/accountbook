@@ -429,7 +429,9 @@
       { id:'ach_travel', period:'once', name:'여행 가계부 만들기',  reward:20, icon:'<path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/>', check:()=> (state.purposeBooks||[]).some(p=>p.type==='travel'||p.type==='gathering') },
       { id:'ach_fx',     period:'once', name:'해외통화로 첫 지출',  reward:20, icon:'<circle cx="12" cy="12" r="9"/><path d="M9 9h6M9 15h6M12 6v12"/>', check:()=> (state.transactions||[]).some(t=>t.currency&&t.currency!=='KRW') },
       { id:'ach_budget', period:'once', name:'첫 예산 설정',        reward:15, icon:'<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 12h8"/>', check:()=> (state.budgets||[]).length>0 },
-      { id:'ach_settle', period:'once', name:'첫 정산 거래',        reward:25, icon:'<path d="M7 8h10M7 12h10M7 16h6"/>', check:()=> (state.transactions||[]).some(t=>t.settlementIncluded===true) }
+      { id:'ach_settle', period:'once', name:'첫 정산 거래',        reward:25, icon:'<path d="M7 8h10M7 12h10M7 16h6"/>', check:()=> (state.transactions||[]).some(t=>t.settlementIncluded===true) },
+      { id:'ach_todo1',  period:'once', name:'첫 할일 완료',        reward:10, icon:'<circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.7 2.7L16.5 9"/>', check:()=> (state.todos||[]).some(t=>t.rewardClaimed||t.done) },
+      { id:'ach_todo10', period:'once', name:'할일 10개 완료',      reward:30, icon:'<path d="M4 6l1.5 1.5L8 5M4 12l1.5 1.5L8 11M4 18l1.5 1.5L8 17M12 6h8M12 12h8M12 18h8"/>', check:()=> (state.todos||[]).filter(t=>t.rewardClaimed).length>=10 }
     ];
     const ALL_MISSIONS = DAILY_MISSIONS.concat(WEEKLY_MISSIONS).concat(ACHIEVEMENTS);
 
@@ -548,6 +550,8 @@
 
     // ---- 게임 상태/경제 ----
     function gameRef(){ return db.ref('users/'+state.uid+'/game'); }
+    const TODO_REWARD=2;   // 할일 완료 시 은화(할일당 1회, todos.rewardClaimed로 멱등)
+    function grantTodoCoins(){ if(!state.uid) return; gameRef().transaction(function(g){ g=normalizeGame(g); g.coins=(g.coins||0)+TODO_REWARD; return g; }); }
     // 보유(owned.cats)·활성(home.active)에 남아있는 구 id를 신 id로 이관(하위호환). 다음 쓰기 때 영구 반영.
     function migratePetIds(o){
       const m=PET_ID_MIGRATE, cats={};
