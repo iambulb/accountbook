@@ -974,7 +974,9 @@
       }).then(()=>{ toast((editing?'저장':'추가')+' 완료! 🐾'); closeSheet(); })
         .catch(e=>{ toast((editing?'저장':'추가')+' 실패: '+((e&&e.message)||e), true); const b=$('dpBtn'); if(b){ b.disabled=false; b.textContent=editing?'저장':'추가'; } });
     }
-    function devSelectPet(id){ state._devPetSel=(state._devPetSel===id?null:id); openDevPetManager(); }
+    function devSelectPet(id){ const prev=document.querySelector('.petmg-list'); const st=prev?prev.scrollTop:0;   // 재렌더로 스크롤이 위로 튀지 않게 위치 보존
+      state._devPetSel=(state._devPetSel===id?null:id); openDevPetManager();
+      const cur=document.querySelector('.petmg-list'); if(cur) cur.scrollTop=st; }
     // 개발자 펫 관리: 전체 목록(삭제된 펫=회색·"삭제됨") + 선택 후 [추가][수정][삭제/복구]
     function openDevPetManager(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
       const list=allPetsForDev(), sel=state._devPetSel, selPet=sel?list.find(p=>p.id===sel):null;
