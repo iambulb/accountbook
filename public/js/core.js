@@ -1083,7 +1083,7 @@
       todocal:'<rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/>',
       tododone:'<circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.7 2.7L16.5 9"/>'
     };
-    const _TABSETS={ ledger:[['calendar','달력'],['stats','리포트'],'fab',['assets','자산'],['more','더보기']],
+    const _TABSETS={ ledger:[['assets','자산'],['calendar','캘린더'],'fab',['stats','리포트'],['more','더보기']],
                      todo:[['todo','할일'],['todocal','캘린더'],'fab',['tododone','완료'],['more','더보기']] };
     function fabAdd(){ if(state.mode==='todo'){ if(typeof openTodoEdit==='function') openTodoEdit(); else toast('할일 추가는 곧 제공됩니다'); } else openTxSheet(); }
     function renderTabBar(){ const nav=document.querySelector('.tabbar'); if(!nav) return;
