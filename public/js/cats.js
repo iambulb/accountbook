@@ -929,6 +929,7 @@
     //  · 가까우면 크게(PET_NEAR_SCALE)·앞으로(z↑), 멀면 작게(PET_FAR_SCALE)·뒤로(z↓) → 가구와 z-index로 상호 가림.
     //  · 요청대로 근거리 확대는 넉넉히, 원거리 축소는 적당히만(FAR를 너무 낮추지 않음).
     const PET_NEAR_SCALE=1.5, PET_FAR_SCALE=0.86;   // 근거리(맨 앞)에서 확실히 크게 → 화면 제일 앞으로 나온 느낌
+    const PET_FOOT_PAD=0.16;   // 스프라이트 프레임 아래 투명 여백 비율(발밑) — 맨 앞(depth0)에서 발이 캠 rect 바닥에 붙도록 이만큼 내려 앉힌다
     // ⚠️ 함수명 주의: petScale(id)=펫별 크기배율(위쪽에 이미 정의, petActorPx가 사용)와 충돌 금지 → 원근 배율은 depthScale로.
     function depthScale(depth){ return PET_FAR_SCALE + (PET_NEAR_SCALE-PET_FAR_SCALE)*(1-depth); }
     // depth로부터 배율·바닥올림(rise)·z-index를 액터에 반영. z는 가구 frontRow(=12-depth*11)와 같은 척도라 상호 가림이 맞물린다.
@@ -939,7 +940,8 @@
     // transform-origin:center bottom 이라 배율은 발밑 기준(발이 바닥선에 유지)·좌우반전은 중심축. 시각 중심 x=a.x+sw/2는 배율과 무관하게 유지.
     // ⚠️ left/top은 절대 매 프레임 건드리지 않는다(레이아웃·페인트 유발). x는 정수 px 스냅.
     function setXform(a, dir, lift){ const d=(dir!=null?dir:a.dir), s=(a.scale||1),
-        up=Math.round((a.rise||0)+(lift!=null?lift:(a.lift||0)));
+        pad=(a.spr?Math.round((a.hh||0)*PET_FOOT_PAD*s):0),   // 스프라이트 발밑 여백 상쇄(스케일 반영) → 발이 바닥선에 닿게
+        up=Math.round((a.rise||0)+(lift!=null?lift:(a.lift||0)))-pad;
       a.el.style.transform='translate3d('+Math.round(a.x)+'px,'+(-up)+'px,0) scale('+(s*d)+','+s+')'; }
     // ⚠️ 핵심 불변식(INVARIANT): "정면(south) 이미지로 이동 금지".
     // 스프라이트 액터의 이동/정지 비주얼(.cspr)은 반드시 아래 두 함수로만 바꾼다 — 모든 상태 전환(roam·pause)과
