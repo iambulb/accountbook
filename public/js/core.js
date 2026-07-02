@@ -285,14 +285,43 @@
         state.userPhotos[state.uid]=u.photo||'';
         $('authScreen').style.display='none';
         $('app').style.display='flex';
+        initUserGraph();   // 개인 할일·친구(user-global) 상시 리스너 — 워크스페이스 무관
         await migrateLegacyIfNeeded();
         await loadMyWorkspaces();
         if(!state.memberships.length){ await createPersonalWorkspace(true); await loadMyWorkspaces(); }
+        try{ await migratePersonalTodos(); }catch(e){ console.warn('personal todo migrate', e); }   // 개인 할일 ws→user 1회 이전
         let active=u.activeWs;
         if(!active || !state.memberships.some(w=>w.id===active)) active=state.memberships[0].id;
         await switchWorkspace(active, true);
         try{ initDock(); initCatGame(); setTimeout(autoClaimAttend, 800); }catch(e){ console.warn('cat game init', e); }   // 🐱 은화·고양이 dock
       }catch(e){ toast(e.message||'로그인 처리 중 오류', true); }
+    }
+
+    // 개인 할일·친구 그래프(user-global) 상시 리스너 — 워크스페이스 전환과 무관하게 유지.
+    let _userRefs=[];
+    function initUserGraph(){
+      if(!state.uid) return;
+      _userRefs.forEach(r=>{ try{ r.off(); }catch(e){} }); _userRefs=[];
+      const add=(path,cb)=>{ const r=db.ref('users/'+state.uid+'/'+path); r.on('value',cb); _userRefs.push(r); };
+      add('todos', s=>{ const o=s.val()||{}; state.myTodos=Object.keys(o).map(k=>Object.assign({id:k,scope:'personal',ownerUid:state.uid},o[k])); rerender(); });
+      add('friends', s=>{ state.friends=s.val()||{}; rerender(); });
+      add('friendReqs', s=>{ state.friendReqs=s.val()||{}; rerender(); });
+      add('todoPublic', s=>{ state.todoPublic=!!s.val(); rerender(); });
+    }
+    // 개인 할일 ws→users/{uid}/todos 1회 이전(멱등: users/{uid}/todosMigrated).
+    async function migratePersonalTodos(){
+      const flagRef=db.ref('users/'+state.uid+'/todosMigrated');
+      if((await flagRef.once('value')).val()) return;
+      const upd={};
+      for(const w of (state.memberships||[])){
+        const o=(await db.ref('ws/'+w.id+'/todos').once('value')).val()||{};
+        Object.keys(o).forEach(k=>{ const t=o[k]; if(t && t.scope==='personal' && ((t.ownerUid||t.createdByUid)===state.uid)){
+          upd['users/'+state.uid+'/todos/'+k]=Object.assign({},t);
+          upd['ws/'+w.id+'/todos/'+k]=null;   // 원본 삭제(그룹 할일은 유지)
+        }});
+      }
+      upd['users/'+state.uid+'/todosMigrated']=true;
+      await db.ref().update(upd);
     }
 
     // 구버전(전역 단일 트리) 데이터를 1회 그룹 워크스페이스로 이전. 멱등(migrationV3 플래그).

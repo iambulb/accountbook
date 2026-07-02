@@ -549,12 +549,15 @@
     function setTodoFilter(f){ _todoFilter=f; renderTodoList(); }
     // 개인 탭에서 보고 있는 대상(친구 uid 또는 나)
     function todoViewUid(){ return state._todoFriend || state.uid; }
+    // 개인(user-global)+그룹(ws) 할일 합본 — 조회/편집 대상 찾기용
+    function allTodos(){ return (state.myTodos||[]).concat(state.todos||[]); }
+    // 할일 쓰기 경로: 개인=users/{uid}/todos, 그룹=ws/{wsId}/todos
+    function todoDbRef(t){ return todoScope(t)==='personal' ? db.ref('users/'+state.uid+'/todos/'+t.id) : db.ref(wp('todos/'+t.id)); }
     // 현재 세그먼트(개인/그룹) + 보는 대상에 해당하는 할일만
     function scopedTodos(){
-      const all=state.todos||[];
-      if(state._todoScope==='group') return all.filter(t=>todoScope(t)==='group');
-      const vu=todoViewUid();
-      return all.filter(t=>todoScope(t)==='personal' && (t.ownerUid||t.createdByUid)===vu);
+      if(state._todoScope==='group') return (state.todos||[]).filter(t=>todoScope(t)==='group');
+      // 개인: 내 것(myTodos·user-global) 또는 친구 열람(friendTodos·읽기전용)
+      return (state._todoFriend && state._todoFriend!==state.uid) ? (state.friendTodos||[]) : (state.myTodos||[]);
     }
     function setTodoScope(s){ state._todoScope=(s==='group'?'group':'personal'); state._todoFriend=null; _todoFilter='all'; try{localStorage.setItem('todoScope',state._todoScope);}catch(e){} rerender(); }
     function todoScopeSeg(){ const g=state._todoScope==='group';
@@ -654,23 +657,24 @@
       h+='<div class="sech"><span class="l">완료</span><span class="s">'+done.length+'개</span></div>';
       h+='<div class="card" style="padding:4px 12px;">'+(done.length?done.map(t=>todoRow(t,ro)).join(''):'<div class="empty" style="padding:26px 6px;">완료한 할일이 아직 없어요</div>')+'</div>';
       $('content').innerHTML=h; }
-    function toggleTodo(id){ const t=(state.todos||[]).find(x=>x.id===id); if(!t) return; const now=new Date().toISOString();
+    function toggleTodo(id){ const t=allTodos().find(x=>x.id===id); if(!t) return; const now=new Date().toISOString();
+      const ref=todoDbRef(t);
       const firstReward=!t.rewardClaimed;   // 할일당 은화 1회(멱등)
       if(!t.done && t.repeat && t.repeat!=='none' && t.dueDate){
         const upd={ dueDate:nextDue(t.dueDate,t.repeat), doneByUid:(state.uid||''), lastDoneAt:now, updatedAt:now };
         if(firstReward) upd.rewardClaimed=true;
-        db.ref(wp('todos/'+id)).update(upd);
+        ref.update(upd);
         const nxt='다음 '+(t.repeat==='weekly'?'주':'일')+'로 넘겼어요';
         if(firstReward && typeof grantTodoCoins==='function'){ grantTodoCoins(); toast('완료! +2 은화 · '+nxt); } else toast('완료! '+nxt);
       } else {
         const done=!t.done; const upd={ done:done, doneAt:done?now:'', doneByUid:done?(state.uid||''):'', updatedAt:now };
-        if(done && firstReward){ upd.rewardClaimed=true; db.ref(wp('todos/'+id)).update(upd); if(typeof grantTodoCoins==='function'){ grantTodoCoins(); toast('완료! +2 은화 🐾'); } }
-        else db.ref(wp('todos/'+id)).update(upd);
+        if(done && firstReward){ upd.rewardClaimed=true; ref.update(upd); if(typeof grantTodoCoins==='function'){ grantTodoCoins(); toast('완료! +2 은화 🐾'); } }
+        else ref.update(upd);
       }
     }
     function openTodoEdit(id, presetPb){
       if(!id) state._todoFriend=null;   // 새 할일은 항상 내 목록으로(친구 읽기전용 뷰였어도)
-      const t=id?(state.todos||[]).find(x=>x.id===id):null;
+      const t=id?allTodos().find(x=>x.id===id):null;
       // 스코프: 편집=기존 할일 값, 신규=현재 세그먼트. 개인은 담당자 없음(소유자=나), 그룹은 담당배정.
       const scope=t?todoScope(t):(state._todoScope==='group'?'group':'personal');
       const asel=t?(t.assignedUid||'공동'):(state.uid||'공동');
@@ -691,7 +695,7 @@
     }
     function saveTodo(id){
       const title=val('tdTitle').trim(); if(!title){ toast('할 일을 입력하세요', true); return; }
-      const t=id?(state.todos||[]).find(x=>x.id===id):null; const now=new Date().toISOString();
+      const t=id?allTodos().find(x=>x.id===id):null; const now=new Date().toISOString();
       const scope=($('tdScope')?val('tdScope'):(t?todoScope(t):'group'))==='personal'?'personal':'group';
       const asel=$('tdAssign')?val('tdAssign'):'공동'; const mem=(state.wsMeta&&state.wsMeta.members)||{};
       let assignedUid='', assignedName='';
@@ -706,11 +710,12 @@
         done:t?!!t.done:false, doneAt:t?(t.doneAt||''):'', doneByUid:t?(t.doneByUid||''):'', rewardClaimed:t?!!t.rewardClaimed:false,
         createdByUid:t?(t.createdByUid||state.uid||''):(state.uid||''), createdAt:t?(t.createdAt||now):now, updatedAt:now,
         sortOrder:t?(t.sortOrder!=null?t.sortOrder:Date.now()):Date.now() };
-      db.ref(wp('todos/'+key)).set(data); toast(t?'수정되었습니다':'추가되었습니다'); closeSheet();
+      const ref=scope==='personal'?db.ref('users/'+state.uid+'/todos/'+key):db.ref(wp('todos/'+key));
+      ref.set(data); toast(t?'수정되었습니다':'추가되었습니다'); closeSheet();
     }
-    function deleteTodo(id){ confirmSheet('이 할일을 삭제할까요?', ()=>{ db.ref(wp('todos/'+id)).remove(); toast('삭제되었습니다'); closeSheet(); }); }
+    function deleteTodo(id){ const t=allTodos().find(x=>x.id===id); if(!t) return; confirmSheet('이 할일을 삭제할까요?', ()=>{ todoDbRef(t).remove(); toast('삭제되었습니다'); closeSheet(); }); }
     // 목적별 가계부(여행 등) 상세에 붙이는 연결된 할일 요약 카드
-    function pbTodoSummaryHtml(pbId){ const list=(state.todos||[]).filter(t=>t.purposeBookId===pbId); if(!list.length && true){ /* 없으면 추가 버튼만 */ }
+    function pbTodoSummaryHtml(pbId){ const list=allTodos().filter(t=>t.purposeBookId===pbId); if(!list.length && true){ /* 없으면 추가 버튼만 */ }
       const doneN=list.filter(t=>t.done).length;
       let h='<div class="sech"><span class="l">할일</span><span class="s">'+(list.length?(doneN+' / '+list.length+' 완료'):'')+'</span></div>';
       h+='<div class="card" style="padding:4px 12px;">'+(list.length?list.slice().sort((a,b)=>(a.done?1:0)-(b.done?1:0)).map(todoRow).join(''):'<div class="empty" style="padding:18px 6px;">연결된 할일이 없어요</div>')+'</div>';
