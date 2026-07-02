@@ -28,13 +28,9 @@
     let sheetCat = '';
 
     // ===== 헬퍼 =====
-    function won(n){ const v=Number(n||0); return (v<0?'-':'')+'₩'+Math.abs(v).toLocaleString(); }
-    function fmtComma(n){ const d=String(n==null?'':n).replace(/[^0-9]/g,''); return d?Number(d).toLocaleString():''; }
-    function parseAmount(s){ return Number(String(s==null?'':s).replace(/[^0-9]/g,''))||0; }
-    // 통화 정보/표시 헬퍼(해외통화). fmtForeign: 외화 원금을 기호+통화 소수자리로.
-    function curInfo(code){ return (typeof CURRENCIES!=='undefined' && CURRENCIES.find(c=>c.code===code)) || { code:'KRW', name:'원', sym:'\u20a9', dec:0 }; }
-    function fmtForeign(amt, code){ const c=curInfo(code); const n=Number(amt||0); return c.sym+n.toLocaleString(undefined,{minimumFractionDigits:0, maximumFractionDigits:c.dec}); }
-    // ===== 실시간 환율(frankfurter, 무키·CORS) — 일자별 캐시(메모리+localStorage). 실패 시 null → 수동 입력 폴백. =====
+    // won·fmtComma·parseAmount·curInfo·fmtForeign은 js/util.js로 이동(전역 노출 + 단위 테스트).
+    // ===== 실시간 환율(frankfurter.dev/v1, 무키·CORS) — 일자별 캐시(메모리+localStorage). 실패 시 null → 수동 입력 폴백. =====
+    //  ⚠️ 구 api.frankfurter.app 은 301→api.frankfurter.dev/v1 로 이전됨. 브라우저 fetch는 교차출처 301 리다이렉트에서 CORS로 막혀 실패하므로 반드시 .dev/v1 을 직접 호출한다.
     const _fxMem={};
     function _fxToday(){ return new Date(Date.now()+9*3600000).toISOString().slice(0,10); }
     function fxCacheGet(date,cur){ const k=date+'|'+cur; if(_fxMem[k]!=null) return _fxMem[k]; try{ const v=localStorage.getItem('eg_fx_'+k); if(v!=null){ const r=parseFloat(v); if(r>0){ _fxMem[k]=r; return r; } } }catch(e){} return null; }
@@ -42,10 +38,9 @@
     function fetchFxRate(cur,date){ if(cur==='KRW') return Promise.resolve(1);
       const today=_fxToday(); const d=(date&&date<today)?date:today;
       const c=fxCacheGet(d,cur); if(c) return Promise.resolve(c);
-      const url=(d===today?'https://api.frankfurter.app/latest':'https://api.frankfurter.app/'+d)+'?from='+cur+'&to=KRW';
+      const url='https://api.frankfurter.dev/v1/'+(d===today?'latest':d)+'?from='+cur+'&to=KRW';
       return fetch(url).then(r=>r.ok?r.json():null).then(j=>{ const rate=j&&j.rates&&j.rates.KRW; if(rate>0){ const rr=Math.round(rate*100)/100; fxCacheSet(d,cur,rr); return rr; } return null; }).catch(()=>null); }
-    // 거래들을 통화별로 합산 → { CODE:{foreign, krw} }. amount는 항상 원화라 krw 합, foreign은 원통화 원금 합(KRW는 동일).
-    function sumByCurrency(txs){ const out={}; (txs||[]).forEach(t=>{ const c=t.currency||'KRW'; const o=out[c]||(out[c]={foreign:0,krw:0}); o.krw+=Number(t.amount)||0; o.foreign+=(c==='KRW'?(Number(t.amount)||0):(Number(t.foreignAmount)||0)); }); return out; }
+    // sumByCurrency는 js/util.js로 이동(순수함수·단위 테스트).
     function escapeHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
     function pad2(n){ return String(n).padStart(2,'0'); }
     function monthStr(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1); }

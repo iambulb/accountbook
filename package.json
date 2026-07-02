@@ -1,0 +1,9 @@
+{
+  "name": "eggarden",
+  "version": "1.0.0",
+  "description": "알뜰(Eggarden) — 개인·그룹 공유 가계부 PWA. 순수 계산 로직(js/util.js)에 대한 단위 테스트 포함.",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  }
+}

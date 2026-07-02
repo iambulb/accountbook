@@ -313,18 +313,28 @@
       renderFxRow(); autoFetchRate(); }
     function renderFxRow(){ const box=$('sFx'); if(!box) return; const c=sheetCur(), sh=$('sheet');
       if(c==='KRW'){ box.innerHTML=''; box.style.display='none'; return; }
-      box.style.display=''; const ci=curInfo(c); const rate=(sh&&sh._rate)?sh._rate:'';
-      box.innerHTML='<div class="fxrow-in"><span class="fxk">1 '+c+' =</span><input class="fxrate" id="sFxRate" inputmode="decimal" value="'+(rate||'')+'" placeholder="환율" oninput="markManualRate();updateFxPreview()"><span class="fxk">₩</span><button type="button" class="fxrefresh" onclick="autoFetchRate()" aria-label="실시간 환율 새로고침" title="실시간 환율 새로고침">🔄</button><span class="fxconv">= ₩<b id="sFxKrw">0</b></span></div><div class="tx-sub" style="margin-top:4px;"><span id="sFxStat"></span> '+escapeHtml(ci.name)+' 금액→원화 자동 환산. 환율 직접 수정 가능.</div>';
+      box.style.display=''; const rate=(sh&&sh._rate)?sh._rate:'';
+      box.innerHTML=
+        '<div class="fxrow-in">'
+        +'<span class="fxk">1 '+c+' =</span>'
+        +'<input class="fxrate" id="sFxRate" inputmode="decimal" value="'+(rate||'')+'" placeholder="환율" oninput="markManualRate();updateFxPreview()">'
+        +'<span class="fxk">₩</span>'
+        +'<button type="button" class="fxrefresh" id="sFxBtn" onclick="autoFetchRate()" aria-label="실시간 환율 조회" title="실시간 환율 조회">'
+          +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3.5V9h-5.5"/></svg>'
+        +'</button>'
+        +'</div>'
+        +'<div class="fxconv-row"><span class="fxk">원화 환산</span><span class="fxconv">₩<b id="sFxKrw">0</b></span></div>'
+        +'<div class="tx-sub" id="sFxStat"></div>';
       updateFxPreview(); }
     function markManualRate(){ const sh=$('sheet'); if(sh){ sh._fxSource='manual'; sh._rate=sheetRate(); } }
     function updateFxPreview(){ const el=$('sFxKrw'); if(el) el.textContent=Math.round(sheetAmt()*sheetRate()).toLocaleString(); }
     // 실시간 환율 자동 조회(통화·날짜 변경 시). 성공 시 환율칸 채움(live), 실패 시 수동 입력 안내.
     function setFxStat(msg){ const el=$('sFxStat'); if(el) el.textContent=msg||''; }
     function autoFetchRate(){ const sh=$('sheet'); const cur=sheetCur(); if(!sh||cur==='KRW') return;
-      const date=val('sDate')||''; setFxStat('환율 불러오는 중…');
-      fetchFxRate(cur, date).then(function(rate){ if(!$('sheet')||sheetCur()!==cur) return; const el=$('sFxRate');
-        if(rate&&el){ el.value=rate; sh._rate=rate; sh._fxSource='live'; setFxStat('실시간 환율'); updateFxPreview(); }
-        else setFxStat('자동 조회 실패 — 직접 입력'); }); }
+      const date=val('sDate')||''; const btn=$('sFxBtn'); if(btn) btn.classList.add('spin'); setFxStat('환율 불러오는 중…');
+      fetchFxRate(cur, date).then(function(rate){ const b=$('sFxBtn'); if(b) b.classList.remove('spin'); if(!$('sheet')||sheetCur()!==cur) return; const el=$('sFxRate');
+        if(rate&&el){ el.value=rate; sh._rate=rate; sh._fxSource='live'; setFxStat('실시간 환율 적용'+(date?' · '+date:'')); updateFxPreview(); }
+        else setFxStat('자동 조회 실패 — 환율을 직접 입력하세요'); }); }
     function onDateChange(){ if(sheetCur()!=='KRW') autoFetchRate(); }
     // 목적별 가계부(여행 등) 선택 시, 그 PB의 기준 통화를 거래 통화 기본값으로 적용(사용자가 직접 고른 통화는 존중).
     function onPbChange(){ renderSettleBlock(); applyPbCurrency(); }
@@ -449,17 +459,7 @@
       const set=new Set(sh._stParts||[]); if(set.has(n)) set.delete(n); else set.add(n);
       sh._stParts=(sh._stAll||[]).filter(x=>set.has(x)); renderSettleFields(); }
     // 분담 금액 계산(UI용): equal=균등+나머지 보정, custom=입력값(없으면 균등 시드), payer_only는 호출 안 함
-    function computeSettleAmounts(type, parts, amount, customMap){
-      if(type==='custom'){
-        const has = customMap && parts.some(n=>customMap[n]!=null);
-        if(!has) return computeSettleAmounts('equal', parts, amount);
-        const out={}; parts.forEach(n=>{ out[n]=Math.round(Number(customMap[n])||0); }); return out;
-      }
-      const out={}, n=parts.length||1, base=Math.floor((amount||0)/n);
-      parts.forEach(nm=>{ out[nm]=base; });
-      if(parts.length) out[parts[parts.length-1]] += (amount||0) - base*n;
-      return out;
-    }
+    // computeSettleAmounts는 js/util.js로 이동(순수함수·단위 테스트).
     // 저장 시점 정산 데이터 수집. {inc:false} 또는 {inc:true, payer, splitType, participants, amounts, memo}
     function collectSettle(){
       const sh=$('sheet'); if(!sh._stReady || !sh._stOn) return { inc:false };

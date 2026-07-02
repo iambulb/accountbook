@@ -11,6 +11,7 @@
 | `index.html` | ~86 | 앱 셸 — 로그인 화면, 상단바, 탭바, 시트/오버레이 컨테이너, SDK·모듈 로드 |
 | `js/firebase.js` | ~17 | `firebaseConfig` + Firebase 초기화(`auth`, `db`). SDK 미로드 시 폴백 화면 |
 | `js/constants.js` | ~54 | 라벨/아이콘 맵, 거래효과 테이블(`TX_EFFECT`), 계좌·제공사·구독·목적별 타입, 기본 카테고리(`buildDefaultCategories`) |
+| `js/util.js` | ~60 | **순수 계산 유틸**(돈/통화/정산): `won`·`fmtComma`·`parseAmount`·`curInfo`·`fmtForeign`·`krwFromForeign`·`sumByCurrency`·`computeSettleAmounts`·`CURRENCIES`. 브라우저 전역 + Node `module.exports` 듀얼 → `test/`에서 단위 테스트. |
 | `js/core.js` | ~649 | 전역 `state`, 헬퍼, 테마, 인증, 워크스페이스 부트스트랩, 마이그레이션, RTDB 리스너, 시딩 |
 | `js/views.js` | ~1146 | 모든 화면·시트 렌더링(달력·리포트·자산·더보기 + 각종 시트), CSV 내보내기 |
 | `js/cats.js` | ~360 | 🐱 알뜰샵(구 고양이집) — 은화 경제(`users/{uid}/game`: coins/owned/home/missions/progress/codes), 도트 아트(`pxSvg`+매트릭스, 고양이 8종 걷기2+정면+포즈 `catPose`(sit/loaf/sleep), 가구 7종+펫하우스 `M_PETHOUSE`), **PNG 스프라이트 걷기+정면 쉬기**(`PET_SPRITES`/`catActorHTML`: 고양이 8종 전부(…·카오스·샴)=PixelLab 288×48 6프레임 시트 `.cspr` CSS steps, **이동=옆 걷기 시트만·정지/가구쉼=south 정면**, 주기 `walkDur`(`--wdur`)로 이동속도 매칭, `frontWalk`(하양)은 이동 중 east 정지스틸, 시트 없는 동물은 SVG 매트릭스 폴백 — 에셋 `assets/pets/<id>/`, 카탈로그 `PET_CATALOG`(species), id 하위호환 `PET_ID_MIGRATE`, 처리 규칙 `docs/pet-asset-pipeline.md`), 단일 rAF 걷기 엔진(`buildActors`/`stepActors` 가구별 상호작용 `poseForItem`), 전역 dock(`#catdock` 웹캠 방: 벽지+가구 배경), 알뜰샵 시트(홈·상점(고양이/가구/벽지/이벤트)·배치(**꾹 눌러 롱프레스 드래그** `beginLongPress`/`giDown`/`palDown`, `furnSpot` 가구별 상호작용)·미션), 벽지(`WALLPAPER_CATALOG`), **뽑기**(`TIERS`/`rollFromPool`/`openGacha`, 펫알·랜덤박스, 오픈 연출 `runGachaFx`+`#catFx`), 금화(`GOLD_PAL`/`goldSvg`, 소비처=슬롯 확장), **활성 슬롯**(`home.slots` 기본3·`slotCount`/`buySlot` 금화100로 4칸 확장), **등급 가격**(`TIER_PRICE`가 `CAT_TIER` 기준 `PET_CATALOG.price` 산정), 품종 라벨(`PET_CATALOG.breed`, 기본 코숏)·이름 등급색(`catTierColor`), 프로모(`redeemCode`), **개발자 모드**(`isDev`/`devOn`/`openDevGacha`: canel94@gmail.com 전용 확률·구성 오버라이드, localStorage), 카탈로그 상수 |
@@ -28,7 +29,7 @@
 `index.html` 하단 script 태그 순서:
 
 ```
-firebase.js → constants.js → core.js → views.js → cats.js → main.js
+firebase.js → constants.js → util.js → core.js → views.js → cats.js → main.js
 ```
 
 - **모듈 시스템 없음**: 모든 함수·상수가 전역(window) 스코프를 공유합니다. `views.js` 가 `core.js` 의 `state`·헬퍼를 직접 참조하고, HTML `onclick="openTxSheet()"` 처럼 전역 함수를 직접 호출합니다.

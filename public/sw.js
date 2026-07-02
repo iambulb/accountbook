@@ -1,11 +1,12 @@
 /* 알뜰(Eggarden) 서비스워커 — 오프라인 앱 셸 캐시 */
-const CACHE_VERSION = 'eggarden-v3.100.0';
+const CACHE_VERSION = 'eggarden-v3.102.0';
 const APP_SHELL = [
   './',
   './index.html',
   './css/styles.css',
   './js/firebase.js',
   './js/constants.js',
+  './js/util.js',
   './js/core.js',
   './js/views.js',
   './js/cats.js',
@@ -116,7 +117,7 @@ self.addEventListener('fetch', event => {
   try { url = new URL(req.url); } catch (e) { return; }
 
   // Firebase 실시간 데이터/인증은 절대 캐시하지 않음 (항상 네트워크)
-  if (/firebaseio\.com$|firebasedatabase\.app$|googleapis\.com$|identitytoolkit|firebaseapp\.com$|frankfurter\.app$/.test(url.hostname)) {
+  if (/firebaseio\.com$|firebasedatabase\.app$|googleapis\.com$|identitytoolkit|firebaseapp\.com$|frankfurter\.(app|dev)$/.test(url.hostname)) {
     return; // 브라우저 기본 처리
   }
 

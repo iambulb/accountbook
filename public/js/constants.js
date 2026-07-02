@@ -42,21 +42,7 @@
     const SETTLE_STATUS_LABEL = { none:'-', unsettled:'미정산', partially_settled:'일부 정산', settled:'정산 완료' };
     const PAYMENT_STATUS_LABEL = { pending:'대기', paid:'완료', cancelled:'취소' };
     const WEEK = ['일','월','화','수','목','금','토'];
-    // 해외통화(여행용). dec=금액 소수 자릿수. 환율은 항상 "원화 per 1단위", amount는 원화 환산액.
-    const CURRENCIES = [
-      { code:'KRW', name:'대한민국 원', sym:'₩', dec:0 },
-      { code:'USD', name:'미국 달러', sym:'$', dec:2 },
-      { code:'JPY', name:'일본 엔', sym:'¥', dec:0 },
-      { code:'EUR', name:'유로', sym:'€', dec:2 },
-      { code:'CNY', name:'중국 위안', sym:'元', dec:2 },
-      { code:'GBP', name:'영국 파운드', sym:'£', dec:2 },
-      { code:'AUD', name:'호주 달러', sym:'A$', dec:2 },
-      { code:'THB', name:'태국 바트', sym:'฿', dec:2 },
-      { code:'VND', name:'베트남 동', sym:'₫', dec:0 },
-      { code:'TWD', name:'대만 달러', sym:'NT$', dec:2 },
-      { code:'HKD', name:'홍콩 달러', sym:'HK$', dec:2 },
-      { code:'SGD', name:'싱가포르 달러', sym:'S$', dec:2 }
-    ];
+    // 해외통화 CURRENCIES는 js/util.js로 이동(브라우저 전역 + Node 테스트 공용).
     const CAT_TYPES = [['expense','지출'],['income','수입'],['transfer','이체'],['event','경조사'],['travel','여행'],['loan','대출'],['subscription','구독'],['other','기타']];
     const CAT_TYPE_LABEL = Object.assign({}, ...CAT_TYPES.map(p=>({[p[0]]:p[1]})));
     const OLD_DEFAULT_CAT_NAMES = ['식사','교통','쇼핑','엔터','생활','의료','카페','기타']; // 구버전 기본 카테고리(삭제불가 판정용)

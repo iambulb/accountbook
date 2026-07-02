@@ -17,6 +17,14 @@ npx serve public                 # http://localhost:3000
 python -m http.server 8000 -d public   # http://localhost:8000
 ```
 
+## 테스트
+
+순수 계산 로직(`public/js/util.js` — 돈/통화/정산)은 Node 내장 러너로 단위 테스트합니다(의존성·빌드 없음).
+
+```bash
+npm test        # node --test (test/*.test.js)
+```
+
 - VS Code를 쓴다면 **Live Server** 확장으로 `public/index.html` 을 열어도 됩니다.
 - 로컬에서도 **실제 Firebase**(`money-bb658`)에 붙습니다. `localhost` 는 Firebase 승인 도메인에 기본 포함됩니다.
 - 로그인이 되려면 Firebase 콘솔에서 **이메일/비밀번호 로그인이 활성화**되어 있어야 합니다(아래 체크리스트).
