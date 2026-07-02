@@ -1885,7 +1885,9 @@
 
     // ===== 대출 / 이자 =====
     // loans: 빌림(borrowed=내 빚)·빌려줌(lent=받을 돈) / loanPayments: 상환 기록(원금+이자).
-    // 잔액·이자는 loanCalc()로 계산. 이자만 실제 거래(이자 지출/이자 수입)로 연결 — 원금 이동은 장부로만 관리(가짜 계정 방지).
+    // 잔액·이자는 loanCalc()로 계산. 상환 기록 시 원금·이자 각각을 실제 거래로 연결(계좌 잔액 반영, 따로 입력 불필요):
+    // 이자=실지출/실수입(대출 비용·이자 수입, isActualExpense=borrowed), 원금=부채 상환이라 잔액엔 반영하되 실지출 통계엔 제외(isActualExpense:false).
+    // linkedTransactionId=이자 거래, linkedPrincipalTxId=원금 거래.
     function openLoanBook(){
       const s=loanSummary(), list=visibleLoans().slice().sort((a,b)=>(b.startDate||'').localeCompare(a.startDate||''));
       let h='<div class="card"><div class="summary">'+
@@ -1967,7 +1969,7 @@
     }
     function deleteLoan(id){
       confirmSheet('이 대출을 삭제할까요? (상환 기록도 함께 삭제됩니다)', ()=>{
-        loanPaymentsOf({id}).forEach(p=>{ if(p.linkedTransactionId) db.ref(wp('transactions/'+state.uid+'/'+p.linkedTransactionId)).remove(); db.ref(wp('loanPayments/'+p.id)).remove(); });
+        loanPaymentsOf({id}).forEach(p=>{ if(p.linkedTransactionId) db.ref(wp('transactions/'+state.uid+'/'+p.linkedTransactionId)).remove(); if(p.linkedPrincipalTxId) db.ref(wp('transactions/'+state.uid+'/'+p.linkedPrincipalTxId)).remove(); db.ref(wp('loanPayments/'+p.id)).remove(); });
         db.ref(wp('loans/'+id)).remove(); toast('삭제되었습니다'); openLoanBook();
       });
     }
@@ -1982,9 +1984,9 @@
       h+='<div class="form-2"><div class="field"><label>원금 상환</label><input class="input" id="lpPrincipal" inputmode="numeric" value="'+(p&&p.principalAmount?Number(p.principalAmount).toLocaleString():'')+'" placeholder="0" oninput="this.value=fmtComma(this.value)"></div>'+
         '<div class="field"><label>'+interestLabel+'</label><input class="input" id="lpInterest" inputmode="numeric" value="'+(p&&p.interestAmount?Number(p.interestAmount).toLocaleString():(c.monthlyInterest?c.monthlyInterest.toLocaleString():''))+'" placeholder="0" oninput="this.value=fmtComma(this.value)"></div></div>';
       h+='<div class="field"><label>날짜</label><input type="date" class="input" id="lpDate" value="'+(p&&p.date?p.date:todayStr())+'"></div>';
-      h+='<div class="menu-item" style="padding:8px 2px;"><span>🧾 이자를 가계부 거래로 기록</span><div class="switch '+(txOn?'on':'')+'" id="lpTx" onclick="this.classList.toggle(\'on\');toggleLoanPayAcct()"><i></i></div></div>';
+      h+='<div class="menu-item" style="padding:8px 2px;"><span>🧾 원금·이자를 가계부 거래로 기록</span><div class="switch '+(txOn?'on':'')+'" id="lpTx" onclick="this.classList.toggle(\'on\');toggleLoanPayAcct()"><i></i></div></div>';
       h+='<div id="lpAcctWrap" style="'+(txOn?'':'display:none;')+'"><div class="field"><label>계좌</label><select class="input" id="lpAcct">'+acctOptsHtml((p&&p.account)||l.account||(state.accounts[0]?state.accounts[0].id:''))+'</select></div>'+
-        '<div class="tx-sub" style="margin-bottom:6px;">이자만 거래로 기록됩니다. 원금 이동은 대출 장부에서 관리돼요.</div></div>';
+        '<div class="tx-sub" style="margin-bottom:6px;">'+(l.direction==='lent'?'원금·이자가 선택한 계좌로 함께 입금돼요':'원금·이자가 선택한 계좌에서 함께 차감돼요')+' (원금은 실지출 통계엔 포함되지 않아요).</div></div>';
       h+='<div class="field"><label>메모</label><input class="input" id="lpMemo" value="'+escapeHtml(p?(p.memo||''):'')+'" placeholder="메모"></div>';
       h+='<button class="btn" onclick="saveLoanPayment(\''+loanId+'\','+(id?'\''+id+'\'':'null')+')">'+(p?'수정':'기록')+'</button>';
       if(p) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteLoanPayment(\''+loanId+'\',\''+id+'\')">삭제</button>';
@@ -2000,27 +2002,30 @@
       const key=id||('lpay_'+Date.now());
       const txOn=$('lpTx')&&$('lpTx').classList.contains('on');
       const acct=$('lpAcct')?val('lpAcct'):(p?p.account:'');
-      let linkedTransactionId=p?(p.linkedTransactionId||null):null;
-      // 이자만 실제 거래 연결 (borrowed=지출, lent=수입)
-      if(txOn && interestAmount>0){
-        const borrowed=l.direction!=='lent', iso=new Date(date+'T'+new Date().toTimeString().slice(0,8)).toISOString();
-        const txObj={ type:borrowed?'expense':'income', date:iso, user:state.userName, amount:interestAmount,
-          category:borrowed?'대출이자':'이자', desc:(l.name||'대출')+' 이자', isActualExpense:borrowed,
-          loanId:loanId, memo };
-        if(borrowed) txObj.from=acct; else txObj.to=acct;
-        const txId=linkedTransactionId||String(Date.now());
-        db.ref(wp('transactions/'+state.uid+'/'+txId)).set(txObj); linkedTransactionId=txId;
-      } else if(linkedTransactionId){
-        db.ref(wp('transactions/'+state.uid+'/'+linkedTransactionId)).remove(); linkedTransactionId=null;
+      const borrowed=l.direction!=='lent', iso=new Date(date+'T'+new Date().toTimeString().slice(0,8)).toISOString();
+      // 원금·이자 각각 실제 거래로 연결(borrowed=지출/차감, lent=수입/입금). 계좌 잔액에 반영돼 따로 입력할 필요 없음.
+      // 이자는 실지출(대출 비용)로 통계 포함, 원금 상환은 부채 상환이라 실지출 통계엔 제외(isActualExpense:false).
+      function upsertLoanTx(existingId, amt, cat, descSuffix, actual, fallbackId){
+        if(txOn && amt>0){ const txId=existingId||fallbackId;
+          const o={ type:borrowed?'expense':'income', date:iso, user:state.userName, amount:amt,
+            category:cat, desc:(l.name||'대출')+' '+descSuffix, isActualExpense:actual, loanId:loanId, memo };
+          if(borrowed) o.from=acct; else o.to=acct;
+          db.ref(wp('transactions/'+state.uid+'/'+txId)).set(o); return txId; }
+        if(existingId){ db.ref(wp('transactions/'+state.uid+'/'+existingId)).remove(); }
+        return null;
       }
+      const linkedTransactionId  = upsertLoanTx(p?(p.linkedTransactionId||null):null,  interestAmount,  borrowed?'대출이자':'이자',   '이자', borrowed, 'lpi_'+key);
+      const linkedPrincipalTxId  = upsertLoanTx(p?(p.linkedPrincipalTxId||null):null, principalAmount, borrowed?'대출상환':'원금회수', '원금', false,    'lpp_'+key);
       const data={ id:key, loanId, date, principalAmount, interestAmount, account:acct||'', memo,
-        linkedTransactionId, createdAt:p?(p.createdAt||now):now, updatedAt:now };
+        linkedTransactionId, linkedPrincipalTxId, createdAt:p?(p.createdAt||now):now, updatedAt:now };
       db.ref(wp('loanPayments/'+key)).set(data); toast(p?'수정되었습니다':'기록되었습니다'); openLoanDetail(loanId);
     }
     function deleteLoanPayment(loanId, id){
       const p=state.loanPayments.find(x=>x.id===id);
-      confirmSheet('이 상환 기록을 삭제할까요?'+(p&&p.linkedTransactionId?' (연결된 이자 거래도 삭제됩니다)':''), ()=>{
+      const hasTx=p&&(p.linkedTransactionId||p.linkedPrincipalTxId);
+      confirmSheet('이 상환 기록을 삭제할까요?'+(hasTx?' (연결된 원금·이자 거래도 삭제됩니다)':''), ()=>{
         if(p&&p.linkedTransactionId) db.ref(wp('transactions/'+state.uid+'/'+p.linkedTransactionId)).remove();
+        if(p&&p.linkedPrincipalTxId) db.ref(wp('transactions/'+state.uid+'/'+p.linkedPrincipalTxId)).remove();
         db.ref(wp('loanPayments/'+id)).remove(); toast('삭제되었습니다'); openLoanDetail(loanId);
       });
     }
