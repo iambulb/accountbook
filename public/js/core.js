@@ -34,6 +34,16 @@
     // 통화 정보/표시 헬퍼(해외통화). fmtForeign: 외화 원금을 기호+통화 소수자리로.
     function curInfo(code){ return (typeof CURRENCIES!=='undefined' && CURRENCIES.find(c=>c.code===code)) || { code:'KRW', name:'원', sym:'\u20a9', dec:0 }; }
     function fmtForeign(amt, code){ const c=curInfo(code); const n=Number(amt||0); return c.sym+n.toLocaleString(undefined,{minimumFractionDigits:0, maximumFractionDigits:c.dec}); }
+    // ===== 실시간 환율(frankfurter, 무키·CORS) — 일자별 캐시(메모리+localStorage). 실패 시 null → 수동 입력 폴백. =====
+    const _fxMem={};
+    function _fxToday(){ return new Date(Date.now()+9*3600000).toISOString().slice(0,10); }
+    function fxCacheGet(date,cur){ const k=date+'|'+cur; if(_fxMem[k]!=null) return _fxMem[k]; try{ const v=localStorage.getItem('eg_fx_'+k); if(v!=null){ const r=parseFloat(v); if(r>0){ _fxMem[k]=r; return r; } } }catch(e){} return null; }
+    function fxCacheSet(date,cur,rate){ const k=date+'|'+cur; _fxMem[k]=rate; try{ localStorage.setItem('eg_fx_'+k,String(rate)); }catch(e){} }
+    function fetchFxRate(cur,date){ if(cur==='KRW') return Promise.resolve(1);
+      const today=_fxToday(); const d=(date&&date<today)?date:today;
+      const c=fxCacheGet(d,cur); if(c) return Promise.resolve(c);
+      const url=(d===today?'https://api.frankfurter.app/latest':'https://api.frankfurter.app/'+d)+'?from='+cur+'&to=KRW';
+      return fetch(url).then(r=>r.ok?r.json():null).then(j=>{ const rate=j&&j.rates&&j.rates.KRW; if(rate>0){ const rr=Math.round(rate*100)/100; fxCacheSet(d,cur,rr); return rr; } return null; }).catch(()=>null); }
     function escapeHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
     function pad2(n){ return String(n).padStart(2,'0'); }
     function monthStr(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1); }

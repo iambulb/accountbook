@@ -331,7 +331,7 @@
     // 카탈로그(코드 상수) — 저장은 보유 id만. id는 종·색 구분(예: cat_calico, dog_corgi), species는 분류/필터용.
     // 새 동물(네발 짐승) 처리 규칙은 docs/pet-asset-pipeline.md 참고.
     // 가격(은화)은 등급·확률에 맞춰 재산정 — 등급이 오를수록 대략 2배씩(TIER_PRICE 참고).
-    // 알(펫알) 100은화로 열면 금화+1·중복 30은화 환급이라, 흔한 등급은 알보다 싸게·희귀는 알보다 비싸게 잡아
+    // 알(펫알) 100은화로 열면 금화+1·중복은 그 펫 가격의 20% 환급이라, 흔한 등급은 알보다 싸게·희귀는 알보다 비싸게 잡아
     // "직접 구매 vs 뽑기" 선택지가 성립하도록 함. 가격은 CAT_TIER→TIER_PRICE로 산정(normalizePrices).
     // @gen:pet-catalog — 자동생성(tools/build_pets.py). 직접 수정 말고 tools/pets.json 편집 후 재실행.
     const PET_CATALOG = [
@@ -929,7 +929,7 @@
             '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+GACHA_PRICE+'</span></div>'+
             '<div class="act">'+act+'</div></div>';
         }).join('');
-        h+='<div class="note">열 때마다 <b>금화 1개</b> 지급. 이미 보유한 고양이는 <b>'+DUP_REFUND+' 은화</b>로 환급돼요. <b>특별 등급 이상</b>은 펫알로만 나와요.</div>';
+        h+='<div class="note">열 때마다 <b>금화 1개</b> 지급. 이미 보유한 고양이는 <b>그 펫 가격의 20% 은화</b>로 환급돼요. <b>특별 등급 이상</b>은 펫알로만 나와요.</div>';
         h+=gachaInfoHtml();
         return h;
       }
@@ -1135,7 +1135,7 @@
     // @gen:end
     const ITEM_TIER = { cushion:'normal', bowl:'uncommon', scratcher:'rare', tower:'epic' };
     // 등급별 상점 가격(은화) — 확률(60/20/15/3.8/1/0.2%)에 맞춰 등급이 오를수록 약 2배씩.
-    // 알 100은화(+금화1·중복 30은화 환급) 대비, 흔한 등급은 알보다 싸게·희귀 등급은 비싸게 → 직접구매 vs 뽑기 선택 성립.
+    // 알 100은화(+금화1·중복은 그 펫 가격의 20% 환급) 대비, 흔한 등급은 알보다 싸게·희귀 등급은 비싸게 → 직접구매 vs 뽑기 선택 성립.
     // CAT_TIER를 단일 소스로 삼아 PET_CATALOG.price를 산정(새 고양이도 등급만 지정하면 자동 가격).
     const TIER_PRICE = { normal:50, uncommon:100, rare:200, epic:400, legend:800, limited:1500 };
     PET_CATALOG.forEach(c=>{ const t=CAT_TIER[c.id]; if(t&&TIER_PRICE[t]!=null) c.price=TIER_PRICE[t]; });
@@ -1174,25 +1174,28 @@
       for(ti=0; ti<TIER_ORDER.length; ti++){ const tier=TIER_ORDER[ti]; const pool=Object.keys(tierMap).filter(k=>tierMap[k]===tier); if(pool.length) return { id:pool[Math.floor(Math.random()*pool.length)], tier }; }
       return null;
     }
-    const GACHA_PRICE=100, DUP_REFUND=30;
-    // 구매+롤(원자적): 은화-100, 금화+1, 지급(신규 고양이/가구 or 중복 환급). 성공 시 연출.
+    const GACHA_PRICE=100;
+    // 중복 펫 환급 = 해당 펫 가격의 20%(등급가 기준). 가구(박스)는 중복 개념 없이 수량 누적(환급 없음).
+    function petDupRefund(id){ const c=PET_CATALOG.find(x=>x.id===id); return c?Math.round((c.price||0)*0.2):0; }
+    // 구매+롤(원자적): 은화-100, 금화+1, 지급(신규 고양이/가구 or 중복 펫 환급). 성공 시 연출.
     function openGacha(kind){
       if(coins()<GACHA_PRICE){ toast((GACHA_PRICE-coins())+' 은화 부족', true); return; }
       const res = rollFromPool(kind==='egg'?effCatTier():effItemTier()); if(!res) return;
       const dup = kind==='egg' && ownsCat(res.id);
+      const refund = dup ? petDupRefund(res.id) : 0;
       gameRef().transaction(g=>{
         g=normalizeGame(g);
         if(g.coins<GACHA_PRICE) return g;
         g.coins-=GACHA_PRICE; g.gold=(g.gold||0)+1;
         if(kind==='egg'){
           if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; if(g.home.active.length<(g.home.slots||BASE_SLOTS) && g.home.active.indexOf(res.id)<0) g.home.active.push(res.id); }
-          else { g.coins+=DUP_REFUND; }
+          else { g.coins+=refund; }
         } else {
           g.owned.items[res.id]=g.owned.items[res.id]||{qty:0,boughtAt:new Date().toISOString()};
           g.owned.items[res.id].qty=(Number(g.owned.items[res.id].qty)||0)+1;
         }
         return g;
-      }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup); });
+      }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund); });
     }
     let _selItem=null;
     function selItem(id){ _selItem=(_selItem===id?null:id); renderCatHouse(); }
@@ -1422,9 +1425,9 @@
     function itemName(kind,id){ return kind==='egg'?catName(id):((ITEM_CATALOG.find(x=>x.id===id)||{}).name||id); }
     function fxParticles(n,cls){ let s=''; for(let i=0;i<(n||14);i++){ const a=(i/(n||14))*360+Math.random()*30, d=60+Math.random()*90; const dx=Math.round(Math.cos(a*Math.PI/180)*d), dy=Math.round(Math.sin(a*Math.PI/180)*d); const del=(Math.random()*0.12).toFixed(2); s+='<span class="'+(cls||'fx-particle')+'" style="--dx:'+dx+'px;--dy:'+dy+'px;animation-delay:'+del+'s"></span>'; } return s; }
     function fxConfetti(){ const cols=['#F04452','#F0883C','#F2C84B','#2FAE7A','#3182F6','#9B6FC8']; let s=''; for(let i=0;i<24;i++){ const x=Math.round(Math.random()*100), r=Math.round(Math.random()*360), del=(Math.random()*0.5).toFixed(2), dur=(1+Math.random()*0.8).toFixed(2); s+='<span class="fx-conf" style="left:'+x+'%;background:'+cols[i%6]+';--r:'+r+'deg;animation-delay:'+del+'s;animation-duration:'+dur+'s"></span>'; } return s; }
-    function runGachaFx(kind, res, dup){
+    function runGachaFx(kind, res, dup, refund){
       const fx=$('catFx'); if(!fx){ toast((kind==='egg'?'펫알':'랜덤박스')+' 획득!'); return; }
-      _fx={ kind, res, dup, stage:0 };
+      _fx={ kind, res, dup, refund:refund||0, stage:0 };
       if(reducedMotion()){ fxReveal(); return; }   // 모션 최소화: 바로 결과
       const art = kind==='egg'? eggSvg(0,{h:150}) : boxSvg({h:150});
       const hint = kind==='egg'? '알을 탭해서 깨보세요! (3번)' : '상자를 탭해서 열어보세요!';
@@ -1507,7 +1510,7 @@
         '<div class="fx-tier">'+t.name+'</div>'+
         '<div class="fx-name">'+(_fx.kind==='egg'?catNameSpan(_fx.res.id,catName(_fx.res.id)):escapeHtml(itemName(_fx.kind,_fx.res.id)))+'</div>'+
         '<div class="fx-reward"><span class="rw"><span class="ci">'+goldSvg({h:18})+'</span>+1 금화</span>'+
-          (_fx.dup?'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>+'+DUP_REFUND+' 은화 (중복)</span>':'')+'</div>'+
+          (_fx.dup?'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>+'+_fx.refund+' 은화 (중복)</span>':'')+'</div>'+
         '<button class="btn" onclick="closeFx()">확인</button>'+
         '<div class="fx-confetti">'+fxConfetti()+'</div></div>';
       fx.className='fx on reveal';

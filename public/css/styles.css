@@ -369,6 +369,8 @@
     .fxrow .fxrate { width:96px; border:1px solid var(--bd); border-radius:8px; padding:6px 8px; font-size:14px; font-weight:800; text-align:right; background:var(--card); color:var(--text); }
     .fxrow .fxk { color:var(--sub); font-weight:700; }
     .fxrow .fxconv { margin-left:auto; font-weight:800; }
+    .fxrow .fxrefresh { border:none; background:var(--soft); border-radius:8px; padding:5px 8px; font-size:13px; cursor:pointer; }
+    .fxrow #sFxStat { color:var(--primary); font-weight:700; }
     .tx-fx { display:block; font-size:11px; color:var(--sub); font-weight:700; margin-top:1px; }
     .chips { display:flex; gap:8px; overflow-x:auto; padding:2px 0 8px; }
     .chips::-webkit-scrollbar { display:none; }

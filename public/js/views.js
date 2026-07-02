@@ -215,7 +215,7 @@
       h+='<div id="sFx" class="fxrow" style="display:none;"></div>';
       h+='<div id="sCatChips"></div>';   // 카테고리 칩(유형별)
       h+='<div id="sDyn"></div>';        // 계좌/이체 행
-      h+='<div class="txfield"><span class="k">날짜</span><input type="date" class="txin" id="sDate" value="'+date+'"></div>';
+      h+='<div class="txfield"><span class="k">날짜</span><input type="date" class="txin" id="sDate" value="'+date+'" onchange="onDateChange()"></div>';
       h+='<div class="txfield"><span class="k">설명</span><input type="text" class="txin" id="sDesc" placeholder="내용" value="'+escapeHtml(desc)+'"></div>';
       // 숫자 키패드
       h+='<div class="kp">'+
@@ -305,17 +305,26 @@
     function kpPaste(e){ e.preventDefault(); const dt=e.clipboardData||window.clipboardData; const txt=dt?dt.getData('text'):''; let m=String(txt||'').replace(/[^0-9.]/g,''); const p=m.split('.'); m=p.shift()+(p.length?'.'+p.join(''):''); setAmt(m); }
     function sheetRate(){ if(sheetCur()==='KRW') return 1; const el=$('sFxRate'); const sh=$('sheet'); const r=el?parseFloat(el.value.replace(/,/g,'')):(sh?parseFloat(sh._rate):0); return r>0?r:0; }
     function sheetKRWAmount(){ return sheetCur()==='KRW' ? Math.round(sheetAmt()) : Math.round(sheetAmt()*sheetRate()); }
-    function onCurChange(){ const sh=$('sheet'); sh._cur=val('sCur');
+    function onCurChange(){ const sh=$('sheet'); const prev=sh._cur; sh._cur=val('sCur');
+      if(sh._cur==='KRW'){ sh._rate=1; renderFxRow(); return; }
       if(curInfo(sh._cur).dec===0) setAmt(String(Math.floor(sheetAmt())||''));
-      if(sh._cur==='KRW') sh._rate=1;
-      renderFxRow(); }
+      if(prev!==sh._cur){ sh._rate=''; sh._fxSource='live'; }
+      renderFxRow(); autoFetchRate(); }
     function renderFxRow(){ const box=$('sFx'); if(!box) return; const c=sheetCur(), sh=$('sheet');
       if(c==='KRW'){ box.innerHTML=''; box.style.display='none'; return; }
       box.style.display=''; const ci=curInfo(c); const rate=(sh&&sh._rate)?sh._rate:'';
-      box.innerHTML='<div class="fxrow-in"><span class="fxk">1 '+c+' =</span><input class="fxrate" id="sFxRate" inputmode="decimal" value="'+(rate||'')+'" placeholder="환율" oninput="markManualRate();updateFxPreview()"><span class="fxk">₩</span><span class="fxconv">= ₩<b id="sFxKrw">0</b></span></div><div class="tx-sub" style="margin-top:4px;">'+escapeHtml(ci.name)+' 금액을 넣으면 원화로 환산돼 저장돼요. 환율은 직접 입력(추후 실시간 자동).</div>';
+      box.innerHTML='<div class="fxrow-in"><span class="fxk">1 '+c+' =</span><input class="fxrate" id="sFxRate" inputmode="decimal" value="'+(rate||'')+'" placeholder="환율" oninput="markManualRate();updateFxPreview()"><span class="fxk">₩</span><button type="button" class="fxrefresh" onclick="autoFetchRate()" aria-label="실시간 환율 새로고침" title="실시간 환율 새로고침">🔄</button><span class="fxconv">= ₩<b id="sFxKrw">0</b></span></div><div class="tx-sub" style="margin-top:4px;"><span id="sFxStat"></span> '+escapeHtml(ci.name)+' 금액→원화 자동 환산. 환율 직접 수정 가능.</div>';
       updateFxPreview(); }
     function markManualRate(){ const sh=$('sheet'); if(sh){ sh._fxSource='manual'; sh._rate=sheetRate(); } }
     function updateFxPreview(){ const el=$('sFxKrw'); if(el) el.textContent=Math.round(sheetAmt()*sheetRate()).toLocaleString(); }
+    // 실시간 환율 자동 조회(통화·날짜 변경 시). 성공 시 환율칸 채움(live), 실패 시 수동 입력 안내.
+    function setFxStat(msg){ const el=$('sFxStat'); if(el) el.textContent=msg||''; }
+    function autoFetchRate(){ const sh=$('sheet'); const cur=sheetCur(); if(!sh||cur==='KRW') return;
+      const date=val('sDate')||''; setFxStat('환율 불러오는 중…');
+      fetchFxRate(cur, date).then(function(rate){ if(!$('sheet')||sheetCur()!==cur) return; const el=$('sFxRate');
+        if(rate&&el){ el.value=rate; sh._rate=rate; sh._fxSource='live'; setFxStat('실시간 환율'); updateFxPreview(); }
+        else setFxStat('자동 조회 실패 — 직접 입력'); }); }
+    function onDateChange(){ if(sheetCur()!=='KRW') autoFetchRate(); }
     function guideNote(actual, text){ return '<div class="install-banner" style="background:'+(actual?'rgba(240,68,82,.1)':'var(--primary-weak)')+';color:'+(actual?'var(--expense)':'var(--primary)')+';">'+(actual?'🛒':'ℹ️')+' '+text+'</div>'; }
     function renderTxDyn(){
       const sh=$('sheet'); const fromV=sh._from, toV=sh._to;
