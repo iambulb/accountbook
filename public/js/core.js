@@ -21,6 +21,7 @@
       todos:[], todoShare:{},   // 그룹 할일 목록(ws/{wsId}/todos) / (레거시) 멤버별 공유 플래그
       myTodos:[],   // 내 개인 할일(user-global: users/{uid}/todos) — 워크스페이스 무관
       friends:{}, friendReqs:{}, todoPublic:false, friendCode:'', friendPub:{},   // 친구 관계·받은 요청·내 공개 플래그·내 코드·친구별 공개여부(users/{uid}/…)
+      friendTodosByUid:{}, _feedFriend:null,   // 공개 친구별 개인 할일(피드) / '친구들' 피드에서 선택한 친구(null=전체)
       friendTodos:[], _friendTodosUid:null,   // 현재 열람 중인 친구의 개인 할일(임시 리스너)
       _todoScope: (localStorage.getItem('todoScope')==='group' ? 'group' : 'personal'),   // 할일 세그먼트: 개인/그룹(친구들)
       _todoFriend: null   // 개인 탭에서 보고 있는 친구 uid(null/내 uid=나)
@@ -235,6 +236,29 @@
     // ===== 인증 =====
     let authMode='login';
     let pendingSignupName='';
+    let justSignedUp=false;   // 이번 진입이 방금 가입한 신규 계정인지(축하 선물 지급 판단)
+    // ===== 아이디 저장 · 자동 로그인 (localStorage, 로그아웃 후에도 유지) =====
+    // 기본값 on: 기존 로그인 세션(Firebase LOCAL 지속성)과 동작을 일치시킴.
+    function authOptGet(k){ try{ const v=localStorage.getItem('auth_'+k); return v===null ? true : v==='1'; }catch(e){ return true; } }
+    function authOptSet(k,on){ try{ localStorage.setItem('auth_'+k, on?'1':'0'); }catch(e){} }
+    function authOptPaint(){ ['saveId','autoLogin'].forEach(k=>{ const on=authOptGet(k);
+      const el=$(k==='saveId'?'optSaveId':'optAutoLogin'); if(!el) return;
+      const sw=el.querySelector('.switch'); if(sw) sw.classList.toggle('on', on); el.setAttribute('aria-checked', on?'true':'false'); }); }
+    function toggleAuthOpt(k){ const on=!authOptGet(k); authOptSet(k,on);
+      if(k==='saveId' && !on){ try{ localStorage.removeItem('auth_savedEmail'); }catch(e){} }   // 끄면 저장된 아이디 삭제
+      authOptPaint(); }
+    // 로그인 화면 진입 시 토글 상태·저장된 아이디 반영.
+    function initAuthOpts(){ authOptPaint();
+      if(authOptGet('saveId')){ try{ const e=localStorage.getItem('auth_savedEmail'); if(e && $('authEmail') && !$('authEmail').value) $('authEmail').value=e; }catch(err){} } }
+    // 자동 로그인 on → LOCAL(앱 재실행에도 유지), off → SESSION(앱 완전 종료 시 재로그인).
+    function authPersistence(){ try{ const P=firebase.auth.Auth.Persistence; return authOptGet('autoLogin')?P.LOCAL:P.SESSION; }catch(e){ return null; } }
+    // 로그인·가입 직전: 아이디 저장 처리 + 지속성 설정(promise 반환).
+    function beforeAuth(email){
+      if(authOptGet('saveId')){ try{ localStorage.setItem('auth_savedEmail', email); }catch(e){} }
+      else { try{ localStorage.removeItem('auth_savedEmail'); }catch(e){} }
+      const p=authPersistence();
+      return p ? auth.setPersistence(p).catch(()=>{}) : Promise.resolve();
+    }
     function setAuthMode(m){
       authMode=m;
       $('modeLogin').classList.toggle('on', m==='login');
@@ -248,17 +272,19 @@
       const name=val('authName').trim(), email=val('authEmail').trim(), pw=val('authPassword');
       if(!name||!email||!pw){ toast('이름·이메일·비밀번호를 모두 입력하세요', true); return; }
       if(pw.length<6){ toast('비밀번호는 6자 이상이어야 합니다', true); return; }
-      pendingSignupName=name;
-      auth.createUserWithEmailAndPassword(email,pw)
+      pendingSignupName=name; justSignedUp=true;
+      beforeAuth(email)
+        .then(()=>auth.createUserWithEmailAndPassword(email,pw))
         .then(()=>db.ref('users/'+auth.currentUser.uid).update({ name, email, createdAt:new Date().toISOString() }))
-        .catch(e=>toast(e.message, true));
+        .catch(e=>{ justSignedUp=false; toast(e.message, true); });
     }
     function login(){
       const email=val('authEmail').trim(), pw=val('authPassword');
       if(!email||!pw){ toast('이메일과 비밀번호를 입력하세요', true); return; }
-      auth.signInWithEmailAndPassword(email,pw).catch(e=>toast(e.message, true));
+      justSignedUp=false;
+      beforeAuth(email).then(()=>auth.signInWithEmailAndPassword(email,pw)).catch(e=>toast(e.message, true));
     }
-    function logout(){ confirmSheet('로그아웃하시겠습니까?', ()=>auth.signOut()); }
+    function logout(){ confirmSheet('로그아웃하시겠습니까?', ()=>auth.signOut()); }   // 아이디저장·자동로그인 토글은 유지(localStorage)
 
     auth.onAuthStateChanged(user=>{
       if(user){ enterApp(user); }
@@ -268,6 +294,7 @@
         state.wsId=null; state.wsMeta=null; state.memberships=[];
         $('authScreen').style.display='flex';
         $('app').style.display='none';
+        initAuthOpts();   // 토글 상태·저장된 아이디 반영
       }
     });
 
@@ -295,6 +322,7 @@
         if(!active || !state.memberships.some(w=>w.id===active)) active=state.memberships[0].id;
         await switchWorkspace(active, true);
         try{ initDock(); initCatGame(); setTimeout(autoClaimAttend, 800); }catch(e){ console.warn('cat game init', e); }   // 🐱 은화·고양이 dock
+        if(justSignedUp){ justSignedUp=false; try{ if(typeof grantWelcomeGift==='function') setTimeout(grantWelcomeGift, 900); }catch(e){ console.warn('welcome gift', e); } }   // 🎉 신규 가입 축하 선물(멱등)
       }catch(e){ toast(e.message||'로그인 처리 중 오류', true); }
     }
 
@@ -303,16 +331,31 @@
     function initUserGraph(){
       if(!state.uid) return;
       _userRefs.forEach(r=>{ try{ r.off(); }catch(e){} }); _userRefs=[];
+      Object.keys(_friendTodoRefs).forEach(u=>{ try{ _friendTodoRefs[u].off(); }catch(e){} }); _friendTodoRefs={}; state.friendTodosByUid={};   // 친구 할일 리스너 초기화
       const add=(path,cb)=>{ const r=db.ref('users/'+state.uid+'/'+path); r.on('value',cb); _userRefs.push(r); };
       add('todos', s=>{ const o=s.val()||{}; state.myTodos=Object.keys(o).map(k=>Object.assign({id:k,scope:'personal',ownerUid:state.uid},o[k])); rerender(); });
       add('friends', s=>{ state.friends=s.val()||{}; loadFriendPublics(); rerender(); });
       add('friendReqs', s=>{ state.friendReqs=s.val()||{}; rerender(); });
       add('todoPublic', s=>{ state.todoPublic=!!s.val(); rerender(); });
     }
-    // 친구별 '할일 공개' 여부를 읽어 캐시(친구 목록 변경 시 갱신). 스트립은 공개 친구만 노출.
+    // 친구별 '할일 공개' 여부를 읽어 캐시(친구 목록 변경 시 갱신). 공개 친구만 피드에 노출.
     function loadFriendPublics(){
       const fr=Object.keys(state.friends||{}); state.friendPub=state.friendPub||{};
-      fr.forEach(uid=>{ db.ref('users/'+uid+'/todoPublic').once('value').then(s=>{ state.friendPub[uid]=!!s.val(); rerender(); }).catch(()=>{}); });
+      Object.keys(state.friendPub).forEach(uid=>{ if(fr.indexOf(uid)<0) delete state.friendPub[uid]; });   // 삭제된 친구 정리
+      fr.forEach(uid=>{ db.ref('users/'+uid+'/todoPublic').once('value').then(s=>{ state.friendPub[uid]=!!s.val(); syncFriendTodoWatch(); rerender(); }).catch(()=>{}); });
+      syncFriendTodoWatch();
+    }
+    // 공개 친구별 개인 할일(users/{uid}/todos) 실시간 리스너 동기화 → state.friendTodosByUid. 비공개/삭제 친구는 해제.
+    let _friendTodoRefs={};
+    function syncFriendTodoWatch(){
+      const want=Object.keys(state.friends||{}).filter(uid=>state.friendPub && state.friendPub[uid]===true);
+      // 더 이상 대상 아닌 친구 리스너 해제
+      Object.keys(_friendTodoRefs).forEach(uid=>{ if(want.indexOf(uid)<0){ try{ _friendTodoRefs[uid].off(); }catch(e){} delete _friendTodoRefs[uid]; delete state.friendTodosByUid[uid]; } });
+      // 새 공개 친구 리스너 부착
+      want.forEach(uid=>{ if(_friendTodoRefs[uid]) return;
+        const r=db.ref('users/'+uid+'/todos'); _friendTodoRefs[uid]=r;
+        r.on('value', s=>{ const o=s.val()||{}; state.friendTodosByUid[uid]=Object.keys(o).map(k=>Object.assign({id:k,scope:'personal',ownerUid:uid},o[k])); rerender(); }, ()=>{});
+      });
     }
     // 내 친구 코드 보장(없으면 생성) + 인덱스 friendCodes/{code}=uid.
     async function ensureFriendCode(){

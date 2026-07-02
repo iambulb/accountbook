@@ -123,6 +123,19 @@ test('friendTodoOrder: 공유자 없으면 나만, 동률은 이름순', () => {
   assert.deepStrictEqual(U.friendTodoOrder([], ['me', 'b', 'a'], share, 'me', nameOf), ['me', 'a', 'b']);
 });
 
+test('friendFeedOrder: 최근 등록순 정렬 + 오늘 등록 판정 + 할일 없는 친구는 뒤로', () => {
+  const byUid = {
+    a: [{ createdAt: '2026-07-01T09:00:00Z' }],
+    b: [{ createdAt: '2026-07-03T08:00:00Z' }, { createdAt: '2026-06-30T00:00:00Z' }],   // 오늘
+    c: []                                                                                   // 할일 없음 → 뒤로
+  };
+  const rows = U.friendFeedOrder(byUid, ['a', 'b', 'c'], '2026-07-03');
+  assert.deepStrictEqual(rows.map(r => r.uid), ['b', 'a', 'c']);          // 최신 b, 그다음 a, 빈 c 마지막
+  assert.strictEqual(rows[0].todayReg, true);                            // b는 오늘 등록
+  assert.strictEqual(rows[1].todayReg, false);                           // a는 오늘 아님
+  assert.strictEqual(rows[2].lastAt, '');                                // c는 없음
+});
+
 test('personKey: 멤버는 uid, 레거시/공동은 이름', () => {
   assert.strictEqual(U.personKey({ userUid: 'uid_123', user: '철수' }), 'uid_123');   // uid 우선
   assert.strictEqual(U.personKey({ user: '철수' }), '철수');                            // 레거시(uid 없음)

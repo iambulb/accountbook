@@ -77,6 +77,18 @@
     });
     return [meUid].concat(friends);
   }
+  // 친구 피드 정렬: 공개 친구를 '가장 최근 할일 등록순'으로. todayReg=오늘(todayYmd) 등록했는지(무지개 테두리용). 할일 없는 친구는 뒤로(이름/uid순).
+  function friendFeedOrder(friendTodosByUid, uids, todayYmd) {
+    const map = friendTodosByUid || {};
+    const rows = (uids || []).map(function (uid) {
+      const list = map[uid] || [];
+      var lastAt = '', todayReg = false;
+      for (var i = 0; i < list.length; i++) { const c = (list[i] && list[i].createdAt) || ''; if (c > lastAt) lastAt = c; if (String(c).slice(0, 10) === todayYmd) todayReg = true; }
+      return { uid: uid, lastAt: lastAt, todayReg: todayReg };
+    });
+    rows.sort(function (a, b) { if (a.lastAt !== b.lastAt) return a.lastAt < b.lastAt ? 1 : -1; return String(a.uid).localeCompare(String(b.uid)); });
+    return rows;
+  }
 
   // ===== 미션(습관) 순수 헬퍼 — 오늘 홈·미션 탭 공용. 날짜는 'YYYY-MM-DD'(KST 키) 문자열, addDays 재사용. =====
   // 체크인 로그 날짜 배열 → 연속 기록(current: 오늘 또는 어제부터 이어진 일수 / best: 전체 최장 연속).
@@ -129,7 +141,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot };
+  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);
