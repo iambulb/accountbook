@@ -223,7 +223,7 @@
         '<button onclick="kpPress(\'.\')" aria-label="소수점">.</button><button onclick="kpPress(\'0\')">0</button><button onclick="kpDel()" aria-label="지우기">⌫</button></div>';
       // 우리 고유 기능 → 상세 설정 접기
       h+='<details class="adv" id="sAdv"'+((pbId||settleInc)?' open':'')+'><summary>상세 설정</summary>';
-      h+='<div class="txfield"><span class="k">목적별 가계부</span><select class="txsel" id="sPb" onchange="renderSettleBlock()">'+
+      h+='<div class="txfield"><span class="k">목적별 가계부</span><select class="txsel" id="sPb" onchange="onPbChange()">'+
         '<option value="">연결 안 함</option>'+
         activePbs.map(p=>'<option value="'+p.id+'"'+(p.id===pbId?' selected':'')+'>'+(p.icon||'📒')+' '+escapeHtml(p.name)+'</option>').join('')+
         ((pbId && !activePbs.some(p=>p.id===pbId))?('<option value="'+pbId+'" selected>'+escapeHtml((t&&t.purposeBookName)||pbId)+' (비활성)</option>'):'')+
@@ -247,7 +247,7 @@
       sh._settle = t ? { inc:t.settlementIncluded===true, payer:t.payer||'', splitType:t.splitType||'equal',
         participants:Array.isArray(t.splitParticipants)?t.splitParticipants.slice():null, amounts:t.splitAmounts||null, memo:t.settlementMemo||'' } : null;
       highlightTypeSeg(); renderTxDyn(); renderSettleBlock();
-      sh._cur=(t&&t.currency)?t.currency:'KRW'; sh._rate=(t&&t.fxRate)?t.fxRate:(sh._cur==='KRW'?1:''); sh._fxSource=(t&&t.fxSource)||'manual'; renderFxRow();
+      sh._cur=(t&&t.currency)?t.currency:'KRW'; sh._rate=(t&&t.fxRate)?t.fxRate:(sh._cur==='KRW'?1:''); sh._fxSource=(t&&t.fxSource)||'manual'; sh._curUserSet=false; renderFxRow(); if(!t) applyPbCurrency();
       // 데스크톱(마우스/물리키보드 환경)에선 금액칸에 포커스를 줘 바로 숫자를 타이핑할 수 있게(모바일은 화면 키패드 유지 위해 포커스 안 줌).
       try{ if(window.matchMedia && window.matchMedia('(pointer: fine)').matches){ setTimeout(function(){ const a=$('sAmount'); if(a){ a.focus(); const v=a.value||''; try{ a.setSelectionRange(v.length, v.length); }catch(_){} } }, 60); } }catch(_){ }
     }
@@ -305,7 +305,7 @@
     function kpPaste(e){ e.preventDefault(); const dt=e.clipboardData||window.clipboardData; const txt=dt?dt.getData('text'):''; let m=String(txt||'').replace(/[^0-9.]/g,''); const p=m.split('.'); m=p.shift()+(p.length?'.'+p.join(''):''); setAmt(m); }
     function sheetRate(){ if(sheetCur()==='KRW') return 1; const el=$('sFxRate'); const sh=$('sheet'); const r=el?parseFloat(el.value.replace(/,/g,'')):(sh?parseFloat(sh._rate):0); return r>0?r:0; }
     function sheetKRWAmount(){ return sheetCur()==='KRW' ? Math.round(sheetAmt()) : Math.round(sheetAmt()*sheetRate()); }
-    function onCurChange(){ const sh=$('sheet'); const prev=sh._cur; sh._cur=val('sCur');
+    function onCurChange(){ const sh=$('sheet'); sh._curUserSet=true; const prev=sh._cur; sh._cur=val('sCur');
       if(sh._cur==='KRW'){ sh._rate=1; renderFxRow(); return; }
       if(curInfo(sh._cur).dec===0) setAmt(String(Math.floor(sheetAmt())||''));
       if(prev!==sh._cur){ sh._rate=''; sh._fxSource='live'; }
@@ -325,6 +325,12 @@
         if(rate&&el){ el.value=rate; sh._rate=rate; sh._fxSource='live'; setFxStat('실시간 환율'); updateFxPreview(); }
         else setFxStat('자동 조회 실패 — 직접 입력'); }); }
     function onDateChange(){ if(sheetCur()!=='KRW') autoFetchRate(); }
+    // 목적별 가계부(여행 등) 선택 시, 그 PB의 기준 통화를 거래 통화 기본값으로 적용(사용자가 직접 고른 통화는 존중).
+    function onPbChange(){ renderSettleBlock(); applyPbCurrency(); }
+    function applyPbCurrency(){ const sh=$('sheet'); if(!sh||sh._curUserSet) return; const pbId=$('sPb')?val('sPb'):''; if(!pbId) return;
+      const pb=state.purposeBooks.find(x=>x.id===pbId); if(!pb) return; const bc=pb.baseCurrency||'KRW';
+      if(bc==='KRW'||sheetCur()===bc) return; const sel=$('sCur'); if(!sel) return;
+      sel.value=bc; sh._cur=bc; sh._rate=''; sh._fxSource='live'; if(curInfo(bc).dec===0) setAmt(String(Math.floor(sheetAmt())||'')); renderFxRow(); autoFetchRate(); }
     function guideNote(actual, text){ return '<div class="install-banner" style="background:'+(actual?'rgba(240,68,82,.1)':'var(--primary-weak)')+';color:'+(actual?'var(--expense)':'var(--primary)')+';">'+(actual?'🛒':'ℹ️')+' '+text+'</div>'; }
     function renderTxDyn(){
       const sh=$('sheet'); const fromV=sh._from, toV=sh._to;
@@ -1709,7 +1715,7 @@
         '<div class="field"><label>종료일(선택)</label><input type="date" class="input" id="pbEnd" value="'+(p&&p.endDate?p.endDate:'')+'"></div></div>';
       h+='<details class="adv"><summary>상세 설정</summary>';
       h+='<label style="font-size:13px;font-weight:600;color:var(--sub);">테마 색상</label><div class="chip-row" id="pbColors" style="margin:8px 0 12px;">'+CAT_PALETTE.map(c=>'<button class="chip" style="background:'+c+';width:32px;height:32px;border-radius:50%;border:2px solid '+(c===window._pbColor?'var(--text)':'transparent')+';" data-color="'+c+'" onclick="pickPbColor(this)"></button>').join('')+'</div>';
-      h+='<div class="form-2"><div class="field"><label>기준 통화</label><input class="input" id="pbCurrency" value="'+escapeHtml(p?(p.baseCurrency||'KRW'):'KRW')+'" placeholder="KRW"></div>'+
+      h+='<div class="form-2"><div class="field"><label>기준 통화</label><select class="input" id="pbCurrency">'+curOptions(p?(p.baseCurrency||'KRW'):'KRW')+'</select></div>'+
         '<div class="field"><label>커버 이미지 URL</label><input class="input" id="pbCover" value="'+escapeHtml(p?(p.coverImageUrl||''):'')+'" placeholder="https://"></div></div>';
       h+='<div class="menu-item" style="padding:8px 2px;"><span>정산 사용</span><div class="switch '+((p&&p.settlementEnabled)?'on':'')+'" id="pbSettle" onclick="this.classList.toggle(\'on\')"><i></i></div></div>';
       h+='<div class="field"><label>공개 범위</label><select class="input" id="pbVis">'+VISIBILITY.map(v=>'<option value="'+v[0]+'"'+(((p&&p.visibility===v[0])||(!p&&v[0]===defaultVisibility()))?' selected':'')+'>'+v[1]+'</option>').join('')+'</select></div>';
