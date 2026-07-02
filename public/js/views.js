@@ -649,33 +649,45 @@
       openSheet('친구', build());
       state._sheetRefresh=function(){ const b=$('sheetBody'); if(b) b.innerHTML=build(); };
     }
-    // ===== 친구들 피드('친구들' 탭) — 공개 친구 아바타(최근 등록순·오늘 무지개) + 친구 할일 목록 =====
-    function setFeedFriend(uid){ state._feedFriend=(state._feedFriend===uid?null:uid); renderTodoList(); }
+    // ===== 친구들 피드('친구들' 탭) = 인스타그램 스토리 줄 + 아래 친구 할일 피드 =====
     // 친구 할일 한 줄(읽기전용) — 우측에 누구 것인지 아바타
     function friendTodoRow(uid, t){ const nm=friendDisplayName(uid);
       const chk='<span class="tdchk'+(t.done?' on':'')+'" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>';
       return '<div class="tdrow">'+chk+'<span class="tdtitle'+(t.done?' done':'')+'">'+escapeHtml(t.title||'')+(t.repeat&&t.repeat!=='none'?' <span class="pill">🔁</span>':'')+(t.purposeBookId?' <span class="pill">📍</span>':'')+'</span>'+todoDueBadge(t)+'<span class="tdwho">'+avatarHtml(uid,nm,20)+'</span></div>'; }
+    // 스토리 열람 기록(localStorage) — {uid: 마지막 열람 시 그 사람 최신 createdAt}
+    function storySeenMap(){ try{ return JSON.parse(localStorage.getItem('storySeen')||'{}')||{}; }catch(e){ return {}; } }
+    function markStorySeen(uid, latestAt){ if(!uid||!latestAt) return; try{ const m=storySeenMap(); m[uid]=latestAt; localStorage.setItem('storySeen', JSON.stringify(m)); }catch(e){} }
+    function latestCreatedAt(list){ var m=''; (list||[]).forEach(function(t){ const c=(t&&t.createdAt)||''; if(c>m) m=c; }); return m; }
+    function storyItem(uid, nm, ring, opts){ opts=opts||{};
+      return '<button class="tdfr story ring-'+ring+(opts.me?' me':'')+'" onclick="'+opts.onclick+'" aria-label="'+escapeHtml(nm)+' 스토리">'+
+        '<span class="story-av">'+avatarHtml(uid,nm,52)+(opts.me?'<span class="story-add">＋</span>':'')+'</span>'+
+        '<span class="tdfrnm">'+(opts.me?'내 스토리':escapeHtml(nm))+'</span></button>'; }
     function renderFriendsFeed(){
       let h=todoScopeSeg();
       const pubUids=Object.keys(state.friends||{}).filter(function(u){ return state.friendPub && state.friendPub[u]; });
+      const today=ymd(new Date()); const seen=storySeenMap();
+      const order=friendFeedOrder(state.friendTodosByUid, pubUids, today);
+      // 스토리 줄: 내 스토리(맨 왼쪽) + 공개 친구(최근 등록순)
+      const myLatest=latestCreatedAt(state.myTodos), myToday=(myLatest.slice(0,10)===today);
+      const myRing=state.todoPublic?storyRing(myLatest, seen[state.uid], myToday):'none';
+      let strip=storyItem(state.uid, state.userName||'나', myRing, {me:true, onclick:'openMyStory()'});
+      strip+=order.map(function(r){ const uid=r.uid, nm=friendDisplayName(uid); const ring=storyRing(r.lastAt, seen[uid], r.todayReg);
+        return storyItem(uid, nm, ring, {onclick:"openFriendStory('"+uid+"')"}); }).join('');
+      h+='<div class="tdfriends"><div class="tdfr-scroll story-row">'+strip+'</div></div>';
       if(!pubUids.length){
-        h+='<div class="card"><div class="empty" style="padding:26px 12px;line-height:1.6;">공개한 친구가 아직 없어요.<br>더보기 → <b>친구</b>에서 친구를 추가하거나, 친구가 <b>할일 공개</b>를 켜면 여기에 떠요.</div></div>';
+        h+='<div class="card"><div class="empty" style="padding:22px 12px;line-height:1.6;">공개한 친구가 아직 없어요.<br>더보기 → <b>친구</b>에서 추가하거나, 친구가 <b>할일 공개</b>를 켜면 스토리에 떠요.</div></div>';
         $('content').innerHTML=h; return;
       }
-      const today=ymd(new Date());
-      const order=friendFeedOrder(state.friendTodosByUid, pubUids, today);
-      const sel=state._feedFriend && state.friendPub[state._feedFriend] ? state._feedFriend : null;
-      // 아바타 스트립(최근 등록순, 오늘 등록=무지개 테두리)
-      h+='<div class="tdfriends"><div class="tdfr-scroll">'+order.map(function(r){ const uid=r.uid, nm=friendDisplayName(uid);
-        return '<button class="tdfr'+(uid===sel?' sel':'')+(r.todayReg?' today':'')+'" onclick="setFeedFriend(\''+uid+'\')" aria-label="'+escapeHtml(nm)+' 할일">'+avatarHtml(uid,nm,44)+'<span class="tdfrnm">'+escapeHtml(nm)+'</span></button>'; }).join('')+'</div></div>';
-      if(sel) h+='<div class="chip-row" style="margin:2px 0 10px;"><button class="chip on">'+escapeHtml(friendDisplayName(sel))+'</button><button class="chip" onclick="setFeedFriend(\''+sel+'\')">전체 보기</button></div>';
-      // 친구 할일 목록(선택 친구 or 전체 합본) — 미완료 마감 임박순
-      const targets = sel? [sel] : order.map(function(r){ return r.uid; });
-      let rows=[]; targets.forEach(function(uid){ (state.friendTodosByUid[uid]||[]).forEach(function(t){ if(!t.done) rows.push({uid:uid,t:t}); }); });
+      // 아래 피드: 모든 공개 친구 미완료 할일 합본(마감 임박순)
+      let rows=[]; order.forEach(function(r){ (state.friendTodosByUid[r.uid]||[]).forEach(function(t){ if(!t.done) rows.push({uid:r.uid,t:t}); }); });
       rows.sort(function(a,b){ const ad=a.t.dueDate||'9999-99', bd=b.t.dueDate||'9999-99'; if(ad!==bd) return ad<bd?-1:1; return (b.t.createdAt||'').localeCompare(a.t.createdAt||''); });
-      h+='<div class="card" style="padding:4px 12px;">'+(rows.length?rows.map(function(x){ return friendTodoRow(x.uid,x.t); }).join(''):'<div class="empty" style="padding:24px 6px;">등록한 할일이 없어요</div>')+'</div>';
+      h+='<div class="sech"><span class="l">친구들 할일</span><span class="s">'+rows.length+'</span></div>';
+      h+='<div class="card" style="padding:4px 12px;">'+(rows.length?rows.map(function(x){ return friendTodoRow(x.uid,x.t); }).join(''):'<div class="empty" style="padding:24px 6px;">아직 등록한 할일이 없어요</div>')+'</div>';
       $('content').innerHTML=h;
     }
+    // 스토리 뷰어 — H2에서 구현. H1에선 자리표시자.
+    function openMyStory(){ toast('스토리 준비 중'); }
+    function openFriendStory(uid){ toast('스토리 준비 중'); }
     // nextDue/dueDiffDays는 js/util.js(순수함수·단위테스트)로 이관됨 — 전역으로 사용.
     function todoDueBadge(t){ if(!t.dueDate) return ''; const today=ymd(new Date());
       const diff=dueDiffDays(t.dueDate, today);
@@ -1269,8 +1281,10 @@
           '<button class="btn sm" onclick="pickProfilePhoto()">사진 변경</button>'+
           '<button class="btn sm ghost" onclick="removeProfilePhoto()">사진 삭제</button></div></div>';
       h+='<div class="field"><label>별명(이름)</label><input class="input" id="profName" value="'+escapeHtml(state.userName)+'" placeholder="가계부에 표시될 이름"></div>';
+      h+='<div class="field"><label>계정 이메일(아이디)</label><input class="input" value="'+escapeHtml(state.userEmail||'')+'" disabled></div>';
       h+='<div class="tx-sub" style="margin:2px 2px 14px;">사진은 256px로 줄여 저장돼요. 같은 그룹 멤버에게 보입니다.</div>';
       h+='<button class="btn" onclick="onSaveProfile()">저장</button>';
+      h+='<button class="btn ghost" style="margin-top:8px;" onclick="openPasswordChangeSheet()">비밀번호 변경</button>';
       openSheet('내 프로필', h);
     }
     function pickProfilePhoto(){
@@ -1281,6 +1295,14 @@
     }
     function removeProfilePhoto(){ window._profilePhoto=''; const a=$('profAvatar'); if(a) a.innerHTML=avatarHtml(state.uid, state.userName, 96, ''); }
     function onSaveProfile(){ const name=val('profName').trim(); if(!name){ toast('이름을 입력하세요', true); return; } saveProfile(name, window._profilePhoto); toast('프로필을 저장했어요'); closeSheet(); }
+    // 비밀번호 변경 시트(내 프로필 → 비밀번호 변경). 실제 변경 로직은 core.js changePassword().
+    function openPasswordChangeSheet(){
+      let h='<div class="field"><label>현재 비밀번호</label><input class="input" id="pwCur" type="password" autocomplete="current-password" placeholder="현재 비밀번호"></div>';
+      h+='<div class="field"><label>새 비밀번호</label><input class="input" id="pwNew" type="password" autocomplete="new-password" placeholder="6자 이상"></div>';
+      h+='<div class="field"><label>새 비밀번호 확인</label><input class="input" id="pwNew2" type="password" autocomplete="new-password" placeholder="다시 입력"></div>';
+      h+='<button class="btn" onclick="changePassword()">변경</button>';
+      openSheet('비밀번호 변경', h);
+    }
 
     // ===== 가계부(워크스페이스) 프로필: 이름 + 사진 =====
     // 사진 있으면 <img>, 없으면 이름 이니셜 그라데이션. photoOverride: 미리보기용
@@ -1315,51 +1337,8 @@
     function onSaveWsProfile(){ const name=val('wsName').trim(); if(!name){ toast('이름을 입력하세요', true); return; } saveWsProfile(name, window._wsPhoto); toast('가계부 프로필을 저장했어요'); closeSheet(); }
 
     // ===== 권한 / 공동 설정 =====
-    function openSharedSettings(){
-      const ws=state.wsMeta||{}, isGroup=ws.type==='group', owner=isWsOwner();
-      let h='<div class="card"><div class="row"><b>'+(isGroup?'👥 ':'🏠 ')+escapeHtml(ws.name||'가계부')+'</b><span class="pill">'+(isGroup?'그룹':'개인')+'</span></div>';
-      if(isGroup) h+='<div class="tx-sub" style="margin-top:6px;">멤버 '+Object.keys(ws.members||{}).length+'명'+(owner?' · 내가 소유자 👑':'')+'</div>';
-      h+='</div>';
-      if(isGroup) h+='<button class="btn ghost" onclick="openGroupManageSheet(\''+state.wsId+'\')">멤버 / 권한 관리</button>';
-      // 공동 기본값
-      const dv=defaultVisibility(), defOwnerMe=(state.wsSettings&&state.wsSettings.defaultOwner==='me');
-      h+='<div class="menu-group-title">공동 기본값</div><div class="card" style="padding:12px;">';
-      h+='<div class="field"><label>새 항목 기본 공개범위</label><select class="input" id="setDefVis" onchange="onDefVisChange()">'+
-         '<option value="full"'+(dv==='full'?' selected':'')+'>전체 공개</option>'+
-         '<option value="private"'+(dv==='private'?' selected':'')+'>개인만 보기</option></select></div>';
-      h+='<div class="menu-item" style="padding:8px 2px;"><span>새 항목 기본 소유자: <b>'+(defOwnerMe?'나':'공동')+'</b></span><div class="switch '+(defOwnerMe?'on':'')+'" id="setDefOwner" onclick="this.classList.toggle(\'on\');onDefOwnerChange()"><i></i></div></div>';
-      h+='<div class="tx-sub">계좌·카테고리·예산 등 새로 만들 때 기본값으로 적용돼요.</div></div>';
-      // 공개범위 개요
-      const priv=collectPrivateItems(); window._visPrivate=priv;
-      h+='<div class="menu-group-title">개인전용(공개 안 함) 항목 '+priv.length+'개</div>';
-      if(priv.length){
-        h+='<button class="btn ghost" onclick="makeAllPublic()">전체 공개로 전환</button>';
-        h+='<div class="card" style="padding:6px 10px;margin-top:8px;">'+priv.map((it,i)=>
-          '<div class="tx"><div class="tx-ic">'+svgWrap(CAT_SVG.tag)+'</div>'+
-          '<div class="tx-main"><div class="tx-title">'+escapeHtml(it.label)+'</div><div class="tx-sub">'+it.typeLabel+'</div></div>'+
-          '<button class="chip" onclick="makeItemPublic('+i+')">공개로</button></div>').join('')+'</div>';
-      } else {
-        h+='<div class="card"><div class="empty">개인전용으로 숨긴 항목이 없습니다</div></div>';
-      }
-      openSheet('권한 / 공동 설정', h);
-    }
-    function onDefVisChange(){ saveWsSettings({ defaultVisibility: val('setDefVis') }); toast('기본 공개범위 저장'); }
-    function onDefOwnerChange(){ const me=$('setDefOwner')&&$('setDefOwner').classList.contains('on'); saveWsSettings({ defaultOwner: me?'me':'common' }); setTimeout(openSharedSettings, 120); }
-    function collectPrivateItems(){
-      const out=[];
-      const push=(arr,typeLabel,icon,labelFn,pathFn)=>{ (arr||[]).forEach(it=>{ if((it.visibility||'full')==='private') out.push({ label:labelFn(it)||'(이름없음)', typeLabel, icon, path:pathFn(it) }); }); };
-      push(state.accounts,'결제수단','🏦',i=>i.name,i=>'accounts/'+i.id);
-      push(state.categories,'카테고리','🏷️',i=>i.name,i=>'categories/'+i.name);
-      push(state.budgets,'예산','💵',i=>i.categoryName||'총예산',i=>'budgets/'+i.id);
-      push(state.subscriptions,'구독','🔔',i=>i.name,i=>'subscriptions/'+i.id);
-      push(state.purposeBooks,'목적별','📒',i=>i.name,i=>'purposeBooks/'+i.id);
-      push(state.giftEvents,'경조사비','🎁',i=>i.personName,i=>'giftEvents/'+i.id);
-      push(state.loans,'대출','🏧',i=>i.name,i=>'loans/'+i.id);
-      push(state.recurring,'정기결제','🔁',i=>i.desc,i=>'recurring/'+i.ownerUid+'/'+i.id);
-      return out;
-    }
-    function makeItemPublic(idx){ const it=(window._visPrivate||[])[idx]; if(!it) return; db.ref(wp(it.path)).update({ visibility:'full' }); toast('공개로 전환했어요'); setTimeout(openSharedSettings, 150); }
-    function makeAllPublic(){ const list=window._visPrivate||[]; if(!list.length) return; confirmSheet(list.length+'개 항목을 모두 전체 공개로 바꿀까요?', ()=>{ list.forEach(it=>db.ref(wp(it.path)).update({ visibility:'full' })); toast('모두 공개로 전환'); setTimeout(openSharedSettings, 200); }); }
+    // (제거됨) '권한 · 공동 설정' 화면 openSharedSettings/onDefVisChange/onDefOwnerChange/collectPrivateItems/makeItemPublic/makeAllPublic
+    //  → 저가치·중복(멤버·권한 관리와 겹침)이라 삭제. 항목별 공개범위/소유자 선택과 기본값 폴백(core.js defaultVisibility 등)은 그대로 유지.
 
     // 더보기 화면 시안 SVG 아이콘(라인). 텍스트 라벨이 있어 장식용.
     const MORE_ICON={
@@ -1427,6 +1406,7 @@
       h+=gcell((typeof bagSvg==='function'?bagSvg({h:26}):''),'가방','openBag()');
       h+=gcell(MORE_ICON.members,'친구','openFriendsSheet()', (typeof state.friendReqs==='object'?Object.keys(state.friendReqs||{}).length:0)||0);
       h+=gcell(MORE_ICON.gear,'설정','openSettingsSheet()');
+      if(typeof isDev==='function' && isDev()) h+=gcell((typeof rainbowEggSvg==='function'?rainbowEggSvg({h:26}):MORE_ICON.gear),'개발자','openDevModeSheet()');
       h+='</div>';
       // 하단 고정: 로그아웃(가운데) → 홈 화면 설치 링크 → 버전
       h+='<div class="more-foot">';
@@ -1460,24 +1440,14 @@
         steps+'<button class="btn" onclick="closeSheet()" style="margin-top:16px;">확인</button>';
       openSheet('앱 설치', h);
     }
-    // ⚠️ 예전 이름 goHome(view)는 core.js의 랜딩 goHome()과 전역 충돌(로드 순서상 이 파일이 이겨 로고=오늘홈이 깨짐) → goLedgerList로 개명.
-    function goLedgerList(view){ state.homeView=view||'list'; go('calendar'); }
     // 설정 시트 — 더보기 하단 설정 항목 모음 + 코드 입력
     function openSettingsSheet(){
       const ws=state.wsMeta||{}, isGroup=ws.type==='group', memCount=Object.keys(ws.members||{}).length;
       let h='<div class="lst">';
       if(isGroup) h+=lrow(MORE_ICON.members,'멤버 · 권한 관리',"openGroupManageSheet('"+state.wsId+"')", memCount+'명');
-      h+=lrow(MORE_ICON.lock,'권한 · 공동 설정','openSharedSettings()');
-      h+=lrow(MORE_ICON.list,'거래내역',"closeSheet();goLedgerList('list')");
       h+=lrow(MORE_ICON.download,'CSV 내보내기','exportCSV()');
       h+=lrow(MORE_ICON.moon,'다크 모드','toggleTheme();openSettingsSheet()', state.theme==='dark'?'켜짐':'꺼짐');
       h+=lrow(MORE_ICON.cam,'펫캠','toggleDockHidden();openSettingsSheet()', (typeof dockHiddenLabel==='function'?dockHiddenLabel():''));
-      // 개발자 모드(등록된 개발자 이메일 전용 — cats.js DEV_EMAILS)
-      if(typeof isDev==='function' && isDev()){
-        h+=lrow(MORE_ICON.gear,'개발자 모드','toggleDevMode();openSettingsSheet()', devOn()?'켜짐':'꺼짐');
-        if(devOn()) h+=lrow(MORE_ICON.gift,'펫알 · 박스 설정','closeSheet();openDevGacha()');
-        if(devOn()) h+=lrow((typeof goldSvg==='function'?goldSvg({h:21}):MORE_ICON.cat),'펫 (추가 · 수정 · 삭제)','closeSheet();openDevPetManager()');
-      }
       h+='</div>';
       // 코드 입력(프로모/치트 코드)
       h+='<div class="sec-title" style="margin-top:22px;">코드 입력</div>';
@@ -1487,6 +1457,18 @@
       openSheet('설정', h);
     }
     function submitPromoCode(){ const el=$('promoCode'); if(!el) return; redeemCode(el.value); el.value=''; }
+    // 개발자 모드 시트 — 더보기 그리드의 무지개알 타일에서 진입(개발자 이메일 전용). 토글 + 하위 기능.
+    function openDevModeSheet(){
+      if(!(typeof isDev==='function' && isDev())){ toast('개발자 전용'); return; }
+      let h='<div class="lst">';
+      h+=lrow(MORE_ICON.gear,'개발자 모드','toggleDevMode();openDevModeSheet()', devOn()?'켜짐':'꺼짐');
+      if(devOn()){
+        h+=lrow(MORE_ICON.gift,'펫알 · 박스 설정','closeSheet();openDevGacha()');
+        h+=lrow((typeof goldSvg==='function'?goldSvg({h:21}):MORE_ICON.cat),'펫 (추가 · 수정 · 삭제)','closeSheet();openDevPetManager()');
+      }
+      h+='</div>';
+      openSheet('개발자 모드', h);
+    }
 
     // ===== 예산 =====
     const PERIOD_LABEL={ weekly:'주간', monthly:'월간', yearly:'연간', custom:'사용자지정' };

@@ -519,6 +519,17 @@
     /* 오늘 할일 등록한 친구 = 무지개 테두리(아바타 뒤 원형 conic 링) */
     .tdfr.today::before { content:''; position:absolute; top:-2px; left:50%; width:48px; height:48px; transform:translateX(-50%); border-radius:50%; z-index:0; background:conic-gradient(from 0deg,#ff5b5b,#ffb14d,#ffe24d,#4dff8f,#4dc6ff,#b04dff,#ff5b5b); }
     .tdfr .avatar { position:relative; z-index:1; }
+    /* 인스타그램식 스토리 링 */
+    .story-row { gap:14px; padding:6px 2px 8px; }
+    .tdfr.story { width:64px; }
+    .story-av { position:relative; display:inline-flex; padding:3px; border-radius:50%; }
+    .story-av .avatar { display:block; border:2px solid var(--card); box-sizing:border-box; }
+    .ring-today .story-av { background:conic-gradient(from 0deg,#ff5b5b,#ffb14d,#ffe24d,#4dff8f,#4dc6ff,#b04dff,#ff5b5b); }
+    .ring-unseen .story-av { background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); }
+    .ring-seen .story-av { background:var(--bd); }
+    .ring-none .story-av { background:transparent; }
+    .ring-none .story-av .avatar { border-color:var(--bd); }
+    .story-add { position:absolute; right:-1px; bottom:-1px; width:18px; height:18px; border-radius:50%; background:var(--primary); color:#fff; font-size:12px; line-height:1; display:flex; align-items:center; justify-content:center; border:2px solid var(--card); }
     .tdfr.sel .avatar { border-color:var(--primary); }
     .tdfrnm { font-size:10.5px; font-weight:700; color:var(--sub); max-width:48px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .tdfr.sel .tdfrnm { color:var(--text); }

@@ -136,6 +136,23 @@ test('friendFeedOrder: 최근 등록순 정렬 + 오늘 등록 판정 + 할일 �
   assert.strictEqual(rows[2].lastAt, '');                                // c는 없음
 });
 
+test('storyRing: 스토리 링 상태(none/seen/today/unseen)', () => {
+  assert.strictEqual(U.storyRing('', '', false), 'none');                                   // 할일 없음
+  assert.strictEqual(U.storyRing('2026-07-03T09:00:00Z', '2026-07-03T09:00:00Z', true), 'seen');   // 열람 == 최신
+  assert.strictEqual(U.storyRing('2026-07-03T09:00:00Z', '2026-07-03T10:00:00Z', true), 'seen');   // 열람 이후
+  assert.strictEqual(U.storyRing('2026-07-03T09:00:00Z', '', true), 'today');               // 오늘·미열람
+  assert.strictEqual(U.storyRing('2026-07-03T09:00:00Z', '2026-07-03T08:00:00Z', false), 'unseen'); // 새 등록·미열람
+});
+
+test('relTime: 상대 시간 표기', () => {
+  const now = new Date('2026-07-03T12:00:00Z').getTime();
+  assert.strictEqual(U.relTime('2026-07-03T11:59:40Z', now), '방금');
+  assert.strictEqual(U.relTime('2026-07-03T11:30:00Z', now), '30분 전');
+  assert.strictEqual(U.relTime('2026-07-03T09:00:00Z', now), '3시간 전');
+  assert.strictEqual(U.relTime('2026-07-01T12:00:00Z', now), '2일 전');
+  assert.strictEqual(U.relTime('', now), '');
+});
+
 test('personKey: 멤버는 uid, 레거시/공동은 이름', () => {
   assert.strictEqual(U.personKey({ userUid: 'uid_123', user: '철수' }), 'uid_123');   // uid 우선
   assert.strictEqual(U.personKey({ user: '철수' }), '철수');                            // 레거시(uid 없음)

@@ -89,6 +89,22 @@
     rows.sort(function (a, b) { if (a.lastAt !== b.lastAt) return a.lastAt < b.lastAt ? 1 : -1; return String(a.uid).localeCompare(String(b.uid)); });
     return rows;
   }
+  // 스토리 링 상태(인스타그램식): none=할일 없음, seen=마지막 열람이 최신 등록 이후, today=오늘 등록·미열람(무지개), unseen=할일 있음·미열람.
+  function storyRing(latestAt, seenAt, todayReg) {
+    if (!latestAt) return 'none';
+    if (seenAt && seenAt >= latestAt) return 'seen';
+    return todayReg ? 'today' : 'unseen';
+  }
+  // 상대 시간 표기(now는 ms로 주입 → 테스트 가능). '방금/N분 전/N시간 전/N일 전'.
+  function relTime(fromIso, nowMs) {
+    if (!fromIso) return '';
+    const t = new Date(fromIso).getTime(); if (isNaN(t)) return '';
+    const min = Math.floor(Math.max(0, (nowMs - t)) / 60000);
+    if (min < 1) return '방금';
+    if (min < 60) return min + '분 전';
+    const hr = Math.floor(min / 60); if (hr < 24) return hr + '시간 전';
+    return Math.floor(hr / 24) + '일 전';
+  }
 
   // ===== 미션(습관) 순수 헬퍼 — 오늘 홈·미션 탭 공용. 날짜는 'YYYY-MM-DD'(KST 키) 문자열, addDays 재사용. =====
   // 체크인 로그 날짜 배열 → 연속 기록(current: 오늘 또는 어제부터 이어진 일수 / best: 전체 최장 연속).
@@ -141,7 +157,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot };
+  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);
