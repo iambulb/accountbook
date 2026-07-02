@@ -750,10 +750,21 @@
     // 걷기 스프라이트 애니메이션 주기(초): 발 놀림이 실제 이동속도에 맞도록 속도에 반비례 → 미끄러짐(무빙워크) 방지, 자연스러운 걸음.
     function walkDur(v, hh){ const stride=0.42*(hh||40), px=Math.max(0.001, v*58); return Math.max(0.45, Math.min(1.5, stride/px)).toFixed(2); }
     function setWalkDur(a){ if(a.spr){ const sc=a.el.querySelector('.cspr'); if(sc) sc.style.setProperty('--wdur', walkDur(a.v, a.hh)+'s'); } }
-    // 액터의 위치(x)·올림(lift)·방향(scaleX)을 transform 하나로 — 전부 합성(메인스레드 페인트 0)이라 걸을 때 깜빡이지 않음.
+    // 펫 원근(캠/방): 배치칸 행처럼 펫도 앞뒤(깊이 depth 0=앞·가까움 ~ 1=뒤·멂)로 움직인다.
+    //  · 가까우면 크게(PET_NEAR_SCALE)·앞으로(z↑), 멀면 작게(PET_FAR_SCALE)·뒤로(z↓) → 가구와 z-index로 상호 가림.
+    //  · 요청대로 근거리 확대는 넉넉히, 원거리 축소는 적당히만(FAR를 너무 낮추지 않음).
+    const PET_NEAR_SCALE=1.28, PET_FAR_SCALE=0.86;
+    function petScale(depth){ return PET_FAR_SCALE + (PET_NEAR_SCALE-PET_FAR_SCALE)*(1-depth); }
+    // depth로부터 배율·바닥올림(rise)·z-index를 액터에 반영. z는 가구 frontRow(=12-depth*11)와 같은 척도라 상호 가림이 맞물린다.
+    function applyDepth(a){ const d=a.depth=Math.max(0,Math.min(1,a.depth||0));
+      a.scale=petScale(d); a.rise=d*(a.riseMax||0);
+      const z=Math.max(1, Math.round(12 - d*11)); if(a._z!==z){ a._z=z; a.el.style.zIndex=z; } }
+    // 액터의 위치(x)·올림(lift)·깊이(scale/rise)·방향(scaleX)을 transform 하나로 — 전부 합성(페인트 0).
+    // transform-origin:center bottom 이라 배율은 발밑 기준(발이 바닥선에 유지)·좌우반전은 중심축. 시각 중심 x=a.x+sw/2는 배율과 무관하게 유지.
     // ⚠️ left/top은 절대 매 프레임 건드리지 않는다(레이아웃·페인트 유발). x는 정수 px 스냅.
-    function setXform(a, dir, lift){ const d=(dir!=null?dir:a.dir), t=Math.round(-(lift!=null?lift:(a.lift||0)));
-      a.el.style.transform='translate3d('+Math.round(a.x)+'px,'+t+'px,0) scaleX('+d+')'; }
+    function setXform(a, dir, lift){ const d=(dir!=null?dir:a.dir), s=(a.scale||1),
+        up=Math.round((a.rise||0)+(lift!=null?lift:(a.lift||0)));
+      a.el.style.transform='translate3d('+Math.round(a.x)+'px,'+(-up)+'px,0) scale('+(s*d)+','+s+')'; }
     // ⚠️ 핵심 불변식(INVARIANT): "정면(south) 이미지로 이동 금지".
     // 스프라이트 액터의 이동/정지 비주얼(.cspr)은 반드시 아래 두 함수로만 바꾼다 — 모든 상태 전환(roam·pause)과
     // 재빌드(buildActors)가 이 두 함수를 거치게 해, DOM 재사용으로 남은 정지스틸(.idle)이 이동 중에 보이는 버그를 원천 차단.
@@ -778,11 +789,15 @@
       const W=stage.clientWidth||160, hh=+stage.dataset.hh||30;
       const hasRoom = stage.id==='crStage' || !!stage.closest('.cd-room');
       const isDock = stage.id!=='crStage';
-      // 가구 위치(발자국 중앙 x) + 렌더 높이(fh) — 상호작용 시 올라갈 높이 계산에 사용
+      // 방 높이 → depth 1(맨 뒤)에서 발이 올라가는 최대 px(rise). 가구 바닥 매핑(bottom%=3+depth*46/38)과 같은 척도라 같은 행에 서면 발높이가 맞는다.
+      const roomEl = stage.closest('.catroom') || stage.closest('.cd-room');
+      const roomH = (roomEl && roomEl.clientHeight) || (isDock?110:244);
+      const riseMax = roomH*(isDock?0.38:0.46);
+      // 가구 위치(발자국 중앙 x)·렌더 높이(fh)·깊이(depth) — 상호작용 시 올라갈 높이·앞뒤 정렬(가림)에 사용
       const props = hasRoom ? placedList().map(p=>{ const foot=itemFoot(p.itemId), depth=(12-(p.r+foot.h-1))/11;   // propMarkup과 동일(앞줄 기준)
         const fh=furnRoomH(p.itemId, isDock, depth);   // 렌더 높이와 동일 → 캣타워 층 lift가 실제 높이에 맞음
         // 가구는 좌측하단 앵커 → 그래픽 중앙 x = 좌측 edge + fh*aspect/2. 고양이가 이 중앙에 서서 상호작용(캣타워 중앙에 앉기).
-        const leftEdge=(p.c-1)/12*W; return { x: leftEdge + fh*furnAspect(p.itemId)/2, itemId:p.itemId, fh, key:p.key }; }) : [];
+        const leftEdge=(p.c-1)/12*W; return { x: leftEdge + fh*furnAspect(p.itemId)/2, itemId:p.itemId, fh, key:p.key, depth }; }) : [];
       // 고양이마다 성격(속도·유휴빈도·방향전환·가구선호)을 랜덤 부여 → 개별적으로 움직임
       // 스프라이트 고양이는 정사각(폭=높이), SVG 고양이는 가로세로비 ~26/14.
       return acts.map(el=>{ const id=el.getAttribute('data-cat'), spr=hasSprite(id), fw=!!(spr&&PET_SPRITES[id]&&PET_SPRITES[id].frontWalk);
@@ -791,10 +806,11 @@
         const a={ el, id, spr, frontWalk:fw, x:(parseFloat(el.style.left)||0), dir:Math.random()<0.5?-1:1, _pdir:0,
         v:v, t:Math.random()*6, frame:0, fc:Math.random()*170, W, hh:ah,
         sw:(spr?ah:Math.round(ah*26/14)), props, lift:0,
+        depth:Math.random(), vz:0, riseMax:riseMax, _z:0,   // 앞뒤(깊이) 원근: 배치칸 행처럼 앞뒤로 움직여 가까/멀
         mode:'roam', pause:0, goal:null, pose:null, resKey:null, resFloor:null,
         // 유휴(그 자리에 멈춰 정면 보기) — 자주·오래 서서 정면을 보도록(poseDur에서 시간 늘림)
         idle:0.0032+Math.random()*0.005, turn:0.004+Math.random()*0.010, seek:0.005+Math.random()*0.009, cool:0 };
-        setWalkDur(a); el.style.left='0px'; setXform(a); a._pdir=a.dir;   // 위치·올림·방향 전부 transform(합성). left는 0 고정 → 걷는 동안 메인스레드 페인트 0
+        setWalkDur(a); el.style.left='0px'; applyDepth(a); setXform(a); a._pdir=a.dir;   // 위치·올림·깊이·방향 전부 transform(합성). left는 0 고정 → 걷는 동안 메인스레드 페인트 0
         // 액터는 항상 'roam'(이동)으로 시작. DOM 재사용(markCatDirty·무대 재부착)으로 남아있던 정지스틸(.idle)을
         // 반드시 이동 표시로 초기화 → "정면 이미지로 이동" 버그 원천 차단.
         actorShowMoving(a);
@@ -824,13 +840,14 @@
       a.mode='pause'; a.pose=s.pose; a.pause=s.dur; a.cool=1700; a.lift=s.lift||0;
       // 고양이 중심을 가구 그래픽 중앙(goal.x)에 맞춤(+옆 오프셋 dx). 캣타워/방석은 dx=0이라 정중앙에 앉음.
       a.x=Math.max(2, Math.min(a.W-a.sw, goal.x - a.sw/2 + (s.dx||0)));
+      if(goal.depth!=null) a.depth=goal.depth; applyDepth(a);   // 가구와 같은 깊이에 서서 크기·앞뒤 가림이 맞물리게
       const dir=a.spr?1:a.dir;
       if(a.spr) actorShowStill(a, s.face);
       else a.el.innerHTML=catPose(id, s.pose, {h:a.hh});
       setXform(a, dir); a._pdir=dir;   // 위치+lift(위에서 설정)+flip을 정적 transform 하나로
     }
     function enterPose(a, id, pose){ a.mode='pause'; a.pose=pose; a.pause=poseDur(pose); a.cool=1400;
-      a.lift=0;
+      a.lift=0; applyDepth(a);   // 현재 깊이의 배율/올림/z 반영(그 자리에서 쉼 — 깊이는 유지)
       if(a.spr){ // 멈춰서 쉴 땐 항상 정면(south)을 본다. 이미지가 정방향이라 플립 없음(scaleX(1)).
         actorShowStill(a, 'south'); setXform(a, 1); a._pdir=1; }
       else { a.el.innerHTML=catPose(id, pose, {h:a.hh});
@@ -851,20 +868,27 @@
         if(a.mode==='roam' && Math.random()<a.turn){ a.dir*=-1; }
         // 가끔 속도 변화(개별) — 바뀐 속도에 맞춰 걷기 주기도 갱신(미끄러짐 방지)
         if(a.mode==='roam' && Math.random()<0.003){ a.v=0.14+Math.random()*0.18; setWalkDur(a); }
+        // 앞뒤(깊이) 배회 — 가끔 앞/뒤 속도를 새로 정하고 천천히 이동해 가까워졌다 멀어졌다(원근·가림 변화)
+        if(a.mode==='roam'){
+          if(a.cool<=0 && Math.random()<0.006) a.vz=(Math.random()*2-1)*0.0002;   // depth/ms (약 5초에 전체 범위)
+          if(a.vz){ a.depth+=a.vz*dt; if(a.depth<=0){a.depth=0;a.vz=Math.abs(a.vz);} else if(a.depth>=1){a.depth=1;a.vz=-Math.abs(a.vz);} }
+        }
         // 가구로 이동 결정(가구 있을 때, 쿨다운 후)
         if(a.mode==='roam' && a.props.length && a.cool<=0 && Math.random()<a.seek){
           const avail=a.props.filter(p=>occupantsOf(p.key,a).n < (p.itemId==='tower'?3:1));   // 빈 가구만(캣타워는 남은 층 있으면)
           if(avail.length){ const g=avail[Math.floor(Math.random()*avail.length)]; a.resKey=g.key;
             if(g.itemId==='tower'){ const used=occupantsOf(g.key,a).floors; a.resFloor=[0,1,2].find(f=>!used[f]); if(a.resFloor==null) a.resFloor=0; } else a.resFloor=null;
             a.goal=g; a.mode='goal'; } }
-        // 가구 도착 판정은 "고양이 중심"(a.x+sw/2) 기준 → 가구 그래픽 중앙(goal.x)에 정확히 서게
-        if(a.mode==='goal' && a.goal){ const cx=a.x+a.sw/2; a.dir=(a.goal.x>cx)?1:-1; if(Math.abs(a.goal.x-cx)<6){ enterInteract(a, id, a.goal); a.goal=null; return; } }
+        // 가구 도착 판정은 "고양이 중심"(a.x+sw/2) 기준 → 가구 그래픽 중앙(goal.x)에 정확히 서게. 깊이도 가구 쪽으로 서서히 맞춰 걸어감(급격한 크기변화 방지).
+        if(a.mode==='goal' && a.goal){ const cx=a.x+a.sw/2; a.dir=(a.goal.x>cx)?1:-1;
+          if(a.goal.depth!=null){ const dd=a.goal.depth-a.depth; a.depth+=Math.sign(dd)*Math.min(Math.abs(dd), 0.0009*dt); }
+          if(Math.abs(a.goal.x-cx)<6 && Math.abs((a.goal.depth==null?a.depth:a.goal.depth)-a.depth)<0.03){ enterInteract(a, id, a.goal); a.goal=null; return; } }
         a.x += a.dir*a.v*dt*0.06;
         const max=a.W-a.sw;
         if(a.x<2){ a.x=2; a.dir=1; if(a.mode==='goal'){a.mode='roam';a.goal=null;releaseRes(a);} } else if(a.x>max){ a.x=max; a.dir=-1; if(a.mode==='goal'){a.mode='roam';a.goal=null;releaseRes(a);} }
         if(!a.spr){ a.fc+=dt; if(a.fc>170){ a.fc=0; a.frame^=1; a.el.innerHTML=catSide(id,a.frame,{h:a.hh}); } }   // SVG 폴백: 2프레임 교대(스프라이트는 필름 csprFilm이 처리)
-        // 이동·방향을 transform 하나로(translate3d+scaleX) — 전부 합성, 매 프레임 페인트 0 → 깜빡임 근본 제거
-        setXform(a); a._pdir=a.dir;
+        // 이동·방향·깊이를 transform 하나로(translate3d+scale) — 전부 합성, 매 프레임 페인트 0 → 깜빡임 근본 제거
+        applyDepth(a); setXform(a); a._pdir=a.dir;
       });
     }
     function catLoop(ts){
@@ -888,10 +912,12 @@
         a.lift=Math.round((a.hh||40)*0.3); a.el.classList.add('cdgrab');
         if(a.spr) actorShowStill(a,'south'); setXform(a, a.spr?1:a.dir);
       };
-      const mv=(ev)=>{ if(!started){ if(Math.abs(ev.clientX-sx)>3) begin(); else return; }   // 살짝만 끌어도 바로 집힘(꾹 누를 필요 없음)
+      const mv=(ev)=>{ if(!started){ if(Math.abs(ev.clientX-sx)>3||Math.abs(ev.clientY-e.clientY)>3) begin(); else return; }   // 살짝만 끌어도 바로 집힘(꾹 누를 필요 없음)
         ev.preventDefault(); const r=stage.getBoundingClientRect(), W=a.W||r.width;
         let x=ev.clientX-r.left-a.sw/2; x=Math.max(2, Math.min(W-a.sw, x));
         if(ev.clientX<lastX-1) a.dir=-1; else if(ev.clientX>lastX+1) a.dir=1; lastX=ev.clientX;
+        // 세로로 끌면 앞뒤(깊이) 이동: 위로 = 멀리(작게·뒤), 아래로 = 가까이(크게·앞).
+        const ry=r.bottom-ev.clientY; a.depth=Math.max(0,Math.min(1, ry/(a.riseMax||1))); applyDepth(a);
         a.x=x; setXform(a, a.spr?1:a.dir);
       };
       const cleanup=()=>{ window.removeEventListener('pointermove',mv); window.removeEventListener('pointerup',end); window.removeEventListener('pointercancel',end);
@@ -1041,15 +1067,24 @@
         }).join('');
         h+='<div class="note">펫을 <b>탭하면 선택</b>돼요 — 카드가 강조되고 미리보기 펫이 <b>옆으로 걸어다녀요</b>. <b>중복 소유</b> 펫은 종당 1마리, 구매하면 자동으로 집에 들어와 걸어다녀요.</div>';
       } else {
-        h+=ITEM_CATALOG.map(it=>{
-          const enough=coins()>=it.price;
-          const act=enough?'<button class="buy" aria-label="'+it.name+' 구매('+it.price+' 은화)" onclick="buyItem(\''+it.id+'\')">구매</button>':'<button class="buy dis" disabled>'+(it.price-coins())+' 부족</button>';
+        // 등급 낮은 것부터. 특별(epic) 이상 가구는 상점 직접 구매 불가 → 랜덤박스(가챠) 전용 표기.
+        const items=ITEM_CATALOG.slice().sort((a,b)=>tierRank(itemTierOf(a.id))-tierRank(itemTierOf(b.id)));
+        h+=items.map(it=>{
+          const enough=coins()>=it.price, gachaOnly=isGachaOnlyItem(it.id);
+          let act, priceHtml;
+          if(gachaOnly){
+            priceHtml='<span class="price gachaonly">'+boxSvg({h:16})+'<b class="tier-limited">랜덤박스 전용</b></span>';
+            act='<button class="buy ghost" aria-label="'+it.name+'은 랜덤박스에서 뽑기" onclick="setShopSub(\'event\')">랜덤박스 뽑기</button>';
+          } else {
+            priceHtml='<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+it.price+'</span>';
+            act=enough?'<button class="buy" aria-label="'+it.name+' 구매('+it.price+' 은화)" onclick="buyItem(\''+it.id+'\')">구매</button>':'<button class="buy dis" disabled>'+(it.price-coins())+' 부족</button>';
+          }
           return '<div class="shopcard"><div class="thumb"><span class="furnfit">'+furnSvg(it.id,{fit:true})+'</span></div>'+
             '<div class="meta"><b>'+it.name+'</b><div class="desc">'+it.desc+'</div>'+
-            '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+it.price+'</span></div>'+
+            priceHtml+'</div>'+
             '<div class="act">'+act+'<span class="qty">보유 '+itemQty(it.id)+'</span></div></div>';
         }).join('');
-        h+='<div class="note"><b>수량 허용</b> 가구는 여러 개 살 수 있어요. 구매 후 <b>배치</b> 탭에서 격자에 놓습니다.</div>';
+        h+='<div class="note"><b>수량 허용</b> 가구는 여러 개 살 수 있어요. <b>특별 등급 이상</b>(펫하우스·캣타워)은 <b>랜덤박스</b>로만 얻어요. 구매 후 <b>배치</b> 탭에서 격자에 놓습니다.</div>';
       }
       return h;
     }
@@ -1060,6 +1095,7 @@
     function itemRemaining(id){ return itemQty(id)-itemPlaced(id); }
     function buyItem(id){
       const it=ITEM_CATALOG.find(x=>x.id===id); if(!it) return;
+      if(isGachaOnlyItem(id)){ toast('이 등급은 랜덤박스(가챠)로만 얻을 수 있어요'); setShopSub('event'); return; }
       if(coins()<it.price){ toast((it.price-coins())+' 은화 부족', true); return; }
       gameRef().transaction(g=>{ g=normalizeGame(g); if(g.coins<it.price) return g;
         g.coins-=it.price; g.owned.items[id]=g.owned.items[id]||{qty:0,boughtAt:new Date().toISOString()};
@@ -1201,7 +1237,7 @@
     // @gen:pet-tier — 자동생성(tools/build_pets.py). tools/pets.json 의 tier 편집 후 재실행.
     const CAT_TIER = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'epic', cat_fluffy:'rare', cat_tuxedo:'legend', cat_chaos:'legend', cat_siamese:'legend', cat_bengal:'uncommon', cat_fold:'rare', cat_bora:'epic', cat_choco:'uncommon', cat_kitten:'normal', cat_pink:'legend' };
     // @gen:end
-    const ITEM_TIER = { cushion:'normal', bowl:'uncommon', scratcher:'rare', tower:'epic' };
+    const ITEM_TIER = { cushion:'normal', bowl:'uncommon', scratcher:'rare', pethouse:'epic', tower:'legend' };
     // 등급별 상점 가격(은화) — 확률(60/20/15/3.8/1/0.2%)에 맞춰 등급이 오를수록 약 2배씩.
     // 알 100은화(+금화1·중복은 그 펫 가격의 20% 환급) 대비, 흔한 등급은 알보다 싸게·희귀 등급은 비싸게 → 직접구매 vs 뽑기 선택 성립.
     // CAT_TIER를 단일 소스로 삼아 PET_CATALOG.price를 산정(새 고양이도 등급만 지정하면 자동 가격).
@@ -1221,6 +1257,8 @@
     function tierRank(tier){ return Math.max(0, TIER_ORDER.indexOf(tier||'normal')); }
     function petTierOf(id){ return effCatTier()[id]||'normal'; }
     function isGachaOnlyCat(id){ return tierRank(petTierOf(id)) >= tierRank('epic'); }
+    function itemTierOf(id){ return effItemTier()[id]||'normal'; }
+    function isGachaOnlyItem(id){ return tierRank(itemTierOf(id)) >= tierRank('epic'); }   // 특별↑ 가구는 랜덤박스 전용
     // 이벤트 하단: 펫알·랜덤박스 구성(등급별 목록)과 확률을 접이식으로 표시.
     function gachaInfoHtml(){
       const tiers=effTiers(), catBy=effCatTier(), itemBy=effItemTier();
