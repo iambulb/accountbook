@@ -399,7 +399,16 @@
       { id:'report', period:'week', name:'리포트 확인', reward:10, icon:'<path d="M5 20V11M12 20V5M19 20v-6"/>',
         check:()=> reportSeenThisWeek() }
     ];
-    const ALL_MISSIONS = DAILY_MISSIONS.concat(WEEKLY_MISSIONS);
+    // 업적(1회성). period:'once' → 영구 저장(초기화 없음). 앱 기능을 써보게 유도하고 은화 보상.
+    const ACHIEVEMENTS = [
+      { id:'ach_first',  period:'once', name:'첫 거래 기록',        reward:10, icon:'<path d="M12 4v16M8 8l4-4 4 4"/>', check:()=> (state.transactions||[]).length>0 },
+      { id:'ach_cats3',  period:'once', name:'고양이 3마리 모으기', reward:30, icon:'<circle cx="9" cy="11" r="2.5"/><circle cx="15" cy="11" r="2.5"/><path d="M4 20c0-3 2.5-5 8-5s8 2 8 5"/>', check:()=> Object.keys((state.game&&state.game.owned&&state.game.owned.cats)||{}).length>=3 },
+      { id:'ach_travel', period:'once', name:'여행 가계부 만들기',  reward:20, icon:'<path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/>', check:()=> (state.purposeBooks||[]).some(p=>p.type==='travel'||p.type==='gathering') },
+      { id:'ach_fx',     period:'once', name:'해외통화로 첫 지출',  reward:20, icon:'<circle cx="12" cy="12" r="9"/><path d="M9 9h6M9 15h6M12 6v12"/>', check:()=> (state.transactions||[]).some(t=>t.currency&&t.currency!=='KRW') },
+      { id:'ach_budget', period:'once', name:'첫 예산 설정',        reward:15, icon:'<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 12h8"/>', check:()=> (state.budgets||[]).length>0 },
+      { id:'ach_settle', period:'once', name:'첫 정산 거래',        reward:25, icon:'<path d="M7 8h10M7 12h10M7 16h6"/>', check:()=> (state.transactions||[]).some(t=>t.settlementIncluded===true) }
+    ];
+    const ALL_MISSIONS = DAILY_MISSIONS.concat(WEEKLY_MISSIONS).concat(ACHIEVEMENTS);
 
     // ---- 픽셀 렌더 ----
     function pxSvg(map, pal, opt){
@@ -573,7 +582,7 @@
 
     // 미션 지급(원자적·멱등): 게임 노드 트랜잭션 1회로 "수령 기록 + 은화 지급"을 동시에.
     // 같은 날 같은 미션은 이미 claimed면 변화 없음 → 중복 지급 불가.
-    function missionKey(m){ return m.period==='week'?kstWeekKey():kstDayKey(); }
+    function missionKey(m){ return m.period==='once'?'once':(m.period==='week'?kstWeekKey():kstDayKey()); }
     function missionClaimed(m){ const key=missionKey(m); const pd=(state.game&&state.game.missions[key])||{}; return !!(pd[m.id]&&pd[m.id].claimed); }
     function grantMission(m){
       const key=missionKey(m);
@@ -1416,6 +1425,8 @@
       h+=DAILY_MISSIONS.map(missionRow).join('');
       h+='<div class="sech"><span class="l">주간 미션</span><span class="s">월요일 초기화</span></div>';
       h+=WEEKLY_MISSIONS.map(missionRow).join('');
+      h+='<div class="sech"><span class="l">업적</span><span class="s">한 번만</span></div>';
+      h+=ACHIEVEMENTS.map(missionRow).join('');
       h+='<div class="note" style="margin-top:12px;"><b>은화</b>로 상점에서 고양이·가구를 사세요. 일일은 자정, 주간은 월요일(KST) 초기화됩니다.</div>';
       return h;
     }
