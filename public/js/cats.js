@@ -953,7 +953,7 @@
           const owned=ownsCat(c.id), sel=_shopSelCat===c.id, gachaOnly=isGachaOnlyCat(c.id), enough=coins()>=c.price;
           let act, priceHtml;
           if(gachaOnly){
-            priceHtml='<span class="price gachaonly">🥚 펫알 전용</span>';
+            priceHtml='<span class="price gachaonly">'+eggSvg(0,{h:16})+'<b class="tier-limited">펫알 전용</b></span>';
             act= owned ? owntag : '<button class="buy ghost" aria-label="'+c.name+'은 펫알에서 뽑기" onclick="event.stopPropagation();setShopSub(\'event\')">펫알 뽑기</button>';
           } else {
             priceHtml='<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+c.price+'</span>';
