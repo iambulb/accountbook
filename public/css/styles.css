@@ -103,9 +103,12 @@
     }
     .topbar h2 { font-size:21px; font-weight:800; letter-spacing:-.02em; }
     /* 좌상단 브랜드: 앱 아이콘 + '알뜰' 도트 워드마크(현재화면 제목 대체) */
-    .brand { display:flex; align-items:center; gap:8px; }
+    .brand { display:flex; align-items:center; gap:8px; position:relative; }
     .brand-ic { width:28px; height:28px; border-radius:7px; display:block; image-rendering:pixelated; }
     .brand-wm { height:19px; width:auto; display:block; image-rendering:pixelated; }
+    /* 오늘 미처리 있을 때 로고 위 작은 점(숫자 없음). 빨강 회피 → --income 톤, 카드색 링으로 분리 */
+    .home-badge { position:absolute; top:-2px; left:20px; width:7px; height:7px; border-radius:50%; background:var(--income); box-shadow:0 0 0 2px var(--card); }
+    .home-badge[hidden] { display:none; }
     .icon-btn { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:17px; background:var(--soft); color:var(--text2); position:relative; }
     .icon-btn svg { width:18px; height:18px; }
     /* 펫캠 토글: 꺼짐 = 흐리게 + 대각선 슬래시 */
@@ -283,8 +286,16 @@
     .hmrow .hmok { flex:none; font-size:12px; font-weight:800; color:var(--income); }
     .homedone { text-align:center; padding:26px 18px; }
     .homedone .hd-emoji { font-size:40px; }
+    .homedone .hd-cat { display:flex; justify-content:center; }
+    .homedone .hd-cat .catpx, .homedone .hd-cat .px { display:block; }
     .homedone .hd-tit { font-size:17px; font-weight:800; margin-top:6px; }
     .homedone .hd-sub { font-size:13px; color:var(--sub); font-weight:500; margin:6px 0 14px; }
+    .homedone.empty .hd-emoji { opacity:.85; }
+    /* 완료 축하 1회 진입 연출(고양이+카드 팝). shouldCelebrateOnce가 celebrate 클래스를 하루 1회만 부여. reduced-motion이면 미부여+전역 media로 이중 차단 */
+    .homedone.celebrate { animation:homePop .5s cubic-bezier(.2,1.5,.4,1); }
+    .homedone.celebrate .hd-cat { animation:homeCatPop .6s cubic-bezier(.2,1.6,.35,1); }
+    @keyframes homePop { 0%{ transform:scale(.96); opacity:.4; } 100%{ transform:scale(1); opacity:1; } }
+    @keyframes homeCatPop { 0%{ transform:scale(.3) translateY(8px); } 60%{ transform:scale(1.12) translateY(0); } 100%{ transform:scale(1); } }
     .homeledger { cursor:pointer; }
     .homeledger .hl-row { display:flex; align-items:center; justify-content:space-between; }
     .homeledger .hl-row.sub { margin-top:6px; }

@@ -1055,6 +1055,19 @@
       return '<div class="hmrow">'+chk+'<span class="hmname'+(o.done?' done':'')+'">'+escapeHtml(o.name)+'</span>'+
         (o.done?'<span class="hmok">완료</span>':'<span class="hmrw"><span class="ci">'+coinSvg({h:14})+'</span>+'+o.reward+'</span>')+'</div>';
     }
+    // 오늘 남은 일(로고 배지·홈 완료카드 공용 단일 소스) — util.todayPending에 현재 브라우저 상태를 모아 넘김(새 조회 없음).
+    function todayPendingNow(){
+      var daily=(typeof DAILY_MISSIONS!=='undefined')?DAILY_MISSIONS:[];
+      var customs=(typeof customMissionList==='function')?customMissionList():[];
+      var flags=daily.map(function(m){return missionClaimed(m);}).concat(customs.map(function(m){return customCheckedToday(m.id);}));
+      var todos=(typeof scopedTodos==='function')?scopedTodos():[];
+      return todayPending(flags, todos, ymd(new Date()));
+    }
+    // 완료 축하 연출은 하루 1회만(renderHome이 재렌더마다 재실행되므로 플래그로 반복 재생 차단). reduced-motion이면 정적.
+    function shouldCelebrateOnce(){
+      if(typeof reducedMotion==='function' && reducedMotion()) return false;
+      var k=ymd(new Date()); if(state._homeDoneCelebrated===k) return false; state._homeDoneCelebrated=k; return true;
+    }
     function renderHome(){
       const c=$('content'); if(!c) return;
       const hh=new Date().getHours(); const greet=hh<11?'좋은 아침이에요':(hh<18?'오늘도 알뜰하게':'오늘 하루 마무리해요');
@@ -1068,16 +1081,22 @@
         .sort(function(a,b){ return (a.dueDate||'').localeCompare(b.dueDate||''); }).slice(0,4);
       const todaySpend=(typeof actualSpend==='function')?actualSpend((state.transactions||[]).filter(function(t){return (t.date||'').slice(0,10)===today;})):0;
       const monthSpend=(typeof actualSpend==='function'&&typeof monthTx==='function')?actualSpend(monthTx(state.month)):0;
-      const missionsDone = st.total===0 || st.allDone, noTodos = dueTop.length===0;
+      const p = todayPending(mrows.map(function(r){return r.done;}), (typeof scopedTodos==='function'?scopedTodos():[]), today);   // 배지·완료카드 공용 판정
 
       let h='<div class="homewrap">';
       h+='<div class="card homehero"><div class="hh-l"><div class="hh-greet">'+greet+', '+escapeHtml(state.userName||'')+'님</div>'+
         '<div class="hh-sub">오늘 미션 '+st.done+'/'+st.total+'</div></div>'+
         '<div class="hh-coin"><span class="ci">'+coinSvg({h:20})+'</span><b>'+coins().toLocaleString()+'</b></div></div>';
-      if(missionsDone && noTodos){
-        h+='<div class="card homedone"><div class="hd-emoji">🐱</div><div class="hd-tit">오늘 할 거 다 했어요</div>'+
+      if(p.allDone && p.any){
+        const cid=(typeof activeCats==='function'&&activeCats()[0])||(typeof ownedCatList==='function'&&ownedCatList()[0])||null;
+        const art=cid?('<div class="hd-cat">'+catFace(cid,{h:64})+'</div>'):'<div class="hd-emoji">🐱</div>';
+        const celebrate=(typeof shouldCelebrateOnce==='function'&&shouldCelebrateOnce());
+        h+='<div class="card homedone'+(celebrate?' celebrate':'')+'">'+art+'<div class="hd-tit">오늘 할 거 다 했어요 🐱</div>'+
           '<div class="hd-sub">고양이도 만족스러워해요. 내일 또 만나요!</div>'+
           '<button class="btn ghost" onclick="openCatHouse()">알뜰샵 둘러보기</button></div>';
+      } else if(p.allDone){
+        h+='<div class="card homedone empty"><div class="hd-emoji">🌙</div><div class="hd-tit">오늘은 예정된 게 없어요</div>'+
+          '<div class="hd-sub">미션이나 할일을 추가해 은화를 모아보세요.</div></div>';
       } else {
         if(mrows.length){
           const col=(typeof budgetColor==='function')?(st.allDone?'var(--income)':budgetColor(100-st.pct)):'var(--income)';
@@ -1409,14 +1428,15 @@
         steps+'<button class="btn" onclick="closeSheet()" style="margin-top:16px;">확인</button>';
       openSheet('앱 설치', h);
     }
-    function goHome(view){ state.homeView=view||'list'; go('calendar'); }
+    // ⚠️ 예전 이름 goHome(view)는 core.js의 랜딩 goHome()과 전역 충돌(로드 순서상 이 파일이 이겨 로고=오늘홈이 깨짐) → goLedgerList로 개명.
+    function goLedgerList(view){ state.homeView=view||'list'; go('calendar'); }
     // 설정 시트 — 더보기 하단 설정 항목 모음 + 코드 입력
     function openSettingsSheet(){
       const ws=state.wsMeta||{}, isGroup=ws.type==='group', memCount=Object.keys(ws.members||{}).length;
       let h='<div class="lst">';
       if(isGroup) h+=lrow(MORE_ICON.members,'멤버 · 권한 관리',"openGroupManageSheet('"+state.wsId+"')", memCount+'명');
       h+=lrow(MORE_ICON.lock,'권한 · 공동 설정','openSharedSettings()');
-      h+=lrow(MORE_ICON.list,'거래내역',"closeSheet();goHome('list')");
+      h+=lrow(MORE_ICON.list,'거래내역',"closeSheet();goLedgerList('list')");
       h+=lrow(MORE_ICON.download,'CSV 내보내기','exportCSV()');
       h+=lrow(MORE_ICON.moon,'다크 모드','toggleTheme();openSettingsSheet()', state.theme==='dark'?'켜짐':'꺼짐');
       h+=lrow(MORE_ICON.cam,'펫캠','toggleDockHidden();openSettingsSheet()', (typeof dockHiddenLabel==='function'?dockHiddenLabel():''));

@@ -1046,8 +1046,13 @@
       if(mode){ state.mode=(mode==='todo'?'todo':'ledger'); try{ localStorage.setItem('mode',state.mode); }catch(e){} renderTabBar(); updateModeToggle(); }
       go(tab || (state.mode==='todo'?'todo':'calendar'));
     }
+    // 상단 로고 점 배지 — 모드 화면에서 오늘 미처리(todayPendingNow().total>0)가 있을 때만 표시. 홈이거나 0이면 숨김.
+    function updateHomeBadge(){ var b=document.querySelector('.brand .home-badge'); if(!b) return;
+      var show = state.view!=='home' && typeof todayPendingNow==='function' && todayPendingNow().total>0;
+      b.hidden = !show; }
     function rerender(){
       document.body.classList.toggle('home-view', state.view==='home');   // 홈에선 바텀 탭바 숨김(CSS)
+      updateHomeBadge();
       if(state.view==='home'){
         if(typeof renderHome==='function') renderHome();
         const sh0=$('sheet'); if(sh0 && sh0.classList.contains('on') && typeof state._sheetRefresh==='function') state._sheetRefresh();

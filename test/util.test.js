@@ -155,3 +155,25 @@ test('todayMissionState: N/M·완료율·전체완료', () => {
   assert.deepStrictEqual(U.todayMissionState([true, true]), { done: 2, total: 2, pct: 100, allDone: true });
   assert.deepStrictEqual(U.todayMissionState([]), { done: 0, total: 0, pct: 0, allDone: false });
 });
+
+test('todayPending: 미션·할일 남은 수/완료/예정없음', () => {
+  const T = '2025-06-15';
+  // 미션 1 남음 + 오늘/지난 할일 2 남음(미래 1은 제외)
+  assert.deepStrictEqual(
+    U.todayPending([true, false], [{ dueDate: '2025-06-15', done: false }, { dueDate: '2025-06-10', done: false }, { dueDate: '2025-12-01', done: false }], T),
+    { missions: 1, todos: 2, total: 3, allDone: false, any: true });
+  // 둘 다 완료 → allDone, 미션이 있었으니 any:true(완료 축하)
+  assert.deepStrictEqual(
+    U.todayPending([true, true], [{ dueDate: '2025-06-10', done: true }], T),
+    { missions: 0, todos: 0, total: 0, allDone: true, any: true });
+  // 애초에 아무것도 없던 날 → allDone true지만 any:false(예정 없음 톤)
+  assert.deepStrictEqual(
+    U.todayPending([], [], T),
+    { missions: 0, todos: 0, total: 0, allDone: true, any: false });
+  // 미션 0·할일만 남음 → 완료 아님
+  assert.strictEqual(U.todayPending([true], [{ dueDate: '2025-06-15', done: false }], T).allDone, false);
+  // 미래 할일만 있으면 today 기준 미처리 아님(예정 없음 취급)
+  assert.deepStrictEqual(
+    U.todayPending([], [{ dueDate: '2025-12-31', done: false }], T),
+    { missions: 0, todos: 0, total: 0, allDone: true, any: false });
+});
