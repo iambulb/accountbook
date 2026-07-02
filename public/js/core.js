@@ -633,10 +633,13 @@
           upd['categories/'+n+'/owner']= c.owner||'공동';
         }
       });
-      // 2) 신규 기본 카테고리 시드 (없는 이름만)
-      const defs=buildDefaultCategories(); let order=maxOrder;
-      Object.keys(defs).forEach(n=>{ if(!(n in o)){ const d=Object.assign({},defs[n]); d.sortOrder=++order; upd['categories/'+n]=d; } });
-      if(Object.keys(upd).length) db.ref(wsRoot()).update(upd);
+      // 2) 신규 기본 카테고리 시드 (없는 이름만) — 사용자가 삭제한 기본(catDeleted 툼스톤)은 다시 만들지 않음.
+      const applyUpd=()=>{ if(Object.keys(upd).length) db.ref(wsRoot()).update(upd); };
+      db.ref(wp('catDeleted')).once('value').then(ds=>{
+        const del=ds.val()||{}; const defs=buildDefaultCategories(); let order=maxOrder;
+        Object.keys(defs).forEach(n=>{ if(!(n in o) && !del[n]){ const d=Object.assign({},defs[n]); d.sortOrder=++order; upd['categories/'+n]=d; } });
+        applyUpd();
+      }).catch(applyUpd);
     }
 
     // 구버전 단일 budgets({monthlyTotal,byCategory}) → budgets/{id} 레코드 컬렉션 (1회, 멱등)

@@ -47,7 +47,7 @@
     const OLD_DEFAULT_CAT_NAMES = ['식사','교통','쇼핑','엔터','생활','의료','카페','기타']; // 구버전 기본 카테고리(삭제불가 판정용)
     // 색상은 핸드오프 v2 팔레트(차분한 톤). 표시 시 13% 알파 tint로 옅게 쓰임(core.js catTileStyle).
     const DEFAULT_CATEGORY_DEFS = {
-      '식비':{type:'expense',icon:'🍚',color:'#E08A3C'}, '배달':{type:'expense',icon:'🛵',color:'#E26B4E'},
+      '식비':{type:'expense',icon:'🍚',color:'#E08A3C'},
       '카페':{type:'expense',icon:'☕',color:'#9C7558'}, '교통':{type:'expense',icon:'🚌',color:'#4C7FE0'},
       '쇼핑':{type:'expense',icon:'🛍️',color:'#DB5F88'}, '생활용품':{type:'expense',icon:'🧴',color:'#8AA13C'},
       '주거':{type:'expense',icon:'🏠',color:'#8773DC'}, '통신':{type:'expense',icon:'📱',color:'#3FA0BA'},

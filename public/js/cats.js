@@ -346,7 +346,8 @@
       { id:'cat_bengal',   species:'cat', name:'벵갈',  price:100,  desc:'골든빛 몸에 동글동글 반점. 야무지게 돌아다녀요.' },
       { id:'cat_fold',     species:'cat', name:'폴드', price:200, desc:'접힌 귀가 매력. 얌전히 자리를 지켜요.' },
       { id:'cat_bora',     species:'cat', name:'보라',  price:400,  desc:'한쪽은 파랑·한쪽은 호박색 오드아이. 신비롭게 거닐어요.' },
-      { id:'cat_choco',    species:'cat', name:'초코',  price:100,  desc:'초콜릿빛 갈색 털에 크림색 입가·가슴. 느긋하게 방을 거닐어요.' }
+      { id:'cat_choco',    species:'cat', name:'초코',  price:100,  desc:'초콜릿빛 갈색 털에 크림색 입가·가슴. 느긋하게 방을 거닐어요.' },
+      { id:'cat_kitten',   species:'cat', name:'아깽이', price:50,  desc:'치즈빛 오렌지 태비 아기고양이. 뒤뚱뒤뚱 방을 쏘다녀요.' }
     ];
     // 종(species) → 상점 분류 라벨. 품종(샴·벵갈 등)은 표시하지 않고 종만 노출.
     const SPECIES_LABEL = { cat:'고양이', dog:'강아지', rabbit:'토끼' };
@@ -433,7 +434,8 @@
       cat_bengal:  { walk:'assets/pets/cat_bengal/walk.png',   frames:6, stills:true },
       cat_fold:    { walk:'assets/pets/cat_fold/walk.png',     frames:6, stills:true },
       cat_bora:    { walk:'assets/pets/cat_bora/walk.png',     frames:6, stills:true },
-      cat_choco:   { walk:'assets/pets/cat_choco/walk.png',    frames:6, stills:true }    // 초코 — Walk/east 옆걷기 정상
+      cat_choco:   { walk:'assets/pets/cat_choco/walk.png',    frames:6, stills:true },   // 초코 — Walk/east 옆걷기 정상
+      cat_kitten:  { walk:'assets/pets/cat_kitten/walk.png',   frames:6, stills:true }    // 아깽이 — Walk/east 옆걷기 정상
     };
     function hasSprite(id){ return !!PET_SPRITES[id]; }
     // 걷기 무대 액터 1개의 내부 마크업 — 시트 있으면 스프라이트 div, 없으면 SVG 프레임0.
@@ -1117,7 +1119,7 @@
       closeRename();
     }
     // 테스트 배정(등급당 1) — 펫알=고양이 / 랜덤박스=가구
-    const CAT_TIER  = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'epic', cat_fluffy:'rare', cat_tuxedo:'legend', cat_chaos:'legend', cat_siamese:'limited', cat_bengal:'uncommon', cat_fold:'rare', cat_bora:'epic', cat_choco:'uncommon' };
+    const CAT_TIER  = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'epic', cat_fluffy:'rare', cat_tuxedo:'legend', cat_chaos:'legend', cat_siamese:'limited', cat_bengal:'uncommon', cat_fold:'rare', cat_bora:'epic', cat_choco:'uncommon', cat_kitten:'normal' };
     const ITEM_TIER = { cushion:'normal', bowl:'uncommon', scratcher:'rare', tower:'epic' };
     // 등급별 상점 가격(은화) — 확률(60/20/15/3.8/1/0.2%)에 맞춰 등급이 오를수록 약 2배씩.
     // 알 100은화(+금화1·중복 30은화 환급) 대비, 흔한 등급은 알보다 싸게·희귀 등급은 비싸게 → 직접구매 vs 뽑기 선택 성립.

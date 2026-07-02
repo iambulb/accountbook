@@ -53,21 +53,28 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 | chibi_pixel_art_grey_cat_small_folded-down_ears_ro.zip | `cat_fold` | 폴드 | 접힌 귀, `Walk/east` |
 | chibi_pixel_art_white_cat_one_blue_eye_one_amber_e.zip | `cat_bora` | 보라 | 오드아이, `Walk/east` |
 | simple_pixel_art_chocolate_brown_cat_cream_muzzle.zip | `cat_choco` | 초코 | 초콜릿빛 갈색+크림 입가·가슴, `Walk/east` 옆걷기 정상 |
+| simple_pixel_art_orange_tabby_kitten_a_few_cheese.zip | `cat_kitten` | 아깽이 | 치즈빛 오렌지 태비 아기고양이, `Walk/east` 옆걷기 정상 |
 
 새 zip이 오면: 사용자가 id를 지정하면 그걸 쓰고, 없으면 종·색에서 합리적 slug(`<species>_<색>`)를 만들어 **이 표에 한 줄 추가**하고, 이름은 위 규칙대로 센스껏 짓는다.
 
 ### ⚠️ 옆걷기(east) 없는 펫 — 이미지 재취득 대상
 `animations/Walk/east`(옆보기 걷기)가 **없는** zip은 `walk.png`가 정면이 되어 `frontWalk:true`로 처리(이동 중 옆 정지스틸만 보이고 걷기 애니 없음). 그런 펫은 옆걷기 포함 zip으로 다시 받아 재생성하고 `frontWalk`를 해제한다.
 
-**현재 재취득 대상: 없음** — 13종 전부 `Walk/east` 옆걷기 보유. (과거 `cat_white`가 south만 있었으나 east 시트로 재취득 완료.) 새 펫 추가 시 east 유무를 확인해 이 목록을 갱신한다.
+**현재 재취득 대상: 없음** — 14종 전부 `Walk/east` 옆걷기 보유. (과거 `cat_white`가 south만 있었으나 east 시트로 재취득 완료.) 새 펫 추가 시 east 유무를 확인해 이 목록을 갱신한다.
 
-## 코드 반영 (에셋만 넣고 끝내지 말 것)
-1. `js/cats.js`의 `PET_SPRITES`에 `<id>:{ walk:'assets/pets/<id>/walk.png', frames:6, stills:true }` 추가.
-   - 카탈로그(구매용 이름/가격/**species**)는 별도 `PET_CATALOG`에 있음. 신규 동물이면 `{ id:'<id>', species:'<cat|dog|rabbit…>', name, price, desc }` 한 줄 추가.
-   - SVG 폴백 팔레트가 필요하면 `CAT_PALS[<id>]`도 추가(스프라이트만 쓸 경우 불필요).
-2. `sw.js` `APP_SHELL`에 `assets/pets/<id>/` 의 `walk.png` + `south/north/east/west.png`(4방향)를 추가 → `CACHE_VERSION` 상향.
-   (단, `_zips/`와 원본 zip은 캐시에 넣지 않음)
-3. `docs/features.md` 동물 목록 갱신, `docs/CHANGELOG.md` `[Unreleased]`에 기록.
+## ✅ 펫 추가 체크리스트 (에셋만 넣고 끝내지 말 것 — 코드+문서 함께 반영)
+> **규칙**: 펫을 추가/변경/제거하면 아래 코드 **3곳**과 문서 **3곳**을 같은 커밋에서 모두 갱신한다. 하나라도 빠지면 미완성으로 본다. (이 규칙은 `CLAUDE.md`의 "문서 최신화 규칙" 표 — *기능 추가·변경·제거 → features.md*, *모든 사용자 체감 변경 → CHANGELOG* — 의 펫 전용 상세판이다.)
+
+**코드**
+1. `js/cats.js` `PET_SPRITES`에 `<id>:{ walk:'assets/pets/<id>/walk.png', frames:6, stills:true }` 추가(옆걷기 없으면 `frontWalk:true`).
+   - `PET_CATALOG`에 `{ id, species, name, price, desc }` 한 줄 추가(이름은 zip 내용 기반 센스껏, 품종은 안 넣음).
+   - `CAT_TIER`에 `<id>:'<등급>'` 추가(가격은 `TIER_PRICE`로 자동 산정). SVG 폴백이 필요하면 `CAT_PALS[<id>]`.
+2. `sw.js` `APP_SHELL`에 `assets/pets/<id>/`의 `walk.png` + `south/north/east/west.png`(4방향) 추가 → `CACHE_VERSION` 상향. (`_zips/`·원본 zip은 캐시에 넣지 않음)
+
+**문서 (필수 — 빠뜨리지 말 것)**
+3. **이 문서(`pet-asset-pipeline.md`)**: 위 **id·이름 매핑 표에 한 줄 추가**, 종 수(`N종`) 갱신, 옆걷기 없는 펫이면 "재취득 대상" 목록에도 반영.
+4. `docs/features.md`: **동물 목록·마릿수** 갱신(`알뜰샵` 절의 "고양이 N종(…)").
+5. `docs/CHANGELOG.md` `[Unreleased]`에 **추가/변경 한 줄** 기록(+ `sw.js` 버전 표기).
 
 ## ★ 모든 표시 위치에 일관 적용 (필수)
 동물 아트는 **정해진 두 진입 함수만** 거치게 해서, 새 동물을 추가하거나 아트를 바꿔도 **dock·방·상점·보유목록·뽑기 결과 어디서나 자동으로 같은 그림**이 나오게 한다. 개별 화면에서 `catFront`/`catSide`를 직접 부르지 말 것.

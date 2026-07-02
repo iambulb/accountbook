@@ -1157,11 +1157,11 @@
     function openCatEdit(name){
       const c=name?getCat(name):null;
       const usedCount=name? state.transactions.filter(t=>t.category===name).length : 0;
-      const canRename = !!c && !c.isDefault && usedCount===0;
+      const canRename = !!c && usedCount===0;
       window._catColor = c?(c.color||CAT_PALETTE[0]):CAT_PALETTE[0];
       window._catIcon = (c && c.iconKey && CAT_SVG[c.iconKey]) ? c.iconKey : ((c && CAT_META[c.name]) ? CAT_META[c.name].i : 'tag');
       let h='';
-      if(c && !canRename) h+='<div class="field"><label>이름</label><input class="input" value="'+escapeHtml(c.name)+'" disabled><div class="tx-sub" style="margin-top:4px;">'+(c.isDefault?'기본 카테고리는 이름 변경 불가':'거래에 사용 중이라 이름 변경 불가(비활성화 권장)')+'</div></div>';
+      if(c && !canRename) h+='<div class="field"><label>이름</label><input class="input" value="'+escapeHtml(c.name)+'" disabled><div class="tx-sub" style="margin-top:4px;">거래에 사용 중이라 이름 변경 불가(비활성화 권장)</div></div>';
       else h+='<div class="field"><label>이름</label><input class="input" id="catName" value="'+escapeHtml(c?c.name:'')+'" placeholder="예: 반려동물"></div>';
       h+='<div class="field"><label>유형</label><select class="input" id="catType">'+CAT_TYPES.map(p=>'<option value="'+p[0]+'"'+(((c&&c.type===p[0])||(!c&&p[0]==='expense'))?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div>';
       h+='<label style="font-size:13px;font-weight:600;color:var(--sub);">아이콘</label><div class="icon-grid" id="catIcons">'+Object.keys(CAT_SVG).map(k=>'<button type="button" class="icon-tile'+(k===window._catIcon?' on':'')+'" data-key="'+k+'" onclick="pickCatIcon(this)">'+svgWrap(CAT_SVG[k])+'</button>').join('')+'</div>';
@@ -1170,7 +1170,7 @@
         '<div class="field"><label>활성</label><select class="input" id="catActive"><option value="1"'+((!c||c.isActive!==false)?' selected':'')+'>활성</option><option value="0"'+((c&&c.isActive===false)?' selected':'')+'>비활성</option></select></div></div>';
       h+='<div class="field"><label>메모 (선택)</label><input class="input" id="catMemo" value="'+escapeHtml(c?(c.memo||''):'')+'" placeholder="메모"></div>';
       h+='<button class="btn" onclick="saveCat('+(name?'\''+escapeHtml(name)+'\'':'null')+','+canRename+')">'+(c?'수정':'추가')+'</button>';
-      if(c && !c.isDefault) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteCat(\''+escapeHtml(name)+'\')">삭제</button>';
+      if(c) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteCat(\''+escapeHtml(name)+'\')">삭제</button>';
       openSheet(c?'카테고리 수정':'카테고리 추가', h);
     }
     function saveCat(origName, canRename){
@@ -1188,15 +1188,14 @@
         owner: c?(c.owner||(vis==='private'?state.userName:defaultOwnerName())):(vis==='private'?state.userName:defaultOwnerName()),
         sortOrder: c?(c.sortOrder!=null?c.sortOrder:(state.categories.length+1)):(Math.max(0,...state.categories.map(x=>x.sortOrder||0))+1),
         createdAt: c?(c.createdAt||nowISO):nowISO, updatedAt: nowISO };
-      const upd={}; upd['categories/'+name]=data; if(renaming) upd['categories/'+origName]=null;
+      const upd={}; upd['categories/'+name]=data; upd['catDeleted/'+name]=null; if(renaming){ upd['categories/'+origName]=null; upd['catDeleted/'+origName]=true; }
       db.ref(wsRoot()).update(upd); toast(c?'수정되었습니다':'추가되었습니다'); openCategorySheet();
     }
     function deleteCat(name){
       const c=getCat(name); if(!c) return;
-      if(c.isDefault){ toast('기본 카테고리는 삭제 불가(비활성화만 가능)', true); return; }
       const used=state.transactions.filter(t=>t.category===name).length;
       const msg = used? ('이 카테고리를 쓴 거래가 '+used+'건 있습니다. 삭제해도 거래의 카테고리명은 남지만 비활성화를 권장합니다. 그래도 삭제할까요?') : '이 카테고리를 삭제할까요?';
-      confirmSheet(msg, ()=>{ db.ref(wp('categories/'+name)).remove(); toast('삭제되었습니다'); openCategorySheet(); });
+      confirmSheet(msg, ()=>{ const upd={}; upd['categories/'+name]=null; if(c.isDefault) upd['catDeleted/'+name]=true; db.ref(wsRoot()).update(upd); toast('삭제되었습니다'); openCategorySheet(); });
     }
 
     // ===== 정기결제 =====
