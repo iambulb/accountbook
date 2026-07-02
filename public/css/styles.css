@@ -64,7 +64,7 @@
       display:flex; flex-direction:column; justify-content:center; padding:32px 36px 44px; scrollbar-width:none;
     }
     .auth-wrap::-webkit-scrollbar { display:none; }
-    .auth-logo { width:64px; height:64px; margin:0 auto 22px; display:block; }
+    .auth-logo { width:132px; height:auto; margin:0 auto 20px; display:block; image-rendering:pixelated; }   /* 뜰 위에 놓인 펫알(고양이 얼굴 알 + 잔디·꽃) 픽셀 씬 */
     .auth-wrap h1 { font-size:26px; font-weight:700; text-align:center; margin-bottom:8px; letter-spacing:-.03em; }
     .auth-wrap .desc { text-align:center; color:var(--sub); margin-bottom:24px; font-size:13.5px; font-weight:500; line-height:1.5; }
     .authfoot { text-align:center; font-size:12.5px; color:var(--sub); font-weight:600; margin-top:24px; line-height:1.5; }
@@ -261,7 +261,11 @@
     /* 하단 탭바 + FAB */
     .tabbar {
       flex-shrink:0;
-      width:100%; height:64px; background:var(--card);
+      width:100%; background:var(--card);
+      /* 콘텐츠 높이 64px를 항상 확보하고, iOS 홈인디케이터 안전영역은 그 아래에 '더한다'.
+         (box-sizing:border-box에서 height:64px + padding-bottom:safe-area 로 두면 홈화면 앱(standalone)에서
+          안전영역(~34px)이 64px 안을 파먹어 탭이 작아 보였음 → height에 safe-area를 더해 콘텐츠 64px 유지) */
+      height:calc(64px + env(safe-area-inset-bottom));
       border-top:1px solid var(--line); display:flex; z-index:30;
       padding-bottom:env(safe-area-inset-bottom);
     }
@@ -627,8 +631,12 @@
     /* 드래그(배치·이동) 중엔 뒤 시트 본문이 스크롤·이동하지 않도록 잠금 */
     body.dragging .sheet-body { overflow:hidden; }
     body.dragging { touch-action:none; }
-    .gitem { position:absolute; box-sizing:border-box; display:flex; align-items:center; justify-content:center; padding:1px; cursor:grab; touch-action:none; z-index:2; will-change:transform; }
+    /* touch-action:pan-y — 세로 스와이프는 시트 스크롤로 통과(드래그는 '꾹 눌러서'만 시작). 화면 스크롤과 겹침 방지. */
+    .gitem { position:absolute; box-sizing:border-box; display:flex; align-items:center; justify-content:center; padding:1px; cursor:grab; touch-action:pan-y; z-index:2; will-change:transform; }
     .gitem.drag { cursor:grabbing; opacity:.92; z-index:50; }
+    /* 꾹 누르는 중(롱프레스 대기) 피드백 — 집어들기 직전 살짝 눌린 느낌 */
+    .gitem.lp-hold { transition:transform .16s ease; transform:scale(.95); filter:brightness(.94); }
+    .pitem.lp-hold { transition:transform .16s ease; transform:scale(.93); filter:brightness(.94); }
     .gitem .gsc { display:flex; align-items:center; justify-content:center; width:100%; height:100%; transform-origin:center center; }
     .gitem .px { width:100%; height:100%; }
     .gdrop { position:absolute; box-sizing:border-box; border:2px solid var(--primary); background:color-mix(in srgb,var(--primary) 20%,transparent); border-radius:6px; z-index:1; pointer-events:none; }
@@ -755,6 +763,17 @@
       18%{ opacity:1; }
       55%{ transform:translate(calc(-50% + var(--sx) * .72), calc(-50% - 26px)) rotate(calc(var(--sr) * .6)) scale(var(--ss)); }
       100%{ opacity:1; transform:translate(calc(-50% + var(--sx)), calc(-50% + var(--sy))) rotate(var(--sr)) scale(var(--ss)); }
+    }
+
+    /* 껍질 조각(탭마다 튀는 작은 조각) — 깨짐 강조 */
+    .fx-chip { position:absolute; left:50%; top:46%; width:9px; height:7px; z-index:3;
+      background:#FBFBFD; border:1.5px solid #c9c2b0; border-radius:46% 46% 60% 60% / 60% 60% 44% 44%;
+      transform:translate(-50%,-50%) scale(.4); opacity:0; filter:drop-shadow(0 2px 3px rgba(0,0,0,.3));
+      animation:fxchip .62s ease-out forwards; }
+    @keyframes fxchip {
+      0%{ opacity:0; transform:translate(-50%,-50%) scale(.4) rotate(0); }
+      15%{ opacity:1; }
+      100%{ opacity:0; transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(var(--s)) rotate(var(--r)); }
     }
 
     /* ===== 접근성(A11y) ===== */
