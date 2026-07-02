@@ -449,6 +449,9 @@
     .menu-item.disabled { opacity:.45; }
 
     /* 워크스페이스 칩 / 관리 */
+    .modeseg { display:inline-flex; background:var(--soft); border-radius:13px; padding:3px; gap:2px; }
+    .modeseg button { border:none; background:transparent; font-size:12px; font-weight:800; color:var(--sub); padding:6px 9px; border-radius:10px; cursor:pointer; white-space:nowrap; }
+    .modeseg button.on { background:var(--card); color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,.1); }
     .ws-chip { max-width:150px; height:36px; padding:0 14px; border-radius:20px; background:var(--soft); color:var(--text2);
       font-size:12.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-flex; align-items:center; gap:7px; }
     .ws-chip .dotk { width:16px; height:16px; border-radius:50%; background:var(--primary); flex:none; }
@@ -492,7 +495,7 @@
        매 프레임 두 페인트가 경쟁하다 iOS/크롬이 한 프레임을 드롭 → 빈(투명) 프레임이 새어 나옴.
        카드(정지)는 페인트원이 bg-position 하나뿐이라 안 깜빡였다(그게 결정적 차이).
        해결: 이동도(translate3d) 프레임전환도(필름 translateX) 전부 transform=합성 → 걷는 동안 메인스레드 페인트 0. */
-    .cd-actor { position:absolute; left:0; bottom:9px; will-change:transform; touch-action:none; }   /* 이동은 transform:translate3d(합성). left는 0 고정. 롱프레스 드래그 위해 touch-action:none */
+    .cd-actor { position:absolute; left:0; bottom:9px; will-change:transform; touch-action:none; pointer-events:auto; }   /* 이동은 transform:translate3d(합성). left는 0 고정. 무대(cr-stage)는 pointer-events:none이라 펫만 auto로 되살려 터치→집기·드래그 가능(빈 공간 탭은 통과) */
     .cd-actor.cdgrab { z-index:60; filter:drop-shadow(0 8px 10px rgba(0,0,0,.42)); cursor:grabbing; }   /* 집어 든 상태(위로 뜬 느낌+그림자) */
     /* .cspr = 한 프레임 크기의 창(overflow로 자름). 걷기 프레임은 안쪽 필름(.csprf)을 transform으로 밀어 재생(bg-position 아님) */
     .cspr { position:relative; overflow:hidden; image-rendering:pixelated; }

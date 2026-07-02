@@ -15,7 +15,9 @@
       memberFilter:'',   // 달력 멤버 칩 필터(기록자 이름) — 그룹 전용
       filter:{ type:'', category:'', account:'', keyword:'' },
       theme: localStorage.getItem('theme') || 'light',
-      tab:'calendar'
+      tab:'calendar',
+      mode: (localStorage.getItem('mode')==='todo' ? 'todo' : 'ledger'),   // 가계부(ledger) / 할일(todo) 모드
+      todos:[]
     };
     let listenersAttached = false;
     let seededAcc = false, seededCat = false, booted = false, migratedAcc = false, migratedCat = false, migratedBudget = false, migratedRec = false;
@@ -405,7 +407,7 @@
       await db.ref('users/'+state.uid+'/activeWs').set(wsId);
       setupListeners();
       updateWorkspaceChip();
-      go('calendar');
+      applyMode();   // 저장된 모드(가계부/할일)에 맞춰 탭바+토글+화면 세팅
       loadMemberPhotos();   // 멤버 프로필 사진 캐시 채우기(비동기, 끝나면 rerender)
       if(!initial) toast((meta.name||'가계부')+'(으)로 전환했어요');
     }
@@ -980,7 +982,32 @@
       else if(state.tab==='stats') renderStats();
       else if(state.tab==='assets') renderAssets();
       else if(state.tab==='more') renderMore();
+      else if(state.tab==='todo') renderTodoList();
+      else if(state.tab==='todocal') renderTodoCalendar();
+      else if(state.tab==='tododone') renderTodoDone();
       // 열린 시트가 실시간 갱신 훅을 등록했으면 본문만 다시 그림
       const sh=$('sheet');
       if(sh && sh.classList.contains('on') && typeof state._sheetRefresh==='function') state._sheetRefresh();
     }
+    // ===== 모드(가계부/할일) 토글 + 모드별 하단 탭바 =====
+    const _TABICON={
+      calendar:'<rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/>',
+      stats:'<path d="M5 20V11M12 20V5M19 20v-6"/>',
+      assets:'<rect x="3" y="5.5" width="18" height="13" rx="3"/><path d="M3 10h18"/><circle cx="16.5" cy="14" r="1.3" fill="currentColor" stroke="none"/>',
+      more:'<path d="M4 7h16M4 12h16M4 17h16"/>',
+      todo:'<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 5.4l1.3 1.3 2-2.3M4 11.4l1.3 1.3 2-2.3M4 17.4l1.3 1.3 2-2.3"/>',
+      todocal:'<rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/>',
+      tododone:'<circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.7 2.7L16.5 9"/>'
+    };
+    const _TABSETS={ ledger:[['calendar','달력'],['stats','리포트'],'fab',['assets','자산'],['more','더보기']],
+                     todo:[['todo','할일'],['todocal','캘린더'],'fab',['tododone','완료'],['more','더보기']] };
+    function fabAdd(){ if(state.mode==='todo'){ if(typeof openTodoEdit==='function') openTodoEdit(); else toast('할일 추가는 곧 제공됩니다'); } else openTxSheet(); }
+    function renderTabBar(){ const nav=document.querySelector('.tabbar'); if(!nav) return;
+      const set=_TABSETS[state.mode==='todo'?'todo':'ledger'];
+      nav.innerHTML=set.map(function(it){ return it==='fab'
+        ? '<div class="fab-slot"><button class="fab" onclick="fabAdd()" aria-label="추가"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>'
+        : '<button class="tab'+(state.tab===it[0]?' on':'')+'" data-tab="'+it[0]+'" onclick="go(\''+it[0]+'\')"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+(_TABICON[it[0]]||'')+'</svg>'+it[1]+'</button>'; }).join('');
+    }
+    function updateModeToggle(){ const seg=$('modeSeg'); if(seg) Array.prototype.forEach.call(seg.children,function(b){ b.classList.toggle('on', b.dataset.mode===state.mode); }); }
+    function applyMode(){ renderTabBar(); updateModeToggle(); go(state.mode==='todo'?'todo':'calendar'); }
+    function setMode(m){ m=(m==='todo')?'todo':'ledger'; state.mode=m; try{ localStorage.setItem('mode',m); }catch(e){} applyMode(); }

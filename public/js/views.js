@@ -544,6 +544,11 @@
     function statsMonth(d){ state.month=shiftMonth(state.month,d); renderStats(); }
     function shortAmt(v){ v=Math.round(Math.abs(v)); if(v>=1e8) return (v/1e8).toFixed(1).replace(/\.0$/,'')+'억'; if(v>=1e4) return Math.round(v/1e4).toLocaleString()+'만'; return v.toLocaleString(); }
     function signComma(v){ return (v<0?'−':'+')+fmtComma(Math.abs(v)); }
+    // ===== 할일(투두) 모드 화면 — T1: 골격/플레이스홀더(T2~에서 실제 구현) =====
+    function renderTodoList(){ $('content').innerHTML='<div class="sech"><span class="l">할일</span><span class="s">함께 하는 할 일</span></div>'+
+      '<div class="card" style="text-align:center;padding:34px 18px;color:var(--sub);line-height:1.6;">공유 할일 목록이 곧 열려요.<br>아래 <b style="color:var(--text);">＋</b> 로 함께 할 일을 추가하게 됩니다.</div>'; }
+    function renderTodoCalendar(){ $('content').innerHTML='<div class="sech"><span class="l">할일 캘린더</span></div><div class="card" style="text-align:center;padding:34px 18px;color:var(--sub);">마감일을 달력으로 보는 화면 준비 중.</div>'; }
+    function renderTodoDone(){ $('content').innerHTML='<div class="sech"><span class="l">완료</span></div><div class="card" style="text-align:center;padding:34px 18px;color:var(--sub);">완료한 할일이 여기에 모여요.</div>'; }
     function renderStats(){
       if(typeof markReportSeen==='function') markReportSeen();   // 🐱 주간 미션: 리포트 확인
       const m=state.month, list=monthTx(m);
