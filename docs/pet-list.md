@@ -2,9 +2,9 @@
 
 현재 앱에 구현된 펫 목록입니다. 데이터 소스는 `public/js/cats.js` 의 `PET_CATALOG`(이름·종·가격·설명)·`CAT_TIER`(등급)·`PET_SPRITES`(아트)이며, **이 문서는 그 코드를 근거로 손으로 정리한 요약**입니다. 펫을 추가·수정하면 이 표도 함께 갱신하세요(추가 절차는 [pet-asset-pipeline.md](pet-asset-pipeline.md)).
 
-- **총 <!--@gen:count-->15<!--@gen:end-->종** (전부 고양이 `cat`).
+- **총 <!--@gen:count-->16<!--@gen:end-->종** (전부 고양이 `cat`).
 - **가격은 등급으로 자동 산정**됩니다: `TIER_PRICE = { 일반 50 · 고급 100 · 희귀 200 · 특별 400 · 전설 800 · 한정 1500 }` 을 `CAT_TIER` 기준으로 `PET_CATALOG.price` 에 적용.
-- **아트**: <!--@gen:count2-->15<!--@gen:end-->종 전부 PixelLab **PNG 스프라이트 시트**(288×48, 옆보기 east 6프레임) + 정지 4방향(south/north/east/west). 시트가 없는 동물만 SVG 폴백을 씁니다(현재 해당 없음).
+- **아트**: <!--@gen:count2-->16<!--@gen:end-->종 전부 PixelLab **PNG 스프라이트 시트**(288×48, 옆보기 east 6프레임) + 정지 4방향(south/north/east/west). 시트가 없는 동물만 SVG 폴백을 씁니다(현재 해당 없음).
 
 ## 목록
 
@@ -26,6 +26,7 @@
 | 13 | 초코 | `cat_choco` | 고양이 | 1× | 고급 | 100 | `public/assets/pets/cat_choco/` | PNG 스프라이트 6프레임 | 초콜릿빛 갈색 털에 크림색 입가·가슴. 느긋하게 방을 거닐어요. |
 | 14 | 아깽이 | `cat_kitten` | 고양이 | 0.5× | 일반 | 50 | `public/assets/pets/cat_kitten/` | PNG 스프라이트 6프레임 | 치즈빛 오렌지 태비 아기고양이. 뒤뚱뒤뚱 방을 쏘다녀요. |
 | 15 | 스핑크스 | `cat_pink` | 고양이 | 1× | 전설 | 800 | `public/assets/pets/cat_pink/` | PNG 스프라이트 6프레임 | 털 없는 분홍빛 주름 피부. 도도하게 방을 누벼요. |
+| 16 | 고랑이 | `tiger_orange` | 호랑이 | 5× | 한정 | 1500 | `public/assets/pets/tiger_orange/` | PNG 스프라이트 6프레임 | 볼드한 검은 줄무늬의 오렌지 호랑이. 위풍당당하게 방을 누벼요. |
 <!-- @gen:end -->
 
 ## 이미지 폴더 구조

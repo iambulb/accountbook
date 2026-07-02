@@ -11,7 +11,8 @@
   "speciesLabel": {
     "cat": "고양이",
     "dog": "강아지",
-    "rabbit": "토끼"
+    "rabbit": "토끼",
+    "tiger": "호랑이"
   },
   "ignoreZips": [
     "simple_pixel_art_calico_cat_white_with_orange_three.zip"
@@ -31,6 +32,7 @@
     { "id": "cat_bora", "species": "cat", "name": "보라", "tier": "epic", "desc": "한쪽은 파랑·한쪽은 호박색 오드아이. 신비롭게 거닐어요.", "zip": "chibi_pixel_art_white_cat_one_blue_eye_one_amber_e.zip", "frontWalk": false },
     { "id": "cat_choco", "species": "cat", "name": "초코", "tier": "uncommon", "desc": "초콜릿빛 갈색 털에 크림색 입가·가슴. 느긋하게 방을 거닐어요.", "zip": "simple_pixel_art_chocolate_brown_cat_cream_muzzle.zip", "frontWalk": false },
     { "id": "cat_kitten", "species": "cat", "name": "아깽이", "tier": "normal", "scale": 0.5, "desc": "치즈빛 오렌지 태비 아기고양이. 뒤뚱뒤뚱 방을 쏘다녀요.", "zip": "simple_pixel_art_orange_tabby_kitten_a_few_cheese.zip", "frontWalk": false },
-    { "id": "cat_pink", "species": "cat", "name": "스핑크스", "tier": "legend", "scale": 1, "desc": "털 없는 분홍빛 주름 피부. 도도하게 방을 누벼요.", "zip": "simple_pixel_art_pink_sphynx_cat_hairless_wrinkled.zip", "frontWalk": false }
+    { "id": "cat_pink", "species": "cat", "name": "스핑크스", "tier": "legend", "scale": 1, "desc": "털 없는 분홍빛 주름 피부. 도도하게 방을 누벼요.", "zip": "simple_pixel_art_pink_sphynx_cat_hairless_wrinkled.zip", "frontWalk": false },
+    { "id": "tiger_orange", "species": "tiger", "name": "고랑이", "tier": "limited", "scale": 5, "desc": "볼드한 검은 줄무늬의 오렌지 호랑이. 위풍당당하게 방을 누벼요.", "zip": "simple_pixel_art_orange_tiger_bold_black_stripes_c.zip", "frontWalk": false }
   ]
 }

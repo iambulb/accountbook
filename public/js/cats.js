@@ -371,7 +371,7 @@
       { id:'cat_choco', species:'cat', name:'초코', price:100, desc:'초콜릿빛 갈색 털에 크림색 입가·가슴. 느긋하게 방을 거닐어요.' },
       { id:'cat_kitten', species:'cat', name:'아깽이', price:50, desc:'치즈빛 오렌지 태비 아기고양이. 뒤뚱뒤뚱 방을 쏘다녀요.' },
       { id:'cat_pink', species:'cat', name:'스핑크스', price:800, desc:'털 없는 분홍빛 주름 피부. 도도하게 방을 누벼요.' },
-      { id:'tiger_orange', species:'tiger', name:'호랑이', price:1500, desc:'볼드한 검은 줄무늬의 오렌지 호랑이. 위풍당당하게 방을 누벼요.' }
+      { id:'tiger_orange', species:'tiger', name:'고랑이', price:1500, desc:'볼드한 검은 줄무늬의 오렌지 호랑이. 위풍당당하게 방을 누벼요.' }
     ];
     // @gen:end
     // 종(species) → 상점 분류 라벨. 품종(샴·벵갈 등)은 표시하지 않고 종만 노출.
