@@ -514,7 +514,8 @@
     .cd-room .cr-base { position:absolute; left:0; right:0; bottom:66%; height:1px; background:var(--bd); z-index:1; }
     .cd-room .cr-props { position:absolute; inset:0; z-index:1; }
     .cd-room .cr-stage { position:absolute; left:0; right:0; bottom:0; height:66%; z-index:2; pointer-events:none; }
-    .cd-room .cd-coin { position:absolute; top:9px; left:12px; z-index:3; cursor:pointer; }
+    .cd-room .cd-coin { position:absolute; top:5px; left:12px; z-index:3; cursor:pointer; }
+    .cd-room .cr-batch { top:4px; }   /* 캠(dock)에서 은화·돌보기 버튼을 살짝 더 위로(홈 방은 기본 top 유지) */
     .cd-coin.tap { animation:coinpress .18s ease; }
     @keyframes coinpress { 40%{ transform:scale(.84); } 100%{ transform:scale(1); } }
     .cd-room .cd-actor { bottom:2px; }
@@ -528,7 +529,7 @@
     .wallmeta b { font-size:13.5px; font-weight:800; }
     .wallcard .buy, .wallcard .owntag { align-self:flex-start; }
     /* 고양이집 시트 — 상단(금화/은화 + 탭)은 sticky로 고정, 아래 콘텐츠만 스크롤 */
-    .cathead { position:sticky; top:0; z-index:6; background:var(--card); margin:0 -22px; padding:2px 22px 2px; }
+    .cathead { position:sticky; top:0; z-index:9; background:var(--card); margin:0 -22px; padding:2px 22px 2px; }   /* z-index를 방 돌보기(cr-batch z6)보다 높여, 스크롤 시 돌보기 버튼이 헤더 위로 새어보이지 않게 */
     .cathead::after { content:""; position:absolute; left:0; right:0; bottom:-10px; height:10px; background:linear-gradient(var(--card),transparent); pointer-events:none; }
     .coinbar { display:flex; justify-content:flex-end; gap:10px; margin:2px 0 8px; }
     .coin { display:inline-flex; align-items:center; gap:6px; background:var(--soft); border:1px solid var(--bd); border-radius:20px; padding:5px 12px 5px 6px; font-size:13px; font-weight:800; color:var(--text); }
