@@ -31,6 +31,9 @@
     function won(n){ const v=Number(n||0); return (v<0?'-':'')+'₩'+Math.abs(v).toLocaleString(); }
     function fmtComma(n){ const d=String(n==null?'':n).replace(/[^0-9]/g,''); return d?Number(d).toLocaleString():''; }
     function parseAmount(s){ return Number(String(s==null?'':s).replace(/[^0-9]/g,''))||0; }
+    // 통화 정보/표시 헬퍼(해외통화). fmtForeign: 외화 원금을 기호+통화 소수자리로.
+    function curInfo(code){ return (typeof CURRENCIES!=='undefined' && CURRENCIES.find(c=>c.code===code)) || { code:'KRW', name:'원', sym:'\u20a9', dec:0 }; }
+    function fmtForeign(amt, code){ const c=curInfo(code); const n=Number(amt||0); return c.sym+n.toLocaleString(undefined,{minimumFractionDigits:0, maximumFractionDigits:c.dec}); }
     function escapeHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
     function pad2(n){ return String(n).padStart(2,'0'); }
     function monthStr(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1); }

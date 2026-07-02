@@ -166,7 +166,7 @@
       return '<div class="tx" onclick="openTxSheet(\''+t.ownerUid+'\',\''+t.id+'\')">'+
         '<div class="tx-ic" style="'+tileStyle+'">'+tileInner+'</div>'+
         '<div class="tx-main"><div class="tx-title">'+escapeHtml(t.desc||'')+rec+cardPill+pbPill+giftPill+loanPill+'</div><div class="tx-sub">'+sub+'</div></div>'+
-        '<div class="tx-amt '+cls+'">'+sign+'₩'+amtNum+'</div></div>';
+        '<div class="tx-amt '+cls+'">'+sign+'₩'+amtNum+((t.currency&&t.currency!=='KRW')?'<span class="tx-fx">'+escapeHtml(fmtForeign(t.foreignAmount,t.currency))+'</span>':'')+'</div></div>';
     }
 
     function upcomingRecurring(){
@@ -211,7 +211,8 @@
         '<button data-tp="__ext__" onclick="setSheetType(\'__ext__\')">선불·포인트</button></div>';
       // 시안: 큰 금액 + 키패드 입력
       // 금액: 모바일은 화면 키패드(OS 키보드 안 뜨게 readonly+inputmode none), 데스크톱은 물리 키보드로 직접 입력(keydown 라우팅).
-      h+='<div class="amtbig"><span class="w">₩</span><input id="sAmount" class="amtbig-in" readonly inputmode="none" aria-label="금액" placeholder="0" onkeydown="kpKey(event)" onpaste="kpPaste(event)" value="'+(amount?Number(amount).toLocaleString():'')+'"></div>';
+      h+='<div class="amtbig"><select id="sCur" class="amt-cur" onchange="onCurChange()">'+curOptions(t&&t.currency?t.currency:'KRW')+'</select><input id="sAmount" class="amtbig-in" readonly inputmode="none" aria-label="금액" placeholder="0" onkeydown="kpKey(event)" onpaste="kpPaste(event)" value="'+((t&&t.currency&&t.currency!=='KRW')?fmtAmt(String(t.foreignAmount||'')):(amount?Number(amount).toLocaleString():''))+'"></div>';
+      h+='<div id="sFx" class="fxrow" style="display:none;"></div>';
       h+='<div id="sCatChips"></div>';   // 카테고리 칩(유형별)
       h+='<div id="sDyn"></div>';        // 계좌/이체 행
       h+='<div class="txfield"><span class="k">날짜</span><input type="date" class="txin" id="sDate" value="'+date+'"></div>';
@@ -219,7 +220,7 @@
       // 숫자 키패드
       h+='<div class="kp">'+
         [1,2,3,4,5,6,7,8,9].map(n=>'<button onclick="kpPress(\''+n+'\')">'+n+'</button>').join('')+
-        '<button onclick="kpPress(\'00\')">00</button><button onclick="kpPress(\'0\')">0</button><button onclick="kpDel()" aria-label="지우기">⌫</button></div>';
+        '<button onclick="kpPress(\'.\')" aria-label="소수점">.</button><button onclick="kpPress(\'0\')">0</button><button onclick="kpDel()" aria-label="지우기">⌫</button></div>';
       // 우리 고유 기능 → 상세 설정 접기
       h+='<details class="adv" id="sAdv"'+((pbId||settleInc)?' open':'')+'><summary>상세 설정</summary>';
       h+='<div class="txfield"><span class="k">목적별 가계부</span><select class="txsel" id="sPb" onchange="renderSettleBlock()">'+
@@ -246,6 +247,7 @@
       sh._settle = t ? { inc:t.settlementIncluded===true, payer:t.payer||'', splitType:t.splitType||'equal',
         participants:Array.isArray(t.splitParticipants)?t.splitParticipants.slice():null, amounts:t.splitAmounts||null, memo:t.settlementMemo||'' } : null;
       highlightTypeSeg(); renderTxDyn(); renderSettleBlock();
+      sh._cur=(t&&t.currency)?t.currency:'KRW'; sh._rate=(t&&t.fxRate)?t.fxRate:(sh._cur==='KRW'?1:''); sh._fxSource=(t&&t.fxSource)||'manual'; renderFxRow();
       // 데스크톱(마우스/물리키보드 환경)에선 금액칸에 포커스를 줘 바로 숫자를 타이핑할 수 있게(모바일은 화면 키패드 유지 위해 포커스 안 줌).
       try{ if(window.matchMedia && window.matchMedia('(pointer: fine)').matches){ setTimeout(function(){ const a=$('sAmount'); if(a){ a.focus(); const v=a.value||''; try{ a.setSelectionRange(v.length, v.length); }catch(_){} } }, 60); } }catch(_){ }
     }
@@ -275,17 +277,45 @@
       else if(!sheetCat && cats[0]) sheetCat=cats[0].name;
       return '<div class="chips">'+cats.map(c=>'<button class="chip'+(c.name===sheetCat?' on':'')+'" onclick="pickCat(\''+escapeHtml(c.name)+'\')"><span class="catdot" style="background:'+(c.color||'#8b95a1')+'"></span>'+escapeHtml(c.name)+'</button>').join('')+'</div>';
     }
-    function kpPress(d){ const el=$('sAmount'); if(!el) return; let cur=String(parseAmount(el.value)||'');
-      if(d==='00'){ if(!cur) return; cur+='00'; } else cur+=d;
-      cur=cur.replace(/^0+(?=\d)/,''); if(cur.length>12) return; el.value = cur?Number(cur).toLocaleString():''; }
-    function kpDel(){ const el=$('sAmount'); if(!el) return; let cur=String(parseAmount(el.value)||'').slice(0,-1); el.value=cur?Number(cur).toLocaleString():''; }
-    // 물리 키보드로 금액 입력(데스크톱): 숫자→kpPress, 백스페이스→kpDel, Enter→저장. readonly라 OS 소프트키보드는 안 뜸.
+    // ===== 금액 입력(통화 인식) — 외화 선택 시 소수점 허용·원화 환산 =====
+    function curOptions(sel){ return CURRENCIES.map(c=>'<option value="'+c.code+'"'+(c.code===sel?' selected':'')+'>'+c.sym+' '+c.code+'</option>').join(''); }
+    function sheetCur(){ const sh=$('sheet'); return (sh&&sh._cur)||'KRW'; }
+    function curDec(){ return curInfo(sheetCur()).dec; }
+    function amtRaw(){ const el=$('sAmount'); return el?el.value.replace(/,/g,''):''; }
+    function sheetAmt(){ return parseFloat(amtRaw())||0; }
+    function fmtAmt(raw){ raw=String(raw==null?'':raw); if(raw==='') return ''; const dot=raw.indexOf('.');
+      if(dot<0){ const i=raw.replace(/[^0-9]/g,''); return i?Number(i).toLocaleString():''; }
+      const ip=raw.slice(0,dot).replace(/[^0-9]/g,'')||'0', fp=raw.slice(dot+1).replace(/[^0-9]/g,'');
+      return Number(ip).toLocaleString()+'.'+fp; }
+    function setAmt(raw){ const el=$('sAmount'); if(el){ el.value=fmtAmt(raw); updateFxPreview(); } }
+    function kpPress(d){ const dec=curDec(); let cur=amtRaw();
+      if(d==='.'){ if(dec===0||cur.indexOf('.')>=0) return; cur=(cur||'0')+'.'; }
+      else if(d==='00'){ if(!cur||cur==='0') return; cur+='00'; }
+      else cur+=d;
+      const dot=cur.indexOf('.');
+      if(dot>=0){ if(dec===0) cur=cur.slice(0,dot); else cur=cur.slice(0,dot+1)+cur.slice(dot+1).replace(/[^0-9]/g,'').slice(0,dec); }
+      if((cur.match(/[0-9]/g)||[]).length>13) return;
+      setAmt(cur); }
+    function kpDel(){ setAmt(amtRaw().slice(0,-1)); }
     function kpKey(e){ const k=e.key;
       if(k>='0'&&k<='9'){ e.preventDefault(); kpPress(k); }
+      else if(k==='.'||k===','){ e.preventDefault(); kpPress('.'); }
       else if(k==='Backspace'||k==='Delete'){ e.preventDefault(); kpDel(); }
       else if(k==='Enter'){ e.preventDefault(); if(typeof saveTx==='function') saveTx(); } }
-    function kpPaste(e){ e.preventDefault(); const dt=e.clipboardData||window.clipboardData; const txt=dt?dt.getData('text'):'';
-      const digits=String(txt||'').replace(/[^0-9]/g,'').replace(/^0+(?=\d)/,'').slice(0,12); const el=$('sAmount'); if(el) el.value=digits?Number(digits).toLocaleString():''; }
+    function kpPaste(e){ e.preventDefault(); const dt=e.clipboardData||window.clipboardData; const txt=dt?dt.getData('text'):''; let m=String(txt||'').replace(/[^0-9.]/g,''); const p=m.split('.'); m=p.shift()+(p.length?'.'+p.join(''):''); setAmt(m); }
+    function sheetRate(){ if(sheetCur()==='KRW') return 1; const el=$('sFxRate'); const sh=$('sheet'); const r=el?parseFloat(el.value.replace(/,/g,'')):(sh?parseFloat(sh._rate):0); return r>0?r:0; }
+    function sheetKRWAmount(){ return sheetCur()==='KRW' ? Math.round(sheetAmt()) : Math.round(sheetAmt()*sheetRate()); }
+    function onCurChange(){ const sh=$('sheet'); sh._cur=val('sCur');
+      if(curInfo(sh._cur).dec===0) setAmt(String(Math.floor(sheetAmt())||''));
+      if(sh._cur==='KRW') sh._rate=1;
+      renderFxRow(); }
+    function renderFxRow(){ const box=$('sFx'); if(!box) return; const c=sheetCur(), sh=$('sheet');
+      if(c==='KRW'){ box.innerHTML=''; box.style.display='none'; return; }
+      box.style.display=''; const ci=curInfo(c); const rate=(sh&&sh._rate)?sh._rate:'';
+      box.innerHTML='<div class="fxrow-in"><span class="fxk">1 '+c+' =</span><input class="fxrate" id="sFxRate" inputmode="decimal" value="'+(rate||'')+'" placeholder="환율" oninput="markManualRate();updateFxPreview()"><span class="fxk">₩</span><span class="fxconv">= ₩<b id="sFxKrw">0</b></span></div><div class="tx-sub" style="margin-top:4px;">'+escapeHtml(ci.name)+' 금액을 넣으면 원화로 환산돼 저장돼요. 환율은 직접 입력(추후 실시간 자동).</div>';
+      updateFxPreview(); }
+    function markManualRate(){ const sh=$('sheet'); if(sh){ sh._fxSource='manual'; sh._rate=sheetRate(); } }
+    function updateFxPreview(){ const el=$('sFxKrw'); if(el) el.textContent=Math.round(sheetAmt()*sheetRate()).toLocaleString(); }
     function guideNote(actual, text){ return '<div class="install-banner" style="background:'+(actual?'rgba(240,68,82,.1)':'var(--primary-weak)')+';color:'+(actual?'var(--expense)':'var(--primary)')+';">'+(actual?'🛒':'ℹ️')+' '+text+'</div>'; }
     function renderTxDyn(){
       const sh=$('sheet'); const fromV=sh._from, toV=sh._to;
@@ -338,7 +368,7 @@
       const sh=$('sheet');
       const defInc = defaultCardIncluded(card, sheetType, sheetCat);
       const inc = sh._cpi!==undefined ? !!sh._cpi : defInc;
-      const amt = sh._cpa!=null ? sh._cpa : parseAmount(val('sAmount'));
+      const amt = sh._cpa!=null ? sh._cpa : sheetKRWAmount();
       box.innerHTML='<div class="card" style="padding:14px;margin:4px 0 14px;">'+
         '<div class="menu-item" style="padding:4px 0;"><span>💳 '+escapeHtml(card.cardName||acctName(card.id))+' 실적 포함</span><div class="switch '+(inc?'on':'')+'" id="sCpi" onclick="this.classList.toggle(\'on\');toggleCpiFields()"><i></i></div></div>'+
         '<div id="sCpiFields" style="'+(inc?'':'display:none;')+'"><div class="field" style="margin-top:8px;"><label>실적 인정 금액</label><input class="input" id="sCpa" inputmode="numeric" value="'+(amt?Number(amt).toLocaleString():'')+'" oninput="this.value=fmtComma(this.value)"></div></div>'+
@@ -385,7 +415,7 @@
       if(type!=='payer_only'){
         h+='<label style="font-size:13px;font-weight:600;color:var(--sub);">참여자</label><div class="chip-row" style="margin:6px 0 8px;">'+
           all.map((n,i)=>'<button class="chip '+(parts.includes(n)?'on':'')+'" onclick="toggleSettleParticipant('+i+')">'+escapeHtml(n)+'</button>').join('')+'</div>';
-        const amt=parseAmount(val('sAmount'));
+        const amt=sheetKRWAmount();
         const split=computeSettleAmounts(type, parts, amt, sh._stCustom);
         h+='<div id="sStAmts">'+parts.map(n=>'<div class="field" style="margin-top:6px;"><label>'+escapeHtml(n)+' 부담</label>'+
           '<input class="input stamt" data-n="'+escapeHtml(n)+'" inputmode="numeric" value="'+(split[n]?Number(split[n]).toLocaleString():'0')+'"'+(type==='equal'?' readonly':' oninput="this.value=fmtComma(this.value)"')+'></div>').join('')+'</div>';
@@ -418,7 +448,7 @@
     function collectSettle(){
       const sh=$('sheet'); if(!sh._stReady || !sh._stOn) return { inc:false };
       captureSettleCustom(); captureSettleScalars();
-      const type=sh._stType||'equal', amt=parseAmount(val('sAmount'));
+      const type=sh._stType||'equal', amt=sheetKRWAmount();
       const payer = $('sStPayer')?val('sStPayer'):(sh._stPayer||state.userName);
       let parts, amounts={};
       if(type==='payer_only'){ parts=[payer]; amounts[payer]=amt; }
@@ -426,8 +456,11 @@
       return { inc:true, payer, splitType:type, participants:parts, amounts, memo: $('sStMemo')?val('sStMemo'):(sh._stMemo||'') };
     }
     function saveTx(){
-      const rawAmount=parseAmount(val('sAmount'));
-      if(!rawAmount){ toast('금액을 입력하세요', true); return; }
+      const curCode=sheetCur(), foreign=sheetAmt();
+      if(!foreign){ toast('금액을 입력하세요', true); return; }
+      if(curCode!=='KRW' && !(sheetRate()>0)){ toast('환율을 입력하세요', true); return; }
+      const rawAmount=sheetKRWAmount();
+      if(!rawAmount){ toast('환산 금액이 0이에요', true); return; }
       const date=val('sDate')||todayStr();
       const desc=val('sDesc').trim();
       const memo=val('sMemo').trim();
@@ -439,6 +472,7 @@
       const tx={ type:sheetType, date:iso, user:consumer, amount:rawAmount,
         desc: desc||(hasCat?(sheetCat||TYPE_LABEL[sheetType]):TYPE_LABEL[sheetType]),
         isActualExpense: !!ACTUAL_DEFAULT[sheetType] };
+      if(curCode!=='KRW'){ tx.currency=curCode; tx.foreignAmount=foreign; tx.fxRate=sheetRate(); tx.fxSource=($('sheet')._fxSource||'manual'); tx.fxDate=date; }
       if(memo) tx.memo=memo;
       if(sheetType==='balance_adjustment'){ tx.to=val('sTo'); if(val('sAdjSign')==='-') tx.amount=-rawAmount; }
       else { if(e.debit) tx.from=val('sFrom'); if(e.credit) tx.to=val('sTo'); }

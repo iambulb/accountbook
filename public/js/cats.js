@@ -333,22 +333,24 @@
     // 가격(은화)은 등급·확률에 맞춰 재산정 — 등급이 오를수록 대략 2배씩(TIER_PRICE 참고).
     // 알(펫알) 100은화로 열면 금화+1·중복 30은화 환급이라, 흔한 등급은 알보다 싸게·희귀는 알보다 비싸게 잡아
     // "직접 구매 vs 뽑기" 선택지가 성립하도록 함. 가격은 CAT_TIER→TIER_PRICE로 산정(normalizePrices).
+    // @gen:pet-catalog — 자동생성(tools/build_pets.py). 직접 수정 말고 tools/pets.json 편집 후 재실행.
     const PET_CATALOG = [
-      { id:'cat_mackerel', species:'cat', name:'고등어', price:50,   desc:'쿨그레이 줄무늬. 차분하게 방을 돌아다녀요.' },
-      { id:'cat_cheese',   species:'cat', name:'치즈',   price:100,  desc:'웜오렌지. 활발하게 뛰어다니는 개냥이.' },
-      { id:'cat_calico',   species:'cat', name:'삼색', price:200,  desc:'검정·주황 어우러진 삼색(토터셸). 도도하게 창가에 앉아요.' },
-      { id:'cat_black',    species:'cat', name:'까망',   price:400,  desc:'노란 눈의 까만 고양이. 조용히 방을 지켜요.' },
-      { id:'cat_white',    species:'cat', name:'하양',   price:800,  desc:'파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요.' },
-      { id:'cat_fluffy',   species:'cat', name:'복슬이', price:200,  desc:'복슬복슬한 털에 파란 눈. 나른하게 졸며 방을 거닐어요.' },
-      { id:'cat_tuxedo',   species:'cat', name:'턱시도', price:1500, desc:'검은 정장에 하얀 셔츠·발. 단정하게 걸어다녀요.' },
-      { id:'cat_chaos',    species:'cat', name:'카오스', price:800,  desc:'다크그레이+브라운 소용돌이 무늬. 종잡을 수 없이 쏘다녀요.' },
-      { id:'cat_siamese',  species:'cat', name:'샴',     price:1500, desc:'크림빛 몸에 짙은 포인트. 우아하게 방을 누벼요.' },
-      { id:'cat_bengal',   species:'cat', name:'벵갈',  price:100,  desc:'골든빛 몸에 동글동글 반점. 야무지게 돌아다녀요.' },
-      { id:'cat_fold',     species:'cat', name:'폴드', price:200, desc:'접힌 귀가 매력. 얌전히 자리를 지켜요.' },
-      { id:'cat_bora',     species:'cat', name:'보라',  price:400,  desc:'한쪽은 파랑·한쪽은 호박색 오드아이. 신비롭게 거닐어요.' },
-      { id:'cat_choco',    species:'cat', name:'초코',  price:100,  desc:'초콜릿빛 갈색 털에 크림색 입가·가슴. 느긋하게 방을 거닐어요.' },
-      { id:'cat_kitten',   species:'cat', name:'아깽이', price:50,  desc:'치즈빛 오렌지 태비 아기고양이. 뒤뚱뒤뚱 방을 쏘다녀요.' }
+      { id:'cat_mackerel', species:'cat', name:'고등어', price:50, desc:'쿨그레이 줄무늬. 차분하게 방을 돌아다녀요.' },
+      { id:'cat_cheese', species:'cat', name:'치즈', price:100, desc:'웜오렌지. 활발하게 뛰어다니는 개냥이.' },
+      { id:'cat_calico', species:'cat', name:'삼색', price:200, desc:'검정·주황 어우러진 삼색(토터셸). 도도하게 창가에 앉아요.' },
+      { id:'cat_black', species:'cat', name:'까망', price:400, desc:'노란 눈의 까만 고양이. 조용히 방을 지켜요.' },
+      { id:'cat_white', species:'cat', name:'하양', price:400, desc:'파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요.' },
+      { id:'cat_fluffy', species:'cat', name:'복슬이', price:200, desc:'복슬복슬한 털에 파란 눈. 나른하게 졸며 방을 거닐어요.' },
+      { id:'cat_tuxedo', species:'cat', name:'턱시도', price:800, desc:'검은 정장에 하얀 셔츠·발. 단정하게 걸어다녀요.' },
+      { id:'cat_chaos', species:'cat', name:'카오스', price:800, desc:'다크그레이+브라운 소용돌이 무늬. 종잡을 수 없이 쏘다녀요.' },
+      { id:'cat_siamese', species:'cat', name:'샴', price:1500, desc:'크림빛 몸에 짙은 포인트. 우아하게 방을 누벼요.' },
+      { id:'cat_bengal', species:'cat', name:'벵갈', price:100, desc:'골든빛 몸에 동글동글 반점. 야무지게 돌아다녀요.' },
+      { id:'cat_fold', species:'cat', name:'폴드', price:200, desc:'접힌 귀가 매력. 얌전히 자리를 지켜요.' },
+      { id:'cat_bora', species:'cat', name:'보라', price:400, desc:'한쪽은 파랑·한쪽은 호박색 오드아이. 신비롭게 거닐어요.' },
+      { id:'cat_choco', species:'cat', name:'초코', price:100, desc:'초콜릿빛 갈색 털에 크림색 입가·가슴. 느긋하게 방을 거닐어요.' },
+      { id:'cat_kitten', species:'cat', name:'아깽이', price:50, desc:'치즈빛 오렌지 태비 아기고양이. 뒤뚱뒤뚱 방을 쏘다녀요.' }
     ];
+    // @gen:end
     // 종(species) → 상점 분류 라벨. 품종(샴·벵갈 등)은 표시하지 않고 종만 노출.
     const SPECIES_LABEL = { cat:'고양이', dog:'강아지', rabbit:'토끼' };
     function speciesLabel(id){ const c=PET_CATALOG.find(x=>x.id===id); return (c&&SPECIES_LABEL[c.species])||'펫'; }
@@ -421,22 +423,24 @@
     function assetUrl(p){ try{ return new URL(p, document.baseURI).href; }catch(e){ return p; } }
     function sprStills(id){ return 'assets/pets/'+id; }
     function sprStill(id, face){ return assetUrl(sprStills(id)+'/'+face+'.png'); }
+    // @gen:pet-sprites — 자동생성(tools/build_pets.py). tools/pets.json 편집 후 재실행.
     const PET_SPRITES = {
       cat_mackerel:{ walk:'assets/pets/cat_mackerel/walk.png', frames:6, stills:true },
-      cat_cheese:  { walk:'assets/pets/cat_cheese/walk.png',   frames:6, stills:true },
-      cat_calico:  { walk:'assets/pets/cat_calico/walk.png',   frames:6, stills:true },
-      cat_white:   { walk:'assets/pets/cat_white/walk.png',    frames:6, stills:true },   // Walk/east 옆걷기 재취득 완료(구 frontWalk 해제)
-      cat_fluffy:  { walk:'assets/pets/cat_fluffy/walk.png',   frames:6, stills:true },   // 복슬이 — Walk/east 옆걷기 정상
-      cat_tuxedo:  { walk:'assets/pets/cat_tuxedo/walk.png',   frames:6, stills:true },
-      cat_black:   { walk:'assets/pets/cat_black/walk.png',    frames:6, stills:true },
-      cat_chaos:   { walk:'assets/pets/cat_chaos/walk.png',    frames:6, stills:true },
-      cat_siamese: { walk:'assets/pets/cat_siamese/walk.png',  frames:6, stills:true },
-      cat_bengal:  { walk:'assets/pets/cat_bengal/walk.png',   frames:6, stills:true },
-      cat_fold:    { walk:'assets/pets/cat_fold/walk.png',     frames:6, stills:true },
-      cat_bora:    { walk:'assets/pets/cat_bora/walk.png',     frames:6, stills:true },
-      cat_choco:   { walk:'assets/pets/cat_choco/walk.png',    frames:6, stills:true },   // 초코 — Walk/east 옆걷기 정상
-      cat_kitten:  { walk:'assets/pets/cat_kitten/walk.png',   frames:6, stills:true }    // 아깽이 — Walk/east 옆걷기 정상
+      cat_cheese:{ walk:'assets/pets/cat_cheese/walk.png', frames:6, stills:true },
+      cat_calico:{ walk:'assets/pets/cat_calico/walk.png', frames:6, stills:true },
+      cat_black:{ walk:'assets/pets/cat_black/walk.png', frames:6, stills:true },
+      cat_white:{ walk:'assets/pets/cat_white/walk.png', frames:6, stills:true },
+      cat_fluffy:{ walk:'assets/pets/cat_fluffy/walk.png', frames:6, stills:true },
+      cat_tuxedo:{ walk:'assets/pets/cat_tuxedo/walk.png', frames:6, stills:true },
+      cat_chaos:{ walk:'assets/pets/cat_chaos/walk.png', frames:6, stills:true },
+      cat_siamese:{ walk:'assets/pets/cat_siamese/walk.png', frames:6, stills:true },
+      cat_bengal:{ walk:'assets/pets/cat_bengal/walk.png', frames:6, stills:true },
+      cat_fold:{ walk:'assets/pets/cat_fold/walk.png', frames:6, stills:true },
+      cat_bora:{ walk:'assets/pets/cat_bora/walk.png', frames:6, stills:true },
+      cat_choco:{ walk:'assets/pets/cat_choco/walk.png', frames:6, stills:true },
+      cat_kitten:{ walk:'assets/pets/cat_kitten/walk.png', frames:6, stills:true }
     };
+    // @gen:end
     function hasSprite(id){ return !!PET_SPRITES[id]; }
     // 걷기 무대 액터 1개의 내부 마크업 — 시트 있으면 스프라이트 div, 없으면 SVG 프레임0.
     // reduced-motion이면 처음부터 정지 이미지(south=앞)로 고정.
@@ -1126,7 +1130,9 @@
       closeRename();
     }
     // 테스트 배정(등급당 1) — 펫알=고양이 / 랜덤박스=가구
-    const CAT_TIER  = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'epic', cat_fluffy:'rare', cat_tuxedo:'legend', cat_chaos:'legend', cat_siamese:'limited', cat_bengal:'uncommon', cat_fold:'rare', cat_bora:'epic', cat_choco:'uncommon', cat_kitten:'normal' };
+    // @gen:pet-tier — 자동생성(tools/build_pets.py). tools/pets.json 의 tier 편집 후 재실행.
+    const CAT_TIER = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'epic', cat_fluffy:'rare', cat_tuxedo:'legend', cat_chaos:'legend', cat_siamese:'limited', cat_bengal:'uncommon', cat_fold:'rare', cat_bora:'epic', cat_choco:'uncommon', cat_kitten:'normal' };
+    // @gen:end
     const ITEM_TIER = { cushion:'normal', bowl:'uncommon', scratcher:'rare', tower:'epic' };
     // 등급별 상점 가격(은화) — 확률(60/20/15/3.8/1/0.2%)에 맞춰 등급이 오를수록 약 2배씩.
     // 알 100은화(+금화1·중복 30은화 환급) 대비, 흔한 등급은 알보다 싸게·희귀 등급은 비싸게 → 직접구매 vs 뽑기 선택 성립.

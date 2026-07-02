@@ -6,6 +6,24 @@
 - `public/assets/pets/_zips/` 에 새 `*.zip`이 추가되거나, 사용자가 "이 동물(zip) 추가해줘"라고 하면 실행.
 - `_zips/`는 원본 보관용이며 **APP_SHELL 캐시에 넣지 않는다.**
 
+## 🚀 자동 파이프라인 (권장) — `tools/build_pets.py`
+**단일 소스 = `tools/pets.json`**(레지스트리). 이 스크립트가 zip→에셋 생성 + `cats.js`(PET_CATALOG·PET_SPRITES·CAT_TIER) + `sw.js`(APP_SHELL·CACHE_VERSION) + 문서(이 표·`pet-list.md`·`features.md` 마릿수)를 **@gen 마커 사이만** 자동 재생성한다(그 밖은 손대지 않음). 아래 흐름이면 손편집이 **이름·등급 한 줄**뿐이다.
+
+```
+1) public/assets/pets/_zips/ 에 zip 넣기
+2) python tools/build_pets.py     # 에셋 생성 + pets.json 에 stub 추가, "확정 필요" 출력
+3) tools/pets.json 에서 그 항목의 name·tier(·desc) 확정
+4) python tools/build_pets.py     # cats.js·sw.js·문서 자동 갱신 + CACHE_VERSION 상향
+5) 커밋
+```
+- `--force` 에셋 강제 재생성 / `--check` 생성 결과가 현재와 다르면 종료코드 1(수정 안 함, 사전점검용).
+- `price`는 넣지 않는다(= `tier`+`TIER_PRICE`로 파생). `frontWalk`는 zip에 `Walk/east`가 없으면 스크립트가 자동 `true` 설정.
+- 폐기된 원본 zip(펫으로 만들지 않을 것)은 `pets.json`의 `ignoreZips`에 넣어 인제스트에서 제외한다.
+- `id`는 RTDB 저장 키다. stub의 제안 id를 바꾸려면 **에셋 생성 전에**(2단계 출력 후) `pets.json`의 `id`를 고치고 폴더명도 맞춘 뒤 재실행(하위호환은 `PET_ID_MIGRATE`).
+- `CAT_PALS`(SVG 폴백 팔레트)·`PET_ID_MIGRATE`는 스프라이트 없는 펫/‑id 변경 시에만 쓰는 **수동 유지** 항목(마커 밖).
+
+> 아래 "zip 규격 / 산출물 / 체크리스트"는 스크립트가 내부적으로 수행하는 내용의 설명이자, 스크립트 없이 수동으로 할 때의 폴백이다.
+
 ## zip 규격 (PixelLab export v3)
 ```
 <folder>/rotations/{south,north,east,west}.png     # 48×48 정지 4방향
@@ -40,27 +58,29 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 
 | zip 파일명 | id | name | 비고 |
 |---|---|---|---|
-| simple_pixel_art_cat_grey_mackerel_tabby_with_dark.zip | `cat_mackerel` | 고등어 | `Walk/east` |
-| simple_pixel_art_cat_orange_tabby_chubby_with_crea.zip | `cat_cheese` | 치즈 | `Walk/east` |
-| chibi_pixel_art_tortoiseshell_cat_mixed_black_and.zip | `cat_calico` | 삼색 | 토터셸 삼색, `Walk/east`. 이전 `simple_pixel_art_calico_...` 대체 |
-| simple_pixel_art_cat_black_yellow_eyes_extra_round.zip | `cat_black` | 까망 | `Walk/east` + 4방향 |
-| chibi_pixel_art_white_cat_pale_blue_eyes_sleepy_fa.zip | `cat_white` | 하양 | `Walk/east` 옆걷기 재취득 완료(구 `frontWalk` 해제). `Walk-<hash>/south`도 있으나 east 우선 |
-| simple_pixel_art_white_cat_fluffy_fur_pale_blue_ey.zip | `cat_fluffy` | 복슬이 | 복슬한 흰 고양이, `Walk/east` 옆걷기 정상 |
-| simple_pixel_art_tuxedo_cat_black_body_with_white.zip | `cat_tuxedo` | 턱시도 | 8방향 rotations + `Walk-<hash>/east` |
-| simple_pixel_art_chaos_cat_dark_grey_and_brown_swir.zip | `cat_chaos` | 카오스 | `Walk/east` + 8방향 |
-| hibi_pixel_art_siamese_cat_cream_body_with_dark_fa.zip | `cat_siamese` | 샴 | `Walk/east` + 8방향 |
-| chibi_pixel_art_golden_cat_a_few_simple_round_spot.zip | `cat_bengal` | 벵갈 | `Walk/east` |
-| chibi_pixel_art_grey_cat_small_folded-down_ears_ro.zip | `cat_fold` | 폴드 | 접힌 귀, `Walk/east` |
-| chibi_pixel_art_white_cat_one_blue_eye_one_amber_e.zip | `cat_bora` | 보라 | 오드아이, `Walk/east` |
-| simple_pixel_art_chocolate_brown_cat_cream_muzzle.zip | `cat_choco` | 초코 | 초콜릿빛 갈색+크림 입가·가슴, `Walk/east` 옆걷기 정상 |
-| simple_pixel_art_orange_tabby_kitten_a_few_cheese.zip | `cat_kitten` | 아깽이 | 치즈빛 오렌지 태비 아기고양이, `Walk/east` 옆걷기 정상 |
+<!-- @gen:pet-idtable — 자동생성(tools/build_pets.py). 상세 설명은 pet-list.md 참고 -->
+| simple_pixel_art_cat_grey_mackerel_tabby_with_dark.zip | `cat_mackerel` | 고등어 | Walk/east 옆걷기 정상 |
+| simple_pixel_art_cat_orange_tabby_chubby_with_crea.zip | `cat_cheese` | 치즈 | Walk/east 옆걷기 정상 |
+| chibi_pixel_art_tortoiseshell_cat_mixed_black_and.zip | `cat_calico` | 삼색 | Walk/east 옆걷기 정상 |
+| simple_pixel_art_cat_black_yellow_eyes_extra_round.zip | `cat_black` | 까망 | Walk/east 옆걷기 정상 |
+| chibi_pixel_art_white_cat_pale_blue_eyes_sleepy_fa.zip | `cat_white` | 하양 | Walk/east 옆걷기 정상 |
+| simple_pixel_art_white_cat_fluffy_fur_pale_blue_ey.zip | `cat_fluffy` | 복슬이 | Walk/east 옆걷기 정상 |
+| simple_pixel_art_tuxedo_cat_black_body_with_white.zip | `cat_tuxedo` | 턱시도 | Walk/east 옆걷기 정상 |
+| simple_pixel_art_chaos_cat_dark_grey_and_brown_swir.zip | `cat_chaos` | 카오스 | Walk/east 옆걷기 정상 |
+| chibi_pixel_art_siamese_cat_cream_body_with_dark_fa.zip | `cat_siamese` | 샴 | Walk/east 옆걷기 정상 |
+| chibi_pixel_art_golden_cat_a_few_simple_round_spot.zip | `cat_bengal` | 벵갈 | Walk/east 옆걷기 정상 |
+| chibi_pixel_art_grey_cat_small_folded-down_ears_ro.zip | `cat_fold` | 폴드 | Walk/east 옆걷기 정상 |
+| chibi_pixel_art_white_cat_one_blue_eye_one_amber_e.zip | `cat_bora` | 보라 | Walk/east 옆걷기 정상 |
+| simple_pixel_art_chocolate_brown_cat_cream_muzzle.zip | `cat_choco` | 초코 | Walk/east 옆걷기 정상 |
+| simple_pixel_art_orange_tabby_kitten_a_few_cheese.zip | `cat_kitten` | 아깽이 | Walk/east 옆걷기 정상 |
+<!-- @gen:end -->
 
 새 zip이 오면: 사용자가 id를 지정하면 그걸 쓰고, 없으면 종·색에서 합리적 slug(`<species>_<색>`)를 만들어 **이 표에 한 줄 추가**하고, 이름은 위 규칙대로 센스껏 짓는다.
 
 ### ⚠️ 옆걷기(east) 없는 펫 — 이미지 재취득 대상
 `animations/Walk/east`(옆보기 걷기)가 **없는** zip은 `walk.png`가 정면이 되어 `frontWalk:true`로 처리(이동 중 옆 정지스틸만 보이고 걷기 애니 없음). 그런 펫은 옆걷기 포함 zip으로 다시 받아 재생성하고 `frontWalk`를 해제한다.
 
-**현재 재취득 대상: 없음** — 14종 전부 `Walk/east` 옆걷기 보유. (과거 `cat_white`가 south만 있었으나 east 시트로 재취득 완료.) 새 펫 추가 시 east 유무를 확인해 이 목록을 갱신한다.
+**현재 재취득 대상: 없음** — <!--@gen:cats-count-->14<!--@gen:end-->종 전부 `Walk/east` 옆걷기 보유. (과거 `cat_white`가 south만 있었으나 east 시트로 재취득 완료.) 새 펫 추가 시 east 유무를 확인해 이 목록을 갱신한다.
 
 ## ✅ 펫 추가 체크리스트 (에셋만 넣고 끝내지 말 것 — 코드+문서 함께 반영)
 > **규칙**: 펫을 추가/변경/제거하면 아래 코드 **3곳**과 문서 **3곳**을 같은 커밋에서 모두 갱신한다. 하나라도 빠지면 미완성으로 본다. (이 규칙은 `CLAUDE.md`의 "문서 최신화 규칙" 표 — *기능 추가·변경·제거 → features.md*, *모든 사용자 체감 변경 → CHANGELOG* — 의 펫 전용 상세판이다.)

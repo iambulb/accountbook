@@ -362,6 +362,14 @@
     .amtbig .w { font-size:24px; font-weight:800; color:var(--sub); }
     .amtbig-in { flex:1; min-width:0; border:none; background:transparent; font-size:38px; font-weight:800; text-align:right; letter-spacing:-.03em; color:var(--text); padding:0; }
     .amtbig-in:focus { outline:none; box-shadow:0 3px 0 -1px var(--primary); caret-color:var(--primary); }
+    /* 해외통화: 금액 옆 통화 선택 + 환율/환산 미리보기 */
+    .amtbig .amt-cur { border:none; background:var(--soft); border-radius:10px; font-size:15px; font-weight:800; color:var(--text); padding:6px 8px; -webkit-appearance:none; appearance:none; cursor:pointer; }
+    .fxrow { margin:2px 0 8px; }
+    .fxrow-in { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:14px; font-weight:700; }
+    .fxrow .fxrate { width:96px; border:1px solid var(--bd); border-radius:8px; padding:6px 8px; font-size:14px; font-weight:800; text-align:right; background:var(--card); color:var(--text); }
+    .fxrow .fxk { color:var(--sub); font-weight:700; }
+    .fxrow .fxconv { margin-left:auto; font-weight:800; }
+    .tx-fx { display:block; font-size:11px; color:var(--sub); font-weight:700; margin-top:1px; }
     .chips { display:flex; gap:8px; overflow-x:auto; padding:2px 0 8px; }
     .chips::-webkit-scrollbar { display:none; }
     .chips .chip { flex:none; }

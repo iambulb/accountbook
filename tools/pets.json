@@ -1,0 +1,35 @@
+{
+  "_comment": "펫 레지스트리 = 단일 소스. 이 파일을 편집하고 `python tools/build_pets.py`를 실행하면 에셋·cats.js·sw.js·문서가 자동 생성/갱신됩니다. price는 tier에서 자동 산정하므로 넣지 않습니다. frontWalk는 zip에 Walk/east가 없을 때만 true(스크립트가 자동 설정).",
+  "tierPrice": {
+    "normal": 50,
+    "uncommon": 100,
+    "rare": 200,
+    "epic": 400,
+    "legend": 800,
+    "limited": 1500
+  },
+  "speciesLabel": {
+    "cat": "고양이",
+    "dog": "강아지",
+    "rabbit": "토끼"
+  },
+  "ignoreZips": [
+    "simple_pixel_art_calico_cat_white_with_orange_three.zip"
+  ],
+  "pets": [
+    { "id": "cat_mackerel", "species": "cat", "name": "고등어", "tier": "normal", "desc": "쿨그레이 줄무늬. 차분하게 방을 돌아다녀요.", "zip": "simple_pixel_art_cat_grey_mackerel_tabby_with_dark.zip", "frontWalk": false },
+    { "id": "cat_cheese", "species": "cat", "name": "치즈", "tier": "uncommon", "desc": "웜오렌지. 활발하게 뛰어다니는 개냥이.", "zip": "simple_pixel_art_cat_orange_tabby_chubby_with_crea.zip", "frontWalk": false },
+    { "id": "cat_calico", "species": "cat", "name": "삼색", "tier": "rare", "desc": "검정·주황 어우러진 삼색(토터셸). 도도하게 창가에 앉아요.", "zip": "chibi_pixel_art_tortoiseshell_cat_mixed_black_and.zip", "frontWalk": false },
+    { "id": "cat_black", "species": "cat", "name": "까망", "tier": "epic", "desc": "노란 눈의 까만 고양이. 조용히 방을 지켜요.", "zip": "simple_pixel_art_cat_black_yellow_eyes_extra_round.zip", "frontWalk": false },
+    { "id": "cat_white", "species": "cat", "name": "하양", "tier": "epic", "desc": "파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요.", "zip": "chibi_pixel_art_white_cat_pale_blue_eyes_sleepy_fa.zip", "frontWalk": false },
+    { "id": "cat_fluffy", "species": "cat", "name": "복슬이", "tier": "rare", "desc": "복슬복슬한 털에 파란 눈. 나른하게 졸며 방을 거닐어요.", "zip": "simple_pixel_art_white_cat_fluffy_fur_pale_blue_ey.zip", "frontWalk": false },
+    { "id": "cat_tuxedo", "species": "cat", "name": "턱시도", "tier": "legend", "desc": "검은 정장에 하얀 셔츠·발. 단정하게 걸어다녀요.", "zip": "simple_pixel_art_tuxedo_cat_black_body_with_white.zip", "frontWalk": false },
+    { "id": "cat_chaos", "species": "cat", "name": "카오스", "tier": "legend", "desc": "다크그레이+브라운 소용돌이 무늬. 종잡을 수 없이 쏘다녀요.", "zip": "simple_pixel_art_chaos_cat_dark_grey_and_brown_swir.zip", "frontWalk": false },
+    { "id": "cat_siamese", "species": "cat", "name": "샴", "tier": "limited", "desc": "크림빛 몸에 짙은 포인트. 우아하게 방을 누벼요.", "zip": "chibi_pixel_art_siamese_cat_cream_body_with_dark_fa.zip", "frontWalk": false },
+    { "id": "cat_bengal", "species": "cat", "name": "벵갈", "tier": "uncommon", "desc": "골든빛 몸에 동글동글 반점. 야무지게 돌아다녀요.", "zip": "chibi_pixel_art_golden_cat_a_few_simple_round_spot.zip", "frontWalk": false },
+    { "id": "cat_fold", "species": "cat", "name": "폴드", "tier": "rare", "desc": "접힌 귀가 매력. 얌전히 자리를 지켜요.", "zip": "chibi_pixel_art_grey_cat_small_folded-down_ears_ro.zip", "frontWalk": false },
+    { "id": "cat_bora", "species": "cat", "name": "보라", "tier": "epic", "desc": "한쪽은 파랑·한쪽은 호박색 오드아이. 신비롭게 거닐어요.", "zip": "chibi_pixel_art_white_cat_one_blue_eye_one_amber_e.zip", "frontWalk": false },
+    { "id": "cat_choco", "species": "cat", "name": "초코", "tier": "uncommon", "desc": "초콜릿빛 갈색 털에 크림색 입가·가슴. 느긋하게 방을 거닐어요.", "zip": "simple_pixel_art_chocolate_brown_cat_cream_muzzle.zip", "frontWalk": false },
+    { "id": "cat_kitten", "species": "cat", "name": "아깽이", "tier": "normal", "desc": "치즈빛 오렌지 태비 아기고양이. 뒤뚱뒤뚱 방을 쏘다녀요.", "zip": "simple_pixel_art_orange_tabby_kitten_a_few_cheese.zip", "frontWalk": false }
+  ]
+}

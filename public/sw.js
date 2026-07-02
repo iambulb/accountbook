@@ -1,5 +1,5 @@
 /* 알뜰(Eggarden) 서비스워커 — 오프라인 앱 셸 캐시 */
-const CACHE_VERSION = 'eggarden-v3.95.2';
+const CACHE_VERSION = 'eggarden-v3.96.0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -17,6 +17,7 @@ const APP_SHELL = [
   './icons/wordmark-altteul.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',
+  // @gen:pet-shell — 자동생성(tools/build_pets.py). tools/pets.json 편집 후 재실행.
   './assets/pets/cat_mackerel/walk.png',
   './assets/pets/cat_mackerel/south.png',
   './assets/pets/cat_mackerel/north.png',
@@ -27,16 +28,6 @@ const APP_SHELL = [
   './assets/pets/cat_cheese/north.png',
   './assets/pets/cat_cheese/east.png',
   './assets/pets/cat_cheese/west.png',
-  './assets/pets/cat_white/walk.png',
-  './assets/pets/cat_white/south.png',
-  './assets/pets/cat_white/north.png',
-  './assets/pets/cat_white/east.png',
-  './assets/pets/cat_white/west.png',
-  './assets/pets/cat_tuxedo/walk.png',
-  './assets/pets/cat_tuxedo/south.png',
-  './assets/pets/cat_tuxedo/north.png',
-  './assets/pets/cat_tuxedo/east.png',
-  './assets/pets/cat_tuxedo/west.png',
   './assets/pets/cat_calico/walk.png',
   './assets/pets/cat_calico/south.png',
   './assets/pets/cat_calico/north.png',
@@ -47,6 +38,21 @@ const APP_SHELL = [
   './assets/pets/cat_black/north.png',
   './assets/pets/cat_black/east.png',
   './assets/pets/cat_black/west.png',
+  './assets/pets/cat_white/walk.png',
+  './assets/pets/cat_white/south.png',
+  './assets/pets/cat_white/north.png',
+  './assets/pets/cat_white/east.png',
+  './assets/pets/cat_white/west.png',
+  './assets/pets/cat_fluffy/walk.png',
+  './assets/pets/cat_fluffy/south.png',
+  './assets/pets/cat_fluffy/north.png',
+  './assets/pets/cat_fluffy/east.png',
+  './assets/pets/cat_fluffy/west.png',
+  './assets/pets/cat_tuxedo/walk.png',
+  './assets/pets/cat_tuxedo/south.png',
+  './assets/pets/cat_tuxedo/north.png',
+  './assets/pets/cat_tuxedo/east.png',
+  './assets/pets/cat_tuxedo/west.png',
   './assets/pets/cat_chaos/walk.png',
   './assets/pets/cat_chaos/south.png',
   './assets/pets/cat_chaos/north.png',
@@ -72,11 +78,6 @@ const APP_SHELL = [
   './assets/pets/cat_bora/north.png',
   './assets/pets/cat_bora/east.png',
   './assets/pets/cat_bora/west.png',
-  './assets/pets/cat_fluffy/walk.png',
-  './assets/pets/cat_fluffy/south.png',
-  './assets/pets/cat_fluffy/north.png',
-  './assets/pets/cat_fluffy/east.png',
-  './assets/pets/cat_fluffy/west.png',
   './assets/pets/cat_choco/walk.png',
   './assets/pets/cat_choco/south.png',
   './assets/pets/cat_choco/north.png',
@@ -86,7 +87,8 @@ const APP_SHELL = [
   './assets/pets/cat_kitten/south.png',
   './assets/pets/cat_kitten/north.png',
   './assets/pets/cat_kitten/east.png',
-  './assets/pets/cat_kitten/west.png'
+  './assets/pets/cat_kitten/west.png',
+  // @gen:end
 ];
 
 // CDN(라이브러리)은 cache-first 로 따로 보관
