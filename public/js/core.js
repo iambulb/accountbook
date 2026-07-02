@@ -1097,6 +1097,12 @@
     function applyMode(){ renderTabBar(); updateModeToggle();
       if(state.view==='home') goHome();                          // 부팅/전환 시 홈 유지
       else go(state.mode==='todo'?'todo':'calendar'); }
-    function setMode(m){ m=(m==='todo')?'todo':'ledger'; state.mode=m; try{ localStorage.setItem('mode',m); }catch(e){}
+    function setMode(m){ m=(m==='todo')?'todo':'ledger';
+      // 토글 시 같은 메뉴 위치 유지: 현재 탭의 인덱스를 반대 모드 탭바의 같은 자리로 매핑(더보기↔더보기 등)
+      const prevSet=_TABSETS[state.mode==='todo'?'todo':'ledger'];
+      const idx=prevSet.findIndex(function(it){ return it!=='fab' && it[0]===state.tab; });
+      state.mode=m; try{ localStorage.setItem('mode',m); }catch(e){}
       state.view='mode'; try{ localStorage.setItem('view','mode'); }catch(e){}   // 모드 토글 = 모드 화면 진입
-      applyMode(); }
+      const nextSet=_TABSETS[m], cell=(idx>=0 && nextSet[idx] && nextSet[idx]!=='fab') ? nextSet[idx] : null;
+      const target=cell?cell[0]:(m==='todo'?'todo':'calendar');   // 같은 위치 탭(없으면 모드 기본)
+      renderTabBar(); updateModeToggle(); go(target); }
