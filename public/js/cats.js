@@ -811,7 +811,7 @@
         const a={ el, id, spr, frontWalk:fw, x:(parseFloat(el.style.left)||0), dir:Math.random()<0.5?-1:1, _pdir:0,
         v:v, t:Math.random()*6, frame:0, fc:Math.random()*170, W, hh:ah,
         sw:(spr?ah:Math.round(ah*26/14)), props, lift:0,
-        depth:Math.random(), vz:0, riseMax:riseMax, _z:0,   // 앞뒤(깊이) 원근: 배치칸 행처럼 앞뒤로 움직여 가까/멀
+        depth:Math.random(), vz:0, riseMax:riseMax, _z:0, flee:0,   // 앞뒤(깊이) 원근 + 도망 타이머(큰 펫 회피)
         mode:'roam', pause:0, goal:null, pose:null, resKey:null, resFloor:null,
         // 유휴(그 자리에 멈춰 정면 보기) — 자주·오래 서서 정면을 보도록(poseDur에서 시간 늘림)
         idle:0.0032+Math.random()*0.005, turn:0.004+Math.random()*0.010, seek:0.005+Math.random()*0.009, cool:0 };
@@ -867,19 +867,31 @@
         if(a.mode==='pause'){ a.pause-=dt; if(a.pause<=0){ a.mode='roam'; a.fc=999; a.dir=Math.random()<0.5?-1:1; a.lift=0; releaseRes(a);   // 내려와 재출발(자리 반납)
           // 이동 재개: 정면 이미지로 이동 금지 — actorShowMoving으로 일원화(일반=CSS 필름, frontWalk=east 정지스틸)
           actorShowMoving(a); setXform(a); a._pdir=a.dir; } return; }   // 재출발: lift 해제·방향 반영, 걷기는 필름(csprFilm)
-        // 유휴 제스처(그 자리 앉기/식빵/낮잠) — 쿨다운 후에만
-        if(a.mode==='roam' && a.cool<=0 && Math.random()<a.idle){ enterPose(a, id, ['loaf','sit','sleep'][Math.floor(Math.random()*3)]); return; }
-        // 가끔 방향 전환(개별)
-        if(a.mode==='roam' && Math.random()<a.turn){ a.dir*=-1; }
+        // 🐈 겁먹고 도망: 나보다 3배 이상 큰 펫이 주변 1칸 이내로 오면 뒤돌아 반대방향으로 살짝 도망(잠깐 빠르게)
+        if(a.flee>0){ a.flee-=dt; if(a.flee<=0) setWalkDur(a); }   // 도망 종료 시 걸음속도 원복
+        if(a.mode==='roam' && a.flee<=0){ const colW=a.W/12, rowD=1/11;
+          for(let k=0;k<_eng.actors.length;k++){ const b=_eng.actors[k];
+            if(b===a || (b.hh||0) < (a.hh||1)*3) continue;   // 나보다 3배 이상 큰 펫만(크기=렌더 높이 hh 기준)
+            if(Math.abs((a.x+a.sw/2)-(b.x+b.sw/2))<colW*1.3 && Math.abs((a.depth||0)-(b.depth||0))<rowD*1.6){   // 주변 1칸 이내
+              a.dir=((a.x+a.sw/2)>=(b.x+b.sw/2))?1:-1;   // 큰 펫 반대 방향으로 뒤돎
+              a.flee=700+Math.random()*400; a.cool=Math.max(a.cool,300);   // 잠깐(0.7~1.1초) 도망(유휴/가구탐색 억제)
+              if(a.spr){ const sc=a.el.querySelector('.cspr'); if(sc) sc.style.setProperty('--wdur', walkDur(a.v*2, a.hh)+'s'); }   // 빨라진 속도에 걸음 맞춤(미끄러짐 방지)
+              break; } }
+        }
+        const fleeing=a.flee>0;
+        // 유휴 제스처(그 자리 앉기/식빵/낮잠) — 쿨다운 후에만(도망 중엔 멈추지 않음)
+        if(a.mode==='roam' && !fleeing && a.cool<=0 && Math.random()<a.idle){ enterPose(a, id, ['loaf','sit','sleep'][Math.floor(Math.random()*3)]); return; }
+        // 가끔 방향 전환(개별) — 도망 중엔 방향 유지(큰 펫 반대)
+        if(a.mode==='roam' && !fleeing && Math.random()<a.turn){ a.dir*=-1; }
         // 가끔 속도 변화(개별) — 바뀐 속도에 맞춰 걷기 주기도 갱신(미끄러짐 방지)
         if(a.mode==='roam' && Math.random()<0.003){ a.v=0.14+Math.random()*0.18; setWalkDur(a); }
-        // 앞뒤(깊이) 배회 — 가끔 앞/뒤 속도를 새로 정하고 천천히 이동해 가까워졌다 멀어졌다(원근·가림 변화)
-        if(a.mode==='roam'){
+        // 앞뒤(깊이) 배회 — 가끔 앞/뒤 속도를 새로 정하고 천천히 이동해 가까워졌다 멀어졌다(원근·가림 변화). 도망 중엔 직진.
+        if(a.mode==='roam' && !fleeing){
           if(a.cool<=0 && Math.random()<0.006) a.vz=(Math.random()*2-1)*0.0002;   // depth/ms (약 5초에 전체 범위)
           if(a.vz){ a.depth+=a.vz*dt; if(a.depth<=0){a.depth=0;a.vz=Math.abs(a.vz);} else if(a.depth>=1){a.depth=1;a.vz=-Math.abs(a.vz);} }
         }
-        // 가구로 이동 결정(가구 있을 때, 쿨다운 후)
-        if(a.mode==='roam' && a.props.length && a.cool<=0 && Math.random()<a.seek){
+        // 가구로 이동 결정(가구 있을 때, 쿨다운 후) — 도망 중엔 가구 탐색 안 함
+        if(a.mode==='roam' && !fleeing && a.props.length && a.cool<=0 && Math.random()<a.seek){
           const avail=a.props.filter(p=>occupantsOf(p.key,a).n < (p.itemId==='tower'?3:1));   // 빈 가구만(캣타워는 남은 층 있으면)
           if(avail.length){ const g=avail[Math.floor(Math.random()*avail.length)]; a.resKey=g.key;
             if(g.itemId==='tower'){ const used=occupantsOf(g.key,a).floors; a.resFloor=[0,1,2].find(f=>!used[f]); if(a.resFloor==null) a.resFloor=0; } else a.resFloor=null;
@@ -888,7 +900,7 @@
         if(a.mode==='goal' && a.goal){ const cx=a.x+a.sw/2; a.dir=(a.goal.x>cx)?1:-1;
           if(a.goal.depth!=null){ const dd=a.goal.depth-a.depth; a.depth+=Math.sign(dd)*Math.min(Math.abs(dd), 0.0009*dt); }
           if(Math.abs(a.goal.x-cx)<6 && Math.abs((a.goal.depth==null?a.depth:a.goal.depth)-a.depth)<0.03){ enterInteract(a, id, a.goal); a.goal=null; return; } }
-        a.x += a.dir*a.v*dt*0.06;
+        a.x += a.dir*(fleeing?a.v*2:a.v)*dt*0.06;   // 도망 중엔 2배 빠르게
         const max=a.W-a.sw;
         if(a.x<2){ a.x=2; a.dir=1; if(a.mode==='goal'){a.mode='roam';a.goal=null;releaseRes(a);} } else if(a.x>max){ a.x=max; a.dir=-1; if(a.mode==='goal'){a.mode='roam';a.goal=null;releaseRes(a);} }
         if(!a.spr){ a.fc+=dt; if(a.fc>170){ a.fc=0; a.frame^=1; a.el.innerHTML=catSide(id,a.frame,{h:a.hh}); } }   // SVG 폴백: 2프레임 교대(스프라이트는 필름 csprFilm이 처리)
