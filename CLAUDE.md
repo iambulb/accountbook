@@ -4,7 +4,7 @@
 
 ## 프로젝트 한눈 요약
 
-- **무엇**: **알뜰집**(영문·코드명 **Eggarden**) — 개인·그룹이 함께 쓰는 공유 가계부 **PWA**(웹앱). 그룹 초대코드로 가족·커플·모임이 같은 가계부를 실시간 공유. *일반 명사 "가계부"는 그대로 쓰되, 앱 제목·브랜드는 `알뜰집`, 영문/코드는 `Eggarden`.*
+- **무엇**: **알뜰**(영문·코드명 **Eggarden**) — 개인·그룹이 함께 쓰는 공유 가계부 **PWA**(웹앱). 그룹 초대코드로 가족·커플·모임이 같은 가계부를 실시간 공유. *일반 명사 "가계부"는 그대로 쓰되, 앱 제목·브랜드는 `알뜰`, 영문/코드는 `Eggarden`.*
 - **스택**: Vanilla JS(프레임워크·빌드 없음) + Firebase **Realtime Database** + **Auth(Email/Password)** + Chart.js. 서비스워커 PWA. Netlify 호스팅, PWABuilder TWA로 안드로이드 APK.
 - **📁 폴더 구조**: 웹 앱은 **`public/`** 아래(`public/index.html`, `public/js/`, `public/sw.js`, `public/css/styles.css`, `public/icons/`, `public/.well-known/`). 배포 설정(`firebase.json`·`netlify.toml`·`.firebaserc`·`database.rules.json`)은 **저장소 루트**. 문서는 루트 `README.md`·`CLAUDE.md` + `docs/`(배포 가이드는 `docs/deploy/`). Netlify는 `publish="public"`.
 

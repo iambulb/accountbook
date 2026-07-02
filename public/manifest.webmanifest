@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "알뜰집",
-  "short_name": "알뜰집",
-  "description": "개인·그룹이 함께 쓰는 공유 가계부 · 알뜰집",
+  "name": "알뜰",
+  "short_name": "알뜰",
+  "description": "개인·그룹이 함께 쓰는 공유 가계부 · 알뜰",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

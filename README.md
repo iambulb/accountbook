@@ -1,6 +1,6 @@
-# 💰 알뜰집 (Eggarden)
+# 💰 알뜰 (Eggarden)
 
-**알뜰집**(영문·코드명 **Eggarden**)은 개인·그룹이 **함께 쓰는** 공유 가계부 웹앱(PWA)입니다. 그룹 초대코드 하나로 가족·커플·모임이 같은 가계부를 실시간으로 공유합니다.
+**알뜰**(영문·코드명 **Eggarden**)은 개인·그룹이 **함께 쓰는** 공유 가계부 웹앱(PWA)입니다. 그룹 초대코드 하나로 가족·커플·모임이 같은 가계부를 실시간으로 공유합니다.
 
 ![stack](https://img.shields.io/badge/JS-Vanilla-f7df1e) ![firebase](https://img.shields.io/badge/Firebase-RTDB%20%2B%20Auth-ffca28) ![pwa](https://img.shields.io/badge/PWA-installable-5a0fc8) ![deploy](https://img.shields.io/badge/Deploy-Netlify-00c7b7)
 
