@@ -78,7 +78,7 @@ firebase.js → constants.js → util.js → core.js → views.js → cats.js �
 | 대출/이자 | `openLoanBook`·`loanCard`·`openLoanDetail`·`openLoanEdit`·`saveLoan`·`deleteLoan`·`setLoanStatus`, 상환 `openLoanPayment`·`saveLoanPayment`(이자 거래연결)·`deleteLoanPayment` |
 | 내보내기 | `exportCSV` |
 | **할일(투두)** | `renderTodoList`/`renderTodoCalendar`/`renderTodoDone`·`todoRow`/`todoDueBadge`·`scopedTodos`(개인=`myTodos`·친구=`friendTodos`·그룹=`ws`)/`allTodos`/`todoDbRef`·`setTodoScope`/`todoScopeSeg`(개인ws=친구들)·CRUD `openTodoEdit`/`saveTodo`/`deleteTodo`/`toggleTodo`·더보기 시트 `openTodoReport`/`openRepeatTodos`·PB연동 `pbTodoSummaryHtml`. 상세 [features-todo.md](features-todo.md) |
-| **친구(별도 추가)** | 피드 `renderFriendsFeed`(아바타 정렬 `friendFeedOrder`·오늘 무지개·합본 목록·`setFeedFriend` 필터)·`friendDisplayName`·관리 시트 `openFriendsSheet`(더보기 공용)·공개 `toggleTodoPublic`·관계 `addFriendByCode`/`acceptFriend`/`declineFriend`/`removeFriend`/`copyFriendCode`. core: `initUserGraph`·`ensureFriendCode`·`loadFriendPublics`·`syncFriendTodoWatch`(공개 친구별 todos→`friendTodosByUid`)·`migratePersonalTodos` |
+| **친구(별도 추가)·스토리** | 피드 `renderFriendsFeed`(스토리 줄·내 스토리·`storyItem`·`storySeenMap`)·풀스크린 뷰어 `openFriendStory`/`openMyStory`/`renderStory`/`storyNext`/`storyPrev`/`closeStory`(진행바·상대시간 `relTime`·자동넘김·Esc)·관리 시트 `openFriendsSheet`(더보기 공용)·관계 `addFriendByCode`/`acceptFriend`/`declineFriend`/`removeFriend`. util `friendFeedOrder`/`storyRing`/`relTime`. core `syncFriendTodoWatch`(공개 친구별 todos→`friendTodosByUid`)·`loadFriendPublics`·`ensureFriendCode` |
 
 ## 모드(가계부/할일) · 네비게이션 / 렌더 흐름
 

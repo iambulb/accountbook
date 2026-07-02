@@ -38,7 +38,7 @@
 
 - **친구 관리 = 더보기 공용**(`openFriendsSheet`, 가계부·할일 두 모드 모두 **더보기 → 친구**): 내 **할일 공개** 토글(`toggleTodoPublic`→`users/{uid}/todoPublic`), 내 코드 복사, **코드로 추가**(`addFriendByCode`→상대 `friendReqs`), **받은 요청** 수락/거절(`acceptFriend`/`declineFriend`), **친구 목록**(공개여부·삭제 `removeFriend`). 더보기 셀에 받은 요청 수 배지.
 - **추가/수락**: 코드로 요청 → 상대가 **더보기 → 친구**에서 수락하면 **양쪽** `users/{uid}/friends`에 상호 등록(규칙상 당사자 두 명만 쓰기).
-- **'친구들' 탭 피드**(개인 워크스페이스 둘째 탭, `renderFriendsFeed`): 상단에 **'할일 공개'한 친구 아바타**를 **가장 최근 할일 등록순**(`friendFeedOrder`)으로 나열, **오늘 할일을 등록한 친구는 무지개 테두리**(`.tdfr.today`). 아래엔 **친구들이 등록한 할일 목록**(모든 공개 친구 합본·마감 임박순, 읽기전용). 아바타 탭 → 그 친구만 필터(`setFeedFriend`·전체 보기).
+- **'친구들' 탭 = 인스타그램 스토리**(개인 워크스페이스 둘째 탭, `renderFriendsFeed`): 상단 **스토리 줄** — 맨 왼쪽 **내 스토리**(＋로 할일 추가) + 공개 친구를 **가장 최근 할일 등록순**(`friendFeedOrder`)으로 가로 스크롤. 링 상태 `storyRing`: **오늘 등록·미열람=무지개**, 미열람=컬러 그라디언트, 열람함=회색, 없음=얇은 테두리(열람기록 `localStorage(storySeen)`). 아바타 탭 → **풀스크린 스토리 뷰어**(`openFriendStory`/`openMyStory`·`renderStory`): 세그먼트 진행바·헤더(아바타·이름·상대시간 `relTime`)·큰 할일 카드, 화면 우/좌 탭=다음/이전(마지막이면 다음 친구), 자동 4.2s 넘김(reduced-motion 끔)·Esc/X 닫기. 스토리 줄 **아래엔 친구들 할일 합본 목록**(마감 임박순, 읽기전용).
 - **데이터**: 공개 친구별 `users/{uid}/todos`를 상시 리스너로 로드(`syncFriendTodoWatch`→`state.friendTodosByUid`, `state.friendPub` 기준). 개인 탭엔 친구 스트립을 두지 않는다(개인 = 내 할일만). 공개는 **UI 레벨 필터**(읽기 규칙은 로그인 전역).
 
 ## 마감일 · 캘린더 · 완료
