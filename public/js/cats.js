@@ -876,31 +876,29 @@
     }
     function startCatLoop(){ if(!_eng.raf) _eng.raf=requestAnimationFrame(catLoop); }
 
-    // ===== 캠/방에서 펫을 꾹 눌러(롱프레스) 집어 좌우로 이동 =====
-    let _petDrag=null, _petJustDragged=false, _petTimer=0;
+    // ===== 캠/방에서 펫을 바로 끌어(드래그) 좌우로 이동 =====
+    let _petDrag=null, _petJustDragged=false;
     function camTap(){ if(_petJustDragged) return; openCatHouse(); }   // 드래그 직후의 탭은 상점 열기 무시
     function petGrabDown(e){
       const el=(e.target&&e.target.closest)?e.target.closest('.cd-actor'):null; if(!el) return;
       const a=_eng.actors.find(x=>x.el===el); if(!a) return;
-      const stage=el.parentElement, sx=e.clientX, sy=e.clientY; let started=false, lastX=e.clientX;
+      e.preventDefault();   // 캠 이미지가 선택/네이티브 드래그되는 것 방지
+      const stage=el.parentElement, sx=e.clientX; let started=false, lastX=e.clientX;
       const begin=()=>{ started=true; _petDrag=a; a.mode='drag'; a.goal=null; if(typeof releaseRes==='function') releaseRes(a);
         a.lift=Math.round((a.hh||40)*0.3); a.el.classList.add('cdgrab');
         if(a.spr) actorShowStill(a,'south'); setXform(a, a.spr?1:a.dir);
-        try{ if(navigator.vibrate) navigator.vibrate(12); }catch(_){}
       };
-      const mv=(ev)=>{ if(!started){ if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>10) cleanup(); return; }
+      const mv=(ev)=>{ if(!started){ if(Math.abs(ev.clientX-sx)>3) begin(); else return; }   // 살짝만 끌어도 바로 집힘(꾹 누를 필요 없음)
         ev.preventDefault(); const r=stage.getBoundingClientRect(), W=a.W||r.width;
         let x=ev.clientX-r.left-a.sw/2; x=Math.max(2, Math.min(W-a.sw, x));
         if(ev.clientX<lastX-1) a.dir=-1; else if(ev.clientX>lastX+1) a.dir=1; lastX=ev.clientX;
         a.x=x; setXform(a, a.spr?1:a.dir);
       };
-      const cleanup=()=>{ clearTimeout(_petTimer);
-        window.removeEventListener('pointermove',mv); window.removeEventListener('pointerup',end); window.removeEventListener('pointercancel',end);
+      const cleanup=()=>{ window.removeEventListener('pointermove',mv); window.removeEventListener('pointerup',end); window.removeEventListener('pointercancel',end);
         if(started){ a.el.classList.remove('cdgrab'); a.mode='roam'; a.lift=0; a.fc=999; a.cool=700; actorShowMoving(a); setXform(a); a._pdir=a.dir;
           _petDrag=null; _petJustDragged=true; setTimeout(()=>{ _petJustDragged=false; }, 260); }   // 놓은 자리에서 다시 배회
       };
       const end=()=>cleanup();
-      _petTimer=setTimeout(begin, 320);   // 320ms 이상 눌러야 집힘(짧은 탭은 상점 열기)
       window.addEventListener('pointermove',mv); window.addEventListener('pointerup',end); window.addEventListener('pointercancel',end);
     }
     if(typeof document!=='undefined') document.addEventListener('pointerdown', petGrabDown, true);
