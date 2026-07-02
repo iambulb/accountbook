@@ -387,13 +387,20 @@
     async function leaveWorkspace(wsId){
       const ws=state.memberships.find(w=>w.id===wsId); if(!ws) return;
       const isOwner = ws.ownerUid===state.uid;
-      const memberCount = Object.keys(ws.members||{}).length;
+      const memberIds = Object.keys(ws.members||{});
+      const memberCount = memberIds.length;
       const upd={};
       upd['users/'+state.uid+'/ws/'+wsId]=null;
       // 마지막 멤버면 워크스페이스/코드까지 정리, 아니면 멤버에서만 제거
       if(memberCount<=1){ upd['workspaces/'+wsId]=null; if(ws.code) upd['codes/'+ws.code]=null; }
-      else { upd['workspaces/'+wsId+'/members/'+state.uid]=null; }
-      await db.ref().update(upd);
+      else {
+        upd['workspaces/'+wsId+'/members/'+state.uid]=null;
+        // 소유자가 나가면 남은 멤버에게 소유권 자동 이양 — 그룹이 주인 없는 상태로 남지 않게(안 하면 남은 멤버가 관리 불가)
+        if(isOwner){ const next=memberIds.find(u=>u!==state.uid); if(next){ upd['workspaces/'+wsId+'/ownerUid']=next; upd['workspaces/'+wsId+'/members/'+next+'/role']='owner'; } }
+      }
+      try{ await db.ref().update(upd); }
+      catch(e){ toast('그룹 나가기에 실패했어요. 잠시 후 다시 시도해 주세요', true); return; }
+      if(typeof closeSheet==='function') closeSheet();   // 열려 있던 '그룹 관리' 시트를 닫아 결과가 바로 보이게
       await loadMyWorkspaces();
       if(!state.memberships.length){ await createPersonalWorkspace(true); await loadMyWorkspaces(); }
       await switchWorkspace(state.memberships[0].id);

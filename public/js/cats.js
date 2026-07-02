@@ -370,11 +370,12 @@
       { id:'cat_bora', species:'cat', name:'보라', price:400, desc:'한쪽은 파랑·한쪽은 호박색 오드아이. 신비롭게 거닐어요.' },
       { id:'cat_choco', species:'cat', name:'초코', price:100, desc:'초콜릿빛 갈색 털에 크림색 입가·가슴. 느긋하게 방을 거닐어요.' },
       { id:'cat_kitten', species:'cat', name:'아깽이', price:50, desc:'치즈빛 오렌지 태비 아기고양이. 뒤뚱뒤뚱 방을 쏘다녀요.' },
-      { id:'cat_pink', species:'cat', name:'스핑크스', price:800, desc:'털 없는 분홍빛 주름 피부. 도도하게 방을 누벼요.' }
+      { id:'cat_pink', species:'cat', name:'스핑크스', price:800, desc:'털 없는 분홍빛 주름 피부. 도도하게 방을 누벼요.' },
+      { id:'tiger_orange', species:'tiger', name:'호랑이', price:1500, desc:'볼드한 검은 줄무늬의 오렌지 호랑이. 위풍당당하게 방을 누벼요.' }
     ];
     // @gen:end
     // 종(species) → 상점 분류 라벨. 품종(샴·벵갈 등)은 표시하지 않고 종만 노출.
-    const SPECIES_LABEL = { cat:'고양이', dog:'강아지', rabbit:'토끼' };
+    const SPECIES_LABEL = { cat:'고양이', dog:'강아지', rabbit:'토끼', tiger:'호랑이' };
     function speciesLabel(id){ const c=PET_CATALOG.find(x=>x.id===id); return (c&&SPECIES_LABEL[c.species])||'펫'; }
     // 구 id(고양이 전용 시절) → 신 id. RTDB 보유/활성 데이터 하위호환(normalizeGame에서 적용).
     const PET_ID_MIGRATE = { mackerel:'cat_mackerel', cheese:'cat_cheese', calico:'cat_calico', black:'cat_black', white:'cat_white' };
@@ -479,7 +480,8 @@
       cat_bora:{ walk:'assets/pets/cat_bora/walk.png', frames:6, stills:true },
       cat_choco:{ walk:'assets/pets/cat_choco/walk.png', frames:6, stills:true },
       cat_kitten:{ walk:'assets/pets/cat_kitten/walk.png', frames:6, stills:true, scale:0.5 },
-      cat_pink:{ walk:'assets/pets/cat_pink/walk.png', frames:6, stills:true }
+      cat_pink:{ walk:'assets/pets/cat_pink/walk.png', frames:6, stills:true },
+      tiger_orange:{ walk:'assets/pets/tiger_orange/walk.png', frames:6, stills:true, scale:5 }
     };
     // @gen:end
     function hasSprite(id){ return !!PET_SPRITES[id]; }
@@ -926,7 +928,7 @@
     // 펫 원근(캠/방): 배치칸 행처럼 펫도 앞뒤(깊이 depth 0=앞·가까움 ~ 1=뒤·멂)로 움직인다.
     //  · 가까우면 크게(PET_NEAR_SCALE)·앞으로(z↑), 멀면 작게(PET_FAR_SCALE)·뒤로(z↓) → 가구와 z-index로 상호 가림.
     //  · 요청대로 근거리 확대는 넉넉히, 원거리 축소는 적당히만(FAR를 너무 낮추지 않음).
-    const PET_NEAR_SCALE=1.28, PET_FAR_SCALE=0.86;
+    const PET_NEAR_SCALE=1.5, PET_FAR_SCALE=0.86;   // 근거리(맨 앞)에서 확실히 크게 → 화면 제일 앞으로 나온 느낌
     // ⚠️ 함수명 주의: petScale(id)=펫별 크기배율(위쪽에 이미 정의, petActorPx가 사용)와 충돌 금지 → 원근 배율은 depthScale로.
     function depthScale(depth){ return PET_FAR_SCALE + (PET_NEAR_SCALE-PET_FAR_SCALE)*(1-depth); }
     // depth로부터 배율·바닥올림(rise)·z-index를 액터에 반영. z는 가구 frontRow(=12-depth*11)와 같은 척도라 상호 가림이 맞물린다.
@@ -966,7 +968,7 @@
       // 방 높이 → depth 1(맨 뒤)에서 발이 올라가는 최대 px(rise). 가구 바닥 매핑(bottom%=3+depth*46/38)과 같은 척도라 같은 행에 서면 발높이가 맞는다.
       const roomEl = stage.closest('.catroom') || stage.closest('.cd-room');
       const roomH = (roomEl && roomEl.clientHeight) || (isDock?110:244);
-      const riseMax = roomH*(isDock?0.38:0.46);
+      const riseMax = roomH*(isDock?0.42:0.52);   // 앞뒤 깊이 스프레드를 넓혀 맨 앞/맨 뒤 대비를 크게(앞이 확실히 앞으로)
       // 가구 위치(발자국 중앙 x)·렌더 높이(fh)·깊이(depth) — 상호작용 시 올라갈 높이·앞뒤 정렬(가림)에 사용
       const props = hasRoom ? placedList().map(p=>{ const foot=itemFoot(p.itemId), depth=(12-(p.r+foot.h-1))/11;   // propMarkup과 동일(앞줄 기준)
         const fh=furnRoomH(p.itemId, isDock, depth);   // 렌더 높이와 동일 → 캣타워 층 lift가 실제 높이에 맞음
@@ -1065,10 +1067,17 @@
           if(avail.length){ const g=avail[Math.floor(Math.random()*avail.length)]; a.resKey=g.key;
             if(g.itemId==='tower'){ const used=occupantsOf(g.key,a).floors; a.resFloor=[0,1,2].find(f=>!used[f]); if(a.resFloor==null) a.resFloor=0; } else a.resFloor=null;
             a.goal=g; a.mode='goal'; } }
-        // 가구 도착 판정은 "고양이 중심"(a.x+sw/2) 기준 → 가구 그래픽 중앙(goal.x)에 정확히 서게. 깊이도 가구 쪽으로 서서히 맞춰 걸어감(급격한 크기변화 방지).
-        if(a.mode==='goal' && a.goal){ const cx=a.x+a.sw/2; a.dir=(a.goal.x>cx)?1:-1;
-          if(a.goal.depth!=null){ const dd=a.goal.depth-a.depth; a.depth+=Math.sign(dd)*Math.min(Math.abs(dd), 0.0009*dt); }
-          if(Math.abs(a.goal.x-cx)<6 && Math.abs((a.goal.depth==null?a.depth:a.goal.depth)-a.depth)<0.03){ enterInteract(a, id, a.goal); a.goal=null; return; } }
+        // 가구 도착: "고양이 중심"(a.x+sw/2) 기준으로 가구 중앙(goal.x)에 섬. 깊이도 가구 쪽으로 맞춰 걸어감.
+        // ⚠️ x에 다 왔는데 깊이 수렴을 기다리며 방향이 매 프레임 뒤집혀 "제자리 좌우 춤"추던 버그 → x 도착 시 위치를 스냅하고 방향을 고정한 채 대기.
+        if(a.mode==='goal' && a.goal){ const cx=a.x+a.sw/2, dxr=a.goal.x-cx, nearX=Math.abs(dxr)<6;
+          if(!nearX) a.dir=(dxr>0)?1:-1;   // 멀 때만 방향 갱신(가까우면 고정 → 좌우 버벅/춤 방지)
+          if(a.goal.depth!=null){ const dd=a.goal.depth-a.depth; a.depth+=Math.sign(dd)*Math.min(Math.abs(dd), 0.004*dt); }   // 깊이 빠르게 수렴(대기 시간 최소화)
+          const nearD=Math.abs((a.goal.depth==null?a.depth:a.goal.depth)-a.depth)<0.03;
+          if(nearX){ a.x=a.goal.x-a.sw/2;   // x 도착 → 위치 스냅(오버슈트로 인한 좌우 떨림 제거)
+            if(nearD){ enterInteract(a, id, a.goal); a.goal=null; return; }
+            applyDepth(a); setXform(a, a.dir); a._pdir=a.dir; return;   // 깊이 수렴까지 그 자리에서 정지(이동·방향전환 없음)
+          }
+        }
         a.x += a.dir*(fleeing?a.v*2:a.v)*dt*0.06;   // 도망 중엔 2배 빠르게
         const max=a.W-a.sw;
         if(a.x<2){ a.x=2; a.dir=1; if(a.mode==='goal'){a.mode='roam';a.goal=null;releaseRes(a);} } else if(a.x>max){ a.x=max; a.dir=-1; if(a.mode==='goal'){a.mode='roam';a.goal=null;releaseRes(a);} }
@@ -1459,7 +1468,7 @@
     }
     // 테스트 배정(등급당 1) — 펫알=고양이 / 랜덤박스=가구
     // @gen:pet-tier — 자동생성(tools/build_pets.py). tools/pets.json 의 tier 편집 후 재실행.
-    const CAT_TIER = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'epic', cat_fluffy:'rare', cat_tuxedo:'legend', cat_chaos:'legend', cat_siamese:'legend', cat_bengal:'uncommon', cat_fold:'rare', cat_bora:'epic', cat_choco:'uncommon', cat_kitten:'normal', cat_pink:'legend' };
+    const CAT_TIER = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'epic', cat_fluffy:'rare', cat_tuxedo:'legend', cat_chaos:'legend', cat_siamese:'legend', cat_bengal:'uncommon', cat_fold:'rare', cat_bora:'epic', cat_choco:'uncommon', cat_kitten:'normal', cat_pink:'legend', tiger_orange:'limited' };
     // @gen:end
     const ITEM_TIER = { cushion:'normal', bowl:'uncommon', scratcher:'rare', pethouse:'epic', tower:'legend' };
     // 등급별 상점 가격(은화) — 확률(60/20/15/3.8/1/0.2%)에 맞춰 등급이 오를수록 약 2배씩.

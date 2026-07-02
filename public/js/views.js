@@ -1037,7 +1037,7 @@
     function openWorkspaceSheet(){
       const cur=state.wsId;
       let h='<p class="muted" style="font-size:13px;margin:2px 2px 12px;">개인 가계부와 그룹을 분리해서 쓸 수 있어요. 그룹은 코드로 친구와 함께 사용합니다.</p>';
-      h+='<div class="menu-group-title">내 가계부</div>';
+      h+='<div class="menu-group-title">내 그룹</div>';
       (state.memberships||[]).forEach(w=>{
         const on=w.id===cur, isGroup=w.type==='group', memCount=Object.keys(w.members||{}).length;
         h+='<div class="ws-item'+(on?' on':'')+'">'+
@@ -1056,7 +1056,7 @@
          '</div>';
       if(!(state.memberships||[]).some(w=>w.type==='personal'))
         h+='<button class="btn ghost" style="margin-top:10px;" onclick="addPersonalWorkspace()">+ 개인 가계부 만들기</button>';
-      openSheet('가계부 전환', h);
+      openSheet('그룹 전환', h);
     }
     function chooseWorkspace(id){ closeSheet(); if(id!==state.wsId) switchWorkspace(id); }
     async function addPersonalWorkspace(){ closeSheet(); await createPersonalWorkspace(); await loadMyWorkspaces(); const p=state.memberships.find(w=>w.type==='personal'); if(p) switchWorkspace(p.id); }
