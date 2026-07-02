@@ -268,7 +268,7 @@
 
     /* 하단 탭바 + FAB */
     /* ===== 오늘 홈(랜딩) ===== */
-    body.home-view .tabbar { display:none; }   /* 홈에선 바텀 탭바 숨김(랜딩 화면) */
+    /* 홈(오늘 마무리)에서도 바텀 탭바 유지 — 별도 나가기 버튼 없이 탭으로 바로 이동 가능하게 */
     .brand { cursor:pointer; }
     .homewrap { padding:14px 16px calc(24px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:12px; }
     .homehero { display:flex; align-items:center; justify-content:space-between; padding:16px 18px; }
