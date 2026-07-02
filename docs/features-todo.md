@@ -8,36 +8,38 @@
 
 - **모드 토글**(상단바): `[가계부 | 할일]` 세그먼트(`setMode`). 선택은 `localStorage('mode')` 로 유지되고, 전환 시 하단 탭바(`renderTabBar`)와 본문(`rerender`)이 모드에 맞게 바뀝니다.
 - **할일 모드 하단 탭**(`_TABSETS.todo`): **할일 · 캘린더 · ＋(추가) · 완료 · 더보기**. FAB(＋)는 `fabAdd()`가 모드 분기 → 할일 모드면 `openTodoEdit()`.
-- 모든 할일 화면 상단에는 **[개인 | 그룹] 세그먼트**(`todoScopeSeg`/`setTodoScope`)가 있어 두 축을 오갑니다. 선택은 `localStorage('todoScope')` 로 유지.
+- 모든 할일 화면 상단에는 **[개인 | 그룹] 세그먼트**(`todoScopeSeg`/`setTodoScope`)가 있어 두 축을 오갑니다. 둘째 탭 라벨은 **개인 워크스페이스에선 '친구들'**, 그룹 워크스페이스에선 '그룹'. 선택은 `localStorage('todoScope')` 로 유지. 개인 할일은 `users/{uid}/todos`(user-global), 그룹 할일은 `ws/{wsId}/todos`.
 
 | 탭 | 화면 | 함수 |
 |---|---|---|
-| 할일 | [개인\|그룹] 목록 + (개인) 공유 친구 스트립 + 필터 칩 | `renderTodoList` |
+| 할일 | [개인\|그룹/친구들] 목록 + (개인) 친구 스트립 + 필터 칩 | `renderTodoList` |
 | 캘린더 | 스코프별 마감일 월 그리드(점/개수) + 그날 할일 | `renderTodoCalendar` |
 | ＋ | 할일 추가/수정 시트 | `openTodoEdit` |
 | 완료 | 스코프별 완료 이력(최신순) | `renderTodoDone` |
 | 더보기 | 할일 전용 메뉴(공유·리포트·반복·목적별) + 공용 알뜰샵·설정 | `renderMore`(모드 분기) |
 
-## 개인 할일 (scope=personal)
+## 개인 할일 (user-global)
 
-- 프로필별 **내 할일**. `ws/{wsId}/todos/{id}` 에 `scope:'personal'`·`ownerUid:내 uid` 로 저장.
-- 추가/수정 시트(`openTodoEdit`)는 개인 스코프에선 **담당자 선택 없이** 제목·마감일·반복·목적별 연결·메모만. 저장 `saveTodo`(개인이면 `ownerUid=나`).
-- 목록은 `scopedTodos()`가 **`scope==='personal' && ownerUid===(보는 대상)`** 으로 필터. 미완료는 마감 임박순, 완료는 하단으로 접힘.
-- 필터 칩: **전체 / 오늘 / 이번주**(개인엔 '내 담당' 없음). 마감일은 **D-day/지남 배지**(`todoDueBadge`, `dueDiffDays`).
+- 프로필별 **내 할일**. **`users/{uid}/todos/{id}`** 에 저장돼 **워크스페이스와 무관하게 항상 동일**(개인↔그룹 가계부를 오가도 그대로). 상시 리스너 `initUserGraph`→`state.myTodos`(워크스페이스 전환에도 유지).
+- 추가/수정 시트(`openTodoEdit`)는 개인 스코프에선 **담당자 없이** 제목·마감일·반복·목적별·메모만. 저장 경로는 `saveTodo`가 개인=`users/{uid}/todos`, 그룹=`ws/{wsId}/todos`로 분기(`todoDbRef`).
+- 목록은 `scopedTodos()`가 개인=`state.myTodos`(내 것) 또는 `state.friendTodos`(친구 열람)로. 미완료 마감 임박순·완료 하단.
+- 필터 칩: **전체 / 오늘 / 이번주**. 마감일은 **D-day/지남 배지**(`todoDueBadge`, `dueDiffDays`).
+- 기존 `ws`의 개인(scope=personal) 할일은 최초 진입 시 `migratePersonalTodos()`로 user로 1회 이전.
 
 ## 그룹 할일 (scope=group)
 
-- 각자 맡은 일을 **그룹 안에서 나눔**(여행: 렌터카·항공권·짐 담당, 집안일 분담 등). 워크스페이스 멤버 **공동 편집**.
-- 추가/수정 시트에 **담당자(멤버) 선택**(`ownerOptions`, uid 저장) 노출. `scope:'group'`, 담당은 `assignedUid`·`assignedName`.
-- 목록 행(`todoRow`)에 **담당자 아바타**(`avatarHtml`) 표시. 필터 칩: **전체 / 내 담당(담당=나) / 오늘 / 이번주**.
-- 기존 플랫 `todos`(담당 배정형)를 그대로 그룹 할일로 사용 — `scope` 누락 시 **group 취급**(`todoScope()` 하위호환).
+- 각자 맡은 일을 **그룹 안에서 나눔**(여행: 렌터카·항공권·짐 담당, 집안일 분담 등). `ws/{wsId}/todos`, 워크스페이스 멤버 **공동 편집**.
+- 추가/수정 시트에 **담당자(멤버) 선택**(`ownerOptions`, uid 저장). `scope:'group'`, 담당은 `assignedUid`·`assignedName`. 목록 행에 **담당자 아바타**. 필터 칩: **전체 / 내 담당 / 오늘 / 이번주**.
+- 세그먼트 둘째 탭은 **그룹 워크스페이스에서만 '그룹'**. **개인 워크스페이스에선 '친구들'**(그룹 할일이 없으므로 친구 허브로 대체 — `isPersonalWs`).
 
-## 공유 친구 스트립 (개인 탭 · 그룹 워크스페이스)
+## 친구 (별도 추가) · 공유 친구 스트립
 
-- **"할일 공유"를 켠 친구**(같은 그룹 멤버)의 프로필이 개인 탭 상단에 가로 스트립으로 뜸(`todoFriendStrip`). **"나" 항상 맨 앞**, 이어서 친구들은 **각자 개인 할일 최신 등록순**(`friendTodoOrder` — `createdAt` 내림차순, 동률/없음은 이름순).
-- 친구 아바타 탭(`setTodoFriend`) → 그 친구의 개인 할일을 **같은 화면에서 읽기전용**으로 열람(`todoReadOnly`): 완료 토글·편집·＋ 비활성, "👀 …님의 할일 · 읽기전용 / 내 할일로" 안내 바. 캘린더·완료 탭에도 읽기전용이 이어집니다.
-- 스트립 우측 **내 공유 토글**(공유중/비공개) → `openTodoShareSheet`/`toggleTodoShare`가 `ws/{wsId}/todoShare/{uid}` 를 기록. 더보기 → **할일 공유**에서도 진입.
-- 공유는 **UI 레벨 필터**입니다(RTDB 규칙상 멤버는 `ws/{wsId}` 전체를 읽을 수 있음 — 기존 `visibility` 관례와 동일, 규칙 강제 아님). 개인 워크스페이스(멤버 1명)에선 스트립이 뜨지 않습니다.
+친구는 **그룹과 무관한 별도 관계**다. 각 사용자는 **친구 코드**(`friendCode` 6자, `friendCodes/{code}=uid` 인덱스, `ensureFriendCode` 백필)를 가진다.
+
+- **추가/수락**: 코드로 요청(`addFriendByCode`→상대 `friendReqs`) → 상대가 **친구 허브**에서 수락(`acceptFriend`)하면 **양쪽** `users/{uid}/friends`에 상호 등록. 거절 `declineFriend`·삭제 `removeFriend`.
+- **친구 허브**: 개인 워크스페이스의 **'친구들' 탭**(`renderFriendsHub`) — 내 코드 표시·복사, 코드로 추가, 받은 요청 수락/거절, 친구 목록(→ '할일 보기').
+- **개인 탭 상단 친구 스트립**(`todoFriendStrip`, 양쪽 ws): **나 + '할일 공개(`todoPublic`)'한 친구**만(이름순, `state.friendPub` 캐시). 아바타 탭(`setTodoFriend`→`viewFriendTodos`) → 그 친구의 `users/{uid}/todos`를 임시 리스너로 받아 **같은 화면에서 읽기전용** 열람(`todoReadOnly`: 완료·편집·＋ 비활성 + "👀 …님의 할일 · 읽기전용 / 내 할일로" 바).
+- **내 공개 토글**(스트립 우측 공개중/비공개, 더보기 → 할일 공유): `toggleTodoPublic`이 **user-global `users/{uid}/todoPublic`** 을 켜고/끔. 공개는 **UI 레벨 필터**(읽기 규칙은 로그인 전역).
 
 ## 마감일 · 캘린더 · 완료
 

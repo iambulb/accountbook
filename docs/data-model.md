@@ -6,6 +6,12 @@
 
 ```
 users/{uid}            : { name, email, photo(프로필 사진 base64 data URL), createdAt, activeWs, ws:{ {wsId}:true },
+                           todos:{ {id}:{ title, note, dueDate, done, doneAt, repeat, purposeBookId?, rewardClaimed, sortOrder, createdAt, updatedAt } },  // ✅ 개인 할일(user-global — 워크스페이스 무관·항상 동일). 소유자=uid 암묵
+                           todosMigrated: true,                    // 개인 할일 ws→user 1회 이전 완료 플래그
+                           todoPublic: true|false,                 // 내 개인 할일을 친구에게 공개할지(친구 스트립·열람 대상)
+                           friendCode: "ABC123",                   // 내 친구 코드(friendCodes 인덱스와 짝)
+                           friends:{ {friendUid}:{ name, at } },   // 상호 친구(수락 시 양쪽 기록)
+                           friendReqs:{ {fromUid}:{ name, at } },  // 받은 친구 요청(수락 시 삭제)
                            game:{ 🐱 고양이집(개인 전역, 워크스페이스 무관)
                              coins,                                  // 은화 잔액(정수)
                              gold,                                   // 금화(뽑기 오픈마다 +1)
@@ -21,6 +27,7 @@ users/{uid}            : { name, email, photo(프로필 사진 base64 data URL),
 workspaces/{wsId}      : { name, photo(가계부 사진 base64 data URL, 선택), type:'personal'|'group', code(그룹), ownerUid, createdAt,
                            members:{ {uid}:{ name, role:'owner'|'member', joinedAt } } }
 codes/{CODE}           : wsId            // 그룹 6자리 코드 → 워크스페이스 조회 인덱스
+friendCodes/{CODE}      : uid            // 친구 6자리 코드 → 사용자 uid 조회 인덱스
 migrationV3            : { by, at }      // v2→v3 데이터 1회 이전 잠금 플래그
 ws/{wsId}/             : 가계부 데이터 (아래 노드들)
   ├─ accounts/{id}
@@ -101,11 +108,15 @@ erDiagram
 ### creditCards/{id}
 `cardName`, `cardCompany`, `monthlyPerformanceTarget`, `performancePeriodType`(calendar_month/custom), `performanceStartDay`, `includePrepaidCharge`, `excludedCategories[]`, `defaultIncluded`, `visibility`, `memo`.
 
-### todos/{id}  (할일 — flat `ws/{wsId}/todos/{id}`)
-`scope`(**personal**=개인 프로필별 / **group**=담당 배정형 — 누락 시 group 취급, 하위호환), `ownerUid`(개인 할일 소유자 uid; group은 미사용), `title`, `note`, `assignedUid`(group 담당 멤버 uid, 공동/미배정은 빈값)·`assignedName`(표시용), `dueDate`(YYYY-MM-DD), `done`·`doneAt`·`doneByUid`, `repeat`(none/daily/weekly), `purposeBookId`(여행 등 연결), `rewardClaimed`(완료 은화 1회 지급 멱등), `createdByUid`, `sortOrder`, `createdAt`·`updatedAt`. 워크스페이스 멤버가 공동 편집(RTDB `ws` 규칙으로 커버, 규칙 변경 없음).
+### 할일 — 개인(user-global) vs 그룹(ws)
+- **개인 할일 `users/{uid}/todos/{id}`**(user-global): `title, note, dueDate, done, doneAt, repeat, purposeBookId?, rewardClaimed, sortOrder, createdAt, updatedAt`. **워크스페이스와 무관**하게 내 프로필에 귀속(그룹을 바꿔도 동일). 쓰기는 본인만(`users/$uid` 규칙), **읽기는 로그인 유저 전역**(`users .read`)이라 친구가 열람 가능(앱은 `todoPublic`인 친구만 노출). 기존 `ws`의 `scope=personal` 할일은 `migratePersonalTodos()`로 1회 이전.
+- **그룹 할일 `ws/{wsId}/todos/{id}`**: `scope`(group — 누락 시 group), `title, note, assignedUid`(담당 멤버)·`assignedName, dueDate, done/doneAt/doneByUid, repeat, purposeBookId, rewardClaimed, createdByUid, sortOrder, createdAt, updatedAt`. 워크스페이스 멤버 공동 편집.
 
-### todoShare/{uid} = true|false  (개인 할일 공유 플래그 — `ws/{wsId}/todoShare/{uid}`)
-멤버가 자기 **개인(scope=personal) 할일**을 그룹 친구에게 공개할지 여부. `true`면 친구의 **할일·개인** 화면 상단 공유 스트립에 그 멤버가 뜨고(최근 등록순), 친구는 그 개인 할일을 **읽기전용**으로 열람. 공유는 **UI 레벨 필터**로, RTDB 규칙상 멤버는 `ws/{wsId}` 전체를 읽을 수 있음(기존 `visibility` 관례와 동일 — 규칙 강제 아님). 규칙 변경 없음.
+### 친구 (users/{uid}/friends · friendReqs · friendCode · todoPublic · friendCodes)
+- **friendCode**(6자) + 인덱스 **`friendCodes/{CODE}=uid`**: 코드로 상대를 찾음(`ensureFriendCode` 백필).
+- **친구 요청**: 요청자가 `users/{targetUid}/friendReqs/{fromUid}={name,at}` 기록 → 대상이 수락 시 **양쪽** `users/{uid}/friends/{otherUid}={name,at}` 기록 + 요청 삭제(`acceptFriend`). 규칙상 `friends`/`friendReqs`의 `$fid`는 **당사자 두 명만** 쓰기.
+- **todoPublic**(bool): 내 개인 할일 공개 여부. 개인 탭 상단 친구 스트립엔 `todoPublic`인 친구만 뜨고, 탭하면 그 친구 `users/{uid}/todos`를 **읽기전용**으로 열람(`viewFriendTodos`, 임시 리스너). 공개는 **UI 레벨 필터**(읽기 규칙은 전역).
+- (레거시) `ws/{wsId}/todoShare/{uid}` 는 그룹 단위 공유 플래그였으나 친구 시스템으로 대체됨.
 
 ### categories/{name}
 `name`, `type`(expense/income/transfer/other 등), `icon`(이모지), `color`, `sortOrder`, `isDefault`, `isActive`, `visibility`(full/private), `owner`. 기본 카테고리는 `buildDefaultCategories` 시딩(신규 기본은 `migrateCategories`가 기존 사용자에도 자동 추가). **기본 카테고리도 수정·삭제 가능**하며, 삭제한 기본은 `ws/{wsId}/catDeleted/{name}=true` 툼스톤으로 표시해 재시딩되지 않음(같은 이름 재생성 시 툼스톤 해제).
@@ -145,8 +156,9 @@ erDiagram
 
 | 경로 | read | write |
 |---|---|---|
-| `users/{uid}` | 로그인 | 본인 uid 만 |
-| `codes/*` | 로그인 | 로그인(코드 등록/조회) |
+| `users/{uid}` | 로그인(전역) | 본인 uid 만 |
+| `users/{uid}/friends/{fid}`·`friendReqs/{fid}` | 로그인 | **당사자 두 명만**($uid 또는 $fid) — 친구 요청/수락 |
+| `codes/*`·`friendCodes/*` | 로그인 | 로그인(코드 등록/조회) |
 | `workspaces/{wsId}` | 로그인 | 멤버 또는 **본인을 멤버로 추가(셀프 합류)** 시 |
 | `ws/{wsId}/**` | 그 워크스페이스 **멤버만** | 그 워크스페이스 **멤버만** |
 | 레거시 루트(`accounts` 등) | 로그인 | 로그인 — 이전용 백업 |

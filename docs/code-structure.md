@@ -75,7 +75,8 @@ firebase.js → constants.js → util.js → core.js → views.js → cats.js �
 | 경조사비 | `openGiftBook`·`setGiftTab`·`renderGiftLog/Planned/People`, 기록 `openGiftEdit`·`saveGiftEvent`(거래연결)·`deleteGiftEvent`, 예정 `openPlannedEdit`·`savePlanned`·`completePlanned`, 인맥 `openPersonEdit`·`savePerson`, 합계 `giftSummary`·`personGiftTotals` |
 | 대출/이자 | `openLoanBook`·`loanCard`·`openLoanDetail`·`openLoanEdit`·`saveLoan`·`deleteLoan`·`setLoanStatus`, 상환 `openLoanPayment`·`saveLoanPayment`(이자 거래연결)·`deleteLoanPayment` |
 | 내보내기 | `exportCSV` |
-| **할일(투두)** | `renderTodoList`/`renderTodoCalendar`/`renderTodoDone`·`todoRow`/`todoDueBadge`·`scopedTodos`/`setTodoScope`/`todoScopeSeg`·공유 친구 `todoFriendStrip`/`friendTodoOrder`/`setTodoFriend`/`todoReadOnly`/`openTodoShareSheet`/`toggleTodoShare`·CRUD `openTodoEdit`/`saveTodo`/`deleteTodo`/`toggleTodo`·더보기 시트 `openTodoReport`/`openRepeatTodos`·PB연동 `pbTodoSummaryHtml`. 상세 [features-todo.md](features-todo.md) |
+| **할일(투두)** | `renderTodoList`/`renderTodoCalendar`/`renderTodoDone`·`todoRow`/`todoDueBadge`·`scopedTodos`(개인=`myTodos`·친구=`friendTodos`·그룹=`ws`)/`allTodos`/`todoDbRef`·`setTodoScope`/`todoScopeSeg`(개인ws=친구들)·CRUD `openTodoEdit`/`saveTodo`/`deleteTodo`/`toggleTodo`·더보기 시트 `openTodoReport`/`openRepeatTodos`·PB연동 `pbTodoSummaryHtml`. 상세 [features-todo.md](features-todo.md) |
+| **친구(별도 추가)** | 스트립 `todoFriendStrip`/`friendDisplayName`·열람 `viewFriendTodos`/`setTodoFriend`/`todoReadOnly`/`clearFriendView`·공개 `toggleTodoPublic`/`openTodoShareSheet`·허브 `renderFriendsHub`·관계 `addFriendByCode`/`acceptFriend`/`declineFriend`/`removeFriend`/`copyFriendCode`. core: `initUserGraph`(상시 리스너 `users/{uid}/todos·friends·friendReqs·todoPublic`)·`ensureFriendCode`·`loadFriendPublics`·`migratePersonalTodos` |
 
 ## 모드(가계부/할일) · 네비게이션 / 렌더 흐름
 
