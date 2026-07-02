@@ -20,7 +20,7 @@
       view: (localStorage.getItem('view')==='mode' ? 'mode' : 'home'),     // 랜딩 '오늘 홈'(home) / 모드 화면(mode) — 모드는 아님(두 모드 그대로)
       todos:[], todoShare:{},   // 그룹 할일 목록(ws/{wsId}/todos) / (레거시) 멤버별 공유 플래그
       myTodos:[],   // 내 개인 할일(user-global: users/{uid}/todos) — 워크스페이스 무관
-      friends:{}, friendReqs:{}, todoPublic:false,   // 친구 관계·받은 요청·내 할일 공개 플래그(users/{uid}/…)
+      friends:{}, friendReqs:{}, todoPublic:false, friendCode:'',   // 친구 관계·받은 요청·내 할일 공개 플래그·내 친구 코드(users/{uid}/…)
       friendTodos:[], _friendTodosUid:null,   // 현재 열람 중인 친구의 개인 할일(임시 리스너)
       _todoScope: (localStorage.getItem('todoScope')==='group' ? 'group' : 'personal'),   // 할일 세그먼트: 개인/그룹(친구들)
       _todoFriend: null   // 개인 탭에서 보고 있는 친구 uid(null/내 uid=나)
@@ -286,6 +286,7 @@
         $('authScreen').style.display='none';
         $('app').style.display='flex';
         initUserGraph();   // 개인 할일·친구(user-global) 상시 리스너 — 워크스페이스 무관
+        ensureFriendCode().catch(e=>console.warn('friendCode', e));   // 내 친구 코드 보장
         await migrateLegacyIfNeeded();
         await loadMyWorkspaces();
         if(!state.memberships.length){ await createPersonalWorkspace(true); await loadMyWorkspaces(); }
@@ -307,6 +308,14 @@
       add('friends', s=>{ state.friends=s.val()||{}; rerender(); });
       add('friendReqs', s=>{ state.friendReqs=s.val()||{}; rerender(); });
       add('todoPublic', s=>{ state.todoPublic=!!s.val(); rerender(); });
+    }
+    // 내 친구 코드 보장(없으면 생성) + 인덱스 friendCodes/{code}=uid.
+    async function ensureFriendCode(){
+      if(!state.uid) return;
+      const ref=db.ref('users/'+state.uid+'/friendCode');
+      let code=(await ref.once('value')).val();
+      if(!code){ code=randCode(6); await db.ref().update({ ['users/'+state.uid+'/friendCode']:code, ['friendCodes/'+code]:state.uid }); }
+      state.friendCode=code;
     }
     // 개인 할일 ws→users/{uid}/todos 1회 이전(멱등: users/{uid}/todosMigrated).
     async function migratePersonalTodos(){

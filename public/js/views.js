@@ -559,12 +559,15 @@
       // 개인: 내 것(myTodos·user-global) 또는 친구 열람(friendTodos·읽기전용)
       return (state._todoFriend && state._todoFriend!==state.uid) ? (state.friendTodos||[]) : (state.myTodos||[]);
     }
-    function setTodoScope(s){ state._todoScope=(s==='group'?'group':'personal'); state._todoFriend=null; _todoFilter='all'; try{localStorage.setItem('todoScope',state._todoScope);}catch(e){} rerender(); }
-    function todoScopeSeg(){ const g=state._todoScope==='group';
-      return '<div class="seg todoseg"><button class="'+(g?'':'on')+'" onclick="setTodoScope(\'personal\')">개인</button><button class="'+(g?'on':'')+'" onclick="setTodoScope(\'group\')">그룹</button></div>'; }
-    // 개인 탭에서 친구(공유자)를 보고 있는지 = 읽기전용
+    function setTodoScope(s){ state._todoScope=(s==='group'?'group':'personal'); clearFriendView(); _todoFilter='all'; try{localStorage.setItem('todoScope',state._todoScope);}catch(e){} rerender(); }
+    function isPersonalWs(){ return ((state.wsMeta&&state.wsMeta.type)||'')==='personal'; }
+    function todoScopeSeg(){ const g=state._todoScope==='group'; const second=isPersonalWs()?'친구들':'그룹';
+      return '<div class="seg todoseg"><button class="'+(g?'':'on')+'" onclick="setTodoScope(\'personal\')">개인</button><button class="'+(g?'on':'')+'" onclick="setTodoScope(\'group\')">'+second+'</button></div>'; }
+    // 개인 탭에서 친구를 보고 있는지 = 읽기전용
     function todoReadOnly(){ return state._todoScope==='personal' && !!state._todoFriend && state._todoFriend!==state.uid; }
-    function setTodoFriend(uid){ state._todoFriend=(uid===state.uid?null:uid); renderTodoList(); }
+    function setTodoFriend(uid){ if(!uid||uid===state.uid){ clearFriendView(); renderTodoList(); } else { viewFriendTodos(uid); } }
+    // 현재 열람 중인 친구 할일 리스너 해제 + 내 목록 복귀
+    function clearFriendView(){ if(state._friendTodosRef){ try{ state._friendTodosRef.off(); }catch(e){} state._friendTodosRef=null; } state._todoFriend=null; state._friendTodosUid=null; state.friendTodos=[]; }
     function todoMemberName(uid){ const m=(state.wsMeta&&state.wsMeta.members)||{}; return (uid===state.uid)?(state.userName||'나'):((m[uid]&&m[uid].name)||''); }
     // 공유 친구 스트립(그룹 전용): 나 + 공유 ON 친구, 최근 등록순. 우측에 내 공유 토글.
     function todoFriendStrip(){
@@ -588,6 +591,53 @@
     }
     function toggleTodoShare(){ const uid=state.uid; if(!uid) return; const on=!!(state.todoShare&&state.todoShare[uid]);
       db.ref(wp('todoShare/'+uid)).set(!on); toast(!on?'할일을 공유합니다':'공유를 껐습니다'); openTodoShareSheet(); }
+    // ===== 친구(별도 추가) — 친구 코드로 요청→수락, 상호 친구(users/{uid}/friends·friendReqs) =====
+    function copyFriendCode(){ const c=state.friendCode||''; if(!c) return; try{ navigator.clipboard.writeText(c); }catch(e){} toast('친구 코드: '+c+' (복사됨)'); }
+    function addFriendByCode(){
+      const raw=(val('friendCodeIn')||'').trim().toUpperCase(); if(!raw){ toast('친구 코드를 입력하세요', true); return; }
+      if(raw===state.friendCode){ toast('내 코드는 추가할 수 없어요', true); return; }
+      db.ref('friendCodes/'+raw).once('value').then(function(s){
+        const uid=s.val(); if(!uid){ toast('존재하지 않는 코드예요', true); return; }
+        if(state.friends&&state.friends[uid]){ toast('이미 친구예요'); return; }
+        db.ref('users/'+uid+'/friendReqs/'+state.uid).set({ name:state.userName||'', at:new Date().toISOString() })
+          .then(function(){ toast('친구 요청을 보냈어요'); if($('friendCodeIn')) $('friendCodeIn').value=''; })
+          .catch(function(){ toast('요청 실패', true); });
+      });
+    }
+    function acceptFriend(uid){ const now=new Date().toISOString(), r=(state.friendReqs&&state.friendReqs[uid])||{}; const upd={};
+      upd['users/'+state.uid+'/friends/'+uid]={ name:r.name||'', at:now };
+      upd['users/'+uid+'/friends/'+state.uid]={ name:state.userName||'', at:now };
+      upd['users/'+state.uid+'/friendReqs/'+uid]=null;
+      db.ref().update(upd).then(function(){ toast('친구가 되었어요 🎉'); }).catch(function(){ toast('수락 실패', true); }); }
+    function declineFriend(uid){ db.ref('users/'+state.uid+'/friendReqs/'+uid).remove().then(function(){ toast('요청을 거절했어요'); }); }
+    function removeFriend(uid){ confirmSheet('친구를 삭제할까요?', function(){ const upd={}; upd['users/'+state.uid+'/friends/'+uid]=null; upd['users/'+uid+'/friends/'+state.uid]=null;
+      db.ref().update(upd).then(function(){ if(state._todoFriend===uid) clearFriendView(); toast('친구를 삭제했어요'); rerender(); }); }); }
+    // 친구 개인 할일 열람(공개한 친구만) — 임시 리스너로 state.friendTodos 채우고 개인 화면 읽기전용
+    function viewFriendTodos(uid){
+      db.ref('users/'+uid+'/todoPublic').once('value').then(function(s){
+        if(!s.val()){ toast('아직 할일을 공개하지 않은 친구예요', true); return; }
+        clearFriendView(); state._todoScope='personal'; state._todoFriend=uid; state._friendTodosUid=uid;
+        const ref=db.ref('users/'+uid+'/todos'); state._friendTodosRef=ref;
+        ref.on('value', function(s2){ const o=s2.val()||{}; state.friendTodos=Object.keys(o).map(function(k){ return Object.assign({id:k,scope:'personal',ownerUid:uid},o[k]); }); rerender(); });
+        try{ localStorage.setItem('todoScope','personal'); }catch(e){}
+        if(typeof go==='function') go('todo'); else rerender();
+      });
+    }
+    // 친구 허브(개인 워크스페이스의 '친구들' 탭) — 내 코드·코드로 추가·받은 요청·친구 목록
+    function renderFriendsHub(){
+      let h=todoScopeSeg();
+      h+='<div class="card" style="padding:14px;"><div class="sec-title">내 친구 코드</div>'+
+        '<div class="row" style="gap:8px;align-items:center;margin-top:6px;"><b style="font-size:20px;letter-spacing:3px;flex:1;">'+escapeHtml(state.friendCode||'—')+'</b>'+
+        '<button class="btn sm" style="flex:none;" onclick="copyFriendCode()">복사</button></div>'+
+        '<div class="row" style="gap:8px;margin-top:10px;"><input class="input" id="friendCodeIn" placeholder="친구 코드 입력" autocapitalize="characters" spellcheck="false" style="flex:1;text-transform:uppercase;"><button class="btn sm" style="flex:none;" onclick="addFriendByCode()">추가</button></div></div>';
+      const reqs=Object.keys(state.friendReqs||{});
+      if(reqs.length){ h+='<div class="sech"><span class="l">받은 요청</span><span class="s">'+reqs.length+'</span></div><div class="card" style="padding:4px 12px;">'+
+        reqs.map(function(u){ const r=state.friendReqs[u]||{}; return '<div class="tdrow"><span class="tdwho">'+avatarHtml(u,r.name||'',28)+'</span><b class="tdtitle">'+escapeHtml(r.name||'사용자')+'</b><button class="buy" onclick="acceptFriend(\''+u+'\')">수락</button><button class="buy dis" onclick="declineFriend(\''+u+'\')">거절</button></div>'; }).join('')+'</div>'; }
+      const fr=Object.keys(state.friends||{});
+      h+='<div class="sech"><span class="l">친구</span><span class="s">'+fr.length+'</span></div><div class="card" style="padding:4px 12px;">'+
+        (fr.length?fr.map(function(u){ const f=state.friends[u]||{}; return '<div class="tdrow"><span class="tdwho">'+avatarHtml(u,f.name||'',28)+'</span><b class="tdtitle" onclick="viewFriendTodos(\''+u+'\')">'+escapeHtml(f.name||'친구')+'</b><button class="buy" onclick="viewFriendTodos(\''+u+'\')">할일 보기</button><button class="buy dis" onclick="removeFriend(\''+u+'\')">삭제</button></div>'; }).join(''):'<div class="empty" style="padding:22px 6px;">아직 친구가 없어요 · 위 코드로 추가하세요</div>')+'</div>';
+      $('content').innerHTML=h;
+    }
     // nextDue/dueDiffDays는 js/util.js(순수함수·단위테스트)로 이관됨 — 전역으로 사용.
     function todoDueBadge(t){ if(!t.dueDate) return ''; const today=ymd(new Date());
       const diff=dueDiffDays(t.dueDate, today);
@@ -607,6 +657,8 @@
         todoDueBadge(t)+who+'</div>';
     }
     function renderTodoList(){
+      // 개인 워크스페이스의 둘째 탭(친구들) = 친구 허브(그룹 할일이 없으므로)
+      if(state._todoScope==='group' && isPersonalWs()) return renderFriendsHub();
       const meUid=state.uid; const today=ymd(new Date());
       const we=new Date(); we.setDate(we.getDate()+7); const weekEnd=ymd(we);
       const isGroup=state._todoScope==='group';

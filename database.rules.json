@@ -3,11 +3,18 @@
     "users": {
       ".read": "auth != null",
       "$uid": {
-        ".write": "auth != null && auth.uid === $uid"
+        ".write": "auth != null && auth.uid === $uid",
+        "friends":    { "$fid": { ".write": "auth != null && (auth.uid === $uid || auth.uid === $fid)" } },
+        "friendReqs": { "$fid": { ".write": "auth != null && (auth.uid === $uid || auth.uid === $fid)" } }
       }
     },
 
     "codes": {
+      ".read": "auth != null",
+      "$code": { ".write": "auth != null" }
+    },
+
+    "friendCodes": {
       ".read": "auth != null",
       "$code": { ".write": "auth != null" }
     },
