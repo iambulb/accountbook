@@ -517,6 +517,37 @@
     // 선물함 아이콘 — 랜덤박스 도트(M_BOX) 그대로, 색만 선물상자(빨강 몸체+금 리본)로 다시 칠함.
     const GIFT_PAL={X:'#a83f52',W:'#e35d76',C:'#f2c84b',L:'#e0a43c',R:'#f2c84b',O:'#f2c84b',Y:'#f2c84b',G:'#f2c84b',B:'#f2c84b',P:'#f2c84b'};
     function giftSvg(opt){ return pxSvg(M_BOX, GIFT_PAL, opt); }
+    // 더보기 그리드용 도트/픽셀 아트 아이콘(11×11) — 단색 currentColor라 라이트/다크 자동 대응(코인·선물함처럼 픽셀 감성).
+    const MORE_PX = {
+      bag:[      // 가방(백팩+앞주머니+버클)
+        "...XXXXX...","..X.....X..",".XXXXXXXXX.",".X.......X.",".X.XXXXX.X.",".X.X...X.X.",".X.X.X.X.X.",".X.X...X.X.",".X.XXXXX.X.",".X.......X.",".XXXXXXXXX."],
+      gear:[     // 설정(톱니+가운데 구멍)
+        "..X.....X..","..X.....X..","XXXXXXXXXXX","X.........X","X..XXXXX..X","X..X...X..X","X..XXXXX..X","X.........X","XXXXXXXXXXX","..X.....X..","..X.....X.."],
+      budget:[   // 예산(동전 더미)
+        "...........","..XXXXXXX..",".X.......X.","..XXXXXXX..","..XXXXXXX..",".X.......X.","..XXXXXXX..",".X.......X.","..XXXXXXX..","...........","..........."],
+      sub:[      // 구독(알림 벨)
+        ".....X.....","....XXX....","...XXXXX...","...XXXXX...","..XXXXXXX..","..XXXXXXX..",".XXXXXXXXX.","XXXXXXXXXXX","XXXXXXXXXXX",".....X.....","..........."],
+      recurring:[// 정기결제(달력)
+        "..X.....X..","..X.....X..",".XXXXXXXXX.",".XXXXXXXXX.",".X.......X.",".X.X.X.X.X.",".X.......X.",".X.X.X.X.X.",".X.......X.",".XXXXXXXXX.","..........."],
+      pb:[       // 목적별(펼친 책)
+        "...........",".XX.....XX.",".XXX...XXX.",".XXXX.XXXX.",".XXXXXXXXX.",".XXXX.XXXX.",".XXXX.XXXX.",".XXXX.XXXX.",".XXXXXXXXX.","...........","..........."],
+      settle:[   // 정산(저울)
+        ".....X.....",".XXXXXXXXX.","X....X....X","X....X....X","XX...X...XX",".X...X...X.","..X..X..X..","..XX.X.XX..",".....X.....","...XXXXX...","..........."],
+      giftEvt:[  // 경조사비(하트 봉투)
+        "...........",".XXXXXXXXX.",".XX.....XX.",".X.XX.XX.X.",".X..X.X..X.",".X.......X.",".X.XX.XX.X.",".X.XXXXX.X.",".X..XXX..X.",".XXXXXXXXX.","..........."],
+      loan:[     // 대출/이자(은행 건물)
+        ".....X.....","....XXX....","...XXXXX...","..XXXXXXX..",".XXXXXXXXX.","XXXXXXXXXXX","X.X.X.X.X.X","X.X.X.X.X.X","X.X.X.X.X.X","XXXXXXXXXXX","..........."],
+      category:[ // 카테고리(태그)
+        "...........","....XXXXXX.","...XX....X.","..X.X....X.",".X..X....X.","X...X....X.",".X..X....X.","..X.X....X.","...XX....X.","....XXXXXX.","..........."],
+      share:[    // 할일 공유(두 사람)
+        "..XX...XX..",".XXXX.XXXX.",".XXXX.XXXX.","..XX...XX..","...........",".X.......X.","XXX.....XXX","XXXX...XXXX","XXXXX.XXXXX","XXXXX.XXXXX","..........."],
+      report:[   // 완료 리포트(막대 그래프)
+        "...........","........XX.","........XX.",".....XX.XX.",".....XX.XX.","..XX.XX.XX.","..XX.XX.XX.","..XX.XX.XX.",".XXXXXXXXXX","...........","..........."],
+      repeat:[   // 반복 할일(순환 화살표)
+        "...XXXXX...","..XX...XX..",".XX.....XX.",".X.......X.","XX.......X.","X..........","X.........X",".X.......X.",".XX....XXX.","..XXXXX.X..","........X.."]
+    };
+    const MPX_PAL={X:'currentColor'};
+    function mIcon(name, opt){ const m=MORE_PX[name]; return m?pxSvg(m, MPX_PAL, opt||{h:26}):''; }
     function pawSvg(opt){ return pxSvg(M_PAW, PAW_PAL, opt); }
     // 상점·팔레트·격자용 대표 아트(물그릇은 물 채운 파란 그릇으로 구분 표시)
     function furnSvg(id, opt){ const M={cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT}[id]; return pxSvg(M, FURN_PALS[id], opt); }
@@ -1172,12 +1203,12 @@
         const rb=[['egg','무지개알','열면 특별70 · 전설20 · 한정10%. 특별↑ 고양이만!', rainbowEggSvg({h:66,cls:'rb-thumb'})],
                   ['box','무지개박스','열면 특별70 · 전설20 · 한정10%. 특별↑ 가구만!', rainbowBoxSvg({h:56,cls:'rb-thumb'})]];
         h+='<div class="rb-hh"><span class="tier-limited">✨ 무지개</span> · 금화 전용 · 특별↑ 확정</div>';
-        h+=rb.map(([k,nm,desc,art])=>{ const key=rainbowKey(k), qty=consumQty(key), canBuy=gold()>=RAINBOW_PRICE_GOLD;
-          const buy=canBuy?'<button class="buy" aria-label="'+nm+' 구매(금화 '+RAINBOW_PRICE_GOLD+')" onclick="buyRainbow(\''+k+'\')">구매</button>':'<button class="buy dis" disabled>금화 '+(RAINBOW_PRICE_GOLD-gold())+' 부족</button>';
+        h+=rb.map(([k,nm,desc,art])=>{ const key=rainbowKey(k), qty=consumQty(key), price=rbPriceGold(k), canBuy=gold()>=price;
+          const buy=canBuy?'<button class="buy" aria-label="'+nm+' 구매(금화 '+price+')" onclick="buyRainbow(\''+k+'\')">구매</button>':'<button class="buy dis" disabled>금화 '+(price-gold())+' 부족</button>';
           const use=qty>0?'<button class="buy rb-use" aria-label="'+nm+' 사용" onclick="useRainbow(\''+k+'\')">사용</button>':'';
           return '<div class="shopcard rb-card"><div class="thumb rb-thumb-wrap">'+art+'</div>'+
             '<div class="meta"><b class="tier-limited">'+nm+'</b><div class="desc">'+desc+'</div>'+
-            '<span class="price"><span class="ci">'+goldSvg({h:16})+'</span>'+RAINBOW_PRICE_GOLD+'</span></div>'+
+            '<span class="price"><span class="ci">'+goldSvg({h:16})+'</span>'+price+'</span></div>'+
             '<div class="act">'+buy+use+'<span class="qty">보유 '+qty+'</span></div></div>'; }).join('');
         h+='<div class="note">열 때마다 <b>금화 1개</b> 지급(무지개 제외·중복 펫은 <b>그 펫 가격의 20% 은화</b> 환급). <b>특별 등급 이상</b>은 펫알/랜덤박스로만 나오며, <b class="tier-limited">무지개</b>는 <b>금화로 구매·사용</b>해 특별↑을 확정으로 뽑아요.</div>';
         h+=gachaInfoHtml();
@@ -1461,15 +1492,17 @@
     }
     // ===== ✨ 무지개알/무지개박스: 금화로 구매하는 소비템 → 사용 시 특별70·전설20·한정10% 가챠 =====
     const RAINBOW_TIERS=[{id:'epic',p:70},{id:'legend',p:20},{id:'limited',p:10}];   // 한정 콘텐츠 없으면 rollFromPool이 전설로 폴백
-    const RAINBOW_PRICE_GOLD=5;
+    const RAINBOW_PRICE_GOLD={ egg:100, box:100 };   // 무지개알·무지개박스 모두 금화100
+    function rbPriceGold(kind){ return RAINBOW_PRICE_GOLD[kind==='egg'?'egg':'box']; }
     function rainbowKey(kind){ return kind==='egg'?'rainbow_egg':'rainbow_box'; }
     function rainbowName(kind){ return kind==='egg'?'무지개알':'무지개박스'; }
     // 구매(금화): 금화 -5, 소비 인벤토리 +1
     function buyRainbow(kind){
       const key=rainbowKey(kind);
-      if(gold()<RAINBOW_PRICE_GOLD){ toast('금화 '+(RAINBOW_PRICE_GOLD-gold())+' 부족', true); return; }
-      gameRef().transaction(g=>{ g=normalizeGame(g); if((g.gold||0)<RAINBOW_PRICE_GOLD) return g;
-        g.gold-=RAINBOW_PRICE_GOLD; g.consum[key]=(Number(g.consum[key])||0)+1; return g;
+      const price=rbPriceGold(kind);
+      if(gold()<price){ toast('금화 '+(price-gold())+' 부족', true); return; }
+      gameRef().transaction(g=>{ g=normalizeGame(g); if((g.gold||0)<price) return g;
+        g.gold-=price; g.consum[key]=(Number(g.consum[key])||0)+1; return g;
       }).then(r=>{ if(r&&r.committed) toast(rainbowName(kind)+' +1 ✨'); });
     }
     // 사용(소비): 인벤토리 -1, 특별↑ 확률표로 롤 → 지급. 금화 보상 없음(금화로 산 프리미엄), 중복 펫은 은화 환급.

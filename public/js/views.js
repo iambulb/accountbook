@@ -1247,26 +1247,28 @@
          '<button class="cnt" onclick="event.stopPropagation();openWorkspaceSheet()">전환</button></div>';
       // 4열 기능 그리드 — 할일 모드면 할일 전용, 아니면 가계부 전용(알뜰샵·설정은 공용)
       h+='<div class="grid4">';
+      // 아이콘은 전부 도트/픽셀 아트(cats.js mIcon, 단색 currentColor). 알뜰샵=코인·선물함=선물상자(컬러 픽셀).
+      const mi=(n)=>(typeof mIcon==='function'?mIcon(n,{h:26}):'');
       if(state.mode==='todo'){
-        h+=gcell(MORE_ICON.share,'할일 공유','openTodoShareSheet()');
-        h+=gcell(MORE_ICON.report,'완료 리포트','openTodoReport()');
-        h+=gcell(MORE_ICON.repeat,'반복 할일','openRepeatTodos()');
-        h+=gcell(MORE_ICON.pb,'목적별','openPurposeBooks()');
+        h+=gcell(mi('share'),'할일 공유','openTodoShareSheet()');
+        h+=gcell(mi('report'),'완료 리포트','openTodoReport()');
+        h+=gcell(mi('repeat'),'반복 할일','openRepeatTodos()');
+        h+=gcell(mi('pb'),'목적별','openPurposeBooks()');
       } else {
         const activeSubs=(state.subscriptions||[]).filter(s=>s.status==='active').length;
-        h+=gcell(MORE_ICON.budget,'예산','openBudgetSheet()');
-        h+=gcell(MORE_ICON.sub,'구독','openSubscriptions()', activeSubs||0);
-        h+=gcell(MORE_ICON.recurring,'정기결제','openRecurringList()');
-        h+=gcell(MORE_ICON.pb,'목적별','openPurposeBooks()');
-        h+=gcell(MORE_ICON.settle,'정산','openSettlementOverview()');
-        h+=gcell(MORE_ICON.gift,'경조사비','openGiftBook()');
-        h+=gcell(MORE_ICON.loan,'대출/이자','openLoanBook()');
-        h+=gcell(MORE_ICON.category,'카테고리','openCategorySheet()');
+        h+=gcell(mi('budget'),'예산','openBudgetSheet()');
+        h+=gcell(mi('sub'),'구독','openSubscriptions()', activeSubs||0);
+        h+=gcell(mi('recurring'),'정기결제','openRecurringList()');
+        h+=gcell(mi('pb'),'목적별','openPurposeBooks()');
+        h+=gcell(mi('settle'),'정산','openSettlementOverview()');
+        h+=gcell(mi('giftEvt'),'경조사비','openGiftBook()');
+        h+=gcell(mi('loan'),'대출/이자','openLoanBook()');
+        h+=gcell(mi('category'),'카테고리','openCategorySheet()');
       }
       h+=gcell(coinSvg({h:26}),'알뜰샵','openCatHouse()');
       h+=gcell(giftSvg({h:26}),'선물함','openGiftbox()', (typeof giftCount==='function'?giftCount():0));
-      h+=gcell('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>','가방','openBag()');
-      h+=gcell(MORE_ICON.gear,'설정','openSettingsSheet()');
+      h+=gcell(mi('bag'),'가방','openBag()');
+      h+=gcell(mi('gear'),'설정','openSettingsSheet()');
       h+='</div>';
       // 하단 고정: 로그아웃(가운데) → 홈 화면 설치 링크 → 버전
       h+='<div class="more-foot">';
