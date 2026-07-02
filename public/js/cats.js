@@ -1075,6 +1075,9 @@
     //  · 요청대로 근거리 확대는 넉넉히, 원거리 축소는 적당히만(FAR를 너무 낮추지 않음).
     const PET_NEAR_SCALE=1.5, PET_FAR_SCALE=0.86;   // 근거리(맨 앞)에서 확실히 크게 → 화면 제일 앞으로 나온 느낌
     const PET_FOOT_PAD=0.16;   // 스프라이트 프레임 아래 투명 여백 비율(발밑) — 맨 앞(depth0)에서 발이 캠 rect 바닥에 붙도록 이만큼 내려 앉힌다
+    // ⚠️ 방향 전환 쿨다운(ms): 벽 튕김·겹침분리·랜덤전환이 매 프레임 서로 반대로 dir를 뒤집어 "제자리 좌우 춤"추던 것 방지.
+    // 이 시간 안에는 dir를 다시 뒤집지 않음 → 최대 ~2회/초. (도망·가구 접근은 의도된 전환이라 별도 처리.)
+    const FLIP_COOL=450;
     // ⚠️ 함수명 주의: petScale(id)=펫별 크기배율(위쪽에 이미 정의, petActorPx가 사용)와 충돌 금지 → 원근 배율은 depthScale로.
     function depthScale(depth){ return PET_FAR_SCALE + (PET_NEAR_SCALE-PET_FAR_SCALE)*(1-depth); }
     // depth로부터 배율·바닥올림(rise)·z-index를 액터에 반영. z는 가구 frontRow(=12-depth*11)와 같은 척도라 상호 가림이 맞물린다.
@@ -1135,7 +1138,7 @@
       // 위에서 내려다보는(탑다운) 느낌: 맨 앞(depth0)=바닥 앞끝, 맨 뒤(depth1)=바닥 뒤끝(벽지 경계)에 닿게.
       // depth1 발높이 ≈ base + riseMax 이므로, 바닥 세로비(홈 cr-floor 54%·dock 66%)에 맞춰 뒤 펫이 벽에 닿도록 폭을 키움.
       // (발밑 여백 상쇄 pad는 깊이와 무관하게 적용되어 맨 앞은 여전히 바닥에 붙음 — 뜨는 문제 재발 없음.)
-      const riseMax = roomH*(isDock?0.62:0.54);
+      const riseMax = roomH*(isDock?0.61:0.53);
       // 가구 위치(발자국 중앙 x)·렌더 높이(fh)·깊이(depth) — 상호작용 시 올라갈 높이·앞뒤 정렬(가림)에 사용
       const props = hasRoom ? placedList().map(p=>{ const foot=itemFoot(p.itemId), depth=(12-(p.r+foot.h-1))/11;   // propMarkup과 동일(앞줄 기준)
         const fh=furnRoomH(p.itemId, isDock, depth);   // 렌더 높이와 동일 → 캣타워 층 lift가 실제 높이에 맞음
@@ -1202,7 +1205,7 @@
     function stepActors(dt){
       _eng.actors.forEach(a=>{
         if(a.mode==='drag') return;   // 손으로 집어 든 펫은 엔진이 건드리지 않음(드래그가 위치 제어)
-        a.t+=dt*0.004; if(a.cool>0)a.cool-=dt; const id=a.el.getAttribute('data-cat');
+        a.t+=dt*0.004; if(a.cool>0)a.cool-=dt; if(a.dcool>0)a.dcool-=dt; const id=a.el.getAttribute('data-cat');
         if(a.mode==='pause'){ a.pause-=dt; if(a.pause<=0){ a.mode='roam'; a.fc=999; a.dir=Math.random()<0.5?-1:1; a.lift=0; a.parked=false; releaseRes(a);   // 내려와 재출발(자리 반납)
           // 이동 재개: 정면 이미지로 이동 금지 — actorShowMoving으로 일원화(일반=CSS 필름, frontWalk=east 정지스틸)
           actorShowMoving(a); setXform(a); a._pdir=a.dir; } return; }   // 재출발: lift 해제·방향 반영, 걷기는 필름(csprFilm)
@@ -1212,7 +1215,7 @@
           for(let k=0;k<_eng.actors.length;k++){ const b=_eng.actors[k];
             if(b===a || (b.hh||0) < (a.hh||1)*3) continue;   // 나보다 3배 이상 큰 펫만(크기=렌더 높이 hh 기준)
             if(Math.abs((a.x+a.sw/2)-(b.x+b.sw/2))<colW*1.3 && Math.abs((a.depth||0)-(b.depth||0))<rowD*1.6){   // 주변 1칸 이내
-              a.dir=((a.x+a.sw/2)>=(b.x+b.sw/2))?1:-1;   // 큰 펫 반대 방향으로 뒤돎
+              a.dir=((a.x+a.sw/2)>=(b.x+b.sw/2))?1:-1; a.dcool=FLIP_COOL;   // 큰 펫 반대 방향으로 뒤돎(쿨다운 부여로 즉시 재뒤집힘 방지)
               a.flee=700+Math.random()*400; a.cool=Math.max(a.cool,300);   // 잠깐(0.7~1.1초) 도망(유휴/가구탐색 억제)
               if(a.spr){ const sc=a.el.querySelector('.cspr'); if(sc) sc.style.setProperty('--wdur', walkDur(a.v*2, a.hh)+'s'); }   // 빨라진 속도에 걸음 맞춤(미끄러짐 방지)
               break; } }
@@ -1221,7 +1224,7 @@
         // 유휴 제스처(그 자리 앉기/식빵/낮잠) — 쿨다운 후에만(도망 중엔 멈추지 않음)
         if(a.mode==='roam' && !fleeing && a.cool<=0 && Math.random()<a.idle){ enterPose(a, id, ['loaf','sit','sleep'][Math.floor(Math.random()*3)]); return; }
         // 가끔 방향 전환(개별) — 도망 중엔 방향 유지(큰 펫 반대)
-        if(a.mode==='roam' && !fleeing && Math.random()<a.turn){ a.dir*=-1; }
+        if(a.mode==='roam' && !fleeing && (a.dcool||0)<=0 && Math.random()<a.turn){ a.dir*=-1; a.dcool=FLIP_COOL; }
         // 가끔 속도 변화(개별) — 바뀐 속도에 맞춰 걷기 주기도 갱신(미끄러짐 방지)
         if(a.mode==='roam' && Math.random()<0.003){ a.v=0.14+Math.random()*0.18; setWalkDur(a); }
         // 앞뒤(깊이) 배회 — 가끔 앞/뒤 속도를 새로 정하고 천천히 이동해 가까워졌다 멀어졌다(원근·가림 변화). 도망 중엔 직진.
@@ -1249,7 +1252,8 @@
         }
         a.x += a.dir*(fleeing?a.v*2:a.v)*dt*0.06;   // 도망 중엔 2배 빠르게
         const max=a.W-a.sw;
-        if(a.x<2){ a.x=2; a.dir=1; if(a.mode==='goal'){a.mode='roam';a.goal=null;releaseRes(a);} } else if(a.x>max){ a.x=max; a.dir=-1; if(a.mode==='goal'){a.mode='roam';a.goal=null;releaseRes(a);} }
+        if(a.x<2){ a.x=2; if(a.dir<0 && (a.dcool||0)<=0){ a.dir=1; a.dcool=FLIP_COOL; } if(a.mode==='goal'){a.mode='roam';a.goal=null;releaseRes(a);} }
+        else if(a.x>max){ a.x=max; if(a.dir>0 && (a.dcool||0)<=0){ a.dir=-1; a.dcool=FLIP_COOL; } if(a.mode==='goal'){a.mode='roam';a.goal=null;releaseRes(a);} }
         if(!a.spr){ a.fc+=dt; if(a.fc>170){ a.fc=0; a.frame^=1; a.el.innerHTML=catSide(id,a.frame,{h:a.hh}); } }   // SVG 폴백: 2프레임 교대(스프라이트는 필름 csprFilm이 처리)
         // 이동·방향·깊이를 transform 하나로(translate3d+scale) — 전부 합성, 매 프레임 페인트 0 → 깜빡임 근본 제거
         applyDepth(a); setXform(a); a._pdir=a.dir;
@@ -1272,8 +1276,8 @@
         const needX=colW-Math.abs(dcx), needD=rowD-Math.abs(ddp);
         if(needX/colW <= needD/rowD){   // 열(x)로 분리
           const sx=(dcx>=0?1:-1), share=(aMov&&bMov)?0.5:1, push=(needX+0.6)*share;
-          if(aMov){ a.x=Math.max(2,Math.min(a.W-a.sw, a.x+sx*push)); a.dir=sx; moved.push(a); }        // b에서 멀어지는 방향으로 전환
-          if(bMov){ b.x=Math.max(2,Math.min(b.W-b.sw, b.x-sx*push)); b.dir=-sx; moved.push(b); }
+          if(aMov){ a.x=Math.max(2,Math.min(a.W-a.sw, a.x+sx*push)); if(a.dir!==sx && (a.dcool||0)<=0){ a.dir=sx; a.dcool=FLIP_COOL; } moved.push(a); }   // 위치는 항상 밀되, 방향은 b쪽으로 향할 때만·쿨다운 지나야 뒤집음(춤 방지)
+          if(bMov){ b.x=Math.max(2,Math.min(b.W-b.sw, b.x-sx*push)); if(b.dir!==-sx && (b.dcool||0)<=0){ b.dir=-sx; b.dcool=FLIP_COOL; } moved.push(b); }
         } else {   // 행(depth)으로 분리
           const sd=(ddp>=0?1:-1), share=(aMov&&bMov)?0.5:1, push=(needD+0.004)*share;
           if(aMov){ a.depth=Math.max(0,Math.min(1, a.depth+sd*push)); a.vz=Math.abs(a.vz||0.0002)*sd; moved.push(a); }
