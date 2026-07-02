@@ -177,3 +177,21 @@ test('todayPending: 미션·할일 남은 수/완료/예정없음', () => {
     U.todayPending([], [{ dueDate: '2025-12-31', done: false }], T),
     { missions: 0, todos: 0, total: 0, allDone: true, any: false });
 });
+
+test('homeBadgeShow: 모드 화면 + 미처리 있을 때만 로고 점', () => {
+  assert.strictEqual(U.homeBadgeShow('home', 5), false);   // 홈에선 항상 숨김
+  assert.strictEqual(U.homeBadgeShow('mode', 0), false);   // 미처리 0이면 숨김
+  assert.strictEqual(U.homeBadgeShow('mode', 3), true);    // 모드 화면 + 남음 → 표시
+  assert.strictEqual(U.homeBadgeShow('home', 0), false);
+});
+
+test('homeCardKind: 남으면 sections / 다 했으면 done / 애초에 없으면 empty', () => {
+  assert.strictEqual(U.homeCardKind({ total: 2, allDone: false, any: true }), 'sections');
+  assert.strictEqual(U.homeCardKind({ total: 0, allDone: true, any: true }), 'done');
+  assert.strictEqual(U.homeCardKind({ total: 0, allDone: true, any: false }), 'empty');
+  assert.strictEqual(U.homeCardKind({}), 'empty');   // 방어(빈 입력)
+  // todayPending 결과를 그대로 흘려도 일관
+  assert.strictEqual(U.homeCardKind(U.todayPending([true, true], [], '2025-06-15')), 'done');
+  assert.strictEqual(U.homeCardKind(U.todayPending([], [], '2025-06-15')), 'empty');
+  assert.strictEqual(U.homeCardKind(U.todayPending([false], [], '2025-06-15')), 'sections');
+});

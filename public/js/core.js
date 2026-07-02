@@ -1046,10 +1046,18 @@
       if(mode){ state.mode=(mode==='todo'?'todo':'ledger'); try{ localStorage.setItem('mode',state.mode); }catch(e){} renderTabBar(); updateModeToggle(); }
       go(tab || (state.mode==='todo'?'todo':'calendar'));
     }
-    // 상단 로고 점 배지 — 모드 화면에서 오늘 미처리(todayPendingNow().total>0)가 있을 때만 표시. 홈이거나 0이면 숨김.
-    function updateHomeBadge(){ var b=document.querySelector('.brand .home-badge'); if(!b) return;
-      var show = state.view!=='home' && typeof todayPendingNow==='function' && todayPendingNow().total>0;
-      b.hidden = !show; }
+    // 오늘 미처리 배지 — 순회 부담을 줄임. 결정은 순수 헬퍼(homeBadgeShow), DOM 쓰기는 여기서. rerender/renderTabBar에서 호출(자동 갱신).
+    //  · 상단 로고 점: 모드 화면에서 오늘 미처리(total>0)일 때(홈/0이면 숨김).
+    //  · 할일 탭 점: 오늘/지난 미완료 할일(todos>0)이 있을 때(할일 모드에서만 그 탭이 존재).
+    function updateHomeBadge(){
+      var pend = (typeof todayPendingNow==='function') ? todayPendingNow() : { total:0, todos:0 };
+      var b=document.querySelector('.brand .home-badge');
+      if(b) b.hidden = !(typeof homeBadgeShow==='function' ? homeBadgeShow(state.view, pend.total) : (state.view!=='home'&&pend.total>0));
+      var tt=document.querySelector('.tabbar .tab[data-tab="todo"]');
+      if(tt){ var dot=tt.querySelector('.tabdot');
+        if((pend.todos|0)>0){ if(!dot){ dot=document.createElement('span'); dot.className='tabdot'; dot.setAttribute('aria-label','오늘 할 일 있음'); tt.appendChild(dot); } }
+        else if(dot){ dot.remove(); } }
+    }
     function rerender(){
       document.body.classList.toggle('home-view', state.view==='home');   // 홈에선 바텀 탭바 숨김(CSS)
       updateHomeBadge();
@@ -1087,6 +1095,7 @@
       nav.innerHTML=set.map(function(it){ return it==='fab'
         ? '<div class="fab-slot"><button class="fab" onclick="fabAdd()" aria-label="추가"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>'
         : '<button class="tab'+(state.tab===it[0]?' on':'')+'" data-tab="'+it[0]+'" onclick="go(\''+it[0]+'\')"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+(_TABICON[it[0]]||'')+'</svg>'+it[1]+'</button>'; }).join('');
+      updateHomeBadge();   // 탭바 재생성 시 할일 탭 점 다시 반영
     }
     function updateModeToggle(){ const seg=$('modeSeg'); if(seg) Array.prototype.forEach.call(seg.children,function(b){ b.classList.toggle('on', b.dataset.mode===state.mode); }); }
     function applyMode(){ renderTabBar(); updateModeToggle();

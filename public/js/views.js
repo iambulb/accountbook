@@ -1082,19 +1082,20 @@
       const todaySpend=(typeof actualSpend==='function')?actualSpend((state.transactions||[]).filter(function(t){return (t.date||'').slice(0,10)===today;})):0;
       const monthSpend=(typeof actualSpend==='function'&&typeof monthTx==='function')?actualSpend(monthTx(state.month)):0;
       const p = todayPending(mrows.map(function(r){return r.done;}), (typeof scopedTodos==='function'?scopedTodos():[]), today);   // 배지·완료카드 공용 판정
+      const kind = homeCardKind(p);   // 'sections' | 'done' | 'empty' (순수 결정, util)
 
       let h='<div class="homewrap">';
       h+='<div class="card homehero"><div class="hh-l"><div class="hh-greet">'+greet+', '+escapeHtml(state.userName||'')+'님</div>'+
         '<div class="hh-sub">오늘 미션 '+st.done+'/'+st.total+'</div></div>'+
         '<div class="hh-coin"><span class="ci">'+coinSvg({h:20})+'</span><b>'+coins().toLocaleString()+'</b></div></div>';
-      if(p.allDone && p.any){
+      if(kind==='done'){
         const cid=(typeof activeCats==='function'&&activeCats()[0])||(typeof ownedCatList==='function'&&ownedCatList()[0])||null;
         const art=cid?('<div class="hd-cat">'+catFace(cid,{h:64})+'</div>'):'<div class="hd-emoji">🐱</div>';
         const celebrate=(typeof shouldCelebrateOnce==='function'&&shouldCelebrateOnce());
         h+='<div class="card homedone'+(celebrate?' celebrate':'')+'">'+art+'<div class="hd-tit">오늘 할 거 다 했어요 🐱</div>'+
           '<div class="hd-sub">고양이도 만족스러워해요. 내일 또 만나요!</div>'+
           '<button class="btn ghost" onclick="openCatHouse()">알뜰샵 둘러보기</button></div>';
-      } else if(p.allDone){
+      } else if(kind==='empty'){
         h+='<div class="card homedone empty"><div class="hd-emoji">🌙</div><div class="hd-tit">오늘은 예정된 게 없어요</div>'+
           '<div class="hd-sub">미션이나 할일을 추가해 은화를 모아보세요.</div></div>';
       } else {
@@ -1444,6 +1445,7 @@
       if(typeof isDev==='function' && isDev()){
         h+=lrow(MORE_ICON.gear,'개발자 모드','toggleDevMode();openSettingsSheet()', devOn()?'켜짐':'꺼짐');
         if(devOn()) h+=lrow(MORE_ICON.gift,'펫알 · 박스 설정','closeSheet();openDevGacha()');
+        if(devOn()) h+=lrow(MORE_ICON.gift,'펫 추가(zip 업로드)','closeSheet();openDevPetAdd()');
       }
       h+='</div>';
       // 코드 입력(프로모/치트 코드)

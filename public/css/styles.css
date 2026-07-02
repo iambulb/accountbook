@@ -312,10 +312,12 @@
       border-top:1px solid var(--line); display:flex; z-index:30;
       padding-bottom:env(safe-area-inset-bottom);
     }
-    .tabbar button { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font-size:10.5px; color:var(--sub); font-weight:700; }
+    .tabbar button { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font-size:10.5px; color:var(--sub); font-weight:700; position:relative; }
     .tabbar button .ti { font-size:20px; line-height:1; }
     .tabbar button svg { width:24px; height:24px; }
     .tabbar button.on { color:var(--text); }
+    /* 할일 탭 오늘 미처리 점(숫자 없음) — 아이콘 우상단, --income 톤, 다크 자동 */
+    .tabbar .tab .tabdot { position:absolute; top:6px; left:calc(50% + 9px); width:7px; height:7px; border-radius:50%; background:var(--income); box-shadow:0 0 0 2px var(--card); }
     .fab-slot { flex:1; position:relative; }
     .fab {
       position:absolute; top:-24px; left:50%; transform:translateX(-50%);
