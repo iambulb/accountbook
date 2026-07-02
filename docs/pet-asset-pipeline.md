@@ -52,13 +52,14 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 | chibi_pixel_art_golden_cat_a_few_simple_round_spot.zip | `cat_bengal` | 벵갈 | `Walk/east` |
 | chibi_pixel_art_grey_cat_small_folded-down_ears_ro.zip | `cat_fold` | 폴드 | 접힌 귀, `Walk/east` |
 | chibi_pixel_art_white_cat_one_blue_eye_one_amber_e.zip | `cat_bora` | 보라 | 오드아이, `Walk/east` |
+| simple_pixel_art_chocolate_brown_cat_cream_muzzle.zip | `cat_choco` | 초코 | 초콜릿빛 갈색+크림 입가·가슴, `Walk/east` 옆걷기 정상 |
 
 새 zip이 오면: 사용자가 id를 지정하면 그걸 쓰고, 없으면 종·색에서 합리적 slug(`<species>_<색>`)를 만들어 **이 표에 한 줄 추가**하고, 이름은 위 규칙대로 센스껏 짓는다.
 
 ### ⚠️ 옆걷기(east) 없는 펫 — 이미지 재취득 대상
 `animations/Walk/east`(옆보기 걷기)가 **없는** zip은 `walk.png`가 정면이 되어 `frontWalk:true`로 처리(이동 중 옆 정지스틸만 보이고 걷기 애니 없음). 그런 펫은 옆걷기 포함 zip으로 다시 받아 재생성하고 `frontWalk`를 해제한다.
 
-**현재 재취득 대상: 없음** — 12종 전부 `Walk/east` 옆걷기 보유. (과거 `cat_white`가 south만 있었으나 east 시트로 재취득 완료.) 새 펫 추가 시 east 유무를 확인해 이 목록을 갱신한다.
+**현재 재취득 대상: 없음** — 13종 전부 `Walk/east` 옆걷기 보유. (과거 `cat_white`가 south만 있었으나 east 시트로 재취득 완료.) 새 펫 추가 시 east 유무를 확인해 이 목록을 갱신한다.
 
 ## 코드 반영 (에셋만 넣고 끝내지 말 것)
 1. `js/cats.js`의 `PET_SPRITES`에 `<id>:{ walk:'assets/pets/<id>/walk.png', frames:6, stills:true }` 추가.
