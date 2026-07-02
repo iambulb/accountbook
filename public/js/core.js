@@ -297,6 +297,7 @@
         initAuthOpts();   // 토글 상태·저장된 아이디 반영
       }
     });
+    initAuthOpts();   // 첫 로드 시(인증 상태 확인 전) 로그인 화면 토글 즉시 반영
 
     // ===== 워크스페이스 부트스트랩 =====
     async function enterApp(user){
