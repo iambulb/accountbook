@@ -44,6 +44,8 @@
       const c=fxCacheGet(d,cur); if(c) return Promise.resolve(c);
       const url=(d===today?'https://api.frankfurter.app/latest':'https://api.frankfurter.app/'+d)+'?from='+cur+'&to=KRW';
       return fetch(url).then(r=>r.ok?r.json():null).then(j=>{ const rate=j&&j.rates&&j.rates.KRW; if(rate>0){ const rr=Math.round(rate*100)/100; fxCacheSet(d,cur,rr); return rr; } return null; }).catch(()=>null); }
+    // 거래들을 통화별로 합산 → { CODE:{foreign, krw} }. amount는 항상 원화라 krw 합, foreign은 원통화 원금 합(KRW는 동일).
+    function sumByCurrency(txs){ const out={}; (txs||[]).forEach(t=>{ const c=t.currency||'KRW'; const o=out[c]||(out[c]={foreign:0,krw:0}); o.krw+=Number(t.amount)||0; o.foreign+=(c==='KRW'?(Number(t.amount)||0):(Number(t.foreignAmount)||0)); }); return out; }
     function escapeHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
     function pad2(n){ return String(n).padStart(2,'0'); }
     function monthStr(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1); }

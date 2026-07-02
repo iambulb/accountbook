@@ -248,6 +248,7 @@
         participants:Array.isArray(t.splitParticipants)?t.splitParticipants.slice():null, amounts:t.splitAmounts||null, memo:t.settlementMemo||'' } : null;
       highlightTypeSeg(); renderTxDyn(); renderSettleBlock();
       sh._cur=(t&&t.currency)?t.currency:'KRW'; sh._rate=(t&&t.fxRate)?t.fxRate:(sh._cur==='KRW'?1:''); sh._fxSource=(t&&t.fxSource)||'manual'; sh._curUserSet=false; renderFxRow(); if(!t) applyPbCurrency();
+      if(t&&t.currency&&t.currency!=='KRW') setFxStat((t.fxSource==='live'?'실시간':'직접입력')+(t.fxDate?' · '+t.fxDate:''));
       // 데스크톱(마우스/물리키보드 환경)에선 금액칸에 포커스를 줘 바로 숫자를 타이핑할 수 있게(모바일은 화면 키패드 유지 위해 포커스 안 줌).
       try{ if(window.matchMedia && window.matchMedia('(pointer: fine)').matches){ setTimeout(function(){ const a=$('sAmount'); if(a){ a.focus(); const v=a.value||''; try{ a.setSelectionRange(v.length, v.length); }catch(_){} } }, 60); } }catch(_){ }
     }
@@ -1612,11 +1613,19 @@
       openSheet(p.name, h);
     }
     function setPbDetailTab(id,tab){ pbDetailTab=tab; openPbDetail(id,tab); }
+    // 여행 PB: 통화별 지출 요약(외화가 있을 때만). 원통화 원금 + 원화 환산 병기.
+    function currencySummaryHtml(txs){ const by=sumByCurrency(txs); const codes=Object.keys(by);
+      if(!codes.some(c=>c!=='KRW')) return '';
+      const order=codes.sort((a,b)=>by[b].krw-by[a].krw); const totalKrw=codes.reduce((s,c)=>s+by[c].krw,0);
+      return '<div class="card"><div class="sec-title" style="margin:0 0 8px;">통화별</div>'+
+        order.map(c=>'<div class="row" style="padding:5px 0;"><span>'+escapeHtml(curInfo(c).name)+'</span><span><b>'+escapeHtml(fmtForeign(by[c].foreign,c))+'</b>'+(c!=='KRW'?'<span class="tx-sub" style="margin-left:6px;">'+won(by[c].krw)+'</span>':'')+'</span></div>').join('')+
+        '<div class="row" style="padding:6px 0 0;border-top:1px solid var(--line-soft);margin-top:4px;"><span class="tx-sub">원화 합계</span><b>'+won(totalKrw)+'</b></div></div>';
+    }
     function renderPbTxTab(p,u){
       const allTx=pbTxs(p).sort((a,b)=>new Date(b.date)-new Date(a.date));
       const byCat={}; u.txs.forEach(t=>{ const k=t.category||'기타'; byCat[k]=(byCat[k]||0)+(Number(t.amount)||0); });
       const catKeys=Object.keys(byCat).sort((a,b)=>byCat[b]-byCat[a]);
-      let h='';
+      let h=currencySummaryHtml(u.txs);
       if(catKeys.length) h+='<div class="card"><div class="sec-title" style="margin:0 0 8px;">카테고리별</div>'+catKeys.map(k=>'<div class="row" style="padding:5px 0;"><span>'+catIcon(k)+' '+escapeHtml(k)+'</span><b>'+won(byCat[k])+'</b></div>').join('')+'</div>';
       h+='<div class="chip-row">'+['active','completed','archived'].map(st=>'<button class="chip '+((p.status||'active')===st?'on':'')+'" onclick="setPbStatus(\''+p.id+'\',\''+st+'\')">'+PB_STATUS_LABEL[st]+'</button>').join('')+'</div>';
       h+='<button class="btn" onclick="openTxSheet(null,null,null,\''+p.id+'\')">+ 이 가계부에 지출 추가</button>';
@@ -2078,8 +2087,8 @@
     function exportCSV(){
       const rows=monthTx(state.month).sort((a,b)=>new Date(a.date)-new Date(b.date));
       if(!rows.length){ toast('이번달 거래가 없습니다', true); return; }
-      const header=['날짜','유형','사용자','카테고리','출금','입금','금액','실제소비','카드실적금액','설명','메모'];
-      const lines=rows.map(t=>[ (t.date||'').substring(0,10), TYPE_LABEL[t.type]||t.type, t.user||'', t.category||'', acctName(t.from), acctName(t.to), t.amount||0, (isActual(t)?(Number(t.amount)||0):0), (t.cardPerformanceIncluded?(t.cardPerformanceAmount!=null?t.cardPerformanceAmount:t.amount):0), t.desc||'', t.memo||'' ]
+      const header=['날짜','유형','사용자','카테고리','출금','입금','금액','실제소비','카드실적금액','원통화','외화금액','환율','환율원본','환율일자','설명','메모'];
+      const lines=rows.map(t=>[ (t.date||'').substring(0,10), TYPE_LABEL[t.type]||t.type, t.user||'', t.category||'', acctName(t.from), acctName(t.to), t.amount||0, (isActual(t)?(Number(t.amount)||0):0), (t.cardPerformanceIncluded?(t.cardPerformanceAmount!=null?t.cardPerformanceAmount:t.amount):0), t.currency||'', (t.foreignAmount!=null?t.foreignAmount:''), (t.fxRate!=null?t.fxRate:''), t.fxSource||'', t.fxDate||'', t.desc||'', t.memo||'' ]
         .map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
       const csv='﻿'+[header.join(','),...lines].join('\r\n');
       const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
