@@ -716,6 +716,32 @@
       h+='<div class="card" style="padding:4px 12px;">'+(list.length?list.slice().sort((a,b)=>(a.done?1:0)-(b.done?1:0)).map(todoRow).join(''):'<div class="empty" style="padding:18px 6px;">연결된 할일이 없어요</div>')+'</div>';
       h+='<button class="btn ghost" style="margin-top:8px;" onclick="openTodoEdit(null,\''+pbId+'\')">＋ 이 여행에 할일 추가</button>';
       return h; }
+    // 완료 리포트(할일 모드 더보기) — 전체 완료율 + 스코프별 + 멤버별 완료 기여
+    function openTodoReport(){
+      const all=state.todos||[]; const total=all.length, doneN=all.filter(t=>t.done).length; const rate=total?Math.round(doneN/total*100):0;
+      const p=all.filter(t=>todoScope(t)==='personal'), g=all.filter(t=>todoScope(t)==='group');
+      const mem=(state.wsMeta&&state.wsMeta.members)||{};
+      let h='<div class="card" style="padding:16px;text-align:center;">'+
+        '<div style="font-size:30px;font-weight:900;color:var(--primary);line-height:1;">'+rate+'%</div>'+
+        '<div class="muted" style="font-size:12.5px;margin-top:5px;">완료 '+doneN+' / 전체 '+total+'</div>'+
+        '<div style="height:8px;border-radius:6px;background:var(--soft);margin-top:12px;overflow:hidden;"><div style="height:100%;width:'+rate+'%;background:var(--primary);"></div></div></div>';
+      h+='<div class="sech"><span class="l">구성</span></div><div class="card" style="padding:4px 12px;">'+
+        '<div class="tdrow"><span class="tdtitle">개인</span>'+todoDoneChip(p)+'</div>'+
+        '<div class="tdrow"><span class="tdtitle">그룹</span>'+todoDoneChip(g)+'</div></div>';
+      const byMem={}; all.forEach(t=>{ if(t.done && t.doneByUid) byMem[t.doneByUid]=(byMem[t.doneByUid]||0)+1; });
+      const uids=Object.keys(byMem).sort((a,b)=>byMem[b]-byMem[a]);
+      if(uids.length){ h+='<div class="sech"><span class="l">완료 기여</span></div><div class="card" style="padding:4px 12px;">'+
+        uids.map(function(u){ const nm=(u===state.uid)?(state.userName||'나'):((mem[u]&&mem[u].name)||'멤버'); return '<div class="tdrow"><span class="tdwho">'+avatarHtml(u,nm,22)+'</span><span class="tdtitle">'+escapeHtml(nm)+'</span><span class="tdue">'+byMem[u]+'개</span></div>'; }).join('')+'</div>'; }
+      openSheet('완료 리포트', h);
+    }
+    function todoDoneChip(list){ return '<span class="tdue">'+list.filter(t=>t.done).length+' / '+list.length+'</span>'; }
+    // 반복 할일 관리(할일 모드 더보기)
+    function openRepeatTodos(){
+      const list=(state.todos||[]).filter(t=>t.repeat && t.repeat!=='none').sort((a,b)=>(a.dueDate||'9999-99').localeCompare(b.dueDate||'9999-99'));
+      let h='<p class="muted" style="margin:2px 2px 12px;line-height:1.5;">매일·매주 반복 중인 할일이에요. 완료하면 자동으로 다음 회차로 넘어가요.</p>';
+      h+='<div class="card" style="padding:4px 12px;">'+(list.length?list.map(function(t){ return todoRow(t,false); }).join(''):'<div class="empty" style="padding:22px 6px;">반복 할일이 없어요</div>')+'</div>';
+      openSheet('반복 할일', h);
+    }
     function renderStats(){
       if(typeof markReportSeen==='function') markReportSeen();   // 🐱 주간 미션: 리포트 확인
       const m=state.month, list=monthTx(m);
@@ -1219,17 +1245,24 @@
          '<div class="gnm"><b>'+escapeHtml(ws.name||'가계부')+'</b><span>'+wsSub+'</span></div>'+
          (isGroup?memberAvatarStack(ws, 26):'')+
          '<button class="cnt" onclick="event.stopPropagation();openWorkspaceSheet()">전환</button></div>';
-      // 4열 기능 그리드
-      const activeSubs=(state.subscriptions||[]).filter(s=>s.status==='active').length;
+      // 4열 기능 그리드 — 할일 모드면 할일 전용, 아니면 가계부 전용(알뜰샵·설정은 공용)
       h+='<div class="grid4">';
-      h+=gcell(MORE_ICON.budget,'예산','openBudgetSheet()');
-      h+=gcell(MORE_ICON.sub,'구독','openSubscriptions()', activeSubs||0);
-      h+=gcell(MORE_ICON.recurring,'정기결제','openRecurringList()');
-      h+=gcell(MORE_ICON.pb,'목적별','openPurposeBooks()');
-      h+=gcell(MORE_ICON.settle,'정산','openSettlementOverview()');
-      h+=gcell(MORE_ICON.gift,'경조사비','openGiftBook()');
-      h+=gcell(MORE_ICON.loan,'대출/이자','openLoanBook()');
-      h+=gcell(MORE_ICON.category,'카테고리','openCategorySheet()');
+      if(state.mode==='todo'){
+        h+=gcell(MORE_ICON.share,'할일 공유','openTodoShareSheet()');
+        h+=gcell(MORE_ICON.report,'완료 리포트','openTodoReport()');
+        h+=gcell(MORE_ICON.repeat,'반복 할일','openRepeatTodos()');
+        h+=gcell(MORE_ICON.pb,'목적별','openPurposeBooks()');
+      } else {
+        const activeSubs=(state.subscriptions||[]).filter(s=>s.status==='active').length;
+        h+=gcell(MORE_ICON.budget,'예산','openBudgetSheet()');
+        h+=gcell(MORE_ICON.sub,'구독','openSubscriptions()', activeSubs||0);
+        h+=gcell(MORE_ICON.recurring,'정기결제','openRecurringList()');
+        h+=gcell(MORE_ICON.pb,'목적별','openPurposeBooks()');
+        h+=gcell(MORE_ICON.settle,'정산','openSettlementOverview()');
+        h+=gcell(MORE_ICON.gift,'경조사비','openGiftBook()');
+        h+=gcell(MORE_ICON.loan,'대출/이자','openLoanBook()');
+        h+=gcell(MORE_ICON.category,'카테고리','openCategorySheet()');
+      }
       h+=gcell(coinSvg({h:26}),'알뜰샵','openCatHouse()');
       h+=gcell(MORE_ICON.gear,'설정','openSettingsSheet()');
       h+='</div>';
