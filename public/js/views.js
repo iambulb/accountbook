@@ -643,6 +643,33 @@
         (fr.length?fr.map(function(u){ const f=state.friends[u]||{}; return '<div class="tdrow"><span class="tdwho">'+avatarHtml(u,f.name||'',28)+'</span><b class="tdtitle" onclick="viewFriendTodos(\''+u+'\')">'+escapeHtml(f.name||'친구')+'</b><button class="buy" onclick="viewFriendTodos(\''+u+'\')">할일 보기</button><button class="buy dis" onclick="removeFriend(\''+u+'\')">삭제</button></div>'; }).join(''):'<div class="empty" style="padding:22px 6px;">아직 친구가 없어요 · 위 코드로 추가하세요</div>')+'</div>';
       $('content').innerHTML=h;
     }
+    // ===== 친구들 피드('친구들' 탭) — 공개 친구 아바타(최근 등록순·오늘 무지개) + 친구 할일 목록 =====
+    function setFeedFriend(uid){ state._feedFriend=(state._feedFriend===uid?null:uid); renderTodoList(); }
+    // 친구 할일 한 줄(읽기전용) — 우측에 누구 것인지 아바타
+    function friendTodoRow(uid, t){ const nm=friendDisplayName(uid);
+      const chk='<span class="tdchk'+(t.done?' on':'')+'" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>';
+      return '<div class="tdrow">'+chk+'<span class="tdtitle'+(t.done?' done':'')+'">'+escapeHtml(t.title||'')+(t.repeat&&t.repeat!=='none'?' <span class="pill">🔁</span>':'')+(t.purposeBookId?' <span class="pill">📍</span>':'')+'</span>'+todoDueBadge(t)+'<span class="tdwho">'+avatarHtml(uid,nm,20)+'</span></div>'; }
+    function renderFriendsFeed(){
+      let h=todoScopeSeg();
+      const pubUids=Object.keys(state.friends||{}).filter(function(u){ return state.friendPub && state.friendPub[u]; });
+      if(!pubUids.length){
+        h+='<div class="card"><div class="empty" style="padding:26px 12px;line-height:1.6;">공개한 친구가 아직 없어요.<br>더보기 → <b>친구</b>에서 친구를 추가하거나, 친구가 <b>할일 공개</b>를 켜면 여기에 떠요.</div></div>';
+        $('content').innerHTML=h; return;
+      }
+      const today=ymd(new Date());
+      const order=friendFeedOrder(state.friendTodosByUid, pubUids, today);
+      const sel=state._feedFriend && state.friendPub[state._feedFriend] ? state._feedFriend : null;
+      // 아바타 스트립(최근 등록순, 오늘 등록=무지개 테두리)
+      h+='<div class="tdfriends"><div class="tdfr-scroll">'+order.map(function(r){ const uid=r.uid, nm=friendDisplayName(uid);
+        return '<button class="tdfr'+(uid===sel?' sel':'')+(r.todayReg?' today':'')+'" onclick="setFeedFriend(\''+uid+'\')" aria-label="'+escapeHtml(nm)+' 할일">'+avatarHtml(uid,nm,44)+'<span class="tdfrnm">'+escapeHtml(nm)+'</span></button>'; }).join('')+'</div></div>';
+      if(sel) h+='<div class="chip-row" style="margin:2px 0 10px;"><button class="chip on">'+escapeHtml(friendDisplayName(sel))+'</button><button class="chip" onclick="setFeedFriend(\''+sel+'\')">전체 보기</button></div>';
+      // 친구 할일 목록(선택 친구 or 전체 합본) — 미완료 마감 임박순
+      const targets = sel? [sel] : order.map(function(r){ return r.uid; });
+      let rows=[]; targets.forEach(function(uid){ (state.friendTodosByUid[uid]||[]).forEach(function(t){ if(!t.done) rows.push({uid:uid,t:t}); }); });
+      rows.sort(function(a,b){ const ad=a.t.dueDate||'9999-99', bd=b.t.dueDate||'9999-99'; if(ad!==bd) return ad<bd?-1:1; return (b.t.createdAt||'').localeCompare(a.t.createdAt||''); });
+      h+='<div class="card" style="padding:4px 12px;">'+(rows.length?rows.map(function(x){ return friendTodoRow(x.uid,x.t); }).join(''):'<div class="empty" style="padding:24px 6px;">등록한 할일이 없어요</div>')+'</div>';
+      $('content').innerHTML=h;
+    }
     // nextDue/dueDiffDays는 js/util.js(순수함수·단위테스트)로 이관됨 — 전역으로 사용.
     function todoDueBadge(t){ if(!t.dueDate) return ''; const today=ymd(new Date());
       const diff=dueDiffDays(t.dueDate, today);
@@ -662,8 +689,8 @@
         todoDueBadge(t)+who+'</div>';
     }
     function renderTodoList(){
-      // 개인 워크스페이스의 둘째 탭(친구들) = 친구 허브(그룹 할일이 없으므로)
-      if(state._todoScope==='group' && isPersonalWs()) return renderFriendsHub();
+      // 개인 워크스페이스의 둘째 탭(친구들) = 친구 피드(아바타 정렬·오늘 무지개·친구 할일 목록)
+      if(state._todoScope==='group' && isPersonalWs()) return renderFriendsFeed();
       const meUid=state.uid; const today=ymd(new Date());
       const we=new Date(); we.setDate(we.getDate()+7); const weekEnd=ymd(we);
       const isGroup=state._todoScope==='group';
@@ -676,14 +703,11 @@
       open.sort((a,b)=>{ const ad=a.dueDate||'9999-99', bd=b.dueDate||'9999-99'; if(ad!==bd) return ad<bd?-1:1; return (a.sortOrder||0)-(b.sortOrder||0); });
       const done=base.filter(t=>t.done).sort((a,b)=>(b.doneAt||'').localeCompare(a.doneAt||''));
       const chips=isGroup?[['all','전체'],['mine','내 담당'],['today','오늘'],['week','이번주']]:[['all','전체'],['today','오늘'],['week','이번주']];
-      const ro=todoReadOnly();
-      let h=todoScopeSeg();
-      if(!isGroup) h+=todoFriendStrip();
-      if(ro) h+='<div class="tdrobar">👀 '+escapeHtml(todoMemberName(state._todoFriend)||'친구')+'님의 할일 · 읽기전용 <button class="lnk" onclick="setTodoFriend(\''+state.uid+'\')">내 할일로</button></div>';
+      let h=todoScopeSeg();   // 개인 탭 = 내 할일만(친구는 '친구들' 탭 피드로 일원화)
       h+='<div class="chip-row" style="margin:6px 0 12px;">'+chips.map(c=>'<button class="chip'+(_todoFilter===c[0]?' on':'')+'" onclick="setTodoFilter(\''+c[0]+'\')">'+c[1]+'</button>').join('')+'</div>';
-      const emptyMsg=ro?'공유된 할일이 없어요':(isGroup?'그룹 할일이 없어요 — 아래 ＋ 로 담당을 나눠보세요':'개인 할일이 없어요 — 아래 ＋ 로 추가하세요');
-      h+='<div class="card" style="padding:4px 12px;">'+(open.length?open.map(t=>todoRow(t,ro)).join(''):'<div class="empty" style="padding:26px 6px;">'+emptyMsg+'</div>')+'</div>';
-      if(done.length){ h+='<div class="sech"><span class="l">완료</span><span class="s">'+done.length+'개</span></div><div class="card" style="padding:4px 12px;">'+done.slice(0,20).map(t=>todoRow(t,ro)).join('')+'</div>'; }
+      const emptyMsg=isGroup?'그룹 할일이 없어요 — 아래 ＋ 로 담당을 나눠보세요':'개인 할일이 없어요 — 아래 ＋ 로 추가하세요';
+      h+='<div class="card" style="padding:4px 12px;">'+(open.length?open.map(t=>todoRow(t)).join(''):'<div class="empty" style="padding:26px 6px;">'+emptyMsg+'</div>')+'</div>';
+      if(done.length){ h+='<div class="sech"><span class="l">완료</span><span class="s">'+done.length+'개</span></div><div class="card" style="padding:4px 12px;">'+done.slice(0,20).map(t=>todoRow(t)).join('')+'</div>'; }
       $('content').innerHTML=h;
     }
     function todoMoveMonth(d){ state.month=shiftMonth(state.month,d); renderTodoCalendar(); }
