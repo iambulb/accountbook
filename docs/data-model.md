@@ -10,10 +10,11 @@ users/{uid}            : { name, email, photo(프로필 사진 base64 data URL),
                              coins,                                  // 은화 잔액(정수)
                              gold,                                   // 금화(뽑기 오픈마다 +1)
                              owned:{ cats:{ {catId}:{boughtAt} }, items:{ {itemId}:{boughtAt,qty} }, wallpapers:{ {wallId}:{boughtAt} } },
-                             consum:{ food, water },                 // 소비 아이템 보유 수(사료·물, 각 1은화). 배치 불가, 그릇 채울 때 소모
-                             home:{ active:[catId…], placed:{ {"r_c"}:{itemId, filledAt?} }, wallpaper:wallId, poops },  // filledAt=밥/물 채운 시각(ms, 3h 뒤 비워지며 poops+1) · poops=미수거 똥 수(탭 시 +2은화)
+                             consum:{ food, water, egg, box, rainbow_egg, rainbow_box },  // 🎒 가방(보유 소비 아이템 수): 사료·물(그릇 채움) + 펫알·랜덤박스(일반 확률 오픈) + 무지개알·무지개박스(특별↑ 오픈)
+                             home:{ active:[catId…], placed:{ {"r_c"}:{itemId, filledAt?} }, wallpaper:wallId, poops, slots },  // filledAt=밥/물 채운 시각(ms, 3h 뒤 비워지며 poops+1) · poops=미수거 똥 수(탭 시 +2은화) · slots=활성 슬롯 수(기본3·금화로 확장)
                              missions:{ {periodKey}:{ {missionId}:{claimed,reward,at} } },  // periodKey=KST 일자 2026-07-01
-                             codes:{ {code}:{reward,at} }             // 사용한 프로모/치트 코드(사용자별 1회, 예: showmethemoney→999)
+                             gifts:[ { type:'coins'|'consum', key?, qty, code, at } … ],  // 🎁 선물함(코드 보상 대기 목록) — 받기(claimGift) 시 은화는 coins로, 아이템은 consum(가방)으로
+                             codes:{ {code}:{at, n} }                 // 사용한 프로모/치트 코드(일반 1회·개발자 무한). n=사용 횟수
                            } }
 workspaces/{wsId}      : { name, photo(가계부 사진 base64 data URL, 선택), type:'personal'|'group', code(그룹), ownerUid, createdAt,
                            members:{ {uid}:{ name, role:'owner'|'member', joinedAt } } }
