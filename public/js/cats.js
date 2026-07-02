@@ -689,7 +689,7 @@
       if(dockMode()==='hidden'){ d.className='catdock hidden'; d.innerHTML=''; stopWalk(); return; }
       d.className='catdock';
       // 웹캠 정면 방: 벽지(배경) + 바닥 + 배치 가구(배경) + 걷는 고양이
-      d.innerHTML='<div class="cd-room" onclick="openCatHouse()">'+
+      d.innerHTML='<div class="cd-room" onclick="camTap()">'+
         '<div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div>'+
         '<span class="cd-coin"><span class="cd-ci">'+coinSvg({h:16})+'</span><b id="cdCoins">0</b></span>'+
         batchBtnHtml()+
@@ -838,6 +838,7 @@
     function releaseRes(a){ a.resKey=null; a.resFloor=null; }
     function stepActors(dt){
       _eng.actors.forEach(a=>{
+        if(a.mode==='drag') return;   // 손으로 집어 든 펫은 엔진이 건드리지 않음(드래그가 위치 제어)
         a.t+=dt*0.004; if(a.cool>0)a.cool-=dt; const id=a.el.getAttribute('data-cat');
         if(a.mode==='pause'){ a.pause-=dt; if(a.pause<=0){ a.mode='roam'; a.fc=999; a.dir=Math.random()<0.5?-1:1; a.lift=0; releaseRes(a);   // 내려와 재출발(자리 반납)
           // 이동 재개: 정면 이미지로 이동 금지 — actorShowMoving으로 일원화(일반=CSS 필름, frontWalk=east 정지스틸)
@@ -872,6 +873,35 @@
       _eng.raf=requestAnimationFrame(catLoop);
     }
     function startCatLoop(){ if(!_eng.raf) _eng.raf=requestAnimationFrame(catLoop); }
+
+    // ===== 캠/방에서 펫을 꾹 눌러(롱프레스) 집어 좌우로 이동 =====
+    let _petDrag=null, _petJustDragged=false, _petTimer=0;
+    function camTap(){ if(_petJustDragged) return; openCatHouse(); }   // 드래그 직후의 탭은 상점 열기 무시
+    function petGrabDown(e){
+      const el=(e.target&&e.target.closest)?e.target.closest('.cd-actor'):null; if(!el) return;
+      const a=_eng.actors.find(x=>x.el===el); if(!a) return;
+      const stage=el.parentElement, sx=e.clientX, sy=e.clientY; let started=false, lastX=e.clientX;
+      const begin=()=>{ started=true; _petDrag=a; a.mode='drag'; a.goal=null; if(typeof releaseRes==='function') releaseRes(a);
+        a.lift=Math.round((a.hh||40)*0.3); a.el.classList.add('cdgrab');
+        if(a.spr) actorShowStill(a,'south'); setXform(a, a.spr?1:a.dir);
+        try{ if(navigator.vibrate) navigator.vibrate(12); }catch(_){}
+      };
+      const mv=(ev)=>{ if(!started){ if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>10) cleanup(); return; }
+        ev.preventDefault(); const r=stage.getBoundingClientRect(), W=a.W||r.width;
+        let x=ev.clientX-r.left-a.sw/2; x=Math.max(2, Math.min(W-a.sw, x));
+        if(ev.clientX<lastX-1) a.dir=-1; else if(ev.clientX>lastX+1) a.dir=1; lastX=ev.clientX;
+        a.x=x; setXform(a, a.spr?1:a.dir);
+      };
+      const cleanup=()=>{ clearTimeout(_petTimer);
+        window.removeEventListener('pointermove',mv); window.removeEventListener('pointerup',end); window.removeEventListener('pointercancel',end);
+        if(started){ a.el.classList.remove('cdgrab'); a.mode='roam'; a.lift=0; a.fc=999; a.cool=700; actorShowMoving(a); setXform(a); a._pdir=a.dir;
+          _petDrag=null; _petJustDragged=true; setTimeout(()=>{ _petJustDragged=false; }, 260); }   // 놓은 자리에서 다시 배회
+      };
+      const end=()=>cleanup();
+      _petTimer=setTimeout(begin, 320);   // 320ms 이상 눌러야 집힘(짧은 탭은 상점 열기)
+      window.addEventListener('pointermove',mv); window.addEventListener('pointerup',end); window.addEventListener('pointercancel',end);
+    }
+    if(typeof document!=='undefined') document.addEventListener('pointerdown', petGrabDown, true);
 
     // ================= 고양이집 시트 (홈 · 상점 · 미션) =================
     let _catTab='home';
