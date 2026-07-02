@@ -1264,6 +1264,8 @@
         h+=gcell(MORE_ICON.category,'카테고리','openCategorySheet()');
       }
       h+=gcell(coinSvg({h:26}),'알뜰샵','openCatHouse()');
+      h+=gcell(giftSvg({h:26}),'선물함','openGiftbox()', (typeof giftCount==='function'?giftCount():0));
+      h+=gcell('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>','가방','openBag()');
       h+=gcell(MORE_ICON.gear,'설정','openSettingsSheet()');
       h+='</div>';
       // 하단 고정: 로그아웃(가운데) → 홈 화면 설치 링크 → 버전

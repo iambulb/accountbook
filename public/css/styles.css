@@ -768,8 +768,8 @@
       background:conic-gradient(from 0deg, rgba(255,255,255,.13) 0 7deg, transparent 7deg 45deg); border-radius:50%; animation:fxspin 7s steps(24) infinite; opacity:.7; }
     .fx-rays.slow { width:420px; height:420px; opacity:.4; }
     /* 튀는 빛 입자 — 둥근 점 대신 각진 픽셀 조각 */
-    .fx-particle { position:absolute; left:50%; top:50%; width:5px; height:5px; border-radius:0; background:rgba(242,200,75,.85); image-rendering:pixelated; z-index:2;
-      animation:fxpart .6s steps(5) forwards; }
+    .fx-particle { position:absolute; left:50%; top:50%; width:5px; height:5px; border-radius:0; background:currentColor; opacity:.92; image-rendering:pixelated; z-index:2;
+      animation:fxpart .6s steps(5) forwards; }   /* 색은 무대 등급색(currentColor) 상속 */
     .fx-reveal { animation:fxfade .3s ease; }
     .fx-halo { position:absolute; left:50%; top:44%; width:230px; height:230px; transform:translate(-50%,-50%); border-radius:50%; z-index:0;
       background:radial-gradient(circle, currentColor 0%, transparent 62%); opacity:.30; }
@@ -788,6 +788,43 @@
     .fx-reveal.tier-limited .fx-tier { background:linear-gradient(90deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8,#F04452); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:rainbow 2s linear infinite; }
     .fx-confetti { position:absolute; inset:0; overflow:hidden; z-index:1; pointer-events:none; }
     .fx-conf { position:absolute; top:-12px; width:8px; height:12px; border-radius:2px; animation:fxconf linear forwards; }
+    /* ✨ 픽셀 반짝임(스파클) — 무지개 대기/등급 등장 공통. 색은 부모 색 상속(무지개=흰색, 등장=등급색). +자 픽셀 */
+    .fx-spark { position:absolute; width:4px; height:4px; background:currentColor; image-rendering:pixelated; z-index:2; opacity:0;
+      box-shadow:4px 0 currentColor,-4px 0 currentColor,0 4px currentColor,0 -4px currentColor;
+      transform:translate(-50%,-50%) scale(var(--sc,1)); animation:fxspark 1.2s steps(3) infinite; }
+    .fx-rb { color:#fff; }                    /* 무지개 대기: 스파클 흰색 */
+    .fx-sparks { position:absolute; inset:0; z-index:2; pointer-events:none; color:inherit; }   /* 등장: 등급색 반짝 */
+    /* 무지개알/박스: 움직이는 무지개 + 무지갯빛 글로우 펄스 */
+    .fx-item.fx-rainbow { filter:drop-shadow(0 0 10px rgba(255,255,255,.55)); }
+    .fx-item.fx-rainbow::after { content:""; position:absolute; inset:-12px; border-radius:50%; z-index:-1; pointer-events:none;
+      background:conic-gradient(#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8,#F04452); filter:blur(15px); opacity:.5; animation:fxspin 3s linear infinite; }
+    /* 등장 픽셀 프레임 — 등급색 각진 테두리(등급↑=두껍고 진하게, 한정=무지개 글로우) */
+    .fx-art { position:relative; }
+    .fx-frame { position:absolute; inset:-8px; z-index:-1; border:3px solid currentColor; image-rendering:pixelated; opacity:.55; animation:fxframe 1.4s steps(2) infinite; }
+    .fx-reveal.rank-3 .fx-frame, .fx-reveal.rank-4 .fx-frame, .fx-reveal.rank-5 .fx-frame { inset:-11px; border-width:4px; opacity:.75; }
+    .fx-reveal.rank-5 .fx-frame { border-color:transparent; box-shadow:0 0 0 4px #ff5fa2, 0 0 16px 5px rgba(255,95,162,.6); }
+    .fx-reveal.rank-0 .fx-frame, .fx-reveal.rank-1 .fx-frame, .fx-reveal.rank-2 .fx-frame { display:none; }   /* 낮은 등급은 프레임 생략(담백) */
+    /* 등급↑ 후광·광선 더 크고 밝게 */
+    .fx-reveal.rank-4 .fx-halo, .fx-reveal.rank-5 .fx-halo { width:300px; height:300px; opacity:.5; }
+    .fx-reveal.rank-4 .fx-rays.slow, .fx-reveal.rank-5 .fx-rays.slow { width:520px; height:520px; opacity:.62; }
+    @keyframes fxspark { 0%{opacity:0;transform:translate(-50%,-50%) scale(0)} 45%{opacity:1;transform:translate(-50%,-50%) scale(var(--sc,1))} 100%{opacity:0;transform:translate(-50%,-50%) scale(0)} }
+    @keyframes fxframe { 0%,100%{opacity:.5} 50%{opacity:.85} }
+    /* ✨ 무지개 상점 카드(이벤트 탭) */
+    .rb-hh { margin:14px 2px 8px; font-size:12.5px; font-weight:800; color:var(--sub); }
+    .rb-card { position:relative; overflow:hidden; }
+    .rb-card::before { content:""; position:absolute; inset:0; z-index:0; pointer-events:none; opacity:.10;
+      background:linear-gradient(120deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8,#F04452); background-size:300% 100%; animation:rainbow 3s linear infinite; }
+    .rb-card > * { position:relative; z-index:1; }
+    .rb-thumb-wrap { filter:drop-shadow(0 0 6px rgba(255,255,255,.5)); }
+    .buy.rb-use { background:linear-gradient(90deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8); background-size:200% 100%; color:#fff; animation:rainbow 2.4s linear infinite; }
+    /* 🎁 선물함 / 🎒 가방 목록 행 */
+    .giftbox, .bag { display:flex; flex-direction:column; gap:8px; }
+    .giftrow, .bagrow { display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--bd); border-radius:12px; padding:8px 12px; }
+    .gfic, .bgic { width:38px; height:38px; flex:none; display:inline-flex; align-items:center; justify-content:center; }
+    .gfic .px, .bgic .px { display:block; }
+    .gfnm, .bgnm { flex:1; font-size:14px; font-weight:800; }
+    .bagrow .qty { font-size:12px; color:var(--sub); font-weight:700; }
+    .giftrow .buy, .bagrow .buy { flex:none; }
     @keyframes fxfade { from{opacity:0} to{opacity:1} }
     @keyframes fxpop { from{transform:scale(.2);opacity:0} to{transform:scale(1);opacity:1} }
     @keyframes fxfloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }

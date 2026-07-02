@@ -339,6 +339,10 @@
     ];
     const EGG_PAL={X:'#c9c2b0',W:'#FBFBFD',S:'#E7E3DA',R:'RAINBOW',O:'RAINBOW',Y:'RAINBOW',G:'RAINBOW',B:'RAINBOW',P:'RAINBOW'};
     const BOX_PAL={X:'#b9c0cb',W:'#FBFBFD',C:'#cdd5e4',L:'#b7c0d4',R:'RAINBOW',O:'RAINBOW',Y:'RAINBOW',G:'RAINBOW',B:'RAINBOW',P:'RAINBOW'};
+    // 무지개알/무지개박스: 껍질(W)·윗면(C·L)·완화픽셀(S)을 통째로 RAINBOW(pxSvg의 움직이는 세로 무지개 그라디언트),
+    // 물음표(R/O/Y/G/B/P)는 흰색으로 대비, 외곽(X)은 은은한 중립색 → "온몸이 움직이는 무지개빛"인 알/상자.
+    const EGG_PAL_RB={X:'#b7b0a2',W:'RAINBOW',S:'RAINBOW',R:'#FBFBFD',O:'#FBFBFD',Y:'#FBFBFD',G:'#FBFBFD',B:'#FBFBFD',P:'#FBFBFD'};
+    const BOX_PAL_RB={X:'#9aa2b0',W:'RAINBOW',C:'RAINBOW',L:'RAINBOW',R:'#FBFBFD',O:'#FBFBFD',Y:'#FBFBFD',G:'#FBFBFD',B:'#FBFBFD',P:'#FBFBFD'};
     // 은화 속 검은 고양이의 앞발(특별↑ 연출에서 톡 건드림)
     const M_PAW = [
       "...XXXXX..","..XBBBBBX.",".XBBBBBBBX",".XBPBPBPBX",".XBBBBBBBX",".XBBPPBBBX",".XBBPPBBBX","..XBBBBBX.","...XXXXX.."
@@ -506,6 +510,13 @@
     function goldSvg(opt){ return pxSvg(M_COIN, GOLD_PAL, opt); }
     function eggSvg(stage, opt){ return pxSvg(stage>=2?M_EGG_C2:(stage>=1?M_EGG_C1:M_EGG), EGG_PAL, opt); }
     function boxSvg(opt){ return pxSvg(M_BOX, BOX_PAL, opt); }
+    // 무지개알/무지개박스 — 기존 알/상자 도트에 움직이는 무지개 채색(반짝임은 CSS .fx-rainbow/.rb-thumb).
+    function rainbowEggSvg(opt){ return pxSvg(M_EGG, EGG_PAL_RB, opt); }
+    function rainbowBoxSvg(opt){ return pxSvg(M_BOX, BOX_PAL_RB, opt); }
+    function rainbowEggStage(stage, opt){ return pxSvg([M_EGG,M_EGG_C1,M_EGG_C2][stage]||M_EGG, EGG_PAL_RB, opt); }
+    // 선물함 아이콘 — 랜덤박스 도트(M_BOX) 그대로, 색만 선물상자(빨강 몸체+금 리본)로 다시 칠함.
+    const GIFT_PAL={X:'#a83f52',W:'#e35d76',C:'#f2c84b',L:'#e0a43c',R:'#f2c84b',O:'#f2c84b',Y:'#f2c84b',G:'#f2c84b',B:'#f2c84b',P:'#f2c84b'};
+    function giftSvg(opt){ return pxSvg(M_BOX, GIFT_PAL, opt); }
     function pawSvg(opt){ return pxSvg(M_PAW, PAW_PAL, opt); }
     // 상점·팔레트·격자용 대표 아트(물그릇은 물 채운 파란 그릇으로 구분 표시)
     function furnSvg(id, opt){ const M={cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT}[id]; return pxSvg(M, FURN_PALS[id], opt); }
@@ -562,10 +573,13 @@
     function normalizeGame(g){ g=g||{}; return migratePetIds({
       coins: Number(g.coins)||0, gold: Number(g.gold)||0,
       owned:{ cats:(g.owned&&g.owned.cats)||{}, items:(g.owned&&g.owned.items)||{}, wallpapers:(g.owned&&g.owned.wallpapers)||{} },
-      consum:{ food:Number(g.consum&&g.consum.food)||0, water:Number(g.consum&&g.consum.water)||0 },
+      consum:{ food:Number(g.consum&&g.consum.food)||0, water:Number(g.consum&&g.consum.water)||0, egg:Number(g.consum&&g.consum.egg)||0, box:Number(g.consum&&g.consum.box)||0, rainbow_egg:Number(g.consum&&g.consum.rainbow_egg)||0, rainbow_box:Number(g.consum&&g.consum.rainbow_box)||0 },
       home:{ active:(g.home&&g.home.active)||[], placed:(g.home&&g.home.placed)||{}, wallpaper:(g.home&&g.home.wallpaper)||'default', poops:Number(g.home&&g.home.poops)||0, slots:Math.min(MAX_SLOTS, Math.max(BASE_SLOTS, Number(g.home&&g.home.slots)||BASE_SLOTS)) },
-      missions: g.missions||{}, progress: g.progress||{}, codes: g.codes||{}
+      missions: g.missions||{}, progress: g.progress||{}, codes: g.codes||{},
+      gifts: normalizeGifts(g.gifts)   // 선물함(코드 보상 대기 목록)
     }); }
+    // 선물함 목록을 항상 배열로 정규화(RTDB가 객체로 돌려줄 수 있어 방어)
+    function normalizeGifts(x){ if(Array.isArray(x)) return x.filter(Boolean); if(x&&typeof x==='object') return Object.keys(x).map(k=>x[k]).filter(Boolean); return []; }
     function gold(){ return (state.game&&state.game.gold)||0; }
     function initCatGame(){
       if(!state.uid) return;
@@ -627,26 +641,113 @@
         return g;
       });
     }
-    // 프로모/치트 코드 — 코드 입력 시 은화 지급(사용자별 1회, 게임 노드에 사용 기록)
-    const PROMO_CODES = { showmethemoney: 999 };
-    const REUSABLE_CODES = { showmethemoney: true };   // 중복 사용 허용 코드(그 외 일반 코드는 사용자당 1회)
+    // 프로모/치트 코드 — 보상은 곧바로 주지 않고 "선물함"으로 들어감(더보기 → 선물함에서 받기).
+    // 규칙: 일반 사용자는 코드당 1회만, 개발자 계정(isDev)은 무제한. type=coins(은화) / consum(소비 아이템).
+    const PROMO_CODES = {
+      showmethemoney: { type:'coins',  qty:999,  label:'999 은화' },
+      helloeggarden:  { type:'consum', key:'rainbow_egg', qty:1,  label:'무지개알 1개' },
+      eggardentodo:   { type:'consum', key:'rainbow_box', qty:1,  label:'무지개박스 1개' },
+      eggmoneyna:     { type:'consum', key:'egg',  qty:10, label:'펫알 10개' }
+    };
     function redeemCode(code){
       const key=(code||'').trim().toLowerCase();
-      const reward=PROMO_CODES[key];
-      if(!reward){ toast('올바르지 않은 코드예요', true); return; }
-      const reusable=!!REUSABLE_CODES[key];
+      const def=PROMO_CODES[key];
+      if(!def){ toast('올바르지 않은 코드예요', true); return; }
+      const dev=(typeof isDev==='function' && isDev());   // 개발자는 무제한, 일반은 1회
       let already=false;
       gameRef().transaction(g=>{
         g=normalizeGame(g);
-        if(!reusable && g.codes[key]){ already=true; return g; }   // 재사용 불가 코드만 1회 제한
-        g.codes[key]={ reward:reward, at:new Date().toISOString(), n:((g.codes[key]&&Number(g.codes[key].n))||0)+1 };
-        g.coins += reward;
+        if(!dev && g.codes[key]){ already=true; return g; }   // 일반 사용자: 이미 쓴 코드면 차단
+        g.codes[key]={ at:new Date().toISOString(), n:((g.codes[key]&&Number(g.codes[key].n))||0)+1 };
+        g.gifts.push({ type:def.type, key:def.key||null, qty:def.qty, code:key, at:new Date().toISOString() });   // 선물함에 적립
         return g;
       }).then(res=>{
         if(!res.committed) return;
         if(already) toast('이미 사용한 코드예요', true);
-        else toast('+'+reward.toLocaleString()+' 은화 획득! 🐾');
+        else toast('🎁 '+def.label+' 선물 도착! 더보기 → 선물함에서 받으세요');
       });
+    }
+    // ===== 🎁 선물함(코드 보상 대기함) + 🎒 가방(보유 소비 아이템) =====
+    function giftCount(){ return ((state.game&&state.game.gifts)||[]).length; }
+    // 소비 아이템 표시 정보(아이콘·이름·사용가능 여부·사용함수)
+    const CONSUM_META = {
+      food:      { name:'사료',       icon:o=>consumSvg('food',o) },
+      water:     { name:'물',         icon:o=>consumSvg('water',o) },
+      egg:       { name:'펫알',       icon:o=>eggSvg(0,o),        use:'egg'  },   // 일반 확률 오픈
+      box:       { name:'랜덤박스',   icon:o=>boxSvg(o),          use:'box'  },
+      rainbow_egg:{ name:'무지개알',  icon:o=>rainbowEggSvg(o),   use:'rb_egg' },  // 특별↑ 확률 오픈
+      rainbow_box:{ name:'무지개박스',icon:o=>rainbowBoxSvg(o),   use:'rb_box' }
+    };
+    // 선물 1건의 아이콘/이름
+    function giftView(gf){ if(gf.type==='coins') return { icon:coinSvg({h:30}), name:(gf.qty||0).toLocaleString()+' 은화' };
+      const m=CONSUM_META[gf.key]||{name:gf.key,icon:()=>''}; return { icon:m.icon({h:34}), name:m.name+' '+(gf.qty||1)+'개' }; }
+    function openGiftbox(){
+      const build=()=>{
+        const gifts=(state.game&&state.game.gifts)||[];
+        let h='<div class="giftbox">';
+        if(!gifts.length){ h+='<div class="empty" style="padding:30px 12px;">받을 선물이 없어요. 설정 → 코드 입력으로 보상을 받아보세요 🎁</div>'; }
+        else {
+          h+='<div class="hintline" style="margin:2px 0 10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>받으면 은화는 잔액으로, 아이템은 <b>가방</b>으로 들어가요.</div>';
+          h+=gifts.map((gf,i)=>{ const v=giftView(gf); return '<div class="giftrow"><span class="gfic">'+v.icon+'</span><b class="gfnm">'+escapeHtml(v.name)+'</b><button class="buy" onclick="claimGift('+i+')">받기</button></div>'; }).join('');
+          h+='<button class="btn" style="margin-top:12px;" onclick="claimAllGifts()">모두 받기</button>';
+        }
+        h+='</div>'; return h;
+      };
+      openSheet('선물함', build());
+      state._sheetRefresh=()=>{ const b=$('sheetBody'); if(b) b.innerHTML=build(); };
+    }
+    function applyGiftToGame(g, gf){ if(gf.type==='coins') g.coins=(g.coins||0)+(Number(gf.qty)||0);
+      else if(gf.type==='consum' && gf.key) g.consum[gf.key]=(Number(g.consum[gf.key])||0)+(Number(gf.qty)||1); }
+    function claimGift(i){
+      let claimed=null;
+      gameRef().transaction(g=>{ g=normalizeGame(g); if(i<0||i>=g.gifts.length) return g; claimed=g.gifts[i]; applyGiftToGame(g, claimed); g.gifts.splice(i,1); return g; })
+        .then(r=>{ if(r&&r.committed&&claimed){ const v=giftView(claimed); toast('🎁 '+v.name+' 받음'+(claimed.type==='consum'?' · 가방에서 사용하세요':'')); if(state._sheetRefresh) state._sheetRefresh(); } });
+    }
+    function claimAllGifts(){
+      let n=0;
+      gameRef().transaction(g=>{ g=normalizeGame(g); n=g.gifts.length; g.gifts.forEach(gf=>applyGiftToGame(g,gf)); g.gifts=[]; return g; })
+        .then(r=>{ if(r&&r.committed){ toast(n?('🎁 선물 '+n+'개 모두 받음'):'받을 선물이 없어요'); if(state._sheetRefresh) state._sheetRefresh(); } });
+    }
+    // 🎒 가방 — 보유한 소비 아이템(사료·물·펫알·랜덤박스·무지개알·무지개박스)을 보고 사용.
+    function openBag(){
+      const build=()=>{
+        const order=['egg','box','rainbow_egg','rainbow_box','food','water'];
+        const rows=order.filter(k=>consumQty(k)>0);
+        let h='<div class="bag">';
+        if(!rows.length){ h+='<div class="empty" style="padding:30px 12px;">가방이 비었어요. 상점·선물함에서 아이템을 얻어보세요 🎒</div>'; }
+        else h+=rows.map(k=>{ const m=CONSUM_META[k], q=consumQty(k);
+          const useBtn = m.use ? '<button class="buy'+((k==='rainbow_egg'||k==='rainbow_box')?' rb-use':'')+'" onclick="useBagItem(\''+k+'\')">사용</button>'
+                               : '<span class="qty" style="font-size:11px;color:var(--sub)">홈에서 그릇 탭</span>';
+          return '<div class="bagrow"><span class="bgic">'+m.icon({h:34})+'</span><b class="bgnm'+((k==='rainbow_egg'||k==='rainbow_box')?' tier-limited':'')+'">'+m.name+'</b><span class="qty">보유 '+q+'</span>'+useBtn+'</div>'; }).join('');
+        h+='<div class="note" style="margin-top:12px;">사료·물은 홈 화면에서 <b>밥·물 그릇을 탭</b>해 사용해요. 펫알·랜덤박스·무지개 아이템은 여기서 <b>사용</b>하면 열려요.</div></div>';
+        return h;
+      };
+      openSheet('가방', build());
+      state._sheetRefresh=()=>{ const b=$('sheetBody'); if(b) b.innerHTML=build(); };
+    }
+    function useBagItem(k){ const use=(CONSUM_META[k]||{}).use;
+      if(use==='egg'||use==='box') useHeldGacha(use);
+      else if(use==='rb_egg') useRainbow('egg');
+      else if(use==='rb_box') useRainbow('box'); }
+    // 보유한 펫알/랜덤박스(소비 인벤토리)를 일반 확률로 오픈 — 은화 대신 인벤토리 1개 소모, 금화+1 지급.
+    function useHeldGacha(kind){
+      const key=kind;   // consum.egg / consum.box
+      if(consumQty(key)<1){ toast('보유한 '+(kind==='egg'?'펫알':'랜덤박스')+'이 없어요', true); return; }
+      const res=rollFromPool(kind==='egg'?effCatTier():effItemTier()); if(!res) return;   // 일반 확률표(effTiers)
+      const dup=kind==='egg' && ownsCat(res.id);
+      const refund=dup?petDupRefund(res.id):0;
+      gameRef().transaction(g=>{ g=normalizeGame(g);
+        if((Number(g.consum[key])||0)<1) return g;
+        g.consum[key]-=1; g.gold=(g.gold||0)+1;
+        if(kind==='egg'){
+          if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; if(g.home.active.length<(g.home.slots||BASE_SLOTS) && g.home.active.indexOf(res.id)<0) g.home.active.push(res.id); }
+          else { g.coins+=refund; }
+        } else {
+          g.owned.items[res.id]=g.owned.items[res.id]||{qty:0,boughtAt:new Date().toISOString()};
+          g.owned.items[res.id].qty=(Number(g.owned.items[res.id].qty)||0)+1;
+        }
+        return g;
+      }).then(r=>{ if(r&&r.committed){ runGachaFx(kind, res, dup, refund); if(state._sheetRefresh) setTimeout(()=>{ if(state._sheetRefresh) state._sheetRefresh(); }, 50); } });
     }
     // 미션 수동 수령(완료 판정 후)
     function claimMission(id){
@@ -1067,7 +1168,18 @@
             '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+GACHA_PRICE+'</span></div>'+
             '<div class="act">'+act+'</div></div>';
         }).join('');
-        h+='<div class="note">열 때마다 <b>금화 1개</b> 지급. 이미 보유한 고양이는 <b>그 펫 가격의 20% 은화</b>로 환급돼요. <b>특별 등급 이상</b>은 펫알로만 나와요.</div>';
+        // ✨ 무지개알/무지개박스 — 금화로 구매하는 소비템(특별↑ 확정). 보유하면 "사용"으로 오픈.
+        const rb=[['egg','무지개알','열면 특별70 · 전설20 · 한정10%. 특별↑ 고양이만!', rainbowEggSvg({h:66,cls:'rb-thumb'})],
+                  ['box','무지개박스','열면 특별70 · 전설20 · 한정10%. 특별↑ 가구만!', rainbowBoxSvg({h:56,cls:'rb-thumb'})]];
+        h+='<div class="rb-hh"><span class="tier-limited">✨ 무지개</span> · 금화 전용 · 특별↑ 확정</div>';
+        h+=rb.map(([k,nm,desc,art])=>{ const key=rainbowKey(k), qty=consumQty(key), canBuy=gold()>=RAINBOW_PRICE_GOLD;
+          const buy=canBuy?'<button class="buy" aria-label="'+nm+' 구매(금화 '+RAINBOW_PRICE_GOLD+')" onclick="buyRainbow(\''+k+'\')">구매</button>':'<button class="buy dis" disabled>금화 '+(RAINBOW_PRICE_GOLD-gold())+' 부족</button>';
+          const use=qty>0?'<button class="buy rb-use" aria-label="'+nm+' 사용" onclick="useRainbow(\''+k+'\')">사용</button>':'';
+          return '<div class="shopcard rb-card"><div class="thumb rb-thumb-wrap">'+art+'</div>'+
+            '<div class="meta"><b class="tier-limited">'+nm+'</b><div class="desc">'+desc+'</div>'+
+            '<span class="price"><span class="ci">'+goldSvg({h:16})+'</span>'+RAINBOW_PRICE_GOLD+'</span></div>'+
+            '<div class="act">'+buy+use+'<span class="qty">보유 '+qty+'</span></div></div>'; }).join('');
+        h+='<div class="note">열 때마다 <b>금화 1개</b> 지급(무지개 제외·중복 펫은 <b>그 펫 가격의 20% 은화</b> 환급). <b>특별 등급 이상</b>은 펫알/랜덤박스로만 나오며, <b class="tier-limited">무지개</b>는 <b>금화로 구매·사용</b>해 특별↑을 확정으로 뽑아요.</div>';
         h+=gachaInfoHtml();
         return h;
       }
@@ -1314,10 +1426,10 @@
         '</div></details>';
     }
     // 확률은 합이 100이 아니어도 총합 기준 비율로 적용(개발 편의)
-    function rollTier(){ const arr=effTiers(); const total=arr.reduce((s,t)=>s+(Number(t.p)||0),0)||1; const r=Math.random()*total; let acc=0; for(const t of arr){ acc+=(Number(t.p)||0); if(r<acc) return t.id; } return arr[0].id; }
-    // 등급 롤 → 해당 등급 풀에서 랜덤. 비면 한 단계 아래로 내려가며 탐색.
-    function rollFromPool(tierMap){
-      let ti=TIER_ORDER.indexOf(rollTier());
+    function rollTier(tiers){ const arr=tiers||effTiers(); const total=arr.reduce((s,t)=>s+(Number(t.p)||0),0)||1; const r=Math.random()*total; let acc=0; for(const t of arr){ acc+=(Number(t.p)||0); if(r<acc) return t.id; } return arr[0].id; }
+    // 등급 롤 → 해당 등급 풀에서 랜덤. 비면 한 단계 아래로 내려가며 탐색. tiers를 주면 그 확률표로(무지개=특별↑ 전용).
+    function rollFromPool(tierMap, tiers){
+      let ti=TIER_ORDER.indexOf(rollTier(tiers));
       for(; ti>=0; ti--){ const tier=TIER_ORDER[ti]; const pool=Object.keys(tierMap).filter(k=>tierMap[k]===tier);
         if(pool.length) return { id:pool[Math.floor(Math.random()*pool.length)], tier }; }
       // 아래로도 없으면 위로
@@ -1346,6 +1458,39 @@
         }
         return g;
       }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund); });
+    }
+    // ===== ✨ 무지개알/무지개박스: 금화로 구매하는 소비템 → 사용 시 특별70·전설20·한정10% 가챠 =====
+    const RAINBOW_TIERS=[{id:'epic',p:70},{id:'legend',p:20},{id:'limited',p:10}];   // 한정 콘텐츠 없으면 rollFromPool이 전설로 폴백
+    const RAINBOW_PRICE_GOLD=5;
+    function rainbowKey(kind){ return kind==='egg'?'rainbow_egg':'rainbow_box'; }
+    function rainbowName(kind){ return kind==='egg'?'무지개알':'무지개박스'; }
+    // 구매(금화): 금화 -5, 소비 인벤토리 +1
+    function buyRainbow(kind){
+      const key=rainbowKey(kind);
+      if(gold()<RAINBOW_PRICE_GOLD){ toast('금화 '+(RAINBOW_PRICE_GOLD-gold())+' 부족', true); return; }
+      gameRef().transaction(g=>{ g=normalizeGame(g); if((g.gold||0)<RAINBOW_PRICE_GOLD) return g;
+        g.gold-=RAINBOW_PRICE_GOLD; g.consum[key]=(Number(g.consum[key])||0)+1; return g;
+      }).then(r=>{ if(r&&r.committed) toast(rainbowName(kind)+' +1 ✨'); });
+    }
+    // 사용(소비): 인벤토리 -1, 특별↑ 확률표로 롤 → 지급. 금화 보상 없음(금화로 산 프리미엄), 중복 펫은 은화 환급.
+    function useRainbow(kind){
+      const key=rainbowKey(kind);
+      if(consumQty(key)<1){ toast(rainbowName(kind)+'이 없어요', true); return; }
+      const res=rollFromPool(kind==='egg'?effCatTier():effItemTier(), RAINBOW_TIERS); if(!res) return;
+      const dup=kind==='egg' && ownsCat(res.id);
+      const refund=dup?petDupRefund(res.id):0;
+      gameRef().transaction(g=>{ g=normalizeGame(g);
+        if((Number(g.consum[key])||0)<1) return g;
+        g.consum[key]-=1;
+        if(kind==='egg'){
+          if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; if(g.home.active.length<(g.home.slots||BASE_SLOTS) && g.home.active.indexOf(res.id)<0) g.home.active.push(res.id); }
+          else { g.coins+=refund; }
+        } else {
+          g.owned.items[res.id]=g.owned.items[res.id]||{qty:0,boughtAt:new Date().toISOString()};
+          g.owned.items[res.id].qty=(Number(g.owned.items[res.id].qty)||0)+1;
+        }
+        return g;
+      }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund, true); });
     }
     let _selItem=null;
     function selItem(id){ _selItem=(_selItem===id?null:id); renderCatHouse(); }
@@ -1577,17 +1722,21 @@
     function itemName(kind,id){ return kind==='egg'?catName(id):((ITEM_CATALOG.find(x=>x.id===id)||{}).name||id); }
     function fxParticles(n,cls){ let s=''; for(let i=0;i<(n||14);i++){ const a=(i/(n||14))*360+Math.random()*30, d=60+Math.random()*90; const dx=Math.round(Math.cos(a*Math.PI/180)*d), dy=Math.round(Math.sin(a*Math.PI/180)*d); const del=(Math.random()*0.12).toFixed(2); s+='<span class="'+(cls||'fx-particle')+'" style="--dx:'+dx+'px;--dy:'+dy+'px;animation-delay:'+del+'s"></span>'; } return s; }
     function fxConfetti(){ const cols=['#F04452','#F0883C','#F2C84B','#2FAE7A','#3182F6','#9B6FC8']; let s=''; for(let i=0;i<24;i++){ const x=Math.round(Math.random()*100), r=Math.round(Math.random()*360), del=(Math.random()*0.5).toFixed(2), dur=(1+Math.random()*0.8).toFixed(2); s+='<span class="fx-conf" style="left:'+x+'%;background:'+cols[i%6]+';--r:'+r+'deg;animation-delay:'+del+'s;animation-duration:'+dur+'s"></span>'; } return s; }
-    function runGachaFx(kind, res, dup, refund){
+    function runGachaFx(kind, res, dup, refund, rainbow){
       const fx=$('catFx'); if(!fx){ toast((kind==='egg'?'펫알':'랜덤박스')+' 획득!'); return; }
-      _fx={ kind, res, dup, refund:refund||0, stage:0 };
+      _fx={ kind, res, dup, refund:refund||0, stage:0, rainbow:!!rainbow, gold: rainbow?0:1 };   // 무지개는 금화로 샀으니 금화 보상 없음
       if(reducedMotion()){ fxReveal(); return; }   // 모션 최소화: 바로 결과
-      const art = kind==='egg'? eggSvg(0,{h:150}) : boxSvg({h:150});
+      const art = rainbow ? (kind==='egg'? rainbowEggSvg({h:150}) : rainbowBoxSvg({h:150}))
+                          : (kind==='egg'? eggSvg(0,{h:150}) : boxSvg({h:150}));
       const hint = kind==='egg'? '알을 탭해서 깨보세요! (3번)' : '상자를 탭해서 열어보세요!';
-      fx.innerHTML='<div class="fx-scrim"></div><div class="fx-stage">'+
-        '<div class="fx-item pop '+(kind==='egg'?'fx-egg':'fx-box')+'" id="fxItem" role="button" aria-label="'+hint+'" onclick="fxTap()">'+art+'</div>'+
+      fx.innerHTML='<div class="fx-scrim"></div><div class="fx-stage'+(rainbow?' fx-rb':'')+'">'+
+        (rainbow?fxSparkles(16):'')+
+        '<div class="fx-item pop '+(kind==='egg'?'fx-egg':'fx-box')+(rainbow?' fx-rainbow':'')+'" id="fxItem" role="button" aria-label="'+hint+'" onclick="fxTap()">'+art+'</div>'+
         '<div class="fx-hint" id="fxHint">'+hint+'</div></div>';
       fx.className='fx on';
     }
+    // ✨ 반짝이는 도트 스파클(무지개알/박스 대기 연출) — 흰 픽셀 점이 제각기 깜빡이며 흩뿌려짐
+    function fxSparkles(n){ let s=''; for(let i=0;i<(n||12);i++){ const x=Math.round(Math.random()*100), y=Math.round(Math.random()*100), del=(Math.random()*1.4).toFixed(2), sc=(0.7+Math.random()*1.2).toFixed(2), du=(0.9+Math.random()*0.9).toFixed(2); s+='<span class="fx-spark" style="left:'+x+'%;top:'+y+'%;--sc:'+sc+';animation-delay:'+del+'s;animation-duration:'+du+'s"></span>'; } return s; }
     // 탭할 때마다 껍질 조각이 사방으로 튀는 연출(단계가 오를수록 더 많이) — 알이 점점 더 깨지는 느낌.
     function fxCrackChips(stage){ const fx=$('catFx'), st=fx&&fx.querySelector('.fx-stage'); if(!st) return;
       const n=4+stage*4; let s='';
@@ -1603,7 +1752,7 @@
       if(_fx.kind==='egg'){
         _fx.stage++;
         if(_fx.stage>=3){ _fx.busy=true; fxClimax(); return; }
-        it.innerHTML=eggSvg(_fx.stage,{h:150}); it.classList.remove('shake'); void it.offsetWidth; it.classList.add('shake');
+        it.innerHTML=_fx.rainbow?rainbowEggStage(_fx.stage,{h:150}):eggSvg(_fx.stage,{h:150}); it.classList.remove('shake'); void it.offsetWidth; it.classList.add('shake');
         fxCrackChips(_fx.stage);   // 탭마다 껍질 조각이 튀어 깨짐을 강조
       } else { _fx.busy=true; fxClimax(); }
     }
@@ -1629,6 +1778,7 @@
       const rank=Math.max(0, TIER_ORDER.indexOf(_fx.res.tier));   // 0(일반)~5(한정)
       const lk=(1+rank*0.15).toFixed(2);                          // 등급 높을수록 빛이 크고 밝게
       const isEgg=_fx.kind==='egg';
+      st.style.color=t.color;   // 무대 전체를 등급색으로 → 픽셀 파티클/섬광/반짝임이 등급색을 따름(currentColor)
       const hint=$('fxHint'); if(hint) hint.remove();
       it.classList.add('fx-preshake');
       let t0=680;
@@ -1644,24 +1794,30 @@
         // 껍질 사이로 새어나오는 빛 — 등급색(한정은 무지개), 등급 높을수록 크고 밝게
         st.insertAdjacentHTML('beforeend','<div class="fx-leak'+(lim?' rainbow':'')+'" style="color:'+t.color+';--lk:'+lk+'"></div>');
       }, t0);
-      setTimeout(()=>{ fxBurst(epic, isEgg); }, t0+700);
+      setTimeout(()=>{ fxBurst(epic, isEgg, rank); }, t0+700);
       setTimeout(fxReveal, t0+700+(isEgg?560:320));   // 알은 껍질 조각이 옆으로 흩어져 앉을 시간을 조금 더 준다
     }
-    function fxBurst(big, isEgg){
+    function fxBurst(big, isEgg, rank){
       const st=$('catFx').querySelector('.fx-stage'); if(!st) return;
       const it=$('fxItem'); if(it) it.style.visibility='hidden';
-      st.insertAdjacentHTML('beforeend','<div class="fx-flash"></div>'+(big?'<div class="fx-rays"></div>':'')+(isEgg?fxShells():'')+fxParticles(big?20:14));
+      rank=rank||0;
+      const parts=12+rank*7;                          // 등급 높을수록 픽셀 파티클 더 많이(화려하게)
+      const rays=(rank>=3)?'<div class="fx-rays"></div>':'';       // 특별↑ 픽셀 광선
+      const sparks=(rank>=3)?fxSparkles(6+rank*3):'';             // 특별↑ 추가 반짝임(등급색)
+      st.insertAdjacentHTML('beforeend','<div class="fx-flash"></div>'+rays+sparks+(isEgg?fxShells():'')+fxParticles(parts));
       const h=$('fxHint'); if(h) h.remove();
     }
     function fxReveal(){
       if(!_fx) return; const fx=$('catFx'); const t=tierInfo(_fx.res.tier);
+      const rank=Math.max(0, TIER_ORDER.indexOf(_fx.res.tier));   // 등급 높을수록 픽셀 프레임·반짝임 화려
       const art=_fx.kind==='egg'?catFace(_fx.res.id,{h:118}):furnSvg(_fx.res.id,{h:104});
-      fx.innerHTML='<div class="fx-scrim"></div><div class="fx-reveal tier-'+t.id+'">'+
+      fx.innerHTML='<div class="fx-scrim"></div><div class="fx-reveal tier-'+t.id+' rank-'+rank+'">'+
         '<div class="fx-halo"></div><div class="fx-rays slow"></div>'+
-        '<div class="fx-art pop">'+art+'</div>'+
+        '<div class="fx-sparks">'+fxSparkles(8+rank*4)+'</div>'+
+        '<div class="fx-art pop"><span class="fx-frame"></span>'+art+'</div>'+
         '<div class="fx-tier">'+t.name+'</div>'+
         '<div class="fx-name">'+(_fx.kind==='egg'?catNameSpan(_fx.res.id,catName(_fx.res.id)):escapeHtml(itemName(_fx.kind,_fx.res.id)))+'</div>'+
-        '<div class="fx-reward"><span class="rw"><span class="ci">'+goldSvg({h:18})+'</span>+1 금화</span>'+
+        '<div class="fx-reward">'+(_fx.gold?'<span class="rw"><span class="ci">'+goldSvg({h:18})+'</span>+1 금화</span>':'')+
           (_fx.dup?'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>+'+_fx.refund+' 은화 (중복)</span>':'')+'</div>'+
         '<button class="btn" onclick="closeFx()">확인</button>'+
         '<div class="fx-confetti">'+fxConfetti()+'</div></div>';
