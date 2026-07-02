@@ -463,7 +463,9 @@
     // `/css/assets/…` 404 → 고양이가 안 보인다. document.baseURI 기준 절대 URL로 고정.
     function assetUrl(p){ try{ return new URL(p, document.baseURI).href; }catch(e){ return p; } }
     function sprStills(id){ return 'assets/pets/'+id; }
-    function sprStill(id, face){ return assetUrl(sprStills(id)+'/'+face+'.png'); }
+    // 런타임(앱에서 업로드) 펫은 이미지가 data URL(PET_SPRITES[id].urls)에 들어있어 파일 경로 대신 그걸 쓴다.
+    function sprStill(id, face){ const sp=PET_SPRITES[id]; if(sp&&sp.urls&&sp.urls[face]) return sp.urls[face]; return assetUrl(sprStills(id)+'/'+face+'.png'); }
+    function sprWalkUrl(sp){ return (sp&&sp.urls&&sp.urls.walk) ? sp.urls.walk : assetUrl(sp.walk); }
     // @gen:pet-sprites — 자동생성(tools/build_pets.py). tools/pets.json 편집 후 재실행.
     const PET_SPRITES = {
       cat_mackerel:{ walk:'assets/pets/cat_mackerel/walk.png', frames:6, stills:true },
@@ -498,7 +500,7 @@
         //  - 이동 중엔 east(옆) 스틸을 보여주고 scaleX로 방향을 뒤집음, 정지/reduced-motion이면 south(정면).
         const idleOn = rm || fw;
         const face = (fw && !rm) ? 'east' : 'south';
-        return '<div class="cspr'+(idleOn?' idle':'')+'" style="width:'+s+'px;height:'+s+'px;--sheet:url('+assetUrl(sp.walk)+');--idle:url('+sprStill(id,face)+');--fw:'+(s*sp.frames)+'px;"><i class="csprf"></i></div>'; }
+        return '<div class="cspr'+(idleOn?' idle':'')+'" style="width:'+s+'px;height:'+s+'px;--sheet:url('+sprWalkUrl(sp)+');--idle:url('+sprStill(id,face)+');--fw:'+(s*sp.frames)+'px;"><i class="csprf"></i></div>'; }
       return catSide(id, 0, {h:h});
     }
     // 정면 썸네일(걷지 않는 표시용: 상점 카드·보유 칩·뽑기 결과 등).
@@ -648,6 +650,7 @@
       if(state._gameRef){ try{ state._gameRef.off(); }catch(e){} }
       state._gameRef=gameRef();
       state._gameRef.on('value', s=>{ state.game=normalizeGame(s.val()); onGameChange(); reconcilePets(); });
+      watchCatalogPets();   // 런타임 펫(전역 catalogPets) 병합 리스너
       startCatLoop();   // 통합 걷기 엔진(단일 rAF, 보이는 무대만 애니메이션)
       // 앱을 켜둔 동안에도 그릇 3시간 만료→똥 정산이 돌도록 주기 점검(다마고치)
       if(state._petTimer) clearInterval(state._petTimer);
@@ -848,6 +851,88 @@
       }).then(res=>{ if(res.committed) toast(c.name+' 입양 완료! 🐾'); });
     }
 
+    // ================= 런타임 펫(앱에서 dev가 zip 업로드 → RTDB catalogPets 전역 저장 → 모든 사용자 반영) =================
+    // 정적 파이프라인(tools/build_pets.py)과 별개 트랙. 이미지=data URL로 저장하므로 재배포·SW캐시 불필요.
+    // 저장: catalogPets/{id}={ name, species, speciesLabel?, tier, scale, frontWalk, walk, south, north, east, west, by, at }.
+    // 병합: PET_CATALOG(배열)·PET_SPRITES·CAT_TIER·SPECIES_LABEL에 밀어넣어 상점·가챠·방 어디서나 정적 펫과 동일 취급.
+    const _runtimeIds=new Set();
+    function catalogRef(){ return db.ref('catalogPets'); }
+    function mergeRuntimePet(p){ if(!p||!p.id) return; const id=p.id;
+      const tier=p.tier||'normal', price=(typeof TIER_PRICE!=='undefined'&&TIER_PRICE[tier])||50;
+      const entry={ id, species:p.species||'cat', name:p.name||id, price, desc:p.desc||'', runtime:true };
+      const ci=PET_CATALOG.findIndex(x=>x.id===id); if(ci>=0) PET_CATALOG[ci]=entry; else PET_CATALOG.push(entry);
+      PET_SPRITES[id]={ walk:p.walk||'', frames:6, stills:true, scale:Number(p.scale)||1, frontWalk:!!p.frontWalk, runtime:true,
+        urls:{ walk:p.walk, south:p.south, north:p.north, east:p.east, west:p.west } };
+      CAT_TIER[id]=tier;
+      if(p.speciesLabel && p.species) SPECIES_LABEL[p.species]=p.speciesLabel;
+      _runtimeIds.add(id);
+    }
+    function unmergeRuntimePet(id){ const ci=PET_CATALOG.findIndex(x=>x.id===id); if(ci>=0) PET_CATALOG.splice(ci,1);
+      delete PET_SPRITES[id]; delete CAT_TIER[id]; _runtimeIds.delete(id); }
+    function watchCatalogPets(){ if(typeof db==='undefined'||!db) return;
+      if(state._catalogRef){ try{ state._catalogRef.off(); }catch(e){} }
+      state._catalogRef=catalogRef();
+      state._catalogRef.on('value', s=>{ const v=s.val()||{}, seen=new Set(Object.keys(v));
+        Array.from(_runtimeIds).forEach(id=>{ if(!seen.has(id)) unmergeRuntimePet(id); });   // 삭제 반영
+        Object.keys(v).forEach(id=>{ const p=v[id]||{}; p.id=id; mergeRuntimePet(p); });
+        markCatDirty();
+        if(typeof renderDockCats==='function') renderDockCats();
+        if(state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh();
+      }, ()=>{});   // 읽기 실패(규칙 미배포 등)는 조용히 무시
+    }
+    function deleteRuntimePet(id){ confirmSheet('이 런타임 펫을 삭제할까요? (모든 사용자에게서 사라져요)', ()=>{ catalogRef().child(id).remove(); toast('삭제했어요'); closeSheet(); }); }
+
+    // ---- dev: 앱에서 zip 업로드로 펫 추가 ----
+    function loadJSZip(){ if(window.JSZip) return Promise.resolve(window.JSZip);
+      return new Promise((res,rej)=>{ const s=document.createElement('script');
+        s.src='https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'; s.onload=()=>res(window.JSZip); s.onerror=()=>rej(new Error('JSZip 로드 실패')); document.head.appendChild(s); }); }
+    function _blobToImg(blob){ return new Promise((res,rej)=>{ const u=URL.createObjectURL(blob); const im=new Image();
+      im.onload=()=>{ URL.revokeObjectURL(u); res(im); }; im.onerror=()=>{ URL.revokeObjectURL(u); rej(new Error('이미지 로드 실패')); }; im.src=u; }); }
+    function openDevPetAdd(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
+      const tierOpts=(typeof TIERS!=='undefined'?TIERS:[{id:'normal',name:'일반'}]).map(t=>'<option value="'+t.id+'">'+t.name+'</option>').join('');
+      let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 12px;line-height:1.5;">PixelLab export <b>zip</b>을 올리고 이름·분류·등급·크기만 정하면 추가됩니다. 앱에서 바로 처리(옆걷기 시트+4방향 생성)해 <b>모든 사용자</b>에게 반영돼요(개발자 전용).</p>';
+      h+='<div class="field"><label>zip 파일</label><input type="file" id="dpZip" accept=".zip,application/zip" class="input"></div>';
+      h+='<div class="field"><label>이름</label><input class="input" id="dpName" placeholder="예: 고랑이" maxlength="16"></div>';
+      h+='<div class="field"><label>분류 라벨(상점 태그)</label><input class="input" id="dpSpeciesLabel" placeholder="예: 호랑이" maxlength="8"></div>';
+      h+='<div class="field"><label>분류 코드(species)</label><input class="input" id="dpSpecies" value="cat" placeholder="cat/dog/tiger…" maxlength="12"></div>';
+      h+='<div class="row" style="gap:8px;"><div class="field" style="flex:1;"><label>등급</label><select class="input" id="dpTier">'+tierOpts+'</select></div>'+
+         '<div class="field" style="flex:1;"><label>크기(배율)</label><input class="input" id="dpScale" type="number" step="0.1" min="0.3" value="1"></div></div>';
+      h+='<button class="btn" id="dpBtn" onclick="submitDevPet()">추가</button>';
+      // 이미 올라온 런타임 펫 목록(삭제용)
+      const rt=PET_CATALOG.filter(c=>c.runtime);
+      if(rt.length){ h+='<div class="sech" style="margin-top:16px;"><span class="l">업로드된 런타임 펫</span></div>';
+        h+=rt.map(c=>'<div class="lrow"><span class="lt">'+escapeHtml(c.name)+' <span class="pill">'+escapeHtml((SPECIES_LABEL[c.species]||c.species))+'</span></span><button class="lnk" onclick="deleteRuntimePet(\''+c.id+'\')">삭제</button></div>').join(''); }
+      openSheet('펫 추가(zip)', h);
+    }
+    function submitDevPet(){
+      const fi=$('dpZip'), file=fi&&fi.files&&fi.files[0];
+      if(!file){ toast('zip 파일을 선택하세요', true); return; }
+      const name=(val('dpName')||'').trim(); if(!name){ toast('이름을 입력하세요', true); return; }
+      const btn=$('dpBtn'); if(btn){ btn.disabled=true; btn.textContent='처리 중…'; }
+      loadJSZip().then(JSZip=>JSZip.loadAsync(file)).then(zip=>{
+        const names=Object.keys(zip.files);
+        let frameNames=names.filter(n=>/\/Walk\/east\/frame_\d+\.png$/i.test(n)).sort(); let frontWalk=false;
+        if(frameNames.length<6){ const s=names.filter(n=>/\/Walk\/south\/frame_\d+\.png$/i.test(n)).sort(); if(s.length>=6){ frameNames=s; frontWalk=true; } }
+        if(frameNames.length<6) throw new Error('걷기 프레임(Walk/east 6장)을 못 찾음');
+        return Promise.all(frameNames.slice(0,6).map(n=>zip.files[n].async('blob').then(_blobToImg))).then(frames=>{
+          const w=frames[0].naturalWidth||48, hgt=frames[0].naturalHeight||48;
+          const cv=document.createElement('canvas'); cv.width=w*6; cv.height=hgt; const ctx=cv.getContext('2d');
+          ctx.imageSmoothingEnabled=false; frames.forEach((im,i)=>ctx.drawImage(im,i*w,0,w,hgt));
+          const walk=cv.toDataURL('image/png');
+          return Promise.all(['south','north','east','west'].map(f=>{ const k=names.find(n=>new RegExp('/rotations/'+f+'\\.png$','i').test(n));
+            return k ? zip.files[k].async('base64').then(b=>'data:image/png;base64,'+b) : Promise.resolve(walk); }))
+            .then(rots=>({ walk, south:rots[0], north:rots[1], east:rots[2], west:rots[3], frontWalk }));
+        });
+      }).then(art=>{
+        const id='rt_'+Date.now().toString(36);
+        const pet={ id, name, species:(val('dpSpecies')||'cat').trim()||'cat', speciesLabel:(val('dpSpeciesLabel')||'').trim(),
+          tier:val('dpTier')||'normal', scale:Number(val('dpScale'))||1, frontWalk:art.frontWalk,
+          walk:art.walk, south:art.south, north:art.north, east:art.east, west:art.west, by:state.userEmail||'', at:new Date().toISOString() };
+        return catalogRef().child(id).set(pet);
+      }).then(()=>{ toast(name+' 추가 완료! 🐾'); closeSheet(); })
+        .catch(e=>{ toast('추가 실패: '+((e&&e.message)||e), true); const b=$('dpBtn'); if(b){ b.disabled=false; b.textContent='추가'; } });
+    }
+
     // ================= 전역 dock (얇은 스트립 / 숨김) =================
     // #catdock 은 index.html 셸의 #content 형제 → 리렌더 영향 없음(애니메이션 유지)
     // 스트립 전체가 탭 시 고양이집 시트를 여므로 별도 확장 뷰/라벨/버튼 없이 간소화.
@@ -940,9 +1025,26 @@
     // transform-origin:center bottom 이라 배율은 발밑 기준(발이 바닥선에 유지)·좌우반전은 중심축. 시각 중심 x=a.x+sw/2는 배율과 무관하게 유지.
     // ⚠️ left/top은 절대 매 프레임 건드리지 않는다(레이아웃·페인트 유발). x는 정수 px 스냅.
     function setXform(a, dir, lift){ const d=(dir!=null?dir:a.dir), s=(a.scale||1),
-        pad=(a.spr?Math.round((a.hh||0)*PET_FOOT_PAD*s):0),   // 스프라이트 발밑 여백 상쇄(스케일 반영) → 발이 바닥선에 닿게
+        fp=(a.footPad!=null?a.footPad:PET_FOOT_PAD),          // 펫별 발밑 여백 비율(측정값, 없으면 기본) — 호랑이 등 큰 동물은 여백↑
+        pad=(a.spr?Math.round((a.hh||0)*fp*s):0),             // 발밑 여백 상쇄(렌더높이×비율×스케일) → 발이 바닥선에 닿게
         up=Math.round((a.rise||0)+(lift!=null?lift:(a.lift||0)))-pad;
       a.el.style.transform='translate3d('+Math.round(a.x)+'px,'+(-up)+'px,0) scale('+(s*d)+','+s+')'; }
+    // 스프라이트 프레임 아래 투명 여백 비율을 실제 이미지 알파로 1회 측정(펫별로 다름)→캐시.
+    const _footPad={};
+    function measureFootPad(id, cb){
+      if(_footPad[id]!=null){ cb&&cb(_footPad[id]); return; }
+      const sp=PET_SPRITES[id]; if(!sp){ _footPad[id]=PET_FOOT_PAD; cb&&cb(_footPad[id]); return; }
+      const img=new Image(); img.crossOrigin='anonymous';
+      img.onload=function(){ try{
+          const w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+          const cv=document.createElement('canvas'); cv.width=w; cv.height=h; const ctx=cv.getContext('2d');
+          ctx.drawImage(img,0,0); const px=ctx.getImageData(0,0,w,h).data; let bottom=-1;
+          for(let y=h-1;y>=0&&bottom<0;y--){ for(let x=0;x<w;x++){ if(px[(y*w+x)*4+3]>16){ bottom=y; break; } } }
+          _footPad[id]=(bottom<0)?PET_FOOT_PAD:Math.max(0,(h-1-bottom)/h);
+        }catch(e){ _footPad[id]=PET_FOOT_PAD; } cb&&cb(_footPad[id]); };
+      img.onerror=function(){ _footPad[id]=PET_FOOT_PAD; cb&&cb(_footPad[id]); };
+      img.src=sprStill(id,'south');
+    }
     // ⚠️ 핵심 불변식(INVARIANT): "정면(south) 이미지로 이동 금지".
     // 스프라이트 액터의 이동/정지 비주얼(.cspr)은 반드시 아래 두 함수로만 바꾼다 — 모든 상태 전환(roam·pause)과
     // 재빌드(buildActors)가 이 두 함수를 거치게 해, DOM 재사용으로 남은 정지스틸(.idle)이 이동 중에 보이는 버그를 원천 차단.
@@ -988,6 +1090,7 @@
         mode:'roam', pause:0, goal:null, pose:null, resKey:null, resFloor:null, parked:false,
         // 유휴(그 자리에 멈춰 정면 보기) — 자주·오래 서서 정면을 보도록(poseDur에서 시간 늘림)
         idle:0.0032+Math.random()*0.005, turn:0.004+Math.random()*0.010, seek:0.005+Math.random()*0.009, cool:0 };
+        a.footPad=(typeof _footPad!=='undefined'&&_footPad[id]!=null?_footPad[id]:null); if(spr) measureFootPad(id,function(fp){ a.footPad=fp; setXform(a); });
         setWalkDur(a); el.style.left='0px'; applyDepth(a); setXform(a); a._pdir=a.dir;   // 위치·올림·깊이·방향 전부 transform(합성). left는 0 고정 → 걷는 동안 메인스레드 페인트 0
         // 액터는 항상 'roam'(이동)으로 시작. DOM 재사용(markCatDirty·무대 재부착)으로 남아있던 정지스틸(.idle)을
         // 반드시 이동 표시로 초기화 → "정면 이미지로 이동" 버그 원천 차단.
