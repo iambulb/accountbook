@@ -968,7 +968,7 @@
       // 방 높이 → depth 1(맨 뒤)에서 발이 올라가는 최대 px(rise). 가구 바닥 매핑(bottom%=3+depth*46/38)과 같은 척도라 같은 행에 서면 발높이가 맞는다.
       const roomEl = stage.closest('.catroom') || stage.closest('.cd-room');
       const roomH = (roomEl && roomEl.clientHeight) || (isDock?110:244);
-      const riseMax = roomH*(isDock?0.42:0.52);   // 앞뒤 깊이 스프레드를 넓혀 맨 앞/맨 뒤 대비를 크게(앞이 확실히 앞으로)
+      const riseMax = roomH*(isDock?0.24:0.30);   // 발 올림(원근) 폭을 줄여 펫이 바닥에 붙게(맨 앞=depth0=바닥, 뒤로도 과하게 안 뜸). 앞뒤 대비는 크기(scale)로 유지
       // 가구 위치(발자국 중앙 x)·렌더 높이(fh)·깊이(depth) — 상호작용 시 올라갈 높이·앞뒤 정렬(가림)에 사용
       const props = hasRoom ? placedList().map(p=>{ const foot=itemFoot(p.itemId), depth=(12-(p.r+foot.h-1))/11;   // propMarkup과 동일(앞줄 기준)
         const fh=furnRoomH(p.itemId, isDock, depth);   // 렌더 높이와 동일 → 캣타워 층 lift가 실제 높이에 맞음
@@ -983,7 +983,7 @@
         v:v, t:Math.random()*6, frame:0, fc:Math.random()*170, W, hh:ah,
         sw:(spr?ah:Math.round(ah*26/14)), props, lift:0,
         depth:Math.random(), vz:0, riseMax:riseMax, _z:0, flee:0,   // 앞뒤(깊이) 원근 + 도망 타이머(큰 펫 회피)
-        mode:'roam', pause:0, goal:null, pose:null, resKey:null, resFloor:null,
+        mode:'roam', pause:0, goal:null, pose:null, resKey:null, resFloor:null, parked:false,
         // 유휴(그 자리에 멈춰 정면 보기) — 자주·오래 서서 정면을 보도록(poseDur에서 시간 늘림)
         idle:0.0032+Math.random()*0.005, turn:0.004+Math.random()*0.010, seek:0.005+Math.random()*0.009, cool:0 };
         setWalkDur(a); el.style.left='0px'; applyDepth(a); setXform(a); a._pdir=a.dir;   // 위치·올림·깊이·방향 전부 transform(합성). left는 0 고정 → 걷는 동안 메인스레드 페인트 0
@@ -1035,7 +1035,7 @@
       _eng.actors.forEach(a=>{
         if(a.mode==='drag') return;   // 손으로 집어 든 펫은 엔진이 건드리지 않음(드래그가 위치 제어)
         a.t+=dt*0.004; if(a.cool>0)a.cool-=dt; const id=a.el.getAttribute('data-cat');
-        if(a.mode==='pause'){ a.pause-=dt; if(a.pause<=0){ a.mode='roam'; a.fc=999; a.dir=Math.random()<0.5?-1:1; a.lift=0; releaseRes(a);   // 내려와 재출발(자리 반납)
+        if(a.mode==='pause'){ a.pause-=dt; if(a.pause<=0){ a.mode='roam'; a.fc=999; a.dir=Math.random()<0.5?-1:1; a.lift=0; a.parked=false; releaseRes(a);   // 내려와 재출발(자리 반납)
           // 이동 재개: 정면 이미지로 이동 금지 — actorShowMoving으로 일원화(일반=CSS 필름, frontWalk=east 정지스틸)
           actorShowMoving(a); setXform(a); a._pdir=a.dir; } return; }   // 재출발: lift 해제·방향 반영, 걷기는 필름(csprFilm)
         // 🐈 겁먹고 도망: 나보다 3배 이상 큰 펫이 주변 1칸 이내로 오면 뒤돌아 반대방향으로 살짝 도망(잠깐 빠르게)
@@ -1070,6 +1070,7 @@
         // 가구 도착: "고양이 중심"(a.x+sw/2) 기준으로 가구 중앙(goal.x)에 섬. 깊이도 가구 쪽으로 맞춰 걸어감.
         // ⚠️ x에 다 왔는데 깊이 수렴을 기다리며 방향이 매 프레임 뒤집혀 "제자리 좌우 춤"추던 버그 → x 도착 시 위치를 스냅하고 방향을 고정한 채 대기.
         if(a.mode==='goal' && a.goal){ const cx=a.x+a.sw/2, dxr=a.goal.x-cx, nearX=Math.abs(dxr)<6;
+          a.parked=nearX;   // x 도착=주차 상태 → separatePets가 밀지 않음(밀림↔스냅 반복으로 인한 제자리 좌우 춤 방지)
           if(!nearX) a.dir=(dxr>0)?1:-1;   // 멀 때만 방향 갱신(가까우면 고정 → 좌우 버벅/춤 방지)
           if(a.goal.depth!=null){ const dd=a.goal.depth-a.depth; a.depth+=Math.sign(dd)*Math.min(Math.abs(dd), 0.004*dt); }   // 깊이 빠르게 수렴(대기 시간 최소화)
           const nearD=Math.abs((a.goal.depth==null?a.depth:a.goal.depth)-a.depth)<0.03;
@@ -1092,7 +1093,7 @@
     function separatePets(){
       const acts=_eng.actors; if(acts.length<2) return;
       const colW=(acts[0].W||160)/12, rowD=1/11, moved=[];
-      const mov=a=>(a.mode==='roam'||a.mode==='goal');   // 이동 가능(멈춤/드래그는 자리 유지 — 가구 점유가 별도 처리)
+      const mov=a=>((a.mode==='roam'||a.mode==='goal')&&!a.parked);   // 이동 가능(멈춤/드래그/주차(가구 도착)는 자리 유지 → 밀림·방향뒤집힘 없음)
       for(let i=0;i<acts.length;i++) for(let j=i+1;j<acts.length;j++){
         const a=acts[i], b=acts[j];
         if(a.mode==='drag'||b.mode==='drag') continue;

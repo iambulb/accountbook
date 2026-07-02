@@ -575,7 +575,7 @@
     .cd-room .cr-batch { top:4px; }   /* 캠(dock)에서 은화·돌보기 버튼을 살짝 더 위로(홈 방은 기본 top 유지) */
     .cd-coin.tap { animation:coinpress .18s ease; }
     @keyframes coinpress { 40%{ transform:scale(.84); } 100%{ transform:scale(1); } }
-    .cd-room .cd-actor { bottom:2px; }
+    .cd-room .cd-actor { bottom:0; }   /* 맨 앞(depth0) 펫 발이 캠 최하단에 닿게 */
     .cr-floor { position:absolute; left:0; right:0; bottom:0; height:54%; background:var(--soft2); z-index:0; }
     /* 벽지 상점 */
     .wallgrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
