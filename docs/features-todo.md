@@ -12,7 +12,7 @@
 
 | 탭 | 화면 | 함수 |
 |---|---|---|
-| 할일 | [개인\|그룹/친구들] 목록 + (개인) 친구 스트립 + 필터 칩 | `renderTodoList` |
+| 할일 | [개인\|그룹/친구들] — 개인=내 할일, 친구들=친구 피드(`renderFriendsFeed`) | `renderTodoList` |
 | 캘린더 | 스코프별 마감일 월 그리드(점/개수) + 그날 할일 | `renderTodoCalendar` |
 | ＋ | 할일 추가/수정 시트 | `openTodoEdit` |
 | 완료 | 스코프별 완료 이력(최신순) | `renderTodoDone` |
@@ -30,16 +30,16 @@
 
 - 각자 맡은 일을 **그룹 안에서 나눔**(여행: 렌터카·항공권·짐 담당, 집안일 분담 등). `ws/{wsId}/todos`, 워크스페이스 멤버 **공동 편집**.
 - 추가/수정 시트에 **담당자(멤버) 선택**(`ownerOptions`, uid 저장). `scope:'group'`, 담당은 `assignedUid`·`assignedName`. 목록 행에 **담당자 아바타**. 필터 칩: **전체 / 내 담당 / 오늘 / 이번주**.
-- 세그먼트 둘째 탭은 **그룹 워크스페이스에서만 '그룹'**. **개인 워크스페이스에선 '친구들'**(그룹 할일이 없으므로 친구 허브로 대체 — `isPersonalWs`).
+- 세그먼트 둘째 탭은 **그룹 워크스페이스에서만 '그룹'**. **개인 워크스페이스에선 '친구들'**(그룹 할일이 없으므로 **친구 피드**로 대체 — `isPersonalWs`).
 
-## 친구 (별도 추가) · 공유 친구 스트립
+## 친구 (별도 추가) — 관리(더보기 공용) + '친구들' 피드
 
 친구는 **그룹과 무관한 별도 관계**다. 각 사용자는 **친구 코드**(`friendCode` 6자, `friendCodes/{code}=uid` 인덱스, `ensureFriendCode` 백필)를 가진다.
 
-- **추가/수락**: 코드로 요청(`addFriendByCode`→상대 `friendReqs`) → 상대가 **친구 허브**에서 수락(`acceptFriend`)하면 **양쪽** `users/{uid}/friends`에 상호 등록. 거절 `declineFriend`·삭제 `removeFriend`.
-- **친구 허브**: 개인 워크스페이스의 **'친구들' 탭**(`renderFriendsHub`) — 내 코드 표시·복사, 코드로 추가, 받은 요청 수락/거절, 친구 목록(→ '할일 보기').
-- **개인 탭 상단 친구 스트립**(`todoFriendStrip`, 양쪽 ws): **나 + '할일 공개(`todoPublic`)'한 친구**만(이름순, `state.friendPub` 캐시). 아바타 탭(`setTodoFriend`→`viewFriendTodos`) → 그 친구의 `users/{uid}/todos`를 임시 리스너로 받아 **같은 화면에서 읽기전용** 열람(`todoReadOnly`: 완료·편집·＋ 비활성 + "👀 …님의 할일 · 읽기전용 / 내 할일로" 바).
-- **내 공개 토글**(스트립 우측 공개중/비공개, 더보기 → 할일 공유): `toggleTodoPublic`이 **user-global `users/{uid}/todoPublic`** 을 켜고/끔. 공개는 **UI 레벨 필터**(읽기 규칙은 로그인 전역).
+- **친구 관리 = 더보기 공용**(`openFriendsSheet`, 가계부·할일 두 모드 모두 **더보기 → 친구**): 내 **할일 공개** 토글(`toggleTodoPublic`→`users/{uid}/todoPublic`), 내 코드 복사, **코드로 추가**(`addFriendByCode`→상대 `friendReqs`), **받은 요청** 수락/거절(`acceptFriend`/`declineFriend`), **친구 목록**(공개여부·삭제 `removeFriend`). 더보기 셀에 받은 요청 수 배지.
+- **추가/수락**: 코드로 요청 → 상대가 **더보기 → 친구**에서 수락하면 **양쪽** `users/{uid}/friends`에 상호 등록(규칙상 당사자 두 명만 쓰기).
+- **'친구들' 탭 피드**(개인 워크스페이스 둘째 탭, `renderFriendsFeed`): 상단에 **'할일 공개'한 친구 아바타**를 **가장 최근 할일 등록순**(`friendFeedOrder`)으로 나열, **오늘 할일을 등록한 친구는 무지개 테두리**(`.tdfr.today`). 아래엔 **친구들이 등록한 할일 목록**(모든 공개 친구 합본·마감 임박순, 읽기전용). 아바타 탭 → 그 친구만 필터(`setFeedFriend`·전체 보기).
+- **데이터**: 공개 친구별 `users/{uid}/todos`를 상시 리스너로 로드(`syncFriendTodoWatch`→`state.friendTodosByUid`, `state.friendPub` 기준). 개인 탭엔 친구 스트립을 두지 않는다(개인 = 내 할일만). 공개는 **UI 레벨 필터**(읽기 규칙은 로그인 전역).
 
 ## 마감일 · 캘린더 · 완료
 
