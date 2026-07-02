@@ -628,20 +628,26 @@
         if(typeof go==='function') go('todo'); else rerender();
       });
     }
-    // 친구 허브(개인 워크스페이스의 '친구들' 탭) — 내 코드·코드로 추가·받은 요청·친구 목록
-    function renderFriendsHub(){
-      let h=todoScopeSeg();
-      h+='<div class="card" style="padding:14px;"><div class="sec-title">내 친구 코드</div>'+
-        '<div class="row" style="gap:8px;align-items:center;margin-top:6px;"><b style="font-size:20px;letter-spacing:3px;flex:1;">'+escapeHtml(state.friendCode||'—')+'</b>'+
-        '<button class="btn sm" style="flex:none;" onclick="copyFriendCode()">복사</button></div>'+
-        '<div class="row" style="gap:8px;margin-top:10px;"><input class="input" id="friendCodeIn" placeholder="친구 코드 입력" autocapitalize="characters" spellcheck="false" style="flex:1;text-transform:uppercase;"><button class="btn sm" style="flex:none;" onclick="addFriendByCode()">추가</button></div></div>';
-      const reqs=Object.keys(state.friendReqs||{});
-      if(reqs.length){ h+='<div class="sech"><span class="l">받은 요청</span><span class="s">'+reqs.length+'</span></div><div class="card" style="padding:4px 12px;">'+
-        reqs.map(function(u){ const r=state.friendReqs[u]||{}; return '<div class="tdrow"><span class="tdwho">'+avatarHtml(u,r.name||'',28)+'</span><b class="tdtitle">'+escapeHtml(r.name||'사용자')+'</b><button class="buy" onclick="acceptFriend(\''+u+'\')">수락</button><button class="buy dis" onclick="declineFriend(\''+u+'\')">거절</button></div>'; }).join('')+'</div>'; }
-      const fr=Object.keys(state.friends||{});
-      h+='<div class="sech"><span class="l">친구</span><span class="s">'+fr.length+'</span></div><div class="card" style="padding:4px 12px;">'+
-        (fr.length?fr.map(function(u){ const f=state.friends[u]||{}; return '<div class="tdrow"><span class="tdwho">'+avatarHtml(u,f.name||'',28)+'</span><b class="tdtitle" onclick="viewFriendTodos(\''+u+'\')">'+escapeHtml(f.name||'친구')+'</b><button class="buy" onclick="viewFriendTodos(\''+u+'\')">할일 보기</button><button class="buy dis" onclick="removeFriend(\''+u+'\')">삭제</button></div>'; }).join(''):'<div class="empty" style="padding:22px 6px;">아직 친구가 없어요 · 위 코드로 추가하세요</div>')+'</div>';
-      $('content').innerHTML=h;
+    // 친구 관리 시트(더보기 공용) — 내 할일 공개 토글·친구 코드 복사/추가·받은 요청·친구 목록(삭제). 열람은 '친구들' 피드에서.
+    function openFriendsSheet(){
+      const build=function(){
+        const on=!!state.todoPublic;
+        let h='<div class="lst">'+lrow(MORE_ICON.share,'내 할일 공개','toggleTodoPublic()', on?'켜짐':'꺼짐')+'</div>';
+        h+='<div class="card" style="padding:14px;margin-top:12px;"><div class="sec-title">내 친구 코드</div>'+
+          '<div class="row" style="gap:8px;align-items:center;margin-top:6px;"><b style="font-size:20px;letter-spacing:3px;flex:1;">'+escapeHtml(state.friendCode||'—')+'</b>'+
+          '<button class="btn sm" style="flex:none;" onclick="copyFriendCode()">복사</button></div>'+
+          '<div class="row" style="gap:8px;margin-top:10px;"><input class="input" id="friendCodeIn" placeholder="친구 코드 입력" autocapitalize="characters" spellcheck="false" style="flex:1;text-transform:uppercase;"><button class="btn sm" style="flex:none;" onclick="addFriendByCode()">추가</button></div></div>';
+        const reqs=Object.keys(state.friendReqs||{});
+        if(reqs.length){ h+='<div class="sech"><span class="l">받은 요청</span><span class="s">'+reqs.length+'</span></div><div class="card" style="padding:4px 12px;">'+
+          reqs.map(function(u){ const r=state.friendReqs[u]||{}; return '<div class="tdrow"><span class="tdwho">'+avatarHtml(u,r.name||'',28)+'</span><b class="tdtitle">'+escapeHtml(r.name||'사용자')+'</b><button class="buy" onclick="acceptFriend(\''+u+'\')">수락</button><button class="buy dis" onclick="declineFriend(\''+u+'\')">거절</button></div>'; }).join('')+'</div>'; }
+        const fr=Object.keys(state.friends||{});
+        h+='<div class="sech"><span class="l">친구</span><span class="s">'+fr.length+'</span></div><div class="card" style="padding:4px 12px;">'+
+          (fr.length?fr.map(function(u){ const f=state.friends[u]||{}; const pub=state.friendPub&&state.friendPub[u]?'<span class="qty" style="color:var(--primary)">공개</span>':'<span class="qty">비공개</span>'; return '<div class="tdrow"><span class="tdwho">'+avatarHtml(u,f.name||'',28)+'</span><b class="tdtitle">'+escapeHtml(f.name||'친구')+'</b>'+pub+'<button class="buy dis" onclick="removeFriend(\''+u+'\')">삭제</button></div>'; }).join(''):'<div class="empty" style="padding:22px 6px;">아직 친구가 없어요 · 위 코드로 추가하세요</div>')+'</div>';
+        h+='<p class="muted" style="font-size:12px;margin-top:10px;">친구가 등록한 할일은 <b>할일 → 친구들</b> 탭에서 볼 수 있어요.</p>';
+        return h;
+      };
+      openSheet('친구', build());
+      state._sheetRefresh=function(){ const b=$('sheetBody'); if(b) b.innerHTML=build(); };
     }
     // ===== 친구들 피드('친구들' 탭) — 공개 친구 아바타(최근 등록순·오늘 무지개) + 친구 할일 목록 =====
     function setFeedFriend(uid){ state._feedFriend=(state._feedFriend===uid?null:uid); renderTodoList(); }
@@ -1419,6 +1425,7 @@
       h+=gcell(coinSvg({h:26}),'알뜰샵','openCatHouse()');
       h+=gcell(giftSvg({h:26}),'선물함','openGiftbox()', (typeof giftCount==='function'?giftCount():0));
       h+=gcell((typeof bagSvg==='function'?bagSvg({h:26}):''),'가방','openBag()');
+      h+=gcell(MORE_ICON.members,'친구','openFriendsSheet()', (typeof state.friendReqs==='object'?Object.keys(state.friendReqs||{}).length:0)||0);
       h+=gcell(MORE_ICON.gear,'설정','openSettingsSheet()');
       h+='</div>';
       // 하단 고정: 로그아웃(가운데) → 홈 화면 설치 링크 → 버전
