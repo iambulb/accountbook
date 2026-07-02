@@ -690,7 +690,7 @@
     function storyTodos(uid){ const list=(uid===state.uid?(state.myTodos||[]):(state.friendTodosByUid[uid]||[])).slice();
       list.sort(function(a,b){ return (a.createdAt||'').localeCompare(b.createdAt||''); }); return list; }   // 오래된→최신 순 재생
     function ensureStoryEl(){ let el=$('storyView'); if(!el){ el=document.createElement('div'); el.id='storyView'; el.className='storyview'; el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true'); document.body.appendChild(el); } return el; }
-    function openMyStory(){ _openStory([state.uid], 0); }
+    function openMyStory(){ if(!storyTodos(state.uid).length){ openTodoEdit(); return; } _openStory([state.uid], 0); }   // 내 할일 없으면 바로 추가
     function openFriendStory(uid){
       const pub=Object.keys(state.friends||{}).filter(function(u){ return state.friendPub && state.friendPub[u]; });
       const order=friendFeedOrder(state.friendTodosByUid, pub, ymd(new Date())).map(function(r){ return r.uid; }).filter(function(u){ return storyTodos(u).length; });

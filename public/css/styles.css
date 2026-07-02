@@ -530,6 +530,29 @@
     .ring-none .story-av { background:transparent; }
     .ring-none .story-av .avatar { border-color:var(--bd); }
     .story-add { position:absolute; right:-1px; bottom:-1px; width:18px; height:18px; border-radius:50%; background:var(--primary); color:#fff; font-size:12px; line-height:1; display:flex; align-items:center; justify-content:center; border:2px solid var(--card); }
+    /* 풀스크린 스토리 뷰어 */
+    body.story-open { overflow:hidden; }
+    .storyview { position:fixed; inset:0; z-index:200; background:#111; color:#fff; display:none; flex-direction:column; }
+    .storyview.on { display:flex; }
+    .sv-top { position:relative; z-index:3; padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 0; }
+    .sv-bars { display:flex; gap:4px; }
+    .sv-bar { flex:1; height:3px; border-radius:2px; background:rgba(255,255,255,.3); overflow:hidden; }
+    .sv-bar i { display:block; height:100%; width:0; background:#fff; }
+    .sv-bar.done i, .sv-bar.cur i { width:100%; }
+    .sv-head { display:flex; align-items:center; gap:8px; padding:10px 2px 6px; }
+    .sv-head .avatar { border:none; }
+    .sv-head b { font-size:14px; font-weight:800; }
+    .sv-time { font-size:12px; opacity:.65; }
+    .sv-x { margin-left:auto; background:none; border:none; color:#fff; font-size:20px; cursor:pointer; padding:4px 8px; }
+    .sv-body { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; position:relative; z-index:2; }
+    .sv-card { background:rgba(255,255,255,.08); border-radius:18px; padding:30px 22px; width:100%; max-width:420px; text-align:center; }
+    .sv-title { font-size:22px; font-weight:800; line-height:1.35; word-break:keep-all; }
+    .sv-title.done { text-decoration:line-through; opacity:.7; }
+    .sv-due { margin-top:14px; } .sv-due .tdue { font-size:13px; color:#fff; opacity:.9; }
+    .sv-note { margin-top:12px; opacity:.85; font-size:14px; line-height:1.5; }
+    .sv-doneflag { margin-top:14px; color:#6ee7a0; font-weight:800; }
+    .sv-zone { position:absolute; top:64px; bottom:0; width:34%; z-index:1; background:transparent; border:none; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    .sv-zone.left { left:0; } .sv-zone.right { right:0; }
     .tdfr.sel .avatar { border-color:var(--primary); }
     .tdfrnm { font-size:10.5px; font-weight:700; color:var(--sub); max-width:48px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .tdfr.sel .tdfrnm { color:var(--text); }
