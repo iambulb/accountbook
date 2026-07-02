@@ -568,25 +568,30 @@
     function setTodoFriend(uid){ if(!uid||uid===state.uid){ clearFriendView(); renderTodoList(); } else { viewFriendTodos(uid); } }
     // 현재 열람 중인 친구 할일 리스너 해제 + 내 목록 복귀
     function clearFriendView(){ if(state._friendTodosRef){ try{ state._friendTodosRef.off(); }catch(e){} state._friendTodosRef=null; } state._todoFriend=null; state._friendTodosUid=null; state.friendTodos=[]; }
-    function todoMemberName(uid){ const m=(state.wsMeta&&state.wsMeta.members)||{}; return (uid===state.uid)?(state.userName||'나'):((m[uid]&&m[uid].name)||''); }
-    // 공유 친구 스트립(그룹 전용): 나 + 공유 ON 친구, 최근 등록순. 우측에 내 공유 토글.
+    // 표시 이름: 나 → 내 이름, 친구 → friends[uid].name, 폴백 멤버명
+    function friendDisplayName(uid){ if(uid===state.uid) return state.userName||'나'; const f=(state.friends&&state.friends[uid]); if(f&&f.name) return f.name; const m=(state.wsMeta&&state.wsMeta.members)||{}; return (m[uid]&&m[uid].name)||'친구'; }
+    function todoMemberName(uid){ return friendDisplayName(uid); }
+    // 개인 탭 상단 친구 스트립: 나 + '할일 공개(todoPublic)'한 친구들(이름순). 우측에 내 공개 토글.
     function todoFriendStrip(){
-      const ws=state.wsMeta||{}; if(ws.type!=='group') return '';
-      const mem=ws.members||{}; const meUid=state.uid; const view=todoViewUid();
-      const order=friendTodoOrder(state.todos, Object.keys(mem), state.todoShare, meUid, todoMemberName);
-      const shareOn=!!(state.todoShare&&state.todoShare[meUid]);
-      const av=order.map(function(uid){ const nm=todoMemberName(uid); const sel=(uid===view)?' sel':'';
-        const label=(uid===meUid)?'나':escapeHtml(nm||'멤버');
-        return '<button class="tdfr'+sel+'" onclick="setTodoFriend(\''+uid+'\')" aria-label="'+escapeHtml(nm||'멤버')+' 할일 보기">'+avatarHtml(uid,nm,40)+'<span class="tdfrnm">'+label+'</span></button>'; }).join('');
+      const meUid=state.uid; const view=todoViewUid();
+      const friends=Object.keys(state.friends||{}).filter(function(u){ return state.friendPub && state.friendPub[u]; })
+        .sort(function(a,b){ return String(friendDisplayName(a)).localeCompare(friendDisplayName(b)); });
+      const order=[meUid].concat(friends);
+      const shareOn=!!state.todoPublic;
+      const av=order.map(function(uid){ const nm=friendDisplayName(uid); const sel=(uid===view)?' sel':'';
+        const label=(uid===meUid)?'나':escapeHtml(nm);
+        return '<button class="tdfr'+sel+'" onclick="setTodoFriend(\''+uid+'\')" aria-label="'+escapeHtml(nm)+' 할일 보기">'+avatarHtml(uid,nm,40)+'<span class="tdfrnm">'+label+'</span></button>'; }).join('');
       return '<div class="tdfriends"><div class="tdfr-scroll">'+av+'</div>'+
-        '<button class="tdshare'+(shareOn?' on':'')+'" onclick="openTodoShareSheet()" aria-label="내 할일 공유 설정">'+
+        '<button class="tdshare'+(shareOn?' on':'')+'" onclick="toggleTodoPublic()" aria-label="내 할일 공개 토글" aria-pressed="'+shareOn+'">'+
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+(shareOn?'<circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8l7.4-4.3M8.3 13.2l7.4 4.3"/>':'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0"/>')+'</svg>'+
-        '<span>'+(shareOn?'공유중':'비공개')+'</span></button></div>';
+        '<span>'+(shareOn?'공개중':'비공개')+'</span></button></div>';
     }
+    // 내 개인 할일 공개 on/off(user-global) — 친구 스트립·열람 대상.
+    function toggleTodoPublic(){ if(!state.uid) return; const on=!!state.todoPublic; db.ref('users/'+state.uid+'/todoPublic').set(!on); toast(!on?'개인 할일을 친구에게 공개합니다':'공개를 껐습니다'); }
     function openTodoShareSheet(){
-      const uid=state.uid; const on=!!(state.todoShare&&state.todoShare[uid]);
-      let h='<p class="muted" style="margin:2px 2px 14px;line-height:1.55;">개인 할일을 같은 그룹 친구에게 공개할지 정해요. 켜면 친구의 <b>할일 · 개인</b> 화면 상단에 내 프로필이 뜨고, 내 개인 할일을 볼 수 있어요(읽기전용).</p>';
-      h+='<div class="lst">'+lrow(MORE_ICON.share,'내 할일 공유','toggleTodoShare()', on?'켜짐':'꺼짐')+'</div>';
+      const on=!!state.todoPublic;
+      let h='<p class="muted" style="margin:2px 2px 14px;line-height:1.55;">개인 할일을 <b>친구</b>에게 공개할지 정해요. 켜면 친구의 <b>할일 · 개인</b> 화면 상단 스트립에 내 프로필이 뜨고, 친구가 내 개인 할일을 읽기전용으로 볼 수 있어요.</p>';
+      h+='<div class="lst">'+lrow(MORE_ICON.share,'내 할일 공개','toggleTodoPublic();openTodoShareSheet()', on?'켜짐':'꺼짐')+'</div>';
       openSheet('할일 공유', h);
     }
     function toggleTodoShare(){ const uid=state.uid; if(!uid) return; const on=!!(state.todoShare&&state.todoShare[uid]);

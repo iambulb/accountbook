@@ -20,7 +20,7 @@
       view: (localStorage.getItem('view')==='mode' ? 'mode' : 'home'),     // 랜딩 '오늘 홈'(home) / 모드 화면(mode) — 모드는 아님(두 모드 그대로)
       todos:[], todoShare:{},   // 그룹 할일 목록(ws/{wsId}/todos) / (레거시) 멤버별 공유 플래그
       myTodos:[],   // 내 개인 할일(user-global: users/{uid}/todos) — 워크스페이스 무관
-      friends:{}, friendReqs:{}, todoPublic:false, friendCode:'',   // 친구 관계·받은 요청·내 할일 공개 플래그·내 친구 코드(users/{uid}/…)
+      friends:{}, friendReqs:{}, todoPublic:false, friendCode:'', friendPub:{},   // 친구 관계·받은 요청·내 공개 플래그·내 코드·친구별 공개여부(users/{uid}/…)
       friendTodos:[], _friendTodosUid:null,   // 현재 열람 중인 친구의 개인 할일(임시 리스너)
       _todoScope: (localStorage.getItem('todoScope')==='group' ? 'group' : 'personal'),   // 할일 세그먼트: 개인/그룹(친구들)
       _todoFriend: null   // 개인 탭에서 보고 있는 친구 uid(null/내 uid=나)
@@ -305,9 +305,14 @@
       _userRefs.forEach(r=>{ try{ r.off(); }catch(e){} }); _userRefs=[];
       const add=(path,cb)=>{ const r=db.ref('users/'+state.uid+'/'+path); r.on('value',cb); _userRefs.push(r); };
       add('todos', s=>{ const o=s.val()||{}; state.myTodos=Object.keys(o).map(k=>Object.assign({id:k,scope:'personal',ownerUid:state.uid},o[k])); rerender(); });
-      add('friends', s=>{ state.friends=s.val()||{}; rerender(); });
+      add('friends', s=>{ state.friends=s.val()||{}; loadFriendPublics(); rerender(); });
       add('friendReqs', s=>{ state.friendReqs=s.val()||{}; rerender(); });
       add('todoPublic', s=>{ state.todoPublic=!!s.val(); rerender(); });
+    }
+    // 친구별 '할일 공개' 여부를 읽어 캐시(친구 목록 변경 시 갱신). 스트립은 공개 친구만 노출.
+    function loadFriendPublics(){
+      const fr=Object.keys(state.friends||{}); state.friendPub=state.friendPub||{};
+      fr.forEach(uid=>{ db.ref('users/'+uid+'/todoPublic').once('value').then(s=>{ state.friendPub[uid]=!!s.val(); rerender(); }).catch(()=>{}); });
     }
     // 내 친구 코드 보장(없으면 생성) + 인덱스 friendCodes/{code}=uid.
     async function ensureFriendCode(){
