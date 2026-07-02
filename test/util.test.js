@@ -93,6 +93,36 @@ test('dueDiffDays: 마감 D-day 계산', () => {
   assert.strictEqual(U.dueDiffDays('2026-06-29', '2026-07-01'), -2);  // 2일 지남
 });
 
+test('todoScope: personal만 개인, 나머지(누락 포함)는 group', () => {
+  assert.strictEqual(U.todoScope({ scope: 'personal' }), 'personal');
+  assert.strictEqual(U.todoScope({ scope: 'group' }), 'group');
+  assert.strictEqual(U.todoScope({}), 'group');            // 레거시(스코프 없음)
+  assert.strictEqual(U.todoScope(null), 'group');
+  assert.strictEqual(U.todoScope({ scope: 'weird' }), 'group');
+});
+
+test('friendTodoOrder: 나 먼저, 공유 ON 친구를 최근 등록순', () => {
+  const todos = [
+    { scope: 'personal', ownerUid: 'me', createdAt: '2026-07-01T00:00:00Z' },
+    { scope: 'personal', ownerUid: 'a', createdAt: '2026-06-01T00:00:00Z' },
+    { scope: 'personal', ownerUid: 'b', createdAt: '2026-07-10T00:00:00Z' },   // b가 더 최근
+    { scope: 'group', ownerUid: 'a', createdAt: '2026-12-31T00:00:00Z' }        // group은 무시
+  ];
+  const members = ['me', 'a', 'b', 'c'];
+  const share = { a: true, b: true, c: false };   // c는 공유 안 함 → 제외
+  const names = { me: '나', a: '에이', b: '비', c: '씨' };
+  const nameOf = u => names[u] || '';
+  assert.deepStrictEqual(U.friendTodoOrder(todos, members, share, 'me', nameOf), ['me', 'b', 'a']);
+});
+
+test('friendTodoOrder: 공유자 없으면 나만, 동률은 이름순', () => {
+  assert.deepStrictEqual(U.friendTodoOrder([], ['me', 'x'], { x: false }, 'me'), ['me']);
+  // 둘 다 개인 할일 없음(동률) → 이름순 폴백
+  const share = { b: true, a: true };
+  const nameOf = u => ({ a: '가', b: '나' }[u] || '');
+  assert.deepStrictEqual(U.friendTodoOrder([], ['me', 'b', 'a'], share, 'me', nameOf), ['me', 'a', 'b']);
+});
+
 test('personKey: 멤버는 uid, 레거시/공동은 이름', () => {
   assert.strictEqual(U.personKey({ userUid: 'uid_123', user: '철수' }), 'uid_123');   // uid 우선
   assert.strictEqual(U.personKey({ user: '철수' }), '철수');                            // 레거시(uid 없음)

@@ -89,8 +89,11 @@ erDiagram
 ### creditCards/{id}
 `cardName`, `cardCompany`, `monthlyPerformanceTarget`, `performancePeriodType`(calendar_month/custom), `performanceStartDay`, `includePrepaidCharge`, `excludedCategories[]`, `defaultIncluded`, `visibility`, `memo`.
 
-### todos/{id}  (공유 할일 — flat `ws/{wsId}/todos/{id}`)
-`title`, `note`, `assignedUid`(담당 멤버 uid, 공동/미배정은 빈값)·`assignedName`(표시용), `dueDate`(YYYY-MM-DD), `done`·`doneAt`·`doneByUid`, `repeat`(none/daily/weekly), `purposeBookId`(여행 등 연결), `rewardClaimed`(완료 은화 1회 지급 멱등), `createdByUid`, `sortOrder`, `createdAt`·`updatedAt`. 워크스페이스 멤버가 공동 편집(RTDB `ws` 규칙으로 커버, 규칙 변경 없음).
+### todos/{id}  (할일 — flat `ws/{wsId}/todos/{id}`)
+`scope`(**personal**=개인 프로필별 / **group**=담당 배정형 — 누락 시 group 취급, 하위호환), `ownerUid`(개인 할일 소유자 uid; group은 미사용), `title`, `note`, `assignedUid`(group 담당 멤버 uid, 공동/미배정은 빈값)·`assignedName`(표시용), `dueDate`(YYYY-MM-DD), `done`·`doneAt`·`doneByUid`, `repeat`(none/daily/weekly), `purposeBookId`(여행 등 연결), `rewardClaimed`(완료 은화 1회 지급 멱등), `createdByUid`, `sortOrder`, `createdAt`·`updatedAt`. 워크스페이스 멤버가 공동 편집(RTDB `ws` 규칙으로 커버, 규칙 변경 없음).
+
+### todoShare/{uid} = true|false  (개인 할일 공유 플래그 — `ws/{wsId}/todoShare/{uid}`)
+멤버가 자기 **개인(scope=personal) 할일**을 그룹 친구에게 공개할지 여부. `true`면 친구의 **할일·개인** 화면 상단 공유 스트립에 그 멤버가 뜨고(최근 등록순), 친구는 그 개인 할일을 **읽기전용**으로 열람. 공유는 **UI 레벨 필터**로, RTDB 규칙상 멤버는 `ws/{wsId}` 전체를 읽을 수 있음(기존 `visibility` 관례와 동일 — 규칙 강제 아님). 규칙 변경 없음.
 
 ### categories/{name}
 `name`, `type`(expense/income/transfer/other 등), `icon`(이모지), `color`, `sortOrder`, `isDefault`, `isActive`, `visibility`(full/private), `owner`. 기본 카테고리는 `buildDefaultCategories` 시딩(신규 기본은 `migrateCategories`가 기존 사용자에도 자동 추가). **기본 카테고리도 수정·삭제 가능**하며, 삭제한 기본은 `ws/{wsId}/catDeleted/{name}=true` 툼스톤으로 표시해 재시딩되지 않음(같은 이름 재생성 시 툼스톤 해제).
