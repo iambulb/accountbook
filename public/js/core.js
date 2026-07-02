@@ -17,7 +17,9 @@
       theme: localStorage.getItem('theme') || 'light',
       tab:'calendar',
       mode: (localStorage.getItem('mode')==='todo' ? 'todo' : 'ledger'),   // 가계부(ledger) / 할일(todo) 모드
-      todos:[]
+      todos:[], todoShare:{},   // 할일 목록 / 멤버별 개인 할일 공유 플래그(ws/{wsId}/todoShare/{uid})
+      _todoScope: (localStorage.getItem('todoScope')==='group' ? 'group' : 'personal'),   // 할일 세그먼트: 개인/그룹
+      _todoFriend: null   // 개인 탭에서 보고 있는 친구 uid(null/내 uid=나)
     };
     let listenersAttached = false;
     let seededAcc = false, seededCat = false, booted = false, migratedAcc = false, migratedCat = false, migratedBudget = false, migratedRec = false;
@@ -584,6 +586,7 @@
       attach('todos', s=>{
         const o=s.val()||{}; state.todos=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender();
       });
+      attach('todoShare', s=>{ state.todoShare=s.val()||{}; rerender(); });   // 멤버별 개인 할일 공유 on/off
       attach('people', s=>{
         const o=s.val()||{}; state.people=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender();
       });

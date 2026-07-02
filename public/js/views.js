@@ -614,13 +614,17 @@
     }
     function openTodoEdit(id, presetPb){
       const t=id?(state.todos||[]).find(x=>x.id===id):null;
+      // 스코프: 편집=기존 할일 값, 신규=현재 세그먼트. 개인은 담당자 없음(소유자=나), 그룹은 담당배정.
+      const scope=t?todoScope(t):(state._todoScope==='group'?'group':'personal');
       const asel=t?(t.assignedUid||'공동'):(state.uid||'공동');
       const rep=t?(t.repeat||'none'):'none';
       const pbSel=t?(t.purposeBookId||''):(presetPb||'');
       const pbs=(state.purposeBooks||[]).filter(p=>(p.status||'active')!=='archived');
-      let h='<div class="field"><label>할 일</label><input class="input" id="tdTitle" value="'+escapeHtml(t?(t.title||''):'')+'" placeholder="예: 장보기, 항공권 예약"></div>';
-      h+='<div class="form-2"><div class="field"><label>담당자</label><select class="input" id="tdAssign">'+ownerOptions(asel)+'</select></div>'+
+      let h='<input type="hidden" id="tdScope" value="'+scope+'">';
+      h+='<div class="field"><label>할 일</label><input class="input" id="tdTitle" value="'+escapeHtml(t?(t.title||''):'')+'" placeholder="예: 장보기, 항공권 예약"></div>';
+      if(scope==='group') h+='<div class="form-2"><div class="field"><label>담당자</label><select class="input" id="tdAssign">'+ownerOptions(asel)+'</select></div>'+
         '<div class="field"><label>마감일</label><input type="date" class="input" id="tdDue" value="'+(t&&t.dueDate?t.dueDate:'')+'"></div></div>';
+      else h+='<div class="field"><label>마감일</label><input type="date" class="input" id="tdDue" value="'+(t&&t.dueDate?t.dueDate:'')+'"></div>';
       h+='<div class="form-2"><div class="field"><label>반복</label><select class="input" id="tdRepeat">'+[['none','반복 없음'],['daily','매일'],['weekly','매주']].map(function(o){ return '<option value="'+o[0]+'"'+(rep===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
         '<div class="field"><label>가계부 연결</label><select class="input" id="tdPb"><option value="">연결 안 함</option>'+pbs.map(function(p){ return '<option value="'+p.id+'"'+(pbSel===p.id?' selected':'')+'>'+(p.icon||'📒')+' '+escapeHtml(p.name)+'</option>'; }).join('')+'</select></div></div>';
       h+='<div class="field"><label>메모 (선택)</label><input class="input" id="tdNote" value="'+escapeHtml(t?(t.note||''):'')+'" placeholder="메모"></div>';
@@ -631,11 +635,15 @@
     function saveTodo(id){
       const title=val('tdTitle').trim(); if(!title){ toast('할 일을 입력하세요', true); return; }
       const t=id?(state.todos||[]).find(x=>x.id===id):null; const now=new Date().toISOString();
+      const scope=($('tdScope')?val('tdScope'):(t?todoScope(t):'group'))==='personal'?'personal':'group';
       const asel=$('tdAssign')?val('tdAssign'):'공동'; const mem=(state.wsMeta&&state.wsMeta.members)||{};
       let assignedUid='', assignedName='';
-      if(asel!=='공동'){ if(mem[asel]){ assignedUid=asel; assignedName=mem[asel].name||''; } else if(asel===state.uid){ assignedUid=state.uid; assignedName=state.userName||''; } else { assignedName=asel; } }
+      if(scope==='group' && asel!=='공동'){ if(mem[asel]){ assignedUid=asel; assignedName=mem[asel].name||''; } else if(asel===state.uid){ assignedUid=state.uid; assignedName=state.userName||''; } else { assignedName=asel; } }
+      // 개인 할일 소유자: 기존 값 유지, 신규는 나. 그룹은 소유자 개념 없음(담당자로 표현).
+      const ownerUid=scope==='personal'?(t?(t.ownerUid||t.createdByUid||state.uid||''):(state.uid||'')):'';
       const key=id||('todo_'+Date.now());
       const data={ title:title, note:val('tdNote').trim(), dueDate:val('tdDue')||'',
+        scope:scope, ownerUid:ownerUid,
         assignedUid:assignedUid, assignedName:assignedName,
         repeat:($('tdRepeat')?val('tdRepeat'):'none')||'none', purposeBookId:($('tdPb')?val('tdPb'):'')||'',
         done:t?!!t.done:false, doneAt:t?(t.doneAt||''):'', doneByUid:t?(t.doneByUid||''):'', rewardClaimed:t?!!t.rewardClaimed:false,
