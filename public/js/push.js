@@ -45,9 +45,7 @@
     if (perm !== 'granted') { toast(perm === 'denied' ? '알림이 차단돼 있어요(브라우저 설정에서 허용)' : '알림 권한이 필요해요', true); return false; }
     const m = messaging(); if (!m) return false;
     try {
-      const reg = await navigator.serviceWorker.getRegistration('/firebase-cloud-messaging-push-scope')
-        || await navigator.serviceWorker.ready;
-      const token = await m.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+      const token = await m.getToken({ vapidKey: VAPID_KEY });   // FCM이 firebase-messaging-sw.js를 자체 스코프로 등록·사용
       if (!token) { toast('알림 토큰을 받지 못했어요', true); return false; }
       if (window.state) state._pushToken = token;
       if (state.uid) await db.ref('users/' + state.uid + '/push').set({ token: token, at: new Date().toISOString(), ua: (navigator.userAgent || '').slice(0, 120) });
@@ -76,8 +74,7 @@
     } catch (e) {}
     if (Notification.permission === 'granted' && state && state.uid) {
       try {
-        const reg = await navigator.serviceWorker.getRegistration('/firebase-cloud-messaging-push-scope') || await navigator.serviceWorker.ready;
-        const token = await m.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+        const token = await m.getToken({ vapidKey: VAPID_KEY });
         if (token) { state._pushToken = token; db.ref('users/' + state.uid + '/push').set({ token: token, at: new Date().toISOString(), ua: (navigator.userAgent || '').slice(0, 120) }); }
       } catch (e) {}
     }

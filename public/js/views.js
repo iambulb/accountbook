@@ -1694,7 +1694,7 @@
       h+=lrow(MORE_ICON.moon,'다크 모드','toggleTheme();openSettingsSheet()', state.theme==='dark'?'켜짐':'꺼짐');
       h+=lrow(MORE_ICON.cam,'펫캠','toggleDockHidden();openSettingsSheet()', (typeof dockHiddenLabel==='function'?dockHiddenLabel():''));
       if(typeof pushState==='function' && pushState()!=='unsupported')   // 🔔 알림(FCM 설정된 지원 기기에서만 노출)
-        h+=lrow('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>','알림','togglePush()', pushStatusLabel());
+        h+=lrow((typeof bellSvg==='function'?bellSvg({h:22}):'🔔'),'알림','togglePush()', pushStatusLabel());
       h+='</div>';
       // 코드 입력(프로모/치트 코드)
       h+='<div class="sec-title" style="margin-top:22px;">코드 입력</div>';
