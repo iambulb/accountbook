@@ -807,21 +807,21 @@
     ];
     const GEAR_PAL={G:'#7c8698',H:'#aeb6c4',S:'#5f6875'};
     function gearSvg(opt){ return pxSvg(M_GEAR, GEAR_PAL, opt); }
-    // 🔔 알림 종(픽셀) — B=몸체(앰버)·D=외곽/림·L=하이라이트. 설정 '알림' 행 등에 사용.
+    // 🔔 알림 종(픽셀) — 대칭 종 + 링 손잡이(O=구멍) + 플레어 림 + 클래퍼. B=몸체(앰버)·D=림/클래퍼·L=좌상단 하이라이트. 설정 '알림' 행 등에 사용.
     const M_BELL = [
-      '.....DD....',
-      '....DBBD...',
-      '....LBBB...',
-      '...LBBBBB..',
-      '..LBBBBBBB.',
-      '..BBBBBBBB.',
+      '.....B.....',
+      '....BOB....',
+      '....BBB....',
+      '...LBBBB...',
+      '..LBBBBBB..',
+      '.LBBBBBBBB.',
       '.BBBBBBBBB.',
-      '.BBBBBBBBB.',
+      'BBBBBBBBBBB',
       'BBBBBBBBBBB',
       'DDDDDDDDDDD',
       '....DDD....'
     ];
-    const BELL_PAL={B:'#f2b134',D:'#c98a1e',L:'#ffe6a3'};
+    const BELL_PAL={B:'#f7c045',D:'#d79a2a',L:'#ffe9ad',O:'#9c6a15'};
     function bellSvg(opt){ return pxSvg(M_BELL, BELL_PAL, opt); }
     // 👑 왕관(그룹 소유자) 픽셀 아트 — 가운데 봉우리 높은 정석 왕관 + 세 끝에 컷팅 루비(L=하이라이트→R=진루비 facet) + 밴드 중앙 보석. C=금, H=금 하이라이트, D=진금 밴드.
     const M_CROWN = [

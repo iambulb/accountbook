@@ -25,7 +25,7 @@
     if (!pushConfigured() || !pushApiOk()) return 'unsupported';
     const p = Notification.permission;
     if (p === 'denied') return 'denied';
-    if (p === 'granted') return (window.state && state._pushToken) ? 'on' : 'off';
+    if (p === 'granted') return (typeof state !== 'undefined' && state && state._pushToken) ? 'on' : 'off';
     return 'default';
   }
   function pushStatusLabel() {
@@ -47,7 +47,7 @@
     try {
       const token = await m.getToken({ vapidKey: VAPID_KEY });   // FCM이 firebase-messaging-sw.js를 자체 스코프로 등록·사용
       if (!token) { toast('알림 토큰을 받지 못했어요', true); return false; }
-      if (window.state) state._pushToken = token;
+      if (typeof state !== 'undefined' && state) state._pushToken = token;
       if (state.uid) await db.ref('users/' + state.uid + '/push').set({ token: token, at: new Date().toISOString(), ua: (navigator.userAgent || '').slice(0, 120) });
       toast('알림을 켰어요 🔔');
       return true;
@@ -55,7 +55,7 @@
   }
   async function pushDisable() {
     try { const m = messaging(); if (m) await m.deleteToken(); } catch (e) {}
-    if (window.state) state._pushToken = null;
+    if (typeof state !== 'undefined' && state) state._pushToken = null;
     try { if (state.uid) await db.ref('users/' + state.uid + '/push').remove(); } catch (e) {}
     toast('알림을 껐어요');
   }
