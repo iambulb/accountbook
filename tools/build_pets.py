@@ -84,7 +84,7 @@ def gen_assets(pet):
     zpath = os.path.join(ZIP_DIR, pet["zip"])
     if not os.path.exists(zpath):
         print(f"  ! zip 없음: {pet['zip']} (에셋 생성 건너뜀)"); return False
-    out = os.path.join(PETS_DIR, pet["id"]); os.makedirs(out, exist_ok=True)
+    out = os.path.join(PETS_DIR, pet["species"], pet["id"]); os.makedirs(out, exist_ok=True)   # 종별 하위폴더
     zf = zipfile.ZipFile(zpath); frontwalk = False
     east = zip_frames(zf, "/Walk/east/frame_")
     if len(east) < 6:
@@ -154,7 +154,7 @@ def gen_sprites(reg):
         fw = ", frontWalk:true" if p.get("frontWalk") else ""
         sc = p.get("scale")
         scStr = f", scale:{sc}" if (sc and float(sc)!=1) else ""
-        lines.append(f"      {p['id']}:{{ walk:'assets/pets/{p['id']}/walk.png', frames:6, stills:true{scStr}{fw} }}{comma}")
+        lines.append(f"      {p['id']}:{{ walk:'assets/pets/{p['species']}/{p['id']}/walk.png', frames:6, stills:true{scStr}{fw} }}{comma}")
     return "    const PET_SPRITES = {\n" + "\n".join(lines) + "\n    };"
 
 def gen_tier(reg):
@@ -165,7 +165,7 @@ def gen_sw_shell(reg):
     out = []
     for p in reg["pets"]:
         for f in ("walk","south","north","east","west"):
-            out.append(f"  './assets/pets/{p['id']}/{f}.png',")
+            out.append(f"  './assets/pets/{p['species']}/{p['id']}/{f}.png',")
     return "\n".join(out)
 
 def gen_names(reg): return "·".join(p["name"] for p in reg["pets"])
@@ -175,7 +175,7 @@ def gen_pet_list_table(reg):
     for i,p in enumerate(reg["pets"],1):
         sc = float(p.get("scale") or 1)
         rows.append(f"| {i} | {p['name']} | `{p['id']}` | {reg['speciesLabel'].get(p['species'],p['species'])} | "
-                    f"{sc:g}× | {TIER_KO.get(p['tier'],p['tier'])} | {price_of(reg,p)} | `public/assets/pets/{p['id']}/` | "
+                    f"{sc:g}× | {TIER_KO.get(p['tier'],p['tier'])} | {price_of(reg,p)} | `public/assets/pets/{p['species']}/{p['id']}/` | "
                     f"{'PNG 스프라이트 6프레임(정면걷기)' if p.get('frontWalk') else 'PNG 스프라이트 6프레임'} | {p['desc']} |")
     return "\n".join(rows)
 
@@ -207,7 +207,7 @@ def main():
 
         # 2) 에셋 생성(없으면; --force면 전부)
         for p in reg["pets"]:
-            walk = os.path.join(PETS_DIR, p["id"], "walk.png")
+            walk = os.path.join(PETS_DIR, p["species"], p["id"], "walk.png")   # 종별 하위폴더
             missing = not os.path.exists(walk)
             if FORCE or missing:
                 if gen_assets(p):

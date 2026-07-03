@@ -169,13 +169,40 @@
       "........","...XX...","..XKKX..",".XKKKKX.",".XKKKKX.","..XKKX..","...XX...","........"
     ];
     // 소비 아이템 아이콘(알뜰샵 소비 탭)
+    // 사료포대(F=몸체,D=외곽/그림자,L=라벨,K=라벨 사료무늬) — 위가 접힌 사료 봉투
     const M_FOOD = [
-      "............","............",".....FF.....","....FFFF....","...FFFFFF...",
-      "..FFFFFFFF..","..FDFFFFDF..","..FFFFFFFF..","...FFFFFF...","............"
+      ".....DD.....",
+      "....DFFD....",
+      "...DFFFFD...",
+      "..DFFFFFFD..",
+      ".DFFFFFFFFD.",
+      ".DFFFFFFFFD.",
+      ".DFLLLLLLFD.",
+      ".DFLKKKKLFD.",
+      ".DFLLLLLLFD.",
+      ".DFFFFFFFFD.",
+      ".DFFFFFFFFD.",
+      ".DFFFFFFFFD.",
+      ".DDFFFFFFDD.",
+      "..DDDDDDDD.."
     ];
+    // 물병(A=물,D=뚜껑/외곽,H=하이라이트,L=라벨) — 뚜껑+라벨 있는 생수병
     const M_WATER = [
-      "............",".....A......",".....A......","....AAA.....","...AAAAA....",
-      "..AAAAAAA...","..AAAAAAA...","...AAAAA....","....AAA.....","............"
+      ".....DD.....",
+      ".....DD.....",
+      "....DDDD....",
+      ".....DD.....",
+      "....DAAD....",
+      "...DAAAAD...",
+      "..DAAAAAAD..",
+      "..DAHAAAAD..",
+      "..DAAAAAAD..",
+      "..DLLLLLLD..",
+      "..DLLLLLLD..",
+      "..DAAAAAAD..",
+      "..DAAAAAAD..",
+      "..DAAAAAAD..",
+      "..DDDDDDDD.."
     ];
     // 캣타워: 3층(발판 3개) 세로형. 비율 11×22 ≈ 3:6칸. 고양이가 각 층 발판에 올라가 쉼.
     const M_TOWER = [
@@ -258,8 +285,8 @@
     ];
     const FURN_PALS={ cushion:{X:'#5b6470',C:'#a9b2be',D:'#868f9c'}, bowl:{X:'#5b6470',W:'#d0d6dd',F:'#d68b4a'}, waterbowl:{X:'#5b6470',W:'#d0d6dd',A:'#5aa9e6'}, tower:{X:'#6f4c28',W:'#c99a5f',P:'#8a6a3f'}, scratcher:{X:'#6f4c28',W:'#c99a5f',P:'#d8b98a'}, litterbox:{X:'#8a8f98',W:'#c9ced6',S:'#e6dcc3'}, pethouse:{X:'#5a4632',R:'#d9694e',W:'#e8c98f',D:'#2c2420'}, plant:{X:'#7c5028',L:'#7cc652',G:'#4e9636',P:'#c8763e'} };
     const POOP_PAL={X:'#4a3218',K:'#7a5230'};
-    const FOOD_PAL={F:'#d68b4a',D:'#a5642a'};
-    const WATER_PAL={A:'#5aa9e6',D:'#3f86c4'};
+    const FOOD_PAL={F:'#d68b4a',D:'#8a5427',L:'#f2e4c6',K:'#7a4a20'};
+    const WATER_PAL={A:'#5aa9e6',D:'#3f86c4',H:'#c7e6ff',L:'#eaf6ff'};
     // ---- 펫알/랜덤박스 도트 ----
     // 알: 위는 둥근 돔(꼭대기 좁게), 아래가 넓고 둥글게. 상단 외곽은 S(밝은 회색)로 계단 모서리를 부드럽게(안티에일리어싱)해 실루엣이 투박하지 않게. 중앙에 크고 두꺼운 무지개(R→P) 물음표(위 방향 유지). S=우측 그림자·상단 외곽 완화.
     const M_EGG = [
@@ -368,6 +395,25 @@
       ".XWWWRRWWOOWWWX.",
       ".XWWWWWWWOOWWWX.",
       ".XWWWWWWYYWWWWX.",
+      ".XWWWWWGGWWWWWX.",
+      ".XWWWWWBBWWWWWX.",
+      ".XWWWWWWWWWWWWX.",
+      ".XWWWWWPPWWWWWX.",
+      ".XXXXXXXXXXXXXX."
+    ];
+    // 열린 랜덤박스(오픈 연출): 뚜껑이 튀어오르고 열린 틈으로 등급색 픽셀 빛(Z)이 쏟아진다. Z=빛(렌더 시 등급색).
+    const M_BOX_OPEN = [
+      "...X........X...",
+      "....XXCCCCXX....",
+      ".....XCCCCX.....",
+      "....ZZZZZZZZ....",
+      "...ZZZZZZZZZZ...",
+      "..XZZZZZZZZZZX..",
+      ".XXZZZZZZZZZZXX.",
+      ".XWWWWWWWWWWWWX.",
+      ".XWWWWRRRRWWWWX.",
+      ".XWWWRRWWOOWWWX.",
+      ".XWWWWWWWOOWWWX.",
       ".XWWWWWGGWWWWWX.",
       ".XWWWWWBBWWWWWX.",
       ".XWWWWWWWWWWWWX.",
@@ -503,7 +549,8 @@
     // styles.css 안의 `background-image:var(--sheet)`가 스타일시트 위치(/css/) 기준으로 해석해
     // `/css/assets/…` 404 → 고양이가 안 보인다. document.baseURI 기준 절대 URL로 고정.
     function assetUrl(p){ try{ return new URL(p, document.baseURI).href; }catch(e){ return p; } }
-    function sprStills(id){ return 'assets/pets/'+id; }
+    // 정지 4방향 PNG의 폴더 = walk.png 경로에서 파생(단일 소스). 종별 하위폴더(assets/pets/<species>/<id>/)가 walk 경로에 이미 들어있어 함께 반영된다.
+    function sprStills(id){ const sp=PET_SPRITES[id]; return (sp&&sp.walk) ? sp.walk.replace(/\/walk\.png$/,'') : 'assets/pets/'+id; }
     const _BLANK_PX='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';   // 1×1 투명 — 아트 로딩 전 깨진 img 방지
     // 런타임(앱에서 업로드) 펫은 이미지가 data URL(PET_SPRITES[id].urls)에 들어있어 파일 경로 대신 그걸 쓴다.
     // 아트 분리 저장(catalogPetArt) → 지연 로딩 전(sp.needArt)에는 파일 경로가 없으므로 투명 픽셀을 준다(로드되면 재렌더로 교체).
@@ -513,22 +560,22 @@
     function _petPlaceholder(s){ return '<span class="petph" style="width:'+s+'px;height:'+s+'px;display:inline-flex;align-items:flex-end;justify-content:center;overflow:hidden;">'+eggSvg(0,{h:Math.round(s*0.72)})+'</span>'; }
     // @gen:pet-sprites — 자동생성(tools/build_pets.py). tools/pets.json 편집 후 재실행.
     const PET_SPRITES = {
-      cat_mackerel:{ walk:'assets/pets/cat_mackerel/walk.png', frames:6, stills:true },
-      cat_cheese:{ walk:'assets/pets/cat_cheese/walk.png', frames:6, stills:true },
-      cat_calico:{ walk:'assets/pets/cat_calico/walk.png', frames:6, stills:true },
-      cat_black:{ walk:'assets/pets/cat_black/walk.png', frames:6, stills:true },
-      cat_white:{ walk:'assets/pets/cat_white/walk.png', frames:6, stills:true },
-      cat_fluffy:{ walk:'assets/pets/cat_fluffy/walk.png', frames:6, stills:true },
-      cat_tuxedo:{ walk:'assets/pets/cat_tuxedo/walk.png', frames:6, stills:true },
-      cat_chaos:{ walk:'assets/pets/cat_chaos/walk.png', frames:6, stills:true },
-      cat_siamese:{ walk:'assets/pets/cat_siamese/walk.png', frames:6, stills:true },
-      cat_bengal:{ walk:'assets/pets/cat_bengal/walk.png', frames:6, stills:true },
-      cat_fold:{ walk:'assets/pets/cat_fold/walk.png', frames:6, stills:true },
-      cat_bora:{ walk:'assets/pets/cat_bora/walk.png', frames:6, stills:true },
-      cat_choco:{ walk:'assets/pets/cat_choco/walk.png', frames:6, stills:true },
-      cat_kitten:{ walk:'assets/pets/cat_kitten/walk.png', frames:6, stills:true, scale:0.5 },
-      cat_pink:{ walk:'assets/pets/cat_pink/walk.png', frames:6, stills:true },
-      tiger_orange:{ walk:'assets/pets/tiger_orange/walk.png', frames:6, stills:true, scale:5 }
+      cat_mackerel:{ walk:'assets/pets/cat/cat_mackerel/walk.png', frames:6, stills:true },
+      cat_cheese:{ walk:'assets/pets/cat/cat_cheese/walk.png', frames:6, stills:true },
+      cat_calico:{ walk:'assets/pets/cat/cat_calico/walk.png', frames:6, stills:true },
+      cat_black:{ walk:'assets/pets/cat/cat_black/walk.png', frames:6, stills:true },
+      cat_white:{ walk:'assets/pets/cat/cat_white/walk.png', frames:6, stills:true },
+      cat_fluffy:{ walk:'assets/pets/cat/cat_fluffy/walk.png', frames:6, stills:true },
+      cat_tuxedo:{ walk:'assets/pets/cat/cat_tuxedo/walk.png', frames:6, stills:true },
+      cat_chaos:{ walk:'assets/pets/cat/cat_chaos/walk.png', frames:6, stills:true },
+      cat_siamese:{ walk:'assets/pets/cat/cat_siamese/walk.png', frames:6, stills:true },
+      cat_bengal:{ walk:'assets/pets/cat/cat_bengal/walk.png', frames:6, stills:true },
+      cat_fold:{ walk:'assets/pets/cat/cat_fold/walk.png', frames:6, stills:true },
+      cat_bora:{ walk:'assets/pets/cat/cat_bora/walk.png', frames:6, stills:true },
+      cat_choco:{ walk:'assets/pets/cat/cat_choco/walk.png', frames:6, stills:true },
+      cat_kitten:{ walk:'assets/pets/cat/cat_kitten/walk.png', frames:6, stills:true, scale:0.5 },
+      cat_pink:{ walk:'assets/pets/cat/cat_pink/walk.png', frames:6, stills:true },
+      tiger_orange:{ walk:'assets/pets/tiger/tiger_orange/walk.png', frames:6, stills:true, scale:5 }
     };
     // @gen:end
     function hasSprite(id){ return !!PET_SPRITES[id]; }
@@ -571,6 +618,8 @@
     function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); return pxSvg(M_EGG_C3, pal, opt); }
     // ✦ 픽셀 빛 폭발(별) — 등급색으로. color 미지정 시 currentColor(무대 등급색 상속).
     function starSvg(color, opt){ return pxSvg(M_STAR, {X:color||'currentColor',H:'#ffffff'}, opt); }
+    // 랜덤박스 오픈: 뚜껑 열리고 틈새로 등급색 빛(Z). rainbow면 몸체는 무지갯빛 유지.
+    function boxOpenSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?BOX_PAL_RB:BOX_PAL, {Z:tierColor||'#FBFBFD'}); return pxSvg(M_BOX_OPEN, pal, opt); }
     // 선물함 아이콘 — 랜덤박스 도트(M_BOX) 그대로, 색만 선물상자(빨강 몸체+금 리본)로 다시 칠함.
     const GIFT_PAL={X:'#a83f52',W:'#e35d76',C:'#f2c84b',L:'#e0a43c',R:'#f2c84b',O:'#f2c84b',Y:'#f2c84b',G:'#f2c84b',B:'#f2c84b',P:'#f2c84b'};
     function giftSvg(opt){ return pxSvg(M_BOX, GIFT_PAL, opt); }
@@ -1211,7 +1260,7 @@
         const petLine=JSON.stringify({ id:sid, species:info.species||'cat', name:info.name||'', tier:info.tier||'normal', scale:sp.scale||1, desc:'', zip:'', frontWalk:!!sp.frontWalk });
         let h='<p class="muted" style="font-size:12.5px;line-height:1.6;margin:2px 2px 10px;">PNG 5장을 내려받았어요. 아래로 정적 편입하세요(<code>id</code>는 원하는 이름으로 바꿔도 됩니다).</p>';
         h+='<ol style="font-size:13px;line-height:1.8;padding-left:20px;margin:0 0 10px;">'+
-           '<li><code>public/assets/pets/'+escapeHtml(sid)+'/</code> 폴더에 5장 넣기</li>'+
+           '<li><code>public/assets/pets/'+escapeHtml(info.species||'cat')+'/'+escapeHtml(sid)+'/</code> 폴더에 5장 넣기</li>'+
            '<li><code>tools/pets.json</code> 의 <code>pets</code> 배열에 아래 한 줄 추가</li>'+
            '<li><code>cats.js</code> 의 <code>PET_ID_MIGRATE</code> 에 아래 한 줄 추가(소유자 이관)</li>'+
            '<li><code>python tools/build_pets.py</code> 실행 → 커밋 → 배포</li>'+
@@ -2327,7 +2376,7 @@
       setTimeout(()=>{
         it.classList.remove('fx-preshake','fx-hit'); void it.offsetWidth; it.classList.add('fx-tremble');
         if(isEgg){ it.innerHTML=eggCrackSvg(t.color, _fx.rainbow, {h:150}); fxCrackChips(4); }   // 알이 크게 갈라지고 틈새로 등급색 빛
-        else it.classList.add('fx-ajar');
+        else { it.innerHTML=boxOpenSvg(t.color, _fx.rainbow, {h:150}); it.classList.add('fx-ajar'); }   // 박스: 뚜껑 열리고 틈새로 등급색 빛
         // 갈라진 틈으로 새어나오는 등급색 픽셀 빛(도트 별) — 둥근 글로우 대신 도트, 등급↑ 크고 밝게
         st.insertAdjacentHTML('afterbegin','<div class="fx-cracklight" style="color:'+t.color+';--lk:'+lk+'">'+starSvg('currentColor',{h:200})+'</div>');
       }, t0);
