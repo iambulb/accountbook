@@ -687,6 +687,22 @@
     .miniroom .cr-base { bottom:52%; }
     .miniroom .cr-props { pointer-events:none; }
     .miniroom .cr-cam { font-size:9px; padding:3px 8px 3px 6px; top:6px; left:8px; }
+    /* 방(프리셋) 미니 미리보기 스트립 — 벽지+가구 축소 썸네일, 탭 전환·✎ 이름변경·잠금 방 확장(금화) */
+    .rmstrip { display:flex; gap:10px; margin:0 0 10px; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch; }
+    .rmthumb { position:relative; flex:0 0 92px; width:92px; border:1.5px solid var(--bd); border-radius:14px; overflow:hidden; background:var(--card); cursor:pointer; padding:0; transition:transform .08s, border-color .12s, box-shadow .12s; }
+    .rmthumb:active { transform:scale(.96); }
+    .rmthumb.on { border-color:var(--accent,#4a90d9); box-shadow:0 0 0 2px color-mix(in srgb,var(--accent,#4a90d9) 40%,transparent); }
+    .rmthumb .rmscene { display:block; position:relative; width:100%; aspect-ratio:12/9; overflow:hidden; }
+    .rmthumb .rmf { position:absolute; background:color-mix(in srgb,var(--text) 42%,transparent); border-radius:2px; }
+    .rmthumb .rmbar { display:flex; align-items:center; justify-content:space-between; gap:4px; padding:4px 6px; font-size:10.5px; font-weight:800; color:var(--text); background:var(--card); }
+    .rmthumb .rmname { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .rmthumb .rmpets { flex:none; color:var(--sub); font-weight:700; }
+    .rmthumb .rm-edit { position:absolute; top:4px; right:4px; z-index:2; width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; color:#fff; background:color-mix(in srgb,#000 42%,transparent); border:none; cursor:pointer; }
+    .rmthumb .rm-edit svg { width:12px; height:12px; }
+    .rmthumb.locked { flex-direction:column; gap:3px; align-items:center; justify-content:center; border-style:dashed; color:var(--sub); background:var(--soft); aspect-ratio:auto; min-height:78px; }
+    .rmthumb.locked .rmlock svg { width:18px; height:18px; }
+    .rmthumb.locked .rmgold { display:inline-flex; align-items:center; gap:2px; font-size:10.5px; font-weight:800; color:var(--text); }
+
     /* 활성 슬롯 행(홈): 채워진 슬롯 + 잠금 슬롯(금화 확장) */
     .slotrow { display:flex; gap:8px; margin:0 0 4px; overflow-x:auto; padding-bottom:3px; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity; }
     .slot { width:46px; height:46px; border-radius:12px; border:1.5px dashed var(--bd); background:var(--soft); display:flex; align-items:center; justify-content:center; flex:none; overflow:hidden; }

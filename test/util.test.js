@@ -236,3 +236,47 @@ test('homeCardKind: 남으면 sections / 다 했으면 done / 애초에 없으�
   assert.strictEqual(U.homeCardKind(U.todayPending([], [], '2025-06-15')), 'empty');
   assert.strictEqual(U.homeCardKind(U.todayPending([false], [], '2025-06-15')), 'sections');
 });
+
+test('normalizeHome: 레거시 flat(단일 방) → rooms[0]로 이관', () => {
+  const h = U.normalizeHome({ active: ['cat_a'], placed: { '2_3': { itemId: 'cushion' } }, wallpaper: 'sky', poops: 2, slots: 4, changedAt: 'x' });
+  assert.strictEqual(h.rooms.length, 1);
+  assert.strictEqual(h.roomSlots, 1);
+  assert.strictEqual(h.current, 0);
+  assert.strictEqual(h.slots, 4);              // 전역 펫 슬롯 보존
+  assert.strictEqual(h.changedAt, 'x');
+  assert.deepStrictEqual(h.rooms[0].active, ['cat_a']);
+  assert.deepStrictEqual(h.rooms[0].placed, { '2_3': { itemId: 'cushion' } });
+  assert.strictEqual(h.rooms[0].wallpaper, 'sky');
+  assert.strictEqual(h.rooms[0].poops, 2);
+  assert.strictEqual(h.rooms[0].name, '방 1');
+});
+
+test('normalizeHome: 빈 입력 → 기본 방 1개', () => {
+  const h = U.normalizeHome(null);
+  assert.strictEqual(h.rooms.length, 1);
+  assert.strictEqual(h.roomSlots, 1);
+  assert.strictEqual(h.slots, 3);
+  assert.deepStrictEqual(h.rooms[0], { name: '방 1', wallpaper: 'default', placed: {}, active: [], poops: 0 });
+});
+
+test('normalizeHome: 이미 rooms면 통과 + roomSlots만큼 방 보장', () => {
+  const h = U.normalizeHome({ rooms: [{ name: '고양이방', wallpaper: 'sakura', active: ['a'] }], roomSlots: 3, current: 2, slots: 5 });
+  assert.strictEqual(h.rooms.length, 3);        // roomSlots(3)만큼 패딩(방 2·방 3 기본)
+  assert.strictEqual(h.rooms[0].name, '고양이방');
+  assert.strictEqual(h.rooms[1].name, '방 2');
+  assert.strictEqual(h.current, 2);             // 클램프 범위 내
+  assert.strictEqual(h.roomSlots, 3);
+});
+
+test('normalizeHome: 상한/클램프 + 방 데이터 손실 방지', () => {
+  // roomSlots 과다 → MAX(5)로, current 음수 → 0
+  const a = U.normalizeHome({ rooms: [{}], roomSlots: 99, current: -5, slots: 999 });
+  assert.strictEqual(a.roomSlots, 5);
+  assert.strictEqual(a.rooms.length, 5);
+  assert.strictEqual(a.current, 0);
+  assert.strictEqual(a.slots, 20);              // 펫 슬롯 상한
+  // 방 데이터가 roomSlots보다 많으면 roomSlots를 올려 손실 방지
+  const b = U.normalizeHome({ rooms: [{}, {}, {}], roomSlots: 1 });
+  assert.strictEqual(b.roomSlots, 3);
+  assert.strictEqual(b.rooms.length, 3);
+});

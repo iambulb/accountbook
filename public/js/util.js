@@ -153,6 +153,40 @@
     var total = missions + todosPending;
     return { missions: missions, todos: todosPending, total: total, allDone: total === 0, any: missionsTotal > 0 || due.length > 0 };
   }
+  // ===== 알뜰홈 여러 방(프리셋) — home 상태 정규화(순수). 레거시 flat(단일 방)과 신규 rooms[] 둘 다 받아 rooms 형태로. =====
+  //  방별: {name,wallpaper,placed,active,poops}. 전역: current(선택 방), roomSlots(열린 방수), slots(방당 펫상한), changedAt.
+  //  opts={baseRooms,maxRooms,baseSlots,maxSlots}(기본 1/5/3/20). 데이터 손실 방지: 방 데이터가 roomSlots보다 많으면 roomSlots를 올린다.
+  function normalizeHome(home, opts) {
+    opts = opts || {};
+    var BASE = Number(opts.baseRooms) || 1, MAX = Number(opts.maxRooms) || 5;
+    var BS = Number(opts.baseSlots) || 3, MS = Number(opts.maxSlots) || 20;
+    var h = home || {};
+    function clamp(n, lo, hi) { n = Math.floor(Number(n) || 0); return Math.max(lo, Math.min(hi, n)); }
+    function normRoom(r, i) {
+      r = r || {};
+      return {
+        name: (typeof r.name === 'string' && r.name) ? r.name : ('방 ' + (i + 1)),
+        wallpaper: r.wallpaper || 'default',
+        placed: (r.placed && typeof r.placed === 'object') ? r.placed : {},
+        active: Array.isArray(r.active) ? r.active.slice() : [],
+        poops: Number(r.poops) || 0
+      };
+    }
+    var rooms = (Array.isArray(h.rooms) && h.rooms.length)
+      ? h.rooms.map(normRoom)
+      : [normRoom({ wallpaper: h.wallpaper, placed: h.placed, active: h.active, poops: h.poops }, 0)];  // 레거시 flat → 방1
+    var roomSlots = clamp(h.roomSlots || rooms.length || BASE, BASE, MAX);
+    while (rooms.length < roomSlots) rooms.push(normRoom({}, rooms.length));
+    if (rooms.length > roomSlots) roomSlots = Math.min(MAX, rooms.length);   // 방 데이터가 더 많으면 손실 없이 slots 올림
+    return {
+      rooms: rooms,
+      current: clamp(h.current, 0, rooms.length - 1),
+      roomSlots: roomSlots,
+      slots: clamp(h.slots || BS, BS, MS),
+      changedAt: h.changedAt || ''
+    };
+  }
+
   // ---- 렌더 결정(순수) — 어떤 배지/카드를 그릴지 판정만. 실제 DOM 쓰기는 core/views의 얇은 래퍼가 담당. ----
   // 상단 로고 점 배지 표시 여부: 모드 화면(홈 아님)에서 오늘 미처리(total>0)일 때만.
   function homeBadgeShow(view, total) { return view !== 'home' && (total | 0) > 0; }
@@ -170,7 +204,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot };
+  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);
