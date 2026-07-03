@@ -376,7 +376,7 @@
       position:fixed; left:50%; bottom:0; transform:translateX(-50%) translateY(100%);
       width:100%; max-width:var(--maxw); background:var(--card);
       border-radius:28px 28px 0 0; z-index:50; transition:transform .28s cubic-bezier(.32,.72,0,1);
-      max-height:92vh; max-height:92dvh; display:flex; flex-direction:column; box-shadow:var(--shadow-lg);
+      max-height:92vh; max-height:92dvh; display:flex; flex-direction:column; box-shadow:var(--shadow-lg); overflow:hidden;
     }
     #sheet.on { transform:translateX(-50%) translateY(0); }
     /* 상단(핸들·헤더)을 잡고 아래로 드래그하면 시트가 닫힘 → 세로 제스처를 스크롤로 뺏기지 않게 touch-action 차단 */
@@ -385,7 +385,7 @@
     .sheet-head { display:flex; align-items:center; justify-content:space-between; padding:8px 22px 12px; touch-action:none; }
     .sheet-head h3 { font-size:18px; font-weight:800; letter-spacing:-.02em; }
     .sheet-head .x { font-size:22px; color:var(--sub); padding:4px; }
-    .sheet-body { padding:0 22px 24px; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+    .sheet-body { flex:1 1 auto; min-height:0; padding:0 22px 24px; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
     .sheet-body { padding-bottom:calc(24px + env(safe-area-inset-bottom)); }
 
     /* 거래 유형 세그(지출/수입/이체) — 의미색 활성 */
