@@ -263,12 +263,11 @@
     if (!doc) return; var b = doc.querySelector('.brand .home-badge');
     if (b) b.hidden = !homeBadgeShow(view, total);
   }
-  // 무료 응원 선물 풀(현 경제 기반): 대부분 저가 소비템, 가끔 은화, 드물게 금화 1. 가중치 합 100.
+  // 무료 응원 선물 풀(현 경제 기반): 대부분 저가 소비템, 가끔 은화. 금화는 제외(크로스유저 통화 민팅 방지). 가중치 합 100.
   var FREE_GIFT_TABLE = [
-    { type: 'consum', key: 'food',  qty: 2,  w: 34 },
-    { type: 'consum', key: 'water', qty: 2,  w: 34 },
-    { type: 'coins',              qty: 10, w: 25 },
-    { type: 'gold',               qty: 1,  w: 7  }
+    { type: 'consum', key: 'food',  qty: 2,  w: 35 },
+    { type: 'consum', key: 'water', qty: 2,  w: 35 },
+    { type: 'coins',              qty: 10, w: 30 }
   ];
   // rand∈[0,1) 로 가중 선택 → 선물 1개 {type,key?,qty}. 순수(테스트 대상). 범위 밖이면 마지막 항목.
   function rollFreeGift(rand) {

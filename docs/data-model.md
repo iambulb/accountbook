@@ -15,7 +15,7 @@ users/{uid}            : { name, email, photo(프로필 사진 base64 data URL),
                            friends:{ {friendUid}:{ name, at } },   // 상호 친구(수락 시 양쪽 기록)
                            friendReqs:{ {fromUid}:{ name, at } },  // 받은 친구 요청(수락 시 삭제)
                            homeLikes:{ {visitorUid}:{ n, last:"YYYY-MM-DD" } },  // ❤️ 내 집(펫캠)에 받은 좋아요 — 방문자별 누적 n + 마지막 날짜(하루 1회). 총 좋아요=Σn. 쓰기=방문자 자신($visitor)만(규칙)
-                           mailbox:{ {senderUid}:{ {giftId}:{ type:'consum'|'coins'|'gold', key?, qty, from, fromName, at } } },  // 🎁 친구가 보낸 선물함(크로스유저). 쓰기=친구인 발신자만+엔트리 validate 상한(gold=1·coins≤10·consum≤3·key∈{egg,water,food}), 읽기=수령자 본인. 받기(claimMailGift)=자기 game에 반영 후 삭제. 펫알 선물(consum egg)은 은화100 지불·무료 응원선물은 rollFreeGift 랜덤
+                           mailbox:{ {senderUid}:{ {giftId}:{ type:'consum'|'coins', key?, qty, from, fromName, at } } },  // 🎁 친구가 보낸 선물함(크로스유저). 쓰기=친구인 발신자만+엔트리 validate 상한(coins≤10·consum≤3·key∈{egg,water,food}, **금화 타입 차단**), 읽기=수령자 본인. 받기(claimMailGift)=자기 game에 반영 후 삭제. 펫알 선물(consum egg)은 은화100 지불·무료 응원선물은 rollFreeGift 랜덤(물/사료/은화, 금화 제외)
                            game:{ 🐱 고양이집(개인 전역, 워크스페이스 무관)
                              coins,                                  // 은화 잔액(정수)
                              gold,                                   // 금화(뽑기 오픈 +1 · 주간미션·업적·로그인 스트릭 마일스톤에서도 지급)
