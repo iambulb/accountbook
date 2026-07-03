@@ -25,8 +25,9 @@
       profilePublic:true,   // 내 프로필 공개 여부(비공개면 랭킹·비친구에게 은화+'알뜰' 익명)
       friendTodosByUid:{}, _feedFriend:null,   // 공개 친구별 개인 할일(피드) / '친구들' 피드에서 선택한 친구(null=전체)
       friendTodos:[], _friendTodosUid:null,   // 현재 열람 중인 친구의 개인 할일(임시 리스너)
-      _todoScope: (localStorage.getItem('todoScope')==='group' ? 'group' : 'personal'),   // 할일 세그먼트: 개인/그룹(친구들)
-      _todoFriend: null   // 개인 탭에서 보고 있는 친구 uid(null/내 uid=나)
+      _todoFeed: false,   // 개인 프로필 할일에서 '친구들' 피드 보기(그룹 컨텍스트에선 미사용). 스코프(개인/그룹)는 현재 컨텍스트로 결정.
+      recentWs: (function(){ let l=null,t=null; try{ l=localStorage.getItem('recentWs_ledger')||null; t=localStorage.getItem('recentWs_todo')||null; }catch(e){} return { ledger:l, todo:t }; })(),   // 모드별(가계부/할일) 최근 컨텍스트 wsId — 토글해도 각자 마지막 그룹/개인프로필 유지
+      _todoFriend: null   // 개인 프로필에서 보고 있는 친구 uid(null/내 uid=나)
     };
     let listenersAttached = false;
     let seededAcc = false, seededCat = false, booted = false, migratedAcc = false, migratedCat = false, migratedBudget = false, migratedRec = false;
@@ -365,11 +366,18 @@
         ensureFriendCode().catch(e=>console.warn('friendCode', e));   // 내 친구 코드 보장
         await migrateLegacyIfNeeded();
         await loadMyWorkspaces();
-        if(!state.memberships.length){ await createPersonalWorkspace(true); await loadMyWorkspaces(); }
+        // 개인 프로필(=예약 워크스페이스 ws_{uid})은 항상 존재하도록 보장 — 그룹전환에서 '개인 프로필'로 선택 가능
+        if(!(state.memberships||[]).some(w=>w.id==='ws_'+state.uid)){ await createPersonalWorkspace(true); await loadMyWorkspaces(); }
         try{ await migratePersonalTodos(); }catch(e){ console.warn('personal todo migrate', e); }   // 개인 할일 ws→user 1회 이전
-        let active=u.activeWs;
-        if(!active || !state.memberships.some(w=>w.id===active)) active=state.memberships[0].id;
-        await switchWorkspace(active, true);
+        // 모드별(가계부/할일) 최근 컨텍스트 로드(크로스 디바이스) + 기본값 시드
+        try{ const rw=(await db.ref('users/'+state.uid+'/recentWs').once('value')).val()||{};
+          if(rw.ledger) state.recentWs.ledger=rw.ledger; if(rw.todo) state.recentWs.todo=rw.todo; }catch(e){}
+        const personalId='ws_'+state.uid;
+        const validWs=id=>!!id && state.memberships.some(w=>w.id===id);
+        if(!validWs(state.recentWs.todo)) state.recentWs.todo=personalId;   // 할일 기본=개인 프로필
+        if(!validWs(state.recentWs.ledger)) state.recentWs.ledger=(validWs(u.activeWs)?u.activeWs:null) || ((state.memberships.find(w=>w.type==='group')||state.memberships[0]||{id:personalId}).id);   // 가계부 기본=최근 활성/첫 그룹
+        const target=validWs(state.recentWs[state.mode])?state.recentWs[state.mode]:personalId;
+        await switchWorkspace(target, true);
         try{ initDock(); initCatGame(); setTimeout(autoClaimAttend, 800); }catch(e){ console.warn('cat game init', e); }   // 🐱 은화·고양이 dock
         if(justSignedUp){ justSignedUp=false; try{ if(typeof grantWelcomeGift==='function') setTimeout(grantWelcomeGift, 900); }catch(e){ console.warn('welcome gift', e); } }   // 🎉 신규 가입 축하 선물(멱등)
         try{ if(typeof maybeOnboard==='function') setTimeout(maybeOnboard, 1300); }catch(e){}   // 🧭 첫 사용자 온보딩(users/{uid}/onboarded 1회)
@@ -488,11 +496,11 @@
       const wsId='ws_'+state.uid;
       const now=new Date().toISOString();
       const upd={};
-      upd['workspaces/'+wsId]={ name:'내 가계부', type:'personal', ownerUid:state.uid, createdAt:now,
+      upd['workspaces/'+wsId]={ name:'개인 프로필', type:'personal', ownerUid:state.uid, createdAt:now,
         members:{ [state.uid]:{ name:state.userName, role:'owner', joinedAt:now } } };
       upd['users/'+state.uid+'/ws/'+wsId]=true;
       await db.ref().update(upd);
-      if(!silent) toast('개인 가계부를 만들었어요');
+      if(!silent) toast('개인 프로필을 준비했어요');
       return wsId;
     }
 
@@ -559,12 +567,15 @@
       detachListeners();
       resetWorkspaceState();
       state.wsId=wsId; state.wsMeta=meta;
+      state._todoFeed=false; if(typeof clearFriendView==='function') clearFriendView();   // 컨텍스트 바뀌면 할일 '친구들' 피드/친구 열람 초기화
+      // 현재 모드(가계부/할일)의 '최근 컨텍스트'로 기억 → 모드 토글 시 각자 마지막 그룹/개인프로필 복원
+      if(state.mode){ state.recentWs[state.mode]=wsId; try{ localStorage.setItem('recentWs_'+state.mode, wsId); }catch(e){} db.ref('users/'+state.uid+'/recentWs/'+state.mode).set(wsId).catch(()=>{}); }
       await db.ref('users/'+state.uid+'/activeWs').set(wsId);
       setupListeners();
       updateWorkspaceChip();
       applyMode();   // 저장된 모드(가계부/할일)에 맞춰 탭바+토글+화면 세팅
       loadMemberPhotos();   // 멤버 프로필 사진 캐시 채우기(비동기, 끝나면 rerender)
-      if(!initial) toast((meta.name||'가계부')+'(으)로 전환했어요');
+      if(!initial) toast((meta.type==='personal'?'개인 프로필':(meta.name||'가계부'))+'(으)로 전환했어요');
     }
     // 현재 워크스페이스 멤버들의 프로필 사진을 users/{uid}/photo 에서 읽어 캐시
     async function loadMemberPhotos(){
@@ -613,11 +624,14 @@
 
     function updateWorkspaceChip(){
       const el=$('wsChip'); if(!el||!state.wsMeta) return;
-      // 현재 그룹/가계부 프로필: 사진 있으면 사진, 없으면 이름 이니셜 아바타(점 대신)
-      const badge = (typeof wsAvatarHtml==='function')
-        ? wsAvatarHtml(state.wsMeta.name, state.wsMeta.photo, 20)
-        : (state.wsMeta.photo ? '<img src="'+state.wsMeta.photo+'" alt="" style="width:20px;height:20px;border-radius:50%;object-fit:cover;flex:none;">' : '<span class="dotk"></span>');
-      el.innerHTML = badge+escapeHtml(state.wsMeta.name||'가계부');
+      const personal = state.wsMeta.type==='personal';
+      // 개인 프로필=내 아바타+'개인 프로필'. 그룹=그룹 사진/이니셜+그룹명.
+      const badge = personal
+        ? (typeof avatarHtml==='function' ? avatarHtml(state.uid, state.userName||'', 20) : '<span class="dotk"></span>')
+        : ((typeof wsAvatarHtml==='function')
+            ? wsAvatarHtml(state.wsMeta.name, state.wsMeta.photo, 20)
+            : (state.wsMeta.photo ? '<img src="'+state.wsMeta.photo+'" alt="" style="width:20px;height:20px;border-radius:50%;object-fit:cover;flex:none;">' : '<span class="dotk"></span>'));
+      el.innerHTML = badge+escapeHtml(personal ? '개인 프로필' : (state.wsMeta.name||'가계부'));
     }
 
     function isGroupWs(){ return state.wsMeta && state.wsMeta.type==='group'; }
@@ -1201,13 +1215,23 @@
     function updateModeToggle(){ const seg=$('modeSeg'); if(seg) Array.prototype.forEach.call(seg.children,function(b){ b.classList.toggle('on', b.dataset.mode===state.mode); }); }
     function applyMode(){ renderTabBar(); updateModeToggle();
       if(state.view==='home') goHome();                          // 부팅/전환 시 홈 유지
-      else go(state.mode==='todo'?'todo':'calendar'); }
+      else { const set=_TABSETS[state.mode==='todo'?'todo':'ledger']; const ok=set.some(function(it){ return it!=='fab' && it[0]===state.tab; });
+        go(ok?state.tab:(state.mode==='todo'?'todo':'calendar')); } }   // 현재 탭이 이 모드에 있으면 유지(컨텍스트 전환 시 자리 보존), 없으면 모드 기본
     function setMode(m){ m=(m==='todo')?'todo':'ledger';
       // 토글 시 같은 메뉴 위치 유지: 현재 탭의 인덱스를 반대 모드 탭바의 같은 자리로 매핑(더보기↔더보기 등)
       const prevSet=_TABSETS[state.mode==='todo'?'todo':'ledger'];
       const idx=prevSet.findIndex(function(it){ return it!=='fab' && it[0]===state.tab; });
-      state.mode=m; try{ localStorage.setItem('mode',m); }catch(e){}
-      state.view='mode'; try{ localStorage.setItem('view','mode'); }catch(e){}   // 모드 토글 = 모드 화면 진입
       const nextSet=_TABSETS[m], cell=(idx>=0 && nextSet[idx] && nextSet[idx]!=='fab') ? nextSet[idx] : null;
       const target=cell?cell[0]:(m==='todo'?'todo':'calendar');   // 같은 위치 탭(없으면 모드 기본)
-      renderTabBar(); updateModeToggle(); go(target); }
+      state.mode=m; try{ localStorage.setItem('mode',m); }catch(e){}
+      state.view='mode'; try{ localStorage.setItem('view','mode'); }catch(e){}   // 모드 토글 = 모드 화면 진입
+      state.tab=target;
+      // 이 모드의 '최근 컨텍스트'가 현재와 다르면 그 그룹/개인프로필로 전환(가계부·할일 각자 마지막 사용처 유지 — 매번 그룹전환 안 해도 됨)
+      const want=state.recentWs && state.recentWs[m];
+      if(want && want!==state.wsId && (state.memberships||[]).some(function(w){ return w.id===want; })){
+        renderTabBar(); updateModeToggle();   // 토글 피드백 즉시(컨텍스트 로딩은 뒤이어)
+        switchWorkspace(want);                // 내부 applyMode()가 state.tab(=target) 유지하며 렌더
+      } else {
+        renderTabBar(); updateModeToggle(); go(target);
+      }
+    }

@@ -615,17 +615,21 @@
     // 할일 쓰기 경로: 개인=users/{uid}/todos, 그룹=ws/{wsId}/todos
     function todoDbRef(t){ return todoScope(t)==='personal' ? db.ref('users/'+state.uid+'/todos/'+t.id) : db.ref(wp('todos/'+t.id)); }
     // 현재 세그먼트(개인/그룹) + 보는 대상에 해당하는 할일만
+    // 할일 스코프는 현재 컨텍스트(그룹전환)로 결정: 개인 프로필=내 할일(user-global), 그룹=그룹 할일.
     function scopedTodos(){
-      if(state._todoScope==='group') return (state.todos||[]).filter(t=>todoScope(t)==='group');
-      // 개인: 내 것(myTodos·user-global) 또는 친구 열람(friendTodos·읽기전용)
+      if(!isPersonalWs()) return (state.todos||[]).filter(t=>todoScope(t)==='group');   // 그룹 컨텍스트=그룹 할일
+      // 개인 프로필: 내 것(myTodos·user-global) 또는 친구 열람(friendTodos·읽기전용)
       return (state._todoFriend && state._todoFriend!==state.uid) ? (state.friendTodos||[]) : (state.myTodos||[]);
     }
-    function setTodoScope(s){ state._todoScope=(s==='group'?'group':'personal'); clearFriendView(); _todoFilter='all'; try{localStorage.setItem('todoScope',state._todoScope);}catch(e){} rerender(); }
+    // 개인 프로필 할일에서 '내 할일 ↔ 친구들 피드' 토글(그룹 컨텍스트엔 세그먼트 없음)
+    function setTodoFeed(on){ state._todoFeed=!!on; if(!on) clearFriendView(); _todoFilter='all'; rerender(); }
     function isPersonalWs(){ return ((state.wsMeta&&state.wsMeta.type)||'')==='personal'; }
-    function todoScopeSeg(){ const g=state._todoScope==='group'; const second=isPersonalWs()?'친구들':'그룹';
-      return '<div class="seg todoseg"><button class="'+(g?'':'on')+'" onclick="setTodoScope(\'personal\')">개인</button><button class="'+(g?'on':'')+'" onclick="setTodoScope(\'group\')">'+second+'</button></div>'; }
-    // 개인 탭에서 친구를 보고 있는지 = 읽기전용
-    function todoReadOnly(){ return state._todoScope==='personal' && !!state._todoFriend && state._todoFriend!==state.uid; }
+    function todoScopeSeg(){
+      if(!isPersonalWs()) return '';   // 그룹 컨텍스트: 그룹 할일 전용(세그먼트 없음)
+      const f=!!state._todoFeed || (!!state._todoFriend && state._todoFriend!==state.uid);
+      return '<div class="seg todoseg"><button class="'+(f?'':'on')+'" onclick="setTodoFeed(false)">내 할일</button><button class="'+(f?'on':'')+'" onclick="setTodoFeed(true)">친구들</button></div>'; }
+    // 개인 프로필에서 친구를 보고 있는지 = 읽기전용
+    function todoReadOnly(){ return isPersonalWs() && !!state._todoFriend && state._todoFriend!==state.uid; }
     function setTodoFriend(uid){ if(!uid||uid===state.uid){ clearFriendView(); renderTodoList(); } else { viewFriendTodos(uid); } }
     // 현재 열람 중인 친구 할일 리스너 해제 + 내 목록 복귀
     function clearFriendView(){ if(state._friendTodosRef){ try{ state._friendTodosRef.off(); }catch(e){} state._friendTodosRef=null; } state._todoFriend=null; state._friendTodosUid=null; state.friendTodos=[]; }
@@ -688,10 +692,9 @@
     function viewFriendTodos(uid){
       db.ref('users/'+uid+'/todoPublic').once('value').then(function(s){
         if(!s.val()){ toast('아직 할일을 공개하지 않은 친구예요', true); return; }
-        clearFriendView(); state._todoScope='personal'; state._todoFriend=uid; state._friendTodosUid=uid;
+        clearFriendView(); state._todoFeed=true; state._todoFriend=uid; state._friendTodosUid=uid;
         const ref=db.ref('users/'+uid+'/todos'); state._friendTodosRef=ref;
         ref.on('value', function(s2){ const o=s2.val()||{}; state.friendTodos=Object.keys(o).map(function(k){ return Object.assign({id:k,scope:'personal',ownerUid:uid},o[k]); }); rerender(); });
-        try{ localStorage.setItem('todoScope','personal'); }catch(e){}
         if(typeof go==='function') go('todo'); else rerender();
       });
     }
@@ -947,11 +950,11 @@
         todoDueBadge(t)+who+'</div>';
     }
     function renderTodoList(){
-      // 개인 워크스페이스의 둘째 탭(친구들) = 친구 피드(아바타 정렬·오늘 무지개·친구 할일 목록)
-      if(state._todoScope==='group' && isPersonalWs()) return renderFriendsFeed();
+      // 개인 프로필의 '친구들' = 친구 피드(아바타 정렬·오늘 무지개·친구 할일 목록). 단, 특정 친구를 열람 중이면 그 친구 목록을 보여줌(아래로 진행).
+      if(isPersonalWs() && state._todoFeed && !(state._todoFriend && state._todoFriend!==state.uid)) return renderFriendsFeed();
       const meUid=state.uid; const today=ymd(new Date());
       const we=new Date(); we.setDate(we.getDate()+7); const weekEnd=ymd(we);
-      const isGroup=state._todoScope==='group';
+      const isGroup=!isPersonalWs();
       if(!isGroup && _todoFilter==='mine') _todoFilter='all';   // 개인 탭엔 '내 담당' 필터 없음
       const base=scopedTodos();
       let open=base.filter(t=>!t.done);
@@ -1015,7 +1018,7 @@
       if(!id) state._todoFriend=null;   // 새 할일은 항상 내 목록으로(친구 읽기전용 뷰였어도)
       const t=id?allTodos().find(x=>x.id===id):null;
       // 스코프: 편집=기존 할일 값, 신규=현재 세그먼트. 개인은 담당자 없음(소유자=나), 그룹은 담당배정.
-      const scope=t?todoScope(t):(state._todoScope==='group'?'group':'personal');
+      const scope=t?todoScope(t):(isPersonalWs()?'personal':'group');
       const asel=t?(t.assignedUid||'공동'):(state.uid||'공동');
       const rep=t?(t.repeat||'none'):'none';
       const pbSel=t?(t.purposeBookId||''):(presetPb||'');
@@ -1389,18 +1392,32 @@
 
     // ===== 워크스페이스(가계부/그룹) 관리 UI =====
     function openWorkspaceSheet(){
-      const cur=state.wsId;
-      let h='<p class="muted" style="font-size:13px;margin:2px 2px 12px;">개인 가계부와 그룹을 분리해서 쓸 수 있어요. 그룹은 코드로 친구와 함께 사용합니다.</p>';
+      const cur=state.wsId; const personalId='ws_'+state.uid;
+      let h='<p class="muted" style="font-size:13px;margin:2px 2px 12px;">나만의 <b>개인 프로필</b>과 <b>그룹</b>을 오가며 써요. 가계부와 할일은 <b>각각 마지막에 쓴 곳</b>을 따로 기억해, 모드를 토글해도 그 그룹/개인 프로필로 바로 이어집니다.</p>';
+      // 개인 프로필(항상 존재하는 예약 컨텍스트) — 내 아바타로 표시
+      const onP=cur===personalId;
+      h+='<div class="menu-group-title">개인</div>';
+      h+='<div class="ws-item'+(onP?' on':'')+'">'+
+          '<span class="ws-ic">'+avatarHtml(state.uid, state.userName||'', 44)+'</span>'+
+          '<div style="flex:1;min-width:0;" onclick="chooseWorkspace(\''+personalId+'\')">'+
+            '<div class="ws-name"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">개인 프로필</span></div>'+
+            '<div class="ws-meta">나만 보는 가계부 · 할일</div>'+
+          '</div>'+
+          (onP?'<span class="ws-ck">'+svgWrap(CAT_SVG.check)+'</span>':'')+
+        '</div>';
+      // 그룹(코드로 함께 쓰는 워크스페이스만)
+      const groups=(state.memberships||[]).filter(w=>w.type==='group');
       h+='<div class="menu-group-title">내 그룹</div>';
-      (state.memberships||[]).forEach(w=>{
-        const on=w.id===cur, isGroup=w.type==='group', memCount=Object.keys(w.members||{}).length;
+      if(!groups.length) h+='<p class="muted" style="font-size:12.5px;margin:2px 2px 6px;">아직 그룹이 없어요. 그룹을 만들거나 코드로 참여해 보세요.</p>';
+      groups.forEach(w=>{
+        const on=w.id===cur, memCount=Object.keys(w.members||{}).length;
         h+='<div class="ws-item'+(on?' on':'')+'">'+
             '<span class="ws-ic">'+wsAvatarHtml(w.name, w.photo, 44)+'</span>'+
             '<div style="flex:1;min-width:0;" onclick="chooseWorkspace(\''+w.id+'\')">'+
-              '<div class="ws-name" style="display:flex;align-items:center;gap:8px;"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(w.name||'가계부')+'</span>'+(isGroup?memberAvatarStack(w,20):'')+'</div>'+
-              '<div class="ws-meta">'+(isGroup?('그룹 · 멤버 '+memCount+'명'):'개인 전용')+'</div>'+
+              '<div class="ws-name" style="display:flex;align-items:center;gap:8px;"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(w.name||'가계부')+'</span>'+memberAvatarStack(w,20)+'</div>'+
+              '<div class="ws-meta">그룹 · 멤버 '+memCount+'명</div>'+
             '</div>'+
-            (isGroup?'<button class="btn sm ghost" onclick="openGroupManageSheet(\''+w.id+'\')">관리</button>':'')+
+            '<button class="btn sm ghost" onclick="openGroupManageSheet(\''+w.id+'\')">관리</button>'+
             (on?'<span class="ws-ck">'+svgWrap(CAT_SVG.check)+'</span>':'')+
           '</div>';
       });
@@ -1408,12 +1425,9 @@
           '<button class="btn" onclick="openCreateGroupSheet()">+ 그룹 만들기</button>'+
           '<button class="btn ghost" onclick="openJoinGroupSheet()">코드로 참여</button>'+
          '</div>';
-      if(!(state.memberships||[]).some(w=>w.type==='personal'))
-        h+='<button class="btn ghost" style="margin-top:10px;" onclick="addPersonalWorkspace()">+ 개인 가계부 만들기</button>';
       openSheet('그룹 전환', h);
     }
     function chooseWorkspace(id){ closeSheet(); if(id!==state.wsId) switchWorkspace(id); }
-    async function addPersonalWorkspace(){ closeSheet(); await createPersonalWorkspace(); await loadMyWorkspaces(); const p=state.memberships.find(w=>w.type==='personal'); if(p) switchWorkspace(p.id); }
     function openCreateGroupSheet(){
       openSheet('그룹 만들기',
         '<div class="field"><label>그룹 이름</label><input class="input" id="grpName" placeholder="예: 우리집 가계부"></div>'+

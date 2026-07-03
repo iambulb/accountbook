@@ -6,13 +6,13 @@
 
 ## 진입 / 화면 구성
 
-- **모드 토글**(상단바): `[가계부 | 할일]` 세그먼트(`setMode`). 선택은 `localStorage('mode')` 로 유지되고, 전환 시 하단 탭바(`renderTabBar`)와 본문(`rerender`)이 모드에 맞게 바뀝니다.
+- **모드 토글**(상단바): `[가계부 | 할일]` 세그먼트(`setMode`). 선택은 `localStorage('mode')` 로 유지되고, 전환 시 하단 탭바(`renderTabBar`)와 본문(`rerender`)이 모드에 맞게 바뀝니다. **모드별 최근 컨텍스트**(`recentWs.ledger`/`recentWs.todo`)를 따로 기억해, 토글하면 그 모드가 마지막에 쓰던 그룹/개인 프로필로 **자동 전환**(`switchWorkspace`) — 할일은 개인 프로필, 가계부는 그룹으로 두고 오갈 때 매번 그룹전환하지 않아도 됩니다.
 - **할일 모드 하단 탭**(`_TABSETS.todo`): **할일 · 캘린더 · ＋(추가) · 완료 · 더보기**. FAB(＋)는 `fabAdd()`가 모드 분기 → 할일 모드면 `openTodoEdit()`.
-- 모든 할일 화면 상단에는 **[개인 | 그룹] 세그먼트**(`todoScopeSeg`/`setTodoScope`)가 있어 두 축을 오갑니다. 둘째 탭 라벨은 **개인 워크스페이스에선 '친구들'**, 그룹 워크스페이스에선 '그룹'. 선택은 `localStorage('todoScope')` 로 유지. 개인 할일은 `users/{uid}/todos`(user-global), 그룹 할일은 `ws/{wsId}/todos`.
+- **할일 스코프는 현재 컨텍스트(그룹전환)가 결정**합니다(`isPersonalWs`): **개인 프로필=내 할일**(`users/{uid}/todos`, user-global), **그룹=그룹 할일**(`ws/{wsId}/todos`). 개인용으로 쓰려면 그룹전환에서 '개인 프로필'을 고르면 됩니다(별도 개인/그룹 세그먼트 없음). 개인 프로필일 때만 상단에 **[내 할일 | 친구들] 소셜 토글**(`todoScopeSeg`/`setTodoFeed`, `state._todoFeed`)이 떠 친구 피드를 봅니다.
 
 | 탭 | 화면 | 함수 |
 |---|---|---|
-| 할일 | [개인\|그룹/친구들] — 개인=내 할일, 친구들=친구 피드(`renderFriendsFeed`) | `renderTodoList` |
+| 할일 | 개인 프로필=[내 할일\|친구들](친구들=`renderFriendsFeed`), 그룹=그룹 할일 | `renderTodoList` |
 | 캘린더 | 스코프별 마감일 월 그리드(점/개수) + 그날 할일 | `renderTodoCalendar` |
 | ＋ | 할일 추가/수정 시트 | `openTodoEdit` |
 | 완료 | 스코프별 완료 이력(최신순) | `renderTodoDone` |
@@ -30,7 +30,7 @@
 
 - 각자 맡은 일을 **그룹 안에서 나눔**(여행: 렌터카·항공권·짐 담당, 집안일 분담 등). `ws/{wsId}/todos`, 워크스페이스 멤버 **공동 편집**.
 - 추가/수정 시트에 **담당자(멤버) 선택**(`ownerOptions`, uid 저장). `scope:'group'`, 담당은 `assignedUid`·`assignedName`. 목록 행에 **담당자 아바타**. 필터 칩: **전체 / 내 담당 / 오늘 / 이번주**.
-- 세그먼트 둘째 탭은 **그룹 워크스페이스에서만 '그룹'**. **개인 워크스페이스에선 '친구들'**(그룹 할일이 없으므로 **친구 피드**로 대체 — `isPersonalWs`).
+- **그룹 컨텍스트에선 상단 세그먼트가 없고 그룹 할일 전용**. 친구 피드(친구들)는 **개인 프로필 컨텍스트**에서만 [내 할일 | 친구들] 토글로 봅니다(`isPersonalWs`).
 
 ## 친구 (별도 추가) — 관리(더보기 공용) + '친구들' 피드
 

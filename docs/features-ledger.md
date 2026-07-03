@@ -51,10 +51,10 @@
 
 핵심 — 모든 가계부 데이터는 워크스페이스 단위로 격리됩니다. (공통 기반이라 [features.md](features.md#공통-기반)에도 요약)
 
-- **개인 가계부**: `type:'personal'`, 멤버 1명. 가입 시 자동 생성(`createPersonalWorkspace`).
+- **개인 프로필**: `type:'personal'`, 예약 워크스페이스 `ws_{uid}`(멤버 1명). 항상 존재하도록 자동 보장(`createPersonalWorkspace`, 없으면 로그인 시 생성). 그룹전환에서 **'개인 프로필'**(내 아바타·이름)로 선택 = 나만 보는 개인 가계부·할일. *구 "개인 전용 그룹"을 대체 — 기존 `ws_{uid}` 데이터는 그대로 개인 프로필 저장소로 재사용.*
 - **그룹**: `type:'group'` + **6자리 초대코드**. 코드를 아는 사람은 즉시 멤버로 합류(`joinByCode`). 그룹 안에서는 서로의 거래까지 공동으로 읽고 씁니다.
 - **멤버 역할**: owner(👑) / member(👤). 관리는 그룹 관리 시트(`openGroupManageSheet`).
-- **전환**: 상단 워크스페이스 칩 또는 더보기 → 가계부 전환(`switchWorkspace`).
+- **전환**: 상단 워크스페이스 칩 또는 더보기 → 그룹 전환(`switchWorkspace`, `openWorkspaceSheet`). **가계부·할일은 각각 최근 컨텍스트를 따로 기억**(`recentWs.ledger`/`recentWs.todo`) — 모드를 토글해도 각자 마지막 쓰던 그룹/개인 프로필로 바로 이어짐.
 - **나가기/정리**: 마지막 멤버가 나가면 워크스페이스·코드까지 삭제(`leaveWorkspace`).
 - **v2→v3 자동 이전**: 구버전 전역 데이터가 있으면 로그인 시 "공유 가계부" 그룹으로 1회 이전(`migrateLegacyIfNeeded`).
 
