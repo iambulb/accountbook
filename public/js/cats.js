@@ -798,16 +798,20 @@
     ];
     const GEAR_PAL={G:'#7c8698',H:'#aeb6c4',S:'#5f6875'};
     function gearSvg(opt){ return pxSvg(M_GEAR, GEAR_PAL, opt); }
-    // 👑 왕관(그룹 소유자) 픽셀 아트 — 세 뾰족 끝에 보석(B) 1개씩 + 하이라이트 밴드(H). C=금, D=진금, B=루비.
+    // 👑 왕관(그룹 소유자) 픽셀 아트 — 가운데 봉우리 높은 정석 왕관 + 세 끝에 컷팅 루비(L=하이라이트→R=진루비 facet) + 밴드 중앙 보석. C=금, H=금 하이라이트, D=진금 밴드.
     const M_CROWN = [
-      ".B...B...B.",
-      "CCC.CCC.CCC",
+      "....LLR....",
+      "....LRR....",
+      "LLR.RRR.LLR",
+      "LRR..R..LRR",
+      "RRR.CCC.RRR",
+      ".C.CCCCC.C.",
       "CCCCCCCCCCC",
-      "CHHHHHHHHHC",
+      "CHHHHRHHHHC",
       "CCCCCCCCCCC",
       "DDDDDDDDDDD"
     ];
-    const CROWN_PAL={C:'#F4D06B',H:'#ffe6a0',D:'#caa23a',B:'#e0556b'};
+    const CROWN_PAL={C:'#F4D06B',H:'#ffe6a0',D:'#caa23a',R:'#c22f47',L:'#ff8a9c'};
     function crownSvg(opt){ return pxSvg(M_CROWN, CROWN_PAL, opt); }
     // 🏆 트로피(랭킹) 픽셀 아트 — C=컵(금), H=하이라이트, D=진금(그림자·기둥·받침).
     const M_TROPHY = [
