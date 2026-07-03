@@ -2,7 +2,7 @@
 
 > 알뜰의 **두 모드 중 하나**입니다. 상단 **모드 토글(가계부 ↔ 할일)** 로 전환합니다. 전체 개요는 [features.md](features.md), 할일 모드는 [features-todo.md](features-todo.md), 데이터 구조는 [data-model.md](data-model.md), 함수 위치는 [code-structure.md](code-structure.md) 참고.
 
-개인·그룹이 함께 쓰는 공유 가계부. 거래 기록부터 카드 실적·예산·구독·목적별 가계부·정산·경조사비·대출까지 지출 관리를 한 곳에서 합니다. 모든 데이터는 워크스페이스(`ws/{wsId}`) 단위로 격리됩니다(→ 워크스페이스는 [features.md](features.md#공통-기반) 공통 기반 참고).
+개인·그룹이 함께 쓰는 공유 가계부. 거래 기록부터 카드 실적·예산·구독·목적별 가계부·정산·경조사비·대출까지 지출 관리를 한 곳에서 합니다. **그룹** 데이터는 워크스페이스(`ws/{wsId}`), **개인** 데이터는 프로필(`users/{uid}/ledger`) 단위로 격리됩니다(→ 컨텍스트는 [features.md](features.md#공통-기반) 공통 기반 참고).
 
 ## 화면 구성 — 하단 4탭 + 거래추가 FAB
 
@@ -47,14 +47,14 @@
 - **달력**(`renderCalendar`): 월 네비게이션 + 일별 수입/지출 색점 그리드(`calendarGridHtml`, 월요일 시작) + 선택일 거래(`selectDay`/`selectedDayHtml`). 그룹은 **멤버 칩 필터**(`memberChipRow`/`setMemberFilterByUid`)로 기록자별로 거름. "다가오는 반복결제" 표시.
 - **리포트**(`renderStats`): 월 요약·총지출·**CSS 도넛(카테고리)**·6개월 막대·**개인별/공동 지출 분리 바**(`t.user` 집계, `공동` 별도)·**통화별 지출**(해외통화 있을 때)·**전월비 급증 인사이트**·예산 임계 경고·목적별 사용 상위. *Chart.js 미사용 — 순수 CSS 차트.*
 
-## 워크스페이스 (개인 / 그룹 공유)
+## 컨텍스트 (개인 프로필 / 그룹 공유)
 
-핵심 — 모든 가계부 데이터는 워크스페이스 단위로 격리됩니다. (공통 기반이라 [features.md](features.md#공통-기반)에도 요약)
+핵심 — 그룹 데이터는 워크스페이스(`ws/{wsId}`), 개인 데이터는 프로필(`users/{uid}/ledger`) 단위로 격리됩니다. (공통 기반이라 [features.md](features.md#공통-기반)에도 요약)
 
-- **개인 가계부**: `type:'personal'`, 멤버 1명. 가입 시 자동 생성(`createPersonalWorkspace`).
-- **그룹**: `type:'group'` + **6자리 초대코드**. 코드를 아는 사람은 즉시 멤버로 합류(`joinByCode`). 그룹 안에서는 서로의 거래까지 공동으로 읽고 씁니다.
+- **개인 가계부**: 워크스페이스가 아니라 **내 프로필 기반**(`users/{uid}/ledger`, 소유자 전용). DB 워크스페이스 레코드 없이 `state.wsId='ws_'+uid` sentinel + 프로필에서 합성한 컨텍스트로 동작(`wp()`가 `users/{uid}/ledger`로 분기). 신규 사용자도 별도 생성 없이 바로 사용. (구 개인 워크스페이스 `ws_{uid}`는 로그인 시 `migratePersonalLedger`로 프로필에 이전 후 레코드 제거.)
+- **그룹**: `type:'group'` + **6자리 초대코드**. 코드를 아는 사람은 즉시 멤버로 합류(`joinByCode`). 그룹 안에서는 서로의 거래까지 공동으로 읽고 씁니다(`ws/{wsId}`).
 - **멤버 역할**: owner(👑) / member(👤). 관리는 그룹 관리 시트(`openGroupManageSheet`).
-- **전환**: 상단 워크스페이스 칩 또는 더보기 → 가계부 전환(`switchWorkspace`).
+- **전환**: 상단 컨텍스트 칩(그룹전환) 또는 더보기 → 전환(`switchWorkspace`). 목록은 [개인 프로필, 그룹들]이며 **가계부·할일이 각각 마지막 컨텍스트를 독립적으로 기억**.
 - **나가기/정리**: 마지막 멤버가 나가면 워크스페이스·코드까지 삭제(`leaveWorkspace`).
 - **v2→v3 자동 이전**: 구버전 전역 데이터가 있으면 로그인 시 "공유 가계부" 그룹으로 1회 이전(`migrateLegacyIfNeeded`).
 

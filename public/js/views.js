@@ -1405,9 +1405,11 @@
     // ===== 워크스페이스(가계부/그룹) 관리 UI =====
     function openWorkspaceSheet(){
       const cur=state.wsId, modeLbl=(state.mode==='todo'?'할일':'가계부');
-      let h='<p class="muted" style="font-size:13px;margin:2px 2px 12px;">지금 고르는 컨텍스트는 <b>'+modeLbl+'</b>에만 적용돼요 — 가계부와 할일은 각각 마지막 선택을 따로 기억해요. 개인 프로필과 그룹을 나눠 쓰고, 그룹은 코드로 친구와 함께 사용합니다.</p>';
+      let h='<p class="muted" style="font-size:13px;margin:2px 2px 12px;">지금 고르는 컨텍스트는 <b>'+modeLbl+'</b>에만 적용돼요 — 가계부와 할일은 각각 마지막 선택을 따로 기억해요. <b>개인은 내 프로필로</b>, 그룹은 초대 코드로 친구와 함께 씁니다.</p>';
       h+='<div class="menu-group-title">개인 · 그룹</div>';
-      (state.memberships||[]).forEach(w=>{
+      // 개인 프로필(합성 컨텍스트)을 맨 위에 주입 + 그룹 멤버십. 개인은 DB 워크스페이스가 아니라 프로필 기반.
+      const PERSONAL={ id:'ws_'+state.uid, type:'personal', name:state.userName };
+      [PERSONAL].concat(state.memberships||[]).forEach(w=>{
         const on=w.id===cur, isGroup=w.type==='group', isPers=w.type==='personal', memCount=Object.keys(w.members||{}).length;
         const nm=isPers?(state.userName||'개인'):(w.name||'가계부');
         const av=isPers?avatarHtml(state.uid, state.userName, 44):wsAvatarHtml(w.name, w.photo, 44);
@@ -1428,7 +1430,6 @@
       openSheet('그룹 전환', h);
     }
     function chooseWorkspace(id){ closeSheet(); if(id!==state.wsId) switchWorkspace(id); }
-    async function addPersonalWorkspace(){ closeSheet(); await createPersonalWorkspace(); await loadMyWorkspaces(); const p=state.memberships.find(w=>w.type==='personal'); if(p) switchWorkspace(p.id); }
     function openCreateGroupSheet(){
       openSheet('그룹 만들기',
         '<div class="field"><label>그룹 이름</label><input class="input" id="grpName" placeholder="예: 우리집 가계부"></div>'+

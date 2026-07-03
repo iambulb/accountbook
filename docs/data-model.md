@@ -1,12 +1,14 @@
 # 🗄️ 데이터 모델
 
-저장소는 **Firebase Realtime Database**(프로젝트 `money-bb658`, asia-southeast1). 모든 가계부 데이터는 워크스페이스(`ws/{wsId}`) 아래에 격리됩니다. 보안규칙 원본은 `database.rules.json`, 상세 설명은 [RULES.md](deploy/rules.md).
+저장소는 **Firebase Realtime Database**(프로젝트 `money-bb658`, asia-southeast1). **그룹** 가계부 데이터는 워크스페이스(`ws/{wsId}`) 아래에, **개인** 가계부 데이터는 프로필(`users/{uid}/ledger`) 아래에 격리됩니다(개인은 워크스페이스가 아니라 프로필 기반 합성 컨텍스트 — `wp()`/`wsRoot()`가 분기). 보안규칙 원본은 `database.rules.json`, 상세 설명은 [RULES.md](deploy/rules.md).
 
 ## RTDB 트리 구조
 
 ```
 users/{uid}            : { name, email, photo(프로필 사진 base64 data URL), createdAt, activeWs(가계부 모드 현재 컨텍스트 wsId), activeWsTodo(할일 모드 현재 컨텍스트 wsId — 가계부와 독립적으로 기억), welcomeGift(true=회원가입 축하선물 지급 완료·1회 멱등), profilePublic(기본 true·false면 랭킹·비친구에 은화+'알뜰' 익명), ws:{ {wsId}:true },
                            todos:{ {id}:{ title, note, dueDate, done, doneAt, repeat, purposeBookId?, rewardClaimed, sortOrder, createdAt, updatedAt } },  // ✅ 개인 할일(user-global — 워크스페이스 무관·항상 동일). 소유자=uid 암묵
+                           ledger:{ accounts, creditCards, categories, budgets, subscriptions, purposeBooks, people, giftEvents, plannedGiftEvents, loans, loanPayments, transactions/{uid}, savings/{uid}, recurring/{uid}, recurringLogs/{uid}, settlementPayments/{uid}, settings, catDeleted },  // 💰 개인 가계부(user-global). ws/{wsId}와 동일 노드 구조를 프로필 아래에 미러(개인=프로필 합성 컨텍스트). transactions 등 per-uid 하위는 단일 소유자
+                           ledgerMigrated: true,                   // 개인 가계부 ws_{uid}→users/{uid}/ledger 1회 이전 완료 플래그
                            onboarded: true,                        // 🧭 첫 사용자 온보딩 1회 표시 완료 플래그
                            push:{ token, at, ua },                 // 🔔 웹 푸시(FCM) 토큰 — 본인만 쓰기·발송기(admin)만 읽음. 알림 끄면 삭제. tools/send_reminders.mjs가 사용
                            todosMigrated: true,                    // 개인 할일 ws→user 1회 이전 완료 플래그
@@ -30,8 +32,8 @@ users/{uid}            : { name, email, photo(프로필 사진 base64 data URL),
                              codes:{ {code}:{at, n} },                // 사용한 프로모/치트 코드(일반 1회·개발자 무한). n=사용 횟수
                              mail:{ free:{ "YYYY-MM-DD":count }, freeTo:{ "YYYY-MM-DD":{ {uid}:1 } }, egg:{ "YYYY-MM-DD":count } }  // 🎁 친구 선물 발신 하루 횟수(kstDayKey). 무료 응원=**친구당 하루 1번**(freeTo) + **전체 하루 5번**(free), 펫알=전체 하루 5번(egg). 클라이언트 게이트
                            } }
-workspaces/{wsId}      : { name, photo(가계부 사진 base64 data URL, 선택), type:'personal'|'group', code(그룹), ownerUid, createdAt,
-                           members:{ {uid}:{ name, role:'owner'|'member', joinedAt } } }
+workspaces/{wsId}      : { name, photo(그룹 사진 base64 data URL, 선택), type:'group'('personal'은 폐지 — 개인은 프로필 합성 컨텍스트, DB 레코드 없음), code, ownerUid, createdAt,
+                           members:{ {uid}:{ name, role:'owner'|'member', joinedAt } } }   // 그룹만. 구 개인 ws_{uid} 레코드는 ledgerMigrated 시 제거
 codes/{CODE}           : wsId            // 그룹 6자리 코드 → 워크스페이스 조회 인덱스
 friendCodes/{CODE}      : uid            // 친구 6자리 코드 → 사용자 uid 조회 인덱스
 migrationV3            : { by, at }      // v2→v3 데이터 1회 이전 잠금 플래그
@@ -39,7 +41,7 @@ rankings/{uid}         : { name, likes, private, at }  // 🏆 공개 랭킹 경
 homeCam/{uid}          : { name, emoji, wallpaper, placed, active, slots, poops, changedAt }  // 🏠🔒 친구·랭킹에 공개하는 **대표 방(showRoom)** 스냅샷만. 소유자 game 변경 시 writeHomeCam이 갱신. 읽기=전체(친구 캠·스토리 변경시각), 쓰기=본인만. **users/{uid}/game(모든 방)은 소유자만 읽음** → 대표 방 외 다른 방은 실제로 비공개.
 catalogPets/{id}       : { name, species, speciesLabel?, tier, scale, frontWalk, hasArt?, deleted?, by, at }  // 🐯 런타임 펫/정적 오버라이드 **메타데이터**(앱에서 dev가 zip 업로드·수정·삭제 → 전역). 읽기=전체, 쓰기=개발자 이메일만(규칙). 앱 로드 시 PET_CATALOG/PET_SPRITES/CAT_TIER/SPECIES_LABEL에 병합. 신규 런타임 펫 또는 정적 펫 오버라이드(이름·등급·디자인·`deleted:true` 소프트삭제) 겸용. `hasArt:true`=이미지가 catalogPetArt에 있음(지연 로드). ※구 레코드는 `walk/south/…` 인라인 data URL을 가질 수 있음(하위호환) — `migrateCatalogArtOnce()`로 분리 이전
 catalogPetArt/{id}     : { walk, south, north, east, west(=data URL PNG) }  // 🖼️ 런타임 펫 스프라이트(base64) — 메타와 분리 저장. 앱 시작 땐 안 받고, 실제로 보이는 펫만 `ensurePetArt()`가 `.once`로 1회 받아 세션 캐시(초기 로딩/재푸시 부담↓). 읽기=전체, 쓰기=개발자 이메일만
-ws/{wsId}/             : 가계부 데이터 (아래 노드들)
+ws/{wsId}/             : 그룹 가계부 데이터 (아래 노드들). 개인은 동일 구조를 users/{uid}/ledger/ 아래에 미러
   ├─ accounts/{id}
   ├─ creditCards/{id}
   ├─ categories/{name}
@@ -167,14 +169,19 @@ erDiagram
 | 경로 | read | write |
 |---|---|---|
 | `users/{uid}` | 로그인(전역) | 본인 uid 만 |
+| `users/{uid}/ledger/**` | **본인만**(개인 가계부) | **본인만** — 소유자 전용, 공개 override 없음 |
 | `users/{uid}/friends/{fid}`·`friendReqs/{fid}` | 로그인 | **당사자 두 명만**($uid 또는 $fid) — 친구 요청/수락 |
 | `codes/*`·`friendCodes/*` | 로그인 | 로그인(코드 등록/조회) |
 | `workspaces/{wsId}` | 로그인 | 멤버 또는 **본인을 멤버로 추가(셀프 합류)** 시 |
-| `ws/{wsId}/**` | 그 워크스페이스 **멤버만** | 그 워크스페이스 **멤버만** |
+| `ws/{wsId}/**` | 그 **그룹** 워크스페이스 **멤버만** | 그 **그룹** 워크스페이스 **멤버만** |
 | 레거시 루트(`accounts` 등) | 로그인 | 로그인 — 이전용 백업 |
 
-**신뢰 모델**: 격리 단위는 워크스페이스. 비멤버는 `ws/{wsId}` 를 읽거나 쓸 수 없습니다. 그룹 내부는 공동 권한(멤버끼리 서로의 거래까지 read/write). `private` 등 세부 공개 제한은 **앱 UI**가 담당합니다(DB 규칙은 자식별 read 필터 불가). 전체 설명·테스트 케이스는 [RULES.md](deploy/rules.md).
+**신뢰 모델**: 그룹 격리 단위는 워크스페이스(비멤버는 `ws/{wsId}` 접근 불가, 멤버끼리는 공동 read/write). **개인 가계부는 `users/{uid}/ledger`로 소유자 전용**(타인이 읽은 적 없어 이전이 안전 — 공개 override를 절대 두지 않는다). `private` 등 세부 공개 제한은 **앱 UI**가 담당합니다(DB 규칙은 자식별 read 필터 불가). 전체 설명·테스트 케이스는 [RULES.md](deploy/rules.md).
 
 ## v2 → v3 마이그레이션
 
 구버전은 전역 단일 트리(`accounts` 등 루트)에 데이터를 두었습니다. v3는 워크스페이스 모델로 바뀌어, 로그인 시 `migrateLegacyIfNeeded()` 가 **"공유 가계부" 그룹**을 만들고 기존 모든 사용자를 멤버로 넣은 뒤 데이터를 `ws/{wsId}` 아래로 복사합니다. `migrationV3` 플래그로 1회만 실행되며, 원본 루트 데이터는 백업으로 남습니다.
+
+## 개인 가계부 → 프로필 이전 (개인 ws 폐지)
+
+개인 전용 워크스페이스(`ws_{uid}`)를 없애고 개인 가계부를 프로필로 옮겼습니다. 로그인 시 `migratePersonalLedger()`(멱등 플래그 `users/{uid}/ledgerMigrated`)가 **단일 원자적 fan-out**으로 `ws/ws_{uid}/{node}` → `users/{uid}/ledger/{node}` 복사, `workspaces/ws_{uid}`·`users/{uid}/ws/ws_{uid}` 인덱스 제거, 플래그 설정을 한 번에 처리합니다(개인 할일은 이미 `users/{uid}/todos`라 제외). **원본 `ws/ws_{uid}` 데이터는 콜드 백업으로 남깁니다**(규칙상 클라이언트 접근 불가 — 레코드 제거로 멤버십 없음, 안정화 후 별도 정리). 개인 컨텍스트는 이후 `state.wsId='ws_'+uid` sentinel + 프로필에서 합성한 `wsMeta`로 표현되며 `wp()`가 `users/{uid}/ledger`로 분기합니다. 규칙 변경은 없습니다(`users/{uid}` 소유자 규칙이 `ledger/**` 커버).

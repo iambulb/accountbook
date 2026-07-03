@@ -41,10 +41,10 @@ firebase.js → constants.js → util.js → core.js → views.js → cats.js �
 | 영역 | 핵심 함수/객체 |
 |---|---|
 | 상태 | `state`(uid·wsId·각 데이터 배열·UI 상태), `sheetTx`/`sheetType`/`sheetCat`(시트 임시 상태) |
-| 헬퍼 | `won`·`fmtComma`·`parseAmount`·`escapeHtml`·`ymd`·`monthStr`·`$`, 워크스페이스 경로 `wsRoot()`·`wp(path)` |
+| 헬퍼 | `won`·`fmtComma`·`parseAmount`·`escapeHtml`·`ymd`·`monthStr`·`$`, 컨텍스트 경로 `wsRoot()`·`wp(path)`·`isPersonalCtx()`(개인=`users/{uid}/ledger`, 그룹=`ws/{wsId}`로 분기) |
 | 테마 | `applyTheme`, `toggleTheme` |
 | 인증 | `setAuthMode`·`signup`·`login`·`logout`, `auth.onAuthStateChanged` |
-| 워크스페이스 | `enterApp`·`loadMyWorkspaces`·`createPersonalWorkspace`·`createGroupWorkspace`·`joinByCode`·`leaveWorkspace`·`switchWorkspace`·`resetWorkspaceState`·`updateWorkspaceChip`·`ownerOptions` |
+| 컨텍스트 | `enterApp`·`loadMyWorkspaces`(그룹만)·`createGroupWorkspace`·`joinByCode`·`leaveWorkspace`·`switchWorkspace`(개인 sentinel=프로필 합성 meta)·`migratePersonalLedger`(개인 ws→`users/{uid}/ledger` 1회 이전)·`restoreModeCtx`(모드별 컨텍스트)·`resetWorkspaceState`·`updateWorkspaceChip`·`ctxName`/`ctxPhoto`·`ownerOptions` |
 | 권한/공동 | `isWsOwner`·`defaultVisibility`·`defaultOwnerName`·`defaultOwnerUid`·`saveWsSettings`, 소유자 동작 `renameWorkspace`·`transferOwnership`·`removeMember` (core). 항목별 공개범위/소유자는 각 생성 폼의 셀렉트가 위 기본값을 사용. *(제거됨: 별도 '권한·공동 설정' 화면 `openSharedSettings`·`collectPrivateItems`·`makeItemPublic`·`makeAllPublic` — 중복·저가치)* |
 | 인증(계정) | `signup`·`login`·`logout`·`beforeAuth`·`authOptGet`/`authOptSet`/`toggleAuthOpt`·`changePassword`(현재 비번 재인증→`updatePassword`)·`openLoginHelpSheet`/`sendPasswordReset`(`sendPasswordResetEmail`) (core); `openPasswordChangeSheet` (views) |
 | 개발자 모드 | `isDev`·`devOn`·`toggleDevMode`·`devCfg`/`saveDevCfg`·`openDevGacha`·`openDevPetManager`(펫 추가/수정/삭제 `submitDevPet`·`deletePetSoft`)·`migrateCatalogArtOnce`(구 인라인 아트 분리 이전)·`exportPetStatic`(런타임→정적 승격 내보내기) (cats); 진입 `openDevModeSheet`(views, 더보기 그리드 무지개알 타일) |
@@ -54,7 +54,7 @@ firebase.js → constants.js → util.js → core.js → views.js → cats.js �
 | 실제소비/정산 | `isActual`·`actualSpend`, **정산(Step 9)** `settlementSplit`·`greedySettle`·`pbSettleSummary`(순수 계산) |
 | 대출 계산 | `loanCalc`(잔액·이자·월예상이자)·`loanSummary`·`loanPaymentsOf`·`visibleLoans` |
 
-> **경로 헬퍼 `wp(path)`** 가 핵심입니다 — `wp('transactions')` → `ws/{현재wsId}/transactions`. RTDB에 접근할 때는 항상 `wp()` 로 현재 워크스페이스에 네임스페이스를 거는 것이 규칙입니다.
+> **경로 헬퍼 `wp(path)`** 가 핵심입니다 — 그룹이면 `wp('transactions')` → `ws/{wsId}/transactions`, **개인이면** `users/{uid}/ledger/transactions`(`isPersonalCtx()` 분기). RTDB 가계부 접근은 항상 `wp()`/`wsRoot()`로 현재 컨텍스트에 네임스페이스를 거는 것이 규칙입니다.
 
 ## `views.js` — 화면·시트 함수 맵
 

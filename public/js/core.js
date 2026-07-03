@@ -64,9 +64,12 @@
     function val(id){ const el=document.getElementById(id); return el?el.value:''; }
     function $(id){ return document.getElementById(id); }
     // ===== 워크스페이스 경로 =====
-    // 모든 가계부 데이터는 ws/{wsId}/ 아래에 네임스페이스로 분리된다.
-    function wsRoot(){ return 'ws/'+state.wsId; }
-    function wp(path){ return 'ws/'+state.wsId+'/'+path; }
+    // 그룹 데이터는 ws/{wsId}/ 아래, 개인 데이터는 users/{uid}/ledger/ 아래에 네임스페이스로 분리된다.
+    // 개인 컨텍스트 sentinel = 'ws_'+uid (실제 workspaces 레코드는 없음 — 프로필에서 합성).
+    function personalCtxId(){ return 'ws_'+state.uid; }
+    function isPersonalCtx(){ return !!state.wsId && !!state.uid && state.wsId===personalCtxId(); }
+    function wsRoot(){ return isPersonalCtx() ? ('users/'+state.uid+'/ledger') : ('ws/'+state.wsId); }
+    function wp(path){ return wsRoot()+'/'+path; }
     function randCode(n){ const ch='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<(n||6);i++) s+=ch[Math.floor(Math.random()*ch.length)]; return s; }
     function budgetColor(p){ return p>=100?'var(--expense)':(p>=90?'#f76707':(p>=80?'#f5a623':'var(--primary)')); }
     function getCat(name){ return state.categories.find(c=>c.name===name); }
@@ -366,19 +369,18 @@
         initUserGraph();   // 개인 할일·친구(user-global) 상시 리스너 — 워크스페이스 무관
         ensureFriendCode().catch(e=>console.warn('friendCode', e));   // 내 친구 코드 보장
         await migrateLegacyIfNeeded();
-        await loadMyWorkspaces();
-        // 개인 프로필 컨텍스트는 항상 존재해야 함(레거시 그룹만 있던 사용자도 개인 ws 보장)
-        if(!state.memberships.some(w=>w.type==='personal')){ await createPersonalWorkspace(true); await loadMyWorkspaces(); }
+        await loadMyWorkspaces();   // 그룹 멤버십만(개인은 프로필 기반 합성 컨텍스트 — 아래)
         try{ await migratePersonalTodos(); }catch(e){ console.warn('personal todo migrate', e); }   // 개인 할일 ws→user 1회 이전
-        // 모드별 컨텍스트 복원(가계부=activeWs / 할일=activeWsTodo). 유효 멤버십만, 없으면 폴백.
-        const isMemb=id=>!!id && state.memberships.some(w=>w.id===id);
-        const personalWs=(state.memberships.find(w=>w.type==='personal')||{}).id||state.memberships[0].id;
-        const ledgerCtx=isMemb(u.activeWs)?u.activeWs:(state.memberships[0]?state.memberships[0].id:personalWs);
+        try{ await migratePersonalLedger(); }catch(e){ console.warn('personal ledger migrate', e); }   // 개인 가계부 ws→users/{uid}/ledger 1회 이전
+        // 모드별 컨텍스트 복원(가계부=activeWs / 할일=activeWsTodo). 개인 프로필 sentinel('ws_'+uid)은 항상 유효.
+        const PERSONAL='ws_'+state.uid;
+        const isCtx=id=>!!id && (id===PERSONAL || state.memberships.some(w=>w.id===id));
+        const ledgerCtx=isCtx(u.activeWs)?u.activeWs:PERSONAL;   // 없거나 무효면 개인 프로필 기본
         let todoCtx=u.activeWsTodo;
-        if(!isMemb(todoCtx)){
-          // 최초 1회: 구 localStorage 'todoScope'에서 이전(개인→개인 ws, 그룹→가계부 컨텍스트)
+        if(!isCtx(todoCtx)){
+          // 최초 1회: 구 localStorage 'todoScope'에서 이전(개인→개인 프로필, 그룹→가계부 컨텍스트)
           let legacyScope=''; try{ legacyScope=localStorage.getItem('todoScope')||''; }catch(e){}
-          todoCtx=(legacyScope==='group')?ledgerCtx:personalWs;
+          todoCtx=(legacyScope==='group' && isCtx(u.activeWs))?u.activeWs:PERSONAL;
           try{ await db.ref('users/'+state.uid+'/activeWsTodo').set(todoCtx); }catch(e){}
         }
         state.ctxWs={ ledger:ledgerCtx, todo:todoCtx };
@@ -439,14 +441,31 @@
       const flagRef=db.ref('users/'+state.uid+'/todosMigrated');
       if((await flagRef.once('value')).val()) return;
       const upd={};
-      for(const w of (state.memberships||[])){
-        const o=(await db.ref('ws/'+w.id+'/todos').once('value')).val()||{};
+      // 개인 ws('ws_'+uid)는 멤버십 목록에서 빠질 수 있으므로 명시적으로 포함해 스캔.
+      const scanIds=Array.from(new Set([('ws_'+state.uid)].concat((state.memberships||[]).map(w=>w.id))));
+      for(const wid of scanIds){
+        const o=(await db.ref('ws/'+wid+'/todos').once('value')).val()||{};
         Object.keys(o).forEach(k=>{ const t=o[k]; if(t && t.scope==='personal' && ((t.ownerUid||t.createdByUid)===state.uid)){
           upd['users/'+state.uid+'/todos/'+k]=Object.assign({},t);
-          upd['ws/'+w.id+'/todos/'+k]=null;   // 원본 삭제(그룹 할일은 유지)
+          upd['ws/'+wid+'/todos/'+k]=null;   // 원본 삭제(그룹 할일은 유지)
         }});
       }
       upd['users/'+state.uid+'/todosMigrated']=true;
+      await db.ref().update(upd);
+    }
+    // 개인 가계부 ws→users/{uid}/ledger 1회 이전(멱등: users/{uid}/ledgerMigrated). 원본 ws 데이터는 백업으로 남김.
+    const LEDGER_NODES=['accounts','creditCards','categories','budgets','subscriptions','purposeBooks','people','giftEvents','plannedGiftEvents','loans','loanPayments','transactions','savings','recurring','recurringLogs','settlementPayments','fixedExpenses','settings','catDeleted'];
+    async function migratePersonalLedger(){
+      const flagRef=db.ref('users/'+state.uid+'/ledgerMigrated');
+      if((await flagRef.once('value')).val()) return;
+      const pid='ws_'+state.uid;
+      const src=(await db.ref('ws/'+pid).once('value')).val()||{};
+      const upd={};
+      LEDGER_NODES.forEach(n=>{ if(src[n]!==undefined) upd['users/'+state.uid+'/ledger/'+n]=src[n]; });   // todos 노드는 스킵(개인 할일은 이미 users/{uid}/todos)
+      upd['workspaces/'+pid]=null;               // 개인 워크스페이스 레코드 제거(개인=프로필 합성 컨텍스트)
+      upd['users/'+state.uid+'/ws/'+pid]=null;   // 멤버십 인덱스 제거 → 그룹전환 목록에서 빠짐
+      upd['users/'+state.uid+'/ledgerMigrated']=true;
+      // 원본 ws/ws_{uid} 데이터는 남겨 백업(콜드, 규칙상 클라이언트 접근 불가) — 안정화 후 별도 릴리스에서 정리
       await db.ref().update(upd);
     }
 
@@ -493,21 +512,12 @@
       const ids=Object.keys(s.val()||{});
       const metas=await Promise.all(ids.map(id=>
         db.ref('workspaces/'+id).once('value').then(ms=>{ const m=ms.val(); return m?Object.assign({id},m):null; })));
-      state.memberships=metas.filter(Boolean).sort((a,b)=>
-        (a.type===b.type? (a.createdAt||'').localeCompare(b.createdAt||'') : (a.type==='personal'?-1:1)));
+      // 개인은 프로필 기반 합성 컨텍스트라 멤버십 목록에서 제외(마이그레이션 전 잔존 레코드 방어). 그룹만 이름순.
+      state.memberships=metas.filter(Boolean).filter(w=>w.type!=='personal' && w.id!==('ws_'+state.uid))
+        .sort((a,b)=>(a.createdAt||'').localeCompare(b.createdAt||''));
     }
 
-    async function createPersonalWorkspace(silent){
-      const wsId='ws_'+state.uid;
-      const now=new Date().toISOString();
-      const upd={};
-      upd['workspaces/'+wsId]={ name:'내 가계부', type:'personal', ownerUid:state.uid, createdAt:now,
-        members:{ [state.uid]:{ name:state.userName, role:'owner', joinedAt:now } } };
-      upd['users/'+state.uid+'/ws/'+wsId]=true;
-      await db.ref().update(upd);
-      if(!silent) toast('개인 가계부를 만들었어요');
-      return wsId;
-    }
+    // (제거됨) createPersonalWorkspace — 개인 가계부는 더 이상 워크스페이스 레코드가 아니라 프로필(users/{uid}) 기반 합성 컨텍스트다.
 
     async function createGroupWorkspace(name){
       const wsId='grp_'+state.uid.slice(0,6)+'_'+randCode(5).toLowerCase();
@@ -560,19 +570,25 @@
       catch(e){ toast('그룹 나가기에 실패했어요. 잠시 후 다시 시도해 주세요', true); return; }
       if(typeof closeSheet==='function') closeSheet();   // 열려 있던 '그룹 관리' 시트를 닫아 결과가 바로 보이게
       await loadMyWorkspaces();
-      if(!state.memberships.some(w=>w.type==='personal')){ await createPersonalWorkspace(true); await loadMyWorkspaces(); }
-      // 나간 그룹이 어느 모드의 컨텍스트였다면 개인 프로필로 폴백
-      const personalId=(state.memberships.find(w=>w.type==='personal')||{}).id||(state.memberships[0]||{}).id||null;
-      if(state.ctxWs.ledger===wsId) state.ctxWs.ledger=personalId;
-      if(state.ctxWs.todo===wsId) state.ctxWs.todo=personalId;
-      await switchWorkspace(state.ctxWs[state.mode==='todo'?'todo':'ledger']||personalId);
+      // 나간 그룹이 어느 모드의 컨텍스트였다면 개인 프로필(항상 존재하는 sentinel)로 폴백
+      const PERSONAL='ws_'+state.uid;
+      if(state.ctxWs.ledger===wsId) state.ctxWs.ledger=PERSONAL;
+      if(state.ctxWs.todo===wsId) state.ctxWs.todo=PERSONAL;
+      await switchWorkspace(state.ctxWs[state.mode==='todo'?'todo':'ledger']||PERSONAL);
       toast('그룹에서 나갔어요');
     }
 
     async function switchWorkspace(wsId, initial, silent){
       if(!wsId) return;
-      let meta=state.memberships.find(w=>w.id===wsId);
-      if(!meta){ const m=(await db.ref('workspaces/'+wsId).once('value')).val(); meta=m?Object.assign({id:wsId},m):{id:wsId,name:'가계부',type:'personal'}; }
+      let meta;
+      if(wsId===('ws_'+state.uid)){
+        // 개인 컨텍스트: workspaces 레코드 없이 프로필에서 합성. members 단일 owner = 소유자 선택 옵션 유지(ownerOptions 등).
+        meta={ id:wsId, type:'personal', name:state.userName, photo:(state.userPhotos[state.uid]||''), ownerUid:state.uid,
+               members:{ [state.uid]:{ name:state.userName, role:'owner' } } };
+      } else {
+        meta=state.memberships.find(w=>w.id===wsId);
+        if(!meta){ const m=(await db.ref('workspaces/'+wsId).once('value')).val(); meta=m?Object.assign({id:wsId},m):{id:wsId,name:'가계부',type:'personal'}; }
+      }
       detachListeners();
       resetWorkspaceState();
       state.wsId=wsId; state.wsMeta=meta;
@@ -1227,12 +1243,13 @@
     function applyMode(){ renderTabBar(); updateModeToggle();
       if(state.view==='home') goHome();                          // 부팅/전환 시 홈 유지
       else go(state.mode==='todo'?'todo':'calendar'); }
-    // 대상 모드가 마지막으로 쓰던 컨텍스트로 전환(현재와 다르면). 유효 멤버십만, 없으면 개인/첫 ws 폴백. 무토스트.
+    // 대상 모드가 마지막으로 쓰던 컨텍스트로 전환(현재와 다르면). 개인 프로필 sentinel은 항상 유효, 무효면 개인으로 폴백. 무토스트.
     async function restoreModeCtx(m){
       const modeKey=(m==='todo')?'todo':'ledger';
-      const isMemb=id=>!!id && state.memberships.some(w=>w.id===id);
+      const PERSONAL='ws_'+state.uid;
+      const isCtx=id=>!!id && (id===PERSONAL || state.memberships.some(w=>w.id===id));
       let ctx=state.ctxWs[modeKey];
-      if(!isMemb(ctx)){ const p=state.memberships.find(w=>w.type==='personal'); ctx=(p&&p.id)||(state.memberships[0]&&state.memberships[0].id)||null; }
+      if(!isCtx(ctx)) ctx=PERSONAL;
       if(!ctx) return;
       if(ctx!==state.wsId){ await switchWorkspace(ctx, false, true); }   // switchWorkspace가 ctxWs 기록+저장 처리
       else if(state.ctxWs[modeKey]!==ctx){ state.ctxWs[modeKey]=ctx; try{ await db.ref('users/'+state.uid+'/'+(modeKey==='todo'?'activeWsTodo':'activeWs')).set(ctx); }catch(e){} }

@@ -79,12 +79,10 @@ sequenceDiagram
     Auth-->>App: onAuthStateChanged(user)
     App->>DB: users/{uid} 조회 (이름 없으면 생성)
     App->>App: migrateLegacyIfNeeded() (v2→v3 1회)
-    App->>DB: loadMyWorkspaces() — users/{uid}/ws
-    alt 멤버십 없음
-        App->>DB: createPersonalWorkspace() — 개인 가계부 생성
-    end
-    App->>App: switchWorkspace(activeWs)
-    App->>DB: setupListeners() — ws/{wsId}/* .on('value') 구독
+    App->>DB: loadMyWorkspaces() — users/{uid}/ws (그룹만)
+    App->>DB: migratePersonalLedger() — 개인 ws→users/{uid}/ledger 1회 이전(멱등)
+    App->>App: switchWorkspace(현재 모드 컨텍스트) — 개인이면 프로필 합성
+    App->>DB: setupListeners() — 개인=users/{uid}/ledger/* · 그룹=ws/{wsId}/* .on('value') 구독
     DB-->>App: 실시간 데이터 → rerender()
     App->>U: 달력 화면 표시
 ```

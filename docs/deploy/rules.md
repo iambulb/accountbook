@@ -4,17 +4,18 @@
 
 ## 데이터 구조
 ```
-users/{uid}            : { name, email, createdAt, activeWs, ws:{ {wsId}:true } }   // 내 워크스페이스 목록
-workspaces/{wsId}      : { name, type:'personal'|'group', code(그룹), ownerUid, createdAt,
+users/{uid}            : { name, email, createdAt, activeWs, activeWsTodo, ledger:{...}(개인 가계부), ws:{ {wsId}:true } }   // 내 그룹 목록 + 개인 원장
+workspaces/{wsId}      : { name, type:'group'(개인은 폐지), code, ownerUid, createdAt,
                            members:{ {uid}:{ name, role:'owner'|'member', joinedAt } } }
 codes/{CODE}           : wsId           // 그룹 코드 → 워크스페이스 조회 인덱스
 friendCodes/{CODE}     : uid            // 친구 코드 → 사용자 uid 조회 인덱스
 migrationV3            : { by, at }     // 구버전 데이터 1회 이전 잠금 플래그
-ws/{wsId}/...          : 가계부 데이터(accounts/categories/budgets/transactions/{uid}/...)
+ws/{wsId}/...          : 그룹 가계부 데이터(accounts/categories/budgets/transactions/{uid}/...)
+users/{uid}/ledger/... : 개인 가계부 데이터(그룹과 동일 구조를 프로필 아래에 미러)   // 소유자 전용, 공개 override 없음
 users/{uid}/todos      : 개인 할일(user-global)   // 친구가 읽기 가능(users 전역 read), 쓰기는 본인만
 users/{uid}/{friends,friendReqs} : 친구 관계·요청   // 당사자 두 명만 쓰기
 ```
-- **개인 가계부** = `type:'personal'` 워크스페이스(멤버 1명).
+- **개인 가계부** = 워크스페이스가 아니라 **프로필 기반**(`users/{uid}/ledger`, 소유자 전용). `type:'personal'` 워크스페이스는 폐지(로그인 시 `migratePersonalLedger`가 프로필로 이전 후 레코드 제거).
 - **그룹 가계부** = `type:'group'`, 6자리 `code` 를 아는 사람이 즉시 멤버로 합류.
 - **친구** = 별도(그룹과 무관). `friendCode`로 요청→수락하면 상호 친구. 개인 할일(`users/{uid}/todos`)은 user-global이라 그룹을 바꿔도 동일하며, `todoPublic`을 켠 친구의 할일을 읽기전용으로 열람.
 
@@ -30,11 +31,12 @@ users/{uid}/{friends,friendReqs} : 친구 관계·요청   // 당사자 두 명�
 | `rankings/{uid}` | 로그인 | **본인만**(`auth.uid === $uid`) — 공개 랭킹 경량 인덱스(name/likes/private) |
 | `codes/*`·`friendCodes/*` | 로그인 | 로그인(코드 등록/조회) |
 | `workspaces/{wsId}` | 로그인(코드로 그룹 조회) | 멤버 또는 **본인을 멤버로 추가**할 때 |
-| `ws/{wsId}/**` | 그 워크스페이스 **멤버만** | 그 워크스페이스 **멤버만** |
+| `ws/{wsId}/**` | 그 **그룹** 워크스페이스 **멤버만** | 그 **그룹** 워크스페이스 **멤버만** |
+| `users/{uid}/ledger/**` | **본인만**(개인 가계부) | **본인만** — 공개 override 금지 |
 | 레거시 루트(`accounts` 등) | 로그인 | 로그인 — 이전용 백업, 이전 후 삭제 가능 |
 
 ## 설계상 신뢰 모델
-- **격리 단위는 워크스페이스**. 멤버가 아니면 `ws/{wsId}` 를 읽거나 쓸 수 없다 → 다른 그룹/개인 가계부는 완전 분리.
+- **그룹 격리 단위는 워크스페이스**. 멤버가 아니면 `ws/{wsId}` 를 읽거나 쓸 수 없다 → 다른 그룹과 완전 분리. **개인 가계부는 `users/{uid}/ledger`로 소유자 전용**(타인 접근 불가, 이전이 안전).
 - **그룹 내부는 공동 권한**: 같은 그룹 멤버끼리는 서로의 거래까지 읽고 쓸 수 있다(가계부 공유 목적). 멤버 간 세분화된 쓰기 격리는 하지 않는다.
 - `private` 등 `visibility` 표시 제한은 **앱 UI**가 담당(리스트 read 시 자식별 필터 불가).
 - **`users/{uid}` 전체 노드 read는 소유자만**. 친구가 크로스유저로 읽는 건 **명시적 공개 서브패스**(`profilePublic`·`photo`·`todos`·`todoPublic`·`friends`·`friendReqs`·`homeLikes`)에 한정한다. 그래서 개인 할일(`todos`)·`todoPublic`은 친구가 읽지만, **`users/{uid}/game`(알뜰홈 모든 방)은 소유자만** 읽는다 → 대표 방 외 다른 방은 규칙 레벨로 비공개.
