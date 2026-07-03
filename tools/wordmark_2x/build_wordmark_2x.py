@@ -37,7 +37,8 @@ for (x, y), c in grid.items():
             up[(2*x+i, 2*y+j)] = c
 W2, H2 = W*2, H*2
 
-# 2) 실루엣 베벨 → 명암 세분화
+# 2) 실루엣 베벨 → 명암 세분화, 3) 전체적으로 색을 옅게(PALE: 흰색으로 소폭 블렌드)
+PALE = 0.20   # 0=원색, 1=흰색. 값이 클수록 옅어짐
 out = {}
 for (X, Y), c in up.items():
     top = (X, Y-1) not in up; bot = (X, Y+1) not in up
@@ -47,7 +48,7 @@ for (X, Y), c in up.items():
     elif bot: nc = darken(c, 0.34)
     elif rig: nc = darken(c, 0.16)
     else:     nc = c
-    out[(X, Y)] = nc
+    out[(X, Y)] = lighten(nc, PALE)
 
 # 3) SVG(가로 런 병합)
 def svg_of(g, w, h):
