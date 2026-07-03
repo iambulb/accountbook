@@ -743,11 +743,15 @@
     .chip.srch svg { width:14px; height:14px; }
     .chip-row.qadd { flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:2px; margin:2px 0 6px; }
     .chip-row.qadd .chip { flex:0 0 auto; } .chip-row.qadd .chip b { font-weight:800; }
-    /* 온보딩 카드 */
-    .obcard { display:flex; align-items:center; gap:10px; padding:11px 12px; border:1.5px solid var(--bd); border-radius:14px; background:var(--card); margin-bottom:8px; }
-    .obcard .obic { font-size:22px; flex:none; } .obcard .obtxt { flex:1; min-width:0; }
-    .obcard .obtxt b { display:block; font-size:14px; } .obcard .obtxt span { font-size:12px; color:var(--sub); }
-    .obcard .obbtn { flex:none; padding:7px 12px; font-size:13px; }
+    /* 온보딩 카드 — 아이콘(픽셀) + 텍스트(가변) + 작은 버튼(고정) 가로 배치 */
+    .obcard { display:flex; align-items:center; gap:11px; padding:11px 12px; border:1.5px solid var(--bd); border-radius:14px; background:var(--card); margin-bottom:8px; }
+    .obcard .obic { flex:none; width:36px; height:36px; display:flex; align-items:center; justify-content:center; }
+    .obcard .obic svg, .obcard .obic img { display:block; }
+    .obcard .obtxt { flex:1 1 auto; min-width:0; }
+    .obcard .obtxt b { display:block; font-size:14px; font-weight:800; }
+    .obcard .obtxt span { display:block; font-size:12px; color:var(--sub); line-height:1.4; }
+    .obcard .obbtn { flex:none; width:auto; margin:0; padding:8px 14px; border-radius:10px; background:var(--soft); color:var(--text); font-size:13px; font-weight:700; border:1.5px solid var(--bd); cursor:pointer; }
+    .obcard .obbtn:active { opacity:.85; }
     .rmstrip .rmthumb { touch-action:pan-x; }   /* 세로 스크롤은 시트로 통과, 가로 롱프레스는 재정렬 */
     /* 펫 카드: 다른 방에 있는 펫(옮겨올 수 있음) — 방 이름 배지 + 은은한 강조 */
     .catchip.elsewhere { border-color:color-mix(in srgb,var(--accent,#4a90d9) 45%,var(--bd)); }

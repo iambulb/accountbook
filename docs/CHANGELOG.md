@@ -8,6 +8,10 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 수정 — 🧭 온보딩 레이아웃 깨짐 + 픽셀아트 아이콘
+- 온보딩 카드가 세로로 깨지던 문제 수정(카드 내 버튼이 `.btn` width:100%로 텍스트를 짓눌러 한 글자씩 세로 배치 → `.obbtn` 독립 스타일 width:auto).
+- 온보딩 아이콘을 이모지→**픽셀아트**로 교체(은화 `coinSvg`·사람들 `peopleSvg`·고양이 `catFace`). CLAUDE.md에 **새 아이콘은 무조건 픽셀아트** 규칙 추가. sw v3.166.0.
+
 ### 추가 — 🔔 Tier2: 푸시 알림(FCM, 서버리스)
 - 설정 → **알림 토글**로 리마인더 푸시 수신(클라 `js/push.js`+`firebase-messaging-sw.js`, 토큰 `users/{uid}/push`).
 - 발송은 **GitHub Actions 스케줄 크론**(`.github/workflows/reminders.yml`)+`tools/send_reminders.mjs`(firebase-admin→FCM), Blaze 불필요. 오늘 미기록자 넛지(20:00 KST).

@@ -589,11 +589,15 @@
       db.ref('users/'+state.uid+'/onboarded').once('value').then(s=>{ if(!s.val() && $('app') && $('app').style.display!=='none') openOnboarding(); }).catch(()=>{}); }
     function finishOnboard(){ if(state.uid){ try{ db.ref('users/'+state.uid+'/onboarded').set(true); }catch(e){} } closeSheet(); }
     function openOnboarding(){
-      const step=(ic,t,d,btn,fn)=>'<div class="obcard"><span class="obic">'+ic+'</span><div class="obtxt"><b>'+t+'</b><span>'+d+'</span></div><button class="btn ghost obbtn" onclick="'+fn+'">'+btn+'</button></div>';
-      let h='<p class="muted" style="margin:2px 2px 14px;line-height:1.55;">알뜰에 오신 걸 환영해요! 🐾 아래를 한 번씩 해보면 금방 익숙해져요.</p>';
-      h+=step('👛','거래·할일 기록','가운데 ＋ 로 오늘 지출이나 할일을 기록해요.','기록','finishOnboard();fabAdd()');
-      h+=step('🧑‍🤝‍🧑','친구 추가','친구 코드로 친구를 맺고 서로의 집·할일을 구경해요.','친구','finishOnboard();openFriendsSheet()');
-      h+=step('🐱','알뜰홈','활동으로 은화를 모아 고양이를 입양하고 방을 꾸며요.','알뜰홈','finishOnboard();openCatHouse(\'home\')');
+      // 아이콘은 픽셀아트(브랜드 자산 재사용): 은화·픽셀 사람들·픽셀 고양이 정면. (CLAUDE.md 픽셀아트 규칙)
+      const coin=(typeof coinSvg==='function')?coinSvg({h:28}):'🪙';
+      const ppl=(typeof peopleSvg==='function')?peopleSvg({h:28}):'🧑‍🤝‍🧑';
+      const cat=(typeof catFace==='function' && typeof PET_CATALOG!=='undefined' && PET_CATALOG[0])?catFace(PET_CATALOG[0].id,{h:30}):'🐱';
+      const step=(ic,t,d,btn,fn)=>'<div class="obcard"><span class="obic">'+ic+'</span><div class="obtxt"><b>'+t+'</b><span>'+d+'</span></div><button class="obbtn" onclick="'+fn+'">'+btn+'</button></div>';
+      let h='<p class="muted" style="margin:2px 2px 14px;line-height:1.55;">알뜰에 오신 걸 환영해요! 아래를 한 번씩 해보면 금방 익숙해져요.</p>';
+      h+=step(coin,'거래·할일 기록','가운데 ＋ 로 오늘 지출이나 할일을 기록해요.','기록','finishOnboard();fabAdd()');
+      h+=step(ppl,'친구 추가','친구 코드로 친구를 맺고 서로의 집·할일을 구경해요.','친구','finishOnboard();openFriendsSheet()');
+      h+=step(cat,'알뜰홈','활동으로 은화를 모아 고양이를 입양하고 방을 꾸며요.','알뜰홈','finishOnboard();openCatHouse(\'home\')');
       h+='<button class="btn" style="margin-top:10px;" onclick="finishOnboard()">시작하기</button>';
       openSheet('시작하기', h);
     }
