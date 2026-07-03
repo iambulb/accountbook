@@ -10,8 +10,10 @@ OUT = os.path.join(_here, '..', 'public', 'icons', 'wordmark-altteul.svg')
 PREVIEW = os.path.join(_here, '_wordmark_preview.png')
 
 TAN='#c9c2b0'; WHITE='#FBFBFD'
-GEDGE='#4e9636'; GFILL='#7cc652'          # 풀(진초록 테두리 / 연초록 채움)
-SOIL='#966130'; DARK='#553012'            # 흙: 갈색 / 고동색(최하단)
+# 풀(3톤): 하이라이트 / 채움 / 그림자·배경
+GHL='#a6e27c'; GFILL='#7cc652'; GEDGE='#3f8a2c'
+# 흙(3톤+고동): 하이라이트 / 갈색채움 / 그림자·배경 / 고동(최하단)
+BHL='#b98a52'; BFILL='#946029'; BEDGE='#6a4420'; DARK='#4a2a10'
 
 # 1) 기존 SVG 파싱 → grid[(x,y)] = color
 svg = open(SRC, encoding='utf-8').read()
@@ -24,19 +26,27 @@ for m in re.finditer(r'<rect x="(\d+)" y="(\d+)"[^>]*fill="(#[0-9a-fA-F]+)"', sv
 
 # 2) 정원 ㄹ 글리프: '알'의 ㄹ 영역(x 1..10, y 7..15)에서 마스크를 얻어 정원색으로.
 #    윗부분(ㄱ: 상단바+오른세로+중간바)=풀, 아랫부분(ㄷ: 왼세로+하단바)=흙, 최하단 줄=고동색.
-RX0, RX1, RY0, RY1 = 1, 10, 7, 15          # 알 ㄹ 박스
-def recolor(kind, lr):                      # kind: 'fill'|'edge', lr: 0..8(글리프 내부 행)
-    if lr == 8: return DARK                 # 최하단 = 고동색
-    if lr >= 5: return SOIL                 # 아래 ㄷ = 갈색 흙
-    return GFILL if kind == 'fill' else GEDGE   # 위쪽 = 풀
-
-glyph = {}                                  # (lx,ly) -> color, lx 0..9, ly 0..8
+RX0, RX1, RY0, RY1 = 1, 10, 7, 15          # 알 ㄹ 박스(글리프 9행: ly 0..8)
+# 글리프 내 각 셀의 종류: 'stroke'(원본 흰=획) / 'bg'(원본 그레이지=획 사이 배경)
+cells = {}
 for y in range(RY0, RY1+1):
     for x in range(RX0, RX1+1):
         c = grid.get((x, y))
         if not c: continue
-        kind = 'fill' if c.upper() == WHITE.upper() else 'edge'
-        glyph[(x-RX0, y-RY0)] = recolor(kind, y-RY0)
+        cells[(x-RX0, y-RY0)] = 'stroke' if c.upper() == WHITE.upper() else 'bg'
+
+def color_for(lx, ly):
+    kind = cells[(lx, ly)]
+    soil = ly >= 5                           # 아래 ㄷ = 흙
+    if soil and ly == 8: return DARK         # 최하단 한 줄 = 고동색
+    topedge = (kind == 'stroke') and (cells.get((lx, ly-1)) != 'stroke')   # 획 윗변 1px 하이라이트
+    if soil:
+        if kind == 'bg': return BEDGE        # 흙 배경(그림자)
+        return BHL if topedge else BFILL     # 흙 획: 윗변 밝게 / 나머지 갈색
+    if kind == 'bg': return GEDGE            # 풀 배경(그림자)
+    return GHL if topedge else GFILL         # 풀 획: 윗변 밝게 / 나머지 연초록
+
+glyph = {k: color_for(*k) for k in cells}   # (lx,ly) -> color, 획/배경 대비 + 1px 명암
 
 # 3) 알 ㄹ 제자리 재채색
 for (lx, ly), col in glyph.items():
@@ -47,9 +57,9 @@ for y in range(5, H):
     for x in range(14, W):
         grid.pop((x, y), None)
 BX = 15                                      # 뜰 ㄹ/ㅡ 좌측 기준(ㄸ 좌측과 정렬)
-for lx in range(0, 10):                      # ㅡ(모음): 풀 2줄 막대
-    grid[(BX+lx, 5)] = GEDGE
-    grid[(BX+lx, 6)] = GFILL
+for lx in range(0, 10):                      # ㅡ(모음): 풀 막대에 1px 명암(윗변 하이라이트 / 아랫변 그림자)
+    grid[(BX+lx, 5)] = GHL                   # 윗변 하이라이트
+    grid[(BX+lx, 6)] = GEDGE                 # 아랫변 그림자 → 입체 막대로 읽힘
 for (lx, ly), col in glyph.items():          # ㄹ: 알과 동일 글리프
     grid[(BX+lx, 7+ly)] = col
 
