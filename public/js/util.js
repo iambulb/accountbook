@@ -178,9 +178,13 @@
     var roomSlots = clamp(h.roomSlots || rooms.length || BASE, BASE, MAX);
     while (rooms.length < roomSlots) rooms.push(normRoom({}, rooms.length));
     if (rooms.length > roomSlots) roomSlots = Math.min(MAX, rooms.length);   // 방 데이터가 더 많으면 손실 없이 slots 올림
+    // 한 펫당 한 방만: 여러 방에 중복 등장하는 펫은 먼저 나온 방에만 남긴다.
+    var seenPet = {};
+    rooms.forEach(function (r) { r.active = r.active.filter(function (id) { if (seenPet[id]) return false; seenPet[id] = 1; return true; }); });
     return {
       rooms: rooms,
       current: clamp(h.current, 0, rooms.length - 1),
+      showRoom: clamp(h.showRoom, 0, rooms.length - 1),   // 친구/랭킹에 보여줄 대표 방
       roomSlots: roomSlots,
       slots: clamp(h.slots || BS, BS, MS),
       changedAt: h.changedAt || ''

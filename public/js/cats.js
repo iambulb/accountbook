@@ -563,7 +563,7 @@
       gameRef().child('home').transaction(cur=>{
         if(cur && Array.isArray(cur.rooms)) return;   // 이미 이관됨 → 변경 없음(abort)
         const nh=normalizeHome(cur, HOME_OPTS);
-        return { rooms:nh.rooms, current:nh.current, roomSlots:nh.roomSlots, slots:nh.slots, changedAt:nh.changedAt||new Date().toISOString() };
+        return { rooms:nh.rooms, current:nh.current, showRoom:nh.showRoom, roomSlots:nh.roomSlots, slots:nh.slots, changedAt:nh.changedAt||new Date().toISOString() };
       }).catch(()=>{}).then(()=>{ state._homeMigrating=false; });
     }
     function currentWall(){ return room().wallpaper||'default'; }
@@ -712,8 +712,8 @@
     function giftSvg(opt){ return pxSvg(M_BOX, GIFT_PAL, opt); }
     // 🎒 가방(더보기) 아이콘 — 갈색 가죽 가방(플랩+버클)을 도트/픽셀 아트로. D=진갈 외곽, B=몸체, L=플랩, M=금 버클.
     const M_BAG = [
-      "..D.....D..",
-      "..D.....D..",
+      "...DDDDD...",
+      "..DD...DD..",
       ".DDDDDDDDD.",
       ".DBBBBBBBD.",
       ".DBBBBBBBD.",
@@ -754,22 +754,34 @@
     ];
     const PEOPLE_PAL={A:'#4a90d9',B:'#f2a154',L:'#a9cdf0'};
     function peopleSvg(opt){ return pxSvg(M_PEOPLE, PEOPLE_PAL, opt); }
-    // ⚙️ 설정(톱니) 픽셀 아트 — G=몸체, L=하이라이트(좌상단). 좋아요/친구와 같은 스타일.
+    // ⚙️ 설정(톱니) 픽셀 아트 — 8이빨 코그 + 가운데 구멍(H=밝은 회색). G=몸체.
     const M_GEAR = [
-      "....GGG....",
-      "....GGG....",
-      ".LLGGGGGGG.",
-      "GLGGGGGGGGG",
-      "GGGG...GGGG",
-      "GGG.....GGG",
-      "GGGG...GGGG",
-      "GGGGGGGGGGG",
-      ".GGGGGGGGG.",
-      "....GGG....",
-      "....GGG...."
+      "....G...G....",
+      "....G...G....",
+      "..G.GGGGG.G..",
+      "..GGGGGGGGG..",
+      "GGGGGHHHGGGGG",
+      "GGGGH...HGGGG",
+      "..GGH...HGG..",
+      "GGGGH...HGGGG",
+      "GGGGGHHHGGGGG",
+      "..GGGGGGGGG..",
+      "..G.GGGGG.G..",
+      "....G...G....",
+      "....G...G...."
     ];
-    const GEAR_PAL={G:'#7c8698',L:'#aeb6c4'};
+    const GEAR_PAL={G:'#7c8698',H:'#c3cad4'};
     function gearSvg(opt){ return pxSvg(M_GEAR, GEAR_PAL, opt); }
+    // 👑 왕관(그룹 소유자) 픽셀 아트 — C=금, J=보석(루비), D=진금 밴드. 은화/금화와 같은 톤.
+    const M_CROWN = [
+      "CC.CCC.CC",
+      "CCCCCCCCC",
+      "CJCCJCCJC",
+      "CCCCCCCCC",
+      "DDDDDDDDD"
+    ];
+    const CROWN_PAL={C:'#F4D06B',J:'#e0556b',D:'#caa23a'};
+    function crownSvg(opt){ return pxSvg(M_CROWN, CROWN_PAL, opt); }
     // 🏆 트로피(랭킹) 픽셀 아트 — C=컵(금), H=하이라이트, D=진금(그림자·기둥·받침).
     const M_TROPHY = [
       "D.......D",
@@ -971,16 +983,24 @@
     function ownsCat(id){ return !!(state.game&&state.game.owned.cats[id]); }
     function activeCats(){ const a=room().active||[]; return a.filter(ownsCat); }   // 현재 방의 활성 펫
     function ownedCatList(){ return PET_CATALOG.filter(c=>ownsCat(c.id)).map(c=>c.id); }
-    function isActiveCat(id){ return activeCats().indexOf(id)>=0; }
-    // 집에 내보낼 수 있는 활성 슬롯: 기본 3, 금화 100으로 1칸 확장(최대 4).
+    function isActiveCat(id){ return activeCats().indexOf(id)>=0; }   // 현재 방에 있는가
+    // 이 펫이 있는 방 인덱스(없으면 -1). 한 펫당 한 방이라 첫 매치가 유일.
+    function petRoomIndex(id){ const rooms=homeH().rooms||[]; for(let i=0;i<rooms.length;i++){ if((rooms[i].active||[]).indexOf(id)>=0) return i; } return -1; }
+    // 집에 내보낼 수 있는 활성 슬롯: 기본 3, 금화 100으로 1칸 확장(최대 20). 방당 상한.
     function slotCount(){ return Math.min(MAX_SLOTS, Math.max(BASE_SLOTS, (state.game&&state.game.home.slots)||BASE_SLOTS)); }
-    // 활성 슬롯 토글(집에 내보내기 / 대기) — 최대 slotCount()마리
+    // 활성 토글: 현재 방에 있으면 대기로, 없으면 현재 방으로 이동(한 펫당 한 방 — 다른 방에서 자동 제거). 방당 최대 slotCount().
     function toggleActiveCat(id){
       if(!ownsCat(id)) return;
-      const a=activeCats().slice(), i=a.indexOf(id), max=slotCount();
-      if(i>=0) a.splice(i,1);
-      else { if(a.length>=max){ toast('최대 '+max+'마리까지 내보낼 수 있어요', true); return; } a.push(id); }
-      gameRef().child(roomChild('active')).set(a); touchHome();
+      const here=isActiveCat(id), max=slotCount(), moved=(!here && petRoomIndex(id)>=0);   // moved=다른 방에서 이동
+      if(!here && activeCats().length>=max){ toast('이 방은 최대 '+max+'마리예요(슬롯 확장 가능)', true); return; }
+      gameRef().transaction(g=>{ g=normalizeGame(g); const idx=g.home.current|0, R=g.home.rooms[idx]||g.home.rooms[0];
+        const has=(R.active||[]).indexOf(id)>=0;
+        if(has){ R.active=R.active.filter(x=>x!==id); }                       // 대기로
+        else { if((R.active||[]).length>=max) return g;                        // 재검증(가득)
+          g.home.rooms.forEach(r=>{ r.active=(r.active||[]).filter(x=>x!==id); });   // 다른 방에서 제거(한 펫당 한 방)
+          R.active.push(id); }
+        g.home.changedAt=new Date().toISOString(); return g;
+      }).then(r=>{ if(r&&r.committed) toast(here?catName(id)+' 대기시켰어요':(moved?catName(id)+'(을)를 이 방으로 옮겼어요':catName(id)+' 이 방에 있어요')); });
     }
     // 활성 슬롯 확장 구매(금화 SLOT_PRICE, 원자적·멱등). 첫 금화 소비처.
     function buySlot(){
@@ -1013,28 +1033,57 @@
         return g;
       }).then(res=>{ if(res.committed) toast('방 +1 확장! 🏠'); });
     }
-    // 방 관리 시트: 이름 변경 · 다른 방 벽지 가져오기(가구는 소비형이라 복사 대신 '비우기'로 재분배) · 방 비우기
-    function openRoomMenu(idx){ const h=homeH(); const r=(h.rooms&&h.rooms[idx])||{}; const cur=r.name||('방 '+(idx+1)); const rc=roomCount();
-      let body='<div class="field"><label for="roomNameIn">방 이름</label><input class="input" id="roomNameIn" maxlength="8" value="'+escapeHtml(cur)+'" placeholder="예: 고양이방"></div>'+
+    // 방 관리(오버레이 모달): 이름 변경 · 다른 방 벽지 가져오기 · 방 비우기.
+    //  ⚠️ openSheet(알뜰홈 시트)를 교체하지 않도록 .gimenu-scrim 모달로 알뜰홈 위에 띄운다(고양이 이름짓기와 동일 패턴).
+    function openRoomMenu(idx){ closeRoomMenu();
+      const h=homeH(); const r=(h.rooms&&h.rooms[idx])||{}; const cur=r.name||('방 '+(idx+1)); const rc=roomCount();
+      let body='<div class="gih"><b>방 관리 · '+escapeHtml(cur)+'</b></div>'+
+        '<div class="field"><label for="roomNameIn">방 이름</label><input class="input" id="roomNameIn" maxlength="8" value="'+escapeHtml(cur)+'" placeholder="예: 고양이방" style="width:100%;box-sizing:border-box;"></div>'+
         '<button class="btn" onclick="saveRoomName('+idx+')">이름 저장</button>';
+      // 대표 방(친구·랭킹에 보이는 방)
+      const isRep=idx===(h.showRoom|0);
+      body+='<div class="sech" style="margin-top:14px;"><span class="l">대표 방</span><span class="s">친구·랭킹에 보임</span></div>'+
+        (isRep?'<p class="muted" style="font-size:12px;margin:0;">★ 이 방이 대표 방이에요. 친구가 내 집을 볼 때 이 방을 봅니다.</p>'
+             :'<button class="btn ghost" onclick="setShowRoom('+idx+')">이 방을 대표 방으로 지정 ★</button>');
+      // 순서 변경
+      if(rc>1){ body+='<div class="sech" style="margin-top:14px;"><span class="l">순서 변경</span></div>'+
+        '<div class="row" style="gap:8px;"><button class="btn ghost" style="flex:1;"'+(idx<=0?' disabled':'')+' onclick="moveRoom('+idx+',-1)">← 앞으로</button>'+
+        '<button class="btn ghost" style="flex:1;"'+(idx>=rc-1?' disabled':'')+' onclick="moveRoom('+idx+',1)">뒤로 →</button></div>'; }
       const others=[]; for(let i=0;i<rc;i++){ if(i!==idx) others.push(i); }
-      if(others.length){ body+='<div class="sech" style="margin-top:18px;"><span class="l">벽지 가져오기</span></div>'+
+      if(others.length){ body+='<div class="sech" style="margin-top:14px;"><span class="l">벽지 가져오기</span></div>'+
         '<div class="row" style="flex-wrap:wrap;gap:8px;">'+others.map(i=>{ const nm=(h.rooms[i].name)||('방 '+(i+1)); return '<button class="btn ghost" onclick="copyRoomWall('+i+','+idx+')"><span class="wsw" style="background:'+wallCss(h.rooms[i].wallpaper||'default')+'"></span>'+escapeHtml(nm)+'</button>'; }).join('')+'</div>'; }
-      body+='<div class="sech" style="margin-top:18px;"><span class="l">방 비우기</span></div>'+
+      body+='<div class="sech" style="margin-top:14px;"><span class="l">방 비우기</span></div>'+
         '<p class="muted" style="font-size:12px;margin:0 0 8px;line-height:1.5;">이 방의 가구는 인벤토리로 돌아가고(다른 방에 다시 놓을 수 있어요), 활성 펫은 대기 상태가 됩니다.</p>'+
-        '<button class="btn danger ghost" onclick="clearRoom('+idx+')">이 방 비우기</button>';
-      openSheet('방 관리 · '+escapeHtml(cur), body);
-      setTimeout(()=>{ const el=$('roomNameIn'); if(el){ el.focus(); el.select(); } }, 30); }
+        '<button class="btn danger ghost" onclick="clearRoom('+idx+')">이 방 비우기</button>'+
+        '<button class="btn ghost" style="margin-top:6px;" onclick="closeRoomMenu()">닫기</button>';
+      const wrap=document.createElement('div'); wrap.id='roomMenu'; wrap.className='gimenu-scrim';
+      wrap.onclick=function(e){ if(e.target===wrap) closeRoomMenu(); };
+      wrap.innerHTML='<div class="gimenu" style="max-height:82vh;overflow-y:auto;">'+body+'</div>';
+      document.body.appendChild(wrap);
+      setTimeout(()=>{ const el=$('roomNameIn'); if(el){ el.focus(); el.select(); } }, 40); }
+    function closeRoomMenu(){ const m=$('roomMenu'); if(m) m.remove(); }
     function openRenameRoom(idx){ openRoomMenu(idx); }   // 하위호환 별칭
+    // 알뜰홈 시트가 열려 있으면 즉시 다시 그려 방 이름/벽지 변경을 반영(모달만 닫고 시트는 유지).
+    function refreshCatSheet(){ if(state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh(); }
     function saveRoomName(idx){ const v=(val('roomNameIn')||'').trim()||('방 '+(idx+1));
-      gameRef().child('home/rooms/'+idx+'/name').set(v).then(()=>{ touchHome(); closeSheet(); toast('방 이름을 바꿨어요'); }); }
+      gameRef().child('home/rooms/'+idx+'/name').set(v).then(()=>{ touchHome(); refreshCatSheet(); toast('방 이름을 바꿨어요'); }); closeRoomMenu(); }
     function copyRoomWall(src, dest){ gameRef().transaction(g=>{ g=normalizeGame(g); const rs=g.home.rooms; if(!rs[src]||!rs[dest]) return g;
         rs[dest].wallpaper=rs[src].wallpaper||'default'; g.home.changedAt=new Date().toISOString(); return g;
-      }).then(r=>{ if(r&&r.committed){ closeSheet(); toast('벽지를 가져왔어요 🎨'); } }); }
-    function clearRoom(idx){ confirmSheet('이 방의 가구·펫을 모두 비울까요? (가구는 인벤토리로 돌아가요)', ()=>{
+      }).then(r=>{ if(r&&r.committed){ refreshCatSheet(); toast('벽지를 가져왔어요 🎨'); } }); closeRoomMenu(); }
+    function clearRoom(idx){ closeRoomMenu();   // 모달을 먼저 닫아야 확인 시트가 보인다(모달 z-index가 더 위)
+      confirmSheet('이 방의 가구·펫을 모두 비울까요? (가구는 인벤토리로 돌아가요)', ()=>{
         gameRef().transaction(g=>{ g=normalizeGame(g); const R=g.home.rooms[idx]; if(!R) return g;
           R.placed={}; R.active=[]; R.poops=0; g.home.changedAt=new Date().toISOString(); return g;
-        }).then(r=>{ if(r&&r.committed) toast('방을 비웠어요'); }); }); }
+        }).then(r=>{ if(r&&r.committed) toast('방을 비웠어요'); renderCatHouse(); }); }); }   // 비운 뒤 알뜰홈으로 복귀
+    function setShowRoom(idx){ gameRef().child('home/showRoom').set(idx).then(()=>{ touchHome(); refreshCatSheet(); toast('대표 방으로 지정했어요 ★'); }); closeRoomMenu(); }
+    // 방 순서 이동(dir=-1 앞/+1 뒤). current·showRoom가 옮겨진 방을 따라가도록 인덱스 보정.
+    function moveRoom(idx, dir){ const j=idx+dir; if(j<0||j>=roomCount()) return;
+      gameRef().transaction(g=>{ g=normalizeGame(g); const rs=g.home.rooms; if(!rs[idx]||!rs[j]) return g;
+        const t=rs[idx]; rs[idx]=rs[j]; rs[j]=t;
+        const fix=v=>{ v=v|0; return v===idx?j:(v===j?idx:v); };
+        g.home.current=fix(g.home.current); g.home.showRoom=fix(g.home.showRoom);
+        g.home.changedAt=new Date().toISOString(); return g;
+      }).then(r=>{ if(r&&r.committed){ refreshCatSheet(); toast('방 순서를 바꿨어요'); } }); closeRoomMenu(); }
 
     // 미션 지급(원자적·멱등): 게임 노드 트랜잭션 1회로 "수령 기록 + 은화 지급"을 동시에.
     // 같은 날 같은 미션은 이미 claimed면 변화 없음 → 중복 지급 불가.
@@ -1780,8 +1829,10 @@
       const dots=Object.keys(placed).map(k=>{ const pr=k.split('_'), rr=+pr[0], cc=+pr[1], foot=itemFoot(placed[k].itemId);
         return '<i class="rmf" style="left:'+((cc-1)/12*100).toFixed(1)+'%;top:'+((rr-1)/12*100).toFixed(1)+'%;width:'+(foot.w/12*100).toFixed(1)+'%;height:'+(foot.h/12*100).toFixed(1)+'%"></i>'; }).join('');
       const pets=(r.active||[]).filter(ownsCat).length;
-      return '<div class="rmthumb'+(on?' on':'')+'" role="button" tabindex="0" aria-pressed="'+on+'" onclick="switchRoom('+idx+')" title="'+escapeHtml(r.name||('방 '+(idx+1)))+'">'+
+      const rep=idx===(homeH().showRoom|0);   // 대표 방(친구·랭킹 노출)
+      return '<div class="rmthumb'+(on?' on':'')+'" role="button" tabindex="0" aria-pressed="'+on+'" onclick="switchRoom('+idx+')" title="'+escapeHtml(r.name||('방 '+(idx+1)))+(rep?' · 대표 방':'')+'">'+
         '<span class="rmscene" style="background:'+wallCss(r.wallpaper||'default')+'">'+dots+'</span>'+
+        (rep?'<span class="rmrep" title="대표 방(친구에게 보이는 방)">★</span>':'')+
         '<span class="rmbar"><span class="rmname">'+escapeHtml(r.name||('방 '+(idx+1)))+'</span><span class="rmpets">🐾'+pets+'</span></span>'+
         '<button class="rm-edit" aria-label="방 관리" onclick="event.stopPropagation();openRoomMenu('+idx+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
       '</div>';
@@ -1817,17 +1868,20 @@
       slotRow+='</div>';
       h+=slotRow;
       if(!owned.length) h+='<div class="empty" style="padding:20px;">아직 펫이 없어요. 알뜰샵에서 입양해 보세요 🐾</div>';
-      else { h+='<div class="catchips">'+owned.map(id=>{ const on=isActiveCat(id);
-        // 이미지 영역엔 고양이를 꽉 차게(선택 시 옆으로 걷는 스프라이트, 아니면 정면 정지). 아래엔 이름 + 상태. 선택되면 체크 배지.
-        const art=on?catActorHTML(id,96):catFace(id,{h:96});
-        return '<div class="catchip'+(on?' on':'')+'" role="button" tabindex="0" aria-pressed="'+on+'" onclick="toggleActiveCat(\''+id+'\')">'+
+      else { const rooms=homeH().rooms||[]; h+='<div class="catchips">'+owned.map(id=>{
+        const roomOf=petRoomIndex(id), here=roomOf===roomIdx();     // 이 방/다른 방/대기 3상태(한 펫당 한 방)
+        const roomNm=roomOf>=0?((rooms[roomOf]&&rooms[roomOf].name)||('방 '+(roomOf+1))):'';
+        // 이미지: 이 방에 있으면 걷는 스프라이트, 아니면 정면 정지. 상태 = 이 방에 있음 / <방이름>에 있음 / 대기.
+        const art=here?catActorHTML(id,96):catFace(id,{h:96});
+        return '<div class="catchip'+(here?' on':(roomOf>=0?' elsewhere':''))+'" role="button" tabindex="0" aria-pressed="'+here+'" onclick="toggleActiveCat(\''+id+'\')">'+
           '<div class="cpic">'+art+'</div>'+
+          (roomOf>=0&&!here?'<span class="croom">'+escapeHtml(roomNm)+'</span>':'')+
           '<div class="cn">'+catNameSpan(id,catName(id))+'</div>'+
-          '<div class="cstate">'+(on?'집에 있음':'대기')+'</div>'+
+          '<div class="cstate">'+(here?'이 방에 있음':(roomOf>=0?escapeHtml(roomNm)+'에 있음':'대기'))+'</div>'+
           '<button class="cn-edit" aria-label="이름 짓기" onclick="event.stopPropagation();openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
-          (on?'<span class="csel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>':'')+
+          (here?'<span class="csel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>':'')+
         '</div>'; }).join('')+'</div>';
-        h+='<div class="hintline" style="margin-top:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>펫을 탭해 집에 내보내거나 대기시켜요(최대 '+sc+'마리)'+(sc<MAX_SLOTS?' · 오른쪽 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장':'')+'.</div>'; }
+        h+='<div class="hintline" style="margin-top:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>펫을 탭하면 <b>이 방</b>으로 옮겨져요(한 펫은 한 방에만, 방당 최대 '+sc+'마리). 다시 탭하면 대기.'+(sc<MAX_SLOTS?' 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장.':'')+'</div>'; }
       return h;
     }
     function mountRoomWalk(){
@@ -1843,7 +1897,8 @@
     }
     // ===== 친구 집(펫캠) — 남의 game으로 읽기전용 방 렌더 + 로밍(엔진 재사용) =====
     // 친구 game에서 활성 펫/가구 목록 도출(내 state.game 비참조). 친구의 '현재 방'을 본다(레거시 flat 폴백).
-    function friendRoom(fg){ const h=(fg&&fg.home)||{}; if(Array.isArray(h.rooms)&&h.rooms.length){ const i=Math.min(h.rooms.length-1, Math.max(0, h.current|0)); return h.rooms[i]||h.rooms[0]; } return h; }
+    // 친구/랭킹 캠은 '대표 방(showRoom)'을 보여준다(사적인 방 노출 방지). showRoom 없으면 current, 레거시는 flat.
+    function friendRoom(fg){ const h=(fg&&fg.home)||{}; if(Array.isArray(h.rooms)&&h.rooms.length){ const i=Math.min(h.rooms.length-1, Math.max(0, (h.showRoom!=null?h.showRoom:h.current)|0)); return h.rooms[i]||h.rooms[0]; } return h; }
     function friendActiveCats(fg){ const owned=(fg.owned&&fg.owned.cats)||{}; const a=friendRoom(fg).active||[]; return a.filter(id=>owned[id]); }
     function friendPlacedList(fg){ const p=friendRoom(fg).placed||{}; return Object.keys(p).map(k=>({ key:k, r:+k.split('_')[0], c:+k.split('_')[1], itemId:p[k].itemId })); }
     // 친구 방 HTML(.catroom + #frStage). name=친구 닉네임.

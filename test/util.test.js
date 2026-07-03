@@ -251,6 +251,19 @@ test('normalizeHome: 레거시 flat(단일 방) → rooms[0]로 이관', () => {
   assert.strictEqual(h.rooms[0].name, '방 1');
 });
 
+test('normalizeHome: 한 펫당 한 방(중복 등장 제거, 먼저 나온 방 우선) + showRoom', () => {
+  const h = U.normalizeHome({ rooms: [{ active: ['a', 'b'] }, { active: ['b', 'c'] }], roomSlots: 2, showRoom: 1 });
+  assert.deepStrictEqual(h.rooms[0].active, ['a', 'b']);
+  assert.deepStrictEqual(h.rooms[1].active, ['c']);   // b는 방0에 이미 있어 제거
+  assert.strictEqual(h.showRoom, 1);
+});
+
+test('normalizeHome: showRoom 기본 0·범위 클램프', () => {
+  assert.strictEqual(U.normalizeHome(null).showRoom, 0);
+  assert.strictEqual(U.normalizeHome({ rooms: [{}, {}], roomSlots: 2, showRoom: 9 }).showRoom, 1);
+  assert.strictEqual(U.normalizeHome({ rooms: [{}], showRoom: -3 }).showRoom, 0);
+});
+
 test('normalizeHome: 빈 입력 → 기본 방 1개', () => {
   const h = U.normalizeHome(null);
   assert.strictEqual(h.rooms.length, 1);
