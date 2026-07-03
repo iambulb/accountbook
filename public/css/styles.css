@@ -69,12 +69,12 @@
       display:flex; flex-direction:column; justify-content:center; padding:32px 36px 44px; scrollbar-width:none;
     }
     .auth-wrap::-webkit-scrollbar { display:none; }
-    /* 로그인 히어로: 픽셀 하늘+구름+살짝 무지개 배경 위에 펫알(고양이 얼굴 알+잔디·꽃) 로고를 올림(앱 아이콘 느낌) */
-    .auth-hero { position:relative; width:100%; max-width:288px; margin:0 auto 18px; aspect-ratio:72/44;
+    /* 로그인 히어로: 픽셀 하늘+구름+살짝 무지개 배경. 상단(무지개 위 맑은 하늘)에 워드마크, 아래에 펫알(고양이 얼굴 알+잔디·꽃) 로고 */
+    .auth-hero { position:relative; width:100%; max-width:288px; margin:8px auto 20px; aspect-ratio:72/54;
       border-radius:22px; overflow:hidden; background:#cbe7fb url('../icons/auth-sky.svg') center/cover no-repeat;
-      image-rendering:pixelated; display:flex; align-items:flex-end; justify-content:center; box-shadow:0 6px 18px rgba(70,120,175,.18); }
-    .auth-logo { width:120px; height:auto; margin:0; display:block; image-rendering:pixelated; position:relative; z-index:1; }   /* 하늘 위 펫알 픽셀 씬 */
-    .auth-wordmark { height:40px; width:auto; margin:0 auto 22px; display:block; image-rendering:pixelated; }   /* '알뜰' 도트 워드마크(로그인 제목) */
+      image-rendering:pixelated; box-shadow:0 6px 18px rgba(70,120,175,.18); }
+    .auth-wordmark { position:absolute; top:15px; left:50%; transform:translateX(-50%); height:32px; width:auto; z-index:2; image-rendering:pixelated; }   /* 무지개 위 하늘에 '알뜰' 워드마크 */
+    .auth-logo { position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:120px; height:auto; z-index:1; image-rendering:pixelated; }   /* 무지개 아래 펫알 픽셀 씬 */
     .auth-wrap h1 { font-size:26px; font-weight:700; text-align:center; margin-bottom:8px; letter-spacing:-.03em; }
     .auth-wrap .desc { text-align:center; color:var(--sub); margin-bottom:24px; font-size:13.5px; font-weight:500; line-height:1.5; }
     .authfoot { text-align:center; font-size:12.5px; color:var(--sub); font-weight:600; margin-top:24px; line-height:1.5; }
@@ -723,9 +723,6 @@
     /* 로그인 스트릭 배지 */
     .streakbar { display:flex; align-items:center; gap:8px; margin:8px 0 4px; padding:9px 12px; border-radius:12px; background:linear-gradient(90deg,color-mix(in srgb,#ff7a3d 16%,var(--card)),var(--card)); border:1.5px solid color-mix(in srgb,#ff7a3d 30%,var(--bd)); }
     .streakbar .fire { font-size:18px; } .streakbar b { font-size:14px; } .streakbar .s { margin-left:auto; font-size:11.5px; color:var(--sub); }
-    /* 도감 진입 버튼 */
-    .dexbtn { display:flex; align-items:center; justify-content:space-between; width:100%; margin:0 0 6px; padding:11px 13px; border-radius:12px; border:1.5px solid var(--bd); background:var(--card); font-size:14px; font-weight:800; color:var(--text); cursor:pointer; }
-    .dexbtn .s { font-size:12px; font-weight:700; color:var(--sub); }
     /* 도감 시트 */
     .dexhead { margin:2px 2px 12px; } .dexhead .bar { margin-top:6px; }
     .dexgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:10px; }

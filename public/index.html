@@ -34,8 +34,7 @@
 <body>
   <!-- 로그인 -->
   <div id="authScreen" class="auth-wrap">
-    <div class="auth-hero"><img src="icons/egg-garden.svg" class="auth-logo" alt=""></div>
-    <img src="icons/wordmark-altteul.svg" class="auth-wordmark" alt="알뜰">
+    <div class="auth-hero"><img src="icons/wordmark-altteul.svg" class="auth-wordmark" alt="알뜰"><img src="icons/egg-garden.svg" class="auth-logo" alt=""></div>
     <p class="desc" id="authDesc">로그인하고 오늘도 알뜰하게~</p>
     <div class="seg" id="authModeSeg">
       <button id="modeLogin" class="on" onclick="setAuthMode('login')">로그인</button>
@@ -56,7 +55,7 @@
   <!-- 앱 -->
   <div id="app">
     <div class="topbar">
-      <div class="brand" role="button" tabindex="0" onclick="goHome()" aria-label="오늘 홈"><img src="icons/icon.svg" class="brand-ic" alt=""><img src="icons/wordmark-altteul.svg" class="brand-wm" alt="알뜰"><span class="home-badge" hidden aria-label="오늘 할 일 있음"></span></div>
+      <div class="brand" role="button" tabindex="0" onclick="goHome()" aria-label="오늘 홈"><img src="icons/icon.svg" class="brand-ic" alt=""><span class="home-badge" hidden aria-label="오늘 할 일 있음"></span></div>
       <div style="display:flex;align-items:center;gap:8px;">
         <div class="modeseg" id="modeSeg" role="tablist" aria-label="가계부/할일 전환">
           <button type="button" data-mode="ledger" class="on" onclick="setMode('ledger')">가계부</button>
