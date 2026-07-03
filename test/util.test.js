@@ -81,10 +81,13 @@ test('addDays: 월/연 경계 넘김', () => {
   assert.strictEqual(U.addDays('2026-03-01', -1), '2026-02-28');
 });
 
-test('nextDue: 매일=+1일, 매주=+7일', () => {
+test('nextDue: 매일=+1일, 매주=+7일, 매월=다음 달 같은 날(말일 클램프)', () => {
   assert.strictEqual(U.nextDue('2026-07-01', 'daily'), '2026-07-02');
   assert.strictEqual(U.nextDue('2026-07-01', 'weekly'), '2026-07-08');
   assert.strictEqual(U.nextDue('2026-07-28', 'weekly'), '2026-08-04');
+  assert.strictEqual(U.nextDue('2026-07-15', 'monthly'), '2026-08-15');   // 같은 날 다음 달
+  assert.strictEqual(U.nextDue('2026-01-31', 'monthly'), '2026-02-28');   // 말일 클램프
+  assert.strictEqual(U.nextDue('2026-12-10', 'monthly'), '2027-01-10');   // 연 경계
 });
 
 test('dueDiffDays: 마감 D-day 계산', () => {

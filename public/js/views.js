@@ -872,8 +872,10 @@
       if(scope==='group') h+='<div class="form-2"><div class="field"><label>담당자</label><select class="input" id="tdAssign">'+ownerOptions(asel)+'</select></div>'+
         '<div class="field"><label>마감일</label><input type="date" class="input" id="tdDue" value="'+(t&&t.dueDate?t.dueDate:'')+'"></div></div>';
       else h+='<div class="field"><label>마감일</label><input type="date" class="input" id="tdDue" value="'+(t&&t.dueDate?t.dueDate:'')+'"></div>';
-      h+='<div class="form-2"><div class="field"><label>반복</label><select class="input" id="tdRepeat">'+[['none','반복 없음'],['daily','매일'],['weekly','매주']].map(function(o){ return '<option value="'+o[0]+'"'+(rep===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
+      var repOpts=[['none','반복 없음'],['weekly','매주'],['monthly','매월']]; if(rep==='daily') repOpts.splice(1,0,['daily','매일(기존)']);   // 매일은 신규 제외(습관=내 미션), 레거시 값은 보존
+      h+='<div class="form-2"><div class="field"><label>반복</label><select class="input" id="tdRepeat">'+repOpts.map(function(o){ return '<option value="'+o[0]+'"'+(rep===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
         '<div class="field"><label>가계부 연결</label><select class="input" id="tdPb"><option value="">연결 안 함</option>'+pbs.map(function(p){ return '<option value="'+p.id+'"'+(pbSel===p.id?' selected':'')+'>'+(p.icon||'📒')+' '+escapeHtml(p.name)+'</option>'; }).join('')+'</select></div></div>';
+      h+='<p class="muted" style="font-size:11.5px;margin:-4px 2px 10px;">매일 하는 습관은 <b>미션 탭 · 내 미션</b>에서 스트릭으로 관리해요.</p>';
       h+='<div class="field"><label>메모 (선택)</label><input class="input" id="tdNote" value="'+escapeHtml(t?(t.note||''):'')+'" placeholder="메모"></div>';
       h+='<button class="btn" onclick="saveTodo('+(id?'\''+id+'\'':'null')+')">'+(t?'수정':'추가')+'</button>';
       if(t) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteTodo(\''+id+'\')">삭제</button>';
@@ -929,7 +931,7 @@
     // 반복 할일 관리(할일 모드 더보기)
     function openRepeatTodos(){
       const list=(state.todos||[]).filter(t=>t.repeat && t.repeat!=='none').sort((a,b)=>(a.dueDate||'9999-99').localeCompare(b.dueDate||'9999-99'));
-      let h='<p class="muted" style="margin:2px 2px 12px;line-height:1.5;">매일·매주 반복 중인 할일이에요. 완료하면 자동으로 다음 회차로 넘어가요.</p>';
+      let h='<p class="muted" style="margin:2px 2px 12px;line-height:1.5;">매주·매월 반복 예정 할일이에요. 완료하면 다음 회차로 넘어가요. 매일 하는 습관은 <b>미션 탭 · 내 미션</b>에서 관리해요.</p>';
       h+='<div class="card" style="padding:4px 12px;">'+(list.length?list.map(function(t){ return todoRow(t,false); }).join(''):'<div class="empty" style="padding:22px 6px;">반복 할일이 없어요</div>')+'</div>';
       openSheet('반복 할일', h);
     }

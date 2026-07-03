@@ -651,6 +651,7 @@
       const cm=id?((state.game.customMissions||{})[id]):null;
       let h='<div class="field"><label>미션 이름</label><input class="input" id="cmTitle" value="'+escapeHtml((cm&&cm.title)||'')+'" placeholder="예: 물 2L 마시기" maxlength="24"></div>';
       h+='<p class="muted" style="font-size:12px;margin:2px 2px 12px;">매일 체크로 습관을 이어가고, <b>'+CUSTOM_STREAK_N+'일 연속마다 +'+CUSTOM_STREAK_BONUS+' 은화</b>. 오늘 홈·미션 탭에서 체크(최대 5개).</p>';
+      h+='<p class="muted" style="font-size:11.5px;margin:-6px 2px 12px;">정해진 날짜에 반복되는 일은 <b>할일 → 반복(매주·매월)</b>으로 관리해요.</p>';
       h+='<button class="btn" onclick="saveCustomMission('+(id?("'"+id+"'"):'')+')">'+(id?'저장':'추가')+'</button>';
       if(id) h+='<button class="btn ghost" style="margin-top:8px;" onclick="deleteCustomMission(\''+id+'\')">삭제</button>';
       openSheet(id?'내 미션 수정':'내 미션 추가', h);
