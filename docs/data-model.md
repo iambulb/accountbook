@@ -15,6 +15,7 @@ users/{uid}            : { name, email, photo(프로필 사진 base64 data URL),
                            friends:{ {friendUid}:{ name, at } },   // 상호 친구(수락 시 양쪽 기록)
                            friendReqs:{ {fromUid}:{ name, at } },  // 받은 친구 요청(수락 시 삭제)
                            homeLikes:{ {visitorUid}:{ n, last:"YYYY-MM-DD" } },  // ❤️ 내 집(펫캠)에 받은 좋아요 — 방문자별 누적 n + 마지막 날짜(하루 1회). 총 좋아요=Σn. 쓰기=방문자 자신($visitor)만(규칙)
+                           mailbox:{ {senderUid}:{ {giftId}:{ type:'consum'|'coins'|'gold', key?, qty, from, fromName, at } } },  // 🎁 친구가 보낸 선물함(크로스유저). 쓰기=친구인 발신자만+엔트리 validate 상한(gold=1·coins≤10·consum≤3·key∈{egg,water,food}), 읽기=수령자 본인. 받기(claimMailGift)=자기 game에 반영 후 삭제. 펫알 선물(consum egg)은 은화100 지불·무료 응원선물은 rollFreeGift 랜덤
                            game:{ 🐱 고양이집(개인 전역, 워크스페이스 무관)
                              coins,                                  // 은화 잔액(정수)
                              gold,                                   // 금화(뽑기 오픈 +1 · 주간미션·업적·로그인 스트릭 마일스톤에서도 지급)
@@ -26,7 +27,8 @@ users/{uid}            : { name, email, photo(프로필 사진 base64 data URL),
                              customMissions:{ {id}:{ title, coinReward, active, createdAt, order } },  // 🎯 내 미션(커스텀 습관, 최대 5개) 정의. 보상은 7일 연속 마일스톤(coinReward는 레거시)
                              missionLogs:{ {missionId}:{ "YYYY-MM-DD":{ done, at, bonus } } },  // 내 미션 체크인 로그(날짜키=하루1회 멱등). bonus=그날 지급한 연속 마일스톤 보너스(재체크 재지급 방지). 매일 체크 무보상·7일 연속마다 은화
                              gifts:[ { type:'coins'|'consum', key?, qty, code, at } … ],  // 🎁 선물함(코드 보상 대기 목록) — 받기(claimGift) 시 은화는 coins로, 아이템은 consum(가방)으로
-                             codes:{ {code}:{at, n} }                 // 사용한 프로모/치트 코드(일반 1회·개발자 무한). n=사용 횟수
+                             codes:{ {code}:{at, n} },                // 사용한 프로모/치트 코드(일반 1회·개발자 무한). n=사용 횟수
+                             mail:{ free:{ "YYYY-MM-DD":count }, egg:{ "YYYY-MM-DD":count } }  // 🎁 친구 선물 발신 하루 횟수(무료 응원·펫알 각 5회/일, kstDayKey). 클라이언트 게이트
                            } }
 workspaces/{wsId}      : { name, photo(가계부 사진 base64 data URL, 선택), type:'personal'|'group', code(그룹), ownerUid, createdAt,
                            members:{ {uid}:{ name, role:'owner'|'member', joinedAt } } }

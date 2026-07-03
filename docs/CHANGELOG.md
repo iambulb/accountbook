@@ -8,6 +8,11 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 추가 — 🎁 친구 선물(펫알 선물 + 무료 응원 선물)
+- 친구 집에서 **친구에게만** 선물 발신: **펫알 선물**(은화 100 → 친구가 열어 랜덤 펫) · **무료 응원 선물**(무료·하루 5회, 물/사료/은화/금화 랜덤, 순수 `rollFreeGift`+테스트). 각 하루 5회 제한.
+- 크로스유저 **`mailbox` 노드** 신설(`game`은 소유자 전용) → 더보기 **선물함**에 "친구가 보낸 선물" 섹션·배지. `applyGiftToGame`에 `gold` 타입 추가.
+- **RTDB 규칙**: `users/$uid/mailbox` — 친구 검증(친구만 write) + 엔트리 `.validate` 상한(gold=1·coins≤10·consum≤3·key∈{egg,water,food})으로 통화 위조 차단. **⚠️ 규칙 배포 필요**(`npx firebase-tools deploy --only database`).
+
 ### 수정 — 🔔 알림 토글 '꺼짐' 고정 버그 + 종 아이콘 다듬기
 - **토글 버그**: `state`가 최상위 `const`라 `window.state`가 `undefined`인데 `push.js`가 토큰 저장을 `if(window.state)`로 감쌌던 탓에 `state._pushToken`이 절대 설정되지 않아 `pushState()`가 항상 `'off'` → 라벨이 '꺼짐'에 고정됐다. 세 곳의 `window.state` 가드를 실제 전역 `state`로 교체.
 - **종 아이콘**: 좌우 대칭 종 + 링 손잡이 + 플레어 림 + 클래퍼로 `M_BELL` 재디자인(기존은 손잡이·명암이 한쪽으로 치우쳐 투박).

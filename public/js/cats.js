@@ -1034,7 +1034,8 @@
       customMissions: g.customMissions||{},   // 내 미션(커스텀 습관): {id:{title,coinReward,active,createdAt,order}}
       missionLogs: g.missionLogs||{},          // 체크인 로그: {missionId:{'YYYY-MM-DD':{done,paid,at}}}
       streak: (g.streak && typeof g.streak==='object') ? g.streak : { last:'', count:0, best:0 },   // 로그인(출석) 연속: {last,count,best,lastReward?}
-      gifts: normalizeGifts(g.gifts)   // 선물함(코드 보상 대기 목록)
+      gifts: normalizeGifts(g.gifts),   // 선물함(코드 보상 대기 목록)
+      mail: (g.mail && typeof g.mail==='object') ? g.mail : {}   // 친구 선물 발신 하루 카운트 {free:{day:n},egg:{day:n}}
     }); }
     // 선물함 목록을 항상 배열로 정규화(RTDB가 객체로 돌려줄 수 있어 방어)
     function normalizeGifts(x){ if(Array.isArray(x)) return x.filter(Boolean); if(x&&typeof x==='object') return Object.keys(x).map(k=>x[k]).filter(Boolean); return []; }
@@ -1290,6 +1291,7 @@
     };
     // 선물 1건의 아이콘/이름(+선택적 메시지)
     function giftView(gf){ if(gf.type==='coins') return { icon:coinSvg({h:30}), name:(gf.qty||0).toLocaleString()+' 은화', msg:gf.msg||'' };
+      if(gf.type==='gold') return { icon:goldSvg({h:30}), name:(gf.qty||1).toLocaleString()+' 금화', msg:gf.msg||'' };
       const m=CONSUM_META[gf.key]||{name:gf.key,icon:()=>''}; return { icon:m.icon({h:34}), name:m.name+' '+(gf.qty||1)+'개', msg:gf.msg||'' }; }
     // 🎉 회원가입 축하 선물 — 신규 계정 첫 진입 시 1회(멱등: users/{uid}/welcomeGift 플래그). 은화100 + 펫알1 + 축하 메시지.
     function grantWelcomeGift(){
@@ -1307,12 +1309,21 @@
     function openGiftbox(){
       const build=()=>{
         const gifts=(state.game&&state.game.gifts)||[];
+        const mail=mailListFlat();
         let h='<div class="giftbox">';
-        if(!gifts.length){ h+='<div class="empty" style="padding:26px 12px;text-align:center;line-height:1.55;"><div style="display:flex;justify-content:center;margin-bottom:10px;">'+giftSvg({h:56})+'</div>받을 선물이 없어요.<br>설정 → 코드 입력으로 보상을 받아보세요.</div>'; }
+        if(!gifts.length && !mail.length){ h+='<div class="empty" style="padding:26px 12px;text-align:center;line-height:1.55;"><div style="display:flex;justify-content:center;margin-bottom:10px;">'+giftSvg({h:56})+'</div>받을 선물이 없어요.<br>친구 집에서 <b>응원 선물</b>을 주고받거나 설정 → 코드 입력으로 보상을 받아보세요.</div>'; }
         else {
-          h+='<div class="hintline" style="margin:2px 0 10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>받으면 은화는 잔액으로, 아이템은 <b>가방</b>으로 들어가요.</div>';
-          h+=gifts.map((gf,i)=>{ const v=giftView(gf); return '<div class="giftrow"><span class="gfic">'+v.icon+'</span><span class="gftx"><b class="gfnm">'+escapeHtml(v.name)+'</b>'+(v.msg?'<span class="gfmsg">'+escapeHtml(v.msg)+'</span>':'')+'</span><button class="buy" onclick="claimGift('+i+')">받기</button></div>'; }).join('');
-          h+='<button class="btn" style="margin-top:12px;" onclick="claimAllGifts()">모두 받기</button>';
+          h+='<div class="hintline" style="margin:2px 0 10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>받으면 은화·금화는 잔액으로, 아이템은 <b>가방</b>으로 들어가요.</div>';
+          if(mail.length){
+            h+='<div class="sech"><span class="l">친구가 보낸 선물</span><span class="s">'+mail.length+'개</span></div>';
+            h+=mail.map(x=>{ const v=giftView(x.gf); return '<div class="giftrow"><span class="gfic">'+v.icon+'</span><span class="gftx"><b class="gfnm">'+escapeHtml(v.name)+'</b><span class="gfmsg">'+escapeHtml((x.gf.fromName||'친구')+'님이 보냄')+'</span></span><button class="buy" onclick="claimMailGift(\''+x.sender+'\',\''+x.gid+'\')">받기</button></div>'; }).join('');
+            h+='<button class="btn ghost" style="margin:8px 0 4px;" onclick="claimAllMail()">친구 선물 모두 받기</button>';
+          }
+          if(gifts.length){
+            if(mail.length) h+='<div class="sech"><span class="l">코드 보상</span><span class="s">'+gifts.length+'개</span></div>';
+            h+=gifts.map((gf,i)=>{ const v=giftView(gf); return '<div class="giftrow"><span class="gfic">'+v.icon+'</span><span class="gftx"><b class="gfnm">'+escapeHtml(v.name)+'</b>'+(v.msg?'<span class="gfmsg">'+escapeHtml(v.msg)+'</span>':'')+'</span><button class="buy" onclick="claimGift('+i+')">받기</button></div>'; }).join('');
+            h+='<button class="btn" style="margin-top:12px;" onclick="claimAllGifts()">코드 보상 모두 받기</button>';
+          }
         }
         h+='</div>'; return h;
       };
@@ -1320,6 +1331,7 @@
       state._sheetRefresh=()=>{ const b=$('sheetBody'); if(b) b.innerHTML=build(); };
     }
     function applyGiftToGame(g, gf){ if(gf.type==='coins') g.coins=(g.coins||0)+(Number(gf.qty)||0);
+      else if(gf.type==='gold') g.gold=(g.gold||0)+(Number(gf.qty)||1);
       else if(gf.type==='consum' && gf.key) g.consum[gf.key]=(Number(g.consum[gf.key])||0)+(Number(gf.qty)||1); }
     function claimGift(i){
       let claimed=null;
@@ -1331,6 +1343,59 @@
       gameRef().transaction(g=>{ g=normalizeGame(g); n=g.gifts.length; g.gifts.forEach(gf=>applyGiftToGame(g,gf)); g.gifts=[]; return g; })
         .then(r=>{ if(r&&r.committed){ toast(n?('🎁 선물 '+n+'개 모두 받음'):'받을 선물이 없어요'); if(state._sheetRefresh) state._sheetRefresh(); } });
     }
+    // ===== 🎁 친구 선물(mailbox) — 크로스유저 선물함 =====
+    // 발신: 펫알 선물(은화 100 지불) · 무료 응원 선물(하루 제한, 물/사료/은화/금화 랜덤). 둘 다 친구에게만(규칙 강제).
+    // 수신: users/{내uid}/mailbox/{보낸uid}/{gid} 로 도착 → 받기(claimMailGift)=내 game에 반영 후 삭제.
+    const MAIL_EGG_COST=100, MAIL_FREE_DAILY=5, MAIL_EGG_DAILY=5;
+    function mailRef(uid){ return db.ref('users/'+uid+'/mailbox/'+state.uid).push(); }   // 내가 uid에게 보내는 새 엔트리
+    function isMyFriend(uid){ return !!(state.friends && state.friends[uid]); }
+    function mailCountLeft(kind){ const day=kstDayKey(); const m=(state.game&&state.game.mail)||{}; const used=Number((m[kind]||{})[day])||0; return Math.max(0,(kind==='egg'?MAIL_EGG_DAILY:MAIL_FREE_DAILY)-used); }
+    // 하루 카운트 tx 게이트(멱등·경쟁안전): 여유 있으면 +1하고 allowed=true. cb(allowed).
+    function mailDailyGate(kind, cb){ const day=kstDayKey(), cap=(kind==='egg'?MAIL_EGG_DAILY:MAIL_FREE_DAILY); let ok=false;
+      gameRef().transaction(g=>{ g=normalizeGame(g); g.mail=g.mail||{}; g.mail[kind]=g.mail[kind]||{}; const c=Number(g.mail[kind][day])||0; if(c>=cap) return g; g.mail[kind][day]=c+1; ok=true; return g; })
+        .then(r=>{ cb(!!(r&&r.committed&&ok)); }).catch(()=>cb(false)); }
+    // mailbox 엔트리 쓰기(발신자→수령자). from/fromName 포함(규칙 validate가 from=auth.uid 요구).
+    function writeMailGift(uid, gf){ const e=Object.assign({}, gf, { from:state.uid, fromName:(state.userName||'알뜰'), at:new Date().toISOString() });
+      return mailRef(uid).set(e); }
+    // 🥚 펫알 선물 — 은화 100 차감(멱등 tx) 후 mailbox에 펫알 1개. 실패 시 환불.
+    function sendPetEggGift(uid){
+      if(!uid || uid===state.uid) return; if(!isMyFriend(uid)){ toast('친구에게만 보낼 수 있어요', true); return; }
+      if(coins()<MAIL_EGG_COST){ toast((MAIL_EGG_COST-coins())+' 은화 부족', true); return; }
+      if(mailCountLeft('egg')<=0){ toast('오늘 펫알 선물을 다 보냈어요(하루 '+MAIL_EGG_DAILY+'회)', true); return; }
+      mailDailyGate('egg', okDay=>{ if(!okDay){ toast('오늘 펫알 선물을 다 보냈어요(하루 '+MAIL_EGG_DAILY+'회)', true); return; }
+        let paid=false;
+        gameRef().transaction(g=>{ g=normalizeGame(g); if((g.coins||0)<MAIL_EGG_COST) return g; g.coins-=MAIL_EGG_COST; paid=true; return g; })
+          .then(r=>{ if(!(r&&r.committed&&paid)){ toast('은화가 부족해요', true); return; }
+            writeMailGift(uid, { type:'consum', key:'egg', qty:1 })
+              .then(()=>{ toast('🥚 '+friendDisplayName(uid)+'님에게 펫알을 보냈어요'); if(state._sheetRefresh) state._sheetRefresh(); })
+              .catch(()=>{ gameRef().transaction(g=>{ g=normalizeGame(g); g.coins=(g.coins||0)+MAIL_EGG_COST; return g; }); toast('선물 전송 실패(친구 관계·네트워크 확인)', true); }); });
+      });
+    }
+    // 🎁 무료 응원 선물 — 무료·하루 제한. 물/사료/은화/금화 랜덤 1개.
+    function sendFreeGift(uid){
+      if(!uid || uid===state.uid) return; if(!isMyFriend(uid)){ toast('친구에게만 보낼 수 있어요', true); return; }
+      if(mailCountLeft('free')<=0){ toast('오늘 무료 선물을 다 보냈어요(하루 '+MAIL_FREE_DAILY+'회)', true); return; }
+      mailDailyGate('free', okDay=>{ if(!okDay){ toast('오늘 무료 선물을 다 보냈어요(하루 '+MAIL_FREE_DAILY+'회)', true); return; }
+        const gift=rollFreeGift(Math.random());
+        writeMailGift(uid, gift).then(()=>{ const v=giftView(gift); toast('🎁 '+friendDisplayName(uid)+'님에게 '+v.name+' 응원 선물!'); if(state._sheetRefresh) state._sheetRefresh(); })
+          .catch(()=>{ toast('선물 전송 실패(친구 관계·네트워크 확인)', true); }); });
+    }
+    // ---- 수신(내 mailbox) ----
+    function mailListFlat(){ const mb=(state.mailbox)||{}; const out=[];
+      Object.keys(mb).forEach(sender=>{ const byGid=mb[sender]||{}; Object.keys(byGid).forEach(gid=>{ const gf=byGid[gid]; if(gf&&gf.type) out.push({ sender, gid, gf }); }); });
+      out.sort((a,b)=> (a.gf.at||'')<(b.gf.at||'')?1:-1); return out; }
+    function mailCount(){ return mailListFlat().length; }
+    let _claimingMail={};
+    function claimMailGift(sender, gid){ const k=sender+'/'+gid; if(_claimingMail[k]) return; _claimingMail[k]=1;
+      const gf=(((state.mailbox||{})[sender])||{})[gid]; if(!gf){ delete _claimingMail[k]; return; }
+      gameRef().transaction(g=>{ g=normalizeGame(g); applyGiftToGame(g, gf); return g; })
+        .then(r=>{ if(r&&r.committed){ db.ref('users/'+state.uid+'/mailbox/'+sender+'/'+gid).remove();
+            const v=giftView(gf); toast('🎁 '+(gf.fromName?escapeHtml(gf.fromName)+'님의 ':'')+v.name+' 받음'+(gf.type==='consum'?' · 가방에서 사용':'')); if(state._sheetRefresh) state._sheetRefresh(); }
+          delete _claimingMail[k]; }).catch(()=>{ delete _claimingMail[k]; }); }
+    function claimAllMail(){ const list=mailListFlat(); if(!list.length){ toast('받을 친구 선물이 없어요'); return; }
+      gameRef().transaction(g=>{ g=normalizeGame(g); list.forEach(x=>applyGiftToGame(g, x.gf)); return g; })
+        .then(r=>{ if(r&&r.committed){ const upd={}; list.forEach(x=>{ upd['users/'+state.uid+'/mailbox/'+x.sender+'/'+x.gid]=null; }); db.ref().update(upd);
+            toast('🎁 친구 선물 '+list.length+'개 모두 받음'); if(state._sheetRefresh) state._sheetRefresh(); } }); }
     // 🎒 가방 — 보유한 소비 아이템(사료·물·펫알·랜덤박스·무지개알·무지개박스)을 보고 사용.
     function openBag(){
       const build=()=>{

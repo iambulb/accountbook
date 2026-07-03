@@ -25,6 +25,7 @@ users/{uid}/{friends,friendReqs} : 친구 관계·요청   // 당사자 두 명�
 | `users/{uid}/{profilePublic,photo,todos,todoPublic}` | 로그인(전역) — 공개/친구용 | 본인 uid 만 |
 | `users/{uid}/friends/{fid}`·`friendReqs/{fid}` | 로그인 | **당사자 두 명만**(`$uid` 또는 `$fid`) |
 | `users/{uid}/homeLikes/{visitor}` | 로그인 | **방문자 자신만**(`auth.uid === $visitor`) — 남의 집에 좋아요를 남기되 자기 항목만 |
+| `users/{uid}/mailbox/{sender}/{gid}` | **수령자(본인)만**(부모 owner-read) | **수령자 본인 또는 친구인 발신자만** — 친구 검증(`friends/{auth.uid}` 존재) + 엔트리 `.validate`로 상한(gold=1·coins≤10·consum≤3·key∈{egg,water,food}·from=auth.uid) |
 | `homeCam/{uid}` | 로그인(전역) — 친구·랭킹이 보는 **대표 방** 스냅샷 | **본인만** |
 | `rankings/{uid}` | 로그인 | **본인만**(`auth.uid === $uid`) — 공개 랭킹 경량 인덱스(name/likes/private) |
 | `codes/*`·`friendCodes/*` | 로그인 | 로그인(코드 등록/조회) |
@@ -59,6 +60,9 @@ users/{uid}/{friends,friendReqs} : 친구 관계·요청   // 당사자 두 명�
 | uidA → `users/uidB/friendReqs/uidA` 쓰기(친구 요청) | 허용(당사자) |
 | uidA → `users/uidB/homeLikes/uidA` 쓰기(좋아요) | 허용(방문자 자신) |
 | uidA → `users/uidB/homeLikes/uidC` 쓰기(남의 좋아요 위조) | 거부 |
+| uidA → `users/uidB/mailbox/uidA/{gid}` 쓰기(친구 선물) | 허용(uidA가 uidB의 친구일 때만) |
+| uidA → `users/uidB/mailbox/uidA/{gid}={type:gold,qty:99}` (변조) | 거부(validate 상한) |
+| 비친구/타인 → `users/uidB/mailbox/...` 쓰기 | 거부 |
 | uidA → `rankings/uidA` 쓰기(내 랭킹 엔트리) | 허용 |
 | uidA → `rankings/uidB` 쓰기(남의 랭킹 위조) | 거부 |
 | uidA → `users/uidB/friends/uidA` 쓰기(수락) | 허용(당사자) |

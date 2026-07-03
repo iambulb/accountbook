@@ -263,6 +263,22 @@
     if (!doc) return; var b = doc.querySelector('.brand .home-badge');
     if (b) b.hidden = !homeBadgeShow(view, total);
   }
+  // 무료 응원 선물 풀(현 경제 기반): 대부분 저가 소비템, 가끔 은화, 드물게 금화 1. 가중치 합 100.
+  var FREE_GIFT_TABLE = [
+    { type: 'consum', key: 'food',  qty: 2,  w: 34 },
+    { type: 'consum', key: 'water', qty: 2,  w: 34 },
+    { type: 'coins',              qty: 10, w: 25 },
+    { type: 'gold',               qty: 1,  w: 7  }
+  ];
+  // rand∈[0,1) 로 가중 선택 → 선물 1개 {type,key?,qty}. 순수(테스트 대상). 범위 밖이면 마지막 항목.
+  function rollFreeGift(rand) {
+    var total = 0, i; for (i = 0; i < FREE_GIFT_TABLE.length; i++) total += FREE_GIFT_TABLE[i].w;
+    var r = (Number(rand) || 0); if (r < 0) r = 0; if (r >= 1) r = 0.999999;
+    var t = r * total, acc = 0;
+    for (i = 0; i < FREE_GIFT_TABLE.length; i++) { acc += FREE_GIFT_TABLE[i].w; if (t < acc) return pickGift(FREE_GIFT_TABLE[i]); }
+    return pickGift(FREE_GIFT_TABLE[FREE_GIFT_TABLE.length - 1]);
+  }
+  function pickGift(e) { var g = { type: e.type, qty: e.qty }; if (e.key) g.key = e.key; return g; }
   // 시즌: 이달의 펫 — monthKey를 해시해 후보 id 중 하나로 결정(모든 사용자 동일·매월 로테이션·순수).
   function featuredPetOfMonth(monthKey, ids) {
     ids = ids || []; if (!ids.length) return null;
@@ -277,7 +293,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, sumPlacedItem: sumPlacedItem, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth };
+  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, sumPlacedItem: sumPlacedItem, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);

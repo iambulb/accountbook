@@ -10,7 +10,15 @@
         "todoPublic":    { ".read": "auth != null" },
         "friends":    { ".read": "auth != null", "$fid": { ".write": "auth != null && (auth.uid === $uid || auth.uid === $fid)" } },
         "friendReqs": { ".read": "auth != null", "$fid": { ".write": "auth != null && (auth.uid === $uid || auth.uid === $fid)" } },
-        "homeLikes":  { ".read": "auth != null", "$visitor": { ".write": "auth != null && auth.uid === $visitor" } }
+        "homeLikes":  { ".read": "auth != null", "$visitor": { ".write": "auth != null && auth.uid === $visitor" } },
+        "mailbox": {
+          "$sender": {
+            ".write": "auth != null && (auth.uid === $uid || (auth.uid === $sender && root.child('users').child($uid).child('friends').child(auth.uid).exists()))",
+            "$gid": {
+              ".validate": "newData.hasChildren(['type','qty','from']) && newData.child('from').val() === auth.uid && newData.child('qty').isNumber() && ((newData.child('type').val() === 'gold' && newData.child('qty').val() === 1) || (newData.child('type').val() === 'coins' && newData.child('qty').val() > 0 && newData.child('qty').val() <= 10) || (newData.child('type').val() === 'consum' && newData.child('qty').val() > 0 && newData.child('qty').val() <= 3 && (newData.child('key').val() === 'egg' || newData.child('key').val() === 'water' || newData.child('key').val() === 'food')))"
+            }
+          }
+        }
       }
     },
 

@@ -307,6 +307,23 @@ test('affectionLevel: 임계 10/50/100 레벨·다음·진행%', () => {
   assert.deepStrictEqual(U.affectionLevel(999), { level: 3, next: null, pct: 100 });
 });
 
+test('rollFreeGift: 가중 누적 경계에서 올바른 보상(food34/water34/coins25/gold7)', () => {
+  // 누적 경계: food[0,0.34) water[0.34,0.68) coins[0.68,0.93) gold[0.93,1)
+  assert.deepStrictEqual(U.rollFreeGift(0),     { type: 'consum', qty: 2, key: 'food' });
+  assert.deepStrictEqual(U.rollFreeGift(0.33),  { type: 'consum', qty: 2, key: 'food' });
+  assert.deepStrictEqual(U.rollFreeGift(0.34),  { type: 'consum', qty: 2, key: 'water' });
+  assert.deepStrictEqual(U.rollFreeGift(0.67),  { type: 'consum', qty: 2, key: 'water' });
+  assert.deepStrictEqual(U.rollFreeGift(0.68),  { type: 'coins',  qty: 10 });
+  assert.deepStrictEqual(U.rollFreeGift(0.92),  { type: 'coins',  qty: 10 });
+  assert.deepStrictEqual(U.rollFreeGift(0.93),  { type: 'gold',   qty: 1 });
+  assert.deepStrictEqual(U.rollFreeGift(0.999), { type: 'gold',   qty: 1 });
+  // 범위 밖/이상값 방어: 음수→0(food), 1이상→0.999999(gold)
+  assert.deepStrictEqual(U.rollFreeGift(-1), { type: 'consum', qty: 2, key: 'food' });
+  assert.deepStrictEqual(U.rollFreeGift(1),  { type: 'gold', qty: 1 });
+  // 가중치 합 100
+  assert.strictEqual(U.FREE_GIFT_TABLE.reduce((s, e) => s + e.w, 0), 100);
+});
+
 test('featuredPetOfMonth: 결정적·후보 내·매월 로테이션', () => {
   const ids = ['a', 'b', 'c', 'd', 'e'];
   // 같은 달 → 항상 같은 결과(결정적)

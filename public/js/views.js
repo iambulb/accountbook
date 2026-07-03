@@ -723,6 +723,17 @@
     }
     function friendChangedToday(uid){ const c=state.friendHomeChangedByUid&&state.friendHomeChangedByUid[uid]; return !!(c && String(c).slice(0,10)===ymd(new Date())); }
     // ===== 친구 집(펫캠) 방문 — 캠 + 좋아요 + 오늘의 할일(공개 시) =====
+    // 🎁 친구 집 선물 보내기 바(친구에게만). 펫알 선물(은화100)·무료 응원 선물(하루 제한, 랜덤). 아이콘은 픽셀(eggSvg/giftSvg).
+    function friendGiftBarInner(uid){
+      const eggLeft=(typeof mailCountLeft==='function')?mailCountLeft('egg'):0;
+      const freeLeft=(typeof mailCountLeft==='function')?mailCountLeft('free'):0;
+      const canAfford=(typeof coins==='function')?coins()>=100:true;
+      const egg=(typeof eggSvg==='function')?eggSvg(0,{h:20}):'🥚';
+      const gift=(typeof giftSvg==='function')?giftSvg({h:20}):'🎁';
+      return '<button class="giftsend" onclick="sendPetEggGift(\''+uid+'\')"'+((eggLeft<=0||!canAfford)?' disabled':'')+'><span class="gsic">'+egg+'</span><span class="gstx"><b>펫알 선물</b><small>은화 100 · 남은 '+eggLeft+'회'+(!canAfford?' · 은화 부족':'')+'</small></span></button>'+
+             '<button class="giftsend free" onclick="sendFreeGift(\''+uid+'\')"'+(freeLeft<=0?' disabled':'')+'><span class="gsic">'+gift+'</span><span class="gstx"><b>무료 응원 선물</b><small>물·사료·은화·금화 랜덤 · 남은 '+freeLeft+'회</small></span></button>';
+    }
+    function friendGiftBar(uid){ return '<div class="sech"><span class="l">선물 보내기</span></div><div id="fhGiftBar" class="fhgift">'+friendGiftBarInner(uid)+'</div>'; }
     function openFriendHome(uid){
       if(!uid || uid===state.uid){ if(typeof openCatHouse==='function') openCatHouse('home'); return; }   // 내 집이면 내 알뜰홈 홈
       const isFriend=!!(state.friends&&state.friends[uid]);
@@ -748,6 +759,7 @@
         let h=friendRoomHtml(fg, showName);
         h+='<div class="likebar"><button class="likebtn'+(liked?' on':'')+'" onclick="likeFriendHome(\''+uid+'\')"'+(liked?' disabled':'')+' aria-label="좋아요">'+heartSvg({h:20,off:!liked})+'<b id="fhLikeN">'+cnt+'</b></button>'+
            '<span class="likehint">'+(liked?'오늘 좋아요 완료 · 내일 또 눌러주세요':'하루 한 번 좋아요를 눌러줄 수 있어요')+'</span></div>';
+        if(isFriend) h+=friendGiftBar(uid);   // 🎁 선물 보내기(친구에게만)
         const todosObj=res[3].val()||{};
         if(isFriend && pub){   // 할일은 친구 사이 + 상대가 공개했을 때만
           const undone=Object.keys(todosObj).map(function(k){ return Object.assign({id:k}, todosObj[k]); }).filter(function(t){ return !t.done; })
@@ -763,6 +775,8 @@
           else h+='<button class="btn" id="fhAddBtn" style="margin-top:6px;width:100%;" onclick="sendFriendRequest(\''+uid+'\')">＋ 친구 추가</button>';
         }
         const b=$('sheetBody'); if(b) b.innerHTML=h;
+        // 선물 후 남은 횟수만 갱신(전체 재조회 없이)
+        state._sheetRefresh=function(){ const el=$('fhGiftBar'); if(el) el.innerHTML=friendGiftBarInner(uid); };
         setTimeout(function(){ mountFriendRoom(fg); }, 30);
       }).catch(function(){ const b=$('sheetBody'); if(b) b.innerHTML='<div class="empty" style="padding:40px 12px;">집을 불러오지 못했어요</div>'; });
     }
@@ -1647,7 +1661,7 @@
       h+='<div class="grid4">';
       h+=gcell(coinSvg({h:26}),'알뜰홈','openCatHouse()');
       h+=gcell((typeof dexSvg==='function'?dexSvg({h:26}):'📖'),'펫도감','openPetDex()');
-      h+=gcell(giftSvg({h:26}),'선물함','openGiftbox()', (typeof giftCount==='function'?giftCount():0));
+      h+=gcell(giftSvg({h:26}),'선물함','openGiftbox()', ((typeof giftCount==='function'?giftCount():0)+(typeof mailCount==='function'?mailCount():0)));
       h+=gcell((typeof bagSvg==='function'?bagSvg({h:26}):''),'가방','openBag()');
       h+=gcell((typeof peopleSvg==='function'?peopleSvg({h:26}):MORE_ICON.members),'친구','openFriendsSheet()', (typeof state.friendReqs==='object'?Object.keys(state.friendReqs||{}).length:0)||0);
       h+=gcell((typeof trophySvg==='function'?trophySvg({h:26}):'🏆'),'랭킹','openRanking()');
