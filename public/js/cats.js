@@ -364,23 +364,64 @@
       "...XWWPPWWX...",
       "....XX.XXX...."
     ];
-    // ✦ 픽셀 빛 폭발(별) — 등급색으로 칠해 연출의 섬광/광선/틈새빛에 공통 사용. X=색(currentColor), H=흰 코어.
-    const M_STAR = [
-      ".......X.......",
-      ".......X.......",
-      ".......X.......",
-      "...X...X...X...",
-      "....X..X..X....",
-      ".....X.X.X.....",
-      "......XXX......",
-      "XXXXXXXHXXXXXXX",
-      "......XXX......",
-      ".....X.X.X.....",
-      "....X..X..X....",
-      "...X...X...X...",
-      ".......X.......",
-      ".......X.......",
-      ".......X......."
+    // ✦ 픽셀 선버스트(빛 광선) — 16방향 방사 광선 + 밝은 정사각 코어. 등급색으로 칠해 오픈 순간·등장 후 오오라에 공통 사용.
+    //    X=광선색(currentColor), H=흰 코어. (구 M_STAR 십자 별을 대체 — 디테일한 도트 광선)
+    const M_RAYS = [
+      "..........X..........",
+      ".....................",
+      "..........X..........",
+      "...X......X......X...",
+      "..........X..........",
+      ".....X..X.X.X..X.....",
+      "......X.X.X.X.X......",
+      ".......X.XXX.X.......",
+      ".....XX.XXXXX.XX.....",
+      ".......XXHHHXX.......",
+      "X.XXXXXXXHHHXXXXXXX.X",
+      ".......XXHHHXX.......",
+      ".....XX.XXXXX.XX.....",
+      ".......X.XXX.X.......",
+      "......X.X.X.X.X......",
+      ".....X..X.X.X..X.....",
+      "..........X..........",
+      "...X......X......X...",
+      "..........X..........",
+      ".....................",
+      "..........X.........."
+    ];
+    // ✦ 픽셀 오오라(은은한 후광) — Bayer 정렬 디더링으로 중심이 밝고 밖으로 감쇠하는 대칭 도트 글로우. 펫 뒤에 은은히 깔림.
+    const M_AURA = [
+      ".....................",
+      ".....................",
+      "......X...X...X......",
+      ".....................",
+      "....X.X.X.X.X.X.X....",
+      ".....X.X.X.X.X.......",
+      "..X.X.X.X.X.X.X.X.X..",
+      ".......X.X.X.X.X.....",
+      "..X.X.X.XXXXXXX.X.X..",
+      ".....X.X.HHH.X.X.X...",
+      "..X.X.XXXHHHX.X.X.X..",
+      ".....X.X.HHH.X.X.....",
+      "..X.X.X.XXXXXXX.X.X..",
+      ".....X.X.X.X.X.X.....",
+      "..X.X.X.X.X.X.X.X.X..",
+      ".......X.X.X.........",
+      "....X.X.X.X.X.X.X....",
+      ".........X...........",
+      "......X...X...X......",
+      ".....................",
+      "....................."
+    ];
+    // ✦ 작은 4점 반짝임(트윙클) — 펫 주변에 깜빡이는 도트 별.
+    const M_SPARK4 = [
+      "...X...",
+      "...X...",
+      ".X.H.X.",
+      "XXHHHXX",
+      ".X.H.X.",
+      "...X...",
+      "...X..."
     ];
     // 박스: 위에 뚜껑(C=윗면, L=앞면), 아래에 몸체(W). 앞면 중앙에 알과 같은 무지개 물음표.
     const M_BOX = [
@@ -627,7 +668,21 @@
     // 3번째 탭: 크게 갈라진 알 + 틈새로 새어나오는 등급색 빛(L=등급색). rainbow면 껍질은 무지갯빛 유지.
     function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); return pxSvg(M_EGG_C3, pal, opt); }
     // ✦ 픽셀 빛 폭발(별) — 등급색으로. color 미지정 시 currentColor(무대 등급색 상속).
-    function starSvg(color, opt){ return pxSvg(M_STAR, {X:color||'currentColor',H:'#ffffff'}, opt); }
+    function raysSvg(color, opt){ return pxSvg(M_RAYS, {X:color||'currentColor',H:'#ffffff'}, opt); }
+    function auraSvg(color, opt){ return pxSvg(M_AURA, {X:color||'currentColor',H:'#ffffff'}, opt); }
+    function sparkSvg(color, opt){ return pxSvg(M_SPARK4, {X:color||'currentColor',H:'#ffffff'}, opt); }
+    // 층층 픽셀 빛: 은은한 오오라 + 서로 반대로 도는 광선 2겹(그냥 회전만 하지 않고 맥동·역회전으로 살아있게). 색은 currentColor(등급색) 상속.
+    function lightLayers(o){ o=o||{}; const a=o.aura||200, r=o.rays||240;
+      return '<span class="ll-aura">'+auraSvg('currentColor',{h:a})+'</span>'+
+             '<span class="ll-rays a">'+raysSvg('currentColor',{h:r})+'</span>'+
+             '<span class="ll-rays b">'+raysSvg('currentColor',{h:Math.round(r*0.72)})+'</span>'; }
+    // 펫 주변을 도는 트윙클 도트 — 등장 후 펫 둘레에 은은히 깜빡이며 흩뿌려짐(등급색).
+    function fxAuraTwinkles(n){ n=n||6; let s='';
+      for(let i=0;i<n;i++){ const a=(i/n)*360+Math.random()*24, d=52+Math.random()*30;
+        const x=Math.round(Math.cos(a*Math.PI/180)*d), y=Math.round(Math.sin(a*Math.PI/180)*d);
+        const h=12+Math.round(Math.random()*8), del=(Math.random()*1.1).toFixed(2), du=(1.1+Math.random()*0.7).toFixed(2);
+        s+='<span class="fx-tw" style="--tx:'+x+'px;--ty:'+y+'px;animation-delay:'+del+'s;animation-duration:'+du+'s">'+sparkSvg('currentColor',{h:h})+'</span>'; }
+      return s; }
     // 랜덤박스 오픈: 뚜껑 열리고 틈새로 등급색 빛(Z). rainbow면 몸체는 무지갯빛 유지.
     function boxOpenSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?BOX_PAL_RB:BOX_PAL, {Z:tierColor||'#FBFBFD'}); return pxSvg(M_BOX_OPEN, pal, opt); }
     // 선물함 아이콘 — 랜덤박스 도트(M_BOX) 그대로, 색만 선물상자(빨강 몸체+금 리본)로 다시 칠함.
@@ -2387,8 +2442,8 @@
         it.classList.remove('fx-preshake','fx-hit'); void it.offsetWidth; it.classList.add('fx-tremble');
         if(isEgg){ it.innerHTML=eggCrackSvg(t.color, _fx.rainbow, {h:150}); fxCrackChips(4); }   // 알이 크게 갈라지고 틈새로 등급색 빛
         else { it.innerHTML=boxOpenSvg(t.color, _fx.rainbow, {h:150}); it.classList.add('fx-ajar'); }   // 박스: 뚜껑 열리고 틈새로 등급색 빛
-        // 갈라진 틈으로 새어나오는 등급색 픽셀 빛(도트 별) — 둥근 글로우 대신 도트, 등급↑ 크고 밝게
-        st.insertAdjacentHTML('afterbegin','<div class="fx-cracklight" style="color:'+t.color+';--lk:'+lk+'">'+starSvg('currentColor',{h:200})+'</div>');
+        // 갈라진 틈으로 새어나오는 등급색 픽셀 빛 — 은은한 오오라 + 역회전 광선 2겹(둥근 글로우 금지, 도트). 등급↑ 크고 밝게(--lk)
+        st.insertAdjacentHTML('afterbegin','<div class="fx-cracklight" style="color:'+t.color+';--lk:'+lk+'">'+lightLayers({aura:170, rays:220})+'</div>');
       }, t0);
       setTimeout(()=>{ fxBurst(epic, isEgg, rank); }, t0+700);
       setTimeout(fxReveal, t0+700+(isEgg?560:320));   // 알은 껍질 조각이 옆으로 흩어져 앉을 시간을 조금 더 준다
@@ -2398,9 +2453,9 @@
       const it=$('fxItem'); if(it) it.style.visibility='hidden';
       rank=rank||0;
       const parts=12+rank*7;                          // 등급 높을수록 픽셀 파티클 더 많이(화려하게)
-      const rays=(rank>=3)?'<div class="fx-pixrays">'+starSvg('currentColor',{h:360})+'</div>':'';       // 특별↑ 등급색 픽셀 광선(도트 별)
+      const rays=(rank>=3)?'<div class="fx-pixrays">'+raysSvg('currentColor',{h:360})+'</div>':'';       // 특별↑ 등급색 픽셀 광선(선버스트)
       const sparks=(rank>=3)?fxSparkles(6+rank*3):'';             // 특별↑ 추가 반짝임(등급색)
-      st.insertAdjacentHTML('beforeend','<div class="fx-pixflash">'+starSvg('currentColor',{h:130})+'</div>'+rays+sparks+(isEgg?fxShells():'')+fxParticles(parts));
+      st.insertAdjacentHTML('beforeend','<div class="fx-pixflash">'+raysSvg('currentColor',{h:150})+'</div>'+rays+sparks+(isEgg?fxShells():'')+fxParticles(parts));
       const h=$('fxHint'); if(h) h.remove();
     }
     function fxReveal(){
@@ -2408,9 +2463,12 @@
       const rank=Math.max(0, TIER_ORDER.indexOf(_fx.res.tier));   // 등급 높을수록 픽셀 프레임·반짝임 화려
       const art=_fx.kind==='egg'?catFace(_fx.res.id,{h:118}):furnSvg(_fx.res.id,{h:104});
       fx.innerHTML='<div class="fx-scrim"></div><div class="fx-reveal tier-'+t.id+' rank-'+rank+'">'+
-        '<div class="fx-pixrays reveal">'+starSvg('currentColor',{h:340})+'</div>'+
-        '<div class="fx-sparks">'+fxSparkles(8+rank*4)+'</div>'+
-        '<div class="fx-art pop"><span class="fx-frame"></span>'+art+'</div>'+
+        '<div class="fx-art pop">'+
+          '<span class="fx-aurawrap">'+lightLayers({aura:210, rays:250})+'</span>'+   // 펫 뒤·주변 은은한 픽셀 오오라(펫 위치에 정렬)
+          '<span class="fx-twinkles">'+fxAuraTwinkles(6+rank*2)+'</span>'+             // 펫 둘레 트윙클 도트(등급↑ 많이)
+          '<span class="fx-frame"></span>'+
+          '<span class="fx-artimg">'+art+'</span>'+
+        '</div>'+
         '<div class="fx-tier">'+t.name+'</div>'+
         '<div class="fx-name">'+(_fx.kind==='egg'?catNameSpan(_fx.res.id,catName(_fx.res.id)):escapeHtml(itemName(_fx.kind,_fx.res.id)))+'</div>'+
         '<div class="fx-reward">'+(_fx.gold?'<span class="rw"><span class="ci">'+goldSvg({h:18})+'</span>+1 금화</span>':'')+
