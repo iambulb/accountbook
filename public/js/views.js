@@ -658,30 +658,37 @@
     // ===== 친구 집(펫캠) 방문 — 캠 + 좋아요 + 오늘의 할일(공개 시) =====
     function openFriendHome(uid){
       if(!uid || uid===state.uid){ if(typeof openCatHouse==='function') openCatHouse('home'); return; }   // 내 집이면 내 알뜰샵 홈
-      const nm=friendDisplayName(uid);
-      openSheet(nm+'의 집', '<div class="empty" style="padding:40px 12px;">불러오는 중…</div>');
+      const isFriend=!!(state.friends&&state.friends[uid]);
+      openSheet('불러오는 중…', '<div class="empty" style="padding:40px 12px;">불러오는 중…</div>');
       Promise.all([
         db.ref('users/'+uid+'/game').once('value'),
         db.ref('users/'+uid+'/todoPublic').once('value'),
         db.ref('users/'+uid+'/homeLikes').once('value'),
-        db.ref('users/'+uid+'/todos').once('value')
+        db.ref('users/'+uid+'/todos').once('value'),
+        db.ref('users/'+uid+'/profilePublic').once('value')
       ]).then(function(res){
         if(!($('sheet')&&$('sheet').classList.contains('on'))) return;   // 그새 닫혔으면 중단
         const fg=normalizeGame(res[0].val()), pub=!!res[1].val(), likes=res[2].val();
-        state._friendCam={ uid:uid, name:nm, game:fg, placedList:friendPlacedList(fg), active:friendActiveCats(fg) };
+        const priv=(res[4].val()===false);
+        const anon=priv && !isFriend;                       // 비공개 + 비친구 → 익명(은화+알뜰)
+        const showName=anon?'알뜰':friendDisplayName(uid);
+        if($('sheetTitle')) $('sheetTitle').textContent=showName+'의 집';
+        state._friendCam={ uid:uid, name:showName, game:fg, placedList:friendPlacedList(fg), active:friendActiveCats(fg) };
         try{ markStorySeen(uid, new Date().toISOString()); }catch(e){}   // 방문 = 스토리 열람 → 무지개 링 해제
         const cnt=homeLikeCount(likes), liked=likedTodayBy(likes, state.uid);
-        let h=friendRoomHtml(fg, nm);
+        let h=friendRoomHtml(fg, showName);
         h+='<div class="likebar"><button class="likebtn'+(liked?' on':'')+'" onclick="likeFriendHome(\''+uid+'\')"'+(liked?' disabled':'')+' aria-label="좋아요">'+heartSvg({h:20,off:!liked})+'<b id="fhLikeN">'+cnt+'</b></button>'+
            '<span class="likehint">'+(liked?'오늘 좋아요 완료 · 내일 또 눌러주세요':'하루 한 번 좋아요를 눌러줄 수 있어요')+'</span></div>';
         const todosObj=res[3].val()||{};
-        if(pub){
+        if(isFriend && pub){   // 할일은 친구 사이 + 상대가 공개했을 때만
           const undone=Object.keys(todosObj).map(function(k){ return Object.assign({id:k}, todosObj[k]); }).filter(function(t){ return !t.done; })
             .sort(function(a,b){ const ad=a.dueDate||'9999-99', bd=b.dueDate||'9999-99'; return ad<bd?-1:(ad>bd?1:0); });
           h+='<div class="sech"><span class="l">오늘의 할일</span><span class="s">'+undone.length+'</span></div>';
           h+='<div class="card" style="padding:4px 12px;">'+(undone.length?undone.map(function(t){ return friendTodoRow(uid,t); }).join(''):'<div class="empty" style="padding:18px 6px;">등록한 할일이 없어요</div>')+'</div>';
-        } else {
+        } else if(isFriend){
           h+='<p class="muted" style="font-size:12px;margin-top:14px;text-align:center;">이 친구는 할일을 공개하지 않았어요</p>';
+        } else {
+          h+='<p class="muted" style="font-size:12px;margin-top:14px;text-align:center;">친구가 되면 할일도 볼 수 있어요</p>';
         }
         const b=$('sheetBody'); if(b) b.innerHTML=h;
         setTimeout(function(){ mountFriendRoom(fg); }, 30);
@@ -1339,8 +1346,8 @@
       size=size||38;
       const photo = photoOverride!==undefined ? photoOverride : (state.userPhotos&&state.userPhotos[uid]);
       if(photo) return '<img class="avatar" src="'+photo+'" alt="" style="width:'+size+'px;height:'+size+'px;">';
-      const ch=String(name||'?').trim().charAt(0)||'?';
-      return '<div class="avatar avatar-fallback" style="width:'+size+'px;height:'+size+'px;background:'+avatarGrad(name||uid)+';font-size:'+Math.round(size*0.42)+'px;">'+escapeHtml(ch)+'</div>';
+      // 기본(사진 없음) 아바타 = 은화 픽셀 아이콘(전역 통일)
+      return '<div class="avatar avatar-coin" style="width:'+size+'px;height:'+size+'px;">'+(typeof coinSvg==='function'?coinSvg({h:Math.round(size*0.72)}):'')+'</div>';
     }
     // 파일 → 중앙 정사각 크롭 → size px JPEG data URL
     function resizeImageFile(file, size, cb){
@@ -1369,10 +1376,11 @@
         '<div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">'+
           '<button class="btn sm" onclick="pickProfilePhoto()">사진 변경</button>'+
           '<button class="btn sm ghost" onclick="removeProfilePhoto()">사진 삭제</button></div>'+
-        '<div class="likemini" style="justify-content:center;margin-top:10px;font-size:14px;" title="친구들에게 받은 좋아요">'+(typeof heartSvg==='function'?heartSvg({h:16}):'❤')+' '+(state.myLikeCount||0)+' 좋아요</div></div>';
+        '<div class="likemini" style="justify-content:center;margin-top:10px;font-size:14px;gap:6px;" title="친구들에게 받은 좋아요">'+(typeof heartSvg==='function'?heartSvg({h:16}):'❤')+(state.myLikeCount||0)+'</div></div>';
       h+='<div class="field"><label>별명(이름)</label><input class="input" id="profName" value="'+escapeHtml(state.userName)+'" placeholder="가계부에 표시될 이름"></div>';
       h+='<div class="field"><label>계정 이메일(아이디)</label><input class="input" value="'+escapeHtml(state.userEmail||'')+'" disabled></div>';
-      h+='<div class="tx-sub" style="margin:2px 2px 14px;">사진은 256px로 줄여 저장돼요. 같은 그룹 멤버에게 보입니다.</div>';
+      h+='<div class="menu-item" style="padding:8px 2px;"><span>프로필 공개</span><div class="switch '+(state.profilePublic!==false?'on':'')+'" id="profPublic" onclick="this.classList.toggle(\'on\')"><i></i></div></div>';
+      h+='<div class="tx-sub" style="margin:2px 2px 14px;">사진은 256px로 줄여 저장돼요. <b>비공개</b>로 하면 랭킹·비친구에게 <b>은화 아이콘 + \'알뜰\'</b>로만 보여요(친구·좋아요·캠은 그대로).</div>';
       h+='<button class="btn" onclick="onSaveProfile()">저장</button>';
       h+='<button class="btn ghost" style="margin-top:8px;" onclick="openPasswordChangeSheet()">비밀번호 변경</button>';
       openSheet('내 프로필', h);
@@ -1384,7 +1392,9 @@
       inp.click();
     }
     function removeProfilePhoto(){ window._profilePhoto=''; const a=$('profAvatar'); if(a) a.innerHTML=avatarHtml(state.uid, state.userName, 96, ''); }
-    function onSaveProfile(){ const name=val('profName').trim(); if(!name){ toast('이름을 입력하세요', true); return; } saveProfile(name, window._profilePhoto); toast('프로필을 저장했어요'); closeSheet(); }
+    function onSaveProfile(){ const name=val('profName').trim(); if(!name){ toast('이름을 입력하세요', true); return; }
+      const pub=$('profPublic')?$('profPublic').classList.contains('on'):true;
+      saveProfile(name, window._profilePhoto, pub); toast('프로필을 저장했어요'); closeSheet(); }
     // 비밀번호 변경 시트(내 프로필 → 비밀번호 변경). 실제 변경 로직은 core.js changePassword().
     function openPasswordChangeSheet(){
       let h='<div class="field"><label>현재 비밀번호</label><input class="input" id="pwCur" type="password" autocomplete="current-password" placeholder="현재 비밀번호"></div>';
@@ -1395,13 +1405,12 @@
     }
 
     // ===== 가계부(워크스페이스) 프로필: 이름 + 사진 =====
-    // 사진 있으면 <img>, 없으면 이름 이니셜 그라데이션. photoOverride: 미리보기용
+    // 사진 있으면 <img>, 없으면 기본=금화 픽셀 아이콘(그룹/가계부). photoOverride: 미리보기용
     function wsAvatarHtml(name, photo, size, photoOverride){
       size=size||52;
       const p = photoOverride!==undefined ? photoOverride : photo;
       if(p) return '<img class="avatar" src="'+p+'" alt="" style="width:'+size+'px;height:'+size+'px;">';
-      const ch=String(name||'가').trim().charAt(0)||'가';
-      return '<div class="avatar avatar-fallback" style="width:'+size+'px;height:'+size+'px;background:'+avatarGrad(name||'ws')+';font-size:'+Math.round(size*0.42)+'px;">'+escapeHtml(ch)+'</div>';
+      return '<div class="avatar avatar-gold" style="width:'+size+'px;height:'+size+'px;">'+(typeof goldSvg==='function'?goldSvg({h:Math.round(size*0.72)}):'')+'</div>';
     }
     function openWsProfileSheet(){
       const ws=state.wsMeta||{}, isGroup=ws.type==='group';
@@ -1492,6 +1501,10 @@
         h+=gcell(MORE_ICON.loan,'대출/이자','openLoanBook()');
         h+=gcell(MORE_ICON.category,'카테고리','openCategorySheet()');
       }
+      h+='</div>';   // 모드 전용 그리드 닫기
+      // 공통(모드 무관) 아이콘 — 가운데 '공통' 라벨 구분선으로 분리
+      h+='<div class="gsep"><span>공통</span></div>';
+      h+='<div class="grid4">';
       h+=gcell(coinSvg({h:26}),'알뜰샵','openCatHouse()');
       h+=gcell(giftSvg({h:26}),'선물함','openGiftbox()', (typeof giftCount==='function'?giftCount():0));
       h+=gcell((typeof bagSvg==='function'?bagSvg({h:26}):''),'가방','openBag()');

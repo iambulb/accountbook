@@ -25,6 +25,11 @@
       ".write": "auth != null"
     },
 
+    "rankings": {
+      ".read": "auth != null",
+      "$uid": { ".write": "auth != null && auth.uid === $uid" }
+    },
+
     "catalogPets": {
       ".read": "auth != null",
       "$id": { ".write": "auth != null && auth.token.email === 'canel94@gmail.com'" }

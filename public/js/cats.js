@@ -573,6 +573,21 @@
     ];
     const PEOPLE_PAL={A:'#4a90d9',B:'#f2a154'};
     function peopleSvg(opt){ return pxSvg(M_PEOPLE, PEOPLE_PAL, opt); }
+    // 🏆 트로피(랭킹) 픽셀 아트 — C=컵(금), H=하이라이트, D=진금(그림자·기둥·받침).
+    const M_TROPHY = [
+      "D.......D",
+      "DCCCCCCCD",
+      ".CCHCCCC.",
+      ".CCCCCCC.",
+      ".CCCCCCC.",
+      "..CCCCC..",
+      "...CCC...",
+      "....D....",
+      "..DDDDD..",
+      "..DDDDD.."
+    ];
+    const TROPHY_PAL={C:'#F4D06B',H:'#fff0b8',D:'#caa23a'};
+    function trophySvg(opt){ return pxSvg(M_TROPHY, TROPHY_PAL, opt); }
     function pawSvg(opt){ return pxSvg(M_PAW, PAW_PAL, opt); }
     // 상점·팔레트·격자용 대표 아트(물그릇은 물 채운 파란 그릇으로 구분 표시)
     function furnSvg(id, opt){ const M={cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT}[id]; return pxSvg(M, FURN_PALS[id], opt); }
@@ -707,7 +722,11 @@
     // 내가 받은 좋아요 총합 실시간
     function watchMyLikes(){ if(!state.uid) return; if(state._myLikesRef){ try{ state._myLikesRef.off(); }catch(e){} }
       state._myLikesRef=db.ref('users/'+state.uid+'/homeLikes');
-      state._myLikesRef.on('value', s=>{ state.myLikeCount=homeLikeCount(s.val()); if(typeof rerender==='function') rerender(); }, ()=>{}); }
+      state._myLikesRef.on('value', s=>{ state.myLikeCount=homeLikeCount(s.val()); writeMyRanking(); if(typeof rerender==='function') rerender(); }, ()=>{}); }
+    // 공개 랭킹용 경량 엔트리(소유자 유지) — 이름·좋아요수·공개여부. 좋아요 변동·프로필 저장·진입 시 갱신.
+    function writeMyRanking(){ if(!state.uid) return;
+      try{ db.ref('rankings/'+state.uid).set({ name:(state.userName||''), likes:(state.myLikeCount||0), private:(state.profilePublic===false), at:new Date().toISOString() }); }catch(e){}
+    }
     function initCatGame(){
       if(!state.uid) return;
       if(state._gameRef){ try{ state._gameRef.off(); }catch(e){} }
