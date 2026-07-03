@@ -1957,7 +1957,7 @@
         if(a.mode==='roam' && Math.random()<0.003){ a.v=0.14+Math.random()*0.18; setWalkDur(a); }
         // 앞뒤(깊이) 배회 — 가끔 앞/뒤 속도를 새로 정하고 천천히 이동해 가까워졌다 멀어졌다(원근·가림 변화).
         if(a.mode==='roam'){
-          if(a.cool<=0 && Math.random()<0.006) a.vz=(Math.random()*2-1)*0.0002;   // depth/ms (약 5초에 전체 범위)
+          if(a.cool<=0 && Math.random()<0.006) a.vz=(Math.random()*2-1)*0.00004;   // depth/ms — 정면캠이라 앞뒤(원근) 이동은 좌우보다 훨씬 느리게(전체 범위 이동에 25초+)
           if(a.vz){ a.depth+=a.vz*dt; if(a.depth<=0){a.depth=0;a.vz=Math.abs(a.vz);} else if(a.depth>=1){a.depth=1;a.vz=-Math.abs(a.vz);} }
         }
         // 가구로 이동 결정(가구 있을 때, 쿨다운 후)
@@ -2007,8 +2007,8 @@
           if(bMov){ b.x=Math.max(2,Math.min(b.W-b.sw, b.x-sx*push)); if(b.dir!==-sx && (b.dcool||0)<=0){ b.dir=-sx; b.dcool=FLIP_COOL; } moved.push(b); }
         } else {   // 행(depth)으로 분리
           const sd=(ddp>=0?1:-1), share=(aMov&&bMov)?0.5:1, push=(needD+0.004)*share;
-          if(aMov){ a.depth=Math.max(0,Math.min(1, a.depth+sd*push)); a.vz=Math.abs(a.vz||0.0002)*sd; moved.push(a); }
-          if(bMov){ b.depth=Math.max(0,Math.min(1, b.depth-sd*push)); b.vz=-Math.abs(b.vz||0.0002)*sd; moved.push(b); }
+          if(aMov){ a.depth=Math.max(0,Math.min(1, a.depth+sd*push)); a.vz=Math.abs(a.vz||0.00004)*sd; moved.push(a); }
+          if(bMov){ b.depth=Math.max(0,Math.min(1, b.depth-sd*push)); b.vz=-Math.abs(b.vz||0.00004)*sd; moved.push(b); }
         }
       }
       moved.forEach(a=>{ applyDepth(a); setXform(a); a._pdir=a.dir; });   // 밀린 펫만 트랜스폼 갱신
