@@ -55,7 +55,15 @@
   function personKey(tx) { return (tx && tx.userUid && tx.userUid !== '공동') ? tx.userUid : ((tx && tx.user) || '미지정'); }
   // 날짜 헬퍼(할일 반복·마감 계산) — 자기완결(외부 의존 없음).
   function addDays(ds, n) { const p = String(ds).split('-'); const d = new Date(+p[0], (+p[1] || 1) - 1, (+p[2] || 1) + (Number(n) || 0)); const z = function (x) { return (x < 10 ? '0' : '') + x; }; return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()); }
-  function nextDue(ds, rep) { return addDays(ds, rep === 'weekly' ? 7 : 1); }
+  function nextDue(ds, rep) {
+    if (rep === 'monthly') {   // 같은 날 다음 달(말일 클램프: 1/31→2/28)
+      const p = String(ds).split('-'), y = +p[0], m = (+p[1] || 1), d = (+p[2] || 1);
+      let nm = m + 1, ny = y; if (nm > 12) { nm = 1; ny++; }
+      const last = new Date(ny, nm, 0).getDate(), z = function (x) { return (x < 10 ? '0' : '') + x; };
+      return ny + '-' + z(nm) + '-' + z(Math.min(d, last));
+    }
+    return addDays(ds, rep === 'weekly' ? 7 : 1);   // weekly=+7, 그 외(레거시 daily 포함)=+1
+  }
   function dueDiffDays(dueYmd, todayYmd) { const a = new Date(dueYmd + 'T00:00:00'), b = new Date(todayYmd + 'T00:00:00'); return Math.round((a - b) / 86400000); }
   // 할일 스코프: 누락(레거시)은 담당배정형 그룹 할일로 취급.
   function todoScope(t) { return (t && t.scope === 'personal') ? 'personal' : 'group'; }
