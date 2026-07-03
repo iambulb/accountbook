@@ -28,15 +28,29 @@
 
 ---
 
-## 1. 🔴 HIGH — TWA(APK) 검증: `assetlinks.json` 플레이스홀더
+## 1. ⏸️ 추후(스토어 출시) 대비 — TWA `assetlinks.json` 채우기
 
-- **현상**: `public/.well-known/assetlinks.json` 이 `REPLACE_WITH_YOUR_PACKAGE_ID`, `REPLACE_WITH_SHA256_FINGERPRINT_FROM_PWABUILDER` 그대로다.
-- **영향**: TWA(APK)에서 이 값이 실제 값과 다르면 **Digital Asset Links 검증 실패** → 앱이 **주소창(Custom Tab)** 으로 뜨거나 브라우저처럼 동작한다. (뒤로가기가 브라우저식으로 앱을 벗어나던 문제의 근본 배경이 될 수 있음 — 미검증 TWA는 사실상 브라우저 탭.)
-- **조치(빌드 단계, 사용자 진행 필요)**:
-  1. PWABuilder로 APK를 만들 때 나오는 **package id**(예: `app.netlify.yourname.twa`)와 **서명 SHA‑256 지문**을 확인.
-  2. `assetlinks.json` 의 두 플레이스홀더를 실제 값으로 교체 → 배포(`/.well-known/assetlinks.json` 이 200으로 열려야 함).
-  3. 설치 후 앱에 **주소창이 안 보이면** 검증 성공.
-- **비고**: 코드로 자동 수정 불가(빌드 산출 값 필요). 값 주시면 대신 채워 드림.
+> **지금은 안 해도 됨.** 현재는 스토어 출시 계획 없음 → `assetlinks.json`은 **PWA 설치(홈 화면에 추가)에선 전혀 안 쓰인다.** 아래는 **나중에 Play스토어에 APK(TWA)로 낼 때**를 위한 대비 메모.
+
+- **현상**: `public/.well-known/assetlinks.json` 이 `REPLACE_WITH_YOUR_PACKAGE_ID`, `REPLACE_WITH_SHA256_FINGERPRINT_FROM_PWABUILDER` 플레이스홀더 상태.
+- **언제 필요?** **오직 TWA(PWABuilder로 만든 APK)** 로 배포할 때만. PWA 설치로만 쓰면 무관.
+- **안 채우고 TWA를 내면 잃는 것**(기능은 정상, "앱스러움/검증"만 못 얻음):
+
+  | 배포 방식 | assetlinks 안 채움 |
+  |---|---|
+  | PWA 설치(홈 화면 추가) | 영향 없음 |
+  | **TWA/APK** | ① 상단 **주소창(URL 바)** 노출 ② **미검증** 상태(시스템 통합 약화) ③ **딥링크(`handle_all_urls`)** 자동 열기 불가. 로그인·기능은 정상 |
+
+- **뒤로가기와 무관**: 뒤로가기 수정은 **웹 히스토리 기반**이라 assetlinks 검증과 상관없이 동작함(안 채워도 안 잃음).
+- **나중에 채우는 법**:
+  1. **가장 쉬움 — PWABuilder가 만들어 줌**: pwabuilder.com에서 Android 패키지 빌드 → 다운로드 zip 안 **`assetlinks.json`이 이미 올바른 값**으로 들어있음 → `public/.well-known/assetlinks.json`에 그대로 덮어쓰고 배포.
+  2. **package_name**: PWABuilder에서 정한 Package ID(예: `app.netlify.<이름>.twa`).
+  3. **SHA‑256 지문**:
+     - Google Play + Play 앱 서명(권장): Play Console → 앱 → **설정 → 앱 무결성 → 앱 서명 키 인증서 → SHA‑256**. ⚠️ **업로드 키가 아니라 '앱 서명 키'** 여야 함.
+     - 키스토어 직접: `keytool -list -v -keystore your.keystore -alias your-alias` → `SHA256:` 값.
+     - 형식: 대문자 콜론 구분 헥사(`AB:CD:…:EF`).
+  4. **검증**: 배포 후 `https://도메인/.well-known/assetlinks.json` 200 JSON, 설치 앱에 **주소창 안 보이면** OK.
+- **비고**: 코드로 자동 채움 불가(빌드 산출 값 필요). 출시 준비 시 package_name·SHA‑256 주면 대신 채워 커밋 가능.
 
 ---
 
@@ -97,9 +111,11 @@
 
 ---
 
-### 우선순위 정리
-1. **(HIGH)** assetlinks 실제 값 채우기 — TWA면 필수.
-2. **(MED)** color-mix 폴백 일괄(구형 안드로이드 타깃이면).
-3. **(LOW)** 실기 확인 후 상단바 세이프에어리어·number input·스플래시 메타.
+### 진행 현황 / 우선순위
+- ✅ **완료** — 하드웨어 뒤로가기 = 진짜 뒤로가기(`main.js`).
+- ✅ **완료** — `color-mix` 폴백 일괄(`styles.css` 끝 `@supports not(color-mix)` 블록, 구형 안드로이드 WebView 대응·모던 무변화).
+- ⏸️ **보류(추후 스토어 출시 시)** — `assetlinks.json` 실제 값 채우기(§1). **지금 PWA 설치에는 불필요.**
+- 🔬 **실기 확인 후 반영** — 노치 안드로이드에서 `.topbar` 상단 세이프에어리어(§3), `type="number"` 1곳, 스플래시(§4). *iPhone에서 정상이라 회귀 방지 위해 실기 확인 먼저.*
+- ⛔ **반영 안 함(의도)** — 다크 first‑paint `theme-color` 미디어 메타: 앱이 **수동 테마 토글**이라 `prefers-color-scheme` 메타와 충돌 → 현재 JS 갱신 방식 유지가 정답.
 
-> 코드로 지금 바로 안전하게 반영 가능한 것: **color-mix 폴백 일괄**, **다크모드 first‑paint theme-color 메타**. 원하시면 진행하겠음. assetlinks는 빌드 값이 필요.
+> 정리: **코드로 지금 바로 안전한 것은 이미 반영 완료**. 남은 건 (a) 추후 출시 대비 assetlinks, (b) 실기 확인이 필요한 몇 가지뿐. 실기 테스트 후 발견되는 것만 추가로 다듬으면 됨.
