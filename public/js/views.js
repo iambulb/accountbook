@@ -709,12 +709,13 @@
       likeHome(uid, function(ok, cnt){
         if(!ok){ toast('오늘은 이미 좋아요를 눌렀어요'); return; }
         toast('좋아요 ❤️');
+        if(cnt!=null){ state.friendLikes=state.friendLikes||{}; state.friendLikes[uid]=cnt; }   // 친구목록 하트 수 즉시 반영
         const n=$('fhLikeN'); if(n && cnt!=null) n.textContent=cnt;
         const btn=document.querySelector('.likebtn'); if(btn){ btn.classList.add('on'); btn.disabled=true; }
         const hint=document.querySelector('.likehint'); if(hint) hint.textContent='오늘 좋아요 완료 · 내일 또 눌러주세요';
       });
     }
-    // ===== 🏆 랭킹(집 좋아요 TOP10) — 공용. rankings 노드만 읽어 정렬 =====
+    // ===== 🏆 랭킹(집 좋아요 TOP10) — 공용. rankings=참가자 디렉터리, 실제 좋아요는 homeLikes에서 라이브 집계(즉시 반영) =====
     function rankAvatar(r, size){
       if(r.anon) return '<div class="avatar avatar-coin" style="width:'+size+'px;height:'+size+'px;">'+(typeof coinSvg==='function'?coinSvg({h:Math.round(size*0.72)}):'')+'</div>';
       return avatarHtml(r.uid, r.show, size);
@@ -747,12 +748,21 @@
         if(!($('sheet')&&$('sheet').classList.contains('on'))) return;
         const o=s.val()||{};
         let rows=Object.keys(o).map(function(uid){ const e=o[uid]||{}; return { uid:uid, name:e.name||'', likes:Number(e.likes)||0, priv:!!e.private }; });
+        // 후보 선정: 저장 좋아요 기준 상위 CAP명(라이브 읽기 수 제한)
         rows.sort(function(a,b){ return (b.likes-a.likes) || String(a.name).localeCompare(String(b.name)); });
-        rows=rows.slice(0,10);
-        rows.forEach(function(r){ const isFriend=!!(state.friends&&state.friends[r.uid]); r.anon=r.priv&&!isFriend; r.show=r.anon?'알뜰':(r.name||'사용자'); });
-        const need=rows.filter(function(r){ return !r.anon && !(state.userPhotos&&state.userPhotos[r.uid]); });
-        Promise.all(need.map(function(r){ return db.ref('users/'+r.uid+'/photo').once('value').then(function(ps){ state.userPhotos[r.uid]=ps.val()||''; }).catch(function(){}); }))
-          .then(function(){ renderRankingBody(rows); });
+        const CAP=80, cand=rows.slice(0,CAP);
+        // 실제 좋아요는 users/{uid}/homeLikes에서 라이브 집계 → 집주인 접속 여부와 무관하게 즉시·정확 반영
+        Promise.all(cand.map(function(r){ return db.ref('users/'+r.uid+'/homeLikes').once('value')
+          .then(function(hs){ r.likes=(typeof homeLikeCount==='function')?homeLikeCount(hs.val()):r.likes; }).catch(function(){}); }))
+          .then(function(){
+            if(!($('sheet')&&$('sheet').classList.contains('on'))) return;
+            cand.sort(function(a,b){ return (b.likes-a.likes) || String(a.name).localeCompare(String(b.name)); });
+            const top=cand.slice(0,10);
+            top.forEach(function(r){ const isFriend=!!(state.friends&&state.friends[r.uid]); r.anon=r.priv&&!isFriend; r.show=r.anon?'알뜰':(r.name||'사용자'); });
+            const need=top.filter(function(r){ return !r.anon && !(state.userPhotos&&state.userPhotos[r.uid]); });
+            return Promise.all(need.map(function(r){ return db.ref('users/'+r.uid+'/photo').once('value').then(function(ps){ state.userPhotos[r.uid]=ps.val()||''; }).catch(function(){}); }))
+              .then(function(){ renderRankingBody(top); });
+          });
       }).catch(function(){ const b=$('sheetBody'); if(b) b.innerHTML='<div class="empty" style="padding:40px 12px;">랭킹을 불러오지 못했어요</div>'; });
     }
     // ===== 친구들 피드('친구들' 탭) = 인스타그램 스토리 줄 + 아래 친구 할일 피드 =====
