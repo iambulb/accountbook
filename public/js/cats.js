@@ -416,8 +416,10 @@
     function currentWall(){ return (state.game&&state.game.home.wallpaper)||'default'; }
     // 미션 정의(일일). reward=은화. check(ctx)=완료 여부(현재 워크스페이스 활동 읽어 판정)
     const DAILY_MISSIONS = [
-      { id:'record', period:'day', name:'오늘 거래 1건 기록', reward:5, icon:'<path d="M12 4v16M8 8l4-4 4 4"/><rect x="4" y="18" width="16" height="3" rx="1"/>',
-        check:()=> (state.transactions||[]).some(t=>(t.date||'').slice(0,10)===kstDayKey()) },
+      { id:'record', period:'day', name:'오늘 1건 추가', reward:5, icon:'<path d="M12 4v16M8 8l4-4 4 4"/><rect x="4" y="18" width="16" height="3" rx="1"/>',
+        // 가계부(거래) 또는 할일 중 아무거나 오늘 1건 등록하면 완료
+        check:()=> (state.transactions||[]).some(t=>(t.date||'').slice(0,10)===kstDayKey())
+          || ((state.todos||[]).concat(state.myTodos||[])).some(t=>(t.createdAt||'').slice(0,10)===kstDayKey()) },
       { id:'attend', period:'day', name:'출석 체크', reward:2, icon:'<path d="M5 12l4 4L19 6"/>',
         check:()=> true }   // 앱 진입 = 완료(멱등 수령)
     ];
@@ -960,7 +962,10 @@
       const m=DAILY_MISSIONS.find(x=>x.id===id); if(!m) return;
       if(missionClaimed(m)) return;
       if(m.check()){ claimMission(id); return; }
-      if(id==='record' && typeof goto==='function'){ goto('ledger'); if(typeof openTxSheet==='function') openTxSheet(); }
+      if(id==='record'){   // 미완료 → 현재 모드에 맞는 추가 화면으로(할일 모드=할일 추가, 그 외=거래 추가)
+        if(state.mode==='todo'){ if(typeof openTodoEdit==='function') openTodoEdit(); }
+        else { if(typeof goto==='function') goto('ledger'); if(typeof openTxSheet==='function') openTxSheet(); }
+      }
     }
     // 출석 자동 수령(진입 시 1회, 멱등)
     function autoClaimAttend(){
