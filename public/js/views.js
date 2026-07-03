@@ -727,11 +727,14 @@
     function friendGiftBarInner(uid){
       const eggLeft=(typeof mailCountLeft==='function')?mailCountLeft('egg'):0;
       const freeLeft=(typeof mailCountLeft==='function')?mailCountLeft('free'):0;
+      const freeDone=(typeof freeSentToday==='function')&&freeSentToday(uid);
       const canAfford=(typeof coins==='function')?coins()>=100:true;
       const egg=(typeof eggSvg==='function')?eggSvg(0,{h:20}):'🥚';
       const gift=(typeof giftSvg==='function')?giftSvg({h:20}):'🎁';
+      const freeHint=freeDone ? '오늘 이 친구에게 보냄 · 내일 또 보낼 수 있어요'
+                              : '물·사료·은화 랜덤 · 이 친구 하루 1번 · 오늘 전체 '+freeLeft+'회 남음';
       return '<button class="giftsend" onclick="sendPetEggGift(\''+uid+'\')"'+((eggLeft<=0||!canAfford)?' disabled':'')+'><span class="gsic">'+egg+'</span><span class="gstx"><b>펫알 선물</b><small>은화 100 · 남은 '+eggLeft+'회'+(!canAfford?' · 은화 부족':'')+'</small></span></button>'+
-             '<button class="giftsend free" onclick="sendFreeGift(\''+uid+'\')"'+(freeLeft<=0?' disabled':'')+'><span class="gsic">'+gift+'</span><span class="gstx"><b>무료 응원 선물</b><small>물·사료·은화·금화 랜덤 · 남은 '+freeLeft+'회</small></span></button>';
+             '<button class="giftsend free" onclick="sendFreeGift(\''+uid+'\')"'+((freeDone||freeLeft<=0)?' disabled':'')+'><span class="gsic">'+gift+'</span><span class="gstx"><b>무료 응원 선물</b><small>'+freeHint+'</small></span></button>';
     }
     function friendGiftBar(uid){ return '<div class="sech"><span class="l">선물 보내기</span></div><div id="fhGiftBar" class="fhgift">'+friendGiftBarInner(uid)+'</div>'; }
     function openFriendHome(uid){

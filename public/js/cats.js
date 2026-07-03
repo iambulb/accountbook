@@ -1350,10 +1350,24 @@
     function mailRef(uid){ return db.ref('users/'+uid+'/mailbox/'+state.uid).push(); }   // 내가 uid에게 보내는 새 엔트리
     function isMyFriend(uid){ return !!(state.friends && state.friends[uid]); }
     function mailCountLeft(kind){ const day=kstDayKey(); const m=(state.game&&state.game.mail)||{}; const used=Number((m[kind]||{})[day])||0; return Math.max(0,(kind==='egg'?MAIL_EGG_DAILY:MAIL_FREE_DAILY)-used); }
-    // 하루 카운트 tx 게이트(멱등·경쟁안전): 여유 있으면 +1하고 allowed=true. cb(allowed).
+    // 하루 카운트 tx 게이트(멱등·경쟁안전): 여유 있으면 +1하고 allowed=true. cb(allowed). (펫알 선물용)
     function mailDailyGate(kind, cb){ const day=kstDayKey(), cap=(kind==='egg'?MAIL_EGG_DAILY:MAIL_FREE_DAILY); let ok=false;
       gameRef().transaction(g=>{ g=normalizeGame(g); g.mail=g.mail||{}; g.mail[kind]=g.mail[kind]||{}; const c=Number(g.mail[kind][day])||0; if(c>=cap) return g; g.mail[kind][day]=c+1; ok=true; return g; })
         .then(r=>{ cb(!!(r&&r.committed&&ok)); }).catch(()=>cb(false)); }
+    // 무료 응원 선물: 오늘 이 친구에게 이미 보냈는지(친구당 하루 1번)
+    function freeSentToday(uid){ const day=kstDayKey(); const m=(state.game&&state.game.mail)||{}; const to=(m.freeTo&&m.freeTo[day])||{}; return !!to[uid]; }
+    // 무료 선물 게이트: 친구당 하루 1번 + 전체 하루 MAIL_FREE_DAILY번. 통과 시 total+1·freeTo[uid]=1. cb(ok, reason).
+    function mailFreeGate(uid, cb){ const day=kstDayKey(); let ok=false, reason='';
+      gameRef().transaction(g=>{ g=normalizeGame(g); g.mail=g.mail||{}; g.mail.free=g.mail.free||{}; g.mail.freeTo=g.mail.freeTo||{};
+        const to=g.mail.freeTo[day]||(g.mail.freeTo[day]={}); const total=Number(g.mail.free[day])||0;
+        if(to[uid]){ reason='dup'; return g; }                       // 이 친구에겐 오늘 이미 보냄
+        if(total>=MAIL_FREE_DAILY){ reason='cap'; return g; }          // 오늘 전체 소진
+        g.mail.free[day]=total+1; to[uid]=1; ok=true; return g;
+      }).then(r=>{ cb(!!(r&&r.committed&&ok), reason); }).catch(()=>cb(false,'err')); }
+    // 무료 선물 게이트 롤백(전송 실패 시 소비한 횟수·친구표시 되돌림)
+    function mailFreeRollback(uid){ const day=kstDayKey();
+      gameRef().transaction(g=>{ g=normalizeGame(g); if(g.mail&&g.mail.free&&g.mail.free[day]) g.mail.free[day]=Math.max(0,Number(g.mail.free[day])-1);
+        if(g.mail&&g.mail.freeTo&&g.mail.freeTo[day]) delete g.mail.freeTo[day][uid]; return g; }); }
     // mailbox 엔트리 쓰기(발신자→수령자). from/fromName 포함(규칙 validate가 from=auth.uid 요구).
     function writeMailGift(uid, gf){ const e=Object.assign({}, gf, { from:state.uid, fromName:(state.userName||'알뜰'), at:new Date().toISOString() });
       return mailRef(uid).set(e); }
@@ -1371,14 +1385,15 @@
               .catch(()=>{ gameRef().transaction(g=>{ g=normalizeGame(g); g.coins=(g.coins||0)+MAIL_EGG_COST; return g; }); toast('선물 전송 실패(친구 관계·네트워크 확인)', true); }); });
       });
     }
-    // 🎁 무료 응원 선물 — 무료·하루 제한. 물/사료/은화/금화 랜덤 1개.
+    // 🎁 무료 응원 선물 — 무료. 친구당 하루 1번 + 전체 하루 5번. 물/사료/은화 랜덤 1개.
     function sendFreeGift(uid){
       if(!uid || uid===state.uid) return; if(!isMyFriend(uid)){ toast('친구에게만 보낼 수 있어요', true); return; }
+      if(freeSentToday(uid)){ toast('이 친구에겐 오늘 이미 보냈어요(친구당 하루 1번)', true); return; }
       if(mailCountLeft('free')<=0){ toast('오늘 무료 선물을 다 보냈어요(하루 '+MAIL_FREE_DAILY+'회)', true); return; }
-      mailDailyGate('free', okDay=>{ if(!okDay){ toast('오늘 무료 선물을 다 보냈어요(하루 '+MAIL_FREE_DAILY+'회)', true); return; }
+      mailFreeGate(uid, (okDay, reason)=>{ if(!okDay){ toast(reason==='dup'?'이 친구에겐 오늘 이미 보냈어요(친구당 하루 1번)':'오늘 무료 선물을 다 보냈어요(하루 '+MAIL_FREE_DAILY+'회)', true); return; }
         const gift=rollFreeGift(Math.random());
         writeMailGift(uid, gift).then(()=>{ const v=giftView(gift); toast('🎁 '+friendDisplayName(uid)+'님에게 '+v.name+' 응원 선물!'); if(state._sheetRefresh) state._sheetRefresh(); })
-          .catch(()=>{ toast('선물 전송 실패(친구 관계·네트워크 확인)', true); }); });
+          .catch(()=>{ mailFreeRollback(uid); toast('선물 전송 실패(친구 관계·네트워크 확인)', true); if(state._sheetRefresh) state._sheetRefresh(); }); });
     }
     // ---- 수신(내 mailbox) ----
     function mailListFlat(){ const mb=(state.mailbox)||{}; const out=[];
