@@ -712,6 +712,7 @@
     .emob.on { border-color:var(--accent,#4a90d9); box-shadow:0 0 0 2px color-mix(in srgb,var(--accent,#4a90d9) 35%,transparent); }
     .rmthumb .rmrep { position:absolute; top:4px; left:4px; z-index:2; font-size:12px; line-height:1; color:#ffd23f; text-shadow:0 1px 2px rgba(0,0,0,.5); pointer-events:none; }
     .rmthumb.rmdragging { z-index:6; opacity:.92; box-shadow:0 6px 18px rgba(0,0,0,.28); touch-action:none; }
+    .rmdropline { position:fixed; width:3px; border-radius:2px; background:var(--accent,#4a90d9); z-index:8; pointer-events:none; box-shadow:0 0 6px color-mix(in srgb,var(--accent,#4a90d9) 70%,transparent); }
     .rmstrip .rmthumb { touch-action:pan-x; }   /* 세로 스크롤은 시트로 통과, 가로 롱프레스는 재정렬 */
     /* 펫 카드: 다른 방에 있는 펫(옮겨올 수 있음) — 방 이름 배지 + 은은한 강조 */
     .catchip.elsewhere { border-color:color-mix(in srgb,var(--accent,#4a90d9) 45%,var(--bd)); }
@@ -912,7 +913,8 @@
     .fx-aurawrap { z-index:0; }
     .fx-twinkles { z-index:3; }
     /* 등장(펫) 연출: 큰 발산 광선은 빼고 — 펫 주변에 작고 은은한 오오라 + 트윙클 반짝임만 */
-    .fx-aurawrap .ll-rays { display:none; }
+    .fx-aurawrap .ll-rays { display:none; }   /* 낮은 등급: 큰 광선 없이 작은 오오라만 */
+    .fx-reveal.rank-3 .fx-aurawrap .ll-rays, .fx-reveal.rank-4 .fx-aurawrap .ll-rays, .fx-reveal.rank-5 .fx-aurawrap .ll-rays, .fx-reveal.rev-rb .fx-aurawrap .ll-rays { display:block; }   /* 특별↑·무지개: 화려한 발산 광선 등장 */
     .fx-aurawrap .ll-aura { opacity:.2; transform:translate(-50%,-50%) scale(.58); animation:llpulse 2.0s steps(6) infinite; }
     .fx-tw { position:absolute; left:50%; top:50%; image-rendering:pixelated; opacity:0;
       transform:translate(calc(-50% + var(--tx,0px)), calc(-50% + var(--ty,0px))) scale(0); animation:fxtw 1.4s steps(3) infinite; }
@@ -931,7 +933,11 @@
     .fx-reveal .fx-tier { color:inherit; }
     .fx-reveal.tier-limited .fx-tier { background:linear-gradient(90deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8,#F04452); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:rainbow 2s linear infinite; }
     .fx-confetti { position:absolute; inset:0; overflow:hidden; z-index:1; pointer-events:none; }
-    .fx-conf { position:absolute; top:-12px; width:8px; height:12px; border-radius:2px; animation:fxconf linear forwards; }
+    /* 픽셀 컨페티 — 각진 도트 블록(둥근 조각 금지). currentColor=조각 색(인라인), 3가지 모양 s0~s2. */
+    .fx-conf { position:absolute; top:-16px; width:4px; height:4px; background:currentColor; border-radius:0; image-rendering:pixelated;
+      box-shadow:4px 0 currentColor, 0 4px currentColor, 4px 4px currentColor; animation:fxconf linear forwards; }
+    .fx-conf.s1 { box-shadow:4px 0 currentColor, 8px 0 currentColor, 4px 4px currentColor; }
+    .fx-conf.s2 { box-shadow:-4px 4px currentColor, 4px 4px currentColor, 0 8px currentColor; }
     /* ✨ 픽셀 반짝임(스파클) — 무지개 대기/등급 등장 공통. 색은 부모 색 상속(무지개=흰색, 등장=등급색). +자 픽셀 */
     .fx-spark { position:absolute; width:4px; height:4px; background:currentColor; image-rendering:pixelated; z-index:2; opacity:0;
       box-shadow:4px 0 currentColor,-4px 0 currentColor,0 4px currentColor,0 -4px currentColor;
@@ -966,6 +972,17 @@
     .fx-reveal.rank-3 .fx-frame, .fx-reveal.rank-4 .fx-frame, .fx-reveal.rank-5 .fx-frame { inset:-11px; border-width:4px; opacity:.75; }
     .fx-reveal.rank-5 .fx-frame { border-color:transparent; box-shadow:0 0 0 4px #ff5fa2, 0 0 16px 5px rgba(255,95,162,.6); }
     .fx-reveal.rank-0 .fx-frame, .fx-reveal.rank-1 .fx-frame, .fx-reveal.rank-2 .fx-frame { display:none; }   /* 낮은 등급은 프레임 생략(담백) */
+    /* 전설↑·무지개: 펫 중심에서 퍼지는 픽셀 링 충격파(각진 사각 테두리, 도트) */
+    .fx-ring { position:absolute; left:50%; top:50%; width:64px; height:64px; transform:translate(-50%,-50%); border:3px solid currentColor; image-rendering:pixelated; opacity:0; display:none; z-index:0; }
+    .fx-reveal.rank-4 .fx-ring, .fx-reveal.rank-5 .fx-ring, .fx-reveal.rev-rb .fx-ring { display:block; animation:fxring 1.6s steps(6) infinite; }
+    @keyframes fxring { 0%{ opacity:.6; width:60px; height:60px; } 100%{ opacity:0; width:240px; height:240px; } }
+    /* ✨ 무지개 등장: 프레임을 무지갯빛으로 + 등급명 무지개 */
+    .fx-reveal.rev-rb .fx-frame { display:block; inset:-11px; border-width:4px; border-color:transparent; box-shadow:0 0 0 4px #ff5fa2, 0 0 0 8px #F2C84B, 0 0 18px 6px rgba(255,95,162,.5); animation:fxframe 1s steps(2) infinite; }
+    .fx-reveal.rev-rb .fx-tier { background:linear-gradient(90deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8,#F04452); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:rainbow 2s linear infinite; }
+    /* ✨ 무지개 승급 순간(2번째 탭) 흰 픽셀 방사 번쩍(1회) */
+    .fx-upgrade { position:absolute; left:50%; top:50%; z-index:4; transform:translate(-50%,-50%) scale(.4); image-rendering:pixelated; color:#fff; animation:fxupg .72s steps(6) forwards; pointer-events:none; }
+    .fx-upgrade .px { display:block; }
+    @keyframes fxupg { 0%{ opacity:0; transform:translate(-50%,-50%) scale(.4); } 30%{ opacity:.95; } 100%{ opacity:0; transform:translate(-50%,-50%) scale(1.9); } }
     /* 등급↑ 후광·광선 더 크고 밝게 */
     .fx-reveal.rank-4 .fx-halo, .fx-reveal.rank-5 .fx-halo { width:300px; height:300px; opacity:.5; }
     .fx-reveal.rank-4 .fx-rays.slow, .fx-reveal.rank-5 .fx-rays.slow { width:520px; height:520px; opacity:.62; }
@@ -999,7 +1016,7 @@
     @keyframes fxspin { to{transform:translate(-50%,-50%) rotate(360deg)} }
     @keyframes fxpart { to{ transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.3); opacity:0; } }
     @keyframes fxopen { to{ transform:translateY(-40px) scale(1.1) rotate(6deg); opacity:0; } }
-    @keyframes fxconf { to{ transform:translateY(105vh) rotate(var(--r)); opacity:.9; } }
+    @keyframes fxconf { to{ transform:translate(var(--sw,0px),110vh) rotate(var(--r)); opacity:.85; } }
     /* 오픈 직전: 흔들림 → 앞발 톡 → 등급색 빛 새어나옴 */
     .fx-item.fx-preshake { animation:fxpreshake .5s ease-in-out infinite; }
     .fx-item.fx-hit { animation:fxhit .34s ease; }
@@ -1016,12 +1033,11 @@
         transparent 78%);
       opacity:0; filter:blur(.5px); animation:fxleak .7s ease-out forwards; }
     .fx-leak.rainbow { background:conic-gradient(#F04452 0 60deg,#F0883C 60deg 120deg,#F2C84B 120deg 180deg,#2FAE7A 180deg 240deg,#3182F6 240deg 300deg,#9B6FC8 300deg 360deg); animation:fxleak .7s ease-out forwards, fxspin 2.4s steps(12) infinite; }
-    /* 깨진 알 껍질 조각 — 튀어나가 옆에 흩어져 앉는다(알 전용) */
-    .fx-shell { position:absolute; left:50%; top:48%; width:13px; height:10px; z-index:2;
-      background:#FBFBFD; border:1.5px solid #c9c2b0; border-radius:48% 48% 60% 60% / 62% 62% 45% 45%;
-      transform:translate(-50%,-50%) scale(.4); opacity:0; filter:drop-shadow(0 2px 3px rgba(0,0,0,.3));
+    /* 깨진 알 껍질 조각(픽셀 svg) — 튀어나가 옆에 흩어져 앉는다. 배경/테두리/모양은 shellSvg가 그림. */
+    .fx-shell { position:absolute; left:50%; top:48%; z-index:2; image-rendering:pixelated;
+      transform:translate(-50%,-50%) scale(.4); opacity:0; filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));
       animation:fxshell .8s cubic-bezier(.2,.85,.3,1) forwards; }
-    .fx-shell.big { width:22px; height:16px; }
+    .fx-shell .px { display:block; }
     .fx-paw { position:absolute; left:50%; top:54%; z-index:3; transform:translate(150px,-50%) rotate(-18deg); }
     .fx-paw .px { height:66px; filter:drop-shadow(0 4px 8px rgba(0,0,0,.4)); }
     .fx-paw.tap { animation:fxpaw .5s cubic-bezier(.3,.7,.3,1); }
@@ -1038,11 +1054,11 @@
       100%{ opacity:1; transform:translate(calc(-50% + var(--sx)), calc(-50% + var(--sy))) rotate(var(--sr)) scale(var(--ss)); }
     }
 
-    /* 껍질 조각(탭마다 튀는 작은 조각) — 깨짐 강조 */
-    .fx-chip { position:absolute; left:50%; top:46%; width:9px; height:7px; z-index:3;
-      background:#FBFBFD; border:1.5px solid #c9c2b0; border-radius:46% 46% 60% 60% / 60% 60% 44% 44%;
+    /* 껍질 조각(탭마다 튀는 작은 픽셀 조각) — 깨짐 강조. 모양은 shellSvg가 그림. */
+    .fx-chip { position:absolute; left:50%; top:46%; z-index:3; image-rendering:pixelated;
       transform:translate(-50%,-50%) scale(.4); opacity:0; filter:drop-shadow(0 2px 3px rgba(0,0,0,.3));
       animation:fxchip .62s ease-out forwards; }
+    .fx-chip .px { display:block; }
     @keyframes fxchip {
       0%{ opacity:0; transform:translate(-50%,-50%) scale(.4) rotate(0); }
       15%{ opacity:1; }

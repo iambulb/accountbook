@@ -11,7 +11,7 @@
 ### 추가·보안 — 🏠🔒 방 프라이버시(대표 방 실제 비공개)·이모지·드래그 재정렬
 - **진짜 프라이버시**: 친구·랭킹이 보는 집을 **공개 스냅샷 `homeCam/{uid}`(대표 방만)**로 분리. RTDB 규칙에서 **`users/{uid}/game`을 소유자만 읽도록** 제한(다른 방은 raw로도 비공개) + 공개 서브패스(profilePublic/photo/todos/todoPublic/friends/friendReqs/homeLikes)만 크로스유저 읽기 허용. 친구 캠·스토리 변경시각은 homeCam에서 읽음. **규칙 배포 필요.**
 - **방 이모지**: 방마다 이모지 지정(썸네일·dock 이름 앞 표시, `setRoomEmoji`).
-- **방 순서 드래그**: 썸네일 롱프레스로 끌어 재정렬(`rmDown`/`moveRoomTo`), 키보드용 ← → 버튼 유지. 대표 방 ★ 배지 aria-label 보강.
+- **방 순서 드래그**: 썸네일 롱프레스로 끌어 재정렬(`rmDown`/`moveRoomTo`), 키보드용 ← → 버튼 유지. 대표 방 ★ 배지 aria-label 보강. 드래그 시 **삽입 위치 표시선**(rmdropline).
 - sw v3.161.0.
 
 ### 추가·개선 — 👥 그룹 멤버 프로필 방문 + 👑 왕관/⚙️설정/🎒가방 픽셀 아이콘

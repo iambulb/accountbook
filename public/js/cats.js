@@ -780,33 +780,34 @@
     ];
     const PEOPLE_PAL={A:'#4a90d9',B:'#f2a154',L:'#a9cdf0'};
     function peopleSvg(opt){ return pxSvg(M_PEOPLE, PEOPLE_PAL, opt); }
-    // ⚙️ 설정(톱니) 픽셀 아트 — 8이빨 코그 + 가운데 구멍(H=밝은 회색). G=몸체.
+    // ⚙️ 설정(톱니) 픽셀 아트 — 청크형 8이빨 코그 + 위→아래 명암(H=하이라이트/G=몸체/S=그림자) + 둥근 구멍. 뾰족한 1px 이빨 대신 두툼한 이빨로 정돈.
     const M_GEAR = [
-      "....G...G....",
-      "....G...G....",
-      "..G.GGGGG.G..",
+      ".............",
+      "..HH.HHH.HH..",
+      "..HH.HHH.HH..",
+      "..HHHHHHHHH..",
       "..GGGGGGGGG..",
-      "GGGGGHHHGGGGG",
-      "GGGGH...HGGGG",
-      "..GGH...HGG..",
-      "GGGGH...HGGGG",
-      "GGGGGHHHGGGGG",
+      "GGGGG...GGGGG",
+      "GGGG.....GGGG",
+      "GGGGG...GGGGG",
       "..GGGGGGGGG..",
-      "..G.GGGGG.G..",
-      "....G...G....",
-      "....G...G...."
+      "..SSSSSSSSS..",
+      "..SS.SSS.SS..",
+      "..SS.SSS.SS..",
+      "............."
     ];
-    const GEAR_PAL={G:'#7c8698',H:'#c3cad4'};
+    const GEAR_PAL={G:'#7c8698',H:'#aeb6c4',S:'#5f6875'};
     function gearSvg(opt){ return pxSvg(M_GEAR, GEAR_PAL, opt); }
-    // 👑 왕관(그룹 소유자) 픽셀 아트 — C=금, J=보석(루비), D=진금 밴드. 은화/금화와 같은 톤.
+    // 👑 왕관(그룹 소유자) 픽셀 아트 — 세 뾰족 끝에 보석(B) 1개씩 + 하이라이트 밴드(H). C=금, D=진금, B=루비.
     const M_CROWN = [
-      "CC.CCC.CC",
-      "CCCCCCCCC",
-      "CJCCJCCJC",
-      "CCCCCCCCC",
-      "DDDDDDDDD"
+      ".B...B...B.",
+      "CCC.CCC.CCC",
+      "CCCCCCCCCCC",
+      "CHHHHHHHHHC",
+      "CCCCCCCCCCC",
+      "DDDDDDDDDDD"
     ];
-    const CROWN_PAL={C:'#F4D06B',J:'#e0556b',D:'#caa23a'};
+    const CROWN_PAL={C:'#F4D06B',H:'#ffe6a0',D:'#caa23a',B:'#e0556b'};
     function crownSvg(opt){ return pxSvg(M_CROWN, CROWN_PAL, opt); }
     // 🏆 트로피(랭킹) 픽셀 아트 — C=컵(금), H=하이라이트, D=진금(그림자·기둥·받침).
     const M_TROPHY = [
@@ -1134,19 +1135,23 @@
     // 방 썸네일 롱프레스 드래그로 순서 변경(짧게 탭=전환). 가구 드래그와 같은 게이트 재사용.
     let _rmDrag=null, _justRmDragged=false;
     function rmTap(idx){ if(_justRmDragged){ _justRmDragged=false; return; } switchRoom(idx); }
+    function rmOthers(d){ return d.strip?Array.prototype.slice.call(d.strip.querySelectorAll('.rmthumb:not(.locked)')).filter(t=>t!==d.el):[]; }
+    function rmDropTo(others, px){ let to=0; others.forEach(t=>{ const r=t.getBoundingClientRect(); if(px>r.left+r.width/2) to++; }); return to; }   // 삽입 위치(드래그 대상 제외)
+    function rmShowDrop(d, px){ const others=rmOthers(d), ind=d.ind; if(!ind||!others.length) return; const to=rmDropTo(others, px);
+      const ref=to<others.length?others[to]:others[others.length-1], rr=ref.getBoundingClientRect();
+      ind.style.left=((to<others.length?rr.left:rr.right)-1.5)+'px'; ind.style.top=rr.top+'px'; ind.style.height=rr.height+'px'; ind.hidden=false; }
     function rmDown(e, idx){ if(roomCount()<2) return; const pid=e.pointerId;
-      beginLongPress(e, (el)=>{ _rmDrag={ idx, el, strip:el.closest('.rmstrip'), sx:e.clientX, sy:e.clientY };
+      beginLongPress(e, (el)=>{ const ind=document.createElement('div'); ind.className='rmdropline'; ind.hidden=true; document.body.appendChild(ind);
+        _rmDrag={ idx, el, strip:el.closest('.rmstrip'), sx:e.clientX, sy:e.clientY, ind };
         lockDragScroll(); try{ el.setPointerCapture(pid); }catch(_){}
         el.classList.add('rmdragging'); el.onpointermove=rmMove; el.onpointerup=rmUp; el.onpointercancel=rmUp;
       }, ()=>{}); }
-    function rmMove(e){ if(!_rmDrag) return; _rmDrag.el.style.transform='translate('+(e.clientX-_rmDrag.sx)+'px,'+(e.clientY-_rmDrag.sy)+'px)'; }
+    function rmMove(e){ if(!_rmDrag) return; _rmDrag.el.style.transform='translate('+(e.clientX-_rmDrag.sx)+'px,'+(e.clientY-_rmDrag.sy)+'px)'; rmShowDrop(_rmDrag, e.clientX); }
     function rmUp(e){ if(!_rmDrag) return; const d=_rmDrag; _rmDrag=null; unlockDragScroll();
       d.el.onpointermove=null; d.el.onpointerup=null; d.el.onpointercancel=null;
-      d.el.classList.remove('rmdragging'); d.el.style.transform='';
+      d.el.classList.remove('rmdragging'); d.el.style.transform=''; if(d.ind) d.ind.remove();
       _justRmDragged=true; setTimeout(()=>{ _justRmDragged=false; }, 150);
-      const thumbs=d.strip?Array.prototype.slice.call(d.strip.querySelectorAll('.rmthumb:not(.locked)')):[];
-      let to=0; const px=e.clientX; thumbs.forEach(t=>{ if(t===d.el) return; const r=t.getBoundingClientRect(); if(px>r.left+r.width/2) to++; });
-      moveRoomTo(d.idx, to); }
+      moveRoomTo(d.idx, rmDropTo(rmOthers(d), e.clientX)); }
 
     // 미션 지급(원자적·멱등): 게임 노드 트랜잭션 1회로 "수령 기록 + 은화 지급"을 동시에.
     // 같은 날 같은 미션은 이미 claimed면 변화 없음 → 중복 지급 불가.
@@ -2583,7 +2588,11 @@
     let _fx=null;
     function itemName(kind,id){ return kind==='egg'?catName(id):((ITEM_CATALOG.find(x=>x.id===id)||{}).name||id); }
     function fxParticles(n,cls){ let s=''; for(let i=0;i<(n||14);i++){ const a=(i/(n||14))*360+Math.random()*30, d=60+Math.random()*90; const dx=Math.round(Math.cos(a*Math.PI/180)*d), dy=Math.round(Math.sin(a*Math.PI/180)*d); const del=(Math.random()*0.12).toFixed(2); s+='<span class="'+(cls||'fx-particle')+'" style="--dx:'+dx+'px;--dy:'+dy+'px;animation-delay:'+del+'s"></span>'; } return s; }
-    function fxConfetti(){ const cols=['#F04452','#F0883C','#F2C84B','#2FAE7A','#3182F6','#9B6FC8']; let s=''; for(let i=0;i<24;i++){ const x=Math.round(Math.random()*100), r=Math.round(Math.random()*360), del=(Math.random()*0.5).toFixed(2), dur=(1+Math.random()*0.8).toFixed(2); s+='<span class="fx-conf" style="left:'+x+'%;background:'+cols[i%6]+';--r:'+r+'deg;animation-delay:'+del+'s;animation-duration:'+dur+'s"></span>'; } return s; }
+    // 픽셀 컨페티(도트) — 둥근 조각 대신 각진 픽셀 블록이 흔들리며 떨어짐. n=개수(등급↑ 많이), 3가지 픽셀 모양(s0~s2).
+    function fxConfetti(n){ const cols=['#F04452','#F0883C','#F2C84B','#2FAE7A','#3182F6','#9B6FC8']; n=n||24; let s='';
+      for(let i=0;i<n;i++){ const x=Math.round(Math.random()*100), r=(Math.round(Math.random()*4)*90), del=(Math.random()*0.7).toFixed(2), dur=(1.1+Math.random()*0.9).toFixed(2), sw=(Math.random()*50-25).toFixed(0), sh=i%3;
+        s+='<span class="fx-conf s'+sh+'" style="left:'+x+'%;color:'+cols[i%6]+';--r:'+r+'deg;--sw:'+sw+'px;animation-delay:'+del+'s;animation-duration:'+dur+'s"></span>'; }
+      return s; }
     function runGachaFx(kind, res, dup, refund, rainbow){
       const fx=$('catFx'); if(!fx){ toast((kind==='egg'?'펫알':'랜덤박스')+' 획득!'); return; }
       _fx={ kind, res, dup, refund:refund||0, stage:0, rainbow:!!rainbow, gold: rainbow?0:1 };   // 무지개는 금화로 샀으니 금화 보상 없음
@@ -2686,14 +2695,20 @@
       st.insertAdjacentHTML('beforeend','<div class="fx-pixflash">'+raysSvg('currentColor',{h:150})+'</div>'+rays+sparks+(isEgg?fxShells():'')+fxParticles(parts));
       const h=$('fxHint'); if(h) h.remove();
     }
+    // 등장 연출 — 등급마다 화려함이 다르게 (CSS .fx-reveal.rank-N/.rev-rb로 계단식 확대):
+    //  낮은 등급=작은 오오라+약간의 반짝임, 특별↑=발산 광선 등장, 전설↑=픽셀 링 충격파+컨페티 폭발, 무지개=무지개 프레임·컨페티.
     function fxReveal(){
       if(!_fx) return; const fx=$('catFx'); const t=tierInfo(_fx.res.tier);
-      const rank=Math.max(0, TIER_ORDER.indexOf(_fx.res.tier));   // 등급 높을수록 픽셀 프레임·반짝임 화려
+      const rank=Math.max(0, TIER_ORDER.indexOf(_fx.res.tier));
+      const rb=!!_fx.rainbow;                                             // 무지개(승급 또는 무지개알 구매)
+      const conf=rb?32:(rank<=0?0:rank<=1?10:rank<=2?16:20+(rank-2)*8);   // 등급↑ 컨페티 더 많이(일반=없음)
+      const tw=5+rank*3;                                                  // 트윙클 수(등급↑ 많이)
       const art=_fx.kind==='egg'?catFace(_fx.res.id,{h:118}):furnSvg(_fx.res.id,{h:104});
-      fx.innerHTML='<div class="fx-scrim"></div><div class="fx-reveal tier-'+t.id+' rank-'+rank+'">'+
+      fx.innerHTML='<div class="fx-scrim"></div><div class="fx-reveal tier-'+t.id+' rank-'+rank+(rb?' rev-rb':'')+'">'+
         '<div class="fx-art pop">'+
-          '<span class="fx-aurawrap">'+lightLayers({aura:210, rays:250})+'</span>'+   // 펫 뒤·주변 은은한 픽셀 오오라(펫 위치에 정렬)
-          '<span class="fx-twinkles">'+fxAuraTwinkles(6+rank*2)+'</span>'+             // 펫 둘레 트윙클 도트(등급↑ 많이)
+          '<span class="fx-aurawrap">'+lightLayers({aura:210, rays:250})+'</span>'+   // 펫 뒤 픽셀 오오라(+특별↑은 발산 광선까지 CSS로 표시)
+          '<span class="fx-ring"></span>'+                                            // 전설↑/무지개: 픽셀 링 충격파(CSS)
+          '<span class="fx-twinkles">'+fxAuraTwinkles(tw)+'</span>'+                   // 펫 둘레 트윙클 도트
           '<span class="fx-frame"></span>'+
           '<span class="fx-artimg">'+art+'</span>'+
         '</div>'+
@@ -2702,7 +2717,7 @@
         '<div class="fx-reward">'+(_fx.gold?'<span class="rw"><span class="ci">'+goldSvg({h:18})+'</span>+1 금화</span>':'')+
           (_fx.dup?'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>+'+_fx.refund+' 은화 (중복)</span>':'')+'</div>'+
         '<button class="btn" onclick="closeFx()">확인</button>'+
-        '<div class="fx-confetti">'+fxConfetti()+'</div></div>';
+        '<div class="fx-confetti">'+(conf?fxConfetti(conf):'')+'</div></div>';
       fx.className='fx on reveal';
     }
     function closeFx(){ const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx=null; }
