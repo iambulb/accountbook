@@ -281,6 +281,62 @@ test('normalizeHome: 이미 rooms면 통과 + roomSlots만큼 방 보장', () =>
   assert.strictEqual(h.roomSlots, 3);
 });
 
+test('loginStreakReward: 마일스톤(3·7·14·30)만 지급, 30 이후 매30일 반복', () => {
+  assert.deepStrictEqual(U.loginStreakReward(1), { coins: 0, gold: 0 });
+  assert.deepStrictEqual(U.loginStreakReward(3), { coins: 5, gold: 0 });
+  assert.deepStrictEqual(U.loginStreakReward(7), { coins: 20, gold: 2 });
+  assert.deepStrictEqual(U.loginStreakReward(14), { coins: 50, gold: 3 });
+  assert.deepStrictEqual(U.loginStreakReward(30), { coins: 100, gold: 5 });
+  assert.deepStrictEqual(U.loginStreakReward(31), { coins: 0, gold: 0 });
+  assert.deepStrictEqual(U.loginStreakReward(60), { coins: 100, gold: 5 });   // 매 30일 반복
+});
+
+test('dexProgress: 보유/전체/퍼센트', () => {
+  const owned = { a: {}, c: {} };
+  assert.deepStrictEqual(U.dexProgress(owned, ['a', 'b', 'c', 'd']), { owned: 2, total: 4, pct: 50 });
+  assert.deepStrictEqual(U.dexProgress({}, []), { owned: 0, total: 0, pct: 0 });
+  assert.deepStrictEqual(U.dexProgress(null, ['a']), { owned: 0, total: 1, pct: 0 });
+});
+
+test('affectionLevel: 임계 10/50/100 레벨·다음·진행%', () => {
+  assert.deepStrictEqual(U.affectionLevel(0), { level: 0, next: 10, pct: 0 });
+  assert.deepStrictEqual(U.affectionLevel(5), { level: 0, next: 10, pct: 50 });
+  assert.deepStrictEqual(U.affectionLevel(10), { level: 1, next: 50, pct: 0 });
+  assert.deepStrictEqual(U.affectionLevel(30), { level: 1, next: 50, pct: 50 });
+  assert.deepStrictEqual(U.affectionLevel(100), { level: 3, next: null, pct: 100 });
+  assert.deepStrictEqual(U.affectionLevel(999), { level: 3, next: null, pct: 100 });
+});
+
+test('frequentTxTemplates: 지출류 빈도 상위(빈 desc·비지출 제외)', () => {
+  const txs = [
+    { type: 'expense', desc: '점심', category: '식비', amount: 12000, date: '2026-07-01' },
+    { type: 'expense', desc: '점심', category: '식비', amount: 12000, date: '2026-07-03' },
+    { type: 'expense', desc: '커피', category: '카페', amount: 5000, date: '2026-07-02' },
+    { type: 'income', desc: '월급', category: '월급', amount: 3000000, date: '2026-07-01' },  // 비지출 제외
+    { type: 'expense', desc: '', category: '식비', amount: 8000, date: '2026-07-01' },        // 빈 desc 제외
+  ];
+  const r = U.frequentTxTemplates(txs, 6);
+  assert.strictEqual(r.length, 2);
+  assert.strictEqual(r[0].desc, '점심');   // count 2 → 최상위
+  assert.strictEqual(r[0].count, 2);
+  assert.strictEqual(r[1].desc, '커피');
+});
+
+test('txMatches: 키워드(desc+memo+category)·기간·금액·타입 필터', () => {
+  const t = { type: 'expense', desc: '스타벅스 커피', memo: '회의', category: '카페', amount: 5500, date: '2026-07-03' };
+  assert.strictEqual(U.txMatches(t, { keyword: '커피' }), true);
+  assert.strictEqual(U.txMatches(t, { keyword: '회의' }), true);   // memo 포함
+  assert.strictEqual(U.txMatches(t, { keyword: '카페' }), true);   // category 포함
+  assert.strictEqual(U.txMatches(t, { keyword: '택시' }), false);
+  assert.strictEqual(U.txMatches(t, { dateFrom: '2026-07-01', dateTo: '2026-07-05' }), true);
+  assert.strictEqual(U.txMatches(t, { dateFrom: '2026-07-04' }), false);
+  assert.strictEqual(U.txMatches(t, { amountMin: 5000, amountMax: 6000 }), true);
+  assert.strictEqual(U.txMatches(t, { amountMin: 6000 }), false);
+  assert.strictEqual(U.txMatches(t, { type: 'income' }), false);
+  assert.strictEqual(U.txMatches(t, { type: 'expense', keyword: '커피', amountMax: 6000 }), true);   // 복합 AND
+  assert.strictEqual(U.txMatches(t, {}), true);   // 빈 쿼리=통과
+});
+
 test('sumPlacedItem: 모든 방에 배치된 같은 가구 개수 합(전역 인벤토리 소진)', () => {
   const rooms = [
     { placed: { '1_1': { itemId: 'cushion' }, '2_2': { itemId: 'bowl' } } },

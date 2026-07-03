@@ -118,11 +118,12 @@
       let h='<div class="chip-row">';
       const types=[['','전체'],['expense','지출'],['income','수입'],['transfer','이체']];
       h+=types.map(t=>'<button class="chip '+(state.filter.type===t[0]?'on':'')+'" onclick="setFilter(\'type\',\''+t[0]+'\')">'+t[1]+'</button>').join('');
+      h+='<button class="chip srch" onclick="openTxSearch()" aria-label="거래 검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>검색</button>';
       h+='</div>';
       const f=state.filter;
       let rows=list.filter(t=>{
         if(f.type&&t.type!==f.type) return false;
-        if(f.keyword){ const k=f.keyword.toLowerCase(); if(!((t.desc||'').toLowerCase().includes(k)||(t.category||'').toLowerCase().includes(k))) return false; }
+        if(f.keyword){ const k=f.keyword.toLowerCase(); if(!((t.desc||'').toLowerCase().includes(k)||(t.memo||'').toLowerCase().includes(k)||(t.category||'').toLowerCase().includes(k))) return false; }
         return true;
       }).sort((a,b)=>new Date(b.date)-new Date(a.date));
       if(!rows.length) return h+'<div class="empty">거래가 없습니다</div>';
@@ -138,6 +139,28 @@
       return h;
     }
 
+    // 🔍 거래 검색(키워드=내용·메모·카테고리 + 기간 + 금액 + 타입). 순수 txMatches로 필터, 폼은 정적·결과만 갱신(입력 포커스 유지).
+    function txSearchResults(){
+      const q=state._txSearch||{};
+      const res=(state.transactions||[]).filter(t=>txMatches(t,q)).sort((a,b)=>new Date(b.date)-new Date(a.date));
+      const rows=res.slice(0,200).map(txRowHtml).join('');
+      return '<div class="sech"><span class="l">결과</span><span class="s">'+res.length+'건'+(res.length>200?' · 200 표시':'')+'</span></div>'+
+        '<div class="card" style="padding:6px 10px;">'+(rows||'<div class="empty">검색 결과가 없어요</div>')+'</div>';
+    }
+    function txSearchSet(k,v){ (state._txSearch||(state._txSearch={}))[k]=v;
+      if(k==='type'){ const seg=$('txsSeg'); if(seg) Array.prototype.forEach.call(seg.querySelectorAll('.chip'),b=>b.classList.toggle('on',(b.getAttribute('data-t')||'')===(v||''))); }
+      const r=$('txsResults'); if(r) r.innerHTML=txSearchResults(); }
+    function openTxSearch(){
+      const st=state._txSearch||(state._txSearch={});
+      let h='<div class="field"><label for="txsKw">키워드(내용·메모·카테고리)</label><input class="input" id="txsKw" value="'+escapeHtml(st.keyword||'')+'" oninput="txSearchSet(\'keyword\',this.value)" placeholder="예: 커피, 회식"></div>'+
+        '<div class="row" style="gap:8px;"><div class="field" style="flex:1;"><label>시작일</label><input class="input" type="date" value="'+(st.dateFrom||'')+'" onchange="txSearchSet(\'dateFrom\',this.value)"></div>'+
+        '<div class="field" style="flex:1;"><label>종료일</label><input class="input" type="date" value="'+(st.dateTo||'')+'" onchange="txSearchSet(\'dateTo\',this.value)"></div></div>'+
+        '<div class="row" style="gap:8px;"><div class="field" style="flex:1;"><label>최소 금액</label><input class="input" inputmode="numeric" value="'+(st.amountMin||'')+'" oninput="txSearchSet(\'amountMin\',this.value.replace(/[^0-9]/g,\'\'))"></div>'+
+        '<div class="field" style="flex:1;"><label>최대 금액</label><input class="input" inputmode="numeric" value="'+(st.amountMax||'')+'" oninput="txSearchSet(\'amountMax\',this.value.replace(/[^0-9]/g,\'\'))"></div></div>'+
+        '<div class="chip-row" id="txsSeg">'+[['','전체'],['expense','지출'],['income','수입'],['transfer','이체']].map(t=>'<button class="chip '+((st.type||'')===t[0]?'on':'')+'" data-t="'+t[0]+'" onclick="txSearchSet(\'type\',\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div>'+
+        '<div id="txsResults">'+txSearchResults()+'</div>';
+      openSheet('거래 검색', h);
+    }
     const TX_SVG_KEY={ income:'wallet', expense:'card', transfer:'swap', prepaid_charge:'coin', prepaid_spend:'card', refund:'refund', point_earn:'coin', point_spend:'coin', balance_adjustment:'tag' };
     function txRowHtml(t){
       const e=TX_EFFECT[t.type]||{};
@@ -209,6 +232,8 @@
         '<button data-tp="income" onclick="setSheetType(\'income\')">수입</button>'+
         '<button data-tp="transfer" onclick="setSheetType(\'transfer\')">이체</button>'+
         '<button data-tp="__ext__" onclick="setSheetType(\'__ext__\')">선불·포인트</button></div>';
+      if(!t){ const tpls=frequentTxTemplates(state.transactions,6); state._txTpls=tpls;   // 빠른 입력: 자주 쓴 지출 원탭 프리필
+        if(tpls.length) h+='<div class="chip-row qadd">'+tpls.map((tp,i)=>'<button class="chip" onclick="applyTxTemplate('+i+')" title="'+escapeHtml(tp.desc)+' '+Number(tp.amount).toLocaleString()+'원">'+escapeHtml(tp.desc)+' <b>'+Number(tp.amount).toLocaleString()+'</b></button>').join('')+'</div>'; }
       // 시안: 큰 금액 + 키패드 입력
       // 금액: 모바일은 화면 키패드(OS 키보드 안 뜨게 readonly+inputmode none), 데스크톱은 물리 키보드로 직접 입력(keydown 라우팅).
       h+='<div class="amtbig"><select id="sCur" class="amt-cur" onchange="onCurChange()">'+curOptions(t&&t.currency?t.currency:'KRW')+'</select><input id="sAmount" class="amtbig-in" readonly inputmode="none" aria-label="금액" placeholder="0" onkeydown="kpKey(event)" onpaste="kpPaste(event)" value="'+((t&&t.currency&&t.currency!=='KRW')?fmtAmt(String(t.foreignAmount||'')):(amount?Number(amount).toLocaleString():''))+'"></div>';
@@ -258,6 +283,12 @@
       highlightTypeSeg(); renderTxDyn();
     }
     function setExtType(tp){ sheetType=tp; highlightTypeSeg(); renderTxDyn(); }
+    // 빠른 입력 칩 탭 → 유형·카테고리·금액·내용 프리필(자주 쓴 지출 재사용)
+    function applyTxTemplate(i){ const tp=(state._txTpls||[])[i]; if(!tp) return;
+      sheetType=tp.type||'expense'; sheetCat=tp.category||'';
+      highlightTypeSeg(); renderTxDyn();
+      const d=$('sDesc'); if(d) d.value=tp.desc||'';
+      setAmt(String(tp.amount||'')); }
     function highlightTypeSeg(){
       const seg=$('sTypeSeg'); if(!seg) return;
       const ext=EXT_TYPES.includes(sheetType);
@@ -531,8 +562,21 @@
         const old=state.transactions.find(x=>x.ownerUid===sheetTx.ownerUid&&x.id===sheetTx.id);
         if(old&&old.recurringId) tx.recurringId=old.recurringId;
         db.ref(wp('transactions/'+sheetTx.ownerUid+'/'+sheetTx.id)).set(tx); toast('수정되었습니다');
-      } else { db.ref(wp('transactions/'+state.uid+'/'+Date.now())).set(tx); toast('저장되었습니다'); }
+      } else { db.ref(wp('transactions/'+state.uid+'/'+Date.now())).set(tx); toast('저장되었습니다'); budgetPreWarn(tx); }
       closeSheet();
+    }
+    // 예산 사전 경고: 이 지출로 관련 예산이 임계(alertThreshold) 또는 100%를 처음 넘으면 비차단 토스트(저장은 그대로).
+    function budgetPreWarn(tx){
+      if(!tx || !['expense','prepaid_spend','point_spend'].includes(tx.type) || tx.isActualExpense===false) return;
+      const amt=Math.abs(Number(tx.amount)||0); if(!amt || typeof budgetUsage!=='function') return;
+      (state.budgets||[]).forEach(b=>{
+        if(b.categoryName && b.categoryName!==tx.category) return;                 // 카테고리 예산=같은 카테고리만
+        if(b.scope==='personal' && b.ownerUid && b.ownerUid!==(tx.userUid||state.uid)) return;   // 개인 예산=본인 소비만
+        const u=budgetUsage(b); if(!u || !u.amount) return;
+        const projPct=Math.round((u.used+amt)/u.amount*100), th=(b.alertEnabled!==false)?(b.alertThreshold||80):101;
+        if(projPct>=100 && u.pct<100) setTimeout(()=>toast('⚠️ '+budgetTitle(b)+' 예산 초과 ('+projPct+'%)', true), 400);
+        else if(projPct>=th && u.pct<th) setTimeout(()=>toast('⚠️ '+budgetTitle(b)+' 예산 '+projPct+'% 도달'), 400);
+      });
     }
     function deleteTx(){
       if(!sheetTx) return;
@@ -540,6 +584,19 @@
       confirmSheet('이 거래를 삭제할까요?', ()=>{ db.ref(wp('transactions/'+ref.ownerUid+'/'+ref.id)).remove(); toast('삭제되었습니다'); });
     }
 
+    // ===== 🧭 온보딩(첫 사용자 1회) =====
+    function maybeOnboard(){ if(!state.uid) return;
+      db.ref('users/'+state.uid+'/onboarded').once('value').then(s=>{ if(!s.val() && $('app') && $('app').style.display!=='none') openOnboarding(); }).catch(()=>{}); }
+    function finishOnboard(){ if(state.uid){ try{ db.ref('users/'+state.uid+'/onboarded').set(true); }catch(e){} } closeSheet(); }
+    function openOnboarding(){
+      const step=(ic,t,d,btn,fn)=>'<div class="obcard"><span class="obic">'+ic+'</span><div class="obtxt"><b>'+t+'</b><span>'+d+'</span></div><button class="btn ghost obbtn" onclick="'+fn+'">'+btn+'</button></div>';
+      let h='<p class="muted" style="margin:2px 2px 14px;line-height:1.55;">알뜰에 오신 걸 환영해요! 🐾 아래를 한 번씩 해보면 금방 익숙해져요.</p>';
+      h+=step('👛','거래·할일 기록','가운데 ＋ 로 오늘 지출이나 할일을 기록해요.','기록','finishOnboard();fabAdd()');
+      h+=step('🧑‍🤝‍🧑','친구 추가','친구 코드로 친구를 맺고 서로의 집·할일을 구경해요.','친구','finishOnboard();openFriendsSheet()');
+      h+=step('🐱','알뜰홈','활동으로 은화를 모아 고양이를 입양하고 방을 꾸며요.','알뜰홈','finishOnboard();openCatHouse(\'home\')');
+      h+='<button class="btn" style="margin-top:10px;" onclick="finishOnboard()">시작하기</button>';
+      openSheet('시작하기', h);
+    }
     // ===== 통계 =====
     function statsMonth(d){ state.month=shiftMonth(state.month,d); renderStats(); }
     function shortAmt(v){ v=Math.round(Math.abs(v)); if(v>=1e8) return (v/1e8).toFixed(1).replace(/\.0$/,'')+'억'; if(v>=1e4) return Math.round(v/1e4).toLocaleString()+'만'; return v.toLocaleString(); }

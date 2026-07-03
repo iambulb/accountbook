@@ -7,6 +7,7 @@
 ```
 users/{uid}            : { name, email, photo(프로필 사진 base64 data URL), createdAt, activeWs, welcomeGift(true=회원가입 축하선물 지급 완료·1회 멱등), profilePublic(기본 true·false면 랭킹·비친구에 은화+'알뜰' 익명), ws:{ {wsId}:true },
                            todos:{ {id}:{ title, note, dueDate, done, doneAt, repeat, purposeBookId?, rewardClaimed, sortOrder, createdAt, updatedAt } },  // ✅ 개인 할일(user-global — 워크스페이스 무관·항상 동일). 소유자=uid 암묵
+                           onboarded: true,                        // 🧭 첫 사용자 온보딩 1회 표시 완료 플래그
                            todosMigrated: true,                    // 개인 할일 ws→user 1회 이전 완료 플래그
                            todoPublic: true|false,                 // 내 개인 할일을 친구에게 공개할지(친구 스트립·열람 대상)
                            friendCode: "ABC123",                   // 내 친구 코드(friendCodes 인덱스와 짝)
@@ -15,8 +16,9 @@ users/{uid}            : { name, email, photo(프로필 사진 base64 data URL),
                            homeLikes:{ {visitorUid}:{ n, last:"YYYY-MM-DD" } },  // ❤️ 내 집(펫캠)에 받은 좋아요 — 방문자별 누적 n + 마지막 날짜(하루 1회). 총 좋아요=Σn. 쓰기=방문자 자신($visitor)만(규칙)
                            game:{ 🐱 고양이집(개인 전역, 워크스페이스 무관)
                              coins,                                  // 은화 잔액(정수)
-                             gold,                                   // 금화(뽑기 오픈마다 +1)
-                             owned:{ cats:{ {catId}:{boughtAt} }, items:{ {itemId}:{boughtAt,qty} }, wallpapers:{ {wallId}:{boughtAt} } },
+                             gold,                                   // 금화(뽑기 오픈 +1 · 주간미션·업적·로그인 스트릭 마일스톤에서도 지급)
+                             streak:{ last:"YYYY-MM-DD", count, best, lastReward? },  // 🔥 로그인(출석) 연속: 어제 출석 시 count+1, 아니면 1. 마일스톤(3·7·14·30, 이후 매30)에 은화+금화(loginStreakReward). autoClaimAttend에서 갱신
+                             owned:{ cats:{ {catId}:{boughtAt, name?, affection?} }, items:{ {itemId}:{boughtAt,qty} }, wallpapers:{ {wallId}:{boughtAt} } },  // affection=❤ 애정도(펫 탭 쓰다듬기 +1, 레벨 10/50/100 = affectionLevel)
                              consum:{ food, water, egg, box, rainbow_egg, rainbow_box },  // 🎒 가방(보유 소비 아이템 수): 사료·물(그릇 채움) + 펫알·랜덤박스(일반 확률 오픈) + 무지개알·무지개박스(특별↑ 오픈)
                              home:{ rooms:[{ name, wallpaper:wallId, placed:{ {"r_c"}:{itemId, filledAt?} }, active:[catId…], poops }…], current, showRoom, roomSlots, slots, changedAt:"ISO" },  // 여러 방(프리셋): 방별 name·벽지·가구배치·활성펫·똥이 rooms[] 에 독립 저장 · current=선택 방 idx · showRoom=친구·랭킹에 보여줄 대표 방 idx · roomSlots=열린 방수(기본1·금화500로 최대5) · slots=방당 활성펫 상한(기본3·금화100로 확장, 전역) · changedAt=마지막 변경(친구 스토리 링) · filledAt=밥/물 채운 시각(ms, 3h 뒤 비워지며 그 방 poops+1) · poops=그 방 미수거 똥(탭 시 +2은화). **한 펫은 한 방에만**(normalizeHome이 방 간 중복 제거). (레거시 flat home.active/placed/wallpaper/poops → 첫 로드시 rooms[0] 로 자동 이관, util.js normalizeHome)
                              missions:{ {periodKey}:{ {missionId}:{claimed,reward,at} } },  // periodKey=KST 일자 2026-07-01(day)·주(week)·once. 일일/주간/업적 수령 기록(멱등)

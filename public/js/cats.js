@@ -294,17 +294,17 @@
       "....XSWWSX....",
       "...XSWWWWSX...",
       "...XWWWWWWX...",
-      "..XWWWWWWWWX..",
-      ".XWWWRRRRWWWX.",
+      "..XWWRRRRWWX..",
       ".XWWRRRRRRWWX.",
-      "XWWWRRWWOOWWSX",
+      ".XWWRRWWOOWWX.",
       "XWWWWWWOOOWWSX",
       "XWWWWWYYYWWWSX",
       "XWWWWGGGWWWWSX",
-      ".XWWWWGGWWWSX.",
+      "XWWWWWGGWWWWSX",
       ".XWWWWBBWWWSX.",
-      "..XWWWWWWWWX..",
-      "...XWWPPWWX...",
+      ".XWWWWWWWWWSX.",
+      "..XWWWPPWWWX..",
+      "...XWWWWWWX...",
       "....XXXXXX...."
     ];
     // 균열1: 위쪽부터 지그재그(번개) 잔금이 생김(쩌저적 갈라짐 시작)
@@ -581,23 +581,25 @@
         check:()=> true }   // 앱 진입 = 완료(멱등 수령)
     ];
     const WEEKLY_MISSIONS = [
-      { id:'week5', period:'week', name:'이번 주 5일 이상 기록', reward:20, icon:'<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/>',
+      { id:'week5', gold:2, period:'week', name:'이번 주 5일 이상 기록', reward:20, icon:'<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/>',
         prog:()=> recordDaysThisWeek()+' / 5일', check:()=> recordDaysThisWeek()>=5 },
-      { id:'report', period:'week', name:'리포트 확인', reward:10, icon:'<path d="M5 20V11M12 20V5M19 20v-6"/>',
+      { id:'report', gold:1, period:'week', name:'리포트 확인', reward:10, icon:'<path d="M5 20V11M12 20V5M19 20v-6"/>',
         check:()=> reportSeenThisWeek() }
     ];
     // 업적(1회성). period:'once' → 영구 저장(초기화 없음). 앱 기능을 써보게 유도하고 은화 보상.
     const ACHIEVEMENTS = [
       { id:'ach_first',  period:'once', name:'첫 거래 기록',        reward:10, icon:'<path d="M12 4v16M8 8l4-4 4 4"/>', check:()=> (state.transactions||[]).length>0 },
-      { id:'ach_cats3',  period:'once', name:'고양이 3마리 모으기', reward:30, icon:'<circle cx="9" cy="11" r="2.5"/><circle cx="15" cy="11" r="2.5"/><path d="M4 20c0-3 2.5-5 8-5s8 2 8 5"/>', check:()=> Object.keys((state.game&&state.game.owned&&state.game.owned.cats)||{}).length>=3 },
+      { id:'ach_cats3', gold:3,  period:'once', name:'고양이 3마리 모으기', reward:30, icon:'<circle cx="9" cy="11" r="2.5"/><circle cx="15" cy="11" r="2.5"/><path d="M4 20c0-3 2.5-5 8-5s8 2 8 5"/>', check:()=> Object.keys((state.game&&state.game.owned&&state.game.owned.cats)||{}).length>=3 },
+      { id:'ach_cats10', gold:5, period:'once', name:'고양이 10마리 모으기', reward:50, icon:'<circle cx="9" cy="11" r="2.5"/><circle cx="15" cy="11" r="2.5"/><path d="M4 20c0-3 2.5-5 8-5s8 2 8 5"/>', check:()=> Object.keys(ownedCatsMap()).length>=10 },
+      { id:'ach_dexall', gold:30, period:'once', name:'도감 완성(전종 수집)', reward:200, icon:'<rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><path d="M13 16l2 2 4-4"/>', check:()=> dexProgress(ownedCatsMap(), PET_CATALOG.map(c=>c.id)).pct>=100 },
       { id:'ach_travel', period:'once', name:'여행 가계부 만들기',  reward:20, icon:'<path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/>', check:()=> (state.purposeBooks||[]).some(p=>p.type==='travel'||p.type==='gathering') },
       { id:'ach_fx',     period:'once', name:'해외통화로 첫 지출',  reward:20, icon:'<circle cx="12" cy="12" r="9"/><path d="M9 9h6M9 15h6M12 6v12"/>', check:()=> (state.transactions||[]).some(t=>t.currency&&t.currency!=='KRW') },
       { id:'ach_budget', period:'once', name:'첫 예산 설정',        reward:15, icon:'<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 12h8"/>', check:()=> (state.budgets||[]).length>0 },
-      { id:'ach_settle', period:'once', name:'첫 정산 거래',        reward:25, icon:'<path d="M7 8h10M7 12h10M7 16h6"/>', check:()=> (state.transactions||[]).some(t=>t.settlementIncluded===true) },
+      { id:'ach_settle', gold:2, period:'once', name:'첫 정산 거래',        reward:25, icon:'<path d="M7 8h10M7 12h10M7 16h6"/>', check:()=> (state.transactions||[]).some(t=>t.settlementIncluded===true) },
       { id:'ach_todo1',  period:'once', name:'첫 할일 완료',        reward:10, icon:'<circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.7 2.7L16.5 9"/>', check:()=> ((state.todos||[]).concat(state.myTodos||[])).some(t=>t.rewardClaimed||t.done) },
-      { id:'ach_todo10', period:'once', name:'할일 10개 완료',      reward:30, icon:'<path d="M4 6l1.5 1.5L8 5M4 12l1.5 1.5L8 11M4 18l1.5 1.5L8 17M12 6h8M12 12h8M12 18h8"/>', check:()=> ((state.todos||[]).concat(state.myTodos||[])).filter(t=>t.rewardClaimed).length>=10 },
+      { id:'ach_todo10', gold:3, period:'once', name:'할일 10개 완료',      reward:30, icon:'<path d="M4 6l1.5 1.5L8 5M4 12l1.5 1.5L8 11M4 18l1.5 1.5L8 17M12 6h8M12 12h8M12 18h8"/>', check:()=> ((state.todos||[]).concat(state.myTodos||[])).filter(t=>t.rewardClaimed).length>=10 },
       { id:'ach_custom1', period:'once', name:'첫 내 미션 만들기',   reward:10, icon:'<path d="M12 5v14M5 12h14"/>', check:()=> Object.keys((state.game&&state.game.customMissions)||{}).length>0 },
-      { id:'ach_custom7', period:'once', name:'내 미션 7일 연속',    reward:30, icon:'<path d="M12 3s5 4 5 9a5 5 0 1 1-10 0c0-2 1-3.5 2-4 0 2 1 3 2 3 0-3 -1-6 -1-8z"/>', check:()=> (typeof customMissionList==='function') && customMissionList().some(m=> missionStreak(missionLogDoneDates(m.id), kstDayKey()).best>=7 ) }
+      { id:'ach_custom7', gold:3, period:'once', name:'내 미션 7일 연속',    reward:30, icon:'<path d="M12 3s5 4 5 9a5 5 0 1 1-10 0c0-2 1-3.5 2-4 0 2 1 3 2 3 0-3 -1-6 -1-8z"/>', check:()=> (typeof customMissionList==='function') && customMissionList().some(m=> missionStreak(missionLogDoneDates(m.id), kstDayKey()).best>=7 ) }
     ];
     const ALL_MISSIONS = DAILY_MISSIONS.concat(WEEKLY_MISSIONS).concat(ACHIEVEMENTS);
 
@@ -958,6 +960,7 @@
       missions: g.missions||{}, progress: g.progress||{}, codes: g.codes||{},
       customMissions: g.customMissions||{},   // 내 미션(커스텀 습관): {id:{title,coinReward,active,createdAt,order}}
       missionLogs: g.missionLogs||{},          // 체크인 로그: {missionId:{'YYYY-MM-DD':{done,paid,at}}}
+      streak: (g.streak && typeof g.streak==='object') ? g.streak : { last:'', count:0, best:0 },   // 로그인(출석) 연속: {last,count,best,lastReward?}
       gifts: normalizeGifts(g.gifts)   // 선물함(코드 보상 대기 목록)
     }); }
     // 선물함 목록을 항상 배열로 정규화(RTDB가 객체로 돌려줄 수 있어 방어)
@@ -1169,6 +1172,7 @@
         if(g.missions[key][m.id] && g.missions[key][m.id].claimed) return g;   // 이미 수령 → 무변화
         g.missions[key][m.id]={ claimed:true, reward:m.reward, at:new Date().toISOString() };
         g.coins += m.reward;
+        if(m.gold) g.gold=(g.gold||0)+m.gold;   // 조직적 금화 획득(가챠 외 공급원)
         return g;
       });
     }
@@ -1300,7 +1304,7 @@
       const m=ALL_MISSIONS.find(x=>x.id===id); if(!m) return;
       if(missionClaimed(m)){ toast('이미 수령했어요'); return; }
       if(!m.check()){ toast('아직 완료되지 않았어요', true); return; }
-      grantMission(m).then(res=>{ if(res.committed) toast('+'+m.reward+' 은화 획득! 🐾'); });
+      grantMission(m).then(res=>{ if(res.committed) toast('+'+m.reward+' 은화'+(m.gold?' · +'+m.gold+' 금화':'')+' 획득! 🐾'); });
     }
     // 오늘 홈에서 일일 미션 행 탭: 이미 수령=무시 / 완료됨=수령 / 미완료=해당 행동으로 딥링크.
     function homeMissionTap(id){
@@ -1312,11 +1316,26 @@
         else { if(typeof goto==='function') goto('ledger'); if(typeof openTxSheet==='function') openTxSheet(); }
       }
     }
-    // 출석 자동 수령(진입 시 1회, 멱등)
+    // 출석 자동 수령 + 로그인 스트릭(진입 시 1회, 멱등). 오늘 처음 출석일 때만 연속일 갱신·마일스톤 보상.
     function autoClaimAttend(){
       const m=DAILY_MISSIONS.find(x=>x.id==='attend');
       if(!state.game || missionClaimed(m)) return;
-      grantMission(m);
+      const today=kstDayKey(); let milestone=null;
+      gameRef().transaction(g=>{
+        g=normalizeGame(g);
+        const key=missionKey(m); g.missions[key]=g.missions[key]||{};
+        if(g.missions[key][m.id] && g.missions[key][m.id].claimed) return g;   // 이미 오늘 처리 → 스트릭 재갱신 안 함
+        g.missions[key][m.id]={ claimed:true, reward:m.reward, at:new Date().toISOString() };
+        g.coins += m.reward;
+        // 연속 출석: 어제 출석했으면 +1, 아니면 1로 리셋
+        g.streak = g.streak || { last:'', count:0, best:0 };
+        g.streak.count = (g.streak.last===addDays(today,-1)) ? (Number(g.streak.count)||0)+1 : 1;
+        g.streak.last = today;
+        if(g.streak.count > (g.streak.best||0)) g.streak.best = g.streak.count;
+        const rw=loginStreakReward(g.streak.count);
+        if(rw.coins||rw.gold){ g.coins+=rw.coins; if(rw.gold) g.gold=(g.gold||0)+rw.gold; milestone={ day:g.streak.count, coins:rw.coins, gold:rw.gold }; g.streak.lastReward=Object.assign({at:new Date().toISOString()}, milestone); }
+        return g;
+      }).then(res=>{ if(res&&res.committed&&milestone){ toast('🔥 '+milestone.day+'일 연속! +'+milestone.coins+' 은화'+(milestone.gold?' · +'+milestone.gold+' 금화':'')); } });
     }
 
     // 고양이 구매(원자적, 잔액 음수 방지)
@@ -1844,6 +1863,20 @@
     // ===== 캠/방에서 펫을 바로 끌어(드래그) 좌우로 이동 =====
     let _petDrag=null, _petJustDragged=false;
     function camTap(){ if(_petJustDragged) return; openCatHouse(); }   // 드래그 직후의 탭은 알뜰샵 열기 무시
+    // 🐾 펫 애정도: 방/캠에서 펫을 탭하면 +1(펫별 쿨다운), 임계(10/50/100)에서 레벨업. 작은 하트 연출.
+    let _affCool={}, _affLevelUp=null;
+    function heartFx(x,y){ const el=document.createElement('div'); el.className='heartfx'; el.textContent='❤';
+      el.style.left=((x||innerWidth/2))+'px'; el.style.top=((y||innerHeight/2))+'px'; document.body.appendChild(el); setTimeout(()=>{ el.remove(); }, 820); }
+    function bumpAffection(id, x, y){
+      if(!id || !ownsCat(id)) return;
+      const now=Date.now(); if(_affCool[id] && now-_affCool[id]<1500){ heartFx(x,y); return; }   // 쿨다운 중엔 연출만(스팸 방지)
+      _affCool[id]=now; _affLevelUp=null;
+      gameRef().transaction(g=>{ g=normalizeGame(g); const c=g.owned.cats[id]; if(!c) return g;
+        const before=affectionLevel(c.affection).level; c.affection=(Number(c.affection)||0)+1;
+        const after=affectionLevel(c.affection).level; if(after>before) _affLevelUp={ id, level:after };
+        return g;
+      }).then(res=>{ if(res&&res.committed){ heartFx(x,y); if(_affLevelUp){ toast('❤ '+catName(_affLevelUp.id)+' 애정 레벨 '+_affLevelUp.level+'!'); _affLevelUp=null; } } });
+    }
     function petGrabDown(e){
       const el=(e.target&&e.target.closest)?e.target.closest('.cd-actor'):null; if(!el) return;
       const a=_eng.actors.find(x=>x.el===el); if(!a) return;
@@ -1865,7 +1898,7 @@
         if(started){ a.el.classList.remove('cdgrab'); a.mode='roam'; a.lift=0; a.fc=999; a.cool=700; actorShowMoving(a); setXform(a); a._pdir=a.dir;
           _petDrag=null; _petJustDragged=true; setTimeout(()=>{ _petJustDragged=false; }, 260); }   // 놓은 자리에서 다시 배회
       };
-      const end=()=>cleanup();
+      const end=(ev)=>{ if(!started && ev && ev.type==='pointerup') bumpAffection(el.getAttribute('data-cat'), ev.clientX, ev.clientY); cleanup(); };   // 안 끌고 뗌=쓰다듬기(애정+1)
       window.addEventListener('pointermove',mv); window.addEventListener('pointerup',end); window.addEventListener('pointercancel',end);
     }
     if(typeof document!=='undefined') document.addEventListener('pointerdown', petGrabDown, true);
@@ -1949,6 +1982,7 @@
           '<div class="cpic">'+art+'</div>'+
           (roomOf>=0&&!here?'<span class="croom">'+escapeHtml(roomNm)+'</span>':'')+
           '<div class="cn">'+catNameSpan(id,catName(id))+'</div>'+
+          (()=>{ const av=(ownedCatsMap()[id]||{}).affection; const lv=affectionLevel(av).level; return lv>0?'<div class="caff" aria-label="애정 '+lv+'">'+'❤'.repeat(lv)+'</div>':''; })()+
           '<div class="cstate">'+(here?'이 방에 있음':(roomOf>=0?escapeHtml(roomNm)+'에 있음':'대기'))+'</div>'+
           '<button class="cn-edit" aria-label="이름 짓기" onclick="event.stopPropagation();openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
           (here?'<span class="csel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>':'')+
@@ -2560,7 +2594,7 @@
       else if(ok) right='<button class="claim" onclick="claimMission(\''+m.id+'\')">수령</button>';
       else right='<span class="prog-pill">'+(m.prog?m.prog():'진행 중')+'</span>';
       return '<div class="cmrow"><span class="cmi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+m.icon+'</svg></span>'+
-        '<div class="cmm"><b>'+m.name+'</b><span class="rw"><span class="ci">'+coinSvg({h:14})+'</span>+'+m.reward+(claimed?' · 수령완료':(ok?' · 완료':(m.prog?' · '+m.prog():'')))+'</span></div>'+right+'</div>';
+        '<div class="cmm"><b>'+m.name+'</b><span class="rw"><span class="ci">'+coinSvg({h:14})+'</span>+'+m.reward+(m.gold?' <span class="ci">'+goldSvg({h:13})+'</span>+'+m.gold:'')+(claimed?' · 수령완료':(ok?' · 완료':(m.prog?' · '+m.prog():'')))+'</span></div>'+right+'</div>';
     }
     // 내 미션(커스텀) 행: 오늘 체크 원 + 이름 + 🔥연속 + 최근7일 점. 이름 탭=수정 시트.
     function customMissionRow(cm){
@@ -2573,8 +2607,28 @@
           '<span class="rw">'+(st.current>0?'🔥 '+st.current+'일 · ':'')+'다음 보상 '+((typeof customMissionMilestone==='function')?customMissionMilestone(st.current, CUSTOM_STREAK_N).toNext:CUSTOM_STREAK_N)+'일 <span class="ci">'+coinSvg({h:14})+'</span>+'+CUSTOM_STREAK_BONUS+'</span></div>'+
         '<span class="cmdots" aria-hidden="true">'+dots+'</span></div>';
     }
+    // 🐾 컬렉션 도감: 전체 펫 그리드(보유=컬러/미보유=실루엣), 진행도 N/총. 애정 레벨 하트 표시.
+    function ownedCatsMap(){ return (state.game&&state.game.owned&&state.game.owned.cats)||{}; }
+    function openPetDex(){
+      const owned=ownedCatsMap(), all=PET_CATALOG.slice().sort((a,b)=> (TIER_ORDER.indexOf(CAT_TIER[a.id])-TIER_ORDER.indexOf(CAT_TIER[b.id])) || 0);
+      const prog=dexProgress(owned, PET_CATALOG.map(c=>c.id));
+      let h='<div class="dexhead"><div class="row" style="justify-content:space-between;"><b>수집</b><span class="s">'+prog.owned+' / '+prog.total+' ('+prog.pct+'%)</span></div><div class="bar"><i style="width:'+prog.pct+'%"></i></div></div>';
+      h+='<div class="dexgrid">'+all.map(c=>{ const has=!!owned[c.id]; const lv=has?affectionLevel(owned[c.id].affection).level:0;
+        return '<div class="dexcell'+(has?'':' locked')+'" title="'+escapeHtml(has?catName(c.id):'미보유')+'">'+
+          '<div class="dexpic">'+catFace(c.id,{h:54})+'</div>'+
+          '<div class="dexnm">'+(has?catNameSpan(c.id,catName(c.id)):'<span class="q">???</span>')+'</div>'+
+          (lv>0?'<div class="dexlv" aria-label="애정 레벨 '+lv+'">'+'❤'.repeat(lv)+'</div>':'')+
+        '</div>'; }).join('')+'</div>';
+      openSheet('펫 도감', h);
+    }
     function catMissionHtml(){
       let h='<div class="coinhero"><span class="ch-big">'+coinSvg({h:44})+'</span><div><div class="k">보유 은화</div><div class="v">'+coins().toLocaleString()+'</div></div></div>';
+      // 로그인 스트릭 배지: 연속 출석일 + 다음 마일스톤까지(3·7·14·30, 이후 매30). 마일스톤에 은화·금화 보상.
+      { const c=(state.game&&state.game.streak&&Number(state.game.streak.count))||0;
+        const nx=[3,7,14,30].find(n=>n>c)||(Math.floor(c/30+1)*30);
+        h+='<div class="streakbar"><span class="fire">🔥</span><b>'+c+'일 연속 출석</b><span class="s">다음 보상까지 '+(nx-c)+'일 (+금화)</span></div>'; }
+      { const pr=dexProgress(ownedCatsMap(), PET_CATALOG.map(c=>c.id));
+        h+='<button class="dexbtn" onclick="openPetDex()"><span>🐾 펫 도감</span><span class="s">'+pr.owned+' / '+pr.total+' 수집 ›</span></button>'; }
       h+='<div class="sech"><span class="l">일일 미션</span><span class="s">자정 초기화</span></div>';
       h+=DAILY_MISSIONS.map(missionRow).join('');
       const _cmN=customMissionList().length; h+='<div class="sech"><span class="l">내 미션</span>'+(_cmN>=5?'<span class="s">최대 5개</span>':'<button class="link" onclick="openCustomMissionEdit()">+ 추가</button>')+'</div>';

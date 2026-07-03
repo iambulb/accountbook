@@ -197,6 +197,62 @@
     var n = 0; (rooms || []).forEach(function (r) { var p = (r && r.placed) || {}; for (var k in p) { if (p[k] && p[k].itemId === id) n++; } }); return n;
   }
 
+  // ===== 게임 리텐션(순수) =====
+  // 로그인(출석) 연속일 → 마일스톤 보상 {coins,gold}. 마일스톤(3·7·14·30)에서만 지급, 30 이후는 매 30일 반복.
+  function loginStreakReward(day) {
+    day = Math.floor(Number(day) || 0);
+    var table = { 3: { coins: 5, gold: 0 }, 7: { coins: 20, gold: 2 }, 14: { coins: 50, gold: 3 }, 30: { coins: 100, gold: 5 } };
+    if (table[day]) return table[day];
+    if (day > 30 && day % 30 === 0) return table[30];
+    return { coins: 0, gold: 0 };
+  }
+  // 컬렉션 도감 진행도. owned=보유 맵(catId→...), catalogIds=전체 펫 id 배열.
+  function dexProgress(owned, catalogIds) {
+    var ids = catalogIds || [], o = 0;
+    ids.forEach(function (id) { if (owned && owned[id]) o++; });
+    return { owned: o, total: ids.length, pct: ids.length ? Math.round(o / ids.length * 100) : 0 };
+  }
+  // 펫 애정도 레벨(임계 10/50/100). {level(0~3), next(다음 임계 or null), pct(다음까지 %)}.
+  function affectionLevel(aff) {
+    aff = Math.max(0, Math.floor(Number(aff) || 0));
+    var TH = [10, 50, 100], level = 0;
+    for (var i = 0; i < TH.length; i++) { if (aff >= TH[i]) level = i + 1; }
+    var prev = level > 0 ? TH[level - 1] : 0, next = level < TH.length ? TH[level] : null;
+    return { level: level, next: next, pct: next != null ? Math.round((aff - prev) / (next - prev) * 100) : 100 };
+  }
+  // 자주 쓰는 거래 → 빠른입력 후보. txs에서 (desc|category|amount|type) 빈도 상위 N. 지출류만(빈 desc 제외).
+  function frequentTxTemplates(txs, limit) {
+    var map = {}, EXP = { expense: 1, prepaid_spend: 1, point_spend: 1 };
+    (txs || []).forEach(function (t) {
+      if (!t || !EXP[t.type]) return;
+      var desc = (t.desc || '').trim(); if (!desc) return;
+      var key = t.type + '|' + desc + '|' + (t.category || '') + '|' + (Number(t.amount) || 0);
+      var e = map[key] || (map[key] = { type: t.type, desc: desc, category: t.category || '', amount: Number(t.amount) || 0, count: 0, last: '' });
+      e.count++; if ((t.date || '') > e.last) e.last = t.date || '';
+    });
+    return Object.keys(map).map(function (k) { return map[k]; })
+      .sort(function (a, b) { return b.count - a.count || (a.last < b.last ? 1 : -1); })
+      .slice(0, limit || 6);
+  }
+
+  // 거래 검색 매칭(순수). q={keyword,dateFrom,dateTo,amountMin,amountMax,type}. keyword는 desc+memo+category 부분일치(소문자).
+  function txMatches(tx, q) {
+    if (!tx) return false; q = q || {};
+    if (q.type && tx.type !== q.type) return false;
+    if (q.keyword) {
+      var k = String(q.keyword).toLowerCase();
+      var hay = ((tx.desc || '') + ' ' + (tx.memo || '') + ' ' + (tx.category || '')).toLowerCase();
+      if (hay.indexOf(k) < 0) return false;
+    }
+    var d = tx.date || '';
+    if (q.dateFrom && d < q.dateFrom) return false;
+    if (q.dateTo && d > q.dateTo) return false;
+    var amt = Math.abs(Number(tx.amount) || 0);
+    if (q.amountMin !== undefined && q.amountMin !== null && q.amountMin !== '' && amt < Number(q.amountMin)) return false;
+    if (q.amountMax !== undefined && q.amountMax !== null && q.amountMax !== '' && amt > Number(q.amountMax)) return false;
+    return true;
+  }
+
   // ---- 렌더 결정(순수) — 어떤 배지/카드를 그릴지 판정만. 실제 DOM 쓰기는 core/views의 얇은 래퍼가 담당. ----
   // 상단 로고 점 배지 표시 여부: 모드 화면(홈 아님)에서 오늘 미처리(total>0)일 때만.
   function homeBadgeShow(view, total) { return view !== 'home' && (total | 0) > 0; }
@@ -214,7 +270,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, sumPlacedItem: sumPlacedItem, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot };
+  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, sumPlacedItem: sumPlacedItem, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);
