@@ -63,6 +63,13 @@ for lx in range(0, 10):                      # ㅡ(모음): 풀 막대에 1px �
 for (lx, ly), col in glyph.items():          # ㄹ: 알과 동일 글리프
     grid[(BX+lx, 7+ly)] = col
 
+# 4.5) 뜰 ㄸ(쌍디귿): 둘째 ㄷ을 왼쪽 1px 이동(x21..25 → x20..24)해 첫 ㄷ과 붙임.
+#      → 사이 공간 제거 + ㄸ도 10칸(x15..24)이라 ㅡ·ㄹ과 오른쪽 끝 정렬.
+for y in range(0, 5):
+    for x in range(21, 26):
+        c = grid.pop((x, y), None)
+        if c: grid[(x-1, y)] = c
+
 # 5) SVG 출력(기존 포맷 유지: width/height 1.02, crispEdges)
 rects = []
 for y in range(H):
