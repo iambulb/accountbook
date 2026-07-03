@@ -1378,11 +1378,12 @@
       h+='<div class="card" style="padding:6px 10px;margin:8px 0 4px;">';
       Object.keys(members).forEach(uid=>{
         const m=members[uid], self=uid===state.uid, isMemOwner=m.role==='owner';
-        h+='<div class="tx">'+avatarHtml(uid, m.name, 38)+
-          '<div class="tx-main"><div class="tx-title">'+escapeHtml(m.name||'멤버')+(isMemOwner?' 👑':'')+(self?' (나)':'')+'</div><div class="tx-sub">'+(isMemOwner?'소유자':'멤버')+'</div></div>';
+        const crown=isMemOwner?' <span class="owncrown">'+(typeof crownSvg==='function'?crownSvg({h:12}):'👑')+'</span>':'';
+        h+='<div class="tx" role="button" tabindex="0" style="cursor:pointer;" onclick="openFriendHome(\''+uid+'\')">'+avatarHtml(uid, m.name, 38)+
+          '<div class="tx-main"><div class="tx-title">'+escapeHtml(m.name||'멤버')+crown+(self?' (나)':'')+'</div><div class="tx-sub">'+(isMemOwner?'소유자':'멤버')+' · 눌러서 방문</div></div>';
         if(isOwner && !self && !isMemOwner){
-          h+='<span style="display:flex;gap:6px;"><button class="chip" onclick="doTransferOwner(\''+wsId+'\',\''+uid+'\')">소유자 지정</button>'+
-             '<button class="chip" onclick="doRemoveMember(\''+wsId+'\',\''+uid+'\')">내보내기</button></span>';
+          h+='<span style="display:flex;gap:6px;" onclick="event.stopPropagation()"><button class="chip" onclick="event.stopPropagation();doTransferOwner(\''+wsId+'\',\''+uid+'\')">소유자 지정</button>'+
+             '<button class="chip" onclick="event.stopPropagation();doRemoveMember(\''+wsId+'\',\''+uid+'\')">내보내기</button></span>';
         }
         h+='</div>';
       });
@@ -1423,13 +1424,29 @@
       r.onerror=()=>toast('파일을 읽을 수 없어요', true);
       r.readAsDataURL(file);
     }
-    // 그룹 멤버 아바타 겹침 나열(최대 5, 초과 시 +N)
+    // 그룹 멤버 아바타 겹침 나열(최대 5, 초과 시 +N). 탭하면 멤버 목록 시트(→프로필 방문).
     function memberAvatarStack(ws, size){
       const m=(ws&&ws.members)||{}; const uids=Object.keys(m); if(!uids.length) return '';
-      const max=5; let h='<div class="mstack">';
+      const wid=(ws&&ws.id)||''; const max=5;
+      let h='<button type="button" class="mstack" onclick="event.stopPropagation();openWsMembersSheet(\''+wid+'\')" aria-label="멤버 보기">';
       uids.slice(0,max).forEach(uid=>{ h+='<span class="ms-av">'+avatarHtml(uid, m[uid]&&m[uid].name, size||26)+'</span>'; });
       if(uids.length>max) h+='<span class="ms-more">+'+(uids.length-max)+'</span>';
-      return h+'</div>';
+      return h+'</button>';
+    }
+    // 그룹 멤버 목록 시트 — 각 멤버 탭 시 그 사용자 집(펫캠) 방문(openFriendHome).
+    function openWsMembersSheet(wsId){
+      const w=(state.memberships||[]).find(x=>x.id===wsId) || ((state.wsMeta&&state.wsMeta.id===wsId)?state.wsMeta:null);
+      if(!w){ toast('가계부를 찾을 수 없어요', true); return; }
+      const members=w.members||{}, uids=Object.keys(members);
+      let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 10px;">멤버를 눌러 집(펫캠)을 방문할 수 있어요.</p><div class="card" style="padding:6px 10px;">';
+      if(!uids.length) h+='<div class="empty" style="padding:20px 6px;">멤버가 없어요</div>';
+      else h+=uids.map(function(uid){ const m=members[uid], self=uid===state.uid, isOwner=m.role==='owner';
+        const crown=isOwner?' <span class="owncrown">'+(typeof crownSvg==='function'?crownSvg({h:12}):'👑')+'</span>':'';
+        return '<div class="tx" role="button" tabindex="0" style="cursor:pointer;" onclick="openFriendHome(\''+uid+'\')">'+avatarHtml(uid, m.name, 38)+
+          '<div class="tx-main"><div class="tx-title">'+escapeHtml(m.name||'멤버')+crown+(self?' (나)':'')+'</div><div class="tx-sub">'+(isOwner?'소유자':'멤버')+'</div></div>'+
+          '<span class="chev">'+MORE_ICON.chev+'</span></div>'; }).join('');
+      h+='</div>';
+      openSheet((w.name||'그룹')+' 멤버', h);
     }
     function openProfileSheet(){
       window._profilePhoto=undefined;   // undefined=유지 / ''=삭제 / dataURL=신규
