@@ -780,9 +780,14 @@
     .slot.locked .slotgold { display:inline-flex; align-items:center; gap:2px; font-size:10px; font-weight:800; color:var(--text); }
     /* 우리집 펫 정렬·검색 바(수백 마리 관리) */
     .petctl { display:flex; gap:8px; margin:2px 0 8px; }
-    .petctl .petsort { flex:none; border:1.5px solid var(--bd); background:var(--card); color:var(--text); border-radius:10px; padding:7px 10px; font-size:12.5px; font-weight:700; }
-    .petctl .petsearch { flex:1; min-width:0; border:1.5px solid var(--bd); background:var(--card); color:var(--text); border-radius:10px; padding:7px 12px; font-size:13px; }
+    /* font-size는 반드시 16px 이상 — iOS Safari는 16px 미만 입력에 포커스 시 화면을 확대(줌)해 스크롤이 생김. 16px면 줌이 발생하지 않음(핀치줌은 유지). */
+    .petctl .petsort { flex:none; border:1.5px solid var(--bd); background:var(--card); color:var(--text); border-radius:10px; padding:7px 10px; font-size:16px; font-weight:700; }
+    .petctl .petsearch { flex:1; min-width:0; border:1.5px solid var(--bd); background:var(--card); color:var(--text); border-radius:10px; padding:7px 12px; font-size:16px; }
     .petctl .petsearch:focus, .petctl .petsort:focus { outline:none; border-color:var(--primary); }
+    /* 우리집 펫 카드 — 애정 레벨 배지(항상 표시, Lv.0~5) */
+    .catchip .clv { display:inline-flex; align-items:center; justify-content:center; gap:3px; margin-top:3px; font-size:11px; font-weight:800; color:#e0567a; }
+    .catchip .clv .clv-h { display:inline-flex; width:11px; height:11px; }
+    .catchip .clv .clv-h .px { display:block; }
     .catchips { display:flex; gap:10px; flex-wrap:nowrap; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch; }
     /* 적당한 세로 카드(고정폭). 이미지 영역엔 고양이를 꽉 차게, 아래엔 이름+상태 */
     .catchip { position:relative; flex:0 0 112px; width:112px; box-sizing:border-box; background:var(--card); border:1.5px solid var(--bd); border-radius:16px; padding:8px 8px 10px; text-align:center; transition:transform .08s, border-color .12s, background .12s; cursor:pointer; }

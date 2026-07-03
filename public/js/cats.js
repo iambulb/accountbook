@@ -2133,8 +2133,9 @@
     // ===== 캠/방에서 펫을 바로 끌어(드래그) 좌우로 이동 =====
     let _petDrag=null, _petJustDragged=false;
     function camTap(){ if(_petJustDragged) return; openCatHouse(); }   // 드래그 직후의 탭은 알뜰샵 열기 무시
-    // 🐾 펫 애정도: 방/캠에서 펫을 탭하면 +1(펫별 쿨다운), 임계(10/50/100)에서 레벨업. 작은 하트 연출.
-    let _affCool={}, _affLevelUp=null;
+    // 🐾 펫 애정도: 방/캠에서 펫을 탭해 쓰다듬기(펫별 3시간 쿨다운) → +1, 임계에서 레벨업. 실제 쓰다듬을 때만 하트 연출.
+    let _affLevelUp=null, _petCdToast=0;
+    const PET_COOLDOWN_MS=3*60*60*1000;   // 쓰다듬기 쿨다운 3시간(펫별, RTDB pettedAt로 지속)
     // 펫 쓰다듬기 연출: 좋아요와 동일한 픽셀 하트(heartSvg)가 위로 떠오르고 + 작은 하트들이 뿅 팝(likeBurst).
     function heartFx(x,y){ const cx=(x||innerWidth/2), cy=(y||innerHeight/2);
       const el=document.createElement('div'); el.className='heartfx'; el.innerHTML=(typeof heartSvg==='function')?heartSvg({h:22}):'❤';
@@ -2155,18 +2156,27 @@
         document.body.appendChild(el); setTimeout(()=>el.remove(), 820+i*16);
       }
     }
+    // 쓰다듬기: 펫별 3시간에 1번만(RTDB owned.cats[id].pettedAt로 지속). 쿨다운 중엔 하트 연출 없음 — 실제 쓰다듬었을 때만 액션.
     function bumpAffection(id, x, y){
       if(!id || !ownsCat(id)) return;
-      const now=Date.now(); if(_affCool[id] && now-_affCool[id]<1500){ heartFx(x,y); return; }   // 쿨다운 중엔 연출만(스팸 방지)
-      _affCool[id]=now; _affLevelUp=null;
-      gameRef().transaction(g=>{ g=normalizeGame(g); const c=g.owned.cats[id]; if(!c) return g;
+      const now=Date.now(), last=Number((ownedCatsMap()[id]||{}).pettedAt)||0;
+      if(now-last < PET_COOLDOWN_MS){   // 쿨다운: 하트 없음. 남은 시간만 가끔 토스트로 안내(스팸 방지).
+        if(now-_petCdToast>2500){ _petCdToast=now; const rem=PET_COOLDOWN_MS-(now-last), hh=Math.floor(rem/3600000), mm=Math.ceil((rem%3600000)/60000);
+          toast(catName(id)+' 쓰다듬기는 3시간에 한 번 · '+(hh>0?hh+'시간 ':'')+mm+'분 후 가능'); }
+        return; }
+      _affLevelUp=null; let did=false;
+      gameRef().transaction(g=>{ g=normalizeGame(g); const c=g.owned.cats[id]; if(!c){ did=false; return g; }
+        if(now-(Number(c.pettedAt)||0) < PET_COOLDOWN_MS){ did=false; return g; }   // 트랜잭션 내 재확인(다기기 동시성)
+        did=true; c.pettedAt=now;
         const before=affectionLevel(c.affection).level; c.affection=(Number(c.affection)||0)+1;
         const after=affectionLevel(c.affection).level;
         if(after>before){ _affLevelUp={ id, level:after, gold:0 };
           if(after>=5){ g.gold=(g.gold||0)+5; _affLevelUp.gold=5; }   // 애정 만렙(레벨5) 1회 도달 보상 — 레벨은 한 번만 오르므로 자동 멱등
         }
         return g;
-      }).then(res=>{ if(res&&res.committed){ heartFx(x,y); if(_affLevelUp){ const g=_affLevelUp.gold; toast('❤ '+catName(_affLevelUp.id)+' 애정 레벨 '+_affLevelUp.level+(g?' · 만렙! 금화 +'+g:'')+'!'); _affLevelUp=null; } } });
+      }).then(res=>{ if(res&&res.committed&&did){ heartFx(x,y);   // 실제 쓰다듬었을 때만 하트 액션
+        if(_affLevelUp){ const g=_affLevelUp.gold; toast('❤ '+catName(_affLevelUp.id)+' 애정 레벨 '+_affLevelUp.level+(g?' · 만렙! 금화 +'+g:'')+'!'); _affLevelUp=null; }
+        else toast('❤ '+catName(id)+' 쓰다듬기 · 애정 +1'); } });
     }
     function petGrabDown(e){
       const el=(e.target&&e.target.closest)?e.target.closest('.cd-actor'):null; if(!el) return;
@@ -2295,8 +2305,8 @@
         return '<div class="catchip'+(here?' on':(roomOf>=0?' elsewhere':''))+'" data-name="'+escapeHtml(catName(id))+'" role="button" tabindex="0" aria-pressed="'+here+'" onclick="toggleActiveCat(\''+id+'\')">'+
           '<div class="cpic">'+art+'</div>'+
           (roomOf>=0&&!here?'<span class="croom">'+escapeHtml(roomNm)+'</span>':'')+
-          '<div class="cn">'+catNameSpan(id,catName(id))+(function(){ const lv=affectionLevel((ownedCatsMap()[id]||{}).affection).level; return lv>0?'<span class="cn-lv" aria-label="애정 레벨 '+lv+'">Lv.'+lv+'</span>':''; })()+'</div>'+
-          (()=>{ const av=(ownedCatsMap()[id]||{}).affection; const lv=affectionLevel(av).level; return lv>0?'<div class="caff" style="display:inline-flex;gap:1px" aria-label="애정 '+lv+'">'+heartSvg({h:10}).repeat(lv)+'</div>':''; })()+
+          '<div class="cn">'+catNameSpan(id,catName(id))+'</div>'+
+          (function(){ const lv=affectionLevel((ownedCatsMap()[id]||{}).affection).level; return '<div class="clv" aria-label="애정 레벨 '+lv+'"><span class="clv-h">'+heartSvg({h:11})+'</span>Lv.'+lv+'</div>'; })()+
           '<div class="cstate">'+(here?'이 방에 있음':(roomOf>=0?escapeHtml(roomNm)+'에 있음':'대기'))+'</div>'+
           '<button class="cn-edit" aria-label="이름 짓기" onclick="event.stopPropagation();openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
           (here?'<span class="csel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>':'')+
