@@ -882,6 +882,23 @@
       "..KK.....KK.."
     ];
     function cartSvg(opt){ return pxSvg(M_CART, {C:'currentColor',K:'currentColor'}, opt); }
+    // 📖 펫도감(책 + 고양이 발자국) 픽셀 아트 — S=책등, C=표지, P=책배(페이지), D=테두리, W=발자국(4발가락 아치 + 둥근 패드).
+    const M_DEX = [
+      "DDDDDDDDDDDDDD",
+      "DSSCCCCCCCCCPD",
+      "DSSCCCWCWCCCPD",
+      "DSSCWCCCCCWCPD",
+      "DSSCCCCCCCCCPD",
+      "DSSCCWWWWWCCPD",
+      "DSSCWWWWWWWCPD",
+      "DSSCWWWWWWWCPD",
+      "DSSCCWWWWWCCPD",
+      "DSSCCCCCCCCCPD",
+      "DSSCCCCCCCCCPD",
+      "DDDDDDDDDDDDDD"
+    ];
+    const DEX_PAL={C:'#3a9d92',S:'#237068',P:'#f3e7c6',D:'#1c4f49',W:'#ffffff'};
+    function dexSvg(opt){ return pxSvg(M_DEX, DEX_PAL, opt); }
     // 🥇 랭킹 등수 픽셀 숫자(3×5) — 메달 배지 안에 넣는 도트 숫자. color 미지정 시 currentColor.
     const M_NUM = {
       '1': [".X.","XX.",".X.",".X.","XXX"],
@@ -2702,8 +2719,6 @@
       { const c=(state.game&&state.game.streak&&Number(state.game.streak.count))||0;
         const nx=[3,7,14,30].find(n=>n>c)||(Math.floor(c/30+1)*30);
         h+='<div class="streakbar"><span class="fire">🔥</span><b>'+c+'일 연속 출석</b><span class="s">다음 보상까지 '+(nx-c)+'일 (+금화)</span></div>'; }
-      { const pr=dexProgress(ownedCatsMap(), PET_CATALOG.map(c=>c.id));
-        h+='<button class="dexbtn" onclick="openPetDex()"><span>🐾 펫 도감</span><span class="s">'+pr.owned+' / '+pr.total+' 수집 ›</span></button>'; }
       h+='<div class="sech"><span class="l">일일 미션</span><span class="s">자정 초기화</span></div>';
       h+=DAILY_MISSIONS.map(missionRow).join('');
       const _cmN=customMissionList().length; h+='<div class="sech"><span class="l">내 미션</span>'+(_cmN>=5?'<span class="s">최대 5개</span>':'<button class="link" onclick="openCustomMissionEdit()">+ 추가</button>')+'</div>';
