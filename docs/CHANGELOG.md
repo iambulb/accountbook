@@ -8,6 +8,11 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 추가 — 🦁🐯🐱 펫 5종 정적 편입 + 정적 펫 2종 조정 (총 21종)
+- 앱 개발자모드로 만든 런타임 펫 5마리를 정적 에셋으로 승격: **갈기냥**(`lion_mane`, 새 종 **사자**·한정)·**펠시안**(`cat_persian`·특별)·**백호**(`tiger_white`·한정)·**러시안블루**(`cat_russianblue`·특별)·**벵갈**(`cat_bengal2`·전설). 새 종 `lion`(라벨 사자) 신설.
+- 기존 정적 펫 편집분 반영: `cat_bengal` 이름 **벵갈→황토**, `cat_chaos` 등급 **전설→희귀**(가격 800→200).
+- `tools/sync_runtime_pets.mjs`로 RTDB 런타임 아트를 종별 폴더로 편입 + `PET_ID_MIGRATE`로 기존 소유자 이관. (RTDB 런타임 레코드 삭제는 프로덕션 배포 후 별도 진행) `sw.js` `v3.157.2`.
+
 ### 변경 — 🗂️ 펫 에셋 폴더를 종별로 정리(`assets/pets/<species>/<id>/`)
 - 기존 `public/assets/pets/<id>/`(전부 한 곳)를 **종별 하위폴더**로 재구성 — 고양이는 `cat/`, 호랑이는 `tiger/`, 이후 강아지는 `dog/` 등. `build_pets.py`·`sync_runtime_pets.mjs`가 `pets.json`의 `species`로 경로를 만들고, `cats.js` `sprStills()`는 `PET_SPRITES[id].walk` 경로에서 정지 4방향 폴더를 파생(단일 소스). 앱 개발자모드에서 **새로운 종의 펫을 추가**하면(그 종 폴더가 자동 생성) 승격 시 알맞은 폴더로 들어간다. `sw.js` `v3.157.1`.
 

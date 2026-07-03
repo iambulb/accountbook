@@ -1,5 +1,5 @@
 /* 알뜰(Eggarden) 서비스워커 — 오프라인 앱 셸 캐시 */
-const CACHE_VERSION = 'eggarden-v3.157.1';
+const CACHE_VERSION = 'eggarden-v3.157.2';
 const APP_SHELL = [
   './',
   './index.html',
@@ -99,6 +99,31 @@ const APP_SHELL = [
   './assets/pets/tiger/tiger_orange/north.png',
   './assets/pets/tiger/tiger_orange/east.png',
   './assets/pets/tiger/tiger_orange/west.png',
+  './assets/pets/lion/lion_mane/walk.png',
+  './assets/pets/lion/lion_mane/south.png',
+  './assets/pets/lion/lion_mane/north.png',
+  './assets/pets/lion/lion_mane/east.png',
+  './assets/pets/lion/lion_mane/west.png',
+  './assets/pets/cat/cat_persian/walk.png',
+  './assets/pets/cat/cat_persian/south.png',
+  './assets/pets/cat/cat_persian/north.png',
+  './assets/pets/cat/cat_persian/east.png',
+  './assets/pets/cat/cat_persian/west.png',
+  './assets/pets/tiger/tiger_white/walk.png',
+  './assets/pets/tiger/tiger_white/south.png',
+  './assets/pets/tiger/tiger_white/north.png',
+  './assets/pets/tiger/tiger_white/east.png',
+  './assets/pets/tiger/tiger_white/west.png',
+  './assets/pets/cat/cat_russianblue/walk.png',
+  './assets/pets/cat/cat_russianblue/south.png',
+  './assets/pets/cat/cat_russianblue/north.png',
+  './assets/pets/cat/cat_russianblue/east.png',
+  './assets/pets/cat/cat_russianblue/west.png',
+  './assets/pets/cat/cat_bengal2/walk.png',
+  './assets/pets/cat/cat_bengal2/south.png',
+  './assets/pets/cat/cat_bengal2/north.png',
+  './assets/pets/cat/cat_bengal2/east.png',
+  './assets/pets/cat/cat_bengal2/west.png',
   // @gen:end
 ];
 

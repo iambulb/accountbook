@@ -446,24 +446,29 @@
       { id:'cat_white', species:'cat', name:'하양', price:400, desc:'파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요.' },
       { id:'cat_fluffy', species:'cat', name:'복슬이', price:200, desc:'복슬복슬한 털에 파란 눈. 나른하게 졸며 방을 거닐어요.' },
       { id:'cat_tuxedo', species:'cat', name:'턱시도', price:800, desc:'검은 정장에 하얀 셔츠·발. 단정하게 걸어다녀요.' },
-      { id:'cat_chaos', species:'cat', name:'카오스', price:800, desc:'다크그레이+브라운 소용돌이 무늬. 종잡을 수 없이 쏘다녀요.' },
+      { id:'cat_chaos', species:'cat', name:'카오스', price:200, desc:'다크그레이+브라운 소용돌이 무늬. 종잡을 수 없이 쏘다녀요.' },
       { id:'cat_siamese', species:'cat', name:'샴', price:800, desc:'크림빛 몸에 짙은 포인트. 우아하게 방을 누벼요.' },
-      { id:'cat_bengal', species:'cat', name:'벵갈', price:100, desc:'골든빛 몸에 동글동글 반점. 야무지게 돌아다녀요.' },
+      { id:'cat_bengal', species:'cat', name:'황토', price:100, desc:'골든빛 몸에 동글동글 반점. 야무지게 돌아다녀요.' },
       { id:'cat_fold', species:'cat', name:'폴드', price:200, desc:'접힌 귀가 매력. 얌전히 자리를 지켜요.' },
       { id:'cat_bora', species:'cat', name:'보라', price:400, desc:'한쪽은 파랑·한쪽은 호박색 오드아이. 신비롭게 거닐어요.' },
       { id:'cat_choco', species:'cat', name:'초코', price:100, desc:'초콜릿빛 갈색 털에 크림색 입가·가슴. 느긋하게 방을 거닐어요.' },
       { id:'cat_kitten', species:'cat', name:'아깽이', price:50, desc:'치즈빛 오렌지 태비 아기고양이. 뒤뚱뒤뚱 방을 쏘다녀요.' },
       { id:'cat_pink', species:'cat', name:'스핑크스', price:800, desc:'털 없는 분홍빛 주름 피부. 도도하게 방을 누벼요.' },
-      { id:'tiger_orange', species:'tiger', name:'고랑이', price:1500, desc:'볼드한 검은 줄무늬의 오렌지 호랑이. 위풍당당하게 방을 누벼요.' }
+      { id:'tiger_orange', species:'tiger', name:'고랑이', price:1500, desc:'볼드한 검은 줄무늬의 오렌지 호랑이. 위풍당당하게 방을 누벼요.' },
+      { id:'lion_mane', species:'lion', name:'갈기냥', price:1500, desc:'풍성한 갈기의 황금빛 사자. 위풍당당하게 방을 거닐어요.' },
+      { id:'cat_persian', species:'cat', name:'펠시안', price:400, desc:'납작한 얼굴에 복슬복슬 긴 털. 우아하게 방을 누벼요.' },
+      { id:'tiger_white', species:'tiger', name:'백호', price:1500, desc:'푸른 눈의 새하얀 호랑이. 늠름하게 방을 누벼요.' },
+      { id:'cat_russianblue', species:'cat', name:'러시안블루', price:400, desc:'은청빛 짧은 털에 초록 눈. 조용히 방을 거닐어요.' },
+      { id:'cat_bengal2', species:'cat', name:'벵갈', price:800, desc:'야생미 물씬 로제트 무늬. 날렵하게 방을 쏘다녀요.' }
     ];
     // @gen:end
     // 종(species) → 알뜰샵 분류 라벨. 품종(샴·벵갈 등)은 표시하지 않고 종만 노출.
-    const SPECIES_LABEL = { cat:'고양이', dog:'강아지', rabbit:'토끼', tiger:'호랑이' };
+    const SPECIES_LABEL = { cat:'고양이', dog:'강아지', rabbit:'토끼', tiger:'호랑이', lion:'사자' };
     function speciesLabel(id){ const c=PET_CATALOG.find(x=>x.id===id); return (c&&SPECIES_LABEL[c.species])||'펫'; }
     // 구 id(고양이 전용 시절) → 신 id. RTDB 보유/활성 데이터 하위호환(normalizeGame에서 적용).
     // 구 id→신 id 매핑(수동 유지, @gen 마커 밖). 런타임 펫 정적 승격 시 tools/sync_runtime_pets.mjs 가 아래 앵커 앞에 rt_xxx:'static_id' 를 자동 삽입한다.
     const PET_ID_MIGRATE = { mackerel:'cat_mackerel', cheese:'cat_cheese', calico:'cat_calico', black:'cat_black', white:'cat_white',
-      /* @rtmigrate */ };
+      rt_mr3n1k85:'lion_mane', rt_mr3n6laq:'cat_persian', rt_mr3nx5r4:'tiger_white', rt_mr3nyl3p:'cat_russianblue', rt_mr3ocsnm:'cat_bengal2', /* @rtmigrate */ };
     // size = 표시 배율(1=기본). footW×footH = 배치 격자 점유(가로×세로 칸). 캣타워=3×6(세로 큼), 스크래처=2×2, 화장실=2×1(가로로 넓음), 방석·밥그릇=1×1(작게, 밥그릇<방석). itemFoot()/furnScale()로 배치·방·알뜰샵에 반영.
     const ITEM_CATALOG = [
       { id:'cushion', name:'방석',   price:15, size:0.6,  footW:1, footH:1, desc:'고양이가 위에 잠시 올라가 쉬어요.' },
@@ -575,7 +580,12 @@
       cat_choco:{ walk:'assets/pets/cat/cat_choco/walk.png', frames:6, stills:true },
       cat_kitten:{ walk:'assets/pets/cat/cat_kitten/walk.png', frames:6, stills:true, scale:0.5 },
       cat_pink:{ walk:'assets/pets/cat/cat_pink/walk.png', frames:6, stills:true },
-      tiger_orange:{ walk:'assets/pets/tiger/tiger_orange/walk.png', frames:6, stills:true, scale:5 }
+      tiger_orange:{ walk:'assets/pets/tiger/tiger_orange/walk.png', frames:6, stills:true, scale:5 },
+      lion_mane:{ walk:'assets/pets/lion/lion_mane/walk.png', frames:6, stills:true, scale:5 },
+      cat_persian:{ walk:'assets/pets/cat/cat_persian/walk.png', frames:6, stills:true },
+      tiger_white:{ walk:'assets/pets/tiger/tiger_white/walk.png', frames:6, stills:true, scale:5 },
+      cat_russianblue:{ walk:'assets/pets/cat/cat_russianblue/walk.png', frames:6, stills:true },
+      cat_bengal2:{ walk:'assets/pets/cat/cat_bengal2/walk.png', frames:6, stills:true }
     };
     // @gen:end
     function hasSprite(id){ return !!PET_SPRITES[id]; }
@@ -1959,7 +1969,7 @@
     }
     // 테스트 배정(등급당 1) — 펫알=고양이 / 랜덤박스=가구
     // @gen:pet-tier — 자동생성(tools/build_pets.py). tools/pets.json 의 tier 편집 후 재실행.
-    const CAT_TIER = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'epic', cat_fluffy:'rare', cat_tuxedo:'legend', cat_chaos:'legend', cat_siamese:'legend', cat_bengal:'uncommon', cat_fold:'rare', cat_bora:'epic', cat_choco:'uncommon', cat_kitten:'normal', cat_pink:'legend', tiger_orange:'limited' };
+    const CAT_TIER = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'epic', cat_fluffy:'rare', cat_tuxedo:'legend', cat_chaos:'rare', cat_siamese:'legend', cat_bengal:'uncommon', cat_fold:'rare', cat_bora:'epic', cat_choco:'uncommon', cat_kitten:'normal', cat_pink:'legend', tiger_orange:'limited', lion_mane:'limited', cat_persian:'epic', tiger_white:'limited', cat_russianblue:'epic', cat_bengal2:'legend' };
     // @gen:end
     const ITEM_TIER = { cushion:'normal', bowl:'uncommon', scratcher:'rare', pethouse:'epic', tower:'legend' };
     // 등급별 알뜰샵 가격(은화) — 확률(60/20/15/3.8/1/0.2%)에 맞춰 등급이 오를수록 약 2배씩.

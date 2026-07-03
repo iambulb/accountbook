@@ -12,7 +12,8 @@
     "cat": "고양이",
     "dog": "강아지",
     "rabbit": "토끼",
-    "tiger": "호랑이"
+    "tiger": "호랑이",
+    "lion": "사자"
   },
   "ignoreZips": [
     "simple_pixel_art_calico_cat_white_with_orange_three.zip"
@@ -25,14 +26,19 @@
     { "id": "cat_white", "species": "cat", "name": "하양", "tier": "epic", "desc": "파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요.", "zip": "chibi_pixel_art_white_cat_pale_blue_eyes_sleepy_fa.zip", "frontWalk": false },
     { "id": "cat_fluffy", "species": "cat", "name": "복슬이", "tier": "rare", "desc": "복슬복슬한 털에 파란 눈. 나른하게 졸며 방을 거닐어요.", "zip": "simple_pixel_art_white_cat_fluffy_fur_pale_blue_ey.zip", "frontWalk": false },
     { "id": "cat_tuxedo", "species": "cat", "name": "턱시도", "tier": "legend", "desc": "검은 정장에 하얀 셔츠·발. 단정하게 걸어다녀요.", "zip": "simple_pixel_art_tuxedo_cat_black_body_with_white.zip", "frontWalk": false },
-    { "id": "cat_chaos", "species": "cat", "name": "카오스", "tier": "legend", "desc": "다크그레이+브라운 소용돌이 무늬. 종잡을 수 없이 쏘다녀요.", "zip": "simple_pixel_art_chaos_cat_dark_grey_and_brown_swir.zip", "frontWalk": false },
+    { "id": "cat_chaos", "species": "cat", "name": "카오스", "tier": "rare", "desc": "다크그레이+브라운 소용돌이 무늬. 종잡을 수 없이 쏘다녀요.", "zip": "simple_pixel_art_chaos_cat_dark_grey_and_brown_swir.zip", "frontWalk": false },
     { "id": "cat_siamese", "species": "cat", "name": "샴", "tier": "legend", "desc": "크림빛 몸에 짙은 포인트. 우아하게 방을 누벼요.", "zip": "chibi_pixel_art_siamese_cat_cream_body_with_dark_fa.zip", "frontWalk": false },
-    { "id": "cat_bengal", "species": "cat", "name": "벵갈", "tier": "uncommon", "desc": "골든빛 몸에 동글동글 반점. 야무지게 돌아다녀요.", "zip": "chibi_pixel_art_golden_cat_a_few_simple_round_spot.zip", "frontWalk": false },
+    { "id": "cat_bengal", "species": "cat", "name": "황토", "tier": "uncommon", "desc": "골든빛 몸에 동글동글 반점. 야무지게 돌아다녀요.", "zip": "chibi_pixel_art_golden_cat_a_few_simple_round_spot.zip", "frontWalk": false },
     { "id": "cat_fold", "species": "cat", "name": "폴드", "tier": "rare", "desc": "접힌 귀가 매력. 얌전히 자리를 지켜요.", "zip": "chibi_pixel_art_grey_cat_small_folded-down_ears_ro.zip", "frontWalk": false },
     { "id": "cat_bora", "species": "cat", "name": "보라", "tier": "epic", "desc": "한쪽은 파랑·한쪽은 호박색 오드아이. 신비롭게 거닐어요.", "zip": "chibi_pixel_art_white_cat_one_blue_eye_one_amber_e.zip", "frontWalk": false },
     { "id": "cat_choco", "species": "cat", "name": "초코", "tier": "uncommon", "desc": "초콜릿빛 갈색 털에 크림색 입가·가슴. 느긋하게 방을 거닐어요.", "zip": "simple_pixel_art_chocolate_brown_cat_cream_muzzle.zip", "frontWalk": false },
     { "id": "cat_kitten", "species": "cat", "name": "아깽이", "tier": "normal", "scale": 0.5, "desc": "치즈빛 오렌지 태비 아기고양이. 뒤뚱뒤뚱 방을 쏘다녀요.", "zip": "simple_pixel_art_orange_tabby_kitten_a_few_cheese.zip", "frontWalk": false },
     { "id": "cat_pink", "species": "cat", "name": "스핑크스", "tier": "legend", "scale": 1, "desc": "털 없는 분홍빛 주름 피부. 도도하게 방을 누벼요.", "zip": "simple_pixel_art_pink_sphynx_cat_hairless_wrinkled.zip", "frontWalk": false },
-    { "id": "tiger_orange", "species": "tiger", "name": "고랑이", "tier": "limited", "scale": 5, "desc": "볼드한 검은 줄무늬의 오렌지 호랑이. 위풍당당하게 방을 누벼요.", "zip": "simple_pixel_art_orange_tiger_bold_black_stripes_c.zip", "frontWalk": false }
+    { "id": "tiger_orange", "species": "tiger", "name": "고랑이", "tier": "limited", "scale": 5, "desc": "볼드한 검은 줄무늬의 오렌지 호랑이. 위풍당당하게 방을 누벼요.", "zip": "simple_pixel_art_orange_tiger_bold_black_stripes_c.zip", "frontWalk": false },
+    { "id": "lion_mane", "species": "lion", "name": "갈기냥", "tier": "limited", "scale": 5, "desc": "풍성한 갈기의 황금빛 사자. 위풍당당하게 방을 거닐어요.", "zip": "", "frontWalk": false },
+    { "id": "cat_persian", "species": "cat", "name": "펠시안", "tier": "epic", "scale": 1, "desc": "납작한 얼굴에 복슬복슬 긴 털. 우아하게 방을 누벼요.", "zip": "", "frontWalk": false },
+    { "id": "tiger_white", "species": "tiger", "name": "백호", "tier": "limited", "scale": 5, "desc": "푸른 눈의 새하얀 호랑이. 늠름하게 방을 누벼요.", "zip": "", "frontWalk": false },
+    { "id": "cat_russianblue", "species": "cat", "name": "러시안블루", "tier": "epic", "scale": 1, "desc": "은청빛 짧은 털에 초록 눈. 조용히 방을 거닐어요.", "zip": "", "frontWalk": false },
+    { "id": "cat_bengal2", "species": "cat", "name": "벵갈", "tier": "legend", "scale": 1, "desc": "야생미 물씬 로제트 무늬. 날렵하게 방을 쏘다녀요.", "zip": "", "frontWalk": false }
   ]
 }
