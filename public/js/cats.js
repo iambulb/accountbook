@@ -558,21 +558,37 @@
     ];
     const HEART_PAL={H:'#F0546A',L:'#FF9DAF'}, HEART_PAL_OFF={H:'#c4cad3',L:'#dde1e7'};
     function heartSvg(opt){ opt=opt||{}; return pxSvg(M_HEART, opt.off?HEART_PAL_OFF:HEART_PAL, opt); }
-    // 👥 친구(사람 둘) 픽셀 아트 — 더보기 친구 타일용. A=앞사람, B=뒷사람.
+    // 👥 친구(사람 둘) 픽셀 아트 — 더보기 친구 타일용. A=앞사람(하이라이트 L), B=뒷사람. 은화/좋아요와 같은 톤(몸체+하이라이트).
     const M_PEOPLE = [
       ".AAA...BBB..",
-      ".AAA...BBB..",
+      "AAAAA.BBBBB.",
+      "ALAAA.BBBBB.",
+      "AAAAA.BBBBB.",
       ".AAA...BBB..",
       "............",
-      "AAAAA.BBBBB.",
-      "AAAAA.BBBBB.",
-      "AAAAA.BBBBB.",
-      "AAAAA.BBBBB.",
-      "AAAAA.BBBBB.",
-      "AAAAA.BBBBB."
+      "AAAAAABBBBBB",
+      "AAAAAABBBBBB",
+      "AAAAAABBBBBB",
+      "AAAAAABBBBBB"
     ];
-    const PEOPLE_PAL={A:'#4a90d9',B:'#f2a154'};
+    const PEOPLE_PAL={A:'#4a90d9',B:'#f2a154',L:'#a9cdf0'};
     function peopleSvg(opt){ return pxSvg(M_PEOPLE, PEOPLE_PAL, opt); }
+    // ⚙️ 설정(톱니) 픽셀 아트 — G=몸체, L=하이라이트(좌상단). 좋아요/친구와 같은 스타일.
+    const M_GEAR = [
+      "....GGG....",
+      "....GGG....",
+      ".LLGGGGGGG.",
+      "GLGGGGGGGGG",
+      "GGGG...GGGG",
+      "GGG.....GGG",
+      "GGGG...GGGG",
+      "GGGGGGGGGGG",
+      ".GGGGGGGGG.",
+      "....GGG....",
+      "....GGG...."
+    ];
+    const GEAR_PAL={G:'#7c8698',L:'#aeb6c4'};
+    function gearSvg(opt){ return pxSvg(M_GEAR, GEAR_PAL, opt); }
     // 🏆 트로피(랭킹) 픽셀 아트 — C=컵(금), H=하이라이트, D=진금(그림자·기둥·받침).
     const M_TROPHY = [
       "D.......D",

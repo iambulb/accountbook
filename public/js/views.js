@@ -1549,7 +1549,7 @@
       h+=gcell((typeof bagSvg==='function'?bagSvg({h:26}):''),'가방','openBag()');
       h+=gcell((typeof peopleSvg==='function'?peopleSvg({h:26}):MORE_ICON.members),'친구','openFriendsSheet()', (typeof state.friendReqs==='object'?Object.keys(state.friendReqs||{}).length:0)||0);
       h+=gcell((typeof trophySvg==='function'?trophySvg({h:26}):'🏆'),'랭킹','openRanking()');
-      h+=gcell(MORE_ICON.gear,'설정','openSettingsSheet()');
+      h+=gcell((typeof gearSvg==='function'?gearSvg({h:26}):MORE_ICON.gear),'설정','openSettingsSheet()');
       if(typeof isDev==='function' && isDev()) h+=gcell((typeof rainbowEggSvg==='function'?rainbowEggSvg({h:26}):MORE_ICON.gear),'개발자','openDevModeSheet()');
       h+='</div>';
       // 하단 고정: 로그아웃(가운데) → 홈 화면 설치 링크 → 버전
