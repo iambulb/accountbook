@@ -586,6 +586,13 @@
       { id:'report', gold:1, period:'week', name:'리포트 확인', reward:10, icon:'<path d="M5 20V11M12 20V5M19 20v-6"/>',
         check:()=> reportSeenThisWeek() }
     ];
+    // 월간 챌린지(period:'month'). 매월 1일(KST) 초기화. 큰 금화 공급원 — 꾸준함 보상.
+    const MONTHLY_MISSIONS = [
+      { id:'mon_days', gold:8, period:'month', name:'이번 달 15일 기록', reward:80, icon:'<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4M8 14h2M14 14h2"/>',
+        prog:()=> recordDaysThisMonth()+' / 15일', check:()=> recordDaysThisMonth()>=15 },
+      { id:'mon_tx', gold:5, period:'month', name:'이번 달 거래 25건', reward:50, icon:'<path d="M4 7h16M4 12h16M4 17h10"/>',
+        prog:()=> Math.min(txThisMonth().length,25)+' / 25건', check:()=> txThisMonth().length>=25 }
+    ];
     // 업적(1회성). period:'once' → 영구 저장(초기화 없음). 앱 기능을 써보게 유도하고 은화 보상.
     const ACHIEVEMENTS = [
       { id:'ach_first',  period:'once', name:'첫 거래 기록',        reward:10, icon:'<path d="M12 4v16M8 8l4-4 4 4"/>', check:()=> (state.transactions||[]).length>0 },
@@ -601,7 +608,7 @@
       { id:'ach_custom1', period:'once', name:'첫 내 미션 만들기',   reward:10, icon:'<path d="M12 5v14M5 12h14"/>', check:()=> Object.keys((state.game&&state.game.customMissions)||{}).length>0 },
       { id:'ach_custom7', gold:3, period:'once', name:'내 미션 7일 연속',    reward:30, icon:'<path d="M12 3s5 4 5 9a5 5 0 1 1-10 0c0-2 1-3.5 2-4 0 2 1 3 2 3 0-3 -1-6 -1-8z"/>', check:()=> (typeof customMissionList==='function') && customMissionList().some(m=> missionStreak(missionLogDoneDates(m.id), kstDayKey()).best>=7 ) }
     ];
-    const ALL_MISSIONS = DAILY_MISSIONS.concat(WEEKLY_MISSIONS).concat(ACHIEVEMENTS);
+    const ALL_MISSIONS = DAILY_MISSIONS.concat(WEEKLY_MISSIONS).concat(MONTHLY_MISSIONS).concat(ACHIEVEMENTS);
 
     // ---- 픽셀 렌더 ----
     function pxSvg(map, pal, opt){
@@ -928,9 +935,13 @@
     // ---- 날짜 키(KST 롤오버) ----
     function kstDayKey(){ const d=new Date(Date.now()+9*3600000); return d.toISOString().slice(0,10); }   // 2026-07-01
     function kstWeekKey(){ const d=new Date(Date.now()+9*3600000); const mon=(d.getUTCDay()+6)%7; d.setUTCDate(d.getUTCDate()-mon); return 'W'+d.toISOString().slice(0,10); } // 그 주 월요일(KST)
+    function kstMonthKey(){ const d=new Date(Date.now()+9*3600000); return 'M'+d.toISOString().slice(0,7); }   // 이번 달(KST) 예: M2026-07
     // 이번 주(월~) 현재 워크스페이스에서 기록한 서로 다른 날 수
     function recordDaysThisWeek(){ const wk=kstWeekKey().slice(1); const days={}; (state.transactions||[]).forEach(t=>{ const d=(t.date||'').slice(0,10); if(!d) return; const kd=weekKeyOf(d); if(kd===kstWeekKey()) days[d]=1; }); return Object.keys(days).length; }
     function weekKeyOf(dateStr){ const d=new Date(dateStr+'T00:00:00Z'); const mon=(d.getUTCDay()+6)%7; d.setUTCDate(d.getUTCDate()-mon); return 'W'+d.toISOString().slice(0,10); }
+    // 이번 달(KST) 거래 건수 / 기록한 서로 다른 날 수 — 월간 챌린지 판정용. kstMonthKey()='M'+YYYY-MM.
+    function txThisMonth(){ const mk=kstMonthKey().slice(1); return (state.transactions||[]).filter(t=>(t.date||'').slice(0,7)===mk); }
+    function recordDaysThisMonth(){ const mk=kstMonthKey().slice(1); const days={}; txThisMonth().forEach(t=>{ const d=(t.date||'').slice(0,10); if(d) days[d]=1; }); return Object.keys(days).length; }
     function reportSeenThisWeek(){ const p=(state.game&&state.game.progress[kstWeekKey()])||{}; return !!p.reportSeen; }
     function markReportSeen(){ if(!state.uid||!state.game) return; if(reportSeenThisWeek()) return; gameRef().child('progress/'+kstWeekKey()+'/reportSeen').set(true); }
     // 활성 슬롯(집에 내보내기): 기본 3, 금화 SLOT_PRICE로 1칸 확장(최대 MAX_SLOTS).
@@ -1207,7 +1218,7 @@
 
     // 미션 지급(원자적·멱등): 게임 노드 트랜잭션 1회로 "수령 기록 + 은화 지급"을 동시에.
     // 같은 날 같은 미션은 이미 claimed면 변화 없음 → 중복 지급 불가.
-    function missionKey(m){ return m.period==='once'?'once':(m.period==='week'?kstWeekKey():kstDayKey()); }
+    function missionKey(m){ return m.period==='once'?'once':(m.period==='month'?kstMonthKey():(m.period==='week'?kstWeekKey():kstDayKey())); }
     function missionClaimed(m){ const key=missionKey(m); const pd=(state.game&&state.game.missions[key])||{}; return !!(pd[m.id]&&pd[m.id].claimed); }
     function grantMission(m){
       const key=missionKey(m);
@@ -1918,9 +1929,12 @@
       _affCool[id]=now; _affLevelUp=null;
       gameRef().transaction(g=>{ g=normalizeGame(g); const c=g.owned.cats[id]; if(!c) return g;
         const before=affectionLevel(c.affection).level; c.affection=(Number(c.affection)||0)+1;
-        const after=affectionLevel(c.affection).level; if(after>before) _affLevelUp={ id, level:after };
+        const after=affectionLevel(c.affection).level;
+        if(after>before){ _affLevelUp={ id, level:after, gold:0 };
+          if(after>=3){ g.gold=(g.gold||0)+5; _affLevelUp.gold=5; }   // 애정 만렙(레벨3) 1회 도달 보상 — 레벨은 한 번만 오르므로 자동 멱등
+        }
         return g;
-      }).then(res=>{ if(res&&res.committed){ heartFx(x,y); if(_affLevelUp){ toast('❤ '+catName(_affLevelUp.id)+' 애정 레벨 '+_affLevelUp.level+'!'); _affLevelUp=null; } } });
+      }).then(res=>{ if(res&&res.committed){ heartFx(x,y); if(_affLevelUp){ const g=_affLevelUp.gold; toast('❤ '+catName(_affLevelUp.id)+' 애정 레벨 '+_affLevelUp.level+(g?' · 만렙! 금화 +'+g:'')+'!'); _affLevelUp=null; } } });
     }
     function petGrabDown(e){
       const el=(e.target&&e.target.closest)?e.target.closest('.cd-actor'):null; if(!el) return;
@@ -2681,9 +2695,11 @@
       h+= mine.length ? mine.map(customMissionRow).join('') : '<div class="note" style="margin:2px 0 4px;">매일 체크할 나만의 습관을 추가해요(최대 5개). 7일 연속마다 은화 보상.</div>';
       h+='<div class="sech"><span class="l">주간 미션</span><span class="s">월요일 초기화</span></div>';
       h+=WEEKLY_MISSIONS.map(missionRow).join('');
+      h+='<div class="sech"><span class="l">월간 챌린지</span><span class="s">매월 1일 초기화</span></div>';
+      h+=MONTHLY_MISSIONS.map(missionRow).join('');
       h+='<div class="sech"><span class="l">업적</span><span class="s">한 번만</span></div>';
       h+=ACHIEVEMENTS.map(missionRow).join('');
-      h+='<div class="note" style="margin-top:12px;"><b>은화</b>로 알뜰샵에서 고양이·가구를 사세요. 일일은 자정, 주간은 월요일(KST) 초기화됩니다.</div>';
+      h+='<div class="note" style="margin-top:12px;"><b>은화</b>로 알뜰샵에서 고양이·가구를 사세요. 일일은 자정, 주간은 월요일, 월간 챌린지는 매월 1일(KST) 초기화됩니다. 펫을 오래 쓰다듬어 <b>애정 만렙</b>을 찍으면 금화도 받아요.</div>';
       return h;
     }
 
