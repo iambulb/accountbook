@@ -891,10 +891,19 @@
       transform:translate(-50%,-50%) scale(var(--sc,1)); animation:fxspark 1.2s steps(3) infinite; }
     .fx-rb { color:#fff; }                    /* 무지개 대기: 스파클 흰색 */
     .fx-sparks { position:absolute; inset:0; z-index:2; pointer-events:none; color:inherit; }   /* 등장: 등급색 반짝 */
-    /* 무지개알/박스: 움직이는 무지개 + 무지갯빛 글로우 펄스 */
-    .fx-item.fx-rainbow { filter:drop-shadow(0 0 10px rgba(255,255,255,.55)); }
-    .fx-item.fx-rainbow::after { content:""; position:absolute; inset:-12px; border-radius:50%; z-index:-1; pointer-events:none;
-      background:conic-gradient(#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8,#F04452); filter:blur(15px); opacity:.5; animation:fxspin 3s linear infinite; }
+    /* 무지개알/박스: 움직이는 무지개 도트만(왼쪽으로 흐르던 둥근 오오라 제거 — 픽셀아트 규칙) */
+    .fx-item.fx-rainbow { filter:drop-shadow(0 0 8px rgba(255,255,255,.5)); }
+    /* ✦ 픽셀 빛 연출 — 둥근 글로우/오오라/방사 그라디언트 대신 도트 별(M_STAR). 색=등급색(currentColor), 도트 유지(pixelated) */
+    .fx-cracklight { position:absolute; left:50%; top:50%; z-index:1; transform:translate(-50%,-50%) scale(.3); opacity:0; image-rendering:pixelated; animation:fxlight .7s steps(6) forwards; }
+    .fx-cracklight .px { display:block; filter:drop-shadow(0 0 2px currentColor); }
+    .fx-pixflash { position:absolute; left:50%; top:50%; z-index:2; transform:translate(-50%,-50%) scale(.4); image-rendering:pixelated; animation:fxpixflash .5s steps(5) forwards; }
+    .fx-pixflash .px { display:block; }
+    .fx-pixrays { position:absolute; left:50%; top:50%; z-index:0; transform:translate(-50%,-50%); opacity:.5; image-rendering:pixelated; animation:fxpixspin 9s steps(12) infinite; }
+    .fx-pixrays .px { display:block; opacity:.55; }
+    .fx-pixrays.reveal { opacity:.4; }
+    @keyframes fxlight { 0%{opacity:0;transform:translate(-50%,-50%) scale(.3)} 55%{opacity:.9} 100%{opacity:.72;transform:translate(-50%,-50%) scale(calc(1.6 * var(--lk,1)))} }
+    @keyframes fxpixflash { 0%{opacity:1;transform:translate(-50%,-50%) scale(.4) rotate(0)} 100%{opacity:0;transform:translate(-50%,-50%) scale(2.6) rotate(45deg)} }
+    @keyframes fxpixspin { to{ transform:translate(-50%,-50%) rotate(360deg); } }
     /* 등장 픽셀 프레임 — 등급색 각진 테두리(등급↑=두껍고 진하게, 한정=무지개 글로우) */
     .fx-art { position:relative; }
     .fx-frame { position:absolute; inset:-8px; z-index:-1; border:3px solid currentColor; image-rendering:pixelated; opacity:.55; animation:fxframe 1.4s steps(2) infinite; }
@@ -1004,9 +1013,9 @@
     .likemini { display:inline-flex; align-items:center; gap:3px; font-size:12.5px; font-weight:800; color:var(--sub); flex:none; }
     .likemini .px { display:block; }
     .friendrow { cursor:pointer; }
-    /* 기본 아바타 = 픽셀 코인(개인=은화·그룹=금화) */
-    .avatar-coin, .avatar-gold { display:inline-flex; align-items:center; justify-content:center; border-radius:50%; background:var(--soft); overflow:hidden; }
-    .avatar-coin .px, .avatar-gold .px { display:block; image-rendering:pixelated; }
+    /* 기본 아바타 = 픽셀 코인(개인=은화·그룹=금화). 코인을 컨테이너 display(block/flex 등)와 무관하게 항상 정중앙에. */
+    .avatar-coin, .avatar-gold { position:relative; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; background:var(--soft); overflow:hidden; }
+    .avatar-coin .px, .avatar-gold .px { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); display:block; image-rendering:pixelated; }
     /* 🏆 랭킹 — 단상(1·2·3) + 리스트(4~10) */
     .rk-podium { display:flex; align-items:flex-end; justify-content:center; gap:10px; padding:14px 4px 8px; }
     .rk-col { flex:1; max-width:120px; background:none; border:0; display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer; padding:0; }
