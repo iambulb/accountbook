@@ -703,6 +703,45 @@
         const hint=document.querySelector('.likehint'); if(hint) hint.textContent='오늘 좋아요 완료 · 내일 또 눌러주세요';
       });
     }
+    // ===== 🏆 랭킹(집 좋아요 TOP10) — 공용. rankings 노드만 읽어 정렬 =====
+    function rankAvatar(r, size){
+      if(r.anon) return '<div class="avatar avatar-coin" style="width:'+size+'px;height:'+size+'px;">'+(typeof coinSvg==='function'?coinSvg({h:Math.round(size*0.72)}):'')+'</div>';
+      return avatarHtml(r.uid, r.show, size);
+    }
+    function renderRankingBody(rows){
+      const b=$('sheetBody'); if(!b) return;
+      if(!rows.length){ b.innerHTML='<div class="empty" style="padding:40px 12px;line-height:1.6;">아직 랭킹이 없어요.<br>친구 집에 <b>좋아요 ❤️</b>를 눌러 순위를 만들어 보세요.</div>'; return; }
+      const top=rows.slice(0,3), rest=rows.slice(3);
+      const order=[top[1],top[0],top[2]], rankOf=[2,1,3];   // 시각 배치: 좌 2등·가운데 1등·우 3등
+      let h='<div class="rk-podium">';
+      order.forEach(function(r,i){ const rank=rankOf[i]; if(!r){ h+='<div class="rk-col"></div>'; return; }
+        const medal=['','gold','silver','bronze'][rank], sz=(rank===1?90:72);
+        h+='<button class="rk-col'+(rank===1?' rk-first':'')+'" onclick="openFriendHome(\''+r.uid+'\')">'+
+          '<span class="rk-av medal-'+medal+'"><span class="rk-rankn">'+rank+'</span>'+rankAvatar(r,sz)+'</span>'+
+          '<span class="rk-nm">'+escapeHtml(r.show)+'</span>'+
+          '<span class="rk-likes">'+(typeof heartSvg==='function'?heartSvg({h:12}):'❤')+' '+r.likes+'</span></button>';
+      });
+      h+='</div>';
+      if(rest.length){ h+='<div class="rk-list">'+rest.map(function(r,i){ const rank=i+4;
+        return '<button class="rk-row" onclick="openFriendHome(\''+r.uid+'\')"><span class="rk-num">'+rank+'</span>'+rankAvatar(r,40)+
+          '<b class="rk-rowname">'+escapeHtml(r.show)+'</b><span class="likemini">'+(typeof heartSvg==='function'?heartSvg({h:13}):'❤')+' '+r.likes+'</span></button>'; }).join('')+'</div>'; }
+      h+='<p class="muted" style="font-size:12px;margin-top:14px;text-align:center;">집(펫캠) <b>좋아요 수</b> 기준 · 눌러서 방문해 보세요</p>';
+      b.innerHTML=h;
+    }
+    function openRanking(){
+      openSheet('랭킹', '<div class="empty" style="padding:40px 12px;">불러오는 중…</div>');
+      db.ref('rankings').once('value').then(function(s){
+        if(!($('sheet')&&$('sheet').classList.contains('on'))) return;
+        const o=s.val()||{};
+        let rows=Object.keys(o).map(function(uid){ const e=o[uid]||{}; return { uid:uid, name:e.name||'', likes:Number(e.likes)||0, priv:!!e.private }; });
+        rows.sort(function(a,b){ return (b.likes-a.likes) || String(a.name).localeCompare(String(b.name)); });
+        rows=rows.slice(0,10);
+        rows.forEach(function(r){ const isFriend=!!(state.friends&&state.friends[r.uid]); r.anon=r.priv&&!isFriend; r.show=r.anon?'알뜰':(r.name||'사용자'); });
+        const need=rows.filter(function(r){ return !r.anon && !(state.userPhotos&&state.userPhotos[r.uid]); });
+        Promise.all(need.map(function(r){ return db.ref('users/'+r.uid+'/photo').once('value').then(function(ps){ state.userPhotos[r.uid]=ps.val()||''; }).catch(function(){}); }))
+          .then(function(){ renderRankingBody(rows); });
+      }).catch(function(){ const b=$('sheetBody'); if(b) b.innerHTML='<div class="empty" style="padding:40px 12px;">랭킹을 불러오지 못했어요</div>'; });
+    }
     // ===== 친구들 피드('친구들' 탭) = 인스타그램 스토리 줄 + 아래 친구 할일 피드 =====
     // 친구 할일 한 줄(읽기전용) — 우측에 누구 것인지 아바타
     function friendTodoRow(uid, t){ const nm=friendDisplayName(uid);
@@ -1509,6 +1548,7 @@
       h+=gcell(giftSvg({h:26}),'선물함','openGiftbox()', (typeof giftCount==='function'?giftCount():0));
       h+=gcell((typeof bagSvg==='function'?bagSvg({h:26}):''),'가방','openBag()');
       h+=gcell((typeof peopleSvg==='function'?peopleSvg({h:26}):MORE_ICON.members),'친구','openFriendsSheet()', (typeof state.friendReqs==='object'?Object.keys(state.friendReqs||{}).length:0)||0);
+      h+=gcell((typeof trophySvg==='function'?trophySvg({h:26}):'🏆'),'랭킹','openRanking()');
       h+=gcell(MORE_ICON.gear,'설정','openSettingsSheet()');
       if(typeof isDev==='function' && isDev()) h+=gcell((typeof rainbowEggSvg==='function'?rainbowEggSvg({h:26}):MORE_ICON.gear),'개발자','openDevModeSheet()');
       h+='</div>';
