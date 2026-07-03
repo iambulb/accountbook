@@ -1385,8 +1385,10 @@
       } else {
         if(mrows.length){
           const col=(typeof budgetColor==='function')?(st.allDone?'var(--income)':budgetColor(100-st.pct)):'var(--income)';
-          h+='<div class="card"><div class="sech" style="margin-top:0;"><span class="l">오늘 미션</span><button class="link" onclick="openCatHouse(\'mission\')">미션 전체</button></div>'+
-            '<div class="hbar"><i style="width:'+st.pct+'%;background:'+col+'"></i></div>'+mrows.map(homeMissionRow).join('')+'</div>';
+          // 미션 상세는 더보기 '미션' 한 곳으로 일원화 — 홈은 진행 요약 + 바로가기만.
+          h+='<div class="card homemission" role="button" tabindex="0" onclick="openMissions()"><div class="sech" style="margin-top:0;"><span class="l">오늘 미션</span><button class="link" onclick="event.stopPropagation();openMissions()">미션 보러가기</button></div>'+
+            '<div class="hbar"><i style="width:'+st.pct+'%;background:'+col+'"></i></div>'+
+            '<div class="hmsum">'+st.done+'/'+st.total+' 완료 — 오늘의 미션을 확인하고 보상을 받아요</div></div>';
         }
         if(dueTop.length){
           h+='<div class="card"><div class="sech" style="margin-top:0;"><span class="l">오늘·임박 할일</span><button class="link" onclick="goto(\'todo\')">전체 보기</button></div>'+
@@ -1671,8 +1673,10 @@
       h+='<div class="gsep"><span>공통</span></div>';
       h+='<div class="grid4">';
       h+=gcell(coinSvg({h:26}),'알뜰홈','openCatHouse()');
+      h+=gcell((typeof bellSvg==='function'?bellSvg({h:26}):'🔔'),'소식','openNews()', (typeof newsUnread==='function'?newsUnread():0));
+      h+=gcell((typeof missionSvg==='function'?missionSvg({h:26}):'📋'),'미션','openMissions()');
       h+=gcell((typeof dexSvg==='function'?dexSvg({h:26}):'📖'),'펫도감','openPetDex()');
-      h+=gcell(giftSvg({h:26}),'선물함','openGiftbox()', ((typeof giftCount==='function'?giftCount():0)+(typeof mailCount==='function'?mailCount():0)));
+      h+=gcell(giftSvg({h:26}),'선물함','openGiftbox()', (typeof giftUnread==='function'?giftUnread():0));
       h+=gcell((typeof bagSvg==='function'?bagSvg({h:26}):''),'가방','openBag()');
       h+=gcell((typeof peopleSvg==='function'?peopleSvg({h:26}):MORE_ICON.members),'친구','openFriendsSheet()', (typeof state.friendReqs==='object'?Object.keys(state.friendReqs||{}).length:0)||0);
       h+=gcell((typeof trophySvg==='function'?trophySvg({h:26}):'🏆'),'랭킹','openRanking()');

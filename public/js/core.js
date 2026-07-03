@@ -388,7 +388,7 @@
       add('friends', s=>{ state.friends=s.val()||{}; loadFriendPublics(); rerender(); });
       add('friendReqs', s=>{ state.friendReqs=s.val()||{}; rerender(); });
       add('todoPublic', s=>{ state.todoPublic=!!s.val(); rerender(); });
-      add('mailbox', s=>{ state.mailbox=s.val()||{}; rerender(); });   // 🎁 친구가 보낸 선물함
+      add('mailbox', s=>{ state.mailbox=s.val()||{}; if(typeof updateDockNotif==='function') updateDockNotif(); rerender(); });   // 🎁 친구가 보낸 선물함 — dock 알림 뱃지도 갱신
     }
     // 친구별 '할일 공개' 여부를 읽어 캐시(친구 목록 변경 시 갱신). 공개 친구만 피드에 노출.
     function loadFriendPublics(){

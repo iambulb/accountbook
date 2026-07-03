@@ -1275,3 +1275,7 @@
     .cpn code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-weight:700; font-size:12px; color:var(--text); background:var(--soft); padding:3px 8px; border-radius:7px; }
     .cpn .rw { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--sub); white-space:nowrap; }
     .cpn .rw .ci { display:inline-flex; } .cpn .rw .px { display:block; }
+    .cpn.used { opacity:.5; }
+    .cpn .cused { margin-left:6px; font-size:11px; font-weight:800; color:var(--sub); background:var(--soft); padding:2px 6px; border-radius:6px; }
+    .homemission { cursor:pointer; }
+    .hmsum { font-size:12.5px; color:var(--sub); margin-top:8px; }

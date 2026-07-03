@@ -738,7 +738,7 @@
     // ✦ 픽셀 빛 폭발(별) — 등급색으로. color 미지정 시 currentColor(무대 등급색 상속).
     function raysSvg(color, opt){ return pxSvg(M_RAYS, {X:color||'currentColor',H:'#ffffff'}, opt); }
     function auraSvg(color, opt){ return pxSvg(M_AURA, {X:color||'currentColor',H:'#ffffff'}, opt); }
-    function sparkSvg(color, opt){ return pxSvg(M_SPARK4, {X:color||'currentColor',H:'#ffffff'}, opt); }
+    function spark4Svg(color, opt){ return pxSvg(M_SPARK4, {X:color||'currentColor',H:'#ffffff'}, opt); }   // 뽑기 트윙클용(색 지정 4점 별). 아이콘용 sparkSvg(opt)와 구분.
     // 층층 픽셀 빛: 은은한 오오라 + 서로 반대로 도는 광선 2겹(그냥 회전만 하지 않고 맥동·역회전으로 살아있게). 색은 currentColor(등급색) 상속.
     function lightLayers(o){ o=o||{}; const a=o.aura||200, r=o.rays||240;
       return '<span class="ll-aura">'+auraSvg('currentColor',{h:a})+'</span>'+
@@ -749,7 +749,7 @@
       for(let i=0;i<n;i++){ const a=(i/n)*360+Math.random()*24, d=52+Math.random()*30;
         const x=Math.round(Math.cos(a*Math.PI/180)*d), y=Math.round(Math.sin(a*Math.PI/180)*d);
         const h=12+Math.round(Math.random()*8), del=(Math.random()*1.1).toFixed(2), du=(1.1+Math.random()*0.7).toFixed(2);
-        s+='<span class="fx-tw" style="--tx:'+x+'px;--ty:'+y+'px;animation-delay:'+del+'s;animation-duration:'+du+'s">'+sparkSvg('currentColor',{h:h})+'</span>'; }
+        s+='<span class="fx-tw" style="--tx:'+x+'px;--ty:'+y+'px;animation-delay:'+del+'s;animation-duration:'+du+'s">'+spark4Svg('currentColor',{h:h})+'</span>'; }
       return s; }
     // 랜덤박스 오픈: 뚜껑 열리고 틈새로 등급색 빛(Z). rainbow면 몸체는 무지갯빛 유지.
     function boxOpenSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?BOX_PAL_RB:BOX_PAL, {Z:tierColor||'#FBFBFD'}); return pxSvg(M_BOX_OPEN, pal, opt); }
@@ -868,6 +868,25 @@
     ];
     const MEGA_PAL={R:'#f06e5a',H:'#ffc9ba',M:'#963628',S:'#e0a43c'};
     function megaSvg(opt){ return pxSvg(M_MEGA, MEGA_PAL, opt); }
+    // 📋 미션(체크리스트 클립보드) 픽셀 — 금색 집게 + 흰 종이 + 초록 체크 항목. 더보기 '미션' 진입 아이콘.
+    const M_MISSION = [
+      "....SSSS....",
+      "....SDDS....",
+      ".DDDSSSSDDD.",
+      ".DWWWWWWWWD.",
+      ".DWGHWLLLWD.",
+      ".DWHGWLLLWD.",
+      ".DWWWWWWWWD.",
+      ".DWGHWLLLWD.",
+      ".DWHGWLLLWD.",
+      ".DWWWWWWWWD.",
+      ".DWDDWLLLWD.",
+      ".DWDDWLLLWD.",
+      ".DWWWWWWWWD.",
+      ".DDDDDDDDDD."
+    ];
+    const MISSION_PAL={D:'#6b6151',W:'#fbfbfd',S:'#e0a43c',G:'#4bb36b',H:'#f0fff6',L:'#cbc5b7'};
+    function missionSvg(opt){ return pxSvg(M_MISSION, MISSION_PAL, opt); }
     // 👑 왕관(그룹 소유자) 픽셀 아트 — 가운데 봉우리 높은 정석 왕관 + 세 끝에 컷팅 루비(L=하이라이트→R=진루비 facet) + 밴드 중앙 보석. C=금, H=금 하이라이트, D=진금 밴드.
     const M_CROWN = [
       "....LLR....",
@@ -1791,14 +1810,14 @@
       d.innerHTML='<div class="cd-room">'+
         '<div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div>'+
         '<span class="cd-roomname" id="cdRoomName"'+(roomCount()>1?'':' hidden')+'>'+(room().emoji?room().emoji+' ':'')+escapeHtml(room().name||'')+'</span>'+
-        '<span class="cd-coin" role="button" tabindex="0" aria-label="알뜰홈 열기(소식·선물)" onclick="event.stopPropagation();coinTap(this)"><span class="cd-ci">'+coinSvg({h:16})+'</span><b id="cdCoins">0</b><span class="cd-notif" id="cdNotif" hidden></span></span>'+
+        '<span class="cd-coin" role="button" tabindex="0" aria-label="소식 열기(알림·선물)" onclick="event.stopPropagation();coinTap(this)"><span class="cd-ci">'+coinSvg({h:16})+'</span><b id="cdCoins">0</b><span class="cd-notif" id="cdNotif" hidden></span></span>'+
         batchBtnHtml()+
         '<div class="cr-props" id="cdProps"></div><div class="cr-stage" id="cdStage"></div></div>';
       updateDockCoins(); renderDockProps(); renderDockCats();
     }
     function updateDockCoins(){ const el=$('cdCoins'); if(el) el.textContent=coins().toLocaleString(); updateDockNotif(); }
-    // 은화 배지 탭 → 눌리는 액션(press) 후 알뜰홈 열기. 캠 빈 곳 탭은 아무 동작 안 함(펫만 조작).
-    function coinTap(el){ const c=el||($('cdCoins')&&$('cdCoins').closest('.cd-coin')); if(c){ c.classList.remove('tap'); void c.offsetWidth; c.classList.add('tap'); } setTimeout(openCatHouse, 170); }
+    // 은화 배지 탭 → 눌리는 액션(press) 후 소식 화면 열기. 캠 빈 곳 탭은 아무 동작 안 함(펫만 조작).
+    function coinTap(el){ const c=el||($('cdCoins')&&$('cdCoins').closest('.cd-coin')); if(c){ c.classList.remove('tap'); void c.offsetWidth; c.classList.add('tap'); } setTimeout(openNews, 170); }
     // 방/dock 공용: 똥을 화장실들에 라운드로빈 분배(각 화장실 객체에 _poops 슬롯 배열 부여, 최대 5개)
     function distributePoops(list){
       const litters=list.filter(p=>p.itemId==='litterbox'); litters.forEach(l=>{ l._poops=[]; });
@@ -2134,25 +2153,27 @@
     let _catTab='home';
     function openCatHouse(tab){ _catTab=tab||'home'; renderCatHouse(); }
     function setCatTab(t){ _catTab=t; renderCatHouse(); }
+    // 알뜰 아이콘 = 소식 전용 화면(탭 없음). 미션은 더보기 '미션'으로 분리.
+    function openNews(){ markNewsSeen(); openSheet('소식', catNewsHtml()); }
+    function openMissions(){ openSheet('오늘의 미션', catMissionHtml()); }
     function renderCatHouse(){
       if(!state.game) state.game=normalizeGame(null);   // 스냅샷 도착 전 안전 가드
       const build=()=>{
         // 상단(금화·은화 + 홈/알뜰샵/배치/미션 탭)은 스크롤해도 고정(sticky), 그 아래 콘텐츠만 스크롤
         let h='<div class="cathead"><div class="coinbar"><span class="coin"><span class="ci">'+goldSvg({h:20})+'</span>'+gold().toLocaleString()+(atMaxGold()?maxChip():'')+'<small>금화</small></span><span class="coin"><span class="ci">'+coinSvg({h:20})+'</span>'+coins().toLocaleString()+(atMaxCoins()?maxChip():'')+'<small>은화</small></span></div>';
-        if(_catTab==='news') markNewsSeen();   // 소식 탭 진입 시 공지 '봄' 처리(뱃지 정리)
-        h+='<div class="catseg">'+[['home','홈'],['news','소식'],['shop','알뜰샵'],['place','배치'],['mission','미션']].map(function(t){ const nb=(t[0]==='news')?newsUnread():0; return '<button class="'+(_catTab===t[0]?'on':'')+'" onclick="setCatTab(\''+t[0]+'\')">'+t[1]+(nb>0?'<span class="segbadge">'+(nb>9?'9+':nb)+'</span>':'')+'</button>'; }).join('')+'</div></div>';
-        if(_catTab==='home') h+=catHomeHtml();
-        else if(_catTab==='news') h+=catNewsHtml();
-        else if(_catTab==='shop') h+=catShopHtml();
+        h+='<div class="catseg">'+[['home','홈'],['shop','알뜰샵'],['place','배치']].map(function(t){ return '<button class="'+(_catTab===t[0]?'on':'')+'" onclick="setCatTab(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div></div>';
+        if(_catTab==='shop') h+=catShopHtml();
         else if(_catTab==='place') h+=catPlaceHtml();
-        else h+=catMissionHtml();
+        else h+=catHomeHtml();   // home(및 미상 탭) → 홈
         return h;
       };
       openSheet('알뜰홈', build());
       state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const st=b.scrollTop;
         const chips=b.querySelector('.catchips'); const chipsL=chips?chips.scrollLeft:0;   // 우리집 펫 카드(가로 스크롤 strip) 위치 보존 — 선택 시 재렌더로 첫 카드로 튀지 않게
+        const pal=b.querySelector('.palette'); const palL=pal?pal.scrollLeft:0;   // 배치 팔레트(가로 스크롤) 위치 보존 — 스크롤해 아이템 선택 시 처음으로 안 튀게
         b.innerHTML=build(); b.scrollTop=st;
         const nchips=b.querySelector('.catchips'); if(nchips) nchips.scrollLeft=chipsL;
+        const npal=b.querySelector('.palette'); if(npal) npal.scrollLeft=palL;
         if(_catTab==='home') mountRoomWalk(); };
       if(_catTab==='home') setTimeout(mountRoomWalk, 30);
     }
@@ -2629,7 +2650,7 @@
       }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund, true); });
     }
     let _selItem=null;
-    function selItem(id){ _selItem=(_selItem===id?null:id); renderCatHouse(); }
+    function selItem(id){ _selItem=(_selItem===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }   // _sheetRefresh=팔레트·펫칩 가로 스크롤 위치 보존(선택 시 처음으로 안 튐)
     const ITEM_SELL = 10;   // 기구물 판매가(은화)
     function itemFoot(id){ const it=ITEM_CATALOG.find(x=>x.id===id); return { w:(it&&it.footW)||1, h:(it&&it.footH)||1 }; }
     function placedItemId(key){ const p=room().placed||{}; return p[key]&&p[key].itemId; }
@@ -2877,15 +2898,17 @@
       { date:'2026-06-28', t:'🎁 친구 응원 선물', s:'친구 집에서 하루 한 번 응원 선물을 주고받을 수 있어요' }
     ];
     function newsSeenAt(){ try{ return localStorage.getItem('newsSeenAt')||''; }catch(e){ return ''; } }
-    function markNewsSeen(){ try{ if(NOTICES[0]) localStorage.setItem('newsSeenAt', NOTICES[0].date); }catch(e){} updateDockNotif(); }
+    function latestNoticeDate(){ return NOTICES.reduce(function(m,n){ return n.date>m?n.date:m; }, ''); }
+    function markNewsSeen(){ try{ localStorage.setItem('newsSeenAt', latestNoticeDate()); }catch(e){} updateDockNotif(); }
     function unseenNoticeCount(){ const s=newsSeenAt(); return NOTICES.filter(function(n){ return n.date>s; }).length; }
-    function newsUnread(){ return giftCount() + unseenNoticeCount(); }   // 뱃지 = 안 받은 선물 + 안 본 공지
+    function giftUnread(){ return giftCount() + (typeof mailCount==='function'?mailCount():0); }   // 안 받은 선물 = 코드보상(gifts) + 친구선물(mailbox)
+    function newsUnread(){ return giftUnread() + unseenNoticeCount(); }   // 뱃지 = 안 받은 선물(코드+친구) + 안 본 공지
     function updateDockNotif(){ const el=$('cdNotif'); if(!el) return; const n=newsUnread(); if(n>0){ el.textContent=n>9?'9+':String(n); el.hidden=false; } else { el.hidden=true; el.textContent=''; } }
     // 쿠폰 보상 픽셀 아이콘(PROMO_CODES 타입별) — 이모지 대신 도트 아이콘 재사용.
     function couponIcon(d){ if(d.type==='coins') return coinSvg({h:15}); if(d.key==='rainbow_egg') return rainbowEggSvg({h:16}); if(d.key==='rainbow_box') return rainbowBoxSvg({h:16}); if(d.key==='egg') return eggSvg(0,{h:16}); if(d.key==='box') return boxSvg({h:16}); return coinSvg({h:15}); }
     function catNewsHtml(){
       let h='';
-      const gc=giftCount();
+      const gc=giftUnread();
       h+='<div class="sech"><span class="l"><span class="sech-ic">'+bellSvg({h:15})+'</span> 알림</span></div>';
       if(gc>0){ h+='<div class="newsalert" role="button" tabindex="0" onclick="openGiftbox()"><span class="nai">'+giftSvg({h:30})+'</span><div class="nat"><b>선물 '+gc+'개가 도착했어요</b><span>탭해서 선물함에서 받으세요</span></div><span class="buy">받기</span></div>'; }
       else { h+='<div class="note" style="margin:2px 0 6px;">받을 선물이 없어요. 친구 집에서 응원 선물을 주고받거나 코드를 입력해 보세요.</div>'; }
@@ -2897,7 +2920,8 @@
       h+='<div class="sech" style="margin-top:16px;"><span class="l"><span class="sech-ic">'+megaSvg({h:15})+'</span> 공지사항</span></div>';
       h+=NOTICES.map(function(n){ return '<div class="newsupd"><b>'+escapeHtml(n.t)+'</b><span>'+escapeHtml(n.s)+'</span></div>'; }).join('');
       h+='<div class="cnote"><b>🎟️ 쿠폰</b> — 더보기 → 코드 입력에서 사용하세요</div>';
-      h+=Object.keys(PROMO_CODES).map(function(code){ const d=PROMO_CODES[code]; return '<div class="cpn"><code>'+code+'</code><span class="rw"><span class="ci">'+couponIcon(d)+'</span>'+d.label+'</span></div>'; }).join('');
+      const _codes=(state.game&&state.game.codes)||{};
+      h+=Object.keys(PROMO_CODES).map(function(code){ const d=PROMO_CODES[code]; const used=!!_codes[code]; return '<div class="cpn'+(used?' used':'')+'"><code>'+code+'</code><span class="rw"><span class="ci">'+couponIcon(d)+'</span>'+d.label+(used?'<span class="cused">사용완료</span>':'')+'</span></div>'; }).join('');
       return h;
     }
     function catMissionHtml(){
