@@ -307,6 +307,19 @@ test('affectionLevel: 임계 10/50/100 레벨·다음·진행%', () => {
   assert.deepStrictEqual(U.affectionLevel(999), { level: 3, next: null, pct: 100 });
 });
 
+test('featuredPetOfMonth: 결정적·후보 내·매월 로테이션', () => {
+  const ids = ['a', 'b', 'c', 'd', 'e'];
+  // 같은 달 → 항상 같은 결과(결정적)
+  assert.strictEqual(U.featuredPetOfMonth('M2026-07', ids), U.featuredPetOfMonth('M2026-07', ids));
+  // 결과는 항상 후보 안
+  ['M2026-01', 'M2026-07', 'M2027-12'].forEach(m => assert.ok(ids.includes(U.featuredPetOfMonth(m, ids))));
+  // 빈 후보/누락 방어
+  assert.strictEqual(U.featuredPetOfMonth('M2026-07', []), null);
+  assert.strictEqual(U.featuredPetOfMonth('M2026-07', null), null);
+  // 후보 1개면 그것
+  assert.strictEqual(U.featuredPetOfMonth('M2026-07', ['solo']), 'solo');
+});
+
 test('frequentTxTemplates: 지출류 빈도 상위(빈 desc·비지출 제외)', () => {
   const txs = [
     { type: 'expense', desc: '점심', category: '식비', amount: 12000, date: '2026-07-01' },

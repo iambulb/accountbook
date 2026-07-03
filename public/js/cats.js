@@ -1399,14 +1399,15 @@
       const c=PET_CATALOG.find(x=>x.id===id); if(!c) return;
       if(ownsCat(id)){ toast('이미 보유한 고양이예요'); return; }
       if(isGachaOnlyCat(id)){ toast('이 등급은 펫알(가챠)로만 얻을 수 있어요'); setShopSub('event'); return; }
-      if(coins()<c.price){ toast((c.price-coins())+' 은화 부족', true); return; }
+      const price=catBuyPrice(id), feat=isFeaturedCat(id);   // 이달의 펫이면 할인가로 결제(월 기준 결정적이라 클라·트랜잭션 값 일치)
+      if(coins()<price){ toast((price-coins())+' 은화 부족', true); return; }
       gameRef().transaction(g=>{
         g=normalizeGame(g);
-        if(g.coins<c.price || g.owned.cats[id]) return g;      // 재검증
-        g.coins-=c.price; g.owned.cats[id]={boughtAt:new Date().toISOString()};
+        if(g.coins<price || g.owned.cats[id]) return g;      // 재검증
+        g.coins-=price; g.owned.cats[id]={boughtAt:new Date().toISOString()};
         { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(id)<0) R.active.push(id); }
         return g;
-      }).then(res=>{ if(res.committed) toast(c.name+' 입양 완료! 🐾'); });
+      }).then(res=>{ if(res.committed) toast(c.name+' 입양 완료! 🐾'+(feat?' · 이달의 펫 할인':'')); });
     }
 
     // ================= 런타임 펫(앱에서 dev가 zip 업로드 → RTDB catalogPets 전역 저장 → 모든 사용자 반영) =================
@@ -2148,19 +2149,27 @@
         const owntag='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>보유</span>';
         // 등급 낮은 것부터 높은 순으로 정렬. 특별(epic) 이상은 알뜰샵 직접 구매 불가 → 펫알(가챠) 전용 표기.
         const cats=PET_CATALOG.slice().sort((a,b)=>tierRank(petTierOf(a.id))-tierRank(petTierOf(b.id)));
+        // 🌟 이달의 펫 배너(미보유·구매 가능한 등급일 때만 강조)
+        { const fid=featuredCatId();
+          if(fid){ const fc=PET_CATALOG.find(x=>x.id===fid); if(fc){
+            h+='<div class="featbanner"><span class="fstar">'+sparkSvg({h:20})+'</span><div class="fb-txt"><b>'+monthLabelKo()+' 이달의 펫 · '+catNameSpan(fid,fc.name)+'</b><span class="s">이번 달만 '+Math.round(FEATURED_DISCOUNT*100)+'% 할인 — '+catBuyPrice(fid)+' 은화'+(ownsCat(fid)?' (보유 완료)':'')+'</span></div><span class="fb-face">'+catFace(fid,{h:40})+'</span></div>'; } } }
         h+=cats.map(c=>{
-          const owned=ownsCat(c.id), sel=_shopSelCat===c.id, gachaOnly=isGachaOnlyCat(c.id), enough=coins()>=c.price;
+          const owned=ownsCat(c.id), sel=_shopSelCat===c.id, gachaOnly=isGachaOnlyCat(c.id);
+          const feat=isFeaturedCat(c.id), bp=catBuyPrice(c.id), enough=coins()>=bp;
           let act, priceHtml;
           if(gachaOnly){
             priceHtml='<span class="price gachaonly">'+eggSvg(0,{h:16})+'<b class="tier-limited">펫알 전용</b></span>';
             act= owned ? owntag : '<button class="buy ghost" aria-label="'+c.name+'은 펫알에서 뽑기" onclick="event.stopPropagation();setShopSub(\'event\')">펫알 뽑기</button>';
           } else {
-            priceHtml='<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+c.price+'</span>';
-            act= owned ? owntag : (enough ? '<button class="buy" aria-label="'+c.name+' 구매('+c.price+' 은화)" onclick="event.stopPropagation();buyCat(\''+c.id+'\')">구매</button>' : '<button class="buy dis" disabled>'+(c.price-coins())+' 부족</button>');
+            priceHtml= feat
+              ? '<span class="price feat"><span class="ci">'+coinSvg({h:16})+'</span><s class="oldp">'+c.price+'</s> '+bp+'</span>'
+              : '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+c.price+'</span>';
+            act= owned ? owntag : (enough ? '<button class="buy" aria-label="'+c.name+' 구매('+bp+' 은화)" onclick="event.stopPropagation();buyCat(\''+c.id+'\')">구매</button>' : '<button class="buy dis" disabled>'+(bp-coins())+' 부족</button>');
           }
           // 선택하면 우리집 펫 카드처럼 옆으로 걷는 스프라이트로, 아니면 정면 정지 썸네일. 선택 시 체크 배지.
           const art=sel?catActorHTML(c.id,72):catFace(c.id,{h:72});
-          return '<div class="shopcard petpick'+(sel?' sel':'')+'" role="button" tabindex="0" aria-pressed="'+sel+'" onclick="selectShopCat(\''+c.id+'\')"><div class="thumb"><div class="fl"></div>'+art+
+          return '<div class="shopcard petpick'+(sel?' sel':'')+(feat?' feat':'')+'" role="button" tabindex="0" aria-pressed="'+sel+'" onclick="selectShopCat(\''+c.id+'\')"><div class="thumb"><div class="fl"></div>'+art+
+            (feat?'<span class="featrib">'+sparkSvg({h:12})+' 이달의 펫</span>':'')+
             (sel?'<span class="psel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>':'')+'</div>'+
             '<div class="meta"><b>'+catNameSpan(c.id,c.name)+' <span class="tagmini">'+speciesLabel(c.id)+'</span></b><div class="desc">'+c.desc+'</div>'+
             priceHtml+'</div>'+
@@ -2362,6 +2371,13 @@
     function isGachaOnlyCat(id){ return tierRank(petTierOf(id)) >= tierRank('epic'); }
     function itemTierOf(id){ return effItemTier()[id]||'normal'; }
     function isGachaOnlyItem(id){ return tierRank(itemTierOf(id)) >= tierRank('epic'); }   // 특별↑ 가구는 랜덤박스 전용
+    // 🌟 시즌: 이달의 펫 — 매월(KST) 은화로 살 수 있는 등급(특별 미만) 중 하나가 자동 선정, 20% 할인. 모든 사용자 동일.
+    const FEATURED_DISCOUNT = 0.2;
+    function featuredEligibleIds(){ return PET_CATALOG.filter(c=>!isGachaOnlyCat(c.id)).map(c=>c.id); }
+    function featuredCatId(){ return featuredPetOfMonth(kstMonthKey(), featuredEligibleIds()); }
+    function isFeaturedCat(id){ return !!id && id===featuredCatId(); }
+    function catBuyPrice(id){ const c=PET_CATALOG.find(x=>x.id===id); if(!c) return 0; return isFeaturedCat(id)?Math.max(1,Math.round((c.price||0)*(1-FEATURED_DISCOUNT))):(c.price||0); }
+    function monthLabelKo(){ const n=parseInt(kstMonthKey().slice(6),10)||0; return n+'월'; }
     // 이벤트 하단: 펫알·랜덤박스 구성(등급별 목록)과 확률을 접이식으로 표시.
     function gachaInfoHtml(){
       const tiers=effTiers(), catBy=effCatTier(), itemBy=effItemTier();

@@ -263,6 +263,13 @@
     if (!doc) return; var b = doc.querySelector('.brand .home-badge');
     if (b) b.hidden = !homeBadgeShow(view, total);
   }
+  // 시즌: 이달의 펫 — monthKey를 해시해 후보 id 중 하나로 결정(모든 사용자 동일·매월 로테이션·순수).
+  function featuredPetOfMonth(monthKey, ids) {
+    ids = ids || []; if (!ids.length) return null;
+    var s = String(monthKey || ''), h = 0;
+    for (var i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) >>> 0; }
+    return ids[h % ids.length];
+  }
   function applyTodoTabDot(doc, todos) {
     if (!doc) return; var tt = doc.querySelector('.tabbar .tab[data-tab="todo"]'); if (!tt) return;
     var dot = tt.querySelector('.tabdot');
@@ -270,7 +277,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, sumPlacedItem: sumPlacedItem, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot };
+  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, sumPlacedItem: sumPlacedItem, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);

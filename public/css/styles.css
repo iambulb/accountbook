@@ -1183,3 +1183,17 @@
     @media (prefers-reduced-motion: reduce){
       *, *::before, *::after { transition-duration:.01ms !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; scroll-behavior:auto !important; }
     }
+    /* 🌟 시즌: 이달의 펫(알뜰샵 고양이 탭) */
+    .featbanner { display:flex; align-items:center; gap:10px; margin:2px 0 10px; padding:10px 12px; border-radius:14px;
+      background:color-mix(in srgb, var(--gold, #f2b134) 14%, var(--card)); border:1.5px solid color-mix(in srgb, var(--gold, #f2b134) 45%, transparent); }
+    .featbanner .fstar { color:var(--gold, #f2b134); display:inline-flex; flex:0 0 auto; }
+    .featbanner .fb-txt { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:1px; }
+    .featbanner .fb-txt b { font-size:14px; }
+    .featbanner .fb-txt .s { font-size:12px; color:var(--muted); }
+    .featbanner .fb-face { flex:0 0 auto; display:inline-flex; }
+    .shopcard.petpick.feat { border-color:color-mix(in srgb, var(--gold, #f2b134) 55%, transparent); }
+    .shopcard .featrib { position:absolute; left:6px; top:6px; display:inline-flex; align-items:center; gap:3px;
+      font-size:10px; font-weight:800; color:#7a5200; background:var(--gold, #f2b134); padding:2px 6px; border-radius:999px; z-index:2; }
+    .shopcard .featrib svg { color:#7a5200; }
+    .price.feat .oldp { color:var(--muted); text-decoration:line-through; margin-right:2px; font-weight:600; }
+    .price.feat { color:var(--gold, #f2b134); font-weight:800; }
