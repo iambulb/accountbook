@@ -128,6 +128,11 @@
     var total = arr.length, done = arr.filter(Boolean).length;
     return { done: done, total: total, pct: total ? Math.round(done / total * 100) : 0, allDone: total > 0 && done === total };
   }
+  // 내 미션 연속(스트릭) 보상 판정: N일 연속 마일스톤(7,14,…)마다 보상. hit=이번 streak이 마일스톤인지, toNext=다음 보상까지 남은 일.
+  function customMissionMilestone(streak, N) {
+    var n = Number(N) || 7, s = Number(streak) || 0, r = s % n;
+    return { hit: s > 0 && r === 0, toNext: r === 0 ? n : (n - r) };
+  }
   // 오늘 남은 일 단일 계산 소스(순수). 입력: 미션 완료플래그[] + 할일[] + 오늘(YYYY-MM-DD).
   //  missions=미완료 미션 수, todos=오늘+지난 미완료 할일 수, total=합, allDone=total===0,
   //  any=오늘 애초에 할 게 있었나(완료 축하 vs '예정 없음' 구분용).
@@ -157,7 +162,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot };
+  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);

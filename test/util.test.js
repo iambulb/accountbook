@@ -153,6 +153,14 @@ test('relTime: 상대 시간 표기', () => {
   assert.strictEqual(U.relTime('', now), '');
 });
 
+test('customMissionMilestone: 7일 연속 마일스톤마다 보상 + 다음까지 남은 일', () => {
+  assert.deepStrictEqual(U.customMissionMilestone(0, 7), { hit: false, toNext: 7 });
+  assert.deepStrictEqual(U.customMissionMilestone(3, 7), { hit: false, toNext: 4 });
+  assert.deepStrictEqual(U.customMissionMilestone(7, 7), { hit: true, toNext: 7 });    // 마일스톤
+  assert.deepStrictEqual(U.customMissionMilestone(8, 7), { hit: false, toNext: 6 });
+  assert.deepStrictEqual(U.customMissionMilestone(14, 7), { hit: true, toNext: 7 });   // 다음 마일스톤
+});
+
 test('personKey: 멤버는 uid, 레거시/공동은 이름', () => {
   assert.strictEqual(U.personKey({ userUid: 'uid_123', user: '철수' }), 'uid_123');   // uid 우선
   assert.strictEqual(U.personKey({ user: '철수' }), '철수');                            // 레거시(uid 없음)

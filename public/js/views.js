@@ -642,8 +642,13 @@
           reqs.map(function(u){ const r=state.friendReqs[u]||{}; return '<div class="tdrow"><span class="tdwho">'+avatarHtml(u,r.name||'',28)+'</span><b class="tdtitle">'+escapeHtml(r.name||'사용자')+'</b><button class="buy" onclick="acceptFriend(\''+u+'\')">수락</button><button class="buy dis" onclick="declineFriend(\''+u+'\')">거절</button></div>'; }).join('')+'</div>'; }
         const fr=Object.keys(state.friends||{});
         h+='<div class="sech"><span class="l">친구</span><span class="s">'+fr.length+'</span></div><div class="card" style="padding:4px 12px;">'+
-          (fr.length?fr.map(function(u){ const f=state.friends[u]||{}; const pub=state.friendPub&&state.friendPub[u]?'<span class="qty" style="color:var(--primary)">공개</span>':'<span class="qty">비공개</span>'; return '<div class="tdrow"><span class="tdwho">'+avatarHtml(u,f.name||'',28)+'</span><b class="tdtitle">'+escapeHtml(f.name||'친구')+'</b>'+pub+'<button class="buy dis" onclick="removeFriend(\''+u+'\')">삭제</button></div>'; }).join(''):'<div class="empty" style="padding:22px 6px;">아직 친구가 없어요 · 위 코드로 추가하세요</div>')+'</div>';
-        h+='<p class="muted" style="font-size:12px;margin-top:10px;">친구가 등록한 할일은 <b>할일 → 친구들</b> 탭에서 볼 수 있어요.</p>';
+          (fr.length?fr.map(function(u){ const f=state.friends[u]||{};
+            const likes=(state.friendLikes&&state.friendLikes[u])||0; const changed=friendChangedToday(u);
+            const av='<span class="tdwho'+(changed?' avring':'')+'">'+avatarHtml(u,f.name||'',28)+'</span>';
+            return '<div class="tdrow friendrow" role="button" tabindex="0" onclick="openFriendHome(\''+u+'\')"><span class="tdwho-wrap">'+av+'</span><b class="tdtitle">'+escapeHtml(f.name||'친구')+'</b>'+
+              '<span class="likemini">'+heartSvg({h:13})+' '+likes+'</span>'+
+              '<button class="buy dis" onclick="event.stopPropagation();removeFriend(\''+u+'\')">삭제</button></div>'; }).join(''):'<div class="empty" style="padding:22px 6px;">아직 친구가 없어요 · 위 코드로 추가하세요</div>')+'</div>';
+        h+='<p class="muted" style="font-size:12px;margin-top:10px;">친구를 탭하면 <b>집(펫캠)</b>을 방문해 좋아요를 누를 수 있어요. 등록한 할일은 <b>할일 → 친구들</b>에서도 볼 수 있어요.</p>';
         return h;
       };
       openSheet('친구', build());
@@ -1129,7 +1134,7 @@
     function homeMissionRow(o){
       const chk='<button class="tdchk'+(o.done?' on':'')+'" onclick="'+o.onclick+'" aria-label="'+escapeHtml(o.name)+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></button>';
       return '<div class="hmrow">'+chk+'<span class="hmname'+(o.done?' done':'')+'">'+escapeHtml(o.name)+'</span>'+
-        (o.done?'<span class="hmok">완료</span>':'<span class="hmrw"><span class="ci">'+coinSvg({h:14})+'</span>+'+o.reward+'</span>')+'</div>';
+        (o.done?'<span class="hmok">완료</span>':(o.reward?'<span class="hmrw"><span class="ci">'+coinSvg({h:14})+'</span>+'+o.reward+'</span>':''))+'</div>';
     }
     // 오늘 남은 일(로고 배지·홈 완료카드 공용 단일 소스) — util.todayPending에 현재 브라우저 상태를 모아 넘김(새 조회 없음).
     function todayPendingNow(){
@@ -1150,7 +1155,7 @@
       const daily=(typeof DAILY_MISSIONS!=='undefined')?DAILY_MISSIONS:[];
       const customs=(typeof customMissionList==='function')?customMissionList():[];
       const mrows=daily.map(function(m){ return { name:m.name, reward:m.reward, done:missionClaimed(m), onclick:"homeMissionTap('"+m.id+"')" }; })
-        .concat(customs.map(function(m){ return { name:m.title, reward:m.coinReward||2, done:customCheckedToday(m.id), onclick:"toggleCustomMissionToday('"+m.id+"')" }; }));
+        .concat(customs.map(function(m){ return { name:m.title, reward:0, done:customCheckedToday(m.id), onclick:"toggleCustomMissionToday('"+m.id+"')" }; }));
       const st=(typeof todayMissionState==='function')?todayMissionState(mrows.map(function(r){return r.done;})):{done:0,total:mrows.length,pct:0,allDone:false};
       const today=ymd(new Date());
       const dueTop=((typeof scopedTodos==='function')?scopedTodos():[]).filter(function(t){ return !t.done && t.dueDate && t.dueDate<=today; })
