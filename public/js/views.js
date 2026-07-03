@@ -1370,7 +1370,7 @@
         const cid=(typeof activeCats==='function'&&activeCats()[0])||(typeof ownedCatList==='function'&&ownedCatList()[0])||null;
         const art=cid?('<div class="hd-cat">'+catFace(cid,{h:64})+'</div>'):'<div class="hd-emoji">🐱</div>';
         const celebrate=(typeof shouldCelebrateOnce==='function'&&shouldCelebrateOnce());
-        h+='<div class="card homedone'+(celebrate?' celebrate':'')+'">'+art+'<div class="hd-tit">오늘 할 거 다 했어요 🐱</div>'+
+        h+='<div class="card homedone'+(celebrate?' celebrate':'')+'">'+art+'<div class="hd-tit">오늘도 알뜰한 하루 보내셨나요!</div>'+
           '<div class="hd-sub">고양이도 만족스러워해요. 내일 또 만나요!</div>'+
           '<button class="btn ghost" onclick="openCatHouse()">알뜰홈 둘러보기</button></div>';
       } else if(kind==='empty'){
@@ -1622,6 +1622,8 @@
     };
     function gcell(icon,label,fn,badge){ return '<button class="gcell" onclick="'+fn+'"><span class="gic">'+icon+(badge?'<span class="gbadge">'+badge+'</span>':'')+'</span><span class="glabel">'+escapeHtml(label)+'</span></button>'; }
     function lrow(icon,label,fn,val){ return '<button class="lrow" onclick="'+fn+'"><span class="li">'+icon+'</span><span class="lt">'+label+'</span><span class="lv">'+(val||'')+'</span><span class="chev">'+MORE_ICON.chev+'</span></button>'; }
+    // 켜기/끄기 토글 행 — 오른쪽에 스위치(꺼짐/켜짐 텍스트 대신 직관적 on/off). 스위치 탭 시 fn 실행(토글+재렌더). val(선택)=스위치 옆 보조 텍스트(예: 알림 '차단됨').
+    function lrowToggle(icon,label,fn,on,val){ return '<div class="lrow lrow-tog"><span class="li">'+icon+'</span><span class="lt">'+label+'</span>'+(val?'<span class="lv">'+val+'</span>':'')+'<div class="switch'+(on?' on':'')+'" onclick="'+fn+'"><i></i></div></div>'; }
     function renderMore(){
       const ws=state.wsMeta||{}; const isGroup=ws.type==='group'; const memCount=Object.keys(ws.members||{}).length;
       let h='<div class="more-wrap">';
@@ -1709,10 +1711,11 @@
       let h='<div class="lst">';
       if(isGroup) h+=lrow(MORE_ICON.members,'멤버 · 권한 관리',"openGroupManageSheet('"+state.wsId+"')", memCount+'명');
       h+=lrow(MORE_ICON.download,'CSV 내보내기','exportCSV()');
-      h+=lrow(MORE_ICON.moon,'다크 모드','toggleTheme();openSettingsSheet()', state.theme==='dark'?'켜짐':'꺼짐');
-      h+=lrow(MORE_ICON.cam,'펫캠','toggleDockHidden();openSettingsSheet()', (typeof dockHiddenLabel==='function'?dockHiddenLabel():''));
-      if(typeof pushState==='function' && pushState()!=='unsupported')   // 🔔 알림(FCM 설정된 지원 기기에서만 노출)
-        h+=lrow((typeof bellSvg==='function'?bellSvg({h:22}):'🔔'),'알림','togglePush()', pushStatusLabel());
+      h+=lrowToggle(MORE_ICON.moon,'다크 모드','toggleTheme();openSettingsSheet()', state.theme==='dark');
+      h+=lrowToggle(MORE_ICON.cam,'펫캠','toggleDockHidden();openSettingsSheet()', (typeof dockMode==='function'&&dockMode()!=='hidden'));
+      if(typeof pushState==='function' && pushState()!=='unsupported'){   // 🔔 알림(FCM 설정된 지원 기기에서만 노출)
+        const _ps=pushState();   // 차단/미지원 상태는 스위치 옆에 사유 텍스트로 안내
+        h+=lrowToggle((typeof bellSvg==='function'?bellSvg({h:22}):'🔔'),'알림','togglePush()', _ps==='on', _ps==='denied'?'차단됨(브라우저 설정)':''); }
       h+='</div>';
       // 코드 입력(프로모/치트 코드)
       h+='<div class="sec-title" style="margin-top:22px;">코드 입력</div>';

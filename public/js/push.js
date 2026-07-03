@@ -49,7 +49,7 @@
       if (!token) { toast('알림 토큰을 받지 못했어요', true); return false; }
       if (typeof state !== 'undefined' && state) state._pushToken = token;
       if (state.uid) await db.ref('users/' + state.uid + '/push').set({ token: token, at: new Date().toISOString(), ua: (navigator.userAgent || '').slice(0, 120) });
-      toast('알림을 켰어요 🔔');
+      toast('알림을 켰어요', false, (typeof bellSvg === 'function' ? bellSvg({ h: 16 }) : ''));
       return true;
     } catch (e) { toast('알림 설정 실패: ' + ((e && e.message) || e), true); return false; }
   }
@@ -57,7 +57,7 @@
     try { const m = messaging(); if (m) await m.deleteToken(); } catch (e) {}
     if (typeof state !== 'undefined' && state) state._pushToken = null;
     try { if (state.uid) await db.ref('users/' + state.uid + '/push').remove(); } catch (e) {}
-    toast('알림을 껐어요');
+    toast('알림을 껐어요', false, (typeof bellSvg === 'function' ? bellSvg({ h: 16 }) : ''));
   }
   function togglePush() { if (pushState() === 'on') pushDisable().then(refreshSettings); else pushEnable().then(refreshSettings); }
   function refreshSettings() { try { if (typeof openSettingsSheet === 'function' && document.getElementById('sheet') && document.getElementById('sheet').classList.contains('on')) openSettingsSheet(); } catch (e) {} }
@@ -69,7 +69,7 @@
     try {
       m.onMessage(function (payload) {
         const n = (payload && (payload.notification || payload.data)) || {};
-        toast('🔔 ' + (n.title || '알뜰') + (n.body ? ' · ' + n.body : ''));
+        toast((n.title || '알뜰') + (n.body ? ' · ' + n.body : ''), false, (typeof bellSvg === 'function' ? bellSvg({ h: 16 }) : ''));
       });
     } catch (e) {}
     if (Notification.permission === 'granted' && state && state.uid) {

@@ -166,8 +166,11 @@
     function catTypeFor(txType){ if(['expense','prepaid_spend','point_spend'].includes(txType)) return 'expense'; if(['income','refund'].includes(txType)) return 'income'; if(txType==='transfer') return 'transfer'; return null; }
     function pickableCats(wantType){ return state.categories.filter(c=>canSee(c) && c.isActive!==false && (c.type===wantType||c.type==='other')).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)); }
 
-    function toast(msg, err){
-      const t=$('toast'); t.textContent=msg; t.className='toast on'+(err?' err':'');
+    // icon(선택): 신뢰된 SVG 마크업(우리 코드에서만 전달) → 아이콘만 innerHTML, msg는 항상 textContent(XSS 안전).
+    function toast(msg, err, icon){
+      const t=$('toast'); t.className='toast on'+(err?' err':'')+(icon?' hasic':'');
+      if(icon){ t.innerHTML='<span class="toast-ic"></span><span class="toast-msg"></span>'; t.firstChild.innerHTML=icon; t.lastChild.textContent=msg; }
+      else { t.textContent=msg; }
       clearTimeout(t._t); t._t=setTimeout(()=>{ t.className='toast'; }, 2200);
     }
 
