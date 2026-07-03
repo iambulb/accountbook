@@ -684,8 +684,7 @@
     .cr-stage { position:absolute; left:0; right:0; bottom:0; height:58%; pointer-events:none; }   /* z-index 제거(auto): 펫이 무대 단위로 항상 앞이 아니라 깊이 z로 가구와 섞임. 고양이 무대가 그릇/똥 클릭을 가로막지 않도록 통과 */
     /* 일괄 돌보기 버튼(방·dock 우측 상단) */
     .cr-batch { position:absolute; top:8px; right:10px; z-index:46; display:inline-flex; align-items:center; gap:4px; padding:5px 10px 5px 8px; border-radius:20px; background:var(--primary); color:var(--card); font-size:11.5px; font-weight:800; box-shadow:0 2px 8px rgba(0,0,0,.18); }   /* 원근 z(≤12)보다 높게(방이 isolate라 sticky 헤더 위로는 안 샘) */
-    .cr-batch svg, .cr-batch .cr-batch-paw { width:15px; height:15px; }
-    .cr-batch-paw { display:inline-flex; flex:none; }
+    .cr-batch svg { width:15px; height:15px; }
     .cr-batch:active { transform:scale(.94); }
     /* 은화가 카운터로 날아드는 연출 + 카운터 톡 튀기 */
     .coinfly { position:fixed; z-index:97; width:15px; height:15px; pointer-events:none; will-change:transform; animation:coinfly .62s cubic-bezier(.5,.1,.9,.5) forwards; }
