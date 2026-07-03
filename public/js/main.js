@@ -97,7 +97,10 @@
         if(scrims.length){ scrims[scrims.length-1].remove(); return true; }
         var sh=document.getElementById('sheet');                         // 알뜰홈·거래입력·더보기 하위 시트 등
         if(sh && sh.classList.contains('on')){ try{ closeSheet(); }catch(e){} return true; }
-        try{ if(state && state.uid && state.view && state.view!=='home' && typeof goHome==='function'){ goHome(); return true; } }catch(e){}   // 더보기 등 모드화면 → 홈
+        try{ if(state && state.uid && typeof go==='function'){                  // 오늘홈·다른 탭 → 기본 탭(캘린더/할일)으로. 캘린더를 홈처럼 사용(오늘홈 랜딩으로 안 보냄)
+          var defTab=(state.mode==='todo')?'todo':'calendar';
+          if(state.view!=='mode' || state.tab!==defTab){ go(defTab); return true; }
+        } }catch(e){}
         return false;
       }
       function rearm(){ try{ history.pushState({ eggardenBack:1 }, ''); }catch(e){} }
