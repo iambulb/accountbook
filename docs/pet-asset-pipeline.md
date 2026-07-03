@@ -38,7 +38,7 @@ metadata.json                                       # size/frames/directions 정
 - ⚠️ 일부 템플릿(예 chibi)은 걷기 프레임이 `Walk/east`가 아니라 `Walk/south` 등 **다른 방향**으로 나온다. 스프라이트 엔진은 east(옆) 기준으로 좌우 이동·플립하므로, east가 없으면 방향을 확인해 별도 처리(옆 걷기 시트 필요)하거나 사용자에게 알린다.
 
 ## 산출물
-`public/assets/pets/<id>/` 에:
+`public/assets/pets/<species>/<id>/` (종별 하위폴더 — 고양이는 `cat/`, 호랑이는 `tiger/`, 강아지는 `dog/` …) 에:
 - `walk.png` = Walk/east 6프레임을 가로로 이은 **288×48** 시트 (east 기준, 투명 보존)
 - `south.png / north.png / east.png / west.png` = `rotations/` 그대로 복사(정지 4방향)
 
@@ -89,10 +89,10 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 > **규칙**: 펫을 추가/변경/제거하면 아래 코드 **3곳**과 문서 **3곳**을 같은 커밋에서 모두 갱신한다. 하나라도 빠지면 미완성으로 본다. (이 규칙은 `CLAUDE.md`의 "문서 최신화 규칙" 표 — *기능 추가·변경·제거 → features.md*, *모든 사용자 체감 변경 → CHANGELOG* — 의 펫 전용 상세판이다.)
 
 **코드**
-1. `js/cats.js` `PET_SPRITES`에 `<id>:{ walk:'assets/pets/<id>/walk.png', frames:6, stills:true }` 추가(옆걷기 없으면 `frontWalk:true`, 고양이보다 크면 `scale:<배율>`).
+1. `js/cats.js` `PET_SPRITES`에 `<id>:{ walk:'assets/pets/<species>/<id>/walk.png', frames:6, stills:true }` 추가(옆걷기 없으면 `frontWalk:true`, 고양이보다 크면 `scale:<배율>`). 정지 4방향 경로는 `sprStills()`가 이 `walk` 경로에서 파생하므로 walk만 맞으면 됨.
    - `PET_CATALOG`에 `{ id, species, name, price, desc }` 한 줄 추가(이름은 zip 내용 기반 센스껏, 품종은 안 넣음).
    - `CAT_TIER`에 `<id>:'<등급>'` 추가(가격은 `TIER_PRICE`로 자동 산정). SVG 폴백이 필요하면 `CAT_PALS[<id>]`.
-2. `sw.js` `APP_SHELL`에 `assets/pets/<id>/`의 `walk.png` + `south/north/east/west.png`(4방향) 추가 → `CACHE_VERSION` 상향. (`_zips/`·원본 zip은 캐시에 넣지 않음)
+2. `sw.js` `APP_SHELL`에 `assets/pets/<species>/<id>/`의 `walk.png` + `south/north/east/west.png`(4방향) 추가 → `CACHE_VERSION` 상향. (`_zips/`·원본 zip은 캐시에 넣지 않음)
 
 **문서 (필수 — 빠뜨리지 말 것)**
 3. **이 문서(`pet-asset-pipeline.md`)**: 위 **id·이름 매핑 표에 한 줄 추가**, 종 수(`N종`) 갱신, 옆걷기 없는 펫이면 "재취득 대상" 목록에도 반영.
@@ -119,14 +119,14 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 
 ## 런타임 펫 vs 정적 펫 — 지연 로딩 & 정적 승격
 런타임 펫(앱 dev 업로드)과 정적 펫(이 파이프라인)은 **별개 트랙**이다.
-- **정적 펫**: `public/assets/pets/<id>/` 파일 + SW 캐시 → **RTDB 비용 0**. 공식/영구 펫은 정적으로 둔다.
+- **정적 펫**: `public/assets/pets/<species>/<id>/` 파일 + SW 캐시 → **RTDB 비용 0**. 공식/영구 펫은 정적으로 둔다. (폴더는 종별로 나뉜다 — `cat/`·`tiger/`·`dog/` …)
 - **런타임 펫**: 이미지가 RTDB에 들어간다. **메타는 `catalogPets/{id}`, 스프라이트는 `catalogPetArt/{id}`(base64)로 분리** 저장되고, 앱 시작 땐 메타만 받는다. 실제로 보이는 펫만 `ensurePetArt(id)`가 `catalogPetArt/{id}`를 **`.once`로 1회** 받아 세션 캐시(`_petArt`)에 담고 스프라이트에 반영한다(초기 로딩·편집 시 전체 재푸시 부담을 없앰). 로딩 전에는 도트 알 플레이스홀더를 보여준다.
 - 구 레코드(인라인 `walk/south/…`)는 개발자 화면의 **"이미지 분리 이전(1회)"**(`migrateCatalogArtOnce`)로 `catalogPetArt`로 옮긴다(멱등).
 
 ### 런타임 → 정적 승격(확정 펫)
 수십 마리로 늘면 RTDB가 커지므로, 디자인이 확정된 런타임 펫은 정적으로 옮긴다.
 1. 개발자 펫 관리에서 런타임 펫 선택 → **"정적 승격 내보내기"**(`exportPetStatic`): `walk/south/north/east/west.png` 5장을 내려받고, `pets.json` 항목·`PET_ID_MIGRATE` 한 줄 스니펫을 보여준다.
-2. `public/assets/pets/<static_id>/`에 5장 배치 → `tools/pets.json` `pets`에 스니펫 추가(`"zip":""`) → `PET_ID_MIGRATE`에 `rt_xxx: '<static_id>'` 추가(소유자 이관).
+2. `public/assets/pets/<species>/<static_id>/`에 5장 배치 → `tools/pets.json` `pets`에 스니펫 추가(`"zip":""`) → `PET_ID_MIGRATE`에 `rt_xxx: '<static_id>'` 추가(소유자 이관).
 3. `python tools/build_pets.py` 실행 → 에셋이 이미 있어 `gen_assets`는 건너뛰고 카탈로그·스프라이트·등급·`sw.js`·문서·`CACHE_VERSION`을 자동 갱신 → 커밋 → 배포.
 4. 배포 확인 후 앱에서 그 **런타임 레코드 삭제**(`catalogPets/{id}`+`catalogPetArt/{id}`). `migratePetIds`가 소유자의 `rt_xxx`를 `<static_id>`로 리맵해 방/보유가 유지된다.
 5. 승격 펫은 자동 CHANGELOG 줄이 안 붙으므로 `docs/CHANGELOG.md`에 수동으로 한 줄 추가한다.
@@ -139,7 +139,7 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 - **루틴**:
   1. `npx firebase-tools database:get /catalogPets --project money-bb658 -o _sync/catalogPets.json` (그리고 `/catalogPetArt` → `_sync/catalogPetArt.json`).
   2. 활성(`deleted!=true`) 런타임 펫마다 `<species>_<slug>` 정적 id·이름·tier·scale·desc를 배정해 `_sync/promote.json` 작성(`{ "rt_xxx": { "id","name","tier","scale","desc" } }`).
-  3. `node tools/sync_runtime_pets.mjs` → PNG 5장을 `public/assets/pets/<id>/`에 기록 + `tools/pets.json`에 `zip:""` 항목 병합 + `PET_ID_MIGRATE`의 `/* @rtmigrate */` 앞에 `rt_xxx:'<id>'` 삽입. (멱등) 스크립트가 승격 목록·미승격(soft-delete/누락) 목록·RTDB 삭제 명령을 출력한다.
+  3. `node tools/sync_runtime_pets.mjs` → PNG 5장을 `public/assets/pets/<species>/<id>/`에 기록(종별 하위폴더 — 새 종이면 폴더 자동 생성) + `tools/pets.json`에 `zip:""` 항목 병합 + `PET_ID_MIGRATE`의 `/* @rtmigrate */` 앞에 `rt_xxx:'<id>'` 삽입. (멱등) 스크립트가 승격 목록·미승격(soft-delete/누락) 목록·RTDB 삭제 명령을 출력한다.
   4. `python tools/build_pets.py`(Windows는 `PYTHONIOENCODING=utf-8`) → 카탈로그·스프라이트·등급·`sw.js`·문서·`CACHE_VERSION` 자동 갱신 → `docs/CHANGELOG.md` 한 줄 수동 추가 → `npm test` → `dev` 커밋·푸시 → 배포.
   5. **배포 확인 후에만** 스크립트가 출력한 `database:remove` 명령으로 `catalogPets/<rt>`·`catalogPetArt/<rt>` 삭제. `migratePetIds`가 소유자 데이터를 `<id>`로 리맵해 방/보유 유지.
 - **soft-delete(앱에서 지운) 펫**: 스크립트가 목록만 출력하고 **자동 삭제하지 않는다**(정적 폴백·migrate가 없어 소유자가 있으면 깨짐). 소유자 확인 후에만 수동 purge.

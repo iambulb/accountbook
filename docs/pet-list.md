@@ -11,30 +11,30 @@
 | # | 이름 | id | 종 | 크기 | 등급 | 가격(은화) | 이미지 폴더 | 아트 | 설명 |
 |---|---|---|---|---|---|---|---|---|---|
 <!-- @gen:pet-list-table — 자동생성(tools/build_pets.py) -->
-| 1 | 고등어 | `cat_mackerel` | 고양이 | 1× | 일반 | 50 | `public/assets/pets/cat_mackerel/` | PNG 스프라이트 6프레임 | 쿨그레이 줄무늬. 차분하게 방을 돌아다녀요. |
-| 2 | 치즈 | `cat_cheese` | 고양이 | 1× | 고급 | 100 | `public/assets/pets/cat_cheese/` | PNG 스프라이트 6프레임 | 웜오렌지. 활발하게 뛰어다니는 개냥이. |
-| 3 | 삼색 | `cat_calico` | 고양이 | 1× | 희귀 | 200 | `public/assets/pets/cat_calico/` | PNG 스프라이트 6프레임 | 검정·주황 어우러진 삼색(토터셸). 도도하게 창가에 앉아요. |
-| 4 | 까망 | `cat_black` | 고양이 | 1× | 특별 | 400 | `public/assets/pets/cat_black/` | PNG 스프라이트 6프레임 | 노란 눈의 까만 고양이. 조용히 방을 지켜요. |
-| 5 | 하양 | `cat_white` | 고양이 | 1× | 특별 | 400 | `public/assets/pets/cat_white/` | PNG 스프라이트 6프레임 | 파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요. |
-| 6 | 복슬이 | `cat_fluffy` | 고양이 | 1× | 희귀 | 200 | `public/assets/pets/cat_fluffy/` | PNG 스프라이트 6프레임 | 복슬복슬한 털에 파란 눈. 나른하게 졸며 방을 거닐어요. |
-| 7 | 턱시도 | `cat_tuxedo` | 고양이 | 1× | 전설 | 800 | `public/assets/pets/cat_tuxedo/` | PNG 스프라이트 6프레임 | 검은 정장에 하얀 셔츠·발. 단정하게 걸어다녀요. |
-| 8 | 카오스 | `cat_chaos` | 고양이 | 1× | 전설 | 800 | `public/assets/pets/cat_chaos/` | PNG 스프라이트 6프레임 | 다크그레이+브라운 소용돌이 무늬. 종잡을 수 없이 쏘다녀요. |
-| 9 | 샴 | `cat_siamese` | 고양이 | 1× | 전설 | 800 | `public/assets/pets/cat_siamese/` | PNG 스프라이트 6프레임 | 크림빛 몸에 짙은 포인트. 우아하게 방을 누벼요. |
-| 10 | 벵갈 | `cat_bengal` | 고양이 | 1× | 고급 | 100 | `public/assets/pets/cat_bengal/` | PNG 스프라이트 6프레임 | 골든빛 몸에 동글동글 반점. 야무지게 돌아다녀요. |
-| 11 | 폴드 | `cat_fold` | 고양이 | 1× | 희귀 | 200 | `public/assets/pets/cat_fold/` | PNG 스프라이트 6프레임 | 접힌 귀가 매력. 얌전히 자리를 지켜요. |
-| 12 | 보라 | `cat_bora` | 고양이 | 1× | 특별 | 400 | `public/assets/pets/cat_bora/` | PNG 스프라이트 6프레임 | 한쪽은 파랑·한쪽은 호박색 오드아이. 신비롭게 거닐어요. |
-| 13 | 초코 | `cat_choco` | 고양이 | 1× | 고급 | 100 | `public/assets/pets/cat_choco/` | PNG 스프라이트 6프레임 | 초콜릿빛 갈색 털에 크림색 입가·가슴. 느긋하게 방을 거닐어요. |
-| 14 | 아깽이 | `cat_kitten` | 고양이 | 0.5× | 일반 | 50 | `public/assets/pets/cat_kitten/` | PNG 스프라이트 6프레임 | 치즈빛 오렌지 태비 아기고양이. 뒤뚱뒤뚱 방을 쏘다녀요. |
-| 15 | 스핑크스 | `cat_pink` | 고양이 | 1× | 전설 | 800 | `public/assets/pets/cat_pink/` | PNG 스프라이트 6프레임 | 털 없는 분홍빛 주름 피부. 도도하게 방을 누벼요. |
-| 16 | 고랑이 | `tiger_orange` | 호랑이 | 5× | 한정 | 1500 | `public/assets/pets/tiger_orange/` | PNG 스프라이트 6프레임 | 볼드한 검은 줄무늬의 오렌지 호랑이. 위풍당당하게 방을 누벼요. |
+| 1 | 고등어 | `cat_mackerel` | 고양이 | 1× | 일반 | 50 | `public/assets/pets/cat/cat_mackerel/` | PNG 스프라이트 6프레임 | 쿨그레이 줄무늬. 차분하게 방을 돌아다녀요. |
+| 2 | 치즈 | `cat_cheese` | 고양이 | 1× | 고급 | 100 | `public/assets/pets/cat/cat_cheese/` | PNG 스프라이트 6프레임 | 웜오렌지. 활발하게 뛰어다니는 개냥이. |
+| 3 | 삼색 | `cat_calico` | 고양이 | 1× | 희귀 | 200 | `public/assets/pets/cat/cat_calico/` | PNG 스프라이트 6프레임 | 검정·주황 어우러진 삼색(토터셸). 도도하게 창가에 앉아요. |
+| 4 | 까망 | `cat_black` | 고양이 | 1× | 특별 | 400 | `public/assets/pets/cat/cat_black/` | PNG 스프라이트 6프레임 | 노란 눈의 까만 고양이. 조용히 방을 지켜요. |
+| 5 | 하양 | `cat_white` | 고양이 | 1× | 특별 | 400 | `public/assets/pets/cat/cat_white/` | PNG 스프라이트 6프레임 | 파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요. |
+| 6 | 복슬이 | `cat_fluffy` | 고양이 | 1× | 희귀 | 200 | `public/assets/pets/cat/cat_fluffy/` | PNG 스프라이트 6프레임 | 복슬복슬한 털에 파란 눈. 나른하게 졸며 방을 거닐어요. |
+| 7 | 턱시도 | `cat_tuxedo` | 고양이 | 1× | 전설 | 800 | `public/assets/pets/cat/cat_tuxedo/` | PNG 스프라이트 6프레임 | 검은 정장에 하얀 셔츠·발. 단정하게 걸어다녀요. |
+| 8 | 카오스 | `cat_chaos` | 고양이 | 1× | 전설 | 800 | `public/assets/pets/cat/cat_chaos/` | PNG 스프라이트 6프레임 | 다크그레이+브라운 소용돌이 무늬. 종잡을 수 없이 쏘다녀요. |
+| 9 | 샴 | `cat_siamese` | 고양이 | 1× | 전설 | 800 | `public/assets/pets/cat/cat_siamese/` | PNG 스프라이트 6프레임 | 크림빛 몸에 짙은 포인트. 우아하게 방을 누벼요. |
+| 10 | 벵갈 | `cat_bengal` | 고양이 | 1× | 고급 | 100 | `public/assets/pets/cat/cat_bengal/` | PNG 스프라이트 6프레임 | 골든빛 몸에 동글동글 반점. 야무지게 돌아다녀요. |
+| 11 | 폴드 | `cat_fold` | 고양이 | 1× | 희귀 | 200 | `public/assets/pets/cat/cat_fold/` | PNG 스프라이트 6프레임 | 접힌 귀가 매력. 얌전히 자리를 지켜요. |
+| 12 | 보라 | `cat_bora` | 고양이 | 1× | 특별 | 400 | `public/assets/pets/cat/cat_bora/` | PNG 스프라이트 6프레임 | 한쪽은 파랑·한쪽은 호박색 오드아이. 신비롭게 거닐어요. |
+| 13 | 초코 | `cat_choco` | 고양이 | 1× | 고급 | 100 | `public/assets/pets/cat/cat_choco/` | PNG 스프라이트 6프레임 | 초콜릿빛 갈색 털에 크림색 입가·가슴. 느긋하게 방을 거닐어요. |
+| 14 | 아깽이 | `cat_kitten` | 고양이 | 0.5× | 일반 | 50 | `public/assets/pets/cat/cat_kitten/` | PNG 스프라이트 6프레임 | 치즈빛 오렌지 태비 아기고양이. 뒤뚱뒤뚱 방을 쏘다녀요. |
+| 15 | 스핑크스 | `cat_pink` | 고양이 | 1× | 전설 | 800 | `public/assets/pets/cat/cat_pink/` | PNG 스프라이트 6프레임 | 털 없는 분홍빛 주름 피부. 도도하게 방을 누벼요. |
+| 16 | 고랑이 | `tiger_orange` | 호랑이 | 5× | 한정 | 1500 | `public/assets/pets/tiger/tiger_orange/` | PNG 스프라이트 6프레임 | 볼드한 검은 줄무늬의 오렌지 호랑이. 위풍당당하게 방을 누벼요. |
 <!-- @gen:end -->
 
 ## 이미지 폴더 구조
 
-각 펫의 이미지 폴더(`public/assets/pets/<id>/`)에는 **5개 PNG** 가 들어 있습니다.
+각 펫의 이미지 폴더(`public/assets/pets/<species>/<id>/` — 종별 하위폴더. 예: `cat/cat_mackerel/`, `tiger/tiger_orange/`)에는 **5개 PNG** 가 들어 있습니다.
 
 ```
-public/assets/pets/<id>/
+public/assets/pets/<species>/<id>/
 ├─ walk.png    # 288×48 = 옆보기(east) 걷기 6프레임을 가로로 이은 스프라이트 시트
 ├─ south.png   # 48×48 정지 — 정면(앞)
 ├─ north.png   # 48×48 정지 — 뒷모습
