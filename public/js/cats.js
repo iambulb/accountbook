@@ -2101,9 +2101,12 @@
             a.goal=g; a.mode='goal'; } }
         // 가구 도착: "고양이 중심"(a.x+sw/2) 기준으로 가구 중앙(goal.x)에 섬. 깊이도 가구 쪽으로 맞춰 걸어감.
         // ⚠️ x에 다 왔는데 깊이 수렴을 기다리며 방향이 매 프레임 뒤집혀 "제자리 좌우 춤"추던 버그 → x 도착 시 위치를 스냅하고 방향을 고정한 채 대기.
-        if(a.mode==='goal' && a.goal){ const cx=a.x+a.sw/2, dxr=a.goal.x-cx, nearX=Math.abs(dxr)<6;
+        if(a.mode==='goal' && a.goal){ const cx=a.x+a.sw/2, dxr=a.goal.x-cx, adx=Math.abs(dxr), nearX=adx<6;
           if(!nearX) a.dir=(dxr>0)?1:-1;   // 멀 때만 방향 갱신(가까우면 고정 → 좌우 버벅/춤 방지). goal 펫은 separatePets 대상 아님(가구로 가는 중 안 막힘)
-          if(a.goal.depth!=null){ const dd=a.goal.depth-a.depth; a.depth+=Math.sign(dd)*Math.min(Math.abs(dd), 0.004*dt); }   // 깊이 빠르게 수렴(대기 시간 최소화)
+          if(a.goal.depth!=null){ const dd=a.goal.depth-a.depth, add=Math.abs(dd), xStep=a.v*dt*0.06;
+            // 앞뒤(깊이) 수렴을 x 접근 '진척에 비례'해 함께 이동 → 대각선으로 자연스럽게 걸어감(예전 0.004*dt는 순간이동처럼 훅 튐). x에 다 왔으면 느린 상한으로만 마무리.
+            const step=nearX ? Math.min(add, 0.00008*dt) : Math.min(add, add*(xStep/Math.max(adx,1)) + 0.00003*dt);
+            a.depth+=Math.sign(dd)*step; }
           const nearD=Math.abs((a.goal.depth==null?a.depth:a.goal.depth)-a.depth)<0.03;
           if(nearX){ a.x=a.goal.x-a.sw/2;   // x 도착 → 위치 스냅(오버슈트로 인한 좌우 떨림 제거)
             if(nearD){ enterInteract(a, id, a.goal); a.goal=null; return; }
@@ -2139,7 +2142,7 @@
           if(aMov){ a.x=Math.max(2,Math.min(a.W-a.sw, a.x+sx*push)); if(a.dir!==sx && (a.dcool||0)<=0){ a.dir=sx; a.dcool=FLIP_COOL; } moved.push(a); }   // 위치는 항상 밀되, 방향은 b쪽으로 향할 때만·쿨다운 지나야 뒤집음(춤 방지)
           if(bMov){ b.x=Math.max(2,Math.min(b.W-b.sw, b.x-sx*push)); if(b.dir!==-sx && (b.dcool||0)<=0){ b.dir=-sx; b.dcool=FLIP_COOL; } moved.push(b); }
         } else {   // 행(depth)으로 분리
-          const sd=(ddp>=0?1:-1), share=(aMov&&bMov)?0.5:1, push=(needD+0.004)*share;
+          const sd=(ddp>=0?1:-1), share=(aMov&&bMov)?0.5:1, push=Math.min((needD+0.004)*share, 0.008);   // 깊이 분리는 프레임당 상한(0.008)으로 완만하게 밀어 순간이동처럼 튀지 않게(여러 프레임에 걸쳐 분리)
           if(aMov){ a.depth=Math.max(0,Math.min(1, a.depth+sd*push)); a.vz=Math.abs(a.vz||0.000008)*sd; moved.push(a); }
           if(bMov){ b.depth=Math.max(0,Math.min(1, b.depth-sd*push)); b.vz=-Math.abs(b.vz||0.000008)*sd; moved.push(b); }
         }
@@ -2322,19 +2325,21 @@
       slotRow+='</div>';
       h+=slotRow;
       if(!owned.length) h+='<div class="empty" style="padding:20px;">아직 펫이 없어요. 알뜰샵에서 입양해 보세요 🐾</div>';
-      else { const rooms=homeH().rooms||[]; if(owned.length>=5) h+=petCtlBar(); h+='<div class="catchips">'+sortOwnedPets(owned).map(id=>{
+      else { const rooms=homeH().rooms||[]; if(owned.length>=5) h+=petCtlBar();
+        const sorted=sortOwnedPets(owned);
+        // 수집형 인벤토리 그리드(5열·세로 나열). 정면 정지 초상(정렬 그리드는 정적이 깔끔·성능↑). 상태는 테두리+뱃지(이 방=강조+체크, 다른 방=방이름, 대기=기본). 걷는 모습은 위 방 무대에.
+        h+='<div class="catchips">'+sorted.map(id=>{
         const roomOf=petRoomIndex(id), here=roomOf===roomIdx();     // 이 방/다른 방/대기 3상태(한 펫당 한 방)
         const roomNm=roomOf>=0?((rooms[roomOf]&&rooms[roomOf].name)||('방 '+(roomOf+1))):'';
-        // 이미지: 이 방에 있으면 걷는 스프라이트, 아니면 정면 정지. 상태 = 이 방에 있음 / <방이름>에 있음 / 대기.
-        const art=here?catActorHTML(id,96):catFace(id,{h:96});
-        return '<div class="catchip'+(here?' on':(roomOf>=0?' elsewhere':''))+'" data-name="'+escapeHtml(catName(id))+'" role="button" tabindex="0" aria-pressed="'+here+'" onclick="toggleActiveCat(\''+id+'\')">'+
-          '<div class="cpic">'+art+'</div>'+
+        const lv=affectionLevel((ownedCatsMap()[id]||{}).affection).level;
+        const st=here?'이 방':(roomOf>=0?roomNm:'대기');
+        return '<div class="catchip'+(here?' on':(roomOf>=0?' elsewhere':''))+'" data-name="'+escapeHtml(catName(id))+'" role="button" tabindex="0" aria-pressed="'+here+'" onclick="toggleActiveCat(\''+id+'\')" title="'+escapeHtml(catName(id))+' · '+escapeHtml(st)+' · Lv.'+lv+'">'+
+          '<div class="cpic">'+catFace(id,{h:44})+'</div>'+
           (roomOf>=0&&!here?'<span class="croom">'+escapeHtml(roomNm)+'</span>':'')+
-          '<div class="cn">'+catNameSpan(id,catName(id))+'</div>'+
-          (function(){ const lv=affectionLevel((ownedCatsMap()[id]||{}).affection).level; return '<div class="clv" aria-label="애정 레벨 '+lv+'"><span class="clv-h">'+heartSvg({h:11})+'</span>Lv.'+lv+'</div>'; })()+
-          '<div class="cstate">'+(here?'이 방에 있음':(roomOf>=0?escapeHtml(roomNm)+'에 있음':'대기'))+'</div>'+
-          '<button class="cn-edit" aria-label="이름 짓기" onclick="event.stopPropagation();openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
           (here?'<span class="csel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>':'')+
+          '<button class="cn-edit" aria-label="이름 짓기" onclick="event.stopPropagation();openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
+          '<div class="cn">'+catNameSpan(id,catName(id))+'</div>'+
+          '<div class="clv" aria-label="애정 레벨 '+lv+'"><span class="clv-h">'+heartSvg({h:9})+'</span>Lv.'+lv+'</div>'+
         '</div>'; }).join('')+'</div>';
         h+='<div id="petSearchEmpty" class="empty" style="display:none;padding:14px;">검색 결과가 없어요</div>';
         h+='<div class="hintline" style="margin-top:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>펫을 탭하면 <b>이 방</b>으로 옮겨져요(한 펫은 한 방에만, 방당 최대 '+sc+'마리). 다시 탭하면 대기.'+(sc<MAX_SLOTS?' 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장.':'')+'</div>'; }

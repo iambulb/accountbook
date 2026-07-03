@@ -771,7 +771,7 @@
     .rmstrip .rmthumb { touch-action:pan-x; }   /* 세로 스크롤은 시트로 통과, 가로 롱프레스는 재정렬 */
     /* 펫 카드: 다른 방에 있는 펫(옮겨올 수 있음) — 방 이름 배지 + 은은한 강조 */
     .catchip.elsewhere { border-color:color-mix(in srgb,var(--accent,#4a90d9) 45%,var(--bd)); }
-    .catchip .croom { position:absolute; top:6px; left:6px; z-index:2; max-width:70%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:9.5px; font-weight:800; color:#fff; background:color-mix(in srgb,var(--accent,#4a90d9) 88%,#000); padding:2px 6px; border-radius:999px; }
+    .catchip .croom { position:absolute; top:3px; left:3px; z-index:2; max-width:84%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:8.5px; font-weight:800; color:#fff; background:color-mix(in srgb,var(--accent,#4a90d9) 88%,#000); padding:1px 5px; border-radius:999px; }
     /* dock(상단 캠) 현재 방 이름 — 방 여러 개일 때만 표시 */
     .cd-roomname { position:absolute; top:6px; left:8px; z-index:3; max-width:45%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px; font-weight:800; color:#fff; background:color-mix(in srgb,#000 42%,transparent); padding:2px 7px; border-radius:999px; pointer-events:none; }
 
@@ -790,26 +790,24 @@
     .petctl .petsearch { flex:1; min-width:0; border:1.5px solid var(--bd); background:var(--card); color:var(--text); border-radius:10px; padding:7px 12px; font-size:16px; }
     .petctl .petsearch:focus, .petctl .petsort:focus { outline:none; border-color:var(--primary); }
     /* 우리집 펫 카드 — 애정 레벨 배지(항상 표시, Lv.0~5) */
-    .catchip .clv { display:inline-flex; align-items:center; justify-content:center; gap:3px; margin-top:3px; font-size:11px; font-weight:800; color:#e0567a; }
-    .catchip .clv .clv-h { display:inline-flex; width:11px; height:11px; }
+    .catchip .clv { display:inline-flex; align-items:center; justify-content:center; gap:2px; margin-top:1px; font-size:9.5px; font-weight:800; color:#e0567a; }
+    .catchip .clv .clv-h { display:inline-flex; width:9px; height:9px; }
     .catchip .clv .clv-h .px { display:block; }
-    .catchips { display:flex; gap:10px; flex-wrap:nowrap; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch; }
-    /* 적당한 세로 카드(고정폭). 이미지 영역엔 고양이를 꽉 차게, 아래엔 이름+상태 */
-    .catchip { position:relative; flex:0 0 112px; width:112px; box-sizing:border-box; background:var(--card); border:1.5px solid var(--bd); border-radius:16px; padding:8px 8px 10px; text-align:center; transition:transform .08s, border-color .12s, background .12s; cursor:pointer; }
-    .catchip .cpic { width:100%; aspect-ratio:1; background:var(--soft); border-radius:12px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
-    .catchip .cpic .cspr, .catchip .cpic .catpx, .catchip .cpic .px { display:block; }
-    .catchip .cn-edit { position:absolute; top:5px; right:5px; z-index:2; transform:translateZ(0); width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; border-radius:7px; color:var(--sub); background:color-mix(in srgb,var(--card) 70%,transparent); }
-    .catchip .cn-edit svg { width:12px; height:12px; }
-    .catchip .cn-edit:active { transform:scale(.9); }
-    .catchip:active { transform:scale(.96); }
+    /* 수집형 인벤토리 — 5열 그리드(세로로 길게 나열, 시트가 세로 스크롤). 축소 타일: 초상 + 이름 + 애정레벨, 상태는 테두리+뱃지. */
+    .catchips { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:7px; padding-bottom:2px; align-items:start; }
+    .catchip { position:relative; box-sizing:border-box; background:var(--card); border:1.5px solid var(--bd); border-radius:12px; padding:5px 4px 7px; text-align:center; transition:transform .08s, border-color .12s, background .12s; cursor:pointer; }
+    .catchip .cpic { width:100%; aspect-ratio:1; background:var(--soft); border-radius:9px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .catchip .cpic .cspr, .catchip .cpic .catpx, .catchip .cpic .px, .catchip .cpic svg, .catchip .cpic img { display:block; max-width:100%; height:auto; }
+    .catchip .cn-edit { position:absolute; top:3px; right:3px; z-index:2; transform:translateZ(0); width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; color:var(--sub); background:color-mix(in srgb,var(--card) 78%,transparent); }
+    .catchip .cn-edit svg { width:10px; height:10px; }
+    .catchip .cn-edit:active { transform:scale(.88); }
+    .catchip:active { transform:scale(.94); }
     .catchip.on { border-color:var(--primary); background:color-mix(in srgb,var(--primary) 8%,var(--card)); }
     .catchip.on .cpic { background:color-mix(in srgb,var(--primary) 14%,var(--soft)); }
     /* 걷기 스프라이트(.cspr)는 translateZ 합성 레이어라, 체크 배지도 같은 레이어로 올려(z-index+translateZ) iOS에서 스프라이트에 가려지지 않게 항상 위에 그린다. */
-    .catchip .csel { position:absolute; top:5px; left:5px; z-index:2; transform:translateZ(0); width:22px; height:22px; border-radius:50%; background:var(--primary); color:#fff; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(0,0,0,.25); }
-    .catchip .csel svg { width:13px; height:13px; }
-    .catchip .cn { font-size:13px; font-weight:700; margin-top:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .catchip .cstate { font-size:9.5px; font-weight:800; margin-top:2px; color:var(--sub); }
-    .catchip.on .cstate { color:var(--income); }
+    .catchip .csel { position:absolute; top:3px; left:3px; z-index:2; transform:translateZ(0); width:18px; height:18px; border-radius:50%; background:var(--primary); color:#fff; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(0,0,0,.25); }
+    .catchip .csel svg { width:11px; height:11px; }
+    .catchip .cn { font-size:10.5px; font-weight:700; margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     /* 알뜰샵 카드 */
     .shopcard { display:flex; align-items:center; gap:14px; background:var(--card); border:1px solid var(--bd); border-radius:18px; padding:14px; margin-bottom:11px; }
     .shopcard .thumb { width:86px; height:86px; border-radius:15px; background:var(--soft); display:flex; align-items:center; justify-content:center; flex:none; position:relative; overflow:hidden; }
