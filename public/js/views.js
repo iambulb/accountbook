@@ -1354,7 +1354,6 @@
     }
     function renderHome(){
       const c=$('content'); if(!c) return;
-      const hh=new Date().getHours(); const greet=hh<11?'좋은 아침이에요':(hh<18?'오늘도 알뜰하게':'오늘 하루 마무리해요');
       const daily=(typeof DAILY_MISSIONS!=='undefined')?DAILY_MISSIONS:[];
       const customs=(typeof customMissionList==='function')?customMissionList():[];
       const mrows=daily.map(function(m){ return { name:m.name, reward:m.reward, done:missionClaimed(m), onclick:"homeMissionTap('"+m.id+"')" }; })
@@ -1363,15 +1362,11 @@
       const today=ymd(new Date());
       const dueTop=((typeof scopedTodos==='function')?scopedTodos():[]).filter(function(t){ return !t.done && t.dueDate && t.dueDate<=today; })
         .sort(function(a,b){ return (a.dueDate||'').localeCompare(b.dueDate||''); }).slice(0,4);
-      const todaySpend=(typeof actualSpend==='function')?actualSpend((state.transactions||[]).filter(function(t){return (t.date||'').slice(0,10)===today;})):0;
-      const monthSpend=(typeof actualSpend==='function'&&typeof monthTx==='function')?actualSpend(monthTx(state.month)):0;
       const p = todayPending(mrows.map(function(r){return r.done;}), (typeof scopedTodos==='function'?scopedTodos():[]), today);   // 배지·완료카드 공용 판정
       const kind = homeCardKind(p);   // 'sections' | 'done' | 'empty' (순수 결정, util)
 
       let h='<div class="homewrap">';
-      h+='<div class="card homehero"><div class="hh-l"><div class="hh-greet">'+greet+', '+escapeHtml(state.userName||'')+'님</div>'+
-        '<div class="hh-sub">오늘 미션 '+st.done+'/'+st.total+'</div></div>'+
-        '<div class="hh-coin"><span class="ci">'+coinSvg({h:20})+'</span><b>'+coins().toLocaleString()+'</b></div></div>';
+      // 인사·미션 요약·지출 카드는 제거(미션은 더보기 '미션'으로 일원화, 지출은 캘린더/자산에서). 오늘 홈 랜딩 자체는 폐지(브랜드=소식).
       if(kind==='done'){
         const cid=(typeof activeCats==='function'&&activeCats()[0])||(typeof ownedCatList==='function'&&ownedCatList()[0])||null;
         const art=cid?('<div class="hd-cat">'+catFace(cid,{h:64})+'</div>'):'<div class="hd-emoji">🐱</div>';
@@ -1383,19 +1378,10 @@
         h+='<div class="card homedone empty"><div class="hd-emoji">🌙</div><div class="hd-tit">오늘은 예정된 게 없어요</div>'+
           '<div class="hd-sub">미션이나 할일을 추가해 은화를 모아보세요.</div></div>';
       } else {
-        if(mrows.length){
-          const col=(typeof budgetColor==='function')?(st.allDone?'var(--income)':budgetColor(100-st.pct)):'var(--income)';
-          // 미션 상세는 더보기 '미션' 한 곳으로 일원화 — 홈은 진행 요약 + 바로가기만.
-          h+='<div class="card homemission" role="button" tabindex="0" onclick="openMissions()"><div class="sech" style="margin-top:0;"><span class="l">오늘 미션</span><button class="link" onclick="event.stopPropagation();openMissions()">미션 보러가기</button></div>'+
-            '<div class="hbar"><i style="width:'+st.pct+'%;background:'+col+'"></i></div>'+
-            '<div class="hmsum">'+st.done+'/'+st.total+' 완료 — 오늘의 미션을 확인하고 보상을 받아요</div></div>';
-        }
         if(dueTop.length){
           h+='<div class="card"><div class="sech" style="margin-top:0;"><span class="l">오늘·임박 할일</span><button class="link" onclick="goto(\'todo\')">전체 보기</button></div>'+
             dueTop.map(function(t){ return todoRow(t,false); }).join('')+'</div>';
         }
-        h+='<div class="card homeledger" role="button" tabindex="0" onclick="goto(\'ledger\')"><div class="hl-row"><span class="hl-k">오늘 지출</span><span class="hl-v">₩'+todaySpend.toLocaleString()+'</span></div>'+
-          '<div class="hl-row sub"><span class="hl-k">이번달 지출</span><span class="hl-v">₩'+monthSpend.toLocaleString()+'</span></div></div>';
       }
       h+='</div>';
       c.innerHTML=h;

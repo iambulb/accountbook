@@ -122,6 +122,11 @@
     /* 오늘 미처리 있을 때 로고 위 작은 점(숫자 없음). 빨강 회피 → --income 톤, 카드색 링으로 분리 */
     .home-badge { position:absolute; top:-2px; left:20px; width:7px; height:7px; border-radius:50%; background:var(--income); box-shadow:0 0 0 2px var(--card); }
     .home-badge[hidden] { display:none; }
+    /* 좌상단 브랜드(소식) 아이콘 알림 뱃지 — 안 받은 선물+안 본 공지 수 */
+    .notif-badge { position:absolute; top:-6px; left:15px; min-width:16px; height:16px; padding:0 4px; border-radius:999px;
+      background:#f04452; color:#fff; font-size:10px; font-weight:900; line-height:1; display:flex; align-items:center; justify-content:center;
+      box-shadow:0 0 0 2px var(--card); font-variant-numeric:tabular-nums; }
+    .notif-badge[hidden] { display:none; }
     .icon-btn { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:17px; background:var(--soft); color:var(--text2); position:relative; }
     .icon-btn svg { width:18px; height:18px; }
     /* 펫캠 토글: 꺼짐 = 흐리게 + 대각선 슬래시 */
@@ -740,6 +745,9 @@
     .catchip .caff { font-size:9px; color:#e0567a; letter-spacing:-1px; line-height:1; margin-top:1px; }
     /* 쓰다듬기 하트 연출 */
     .heartfx { position:fixed; z-index:60; transform:translate(-50%,-50%); font-size:20px; color:#ff5d7a; pointer-events:none; animation:heartrise .8s ease-out forwards; }
+    .heartfx .px { display:block; }   /* 픽셀 하트(heartSvg) 렌더 */
+    /* 우리집 펫 카드 — 이름 옆 애정 레벨 배지 */
+    .catchip .cn-lv { display:inline-block; margin-left:4px; font-size:10px; font-weight:800; color:#e0567a; vertical-align:1px; }
     @keyframes heartrise { 0%{ opacity:0; transform:translate(-50%,-50%) scale(.6);} 25%{ opacity:1;} 100%{ opacity:0; transform:translate(-50%,-160%) scale(1.1);} }
     /* 거래 검색 버튼 · 빠른입력 칩 */
     .chip.srch { margin-left:auto; display:inline-flex; align-items:center; gap:4px; }
@@ -770,6 +778,11 @@
     .slot.locked:active { transform:scale(.94); }
     .slot.locked .lockic { width:16px; height:16px; }
     .slot.locked .slotgold { display:inline-flex; align-items:center; gap:2px; font-size:10px; font-weight:800; color:var(--text); }
+    /* 우리집 펫 정렬·검색 바(수백 마리 관리) */
+    .petctl { display:flex; gap:8px; margin:2px 0 8px; }
+    .petctl .petsort { flex:none; border:1.5px solid var(--bd); background:var(--card); color:var(--text); border-radius:10px; padding:7px 10px; font-size:12.5px; font-weight:700; }
+    .petctl .petsearch { flex:1; min-width:0; border:1.5px solid var(--bd); background:var(--card); color:var(--text); border-radius:10px; padding:7px 12px; font-size:13px; }
+    .petctl .petsearch:focus, .petctl .petsort:focus { outline:none; border-color:var(--primary); }
     .catchips { display:flex; gap:10px; flex-wrap:nowrap; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch; }
     /* 적당한 세로 카드(고정폭). 이미지 영역엔 고양이를 꽉 차게, 아래엔 이름+상태 */
     .catchip { position:relative; flex:0 0 112px; width:112px; box-sizing:border-box; background:var(--card); border:1.5px solid var(--bd); border-radius:16px; padding:8px 8px 10px; text-align:center; transition:transform .08s, border-color .12s, background .12s; cursor:pointer; }

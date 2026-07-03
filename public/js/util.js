@@ -212,10 +212,10 @@
     ids.forEach(function (id) { if (owned && owned[id]) o++; });
     return { owned: o, total: ids.length, pct: ids.length ? Math.round(o / ids.length * 100) : 0 };
   }
-  // 펫 애정도 레벨(임계 10/50/100). {level(0~3), next(다음 임계 or null), pct(다음까지 %)}.
+  // 펫 애정도 레벨(임계 10/30/60/100/150 — 최대 5레벨). {level(0~5), next(다음 임계 or null), pct(다음까지 %)}.
   function affectionLevel(aff) {
     aff = Math.max(0, Math.floor(Number(aff) || 0));
-    var TH = [10, 50, 100], level = 0;
+    var TH = [10, 30, 60, 100, 150], level = 0;
     for (var i = 0; i < TH.length; i++) { if (aff >= TH[i]) level = i + 1; }
     var prev = level > 0 ? TH[level - 1] : 0, next = level < TH.length ? TH[level] : null;
     return { level: level, next: next, pct: next != null ? Math.round((aff - prev) / (next - prev) * 100) : 100 };

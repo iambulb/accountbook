@@ -298,13 +298,15 @@ test('dexProgress: 보유/전체/퍼센트', () => {
   assert.deepStrictEqual(U.dexProgress(null, ['a']), { owned: 0, total: 1, pct: 0 });
 });
 
-test('affectionLevel: 임계 10/50/100 레벨·다음·진행%', () => {
+test('affectionLevel: 임계 10/30/60/100/150 레벨·다음·진행%(최대 5)', () => {
   assert.deepStrictEqual(U.affectionLevel(0), { level: 0, next: 10, pct: 0 });
   assert.deepStrictEqual(U.affectionLevel(5), { level: 0, next: 10, pct: 50 });
-  assert.deepStrictEqual(U.affectionLevel(10), { level: 1, next: 50, pct: 0 });
-  assert.deepStrictEqual(U.affectionLevel(30), { level: 1, next: 50, pct: 50 });
-  assert.deepStrictEqual(U.affectionLevel(100), { level: 3, next: null, pct: 100 });
-  assert.deepStrictEqual(U.affectionLevel(999), { level: 3, next: null, pct: 100 });
+  assert.deepStrictEqual(U.affectionLevel(10), { level: 1, next: 30, pct: 0 });
+  assert.deepStrictEqual(U.affectionLevel(20), { level: 1, next: 30, pct: 50 });
+  assert.deepStrictEqual(U.affectionLevel(60), { level: 3, next: 100, pct: 0 });
+  assert.deepStrictEqual(U.affectionLevel(100), { level: 4, next: 150, pct: 0 });
+  assert.deepStrictEqual(U.affectionLevel(150), { level: 5, next: null, pct: 100 });
+  assert.deepStrictEqual(U.affectionLevel(999), { level: 5, next: null, pct: 100 });
 });
 
 test('rollFreeGift: 가중 누적 경계에서 올바른 보상(food35/water35/coins30, 금화 없음)', () => {

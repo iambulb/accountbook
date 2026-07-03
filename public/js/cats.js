@@ -1193,7 +1193,7 @@
       state._petTimer=setInterval(reconcilePets, 60000);
     }
     function onGameChange(){
-      updateDockCoins();
+      updateDockCoins(); updateNewsBadge();
       const dw=$('catdock'); const wall=dw&&dw.querySelector('.cr-wall'); if(wall) wall.style.background=wallCss(currentWall());
       const rn=$('cdRoomName'); if(rn){ const multi=roomCount()>1; rn.hidden=!multi; if(multi) rn.textContent=(room().emoji?room().emoji+' ':'')+(room().name||''); }   // dock 현재 방 이름(방 여러 개일 때만)
       renderDockProps();
@@ -1852,14 +1852,14 @@
       d.innerHTML='<div class="cd-room">'+
         '<div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div>'+
         '<span class="cd-roomname" id="cdRoomName"'+(roomCount()>1?'':' hidden')+'>'+(room().emoji?room().emoji+' ':'')+escapeHtml(room().name||'')+'</span>'+
-        '<span class="cd-coin" role="button" tabindex="0" aria-label="소식 열기(알림·선물)" onclick="event.stopPropagation();coinTap(this)"><span class="cd-ci">'+coinSvg({h:16})+'</span><b id="cdCoins">0</b><span class="cd-notif" id="cdNotif" hidden></span></span>'+
+        '<span class="cd-coin" role="button" tabindex="0" aria-label="알뜰홈 열기" onclick="event.stopPropagation();coinTap(this)"><span class="cd-ci">'+coinSvg({h:16})+'</span><b id="cdCoins">0</b></span>'+
         batchBtnHtml()+
         '<div class="cr-props" id="cdProps"></div><div class="cr-stage" id="cdStage"></div></div>';
       updateDockCoins(); renderDockProps(); renderDockCats();
     }
-    function updateDockCoins(){ const el=$('cdCoins'); if(el) el.textContent=coins().toLocaleString(); updateDockNotif(); }
-    // 은화 배지 탭 → 눌리는 액션(press) 후 소식 화면 열기. 캠 빈 곳 탭은 아무 동작 안 함(펫만 조작).
-    function coinTap(el){ const c=el||($('cdCoins')&&$('cdCoins').closest('.cd-coin')); if(c){ c.classList.remove('tap'); void c.offsetWidth; c.classList.add('tap'); } setTimeout(openNews, 170); }
+    function updateDockCoins(){ const el=$('cdCoins'); if(el) el.textContent=coins().toLocaleString(); }
+    // 은화 배지 탭 → 눌리는 액션(press) 후 알뜰홈 열기. 캠 빈 곳 탭은 아무 동작 안 함(펫만 조작). (소식은 좌상단 브랜드 아이콘)
+    function coinTap(el){ const c=el||($('cdCoins')&&$('cdCoins').closest('.cd-coin')); if(c){ c.classList.remove('tap'); void c.offsetWidth; c.classList.add('tap'); } setTimeout(openCatHouse, 170); }
     // 방/dock 공용: 똥을 화장실들에 라운드로빈 분배(각 화장실 객체에 _poops 슬롯 배열 부여, 최대 5개)
     function distributePoops(list){
       const litters=list.filter(p=>p.itemId==='litterbox'); litters.forEach(l=>{ l._poops=[]; });
@@ -2135,8 +2135,11 @@
     function camTap(){ if(_petJustDragged) return; openCatHouse(); }   // 드래그 직후의 탭은 알뜰샵 열기 무시
     // 🐾 펫 애정도: 방/캠에서 펫을 탭하면 +1(펫별 쿨다운), 임계(10/50/100)에서 레벨업. 작은 하트 연출.
     let _affCool={}, _affLevelUp=null;
-    function heartFx(x,y){ const el=document.createElement('div'); el.className='heartfx'; el.textContent='❤';
-      el.style.left=((x||innerWidth/2))+'px'; el.style.top=((y||innerHeight/2))+'px'; document.body.appendChild(el); setTimeout(()=>{ el.remove(); }, 820); }
+    // 펫 쓰다듬기 연출: 좋아요와 동일한 픽셀 하트(heartSvg)가 위로 떠오르고 + 작은 하트들이 뿅 팝(likeBurst).
+    function heartFx(x,y){ const cx=(x||innerWidth/2), cy=(y||innerHeight/2);
+      const el=document.createElement('div'); el.className='heartfx'; el.innerHTML=(typeof heartSvg==='function')?heartSvg({h:22}):'❤';
+      el.style.left=cx+'px'; el.style.top=cy+'px'; document.body.appendChild(el); setTimeout(()=>{ el.remove(); }, 820);
+      if(typeof likeBurst==='function') likeBurst(cx,cy); }
     // ❤ 좋아요 팝: (cx,cy) 근처에서 작은 픽셀 하트들이 위쪽 부채꼴로 '뿅' 튀어올랐다 사라짐. prefers-reduced-motion이면 생략.
     function likeBurst(cx,cy){
       if(typeof heartSvg!=='function') return;
@@ -2160,7 +2163,7 @@
         const before=affectionLevel(c.affection).level; c.affection=(Number(c.affection)||0)+1;
         const after=affectionLevel(c.affection).level;
         if(after>before){ _affLevelUp={ id, level:after, gold:0 };
-          if(after>=3){ g.gold=(g.gold||0)+5; _affLevelUp.gold=5; }   // 애정 만렙(레벨3) 1회 도달 보상 — 레벨은 한 번만 오르므로 자동 멱등
+          if(after>=5){ g.gold=(g.gold||0)+5; _affLevelUp.gold=5; }   // 애정 만렙(레벨5) 1회 도달 보상 — 레벨은 한 번만 오르므로 자동 멱등
         }
         return g;
       }).then(res=>{ if(res&&res.committed){ heartFx(x,y); if(_affLevelUp){ const g=_affLevelUp.gold; toast('❤ '+catName(_affLevelUp.id)+' 애정 레벨 '+_affLevelUp.level+(g?' · 만렙! 금화 +'+g:'')+'!'); _affLevelUp=null; } } });
@@ -2216,8 +2219,8 @@
         b.innerHTML=build(); b.scrollTop=st;
         const nchips=b.querySelector('.catchips'); if(nchips) nchips.scrollLeft=chipsL;
         const npal=b.querySelector('.palette'); if(npal) npal.scrollLeft=palL;
-        if(_catTab==='home') mountRoomWalk(); };
-      if(_catTab==='home') setTimeout(mountRoomWalk, 30);
+        if(_catTab==='home'){ mountRoomWalk(); applyPetFilter(); } };   // 재렌더 후 현재 검색어 재적용
+      if(_catTab==='home'){ setTimeout(mountRoomWalk, 30); applyPetFilter(); }
     }
     // 방 미니 미리보기 썸네일(프리셋): 벽지 bg + 가구 위치 축소 + 이름 + 펫수. 탭=전환, ✎=이름변경.
     function roomThumb(r, idx){
@@ -2241,6 +2244,25 @@
       if(rc<MAX_ROOMS) h+='<button class="rmthumb locked" onclick="buyRoom()" aria-label="방 확장(금화 '+ROOM_PRICE+')"><span class="rmlock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span class="rmgold">'+goldSvg({h:12})+ROOM_PRICE+'</span></button>';
       return h+'</div>';
     }
+    // ===== 우리집 펫 리스트 정렬·검색(수백 마리 관리) =====
+    let _petSort='recent', _petQuery='';
+    const PET_SORTS=[['recent','최근 획득'],['tier','등급↑'],['aff','애정↑'],['species','종류'],['name','이름']];
+    function setPetSort(v){ _petSort=v||'recent'; if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
+    function setPetQuery(v){ _petQuery=v||''; applyPetFilter(); }   // 재렌더 없이 DOM만 숨김/표시(입력 포커스·커서 유지)
+    function applyPetFilter(){ const q=(_petQuery||'').trim().toLowerCase(); const box=document.querySelector('.catchips'); if(!box) return; let shown=0;
+      box.querySelectorAll('.catchip').forEach(el=>{ const nm=(el.getAttribute('data-name')||'').toLowerCase(); const ok=!q||nm.indexOf(q)>=0; el.style.display=ok?'':'none'; if(ok) shown++; });
+      const em=document.getElementById('petSearchEmpty'); if(em) em.style.display=(q&&!shown)?'':'none'; }
+    // 소유 펫 정렬 — recent(최근 획득)·tier(등급↑, 한정 먼저)·aff(애정↑)·species(종류)·name(이름). 필터(검색)는 표시 단계에서.
+    function sortOwnedPets(ids){ const l=ids.slice();
+      const rank=id=>tierRank(CAT_TIER[id]||'normal'), aff=id=>Number((ownedCatsMap()[id]||{}).affection)||0, bat=id=>((ownedCatsMap()[id]||{}).boughtAt)||'', nm=id=>catName(id)||'', spc=id=>{ const c=PET_CATALOG.find(x=>x.id===id); return (c&&c.species)||''; };
+      if(_petSort==='tier') l.sort((a,b)=> rank(b)-rank(a) || bat(b).localeCompare(bat(a)));
+      else if(_petSort==='aff') l.sort((a,b)=> aff(b)-aff(a) || nm(a).localeCompare(nm(b)));
+      else if(_petSort==='species') l.sort((a,b)=> spc(a).localeCompare(spc(b)) || nm(a).localeCompare(nm(b)));
+      else if(_petSort==='name') l.sort((a,b)=> nm(a).localeCompare(nm(b)));
+      else l.sort((a,b)=> bat(b).localeCompare(bat(a)));   // recent
+      return l; }
+    function petCtlBar(){ return '<div class="petctl"><select class="petsort" aria-label="펫 정렬" onchange="setPetSort(this.value)">'+PET_SORTS.map(o=>'<option value="'+o[0]+'"'+(_petSort===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+
+      '<input class="petsearch" type="search" inputmode="search" placeholder="이름 검색" value="'+escapeHtml(_petQuery)+'" oninput="setPetQuery(this.value)" aria-label="펫 이름 검색"></div>'; }
     function catHomeHtml(){
       reconcilePets();   // 3시간 지난 그릇 비우고 똥 정산(멱등)
       const cats=activeCats();
@@ -2265,20 +2287,21 @@
       slotRow+='</div>';
       h+=slotRow;
       if(!owned.length) h+='<div class="empty" style="padding:20px;">아직 펫이 없어요. 알뜰샵에서 입양해 보세요 🐾</div>';
-      else { const rooms=homeH().rooms||[]; h+='<div class="catchips">'+owned.map(id=>{
+      else { const rooms=homeH().rooms||[]; if(owned.length>=5) h+=petCtlBar(); h+='<div class="catchips">'+sortOwnedPets(owned).map(id=>{
         const roomOf=petRoomIndex(id), here=roomOf===roomIdx();     // 이 방/다른 방/대기 3상태(한 펫당 한 방)
         const roomNm=roomOf>=0?((rooms[roomOf]&&rooms[roomOf].name)||('방 '+(roomOf+1))):'';
         // 이미지: 이 방에 있으면 걷는 스프라이트, 아니면 정면 정지. 상태 = 이 방에 있음 / <방이름>에 있음 / 대기.
         const art=here?catActorHTML(id,96):catFace(id,{h:96});
-        return '<div class="catchip'+(here?' on':(roomOf>=0?' elsewhere':''))+'" role="button" tabindex="0" aria-pressed="'+here+'" onclick="toggleActiveCat(\''+id+'\')">'+
+        return '<div class="catchip'+(here?' on':(roomOf>=0?' elsewhere':''))+'" data-name="'+escapeHtml(catName(id))+'" role="button" tabindex="0" aria-pressed="'+here+'" onclick="toggleActiveCat(\''+id+'\')">'+
           '<div class="cpic">'+art+'</div>'+
           (roomOf>=0&&!here?'<span class="croom">'+escapeHtml(roomNm)+'</span>':'')+
-          '<div class="cn">'+catNameSpan(id,catName(id))+'</div>'+
+          '<div class="cn">'+catNameSpan(id,catName(id))+(function(){ const lv=affectionLevel((ownedCatsMap()[id]||{}).affection).level; return lv>0?'<span class="cn-lv" aria-label="애정 레벨 '+lv+'">Lv.'+lv+'</span>':''; })()+'</div>'+
           (()=>{ const av=(ownedCatsMap()[id]||{}).affection; const lv=affectionLevel(av).level; return lv>0?'<div class="caff" style="display:inline-flex;gap:1px" aria-label="애정 '+lv+'">'+heartSvg({h:10}).repeat(lv)+'</div>':''; })()+
           '<div class="cstate">'+(here?'이 방에 있음':(roomOf>=0?escapeHtml(roomNm)+'에 있음':'대기'))+'</div>'+
           '<button class="cn-edit" aria-label="이름 짓기" onclick="event.stopPropagation();openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
           (here?'<span class="csel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>':'')+
         '</div>'; }).join('')+'</div>';
+        h+='<div id="petSearchEmpty" class="empty" style="display:none;padding:14px;">검색 결과가 없어요</div>';
         h+='<div class="hintline" style="margin-top:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>펫을 탭하면 <b>이 방</b>으로 옮겨져요(한 펫은 한 방에만, 방당 최대 '+sc+'마리). 다시 탭하면 대기.'+(sc<MAX_SLOTS?' 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장.':'')+'</div>'; }
       return h;
     }
@@ -2943,18 +2966,19 @@
     function loadNotices(){ try{ db.ref('config/notices').on('value', function(s){ const v=s.val(); let arr=[];
       if(Array.isArray(v)) arr=v; else if(v&&typeof v==='object') arr=Object.keys(v).map(function(k){ return v[k]; });
       arr=(arr||[]).filter(function(n){ return n && n.date && n.t; }).sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
-      if(arr.length){ NOTICES=arr; if(typeof updateDockNotif==='function') updateDockNotif(); }
+      if(arr.length){ NOTICES=arr; if(typeof updateNewsBadge==='function') updateNewsBadge(); }
     }); }catch(e){} }
     // 안 본 공지 기준일 — 계정(RTDB game.newsSeenAt)과 기기(localStorage) 중 더 최신 사용(기기 간 동기화).
     function newsSeenAt(){ let g=(state.game&&state.game.newsSeenAt)||''; let l=''; try{ l=localStorage.getItem('newsSeenAt')||''; }catch(e){} return g>l?g:l; }
     function latestNoticeDate(){ return NOTICES.reduce(function(m,n){ return n.date>m?n.date:m; }, ''); }
     function markNewsSeen(){ const d=latestNoticeDate(); try{ localStorage.setItem('newsSeenAt', d); }catch(e){}
       try{ if(typeof gameRef==='function' && state.uid && d) gameRef().child('newsSeenAt').set(d); }catch(e){}   // 계정 동기화
-      updateDockNotif(); }
+      updateNewsBadge(); }
     function unseenNoticeCount(){ const s=newsSeenAt(); return NOTICES.filter(function(n){ return n.date>s; }).length; }
     function giftUnread(){ return giftCount() + (typeof mailCount==='function'?mailCount():0); }   // 안 받은 선물 = 코드보상(gifts) + 친구선물(mailbox)
     function newsUnread(){ return giftUnread() + unseenNoticeCount(); }   // 뱃지 = 안 받은 선물(코드+친구) + 안 본 공지
-    function updateDockNotif(){ const el=$('cdNotif'); if(!el) return; const n=newsUnread(); if(n>0){ el.textContent=n>9?'9+':String(n); el.hidden=false; } else { el.hidden=true; el.textContent=''; } }
+    // 좌상단 브랜드(알뜰 메인) 아이콘 = 소식 진입. 그 위에 안 받은 선물(코드+친구)+안 본 공지 수를 뱃지로.
+    function updateNewsBadge(){ const el=$('newsBadge'); if(!el) return; const n=newsUnread(); if(n>0){ el.textContent=n>9?'9+':String(n); el.hidden=false; } else { el.hidden=true; el.textContent=''; } }
     // 쿠폰 보상 픽셀 아이콘(PROMO_CODES 타입별) — 이모지 대신 도트 아이콘 재사용.
     function couponIcon(d){ if(d.type==='coins') return coinSvg({h:15}); if(d.key==='rainbow_egg') return rainbowEggSvg({h:16}); if(d.key==='rainbow_box') return rainbowBoxSvg({h:16}); if(d.key==='egg') return eggSvg(0,{h:16}); if(d.key==='box') return boxSvg({h:16}); return coinSvg({h:15}); }
     function catNewsHtml(){
@@ -2977,8 +3001,6 @@
     }
     function catMissionHtml(){
       let h='<div class="coinhero"><span class="ch-big">'+coinSvg({h:44})+'</span><div><div class="k">보유 은화</div><div class="v">'+coins().toLocaleString()+(atMaxCoins()?maxChip():'')+'</div></div></div>';
-      const _hh=new Date().getHours(); const _greet=_hh<11?'좋은 아침이에요 ☀️':(_hh<18?'오늘도 알뜰하게 🌱':'오늘 하루 마무리해요 🌙');
-      h+='<div class="mgreet"><b>오늘의 미션</b><span>'+_greet+'</span></div>';
       // 로그인 스트릭 배지: 연속 출석일 + 다음 마일스톤까지(3·7·14·30, 이후 매30). 마일스톤에 은화·금화 보상.
       { const c=(state.game&&state.game.streak&&Number(state.game.streak.count))||0;
         const nx=[3,7,14,30].find(n=>n>c)||(Math.floor(c/30+1)*30);

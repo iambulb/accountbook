@@ -17,7 +17,7 @@
       theme: localStorage.getItem('theme') || 'light',
       tab:'calendar',
       mode: (localStorage.getItem('mode')==='todo' ? 'todo' : 'ledger'),   // 가계부(ledger) / 할일(todo) 모드
-      view: (localStorage.getItem('view')==='mode' ? 'mode' : 'home'),     // 랜딩 '오늘 홈'(home) / 모드 화면(mode) — 모드는 아님(두 모드 그대로)
+      view: 'mode',     // 캘린더(탭)를 홈처럼 사용 — '오늘 홈' 랜딩 폐지(브랜드 아이콘=소식). 구 'home' 뷰 로직은 미사용
       todos:[], todoShare:{},   // 그룹 할일 목록(ws/{wsId}/todos) / (레거시) 멤버별 공유 플래그
       myTodos:[],   // 내 개인 할일(user-global: users/{uid}/todos) — 워크스페이스 무관
       friends:{}, friendReqs:{}, todoPublic:false, friendCode:'', friendPub:{},   // 친구 관계·받은 요청·내 공개 플래그·내 코드·친구별 공개여부(users/{uid}/…)
@@ -388,7 +388,7 @@
       add('friends', s=>{ state.friends=s.val()||{}; loadFriendPublics(); rerender(); });
       add('friendReqs', s=>{ state.friendReqs=s.val()||{}; rerender(); });
       add('todoPublic', s=>{ state.todoPublic=!!s.val(); rerender(); });
-      add('mailbox', s=>{ state.mailbox=s.val()||{}; if(typeof updateDockNotif==='function') updateDockNotif(); rerender(); });   // 🎁 친구가 보낸 선물함 — dock 알림 뱃지도 갱신
+      add('mailbox', s=>{ state.mailbox=s.val()||{}; if(typeof updateNewsBadge==='function') updateNewsBadge(); rerender(); });   // 🎁 친구가 보낸 선물함 — 소식(브랜드) 알림 뱃지도 갱신
     }
     // 친구별 '할일 공개' 여부를 읽어 캐시(친구 목록 변경 시 갱신). 공개 친구만 피드에 노출.
     function loadFriendPublics(){
