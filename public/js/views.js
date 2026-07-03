@@ -786,10 +786,16 @@
     function likeFriendHome(uid){
       likeHome(uid, function(ok, cnt){
         if(!ok){ toast('오늘은 이미 좋아요를 눌렀어요'); return; }
-        toast('좋아요 ❤️');
+        toast('좋아요', false, (typeof heartSvg==='function'?heartSvg({h:16}):''));   // 픽셀 하트 토스트
         if(cnt!=null){ state.friendLikes=state.friendLikes||{}; state.friendLikes[uid]=cnt; }   // 친구목록 하트 수 즉시 반영
         const n=$('fhLikeN'); if(n && cnt!=null) n.textContent=cnt;
-        const btn=document.querySelector('.likebtn'); if(btn){ btn.classList.add('on'); btn.disabled=true; }
+        const btn=document.querySelector('.likebtn');
+        if(btn){
+          btn.classList.add('on'); btn.disabled=true;
+          const heart=btn.querySelector('.px');   // 회색(미좋아요) 하트를 즉시 채워진 하트로 교체 + 두근(beat) 애니
+          if(heart && typeof heartSvg==='function') heart.outerHTML=heartSvg({h:20,cls:'beat'});
+          if(typeof likeBurst==='function'){ const r=btn.getBoundingClientRect(); likeBurst(r.left+24, r.top+r.height/2); }   // 작은 하트들 뿅
+        }
         const hint=document.querySelector('.likehint'); if(hint) hint.textContent='오늘 좋아요 완료 · 내일 또 눌러주세요';
       });
     }

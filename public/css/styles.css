@@ -1125,6 +1125,17 @@
     .likebtn.on { border-color:#F0546A; color:#F0546A; }
     .likebtn .px { display:block; }
     .likehint { font-size:12.5px; color:var(--sub); font-weight:600; }
+    /* ❤ 좋아요 눌렀을 때: 하트가 두근 + 작은 하트들이 뿅 튀어나왔다 사라짐 */
+    .likebtn .px.beat { animation:likebeat .6s ease; transform-origin:center; }
+    @keyframes likebeat { 0%,100%{transform:scale(1);} 18%{transform:scale(1.42);} 38%{transform:scale(.86);} 58%{transform:scale(1.24);} 78%{transform:scale(.96);} }
+    .likepop { position:fixed; z-index:61; transform:translate(-50%,-50%); pointer-events:none; will-change:transform,opacity; animation:likepop .82s ease-out forwards; }
+    .likepop .px { display:block; }
+    @keyframes likepop {
+      0%   { opacity:0; transform:translate(-50%,-50%) scale(.3); }
+      25%  { opacity:1; transform:translate(-50%,-50%) scale(1.2); }
+      100% { opacity:0; transform:translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(.7); }
+    }
+    @media (prefers-reduced-motion: reduce){ .likebtn .px.beat { animation:none; } }
     .likemini { display:inline-flex; align-items:center; gap:3px; font-size:12.5px; font-weight:800; color:var(--sub); flex:none; }
     .likemini .px { display:block; }
     .friendrow { cursor:pointer; }

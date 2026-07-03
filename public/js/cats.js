@@ -2029,6 +2029,21 @@
     let _affCool={}, _affLevelUp=null;
     function heartFx(x,y){ const el=document.createElement('div'); el.className='heartfx'; el.textContent='❤';
       el.style.left=((x||innerWidth/2))+'px'; el.style.top=((y||innerHeight/2))+'px'; document.body.appendChild(el); setTimeout(()=>{ el.remove(); }, 820); }
+    // ❤ 좋아요 팝: (cx,cy) 근처에서 작은 픽셀 하트들이 위쪽 부채꼴로 '뿅' 튀어올랐다 사라짐. prefers-reduced-motion이면 생략.
+    function likeBurst(cx,cy){
+      if(typeof heartSvg!=='function') return;
+      try{ if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return; }catch(e){}
+      const N=6;
+      for(let i=0;i<N;i++){
+        const el=document.createElement('div'); el.className='likepop';
+        const ang=(-90+(i-(N-1)/2)*24)*Math.PI/180, dist=22+Math.random()*20;
+        el.style.setProperty('--tx',(Math.cos(ang)*dist).toFixed(1)+'px');
+        el.style.setProperty('--ty',(Math.sin(ang)*dist).toFixed(1)+'px');
+        el.style.left=cx+'px'; el.style.top=cy+'px'; el.style.animationDelay=(i*16)+'ms';
+        el.innerHTML=heartSvg({h:11+Math.floor(Math.random()*7)});
+        document.body.appendChild(el); setTimeout(()=>el.remove(), 820+i*16);
+      }
+    }
     function bumpAffection(id, x, y){
       if(!id || !ownsCat(id)) return;
       const now=Date.now(); if(_affCool[id] && now-_affCool[id]<1500){ heartFx(x,y); return; }   // 쿨다운 중엔 연출만(스팸 방지)
