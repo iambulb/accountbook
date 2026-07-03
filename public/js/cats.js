@@ -153,17 +153,19 @@
       "................","................","...XXXXXXXXX....","..XAAAAAAAAAAX..",
       "..XAAAAAAAAAAX..","...XAAAAAAAAX...","....XXXXXXXX....","................"
     ];
-    // 펫 화장실(2×1): 가로로 넓고 낮은 모래 트레이(캠·방에서 방석 폭의 약 2배). 비운 그릇 수만큼 똥이 쌓임. 가로세로비 ≈ 32/9.
+    // 펫 화장실(1×1): 1칸에 거의 꽉 차는 정사각 오픈 모래 트레이(X=림 외곽, W=안쪽 림, S=모래). 비운 그릇 수만큼 똥이 모래 위에 쌓임. 가로세로비 ≈ 13/11.
     const M_LITTER = [
-      "................................",
-      "..XXXXXXXXXXXXXXXXXXXXXXXXXXXX..",
-      "..XWSSSSSSSSSSSSSSSSSSSSSSSSWX..",
-      "..XWSSSSSSSSSSSSSSSSSSSSSSSSWX..",
-      "..XWSSSSSSSSSSSSSSSSSSSSSSSSWX..",
-      "..XWSSSSSSSSSSSSSSSSSSSSSSSSWX..",
-      "..XWWWWWWWWWWWWWWWWWWWWWWWWWWX..",
-      ".XWWWWWWWWWWWWWWWWWWWWWWWWWWWWX.",
-      "..XXXXXXXXXXXXXXXXXXXXXXXXXXXX.."
+      ".............",
+      "..XXXXXXXXX..",
+      ".XWWWWWWWWWX.",
+      ".XWSSSSSSSWX.",
+      ".XWSSSSSSSWX.",
+      ".XWSSSSSSSWX.",
+      ".XWSSSSSSSWX.",
+      ".XWWWWWWWWWX.",
+      "XWWWWWWWWWWWX",
+      ".XXXXXXXXXXX.",
+      "............."
     ];
     const M_POOP = [
       "........","...XX...","..XKKX..",".XKKKKX.",".XKKKKX.","..XKKX..","...XX...","........"
@@ -515,15 +517,15 @@
     // 구 id→신 id 매핑(수동 유지, @gen 마커 밖). 런타임 펫 정적 승격 시 tools/pet_maint.mjs(apply) 가 아래 앵커 앞에 rt_xxx:'static_id' 를 자동 삽입한다.
     const PET_ID_MIGRATE = { mackerel:'cat_mackerel', cheese:'cat_cheese', calico:'cat_calico', black:'cat_black', white:'cat_white',
       rt_mr3n1k85:'lion_mane', rt_mr3n6laq:'cat_persian', rt_mr3nx5r4:'tiger_white', rt_mr3nyl3p:'cat_russianblue', rt_mr3ocsnm:'cat_bengal2', /* @rtmigrate */ };
-    // size = 표시 배율(1=기본). footW×footH = 배치 격자 점유(가로×세로 칸). 캣타워=3×6(세로 큼), 스크래처=2×2, 화장실=2×1(가로로 넓음), 방석·밥그릇=1×1(작게, 밥그릇<방석). itemFoot()/furnScale()로 배치·방·알뜰샵에 반영.
+    // size = 표시 배율(1=기본, 팔레트 아이콘 크기에 반영). footW×footH = 배치 격자 점유(가로×세로 칸). 캣타워=1×2, 스크래처=1×1, 화장실=1×1(정사각), 방석·밥그릇=1×1(작게, 밥그릇<방석). itemFoot()/furnScale()로 배치·팔레트에 반영.
     const ITEM_CATALOG = [
       { id:'cushion', name:'방석',   price:15, size:0.6,  footW:1, footH:1, desc:'고양이가 위에 잠시 올라가 쉬어요.' },
       { id:'bowl',    name:'밥그릇', price:20, size:0.45, footW:1, footH:1, desc:'홈에서 탭해 사료를 채워요(3시간 뒤 비워짐).' },
       { id:'waterbowl', name:'물그릇', price:20, size:0.45, footW:1, footH:1, desc:'홈에서 탭해 물을 채워요(3시간 뒤 비워짐).' },
-      { id:'tower',   name:'캣타워', price:35, size:2,    footW:3, footH:6, desc:'3층 발판 — 한 층에 올라가 쉬어요.' },
-      { id:'scratcher', name:'스크래처', price:18, size:2, footW:2, footH:2, desc:'옆에서 잠시 머물며 발톱을 갈아요.' },
-      { id:'litterbox', name:'화장실', price:25, size:1, footW:2, footH:1, desc:'비운 그릇 수만큼 똥이 쌓여요. 탭해 치우면 은화!' },
-      { id:'pethouse', name:'펫하우스', price:45, size:2, footW:3, footH:3, desc:'펫이 안에 들어가 정면을 보며 아늑하게 쉬어요.' },
+      { id:'tower',   name:'캣타워', price:35, size:2,    footW:1, footH:2, desc:'3층 발판 — 한 층에 올라가 쉬어요.' },
+      { id:'scratcher', name:'스크래처', price:18, size:2, footW:1, footH:1, desc:'옆에서 잠시 머물며 발톱을 갈아요.' },
+      { id:'litterbox', name:'화장실', price:25, size:1, footW:1, footH:1, desc:'비운 그릇 수만큼 똥이 쌓여요. 탭해 치우면 은화!' },
+      { id:'pethouse', name:'펫하우스', price:45, size:2, footW:2, footH:2, desc:'펫이 안에 들어가 정면을 보며 아늑하게 쉬어요.' },
       { id:'plant',    name:'화분',   price:22, size:1, footW:1, footH:2, desc:'초록 화분. 고양이가 곁에서 잠시 쉬어요.' }
     ];
     // 소비 아이템(배치 불가) — 홈에서 밥그릇/물그릇을 탭해 채울 때 소모. 알뜰샵 "소비" 탭에서 구매.
@@ -934,9 +936,9 @@
     // 방(dock·홈)에서의 가구 렌더 높이(px) — 발자국 세로 칸수(footH)에 비례해 키움(캣타워 6칸=제일 큼, 스크래처 2칸, 방석·밥그릇 1칸).
     // 고양이 상호작용(캣타워 3층 올라가기 등)이 맞아떨어지도록 렌더·엔진(fh)이 같은 값을 쓴다. depth(뒤로 갈수록) 작게.
     // 방 렌더 높이 배율(실물감) — 캣타워 제일 큼, 스크래처는 고양이 키만큼, 화장실=낮은 상자, 방석·그릇 작게.
-    const ROOM_H = { tower:6.2, scratcher:2.9, pethouse:3.2, plant:2, litterbox:1.3, cushion:1, bowl:0.8, waterbowl:0.8 };
+    const ROOM_H = { tower:6.2, scratcher:2.9, pethouse:2.8, plant:2, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6 };
     // 가구 그래픽 가로세로비(cols/rows) — 좌측하단 앵커라 그래픽 중앙 x = 좌측 edge + fh*aspect/2 (고양이가 가구 중앙에 서게).
-    const FURN_ASPECT = { tower:0.5, scratcher:1.0, pethouse:1.2, plant:0.57, litterbox:3.56, cushion:2.29, bowl:2.0, waterbowl:2.0 };
+    const FURN_ASPECT = { tower:0.5, scratcher:1.0, pethouse:1.2, plant:0.57, litterbox:1.18, cushion:2.29, bowl:2.0, waterbowl:2.0 };
     function furnAspect(id){ return FURN_ASPECT[id]||1; }
     function furnRoomH(id, isDock, depth){
       const mult = ROOM_H[id] || 1;
@@ -2777,7 +2779,8 @@
       const grid='<div class="grid12" id="placeGrid" onclick="placeClick(event)">'+items+'<div class="gdrop" id="gdrop" hidden></div></div>';
       // 팔레트 항목을 그리드로 바로 드래그해 배치(탭하면 선택). 아이콘은 크게.
       const pal=ITEM_CATALOG.map(it=>{ const foot=itemFoot(it.id);
-        return '<button class="pitem'+(_selItem===it.id?' on':'')+'" onpointerdown="palDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selItem(\''+it.id+'\')"><span class="pic">'+furnSvg(it.id,{h:30})+'</span><span>'+it.name+'</span><span class="pq">'+foot.w+'×'+foot.h+' · 남은 '+itemRemaining(it.id)+'</span></button>'; }).join('');
+        const picH=Math.round(18+Math.min(1,furnScale(it.id)/2)*14);   // 아이템 크기(size)에 비례한 팔레트 아이콘 높이(작은 그릇·방석은 작게, 큰 가구는 32칸 꽉) — 셀 밖으로 안 튀어나오게 .pic가 max-width로 한 번 더 클램프
+        return '<button class="pitem'+(_selItem===it.id?' on':'')+'" onpointerdown="palDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selItem(\''+it.id+'\')"><span class="pic">'+furnSvg(it.id,{h:picH})+'</span><span>'+it.name+'</span><span class="pq">'+foot.w+'×'+foot.h+' · 남은 '+itemRemaining(it.id)+'</span></button>'; }).join('');
       // 미니 웹캠 프리뷰: 현재 배치를 실제 방 뷰로 보여줘 방향 헷갈림 방지(표시 전용)
       const plist=placedList().sort((a,b)=>a.r-b.r); distributePoops(plist);
       const preview='<div class="miniroom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div><span class="cr-cam"><i></i>미리보기</span><div class="cr-props">'+plist.map(p=>propMarkup(p,true)).join('')+'</div></div>';
