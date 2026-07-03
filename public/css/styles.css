@@ -63,7 +63,7 @@
     /* 인증 상태 확인 전 스플래시 — 로그인창/앱 둘 다 숨겨 iOS PWA 로그인창 깜빡임 방지 */
     body.auth-pending #authScreen, body.auth-pending #app { display:none !important; }
     body.auth-pending::after { content:''; position:fixed; inset:0; z-index:5; background-color:var(--bg);
-      background-image:url('../icons/egg-garden.svg'); background-repeat:no-repeat; background-position:center; background-size:min(56vw,240px) auto; image-rendering:pixelated; }
+      background-image:url('../icons/egg-garden.svg'); background-repeat:no-repeat; background-position:center; background-size:min(28vw,120px) auto; image-rendering:pixelated; }
     .auth-wrap {
       max-width:var(--maxw); margin:0 auto; height:100vh; height:100dvh; overflow-y:auto; overflow-x:hidden; background:var(--bg);
       display:flex; flex-direction:column; justify-content:center; padding:32px 36px 44px; scrollbar-width:none;
