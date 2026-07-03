@@ -59,6 +59,9 @@
     .blue { color:var(--primary); }
 
     /* ===== 로그인 ===== */
+    /* 인증 상태 확인 전 스플래시 — 로그인창/앱 둘 다 숨겨 iOS PWA 로그인창 깜빡임 방지 */
+    body.auth-pending #authScreen, body.auth-pending #app { display:none !important; }
+    body.auth-pending::after { content:''; position:fixed; inset:0; background:var(--bg); z-index:5; }
     .auth-wrap {
       max-width:var(--maxw); margin:0 auto; height:100vh; height:100dvh; overflow-y:auto; overflow-x:hidden; background:var(--bg);
       display:flex; flex-direction:column; justify-content:center; padding:32px 36px 44px; scrollbar-width:none;
@@ -354,6 +357,11 @@
     .mstack .ms-av:first-child { margin-left:0; }
     .mstack .ms-more { margin-left:-8px; min-width:26px; height:26px; padding:0 4px; border-radius:50%; background:var(--soft2); color:var(--text2); font-size:10px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; border:2px solid var(--bg); }
     .grid4 { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px 2px; padding:8px 0 4px; }
+    /* 더보기: 모드 전용 아이콘과 공통 아이콘을 가르는 얇은 라벨 구분선 */
+    .gsep { display:flex; align-items:center; gap:10px; margin:12px 4px 4px; }
+    .gsep::before, .gsep::after { content:''; flex:1; height:1px; background:var(--line); }
+    .gsep span { font-size:11px; font-weight:700; color:var(--sub); letter-spacing:.02em; }
+    .gsep + .grid4 { padding-top:0; }   /* 구분선 바로 아래 그리드는 상단 여백 제거(간격 과하지 않게) */
     .gcell { display:flex; flex-direction:column; align-items:center; gap:7px; padding:3px 0; transition:transform .08s; }
     .gic { width:58px; height:58px; border-radius:18px; background:var(--soft); display:flex; align-items:center; justify-content:center; color:var(--text); position:relative; }
     .gic svg { width:28px; height:28px; }

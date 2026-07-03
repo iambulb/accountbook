@@ -22,6 +22,7 @@
       myTodos:[],   // 내 개인 할일(user-global: users/{uid}/todos) — 워크스페이스 무관
       friends:{}, friendReqs:{}, todoPublic:false, friendCode:'', friendPub:{},   // 친구 관계·받은 요청·내 공개 플래그·내 코드·친구별 공개여부(users/{uid}/…)
       friendLikes:{}, friendHomeChangedByUid:{}, myLikeCount:0, _friendCam:null,   // 친구별 집 좋아요수·집 변경시각 / 내 받은 좋아요 / 방문 중 친구 캠 컨텍스트
+      profilePublic:true,   // 내 프로필 공개 여부(비공개면 랭킹·비친구에게 은화+'알뜰' 익명)
       friendTodosByUid:{}, _feedFriend:null,   // 공개 친구별 개인 할일(피드) / '친구들' 피드에서 선택한 친구(null=전체)
       friendTodos:[], _friendTodosUid:null,   // 현재 열람 중인 친구의 개인 할일(임시 리스너)
       _todoScope: (localStorage.getItem('todoScope')==='group' ? 'group' : 'personal'),   // 할일 세그먼트: 개인/그룹(친구들)
@@ -247,6 +248,7 @@
       const sw=el.querySelector('.switch'); if(sw) sw.classList.toggle('on', on); el.setAttribute('aria-checked', on?'true':'false'); }); }
     function toggleAuthOpt(k){ const on=!authOptGet(k); authOptSet(k,on);
       if(k==='saveId' && !on){ try{ localStorage.removeItem('auth_savedEmail'); }catch(e){} }   // 끄면 저장된 아이디 삭제
+      if(k==='autoLogin'){ try{ const p=authPersistence(); if(p) auth.setPersistence(p).catch(()=>{}); }catch(e){} }   // 자동로그인 토글 → 지속성 즉시 반영
       authOptPaint(); }
     // 로그인 화면 진입 시 토글 상태·저장된 아이디 반영.
     function initAuthOpts(){ authOptPaint();
@@ -257,8 +259,7 @@
     function beforeAuth(email){
       if(authOptGet('saveId')){ try{ localStorage.setItem('auth_savedEmail', email); }catch(e){} }
       else { try{ localStorage.removeItem('auth_savedEmail'); }catch(e){} }
-      const p=authPersistence();
-      return p ? auth.setPersistence(p).catch(()=>{}) : Promise.resolve();
+      return Promise.resolve();   // 지속성(setPersistence)은 부팅 시 1회만 설정 → 로그인마다 재설정하지 않음(iOS 인증상태 깜빡임 방지)
     }
     function setAuthMode(m){
       authMode=m;
@@ -316,18 +317,27 @@
           toast(c==='auth/user-not-found'?'가입되지 않은 이메일이에요':(c==='auth/invalid-email'?'이메일 형식이 올바르지 않아요':(e.message||'전송 실패')), true); });
     }
 
+    // Firebase가 세션(자동 로그인)을 복원할 때까지 로그인창을 띄우지 않는다(스플래시) → iOS 홈화면 PWA에서 로그인창 깜빡임 방지.
+    try{ document.body.classList.add('auth-pending'); }catch(e){}
+    try{ const _p=authPersistence(); if(_p) auth.setPersistence(_p).catch(()=>{}); }catch(e){}   // 지속성은 부팅 시 1회만
+    let _hadUser=false, _loginTimer=0;
     auth.onAuthStateChanged(user=>{
-      if(user){ enterApp(user); }
-      else {
-        detachListeners();
-        state.uid=null; state.userName=''; state.userEmail='';
-        state.wsId=null; state.wsMeta=null; state.memberships=[];
-        $('authScreen').style.display='flex';
-        $('app').style.display='none';
-        initAuthOpts();   // 토글 상태·저장된 아이디 반영
+      try{ document.body.classList.remove('auth-pending'); }catch(e){}   // 첫 인증 결정 시 스플래시 해제
+      if(_loginTimer){ clearTimeout(_loginTimer); _loginTimer=0; }   // 대기 중이던 '로그인화면 표시' 취소(전환 null→user 흡수)
+      if(user){
+        _hadUser=true;
+        if(state.uid===user.uid) return;   // 같은 유저로 이미 진입 → 중복 onAuthStateChanged 무시(이중 부팅 방지)
+        enterApp(user);
+      } else {
+        const showLogin=function(){ if(auth.currentUser) return;   // 그새 세션이 복원됐으면 무시
+          detachListeners(); state.uid=null; state.userName=''; state.userEmail='';
+          state.wsId=null; state.wsMeta=null; state.memberships=[];
+          $('authScreen').style.display='flex'; $('app').style.display='none'; initAuthOpts(); };
+        if(_hadUser){ _loginTimer=setTimeout(showLogin, 600); }   // 로그인 상태였다 null → iOS 순간 null을 지연 흡수
+        else showLogin();   // 처음부터 미로그인 → 즉시 로그인화면
       }
     });
-    initAuthOpts();   // 첫 로드 시(인증 상태 확인 전) 로그인 화면 토글 즉시 반영
+    initAuthOpts();   // 첫 로드 시 토글 상태·저장된 아이디 반영(스플래시 뒤에서 준비)
 
     // ===== 워크스페이스 부트스트랩 =====
     async function enterApp(user){
@@ -341,6 +351,7 @@
         }
         state.userName=u.name;
         state.userPhotos[state.uid]=u.photo||'';
+        state.profilePublic=(u.profilePublic!==false);   // 기본 공개(미설정=공개)
         $('authScreen').style.display='none';
         $('app').style.display='flex';
         initUserGraph();   // 개인 할일·친구(user-global) 상시 리스너 — 워크스페이스 무관
@@ -554,11 +565,12 @@
         rerender();
       }catch(e){}
     }
-    // 프로필 저장: 사진(photoChange: undefined=유지 / ''=삭제 / dataURL=교체) + 이름(별명)
-    async function saveProfile(name, photoChange){
+    // 프로필 저장: 사진(photoChange: undefined=유지 / ''=삭제 / dataURL=교체) + 이름(별명) + 공개여부(isPublic: undefined=유지)
+    async function saveProfile(name, photoChange, isPublic){
       name=(name||'').trim()||state.userName;
       const upd={ name };
       if(photoChange!==undefined) upd.photo=photoChange||null;   // ''/null → 삭제
+      if(isPublic!==undefined) upd.profilePublic=!!isPublic;
       await db.ref('users/'+state.uid).update(upd);
       // 이름 비정규화: 내가 속한 모든 워크스페이스의 멤버 이름 갱신
       (state.memberships||[]).forEach(w=>{
@@ -568,6 +580,8 @@
       if(state.wsMeta&&state.wsMeta.members&&state.wsMeta.members[state.uid]) state.wsMeta.members[state.uid].name=name;
       state.userName=name;
       if(photoChange!==undefined) state.userPhotos[state.uid]=photoChange||'';
+      if(isPublic!==undefined) state.profilePublic=!!isPublic;
+      if(typeof writeMyRanking==='function') writeMyRanking();   // 랭킹 엔트리(이름·공개여부) 갱신
       rerender();
     }
     // 이름/uid 해시 → 폴백 아바타 배경색
