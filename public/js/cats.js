@@ -288,11 +288,11 @@
     const FOOD_PAL={F:'#d68b4a',D:'#8a5427',L:'#f2e4c6',K:'#7a4a20'};
     const WATER_PAL={A:'#5aa9e6',D:'#3f86c4',H:'#c7e6ff',L:'#eaf6ff'};
     // ---- 펫알/랜덤박스 도트 ----
-    // 알: 위는 둥근 돔(꼭대기 좁게), 아래가 넓고 둥글게. 상단 외곽은 S(밝은 회색)로 계단 모서리를 부드럽게(안티에일리어싱)해 실루엣이 투박하지 않게. 중앙에 크고 두꺼운 무지개(R→P) 물음표(위 방향 유지). S=우측 그림자·상단 외곽 완화.
+    // 알: 위는 둥근 돔(꼭대기 좁게), 아래가 넓고 둥글게. 테두리는 바깥이 진한 X(#968c76), 그 안쪽에 연한 S 링 → 외곽선이 또렷·진하게(전체 통일). 중앙에 크고 두꺼운 무지개(R→P) 물음표. S=안쪽 연한 링·우측 그림자.
     const M_EGG = [
-      ".....SXXS.....",
-      "....SXWWXS....",
-      "...SXWWWWXS...",
+      ".....XSSX.....",
+      "....XSWWSX....",
+      "...XSWWWWSX...",
       "...XWWWWWWX...",
       "..XWWWWWWWWX..",
       ".XWWWRRRRWWWX.",
@@ -309,9 +309,9 @@
     ];
     // 균열1: 위쪽부터 지그재그(번개) 잔금이 생김(쩌저적 갈라짐 시작)
     const M_EGG_C1 = [
-      ".....SXXS.....",
-      "....SXWWXS....",
-      "...SXWXWWXS...",
+      ".....XSSX.....",
+      "....XSWWSX....",
+      "...XSWSWWSX...",
       "...XWXXWWWX...",
       "..XWXWWWWWWX..",
       ".XWXWRRRRWWWX.",
@@ -328,9 +328,9 @@
     ];
     // 균열2: 지그재그 금이 전체로 번지고 살짝 벌어짐(틈+빛 조금)
     const M_EGG_C2 = [
-      ".....SXXS.....",
-      "....SX.XXS....",
-      "...SXW.WWXS...",
+      ".....XSSX.....",
+      "....XS.SSX....",
+      "...XSW.WWSX...",
       "...XWWX.XWX...",
       "..XWWL.WWWWX..",
       ".XWWX.XRRWWWX.",
@@ -347,9 +347,9 @@
     ];
     // 균열3(3번째 탭): 알이 지그재그로 쩍! 크게 갈라지고, 벌어진 틈(L)으로 등급색 빛이 쏟아진다. L=빛(렌더 시 등급색).
     const M_EGG_C3 = [
-      ".....SXXS.....",
-      "....SX.LXS....",
-      "...SXL.LWXS...",
+      ".....XSSX.....",
+      "....XS.LSX....",
+      "...XSL.LWSX...",
       "...XWWL.LWX...",
       "..XWL..LWWWX..",
       ".XWL..LRRWWWX.",
@@ -466,11 +466,11 @@
       ".XWWWWWPPWWWWWX.",
       ".XXXXXXXXXXXXXX."
     ];
-    const EGG_PAL={X:'#c9c2b0',W:'#FBFBFD',S:'#E7E3DA',R:'RAINBOW',O:'RAINBOW',Y:'RAINBOW',G:'RAINBOW',B:'RAINBOW',P:'RAINBOW'};
+    const EGG_PAL={X:'#968c76',W:'#FBFBFD',S:'#d2ccbe',R:'RAINBOW',O:'RAINBOW',Y:'RAINBOW',G:'RAINBOW',B:'RAINBOW',P:'RAINBOW'};   // X=바깥 진한 테두리, S=안쪽 연한 링(스왑)
     const BOX_PAL={X:'#b9c0cb',W:'#FBFBFD',C:'#cdd5e4',L:'#b7c0d4',R:'RAINBOW',O:'RAINBOW',Y:'RAINBOW',G:'RAINBOW',B:'RAINBOW',P:'RAINBOW'};
     // 무지개알/무지개박스: 껍질(W)·윗면(C·L)·완화픽셀(S)을 통째로 RAINBOW(pxSvg의 움직이는 세로 무지개 그라디언트),
     // 물음표(R/O/Y/G/B/P)는 흰색으로 대비, 외곽(X)은 은은한 중립색 → "온몸이 움직이는 무지개빛"인 알/상자.
-    const EGG_PAL_RB={X:'#b7b0a2',W:'RAINBOW',S:'RAINBOW',R:'#FBFBFD',O:'#FBFBFD',Y:'#FBFBFD',G:'#FBFBFD',B:'#FBFBFD',P:'#FBFBFD'};
+    const EGG_PAL_RB={X:'#968c76',W:'RAINBOW',S:'RAINBOW',R:'#FBFBFD',O:'#FBFBFD',Y:'#FBFBFD',G:'#FBFBFD',B:'#FBFBFD',P:'#FBFBFD'};   // 무지개알도 바깥 진한 테두리
     const BOX_PAL_RB={X:'#9aa2b0',W:'RAINBOW',C:'RAINBOW',L:'RAINBOW',R:'#FBFBFD',O:'#FBFBFD',Y:'#FBFBFD',G:'#FBFBFD',B:'#FBFBFD',P:'#FBFBFD'};
     // 은화 속 검은 고양이의 앞발(특별↑ 연출에서 톡 건드림)
     const M_PAW = [
@@ -692,10 +692,10 @@
     function rainbowBoxSvg(opt){ return pxSvg(M_BOX, BOX_PAL_RB, opt); }
     function rainbowEggStage(stage, opt){ return pxSvg([M_EGG,M_EGG_C1,M_EGG_C2][stage]||M_EGG, EGG_PAL_RB, opt); }
     // 3번째 탭: 크게 갈라진 알 + 틈새로 새어나오는 등급색 빛(L=등급색). rainbow면 껍질은 무지갯빛 유지.
-    function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); return pxSvg(M_EGG_C3, pal, opt); }
+    function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); if(rainbow) pal.X='RAINBOW'; return pxSvg(M_EGG_C3, pal, opt); }   // 무지개알 열 때: 테두리(X)까지 무지개색
     // 픽셀 껍질 조각 렌더(A=큰 곡면, B=삼각, C=작은 조각). rainbow면 무지갯빛 껍질.
-    const SHELL_PAL={X:'#c9c2b0',W:'#FBFBFD',S:'#E7E3DA'};
-    const SHELL_PAL_RB={X:'#b7b0a2',W:'RAINBOW',S:'RAINBOW'};
+    const SHELL_PAL={X:'#968c76',W:'#FBFBFD',S:'#d2ccbe'};   // 껍질 조각도 진한 테두리(알과 통일)
+    const SHELL_PAL_RB={X:'#968c76',W:'RAINBOW',S:'RAINBOW'};
     function shellSvg(which, rainbow, opt){ const M=[M_SHELL_A,M_SHELL_B,M_SHELL_C][which]||M_SHELL_A; return pxSvg(M, rainbow?SHELL_PAL_RB:SHELL_PAL, opt); }
     // ✦ 픽셀 빛 폭발(별) — 등급색으로. color 미지정 시 currentColor(무대 등급색 상속).
     function raysSvg(color, opt){ return pxSvg(M_RAYS, {X:color||'currentColor',H:'#ffffff'}, opt); }
