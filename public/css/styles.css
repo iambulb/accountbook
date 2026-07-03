@@ -878,7 +878,9 @@
     .fx-aurawrap, .fx-twinkles { position:absolute; left:50%; top:50%; width:0; height:0; pointer-events:none; }
     .fx-aurawrap { z-index:0; }
     .fx-twinkles { z-index:3; }
-    .fx-aurawrap .ll-aura { opacity:.24; } .fx-aurawrap .ll-rays.a { opacity:.42; } .fx-aurawrap .ll-rays.b { opacity:.26; }
+    /* 등장(펫) 연출: 큰 발산 광선은 빼고 — 펫 주변에 작고 은은한 오오라 + 트윙클 반짝임만 */
+    .fx-aurawrap .ll-rays { display:none; }
+    .fx-aurawrap .ll-aura { opacity:.2; transform:translate(-50%,-50%) scale(.58); animation:llpulse 2.0s steps(6) infinite; }
     .fx-tw { position:absolute; left:50%; top:50%; image-rendering:pixelated; opacity:0;
       transform:translate(calc(-50% + var(--tx,0px)), calc(-50% + var(--ty,0px))) scale(0); animation:fxtw 1.4s steps(3) infinite; }
     .fx-tw .px { display:block; }
@@ -906,15 +908,15 @@
     /* 무지개알/박스: 움직이는 무지개 도트만(왼쪽으로 흐르던 둥근 오오라 제거 — 픽셀아트 규칙) */
     .fx-item.fx-rainbow { filter:drop-shadow(0 0 8px rgba(255,255,255,.5)); }
     /* ✦ 픽셀 빛 연출 — 둥근 글로우/방사 그라디언트 대신 도트 선버스트(M_RAYS)+디더 오오라(M_AURA). 색=등급색(currentColor), 도트 유지(pixelated) */
-    /* 층층 광선: 은은한 오오라 + 서로 반대로 도는 광선 2겹(+맥동) → "그냥 회전만" 아닌 살아있는 빛 */
+    /* 층층 광선: 은은한 오오라 + 바깥으로 살짝씩 퍼져나가는(발산) 광선 2겹(회전 아님) → 빛이 번지듯 새어나옴 */
     .ll-aura, .ll-rays { position:absolute; left:50%; top:50%; display:block; image-rendering:pixelated; }
-    .ll-aura { transform:translate(-50%,-50%); opacity:.30; animation:llpulse 2.4s steps(6) infinite; }
-    .ll-rays.a { opacity:.52; transform:translate(-50%,-50%); animation:llspin 15s steps(24) infinite, llflick 2.2s steps(4) infinite; }
-    .ll-rays.b { opacity:.34; transform:translate(-50%,-50%); animation:llspinr 22s steps(24) infinite; }
-    @keyframes llspin  { to{ transform:translate(-50%,-50%) rotate(360deg); } }
-    @keyframes llspinr { to{ transform:translate(-50%,-50%) rotate(-360deg); } }
-    @keyframes llpulse { 0%,100%{ opacity:.16; } 50%{ opacity:.34; } }
-    @keyframes llflick { 0%,100%{ opacity:.40; } 50%{ opacity:.60; } }
+    .ll-aura { transform:translate(-50%,-50%); opacity:.22; animation:llpulse 2.6s steps(6) infinite; }
+    .ll-rays { transform:translate(-50%,-50%); }
+    .ll-rays.a { opacity:.44; animation:llbreath 2.6s steps(6) infinite; }     /* 베이스: 디테일한 버스트가 항상 보이며 살짝 숨쉬듯 */
+    .ll-rays.b { opacity:0; animation:llspread 2.4s steps(7) infinite; }        /* 파문: 바깥으로 살짝씩 퍼지며 사라짐(반복) */
+    @keyframes llbreath { 0%,100%{ transform:translate(-50%,-50%) scale(.94); } 50%{ transform:translate(-50%,-50%) scale(1.08); } }
+    @keyframes llspread { 0%{ transform:translate(-50%,-50%) scale(.86); opacity:.38; } 100%{ transform:translate(-50%,-50%) scale(1.5); opacity:0; } }
+    @keyframes llpulse { 0%,100%{ opacity:.12; } 50%{ opacity:.26; } }
     /* 갈라진 틈으로 새어나오는 빛: 껍질과 함께 자라나며 등장(내부 광선은 자체 회전·맥동) */
     .fx-cracklight { position:absolute; left:50%; top:50%; z-index:1; transform:translate(-50%,-50%) scale(.3); opacity:0; animation:fxlight .7s steps(6) forwards; }
     .fx-pixflash { position:absolute; left:50%; top:50%; z-index:2; transform:translate(-50%,-50%) scale(.4); image-rendering:pixelated; animation:fxpixflash .5s steps(5) forwards; }
