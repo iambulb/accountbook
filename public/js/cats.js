@@ -2826,7 +2826,8 @@
       const grid='<div class="grid12" id="placeGrid" onclick="placeClick(event)">'+items+'<div class="gdrop" id="gdrop" hidden></div></div>';
       // 팔레트 항목을 그리드로 바로 드래그해 배치(탭하면 선택). 아이콘은 크게.
       const pal=ITEM_CATALOG.map(it=>{ const foot=itemFoot(it.id);
-        const picH=Math.round(18+Math.min(1,furnScale(it.id)/2)*14);   // 아이템 크기(size)에 비례한 팔레트 아이콘 높이(작은 그릇·방석은 작게, 큰 가구는 32칸 꽉) — 셀 밖으로 안 튀어나오게 .pic가 max-width로 한 번 더 클램프
+        // 팔레트 아이콘 높이 = 방 렌더 크기(ROOM_H)에 sqrt로 완만 비례 → 실제로 작은 그릇은 작게, 큰 캣타워는 크게 보이되 극단 비율(0.6~6.2배)은 압축(√). 최소 16px(너무 작지 않게)·최대 30px(작은 걸 셀에 꽉 채우지 않음). 셀 밖 넘침은 .pic max-width가 한 번 더 클램프.
+        const rh=(ROOM_H[it.id]||1); const picH=Math.max(16,Math.min(30,Math.round(11+Math.sqrt(rh)*7.5)));
         return '<button class="pitem'+(_selItem===it.id?' on':'')+'" onpointerdown="palDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selItem(\''+it.id+'\')"><span class="pic">'+furnSvg(it.id,{h:picH})+'</span><span>'+it.name+'</span><span class="pq">'+foot.w+'×'+foot.h+' · 남은 '+itemRemaining(it.id)+'</span></button>'; }).join('');
       // 미니 웹캠 프리뷰: 현재 배치를 실제 방 뷰로 보여줘 방향 헷갈림 방지(표시 전용)
       const plist=placedList().sort((a,b)=>a.r-b.r); distributePoops(plist);
