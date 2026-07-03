@@ -21,6 +21,7 @@
       todos:[], todoShare:{},   // 그룹 할일 목록(ws/{wsId}/todos) / (레거시) 멤버별 공유 플래그
       myTodos:[],   // 내 개인 할일(user-global: users/{uid}/todos) — 워크스페이스 무관
       friends:{}, friendReqs:{}, todoPublic:false, friendCode:'', friendPub:{},   // 친구 관계·받은 요청·내 공개 플래그·내 코드·친구별 공개여부(users/{uid}/…)
+      friendLikes:{}, friendHomeChangedByUid:{}, myLikeCount:0, _friendCam:null,   // 친구별 집 좋아요수·집 변경시각 / 내 받은 좋아요 / 방문 중 친구 캠 컨텍스트
       friendTodosByUid:{}, _feedFriend:null,   // 공개 친구별 개인 할일(피드) / '친구들' 피드에서 선택한 친구(null=전체)
       friendTodos:[], _friendTodosUid:null,   // 현재 열람 중인 친구의 개인 할일(임시 리스너)
       _todoScope: (localStorage.getItem('todoScope')==='group' ? 'group' : 'personal'),   // 할일 세그먼트: 개인/그룹(친구들)
@@ -371,8 +372,12 @@
     // 친구별 '할일 공개' 여부를 읽어 캐시(친구 목록 변경 시 갱신). 공개 친구만 피드에 노출.
     function loadFriendPublics(){
       const fr=Object.keys(state.friends||{}); state.friendPub=state.friendPub||{};
-      Object.keys(state.friendPub).forEach(uid=>{ if(fr.indexOf(uid)<0) delete state.friendPub[uid]; });   // 삭제된 친구 정리
-      fr.forEach(uid=>{ db.ref('users/'+uid+'/todoPublic').once('value').then(s=>{ state.friendPub[uid]=!!s.val(); syncFriendTodoWatch(); rerender(); }).catch(()=>{}); });
+      Object.keys(state.friendPub).forEach(uid=>{ if(fr.indexOf(uid)<0){ delete state.friendPub[uid]; delete state.friendLikes[uid]; delete state.friendHomeChangedByUid[uid]; } });   // 삭제된 친구 정리
+      fr.forEach(uid=>{ db.ref('users/'+uid+'/todoPublic').once('value').then(s=>{ state.friendPub[uid]=!!s.val(); syncFriendTodoWatch(); rerender(); }).catch(()=>{});
+        // 친구 목록/스토리용: 집 좋아요수 + 집 변경시각(무지개 링)
+        db.ref('users/'+uid+'/homeLikes').once('value').then(s=>{ state.friendLikes[uid]=(typeof homeLikeCount==='function'?homeLikeCount(s.val()):0); rerender(); }).catch(()=>{});
+        db.ref('users/'+uid+'/game/home/changedAt').once('value').then(s=>{ state.friendHomeChangedByUid[uid]=s.val()||''; rerender(); }).catch(()=>{});
+      });
       syncFriendTodoWatch();
     }
     // 공개 친구별 개인 할일(users/{uid}/todos) 실시간 리스너 동기화 → state.friendTodosByUid. 비공개/삭제 친구는 해제.

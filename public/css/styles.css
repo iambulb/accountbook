@@ -456,6 +456,7 @@
       position:fixed; bottom:84px; left:50%; transform:translateX(-50%) translateY(20px);
       background:var(--text); color:var(--bg); padding:13px 20px; border-radius:14px; font-size:14px; font-weight:600;
       z-index:60; opacity:0; transition:all .25s; max-width:90%; text-align:center; box-shadow:0 8px 28px rgba(0,0,0,.22);
+      pointer-events:none;   /* 상태 알림(role=status)은 입력을 가로채면 안 됨 — opacity:0이어도 남아 FAB(+) 탭을 먹던 버그 방지 */
     }
     .toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
     .toast.err { background:var(--expense); color:#fff; }
@@ -985,6 +986,17 @@
     .x { min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; }
     .icon-btn { min-width:34px; min-height:34px; display:inline-flex; align-items:center; justify-content:center; }
     /* 화면에는 숨기되 스크린리더에는 읽히는 텍스트 */
+    /* 친구 집(펫캠) 방문 — 좋아요 바 + 이름옆 하트 + 친구목록 무지개 링 */
+    .likebar { display:flex; align-items:center; gap:12px; margin:12px 0 4px; }
+    .likebtn { display:inline-flex; align-items:center; gap:7px; padding:9px 16px; border-radius:999px; border:1.5px solid var(--line); background:var(--card); color:var(--text); font-size:15px; font-weight:800; }
+    .likebtn.on { border-color:#F0546A; color:#F0546A; }
+    .likebtn .px { display:block; }
+    .likehint { font-size:12.5px; color:var(--sub); font-weight:600; }
+    .likemini { display:inline-flex; align-items:center; gap:3px; font-size:12.5px; font-weight:800; color:var(--sub); flex:none; }
+    .likemini .px { display:block; }
+    .friendrow { cursor:pointer; }
+    .tdwho.avring { padding:2px; border-radius:50%; background:conic-gradient(from 0deg,#ff5b5b,#ffb14d,#ffe24d,#4dff8f,#4dc6ff,#b04dff,#ff5b5b); }
+    .tdwho.avring .avatar { border:2px solid var(--card); box-sizing:border-box; }
     /* 개발자 펫 관리 */
     .petmg-list { display:flex; flex-direction:column; gap:6px; max-height:46vh; overflow:auto; margin-bottom:14px; -webkit-overflow-scrolling:touch; }
     .petmg-row { display:flex; align-items:center; gap:12px; width:100%; text-align:left; padding:9px 12px; border:1.5px solid var(--line); border-radius:12px; background:var(--card); color:var(--text); }

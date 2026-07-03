@@ -12,12 +12,13 @@ users/{uid}            : { name, email, photo(프로필 사진 base64 data URL),
                            friendCode: "ABC123",                   // 내 친구 코드(friendCodes 인덱스와 짝)
                            friends:{ {friendUid}:{ name, at } },   // 상호 친구(수락 시 양쪽 기록)
                            friendReqs:{ {fromUid}:{ name, at } },  // 받은 친구 요청(수락 시 삭제)
+                           homeLikes:{ {visitorUid}:{ n, last:"YYYY-MM-DD" } },  // ❤️ 내 집(펫캠)에 받은 좋아요 — 방문자별 누적 n + 마지막 날짜(하루 1회). 총 좋아요=Σn. 쓰기=방문자 자신($visitor)만(규칙)
                            game:{ 🐱 고양이집(개인 전역, 워크스페이스 무관)
                              coins,                                  // 은화 잔액(정수)
                              gold,                                   // 금화(뽑기 오픈마다 +1)
                              owned:{ cats:{ {catId}:{boughtAt} }, items:{ {itemId}:{boughtAt,qty} }, wallpapers:{ {wallId}:{boughtAt} } },
                              consum:{ food, water, egg, box, rainbow_egg, rainbow_box },  // 🎒 가방(보유 소비 아이템 수): 사료·물(그릇 채움) + 펫알·랜덤박스(일반 확률 오픈) + 무지개알·무지개박스(특별↑ 오픈)
-                             home:{ active:[catId…], placed:{ {"r_c"}:{itemId, filledAt?} }, wallpaper:wallId, poops, slots },  // filledAt=밥/물 채운 시각(ms, 3h 뒤 비워지며 poops+1) · poops=미수거 똥 수(탭 시 +2은화) · slots=활성 슬롯 수(기본3·금화로 확장)
+                             home:{ active:[catId…], placed:{ {"r_c"}:{itemId, filledAt?} }, wallpaper:wallId, poops, slots, changedAt:"ISO" },  // filledAt=밥/물 채운 시각(ms, 3h 뒤 비워지며 poops+1) · poops=미수거 똥 수(탭 시 +2은화) · slots=활성 슬롯 수(기본3·금화로 확장) · changedAt=펫 노출/가구 마지막 변경 시각(친구 스토리 무지개 링 근거)
                              missions:{ {periodKey}:{ {missionId}:{claimed,reward,at} } },  // periodKey=KST 일자 2026-07-01(day)·주(week)·once. 일일/주간/업적 수령 기록(멱등)
                              customMissions:{ {id}:{ title, coinReward, active, createdAt, order } },  // 🎯 내 미션(커스텀 습관, 최대 5개) 정의. 보상은 7일 연속 마일스톤(coinReward는 레거시)
                              missionLogs:{ {missionId}:{ "YYYY-MM-DD":{ done, at, bonus } } },  // 내 미션 체크인 로그(날짜키=하루1회 멱등). bonus=그날 지급한 연속 마일스톤 보너스(재체크 재지급 방지). 매일 체크 무보상·7일 연속마다 은화

@@ -5,7 +5,8 @@
       "$uid": {
         ".write": "auth != null && auth.uid === $uid",
         "friends":    { "$fid": { ".write": "auth != null && (auth.uid === $uid || auth.uid === $fid)" } },
-        "friendReqs": { "$fid": { ".write": "auth != null && (auth.uid === $uid || auth.uid === $fid)" } }
+        "friendReqs": { "$fid": { ".write": "auth != null && (auth.uid === $uid || auth.uid === $fid)" } },
+        "homeLikes":  { "$visitor": { ".write": "auth != null && auth.uid === $visitor" } }
       }
     },
 

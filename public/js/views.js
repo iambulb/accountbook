@@ -645,7 +645,7 @@
           (fr.length?fr.map(function(u){ const f=state.friends[u]||{};
             const likes=(state.friendLikes&&state.friendLikes[u])||0; const changed=friendChangedToday(u);
             const av='<span class="tdwho'+(changed?' avring':'')+'">'+avatarHtml(u,f.name||'',28)+'</span>';
-            return '<div class="tdrow friendrow" role="button" tabindex="0" onclick="openFriendHome(\''+u+'\')"><span class="tdwho-wrap">'+av+'</span><b class="tdtitle">'+escapeHtml(f.name||'친구')+'</b>'+
+            return '<div class="tdrow friendrow" role="button" tabindex="0" onclick="openFriendHome(\''+u+'\')">'+av+'<b class="tdtitle">'+escapeHtml(f.name||'친구')+'</b>'+
               '<span class="likemini">'+heartSvg({h:13})+' '+likes+'</span>'+
               '<button class="buy dis" onclick="event.stopPropagation();removeFriend(\''+u+'\')">삭제</button></div>'; }).join(''):'<div class="empty" style="padding:22px 6px;">아직 친구가 없어요 · 위 코드로 추가하세요</div>')+'</div>';
         h+='<p class="muted" style="font-size:12px;margin-top:10px;">친구를 탭하면 <b>집(펫캠)</b>을 방문해 좋아요를 누를 수 있어요. 등록한 할일은 <b>할일 → 친구들</b>에서도 볼 수 있어요.</p>';
@@ -653,6 +653,48 @@
       };
       openSheet('친구', build());
       state._sheetRefresh=function(){ const b=$('sheetBody'); if(b) b.innerHTML=build(); };
+    }
+    function friendChangedToday(uid){ const c=state.friendHomeChangedByUid&&state.friendHomeChangedByUid[uid]; return !!(c && String(c).slice(0,10)===ymd(new Date())); }
+    // ===== 친구 집(펫캠) 방문 — 캠 + 좋아요 + 오늘의 할일(공개 시) =====
+    function openFriendHome(uid){
+      if(!uid || uid===state.uid){ if(typeof openCatHouse==='function') openCatHouse('home'); return; }   // 내 집이면 내 알뜰샵 홈
+      const nm=friendDisplayName(uid);
+      openSheet(nm+'의 집', '<div class="empty" style="padding:40px 12px;">불러오는 중…</div>');
+      Promise.all([
+        db.ref('users/'+uid+'/game').once('value'),
+        db.ref('users/'+uid+'/todoPublic').once('value'),
+        db.ref('users/'+uid+'/homeLikes').once('value'),
+        db.ref('users/'+uid+'/todos').once('value')
+      ]).then(function(res){
+        if(!($('sheet')&&$('sheet').classList.contains('on'))) return;   // 그새 닫혔으면 중단
+        const fg=normalizeGame(res[0].val()), pub=!!res[1].val(), likes=res[2].val();
+        state._friendCam={ uid:uid, name:nm, game:fg, placedList:friendPlacedList(fg), active:friendActiveCats(fg) };
+        try{ markStorySeen(uid, new Date().toISOString()); }catch(e){}   // 방문 = 스토리 열람 → 무지개 링 해제
+        const cnt=homeLikeCount(likes), liked=likedTodayBy(likes, state.uid);
+        let h=friendRoomHtml(fg, nm);
+        h+='<div class="likebar"><button class="likebtn'+(liked?' on':'')+'" onclick="likeFriendHome(\''+uid+'\')"'+(liked?' disabled':'')+' aria-label="좋아요">'+heartSvg({h:20,off:!liked})+'<b id="fhLikeN">'+cnt+'</b></button>'+
+           '<span class="likehint">'+(liked?'오늘 좋아요 완료 · 내일 또 눌러주세요':'하루 한 번 좋아요를 눌러줄 수 있어요')+'</span></div>';
+        const todosObj=res[3].val()||{};
+        if(pub){
+          const undone=Object.keys(todosObj).map(function(k){ return Object.assign({id:k}, todosObj[k]); }).filter(function(t){ return !t.done; })
+            .sort(function(a,b){ const ad=a.dueDate||'9999-99', bd=b.dueDate||'9999-99'; return ad<bd?-1:(ad>bd?1:0); });
+          h+='<div class="sech"><span class="l">오늘의 할일</span><span class="s">'+undone.length+'</span></div>';
+          h+='<div class="card" style="padding:4px 12px;">'+(undone.length?undone.map(function(t){ return friendTodoRow(uid,t); }).join(''):'<div class="empty" style="padding:18px 6px;">등록한 할일이 없어요</div>')+'</div>';
+        } else {
+          h+='<p class="muted" style="font-size:12px;margin-top:14px;text-align:center;">이 친구는 할일을 공개하지 않았어요</p>';
+        }
+        const b=$('sheetBody'); if(b) b.innerHTML=h;
+        setTimeout(function(){ mountFriendRoom(fg); }, 30);
+      }).catch(function(){ const b=$('sheetBody'); if(b) b.innerHTML='<div class="empty" style="padding:40px 12px;">집을 불러오지 못했어요</div>'; });
+    }
+    function likeFriendHome(uid){
+      likeHome(uid, function(ok, cnt){
+        if(!ok){ toast('오늘은 이미 좋아요를 눌렀어요'); return; }
+        toast('좋아요 ❤️');
+        const n=$('fhLikeN'); if(n && cnt!=null) n.textContent=cnt;
+        const btn=document.querySelector('.likebtn'); if(btn){ btn.classList.add('on'); btn.disabled=true; }
+        const hint=document.querySelector('.likehint'); if(hint) hint.textContent='오늘 좋아요 완료 · 내일 또 눌러주세요';
+      });
     }
     // ===== 친구들 피드('친구들' 탭) = 인스타그램 스토리 줄 + 아래 친구 할일 피드 =====
     // 친구 할일 한 줄(읽기전용) — 우측에 누구 것인지 아바타
@@ -673,11 +715,16 @@
       const today=ymd(new Date()); const seen=storySeenMap();
       const order=friendFeedOrder(state.friendTodosByUid, pubUids, today);
       // 스토리 줄: 내 스토리(맨 왼쪽) + 공개 친구(최근 등록순)
-      const myLatest=latestCreatedAt(state.myTodos), myToday=(myLatest.slice(0,10)===today);
-      const myRing=state.todoPublic?storyRing(myLatest, seen[state.uid], myToday):'none';
+      // 스토리 활동시각 = 할일 최신 + 집 변경(펫/가구) 중 더 최신 → 집만 바꿔도 무지개 링
+      const myChg=(state.game&&state.game.home&&state.game.home.changedAt)||'';
+      const myLatest=[latestCreatedAt(state.myTodos), myChg].sort().pop()||'', myToday=(myLatest.slice(0,10)===today);
+      const myRing=storyRing(myLatest, seen[state.uid], myToday);
       let strip=storyItem(state.uid, state.userName||'나', myRing, {me:true, onclick:'openMyStory()'});
-      strip+=order.map(function(r){ const uid=r.uid, nm=friendDisplayName(uid); const ring=storyRing(r.lastAt, seen[uid], r.todayReg);
-        return storyItem(uid, nm, ring, {onclick:"openFriendStory('"+uid+"')"}); }).join('');
+      strip+=order.map(function(r){ const uid=r.uid, nm=friendDisplayName(uid);
+        const chg=(state.friendHomeChangedByUid&&state.friendHomeChangedByUid[uid])||'';
+        const latest=[r.lastAt||'', chg].sort().pop()||''; const todayReg=(latest.slice(0,10)===today);
+        const ring=storyRing(latest, seen[uid], todayReg);
+        return storyItem(uid, nm, ring, {onclick:"openFriendHome('"+uid+"')"}); }).join('');
       h+='<div class="tdfriends"><div class="tdfr-scroll story-row">'+strip+'</div></div>';
       if(!pubUids.length){
         h+='<div class="card"><div class="empty" style="padding:22px 12px;line-height:1.6;">공개한 친구가 아직 없어요.<br>더보기 → <b>친구</b>에서 추가하거나, 친구가 <b>할일 공개</b>를 켜면 스토리에 떠요.</div></div>';
@@ -695,7 +742,8 @@
     function storyTodos(uid){ const list=(uid===state.uid?(state.myTodos||[]):(state.friendTodosByUid[uid]||[])).slice();
       list.sort(function(a,b){ return (a.createdAt||'').localeCompare(b.createdAt||''); }); return list; }   // 오래된→최신 순 재생
     function ensureStoryEl(){ let el=$('storyView'); if(!el){ el=document.createElement('div'); el.id='storyView'; el.className='storyview'; el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true'); document.body.appendChild(el); } return el; }
-    function openMyStory(){ if(!storyTodos(state.uid).length){ openTodoEdit(); return; } _openStory([state.uid], 0); }   // 내 할일 없으면 바로 추가
+    function openMyStory(){ if(typeof openCatHouse==='function') openCatHouse('home'); }   // 내 스토리 = 내 알뜰샵 홈(라이브 캠)
+    function openMyStoryTodos(){ if(!storyTodos(state.uid).length){ openTodoEdit(); return; } _openStory([state.uid], 0); }   // (레거시 풀스크린 페이저)
     function openFriendStory(uid){
       const pub=Object.keys(state.friends||{}).filter(function(u){ return state.friendPub && state.friendPub[u]; });
       const order=friendFeedOrder(state.friendTodosByUid, pub, ymd(new Date())).map(function(r){ return r.uid; }).filter(function(u){ return storyTodos(u).length; });
@@ -1318,7 +1366,8 @@
         '<div id="profAvatar" style="display:inline-flex;">'+avatarHtml(state.uid, state.userName, 96)+'</div>'+
         '<div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">'+
           '<button class="btn sm" onclick="pickProfilePhoto()">사진 변경</button>'+
-          '<button class="btn sm ghost" onclick="removeProfilePhoto()">사진 삭제</button></div></div>';
+          '<button class="btn sm ghost" onclick="removeProfilePhoto()">사진 삭제</button></div>'+
+        '<div class="likemini" style="justify-content:center;margin-top:10px;font-size:14px;" title="친구들에게 받은 좋아요">'+(typeof heartSvg==='function'?heartSvg({h:16}):'❤')+' '+(state.myLikeCount||0)+' 좋아요</div></div>';
       h+='<div class="field"><label>별명(이름)</label><input class="input" id="profName" value="'+escapeHtml(state.userName)+'" placeholder="가계부에 표시될 이름"></div>';
       h+='<div class="field"><label>계정 이메일(아이디)</label><input class="input" value="'+escapeHtml(state.userEmail||'')+'" disabled></div>';
       h+='<div class="tx-sub" style="margin:2px 2px 14px;">사진은 256px로 줄여 저장돼요. 같은 그룹 멤버에게 보입니다.</div>';
@@ -1412,6 +1461,7 @@
       h+='<div class="prow" onclick="openProfileSheet()">'+
          avatarHtml(state.uid, state.userName, 44)+
          '<div class="pnm"><b>'+escapeHtml(state.userName||'사용자')+'</b><span>내 프로필</span></div>'+
+         '<span class="likemini" title="받은 좋아요">'+(typeof heartSvg==='function'?heartSvg({h:14}):'❤')+' '+(state.myLikeCount||0)+'</span>'+
          '<span class="editk">'+MORE_ICON.chev+'</span></div>';
       // 그 아래: 현재 가계부/그룹 — 아바타 44 + 이름(flex) + 멤버 아바타 + 전환(우측)
       const wsSub = isGroup ? ('그룹 · 멤버 '+memCount+'명') : '개인 가계부';
@@ -1443,7 +1493,7 @@
       h+=gcell(coinSvg({h:26}),'알뜰샵','openCatHouse()');
       h+=gcell(giftSvg({h:26}),'선물함','openGiftbox()', (typeof giftCount==='function'?giftCount():0));
       h+=gcell((typeof bagSvg==='function'?bagSvg({h:26}):''),'가방','openBag()');
-      h+=gcell(MORE_ICON.members,'친구','openFriendsSheet()', (typeof state.friendReqs==='object'?Object.keys(state.friendReqs||{}).length:0)||0);
+      h+=gcell((typeof peopleSvg==='function'?peopleSvg({h:26}):MORE_ICON.members),'친구','openFriendsSheet()', (typeof state.friendReqs==='object'?Object.keys(state.friendReqs||{}).length:0)||0);
       h+=gcell(MORE_ICON.gear,'설정','openSettingsSheet()');
       if(typeof isDev==='function' && isDev()) h+=gcell((typeof rainbowEggSvg==='function'?rainbowEggSvg({h:26}):MORE_ICON.gear),'개발자','openDevModeSheet()');
       h+='</div>';
