@@ -206,30 +206,40 @@
       "..DAAAAAAD..",
       "..DDDDDDDD.."
     ];
-    // 캣타워: 3층(발판 3개) 세로형. 비율 11×22 ≈ 3:6칸. 고양이가 각 층 발판에 올라가 쉼.
+    // 캣타워: 3층(발판 3개) 세로형 — 상단 둥지컵 + 중·하단 카펫 발판 + 시살(밧줄) 기둥 + 매달린 장난감 + 발 달린 목재 베이스.
+    // 16×30, 가로세로비 ≈ 0.533. 발판 중심이 상호작용 층 높이(furnSpot frac 0.30/0.62/0.92)에 정렬(하단30%·중단62%·상단컵92%).
+    // 팔레트: X=진한 목재·P/H=기둥 목재·W/C/L=카펫(기본/음영/하이라이트)·R/S=시살 밧줄·T/O=장난감 공·K=끈.
     const M_TOWER = [
-      ".XXXXXXXXX.",
-      ".XWWWWWWWX.",
-      ".XWWWWWWWX.",
-      ".XXXXXXXXX.",
-      "...XPPPX...",
-      "...XPPPX...",
-      "...XPPPX...",
-      ".XXXXXXXXX.",
-      ".XWWWWWWWX.",
-      ".XWWWWWWWX.",
-      ".XXXXXXXXX.",
-      "...XPPPX...",
-      "...XPPPX...",
-      "...XPPPX...",
-      ".XXXXXXXXX.",
-      ".XWWWWWWWX.",
-      ".XWWWWWWWX.",
-      ".XXXXXXXXX.",
-      "...XPPPX...",
-      "...XPPPX...",
-      "..XXXXXXX..",
-      "..XXXXXXX.."
+      "................",
+      ".....LCCCCL.....",
+      "....CWWWWWWC....",
+      "....CWWWWWWC....",
+      "....XCCCCCCX....",
+      "...LLLLLLLLLL...",
+      "..WWWWWWWWWWWK..",
+      "..CCCCCCCCCCCK..",
+      "...XXXXXXXXXXK..",
+      "......SSSS...K..",
+      "......SRRS..OOT.",
+      "....LLLLLLLLTTT.",
+      "...WWWWWWWWWW...",
+      "...WWWWWWWWWW...",
+      "...CCCCCCCCCC...",
+      "....XXXXXXXX....",
+      "......SSSS......",
+      "......SRRS......",
+      "......SSSS......",
+      "......SRRS......",
+      "..LLLLLLLLLLLL..",
+      ".WWWWWWWWWWWWWW.",
+      ".WWWWWWWWWWWWWW.",
+      ".CCCCCCCCCCCCCC.",
+      "..XXXXXXXXXXXX..",
+      "......XPHX......",
+      "......XPHX......",
+      ".HHHHHHHHHHHHHH.",
+      ".XXXXXXXXXXXXXX.",
+      "..XXX......XXX.."
     ];
     const M_SCRATCHER = [
       "................",".....XXXXXX.....","....XWWWWWWX....","....XWWWWWWX....",".....XXPPXX.....",
@@ -311,7 +321,7 @@
       ".PPPPPP.",
       "..XXXX.."
     ];
-    const FURN_PALS={ cushion:{X:'#5b6470',C:'#a9b2be',D:'#868f9c'}, bowl:{X:'#5b6470',W:'#d0d6dd',F:'#d68b4a'}, waterbowl:{X:'#5b6470',W:'#d0d6dd',A:'#5aa9e6'}, tower:{X:'#6f4c28',W:'#c99a5f',P:'#8a6a3f'}, scratcher:{X:'#6f4c28',W:'#c99a5f',P:'#d8b98a'}, litterbox:{X:'#8a8f98',W:'#c9ced6',S:'#e6dcc3'}, pethouse:{X:'#5a4632',R:'#d9694e',W:'#e8c98f',D:'#2c2420'}, plant:{X:'#7c5028',L:'#7cc652',G:'#4e9636',P:'#c8763e'}, catwheel:{X:'#2f6f68',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',R:'#c9a06a',D:'#6b5842'} };
+    const FURN_PALS={ cushion:{X:'#5b6470',C:'#a9b2be',D:'#868f9c'}, bowl:{X:'#5b6470',W:'#d0d6dd',F:'#d68b4a'}, waterbowl:{X:'#5b6470',W:'#d0d6dd',A:'#5aa9e6'}, tower:{X:'#5e3f22',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#6f4c28',W:'#c99a5f',P:'#d8b98a'}, litterbox:{X:'#8a8f98',W:'#c9ced6',S:'#e6dcc3'}, pethouse:{X:'#5a4632',R:'#d9694e',W:'#e8c98f',D:'#2c2420'}, plant:{X:'#7c5028',L:'#7cc652',G:'#4e9636',P:'#c8763e'}, catwheel:{X:'#2f6f68',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',R:'#c9a06a',D:'#6b5842'} };
     const POOP_PAL={X:'#4a3218',K:'#7a5230'};
     const FOOD_PAL={F:'#d68b4a',D:'#8a5427',L:'#f2e4c6',K:'#7a4a20'};
     const WATER_PAL={A:'#5aa9e6',D:'#3f86c4',H:'#c7e6ff',L:'#eaf6ff'};
@@ -1031,7 +1041,7 @@
     // 방 렌더 높이 배율(실물감) — 캣타워 제일 큼, 스크래처는 고양이 키만큼, 화장실=낮은 상자, 방석·그릇 작게.
     const ROOM_H = { tower:6.2, scratcher:2.9, pethouse:2.8, catwheel:3.0, plant:2, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6 };
     // 가구 그래픽 가로세로비(cols/rows) — 좌측하단 앵커라 그래픽 중앙 x = 좌측 edge + fh*aspect/2 (고양이가 가구 중앙에 서게).
-    const FURN_ASPECT = { tower:0.5, scratcher:1.0, pethouse:1.2, catwheel:1.04, plant:0.57, litterbox:1.18, cushion:2.29, bowl:2.0, waterbowl:2.0 };
+    const FURN_ASPECT = { tower:0.533, scratcher:1.0, pethouse:1.2, catwheel:1.04, plant:0.57, litterbox:1.18, cushion:2.29, bowl:2.0, waterbowl:2.0 };
     function furnAspect(id){ return FURN_ASPECT[id]||1; }
     function furnRoomH(id, isDock, depth){
       const mult = ROOM_H[id] || 1;
