@@ -706,7 +706,13 @@
     .rmthumb.locked .rmlock svg { width:18px; height:18px; }
     .rmthumb.locked .rmgold { display:inline-flex; align-items:center; gap:2px; font-size:10.5px; font-weight:800; color:var(--text); }
     .wsw { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:6px; vertical-align:-1px; border:1px solid color-mix(in srgb,var(--text) 20%,transparent); }
+    /* 방 이모지 선택 */
+    .emopick { display:flex; flex-wrap:wrap; gap:6px; }
+    .emob { min-width:38px; height:36px; padding:0 8px; border:1.5px solid var(--bd); border-radius:10px; background:var(--card); font-size:18px; line-height:1; cursor:pointer; color:var(--sub); }
+    .emob.on { border-color:var(--accent,#4a90d9); box-shadow:0 0 0 2px color-mix(in srgb,var(--accent,#4a90d9) 35%,transparent); }
     .rmthumb .rmrep { position:absolute; top:4px; left:4px; z-index:2; font-size:12px; line-height:1; color:#ffd23f; text-shadow:0 1px 2px rgba(0,0,0,.5); pointer-events:none; }
+    .rmthumb.rmdragging { z-index:6; opacity:.92; box-shadow:0 6px 18px rgba(0,0,0,.28); touch-action:none; }
+    .rmstrip .rmthumb { touch-action:pan-x; }   /* 세로 스크롤은 시트로 통과, 가로 롱프레스는 재정렬 */
     /* 펫 카드: 다른 방에 있는 펫(옮겨올 수 있음) — 방 이름 배지 + 은은한 강조 */
     .catchip.elsewhere { border-color:color-mix(in srgb,var(--accent,#4a90d9) 45%,var(--bd)); }
     .catchip .croom { position:absolute; top:6px; left:6px; z-index:2; max-width:70%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:9.5px; font-weight:800; color:#fff; background:color-mix(in srgb,var(--accent,#4a90d9) 88%,#000); padding:2px 6px; border-radius:999px; }

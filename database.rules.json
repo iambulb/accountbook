@@ -1,13 +1,22 @@
 {
   "rules": {
     "users": {
-      ".read": "auth != null",
       "$uid": {
+        ".read":  "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid",
-        "friends":    { "$fid": { ".write": "auth != null && (auth.uid === $uid || auth.uid === $fid)" } },
-        "friendReqs": { "$fid": { ".write": "auth != null && (auth.uid === $uid || auth.uid === $fid)" } },
-        "homeLikes":  { "$visitor": { ".write": "auth != null && auth.uid === $visitor" } }
+        "profilePublic": { ".read": "auth != null" },
+        "photo":         { ".read": "auth != null" },
+        "todos":         { ".read": "auth != null" },
+        "todoPublic":    { ".read": "auth != null" },
+        "friends":    { ".read": "auth != null", "$fid": { ".write": "auth != null && (auth.uid === $uid || auth.uid === $fid)" } },
+        "friendReqs": { ".read": "auth != null", "$fid": { ".write": "auth != null && (auth.uid === $uid || auth.uid === $fid)" } },
+        "homeLikes":  { ".read": "auth != null", "$visitor": { ".write": "auth != null && auth.uid === $visitor" } }
       }
+    },
+
+    "homeCam": {
+      ".read": "auth != null",
+      "$uid": { ".write": "auth != null && auth.uid === $uid" }
     },
 
     "codes": {

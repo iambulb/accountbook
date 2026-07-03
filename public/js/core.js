@@ -216,11 +216,15 @@
       const rf=sh._returnFocus; sh._returnFocus=null;
       if(rf && rf.focus){ try{ rf.focus(); }catch(e){} }
     }
-    function confirmSheet(msg, onYes){
-      openSheet('확인',
-        '<p style="padding:6px 2px 22px;font-size:15px;">'+escapeHtml(msg)+'</p>'+
+    // 확인 시트. opts:{ okLabel, danger, title } — 기본은 삭제(빨강). 로그아웃 등 비삭제 동작은 okLabel/danger 지정.
+    function confirmSheet(msg, onYes, opts){
+      opts=opts||{};
+      const label=opts.okLabel||'삭제';
+      const danger=(opts.danger!==undefined)?opts.danger:(label==='삭제');
+      openSheet(opts.title||'확인',
+        '<p style="padding:4px 2px 20px;font-size:15px;line-height:1.55;">'+escapeHtml(msg)+'</p>'+
         '<div class="form-2"><button class="btn ghost" onclick="closeSheet()">취소</button>'+
-        '<button class="btn danger" id="confirmYes">삭제</button></div>');
+        '<button class="'+(danger?'btn danger':'btn')+'" id="confirmYes">'+escapeHtml(label)+'</button></div>');
       $('confirmYes').onclick=()=>{ closeSheet(); onYes(); };
     }
 
@@ -286,7 +290,7 @@
       justSignedUp=false;
       beforeAuth(email).then(()=>auth.signInWithEmailAndPassword(email,pw)).catch(e=>toast(e.message, true));
     }
-    function logout(){ confirmSheet('로그아웃하시겠습니까?', ()=>auth.signOut()); }   // 아이디저장·자동로그인 토글은 유지(localStorage)
+    function logout(){ confirmSheet('로그아웃할까요? (아이디 저장·자동 로그인 설정은 유지돼요)', ()=>auth.signOut(), {title:'로그아웃', okLabel:'로그아웃'}); }
     // 비밀번호 변경(내 프로필) — 현재 비번으로 재인증 후 변경(requires-recent-login 방지)
     function changePassword(){
       const cur=val('pwCur'), np=val('pwNew'), np2=val('pwNew2');
@@ -387,7 +391,7 @@
       fr.forEach(uid=>{ db.ref('users/'+uid+'/todoPublic').once('value').then(s=>{ state.friendPub[uid]=!!s.val(); syncFriendTodoWatch(); rerender(); }).catch(()=>{});
         // 친구 목록/스토리용: 집 좋아요수 + 집 변경시각(무지개 링)
         db.ref('users/'+uid+'/homeLikes').once('value').then(s=>{ state.friendLikes[uid]=(typeof homeLikeCount==='function'?homeLikeCount(s.val()):0); rerender(); }).catch(()=>{});
-        db.ref('users/'+uid+'/game/home/changedAt').once('value').then(s=>{ state.friendHomeChangedByUid[uid]=s.val()||''; rerender(); }).catch(()=>{});
+        db.ref('homeCam/'+uid+'/changedAt').once('value').then(s=>{ state.friendHomeChangedByUid[uid]=s.val()||''; rerender(); }).catch(()=>{});   // 대표 방 공개 스냅샷의 변경시각(users/game은 비공개)
       });
       syncFriendTodoWatch();
     }

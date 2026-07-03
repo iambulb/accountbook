@@ -307,63 +307,67 @@
       "...XWWPPWWX...",
       "....XXXXXX...."
     ];
-    // 균열1: 위쪽(뾰족한 끝)에 잔금이 생김
+    // 균열1: 위쪽부터 지그재그(번개) 잔금이 생김(쩌저적 갈라짐 시작)
     const M_EGG_C1 = [
       ".....SXXS.....",
       "....SXWWXS....",
       "...SXWXWWXS...",
-      "...XWXWWWWX...",
+      "...XWXXWWWX...",
       "..XWXWWWWWWX..",
-      ".XWWWRRRRWWWX.",
-      ".XWWRRRRRRWWX.",
-      "XWWWRRWWOOWWSX",
-      "XWWWWWWOOOWWSX",
-      "XWWWWWYYYWWWSX",
+      ".XWXWRRRRWWWX.",
+      ".XWXWRRRRRWWX.",
+      "XWWWRXWWOOWWSX",
+      "XWWWWWXWOOWWSX",
+      "XWWWWWXWWWWWSX",
       "XWWWWGGGWWWWSX",
-      ".XWWWWGGWXWSX.",
-      ".XWWWWBBWXWSX.",
-      "..XWWWWWXWWX..",
+      ".XWWWWGGWWWSX.",
+      ".XWWWWBBWWWSX.",
+      "..XWWWWWWWWX..",
       "...XWWPPWWX...",
       "....XXXXXX...."
     ];
-    // 균열2: 금이 번지고 조각이 떨어질 듯
+    // 균열2: 지그재그 금이 전체로 번지고 살짝 벌어짐(틈+빛 조금)
     const M_EGG_C2 = [
-      ".....S..S.....",
-      "....SXWWXS....",
-      "...SXWXWWXS...",
-      "...XWXWWWWX...",
-      "..XWXWWWWWWX..",
-      ".XWXWRRRRWWWX.",
-      ".XWWRRRRRRWWX.",
-      "XWXWRRWWOOWWSX",
-      "XWWWWWWOOOWWSX",
-      "XWWWWWYYYWWWSX",
-      "XWWWXGGGWWWWSX",
-      ".XWWWWGGWXWSX.",
-      ".XWXWWBBWWWSX.",
-      "..XWWWWWXWWX..",
+      ".....SXXS.....",
+      "....SX.XXS....",
+      "...SXW.WWXS...",
+      "...XWWX.XWX...",
+      "..XWWL.WWWWX..",
+      ".XWWX.XRRWWWX.",
+      ".XWWL.RRRRWWX.",
+      "XWWWRX.XOOWWSX",
+      "XWWWWWL.OOWWSX",
+      "XWWWWWX.XWWWSX",
+      "XWWWWL.GWWWWSX",
+      ".XWWX.XGWWWSX.",
+      ".XWWWW.BWWWSX.",
+      "..XWWX.XWWWX..",
       "...XWWPPWWX...",
-      "....XX.XXX...."
+      "....XXXXXX...."
     ];
-    // 균열3(3번째 탭): 알이 크게 세로로 갈라지고, 틈(L)으로 등급색 빛이 새어나온다. L=빛(렌더 시 등급색으로 칠함).
+    // 균열3(3번째 탭): 알이 지그재그로 쩍! 크게 갈라지고, 벌어진 틈(L)으로 등급색 빛이 쏟아진다. L=빛(렌더 시 등급색).
     const M_EGG_C3 = [
-      ".....S..S.....",
-      "....SX..XS....",
-      "...SXW..WXS...",
-      "...XW.X.WWX...",
-      "..XWX.X.WWWX..",
-      ".XWXWL..LWWWX.",
-      ".XWWLL..LLWWX.",
-      "XWXWLL..OLWWSX",
-      "XWWWWL..OLWWSX",
-      "XWWWWL.YYLWWSX",
-      "XWWWXL..LWWWSX",
-      ".XWWWLL.WXWSX.",
-      ".XWXWWL.WWWSX.",
-      "..XWWW..XWWX..",
-      "...XWWPPWWX...",
-      "....XX.XXX...."
+      ".....SXXS.....",
+      "....SX.LXS....",
+      "...SXL.LWXS...",
+      "...XWWL.LWX...",
+      "..XWL..LWWWX..",
+      ".XWL..LRRWWWX.",
+      ".XWL..LRRRWWX.",
+      "XWWWL..LOOWWSX",
+      "XWWWWL..LOWWSX",
+      "XWWWWL..LWWWSX",
+      "XWWWL..LWWWWSX",
+      ".XWL..LGWWWSX.",
+      ".XWWL..LWWWSX.",
+      "..XWWL.LWWWX..",
+      "...XWL.LWWX...",
+      "....XXXXXX...."
     ];
+    // 🥚 깨진 껍질 조각(픽셀아트) — 흰 껍질(W)+회색 테두리(X)+안쪽 그림자(S). 오픈 순간 사방으로 튕겨나감.
+    const M_SHELL_A = [ ".XXXX.","XWWWWX","XWWWWS","XWWWSS",".XWSX.","..XX.." ];
+    const M_SHELL_B = [ "XXX..","WWWX.","WWWWX","SWWSX",".XXX." ];
+    const M_SHELL_C = [ ".XX.","XWWX","XWSX",".XX." ];
     // ✦ 픽셀 방사 버스트(빛) — 카디널(수직·수평) 광선을 빼고 12갈래를 15°씩 어긋나게 배치(→ 십자 느낌 제거),
     //    길고 짧은 광선을 교대로 변주 + 바깥 크리스탈 스파클 도트로 화려하게. X=광선색(currentColor), H=작은 흰 코어.
     //    회전이 아니라 CSS로 살짝씩 바깥으로 퍼져나가는(발산) 연출을 준다.
@@ -689,6 +693,10 @@
     function rainbowEggStage(stage, opt){ return pxSvg([M_EGG,M_EGG_C1,M_EGG_C2][stage]||M_EGG, EGG_PAL_RB, opt); }
     // 3번째 탭: 크게 갈라진 알 + 틈새로 새어나오는 등급색 빛(L=등급색). rainbow면 껍질은 무지갯빛 유지.
     function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); return pxSvg(M_EGG_C3, pal, opt); }
+    // 픽셀 껍질 조각 렌더(A=큰 곡면, B=삼각, C=작은 조각). rainbow면 무지갯빛 껍질.
+    const SHELL_PAL={X:'#c9c2b0',W:'#FBFBFD',S:'#E7E3DA'};
+    const SHELL_PAL_RB={X:'#b7b0a2',W:'RAINBOW',S:'RAINBOW'};
+    function shellSvg(which, rainbow, opt){ const M=[M_SHELL_A,M_SHELL_B,M_SHELL_C][which]||M_SHELL_A; return pxSvg(M, rainbow?SHELL_PAL_RB:SHELL_PAL, opt); }
     // ✦ 픽셀 빛 폭발(별) — 등급색으로. color 미지정 시 currentColor(무대 등급색 상속).
     function raysSvg(color, opt){ return pxSvg(M_RAYS, {X:color||'currentColor',H:'#ffffff'}, opt); }
     function auraSvg(color, opt){ return pxSvg(M_AURA, {X:color||'currentColor',H:'#ffffff'}, opt); }
@@ -707,9 +715,27 @@
       return s; }
     // 랜덤박스 오픈: 뚜껑 열리고 틈새로 등급색 빛(Z). rainbow면 몸체는 무지갯빛 유지.
     function boxOpenSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?BOX_PAL_RB:BOX_PAL, {Z:tierColor||'#FBFBFD'}); return pxSvg(M_BOX_OPEN, pal, opt); }
-    // 선물함 아이콘 — 랜덤박스 도트(M_BOX) 그대로, 색만 선물상자(빨강 몸체+금 리본)로 다시 칠함.
-    const GIFT_PAL={X:'#a83f52',W:'#e35d76',C:'#f2c84b',L:'#e0a43c',R:'#f2c84b',O:'#f2c84b',Y:'#f2c84b',G:'#f2c84b',B:'#f2c84b',P:'#f2c84b'};
-    function giftSvg(opt){ return pxSvg(M_BOX, GIFT_PAL, opt); }
+    // 🎁 선물함 아이콘 — 리본을 정갈하게 묶은 선물상자(도트). X=진빨강 테두리, B=빨강 몸체, L=뚜껑(밝은), R=금 리본, Y=리본 하이라이트/뚜껑선.
+    const M_GIFT = [
+      "................",
+      "....RR....RR....",
+      "...RYYR..RYYR...",
+      "...RRRR..RRRR...",
+      "....RRRRRRRR....",
+      "..XXXXXXXXXXXX..",
+      "..XLLLLYRLLLLX..",
+      "..XXXXXYRXXXXX..",
+      "..XBBBBYRBBBBX..",
+      "..XBBBBYRBBBBX..",
+      "..XYYYYYYYYYYX..",
+      "..XRRRRRRRRRRX..",
+      "..XBBBBYRBBBBX..",
+      "..XBBBBYRBBBBX..",
+      "..XXXXXXXXXXXX..",
+      "................"
+    ];
+    const GIFT_PAL={X:'#a83f52',B:'#e35d76',L:'#f0869a',R:'#f2c84b',Y:'#ffe08a'};
+    function giftSvg(opt){ return pxSvg(M_GIFT, GIFT_PAL, opt); }
     // 🎒 가방(더보기) 아이콘 — 갈색 가죽 가방(플랩+버클)을 도트/픽셀 아트로. D=진갈 외곽, B=몸체, L=플랩, M=금 버클.
     const M_BAG = [
       "...DDDDD...",
@@ -973,12 +999,20 @@
     function onGameChange(){
       updateDockCoins();
       const dw=$('catdock'); const wall=dw&&dw.querySelector('.cr-wall'); if(wall) wall.style.background=wallCss(currentWall());
-      const rn=$('cdRoomName'); if(rn){ const multi=roomCount()>1; rn.hidden=!multi; if(multi) rn.textContent=room().name||''; }   // dock 현재 방 이름(방 여러 개일 때만)
+      const rn=$('cdRoomName'); if(rn){ const multi=roomCount()>1; rn.hidden=!multi; if(multi) rn.textContent=(room().emoji?room().emoji+' ':'')+(room().name||''); }   // dock 현재 방 이름(방 여러 개일 때만)
       renderDockProps();
       renderDockCats();
       if(state.view==='home' && typeof renderHome==='function') renderHome();   // 홈의 미션·은화 즉시 반영
       if(state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh();
+      writeHomeCam();   // 대표 방 공개 스냅샷 갱신(친구·랭킹이 이것만 읽음 — 다른 방은 비공개)
     }
+    // 친구·랭킹에 공개할 '대표 방' 스냅샷. 사적인 다른 방은 담지 않는다.
+    function repRoomSnapshot(){ const h=homeH(); const rooms=h.rooms||[]; const i=Math.min(rooms.length-1, Math.max(0, (h.showRoom!=null?h.showRoom:0)|0)); const r=rooms[i]||rooms[0]||{};
+      return { name:r.name||'', emoji:r.emoji||'', wallpaper:r.wallpaper||'default', placed:r.placed||{}, active:(r.active||[]).filter(ownsCat), slots:slotCount(), poops:Number(r.poops)||0, changedAt:h.changedAt||'' }; }
+    // homeCam/{uid} 에 기록(내용 바뀔 때만). users/{uid}/game 은 규칙상 소유자만 읽으므로 친구는 이 노드로만 내 집을 본다.
+    function writeHomeCam(){ if(!state.uid||!state.game) return; const snap=repRoomSnapshot(); const sig=JSON.stringify(snap);
+      if(sig===state._lastCamSig) return; state._lastCamSig=sig;
+      try{ db.ref('homeCam/'+state.uid).set(snap); }catch(e){} }
     function coins(){ return (state.game&&state.game.coins)||0; }
     function ownsCat(id){ return !!(state.game&&state.game.owned.cats[id]); }
     function activeCats(){ const a=room().active||[]; return a.filter(ownsCat); }   // 현재 방의 활성 펫
@@ -1040,6 +1074,10 @@
       let body='<div class="gih"><b>방 관리 · '+escapeHtml(cur)+'</b></div>'+
         '<div class="field"><label for="roomNameIn">방 이름</label><input class="input" id="roomNameIn" maxlength="8" value="'+escapeHtml(cur)+'" placeholder="예: 고양이방" style="width:100%;box-sizing:border-box;"></div>'+
         '<button class="btn" onclick="saveRoomName('+idx+')">이름 저장</button>';
+      // 방 이모지(선택) — 썸네일·dock 이름 앞에 표시
+      const EMO=['','🐱','🐯','🦁','🐶','🌙','☀️','🌸','🎋','🛋️','🌊','⭐'];
+      body+='<div class="sech" style="margin-top:14px;"><span class="l">이모지</span></div>'+
+        '<div class="emopick">'+EMO.map(e=>'<button class="emob'+((r.emoji||'')===e?' on':'')+'" onclick="setRoomEmoji('+idx+',\''+e+'\')">'+(e||'없음')+'</button>').join('')+'</div>';
       // 대표 방(친구·랭킹에 보이는 방)
       const isRep=idx===(h.showRoom|0);
       body+='<div class="sech" style="margin-top:14px;"><span class="l">대표 방</span><span class="s">친구·랭킹에 보임</span></div>'+
@@ -1067,6 +1105,7 @@
     function refreshCatSheet(){ if(state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh(); }
     function saveRoomName(idx){ const v=(val('roomNameIn')||'').trim()||('방 '+(idx+1));
       gameRef().child('home/rooms/'+idx+'/name').set(v).then(()=>{ touchHome(); refreshCatSheet(); toast('방 이름을 바꿨어요'); }); closeRoomMenu(); }
+    function setRoomEmoji(idx, e){ gameRef().child('home/rooms/'+idx+'/emoji').set(e||'').then(()=>{ touchHome(); refreshCatSheet(); }); closeRoomMenu(); }
     function copyRoomWall(src, dest){ gameRef().transaction(g=>{ g=normalizeGame(g); const rs=g.home.rooms; if(!rs[src]||!rs[dest]) return g;
         rs[dest].wallpaper=rs[src].wallpaper||'default'; g.home.changedAt=new Date().toISOString(); return g;
       }).then(r=>{ if(r&&r.committed){ refreshCatSheet(); toast('벽지를 가져왔어요 🎨'); } }); closeRoomMenu(); }
@@ -1084,6 +1123,30 @@
         g.home.current=fix(g.home.current); g.home.showRoom=fix(g.home.showRoom);
         g.home.changedAt=new Date().toISOString(); return g;
       }).then(r=>{ if(r&&r.committed){ refreshCatSheet(); toast('방 순서를 바꿨어요'); } }); closeRoomMenu(); }
+    // 드래그 재정렬: from 방을 to 위치로 삽입 이동. current·showRoom가 원래 방을 따라가도록 remap.
+    function moveRoomTo(from, to){ if(from===to) return; const rc=roomCount(); to=Math.max(0,Math.min(rc-1,to|0));
+      gameRef().transaction(g=>{ g=normalizeGame(g); const rs=g.home.rooms; if(from<0||from>=rs.length||to<0||to>=rs.length) return g;
+        const moved=rs.splice(from,1)[0]; rs.splice(to,0,moved);
+        const remap=v=>{ v=v|0; if(v===from) return to; if(from<to){ if(v>from&&v<=to) return v-1; } else { if(v>=to&&v<from) return v+1; } return v; };
+        g.home.current=remap(g.home.current); g.home.showRoom=remap(g.home.showRoom);
+        g.home.changedAt=new Date().toISOString(); return g;
+      }).then(r=>{ if(r&&r.committed) refreshCatSheet(); }); }
+    // 방 썸네일 롱프레스 드래그로 순서 변경(짧게 탭=전환). 가구 드래그와 같은 게이트 재사용.
+    let _rmDrag=null, _justRmDragged=false;
+    function rmTap(idx){ if(_justRmDragged){ _justRmDragged=false; return; } switchRoom(idx); }
+    function rmDown(e, idx){ if(roomCount()<2) return; const pid=e.pointerId;
+      beginLongPress(e, (el)=>{ _rmDrag={ idx, el, strip:el.closest('.rmstrip'), sx:e.clientX, sy:e.clientY };
+        lockDragScroll(); try{ el.setPointerCapture(pid); }catch(_){}
+        el.classList.add('rmdragging'); el.onpointermove=rmMove; el.onpointerup=rmUp; el.onpointercancel=rmUp;
+      }, ()=>{}); }
+    function rmMove(e){ if(!_rmDrag) return; _rmDrag.el.style.transform='translate('+(e.clientX-_rmDrag.sx)+'px,'+(e.clientY-_rmDrag.sy)+'px)'; }
+    function rmUp(e){ if(!_rmDrag) return; const d=_rmDrag; _rmDrag=null; unlockDragScroll();
+      d.el.onpointermove=null; d.el.onpointerup=null; d.el.onpointercancel=null;
+      d.el.classList.remove('rmdragging'); d.el.style.transform='';
+      _justRmDragged=true; setTimeout(()=>{ _justRmDragged=false; }, 150);
+      const thumbs=d.strip?Array.prototype.slice.call(d.strip.querySelectorAll('.rmthumb:not(.locked)')):[];
+      let to=0; const px=e.clientX; thumbs.forEach(t=>{ if(t===d.el) return; const r=t.getBoundingClientRect(); if(px>r.left+r.width/2) to++; });
+      moveRoomTo(d.idx, to); }
 
     // 미션 지급(원자적·멱등): 게임 노드 트랜잭션 1회로 "수령 기록 + 은화 지급"을 동시에.
     // 같은 날 같은 미션은 이미 claimed면 변화 없음 → 중복 지급 불가.
@@ -1159,7 +1222,7 @@
       const build=()=>{
         const gifts=(state.game&&state.game.gifts)||[];
         let h='<div class="giftbox">';
-        if(!gifts.length){ h+='<div class="empty" style="padding:30px 12px;">받을 선물이 없어요. 설정 → 코드 입력으로 보상을 받아보세요 🎁</div>'; }
+        if(!gifts.length){ h+='<div class="empty" style="padding:26px 12px;text-align:center;line-height:1.55;"><div style="display:flex;justify-content:center;margin-bottom:10px;">'+giftSvg({h:56})+'</div>받을 선물이 없어요.<br>설정 → 코드 입력으로 보상을 받아보세요.</div>'; }
         else {
           h+='<div class="hintline" style="margin:2px 0 10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>받으면 은화는 잔액으로, 아이템은 <b>가방</b>으로 들어가요.</div>';
           h+=gifts.map((gf,i)=>{ const v=giftView(gf); return '<div class="giftrow"><span class="gfic">'+v.icon+'</span><span class="gftx"><b class="gfnm">'+escapeHtml(v.name)+'</b>'+(v.msg?'<span class="gfmsg">'+escapeHtml(v.msg)+'</span>':'')+'</span><button class="buy" onclick="claimGift('+i+')">받기</button></div>'; }).join('');
@@ -1492,7 +1555,7 @@
       // 웹캠 정면 방: 벽지(배경) + 바닥 + 배치 가구(배경) + 걷는 고양이
       d.innerHTML='<div class="cd-room">'+
         '<div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div>'+
-        '<span class="cd-roomname" id="cdRoomName"'+(roomCount()>1?'':' hidden')+'>'+escapeHtml(room().name||'')+'</span>'+
+        '<span class="cd-roomname" id="cdRoomName"'+(roomCount()>1?'':' hidden')+'>'+(room().emoji?room().emoji+' ':'')+escapeHtml(room().name||'')+'</span>'+
         '<span class="cd-coin" role="button" tabindex="0" aria-label="알뜰홈 열기" onclick="event.stopPropagation();coinTap(this)"><span class="cd-ci">'+coinSvg({h:16})+'</span><b id="cdCoins">0</b></span>'+
         batchBtnHtml()+
         '<div class="cr-props" id="cdProps"></div><div class="cr-stage" id="cdStage"></div></div>';
@@ -1830,10 +1893,10 @@
         return '<i class="rmf" style="left:'+((cc-1)/12*100).toFixed(1)+'%;top:'+((rr-1)/12*100).toFixed(1)+'%;width:'+(foot.w/12*100).toFixed(1)+'%;height:'+(foot.h/12*100).toFixed(1)+'%"></i>'; }).join('');
       const pets=(r.active||[]).filter(ownsCat).length;
       const rep=idx===(homeH().showRoom|0);   // 대표 방(친구·랭킹 노출)
-      return '<div class="rmthumb'+(on?' on':'')+'" role="button" tabindex="0" aria-pressed="'+on+'" onclick="switchRoom('+idx+')" title="'+escapeHtml(r.name||('방 '+(idx+1)))+(rep?' · 대표 방':'')+'">'+
+      return '<div class="rmthumb'+(on?' on':'')+'" role="button" tabindex="0" aria-pressed="'+on+'" onpointerdown="rmDown(event,'+idx+')" onclick="rmTap('+idx+')" title="'+escapeHtml(r.name||('방 '+(idx+1)))+(rep?' · 대표 방':'')+'">'+
         '<span class="rmscene" style="background:'+wallCss(r.wallpaper||'default')+'">'+dots+'</span>'+
-        (rep?'<span class="rmrep" title="대표 방(친구에게 보이는 방)">★</span>':'')+
-        '<span class="rmbar"><span class="rmname">'+escapeHtml(r.name||('방 '+(idx+1)))+'</span><span class="rmpets">🐾'+pets+'</span></span>'+
+        (rep?'<span class="rmrep" role="img" aria-label="대표 방(친구에게 보이는 방)" title="대표 방(친구에게 보이는 방)">★</span>':'')+
+        '<span class="rmbar"><span class="rmname">'+(r.emoji?r.emoji+' ':'')+escapeHtml(r.name||('방 '+(idx+1)))+'</span><span class="rmpets">🐾'+pets+'</span></span>'+
         '<button class="rm-edit" aria-label="방 관리" onclick="event.stopPropagation();openRoomMenu('+idx+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
       '</div>';
     }
@@ -1899,7 +1962,7 @@
     // 친구 game에서 활성 펫/가구 목록 도출(내 state.game 비참조). 친구의 '현재 방'을 본다(레거시 flat 폴백).
     // 친구/랭킹 캠은 '대표 방(showRoom)'을 보여준다(사적인 방 노출 방지). showRoom 없으면 current, 레거시는 flat.
     function friendRoom(fg){ const h=(fg&&fg.home)||{}; if(Array.isArray(h.rooms)&&h.rooms.length){ const i=Math.min(h.rooms.length-1, Math.max(0, (h.showRoom!=null?h.showRoom:h.current)|0)); return h.rooms[i]||h.rooms[0]; } return h; }
-    function friendActiveCats(fg){ const owned=(fg.owned&&fg.owned.cats)||{}; const a=friendRoom(fg).active||[]; return a.filter(id=>owned[id]); }
+    function friendActiveCats(fg){ const a=friendRoom(fg).active||[]; const owned=(fg.owned&&fg.owned.cats); return owned?a.filter(id=>owned[id]):a.slice(); }   // homeCam 스냅샷은 owned 없이 active를 그대로 신뢰
     function friendPlacedList(fg){ const p=friendRoom(fg).placed||{}; return Object.keys(p).map(k=>({ key:k, r:+k.split('_')[0], c:+k.split('_')[1], itemId:p[k].itemId })); }
     // 친구 방 HTML(.catroom + #frStage). name=친구 닉네임.
     function friendRoomHtml(fg, name){
@@ -2538,11 +2601,11 @@
     function fxSparkles(n){ let s=''; for(let i=0;i<(n||12);i++){ const x=Math.round(Math.random()*100), y=Math.round(Math.random()*100), del=(Math.random()*1.4).toFixed(2), sc=(0.7+Math.random()*1.2).toFixed(2), du=(0.9+Math.random()*0.9).toFixed(2); s+='<span class="fx-spark" style="left:'+x+'%;top:'+y+'%;--sc:'+sc+';animation-delay:'+del+'s;animation-duration:'+du+'s"></span>'; } return s; }
     // 탭할 때마다 껍질 조각이 사방으로 튀는 연출(단계가 오를수록 더 많이) — 알이 점점 더 깨지는 느낌.
     function fxCrackChips(stage){ const fx=$('catFx'), st=fx&&fx.querySelector('.fx-stage'); if(!st) return;
-      const n=4+stage*4; let s='';
-      for(let i=0;i<n;i++){ const a=-90+(i/n)*300+(Math.random()*24-12), d=44+Math.random()*72;
+      const n=5+stage*5; const rb=_fx&&_fx.rainbow; let s='';   // 단계↑ 더 많은 조각이 튐
+      for(let i=0;i<n;i++){ const a=-90+(i/n)*300+(Math.random()*24-12), d=48+Math.random()*84;
         const dx=Math.round(Math.cos(a*Math.PI/180)*d), dy=Math.round(Math.sin(a*Math.PI/180)*d)+8;
-        const rot=Math.round(Math.random()*320-160), sc=(0.5+Math.random()*0.7).toFixed(2), del=(Math.random()*0.05).toFixed(2);
-        s+='<span class="fx-chip" style="--dx:'+dx+'px;--dy:'+dy+'px;--r:'+rot+'deg;--s:'+sc+';animation-delay:'+del+'s"></span>'; }
+        const rot=Math.round(Math.random()*360-180), sc=(0.5+Math.random()*0.7).toFixed(2), del=(Math.random()*0.05).toFixed(2), h=7+Math.round(Math.random()*4);
+        s+='<span class="fx-chip" style="--dx:'+dx+'px;--dy:'+dy+'px;--r:'+rot+'deg;--s:'+sc+';animation-delay:'+del+'s">'+shellSvg(2,rb,{h:h})+'</span>'; }
       const w=document.createElement('div'); w.innerHTML=s; const nodes=[].slice.call(w.children);
       nodes.forEach(function(nd){ st.appendChild(nd); }); setTimeout(function(){ nodes.forEach(function(nd){ nd.remove(); }); }, 720);
     }
@@ -2551,22 +2614,38 @@
       if(_fx.kind==='egg'){
         _fx.stage++;
         if(_fx.stage>=3){ _fx.busy=true; fxClimax(); return; }
+        if(_fx.stage===2 && !_fx.rainbow) maybeRainbowUpgrade();   // 2번째 탭 직후: 특별↑이면 확률로 무지개알 승급
         it.innerHTML=_fx.rainbow?rainbowEggStage(_fx.stage,{h:150}):eggSvg(_fx.stage,{h:150}); it.classList.remove('shake'); void it.offsetWidth; it.classList.add('shake');
         fxCrackChips(_fx.stage);   // 탭마다 껍질 조각이 튀어 깨짐을 강조
       } else { _fx.busy=true; fxClimax(); }
     }
+    // ✨ 무지개 승급: 결과 등급이 특별↑이면 확률로 알을 무지개알로 변신(특별 50% · 전설/한정 100%).
+    //    시각·연출만 무지개로 바뀌고 결과 펫·보상(_fx.gold)은 그대로. 3번째 탭에서 무지개 오픈 연출로 열린다.
+    function maybeRainbowUpgrade(){
+      const tier=_fx.res.tier; const chance=(tier==='epic')?0.5:((tier==='legend'||tier==='limited')?1:0);
+      if(chance<=0 || Math.random()>=chance) return;
+      _fx.rainbow=true; _fx.rbUpgrade=true;
+      const it=$('fxItem'), st=$('catFx')&&$('catFx').querySelector('.fx-stage');
+      if(it) it.classList.add('fx-rainbow');
+      if(st){ st.classList.add('fx-rb'); st.insertAdjacentHTML('beforeend', fxSparkles(14));
+        st.insertAdjacentHTML('beforeend','<div class="fx-upgrade">'+raysSvg('#ffffff',{h:220})+'</div>');
+        const u=st.querySelector('.fx-upgrade'); if(u) setTimeout(function(){ u.remove(); }, 720); }
+      const hint=$('fxHint'); if(hint) hint.textContent='✨ 무지개알로 변했어요! 한 번 더 탭!';
+      toast('✨ 무지개알로 변신!');
+    }
     // 깨진 껍질 조각(알 전용): 좌우로 튀어나가 아래·옆에 흩어져 놓인다. 큰 조각 2개 + 잔조각.
     function fxShells(){
-      let s=''; const n=7;
+      let s=''; const n=11; const rb=_fx&&_fx.rainbow;   // 조각을 더 많이 + 더 멀리 튕겨나가게(껍질이 확 깨져 날아가는 게 보이게)
       for(let i=0;i<n;i++){
         const side=(i%2)?1:-1;
-        const sx=(side*(48+Math.random()*94)).toFixed(0);   // 좌우로 흩어짐
-        const sy=(24+Math.random()*74).toFixed(0);          // 아래로 떨어져 옆에 놓임
-        const sr=(side*(30+Math.random()*170)).toFixed(0);
-        const big=i<2;
-        const sc=(big?1:0.5+Math.random()*0.35).toFixed(2);
-        const del=(Math.random()*0.09).toFixed(2);
-        s+='<span class="fx-shell'+(big?' big':'')+'" style="--sx:'+sx+'px;--sy:'+sy+'px;--sr:'+sr+'deg;--ss:'+sc+';animation-delay:'+del+'s"></span>';
+        const sx=(side*(62+Math.random()*132)).toFixed(0);   // 좌우로 더 멀리 흩어짐
+        const sy=(18+Math.random()*108).toFixed(0);          // 위로 튀었다 아래로 떨어져 옆에 놓임
+        const sr=(side*(140+Math.random()*400)).toFixed(0);  // 빙글빙글 더 많이 회전
+        const big=i<3;                                        // 큰 곡면 조각 3개 + 잔조각
+        const which=big?(i%2):2;                              // A/B(큰), C(작은)
+        const h=big?(15+Math.round(Math.random()*7)):(8+Math.round(Math.random()*4));
+        const del=(Math.random()*0.12).toFixed(2);
+        s+='<span class="fx-shell'+(big?' big':'')+'" style="--sx:'+sx+'px;--sy:'+sy+'px;--sr:'+sr+'deg;--ss:1;animation-delay:'+del+'s">'+shellSvg(which,rb,{h:h})+'</span>';
       }
       return s;
     }

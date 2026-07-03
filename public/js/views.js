@@ -667,7 +667,7 @@
       const isFriend=!!(state.friends&&state.friends[uid]);
       openSheet('불러오는 중…', '<div class="empty" style="padding:40px 12px;">불러오는 중…</div>');
       Promise.all([
-        db.ref('users/'+uid+'/game').once('value'),
+        db.ref('homeCam/'+uid).once('value'),   // 대표 방 공개 스냅샷만 읽음(내 다른 방은 규칙상 비공개)
         db.ref('users/'+uid+'/todoPublic').once('value'),
         db.ref('users/'+uid+'/homeLikes').once('value'),
         db.ref('users/'+uid+'/todos').once('value'),
@@ -675,7 +675,7 @@
         db.ref('users/'+uid+'/friendReqs/'+state.uid).once('value')
       ]).then(function(res){
         if(!($('sheet')&&$('sheet').classList.contains('on'))) return;   // 그새 닫혔으면 중단
-        const fg=normalizeGame(res[0].val()), pub=!!res[1].val(), likes=res[2].val();
+        const fg={ home:(res[0].val()||{}) }, pub=!!res[1].val(), likes=res[2].val();   // homeCam 스냅샷을 flat home으로(friendRoom이 그대로 사용)
         const priv=(res[4].val()===false);
         const sentReq=!!res[5].val(), incomingReq=!!(state.friendReqs&&state.friendReqs[uid]);   // 내가 보낸 요청 / 상대가 나에게 보낸 요청
         const anon=priv && !isFriend;                       // 비공개 + 비친구 → 익명(은화+알뜰)
@@ -1394,12 +1394,12 @@
     }
     function memberName(wsId, uid){ const w=(state.memberships||[]).find(x=>x.id===wsId); return (w&&w.members&&w.members[uid]&&w.members[uid].name)||'멤버'; }
     function doRenameWs(wsId){ const n=val('grpRename').trim(); if(!n){ toast('이름을 입력하세요', true); return; } renameWorkspace(wsId, n).then(()=>openGroupManageSheet(wsId)); }
-    function doTransferOwner(wsId, uid){ confirmSheet('"'+memberName(wsId,uid)+'"님에게 소유자를 넘길까요? 넘기면 나는 일반 멤버가 됩니다.', ()=>{ transferOwnership(wsId, uid).then(()=>openGroupManageSheet(wsId)); }); }
-    function doRemoveMember(wsId, uid){ confirmSheet('"'+memberName(wsId,uid)+'"님을 그룹에서 내보낼까요? 이 그룹에 더 이상 접근할 수 없게 됩니다.', ()=>{ removeMember(wsId, uid).then(()=>openGroupManageSheet(wsId)); }); }
+    function doTransferOwner(wsId, uid){ confirmSheet('"'+memberName(wsId,uid)+'"님에게 소유자를 넘길까요? 넘기면 나는 일반 멤버가 됩니다.', ()=>{ transferOwnership(wsId, uid).then(()=>openGroupManageSheet(wsId)); }, {title:'소유자 넘기기', okLabel:'넘기기'}); }
+    function doRemoveMember(wsId, uid){ confirmSheet('"'+memberName(wsId,uid)+'"님을 그룹에서 내보낼까요? 이 그룹에 더 이상 접근할 수 없게 됩니다.', ()=>{ removeMember(wsId, uid).then(()=>openGroupManageSheet(wsId)); }, {title:'멤버 내보내기', okLabel:'내보내기', danger:true}); }
     function confirmLeave(wsId){
       const w=(state.memberships||[]).find(x=>x.id===wsId);
       const last=w && Object.keys(w.members||{}).length<=1;
-      confirmSheet(last?'마지막 멤버예요. 나가면 이 그룹의 데이터가 모두 삭제됩니다. 계속할까요?':'이 그룹에서 나갈까요? (이 그룹 데이터에 더 이상 접근할 수 없어요)', ()=>leaveWorkspace(wsId));
+      confirmSheet(last?'마지막 멤버예요. 나가면 이 그룹의 데이터가 모두 삭제됩니다. 계속할까요?':'이 그룹에서 나갈까요? (이 그룹 데이터에 더 이상 접근할 수 없어요)', ()=>leaveWorkspace(wsId), {title:'그룹 나가기', okLabel:'나가기', danger:true});
     }
     function copyText(t){ if(navigator.clipboard && t){ navigator.clipboard.writeText(t).then(()=>toast('복사했어요')).catch(()=>toast(t)); } else toast(t||''); }
 

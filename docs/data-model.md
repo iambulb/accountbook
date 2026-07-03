@@ -31,6 +31,7 @@ codes/{CODE}           : wsId            // 그룹 6자리 코드 → 워크스�
 friendCodes/{CODE}      : uid            // 친구 6자리 코드 → 사용자 uid 조회 인덱스
 migrationV3            : { by, at }      // v2→v3 데이터 1회 이전 잠금 플래그
 rankings/{uid}         : { name, likes, private, at }  // 🏆 공개 랭킹 경량 인덱스(집 좋아요 TOP10). 소유자만 유지(watchMyLikes 좋아요 변동·프로필 저장·진입 시 writeMyRanking). likes=Σ homeLikes.n. 읽기=전체, 쓰기=본인($uid)만. 사진 미포함(상위권만 users/{uid}/photo 지연 로드)
+homeCam/{uid}          : { name, emoji, wallpaper, placed, active, slots, poops, changedAt }  // 🏠🔒 친구·랭킹에 공개하는 **대표 방(showRoom)** 스냅샷만. 소유자 game 변경 시 writeHomeCam이 갱신. 읽기=전체(친구 캠·스토리 변경시각), 쓰기=본인만. **users/{uid}/game(모든 방)은 소유자만 읽음** → 대표 방 외 다른 방은 실제로 비공개.
 catalogPets/{id}       : { name, species, speciesLabel?, tier, scale, frontWalk, hasArt?, deleted?, by, at }  // 🐯 런타임 펫/정적 오버라이드 **메타데이터**(앱에서 dev가 zip 업로드·수정·삭제 → 전역). 읽기=전체, 쓰기=개발자 이메일만(규칙). 앱 로드 시 PET_CATALOG/PET_SPRITES/CAT_TIER/SPECIES_LABEL에 병합. 신규 런타임 펫 또는 정적 펫 오버라이드(이름·등급·디자인·`deleted:true` 소프트삭제) 겸용. `hasArt:true`=이미지가 catalogPetArt에 있음(지연 로드). ※구 레코드는 `walk/south/…` 인라인 data URL을 가질 수 있음(하위호환) — `migrateCatalogArtOnce()`로 분리 이전
 catalogPetArt/{id}     : { walk, south, north, east, west(=data URL PNG) }  // 🖼️ 런타임 펫 스프라이트(base64) — 메타와 분리 저장. 앱 시작 땐 안 받고, 실제로 보이는 펫만 `ensurePetArt()`가 `.once`로 1회 받아 세션 캐시(초기 로딩/재푸시 부담↓). 읽기=전체, 쓰기=개발자 이메일만
 ws/{wsId}/             : 가계부 데이터 (아래 노드들)

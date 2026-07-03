@@ -166,6 +166,7 @@
       r = r || {};
       return {
         name: (typeof r.name === 'string' && r.name) ? r.name : ('방 ' + (i + 1)),
+        emoji: (typeof r.emoji === 'string') ? r.emoji : '',
         wallpaper: r.wallpaper || 'default',
         placed: (r.placed && typeof r.placed === 'object') ? r.placed : {},
         active: Array.isArray(r.active) ? r.active.slice() : [],
