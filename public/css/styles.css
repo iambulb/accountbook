@@ -1207,3 +1207,6 @@
     .giftsend .gstx b { font-size:14px; }
     .giftsend .gstx small { font-size:11.5px; color:var(--muted); }
     .giftsend.free { border-color:color-mix(in srgb, var(--gold, #f2b134) 45%, var(--line)); }
+    /* 보유 최대치 도달 칩(재화·아이템이 상한에 닿았을 때만 노출) */
+    .maxchip { display:inline-block; font-size:10px; font-weight:800; line-height:1.4; color:var(--sub);
+      background:var(--line); padding:0 5px; border-radius:6px; margin-left:4px; vertical-align:middle; }

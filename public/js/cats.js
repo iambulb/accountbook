@@ -1025,10 +1025,18 @@
       (o.home.rooms||[]).forEach(r=>{ const seen={}; r.active=(r.active||[]).map(k=>m[k]||k).filter(k=>{ if(seen[k]) return false; seen[k]=1; return true; }); });
       return o;
     }
+    // 재화·아이템 보유 상한(넉넉). 모든 트랜잭션이 normalizeGame을 거치므로 여기서 클램프하면 전 경로에 일관 적용.
+    const MAX_COINS=9999999, MAX_GOLD=999999, MAX_CONSUM=9999;
+    function clampCoins(v){ return Math.min(MAX_COINS, Math.max(0, Math.floor(Number(v)||0))); }
+    function clampGold(v){ return Math.min(MAX_GOLD, Math.max(0, Math.floor(Number(v)||0))); }
+    function clampConsum(v){ return Math.min(MAX_CONSUM, Math.max(0, Math.floor(Number(v)||0))); }
+    function atMaxCoins(){ return coins()>=MAX_COINS; }
+    function atMaxGold(){ return gold()>=MAX_GOLD; }
+    function maxChip(){ return ' <span class="maxchip">최대</span>'; }
     function normalizeGame(g){ g=g||{}; return migratePetIds({
-      coins: Number(g.coins)||0, gold: Number(g.gold)||0,
+      coins: clampCoins(g.coins), gold: clampGold(g.gold),
       owned:{ cats:(g.owned&&g.owned.cats)||{}, items:(g.owned&&g.owned.items)||{}, wallpapers:(g.owned&&g.owned.wallpapers)||{} },
-      consum:{ food:Number(g.consum&&g.consum.food)||0, water:Number(g.consum&&g.consum.water)||0, egg:Number(g.consum&&g.consum.egg)||0, box:Number(g.consum&&g.consum.box)||0, rainbow_egg:Number(g.consum&&g.consum.rainbow_egg)||0, rainbow_box:Number(g.consum&&g.consum.rainbow_box)||0 },
+      consum:{ food:clampConsum(g.consum&&g.consum.food), water:clampConsum(g.consum&&g.consum.water), egg:clampConsum(g.consum&&g.consum.egg), box:clampConsum(g.consum&&g.consum.box), rainbow_egg:clampConsum(g.consum&&g.consum.rainbow_egg), rainbow_box:clampConsum(g.consum&&g.consum.rainbow_box) },
       home: normalizeHome(g.home, HOME_OPTS),   // 여러 방(프리셋): rooms[]·current·roomSlots·slots·changedAt (레거시 flat 자동 이관)
       missions: g.missions||{}, progress: g.progress||{}, codes: g.codes||{},
       customMissions: g.customMissions||{},   // 내 미션(커스텀 습관): {id:{title,coinReward,active,createdAt,order}}
@@ -1039,7 +1047,7 @@
     }); }
     // 선물함 목록을 항상 배열로 정규화(RTDB가 객체로 돌려줄 수 있어 방어)
     function normalizeGifts(x){ if(Array.isArray(x)) return x.filter(Boolean); if(x&&typeof x==='object') return Object.keys(x).map(k=>x[k]).filter(Boolean); return []; }
-    function gold(){ return (state.game&&state.game.gold)||0; }
+    function gold(){ return clampGold((state.game&&state.game.gold)||0); }
     // 집(펫 노출·가구) 변경 시각 갱신 — 친구 스토리 무지개 링의 근거(오늘 바뀌면 링).
     function touchHome(){ try{ gameRef().child('home/changedAt').set(new Date().toISOString()); }catch(e){} }
     // ===== ❤️ 집 좋아요(하루 1회/방문자) — users/{owner}/homeLikes/{visitor}={n,last} =====
@@ -1095,7 +1103,7 @@
     function writeHomeCam(){ if(!state.uid||!state.game) return; const snap=repRoomSnapshot(); const sig=JSON.stringify(snap);
       if(sig===state._lastCamSig) return; state._lastCamSig=sig;
       try{ db.ref('homeCam/'+state.uid).set(snap); }catch(e){} }
-    function coins(){ return (state.game&&state.game.coins)||0; }
+    function coins(){ return clampCoins((state.game&&state.game.coins)||0); }
     function ownsCat(id){ return !!(state.game&&state.game.owned.cats[id]); }
     function activeCats(){ const a=room().active||[]; return a.filter(ownsCat); }   // 현재 방의 활성 펫
     function ownedCatList(){ return PET_CATALOG.filter(c=>ownsCat(c.id)).map(c=>c.id); }
@@ -1421,7 +1429,7 @@
         else h+=rows.map(k=>{ const m=CONSUM_META[k], q=consumQty(k);
           const useBtn = m.use ? '<button class="buy'+((k==='rainbow_egg'||k==='rainbow_box')?' rb-use':'')+'" onclick="useBagItem(\''+k+'\')">사용</button>'
                                : '<span class="qty" style="font-size:11px;color:var(--sub)">홈에서 그릇 탭</span>';
-          return '<div class="bagrow"><span class="bgic">'+m.icon({h:34})+'</span><b class="bgnm'+((k==='rainbow_egg'||k==='rainbow_box')?' tier-limited':'')+'">'+m.name+'</b><span class="qty">보유 '+q+'</span>'+useBtn+'</div>'; }).join('');
+          return '<div class="bagrow"><span class="bgic">'+m.icon({h:34})+'</span><b class="bgnm'+((k==='rainbow_egg'||k==='rainbow_box')?' tier-limited':'')+'">'+m.name+'</b><span class="qty">보유 '+q.toLocaleString()+(q>=MAX_CONSUM?maxChip():'')+'</span>'+useBtn+'</div>'; }).join('');
         h+='<div class="note" style="margin-top:12px;">사료·물은 홈 화면에서 <b>밥·물 그릇을 탭</b>해 사용해요. 펫알·랜덤박스·무지개 아이템은 여기서 <b>사용</b>하면 열려요.</div></div>';
         return h;
       };
@@ -2068,7 +2076,7 @@
       if(!state.game) state.game=normalizeGame(null);   // 스냅샷 도착 전 안전 가드
       const build=()=>{
         // 상단(금화·은화 + 홈/알뜰샵/배치/미션 탭)은 스크롤해도 고정(sticky), 그 아래 콘텐츠만 스크롤
-        let h='<div class="cathead"><div class="coinbar"><span class="coin"><span class="ci">'+goldSvg({h:20})+'</span>'+gold().toLocaleString()+'<small>금화</small></span><span class="coin"><span class="ci">'+coinSvg({h:20})+'</span>'+coins().toLocaleString()+'<small>은화</small></span></div>';
+        let h='<div class="cathead"><div class="coinbar"><span class="coin"><span class="ci">'+goldSvg({h:20})+'</span>'+gold().toLocaleString()+(atMaxGold()?maxChip():'')+'<small>금화</small></span><span class="coin"><span class="ci">'+coinSvg({h:20})+'</span>'+coins().toLocaleString()+(atMaxCoins()?maxChip():'')+'<small>은화</small></span></div>';
         h+='<div class="catseg">'+[['home','홈'],['shop','알뜰샵'],['place','배치'],['mission','미션']].map(t=>'<button class="'+(_catTab===t[0]?'on':'')+'" onclick="setCatTab(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div></div>';
         if(_catTab==='home') h+=catHomeHtml();
         else if(_catTab==='shop') h+=catShopHtml();
@@ -2195,7 +2203,7 @@
           return '<div class="shopcard"><div class="thumb"><span class="furnfit">'+consumSvg(c.id,{fit:true})+'</span></div>'+
             '<div class="meta"><b>'+c.name+' <span class="tagmini">소비</span></b><div class="desc">'+c.desc+'</div>'+
             '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+c.price+'</span></div>'+
-            '<div class="act">'+act+'<span class="qty">보유 '+consumQty(c.id)+'</span></div></div>';
+            '<div class="act">'+act+'<span class="qty">보유 '+consumQty(c.id).toLocaleString()+(consumQty(c.id)>=MAX_CONSUM?maxChip():'')+'</span></div></div>';
         }).join('');
         h+='<div class="note"><b>소비 아이템</b>은 배치할 수 없어요. 홈 화면에서 <b>밥그릇·물그릇을 탭</b>하면 사료·물을 1개 써서 채워집니다(3시간 뒤 비워짐).</div>';
         return h;
@@ -2221,7 +2229,7 @@
           return '<div class="shopcard rb-card"><div class="thumb rb-thumb-wrap">'+art+'</div>'+
             '<div class="meta"><b class="tier-limited">'+nm+'</b><div class="desc">'+desc+'</div>'+
             '<span class="price"><span class="ci">'+goldSvg({h:16})+'</span>'+price+'</span></div>'+
-            '<div class="act">'+buy+use+'<span class="qty">보유 '+qty+'</span></div></div>'; }).join('');
+            '<div class="act">'+buy+use+'<span class="qty">보유 '+qty.toLocaleString()+(qty>=MAX_CONSUM?maxChip():'')+'</span></div></div>'; }).join('');
         h+='<div class="note">열 때마다 <b>금화 1개</b> 지급(무지개 제외·중복 펫은 <b>그 펫 가격의 20% 은화</b> 환급). <b>특별 등급 이상</b>은 펫알/랜덤박스로만 나오며, <b class="tier-limited">무지개</b>는 <b>금화로 구매·사용</b>해 특별↑을 확정으로 뽑아요.</div>';
         h+=gachaInfoHtml();
         return h;
@@ -2311,12 +2319,13 @@
       }).then(res=>{ if(res.committed) toast(it.name+' 구매! 배치 탭에서 놓아보세요'); });
     }
     // ===== 🍚💧 다마고치: 사료·물 소비 / 급여 / 배변 / 똥 수거 =====
-    function consumQty(id){ return (state.game&&state.game.consum&&Number(state.game.consum[id]))||0; }
+    function consumQty(id){ return clampConsum((state.game&&state.game.consum&&state.game.consum[id]))||0; }
     // 소비 아이템 구매(1은화, 배치 불가)
     function buyConsum(id){
       const c=CONSUM_CATALOG.find(x=>x.id===id); if(!c) return;
+      if(consumQty(id)>=MAX_CONSUM){ toast(c.name+' 최대 보유량이에요('+MAX_CONSUM.toLocaleString()+'개)', true); return; }   // 캡 도달 시 구매 차단(은화 낭비 방지)
       if(coins()<c.price){ toast((c.price-coins())+' 은화 부족', true); return; }
-      gameRef().transaction(g=>{ g=normalizeGame(g); if(g.coins<c.price) return g;
+      gameRef().transaction(g=>{ g=normalizeGame(g); if(g.coins<c.price || (Number(g.consum[id])||0)>=MAX_CONSUM) return g;
         g.coins-=c.price; g.consum[id]=(Number(g.consum[id])||0)+1; return g;
       }).then(res=>{ if(res.committed) toast(c.name+' +1'); });
     }
@@ -2529,8 +2538,9 @@
     function buyRainbow(kind){
       const key=rainbowKey(kind);
       const price=rbPriceGold(kind);
+      if(consumQty(key)>=MAX_CONSUM){ toast(rainbowName(kind)+' 최대 보유량이에요('+MAX_CONSUM.toLocaleString()+'개)', true); return; }
       if(gold()<price){ toast('금화 '+(price-gold())+' 부족', true); return; }
-      gameRef().transaction(g=>{ g=normalizeGame(g); if((g.gold||0)<price) return g;
+      gameRef().transaction(g=>{ g=normalizeGame(g); if((g.gold||0)<price || (Number(g.consum[key])||0)>=MAX_CONSUM) return g;
         g.gold-=price; g.consum[key]=(Number(g.consum[key])||0)+1; return g;
       }).then(r=>{ if(r&&r.committed) toast(rainbowName(kind)+' +1 ✨'); });
     }
@@ -2794,7 +2804,7 @@
       openSheet('펫 도감', h);
     }
     function catMissionHtml(){
-      let h='<div class="coinhero"><span class="ch-big">'+coinSvg({h:44})+'</span><div><div class="k">보유 은화</div><div class="v">'+coins().toLocaleString()+'</div></div></div>';
+      let h='<div class="coinhero"><span class="ch-big">'+coinSvg({h:44})+'</span><div><div class="k">보유 은화</div><div class="v">'+coins().toLocaleString()+(atMaxCoins()?maxChip():'')+'</div></div></div>';
       // 로그인 스트릭 배지: 연속 출석일 + 다음 마일스톤까지(3·7·14·30, 이후 매30). 마일스톤에 은화·금화 보상.
       { const c=(state.game&&state.game.streak&&Number(state.game.streak.count))||0;
         const nx=[3,7,14,30].find(n=>n>c)||(Math.floor(c/30+1)*30);
