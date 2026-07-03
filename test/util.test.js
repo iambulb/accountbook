@@ -268,6 +268,19 @@ test('normalizeHome: 이미 rooms면 통과 + roomSlots만큼 방 보장', () =>
   assert.strictEqual(h.roomSlots, 3);
 });
 
+test('sumPlacedItem: 모든 방에 배치된 같은 가구 개수 합(전역 인벤토리 소진)', () => {
+  const rooms = [
+    { placed: { '1_1': { itemId: 'cushion' }, '2_2': { itemId: 'bowl' } } },
+    { placed: { '3_3': { itemId: 'cushion' } } },
+    { placed: {} },
+    {},
+  ];
+  assert.strictEqual(U.sumPlacedItem(rooms, 'cushion'), 2);   // 방1+방2
+  assert.strictEqual(U.sumPlacedItem(rooms, 'bowl'), 1);
+  assert.strictEqual(U.sumPlacedItem(rooms, 'tower'), 0);
+  assert.strictEqual(U.sumPlacedItem(null, 'cushion'), 0);    // 방어
+});
+
 test('normalizeHome: 상한/클램프 + 방 데이터 손실 방지', () => {
   // roomSlots 과다 → MAX(5)로, current 음수 → 0
   const a = U.normalizeHome({ rooms: [{}], roomSlots: 99, current: -5, slots: 999 });

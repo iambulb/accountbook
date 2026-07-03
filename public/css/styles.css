@@ -702,6 +702,9 @@
     .rmthumb.locked { flex-direction:column; gap:3px; align-items:center; justify-content:center; border-style:dashed; color:var(--sub); background:var(--soft); aspect-ratio:auto; min-height:78px; }
     .rmthumb.locked .rmlock svg { width:18px; height:18px; }
     .rmthumb.locked .rmgold { display:inline-flex; align-items:center; gap:2px; font-size:10.5px; font-weight:800; color:var(--text); }
+    .wsw { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:6px; vertical-align:-1px; border:1px solid color-mix(in srgb,var(--text) 20%,transparent); }
+    /* dock(상단 캠) 현재 방 이름 — 방 여러 개일 때만 표시 */
+    .cd-roomname { position:absolute; top:6px; left:8px; z-index:3; max-width:45%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px; font-weight:800; color:#fff; background:color-mix(in srgb,#000 42%,transparent); padding:2px 7px; border-radius:999px; pointer-events:none; }
 
     /* 활성 슬롯 행(홈): 채워진 슬롯 + 잠금 슬롯(금화 확장) */
     .slotrow { display:flex; gap:8px; margin:0 0 4px; overflow-x:auto; padding-bottom:3px; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity; }

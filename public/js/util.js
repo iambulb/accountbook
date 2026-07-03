@@ -187,6 +187,11 @@
     };
   }
 
+  // 가구 인벤토리 소진량 = 모든 방에 배치된 같은 itemId 개수 합(전역). 방별 배치라도 인벤토리(owned)는 전역이라 전 방 합산해야 복제 방지.
+  function sumPlacedItem(rooms, id) {
+    var n = 0; (rooms || []).forEach(function (r) { var p = (r && r.placed) || {}; for (var k in p) { if (p[k] && p[k].itemId === id) n++; } }); return n;
+  }
+
   // ---- 렌더 결정(순수) — 어떤 배지/카드를 그릴지 판정만. 실제 DOM 쓰기는 core/views의 얇은 래퍼가 담당. ----
   // 상단 로고 점 배지 표시 여부: 모드 화면(홈 아님)에서 오늘 미처리(total>0)일 때만.
   function homeBadgeShow(view, total) { return view !== 'home' && (total | 0) > 0; }
@@ -204,7 +209,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot };
+  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, sumPlacedItem: sumPlacedItem, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);

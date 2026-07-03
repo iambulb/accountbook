@@ -558,9 +558,13 @@
       const h=raw&&raw.home;
       if(!h || Array.isArray(h.rooms)) return;   // 신규 구조거나 home 없음(신규 유저는 이관 불필요)
       if(!(h.placed || (h.active&&h.active.length) || h.wallpaper || h.poops)) return;   // 옮길 flat 데이터 없음
-      const nh=state.game.home;   // normalizeGame이 rooms화한 결과
-      gameRef().child('home').update({ rooms:nh.rooms, current:nh.current, roomSlots:nh.roomSlots, slots:nh.slots,
-        changedAt:nh.changedAt||new Date().toISOString(), active:null, placed:null, wallpaper:null, poops:null });   // flat 키 제거
+      if(state._homeMigrating) return; state._homeMigrating=true;   // 로컬 중복 방지
+      // 트랜잭션으로 race-safe: 그새 다른 기기가 이미 rooms화했으면 건너뜀. flat 키는 제거하고 rooms로 이관.
+      gameRef().child('home').transaction(cur=>{
+        if(cur && Array.isArray(cur.rooms)) return;   // 이미 이관됨 → 변경 없음(abort)
+        const nh=normalizeHome(cur, HOME_OPTS);
+        return { rooms:nh.rooms, current:nh.current, roomSlots:nh.roomSlots, slots:nh.slots, changedAt:nh.changedAt||new Date().toISOString() };
+      }).catch(()=>{}).then(()=>{ state._homeMigrating=false; });
     }
     function currentWall(){ return room().wallpaper||'default'; }
     // 미션 정의(일일). reward=은화. check(ctx)=완료 여부(현재 워크스페이스 활동 읽어 판정)
@@ -957,6 +961,7 @@
     function onGameChange(){
       updateDockCoins();
       const dw=$('catdock'); const wall=dw&&dw.querySelector('.cr-wall'); if(wall) wall.style.background=wallCss(currentWall());
+      const rn=$('cdRoomName'); if(rn){ const multi=roomCount()>1; rn.hidden=!multi; if(multi) rn.textContent=room().name||''; }   // dock 현재 방 이름(방 여러 개일 때만)
       renderDockProps();
       renderDockCats();
       if(state.view==='home' && typeof renderHome==='function') renderHome();   // 홈의 미션·은화 즉시 반영
@@ -1008,12 +1013,28 @@
         return g;
       }).then(res=>{ if(res.committed) toast('방 +1 확장! 🏠'); });
     }
-    function openRenameRoom(idx){ const h=homeH(); const r=(h.rooms&&h.rooms[idx])||{}; const cur=r.name||('방 '+(idx+1));
-      openSheet('방 이름', '<div class="field"><label for="roomNameIn">방 이름</label><input class="input" id="roomNameIn" maxlength="8" value="'+escapeHtml(cur)+'" placeholder="예: 고양이방"></div>'+
-        '<button class="btn" onclick="saveRoomName('+idx+')">저장</button>');
+    // 방 관리 시트: 이름 변경 · 다른 방 벽지 가져오기(가구는 소비형이라 복사 대신 '비우기'로 재분배) · 방 비우기
+    function openRoomMenu(idx){ const h=homeH(); const r=(h.rooms&&h.rooms[idx])||{}; const cur=r.name||('방 '+(idx+1)); const rc=roomCount();
+      let body='<div class="field"><label for="roomNameIn">방 이름</label><input class="input" id="roomNameIn" maxlength="8" value="'+escapeHtml(cur)+'" placeholder="예: 고양이방"></div>'+
+        '<button class="btn" onclick="saveRoomName('+idx+')">이름 저장</button>';
+      const others=[]; for(let i=0;i<rc;i++){ if(i!==idx) others.push(i); }
+      if(others.length){ body+='<div class="sech" style="margin-top:18px;"><span class="l">벽지 가져오기</span></div>'+
+        '<div class="row" style="flex-wrap:wrap;gap:8px;">'+others.map(i=>{ const nm=(h.rooms[i].name)||('방 '+(i+1)); return '<button class="btn ghost" onclick="copyRoomWall('+i+','+idx+')"><span class="wsw" style="background:'+wallCss(h.rooms[i].wallpaper||'default')+'"></span>'+escapeHtml(nm)+'</button>'; }).join('')+'</div>'; }
+      body+='<div class="sech" style="margin-top:18px;"><span class="l">방 비우기</span></div>'+
+        '<p class="muted" style="font-size:12px;margin:0 0 8px;line-height:1.5;">이 방의 가구는 인벤토리로 돌아가고(다른 방에 다시 놓을 수 있어요), 활성 펫은 대기 상태가 됩니다.</p>'+
+        '<button class="btn danger ghost" onclick="clearRoom('+idx+')">이 방 비우기</button>';
+      openSheet('방 관리 · '+escapeHtml(cur), body);
       setTimeout(()=>{ const el=$('roomNameIn'); if(el){ el.focus(); el.select(); } }, 30); }
+    function openRenameRoom(idx){ openRoomMenu(idx); }   // 하위호환 별칭
     function saveRoomName(idx){ const v=(val('roomNameIn')||'').trim()||('방 '+(idx+1));
       gameRef().child('home/rooms/'+idx+'/name').set(v).then(()=>{ touchHome(); closeSheet(); toast('방 이름을 바꿨어요'); }); }
+    function copyRoomWall(src, dest){ gameRef().transaction(g=>{ g=normalizeGame(g); const rs=g.home.rooms; if(!rs[src]||!rs[dest]) return g;
+        rs[dest].wallpaper=rs[src].wallpaper||'default'; g.home.changedAt=new Date().toISOString(); return g;
+      }).then(r=>{ if(r&&r.committed){ closeSheet(); toast('벽지를 가져왔어요 🎨'); } }); }
+    function clearRoom(idx){ confirmSheet('이 방의 가구·펫을 모두 비울까요? (가구는 인벤토리로 돌아가요)', ()=>{
+        gameRef().transaction(g=>{ g=normalizeGame(g); const R=g.home.rooms[idx]; if(!R) return g;
+          R.placed={}; R.active=[]; R.poops=0; g.home.changedAt=new Date().toISOString(); return g;
+        }).then(r=>{ if(r&&r.committed) toast('방을 비웠어요'); }); }); }
 
     // 미션 지급(원자적·멱등): 게임 노드 트랜잭션 1회로 "수령 기록 + 은화 지급"을 동시에.
     // 같은 날 같은 미션은 이미 claimed면 변화 없음 → 중복 지급 불가.
@@ -1422,6 +1443,7 @@
       // 웹캠 정면 방: 벽지(배경) + 바닥 + 배치 가구(배경) + 걷는 고양이
       d.innerHTML='<div class="cd-room">'+
         '<div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div>'+
+        '<span class="cd-roomname" id="cdRoomName"'+(roomCount()>1?'':' hidden')+'>'+escapeHtml(room().name||'')+'</span>'+
         '<span class="cd-coin" role="button" tabindex="0" aria-label="알뜰홈 열기" onclick="event.stopPropagation();coinTap(this)"><span class="cd-ci">'+coinSvg({h:16})+'</span><b id="cdCoins">0</b></span>'+
         batchBtnHtml()+
         '<div class="cr-props" id="cdProps"></div><div class="cr-stage" id="cdStage"></div></div>';
@@ -1761,7 +1783,7 @@
       return '<div class="rmthumb'+(on?' on':'')+'" role="button" tabindex="0" aria-pressed="'+on+'" onclick="switchRoom('+idx+')" title="'+escapeHtml(r.name||('방 '+(idx+1)))+'">'+
         '<span class="rmscene" style="background:'+wallCss(r.wallpaper||'default')+'">'+dots+'</span>'+
         '<span class="rmbar"><span class="rmname">'+escapeHtml(r.name||('방 '+(idx+1)))+'</span><span class="rmpets">🐾'+pets+'</span></span>'+
-        '<button class="rm-edit" aria-label="방 이름 바꾸기" onclick="event.stopPropagation();openRenameRoom('+idx+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
+        '<button class="rm-edit" aria-label="방 관리" onclick="event.stopPropagation();openRoomMenu('+idx+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
       '</div>';
     }
     function roomStripHtml(){
@@ -1780,6 +1802,8 @@
       const props=list.map(p=>propMarkup(p,false)).join('');
       const roomName=(room().name)||'우리집';
       let h=roomStripHtml()+'<div class="catroom" id="catRoom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div><span class="cr-cam"><i></i>LIVE · '+escapeHtml(roomName)+'</span>'+batchBtnHtml()+'<div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div></div>';
+      // 빈 방(가구·펫 없음) 안내 — 방 확장 직후 '사라진 것처럼' 보이는 혼동 방지
+      if(!list.length && !cats.length) h+='<div class="hintline" style="margin:8px 0 0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>새 방이에요! 아래에서 <b>펫을 내보내고</b>, <b>배치</b> 탭에서 가구를 놓아보세요. (다른 방과 따로 저장돼요)</div>';
       // 안내: 그릇 채우기 / 똥 수거
       const poops=room().poops||0;
       h+='<div class="hintline" style="margin:8px 0 0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>밥·물 그릇을 탭해 채우고(3시간 뒤 비워짐), 쌓인 <b>똥을 탭해 치우면 +'+POOP_REWARD+' 은화</b>'+(poops&&!litters.length?' · 화장실을 놓아야 똥을 치울 수 있어요':'')+'.</div>';
@@ -1948,8 +1972,9 @@
     // ---- 가구 인벤토리/배치 ----
     function itemQty(id){ const it=state.game&&state.game.owned.items[id]; return it?(Number(it.qty)||0):0; }
     function placedList(){ const p=room().placed||{}; return Object.keys(p).map(k=>({key:k, r:+k.split('_')[0], c:+k.split('_')[1], itemId:p[k].itemId})); }
-    function itemPlaced(id){ return placedList().filter(x=>x.itemId===id).length; }
-    function itemRemaining(id){ return itemQty(id)-itemPlaced(id); }
+    function itemPlaced(id){ return placedList().filter(x=>x.itemId===id).length; }          // 현재 방 배치 수(케어 아이템 방당 상한용)
+    function itemPlacedAll(id){ return sumPlacedItem(homeH().rooms, id); }                    // 전 방 배치 합(전역 인벤토리 소진 — 복제 방지)
+    function itemRemaining(id){ return itemQty(id)-itemPlacedAll(id); }                       // 남은 수량 = 보유 - 모든 방 배치
     function buyItem(id){
       const it=ITEM_CATALOG.find(x=>x.id===id); if(!it) return;
       if(isGachaOnlyItem(id)){ toast('이 등급은 랜덤박스(가챠)로만 얻을 수 있어요'); setShopSub('event'); return; }
@@ -1986,12 +2011,13 @@
     // 채워진 지 3시간 지난 그릇을 비우고, 비운 개수만큼 똥을 쌓는다(멱등: filledAt 지우면 재발동 안 함)
     function reconcilePets(){
       const g=state.game; if(!g||!g.home) return;
-      const placed=room().placed||{}, now=Date.now();
-      let expired=0; Object.keys(placed).forEach(k=>{ const e=placed[k]; if(e&&e.filledAt&&(now-e.filledAt)>=FILL_MS) expired++; });
+      const now=Date.now();   // 모든 방의 그릇을 점검(안 보는 방도 3h 뒤 비워지며 그 방 똥 누적)
+      let expired=0; (g.home.rooms||[]).forEach(r=>{ const pl=(r&&r.placed)||{}; Object.keys(pl).forEach(k=>{ const e=pl[k]; if(e&&e.filledAt&&(now-e.filledAt)>=FILL_MS) expired++; }); });
       if(!expired) return;
-      gameRef().transaction(gg=>{ gg=normalizeGame(gg); const R=gRoom(gg); const pl=R.placed||{}, n=Date.now(); let poop=0;
-        Object.keys(pl).forEach(k=>{ const e=pl[k]; if(e&&e.filledAt&&(n-e.filledAt)>=FILL_MS){ e.filledAt=null; poop++; } });
-        if(poop) R.poops=(Number(R.poops)||0)+poop;
+      gameRef().transaction(gg=>{ gg=normalizeGame(gg); const n=Date.now();
+        (gg.home.rooms||[]).forEach(R=>{ const pl=R.placed||{}; let poop=0;
+          Object.keys(pl).forEach(k=>{ const e=pl[k]; if(e&&e.filledAt&&(n-e.filledAt)>=FILL_MS){ e.filledAt=null; poop++; } });
+          if(poop) R.poops=(Number(R.poops)||0)+poop; });
         return gg;
       });
     }
