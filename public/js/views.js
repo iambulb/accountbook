@@ -663,7 +663,7 @@
     function friendChangedToday(uid){ const c=state.friendHomeChangedByUid&&state.friendHomeChangedByUid[uid]; return !!(c && String(c).slice(0,10)===ymd(new Date())); }
     // ===== 친구 집(펫캠) 방문 — 캠 + 좋아요 + 오늘의 할일(공개 시) =====
     function openFriendHome(uid){
-      if(!uid || uid===state.uid){ if(typeof openCatHouse==='function') openCatHouse('home'); return; }   // 내 집이면 내 알뜰샵 홈
+      if(!uid || uid===state.uid){ if(typeof openCatHouse==='function') openCatHouse('home'); return; }   // 내 집이면 내 알뜰홈 홈
       const isFriend=!!(state.friends&&state.friends[uid]);
       openSheet('불러오는 중…', '<div class="empty" style="padding:40px 12px;">불러오는 중…</div>');
       Promise.all([
@@ -801,7 +801,7 @@
     function storyTodos(uid){ const list=(uid===state.uid?(state.myTodos||[]):(state.friendTodosByUid[uid]||[])).slice();
       list.sort(function(a,b){ return (a.createdAt||'').localeCompare(b.createdAt||''); }); return list; }   // 오래된→최신 순 재생
     function ensureStoryEl(){ let el=$('storyView'); if(!el){ el=document.createElement('div'); el.id='storyView'; el.className='storyview'; el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true'); document.body.appendChild(el); } return el; }
-    function openMyStory(){ if(typeof openCatHouse==='function') openCatHouse('home'); }   // 내 스토리 = 내 알뜰샵 홈(라이브 캠)
+    function openMyStory(){ if(typeof openCatHouse==='function') openCatHouse('home'); }   // 내 스토리 = 내 알뜰홈 홈(라이브 캠)
     function openMyStoryTodos(){ if(!storyTodos(state.uid).length){ openTodoEdit(); return; } _openStory([state.uid], 0); }   // (레거시 풀스크린 페이저)
     function openFriendStory(uid){
       const pub=Object.keys(state.friends||{}).filter(function(u){ return state.friendPub && state.friendPub[u]; });
@@ -1284,7 +1284,7 @@
         const celebrate=(typeof shouldCelebrateOnce==='function'&&shouldCelebrateOnce());
         h+='<div class="card homedone'+(celebrate?' celebrate':'')+'">'+art+'<div class="hd-tit">오늘 할 거 다 했어요 🐱</div>'+
           '<div class="hd-sub">고양이도 만족스러워해요. 내일 또 만나요!</div>'+
-          '<button class="btn ghost" onclick="openCatHouse()">알뜰샵 둘러보기</button></div>';
+          '<button class="btn ghost" onclick="openCatHouse()">알뜰홈 둘러보기</button></div>';
       } else if(kind==='empty'){
         h+='<div class="card homedone empty"><div class="hd-emoji">🌙</div><div class="hd-tit">오늘은 예정된 게 없어요</div>'+
           '<div class="hd-sub">미션이나 할일을 추가해 은화를 모아보세요.</div></div>';
@@ -1534,9 +1534,9 @@
          '<div class="gnm"><b>'+escapeHtml(ws.name||'가계부')+'</b><span>'+wsSub+'</span></div>'+
          (isGroup?memberAvatarStack(ws, 26):'')+
          '<button class="cnt" onclick="event.stopPropagation();openWorkspaceSheet()">전환</button></div>';
-      // 4열 기능 그리드 — 할일 모드면 할일 전용, 아니면 가계부 전용(알뜰샵·설정은 공용)
+      // 4열 기능 그리드 — 할일 모드면 할일 전용, 아니면 가계부 전용(알뜰홈·설정은 공용)
       h+='<div class="grid4">';
-      // 기본 메뉴 아이콘은 라인 SVG(MORE_ICON) 유지. 알뜰샵=코인·선물함=선물상자·가방=갈색 가방(픽셀 아트).
+      // 기본 메뉴 아이콘은 라인 SVG(MORE_ICON) 유지. 알뜰홈=코인·선물함=선물상자·가방=갈색 가방(픽셀 아트).
       if(state.mode==='todo'){
         h+=gcell(MORE_ICON.share,'할일 공유','openTodoShareSheet()');
         h+=gcell(MORE_ICON.report,'완료 리포트','openTodoReport()');
@@ -1557,7 +1557,7 @@
       // 공통(모드 무관) 아이콘 — 가운데 '공통' 라벨 구분선으로 분리
       h+='<div class="gsep"><span>공통</span></div>';
       h+='<div class="grid4">';
-      h+=gcell(coinSvg({h:26}),'알뜰샵','openCatHouse()');
+      h+=gcell(coinSvg({h:26}),'알뜰홈','openCatHouse()');
       h+=gcell(giftSvg({h:26}),'선물함','openGiftbox()', (typeof giftCount==='function'?giftCount():0));
       h+=gcell((typeof bagSvg==='function'?bagSvg({h:26}):''),'가방','openBag()');
       h+=gcell((typeof peopleSvg==='function'?peopleSvg({h:26}):MORE_ICON.members),'친구','openFriendsSheet()', (typeof state.friendReqs==='object'?Object.keys(state.friendReqs||{}).length:0)||0);

@@ -601,7 +601,7 @@
 
     /* ===== 🐱 고양이집 (은화 경제 + 도트 아트) ===== */
     .px { image-rendering:pixelated; display:block; }
-    .catpx { image-rendering:pixelated; display:block; } /* 스프라이트 고양이 정면 썸네일(south.png) — 상점·보유칩·뽑기 공통 */
+    .catpx { image-rendering:pixelated; display:block; } /* 스프라이트 고양이 정면 썸네일(south.png) — 알뜰샵·보유칩·뽑기 공통 */
     /* 전역 dock 스트립 (topbar와 content 사이 상시 노출) */
     .catdock { flex-shrink:0; background:var(--soft); border-bottom:1px solid var(--bd); }
     .cd-strip { height:52px; display:flex; align-items:center; gap:10px; padding:0 14px; position:relative; overflow:hidden; }
@@ -642,7 +642,7 @@
     @keyframes coinpress { 40%{ transform:scale(.84); } 100%{ transform:scale(1); } }
     .cd-room .cd-actor { bottom:0; }   /* 맨 앞(depth0) 펫 발이 캠 최하단에 닿게 */
     .cr-floor { position:absolute; left:0; right:0; bottom:0; height:54%; background:var(--soft2); z-index:0; }
-    /* 벽지 상점 */
+    /* 벽지 알뜰샵 */
     .wallgrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
     .wallcard { background:var(--card); border:1.5px solid var(--bd); border-radius:14px; padding:10px; display:flex; flex-direction:column; gap:8px; }
     .wallcard.on { border-color:var(--primary); }
@@ -711,11 +711,11 @@
     .catchip .cn { font-size:13px; font-weight:700; margin-top:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .catchip .cstate { font-size:9.5px; font-weight:800; margin-top:2px; color:var(--sub); }
     .catchip.on .cstate { color:var(--income); }
-    /* 상점 카드 */
+    /* 알뜰샵 카드 */
     .shopcard { display:flex; align-items:center; gap:14px; background:var(--card); border:1px solid var(--bd); border-radius:18px; padding:14px; margin-bottom:11px; }
     .shopcard .thumb { width:86px; height:86px; border-radius:15px; background:var(--soft); display:flex; align-items:center; justify-content:center; flex:none; position:relative; overflow:hidden; }
     .shopcard .thumb .fl { position:absolute; left:0; right:0; bottom:14px; height:1px; background:var(--bd); }
-    /* 상점 가구 썸네일 — 실제 크기와 무관하게 60px 상자에 맞춰(비율 유지) 적당히 표시 */
+    /* 알뜰샵 가구 썸네일 — 실제 크기와 무관하게 60px 상자에 맞춰(비율 유지) 적당히 표시 */
     .shopcard .thumb .furnfit { width:74px; height:74px; display:flex; align-items:center; justify-content:center; }
     .shopcard .thumb .furnfit .px { width:100%; height:100%; }
     .shopcard .meta { flex:1; min-width:0; }
@@ -724,7 +724,7 @@
     .shopcard .meta .price { display:inline-flex; align-items:center; gap:5px; font-size:13px; font-weight:800; margin-top:8px; }
     .shopcard .meta .price .ci { width:17px; height:17px; display:inline-flex; }
     .shopcard .act { flex:none; }
-    /* 상점 펫 카드 선택(미리보기) — 탭하면 강조되고 썸네일이 옆으로 걷는 스프라이트로 바뀐다. */
+    /* 알뜰샵 펫 카드 선택(미리보기) — 탭하면 강조되고 썸네일이 옆으로 걷는 스프라이트로 바뀐다. */
     .shopcard.petpick { cursor:pointer; transition:border-color .12s, background .12s, transform .08s; }
     .shopcard.petpick:active { transform:scale(.99); }
     .shopcard.petpick.sel { border-color:var(--primary); background:color-mix(in srgb,var(--primary) 8%,var(--card)); }
@@ -906,7 +906,7 @@
     .fx-reveal.rank-4 .fx-rays.slow, .fx-reveal.rank-5 .fx-rays.slow { width:520px; height:520px; opacity:.62; }
     @keyframes fxspark { 0%{opacity:0;transform:translate(-50%,-50%) scale(0)} 45%{opacity:1;transform:translate(-50%,-50%) scale(var(--sc,1))} 100%{opacity:0;transform:translate(-50%,-50%) scale(0)} }
     @keyframes fxframe { 0%,100%{opacity:.5} 50%{opacity:.85} }
-    /* ✨ 무지개 상점 카드(이벤트 탭) */
+    /* ✨ 무지개 알뜰샵 카드(이벤트 탭) */
     .rb-hh { margin:14px 2px 8px; font-size:12.5px; font-weight:800; color:var(--sub); }
     .rb-card { position:relative; overflow:hidden; }
     .rb-card::before { content:""; position:absolute; inset:0; z-index:0; pointer-events:none; opacity:.10;
@@ -1037,7 +1037,7 @@
     .rk-row { display:flex; align-items:center; gap:11px; width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:8px 12px; cursor:pointer; }
     .rk-num { flex:none; width:22px; text-align:center; font-size:14px; font-weight:800; color:var(--sub); }
     .rk-rowname { flex:1; min-width:0; font-size:14px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    /* 내(본인) 순위 강조 — 탭은 유지(내 알뜰샵으로 이동) */
+    /* 내(본인) 순위 강조 — 탭은 유지(내 알뜰홈으로 이동) */
     .rk-row.me { border-color:var(--primary); background:var(--soft); }
     .rk-me { display:inline-block; margin-left:5px; padding:0 6px; border-radius:8px; background:var(--primary); color:var(--card); font-size:10px; font-weight:800; line-height:1.7; vertical-align:middle; }
     .tdwho.avring { padding:2px; border-radius:50%; background:conic-gradient(from 0deg,#ff5b5b,#ffb14d,#ffe24d,#4dff8f,#4dc6ff,#b04dff,#ff5b5b); }
