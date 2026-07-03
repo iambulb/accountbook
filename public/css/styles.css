@@ -796,7 +796,8 @@
     /* 격자 배치 에디터 (12×12) */
     .editwrap { background:var(--card); border:1px solid var(--bd); border-radius:18px; padding:14px; margin-top:2px; }
     /* 배치 격자: 절대좌표 + 드래그 가능한 가구. 배경 라인으로 12×12 표시 */
-    .grid12 { position:relative; width:100%; aspect-ratio:1; margin-bottom:12px; border-radius:8px; overflow:hidden; background:var(--soft); touch-action:none;
+    /* touch-action:pan-y — 빈 격자에서도 세로 스와이프는 시트 스크롤로 통과(드래그는 '꾹 눌러서'만, 드래그 중엔 body.dragging이 스크롤 잠금). none이면 격자가 터치를 먹어 스크롤이 막히던 버그 수정. */
+    .grid12 { position:relative; width:100%; aspect-ratio:1; margin-bottom:12px; border-radius:8px; overflow:hidden; background:var(--soft); touch-action:pan-y;
       background-image:linear-gradient(var(--bd) 1px, transparent 1px), linear-gradient(90deg, var(--bd) 1px, transparent 1px);
       background-size:calc(100%/12) calc(100%/12); }
     /* 드래그(배치·이동) 중엔 뒤 시트 본문이 스크롤·이동하지 않도록 잠금 */
