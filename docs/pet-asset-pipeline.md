@@ -131,6 +131,19 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 4. 배포 확인 후 앱에서 그 **런타임 레코드 삭제**(`catalogPets/{id}`+`catalogPetArt/{id}`). `migratePetIds`가 소유자의 `rt_xxx`를 `<static_id>`로 리맵해 방/보유가 유지된다.
 5. 승격 펫은 자동 CHANGELOG 줄이 안 붙으므로 `docs/CHANGELOG.md`에 수동으로 한 줄 추가한다.
 
+### 주간 자동 정리 — 트리거 문구 **"펫 정리해줘"**
+개발자는 **앱에서 런타임 펫을 추가/수정/삭제만** 하고, 위 수동 5단계를 직접 하지 않는다. 대신 주기적으로(약 주 1회) 담당자에게 **"펫 정리해줘"** 라고 하면 아래 루틴이 실행된다. 위 5단계를 도구로 묶어 자동화한 것이며, RTDB 접근을 위해 **`firebase login`이 한 번** 되어 있어야 한다(프로젝트 소유 계정 → 규칙 무시하고 read/remove).
+
+- **일회성 준비**: `npx firebase-tools login`(브라우저 인증) 1회. 이후 CLI가 비대화식으로 동작.
+- **도구**: `tools/sync_runtime_pets.mjs`(Node). 입력 폴더 기본값 `_sync/`(gitignore, 커밋 안 됨).
+- **루틴**:
+  1. `npx firebase-tools database:get /catalogPets --project money-bb658 -o _sync/catalogPets.json` (그리고 `/catalogPetArt` → `_sync/catalogPetArt.json`).
+  2. 활성(`deleted!=true`) 런타임 펫마다 `<species>_<slug>` 정적 id·이름·tier·scale·desc를 배정해 `_sync/promote.json` 작성(`{ "rt_xxx": { "id","name","tier","scale","desc" } }`).
+  3. `node tools/sync_runtime_pets.mjs` → PNG 5장을 `public/assets/pets/<id>/`에 기록 + `tools/pets.json`에 `zip:""` 항목 병합 + `PET_ID_MIGRATE`의 `/* @rtmigrate */` 앞에 `rt_xxx:'<id>'` 삽입. (멱등) 스크립트가 승격 목록·미승격(soft-delete/누락) 목록·RTDB 삭제 명령을 출력한다.
+  4. `python tools/build_pets.py`(Windows는 `PYTHONIOENCODING=utf-8`) → 카탈로그·스프라이트·등급·`sw.js`·문서·`CACHE_VERSION` 자동 갱신 → `docs/CHANGELOG.md` 한 줄 수동 추가 → `npm test` → `dev` 커밋·푸시 → 배포.
+  5. **배포 확인 후에만** 스크립트가 출력한 `database:remove` 명령으로 `catalogPets/<rt>`·`catalogPetArt/<rt>` 삭제. `migratePetIds`가 소유자 데이터를 `<id>`로 리맵해 방/보유 유지.
+- **soft-delete(앱에서 지운) 펫**: 스크립트가 목록만 출력하고 **자동 삭제하지 않는다**(정적 폴백·migrate가 없어 소유자가 있으면 깨짐). 소유자 확인 후에만 수동 purge.
+
 ## 걷기/쉬기 상태 (cats.js 통합 엔진)
 스프라이트 동물은 단일 rAF 엔진(`catLoop`/`stepActors`)의 액터로 배치되어 두 상태를 오간다.
 - **걷기(roam/goal)**: `.cspr`(한 프레임 창, `overflow:hidden`) 안쪽 필름 `.csprf`(288×48 스트립)를 CSS `steps(6)` + `transform:translateX`(`@keyframes csprFilm`)로 밀어 재생하며 좌우 이동. 서쪽 이동이면 `scaleX(-1)`로 뒤집음(시트는 east 기준).

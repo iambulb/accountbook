@@ -18,6 +18,7 @@
 - **픽셀로 그리는 대상(브랜드·게임·장식)**: 앱 아이콘(`icons/icon.svg`·`icon-192/512`)·로그인 로고(`icons/egg-garden.svg`)·한글 워드마크(`icons/wordmark-altteul.svg`)·펫 스프라이트·가구·은화/금화·펫알/랜덤박스 등. 새 요소도 **같은 격자·톤·팔레트**를 따른다.
 - **예외 — 기능 UI 아이콘은 라인(stroke) SVG**: 상단바·탭바 등 **네비게이션/기능 아이콘은 라인 아이콘**(`viewBox="0 0 24 24"`, `fill:none`, `stroke:currentColor`, `stroke-width≈1.8~2`, `stroke-linecap/join:round`)으로 이미 통일돼 있다. 이 부류는 라인 스타일을 유지한다(픽셀로 바꾸지 말 것). 정리하면 **기능 아이콘 = 라인, 브랜드·게임·장식 = 픽셀**.
 - **재사용·제작**: 매트릭스 도트는 `cats.js` 의 `M_*` 매트릭스 + `pxSvg()`/`FURN_PALS` 패턴을 재사용한다. 로고·워드마크처럼 큰 씬은 스크립트로 rect 를 생성하되(파이썬 PIL 로 미리보기 렌더해 눈으로 확인 후 확정), 결과는 `crispEdges` SVG 로 저장. 색은 항상 **CSS 변수**(다크모드 대응)를 쓴다.
+- **게임(펫) 요소·연출·아이콘은 무조건 픽셀 아트 (사용자 지침, 중요)**: 펫·가구·소비템·펫알/랜덤박스 등 **게임 요소와 그 아이콘, 그리고 오픈(뽑기) 연출까지 전부 픽셀(도트) 아트**로 만든다. 연출의 **빛/섬광/광선/틈새빛도 둥근 글로우·오오라·`border-radius:50%`·`radial/conic-gradient`·`blur` 금지 → 도트 별(`M_STAR`/`starSvg()`) 같은 픽셀 요소**(`image-rendering:pixelated`·`steps()` 애니)로 표현하고, **빛 색은 등급색 톤**(`tierInfo(tier).color`, `currentColor` 상속)을 따른다. 펫알은 탭할수록 균열이 커지고 **3번째 탭에서 크게 갈라져(`M_EGG_C3`) 틈새로 등급색 픽셀 빛이 새어나온다**(`eggCrackSvg()`). 뽑기 FX 구현은 `cats.js` 의 `runGachaFx`/`fxTap`/`fxClimax`/`fxBurst`/`fxReveal` + `styles.css` 의 `.fx-*`(도트 기반). 앞으로 이 부류에 벡터 글로우·이모지를 쓰지 말 것.
 - 새 픽셀 자산을 추가하면 `sw.js` `APP_SHELL`+`CACHE_VERSION` 과 관련 문서도 함께 갱신한다(아래 "문서 최신화 규칙").
 
 ## Git · 커밋 · 머지 · 배포 규칙 (중요)

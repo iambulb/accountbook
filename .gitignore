@@ -3,3 +3,6 @@
 
 # Dependencies
 node_modules/
+
+# 런타임 펫 정리 작업용 RTDB 덤프(tools/sync_runtime_pets.mjs 입력) — 커밋하지 않음
+_sync/

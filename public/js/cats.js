@@ -318,6 +318,43 @@
       "...XWWPPWWX...",
       "....XX.XXX...."
     ];
+    // 균열3(3번째 탭): 알이 크게 세로로 갈라지고, 틈(L)으로 등급색 빛이 새어나온다. L=빛(렌더 시 등급색으로 칠함).
+    const M_EGG_C3 = [
+      ".....S..S.....",
+      "....SX..XS....",
+      "...SXW..WXS...",
+      "...XW.X.WWX...",
+      "..XWX.X.WWWX..",
+      ".XWXWL..LWWWX.",
+      ".XWWLL..LLWWX.",
+      "XWXWLL..OLWWSX",
+      "XWWWWL..OLWWSX",
+      "XWWWWL.YYLWWSX",
+      "XWWWXL..LWWWSX",
+      ".XWWWLL.WXWSX.",
+      ".XWXWWL.WWWSX.",
+      "..XWWW..XWWX..",
+      "...XWWPPWWX...",
+      "....XX.XXX...."
+    ];
+    // ✦ 픽셀 빛 폭발(별) — 등급색으로 칠해 연출의 섬광/광선/틈새빛에 공통 사용. X=색(currentColor), H=흰 코어.
+    const M_STAR = [
+      ".......X.......",
+      ".......X.......",
+      ".......X.......",
+      "...X...X...X...",
+      "....X..X..X....",
+      ".....X.X.X.....",
+      "......XXX......",
+      "XXXXXXXHXXXXXXX",
+      "......XXX......",
+      ".....X.X.X.....",
+      "....X..X..X....",
+      "...X...X...X...",
+      ".......X.......",
+      ".......X.......",
+      ".......X......."
+    ];
     // 박스: 위에 뚜껑(C=윗면, L=앞면), 아래에 몸체(W). 앞면 중앙에 알과 같은 무지개 물음표.
     const M_BOX = [
       "................",
@@ -378,7 +415,9 @@
     const SPECIES_LABEL = { cat:'고양이', dog:'강아지', rabbit:'토끼', tiger:'호랑이' };
     function speciesLabel(id){ const c=PET_CATALOG.find(x=>x.id===id); return (c&&SPECIES_LABEL[c.species])||'펫'; }
     // 구 id(고양이 전용 시절) → 신 id. RTDB 보유/활성 데이터 하위호환(normalizeGame에서 적용).
-    const PET_ID_MIGRATE = { mackerel:'cat_mackerel', cheese:'cat_cheese', calico:'cat_calico', black:'cat_black', white:'cat_white' };
+    // 구 id→신 id 매핑(수동 유지, @gen 마커 밖). 런타임 펫 정적 승격 시 tools/sync_runtime_pets.mjs 가 아래 앵커 앞에 rt_xxx:'static_id' 를 자동 삽입한다.
+    const PET_ID_MIGRATE = { mackerel:'cat_mackerel', cheese:'cat_cheese', calico:'cat_calico', black:'cat_black', white:'cat_white',
+      /* @rtmigrate */ };
     // size = 표시 배율(1=기본). footW×footH = 배치 격자 점유(가로×세로 칸). 캣타워=3×6(세로 큼), 스크래처=2×2, 화장실=2×1(가로로 넓음), 방석·밥그릇=1×1(작게, 밥그릇<방석). itemFoot()/furnScale()로 배치·방·알뜰샵에 반영.
     const ITEM_CATALOG = [
       { id:'cushion', name:'방석',   price:15, size:0.6,  footW:1, footH:1, desc:'고양이가 위에 잠시 올라가 쉬어요.' },
@@ -528,6 +567,10 @@
     function rainbowEggSvg(opt){ return pxSvg(M_EGG, EGG_PAL_RB, opt); }
     function rainbowBoxSvg(opt){ return pxSvg(M_BOX, BOX_PAL_RB, opt); }
     function rainbowEggStage(stage, opt){ return pxSvg([M_EGG,M_EGG_C1,M_EGG_C2][stage]||M_EGG, EGG_PAL_RB, opt); }
+    // 3번째 탭: 크게 갈라진 알 + 틈새로 새어나오는 등급색 빛(L=등급색). rainbow면 껍질은 무지갯빛 유지.
+    function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); return pxSvg(M_EGG_C3, pal, opt); }
+    // ✦ 픽셀 빛 폭발(별) — 등급색으로. color 미지정 시 currentColor(무대 등급색 상속).
+    function starSvg(color, opt){ return pxSvg(M_STAR, {X:color||'currentColor',H:'#ffffff'}, opt); }
     // 선물함 아이콘 — 랜덤박스 도트(M_BOX) 그대로, 색만 선물상자(빨강 몸체+금 리본)로 다시 칠함.
     const GIFT_PAL={X:'#a83f52',W:'#e35d76',C:'#f2c84b',L:'#e0a43c',R:'#f2c84b',O:'#f2c84b',Y:'#f2c84b',G:'#f2c84b',B:'#f2c84b',P:'#f2c84b'};
     function giftSvg(opt){ return pxSvg(M_BOX, GIFT_PAL, opt); }
@@ -2283,9 +2326,10 @@
       }
       setTimeout(()=>{
         it.classList.remove('fx-preshake','fx-hit'); void it.offsetWidth; it.classList.add('fx-tremble');
-        if(_fx.kind==='box') it.classList.add('fx-ajar');
-        // 껍질 사이로 새어나오는 빛 — 등급색(한정은 무지개), 등급 높을수록 크고 밝게
-        st.insertAdjacentHTML('beforeend','<div class="fx-leak'+(lim?' rainbow':'')+'" style="color:'+t.color+';--lk:'+lk+'"></div>');
+        if(isEgg){ it.innerHTML=eggCrackSvg(t.color, _fx.rainbow, {h:150}); fxCrackChips(4); }   // 알이 크게 갈라지고 틈새로 등급색 빛
+        else it.classList.add('fx-ajar');
+        // 갈라진 틈으로 새어나오는 등급색 픽셀 빛(도트 별) — 둥근 글로우 대신 도트, 등급↑ 크고 밝게
+        st.insertAdjacentHTML('afterbegin','<div class="fx-cracklight" style="color:'+t.color+';--lk:'+lk+'">'+starSvg('currentColor',{h:200})+'</div>');
       }, t0);
       setTimeout(()=>{ fxBurst(epic, isEgg, rank); }, t0+700);
       setTimeout(fxReveal, t0+700+(isEgg?560:320));   // 알은 껍질 조각이 옆으로 흩어져 앉을 시간을 조금 더 준다
@@ -2295,9 +2339,9 @@
       const it=$('fxItem'); if(it) it.style.visibility='hidden';
       rank=rank||0;
       const parts=12+rank*7;                          // 등급 높을수록 픽셀 파티클 더 많이(화려하게)
-      const rays=(rank>=3)?'<div class="fx-rays"></div>':'';       // 특별↑ 픽셀 광선
+      const rays=(rank>=3)?'<div class="fx-pixrays">'+starSvg('currentColor',{h:360})+'</div>':'';       // 특별↑ 등급색 픽셀 광선(도트 별)
       const sparks=(rank>=3)?fxSparkles(6+rank*3):'';             // 특별↑ 추가 반짝임(등급색)
-      st.insertAdjacentHTML('beforeend','<div class="fx-flash"></div>'+rays+sparks+(isEgg?fxShells():'')+fxParticles(parts));
+      st.insertAdjacentHTML('beforeend','<div class="fx-pixflash">'+starSvg('currentColor',{h:130})+'</div>'+rays+sparks+(isEgg?fxShells():'')+fxParticles(parts));
       const h=$('fxHint'); if(h) h.remove();
     }
     function fxReveal(){
@@ -2305,7 +2349,7 @@
       const rank=Math.max(0, TIER_ORDER.indexOf(_fx.res.tier));   // 등급 높을수록 픽셀 프레임·반짝임 화려
       const art=_fx.kind==='egg'?catFace(_fx.res.id,{h:118}):furnSvg(_fx.res.id,{h:104});
       fx.innerHTML='<div class="fx-scrim"></div><div class="fx-reveal tier-'+t.id+' rank-'+rank+'">'+
-        '<div class="fx-halo"></div><div class="fx-rays slow"></div>'+
+        '<div class="fx-pixrays reveal">'+starSvg('currentColor',{h:340})+'</div>'+
         '<div class="fx-sparks">'+fxSparkles(8+rank*4)+'</div>'+
         '<div class="fx-art pop"><span class="fx-frame"></span>'+art+'</div>'+
         '<div class="fx-tier">'+t.name+'</div>'+
