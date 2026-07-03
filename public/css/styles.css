@@ -478,6 +478,9 @@
     .form-2 { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; }
     .link { color:var(--primary); font-weight:700; font-size:14px; }
     .install-banner { display:flex; align-items:center; gap:10px; background:var(--soft); color:var(--text); padding:13px 14px; border-radius:14px; font-size:13px; font-weight:700; margin-bottom:12px; }
+    .guidenote { gap:8px; }
+    .guidenote .gn-ic { width:16px; height:16px; flex:none; display:inline-flex; align-items:center; justify-content:center; }
+    .guidenote .gn-ic svg { width:100%; height:100%; }
     .install-link { color:var(--sub); font-size:12px; font-weight:600; text-decoration:underline; text-underline-offset:2px; padding:4px; }
     /* 앱 설치 CTA(더보기 하단, 항상 노출) */
     .install-cta { display:inline-flex; align-items:center; gap:8px; margin-top:12px; padding:11px 18px; border-radius:14px; background:var(--primary); color:var(--card); font-size:13.5px; font-weight:800; transition:opacity .15s; }
@@ -677,7 +680,8 @@
     .cr-stage { position:absolute; left:0; right:0; bottom:0; height:58%; pointer-events:none; }   /* z-index 제거(auto): 펫이 무대 단위로 항상 앞이 아니라 깊이 z로 가구와 섞임. 고양이 무대가 그릇/똥 클릭을 가로막지 않도록 통과 */
     /* 일괄 돌보기 버튼(방·dock 우측 상단) */
     .cr-batch { position:absolute; top:8px; right:10px; z-index:46; display:inline-flex; align-items:center; gap:4px; padding:5px 10px 5px 8px; border-radius:20px; background:var(--primary); color:var(--card); font-size:11.5px; font-weight:800; box-shadow:0 2px 8px rgba(0,0,0,.18); }   /* 원근 z(≤12)보다 높게(방이 isolate라 sticky 헤더 위로는 안 샘) */
-    .cr-batch svg { width:15px; height:15px; }
+    .cr-batch svg, .cr-batch .cr-batch-paw { width:15px; height:15px; }
+    .cr-batch-paw { display:inline-flex; flex:none; }
     .cr-batch:active { transform:scale(.94); }
     /* 은화가 카운터로 날아드는 연출 + 카운터 톡 튀기 */
     .coinfly { position:fixed; z-index:97; width:15px; height:15px; pointer-events:none; will-change:transform; animation:coinfly .62s cubic-bezier(.5,.1,.9,.5) forwards; }
@@ -685,7 +689,7 @@
     .cd-coin.bump, .coin.bump { animation:coinbump .3s ease; }
     @keyframes coinbump { 0%,100%{transform:scale(1)} 42%{transform:scale(1.22)} }
     /* 배치 탭 미니 웹캠 프리뷰(현재 배치를 방 뷰로 보여줘 앞=아래/뒤=위 방향 안내, 표시 전용) */
-    .miniroom { position:relative; height:120px; border-radius:12px; overflow:hidden; border:1px solid var(--bd); margin:2px 0 12px; }
+    .miniroom { position:relative; height:120px; border-radius:12px; overflow:hidden; isolation:isolate; border:1px solid var(--bd); margin:2px 0 12px; }   /* isolation=미니룸을 독립 스택 컨텍스트로 → 내부 '미리보기' 배지(z45)가 스크롤 시 sticky 헤더 위로 새어보이던 버그 방지 */
     .miniroom .cr-floor { height:52%; }
     .miniroom .cr-base { bottom:52%; }
     .miniroom .cr-props { pointer-events:none; }
@@ -885,8 +889,8 @@
     .pitem .pq { font-size:9px; font-weight:800; color:var(--sub); white-space:nowrap; }
     /* 팔레트에서 그리드로 드래그 중 따라다니는 고스트 */
     .palghost { position:fixed; transform:translate(-50%,-50%); pointer-events:none; z-index:98; opacity:.9; filter:drop-shadow(0 4px 10px rgba(0,0,0,.35)); }
-    .hintline { display:flex; align-items:center; gap:7px; font-size:11.5px; font-weight:600; color:var(--sub); margin-top:12px; padding:0 2px; }
-    .hintline svg { width:15px; height:15px; flex:none; }
+    .hintline { display:flex; align-items:flex-start; gap:7px; font-size:11.5px; font-weight:600; color:var(--sub); margin-top:12px; padding:0 2px; line-height:1.5; }   /* flex-start: 여러 줄로 감기는 안내문에서 아이콘이 첫 줄이 아니라 텍스트 중앙에 뜨던 정렬 버그 수정 */
+    .hintline svg { width:15px; height:15px; flex:none; margin-top:1px; }
     .qty { font-size:11.5px; font-weight:700; color:var(--sub); margin-top:6px; display:block; text-align:right; }
     /* 뽑기 확률표 */
     .ratebox { display:flex; flex-wrap:wrap; gap:6px 12px; padding:10px 2px 2px; }

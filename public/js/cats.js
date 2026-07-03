@@ -830,6 +830,48 @@
     ];
     const TROPHY_PAL={C:'#F4D06B',H:'#fff0b8',D:'#caa23a'};
     function trophySvg(opt){ return pxSvg(M_TROPHY, TROPHY_PAL, opt); }
+    // ℹ️ 정보 픽셀 아트 — 원(I=currentColor) 안에 'i'(W=배경색으로 파냄). 안내문구 색을 그대로 상속.
+    const M_INFO = [
+      "...IIIII...",
+      "..IIIIIII..",
+      ".IIIIIIIII.",
+      ".IIIWWIIII.",
+      ".IIIWWIIII.",
+      ".IIIIIIIII.",
+      ".IIIWWIIII.",
+      ".IIIWWIIII.",
+      ".IIIWWIIII.",
+      "..IIIIIII..",
+      "...IIIII..."
+    ];
+    function infoSvg(opt){ return pxSvg(M_INFO, {I:'currentColor',W:'var(--primary-weak)'}, opt); }
+    // 🛒 쇼핑카트 픽셀 아트 — 손잡이+바구니(사다리꼴)+다리로 연결된 바퀴. C=currentColor(안내문구 색 상속), K=바퀴(짙게).
+    const M_CART = [
+      "CC...........",
+      ".C...........",
+      ".CCCCCCCCCCC.",
+      ".C.........C.",
+      ".C.........C.",
+      ".CC.......CC.",
+      "..CCCCCCCCC..",
+      "...C.....C...",
+      "..KK.....KK..",
+      "..KK.....KK.."
+    ];
+    function cartSvg(opt){ return pxSvg(M_CART, {C:'currentColor',K:'currentColor'}, opt); }
+    // 🐾 고양이 발자국 픽셀 아트 — 발가락 4(아치) + 둥근 메인패드. P=currentColor(버튼 글자색 상속).
+    const M_PAWPRINT = [
+      "...PP.PP...",
+      "PP.PP.PP.PP",
+      "PP.......PP",
+      "...........",
+      "...PPPPP...",
+      "..PPPPPPP..",
+      ".PPPPPPPPP.",
+      "..PPPPPPP..",
+      "...PPPPP..."
+    ];
+    function pawPrintSvg(opt){ return pxSvg(M_PAWPRINT, {P:'currentColor'}, opt); }
     // 🥇 랭킹 등수 픽셀 숫자(3×5) — 메달 배지 안에 넣는 도트 숫자. color 미지정 시 currentColor.
     const M_NUM = {
       '1': [".X.","XX.",".X.",".X.","XXX"],
@@ -1616,7 +1658,7 @@
       return '<div class="cr-prop'+(tap?' cr-tap':'')+(p.itemId==='litterbox'?' cr-litter':'')+'" style="left:'+x+'%;bottom:'+bottom+'%;z-index:'+z+';"'+(tap?' onclick="event.stopPropagation();feedBowl(\''+p.key+'\')"':'')+'>'+inner+'</div>';
     }
     // 우측 상단 "일괄 돌보기" 버튼(밥·물 채우고 똥 치우기) — dock·홈 공용
-    function batchBtnHtml(){ return '<button class="cr-batch" onclick="event.stopPropagation();batchCare(this)" aria-label="일괄 돌보기: 밥·물 채우고 똥 치우기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 20c0-3.6 3.4-5.5 7.5-5.5s7.5 1.9 7.5 5.5"/><circle cx="8" cy="8.5" r="1.5"/><circle cx="16" cy="8.5" r="1.5"/><circle cx="12" cy="6.5" r="1.6"/></svg>돌보기</button>'; }
+    function batchBtnHtml(){ return '<button class="cr-batch" onclick="event.stopPropagation();batchCare(this)" aria-label="일괄 돌보기: 밥·물 채우고 똥 치우기"><span class="cr-batch-paw">'+pawPrintSvg({fit:true})+'</span>돌보기</button>'; }
     // 배치 가구를 무대 바닥에 배경으로(가로=열, 앞뒤 깊이=행)
     function renderDockProps(){
       const box=$('cdProps'); if(!box) return;
