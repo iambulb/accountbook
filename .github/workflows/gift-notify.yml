@@ -1,0 +1,31 @@
+name: gift-notify
+
+# 친구 선물 도착 알림 — 서버리스(Blaze 불필요). 매시 mailbox를 스캔해 미수령 선물이 있는 사용자에게 푸시.
+# 실시간이 아니라 최대 ~1시간 지연될 수 있음(GitHub Actions 스케줄은 best-effort). 중복은 pushMeta.lastGiftNotify 워터마크로 방지.
+# 활성 조건: 리포지토리 Secret FIREBASE_SERVICE_ACCOUNT(서비스계정 JSON). 없으면 스크립트가 no-op.
+# iOS는 홈 화면에 설치된 PWA(iOS 16.4+)에서만 웹푸시 수신.
+
+on:
+  schedule:
+    - cron: '0 * * * *'    # 매시 정각(UTC). 선물 도착 스캔.
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: 'dry run(발송 안 함, 대상만 출력)'
+        type: boolean
+        default: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: install firebase-admin
+        run: npm i --no-save firebase-admin@12
+      - name: notify gifts
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node tools/send_reminders.mjs --type=gift ${{ (github.event_name == 'workflow_dispatch' && inputs.dry) && '--dry' || '' }}

@@ -887,6 +887,37 @@
     ];
     const MISSION_PAL={D:'#6b6151',W:'#fbfbfd',S:'#e0a43c',G:'#4bb36b',H:'#f0fff6',L:'#cbc5b7'};
     function missionSvg(opt){ return pxSvg(M_MISSION, MISSION_PAL, opt); }
+    // 🔥 불꽃(로그인 스트릭) 픽셀 — O=진주황 외곽·F=주황·Y=노랑·C=밝은 코어. 물방울 형태.
+    const M_FLAME = [
+      "....O....",
+      "...OO....",
+      "...OFO...",
+      "..OFFO...",
+      "..OFYFO..",
+      ".OFYYFO..",
+      ".OFYCYFO.",
+      ".OFYCCYO.",
+      ".OFYCCYFO",
+      ".OFFYYFFO",
+      "..OFFFFO.",
+      "..OOOOO.."
+    ];
+    const FLAME_PAL={O:'#e0552b',F:'#f2933c',Y:'#ffc94a',C:'#fff2c0'};
+    function flameSvg(opt){ return pxSvg(M_FLAME, FLAME_PAL, opt); }
+    // 🎟️ 쿠폰(티켓) 픽셀 — X=진금 외곽·T=금 몸체·H=밝은 스텁창·D=가운데 점선 천공. 가로 티켓.
+    const M_TICKET = [
+      ".XXXXXXXXXXXXX.",
+      "XTTTTTDTTTTTTTX",
+      "XTHHTTTTTHHHTTX",
+      "XTHHTTDTTHHHTTX",
+      "XTHHTTTTTHHHTTX",
+      "XTHHTTDTTHHHTTX",
+      "XTHHTTTTTHHHTTX",
+      "XTTTTTDTTTTTTTX",
+      ".XXXXXXXXXXXXX."
+    ];
+    const TICKET_PAL={X:'#b9832a',T:'#f2c84b',H:'#ffe9ad',D:'#c99a34'};
+    function ticketSvg(opt){ return pxSvg(M_TICKET, TICKET_PAL, opt); }
     // 👑 왕관(그룹 소유자) 픽셀 아트 — 가운데 봉우리 높은 정석 왕관 + 세 끝에 컷팅 루비(L=하이라이트→R=진루비 facet) + 밴드 중앙 보석. C=금, H=금 하이라이트, D=진금 밴드.
     const M_CROWN = [
       "....LLR....",
@@ -1145,6 +1176,7 @@
       state._gameRef.on('value', s=>{ const raw=s.val(); state.game=normalizeGame(raw); migrateHomeRoomsIfNeeded(raw); onGameChange(); reconcilePets(); });
       watchCatalogPets();   // 런타임 펫(전역 catalogPets) 병합 리스너
       watchMyLikes();       // 내가 받은 집 좋아요 총합
+      loadNotices();        // 📢 공지(config/notices) 구독 — 배포 없이 공지 갱신
       startCatLoop();   // 통합 걷기 엔진(단일 rAF, 보이는 무대만 애니메이션)
       // 앱을 켜둔 동안에도 그릇 3시간 만료→똥 정산이 돌도록 주기 점검(다마고치)
       if(state._petTimer) clearInterval(state._petTimer);
@@ -2232,7 +2264,7 @@
           '<div class="cpic">'+art+'</div>'+
           (roomOf>=0&&!here?'<span class="croom">'+escapeHtml(roomNm)+'</span>':'')+
           '<div class="cn">'+catNameSpan(id,catName(id))+'</div>'+
-          (()=>{ const av=(ownedCatsMap()[id]||{}).affection; const lv=affectionLevel(av).level; return lv>0?'<div class="caff" aria-label="애정 '+lv+'">'+'❤'.repeat(lv)+'</div>':''; })()+
+          (()=>{ const av=(ownedCatsMap()[id]||{}).affection; const lv=affectionLevel(av).level; return lv>0?'<div class="caff" style="display:inline-flex;gap:1px" aria-label="애정 '+lv+'">'+heartSvg({h:10}).repeat(lv)+'</div>':''; })()+
           '<div class="cstate">'+(here?'이 방에 있음':(roomOf>=0?escapeHtml(roomNm)+'에 있음':'대기'))+'</div>'+
           '<button class="cn-edit" aria-label="이름 짓기" onclick="event.stopPropagation();openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
           (here?'<span class="csel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>':'')+
@@ -2873,7 +2905,7 @@
       return '<div class="cmrow custom">'+
         '<button class="tdchk'+(done?' on':'')+'" onclick="event.stopPropagation();toggleCustomMissionToday(\''+cm.id+'\')" aria-label="'+(done?'오늘 완료 취소':'오늘 완료')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></button>'+
         '<div class="cmm" onclick="openCustomMissionEdit(\''+cm.id+'\')"><b>'+escapeHtml(cm.title||'')+'</b>'+
-          '<span class="rw">'+(st.current>0?'🔥 '+st.current+'일 · ':'')+'다음 보상 '+((typeof customMissionMilestone==='function')?customMissionMilestone(st.current, CUSTOM_STREAK_N).toNext:CUSTOM_STREAK_N)+'일 <span class="ci">'+coinSvg({h:14})+'</span>+'+CUSTOM_STREAK_BONUS+'</span></div>'+
+          '<span class="rw">'+(st.current>0?'<span style="display:inline-flex;vertical-align:-2px">'+flameSvg({h:12})+'</span> '+st.current+'일 · ':'')+'다음 보상 '+((typeof customMissionMilestone==='function')?customMissionMilestone(st.current, CUSTOM_STREAK_N).toNext:CUSTOM_STREAK_N)+'일 <span class="ci">'+coinSvg({h:14})+'</span>+'+CUSTOM_STREAK_BONUS+'</span></div>'+
         '<span class="cmdots" aria-hidden="true">'+dots+'</span></div>';
     }
     // 🐾 컬렉션 도감: 전체 펫 그리드(보유=컬러/미보유=실루엣), 진행도 N/총. 애정 레벨 하트 표시.
@@ -2886,20 +2918,29 @@
         return '<div class="dexcell'+(has?'':' locked')+'" title="'+escapeHtml(has?catName(c.id):'미보유')+'">'+
           '<div class="dexpic">'+catFace(c.id,{h:54})+'</div>'+
           '<div class="dexnm">'+(has?catNameSpan(c.id,catName(c.id)):'<span class="q">???</span>')+'</div>'+
-          (lv>0?'<div class="dexlv" aria-label="애정 레벨 '+lv+'">'+'❤'.repeat(lv)+'</div>':'')+
+          (lv>0?'<div class="dexlv" style="display:inline-flex;gap:1px" aria-label="애정 레벨 '+lv+'">'+heartSvg({h:9}).repeat(lv)+'</div>':'')+
         '</div>'; }).join('')+'</div>';
       openSheet('펫 도감', h);
     }
-    // ===== 📢 소식(알림·이벤트·공지) — 알뜰홈 '소식' 탭 =====
-    // 업데이트 공지(최신순). date = '안 본 공지' 판정용(로컬 저장, 기기별).
-    const NOTICES = [
-      { date:'2026-07-04', t:'로그인 화면 개편 · 뒤로가기 개선', s:'하늘·무지개 로그인, 안드로이드 하드웨어 뒤로가기(진짜 뒤로가기), 소식 탭 신설' },
+    // ===== 📢 소식(알림·이벤트·공지) — 알뜰 아이콘 '소식' 화면 =====
+    // 업데이트 공지 — 기본값(폴백). 운영은 RTDB config/notices(관리자만 쓰기)에서 덮어씀(loadNotices). 최신순.
+    let NOTICES = [
+      { date:'2026-07-04', t:'소식 화면 · 미션 정리', s:'알뜰 아이콘=소식(알림·이벤트·공지), 미션은 더보기로 모음. 친구 선물 알림 반영' },
       { date:'2026-07-01', t:'🌟 이달의 펫 시즌 할인', s:'매월 은화로 살 수 있는 펫 하나가 20% 할인으로 바뀌어요' },
       { date:'2026-06-28', t:'🎁 친구 응원 선물', s:'친구 집에서 하루 한 번 응원 선물을 주고받을 수 있어요' }
     ];
-    function newsSeenAt(){ try{ return localStorage.getItem('newsSeenAt')||''; }catch(e){ return ''; } }
+    // RTDB config/notices(공개 읽기·관리자 쓰기)에서 공지를 읽어 NOTICES를 갱신. 없으면 위 기본값 유지.
+    function loadNotices(){ try{ db.ref('config/notices').on('value', function(s){ const v=s.val(); let arr=[];
+      if(Array.isArray(v)) arr=v; else if(v&&typeof v==='object') arr=Object.keys(v).map(function(k){ return v[k]; });
+      arr=(arr||[]).filter(function(n){ return n && n.date && n.t; }).sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+      if(arr.length){ NOTICES=arr; if(typeof updateDockNotif==='function') updateDockNotif(); }
+    }); }catch(e){} }
+    // 안 본 공지 기준일 — 계정(RTDB game.newsSeenAt)과 기기(localStorage) 중 더 최신 사용(기기 간 동기화).
+    function newsSeenAt(){ let g=(state.game&&state.game.newsSeenAt)||''; let l=''; try{ l=localStorage.getItem('newsSeenAt')||''; }catch(e){} return g>l?g:l; }
     function latestNoticeDate(){ return NOTICES.reduce(function(m,n){ return n.date>m?n.date:m; }, ''); }
-    function markNewsSeen(){ try{ localStorage.setItem('newsSeenAt', latestNoticeDate()); }catch(e){} updateDockNotif(); }
+    function markNewsSeen(){ const d=latestNoticeDate(); try{ localStorage.setItem('newsSeenAt', d); }catch(e){}
+      try{ if(typeof gameRef==='function' && state.uid && d) gameRef().child('newsSeenAt').set(d); }catch(e){}   // 계정 동기화
+      updateDockNotif(); }
     function unseenNoticeCount(){ const s=newsSeenAt(); return NOTICES.filter(function(n){ return n.date>s; }).length; }
     function giftUnread(){ return giftCount() + (typeof mailCount==='function'?mailCount():0); }   // 안 받은 선물 = 코드보상(gifts) + 친구선물(mailbox)
     function newsUnread(){ return giftUnread() + unseenNoticeCount(); }   // 뱃지 = 안 받은 선물(코드+친구) + 안 본 공지
@@ -2919,7 +2960,7 @@
       else { h+='<div class="note" style="margin:2px 0 6px;">진행 중인 이벤트가 곧 열려요.</div>'; }
       h+='<div class="sech" style="margin-top:16px;"><span class="l"><span class="sech-ic">'+megaSvg({h:15})+'</span> 공지사항</span></div>';
       h+=NOTICES.map(function(n){ return '<div class="newsupd"><b>'+escapeHtml(n.t)+'</b><span>'+escapeHtml(n.s)+'</span></div>'; }).join('');
-      h+='<div class="cnote"><b>🎟️ 쿠폰</b> — 더보기 → 코드 입력에서 사용하세요</div>';
+      h+='<div class="cnote"><b><span style="display:inline-flex;vertical-align:-2px">'+ticketSvg({h:14})+'</span> 쿠폰</b> — 더보기 → 코드 입력에서 사용하세요</div>';
       const _codes=(state.game&&state.game.codes)||{};
       h+=Object.keys(PROMO_CODES).map(function(code){ const d=PROMO_CODES[code]; const used=!!_codes[code]; return '<div class="cpn'+(used?' used':'')+'"><code>'+code+'</code><span class="rw"><span class="ci">'+couponIcon(d)+'</span>'+d.label+(used?'<span class="cused">사용완료</span>':'')+'</span></div>'; }).join('');
       return h;
@@ -2931,7 +2972,7 @@
       // 로그인 스트릭 배지: 연속 출석일 + 다음 마일스톤까지(3·7·14·30, 이후 매30). 마일스톤에 은화·금화 보상.
       { const c=(state.game&&state.game.streak&&Number(state.game.streak.count))||0;
         const nx=[3,7,14,30].find(n=>n>c)||(Math.floor(c/30+1)*30);
-        h+='<div class="streakbar"><span class="fire">🔥</span><b>'+c+'일 연속 출석</b><span class="s">다음 보상까지 '+(nx-c)+'일 (+금화)</span></div>'; }
+        h+='<div class="streakbar"><span class="fire" style="display:inline-flex;align-items:center">'+flameSvg({h:18})+'</span><b>'+c+'일 연속 출석</b><span class="s">다음 보상까지 '+(nx-c)+'일 (+금화)</span></div>'; }
       h+='<div class="sech"><span class="l">일일 미션</span><span class="s">자정 초기화</span></div>';
       h+=DAILY_MISSIONS.map(missionRow).join('');
       const _cmN=customMissionList().length; h+='<div class="sech"><span class="l">내 미션</span>'+(_cmN>=5?'<span class="s">최대 5개</span>':'<button class="link" onclick="openCustomMissionEdit()">+ 추가</button>')+'</div>';

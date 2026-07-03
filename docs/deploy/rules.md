@@ -28,6 +28,7 @@ users/{uid}/{friends,friendReqs} : 친구 관계·요청   // 당사자 두 명�
 | `users/{uid}/mailbox/{sender}/{gid}` | **수령자(본인)만**(부모 owner-read) | **수령자 본인 또는 친구인 발신자만** — 친구 검증(`friends/{auth.uid}` 존재) + 엔트리 `.validate`로 상한(coins≤10·consum≤3·key∈{egg,water,food}·from=auth.uid). **금화(gold) 선물은 규칙상 차단**(크로스유저 통화 민팅 방지) |
 | `homeCam/{uid}` | 로그인(전역) — 친구·랭킹이 보는 **대표 방** 스냅샷 | **본인만** |
 | `rankings/{uid}` | 로그인 | **본인만**(`auth.uid === $uid`) — 공개 랭킹 경량 인덱스(name/likes/private) |
+| `config/notices` | 로그인(전역) | **개발자 이메일만**(`auth.token.email`) — 📢 소식 공지. 배포 없이 Firebase 콘솔/개발자 계정에서 편집(`loadNotices`가 구독) |
 | `codes/*`·`friendCodes/*` | 로그인 | 로그인(코드 등록/조회) |
 | `workspaces/{wsId}` | 로그인(코드로 그룹 조회) | 멤버 또는 **본인을 멤버로 추가**할 때 |
 | `ws/{wsId}/**` | 그 워크스페이스 **멤버만** | 그 워크스페이스 **멤버만** |
@@ -71,3 +72,4 @@ users/{uid}/{friends,friendReqs} : 친구 관계·요청   // 당사자 두 명�
 
 - **`catalogPets`**: 런타임 펫 **메타데이터**(앱 dev zip 업로드). 읽기=로그인 전체, 쓰기=개발자 이메일(`auth.token.email` 화이트리스트)만. 규칙 변경 후 `npx firebase-tools deploy --only database` 로 배포해야 업로드가 동작한다.
 - **`catalogPetArt`**: 런타임 펫 **스프라이트 이미지**(base64, 메타와 분리). 읽기·쓰기 규칙은 `catalogPets`와 동일(개발자 이메일만 쓰기). 이미지 분리 저장(지연 로딩)을 위해 추가됐으므로, **이 노드도 배포돼야** dev 업로드가 동작한다.
+- **`config/notices`**: 📢 소식 화면 **공지 목록**(`[{date,t,s}]`). 읽기=로그인 전체, 쓰기=개발자 이메일만. 앱이 `loadNotices`로 구독하므로 **배포 없이** Firebase 콘솔(또는 개발자 계정)에서 공지를 추가/수정하면 즉시 반영된다(비어있으면 `cats.js`의 기본 `NOTICES` 폴백). **규칙 배포 필요**: `npx firebase-tools deploy --only database`.

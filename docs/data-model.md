@@ -9,6 +9,7 @@ users/{uid}            : { name, email, photo(프로필 사진 base64 data URL),
                            todos:{ {id}:{ title, note, dueDate, done, doneAt, repeat, purposeBookId?, rewardClaimed, sortOrder, createdAt, updatedAt } },  // ✅ 개인 할일(user-global — 워크스페이스 무관·항상 동일). 소유자=uid 암묵
                            onboarded: true,                        // 🧭 첫 사용자 온보딩 1회 표시 완료 플래그
                            push:{ token, at, ua },                 // 🔔 웹 푸시(FCM) 토큰 — 본인만 쓰기·발송기(admin)만 읽음. 알림 끄면 삭제. tools/send_reminders.mjs가 사용
+                           pushMeta:{ lastGiftNotify },            // 🎁 친구선물 푸시 중복방지 워터마크(발송기 admin이 쓰기) — 이 시각 이후 선물만 알림. gift-notify 크론이 사용
                            todosMigrated: true,                    // 개인 할일 ws→user 1회 이전 완료 플래그
                            todoPublic: true|false,                 // 내 개인 할일을 친구에게 공개할지(친구 스트립·열람 대상)
                            friendCode: "ABC123",                   // 내 친구 코드(friendCodes 인덱스와 짝)
@@ -28,6 +29,7 @@ users/{uid}            : { name, email, photo(프로필 사진 base64 data URL),
                              missionLogs:{ {missionId}:{ "YYYY-MM-DD":{ done, at, bonus } } },  // 내 미션 체크인 로그(날짜키=하루1회 멱등). bonus=그날 지급한 연속 마일스톤 보너스(재체크 재지급 방지). 매일 체크 무보상·7일 연속마다 은화
                              gifts:[ { type:'coins'|'consum', key?, qty, code, at } … ],  // 🎁 선물함(코드 보상 대기 목록) — 받기(claimGift) 시 은화는 coins로, 아이템은 consum(가방)으로
                              codes:{ {code}:{at, n} },                // 사용한 프로모/치트 코드(일반 1회·개발자 무한). n=사용 횟수
+                             newsSeenAt:"YYYY-MM-DD",                 // 📢 마지막으로 '본' 공지 날짜(소식 화면 진입 시 markNewsSeen). 기기(localStorage)와 함께 더 최신을 사용해 기기 간 동기화
                              mail:{ free:{ "YYYY-MM-DD":count }, freeTo:{ "YYYY-MM-DD":{ {uid}:1 } }, egg:{ "YYYY-MM-DD":count } }  // 🎁 친구 선물 발신 하루 횟수(kstDayKey). 무료 응원=**친구당 하루 1번**(freeTo) + **전체 하루 5번**(free), 펫알=전체 하루 5번(egg). 클라이언트 게이트
                            } }
 workspaces/{wsId}      : { name, photo(가계부 사진 base64 data URL, 선택), type:'personal'|'group', code(그룹), ownerUid, createdAt,
@@ -39,6 +41,7 @@ rankings/{uid}         : { name, likes, private, at }  // 🏆 공개 랭킹 경
 homeCam/{uid}          : { name, emoji, wallpaper, placed, active, slots, poops, changedAt }  // 🏠🔒 친구·랭킹에 공개하는 **대표 방(showRoom)** 스냅샷만. 소유자 game 변경 시 writeHomeCam이 갱신. 읽기=전체(친구 캠·스토리 변경시각), 쓰기=본인만. **users/{uid}/game(모든 방)은 소유자만 읽음** → 대표 방 외 다른 방은 실제로 비공개.
 catalogPets/{id}       : { name, species, speciesLabel?, tier, scale, frontWalk, hasArt?, deleted?, by, at }  // 🐯 런타임 펫/정적 오버라이드 **메타데이터**(앱에서 dev가 zip 업로드·수정·삭제 → 전역). 읽기=전체, 쓰기=개발자 이메일만(규칙). 앱 로드 시 PET_CATALOG/PET_SPRITES/CAT_TIER/SPECIES_LABEL에 병합. 신규 런타임 펫 또는 정적 펫 오버라이드(이름·등급·디자인·`deleted:true` 소프트삭제) 겸용. `hasArt:true`=이미지가 catalogPetArt에 있음(지연 로드). ※구 레코드는 `walk/south/…` 인라인 data URL을 가질 수 있음(하위호환) — `migrateCatalogArtOnce()`로 분리 이전
 catalogPetArt/{id}     : { walk, south, north, east, west(=data URL PNG) }  // 🖼️ 런타임 펫 스프라이트(base64) — 메타와 분리 저장. 앱 시작 땐 안 받고, 실제로 보이는 펫만 `ensurePetArt()`가 `.once`로 1회 받아 세션 캐시(초기 로딩/재푸시 부담↓). 읽기=전체, 쓰기=개발자 이메일만
+config/notices         : [ { date:"YYYY-MM-DD", t, s } … ]  // 📢 소식 화면 공지(업데이트 내역). 읽기=로그인 전체, 쓰기=개발자 이메일만(규칙). 앱이 loadNotices로 구독해 배포 없이 공지 갱신(비어있으면 cats.js 기본 NOTICES 폴백). Firebase 콘솔 또는 개발자 계정에서 편집
 ws/{wsId}/             : 가계부 데이터 (아래 노드들)
   ├─ accounts/{id}
   ├─ creditCards/{id}

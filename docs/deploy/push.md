@@ -5,8 +5,10 @@
 ## 구성 요소(이미 코드에 포함)
 - **클라이언트**: `public/js/push.js`(권한 요청·토큰 저장·포그라운드 수신) + `public/firebase-messaging-sw.js`(백그라운드 알림 표시·클릭 시 앱 열기). 설정 시트에 **알림 토글**(FCM 설정·지원 기기에서만 노출).
 - **토큰 저장**: `users/{uid}/push = { token, at, ua }`(본인만 쓰기·admin만 읽음).
-- **발송기**: `tools/send_reminders.mjs`(firebase-admin으로 RTDB 읽어 대상 선정 → FCM 데이터 메시지). 
-- **스케줄**: `.github/workflows/reminders.yml`(매일 20:00 KST = 11:00 UTC). 수동 실행(dry-run) 가능.
+- **발송기**: `tools/send_reminders.mjs`(firebase-admin으로 RTDB 읽어 대상 선정 → FCM 데이터 메시지). `--type=daily`(오늘 미기록 넛지)·`--type=gift`(친구 선물 도착).
+- **스케줄**:
+  - `.github/workflows/reminders.yml` — **일일 넛지**(`--type=daily`, 매일 20:00 KST = 11:00 UTC).
+  - `.github/workflows/gift-notify.yml` — **친구 선물 도착**(`--type=gift`, 매시 정각). mailbox에 미수령 선물이 있으면 푸시. 실시간이 아니라 **최대 ~1시간 지연**(스케줄 best-effort). 중복은 `users/{uid}/pushMeta/lastGiftNotify` 워터마크로 방지(발송기 admin이 갱신). 둘 다 수동 실행(dry-run) 가능.
 
 ## 활성화 — 두 가지 수동 준비(1회)
 > 아래 두 값을 넣기 전까지 알림은 **자동 비활성**(앱은 정상, 토글이 안 뜸 / 크론은 no-op).
@@ -23,7 +25,7 @@
    - Name: `FIREBASE_SERVICE_ACCOUNT`, Value: 다운로드한 **JSON 파일 내용 전체**.
 3. Actions 탭에서 `push-reminders` 워크플로를 **Run workflow(dry-run 체크)** 로 대상 수 확인 → 정상이면 스케줄이 매일 자동 발송.
 
-> ⚠️ **스케줄 크론은 리포지토리 기본 브랜치에서만 동작한다.** 현재 개발은 `dev`로만 하므로, 스케줄이 돌게 하려면 **① GitHub 리포지토리 기본 브랜치를 `dev`로 바꾸거나**(Settings → General → Default branch), ② 이 워크플로 파일만 `main`에 올려야 한다. (수동 `workflow_dispatch`는 해당 브랜치를 골라 실행 가능.)
+> ⚠️ **스케줄 크론은 리포지토리 기본 브랜치에서만 동작한다.** 현재 개발은 `dev`로만 하므로, 스케줄(`push-reminders`·`gift-notify` 둘 다)이 돌게 하려면 **① GitHub 리포지토리 기본 브랜치를 `dev`로 바꾸거나**(Settings → General → Default branch), ② 이 워크플로 파일들을 `main`에 올려야 한다. (수동 `workflow_dispatch`는 해당 브랜치를 골라 실행 가능.)
 
 ## 동작·한계
 - **iOS**: 웹 푸시는 **홈화면에 설치한 PWA(iOS 16.4+)** 에서만 동작한다(사파리 탭에선 미지원). 안드로이드/데스크톱 크롬은 설치 없이도 동작.
