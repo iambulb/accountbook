@@ -615,6 +615,12 @@
       upd['users/'+state.uid+'/friendReqs/'+uid]=null;
       db.ref().update(upd).then(function(){ toast('친구가 되었어요 🎉'); }).catch(function(){ toast('수락 실패', true); }); }
     function declineFriend(uid){ db.ref('users/'+state.uid+'/friendReqs/'+uid).remove().then(function(){ toast('요청을 거절했어요'); }); }
+    // 프로필(랭킹·그룹 등)에서 uid로 바로 친구 요청 — 즉시 친구 아님, 상대가 친구 탭에서 수락/거절.
+    function sendFriendRequest(uid){ if(!uid||uid===state.uid) return;
+      if(state.friends&&state.friends[uid]){ toast('이미 친구예요'); return; }
+      db.ref('users/'+uid+'/friendReqs/'+state.uid).set({ name:state.userName||'', at:new Date().toISOString() })
+        .then(function(){ toast('친구 요청을 보냈어요'); const el=$('fhAddBtn'); if(el) el.outerHTML='<button class="btn ghost" disabled style="margin-top:6px;width:100%;">친구 요청됨</button>'; })
+        .catch(function(){ toast('요청 실패', true); }); }
     function removeFriend(uid){ confirmSheet('친구를 삭제할까요?', function(){ const upd={}; upd['users/'+state.uid+'/friends/'+uid]=null; upd['users/'+uid+'/friends/'+state.uid]=null;
       db.ref().update(upd).then(function(){ if(state._todoFriend===uid) clearFriendView(); toast('친구를 삭제했어요'); rerender(); }); }); }
     // 친구 개인 할일 열람(공개한 친구만) — 임시 리스너로 state.friendTodos 채우고 개인 화면 읽기전용
@@ -665,11 +671,13 @@
         db.ref('users/'+uid+'/todoPublic').once('value'),
         db.ref('users/'+uid+'/homeLikes').once('value'),
         db.ref('users/'+uid+'/todos').once('value'),
-        db.ref('users/'+uid+'/profilePublic').once('value')
+        db.ref('users/'+uid+'/profilePublic').once('value'),
+        db.ref('users/'+uid+'/friendReqs/'+state.uid).once('value')
       ]).then(function(res){
         if(!($('sheet')&&$('sheet').classList.contains('on'))) return;   // 그새 닫혔으면 중단
         const fg=normalizeGame(res[0].val()), pub=!!res[1].val(), likes=res[2].val();
         const priv=(res[4].val()===false);
+        const sentReq=!!res[5].val(), incomingReq=!!(state.friendReqs&&state.friendReqs[uid]);   // 내가 보낸 요청 / 상대가 나에게 보낸 요청
         const anon=priv && !isFriend;                       // 비공개 + 비친구 → 익명(은화+알뜰)
         const showName=anon?'알뜰':friendDisplayName(uid);
         if($('sheetTitle')) $('sheetTitle').textContent=showName+'의 집';
@@ -689,6 +697,9 @@
           h+='<p class="muted" style="font-size:12px;margin-top:14px;text-align:center;">이 친구는 할일을 공개하지 않았어요</p>';
         } else {
           h+='<p class="muted" style="font-size:12px;margin-top:14px;text-align:center;">친구가 되면 할일도 볼 수 있어요</p>';
+          if(incomingReq) h+='<div class="row" style="gap:8px;margin-top:6px;"><button class="btn" style="flex:1;" onclick="acceptFriend(\''+uid+'\');closeSheet()">친구 수락</button><button class="btn ghost" style="flex:1;" onclick="declineFriend(\''+uid+'\');closeSheet()">거절</button></div>';
+          else if(sentReq) h+='<button class="btn ghost" disabled style="margin-top:6px;width:100%;">친구 요청됨</button>';
+          else h+='<button class="btn" id="fhAddBtn" style="margin-top:6px;width:100%;" onclick="sendFriendRequest(\''+uid+'\')">＋ 친구 추가</button>';
         }
         const b=$('sheetBody'); if(b) b.innerHTML=h;
         setTimeout(function(){ mountFriendRoom(fg); }, 30);
@@ -715,16 +726,16 @@
       const order=[top[1],top[0],top[2]], rankOf=[2,1,3];   // 시각 배치: 좌 2등·가운데 1등·우 3등
       let h='<div class="rk-podium">';
       order.forEach(function(r,i){ const rank=rankOf[i]; if(!r){ h+='<div class="rk-col"></div>'; return; }
-        const medal=['','gold','silver','bronze'][rank], sz=(rank===1?90:72);
-        h+='<button class="rk-col'+(rank===1?' rk-first':'')+'" onclick="openFriendHome(\''+r.uid+'\')">'+
+        const medal=['','gold','silver','bronze'][rank], sz=(rank===1?90:72), me=(r.uid===state.uid);
+        h+='<button class="rk-col'+(rank===1?' rk-first':'')+(me?' me':'')+'" onclick="openFriendHome(\''+r.uid+'\')">'+
           '<span class="rk-av medal-'+medal+'"><span class="rk-rankn">'+rank+'</span>'+rankAvatar(r,sz)+'</span>'+
-          '<span class="rk-nm">'+escapeHtml(r.show)+'</span>'+
+          '<span class="rk-nm">'+escapeHtml(r.show)+(me?'<span class="rk-me">나</span>':'')+'</span>'+
           '<span class="rk-likes">'+(typeof heartSvg==='function'?heartSvg({h:12}):'❤')+' '+r.likes+'</span></button>';
       });
       h+='</div>';
-      if(rest.length){ h+='<div class="rk-list">'+rest.map(function(r,i){ const rank=i+4;
-        return '<button class="rk-row" onclick="openFriendHome(\''+r.uid+'\')"><span class="rk-num">'+rank+'</span>'+rankAvatar(r,40)+
-          '<b class="rk-rowname">'+escapeHtml(r.show)+'</b><span class="likemini">'+(typeof heartSvg==='function'?heartSvg({h:13}):'❤')+' '+r.likes+'</span></button>'; }).join('')+'</div>'; }
+      if(rest.length){ h+='<div class="rk-list">'+rest.map(function(r,i){ const rank=i+4, me=(r.uid===state.uid);
+        return '<button class="rk-row'+(me?' me':'')+'" onclick="openFriendHome(\''+r.uid+'\')"><span class="rk-num">'+rank+'</span>'+rankAvatar(r,40)+
+          '<b class="rk-rowname">'+escapeHtml(r.show)+(me?'<span class="rk-me">나</span>':'')+'</b><span class="likemini">'+(typeof heartSvg==='function'?heartSvg({h:13}):'❤')+' '+r.likes+'</span></button>'; }).join('')+'</div>'; }
       h+='<p class="muted" style="font-size:12px;margin-top:14px;text-align:center;">집(펫캠) <b>좋아요 수</b> 기준 · 눌러서 방문해 보세요</p>';
       b.innerHTML=h;
     }
