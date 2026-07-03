@@ -259,6 +259,32 @@
       "....XWWWDDDDDDDDWWWX....",
       "....XXXXDDDDDDDDXXXX...."
     ];
+    // 캣휠(러닝휠): 세로로 선 큰 링(러닝 트랙, X=림 테두리·W=밴드·H=하이라이트·T=트레드 슬랫) + 롤러(R)·나무 스탠드(D). 2×2, 가로세로비 ≈ 24/23.
+    const M_CATWHEEL = [
+      ".......XXXHHHXXX........",
+      ".....XXHTHHHHHTHXX......",
+      "....XXHHHXXXXXHHHXX.....",
+      "...XXHHXX.....XXHHXX....",
+      "..XXWHX.........XWWXX...",
+      "..XWWX...........XWWX...",
+      "..XTWX...........XWTX...",
+      ".XWWX.............XWWX..",
+      ".XWWX.............XWWX..",
+      ".XWWX.............XWWX..",
+      ".XWWX.............XWWX..",
+      ".XWWX.............XWWX..",
+      ".XXTXX...........XXTXX..",
+      "..XWWX...........XWWX...",
+      "..XWWWX.........XWWWX...",
+      "...XWWWX.......XWWWX....",
+      "....XWWWXXXXXXXWWWX.....",
+      ".....XWWTWWWWWTWWX......",
+      "......XXWWWWWWWXX.......",
+      ".......RRXXXXXXRR.......",
+      ".......DDDDDDDDDR.......",
+      ".....DDDDDDDDDDDDD......",
+      "...DDDDDDDDDDDDDDDDD...."
+    ];
     const CAT_PALS = {
       cat_mackerel:{X:'#3b4048',B:'#9AA6B4',L:'#D8DDE3',S:'#6E7A8A',E:'#22242b',P:'#E08b9d',I:'#E6A9B4'},
       cat_cheese:  {X:'#6b3f1c',B:'#E8974C',L:'#F6D6A6',S:'#CC7A33',E:'#3a2415',P:'#E08b9d',I:'#F0C8A0'},
@@ -285,7 +311,7 @@
       ".PPPPPP.",
       "..XXXX.."
     ];
-    const FURN_PALS={ cushion:{X:'#5b6470',C:'#a9b2be',D:'#868f9c'}, bowl:{X:'#5b6470',W:'#d0d6dd',F:'#d68b4a'}, waterbowl:{X:'#5b6470',W:'#d0d6dd',A:'#5aa9e6'}, tower:{X:'#6f4c28',W:'#c99a5f',P:'#8a6a3f'}, scratcher:{X:'#6f4c28',W:'#c99a5f',P:'#d8b98a'}, litterbox:{X:'#8a8f98',W:'#c9ced6',S:'#e6dcc3'}, pethouse:{X:'#5a4632',R:'#d9694e',W:'#e8c98f',D:'#2c2420'}, plant:{X:'#7c5028',L:'#7cc652',G:'#4e9636',P:'#c8763e'} };
+    const FURN_PALS={ cushion:{X:'#5b6470',C:'#a9b2be',D:'#868f9c'}, bowl:{X:'#5b6470',W:'#d0d6dd',F:'#d68b4a'}, waterbowl:{X:'#5b6470',W:'#d0d6dd',A:'#5aa9e6'}, tower:{X:'#6f4c28',W:'#c99a5f',P:'#8a6a3f'}, scratcher:{X:'#6f4c28',W:'#c99a5f',P:'#d8b98a'}, litterbox:{X:'#8a8f98',W:'#c9ced6',S:'#e6dcc3'}, pethouse:{X:'#5a4632',R:'#d9694e',W:'#e8c98f',D:'#2c2420'}, plant:{X:'#7c5028',L:'#7cc652',G:'#4e9636',P:'#c8763e'}, catwheel:{X:'#2f6f68',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',R:'#c9a06a',D:'#6b5842'} };
     const POOP_PAL={X:'#4a3218',K:'#7a5230'};
     const FOOD_PAL={F:'#d68b4a',D:'#8a5427',L:'#f2e4c6',K:'#7a4a20'};
     const WATER_PAL={A:'#5aa9e6',D:'#3f86c4',H:'#c7e6ff',L:'#eaf6ff'};
@@ -526,6 +552,7 @@
       { id:'scratcher', name:'스크래처', price:18, size:2, footW:1, footH:1, desc:'옆에서 잠시 머물며 발톱을 갈아요.' },
       { id:'litterbox', name:'화장실', price:25, size:1, footW:1, footH:1, desc:'비운 그릇 수만큼 똥이 쌓여요. 탭해 치우면 은화!' },
       { id:'pethouse', name:'펫하우스', price:45, size:2, footW:2, footH:2, desc:'펫이 안에 들어가 정면을 보며 아늑하게 쉬어요.' },
+      { id:'catwheel', name:'캣휠', price:60, size:2, footW:2, footH:2, desc:'고양이가 안에서 달리며 운동하는 러닝휠.' },
       { id:'plant',    name:'화분',   price:22, size:1, footW:1, footH:2, desc:'초록 화분. 고양이가 곁에서 잠시 쉬어요.' }
     ];
     // 소비 아이템(배치 불가) — 홈에서 밥그릇/물그릇을 탭해 채울 때 소모. 알뜰샵 "소비" 탭에서 구매.
@@ -938,7 +965,7 @@
     function sparkSvg(opt){ return pxSvg(M_SPARK, SPARK_PAL, opt); }
     function pawSvg(opt){ return pxSvg(M_PAW, PAW_PAL, opt); }
     // 알뜰샵·팔레트·격자용 대표 아트(물그릇은 물 채운 파란 그릇으로 구분 표시)
-    function furnSvg(id, opt){ const M={cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT}[id]; return pxSvg(M, FURN_PALS[id], opt); }
+    function furnSvg(id, opt){ const M={cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT,catwheel:M_CATWHEEL}[id]; return pxSvg(M, FURN_PALS[id], opt); }
     // 방(홈·dock)용 — 채움 상태 반영: 밥그릇=빈/사료, 물그릇=빈(회색)/물.
     function furnRoomSvg(itemId, key, opt){
       if(itemId==='bowl')      return pxSvg(isFilled(key)?M_BOWL_FOOD:M_BOWL, FURN_PALS.bowl, opt);
@@ -952,9 +979,9 @@
     // 방(dock·홈)에서의 가구 렌더 높이(px) — 발자국 세로 칸수(footH)에 비례해 키움(캣타워 6칸=제일 큼, 스크래처 2칸, 방석·밥그릇 1칸).
     // 고양이 상호작용(캣타워 3층 올라가기 등)이 맞아떨어지도록 렌더·엔진(fh)이 같은 값을 쓴다. depth(뒤로 갈수록) 작게.
     // 방 렌더 높이 배율(실물감) — 캣타워 제일 큼, 스크래처는 고양이 키만큼, 화장실=낮은 상자, 방석·그릇 작게.
-    const ROOM_H = { tower:6.2, scratcher:2.9, pethouse:2.8, plant:2, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6 };
+    const ROOM_H = { tower:6.2, scratcher:2.9, pethouse:2.8, catwheel:3.0, plant:2, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6 };
     // 가구 그래픽 가로세로비(cols/rows) — 좌측하단 앵커라 그래픽 중앙 x = 좌측 edge + fh*aspect/2 (고양이가 가구 중앙에 서게).
-    const FURN_ASPECT = { tower:0.5, scratcher:1.0, pethouse:1.2, plant:0.57, litterbox:1.18, cushion:2.29, bowl:2.0, waterbowl:2.0 };
+    const FURN_ASPECT = { tower:0.5, scratcher:1.0, pethouse:1.2, catwheel:1.04, plant:0.57, litterbox:1.18, cushion:2.29, bowl:2.0, waterbowl:2.0 };
     function furnAspect(id){ return FURN_ASPECT[id]||1; }
     function furnRoomH(id, isDock, depth){
       const mult = ROOM_H[id] || 1;
@@ -1937,6 +1964,8 @@
       if(it==='cushion') return { lift:Math.round(fh*0.4), face:'south', dx:0, pose:'loaf', dur:20000+Math.random()*30000 };
       if(it==='bowl')    return { lift:Math.round(fh*0.15), face:'south', dx:0, pose:'sit', dur:20000+Math.random()*26000 };
       if(it==='scratcher') return { lift:0, face:(Math.random()<0.5?'east':'west'), dx:Math.round(a.sw*0.6)*(Math.random()<0.5?1:-1), pose:'sit', dur:18000+Math.random()*28000 };
+      // 캣휠: 링 안쪽 바닥(정중앙)에 들어가 옆(east/west)을 보며 달리는 자세로 오래 머무름.
+      if(it==='catwheel') return { lift:Math.round(fh*0.12), face:(Math.random()<0.5?'east':'west'), dx:0, pose:'sit', dur:30000+Math.random()*45000 };
       return { lift:0, face:'south', dx:0, pose:'loaf', dur:22000+Math.random()*26000 };
     }
     // 가구에 도착 → 자리 잡고 머무름(랜덤 시간). 스프라이트는 해당 방향 정지, SVG는 포즈. lift로 발판/방석 위로 올림.
@@ -2490,7 +2519,7 @@
     // @gen:pet-tier — 자동생성(tools/build_pets.py). tools/pets.json 의 tier 편집 후 재실행.
     const CAT_TIER = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'epic', cat_fluffy:'rare', cat_tuxedo:'legend', cat_chaos:'rare', cat_siamese:'legend', cat_bengal:'uncommon', cat_fold:'rare', cat_bora:'epic', cat_choco:'uncommon', cat_kitten:'normal', cat_pink:'legend', tiger_orange:'limited', lion_mane:'limited', cat_persian:'epic', tiger_white:'limited', cat_russianblue:'epic', cat_bengal2:'legend' };
     // @gen:end
-    const ITEM_TIER = { cushion:'normal', bowl:'uncommon', scratcher:'rare', pethouse:'epic', tower:'legend' };
+    const ITEM_TIER = { cushion:'normal', bowl:'uncommon', scratcher:'rare', pethouse:'epic', tower:'legend', catwheel:'limited' };
     // 등급별 알뜰샵 가격(은화) — 확률(60/20/15/3.8/1/0.2%)에 맞춰 등급이 오를수록 약 2배씩.
     // 알 100은화(+금화1·중복은 그 펫 가격의 20% 환급) 대비, 흔한 등급은 알보다 싸게·희귀 등급은 비싸게 → 직접구매 vs 뽑기 선택 성립.
     // CAT_TIER를 단일 소스로 삼아 PET_CATALOG.price를 산정(새 고양이도 등급만 지정하면 자동 가격).
