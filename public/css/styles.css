@@ -1221,3 +1221,30 @@
     /* 보유 최대치 도달 칩(재화·아이템이 상한에 닿았을 때만 노출) */
     .maxchip { display:inline-block; font-size:10px; font-weight:800; line-height:1.4; color:var(--sub);
       background:var(--line); padding:0 5px; border-radius:6px; margin-left:4px; vertical-align:middle; }
+
+    /* ===== color-mix() 폴백 — 구형 안드로이드 WebView(<Chrome 111)·미지원 브라우저용 솔리드 근사색 =====
+       모던 브라우저는 이 블록을 통째로 건너뜀(색 변화 없음). 미지원 브라우저에서만 아래 솔리드색으로 대체돼 색이 깨지지 않는다. */
+    @supports not (background: color-mix(in srgb, red 50%, blue)) {
+      .cr-wall { background:linear-gradient(180deg,var(--soft) 0%,var(--soft) 46%,var(--soft2) 46%,var(--soft2) 100%); }
+      .rmthumb.on { box-shadow:0 0 0 2px var(--accent,#4a90d9); }
+      .rmthumb .rmf { background:var(--sub); }
+      .rmthumb .rm-edit { background:rgba(0,0,0,.42); }
+      .wsw { border:1px solid var(--bd); }
+      .emob.on { box-shadow:0 0 0 2px var(--accent,#4a90d9); }
+      .rmdropline { box-shadow:0 0 6px var(--accent,#4a90d9); }
+      .streakbar { background:var(--card); border:1.5px solid var(--bd); }
+      .catchip.elsewhere { border-color:var(--bd); }
+      .catchip .croom { background:var(--accent,#4a90d9); }
+      .cd-roomname { background:rgba(0,0,0,.42); }
+      .catchip .cn-edit { background:var(--card); }
+      .catchip.on { background:var(--card); }
+      .catchip.on .cpic { background:var(--soft); }
+      .shopcard.petpick.sel { background:var(--card); }
+      .shopcard.petpick.sel .thumb { background:var(--soft); }
+      .gdrop, .gdrop.bad { background:transparent; }
+      .gib.sell { background:var(--card); }
+      .fx-leak { background:radial-gradient(circle, currentColor 0 30%, transparent 72%); }
+      .featbanner { background:var(--card); border:1.5px solid var(--gold,#f2b134); }
+      .shopcard.petpick.feat { border-color:var(--gold,#f2b134); }
+      .giftsend.free { border-color:var(--line); }
+    }
