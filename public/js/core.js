@@ -342,6 +342,7 @@
     // ===== 워크스페이스 부트스트랩 =====
     async function enterApp(user){
       state.uid=user.uid; state.userEmail=user.email||'';
+      try{ document.body.classList.add('auth-pending'); }catch(e){}   // 로그인 성공~메인 준비 완료까지 스플래시로 덮어 빈 셸·로그인창 잔상 방지
       try{
         const s=await db.ref('users/'+user.uid).once('value');
         let u=s.val()||{};
@@ -352,8 +353,6 @@
         state.userName=u.name;
         state.userPhotos[state.uid]=u.photo||'';
         state.profilePublic=(u.profilePublic!==false);   // 기본 공개(미설정=공개)
-        $('authScreen').style.display='none';
-        $('app').style.display='flex';
         initUserGraph();   // 개인 할일·친구(user-global) 상시 리스너 — 워크스페이스 무관
         ensureFriendCode().catch(e=>console.warn('friendCode', e));   // 내 친구 코드 보장
         await migrateLegacyIfNeeded();
@@ -362,10 +361,13 @@
         try{ await migratePersonalTodos(); }catch(e){ console.warn('personal todo migrate', e); }   // 개인 할일 ws→user 1회 이전
         let active=u.activeWs;
         if(!active || !state.memberships.some(w=>w.id===active)) active=state.memberships[0].id;
-        await switchWorkspace(active, true);
-        try{ initDock(); initCatGame(); setTimeout(autoClaimAttend, 800); }catch(e){ console.warn('cat game init', e); }   // 🐱 은화·고양이 dock
+        await switchWorkspace(active, true);   // 여기서 #content 최초 렌더(아직 스플래시 아래)
+        // 메인 준비 완료 → 앱 노출(빈 화면 없이 곧바로 메인, 로그인창 잔상 없음)
+        $('authScreen').style.display='none'; $('app').style.display='flex';
+        try{ document.body.classList.remove('auth-pending'); }catch(e){}
+        try{ initDock(); initCatGame(); setTimeout(autoClaimAttend, 800); }catch(e){ console.warn('cat game init', e); }   // 🐱 은화·고양이 dock(노출 후 초기화 → 폭 측정 정확)
         if(justSignedUp){ justSignedUp=false; try{ if(typeof grantWelcomeGift==='function') setTimeout(grantWelcomeGift, 900); }catch(e){ console.warn('welcome gift', e); } }   // 🎉 신규 가입 축하 선물(멱등)
-      }catch(e){ toast(e.message||'로그인 처리 중 오류', true); }
+      }catch(e){ try{ document.body.classList.remove('auth-pending'); $('authScreen').style.display='none'; $('app').style.display='flex'; }catch(_){ } toast(e.message||'로그인 처리 중 오류', true); }
     }
 
     // 개인 할일·친구 그래프(user-global) 상시 리스너 — 워크스페이스 전환과 무관하게 유지.
