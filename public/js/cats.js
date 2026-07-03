@@ -463,9 +463,13 @@
     // `/css/assets/…` 404 → 고양이가 안 보인다. document.baseURI 기준 절대 URL로 고정.
     function assetUrl(p){ try{ return new URL(p, document.baseURI).href; }catch(e){ return p; } }
     function sprStills(id){ return 'assets/pets/'+id; }
+    const _BLANK_PX='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';   // 1×1 투명 — 아트 로딩 전 깨진 img 방지
     // 런타임(앱에서 업로드) 펫은 이미지가 data URL(PET_SPRITES[id].urls)에 들어있어 파일 경로 대신 그걸 쓴다.
-    function sprStill(id, face){ const sp=PET_SPRITES[id]; if(sp&&sp.urls&&sp.urls[face]) return sp.urls[face]; return assetUrl(sprStills(id)+'/'+face+'.png'); }
-    function sprWalkUrl(sp){ return (sp&&sp.urls&&sp.urls.walk) ? sp.urls.walk : assetUrl(sp.walk); }
+    // 아트 분리 저장(catalogPetArt) → 지연 로딩 전(sp.needArt)에는 파일 경로가 없으므로 투명 픽셀을 준다(로드되면 재렌더로 교체).
+    function sprStill(id, face){ const sp=PET_SPRITES[id]; if(sp&&sp.urls&&sp.urls[face]) return sp.urls[face]; if(sp&&sp.runtime&&sp.needArt) return _BLANK_PX; return assetUrl(sprStills(id)+'/'+face+'.png'); }
+    function sprWalkUrl(sp){ if(sp&&sp.urls&&sp.urls.walk) return sp.urls.walk; if(sp&&sp.runtime&&sp.needArt) return _BLANK_PX; return assetUrl(sp.walk); }
+    // 런타임 펫 아트가 아직 안 온 동안 보여줄 플레이스홀더(도트 알). 준비되면 catFace/catActorHTML가 실제 스프라이트로 교체.
+    function _petPlaceholder(s){ return '<span class="petph" style="width:'+s+'px;height:'+s+'px;display:inline-flex;align-items:flex-end;justify-content:center;overflow:hidden;">'+eggSvg(0,{h:Math.round(s*0.72)})+'</span>'; }
     // @gen:pet-sprites — 자동생성(tools/build_pets.py). tools/pets.json 편집 후 재실행.
     const PET_SPRITES = {
       cat_mackerel:{ walk:'assets/pets/cat_mackerel/walk.png', frames:6, stills:true },
@@ -495,7 +499,8 @@
     // reduced-motion이면 처음부터 정지 이미지(south=앞)로 고정.
     function catActorHTML(id, h){
       const sp=PET_SPRITES[id];
-      if(sp){ const s=Math.round(h); const rm=reducedMotion(); const fw=sp.frontWalk;
+      if(sp){ ensurePetArt(id); if(sp.runtime && !sp.urls) return _petPlaceholder(Math.round(h));   // 아트 지연 로딩 중이면 도트 알
+        const s=Math.round(h); const rm=reducedMotion(); const fw=sp.frontWalk;
         // frontWalk 고양이는 walk.png가 정면이라 걷기 시트를 애니메이션하지 않고 항상 정지 스틸(.idle)로 둔다.
         //  - 이동 중엔 east(옆) 스틸을 보여주고 scaleX로 방향을 뒤집음, 정지/reduced-motion이면 south(정면).
         const idleOn = rm || fw;
@@ -507,7 +512,8 @@
     // 스프라이트 고양이는 south(정면) PNG, 없으면 SVG 매트릭스로 자동 분기.
     // ★ 고양이를 추가/수정할 땐 정면 표시는 반드시 catFace를 거쳐야 dock·방·상점·보유목록·뽑기 어디서나 같은 아트가 나온다.
     function catFace(id, opt){ opt=opt||{}; const h=opt.h||48;
-      if(hasSprite(id)){ const s=Math.round(h);
+      if(hasSprite(id)){ const sp=PET_SPRITES[id]; ensurePetArt(id); const s=Math.round(h);
+        if(sp.runtime && !sp.urls) return _petPlaceholder(s);   // 아트 지연 로딩 중이면 도트 알
         return '<img class="catpx" src="'+sprStill(id,'south')+'" alt="" width="'+s+'" height="'+s+'" loading="lazy">'; }
       return catFront(id, opt); }
     const POSE_M = { sit:M_CAT_SIT, loaf:M_CAT_LOAF, sleep:M_CAT_SLEEP };
@@ -891,10 +897,12 @@
       _deletedPets={};
       // 2) catalog 레코드 적용(신규/오버라이드/삭제)
       Object.keys(recs).forEach(id=>{ const r=recs[id]||{}; const isNew=isRuntimePet(id);
-        if(isNew && !r.walk && !r.deleted) return;   // 이미지 없는 신규는 무시
+        const hasArt=!!(r.walk || r.hasArt);   // 인라인 이미지(구 레코드) 또는 분리 노드 catalogPetArt(신)
+        if(isNew && !hasArt && !r.deleted) return;   // 이미지 없는 신규는 무시
         // 스프라이트
         let sp = isNew ? { frames:6, stills:true } : Object.assign({}, STATIC_SPRITES[id]);
-        if(r.walk) sp.urls={ walk:r.walk, south:r.south, north:r.north, east:r.east, west:r.west };   // (재)업로드 디자인
+        if(r.walk) sp.urls={ walk:r.walk, south:r.south, north:r.north, east:r.east, west:r.west };   // 구: 인라인 data URL(하위호환)
+        else if(hasArt){ sp.needArt=true; sp.artAt=r.at||''; }   // 신: catalogPetArt/{id}에서 지연 로드(ensurePetArt)
         if(r.scale!=null) sp.scale=Number(r.scale)||1;
         if(r.frontWalk!=null) sp.frontWalk=!!r.frontWalk;
         if(isNew){ sp.runtime=true; sp.walk=sp.walk||''; }
@@ -921,6 +929,30 @@
         if(state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh();
       }, ()=>{});   // 읽기 실패(규칙 미배포 등)는 조용히 무시
     }
+    // ---- 런타임 펫 이미지 지연 로딩 ----
+    // 스프라이트 base64는 catalogPets(메타)와 분리된 catalogPetArt/{id}에 저장 → 앱 시작 땐 메타만 받고,
+    // 실제로 보이는 펫만 그때 .once로 아트를 받아 캐시(세션). .on이 아니라 편집 시 전체 재푸시 없음, 펫별 1회.
+    const _petArt={};        // id -> { at, urls:{walk,south,north,east,west} } 세션 캐시
+    const _petArtPending={};  // 진행 중 요청 가드
+    function _applyArt(id, urls){ const sp=PET_SPRITES[id]; if(sp&&urls){ sp.urls={ walk:urls.walk, south:urls.south, north:urls.north, east:urls.east, west:urls.west }; sp.needArt=false; } }
+    // 아트가 준비됐으면 스프라이트에 반영하고 true, 아직이면 로드 시작 후 false. (정적/이미 로드된 펫은 즉시 true)
+    function ensurePetArt(id){ const sp=PET_SPRITES[id];
+      if(!sp || !sp.needArt) return true;
+      const c=_petArt[id]; if(c && c.at===(sp.artAt||'')){ _applyArt(id, c.urls); return true; }   // 캐시 히트(같은 at)
+      if(_petArtPending[id]) return false;
+      if(typeof db==='undefined'||!db) return false;
+      _petArtPending[id]=true;
+      db.ref('catalogPetArt/'+id).once('value').then(s=>{ delete _petArtPending[id]; const urls=s.val();
+        if(urls && urls.walk){ _petArt[id]={ at:(sp.artAt||''), urls }; _applyArt(id, urls); _petArtRerender(); }
+      }).catch(()=>{ delete _petArtPending[id]; });
+      return false;
+    }
+    function ensurePetArtMany(ids){ (ids||[]).forEach(ensurePetArt); }   // 방/독 진입 시 소유 펫만 선로드
+    // 아트 도착 → 무대 sig 무효화(스프라이트 src 갱신)하고 방/독·열린 시트 재렌더.
+    function _petArtRerender(){ const cd=$('cdStage'); if(cd) cd.dataset.sig=''; const cr=$('crStage'); if(cr) cr.dataset.sig='';
+      if(typeof renderDockCats==='function') renderDockCats();
+      if(typeof mountRoomWalk==='function') mountRoomWalk();
+      if(state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh(); }
     // 모든 펫(활성+삭제) — dev 관리 화면용. {id,name,species,tier,deleted}
     function allPetsForDev(){ const out=PET_CATALOG.map(c=>({ id:c.id, name:c.name, species:c.species, tier:CAT_TIER[c.id]||'normal', runtime:!!c.runtime, deleted:false }));
       Object.keys(_deletedPets).forEach(id=>{ const d=_deletedPets[id]; out.push({ id, name:d.name, species:d.species, tier:d.tier||'normal', runtime:!!d.runtime, deleted:true }); });
@@ -981,15 +1013,55 @@
       const fields={ name, species:(val('dpSpecies')||'cat').trim()||'cat', speciesLabel:(val('dpSpeciesLabel')||'').trim(),
         tier:val('dpTier')||'normal', scale:Number(val('dpScale'))||1, by:state.userEmail||'', at:new Date().toISOString() };
       const p = file ? _processPetZip(file) : Promise.resolve(null);
-      p.then(art=>{ if(art){ fields.walk=art.walk; fields.south=art.south; fields.north=art.north; fields.east=art.east; fields.west=art.west; fields.frontWalk=art.frontWalk; }
-        const id=editing?_devPetTarget:('rt_'+Date.now().toString(36)); const ref=catalogRef().child(id);
-        return editing ? ref.update(fields) : ref.set(fields);
+      p.then(art=>{
+        const id=editing?_devPetTarget:('rt_'+Date.now().toString(36));
+        if(art){
+          // 메타는 catalogPets/{id}, 이미지는 분리 노드 catalogPetArt/{id} — 원자 다중경로 업데이트(메타 필드는 개별 경로로 병합).
+          fields.frontWalk=art.frontWalk; fields.hasArt=true;
+          const upd={};
+          ['name','species','speciesLabel','tier','scale','by','at','frontWalk','hasArt'].forEach(k=>{ if(fields[k]!==undefined) upd['catalogPets/'+id+'/'+k]=fields[k]; });
+          upd['catalogPetArt/'+id]={ walk:art.walk, south:art.south, north:art.north, east:art.east, west:art.west };
+          delete _petArt[id];   // 세션 캐시 무효화(새 아트)
+          return db.ref().update(upd);
+        }
+        // 이미지 없는 수정(메타만) — 기존처럼 병합 update
+        return catalogRef().child(id).update(fields);
       }).then(()=>{ toast((editing?'저장':'추가')+' 완료! 🐾'); closeSheet(); })
         .catch(e=>{ toast((editing?'저장':'추가')+' 실패: '+((e&&e.message)||e), true); const b=$('dpBtn'); if(b){ b.disabled=false; b.textContent=editing?'저장':'추가'; } });
     }
     function devSelectPet(id){ const prev=document.querySelector('.petmg-list'); const st=prev?prev.scrollTop:0;   // 재렌더로 스크롤이 위로 튀지 않게 위치 보존
       state._devPetSel=(state._devPetSel===id?null:id); openDevPetManager();
       const cur=document.querySelector('.petmg-list'); if(cur) cur.scrollTop=st; }
+    // 기존 인라인 아트(catalogPets/{id}.walk…) → 분리 노드 catalogPetArt/{id}로 1회 이전(멱등). canel94로 1회 실행.
+    function migrateCatalogArtOnce(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
+      catalogRef().once('value').then(s=>{ const recs=s.val()||{}; const upd={}; let n=0;
+        Object.keys(recs).forEach(id=>{ const r=recs[id]||{}; if(!r.walk) return;   // 이미 이전됨/이미지 없음
+          upd['catalogPetArt/'+id]={ walk:r.walk, south:r.south, north:r.north, east:r.east, west:r.west };
+          ['walk','south','north','east','west'].forEach(k=>upd['catalogPets/'+id+'/'+k]=null);
+          upd['catalogPets/'+id+'/hasArt']=true; n++; });
+        if(!n){ toast('이전할 항목이 없어요'); return; }
+        return db.ref().update(upd).then(()=>toast(n+'개 펫 이미지를 분리 저장했어요 ✅'));
+      }).catch(e=>toast('이전 실패: '+((e&&e.message)||e), true)); }
+    // 런타임 펫을 정적 파이프라인으로 승격 — 아트 5장을 파일로 내려받고, pets.json·PET_ID_MIGRATE 스니펫을 안내.
+    function exportPetStatic(id){ if(!(typeof isDev==='function'&&isDev())) return;
+      const info=devPetInfo(id); if(!info){ toast('펫을 찾을 수 없어요', true); return; } const sp=PET_SPRITES[id]||{};
+      const doExport=(urls)=>{ if(!urls || !urls.walk){ toast('이미지를 불러오는 중이에요. 잠시 후 다시 시도하세요.'); ensurePetArt(id); return; }
+        ['walk','south','north','east','west'].forEach(f=>{ if(!urls[f]) return; const a=document.createElement('a'); a.href=urls[f]; a.download=f+'.png'; document.body.appendChild(a); a.click(); a.remove(); });
+        const slug=String(id).replace(/^rt_/,'')||'new'; const sid=(info.species||'cat')+'_'+slug;
+        const petLine=JSON.stringify({ id:sid, species:info.species||'cat', name:info.name||'', tier:info.tier||'normal', scale:sp.scale||1, desc:'', zip:'', frontWalk:!!sp.frontWalk });
+        let h='<p class="muted" style="font-size:12.5px;line-height:1.6;margin:2px 2px 10px;">PNG 5장을 내려받았어요. 아래로 정적 편입하세요(<code>id</code>는 원하는 이름으로 바꿔도 됩니다).</p>';
+        h+='<ol style="font-size:13px;line-height:1.8;padding-left:20px;margin:0 0 10px;">'+
+           '<li><code>public/assets/pets/'+escapeHtml(sid)+'/</code> 폴더에 5장 넣기</li>'+
+           '<li><code>tools/pets.json</code> 의 <code>pets</code> 배열에 아래 한 줄 추가</li>'+
+           '<li><code>cats.js</code> 의 <code>PET_ID_MIGRATE</code> 에 아래 한 줄 추가(소유자 이관)</li>'+
+           '<li><code>python tools/build_pets.py</code> 실행 → 커밋 → 배포</li>'+
+           '<li>배포 확인 후 이 런타임 펫을 <b>삭제</b>(catalogPets·catalogPetArt 제거)</li></ol>';
+        h+='<div class="field"><label>pets.json 항목</label><pre style="white-space:pre-wrap;word-break:break-all;background:var(--card,#0002);padding:8px;border-radius:8px;font-size:12px;">'+escapeHtml(petLine)+'</pre></div>';
+        h+='<div class="field"><label>PET_ID_MIGRATE 한 줄</label><pre style="background:var(--card,#0002);padding:8px;border-radius:8px;font-size:12px;">'+escapeHtml(id+": '"+sid+"',")+'</pre></div>';
+        openSheet('정적 승격 · '+escapeHtml(info.name||id), h); };
+      if(sp.urls) doExport(sp.urls);
+      else if(_petArt[id] && _petArt[id].urls) doExport(_petArt[id].urls);
+      else db.ref('catalogPetArt/'+id).once('value').then(s=>doExport(s.val())).catch(e=>toast('불러오기 실패: '+((e&&e.message)||e), true)); }
     // 개발자 펫 관리: 전체 목록(삭제된 펫=회색·"삭제됨") + 선택 후 [추가][수정][삭제/복구]
     function openDevPetManager(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
       const list=allPetsForDev(), sel=state._devPetSel, selPet=sel?list.find(p=>p.id===sel):null;
@@ -1004,6 +1076,12 @@
         : '<button class="btn danger"'+(sel?'':' disabled')+(sel?' onclick="deletePetSoft(\''+sel+'\')"':'')+'>삭제</button>';
       h+='<div class="petmg-btns"><button class="btn ghost" onclick="openDevPetAdd()">추가</button>'+
          '<button class="btn"'+(sel?'':' disabled')+(sel?' onclick="openDevPetEdit(\''+sel+'\')"':'')+'>수정</button>'+dr+'</div>';
+      // 개발자 유틸: 선택한 런타임 펫을 정적으로 승격(내보내기), 구 인라인 아트 1회 분리 이전.
+      const canPromote = selPet && selPet.runtime && !selPet.deleted;
+      h+='<div class="petmg-btns" style="margin-top:6px;">'+
+         '<button class="btn ghost"'+(canPromote?' onclick="exportPetStatic(\''+sel+'\')"':' disabled')+'>정적 승격 내보내기</button>'+
+         '<button class="btn ghost" onclick="migrateCatalogArtOnce()">이미지 분리 이전(1회)</button></div>';
+      h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:8px 2px 0;">승격=런타임 펫을 파일 에셋으로 옮겨 RTDB 부담을 줄임. 분리 이전=예전 인라인 아트를 <code>catalogPetArt</code>로 옮기는 1회 작업.</p>';
       openSheet('펫 관리', h); }
 
     // ================= 전역 dock (얇은 스트립 / 숨김) =================
@@ -1069,6 +1147,7 @@
     function renderDockCats(){
       const stage=$('cdStage'); if(!stage) return;
       const cats=activeCats(); const list=cats.slice(0,slotCount());
+      ensurePetArtMany(list);   // 독에 보이는 소유 펫 아트 선로드(지연)
       stage.dataset.hh=48;
       const sig='c:'+list.join(',');   // 고양이 구성이 그대로면 DOM 재생성 금지(스프라이트 리로드·애니메이션 리셋 깜빡임 방지)
       if(stage.dataset.sig===sig && stage.querySelector('.cd-actor')) return;
@@ -1110,6 +1189,7 @@
     function measureFootPad(id, cb){
       if(_footPad[id]!=null){ cb&&cb(_footPad[id]); return; }
       const sp=PET_SPRITES[id]; if(!sp){ _footPad[id]=PET_FOOT_PAD; cb&&cb(_footPad[id]); return; }
+      if(sp.runtime && sp.needArt && !sp.urls){ cb&&cb(PET_FOOT_PAD); return; }   // 아트 로딩 전(투명 픽셀)엔 측정·캐시 금지 — 로드 후 재측정
       const img=new Image(); img.crossOrigin='anonymous';
       img.onload=function(){ try{
           const w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
@@ -1385,6 +1465,7 @@
     function mountRoomWalk(){
       const stage=$('crStage'); if(!stage) return;
       const list=activeCats().slice(0,slotCount());
+      ensurePetArtMany(list);   // 방에 보이는 소유 펫 아트 선로드(지연)
       stage.dataset.hh=64;
       const sig='c:'+list.join(',');   // 같은 고양이면 재생성 안 함(애니메이션 유지)
       if(stage.dataset.sig===sig && stage.querySelector('.cd-actor')) return;

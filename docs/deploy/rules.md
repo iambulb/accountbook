@@ -55,4 +55,5 @@ users/{uid}/{friends,friendReqs} : 친구 관계·요청   // 당사자 두 명�
 | uidA → `users/uidB/friends/uidA` 쓰기(수락) | 허용(당사자) |
 | 비로그인 read | 거부 |
 
-- **`catalogPets`**: 런타임 펫(앱 dev zip 업로드). 읽기=로그인 전체, 쓰기=개발자 이메일(`auth.token.email` 화이트리스트)만. 규칙 변경 후 `npx firebase-tools deploy --only database` 로 배포해야 업로드가 동작한다.
+- **`catalogPets`**: 런타임 펫 **메타데이터**(앱 dev zip 업로드). 읽기=로그인 전체, 쓰기=개발자 이메일(`auth.token.email` 화이트리스트)만. 규칙 변경 후 `npx firebase-tools deploy --only database` 로 배포해야 업로드가 동작한다.
+- **`catalogPetArt`**: 런타임 펫 **스프라이트 이미지**(base64, 메타와 분리). 읽기·쓰기 규칙은 `catalogPets`와 동일(개발자 이메일만 쓰기). 이미지 분리 저장(지연 로딩)을 위해 추가됐으므로, **이 노드도 배포돼야** dev 업로드가 동작한다.

@@ -117,6 +117,20 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 ## id 변경 시 하위호환
 `PET_CATALOG`의 `id`는 RTDB 저장 키(`users/{uid}/game/owned/cats/<id>`, `home/active[]`)다. id를 바꾸면 기존 사용자 데이터가 끊기므로, `js/cats.js`의 `PET_ID_MIGRATE`(구 id→신 id)에 매핑을 추가하고 `normalizeGame`이 읽을 때 자동 이관한다(다음 쓰기에서 영구 반영). 예: `mackerel → cat_mackerel`.
 
+## 런타임 펫 vs 정적 펫 — 지연 로딩 & 정적 승격
+런타임 펫(앱 dev 업로드)과 정적 펫(이 파이프라인)은 **별개 트랙**이다.
+- **정적 펫**: `public/assets/pets/<id>/` 파일 + SW 캐시 → **RTDB 비용 0**. 공식/영구 펫은 정적으로 둔다.
+- **런타임 펫**: 이미지가 RTDB에 들어간다. **메타는 `catalogPets/{id}`, 스프라이트는 `catalogPetArt/{id}`(base64)로 분리** 저장되고, 앱 시작 땐 메타만 받는다. 실제로 보이는 펫만 `ensurePetArt(id)`가 `catalogPetArt/{id}`를 **`.once`로 1회** 받아 세션 캐시(`_petArt`)에 담고 스프라이트에 반영한다(초기 로딩·편집 시 전체 재푸시 부담을 없앰). 로딩 전에는 도트 알 플레이스홀더를 보여준다.
+- 구 레코드(인라인 `walk/south/…`)는 개발자 화면의 **"이미지 분리 이전(1회)"**(`migrateCatalogArtOnce`)로 `catalogPetArt`로 옮긴다(멱등).
+
+### 런타임 → 정적 승격(확정 펫)
+수십 마리로 늘면 RTDB가 커지므로, 디자인이 확정된 런타임 펫은 정적으로 옮긴다.
+1. 개발자 펫 관리에서 런타임 펫 선택 → **"정적 승격 내보내기"**(`exportPetStatic`): `walk/south/north/east/west.png` 5장을 내려받고, `pets.json` 항목·`PET_ID_MIGRATE` 한 줄 스니펫을 보여준다.
+2. `public/assets/pets/<static_id>/`에 5장 배치 → `tools/pets.json` `pets`에 스니펫 추가(`"zip":""`) → `PET_ID_MIGRATE`에 `rt_xxx: '<static_id>'` 추가(소유자 이관).
+3. `python tools/build_pets.py` 실행 → 에셋이 이미 있어 `gen_assets`는 건너뛰고 카탈로그·스프라이트·등급·`sw.js`·문서·`CACHE_VERSION`을 자동 갱신 → 커밋 → 배포.
+4. 배포 확인 후 앱에서 그 **런타임 레코드 삭제**(`catalogPets/{id}`+`catalogPetArt/{id}`). `migratePetIds`가 소유자의 `rt_xxx`를 `<static_id>`로 리맵해 방/보유가 유지된다.
+5. 승격 펫은 자동 CHANGELOG 줄이 안 붙으므로 `docs/CHANGELOG.md`에 수동으로 한 줄 추가한다.
+
 ## 걷기/쉬기 상태 (cats.js 통합 엔진)
 스프라이트 동물은 단일 rAF 엔진(`catLoop`/`stepActors`)의 액터로 배치되어 두 상태를 오간다.
 - **걷기(roam/goal)**: `.cspr`(한 프레임 창, `overflow:hidden`) 안쪽 필름 `.csprf`(288×48 스트립)를 CSS `steps(6)` + `transform:translateX`(`@keyframes csprFilm`)로 밀어 재생하며 좌우 이동. 서쪽 이동이면 `scaleX(-1)`로 뒤집음(시트는 east 기준).

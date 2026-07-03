@@ -74,6 +74,9 @@ def has_east(zf):
 
 def gen_assets(pet):
     """zip에서 walk.png(288×48)+4방향 생성. east 없으면 south로 walk 구성 후 frontWalk 표시."""
+    if not pet.get("zip"):
+        # 정적 승격 항목: 에셋(PNG)이 이미 배치돼 있어 zip 없이 코드젠만 함(--force여도 생성 건너뜀).
+        print(f"  · {pet['id']}: zip 없음(정적 승격) → 에셋 생성 건너뜀"); return False
     try:
         from PIL import Image
     except ImportError:
@@ -180,7 +183,8 @@ def gen_pipe_idtable(reg):
     rows = []
     for p in reg["pets"]:
         note = "Walk/east 옆걷기" + (" 없음→정면(frontWalk)" if p.get("frontWalk") else " 정상")
-        rows.append(f"| {p['zip']} | `{p['id']}` | {p['name']} | {note} |")
+        zipname = p.get("zip") or "(정적 승격)"
+        rows.append(f"| {zipname} | `{p['id']}` | {p['name']} | {note} |")
     return "\n".join(rows)
 
 # ---------- 메인 ----------
