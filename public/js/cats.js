@@ -2235,8 +2235,8 @@
             '<div class="act">'+act+'</div></div>';
         }).join('');
         // ✨ 무지개알/무지개박스 — 금화로 구매하는 소비템(특별↑ 확정). 보유하면 "사용"으로 오픈.
-        const rb=[['egg','무지개알','열면 특별70 · 전설20 · 한정10%. 특별↑ 고양이만!', rainbowEggSvg({h:66,cls:'rb-thumb'})],
-                  ['box','무지개박스','열면 특별70 · 전설20 · 한정10%. 특별↑ 가구만!', rainbowBoxSvg({h:56,cls:'rb-thumb'})]];
+        const rb=[['egg','무지개알','열면 특별90 · 전설8 · 한정2%. 특별↑ 고양이만!', rainbowEggSvg({h:66,cls:'rb-thumb'})],
+                  ['box','무지개박스','열면 특별90 · 전설8 · 한정2%. 특별↑ 가구만!', rainbowBoxSvg({h:56,cls:'rb-thumb'})]];
         h+='<div class="rb-hh"><span class="tier-limited">✨ 무지개</span> · 금화 전용 · 특별↑ 확정</div>';
         h+=rb.map(([k,nm,desc,art])=>{ const key=rainbowKey(k), qty=consumQty(key), price=rbPriceGold(k), canBuy=gold()>=price;
           const buy=canBuy?'<button class="buy" aria-label="'+nm+' 구매(금화 '+price+')" onclick="buyRainbow(\''+k+'\')">구매</button>':'<button class="buy dis" disabled>금화 '+(price-gold())+' 부족</button>';
@@ -2543,8 +2543,8 @@
         return g;
       }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund); });
     }
-    // ===== ✨ 무지개알/무지개박스: 금화로 구매하는 소비템 → 사용 시 특별70·전설20·한정10% 가챠 =====
-    const RAINBOW_TIERS=[{id:'epic',p:70},{id:'legend',p:20},{id:'limited',p:10}];   // 한정 콘텐츠 없으면 rollFromPool이 전설로 폴백
+    // ===== ✨ 무지개알/무지개박스: 금화로 구매하는 소비템 → 사용 시 특별90·전설8·한정2% 가챠 =====
+    const RAINBOW_TIERS=[{id:'epic',p:90},{id:'legend',p:8},{id:'limited',p:2}];   // 한정 콘텐츠 없으면 rollFromPool이 전설로 폴백
     const RAINBOW_PRICE_GOLD={ egg:100, box:100 };   // 무지개알·무지개박스 모두 금화100
     function rbPriceGold(kind){ return RAINBOW_PRICE_GOLD[kind==='egg'?'egg':'box']; }
     function rainbowKey(kind){ return kind==='egg'?'rainbow_egg':'rainbow_box'; }
