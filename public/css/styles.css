@@ -1249,3 +1249,29 @@
       .shopcard.petpick.feat { border-color:var(--gold,#f2b134); }
       .giftsend.free { border-color:var(--line); }
     }
+
+    /* ===== 🔔 소식 탭 · dock 알림 뱃지 ===== */
+    .cd-coin { position:relative; }
+    .cd-notif { position:absolute; top:-7px; right:-7px; min-width:16px; height:16px; padding:0 4px; border-radius:999px;
+      background:#f04452; color:#fff; font-size:10px; font-weight:900; line-height:1; display:flex; align-items:center; justify-content:center;
+      border:2px solid var(--bg); font-variant-numeric:tabular-nums; }
+    .catseg button { position:relative; }
+    .segbadge { position:absolute; top:2px; right:6px; min-width:15px; height:15px; padding:0 4px; border-radius:999px;
+      background:#f04452; color:#fff; font-size:9.5px; font-weight:900; line-height:1; display:flex; align-items:center; justify-content:center; font-variant-numeric:tabular-nums; }
+    .sech .sech-ic { display:inline-flex; vertical-align:-2px; margin-right:2px; }
+    .sech .sech-ic .px { display:block; }
+    .mgreet { display:flex; align-items:baseline; gap:8px; margin:4px 2px 10px; }
+    .mgreet b { font-size:16px; font-weight:850; } .mgreet span { font-size:12.5px; color:var(--sub); }
+    .newsalert { display:flex; align-items:center; gap:11px; background:var(--bg); border:1px solid var(--bd); border-radius:13px; padding:11px 12px; cursor:pointer; }
+    .newsalert .nai { width:36px; height:36px; flex:none; display:inline-flex; align-items:center; justify-content:center; }
+    .newsalert .nai .px { display:block; }
+    .newsalert .nat { flex:1; min-width:0; } .newsalert .nat b { font-size:14px; } .newsalert .nat span { display:block; font-size:12px; color:var(--sub); margin-top:1px; }
+    .newsalert .buy { flex:none; }
+    .newsupd { padding:7px 2px; border-bottom:1px solid var(--line); }
+    .newsupd b { font-size:13px; font-weight:750; } .newsupd span { display:block; font-size:12px; color:var(--sub); margin-top:2px; line-height:1.45; }
+    .cnote { font-size:12.5px; color:var(--sub); margin:12px 2px 8px; padding-left:11px; border-left:3px solid var(--gold,#e0a43c); line-height:1.5; }
+    .cnote b { color:var(--text); }
+    .cpn { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 12px; border:1px solid var(--bd); border-radius:11px; background:var(--bg); margin-top:7px; }
+    .cpn code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-weight:700; font-size:12px; color:var(--text); background:var(--soft); padding:3px 8px; border-radius:7px; }
+    .cpn .rw { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--sub); white-space:nowrap; }
+    .cpn .rw .ci { display:inline-flex; } .cpn .rw .px { display:block; }
