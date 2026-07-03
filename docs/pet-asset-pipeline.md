@@ -136,18 +136,22 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 4. 배포 확인 후 앱에서 그 **런타임 레코드 삭제**(`catalogPets/{id}`+`catalogPetArt/{id}`). `migratePetIds`가 소유자의 `rt_xxx`를 `<static_id>`로 리맵해 방/보유가 유지된다.
 5. 승격 펫은 자동 CHANGELOG 줄이 안 붙으므로 `docs/CHANGELOG.md`에 수동으로 한 줄 추가한다.
 
-### 주간 자동 정리 — 트리거 문구 **"펫 정리해줘"**
-개발자는 **앱에서 런타임 펫을 추가/수정/삭제만** 하고, 위 수동 5단계를 직접 하지 않는다. 대신 주기적으로(약 주 1회) 담당자에게 **"펫 정리해줘"** 라고 하면 아래 루틴이 실행된다. 위 5단계를 도구로 묶어 자동화한 것이며, RTDB 접근을 위해 **`firebase login`이 한 번** 되어 있어야 한다(프로젝트 소유 계정 → 규칙 무시하고 read/remove).
+### 주간 자동 정리 — 트리거 문구 **"펫 정리해줘"** (오케스트레이터 `tools/pet_maint.mjs`)
+개발자는 **앱에서 런타임 펫을 추가/수정/삭제만** 하고, 위 수동 5단계를 직접 하지 않는다. 주기적으로(약 주 1회) 담당자에게 **"펫 정리해줘"** 라고 하면, 위 5단계를 묶은 **오케스트레이터 `tools/pet_maint.mjs`** 의 4개 서브커맨드로 처리한다. RTDB 접근을 위해 **`firebase login`이 한 번** 돼 있어야 한다(프로젝트 소유 계정 → 규칙 무시 read/remove). 대상은 코드 상수(`PROJECT`=`money-bb658`, `PROD_URL`=dev 배포 URL, `EGG_FB_PROJECT`/`EGG_PROD_URL` 로 오버라이드)로 박아 두어 매번 정할 필요가 없다. Windows 게토(Git Bash MSYS 경로변환·python cp949)는 도구가 **Node 자식프로세스+`PYTHONIOENCODING`으로 내부 처리**하므로 그냥 `node`로 실행하면 된다.
 
-- **일회성 준비**: `npx firebase-tools login`(브라우저 인증) 1회. 이후 CLI가 비대화식으로 동작.
-- **도구**: `tools/sync_runtime_pets.mjs`(Node). 입력 폴더 기본값 `_sync/`(gitignore, 커밋 안 됨).
-- **루틴**:
-  1. `npx firebase-tools database:get /catalogPets --project money-bb658 -o _sync/catalogPets.json` (그리고 `/catalogPetArt` → `_sync/catalogPetArt.json`).
-  2. 활성(`deleted!=true`) 런타임 펫마다 `<species>_<slug>` 정적 id·이름·tier·scale·desc를 배정해 `_sync/promote.json` 작성(`{ "rt_xxx": { "id","name","tier","scale","desc" } }`).
-  3. `node tools/sync_runtime_pets.mjs` → PNG 5장을 `public/assets/pets/<species>/<id>/`에 기록(종별 하위폴더 — 새 종이면 폴더 자동 생성) + `tools/pets.json`에 `zip:""` 항목 병합 + `PET_ID_MIGRATE`의 `/* @rtmigrate */` 앞에 `rt_xxx:'<id>'` 삽입. (멱등) 스크립트가 승격 목록·미승격(soft-delete/누락) 목록·RTDB 삭제 명령을 출력한다.
-  4. `python tools/build_pets.py`(Windows는 `PYTHONIOENCODING=utf-8`) → 카탈로그·스프라이트·등급·`sw.js`·문서·`CACHE_VERSION` 자동 갱신 → `docs/CHANGELOG.md` 한 줄 수동 추가 → `npm test` → `dev` 커밋·푸시 → 배포.
-  5. **배포 확인 후에만** 스크립트가 출력한 `database:remove` 명령으로 `catalogPets/<rt>`·`catalogPetArt/<rt>` 삭제. `migratePetIds`가 소유자 데이터를 `<id>`로 리맵해 방/보유 유지.
-- **soft-delete(앱에서 지운) 펫**: 스크립트가 목록만 출력하고 **자동 삭제하지 않는다**(정적 폴백·migrate가 없어 소유자가 있으면 깨짐). 소유자 확인 후에만 수동 purge.
+```
+1) node tools/pet_maint.mjs pull      # RTDB(catalogPets/catalogPetArt) 덤프 → 분류 리포트 + _sync/plan.json 템플릿 생성
+2) (검토) _sync/plan.json: promote 의 id 를 의미있는 <species>_<slug> 로, 새 종이면 speciesLabels 라벨·desc 채움
+3) node tools/pet_maint.mjs apply      # PNG 종별폴더 편입 + pets.json 병합 + 오버라이드 반영 + 새 종 라벨(pets.json·cats.js) + PET_ID_MIGRATE + build_pets.py + _sync/cleanup.json
+4) npm test → git 커밋·푸시(dev 자동배포) + CHANGELOG 한 줄
+5) node tools/pet_maint.mjs verify     # 프로덕션 sw 버전·새 PNG(200) 확인 (빌드 1~2분)
+6) node tools/pet_maint.mjs cleanup     # 배포 확인 후 _sync/cleanup.json 의 RTDB 레코드 삭제(비가역)
+```
+
+- **분류(자동, `pull`)**: `rt_*`(활성·이미지 있음)=**승격 대상**, `rt_*`+`deleted`=**soft-delete**(자동 삭제 안 함 — 소유자 보호), 정적 id(비-rt_)=**오버라이드**(앱에서 정적 펫을 편집한 것 → `pets.json` 대비 바뀐 필드만 자동 산출). 새 종(speciesLabel 없음)은 리포트로 경고하고 `plan.json`에 라벨칸을 비워 둔다.
+- **plan.json 스키마**: `{ promote:{ rt_id:{id,species,name,tier,scale,desc} }, overrides:{ static_id:{name?,tier?,scale?} }, speciesLabels:{ 새종:"" }, softDeleted:[...] }`. 검토 단계는 보통 **promote 의 id 를 의미있는 slug 로 바꾸고(예 `cat_xxxxx`→`cat_persian`), 새 종 라벨 채우는 정도**뿐.
+- `apply` 는 멱등(재실행 안전), `PET_ID_MIGRATE`/`SPECIES_LABEL` 중복 방지. 이미지가 `catalogPetArt` 없이 `catalogPets` 인라인이어도 처리한다. 승격 펫은 자동 CHANGELOG가 안 붙으니 4단계에서 한 줄 추가.
+- `cleanup` 은 `_sync/cleanup.json`(승격된 `rt_*`의 catalogPets/catalogPetArt + 반영한 오버라이드 정적 id)만 지운다. `migratePetIds`가 소유자 `rt_*`→`<static_id>`를 리맵해 방/보유 유지. **soft-delete 펫은 여기 안 들어간다**(소유자 있으면 깨질 수 있어 별도 확인 후 수동 purge).
 
 ## 걷기/쉬기 상태 (cats.js 통합 엔진)
 스프라이트 동물은 단일 rAF 엔진(`catLoop`/`stepActors`)의 액터로 배치되어 두 상태를 오간다.
