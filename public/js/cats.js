@@ -928,6 +928,27 @@
     ];
     const TICKET_PAL={X:'#b9832a',T:'#f2c84b',H:'#ffe9ad',D:'#c99a34'};
     function ticketSvg(opt){ return pxSvg(M_TICKET, TICKET_PAL, opt); }
+    // 🏷️ 시즌 할인(이달의 펫) 픽셀 — 금색 세일 태그(끈 구멍 O) + 큰 퍼센트(W). X=외곽·S=음영·T=몸체·H=하이라이트.
+    const M_SEASON = [
+      "................",
+      ".......XX.......",
+      "......XSSX......",
+      ".....XSHHSX.....",
+      "....XSHOOHSX....",
+      "...XSHTOOTHSX...",
+      "..XSHTTTTTTHSX..",
+      ".XSHTTTTTTTTHSX.",
+      "XSHTWWTTTTTWTHSX",
+      "XSTTWWTTTTWTTTSX",
+      "XSTTTTTTTWTTTTSX",
+      "XSTTTTTTWTTTTTSX",
+      "XSTTTTTWTTWWTTSX",
+      "XSTTTTWTTTWWTTSX",
+      ".XSTTTTTTTTTTSX.",
+      "..XSSSSSSSSSSXX."
+    ];
+    const SEASON_PAL={X:'#8a4a12',S:'#c77f26',T:'#f2a838',H:'#ffcf72',O:'#783e0e',W:'#fffaeb'};
+    function seasonSvg(opt){ return pxSvg(M_SEASON, SEASON_PAL, opt); }
     // 👑 왕관(그룹 소유자) 픽셀 아트 — 가운데 봉우리 높은 정석 왕관 + 세 끝에 컷팅 루비(L=하이라이트→R=진루비 facet) + 밴드 중앙 보석. C=금, H=금 하이라이트, D=진금 밴드.
     const M_CROWN = [
       "....LLR....",
@@ -1195,7 +1216,7 @@
     function onGameChange(){
       updateDockCoins(); updateNewsBadge();
       const dw=$('catdock'); const wall=dw&&dw.querySelector('.cr-wall'); if(wall) wall.style.background=wallCss(currentWall());
-      const rn=$('cdRoomName'); if(rn){ const multi=roomCount()>1; rn.hidden=!multi; if(multi) rn.textContent=(room().emoji?room().emoji+' ':'')+(room().name||''); }   // dock 현재 방 이름(방 여러 개일 때만)
+      const rn=$('cdCamTxt'); if(rn){ rn.textContent=(room().emoji?room().emoji+' ':'')+(room().name||'우리집'); }   // dock LIVE 배지의 현재 방 이름(항상 표시)
       renderDockProps();
       renderDockCats();
       if(state.view==='home' && typeof renderHome==='function') renderHome();   // 홈의 미션·은화 즉시 반영
@@ -1851,8 +1872,7 @@
       // 웹캠 정면 방: 벽지(배경) + 바닥 + 배치 가구(배경) + 걷는 고양이
       d.innerHTML='<div class="cd-room">'+
         '<div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div>'+
-        '<span class="cd-roomname" id="cdRoomName"'+(roomCount()>1?'':' hidden')+'>'+(room().emoji?room().emoji+' ':'')+escapeHtml(room().name||'')+'</span>'+
-        '<span class="cd-coin" role="button" tabindex="0" aria-label="알뜰홈 열기" onclick="event.stopPropagation();coinTap(this)"><span class="cd-ci">'+coinSvg({h:16})+'</span><b id="cdCoins">0</b></span>'+
+        '<span class="cr-cam cd-cam" role="button" tabindex="0" aria-label="알뜰홈 열기" onclick="event.stopPropagation();coinTap(this)"><i></i>LIVE · <span class="cd-camtxt" id="cdCamTxt">'+(room().emoji?room().emoji+' ':'')+escapeHtml(room().name||'우리집')+'</span></span>'+
         batchBtnHtml()+
         '<div class="cr-props" id="cdProps"></div><div class="cr-stage" id="cdStage"></div></div>';
       updateDockCoins(); renderDockProps(); renderDockCats();
@@ -2065,7 +2085,7 @@
         if(a.mode==='roam' && Math.random()<0.003){ a.v=0.14+Math.random()*0.18; setWalkDur(a); }
         // 앞뒤(깊이) 배회 — 가끔 앞/뒤 속도를 새로 정하고 천천히 이동해 가까워졌다 멀어졌다(원근·가림 변화).
         if(a.mode==='roam'){
-          if(a.cool<=0 && Math.random()<0.006) a.vz=(Math.random()*2-1)*0.00004;   // depth/ms — 정면캠이라 앞뒤(원근) 이동은 좌우보다 훨씬 느리게(전체 범위 이동에 25초+)
+          if(a.cool<=0 && Math.random()<0.006) a.vz=(Math.random()*2-1)*0.000008;   // depth/ms — 정면캠이라 앞뒤(원근) 이동은 좌우보다 훨씬 더 느리게(전체 범위 이동에 약 120초+, 살짝만 움직여도 크게 보이는 원근 왜곡 완화)
           if(a.vz){ a.depth+=a.vz*dt; if(a.depth<=0){a.depth=0;a.vz=Math.abs(a.vz);} else if(a.depth>=1){a.depth=1;a.vz=-Math.abs(a.vz);} }
         }
         // 가구로 이동 결정(가구 있을 때, 쿨다운 후)
@@ -2115,8 +2135,8 @@
           if(bMov){ b.x=Math.max(2,Math.min(b.W-b.sw, b.x-sx*push)); if(b.dir!==-sx && (b.dcool||0)<=0){ b.dir=-sx; b.dcool=FLIP_COOL; } moved.push(b); }
         } else {   // 행(depth)으로 분리
           const sd=(ddp>=0?1:-1), share=(aMov&&bMov)?0.5:1, push=(needD+0.004)*share;
-          if(aMov){ a.depth=Math.max(0,Math.min(1, a.depth+sd*push)); a.vz=Math.abs(a.vz||0.00004)*sd; moved.push(a); }
-          if(bMov){ b.depth=Math.max(0,Math.min(1, b.depth-sd*push)); b.vz=-Math.abs(b.vz||0.00004)*sd; moved.push(b); }
+          if(aMov){ a.depth=Math.max(0,Math.min(1, a.depth+sd*push)); a.vz=Math.abs(a.vz||0.000008)*sd; moved.push(a); }
+          if(bMov){ b.depth=Math.max(0,Math.min(1, b.depth-sd*push)); b.vz=-Math.abs(b.vz||0.000008)*sd; moved.push(b); }
         }
       }
       moved.forEach(a=>{ applyDepth(a); setXform(a); a._pdir=a.dir; });   // 밀린 펫만 트랜스폼 갱신
@@ -2532,7 +2552,7 @@
     function coinTarget(){
       const open=$('sheet')&&$('sheet').classList.contains('on');
       if(open){ const c=document.querySelector('#sheetBody .coinbar .coin:last-child'); if(c) return c; }
-      return document.querySelector('#catdock .cd-coin');
+      return document.querySelector('#catdock .cd-coin') || document.querySelector('#catdock .cd-cam');   // 은화 배지 대신 LIVE 배지로(은화 배지 제거됨)
     }
     // 은화가 (x,y)에서 카운터로 날아 들어가는 연출 + 카운터 톡 튀기
     function coinFlyFx(x,y,n){
@@ -2991,6 +3011,9 @@
     function updateNewsBadge(){ const el=$('newsBadge'); if(!el) return; const n=newsUnread(); if(n>0){ el.textContent=n>9?'9+':String(n); el.hidden=false; } else { el.hidden=true; el.textContent=''; } }
     // 쿠폰 보상 픽셀 아이콘(PROMO_CODES 타입별) — 이모지 대신 도트 아이콘 재사용.
     function couponIcon(d){ if(d.type==='coins') return coinSvg({h:15}); if(d.key==='rainbow_egg') return rainbowEggSvg({h:16}); if(d.key==='rainbow_box') return rainbowBoxSvg({h:16}); if(d.key==='egg') return eggSvg(0,{h:16}); if(d.key==='box') return boxSvg({h:16}); return coinSvg({h:15}); }
+    // 공지 왼쪽 픽셀 아이콘 — 제목 키워드로 선택(선물=giftSvg·시즌 할인=seasonSvg·그 외=확성기). 제목 앞 이모지는 표시에서 제거.
+    function noticeIcon(n){ const t=(n&&n.t)||''; if(/선물/.test(t)) return giftSvg({h:24}); if(/할인|시즌|이달의\s*펫/.test(t)) return seasonSvg({h:24}); return megaSvg({h:20}); }
+    function noticeTitle(n){ return ((n&&n.t)||'').replace(/^\s*(?:\p{Extended_Pictographic}[️‍]*)+\s*/u, ''); }
     function catNewsHtml(){
       let h='';
       const gc=giftUnread();
@@ -3003,7 +3026,7 @@
         h+='<div class="featbanner" role="button" tabindex="0" onclick="openCatHouse(\'shop\')"><span class="fstar">'+sparkSvg({h:20})+'</span><div class="fb-txt"><b>'+monthLabelKo()+' 이달의 펫 · '+catNameSpan(fid,fc.name)+'</b><span class="s">이번 달만 '+Math.round(FEATURED_DISCOUNT*100)+'% 할인 — '+catBuyPrice(fid)+' 은화'+(ownsCat(fid)?' (보유 완료)':' · 사러가기')+'</span></div><span class="fb-face">'+catFace(fid,{h:40})+'</span></div>'; } }
       else { h+='<div class="note" style="margin:2px 0 6px;">진행 중인 이벤트가 곧 열려요.</div>'; }
       h+='<div class="sech" style="margin-top:16px;"><span class="l"><span class="sech-ic">'+megaSvg({h:15})+'</span> 공지사항</span></div>';
-      h+=NOTICES.map(function(n){ return '<div class="newsupd"><b>'+escapeHtml(n.t)+'</b><span>'+escapeHtml(n.s)+'</span></div>'; }).join('');
+      h+=NOTICES.map(function(n){ return '<div class="newsupd"><span class="nu-ic">'+noticeIcon(n)+'</span><div class="nu-tx"><b>'+escapeHtml(noticeTitle(n))+'</b><span>'+escapeHtml(n.s)+'</span></div></div>'; }).join('');
       h+='<div class="cnote"><b><span style="display:inline-flex;vertical-align:-2px">'+ticketSvg({h:14})+'</span> 쿠폰</b> — 더보기 → 코드 입력에서 사용하세요</div>';
       const _codes=(state.game&&state.game.codes)||{};
       h+=Object.keys(PROMO_CODES).map(function(code){ const d=PROMO_CODES[code]; const used=!!_codes[code]; return '<div class="cpn'+(used?' used':'')+'"><code>'+code+'</code><span class="rw"><span class="ci">'+couponIcon(d)+'</span>'+d.label+(used?'<span class="cused">사용완료</span>':'')+'</span></div>'; }).join('');

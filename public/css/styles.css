@@ -656,6 +656,11 @@
     .cd-room .cr-props { position:absolute; inset:0; }   /* z-index 제거(auto) → 가구(.cr-prop)와 펫(.cd-actor)이 같은 방 컨텍스트에서 각자 z로 상호 가림 */
     .cd-room .cr-stage { position:absolute; left:0; right:0; bottom:0; height:66%; pointer-events:none; }   /* z-index 제거(auto): 펫이 무대 단위로 항상 앞이 아니라, 깊이 z로 가구와 섞임 */
     .cd-room .cd-coin { position:absolute; top:5px; left:12px; z-index:45; cursor:pointer; }   /* 원근 z(≤12)보다 높게 → 펫/가구가 배지를 가리지 않음 */
+    /* dock 캠 LIVE 배지(은화 대신) — 탭하면 알뜰홈. 방 이름이 길면 말줄임. */
+    .cd-room .cr-cam.cd-cam { top:5px; left:12px; cursor:pointer; max-width:72%; }
+    .cd-room .cr-cam.cd-cam .cd-camtxt { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .cd-cam.tap { animation:coinpress .18s ease; }
+    .cd-cam.bump { animation:coinbump .3s ease; }
     .cd-room .cr-batch { top:4px; }   /* 캠(dock)에서 은화·돌보기 버튼을 살짝 더 위로(홈 방은 기본 top 유지) */
     .cd-coin.tap { animation:coinpress .18s ease; }
     @keyframes coinpress { 40%{ transform:scale(.84); } 100%{ transform:scale(1); } }
@@ -1285,9 +1290,11 @@
     .newsalert .nai .px { display:block; }
     .newsalert .nat { flex:1; min-width:0; } .newsalert .nat b { font-size:14px; } .newsalert .nat span { display:block; font-size:12px; color:var(--sub); margin-top:1px; }
     .newsalert .buy { flex:none; }
-    .newsupd { padding:7px 2px; border-bottom:1px solid var(--line); }
-    .newsupd b { font-size:13px; font-weight:750; } .newsupd span { display:block; font-size:12px; color:var(--sub); margin-top:2px; line-height:1.45; }
-    .cnote { font-size:12.5px; color:var(--sub); margin:12px 2px 8px; padding-left:11px; border-left:3px solid var(--gold,#e0a43c); line-height:1.5; }
+    .newsupd { display:flex; gap:10px; align-items:flex-start; padding:8px 2px; border-bottom:1px solid var(--line); }
+    .newsupd .nu-ic { flex:0 0 auto; display:inline-flex; margin-top:1px; }
+    .newsupd .nu-tx { flex:1 1 auto; min-width:0; }
+    .newsupd b { font-size:13px; font-weight:750; } .newsupd .nu-tx span { display:block; font-size:12px; color:var(--sub); margin-top:2px; line-height:1.45; }
+    .cnote { font-size:12.5px; color:var(--sub); margin:22px 2px 8px; padding-left:11px; border-left:3px solid var(--gold,#e0a43c); line-height:1.5; }
     .cnote b { color:var(--text); }
     .cpn { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 12px; border:1px solid var(--bd); border-radius:11px; background:var(--bg); margin-top:7px; }
     .cpn code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-weight:700; font-size:12px; color:var(--text); background:var(--soft); padding:3px 8px; border-radius:7px; }
