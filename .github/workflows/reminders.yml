@@ -1,0 +1,30 @@
+name: push-reminders
+
+# 알뜰 리마인더 — 서버리스(Blaze 불필요) 스케줄 발송.
+# 20:00 KST(=11:00 UTC) 매일: 오늘 활동 미기록자에게 넛지.
+# 활성 조건: 리포지토리 Secret FIREBASE_SERVICE_ACCOUNT(서비스계정 JSON) 등록. 없으면 스크립트가 no-op.
+
+on:
+  schedule:
+    - cron: '0 11 * * *'   # 매일 11:00 UTC = 20:00 KST
+  workflow_dispatch:        # 수동 실행(테스트). --dry 로 대상만 확인 가능
+    inputs:
+      dry:
+        description: 'dry run(발송 안 함, 대상만 출력)'
+        type: boolean
+        default: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: install firebase-admin
+        run: npm i --no-save firebase-admin@12
+      - name: send reminders
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node tools/send_reminders.mjs --type=daily ${{ (github.event_name == 'workflow_dispatch' && inputs.dry) && '--dry' || '' }}

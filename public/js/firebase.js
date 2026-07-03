@@ -15,3 +15,6 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
+    // 🔔 웹 푸시(FCM) 공개 키(VAPID) — Firebase Console → 프로젝트 설정 → 클라우드 메시징 → 웹 푸시 인증서(키페어)의 "키페어" 값.
+    // 공개키라 노출 정상. 비어 있으면 알림 기능은 자동 비활성(요청/토큰 생성 안 함). 채우면 활성화.
+    const VAPID_KEY = "";

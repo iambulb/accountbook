@@ -8,6 +8,7 @@
 users/{uid}            : { name, email, photo(프로필 사진 base64 data URL), createdAt, activeWs, welcomeGift(true=회원가입 축하선물 지급 완료·1회 멱등), profilePublic(기본 true·false면 랭킹·비친구에 은화+'알뜰' 익명), ws:{ {wsId}:true },
                            todos:{ {id}:{ title, note, dueDate, done, doneAt, repeat, purposeBookId?, rewardClaimed, sortOrder, createdAt, updatedAt } },  // ✅ 개인 할일(user-global — 워크스페이스 무관·항상 동일). 소유자=uid 암묵
                            onboarded: true,                        // 🧭 첫 사용자 온보딩 1회 표시 완료 플래그
+                           push:{ token, at, ua },                 // 🔔 웹 푸시(FCM) 토큰 — 본인만 쓰기·발송기(admin)만 읽음. 알림 끄면 삭제. tools/send_reminders.mjs가 사용
                            todosMigrated: true,                    // 개인 할일 ws→user 1회 이전 완료 플래그
                            todoPublic: true|false,                 // 내 개인 할일을 친구에게 공개할지(친구 스트립·열람 대상)
                            friendCode: "ABC123",                   // 내 친구 코드(friendCodes 인덱스와 짝)

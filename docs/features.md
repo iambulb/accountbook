@@ -73,6 +73,7 @@
 - **PWA**: 홈 화면 추가 배너(`beforeinstallprompt` → `installApp`), 오프라인 앱 셸 캐시(`sw.js`). 펫캠 dock 토글(`toggleDockHidden`).
 - **접근성(A11y)**: `a11yDecorate`(+MutationObserver)가 재렌더 시 role/포커스/라벨을 자동 보강, 전역 키보드 핸들러(Enter/Space·Esc·포커스 트랩).
 - **토스트 알림**: 모든 사용자 동작 피드백(`toast`).
+- **🔔 푸시 알림(FCM, 서버리스)**: 설정 → 알림 토글로 켜면 **리마인더 푸시**(오늘 미기록 넛지 등)를 받음. 발송은 **GitHub Actions 스케줄 크론**(Blaze 불필요) + FCM. 토큰 `users/{uid}/push`, 클라 `js/push.js`+`firebase-messaging-sw.js`. iOS는 홈화면 설치 PWA(16.4+)에서만 동작. 설정·활성화는 [docs/deploy/push.md](deploy/push.md).
 - **온보딩**: 첫 사용자 진입 시 **3스텝 안내 시트**(기록·친구·알뜰홈, `maybeOnboard`/`openOnboarding`, `users/{uid}/onboarded` 1회 멱등, 스킵 가능).
 
 > ✅ 로드맵 기능이 모두 구현되었습니다(가계부 정산·경조사비·대출·권한/공동 설정 + 할일 개인/그룹·공유). 더보기 메뉴에 남은 "예정" 항목 없음.

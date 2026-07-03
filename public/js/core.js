@@ -370,6 +370,7 @@
         try{ initDock(); initCatGame(); setTimeout(autoClaimAttend, 800); }catch(e){ console.warn('cat game init', e); }   // 🐱 은화·고양이 dock
         if(justSignedUp){ justSignedUp=false; try{ if(typeof grantWelcomeGift==='function') setTimeout(grantWelcomeGift, 900); }catch(e){ console.warn('welcome gift', e); } }   // 🎉 신규 가입 축하 선물(멱등)
         try{ if(typeof maybeOnboard==='function') setTimeout(maybeOnboard, 1300); }catch(e){}   // 🧭 첫 사용자 온보딩(users/{uid}/onboarded 1회)
+        try{ if(typeof initPush==='function') setTimeout(initPush, 1600); }catch(e){}   // 🔔 알림 토큰 조용히 갱신(권한 이미 허용 시)
       }catch(e){ toast(e.message||'로그인 처리 중 오류', true); }
     }
 

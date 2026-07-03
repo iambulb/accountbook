@@ -8,6 +8,17 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 추가 — 🔔 Tier2: 푸시 알림(FCM, 서버리스)
+- 설정 → **알림 토글**로 리마인더 푸시 수신(클라 `js/push.js`+`firebase-messaging-sw.js`, 토큰 `users/{uid}/push`).
+- 발송은 **GitHub Actions 스케줄 크론**(`.github/workflows/reminders.yml`)+`tools/send_reminders.mjs`(firebase-admin→FCM), Blaze 불필요. 오늘 미기록자 넛지(20:00 KST).
+- **활성화(1회)**: firebase.js `VAPID_KEY` + GitHub Secret `FIREBASE_SERVICE_ACCOUNT` — 설정 전엔 자동 비활성. iOS는 홈화면 설치 PWA(16.4+) 전용. 상세 [docs/deploy/push.md]. sw v3.165.0.
+
+### 변경 — 🎨 픽셀 아이콘 정비 + 배치 미리보기 스크롤 버그 수정
+- **정보·쇼핑카트 아이콘 픽셀화**: 지출 시트(선불·포인트 등) 안내문구의 이모지(`ℹ️`·`🛒`)를 도트 아이콘(`infoSvg`·`cartSvg`)으로 교체 — 안내문구 색 상속(`currentColor`).
+- **돌보기 버튼 아이콘**: 캠/홈 일괄 돌보기 버튼의 라인 아이콘을 **고양이 발자국 픽셀 아트**(`pawPrintSvg`)로 교체.
+- **배치 미리보기 스크롤 버그 수정**: 알뜰홈 배치 탭에서 스크롤 시 미니룸 '미리보기' 배지(z45)가 sticky 헤더 위로 새어보이던 문제 → `.miniroom { isolation:isolate }`로 독립 스택 컨텍스트화.
+- **안내문(`.hintline`) 정렬 버그 수정**: 여러 줄로 감기는 안내문(예: 알뜰홈 홈 탭 최하단)에서 앞 아이콘이 첫 줄이 아니라 텍스트 세로 중앙에 뜨던 문제 → `align-items:flex-start`로 첫 줄 정렬. sw v3.165.0.
+
 ### 추가 — 🔍 Tier1-B: 거래 검색·예산 사전경고·빠른입력·온보딩
 - **거래 검색**(`openTxSearch`, 목록 상단 🔍): 키워드(내용·**메모**·카테고리) + 기간(from~to) + 금액(min~max) + 타입. 순수 `txMatches`.
 - **예산 초과 사전 경고**: 지출 저장 시 관련 예산이 임계·100%를 처음 넘으면 비차단 토스트(`budgetPreWarn`).
