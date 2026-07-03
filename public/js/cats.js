@@ -313,17 +313,17 @@
       "....XSWWSX....",
       "...XSWSWWSX...",
       "...XWXXWWWX...",
-      "..XWXWWWWWWX..",
-      ".XWXWRRRRWWWX.",
+      "..XWXRRRRWWX..",
       ".XWXWRRRRRWWX.",
-      "XWWWRXWWOOWWSX",
-      "XWWWWWXWOOWWSX",
+      ".XWXRWWWOOWWX.",
+      "XWWWWXWWOOWWSX",
       "XWWWWWXWWWWWSX",
       "XWWWWGGGWWWWSX",
-      ".XWWWWGGWWWSX.",
+      "XWWWWWGGWWWWSX",
       ".XWWWWBBWWWSX.",
-      "..XWWWWWWWWX..",
-      "...XWWPPWWX...",
+      ".XWWWWWWWWWSX.",
+      "..XWWWPPWWWX..",
+      "...XWWWWWWX...",
       "....XXXXXX...."
     ];
     // 균열2: 지그재그 금이 전체로 번지고 살짝 벌어짐(틈+빛 조금)
@@ -332,17 +332,17 @@
       "....XS.SSX....",
       "...XSW.WWSX...",
       "...XWWX.XWX...",
-      "..XWWL.WWWWX..",
-      ".XWWX.XRRWWWX.",
-      ".XWWL.RRRRWWX.",
-      "XWWWRX.XOOWWSX",
-      "XWWWWWL.OOWWSX",
-      "XWWWWWX.XWWWSX",
+      "..XWWL.RRWWX..",
+      ".XWWX.RRRRWWX.",
+      ".XWWR.WWOOWWX.",
+      "XWWWWX.XOOWWSX",
+      "XWWWWWL.WWWWSX",
+      "XWWWWWXGXWWWSX",
       "XWWWWL.GWWWWSX",
-      ".XWWX.XGWWWSX.",
-      ".XWWWW.BWWWSX.",
-      "..XWWX.XWWWX..",
-      "...XWWPPWWX...",
+      ".XWWX.XBWWWSX.",
+      ".XWWWW.WWWWSX.",
+      "..XWWXPPWWWX..",
+      "...XWWWWWWX...",
       "....XXXXXX...."
     ];
     // 균열3(3번째 탭): 알이 지그재그로 쩍! 크게 갈라지고, 벌어진 틈(L)으로 등급색 빛이 쏟아진다. L=빛(렌더 시 등급색).
@@ -351,14 +351,14 @@
       "....XS.LSX....",
       "...XSL.LWSX...",
       "...XWWL.LWX...",
-      "..XWL..LWWWX..",
-      ".XWL..LRRWWWX.",
+      "..XWL..RRWWX..",
       ".XWL..LRRRWWX.",
-      "XWWWL..LOOWWSX",
-      "XWWWWL..LOWWSX",
+      ".XWL..LWOOWWX.",
+      "XWWWL..LWOWWSX",
       "XWWWWL..LWWWSX",
-      "XWWWL..LWWWWSX",
-      ".XWL..LGWWWSX.",
+      "XWWWWL..LWWWSX",
+      "XWWWL..GWWWWSX",
+      ".XWL..LWWWWSX.",
       ".XWWL..LWWWSX.",
       "..XWWL.LWWWX..",
       "...XWL.LWWX...",
@@ -859,19 +859,6 @@
       "..KK.....KK.."
     ];
     function cartSvg(opt){ return pxSvg(M_CART, {C:'currentColor',K:'currentColor'}, opt); }
-    // 🐾 고양이 발자국 픽셀 아트 — 발가락 4(아치) + 둥근 메인패드. P=currentColor(버튼 글자색 상속).
-    const M_PAWPRINT = [
-      "...PP.PP...",
-      "PP.PP.PP.PP",
-      "PP.......PP",
-      "...........",
-      "...PPPPP...",
-      "..PPPPPPP..",
-      ".PPPPPPPPP.",
-      "..PPPPPPP..",
-      "...PPPPP..."
-    ];
-    function pawPrintSvg(opt){ return pxSvg(M_PAWPRINT, {P:'currentColor'}, opt); }
     // 🥇 랭킹 등수 픽셀 숫자(3×5) — 메달 배지 안에 넣는 도트 숫자. color 미지정 시 currentColor.
     const M_NUM = {
       '1': [".X.","XX.",".X.",".X.","XXX"],
@@ -1658,7 +1645,7 @@
       return '<div class="cr-prop'+(tap?' cr-tap':'')+(p.itemId==='litterbox'?' cr-litter':'')+'" style="left:'+x+'%;bottom:'+bottom+'%;z-index:'+z+';"'+(tap?' onclick="event.stopPropagation();feedBowl(\''+p.key+'\')"':'')+'>'+inner+'</div>';
     }
     // 우측 상단 "일괄 돌보기" 버튼(밥·물 채우고 똥 치우기) — dock·홈 공용
-    function batchBtnHtml(){ return '<button class="cr-batch" onclick="event.stopPropagation();batchCare(this)" aria-label="일괄 돌보기: 밥·물 채우고 똥 치우기"><span class="cr-batch-paw">'+pawPrintSvg({fit:true})+'</span>돌보기</button>'; }
+    function batchBtnHtml(){ return '<button class="cr-batch" onclick="event.stopPropagation();batchCare(this)" aria-label="일괄 돌보기: 밥·물 채우고 똥 치우기">돌보기</button>'; }
     // 배치 가구를 무대 바닥에 배경으로(가로=열, 앞뒤 깊이=행)
     function renderDockProps(){
       const box=$('cdProps'); if(!box) return;

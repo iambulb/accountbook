@@ -69,7 +69,11 @@
       display:flex; flex-direction:column; justify-content:center; padding:32px 36px 44px; scrollbar-width:none;
     }
     .auth-wrap::-webkit-scrollbar { display:none; }
-    .auth-logo { width:132px; height:auto; margin:0 auto 14px; display:block; image-rendering:pixelated; }   /* 뜰 위에 놓인 펫알(고양이 얼굴 알 + 잔디·꽃) 픽셀 씬 */
+    /* 로그인 히어로: 픽셀 하늘+구름+살짝 무지개 배경 위에 펫알(고양이 얼굴 알+잔디·꽃) 로고를 올림(앱 아이콘 느낌) */
+    .auth-hero { position:relative; width:100%; max-width:288px; margin:0 auto 18px; aspect-ratio:72/44;
+      border-radius:22px; overflow:hidden; background:#cbe7fb url('../icons/auth-sky.svg') center/cover no-repeat;
+      image-rendering:pixelated; display:flex; align-items:flex-end; justify-content:center; box-shadow:0 6px 18px rgba(70,120,175,.18); }
+    .auth-logo { width:120px; height:auto; margin:0; display:block; image-rendering:pixelated; position:relative; z-index:1; }   /* 하늘 위 펫알 픽셀 씬 */
     .auth-wordmark { height:40px; width:auto; margin:0 auto 22px; display:block; image-rendering:pixelated; }   /* '알뜰' 도트 워드마크(로그인 제목) */
     .auth-wrap h1 { font-size:26px; font-weight:700; text-align:center; margin-bottom:8px; letter-spacing:-.03em; }
     .auth-wrap .desc { text-align:center; color:var(--sub); margin-bottom:24px; font-size:13.5px; font-weight:500; line-height:1.5; }
