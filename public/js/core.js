@@ -25,8 +25,10 @@
       profilePublic:true,   // 내 프로필 공개 여부(비공개면 랭킹·비친구에게 은화+'알뜰' 익명)
       friendTodosByUid:{}, _feedFriend:null,   // 공개 친구별 개인 할일(피드) / '친구들' 피드에서 선택한 친구(null=전체)
       friendTodos:[], _friendTodosUid:null,   // 현재 열람 중인 친구의 개인 할일(임시 리스너)
-      _todoScope: (localStorage.getItem('todoScope')==='group' ? 'group' : 'personal'),   // 할일 세그먼트: 개인/그룹(친구들)
-      _todoFriend: null   // 개인 탭에서 보고 있는 친구 uid(null/내 uid=나)
+      _todoScope: 'personal',   // 할일 데이터 스코프(개인/그룹) — 컨텍스트(현재 ws 종류)에서 파생. 더는 사용자 토글 아님.
+      _todoPersonalTab: 'mine',   // 개인 컨텍스트 할일 하위탭: 내 할일(mine) / 친구들 피드(friends)
+      _todoFriend: null,   // 개인 탭에서 보고 있는 친구 uid(null/내 uid=나)
+      ctxWs: { ledger:null, todo:null }   // 모드별 마지막 컨텍스트(워크스페이스) 기억 — 가계부/할일 그룹전환 독립
     };
     let listenersAttached = false;
     let seededAcc = false, seededCat = false, booted = false, migratedAcc = false, migratedCat = false, migratedBudget = false, migratedRec = false;
@@ -365,11 +367,22 @@
         ensureFriendCode().catch(e=>console.warn('friendCode', e));   // 내 친구 코드 보장
         await migrateLegacyIfNeeded();
         await loadMyWorkspaces();
-        if(!state.memberships.length){ await createPersonalWorkspace(true); await loadMyWorkspaces(); }
+        // 개인 프로필 컨텍스트는 항상 존재해야 함(레거시 그룹만 있던 사용자도 개인 ws 보장)
+        if(!state.memberships.some(w=>w.type==='personal')){ await createPersonalWorkspace(true); await loadMyWorkspaces(); }
         try{ await migratePersonalTodos(); }catch(e){ console.warn('personal todo migrate', e); }   // 개인 할일 ws→user 1회 이전
-        let active=u.activeWs;
-        if(!active || !state.memberships.some(w=>w.id===active)) active=state.memberships[0].id;
-        await switchWorkspace(active, true);
+        // 모드별 컨텍스트 복원(가계부=activeWs / 할일=activeWsTodo). 유효 멤버십만, 없으면 폴백.
+        const isMemb=id=>!!id && state.memberships.some(w=>w.id===id);
+        const personalWs=(state.memberships.find(w=>w.type==='personal')||{}).id||state.memberships[0].id;
+        const ledgerCtx=isMemb(u.activeWs)?u.activeWs:(state.memberships[0]?state.memberships[0].id:personalWs);
+        let todoCtx=u.activeWsTodo;
+        if(!isMemb(todoCtx)){
+          // 최초 1회: 구 localStorage 'todoScope'에서 이전(개인→개인 ws, 그룹→가계부 컨텍스트)
+          let legacyScope=''; try{ legacyScope=localStorage.getItem('todoScope')||''; }catch(e){}
+          todoCtx=(legacyScope==='group')?ledgerCtx:personalWs;
+          try{ await db.ref('users/'+state.uid+'/activeWsTodo').set(todoCtx); }catch(e){}
+        }
+        state.ctxWs={ ledger:ledgerCtx, todo:todoCtx };
+        await switchWorkspace(state.ctxWs[state.mode]||ledgerCtx, true);
         try{ initDock(); initCatGame(); setTimeout(autoClaimAttend, 800); }catch(e){ console.warn('cat game init', e); }   // 🐱 은화·고양이 dock
         if(justSignedUp){ justSignedUp=false; try{ if(typeof grantWelcomeGift==='function') setTimeout(grantWelcomeGift, 900); }catch(e){ console.warn('welcome gift', e); } }   // 🎉 신규 가입 축하 선물(멱등)
         try{ if(typeof maybeOnboard==='function') setTimeout(maybeOnboard, 1300); }catch(e){}   // 🧭 첫 사용자 온보딩(users/{uid}/onboarded 1회)
@@ -547,24 +560,32 @@
       catch(e){ toast('그룹 나가기에 실패했어요. 잠시 후 다시 시도해 주세요', true); return; }
       if(typeof closeSheet==='function') closeSheet();   // 열려 있던 '그룹 관리' 시트를 닫아 결과가 바로 보이게
       await loadMyWorkspaces();
-      if(!state.memberships.length){ await createPersonalWorkspace(true); await loadMyWorkspaces(); }
-      await switchWorkspace(state.memberships[0].id);
+      if(!state.memberships.some(w=>w.type==='personal')){ await createPersonalWorkspace(true); await loadMyWorkspaces(); }
+      // 나간 그룹이 어느 모드의 컨텍스트였다면 개인 프로필로 폴백
+      const personalId=(state.memberships.find(w=>w.type==='personal')||{}).id||(state.memberships[0]||{}).id||null;
+      if(state.ctxWs.ledger===wsId) state.ctxWs.ledger=personalId;
+      if(state.ctxWs.todo===wsId) state.ctxWs.todo=personalId;
+      await switchWorkspace(state.ctxWs[state.mode==='todo'?'todo':'ledger']||personalId);
       toast('그룹에서 나갔어요');
     }
 
-    async function switchWorkspace(wsId, initial){
+    async function switchWorkspace(wsId, initial, silent){
       if(!wsId) return;
       let meta=state.memberships.find(w=>w.id===wsId);
       if(!meta){ const m=(await db.ref('workspaces/'+wsId).once('value')).val(); meta=m?Object.assign({id:wsId},m):{id:wsId,name:'가계부',type:'personal'}; }
       detachListeners();
       resetWorkspaceState();
       state.wsId=wsId; state.wsMeta=meta;
-      await db.ref('users/'+state.uid+'/activeWs').set(wsId);
+      state._todoScope=(meta.type==='personal')?'personal':'group';   // 할일 스코프는 컨텍스트(ws 종류)에서 파생
+      // 현재 모드의 컨텍스트로 기억(가계부=activeWs / 할일=activeWsTodo) — 두 모드 독립
+      const modeKey=(state.mode==='todo')?'todo':'ledger';
+      state.ctxWs[modeKey]=wsId;
+      await db.ref('users/'+state.uid+'/'+(modeKey==='todo'?'activeWsTodo':'activeWs')).set(wsId);
       setupListeners();
       updateWorkspaceChip();
       applyMode();   // 저장된 모드(가계부/할일)에 맞춰 탭바+토글+화면 세팅
       loadMemberPhotos();   // 멤버 프로필 사진 캐시 채우기(비동기, 끝나면 rerender)
-      if(!initial) toast((meta.name||'가계부')+'(으)로 전환했어요');
+      if(!initial && !silent) toast(((meta.type==='personal')?'개인 프로필':ctxName())+'(으)로 전환했어요');
     }
     // 현재 워크스페이스 멤버들의 프로필 사진을 users/{uid}/photo 에서 읽어 캐시
     async function loadMemberPhotos(){
@@ -611,13 +632,17 @@
       recv.tx=recv.acc=recv.cat=recv.rec=recv.log=false;
     }
 
+    // 현재(또는 주어진) 컨텍스트의 표시 이름/사진 — 개인=내 프로필(이름/사진), 그룹=그룹 프로필(ws 메타).
+    function ctxName(meta){ const m=meta||state.wsMeta; if(!m) return '가계부'; return (m.type==='personal') ? (state.userName||'개인') : (m.name||'가계부'); }
+    function ctxPhoto(meta){ const m=meta||state.wsMeta; if(!m) return ''; return (m.type==='personal') ? (state.userPhotos[state.uid]||'') : (m.photo||''); }
     function updateWorkspaceChip(){
       const el=$('wsChip'); if(!el||!state.wsMeta) return;
-      // 현재 그룹/가계부 프로필: 사진 있으면 사진, 없으면 이름 이니셜 아바타(점 대신)
+      // 현재 컨텍스트: 개인=내 프로필(이름/사진), 그룹=그룹 프로필. 사진 있으면 사진, 없으면 이니셜 아바타(점 대신)
+      const nm=ctxName(), ph=ctxPhoto();
       const badge = (typeof wsAvatarHtml==='function')
-        ? wsAvatarHtml(state.wsMeta.name, state.wsMeta.photo, 20)
-        : (state.wsMeta.photo ? '<img src="'+state.wsMeta.photo+'" alt="" style="width:20px;height:20px;border-radius:50%;object-fit:cover;flex:none;">' : '<span class="dotk"></span>');
-      el.innerHTML = badge+escapeHtml(state.wsMeta.name||'가계부');
+        ? wsAvatarHtml(nm, ph, 20)
+        : (ph ? '<img src="'+ph+'" alt="" style="width:20px;height:20px;border-radius:50%;object-fit:cover;flex:none;">' : '<span class="dotk"></span>');
+      el.innerHTML = badge+escapeHtml(nm);
     }
 
     function isGroupWs(){ return state.wsMeta && state.wsMeta.type==='group'; }
@@ -646,7 +671,7 @@
       if(state.wsId===wsId && state.wsMeta){ state.wsMeta.name=name; updateWorkspaceChip(); }
       toast('그룹 이름을 바꿨어요');
     }
-    // 가계부 프로필 저장: 이름 + 사진(photoChange: undefined=유지 / ''=삭제 / dataURL=교체)
+    // 그룹 프로필 저장: 이름 + 사진(photoChange: undefined=유지 / ''=삭제 / dataURL=교체)
     // workspaces/{wsId} 는 멤버면 쓰기 가능(규칙) — 별도 규칙 변경 불필요
     async function saveWsProfile(name, photoChange){
       const wsId=state.wsId; if(!wsId) return;
@@ -1147,8 +1172,8 @@
       state.view='home'; try{ localStorage.setItem('view','home'); }catch(e){}
       rerender(); const c=$('content'); if(c) c.scrollTop=0; }
     // 홈 카드 딥링크: 모드 세팅 + 해당 탭으로 진입.
-    function goto(mode, tab){
-      if(mode){ state.mode=(mode==='todo'?'todo':'ledger'); try{ localStorage.setItem('mode',state.mode); }catch(e){} renderTabBar(); updateModeToggle(); }
+    async function goto(mode, tab){
+      if(mode){ state.mode=(mode==='todo'?'todo':'ledger'); try{ localStorage.setItem('mode',state.mode); }catch(e){} await restoreModeCtx(state.mode); renderTabBar(); updateModeToggle(); }
       go(tab || (state.mode==='todo'?'todo':'calendar'));
     }
     // 오늘 미처리 배지 — 순회 부담을 줄임. 결정은 순수 헬퍼(homeBadgeShow), DOM 쓰기는 여기서. rerender/renderTabBar에서 호출(자동 갱신).
@@ -1202,12 +1227,23 @@
     function applyMode(){ renderTabBar(); updateModeToggle();
       if(state.view==='home') goHome();                          // 부팅/전환 시 홈 유지
       else go(state.mode==='todo'?'todo':'calendar'); }
-    function setMode(m){ m=(m==='todo')?'todo':'ledger';
+    // 대상 모드가 마지막으로 쓰던 컨텍스트로 전환(현재와 다르면). 유효 멤버십만, 없으면 개인/첫 ws 폴백. 무토스트.
+    async function restoreModeCtx(m){
+      const modeKey=(m==='todo')?'todo':'ledger';
+      const isMemb=id=>!!id && state.memberships.some(w=>w.id===id);
+      let ctx=state.ctxWs[modeKey];
+      if(!isMemb(ctx)){ const p=state.memberships.find(w=>w.type==='personal'); ctx=(p&&p.id)||(state.memberships[0]&&state.memberships[0].id)||null; }
+      if(!ctx) return;
+      if(ctx!==state.wsId){ await switchWorkspace(ctx, false, true); }   // switchWorkspace가 ctxWs 기록+저장 처리
+      else if(state.ctxWs[modeKey]!==ctx){ state.ctxWs[modeKey]=ctx; try{ await db.ref('users/'+state.uid+'/'+(modeKey==='todo'?'activeWsTodo':'activeWs')).set(ctx); }catch(e){} }
+    }
+    async function setMode(m){ m=(m==='todo')?'todo':'ledger';
       // 토글 시 같은 메뉴 위치 유지: 현재 탭의 인덱스를 반대 모드 탭바의 같은 자리로 매핑(더보기↔더보기 등)
       const prevSet=_TABSETS[state.mode==='todo'?'todo':'ledger'];
       const idx=prevSet.findIndex(function(it){ return it!=='fab' && it[0]===state.tab; });
       state.mode=m; try{ localStorage.setItem('mode',m); }catch(e){}
       state.view='mode'; try{ localStorage.setItem('view','mode'); }catch(e){}   // 모드 토글 = 모드 화면 진입
+      await restoreModeCtx(m);   // 이 모드가 마지막으로 쓰던 컨텍스트 복원(가계부/할일 독립)
       const nextSet=_TABSETS[m], cell=(idx>=0 && nextSet[idx] && nextSet[idx]!=='fab') ? nextSet[idx] : null;
       const target=cell?cell[0]:(m==='todo'?'todo':'calendar');   // 같은 위치 탭(없으면 모드 기본)
       renderTabBar(); updateModeToggle(); go(target); }

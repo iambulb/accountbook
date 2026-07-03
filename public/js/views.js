@@ -620,10 +620,13 @@
       // 개인: 내 것(myTodos·user-global) 또는 친구 열람(friendTodos·읽기전용)
       return (state._todoFriend && state._todoFriend!==state.uid) ? (state.friendTodos||[]) : (state.myTodos||[]);
     }
-    function setTodoScope(s){ state._todoScope=(s==='group'?'group':'personal'); clearFriendView(); _todoFilter='all'; try{localStorage.setItem('todoScope',state._todoScope);}catch(e){} rerender(); }
+    // 개인 컨텍스트 할일 하위탭 전환: 내 할일 / 친구들 피드. (개인↔그룹 컨텍스트 전환은 상단 그룹전환 칩으로 일원화)
+    function setTodoPersonalTab(tab){ state._todoPersonalTab=(tab==='friends'?'friends':'mine'); if(tab!=='friends') clearFriendView(); _todoFilter='all'; rerender(); }
     function isPersonalWs(){ return ((state.wsMeta&&state.wsMeta.type)||'')==='personal'; }
-    function todoScopeSeg(){ const g=state._todoScope==='group'; const second=isPersonalWs()?'친구들':'그룹';
-      return '<div class="seg todoseg"><button class="'+(g?'':'on')+'" onclick="setTodoScope(\'personal\')">개인</button><button class="'+(g?'on':'')+'" onclick="setTodoScope(\'group\')">'+second+'</button></div>'; }
+    // 할일 상단 세그먼트: 개인 컨텍스트에서만 [내 할일][친구들]. 그룹 컨텍스트는 세그먼트 없음(컨텍스트는 상단 칩).
+    function todoTabSeg(){ if(!isPersonalWs()) return '';
+      const f=state._todoPersonalTab==='friends';
+      return '<div class="seg todoseg"><button class="'+(f?'':'on')+'" onclick="setTodoPersonalTab(\'mine\')">내 할일</button><button class="'+(f?'on':'')+'" onclick="setTodoPersonalTab(\'friends\')">친구들</button></div>'; }
     // 개인 탭에서 친구를 보고 있는지 = 읽기전용
     function todoReadOnly(){ return state._todoScope==='personal' && !!state._todoFriend && state._todoFriend!==state.uid; }
     function setTodoFriend(uid){ if(!uid||uid===state.uid){ clearFriendView(); renderTodoList(); } else { viewFriendTodos(uid); } }
@@ -863,7 +866,7 @@
         '<span class="story-av">'+avatarHtml(uid,nm,52)+(opts.me?'<span class="story-add">＋</span>':'')+'</span>'+
         '<span class="tdfrnm">'+(opts.me?'내 스토리':escapeHtml(nm))+'</span></button>'; }
     function renderFriendsFeed(){
-      let h=todoScopeSeg();
+      let h=todoTabSeg();
       const pubUids=Object.keys(state.friends||{}).filter(function(u){ return state.friendPub && state.friendPub[u]; });
       const today=ymd(new Date()); const seen=storySeenMap();
       const order=friendFeedOrder(state.friendTodosByUid, pubUids, today);
@@ -947,8 +950,8 @@
         todoDueBadge(t)+who+'</div>';
     }
     function renderTodoList(){
-      // 개인 워크스페이스의 둘째 탭(친구들) = 친구 피드(아바타 정렬·오늘 무지개·친구 할일 목록)
-      if(state._todoScope==='group' && isPersonalWs()) return renderFriendsFeed();
+      // 개인 컨텍스트의 '친구들' 하위탭 = 친구 피드(아바타 정렬·오늘 무지개·친구 할일 목록)
+      if(isPersonalWs() && state._todoPersonalTab==='friends') return renderFriendsFeed();
       const meUid=state.uid; const today=ymd(new Date());
       const we=new Date(); we.setDate(we.getDate()+7); const weekEnd=ymd(we);
       const isGroup=state._todoScope==='group';
@@ -961,7 +964,7 @@
       open.sort((a,b)=>{ const ad=a.dueDate||'9999-99', bd=b.dueDate||'9999-99'; if(ad!==bd) return ad<bd?-1:1; return (a.sortOrder||0)-(b.sortOrder||0); });
       const done=base.filter(t=>t.done).sort((a,b)=>(b.doneAt||'').localeCompare(a.doneAt||''));
       const chips=isGroup?[['all','전체'],['mine','내 담당'],['today','오늘'],['week','이번주']]:[['all','전체'],['today','오늘'],['week','이번주']];
-      let h=todoScopeSeg();   // 개인 탭 = 내 할일만(친구는 '친구들' 탭 피드로 일원화)
+      let h=todoTabSeg();   // 개인 컨텍스트 = [내 할일][친구들]. 그룹 컨텍스트는 세그먼트 없음
       h+='<div class="chip-row" style="margin:6px 0 12px;">'+chips.map(c=>'<button class="chip'+(_todoFilter===c[0]?' on':'')+'" onclick="setTodoFilter(\''+c[0]+'\')">'+c[1]+'</button>').join('')+'</div>';
       const emptyMsg=isGroup?'그룹 할일이 없어요 — 아래 ＋ 로 담당을 나눠보세요':'개인 할일이 없어요 — 아래 ＋ 로 추가하세요';
       h+='<div class="card" style="padding:4px 12px;">'+(open.length?open.map(t=>todoRow(t)).join(''):'<div class="empty" style="padding:26px 6px;">'+emptyMsg+'</div>')+'</div>';
@@ -975,7 +978,7 @@
       const base=scopedTodos();
       const byDay={}; base.forEach(t=>{ if(!t.done && t.dueDate && t.dueDate.slice(0,7)===m) byDay[t.dueDate]=(byDay[t.dueDate]||0)+1; });
       const HEAD=['월','화','수','목','금','토','일']; const first=(new Date(y,mo-1,1).getDay()+6)%7; const days=new Date(y,mo,0).getDate(); const todayS=todayStr(); const sel=_todoSel||todayS;
-      let h=todoScopeSeg();
+      let h='';   // 캘린더·완료 탭은 세그먼트 없음(컨텍스트는 상단 칩, 친구들은 목록 탭)
       h+='<div class="monthlbl"><button onclick="todoMoveMonth(-1)" aria-label="이전 달">‹</button><b>'+y+'년 '+mo+'월</b><button onclick="todoMoveMonth(1)" aria-label="다음 달">›</button></div>';
       h+='<div class="calwrap"><div class="cal-head">'+HEAD.map(function(w,i){ return '<div class="'+(i===5?'sat':i===6?'sun':'')+'">'+w+'</div>'; }).join('')+'</div><div class="cal-grid">';
       for(let i=0;i<first;i++) h+='<div class="cal-cell dim"></div>';
@@ -992,7 +995,7 @@
       $('content').innerHTML=h;
     }
     function renderTodoDone(){ const ro=todoReadOnly(); const done=scopedTodos().filter(t=>t.done).sort((a,b)=>(b.doneAt||'').localeCompare(a.doneAt||''));
-      let h=todoScopeSeg();
+      let h='';   // 캘린더·완료 탭은 세그먼트 없음(컨텍스트는 상단 칩, 친구들은 목록 탭)
       h+='<div class="sech"><span class="l">완료</span><span class="s">'+done.length+'개</span></div>';
       h+='<div class="card" style="padding:4px 12px;">'+(done.length?done.map(t=>todoRow(t,ro)).join(''):'<div class="empty" style="padding:26px 6px;">완료한 할일이 아직 없어요</div>')+'</div>';
       $('content').innerHTML=h; }
@@ -1401,16 +1404,18 @@
 
     // ===== 워크스페이스(가계부/그룹) 관리 UI =====
     function openWorkspaceSheet(){
-      const cur=state.wsId;
-      let h='<p class="muted" style="font-size:13px;margin:2px 2px 12px;">개인 가계부와 그룹을 분리해서 쓸 수 있어요. 그룹은 코드로 친구와 함께 사용합니다.</p>';
-      h+='<div class="menu-group-title">내 그룹</div>';
+      const cur=state.wsId, modeLbl=(state.mode==='todo'?'할일':'가계부');
+      let h='<p class="muted" style="font-size:13px;margin:2px 2px 12px;">지금 고르는 컨텍스트는 <b>'+modeLbl+'</b>에만 적용돼요 — 가계부와 할일은 각각 마지막 선택을 따로 기억해요. 개인 프로필과 그룹을 나눠 쓰고, 그룹은 코드로 친구와 함께 사용합니다.</p>';
+      h+='<div class="menu-group-title">개인 · 그룹</div>';
       (state.memberships||[]).forEach(w=>{
-        const on=w.id===cur, isGroup=w.type==='group', memCount=Object.keys(w.members||{}).length;
+        const on=w.id===cur, isGroup=w.type==='group', isPers=w.type==='personal', memCount=Object.keys(w.members||{}).length;
+        const nm=isPers?(state.userName||'개인'):(w.name||'가계부');
+        const av=isPers?avatarHtml(state.uid, state.userName, 44):wsAvatarHtml(w.name, w.photo, 44);
         h+='<div class="ws-item'+(on?' on':'')+'">'+
-            '<span class="ws-ic">'+wsAvatarHtml(w.name, w.photo, 44)+'</span>'+
+            '<span class="ws-ic">'+av+'</span>'+
             '<div style="flex:1;min-width:0;" onclick="chooseWorkspace(\''+w.id+'\')">'+
-              '<div class="ws-name" style="display:flex;align-items:center;gap:8px;"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(w.name||'가계부')+'</span>'+(isGroup?memberAvatarStack(w,20):'')+'</div>'+
-              '<div class="ws-meta">'+(isGroup?('그룹 · 멤버 '+memCount+'명'):'개인 전용')+'</div>'+
+              '<div class="ws-name" style="display:flex;align-items:center;gap:8px;"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(nm)+'</span>'+(isGroup?memberAvatarStack(w,20):'')+'</div>'+
+              '<div class="ws-meta">'+(isGroup?('그룹 · 멤버 '+memCount+'명'):'개인 프로필')+'</div>'+
             '</div>'+
             (isGroup?'<button class="btn sm ghost" onclick="openGroupManageSheet(\''+w.id+'\')">관리</button>':'')+
             (on?'<span class="ws-ck">'+svgWrap(CAT_SVG.check)+'</span>':'')+
@@ -1420,8 +1425,6 @@
           '<button class="btn" onclick="openCreateGroupSheet()">+ 그룹 만들기</button>'+
           '<button class="btn ghost" onclick="openJoinGroupSheet()">코드로 참여</button>'+
          '</div>';
-      if(!(state.memberships||[]).some(w=>w.type==='personal'))
-        h+='<button class="btn ghost" style="margin-top:10px;" onclick="addPersonalWorkspace()">+ 개인 가계부 만들기</button>';
       openSheet('그룹 전환', h);
     }
     function chooseWorkspace(id){ closeSheet(); if(id!==state.wsId) switchWorkspace(id); }
@@ -1520,7 +1523,7 @@
     // 그룹 멤버 목록 시트 — 각 멤버 탭 시 그 사용자 집(펫캠) 방문(openFriendHome).
     function openWsMembersSheet(wsId){
       const w=(state.memberships||[]).find(x=>x.id===wsId) || ((state.wsMeta&&state.wsMeta.id===wsId)?state.wsMeta:null);
-      if(!w){ toast('가계부를 찾을 수 없어요', true); return; }
+      if(!w){ toast('그룹을 찾을 수 없어요', true); return; }
       const members=w.members||{}, uids=Object.keys(members);
       let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 10px;">멤버를 눌러 집(펫캠)을 방문할 수 있어요.</p><div class="card" style="padding:6px 10px;">';
       if(!uids.length) h+='<div class="empty" style="padding:20px 6px;">멤버가 없어요</div>';
@@ -1577,6 +1580,7 @@
     }
     function openWsProfileSheet(){
       const ws=state.wsMeta||{}, isGroup=ws.type==='group';
+      if(ws.type==='personal'){ openProfileSheet(); return; }   // 개인 컨텍스트 정체성은 '내 프로필'에서 편집
       if(isGroup && !isWsOwner()){ toast('그룹 이름·사진은 소유자만 변경할 수 있어요', true); return; }
       window._wsPhoto=undefined;   // undefined=유지 / ''=삭제 / dataURL=신규
       let h='<div style="text-align:center;margin:6px 0 16px;">'+
@@ -1584,10 +1588,10 @@
         '<div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">'+
           '<button class="btn sm" onclick="pickWsPhoto()">사진 변경</button>'+
           '<button class="btn sm ghost" onclick="removeWsPhoto()">사진 삭제</button></div></div>';
-      h+='<div class="field"><label>가계부 이름</label><input class="input" id="wsName" value="'+escapeHtml(ws.name||'')+'" placeholder="예: 우리집 가계부"></div>';
+      h+='<div class="field"><label>그룹 이름</label><input class="input" id="wsName" value="'+escapeHtml(ws.name||'')+'" placeholder="예: 우리집 가계부"></div>';
       h+='<div class="tx-sub" style="margin:2px 2px 14px;">사진은 256px로 줄여 저장돼요.'+(isGroup?' 그룹 멤버 모두에게 보입니다.':'')+'</div>';
       h+='<button class="btn" onclick="onSaveWsProfile()">저장</button>';
-      openSheet('가계부 프로필', h);
+      openSheet('그룹 프로필', h);
     }
     function pickWsPhoto(){
       const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
@@ -1596,7 +1600,7 @@
       inp.click();
     }
     function removeWsPhoto(){ window._wsPhoto=''; const a=$('wsAvatar'); if(a) a.innerHTML=wsAvatarHtml((state.wsMeta||{}).name, '', 96, ''); }
-    function onSaveWsProfile(){ const name=val('wsName').trim(); if(!name){ toast('이름을 입력하세요', true); return; } saveWsProfile(name, window._wsPhoto); toast('가계부 프로필을 저장했어요'); closeSheet(); }
+    function onSaveWsProfile(){ const name=val('wsName').trim(); if(!name){ toast('이름을 입력하세요', true); return; } saveWsProfile(name, window._wsPhoto); toast('그룹 프로필을 저장했어요'); closeSheet(); }
 
     // ===== 권한 / 공동 설정 =====
     // (제거됨) '권한 · 공동 설정' 화면 openSharedSettings/onDefVisChange/onDefOwnerChange/collectPrivateItems/makeItemPublic/makeAllPublic
@@ -1639,12 +1643,16 @@
          '<div class="pnm"><b>'+escapeHtml(state.userName||'사용자')+'</b><span>내 프로필</span></div>'+
          '<span class="likemini" title="받은 좋아요">'+(typeof heartSvg==='function'?heartSvg({h:14}):'❤')+' '+(state.myLikeCount||0)+'</span>'+
          '<span class="editk">'+MORE_ICON.chev+'</span></div>';
-      // 그 아래: 현재 가계부/그룹 — 아바타 44 + 이름(flex) + 멤버 아바타 + 전환(우측)
-      const wsSub = isGroup ? ('그룹 · 멤버 '+memCount+'명') : '개인 가계부';
-      const canEditWs = !isGroup || isWsOwner();
+      // 그 아래: 현재 컨텍스트(개인 프로필 / 그룹) — 아바타 44 + 이름(flex) + 멤버 아바타 + 전환(우측). 이 모드의 활성 컨텍스트.
+      const isPers=ws.type==='personal';
+      const modeLbl=(state.mode==='todo'?'할일':'가계부');
+      const wsSub = isGroup ? ('그룹 · 멤버 '+memCount+'명') : ('개인 프로필 · '+modeLbl);
+      const canEditWs = isGroup && isWsOwner();   // 그룹 소유자만 그룹 프로필 편집. 개인 정체성은 위 '내 프로필'에서.
+      const gName = isPers ? (state.userName||'개인') : (ws.name||'가계부');
+      const gAvatar = isPers ? avatarHtml(state.uid, state.userName, 44) : wsAvatarHtml(ws.name, ws.photo, 44);
       h+='<div class="grow"'+(canEditWs?' onclick="openWsProfileSheet()"':'')+'>'+
-         wsAvatarHtml(ws.name, ws.photo, 44)+
-         '<div class="gnm"><b>'+escapeHtml(ws.name||'가계부')+'</b><span>'+wsSub+'</span></div>'+
+         gAvatar+
+         '<div class="gnm"><b>'+escapeHtml(gName)+'</b><span>'+wsSub+'</span></div>'+
          (isGroup?memberAvatarStack(ws, 26):'')+
          '<button class="cnt" onclick="event.stopPropagation();openWorkspaceSheet()">전환</button></div>';
       // 4열 기능 그리드 — 할일 모드면 할일 전용, 아니면 가계부 전용(알뜰홈·설정은 공용)

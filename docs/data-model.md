@@ -5,7 +5,7 @@
 ## RTDB 트리 구조
 
 ```
-users/{uid}            : { name, email, photo(프로필 사진 base64 data URL), createdAt, activeWs, welcomeGift(true=회원가입 축하선물 지급 완료·1회 멱등), profilePublic(기본 true·false면 랭킹·비친구에 은화+'알뜰' 익명), ws:{ {wsId}:true },
+users/{uid}            : { name, email, photo(프로필 사진 base64 data URL), createdAt, activeWs(가계부 모드 현재 컨텍스트 wsId), activeWsTodo(할일 모드 현재 컨텍스트 wsId — 가계부와 독립적으로 기억), welcomeGift(true=회원가입 축하선물 지급 완료·1회 멱등), profilePublic(기본 true·false면 랭킹·비친구에 은화+'알뜰' 익명), ws:{ {wsId}:true },
                            todos:{ {id}:{ title, note, dueDate, done, doneAt, repeat, purposeBookId?, rewardClaimed, sortOrder, createdAt, updatedAt } },  // ✅ 개인 할일(user-global — 워크스페이스 무관·항상 동일). 소유자=uid 암묵
                            onboarded: true,                        // 🧭 첫 사용자 온보딩 1회 표시 완료 플래그
                            push:{ token, at, ua },                 // 🔔 웹 푸시(FCM) 토큰 — 본인만 쓰기·발송기(admin)만 읽음. 알림 끄면 삭제. tools/send_reminders.mjs가 사용
