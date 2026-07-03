@@ -604,6 +604,25 @@
     ];
     const TROPHY_PAL={C:'#F4D06B',H:'#fff0b8',D:'#caa23a'};
     function trophySvg(opt){ return pxSvg(M_TROPHY, TROPHY_PAL, opt); }
+    // 🥇 랭킹 등수 픽셀 숫자(3×5) — 메달 배지 안에 넣는 도트 숫자. color 미지정 시 currentColor.
+    const M_NUM = {
+      '1': [".X.","XX.",".X.",".X.","XXX"],
+      '2': ["XXX","..X","XXX","X..","XXX"],
+      '3': ["XXX","..X","XXX","..X","XXX"]
+    };
+    function numSvg(n, color, opt){ const M=M_NUM[String(n)]; if(!M) return String(n); return pxSvg(M, {X:color||'currentColor'}, opt); }
+    // ✦ 반짝임(4점 스파클) 픽셀 아트 — X=색(currentColor로 등수색 상속), H=흰 하이라이트.
+    const M_SPARK = [
+      "...X...",
+      "...X...",
+      "..XXX..",
+      "XXXHXXX",
+      "..XXX..",
+      "...X...",
+      "...X..."
+    ];
+    const SPARK_PAL={X:'currentColor',H:'#ffffff'};
+    function sparkSvg(opt){ return pxSvg(M_SPARK, SPARK_PAL, opt); }
     function pawSvg(opt){ return pxSvg(M_PAW, PAW_PAL, opt); }
     // 상점·팔레트·격자용 대표 아트(물그릇은 물 채운 파란 그릇으로 구분 표시)
     function furnSvg(id, opt){ const M={cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT}[id]; return pxSvg(M, FURN_PALS[id], opt); }

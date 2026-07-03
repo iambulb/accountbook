@@ -727,8 +727,10 @@
       let h='<div class="rk-podium">';
       order.forEach(function(r,i){ const rank=rankOf[i]; if(!r){ h+='<div class="rk-col"></div>'; return; }
         const medal=['','gold','silver','bronze'][rank], sz=(rank===1?90:72), me=(r.uid===state.uid);
+        const rankn=(typeof numSvg==='function'?numSvg(rank,'currentColor',{h:12}):String(rank));
+        const spk=(typeof sparkSvg==='function')?'<span class="rk-spk"><i class="tw t1">'+sparkSvg({h:11})+'</i><i class="tw t2">'+sparkSvg({h:8})+'</i><i class="tw t3">'+sparkSvg({h:6})+'</i></span>':'';
         h+='<button class="rk-col'+(rank===1?' rk-first':'')+(me?' me':'')+'" onclick="openFriendHome(\''+r.uid+'\')">'+
-          '<span class="rk-av medal-'+medal+'"><span class="rk-rankn">'+rank+'</span>'+rankAvatar(r,sz)+'</span>'+
+          '<span class="rk-av medal-'+medal+'"><span class="rk-rankn">'+rankn+'</span>'+rankAvatar(r,sz)+spk+'</span>'+
           '<span class="rk-nm">'+escapeHtml(r.show)+(me?'<span class="rk-me">나</span>':'')+'</span>'+
           '<span class="rk-likes">'+(typeof heartSvg==='function'?heartSvg({h:12}):'❤')+' '+r.likes+'</span></button>';
       });
