@@ -82,5 +82,37 @@
     a11yDecorate(document.body);
     syncTabCurrent();
 
+    // ===== 📱 Android 하드웨어/제스처 뒤로가기 = 진짜 뒤로가기 (설치형 PWA/TWA) =====
+    // PWA/TWA에서 뒤로가기는 브라우저 히스토리를 소비한다. SPA라 히스토리 항목이 없어 뒤로가기 한 번에
+    // 앱이 그냥 종료되던 치명적 문제 수정. 히스토리에 가드 항목 1개를 얹고 popstate를 가로채,
+    // 열린 모달(#catFx·.gimenu-scrim) → 시트(#sheet) → 모드화면(→홈) 순으로 하나씩 닫는다.
+    // 홈 루트에서 아무것도 없으면 "한 번 더 누르면 종료"(안드로이드 관례). 브라우저 탭(비설치)에선 개입 안 함.
+    (function backNav(){
+      if(!window.history || !window.history.pushState) return;
+      if(typeof isStandalone==='function' && !isStandalone()) return;   // 설치형 앱에서만 커스텀 뒤로가기(브라우저 탭 기본 동작 유지)
+      function closeTop(){
+        var fx=document.getElementById('catFx');
+        if(fx && fx.classList.contains('on')){ try{ closeFx(); }catch(e){ fx.className='fx'; fx.innerHTML=''; } return true; }   // 뽑기 연출
+        var scrims=document.querySelectorAll('.gimenu-scrim');           // 방메뉴·이름짓기·가구메뉴·확인 등
+        if(scrims.length){ scrims[scrims.length-1].remove(); return true; }
+        var sh=document.getElementById('sheet');                         // 알뜰홈·거래입력·더보기 하위 시트 등
+        if(sh && sh.classList.contains('on')){ try{ closeSheet(); }catch(e){} return true; }
+        try{ if(state && state.uid && state.view && state.view!=='home' && typeof goHome==='function'){ goHome(); return true; } }catch(e){}   // 더보기 등 모드화면 → 홈
+        return false;
+      }
+      function rearm(){ try{ history.pushState({ eggardenBack:1 }, ''); }catch(e){} }
+      var _lastRootBack=0;
+      window.addEventListener('popstate', function(){
+        if(closeTop()){ rearm(); return; }                               // 위 계층 하나 닫고 가드 재장전
+        if(Date.now()-_lastRootBack < 1800){ try{ history.back(); }catch(e){} return; }   // 홈 루트에서 두 번째 뒤로가기 → 앱 종료
+        _lastRootBack=Date.now();
+        try{ toast('한 번 더 누르면 종료돼요'); }catch(e){}
+        rearm();
+      });
+      function seed(){ try{ if(!(history.state && history.state.eggardenBack)) rearm(); }catch(e){} }   // 가드 항목 1개 확보
+      seed();
+      window.addEventListener('pageshow', seed);
+    })();
+
     // ===== 초기 =====
     applyTheme();
