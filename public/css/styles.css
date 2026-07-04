@@ -1127,9 +1127,10 @@
       animation:fxshell .8s cubic-bezier(.2,.85,.3,1) forwards; }
     .fx-shell .px { display:block; }
     /* 가챠 오픈 연출 고양이 — 지정 펫(자립 걷기 .cspr) 또는 기본 검은고양이(walk.png 8프레임). 컨테이너=이동/위치, 안쪽 .fxc-in=방향(scaleX)·스프라이트.
-       슬롯 fxc-l(왼쪽 등장·오른쪽 봄)·fxc-r(오른쪽 등장·왼쪽 봄, flip). 크기 --cat(펫=배율·기본480), --foot=투명 하단여백(발끝을 알 바닥에 맞춤), --cat-y 세로 미세조정 */
-    .fx-cat { --cat:200px; --cat-y:14px; --foot:.06;
-      position:absolute; left:50%; top:50%; z-index:4; width:var(--cat); height:var(--cat);
+       슬롯 fxc-l(왼쪽 등장·오른쪽 봄)·fxc-r(오른쪽 등장·왼쪽 봄, flip). 크기 --cat(펫=배율·기본480), --foot=투명 하단여백.
+       세로 정렬: 발끝을 알의 '실제 바닥(--floor, JS가 알 offsetTop+offsetHeight로 측정해 주입)'에 맞춘다. top=--floor에서 margin-top으로 (스프라이트 높이 - 투명여백)만큼 끌어올려 발끝이 정확히 바닥에 서게. --cat-y=미세조정(+면 더 아래). */
+    .fx-cat { --cat:200px; --cat-y:0px; --foot:.06; --floor:50%;
+      position:absolute; left:50%; top:var(--floor); z-index:4; width:var(--cat); height:var(--cat);
       margin:calc(var(--cat-y) - var(--cat) * (1 - var(--foot))) 0 0 calc(var(--cat) * -0.5);
       image-rendering:pixelated; filter:drop-shadow(0 10px 20px rgba(0,0,0,.5)); transform:translateX(var(--from)); }
     .fx-cat .fxc-in { width:100%; height:100%; transform:scaleX(var(--dir,1)); }

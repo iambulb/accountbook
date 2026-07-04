@@ -3431,6 +3431,10 @@
       const el=document.createElement('div');
       el.className='fx-cat walkin fxc-'+side+(isPet?' fxc-pet':' fxc-gc');
       el.style.setProperty('--cat', size+'px'); el.style.setProperty('--foot','0.06');
+      // 발끝 기준선(--floor) = 알의 실제 바닥. 알(#fxItem)의 레이아웃 위치(offsetTop+offsetHeight, transform 영향 없음)로 측정 → 고양이가 알 옆 같은 바닥에 서게. 실전엔 힌트가 제거돼 알이 무대 중앙, 미리보기엔 힌트가 있어 알이 위쪽 — 둘 다 실측이라 자동 정합.
+      const eggEl=(typeof $==='function'&&$('fxItem'))|| (st.querySelector&&st.querySelector('.fx-item'));
+      const floor = eggEl ? (eggEl.offsetTop + eggEl.offsetHeight) : Math.round((st.offsetHeight||st.clientHeight||480)*0.62);
+      el.style.setProperty('--floor', floor+'px');
       if(isPet){ ensurePetArt(id); el.innerHTML='<div class="fxc-in">'+catActorHTML(id, size)+'</div>';
         if(typeof measureFootPad==='function') measureFootPad(id, function(fp){ el.style.setProperty('--foot', (fp!=null?fp:0.06).toFixed(3)); }, 'east'); }   // 연출은 옆(east)으로 걸으니 east 스틸 여백으로 발끝 정합
       else { el.innerHTML='<div class="fxc-in"></div>'; }
