@@ -2662,7 +2662,7 @@
         else { h+='<div class="catseg">'+[['home','홈'],['place','배치']].map(function(t){ return '<button class="'+(_catTab===t[0]?'on':'')+'" onclick="setCatTab(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>'; }
         if(isShop) h+=shopSubsegHtml();   // 알뜰샵 서브탭(sticky 헤더 안)
         h+='</div>';   // .cathead 닫기(여기까지 sticky)
-        if(isShop) h+=catShopHtml();
+        if(isShop) h+='<div class="shopwrap">'+catShopHtml()+'</div>';   // min-height로 탭마다 시트 높이 동일(소비처럼 항목 적어도 안 줄어듦)
         else if(_catTab==='place') h+=catPlaceHtml();
         else h+=catHomeHtml();   // home(및 미상 탭) → 홈
         return h;
@@ -2833,9 +2833,9 @@
     // 알뜰샵에서 미리보기로 "선택"한 펫 — 선택하면 카드가 강조되고 썸네일이 옆으로 걷는 스프라이트(우리집 펫 카드와 동일)로 바뀐다.
     let _shopSelCat=null;
     function selectShopCat(id){ _shopSelCat=(_shopSelCat===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
-    // 알뜰샵 서브탭(펫/가구/소비/벽지/이벤트) — cathead(sticky) 안에 넣어 스크롤해도 상단 고정. '펫'=구 '고양이'(호랑이·사자 등 포함이라 펫으로 통일).
+    // 알뜰샵 서브탭(펫/가구/소비/벽지/가챠) — cathead(sticky) 안에 넣어 스크롤해도 상단 고정. '펫'=구 '고양이'(호랑이·사자 등 포함이라 펫으로 통일). ('가챠' 탭 키는 내부적으로 'event' 유지)
     function shopSubsegHtml(){
-      const tabs=[['cats','펫'],['furn','가구'],['consum','소비'],['wall','벽지'],['event','이벤트']];
+      const tabs=[['cats','펫'],['furn','가구'],['consum','소비'],['wall','벽지'],['event','가챠']];
       return '<div class="subseg">'+tabs.map(function(t){ return '<button class="'+(_shopSub===t[0]?'on':'')+'" onclick="setShopSub(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
     }
     function catShopHtml(){
@@ -3060,7 +3060,7 @@
     }
     function applyWall(id){ if(!ownsWall(id)){ toast('먼저 구매하세요', true); return; } gameRef().child(roomChild('wallpaper')).set(id); toast('벽지를 적용했어요'); }
 
-    // ================= 이벤트: 뽑기(가챠) =================
+    // ================= 가챠 탭: 뽑기(펫알·랜덤박스) =================
     // 등급/확률(합 100). color=이름 텍스트/후광 색, limited는 CSS 레인보우.
     const TIERS = [
       { id:'normal',   name:'일반', p:60,  color:'#FFFFFF' },
@@ -3185,7 +3185,7 @@
     function isFeaturedCat(id){ return !!id && id===featuredCatId(); }
     function catBuyPrice(id){ const c=PET_CATALOG.find(x=>x.id===id); if(!c) return 0; return isFeaturedCat(id)?Math.max(1,Math.round((c.price||0)*(1-FEATURED_DISCOUNT))):(c.price||0); }
     function monthLabelKo(){ const n=parseInt(kstMonthKey().slice(6),10)||0; return n+'월'; }
-    // 이벤트 하단: 펫알·랜덤박스 구성(등급별 목록)과 확률을 접이식으로 표시.
+    // 가챠 탭 하단: 펫알·랜덤박스 구성(등급별 목록)과 확률을 접이식으로 표시.
     function gachaInfoHtml(){
       const tiers=effTiers(), catBy=effCatTier(), itemBy=effItemTier();
       const secRows=(items,byMap,key)=> tiers.map(t=>{ const ns=items.filter(x=>byMap[x.id]===t.id).map(x=>x[key]); if(!ns.length) return '';

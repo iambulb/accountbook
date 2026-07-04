@@ -692,6 +692,8 @@
     .cathead .subseg::-webkit-scrollbar { display:none; }
     .cathead .subseg button { flex:none; }
     .cathead .catseg { margin-bottom:6px; }
+    /* 알뜰샵 탭 내용은 항목 수와 무관하게 시트를 같은 높이로 채운다(소비처럼 카드가 적어도 시트가 확 줄지 않게). 헤더(핸들+제목+coinbar+서브탭) 높이만큼 빼고 body를 꽉 채움 → 캡(92dvh)에 맞물려 모든 탭 높이 동일. */
+    .shopwrap { min-height:calc(92vh - 160px); min-height:calc(92dvh - 160px); }
     .subseg button { flex:none; padding:8px 16px; border-radius:11px; background:var(--soft); font-size:13px; font-weight:700; color:var(--text2); }
     .subseg button.on { background:var(--primary); color:var(--card); }
     /* 방(웹캠 — 위에서 아래로 내려다보는 뷰: 바닥을 넓게, 벽지는 좁게) */
