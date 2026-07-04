@@ -2694,6 +2694,10 @@
         inner+=slots.map(s=>'<span class="poop" role="button" tabindex="0" onclick="collectPoop(event)" style="left:'+(20+(s%3)*26)+'%;top:'+(30+((s/3|0)*20))+'%;height:'+ph+'px" title="치우기 +'+POOP_REWARD+' 은화">'+poopSvg({h:ph})+'</span>').join(''); }
       return '<div class="cr-prop'+(tap?' cr-tap':'')+(p.itemId==='litterbox'?' cr-litter':'')+'" style="left:'+x+'%;bottom:'+bottom+'%;z-index:'+z+';--crtx:'+txPct+'%;transform:translateX(var(--crtx));"'+(tap?' role="button" tabindex="0" onclick="event.stopPropagation();feedBowl(\''+p.key+'\')"':'')+'>'+inner+'</div>';
     }
+    // 배치 가구 마크업을 "바닥 아이템(러그·연못) 먼저 → 그 외"로 나눠 반환. 바닥 아이템은 z:0이라 그 외(z≥1)엔 이미 밀리지만,
+    // 벽 가구도 z:0(같은 값)이라 DOM 순서가 앞서면 바닥 아이템 위로 그려진다 → 바닥 아이템을 항상 맨 앞(=맨 아래 레이어)에 두어
+    // 러그가 벽 가구·일반 가구·펫 무엇보다도 아래로 보이게 한다(사용자 지침).
+    function splitProps(list, mapFn){ let floor='', other=''; list.forEach(function(p){ if(isFloorItem(p.itemId)) floor+=mapFn(p); else other+=mapFn(p); }); return { floor:floor, other:other }; }
     // 우측 상단 "일괄 돌보기" 버튼(밥·물 채우고 똥 치우기) — dock·홈 공용
     function batchBtnHtml(){ return '<button class="cr-batch" onclick="event.stopPropagation();batchCare(this)" aria-label="일괄 돌보기: 밥·물 채우고 똥 치우기">돌보기</button>'; }
     // 배치 가구를 무대 바닥에 배경으로(가로=열, 앞뒤 깊이=행)
@@ -2703,7 +2707,8 @@
       // 원근: 뒤(행 큰 값)일수록 위로·작게, 앞(행 작은 값)일수록 아래로·크게. 앞 가구가 뒤 가구를 덮도록 뒤부터.
       const list=placedList().sort((a,b)=>a.r-b.r); distributePoops(list);
       const wallProps=wallPlacedList().map(p=>wallPropMarkup(p,true,true)).join('');   // 벽 가구(뒤 벽면, z:0)
-      box.innerHTML=wallProps+list.map(p=>propMarkup(p,true,false,true)).join('');   // live=true → dock 캠 연출
+      const sp=splitProps(list, p=>propMarkup(p,true,false,true));   // 바닥 아이템(러그·연못) 먼저 → 맨 아래
+      box.innerHTML=sp.floor+wallProps+sp.other;   // 바닥 아이템 → 벽 가구 → 일반 가구. live=true → dock 캠 연출
     }
     // 활성 고양이를 dock 무대에 액터로 배치(없으면 안내)
     function renderDockCats(){
@@ -3231,7 +3236,8 @@
       // 배치된 가구를 방 바닥에 매핑. 그릇=탭 급여·채움 반영, 화장실=똥 수거(공용 헬퍼).
       const list=placedList().sort((a,b)=>a.r-b.r); distributePoops(list);
       const litters=list.filter(p=>p.itemId==='litterbox');
-      const props=wallPlacedList().map(p=>wallPropMarkup(p,false,true)).join('')+list.map(p=>propMarkup(p,false,false,true)).join('');   // 벽 가구(뒤) + 바닥 가구. live=true → 홈 LIVE 캠 연출
+      const spH=splitProps(list, p=>propMarkup(p,false,false,true));   // 바닥 아이템(러그·연못) 먼저 → 맨 아래
+      const props=spH.floor+wallPlacedList().map(p=>wallPropMarkup(p,false,true)).join('')+spH.other;   // 바닥 아이템 → 벽 가구(뒤) + 일반 가구. live=true → 홈 LIVE 캠 연출
       const roomName=(room().name)||'우리집';
       let h=roomStripHtml()+'<div class="catroom" id="catRoom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor" style="background:'+floorCss(currentFloor())+'"></div><div class="cr-base"></div><span class="cr-cam"><i></i>LIVE · '+escapeHtml(roomName)+'</span>'+batchBtnHtml()+'<div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div></div>';
       // 빈 방(가구·펫 없음) 안내 — 방 확장 직후 '사라진 것처럼' 보이는 혼동 방지
@@ -3276,7 +3282,8 @@
     // 친구 방 HTML(.catroom + #frStage). name=친구 닉네임.
     function friendRoomHtml(fg, name){
       const wall=friendRoom(fg).wallpaper||'default';
-      const props=friendWallPlacedList(fg).map(p=>wallPropMarkup(p,false,true)).join('')+friendPlacedList(fg).sort((a,b)=>a.r-b.r).map(p=>propMarkup(p,false,true,true)).join('');   // 벽 가구(뒤) + 바닥 가구. plain=true(읽기전용) + live=true(연출)
+      const spF=splitProps(friendPlacedList(fg).sort((a,b)=>a.r-b.r), p=>propMarkup(p,false,true,true));   // 바닥 아이템(러그·연못) 먼저 → 맨 아래
+      const props=spF.floor+friendWallPlacedList(fg).map(p=>wallPropMarkup(p,false,true)).join('')+spF.other;   // 바닥 아이템 → 벽 가구(뒤) + 일반 가구. plain=true(읽기전용) + live=true(연출)
       return '<div class="catroom" id="friendRoom"><div class="cr-wall" style="background:'+wallCss(wall)+'"></div><div class="cr-floor" style="background:'+floorCss(friendRoom(fg).floor||'default')+'"></div><div class="cr-base"></div>'+
         '<span class="cr-cam"><i></i>LIVE · '+escapeHtml(name||'친구')+'의 집</span>'+
         '<div class="cr-props">'+props+'</div><div class="cr-stage" id="frStage"></div></div>';
