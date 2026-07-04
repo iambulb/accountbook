@@ -1629,7 +1629,7 @@
       }
       // 4열 기능 그리드 — 할일 모드면 할일 전용, 아니면 가계부 전용(알뜰홈·설정은 공용)
       h+='<div class="grid4">';
-      // 기본 메뉴 아이콘은 라인 SVG(MORE_ICON) 유지. 알뜰홈=코인·선물함=선물상자·가방=갈색 가방(픽셀 아트).
+      // 기본 메뉴 아이콘은 라인 SVG(MORE_ICON) 유지. 알뜰홈=메인 앱아이콘·알뜰샵=상점(은화기반 픽셀)·선물함=선물상자·가방=갈색 가방(픽셀 아트).
       if(state.mode==='todo'){
         h+=gcell(MORE_ICON.share,'할일 공유','openTodoShareSheet()');
         h+=gcell(MORE_ICON.report,'완료 리포트','openTodoReport()');
@@ -1650,7 +1650,8 @@
       // 공통(모드 무관) 아이콘 — 가운데 '공통' 라벨 구분선으로 분리
       h+='<div class="gsep"><span>공통</span></div>';
       h+='<div class="grid4">';
-      h+=gcell(coinSvg({h:26}),'알뜰홈','openCatHouse()');
+      h+=gcell('<img class="gic-app" src="icons/icon.svg" alt="" width="28" height="28" style="display:block;image-rendering:pixelated;border-radius:6px;">','알뜰홈','openCatHouse()');
+      h+=gcell((typeof shopSvg==='function'?shopSvg({h:26}):'🏪'),'알뜰샵','openShop()');
       h+=gcell((typeof bellSvg==='function'?bellSvg({h:26}):'🔔'),'소식','openNews()', (typeof newsMoreCount==='function'?newsMoreCount():0));   // 선물 제외: 안 쓴 쿠폰+안 본 공지만(선물은 선물함 셀에)
       h+=gcell((typeof missionSvg==='function'?missionSvg({h:26}):'📋'),'미션','openMissions()');
       h+=gcell((typeof dexSvg==='function'?dexSvg({h:26}):'📖'),'펫도감','openPetDex()');
