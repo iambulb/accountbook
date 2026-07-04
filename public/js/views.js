@@ -1717,6 +1717,7 @@
       let h='<div class="lst">';
       h+=lrow(MORE_ICON.gear,'개발자 모드','toggleDevMode();openDevModeSheet()', devOn()?'켜짐':'꺼짐');
       if(devOn()){
+        h+=lrow((typeof peopleSvg==='function'?peopleSvg({h:20}):MORE_ICON.gear),'사용자 현황','closeSheet();openDevUsers()');
         h+=lrow(MORE_ICON.gift,'펫알 · 박스 설정','closeSheet();openDevGacha()');
         h+=lrow((typeof goldSvg==='function'?goldSvg({h:21}):MORE_ICON.cat),'펫 (추가 · 수정 · 삭제)','closeSheet();openDevPetManager()');
         h+=lrow((typeof sparkSvg==='function'?sparkSvg({h:20}):MORE_ICON.gear),'이달의 펫 선정','closeSheet();openDevFeatured()');

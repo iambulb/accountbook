@@ -3364,22 +3364,29 @@
       if(typeof updateNewsBadge==='function') updateNewsBadge(); if(state._sheetRefresh) state._sheetRefresh();
     }); }catch(e){} }
     function announceList(){ return ANNOUNCE; }
-    // 개발자: 공지사항(제목+내용) 등록/삭제 → config/announce
+    // 개발자: 공지사항(제목+내용) 등록·수정·삭제 → config/announce. _annEditId!=null이면 그 공지 수정 모드.
+    let _annEditId=null;
     function sendAnnounce(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용', true); return; }
       const title=(val('an_title')||'').trim(), body=(val('an_body')||'').trim();
       if(!title){ toast('제목을 입력하세요', true); return; }
-      const item={ title:title.slice(0,80), body:body.slice(0,500), at:new Date().toISOString() };
-      db.ref('config/announce').push(item).then(function(){ toast('📢 공지를 등록했어요'); if(typeof openDevAnnounce==='function') openDevAnnounce(); }).catch(_cfgWriteErr); }
+      const t=title.slice(0,80), b=body.slice(0,500);
+      if(_annEditId){ const id=_annEditId; db.ref('config/announce/'+id).update({ title:t, body:b }).then(function(){ _annEditId=null; toast('📢 공지를 수정했어요'); if(typeof openDevAnnounce==='function') openDevAnnounce(); }).catch(_cfgWriteErr); return; }   // 수정: at 유지
+      db.ref('config/announce').push({ title:t, body:b, at:new Date().toISOString() }).then(function(){ toast('📢 공지를 등록했어요'); if(typeof openDevAnnounce==='function') openDevAnnounce(); }).catch(_cfgWriteErr); }
+    function editAnnounce(id){ if(!(typeof isDev==='function'&&isDev())) return; _annEditId=id; if(typeof openDevAnnounce==='function') openDevAnnounce(); }
+    function cancelAnnounceEdit(){ _annEditId=null; if(typeof openDevAnnounce==='function') openDevAnnounce(); }
     function deleteAnnounce(id){ if(!(typeof isDev==='function'&&isDev())) return;
-      db.ref('config/announce/'+id).remove().then(function(){ toast('공지를 삭제했어요'); if(typeof openDevAnnounce==='function') openDevAnnounce(); }).catch(_cfgWriteErr); }
+      db.ref('config/announce/'+id).remove().then(function(){ if(_annEditId===id) _annEditId=null; toast('공지를 삭제했어요'); if(typeof openDevAnnounce==='function') openDevAnnounce(); }).catch(_cfgWriteErr); }
     function openDevAnnounce(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용', true); return; }
-      let h='<div class="note">소식 화면 <b>공지사항</b>에 표시할 운영자 공지(제목+내용)를 등록해요. 전역 <b>config/announce</b>(관리자만 쓰기·전체 읽기)에 저장돼 모든 사용자에게 즉시 반영. ⚠️ 일반 사용자에게 노출되니 개발자 모드·내부 내용은 넣지 마세요.</div>';
-      h+='<div class="field"><label for="an_title">제목</label><input class="input" id="an_title" maxlength="80" placeholder="예: 서버 점검 안내"></div>';
-      h+='<div class="field"><label for="an_body">내용</label><textarea class="input" id="an_body" rows="3" maxlength="500" placeholder="예: 7/12 02:00~04:00 점검이 있어요"></textarea></div>';
-      h+='<button class="btn" style="margin-top:4px;" onclick="sendAnnounce()">공지 등록</button>';
+      const editing=_annEditId?ANNOUNCE.filter(function(a){ return a.id===_annEditId; })[0]:null; if(_annEditId && !editing) _annEditId=null;   // 대상이 사라졌으면 등록 모드로
+      const et=editing?(editing.title||''):'', eb=editing?(editing.body||''):'';
+      let h='<div class="note">소식 화면 <b>공지사항</b>에 표시할 운영자 공지(제목+내용)를 등록·수정해요. 전역 <b>config/announce</b>(관리자만 쓰기·전체 읽기)에 저장돼 모든 사용자에게 즉시 반영. ⚠️ 일반 사용자에게 노출되니 개발자 모드·내부 내용은 넣지 마세요.</div>';
+      if(editing) h+='<div class="note" style="border-left:3px solid var(--primary);">✏️ <b>공지 수정 중</b> — 저장하면 이 공지가 바뀝니다(등록 순서·날짜 유지).</div>';
+      h+='<div class="field"><label for="an_title">제목</label><input class="input" id="an_title" maxlength="80" placeholder="예: 서버 점검 안내" value="'+escapeHtml(et)+'"></div>';
+      h+='<div class="field"><label for="an_body">내용</label><textarea class="input" id="an_body" rows="3" maxlength="500" placeholder="예: 7/12 02:00~04:00 점검이 있어요">'+escapeHtml(eb)+'</textarea></div>';
+      h+='<div class="row" style="gap:8px;margin-top:4px;"><button class="btn" style="flex:1;" onclick="sendAnnounce()">'+(editing?'수정 저장':'공지 등록')+'</button>'+(editing?'<button class="btn ghost" style="flex:none;" onclick="cancelAnnounceEdit()">취소</button>':'')+'</div>';
       const list=announceList();
       h+='<div class="sech" style="margin-top:18px;"><span class="l">등록된 공지</span><span class="s">'+list.length+'개</span></div>';
-      h+= list.length ? list.map(function(a){ return '<div class="giftrow"><span class="gftx"><b class="gfnm">'+escapeHtml(a.title||'')+'</b>'+(a.body?'<span class="gfmsg">'+escapeHtml(a.body)+'</span>':'')+'</span><button class="chip" onclick="deleteAnnounce(\''+a.id+'\')">삭제</button></div>'; }).join('') : '<div class="note" style="margin:6px 2px;">등록된 공지가 없어요.</div>';
+      h+= list.length ? list.map(function(a){ return '<div class="giftrow'+(_annEditId===a.id?' on':'')+'"><span class="gftx"><b class="gfnm">'+escapeHtml(a.title||'')+'</b>'+(a.body?'<span class="gfmsg">'+escapeHtml(a.body)+'</span>':'')+'</span><span style="display:flex;gap:6px;flex:none;"><button class="chip" onclick="editAnnounce(\''+a.id+'\')">수정</button><button class="chip" onclick="deleteAnnounce(\''+a.id+'\')">삭제</button></span></div>'; }).join('') : '<div class="note" style="margin:6px 2px;">등록된 공지가 없어요.</div>';
       openSheet('공지사항 관리', h); }
     // 안 본 공지 기준일 — 계정(RTDB game.newsSeenAt)과 기기(localStorage) 중 더 최신 사용(기기 간 동기화).
     function newsSeenAt(){ let g=(state.game&&state.game.newsSeenAt)||''; let l=''; try{ l=localStorage.getItem('newsSeenAt')||''; }catch(e){} return g>l?g:l; }

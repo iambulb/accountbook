@@ -365,6 +365,7 @@
         $('app').style.display='flex';   // 사용자 확인 즉시 앱 노출(흰 스플래시가 오래 남지 않게) — 내용은 곧이어 채워짐
         initUserGraph();   // 개인 할일·친구(user-global) 상시 리스너 — 워크스페이스 무관
         ensureFriendCode().catch(e=>console.warn('friendCode', e));   // 내 친구 코드 보장
+        setupPresence();   // 🟢 접속 상태(presence/{uid}) 기록 — 개발자 '사용자 현황' 접속중 표시
         await migrateLegacyIfNeeded();
         await loadMyWorkspaces();
         // 개인 프로필(=예약 워크스페이스 ws_{uid})은 항상 존재하도록 보장 — 그룹전환에서 '개인 프로필'로 선택 가능
@@ -430,6 +431,19 @@
       if(!code){ code=randCode(6); await db.ref().update({ ['users/'+state.uid+'/friendCode']:code, ['friendCodes/'+code]:state.uid }); }
       state.friendCode=code;
     }
+    // 🟢 접속 상태 기록: presence/{uid}=서버시각. 연결되면 쓰고, 끊기면 onDisconnect로 자동 삭제(정상 종료 시). 개발자 '사용자 현황'에서 접속중 판별에 사용.
+    function setupPresence(){
+      if(!state.uid || _presenceReady) return; _presenceReady=true;
+      try{
+        const ref=db.ref('presence/'+state.uid);
+        db.ref('.info/connected').on('value', function(s){
+          if(s.val()!==true) return;
+          ref.onDisconnect().remove();
+          ref.set(firebase.database.ServerValue.TIMESTAMP).catch(function(){});   // 규칙 미배포면 조용히 무시
+        });
+      }catch(e){}
+    }
+    let _presenceReady=false;
     // 개인 할일 ws→users/{uid}/todos 1회 이전(멱등: users/{uid}/todosMigrated).
     async function migratePersonalTodos(){
       const flagRef=db.ref('users/'+state.uid+'/todosMigrated');
