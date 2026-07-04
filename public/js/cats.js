@@ -2099,10 +2099,19 @@
       if(sp.runtime && sp.needArt && !sp.urls){ cb&&cb(PET_FOOT_PAD); return; }   // 아트 로딩 전(투명 픽셀)엔 측정·캐시 금지 — 로드 후 재측정
       _measurePadUrl(sprStill(id,face), function(fp){ _footPad[key]=(fp==null?PET_FOOT_PAD:fp); cb&&cb(_footPad[key]); });
     }
-    // 기본 검은 고양이(gachacat) 스프라이트의 하단 투명여백 측정→캐시. still.png는 아래 ~29% 가 투명이라 하드코딩 0.06이면 발이 알 중앙까지 떠버림.
-    const GACHACAT_FOOT_DEFAULT=0.29;
-    function measureGachacatFoot(cb){ if(_footPad['_gc']!=null){ cb(_footPad['_gc']); return; }
-      _measurePadUrl(assetUrl('assets/fx/gachacat/still.png'), function(fp){ _footPad['_gc']=(fp==null?GACHACAT_FOOT_DEFAULT:fp); cb(_footPad['_gc']); }); }
+    // 연출(가챠)용 발끝 여백: 걷는 스프라이트의 east walk 시트 하단 투명여백을 실측(캐시). id=펫(sprWalkUrl)·id 없으면 기본 검은고양이(gachacat walk.png).
+    // ★ 걷는 프레임(연출 중 실제로 보이는 프레임) 기준이라 이동 중 발끝-알 바닥 정합이 자연스럽고, 펫 종류·크기가 달라도 전부 같은 방식으로 맞춰진다(크기는 컨테이너 수식에서 상쇄).
+    const GACHACAT_FOOT_DEFAULT=0.30;
+    function measureFxFoot(id, cb){
+      if(!id){ if(_footPad['_gc']!=null){ cb(_footPad['_gc']); return; }
+        _measurePadUrl(assetUrl('assets/fx/gachacat/walk.png'), function(fp){ _footPad['_gc']=(fp==null?GACHACAT_FOOT_DEFAULT:fp); cb(_footPad['_gc']); }); return; }
+      const key=id+':fxwalk'; if(_footPad[key]!=null){ cb(_footPad[key]); return; }
+      const sp=PET_SPRITES[id]; if(!sp){ cb(PET_FOOT_PAD); return; }
+      if(sp.runtime && sp.needArt && !sp.urls){ cb(PET_FOOT_PAD); return; }   // 아트 로딩 전(투명)엔 캐시 금지 — 로드 후 재측정
+      _measurePadUrl(sprWalkUrl(sp), function(fp){ _footPad[key]=(fp==null?PET_FOOT_PAD:fp); cb(_footPad[key]); }); }
+    // 지정된 연출 펫·기본 고양이의 발끝 여백을 미리 측정·캐시 → 연출 시작 전에 값이 준비돼 첫 등장에서 세로 점프가 없다(펫/크기 달라도 동일 정합).
+    function prewarmGachaFxPads(){ try{ measureFxFoot(null, function(){});
+      ['a','b'].forEach(function(k){ const id=_gachaFx&&_gachaFx[k]; if(id && typeof hasSprite==='function' && hasSprite(id)) measureFxFoot(id, function(){}); }); }catch(e){} }
     // ⚠️ 핵심 불변식(INVARIANT): "정면(south) 이미지로 이동 금지".
     // 스프라이트 액터의 이동/정지 비주얼(.cspr)은 반드시 아래 두 함수로만 바꾼다 — 모든 상태 전환(roam·pause)과
     // 재빌드(buildActors)가 이 두 함수를 거치게 해, DOM 재사용으로 남은 정지스틸(.idle)이 이동 중에 보이는 버그를 원천 차단.
@@ -2864,7 +2873,7 @@
       if(typeof rerender==='function') rerender(); if(state && state._sheetRefresh) state._sheetRefresh(); }); }catch(e){} }
     // 🎬 가챠 오픈 연출에 등장하는 펫(개발자 지정, 전역). a=1번(왼쪽에서 등장·오른쪽 봄)·b=2번(오른쪽에서 등장·왼쪽 봄). 미지정이면 기본 검은고양이 스프라이트.
     let _gachaFx={};
-    function loadGachaFx(){ try{ db.ref('config/gachaFx').on('value', function(s){ _gachaFx=s.val()||{}; }); }catch(e){} }
+    function loadGachaFx(){ try{ db.ref('config/gachaFx').on('value', function(s){ _gachaFx=s.val()||{}; if(typeof prewarmGachaFxPads==='function') prewarmGachaFxPads(); }); }catch(e){} }   // 지정 펫 바뀌면 발끝 여백 미리 측정(첫 등장 점프 방지)
     function gachaFxSlotOf(id){ if(_gachaFx&&_gachaFx.a===id) return 'a'; if(_gachaFx&&_gachaFx.b===id) return 'b'; return null; }
     function gachaSlotLabel(slot){ return slot==='a'?'1(왼쪽)':'2(오른쪽)'; }
     // 슬롯 지정 펫 이름 + 경고(삭제되어 스프라이트 없음 ⚠ / frontWalk=걷기 모션 없음). 미지정이면 기본/없음.
@@ -2885,7 +2894,7 @@
     // 연출 미리보기(개발자): 3탭·리빌 없이 고양이 연출 시퀀스만 바로 재생하고 자동 종료. reduced-motion도 무시(연출 확인이 목적). 지정 없으면 기본 검은 고양이.
     function devPreviewGachaFx(){ if(!(typeof isDev==='function'&&isDev())) return;
       const fx=$('catFx'); if(!fx){ toast('미리보기를 열 수 없어요', true); return; }
-      closeSheet(); _fxClear();
+      closeSheet(); _fxClear(); prewarmGachaFxPads();   // 발끝 여백 미리 측정(등장 전 값 준비)
       _fx={ kind:'egg', preview:true, busy:true, rainbow:false, gold:0, res:{ id:(_gachaFx&&(_gachaFx.a||_gachaFx.b))||(PET_CATALOG[0]&&PET_CATALOG[0].id), tier:'legend' } };
       fx.innerHTML='<div class="fx-scrim"></div><div class="fx-stage">'+
         '<div class="fx-item pop fx-egg" id="fxItem">'+eggSvg(2,{h:150})+'</div>'+
@@ -3369,6 +3378,7 @@
       _fxClear();   // 이전 FX 잔여 타이머 취소(빠른 재오픈 교차 방지)
       _fx={ kind, res, dup, refund:refund||0, stage:0, rainbow:!!rainbow, gold: rainbow?0:1 };   // 무지개는 금화로 샀으니 금화 보상 없음
       if(kind==='egg' && typeof hasSprite==='function' && hasSprite(res.id)){ try{ const _pi=new Image(); _pi.src=sprStill(res.id,'south'); if(_pi.decode) _pi.decode().catch(function(){}); }catch(e){} }   // 등장 스프라이트 미리 로드·디코드(연출 도는 동안) → 마지막에 바로 표시
+      if(typeof prewarmGachaFxPads==='function') prewarmGachaFxPads();   // 연출 고양이 발끝 여백 미리 측정(탭하는 동안 캐시 완료 → 첫 등장 세로 점프 방지)
       if(reducedMotion()){ fxReveal(); return; }   // 모션 최소화: 바로 결과
       const art = rainbow ? (kind==='egg'? rainbowEggSvg({h:150}) : rainbowBoxSvg({h:150}))
                           : (kind==='egg'? eggSvg(0,{h:150}) : boxSvg({h:150}));
@@ -3443,13 +3453,12 @@
       const eggEl=(typeof $==='function'&&$('fxItem'))|| (st.querySelector&&st.querySelector('.fx-item'));
       const floor = eggEl ? (eggEl.offsetTop + eggEl.offsetHeight) : Math.round((st.offsetHeight||st.clientHeight||480)*0.62);
       el.style.setProperty('--floor', floor+'px');
-      // --foot=스프라이트 하단 투명여백 비율(발끝을 --floor에 정확히 맞추는 보정). 펫=east 스틸 실측, 기본 고양이=gachacat still.png 실측(둘 다 캐시). 하드코딩 금지(안 맞으면 발이 알 중앙까지 뜸).
-      if(isPet){ ensurePetArt(id); el.innerHTML='<div class="fxc-in">'+catActorHTML(id, size)+'</div>';
-        el.style.setProperty('--foot', (typeof _footPad!=='undefined'&&_footPad[id+':east']!=null?_footPad[id+':east']:PET_FOOT_PAD).toFixed(3));
-        if(typeof measureFootPad==='function') measureFootPad(id, function(fp){ el.style.setProperty('--foot', (fp!=null?fp:PET_FOOT_PAD).toFixed(3)); }, 'east'); }
-      else { el.innerHTML='<div class="fxc-in"></div>';
-        el.style.setProperty('--foot', (typeof _footPad!=='undefined'&&_footPad['_gc']!=null?_footPad['_gc']:GACHACAT_FOOT_DEFAULT).toFixed(3));
-        if(typeof measureGachacatFoot==='function') measureGachacatFoot(function(fp){ el.style.setProperty('--foot', fp.toFixed(3)); }); }
+      // --foot=스프라이트 하단 투명여백 비율(발끝을 --floor=알 바닥에 정확히 맞추는 보정). 펫·기본 고양이 모두 걷는 walk 시트를 실측(measureFxFoot)해 크기·종류 무관하게 동일 정합. 하드코딩 금지.
+      const fpKey=isPet?(id+':fxwalk'):'_gc', fpDef=isPet?PET_FOOT_PAD:GACHACAT_FOOT_DEFAULT;
+      el.style.setProperty('--foot', (typeof _footPad!=='undefined'&&_footPad[fpKey]!=null?_footPad[fpKey]:fpDef).toFixed(3));   // 측정 전 즉시 기본값(prewarm됐으면 캐시 적중 → 점프 없음)
+      if(isPet){ ensurePetArt(id); el.innerHTML='<div class="fxc-in">'+catActorHTML(id, size)+'</div>'; }
+      else { el.innerHTML='<div class="fxc-in"></div>'; }
+      if(typeof measureFxFoot==='function') measureFxFoot(isPet?id:null, function(fp){ el.style.setProperty('--foot', fp.toFixed(3)); });
       st.appendChild(el);
     }
     // 가챠 연출 고양이 시퀀스를 _fxT 타이머로 예약(1번 왼쪽 → 끝나면 2번 오른쪽, 순차). 알 무대(st)·아이템(it)에 동작하고 '마지막 고양이가 톡 치는 시각(=알 오픈 타이밍)'을 ms로 반환. fxClimax(실전)·devPreviewGachaFx(미리보기) 공용.
