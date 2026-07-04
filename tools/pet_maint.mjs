@@ -39,7 +39,7 @@ function readJson(p, fb) { if (!fs.existsSync(p)) return fb; const t = fs.readFi
 function decodeDataUrl(s) { if (typeof s !== 'string' || !s) return null; const i = s.indexOf('base64,'); return Buffer.from(i >= 0 ? s.slice(i + 7) : s, 'base64'); }
 // tools/pets.json 을 build_pets.py 의 save_reg 와 동일 포맷으로 직렬화(불필요한 diff 방지)
 function serializeReg(reg) {
-  const KEYS = ['id', 'species', 'name', 'tier', 'scale', 'desc', 'zip', 'frontWalk'];
+  const KEYS = ['id', 'species', 'name', 'tier', 'scale', 'desc', 'zip', 'frontWalk', 'frames'];
   const line = (p) => '    { ' + KEYS.filter(k => k in p).map(k => `"${k}": ${JSON.stringify(p[k])}`).join(', ') + ' }';
   const body = reg.pets.map(line).join(',\n');
   const out = {}; for (const k of Object.keys(reg)) if (k !== 'pets') out[k] = reg[k];
@@ -91,7 +91,7 @@ function cmdPull(force) {
       const hasArt = (art[id] && DIRS.some(d => art[id][d])) || DIRS.some(d => typeof p[d] === 'string' && p[d].length > 50);
       if (!hasArt) { warn.push(`${id}: 이미지 없음(승격 불가) — 건너뜀`); continue; }
       const sid = suggestId(species, id, taken);
-      promote[id] = { id: sid, species, name: p.name || sid, tier: p.tier || 'normal', scale: (p.scale != null ? p.scale : 1), desc: p.desc || '' };
+      promote[id] = { id: sid, species, name: p.name || sid, tier: p.tier || 'normal', scale: (p.scale != null ? p.scale : 1), desc: p.desc || '', frames: (p.frames != null ? Number(p.frames) : 6) };
       if (!reg.speciesLabel[species]) speciesLabels[species] = '';   // 새 종 → 라벨 채우기 필요
     } else {
       const base = reg.pets.find(x => x.id === id);
@@ -158,7 +158,7 @@ function cmdApply() {
     let wrote = 0;
     for (const d of DIRS) { const buf = decodeDataUrl(src[d]); if (buf) { fs.writeFileSync(path.join(outDir, d + '.png'), buf); wrote++; } }
     if (!wrote) throw new Error(`${rt}(${sid}): 이미지 디코드 실패`);
-    const entry = { id: sid, species, name: cfg.name || m.name || sid, tier: cfg.tier || m.tier || 'normal', scale: (cfg.scale != null ? cfg.scale : (m.scale != null ? m.scale : 1)), desc: cfg.desc || m.desc || '', zip: '', frontWalk: (cfg.frontWalk != null ? cfg.frontWalk : !!m.frontWalk) };
+    const entry = { id: sid, species, name: cfg.name || m.name || sid, tier: cfg.tier || m.tier || 'normal', scale: (cfg.scale != null ? cfg.scale : (m.scale != null ? m.scale : 1)), desc: cfg.desc || m.desc || '', zip: '', frontWalk: (cfg.frontWalk != null ? cfg.frontWalk : !!m.frontWalk), frames: (cfg.frames != null ? Number(cfg.frames) : (m.frames != null ? Number(m.frames) : 6)) };
     const i = reg.pets.findIndex(p => p.id === sid); if (i >= 0) reg.pets[i] = entry; else reg.pets.push(entry);
     if (!new RegExp(`\\b${rt}\\s*:`).test(cats)) { const at = cats.lastIndexOf(ANCHOR); cats = cats.slice(0, at) + `${rt}:'${sid}', ` + cats.slice(at); }
     cleanupKeys.push(`/catalogPets/${rt}`, `/catalogPetArt/${rt}`);

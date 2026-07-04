@@ -39,7 +39,7 @@ metadata.json                                       # size/frames/directions 정
 
 ## 산출물
 `public/assets/pets/<species>/<id>/` (종별 하위폴더 — 고양이는 `cat/`, 호랑이는 `tiger/`, 강아지는 `dog/` …) 에:
-- `walk.png` = Walk/east 6프레임을 가로로 이은 **288×48** 시트 (east 기준, 투명 보존)
+- `walk.png` = Walk/east 프레임을 가로로 이은 시트(east 기준, 투명 보존). **프레임 수 가변**(기본 6, 고등급 8 등 **최대 12**) — 실제 east 장수를 그대로 이어 `W×(장수)` 폭으로 만들고, 장수를 `pets.json`의 **`frames`**(코드젠이 `PET_SPRITES`·런타임 `catalogPets/{id}.frames`에 반영)로 기록. 렌더는 `--fw=칸×frames`+인라인 `steps(frames)`로 프레임당 한 칸 재생.
 - `south.png / north.png / east.png / west.png` = `rotations/` 그대로 복사(정지 4방향)
 
 생성은 ImageMagick이 없을 수 있으므로 **Python PIL** 사용:
@@ -157,7 +157,7 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 
 ## 걷기/쉬기 상태 (cats.js 통합 엔진)
 스프라이트 동물은 단일 rAF 엔진(`catLoop`/`stepActors`)의 액터로 배치되어 두 상태를 오간다.
-- **걷기(roam/goal)**: `.cspr`(한 프레임 창, `overflow:hidden`) 안쪽 필름 `.csprf`(288×48 스트립)를 CSS `steps(6)` + `transform:translateX`(`@keyframes csprFilm`)로 밀어 재생하며 좌우 이동. 서쪽 이동이면 `scaleX(-1)`로 뒤집음(시트는 east 기준).
+- **걷기(roam/goal)**: `.cspr`(한 프레임 창, `overflow:hidden`) 안쪽 필름 `.csprf`(가로 스트립)를 CSS `steps(frames)`(인라인 override, 기본 6) + `transform:translateX`(`@keyframes csprFilm`)로 밀어 재생하며 좌우 이동. 서쪽 이동이면 `scaleX(-1)`로 뒤집음(시트는 east 기준).
   - ⚠️ **깜빡임 방지 핵심**: 걷는 액터는 이동·프레임전환을 **전부 `transform`(합성)** 으로 한다. `background-position` 프레임 애니는 **금지**(합성 안 되고 매 프레임 메인스레드 리페인트 → 이동 페인트와 경쟁해 iOS/크롬에서 프레임 드롭·"순간 사라짐" 발생). 액터 위치는 `setXform`이 `translate3d`로만 옮기고 `left`/`top`은 건드리지 않는다.
 - **쉬기(pause)**: `enterPose`/`enterInteract`에서 `stills` 4방향(south=앞/north=뒤/east=우/west=좌) 중 하나를 `--idle`에 지정하고 `.cspr.idle`로 필름을 숨긴 뒤 그 스틸을 창 배경으로 보여줌. 정지 이미지는 이미 올바른 방향이라 **플립하지 않음**(`scaleX(1)`).
 - **reduced-motion**: `catActorHTML`이 처음부터 `.idle`(south=앞)로 고정, 이동·걷기 정지.

@@ -53,7 +53,7 @@ def load_reg():
 def save_reg(reg):
     # pets 배열은 한 항목 한 줄로 보기 좋게 직렬화
     def petline(p):
-        keys = ["id","species","name","tier","scale","desc","zip","frontWalk"]
+        keys = ["id","species","name","tier","scale","desc","zip","frontWalk","frames"]
         parts = [f'"{k}": {json.dumps(p.get(k), ensure_ascii=False)}' for k in keys if k in p]
         return "    { " + ", ".join(parts) + " }"
     body = ",\n".join(petline(p) for p in reg["pets"])
@@ -65,9 +65,12 @@ def save_reg(reg):
 def price_of(reg, pet): return reg["tierPrice"].get(pet["tier"], 50)
 
 # ---------- zip → 에셋 ----------
+def _frame_no(n):
+    m = re.search(r"frame_(\d+)", n)
+    return int(m.group(1)) if m else 0
 def zip_frames(zf, subpath):
     ns = [n for n in zf.namelist() if n.endswith(".png") and subpath in n]
-    return sorted(ns)
+    return sorted(ns, key=_frame_no)   # 프레임 번호 자연 정렬(frame_10<frame_2 어긋남 방지 — 8장↑ 대비)
 
 def has_east(zf):
     return len(zip_frames(zf, "/Walk/east/frame_")) >= 6
@@ -94,9 +97,10 @@ def gen_assets(pet):
             print(f"  ⚠ {pet['id']}: Walk/east 없음 → south로 walk 구성, frontWalk:true")
         else:
             print(f"  ! {pet['id']}: 걷기 프레임 부족(east/south 6장 없음)"); return False
+    nf = min(len(east), 12)   # 걷기 장수를 zip 그대로(6·8 등, 최대 12) — 고등급 8프레임 등 부드러운 모션
     f0 = Image.open(io.BytesIO(zf.read(east[0]))).convert("RGBA"); W, H = f0.size
-    sheet = Image.new("RGBA", (W*6, H), (0,0,0,0))
-    for i, n in enumerate(east[:6]):
+    sheet = Image.new("RGBA", (W*nf, H), (0,0,0,0))
+    for i, n in enumerate(east[:nf]):
         sheet.paste(Image.open(io.BytesIO(zf.read(n))).convert("RGBA"), (i*W, 0))
     sheet.save(os.path.join(out, "walk.png"))
     rot = [n for n in zf.namelist() if "/rotations/" in n and n.endswith(".png")]
@@ -105,6 +109,7 @@ def gen_assets(pet):
         if m: Image.open(io.BytesIO(zf.read(m[0]))).convert("RGBA").save(os.path.join(out, d+".png"))
         else: print(f"  ! {pet['id']}: rotations/{d}.png 없음")
     pet["frontWalk"] = frontwalk
+    pet["frames"] = nf   # 걷기 프레임 수 기록(gen_sprites·pets.json 반영). 없으면 코드젠에서 6 기본.
     return True
 
 def slugify(zipname):
@@ -154,7 +159,7 @@ def gen_sprites(reg):
         fw = ", frontWalk:true" if p.get("frontWalk") else ""
         sc = p.get("scale")
         scStr = f", scale:{sc}" if (sc and float(sc)!=1) else ""
-        lines.append(f"      {p['id']}:{{ walk:'assets/pets/{p['species']}/{p['id']}/walk.png', frames:6, stills:true{scStr}{fw} }}{comma}")
+        lines.append(f"      {p['id']}:{{ walk:'assets/pets/{p['species']}/{p['id']}/walk.png', frames:{p.get('frames',6)}, stills:true{scStr}{fw} }}{comma}")
     return "    const PET_SPRITES = {\n" + "\n".join(lines) + "\n    };"
 
 def gen_tier(reg):
@@ -176,7 +181,7 @@ def gen_pet_list_table(reg):
         sc = float(p.get("scale") or 1)
         rows.append(f"| {i} | {p['name']} | `{p['id']}` | {reg['speciesLabel'].get(p['species'],p['species'])} | "
                     f"{sc:g}× | {TIER_KO.get(p['tier'],p['tier'])} | {price_of(reg,p)} | `public/assets/pets/{p['species']}/{p['id']}/` | "
-                    f"{'PNG 스프라이트 6프레임(정면걷기)' if p.get('frontWalk') else 'PNG 스프라이트 6프레임'} | {p['desc']} |")
+                    f"PNG 스프라이트 {p.get('frames',6)}프레임{'(정면걷기)' if p.get('frontWalk') else ''} | {p['desc']} |")
     return "\n".join(rows)
 
 def gen_pipe_idtable(reg):

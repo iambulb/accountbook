@@ -23,7 +23,7 @@
 ### 개선(dev) — 🎞️ 걷기 프레임 가변화(6·8장 지원) — 고등급 펫 부드러운 모션
 - 걷기 애니메이션 장수를 6프레임 고정 → **펫별 가변**(`PET_SPRITES[id].frames`/런타임 `catalogPets/{id}.frames`)으로 전환. 렌더가 `--fw = 칸크기 × frames` + **인라인 `steps(frames)`**(CSS `.csprf`의 `steps(6)`은 기본값, 인라인이 덮어씀)로 프레임당 정확히 한 칸 재생.
 - **dev 펫 업로드(`_processPetZip`)가 zip의 실제 east 프레임 장수(최대 12)를 그대로** 시트로 합성하고 `frames`를 RTDB에 저장 → **고등급 펫에 8프레임**을 넣으면 그대로 부드럽게 재생. 프레임 파일명 자연 정렬(`frame_10<frame_2` 어긋남 방지). 구 레코드(frames 없음)는 6으로 하위호환.
-- 번들 파이프라인(`tools/build_pets.py`)은 아직 6프레임 고정(필요 시 별도 확장). `sw.js` `v3.270.0`.
+- **"펫 정리"(정적 승격) 파이프라인도 `frames` 보존**: `pet_maint.mjs`가 RTDB `catalogPets/{id}.frames`를 `pets.json`에 병합(walk.png는 RTDB 시트를 그대로 저장 → 8프레임 유지), `build_pets.py`가 `frames`를 `PET_SPRITES` 코드젠에 반영 + zip 번들도 실제 east 장수 그대로 합성(자연 정렬). dev 업로드→승격 어느 쪽이든 8프레임 유지. `sw.js` `v3.270.0`.
 
 ### 개선 — 🔥 벽난로 1×1 축소 + 벽꾸미기도 방꾸미기처럼 드래그 배치/이동
 - **벽난로를 1×1로**(기존 2×1) — 주변 칸을 침범하던 문제 해결. 캠·배치 크기도 창문과 같은 1×1 벽 가구 기준(`ROOM_H` 2.6→1.4)으로 통일.
