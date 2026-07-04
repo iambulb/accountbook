@@ -516,11 +516,11 @@
       "...PppP...BooB..CC..","WWWWWWWWWWWWWWWWWWWW","wwwwwwwwwwwwwwwwwwww","..K..............K..",
       "..K..............K..","..KK............KK..","....................","...................."
     ];
-    // 거울(12×20): 금테 타원(X 외곽·W 밝음·w 그림자·o 상하 장식)+반사면(A 중간·a 그림자·b 밝음 그라데이션)+사선 광택(h, 캠에서 반짝 스윕).
+    // 거울(12×19): 금테 타원(X 외곽·W 밝음·w 그림자·o 상하 장식)+반사면(A 중간·a 그림자·b 밝음 그라데이션)+사선 광택(h, 캠에서 반짝 스윕). ※ 맨 아래 빈 줄 없음 — mount 앵커라 아래가 배치칸 바닥선에 딱 붙어야(창문처럼) 함.
     const M_MIRROR = [
       "....oXXo....","..oXWWWWXo..",".XWwHHHHwWX.","XWwaaaaaaWwX","XWwaaaahAbWX","XWwaaahAAbWX",
       "XWwaahAAAbWX","XWwahAAAAbWX","XWwhAAAAAbWX","XWwAAAAAAbWX","XWwAAAAAAbWX","XWwAAAAAbbWX",
-      "XWwAAAAbbbWX","XWwAAAbbbbWX",".XWwbbbbwWX.","..XWwwwwWX..","...XWHHWX...","..oXWWWWXo..","....oXXo....","............"
+      "XWwAAAAbbbWX","XWwAAAbbbbWX",".XWwbbbbwWX.","..XWwwwwWX..","...XWHHWX...","..oXWWWWXo..","....oXXo...."
     ];
     // 네온 하트(18×14, blink): 네온관 채운 하트(N 분홍 코어·H 밝은 분홍·C 화이트 핫스팟·g 뒤 글로우)+양옆 반짝임(S). 캠에서 네온처럼 파르르 깜빡.
     const M_NEON = [
@@ -1628,7 +1628,7 @@
       if(right===GRID_N && c!==1) return 'right';
       return 'center'; }
     // 가구 그래픽 가로세로비(cols/rows) — 그래픽 폭 = fh*aspect. 캠 중심 x 계산(buildActors)에 사용.
-    const FURN_ASPECT = { pond:1.667, tower:0.533, scratcher:0.636, pethouse:1.05, catwheel:1.0, plant:0.6, litterbox:1.167, cushion:1.778, bowl:1.778, waterbowl:1.778, rug:2.4, window:0.9, fishtank:1.125, fireplace:1.125, fan:0.727, hammock:1.25, teaser:0.8, wallclock:0.636, hangplant:0.7, mobile:1.2, chandelier:1.0, jingleball:1.0, frame:1.067, shelf:1.667, mirror:0.6, neon:1.286, sconce:0.778, garland:2.667, poster:0.778, tapestry:0.727 };
+    const FURN_ASPECT = { pond:1.667, tower:0.533, scratcher:0.636, pethouse:1.05, catwheel:1.0, plant:0.6, litterbox:1.167, cushion:1.778, bowl:1.778, waterbowl:1.778, rug:2.4, window:0.9, fishtank:1.125, fireplace:1.125, fan:0.727, hammock:1.25, teaser:0.8, wallclock:0.636, hangplant:0.7, mobile:1.2, chandelier:1.0, jingleball:1.0, frame:1.067, shelf:1.667, mirror:0.632, neon:1.286, sconce:0.778, garland:2.667, poster:0.778, tapestry:0.727 };
     function furnAspect(id){ return FURN_ASPECT[id]||1; }
     function furnRoomH(id, isDock, depth){
       const mult = ROOM_H[id] || 1;
