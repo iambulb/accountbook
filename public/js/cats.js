@@ -3578,8 +3578,8 @@
     // ================= 가챠 탭: 뽑기(펫알·랜덤박스) =================
     // 등급/확률(합 100). color=이름 텍스트/후광 색, limited는 CSS 레인보우.
     const TIERS = [
-      { id:'normal',   name:'일반', p:60,  color:'#FFFFFF' },
-      { id:'uncommon', name:'고급', p:20,  color:'#2FAE7A' },
+      { id:'normal',   name:'일반', p:50,  color:'#FFFFFF' },
+      { id:'uncommon', name:'고급', p:30,  color:'#2FAE7A' },
       { id:'rare',     name:'희귀', p:15,  color:'#3182F6' },
       { id:'epic',     name:'특별', p:3.8, color:'#9B6FC8' },
       { id:'legend',   name:'전설', p:1,   color:'#E0A43C' },
