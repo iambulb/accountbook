@@ -568,32 +568,87 @@
     const EGG_PAL_RB={X:'#968c76',W:'RAINBOW',S:'RAINBOW',R:'#FBFBFD',O:'#FBFBFD',Y:'#FBFBFD',G:'#FBFBFD',B:'#FBFBFD',P:'#FBFBFD'};   // 무지개알도 바깥 진한 테두리
     const BOX_PAL_RB={X:'#9aa2b0',W:'RAINBOW',C:'RAINBOW',L:'RAINBOW',R:'#FBFBFD',O:'#FBFBFD',Y:'#FBFBFD',G:'#FBFBFD',B:'#FBFBFD',P:'#FBFBFD'};
     // 은화 속 검은 고양이 — 특별↑ 오픈 연출에서 오른쪽에서 슥 들어와 앞발로 알/상자를 톡 건드린다.
-    // 정면 실사풍 검은 고양이(까망이): 둥근 귀+분홍 귀속, 작은 호박색 슬릿 눈(세로동공), 작은 분홍 코+입 음영, 검은 앞발을 왼쪽으로 뻗어 톡(발끝에 작은 분홍 젤리만). 수염 없음. 어두운 무대에서 실루엣이 읽히게 외곽선(K)을 몸(B)보다 진하게.
-    const M_COINCAT = [
-      "................................",
-      ".............KK......KK.........",
-      "............KBBK....KBBK........",
-      "...........KBpBK....KBpBK.......",
-      "..........KBBBBKKKKKKBBBBK......",
-      ".........KBbBBBBBBBBBBBBbBK.....",
-      ".........KBBBBBBBBBBBBBBBBK.....",
-      ".........KBBYiBBBBBBBBiYBBK.....",
-      ".........KBBYiBBBBBBBBiYBBK.....",
-      ".........KBBBBBBBPPBBBBBBBK.....",
-      ".........KBBBBBBBmmBBBBBBBK.....",
-      "..........KBBBBBBBBBBBBBBK......",
-      "..........KBBBBBBBBBBBBBBK......",
-      "...........KBBBBBBBBBBBBK.......",
-      ".....KKKKKKKKBBBBBBBBBBBK.......",
-      "..KKKBBBBBBBBBBBBBBBBBBBK.......",
-      ".KBbbBBBBBBBBBBBBBBBBBBBK.......",
-      ".KPpPBKKBBBBBBBBBBBBBBBBK.......",
-      ".KKKKK..KBBBBK....KBBBBBK.......",
-      "........KBBBK......KBBBK........",
-      "........KKK........KKK.........."
+    // 옆모습 실사풍 검은 고양이 3프레임(가챠 오픈용): 걷기 A/B(다리 교차)로 도도하게 걸어나와, TAP(앞발 들어 왼쪽 앞으로 뻗음)으로 알을 톡. 꼬리 세움·등 털광택(b)·호박 눈. 어두운 무대에서 실루엣 읽히게 외곽선(K)>몸(B).
+    const M_GCAT_A = [
+      ".......................................",
+      "................................KK.....",
+      "...............................KBbK....",
+      "..............................KBbBK....",
+      "....KK....KK.................KKBbBK....",
+      "...KBnK..KBnK..............KKBBbBK.....",
+      "...KBBK.KBBBK...........bbbbBBBBBK.....",
+      "..KKBBKKBBBBKbbbbbbbbbbbBBBBBBBBBK.....",
+      ".KPYiBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.....",
+      ".KPBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.....",
+      ".KBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.....",
+      "..KBBBBBBBBBBBBBBBBBBBBBBBBBBBBBK......",
+      "..KBBBBBBBddddddddddddddBBBBBBBBK......",
+      "..KBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.......",
+      "...KBBBBBBBBBBBBBBBBBBBBBBBBBBK........",
+      "...KBBBBBBBBBBBBBBBBBBBBBBBBBBK........",
+      "...KBBK..KBBK........KBBK...KBBK.......",
+      "...KBBK..KBBK........KBBK...KBBK.......",
+      "...KBBK..KBBK........KBBK...KBBK.......",
+      "...KBBK..KBBK........KBBK...KBBK.......",
+      "..KPPBK.KBBK........KBBK...KBPPK.......",
+      "..KKKKK.KKKK........KKKK...KKKKK.......",
+      ".......................................",
+      "......................................."
     ];
-    // K=외곽선(먹) B=몸 검정 b=털 광택 하이라이트 Y=눈(호박) i=세로동공(암) P=분홍(코·귀속·발끝 젤리) p=진한 분홍 m=입·코 음영
-    const COINCAT_PAL={K:'#0b0c10',B:'#23262d',b:'#343b47',Y:'#C79A34',i:'#0b0c10',P:'#E58aa0',p:'#c46e86',m:'#7a3a4a'};
+    const M_GCAT_B = [
+      ".......................................",
+      "................................KK.....",
+      "...............................KBbK....",
+      "..............................KBbBK....",
+      "....KK....KK.................KKBbBK....",
+      "...KBnK..KBnK..............KKBBbBK.....",
+      "...KBBK.KBBBK...........bbbbBBBBBK.....",
+      "..KKBBKKBBBBKbbbbbbbbbbbBBBBBBBBBK.....",
+      ".KPYiBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.....",
+      ".KPBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.....",
+      ".KBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.....",
+      "..KBBBBBBBBBBBBBBBBBBBBBBBBBBBBBK......",
+      "..KBBBBBBBddddddddddddddBBBBBBBBK......",
+      "..KBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.......",
+      "...KBBBBBBBBBBBBBBBBBBBBBBBBBBK........",
+      "...KBBBBBBBBBBBBBBBBBBBBBBBBBBK........",
+      "..KBBK....KBBK.......KBBK..KBBK........",
+      "..KBBK....KBBK.......KBBK..KBBK........",
+      "..KBBK....KBBK.......KBBK..KBBK........",
+      "..KBBK....KBBK.......KBBK..KBBK........",
+      ".KPPBK...KBBK.......KBBK..KBPPK........",
+      ".KKKKK...KKKK.......KKKK..KKKKK........",
+      ".......................................",
+      "......................................."
+    ];
+    const M_GCAT_TAP = [
+      ".......................................",
+      "................................KK.....",
+      "...............................KBbK....",
+      "..............................KBbBK....",
+      "....KK....KK.................KKBbBK....",
+      "...KBnK..KBnK..............KKBBbBK.....",
+      "...KBBK.KBBBK...........bbbbBBBBBK.....",
+      "..KKBBKKBBBBKbbbbbbbbbbbBBBBBBBBBK.....",
+      ".KPYiBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.....",
+      ".KPBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.....",
+      ".KBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.....",
+      "..KBBBBBBBBBBBBBBBBBBBBBBBBBBBBBK......",
+      "..KBBBBBBBddddddddddddddBBBBBBBBK......",
+      "..KBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.......",
+      "...KBBBBBBBBBBBBBBBBBBBBBBBBBBK........",
+      "...KBBBBBBBBBBBBBBBBBBBBBBBBBBK........",
+      "...KBBK.............KBBK...KBBK........",
+      "...KBBK.............KBBK...KBBK........",
+      "PKBBBK.............KBBK...KBBK.........",
+      "KPBBK..............KBBK...KBBK.........",
+      ".KK.....KBBK.......KBBK...KBPPK........",
+      "........KKKK.......KKKK...KKKKK........",
+      ".......................................",
+      "......................................."
+    ];
+    // K=외곽선(먹) B=몸 검정 b=등 털광택 d=배 그림자 Y=눈(호박) i=세로동공(암) P=코·발끝 젤리(분홍) n=귀속(어두운 분홍)
+    const GCAT_PAL={K:'#0a0b0e',B:'#22252c',b:'#343c4a',d:'#15171c',Y:'#C99A34',i:'#0a0b0e',P:'#d18a9c',n:'#7a4b58'};
 
     // 카탈로그(코드 상수) — 저장은 보유 id만. id는 종·색 구분(예: cat_calico, dog_corgi), species는 분류/필터용.
     // 새 동물(네발 짐승) 처리 규칙은 docs/pet-asset-pipeline.md 참고.
@@ -1124,7 +1179,7 @@
     ];
     const SPARK_PAL={X:'currentColor',H:'#ffffff'};
     function sparkSvg(opt){ return pxSvg(M_SPARK, SPARK_PAL, opt); }
-    function coinCatSvg(opt){ return pxSvg(M_COINCAT, COINCAT_PAL, opt); }
+    function gcatSvg(fr, opt){ return pxSvg(fr==='b'?M_GCAT_B:(fr==='tap'?M_GCAT_TAP:M_GCAT_A), GCAT_PAL, opt); }   // 가챠 검은 고양이: 'a'/'b' 걷기·'tap' 앞발 톡
     // 알뜰샵·팔레트·격자용 대표 아트(물그릇은 물 채운 파란 그릇으로 구분 표시)
     function furnMatrix(id){ return {cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT,catwheel:M_CATWHEEL}[id]; }
     function furnSvg(id, opt){ return pxSvg(furnMatrix(id), FURN_PALS[id], opt); }
@@ -3347,10 +3402,15 @@
       it.classList.add('fx-preshake');
       let t0=680;
       if(catShow){
-        _fxT(()=>{ st.insertAdjacentHTML('beforeend','<div class="fx-paw" id="fxPaw">'+coinCatSvg({h:120})+'</div>'); const p=$('fxPaw'); if(p){ void p.offsetWidth; p.classList.add('tap'); } }, 440);   // 검은 고양이가 오른쪽에서 슥 등장
-        _fxT(()=>{ it.classList.remove('fx-preshake'); void it.offsetWidth; it.classList.add('fx-hit'); }, 700);   // 앞발이 닿는 순간 알/상자가 톡 튕김
-        _fxT(()=>{ const p=$('fxPaw'); if(p) p.remove(); it.classList.remove('fx-hit'); }, 1140);   // 고양이 퇴장 후 제거
-        t0=1240;
+        // 옆모습 검은 고양이가 오른쪽에서 도도하게 천천히 걸어나와(2프레임 걸음) 앞발로 알을 톡 → 그 자리에서 알이 열림
+        st.insertAdjacentHTML('beforeend','<div class="fx-cat walkin" id="fxCat">'+gcatSvg('a',{h:112})+'</div>');
+        let wf=false; const wi=setInterval(()=>{ const c=$('fxCat'); if(!c){ clearInterval(wi); return; } wf=!wf; c.innerHTML=gcatSvg(wf?'b':'a',{h:112}); }, 175);   // 걸음 2프레임 교차
+        _fxTimers.push(wi);   // 닫기/재시작 시 정리(clearTimeout/Interval 호환)
+        _fxT(()=>{ clearInterval(wi); const c=$('fxCat'); if(c){ c.innerHTML=gcatSvg('tap',{h:112}); c.classList.remove('walkin'); c.classList.add('arr','tap'); } }, 1300);   // 도착 → 앞발 톡 포즈
+        _fxT(()=>{ it.classList.remove('fx-preshake'); void it.offsetWidth; it.classList.add('fx-hit'); }, 1440);   // 앞발이 닿는 순간 알/상자가 톡 튕김
+        _fxT(()=>{ const c=$('fxCat'); if(c){ c.classList.remove('tap'); c.classList.add('leave'); } it.classList.remove('fx-hit'); }, 1620);   // 톡 후 물러나며 흐려짐(빛이 덮음)
+        _fxT(()=>{ const c=$('fxCat'); if(c) c.remove(); }, 2160);
+        t0=1600;   // 톡 직후 그 자리에서 알 오픈
       }
       _fxT(()=>{
         st.style.color=t.color;   // 열리는 순간부터 등급색 — 빛·픽셀 파티클·버스트·등장이 currentColor로 등급색을 따른다(그 전엔 흰빛이라 등급 스포일러 방지)
