@@ -1288,7 +1288,8 @@
       state._gameRef.on('value', s=>{ const raw=s.val(); state.game=normalizeGame(raw); migrateHomeRoomsIfNeeded(raw); onGameChange(); reconcilePets(); });
       watchCatalogPets();   // 런타임 펫(전역 catalogPets) 병합 리스너
       watchMyLikes();       // 내가 받은 집 좋아요 총합
-      loadNotices();        // 📢 공지(config/notices) 구독 — 배포 없이 공지 갱신
+      loadNotices();        // 📢 업데이트 내역(config/notices) 구독 — 배포 없이 갱신
+      loadAnnounce();       // 📢 운영자 공지(config/announce, 제목+내용) 구독 — 공지사항에 표시
       loadFeaturedPet();    // 🌟 이달의 펫 수동 선정(config/featuredPet) 구독 — 개발자가 고르면 전역 반영
       loadGachaFx();        // 🎬 가챠 오픈 연출 펫(config/gachaFx: a=1번/왼쪽·b=2번/오른쪽) 구독 — 미지정이면 기본 검은고양이
       loadBroadcasts();     // 📣 전체 선물(config/broadcast) 구독 — 개발자가 넣으면 각 사용자 선물함으로 1회 수령
@@ -3346,7 +3347,7 @@
     // 업데이트 내역 기본값(요약) — 최신순. RTDB config/notices가 있으면 그걸로 덮어씀. 시즌·친구선물 홍보는 이벤트·알림 섹션에 이미 나오므로 여기(업데이트 내역)엔 넣지 않는다.
     // 🔒 여기(및 config/notices)는 일반 사용자에게 그대로 노출된다. 개발자 모드·치트·내부 도구 등 비공개 변경은 절대 넣지 말 것(운영 유출 크리티컬). 방어로 isDevNotice가 한 번 더 거른다.
     let NOTICES = [
-      { date:'2026-07-04', t:'소식 화면 개편 · 업데이트 내역', s:'공지를 업데이트 내역으로 정리하고, 확성기 아이콘·레이아웃을 다듬었어요' }
+      { date:'2026-07-10', t:'선물함·공지 개편', s:'선물 출처 표시, 운영자 선물, 공지사항에 운영자 공지와 업데이트 내역을 함께 정리했어요' }
     ];
     // RTDB config/notices(공개 읽기·관리자 쓰기)에서 공지를 읽어 NOTICES를 갱신. 없으면 위 기본값 유지.
     function loadNotices(){ try{ db.ref('config/notices').on('value', function(s){ const v=s.val(); let arr=[];
@@ -3354,6 +3355,32 @@
       arr=(arr||[]).filter(function(n){ return n && n.date && n.t; }).sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
       if(arr.length){ NOTICES=arr; if(typeof updateNewsBadge==='function') updateNewsBadge(); }
     }); }catch(e){} }
+    // 📢 운영자 공지(제목+내용) — config/announce(관리자 쓰기·전체 읽기). 소식 '공지사항'에 업데이트 내역과 함께 표시. 개발자 모드 '공지사항 관리'에서 등록/삭제.
+    let ANNOUNCE=[];
+    function loadAnnounce(){ try{ db.ref('config/announce').on('value', function(s){ const v=s.val(); let arr=[];
+      if(Array.isArray(v)) arr=v.map(function(a,i){ return Object.assign({id:String(i)}, a); });
+      else if(v&&typeof v==='object') arr=Object.keys(v).map(function(k){ return Object.assign({id:k}, v[k]); });
+      ANNOUNCE=(arr||[]).filter(function(a){ return a && a.title; }).sort(function(a,b){ return (b.at||'').localeCompare(a.at||''); });
+      if(typeof updateNewsBadge==='function') updateNewsBadge(); if(state._sheetRefresh) state._sheetRefresh();
+    }); }catch(e){} }
+    function announceList(){ return ANNOUNCE; }
+    // 개발자: 공지사항(제목+내용) 등록/삭제 → config/announce
+    function sendAnnounce(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용', true); return; }
+      const title=(val('an_title')||'').trim(), body=(val('an_body')||'').trim();
+      if(!title){ toast('제목을 입력하세요', true); return; }
+      const item={ title:title.slice(0,80), body:body.slice(0,500), at:new Date().toISOString() };
+      db.ref('config/announce').push(item).then(function(){ toast('📢 공지를 등록했어요'); if(typeof openDevAnnounce==='function') openDevAnnounce(); }).catch(_cfgWriteErr); }
+    function deleteAnnounce(id){ if(!(typeof isDev==='function'&&isDev())) return;
+      db.ref('config/announce/'+id).remove().then(function(){ toast('공지를 삭제했어요'); if(typeof openDevAnnounce==='function') openDevAnnounce(); }).catch(_cfgWriteErr); }
+    function openDevAnnounce(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용', true); return; }
+      let h='<div class="note">소식 화면 <b>공지사항</b>에 표시할 운영자 공지(제목+내용)를 등록해요. 전역 <b>config/announce</b>(관리자만 쓰기·전체 읽기)에 저장돼 모든 사용자에게 즉시 반영. ⚠️ 일반 사용자에게 노출되니 개발자 모드·내부 내용은 넣지 마세요.</div>';
+      h+='<div class="field"><label for="an_title">제목</label><input class="input" id="an_title" maxlength="80" placeholder="예: 서버 점검 안내"></div>';
+      h+='<div class="field"><label for="an_body">내용</label><textarea class="input" id="an_body" rows="3" maxlength="500" placeholder="예: 7/12 02:00~04:00 점검이 있어요"></textarea></div>';
+      h+='<button class="btn" style="margin-top:4px;" onclick="sendAnnounce()">공지 등록</button>';
+      const list=announceList();
+      h+='<div class="sech" style="margin-top:18px;"><span class="l">등록된 공지</span><span class="s">'+list.length+'개</span></div>';
+      h+= list.length ? list.map(function(a){ return '<div class="giftrow"><span class="gftx"><b class="gfnm">'+escapeHtml(a.title||'')+'</b>'+(a.body?'<span class="gfmsg">'+escapeHtml(a.body)+'</span>':'')+'</span><button class="chip" onclick="deleteAnnounce(\''+a.id+'\')">삭제</button></div>'; }).join('') : '<div class="note" style="margin:6px 2px;">등록된 공지가 없어요.</div>';
+      openSheet('공지사항 관리', h); }
     // 안 본 공지 기준일 — 계정(RTDB game.newsSeenAt)과 기기(localStorage) 중 더 최신 사용(기기 간 동기화).
     function newsSeenAt(){ let g=(state.game&&state.game.newsSeenAt)||''; let l=''; try{ l=localStorage.getItem('newsSeenAt')||''; }catch(e){} return g>l?g:l; }
     // 시즌·친구선물 홍보 공지 판별(이벤트/알림 섹션에 이미 노출) → 업데이트 내역에서 제외. 개발자 changelog가 실수로 걸리지 않게 문구를 좁게 매칭.
@@ -3365,11 +3392,12 @@
     function updateNotices(){ return NOTICES.filter(function(n){ return !isPromoNotice(n) && !isDevNotice(n); }); }
     // 그중 '최신 1건'만 노출(이전 내역은 사라짐). 날짜 최대값으로 선택(배열 정렬에 의존하지 않음).
     function latestUpdate(){ return updateNotices().reduce(function(m,n){ return (!m || (n.date||'')>(m.date||''))?n:m; }, null); }
-    function latestNoticeDate(){ const u=latestUpdate(); return u?(u.date||''):''; }
+    // 안 본 판정 기준일 = 업데이트 내역 최신 + 운영자 공지 최신(at의 날짜부분) 중 최대.
+    function latestNoticeDate(){ let d=''; const u=latestUpdate(); if(u&&(u.date||'')>d) d=u.date||''; ANNOUNCE.forEach(function(a){ const ad=(a.at||'').slice(0,10); if(ad>d) d=ad; }); return d; }
     function markNewsSeen(){ const d=latestNoticeDate(); try{ localStorage.setItem('newsSeenAt', d); }catch(e){}
       try{ if(typeof gameRef==='function' && state.uid && d) gameRef().child('newsSeenAt').set(d); }catch(e){}   // 계정 동기화
       updateNewsBadge(); refreshMoreBadges(); }   // 로컬 저장으로 안 본 공지=0 됐으니 더보기 '소식' 뱃지도 즉시 갱신(RTDB set이 값 동일이면 리스너가 안 뜨므로 여기서 직접)
-    function unseenNoticeCount(){ const u=latestUpdate(); return (u && (u.date||'')>newsSeenAt())?1:0; }   // 노출은 최신 1건뿐 → 뱃지도 0/1
+    function unseenNoticeCount(){ const seen=newsSeenAt(); let n=0; const u=latestUpdate(); if(u && (u.date||'')>seen) n++; ANNOUNCE.forEach(function(a){ if((a.at||'').slice(0,10)>seen) n++; }); return n; }   // 안 본 운영자 공지 + 최신 업데이트
     function giftUnread(){ return giftCount() + (typeof mailCount==='function'?mailCount():0); }   // 안 받은 선물 = 코드보상(gifts) + 친구선물(mailbox)
     function newsUnread(){ return giftUnread() + unseenNoticeCount(); }   // (브랜드 아이콘) 뱃지 = 안 받은 선물(코드+친구) + 안 본 공지
     // 아직 안 쓴 프로모 쿠폰 개수(state.game.codes에 없는 PROMO_CODES 키 수).
@@ -3398,9 +3426,12 @@
       if(fid){ const fc=PET_CATALOG.find(function(x){ return x.id===fid; }); if(fc){
         h+='<div class="featbanner" role="button" tabindex="0" onclick="openCatHouse(\'shop\')"><span class="fstar">'+sparkSvg({h:20})+'</span><div class="fb-txt"><b>'+monthLabelKo()+' 이달의 펫 · '+catNameSpan(fid,fc.name)+'</b><span class="s">이번 달만 '+Math.round(FEATURED_DISCOUNT*100)+'% 할인 — '+catBuyPrice(fid)+' 은화'+(ownsCat(fid)?' (보유 완료)':' · 사러가기')+'</span></div><span class="fb-face">'+catFace(fid,{h:40})+'</span></div>'; } }
       else { h+='<div class="note" style="margin:2px 0 6px;">진행 중인 이벤트가 곧 열려요.</div>'; }
-      h+='<div class="sech" style="margin-top:16px;"><span class="l"><span class="sech-ic">'+megaSvg({h:16})+'</span> 업데이트 내역</span></div>';
-      // 시즌·친구선물 홍보 제외, 개발자가 실시간(RTDB)으로 올리는 최신 업데이트 '1건'만 카드로 노출(이전 내역은 사라짐).
+      h+='<div class="sech" style="margin-top:16px;"><span class="l"><span class="sech-ic">'+megaSvg({h:16})+'</span> 공지사항</span></div>';
+      // 공지사항 = ① 운영자 공지(제목+내용, config/announce) + ② 업데이트 내역(최신 1건). 홍보·개발자 문구는 업데이트 내역에서 제외.
+      const _ann=announceList();
+      if(_ann.length){ h+=_ann.map(function(a){ return '<div class="newsupd"><span class="nu-ic">'+megaSvg({h:16})+'</span><div class="nu-tx"><b>'+escapeHtml(a.title||'')+'</b>'+(a.body?'<span>'+escapeHtml(a.body)+'</span>':'')+'</div></div>'; }).join(''); }
       const _u=latestUpdate();
+      h+='<div class="tx-sub" style="margin:12px 2px 4px;font-weight:800;color:var(--sub);">업데이트 내역</div>';
       h+='<div class="newscard">'+(_u
         ? '<div class="newsupd"><span class="nu-ic">'+noticeIcon(_u)+'</span><div class="nu-tx"><b>'+escapeHtml(noticeTitle(_u))+'</b><span>'+escapeHtml(_u.s||'')+'</span></div></div>'
         : '<div class="note" style="margin:8px 2px;">최근 업데이트 소식이 없어요.</div>')+'</div>';
