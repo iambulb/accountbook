@@ -1129,7 +1129,7 @@
     // 캠 전용 연출(움직이는 부분만 오버레이로 분리해 CSS 애니메이션): 같은 매트릭스를 팔레트만 나눠 두 겹으로 그림.
     //  base=움직이는 글자 제외, fx=그 글자만 → 완벽히 겹쳐 정지 배경 + 움직이는 부품(캣휠 트레드 회전·펫알 방울 흔들림·화분 잎 살랑).
     const FURN_ANIM = {   // move=오버레이(움직이는)로 뺄 글자, type=애니메이션 종류(spin/swing/sway)
-      catwheel:{ type:'spin',  move:['X','W','H','T'] },   // 동그란 링 전체(림·밴드·하이라이트·트레드)가 제자리 회전(롤러 R·스탠드 D는 정지)
+      catwheel:{ type:'spin',  move:['T','H'] },   // 정지된 림 안에서 트레드·하이라이트만 제자리 회전(림 픽셀이 뭉개지지 않게 링은 고정 → 바퀴 도는 느낌만)
       tower:   { type:'swing', move:['T','O','K'] },   // 매달린 장난감 공(빨강 T·하이라이트 O)+끈(K)
       scratcher:{type:'swing', move:['T','O','H'] },   // 매달린 공(O)+하이라이트(H)+끈(T)
       plant:   { type:'sway',  move:['G','L','l'] }    // 잎만 살랑(줄기 S·화분 P/p/X는 정지)
@@ -3315,24 +3315,26 @@
       }
       return s;
     }
-    // 오픈 직전 연출: (흔들림) → [특별↑: 검은 고양이 앞발로 톡 → 추가 흔들림] → 등급색 빛 새어나옴(등급↑ 강함) → 버스트(알=껍질 조각 튐) → 등장
+    // 오픈 직전 연출: (흔들림·흰빛) → [전설·한정만: 검은 고양이 앞발로 톡] → (열리는 순간부터 등급색) 빛 새어나옴 → 버스트(알=껍질 조각 튐) → 등장
     function fxClimax(){
       const fx=$('catFx'), st=fx&&fx.querySelector('.fx-stage'), it=$('fxItem'); if(!st||!it) return;
       const t=tierInfo(_fx.res.tier), epic=['epic','legend','limited'].indexOf(_fx.res.tier)>=0, lim=_fx.res.tier==='limited';
+      const catShow=['legend','limited'].indexOf(_fx.res.tier)>=0;   // 검은 고양이 앞발 연출은 전설·한정에만(등장 자체가 고등급 스포일러라 특별엔 안 보임)
       const rank=Math.max(0, TIER_ORDER.indexOf(_fx.res.tier));   // 0(일반)~5(한정)
       const lk=(1+rank*0.15).toFixed(2);                          // 등급 높을수록 빛이 크고 밝게
       const isEgg=_fx.kind==='egg';
-      st.style.color=t.color;   // 무대 전체를 등급색으로 → 픽셀 파티클/섬광/반짝임이 등급색을 따름(currentColor)
+      st.style.color='#ffffff';   // 오픈 전(흔들림·고양이)엔 흰빛 — 등급색을 미리 깔면 열기 전에 등급이 새므로, 실제 열리는 순간(t0)부터 등급색으로 바꾼다
       const hint=$('fxHint'); if(hint) hint.remove();
       it.classList.add('fx-preshake');
       let t0=680;
-      if(epic){
+      if(catShow){
         _fxT(()=>{ st.insertAdjacentHTML('beforeend','<div class="fx-paw" id="fxPaw">'+coinCatSvg({h:120})+'</div>'); const p=$('fxPaw'); if(p){ void p.offsetWidth; p.classList.add('tap'); } }, 440);   // 검은 고양이가 오른쪽에서 슥 등장
         _fxT(()=>{ it.classList.remove('fx-preshake'); void it.offsetWidth; it.classList.add('fx-hit'); }, 700);   // 앞발이 닿는 순간 알/상자가 톡 튕김
         _fxT(()=>{ const p=$('fxPaw'); if(p) p.remove(); it.classList.remove('fx-hit'); }, 1140);   // 고양이 퇴장 후 제거
         t0=1240;
       }
       _fxT(()=>{
+        st.style.color=t.color;   // 열리는 순간부터 등급색 — 빛·픽셀 파티클·버스트·등장이 currentColor로 등급색을 따른다(그 전엔 흰빛이라 등급 스포일러 방지)
         it.classList.remove('fx-preshake','fx-hit'); void it.offsetWidth; it.classList.add('fx-tremble');
         if(isEgg){ it.innerHTML=eggCrackSvg(t.color, _fx.rainbow, {h:150}); fxCrackChips(4); }   // 알이 크게 갈라지고 틈새로 등급색 빛
         else { it.innerHTML=boxOpenSvg(t.color, _fx.rainbow, {h:150}); it.classList.add('fx-ajar'); }   // 박스: 뚜껑 열리고 틈새로 등급색 빛

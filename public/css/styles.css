@@ -876,13 +876,13 @@
     .cr-prop .ffx-swing .px { animation:ffswing 3.4s ease-in-out infinite; }
     .cr-prop .ffx-sway .px  { animation:ffsway 4.6s ease-in-out infinite; }
     /* 회전/흔들림 중심(부품 위치) — 가구별 */
-    .cr-prop .ffx-catwheel .px  { transform-origin:50% 41%; }   /* 휠 중심 */
+    .cr-prop .ffx-catwheel .px  { transform-origin:47.8% 41%; }   /* 휠 정중심 → 제자리 회전(옆으로 흔들림 방지) */
     .cr-prop .ffx-tower .px     { transform-origin:84% 20%; }   /* 끈 매단 지점 */
     .cr-prop .ffx-scratcher .px { transform-origin:75% 13%; }   /* 끈 매단 지점 */
-    .cr-prop .ffx-plant .px     { transform-origin:50% 62%; }   /* 줄기 밑동 */
+    .cr-prop .ffx-plant .px     { transform-origin:50% 57%; }   /* 잎 아래(줄기 위) → 잎만 좌우로 기울어 살랑 */
     @keyframes ffspin  { to { transform:rotate(360deg); } }
     @keyframes ffswing { 0%,100%{ transform:rotate(-6deg); } 50%{ transform:rotate(6deg); } }
-    @keyframes ffsway  { 0%,100%{ transform:rotate(-2.4deg); } 50%{ transform:rotate(2.4deg); } }
+    @keyframes ffsway  { 0%,100%{ transform:rotate(-4.5deg); } 50%{ transform:rotate(4.5deg); } }
     @media (prefers-reduced-motion:reduce){ .cr-prop .ffx .px { animation:none; } }
     /* 다마고치: 탭 가능한 그릇 / 화장실 위 똥 / 똥 수거 획득 연출 */
     .cr-prop.cr-tap { cursor:pointer; z-index:2; }
