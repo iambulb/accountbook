@@ -3355,13 +3355,13 @@
       it.classList.add('fx-preshake');
       let t0=680;
       if(catShow){
-        // 귀여운 검은 고양이(PNG 스프라이트 시트)가 왼쪽에서 도도하게 천천히 걸어나와(걷기 6프레임 steps) 앞발로 알을 톡 → 그 자리에서 알이 열림
-        st.insertAdjacentHTML('beforeend','<div class="fx-cat walkin" id="fxCat"></div>');   // 걷기/정지·이동은 CSS(.fx-cat)에서
-        _fxT(()=>{ const c=$('fxCat'); if(c){ c.classList.remove('walkin'); c.classList.add('arr','tap'); } }, 1400);   // 도착 → 정지 스틸 + 앞발 톡
-        _fxT(()=>{ it.classList.remove('fx-preshake'); void it.offsetWidth; it.classList.add('fx-hit'); }, 1560);   // 앞발이 닿는 순간 알/상자가 톡 튕김
-        _fxT(()=>{ const c=$('fxCat'); if(c){ c.classList.remove('tap'); c.classList.add('leave'); } it.classList.remove('fx-hit'); }, 1740);   // 톡 후 물러나며 흐려짐(빛이 덮음)
-        _fxT(()=>{ const c=$('fxCat'); if(c) c.remove(); }, 2320);
-        t0=1720;   // 톡 직후 그 자리에서 알 오픈
+        // 실사 검은 고양이(PNG 스프라이트 8프레임)가 왼쪽에서 도도하게 천천히 걸어나와(steps 걷기 ≈1.8s) 앞발로 알을 톡 → 그 자리에서 알이 열림
+        st.insertAdjacentHTML('beforeend','<div class="fx-cat walkin" id="fxCat"></div>');   // 걷기/정지·이동·크기는 CSS(.fx-cat 변수)에서
+        _fxT(()=>{ const c=$('fxCat'); if(c){ c.classList.remove('walkin'); c.classList.add('arr','tap'); } }, 1800);   // 도착 → 정지 스틸 + 앞발 톡
+        _fxT(()=>{ it.classList.remove('fx-preshake'); void it.offsetWidth; it.classList.add('fx-hit'); }, 1960);   // 앞발이 닿는 순간 알/상자가 톡 튕김
+        _fxT(()=>{ const c=$('fxCat'); if(c){ c.classList.remove('tap'); c.classList.add('leave'); } it.classList.remove('fx-hit'); }, 2140);   // 톡 후 물러나며 흐려짐(빛이 덮음)
+        _fxT(()=>{ const c=$('fxCat'); if(c) c.remove(); }, 2760);
+        t0=2120;   // 톡 직후 그 자리에서 알 오픈
       }
       _fxT(()=>{
         st.style.color=t.color;   // 열리는 순간부터 등급색 — 빛·픽셀 파티클·버스트·등장이 currentColor로 등급색을 따른다(그 전엔 흰빛이라 등급 스포일러 방지)
