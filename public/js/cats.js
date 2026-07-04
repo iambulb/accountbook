@@ -355,7 +355,7 @@
     const COIN_PAL={X:'#6f7681',S:'#d6dbe1',D:'#a8afb8',A:'#4a4f57',E:'#d6dbe1',P:'#cf8f6c'};
     const GOLD_PAL={X:'#8a6a1e',S:'#F4D06B',D:'#caa23a',A:'#7a5a12',E:'#fff0b8',P:'#cf8f6c'};   // 금화(은화와 동형, 금색)
     // 화분(장식): 초록 잎(L=밝은 초록, G=진한 초록 테두리) + 테라코타 화분(P) + 화분 테두리(X). 세로형(8×14).
-    // 화분(1×1, 세로형): 무성한 잎(G 진초록·L 잎·l 하이라이트) + 테라코타 화분(P/p 음영·X 외곽) + 줄기(L). 12×20 → 가로세로비 0.6.
+    // 화분(1×1, 세로형): 무성한 잎(G 진초록·L 잎·l 하이라이트) + 줄기(S, 잎만 살랑이도록 잎과 글자 분리) + 테라코타 화분(P/p 음영·X 외곽). 12×20 → 가로세로비 0.6.
     const M_PLANT = [
       "....GG......",
       "...GllG.GG..",
@@ -369,7 +369,7 @@
       "...GLLLLG...",
       "....GllG....",
       ".....GG.....",
-      ".....LL.....",
+      ".....SS.....",
       "....XPPX....",
       "...XPppPX...",
       "...PppppP...",
@@ -378,7 +378,7 @@
       "....XppX....",
       ".....XX....."
     ];
-    const FURN_PALS={ cushion:{X:'#4a5361',C:'#9aa4b2',D:'#79838f',L:'#c2cad4',B:'#5b6470'}, bowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',F:'#d68b4a',f:'#b06a2e',g:'#efb37a'}, waterbowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',A:'#5aa9e6',a:'#3f86c4',h:'#bfe2fb'}, tower:{X:'#5e3f22',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#5e3f22',W:'#c99a5f',C:'#a87c46',L:'#e6c085',S:'#d8b98a',R:'#b8935f',T:'#6b4a2a',O:'#d9694e',H:'#f2a98f'}, litterbox:{X:'#7a808a',W:'#c9ced6',D:'#9aa0aa',S:'#f4efe4',s:'#e7e0d0',k:'#d6ccb8'}, pethouse:{X:'#5a4632',R:'#d9694e',r:'#b8503a',W:'#e8c98f',w:'#d4b06a',D:'#2c2420'}, plant:{X:'#7c5028',L:'#7cc652',G:'#4e9636',P:'#c8763e',p:'#a85e2c',l:'#9ad86a',S:'#6b4a2a'}, catwheel:{X:'#2f6f68',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',R:'#c9a06a',D:'#6b5842'} };
+    const FURN_PALS={ cushion:{X:'#4a5361',C:'#9aa4b2',D:'#79838f',L:'#c2cad4',B:'#5b6470'}, bowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',F:'#d68b4a',f:'#b06a2e',g:'#efb37a'}, waterbowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',A:'#5aa9e6',a:'#3f86c4',h:'#bfe2fb'}, tower:{X:'#5e3f22',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#5e3f22',W:'#c99a5f',C:'#a87c46',L:'#e6c085',S:'#d8b98a',R:'#b8935f',T:'#6b4a2a',O:'#d9694e',H:'#f2a98f'}, litterbox:{X:'#7a808a',W:'#c9ced6',D:'#9aa0aa',S:'#f4efe4',s:'#e7e0d0',k:'#d6ccb8'}, pethouse:{X:'#5a4632',R:'#d9694e',r:'#b8503a',W:'#e8c98f',w:'#d4b06a',D:'#2c2420'}, plant:{X:'#7c5028',L:'#7cc652',G:'#4e9636',P:'#c8763e',p:'#a85e2c',l:'#9ad86a',S:'#6f9440'}, catwheel:{X:'#2f6f68',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',R:'#c9a06a',D:'#6b5842'} };
     const POOP_PAL={X:'#4a3218',K:'#7a5230'};
     const FOOD_PAL={F:'#d68b4a',D:'#8a5427',L:'#f2e4c6',K:'#7a4a20'};
     const WATER_PAL={A:'#5aa9e6',D:'#3f86c4',H:'#c7e6ff',L:'#eaf6ff'};
@@ -1129,10 +1129,10 @@
     // 캠 전용 연출(움직이는 부분만 오버레이로 분리해 CSS 애니메이션): 같은 매트릭스를 팔레트만 나눠 두 겹으로 그림.
     //  base=움직이는 글자 제외, fx=그 글자만 → 완벽히 겹쳐 정지 배경 + 움직이는 부품(캣휠 트레드 회전·펫알 방울 흔들림·화분 잎 살랑).
     const FURN_ANIM = {   // move=오버레이(움직이는)로 뺄 글자, type=애니메이션 종류(spin/swing/sway)
-      catwheel:{ type:'spin',  move:['T','H'] },   // 트레드+하이라이트만 회전(림·롤러·스탠드는 정지)
+      catwheel:{ type:'spin',  move:['X','W','H','T'] },   // 동그란 링 전체(림·밴드·하이라이트·트레드)가 제자리 회전(롤러 R·스탠드 D는 정지)
       tower:   { type:'swing', move:['T','O','K'] },   // 매달린 장난감 공(빨강 T·하이라이트 O)+끈(K)
       scratcher:{type:'swing', move:['T','O','H'] },   // 매달린 공(O)+하이라이트(H)+끈(T)
-      plant:   { type:'sway',  move:['G','L','l'] }    // 잎+줄기(화분 P/p/X는 정지)
+      plant:   { type:'sway',  move:['G','L','l'] }    // 잎만 살랑(줄기 S·화분 P/p/X는 정지)
     };
     function palPick(pal, keys, keep){ const o={}; Object.keys(pal).forEach(function(k){ const on=keys.indexOf(k)>=0; if(on===keep) o[k]=pal[k]; }); return o; }
     // 연출 있는 가구를 base+fx 두 겹 SVG로. (연출 없으면 일반 furnSvg 반환)
@@ -1308,7 +1308,7 @@
       state._petTimer=setInterval(reconcilePets, 60000);
     }
     function onGameChange(){
-      updateDockCoins(); updateNewsBadge();
+      updateNewsBadge();
       const dw=$('catdock'); const wall=dw&&dw.querySelector('.cr-wall'); if(wall) wall.style.background=wallCss(currentWall());
       const rn=$('cdCamTxt'); if(rn){ rn.textContent=(room().emoji?room().emoji+' ':'')+(room().name||'우리집'); }   // dock LIVE 배지의 현재 방 이름(항상 표시)
       renderDockProps();
@@ -1972,9 +1972,8 @@
         '<span class="cr-cam cd-cam" role="button" tabindex="0" aria-label="알뜰홈 열기" onclick="event.stopPropagation();coinTap(this)"><i></i>LIVE · <span class="cd-camtxt" id="cdCamTxt">'+(room().emoji?room().emoji+' ':'')+escapeHtml(room().name||'우리집')+'</span></span>'+
         batchBtnHtml()+
         '<div class="cr-props" id="cdProps"></div><div class="cr-stage" id="cdStage"></div></div>';
-      updateDockCoins(); renderDockProps(); renderDockCats();
+      renderDockProps(); renderDockCats();
     }
-    function updateDockCoins(){ const el=$('cdCoins'); if(el) el.textContent=coins().toLocaleString(); }
     // 은화 배지 탭 → 눌리는 액션(press) 후 알뜰홈 열기. 캠 빈 곳 탭은 아무 동작 안 함(펫만 조작). (소식은 좌상단 브랜드 아이콘)
     function coinTap(el){ const c=el||($('cdCoins')&&$('cdCoins').closest('.cd-coin')); if(c){ c.classList.remove('tap'); void c.offsetWidth; c.classList.add('tap'); } setTimeout(openCatHouse, 170); }
     // 방/dock 공용: 똥을 화장실들에 라운드로빈 분배(각 화장실 객체에 _poops 슬롯 배열 부여, 최대 5개)
@@ -2180,7 +2179,7 @@
     function stepActors(dt){
       _eng.actors.forEach(a=>{
         if(a.mode==='drag') return;   // 손으로 집어 든 펫은 엔진이 건드리지 않음(드래그가 위치 제어)
-        a.t+=dt*0.004; if(a.cool>0)a.cool-=dt; if(a.dcool>0)a.dcool-=dt; const id=a.el.getAttribute('data-cat');
+        a.t+=dt*0.004; if(a.cool>0)a.cool-=dt; if(a.dcool>0)a.dcool-=dt; const id=a.id;
         if(a.mode==='pause'){ a.pause-=dt; if(a.pause<=0){ a.mode='roam'; a.fc=999; a.dir=Math.random()<0.5?-1:1; a.lift=0; releaseRes(a);   // 내려와 재출발(자리 반납)
           // 이동 재개: 정면 이미지로 이동 금지 — actorShowMoving으로 일원화(일반=CSS 필름, frontWalk=east 정지스틸)
           actorShowMoving(a); setXform(a); a._pdir=a.dir; } return; }   // 재출발: lift 해제·방향 반영, 걷기는 필름(csprFilm)
@@ -2404,7 +2403,7 @@
     const PET_SORTS=[['recent','최근 획득'],['tier','등급↑'],['aff','애정↑'],['species','종류'],['name','이름']];
     function setPetSort(v){ _petSort=v||'recent'; if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     function setPetQuery(v){ _petQuery=v||''; applyPetFilter(); }   // 재렌더 없이 DOM만 숨김/표시(입력 포커스·커서 유지)
-    function applyPetFilter(){ const q=(_petQuery||'').trim().toLowerCase(); const box=document.querySelector('.catchips'); if(!box) return; let shown=0;
+    function applyPetFilter(){ const q=(_petQuery||'').trim().toLowerCase(); const box=$('petGrid'); if(!box) return; let shown=0;
       box.querySelectorAll('.catchip').forEach(el=>{ const nm=(el.getAttribute('data-name')||'').toLowerCase(); const ok=!q||nm.indexOf(q)>=0; el.style.display=ok?'':'none'; if(ok) shown++; });
       const em=document.getElementById('petSearchEmpty'); if(em) em.style.display=(q&&!shown)?'':'none'; }
     // 소유 펫 정렬 — recent(최근 획득)·tier(등급↑, 한정 먼저)·aff(애정↑)·species(종류)·name(이름). 필터(검색)는 표시 단계에서.
@@ -2926,7 +2925,7 @@
     // 드롭 좌상단 칸 = 포인터가 발자국 "가운데"에 오도록 보정(3칸 가로면 2번째 칸 기준). 격자 안으로 클램프.
     function dropCell(grid, x, y, foot){
       const p=cellFromPoint(grid, x, y);
-      let c=p.c-Math.floor((foot.w-1)/2), r=p.r-Math.floor((foot.h-1)/2);
+      let c=p.c-Math.round((foot.w-1)/2), r=p.r-Math.round((foot.h-1)/2);   // 짝수 폭(2×2)도 손가락 기준 가운데에 가깝게(floor는 한쪽으로 치우침)
       c=Math.max(1, Math.min(13-foot.w, c)); r=Math.max(1, Math.min(13-foot.h, r));
       return { r, c };
     }

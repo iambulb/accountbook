@@ -8,6 +8,13 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 수정 — 🧹 레이아웃·정리(배치 4/4: 감사 반영)
+- **알뜰샵 서브탭 오버플로**: 5탭(고양이/가구/소비/벽지/이벤트)이 320px에서 넘쳐 줄바꿈/겹침 → `.subseg`에 `overflow-x:auto`(+`button{flex:none}`)로 가로 스크롤.
+- **그리드 타일 방이름 뱃지 겹침**: 좁은 5열 타일에서 `.croom`이 우상단 ✎와 겹치던 것 → `max-width:calc(100% - 24px)`로 제한.
+- **한정펫 이름 무한 레인보우 애니 상시 구동**: 그리드·도감의 한정펫 이름마다 `tier-limited` 애니가 계속 돌아 배터리 소모 → 리스트에선 **정적 그라데이션**(애니 끔), reduced-motion에도 `tier-limited`·가챠 컨페티(`.fx-conf`/`.fx-confetti`) 추가.
+- **2×2 가구 드롭 중앙정렬**: `dropCell`이 `Math.floor`로 짝수 폭을 한쪽으로 치우쳐 놓던 것 → `Math.round`로 손가락 기준 가운데에 가깝게.
+- **죽은 코드 정리**: 존재하지 않는 `#cdCoins`를 갱신하던 `updateDockCoins`(no-op) 제거, 이동 엔진의 매 프레임 `getAttribute('data-cat')`→`a.id`, `applyPetFilter`의 `.catchips` 조회→`#petGrid`. `sw.js` `v3.208.0`.
+
 ### 수정 — ⚡ 캠 성능·누수(배치 3/4: 감사 반영)
 - **탭 숨김 시 애니메이션 루프 정지**: `catLoop`가 항상 rAF를 재예약해 백그라운드에서도 유휴 소모 → **`document.hidden`이면 루프 정지**, `visibilitychange`로 복귀 시 재개(`startCatLoop`은 숨김 중 시작 안 함). `markCatDirty`도 루프 재개를 보장.
 - **런타임 펫 아트 도착 시 무대 재빌드 폭주 완화**: 여러 펫 아트가 잇달아 오면 그때마다 dock·방·시트를 전부 재빌드했음 → **`_petArtRerender` 디바운스(80ms)**로 1회 합침(위치는 배치2의 x지속으로 이미 안정).

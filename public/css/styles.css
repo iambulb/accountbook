@@ -684,13 +684,14 @@
     .catseg { display:flex; background:var(--soft2); border-radius:13px; padding:4px; gap:4px; margin:2px 0 10px; }
     .catseg button { flex:1; padding:9px 0; border-radius:10px; font-size:13px; font-weight:700; color:var(--sub); }
     .catseg button.on { background:var(--card); color:var(--text); box-shadow:0 1px 4px rgba(0,0,0,.08); }
-    .subseg { display:flex; gap:8px; margin:8px 0 10px; }
+    .subseg { display:flex; gap:8px; margin:8px 0 10px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }   /* 5탭이 좁은 화면(320px)에서 넘치면 가로 스크롤(줄바꿈/겹침 방지) */
+    .subseg::-webkit-scrollbar { display:none; }
     /* 알뜰샵 서브탭을 sticky 헤더(.cathead) 안에 둘 때: 위 catseg와 간격 줄이고 아래 여백은 헤더 fade에 맡김 */
     .cathead .subseg { margin:2px 0 4px; overflow-x:auto; scrollbar-width:none; }
     .cathead .subseg::-webkit-scrollbar { display:none; }
     .cathead .subseg button { flex:none; }
     .cathead .catseg { margin-bottom:6px; }
-    .subseg button { padding:8px 16px; border-radius:11px; background:var(--soft); font-size:13px; font-weight:700; color:var(--text2); }
+    .subseg button { flex:none; padding:8px 16px; border-radius:11px; background:var(--soft); font-size:13px; font-weight:700; color:var(--text2); }
     .subseg button.on { background:var(--primary); color:var(--card); }
     /* 방(웹캠 — 위에서 아래로 내려다보는 뷰: 바닥을 넓게, 벽지는 좁게) */
     .catroom { position:relative; height:244px; border-radius:16px; overflow:hidden; isolation:isolate; border:1px solid var(--bd); margin:4px 0 6px; }   /* 세로 확대: 큰 캣타워가 잘리지 않게. isolation=방을 독립 스택 컨텍스트로 → 펫·가구가 각자 z로 상호 가림하되 방 밖(sticky 헤더 등)엔 안 샘 */
@@ -772,7 +773,7 @@
     .rmstrip .rmthumb { touch-action:pan-x; }   /* 세로 스크롤은 시트로 통과, 가로 롱프레스는 재정렬 */
     /* 펫 카드: 다른 방에 있는 펫(옮겨올 수 있음) — 방 이름 배지 + 은은한 강조 */
     .catchip.elsewhere { border-color:color-mix(in srgb,var(--accent,#4a90d9) 45%,var(--bd)); }
-    .catchip .croom { position:absolute; top:3px; left:3px; z-index:2; max-width:84%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:8.5px; font-weight:800; color:#fff; background:color-mix(in srgb,var(--accent,#4a90d9) 88%,#000); padding:1px 5px; border-radius:999px; }
+    .catchip .croom { position:absolute; top:3px; left:3px; z-index:2; max-width:calc(100% - 24px); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:8.5px; font-weight:800; color:#fff; background:color-mix(in srgb,var(--accent,#4a90d9) 88%,#000); padding:1px 5px; border-radius:999px; }
     /* dock(상단 캠) 현재 방 이름 — 방 여러 개일 때만 표시 */
     .cd-roomname { position:absolute; top:6px; left:8px; z-index:3; max-width:45%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px; font-weight:800; color:#fff; background:color-mix(in srgb,#000 42%,transparent); padding:2px 7px; border-radius:999px; pointer-events:none; }
 
@@ -963,6 +964,8 @@
     .tier-normal { color:var(--text); } [data-theme="dark"] .tier-normal { color:#fff; }
     .tier-uncommon { color:#2FAE7A; } .tier-rare { color:#3182F6; } .tier-epic { color:#9B6FC8; } .tier-legend { color:#E0A43C; }
     .tier-limited { background:linear-gradient(90deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8,#F04452); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:rainbow 2.4s linear infinite; }
+    /* 리스트(그리드·도감)의 한정펫 이름은 무한 레인보우 애니를 끄고 정적 그라데이션(수십 개 동시 애니 배터리 소모 방지). 애니는 가챠 연출 등 단발에서만. */
+    .catchip .cn .tier-limited, .dexnm .tier-limited { animation:none; }
     @keyframes rainbow { to { background-position:200% 0; } }
 
     /* ===== 🥚 뽑기 오픈 연출 (#catFx) ===== */
@@ -1051,7 +1054,7 @@
     @keyframes fxpixflash { 0%{opacity:1;transform:translate(-50%,-50%) scale(.4) rotate(0)} 100%{opacity:0;transform:translate(-50%,-50%) scale(2.6) rotate(45deg)} }
     @keyframes fxpixspin { to{ transform:translate(-50%,-50%) rotate(360deg); } }
     /* 모션 최소화: 오오라·광선·트윙클 정지(정적으로만 표시) */
-    @media (prefers-reduced-motion: reduce){ .ll-aura,.ll-rays,.fx-tw{ animation:none; } }
+    @media (prefers-reduced-motion: reduce){ .ll-aura,.ll-rays,.fx-tw,.tier-limited{ animation:none; } .fx-conf,.fx-confetti{ animation:none; opacity:0; } }
     /* 등장 픽셀 프레임 — 등급색 각진 테두리(등급↑=두껍고 진하게, 한정=무지개 글로우) */
     .fx-frame { position:absolute; inset:-8px; z-index:1; border:3px solid currentColor; image-rendering:pixelated; opacity:.55; animation:fxframe 1.4s steps(2) infinite; }
     .fx-reveal.rank-3 .fx-frame, .fx-reveal.rank-4 .fx-frame, .fx-reveal.rank-5 .fx-frame { inset:-11px; border-width:4px; opacity:.75; }
