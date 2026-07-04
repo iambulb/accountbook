@@ -169,6 +169,7 @@
         emoji: (typeof r.emoji === 'string') ? r.emoji : '',
         wallpaper: r.wallpaper || 'default',
         placed: (r.placed && typeof r.placed === 'object') ? r.placed : {},
+        wallPlaced: (r.wallPlaced && typeof r.wallPlaced === 'object') ? r.wallPlaced : {},   // 벽꾸미기(벽 격자) 배치 — placed(바닥)와 별개
         active: Array.isArray(r.active) ? r.active.slice() : [],
         poops: Number(r.poops) || 0,
         floor: r.floor || 'default'
@@ -194,8 +195,12 @@
   }
 
   // 가구 인벤토리 소진량 = 모든 방에 배치된 같은 itemId 개수 합(전역). 방별 배치라도 인벤토리(owned)는 전역이라 전 방 합산해야 복제 방지.
+  // 바닥(placed)+벽(wallPlaced) 둘 다 합산 — 한 아이템은 바닥 또는 벽 한쪽에만 놓이므로 양쪽을 더해도 이중집계 안 됨.
   function sumPlacedItem(rooms, id) {
-    var n = 0; (rooms || []).forEach(function (r) { var p = (r && r.placed) || {}; for (var k in p) { if (p[k] && p[k].itemId === id) n++; } }); return n;
+    var n = 0; (rooms || []).forEach(function (r) {
+      var p = (r && r.placed) || {}; for (var k in p) { if (p[k] && p[k].itemId === id) n++; }
+      var w = (r && r.wallPlaced) || {}; for (var wk in w) { if (w[wk] && w[wk].itemId === id) n++; }
+    }); return n;
   }
 
   // ===== 게임 리텐션(순수) =====
