@@ -44,6 +44,7 @@ catalogPets/{id}       : { name, species, speciesLabel?, tier, scale, frontWalk,
 catalogPetArt/{id}     : { walk, south, north, east, west(=data URL PNG) }  // 🖼️ 런타임 펫 스프라이트(base64) — 메타와 분리 저장. 앱 시작 땐 안 받고, 실제로 보이는 펫만 `ensurePetArt()`가 `.once`로 1회 받아 세션 캐시(초기 로딩/재푸시 부담↓). 읽기=전체, 쓰기=개발자 이메일만
 config/notices         : [ { date:"YYYY-MM-DD", t, s } … ]  // 📢 소식 화면 공지(업데이트 내역). 읽기=로그인 전체, 쓰기=개발자 이메일만(규칙). 앱이 loadNotices로 구독해 배포 없이 공지 갱신(비어있으면 cats.js 기본 NOTICES 폴백). Firebase 콘솔 또는 개발자 계정에서 편집. 🔒 일반 사용자에게 노출됨 — 개발자 모드·치트·내부 도구 등 비공개 내용은 절대 넣지 말 것(방어로 isDevNotice가 필터). CLAUDE.md '운영 유출 금지' 참고
 config/featuredPet     : { "M2026-07": "cat_id", … }         // 🌟 이달의 펫 수동 선정(월키→펫 id). 읽기=로그인 전체, 쓰기=개발자 이메일만(규칙). loadFeaturedPet 구독, featuredCatId가 해당 월 값 있으면 우선 사용(없으면 featuredPetOfMonth 해시 폴백). 개발자 모드 '이달의 펫 선정'(openDevFeatured)에서 편집
+config/gachaFx         : { a:"pet_id", b:"pet_id" }           // 🎬 가챠 오픈 연출 펫(a=연출1번/왼쪽 등장, b=연출2번/오른쪽 등장). 읽기=로그인 전체, 쓰기=개발자 이메일만(규칙). loadGachaFx 구독, fxClimax가 지정 펫을 걸어와 톡 치게 연출(미지정이면 기본 검은 고양이). 개발자 모드 '펫 관리'(setGachaFxSlot)에서 편집
 ws/{wsId}/             : 가계부 데이터 (아래 노드들)
   ├─ accounts/{id}
   ├─ creditCards/{id}

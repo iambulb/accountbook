@@ -1283,6 +1283,7 @@
       watchMyLikes();       // 내가 받은 집 좋아요 총합
       loadNotices();        // 📢 공지(config/notices) 구독 — 배포 없이 공지 갱신
       loadFeaturedPet();    // 🌟 이달의 펫 수동 선정(config/featuredPet) 구독 — 개발자가 고르면 전역 반영
+      loadGachaFx();        // 🎬 가챠 오픈 연출 펫(config/gachaFx: a=1번/왼쪽·b=2번/오른쪽) 구독 — 미지정이면 기본 검은고양이
       startCatLoop();   // 통합 걷기 엔진(단일 rAF, 보이는 무대만 애니메이션)
       // 앱을 켜둔 동안에도 그릇 3시간 만료→똥 정산이 돌도록 주기 점검(다마고치)
       if(state._petTimer) clearInterval(state._petTimer);
@@ -1924,13 +1925,36 @@
         : '<button class="btn danger"'+(sel?'':' disabled')+(sel?' onclick="deletePetSoft(\''+sel+'\')"':'')+'>삭제</button>';
       h+='<div class="petmg-btns"><button class="btn ghost" onclick="openDevPetAdd()">추가</button>'+
          '<button class="btn"'+(sel?'':' disabled')+(sel?' onclick="openDevPetEdit(\''+sel+'\')"':'')+'>수정</button>'+dr+'</div>';
-      // 개발자 유틸: 선택한 런타임 펫을 정적으로 승격(내보내기), 구 인라인 아트 1회 분리 이전.
-      const canPromote = selPet && selPet.runtime && !selPet.deleted;
-      h+='<div class="petmg-btns" style="margin-top:6px;">'+
-         '<button class="btn ghost"'+(canPromote?' onclick="exportPetStatic(\''+sel+'\')"':' disabled')+'>정적 승격 내보내기</button>'+
-         '<button class="btn ghost" onclick="migrateCatalogArtOnce()">이미지 분리 이전(1회)</button></div>';
-      h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:8px 2px 0;">승격=런타임 펫을 파일 에셋으로 옮겨 RTDB 부담을 줄임. 분리 이전=예전 인라인 아트를 <code>catalogPetArt</code>로 옮기는 1회 작업.</p>';
+      // 🎬 가챠 오픈 연출 펫 지정: 선택 펫을 연출 1번(왼쪽) / 2번(오른쪽) 슬롯에 배정(다시 누르면 해제). 미지정이면 기본 검은 고양이.
+      if(sel && selPet && !selPet.deleted){
+        const sa=gachaFxSlotOf(sel);   // 'a'|'b'|null (현재 이 펫이 배정된 슬롯)
+        h+='<div class="petmg-btns" style="margin-top:6px;">'+
+           '<button class="btn'+(sa==='a'?'':' ghost')+'" onclick="setGachaFxSlot(\'a\',\''+sel+'\')">연출 1번(왼쪽)'+(sa==='a'?' ✓':'')+'</button>'+
+           '<button class="btn'+(sa==='b'?'':' ghost')+'" onclick="setGachaFxSlot(\'b\',\''+sel+'\')">연출 2번(오른쪽)'+(sa==='b'?' ✓':'')+'</button></div>';
+        const an=(_gachaFx&&_gachaFx.a)?catName(_gachaFx.a):'기본 검은 고양이', bn=(_gachaFx&&_gachaFx.b)?catName(_gachaFx.b):'없음';
+        h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:8px 2px 0;">펫알·박스 열 때 걸어와 톡 치는 연출 펫이에요. <b>1번</b>=왼쪽에서, <b>2번</b>=오른쪽에서 등장(크기는 펫 배율만큼). 현재 1번=<b>'+escapeHtml(an)+'</b> · 2번=<b>'+escapeHtml(bn)+'</b>.</p>';
+      } else {
+        h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:8px 2px 0;">펫을 선택하면 <b>가챠 오픈 연출</b>(펫알·박스 열 때 걸어와 톡 치는 펫)로 지정할 수 있어요.</p>';
+      }
       openSheet('펫 관리', h); }
+
+    // 개발자 데이터 정리: 런타임 펫 정적 승격(내보내기) + 구 인라인 아트 1회 분리 이전.
+    function openDevDataTools(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
+      const runtimes=allPetsForDev().filter(p=>p.runtime && !p.deleted);
+      let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 10px;line-height:1.5;">RTDB에 저장된 데이터를 파일 에셋으로 옮겨 부담을 줄이는 <b>정리 도구</b>예요. 실행 전 백업/배포 순서를 지켜요.</p>';
+      h+='<div class="field"><label>런타임 펫 정적 승격</label>';
+      if(runtimes.length){
+        h+='<div class="petmg-list">'+runtimes.map(p=>{
+          const tag=(SPECIES_LABEL[p.species]||p.species), tn=((typeof TIERS!=='undefined'&&TIERS.find(t=>t.id===p.tier))||{}).name||p.tier;
+          return '<button class="petmg-row" onclick="exportPetStatic(\''+p.id+'\')">'+
+            '<span class="pm-thumb">'+catFace(p.id,{h:52})+'</span>'+
+            '<span class="pm-txt"><span class="pm-nm">'+escapeHtml(p.name||p.id)+'</span>'+
+            '<span class="pm-meta">'+escapeHtml(tag)+' · '+escapeHtml(tn)+' · 런타임</span></span></button>'; }).join('')+'</div>';
+      } else { h+='<p class="muted" style="font-size:12px;margin:2px;">승격할 런타임 펫이 없어요.</p>'; }
+      h+='</div>';
+      h+='<div class="petmg-btns" style="margin-top:10px;"><button class="btn ghost" onclick="migrateCatalogArtOnce()">이미지 분리 이전(1회)</button></div>';
+      h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:8px 2px 0;">승격=런타임 펫을 파일 에셋으로 옮겨 RTDB 부담을 줄임(<code>tools/pets.json</code>+<code>build_pets.py</code>). 분리 이전=예전 인라인 아트를 <code>catalogPetArt</code>로 옮기는 1회 작업.</p>';
+      openSheet('데이터 정리', h); }
 
     // ================= 전역 dock (얇은 스트립 / 숨김) =================
     // #catdock 은 index.html 셸의 #content 형제 → 리렌더 영향 없음(애니메이션 유지)
@@ -2813,6 +2837,15 @@
     let _featuredMap = {};   // { 'M2026-07': 'cat_xxx', ... } — RTDB config/featuredPet 구독값(loadFeaturedPet)
     function loadFeaturedPet(){ try{ db.ref('config/featuredPet').on('value', function(s){ _featuredMap = s.val() || {};
       if(typeof rerender==='function') rerender(); if(state && state._sheetRefresh) state._sheetRefresh(); }); }catch(e){} }
+    // 🎬 가챠 오픈 연출에 등장하는 펫(개발자 지정, 전역). a=1번(왼쪽에서 등장·오른쪽 봄)·b=2번(오른쪽에서 등장·왼쪽 봄). 미지정이면 기본 검은고양이 스프라이트.
+    let _gachaFx={};
+    function loadGachaFx(){ try{ db.ref('config/gachaFx').on('value', function(s){ _gachaFx=s.val()||{}; }); }catch(e){} }
+    function gachaFxSlotOf(id){ if(_gachaFx&&_gachaFx.a===id) return 'a'; if(_gachaFx&&_gachaFx.b===id) return 'b'; return null; }
+    function setGachaFxSlot(slot, id){ if(!(typeof isDev==='function'&&isDev())) return;
+      const cur=_gachaFx&&_gachaFx[slot]; const other=(slot==='a')?'b':'a'; const upd={};
+      if(cur===id){ upd['config/gachaFx/'+slot]=null; }                          // 같은 슬롯 재탭=해제
+      else { upd['config/gachaFx/'+slot]=id; if(_gachaFx&&_gachaFx[other]===id) upd['config/gachaFx/'+other]=null; }   // 다른 슬롯에 이미 있으면 옮김
+      db.ref().update(upd).then(function(){ toast('연출 '+(slot==='a'?'1(왼쪽)':'2(오른쪽)')+'번 '+((cur===id)?'해제':('= '+catName(id)))); if(typeof openDevPetManager==='function') openDevPetManager(); }).catch(function(){ toast('실패 — 관리자 계정만', true); }); }
     function featuredEligibleIds(){ return PET_CATALOG.filter(c=>!isGachaOnlyCat(c.id)).map(c=>c.id); }
     function featuredCatId(){ const mk=kstMonthKey();
       const ov=_featuredMap && _featuredMap[mk];   // 개발자 수동 선정 우선(존재·미삭제 펫이면)
@@ -3346,6 +3379,18 @@
       return s;
     }
     // 오픈 직전 연출: (흔들림·흰빛) → [확률로: 검은 고양이 앞발로 톡] → (열리는 순간부터 등급색) 빛 새어나옴 → 버스트(알=껍질 조각 튐) → 등장
+    // 가챠 오픈 연출 고양이 1마리 생성. side='l'(왼쪽 등장·오른쪽 봄)/'r'(오른쪽 등장·왼쪽 봄). id=지정 펫(스프라이트 자립 걷기·크기=배율) 또는 null(기본 검은고양이 배경 스프라이트 480).
+    function fxSpawnCat(st, side, id){
+      const isPet=!!(id && typeof hasSprite==='function' && hasSprite(id));
+      const size=isPet ? Math.max(140, Math.min(560, Math.round(200*petScale(id)))) : 480;
+      const el=document.createElement('div');
+      el.className='fx-cat walkin fxc-'+side+(isPet?' fxc-pet':' fxc-gc');
+      el.style.setProperty('--cat', size+'px'); el.style.setProperty('--foot','0.06');
+      if(isPet){ ensurePetArt(id); el.innerHTML='<div class="fxc-in">'+catActorHTML(id, size)+'</div>';
+        if(typeof measureFootPad==='function') measureFootPad(id, function(fp){ el.style.setProperty('--foot', (fp!=null?fp:0.06).toFixed(3)); }); }
+      else { el.innerHTML='<div class="fxc-in"></div>'; }
+      st.appendChild(el);
+    }
     function fxClimax(){
       const fx=$('catFx'), st=fx&&fx.querySelector('.fx-stage'), it=$('fxItem'); if(!st||!it) return;
       const t=tierInfo(_fx.res.tier), epic=['epic','legend','limited'].indexOf(_fx.res.tier)>=0, lim=_fx.res.tier==='limited';
@@ -3359,13 +3404,20 @@
       it.classList.add('fx-preshake');
       let t0=680;
       if(catShow){
-        // 실사 검은 고양이(PNG 스프라이트 8프레임)가 왼쪽에서 도도하게 천천히 걸어나와(steps 걷기 ≈1.8s) 앞발로 알을 톡 → 그 자리에서 알이 열림
-        st.insertAdjacentHTML('beforeend','<div class="fx-cat walkin" id="fxCat"></div>');   // 걷기/정지·이동·크기는 CSS(.fx-cat 변수)에서
-        _fxT(()=>{ const c=$('fxCat'); if(c){ c.classList.remove('walkin'); c.classList.add('arr','tap'); } }, 1800);   // 도착 → 정지 스틸 + 앞발 톡
-        _fxT(()=>{ it.classList.remove('fx-preshake'); void it.offsetWidth; it.classList.add('fx-hit'); }, 1960);   // 앞발이 닿는 순간 알/상자가 톡 튕김
-        _fxT(()=>{ const c=$('fxCat'); if(c){ c.classList.remove('tap'); c.classList.add('leave'); } it.classList.remove('fx-hit'); }, 2140);   // 톡 후 물러나며 흐려짐(빛이 덮음)
-        _fxT(()=>{ const c=$('fxCat'); if(c) c.remove(); }, 2760);
-        t0=2120;   // 톡 직후 그 자리에서 알 오픈
+        // 개발자가 지정한 펫(config/gachaFx)이 도도하게 걸어나와 앞발로 알을 톡 → 그 자리서 알 오픈. 미지정이면 기본 검은고양이(왼쪽 1마리).
+        // 순서(사용자 지침): 1번(왼쪽)이 등장~톡~퇴장을 마친 뒤에 2번(오른쪽)이 시작(동시 등장 아님). 알은 마지막 고양이가 톡 친 직후 열림.
+        const a=_gachaFx&&_gachaFx.a, b=_gachaFx&&_gachaFx.b, any=a||b;
+        const seq=[]; if(a || !any) seq.push({side:'l', id:any?a:null}); if(b) seq.push({side:'r', id:b});
+        const WALK=1800, TAP=160, HIT=180, STEP=2760;   // 한 마리 구간: 등장(WALK)→톡(TAP 뒤 HIT 충격)→퇴장(STEP에서 제거)
+        const catAt=side=>st.querySelector('.fx-cat.fxc-'+side);
+        seq.forEach((c, i)=>{ const base=i*STEP, isLast=i===seq.length-1;
+          _fxT(()=>{ fxSpawnCat(st, c.side, c.id); }, base);   // 등장(walkin)
+          _fxT(()=>{ const el=catAt(c.side); if(el){ el.classList.remove('walkin'); el.classList.add('arr','tap'); } }, base+WALK);   // 도착 → 앞발 톡(펫 .cspr은 계속 걷고, 기본 고양이는 CSS로 정지 스틸)
+          _fxT(()=>{ it.classList.remove('fx-preshake'); void it.offsetWidth; it.classList.add('fx-hit'); }, base+WALK+TAP);   // 앞발이 닿는 순간 알/상자가 톡 튕김
+          _fxT(()=>{ const el=catAt(c.side); if(el){ el.classList.remove('tap'); el.classList.add('leave'); } it.classList.remove('fx-hit'); if(!isLast){ void it.offsetWidth; it.classList.add('fx-preshake'); } }, base+WALK+TAP+HIT);   // 톡 후 물러나며 흐려짐, 다음 고양이 있으면 알은 다시 들썩이며 대기
+          _fxT(()=>{ const el=catAt(c.side); if(el) el.remove(); }, base+STEP);
+        });
+        t0=(seq.length-1)*STEP+2120;   // 마지막 고양이가 톡 친 직후 그 자리에서 알 오픈
       }
       _fxT(()=>{
         st.style.color=t.color;   // 열리는 순간부터 등급색 — 빛·픽셀 파티클·버스트·등장이 currentColor로 등급색을 따른다(그 전엔 흰빛이라 등급 스포일러 방지)

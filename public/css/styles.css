@@ -1126,26 +1126,32 @@
       transform:translate(-50%,-50%) scale(.4); opacity:0; filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));
       animation:fxshell .8s cubic-bezier(.2,.85,.3,1) forwards; }
     .fx-shell .px { display:block; }
-    /* 검은 고양이(가챠 오픈) — PNG 스프라이트 시트(walk.png 8프레임 92×92, 자연스러운 걸음). 왼쪽 화면 밖에서 도도하게 걸어나와(steps 걷기) 앞발(스프라이트 앞=오른쪽)로 알을 톡.
-       크기·위치는 CSS 변수로 튜닝: --cat(크기, 5배≈480px)·--cat-y(세로 미세조정)·--cat-arr(도착 x=알 옆). 발(프레임 하단)을 알 세로중앙에 맞춰 크기를 바꿔도 발 높이가 유지됨 */
-    .fx-cat { --cat:480px; --cat-y:0px; --cat-arr:-150px;
+    /* 가챠 오픈 연출 고양이 — 지정 펫(자립 걷기 .cspr) 또는 기본 검은고양이(walk.png 8프레임). 컨테이너=이동/위치, 안쪽 .fxc-in=방향(scaleX)·스프라이트.
+       슬롯 fxc-l(왼쪽 등장·오른쪽 봄)·fxc-r(오른쪽 등장·왼쪽 봄, flip). 크기 --cat(펫=배율·기본480), --foot=투명 하단여백(발끝을 알 바닥에 맞춤), --cat-y 세로 미세조정 */
+    .fx-cat { --cat:200px; --cat-y:14px; --foot:.06;
       position:absolute; left:50%; top:50%; z-index:4; width:var(--cat); height:var(--cat);
-      margin:calc(var(--cat) * -0.9 + var(--cat-y)) 0 0 calc(var(--cat) * -0.5);
-      background:url('../assets/fx/gachacat/walk.png') 0 0 / calc(var(--cat) * 8) var(--cat) no-repeat; image-rendering:pixelated;
-      transform:translateX(-760px); filter:drop-shadow(0 10px 20px rgba(0,0,0,.5)); }
-    .fx-cat.walkin { animation:fxcatstep .8s steps(8) infinite, fxcatwalk 1.8s cubic-bezier(.33,.05,.28,1) forwards; }   /* 걷기(8프레임) + 왼쪽 밖→알 옆 */
-    .fx-cat.arr { background-image:url('../assets/fx/gachacat/still.png'); background-size:var(--cat) var(--cat); background-position:0 0; transform:translateX(var(--cat-arr)); }   /* 도착=옆모습 정지 */
-    .fx-cat.tap { animation:fxcattap .5s ease; }                                           /* 앞발로 톡(알 쪽=오른쪽으로 살짝) */
-    .fx-cat.leave { animation:fxcatleave .6s ease-in forwards; }                            /* 톡 후 물러나며 페이드 */
+      margin:calc(var(--cat-y) - var(--cat) * (1 - var(--foot))) 0 0 calc(var(--cat) * -0.5);
+      image-rendering:pixelated; filter:drop-shadow(0 10px 20px rgba(0,0,0,.5)); transform:translateX(var(--from)); }
+    .fx-cat .fxc-in { width:100%; height:100%; transform:scaleX(var(--dir,1)); }
+    .fx-cat .fxc-in .cspr { margin:0 auto; }
+    .fxc-l { --from:-820px; --to:-170px; --dir:1;  --poke:26px; }
+    .fxc-r { --from:820px;  --to:170px;  --dir:-1; --poke:-26px; }
+    .fxc-gc .fxc-in { background:url('../assets/fx/gachacat/walk.png') 0 0 / calc(var(--cat) * 8) var(--cat) no-repeat; }   /* 기본 검은고양이(폴백)=배경 스프라이트 */
+    .fxc-gc.walkin .fxc-in { animation:fxcatstep .8s steps(8) infinite; }
+    .fxc-gc.arr .fxc-in { background-image:url('../assets/fx/gachacat/still.png'); background-size:var(--cat) var(--cat); }
+    .fx-cat.walkin { animation:fxcatwalk 1.8s cubic-bezier(.33,.05,.28,1) forwards; }   /* 등장→도착 이동(걷는 동안) */
+    .fx-cat.arr { transform:translateX(var(--to)); }                                    /* 알 옆 도착 위치 고정 */
+    .fx-cat.tap { animation:fxcattap .5s ease; }                                        /* 앞발로 톡(--poke 방향) */
+    .fx-cat.leave { animation:fxcatleave .6s ease-in forwards; }                         /* 톡 후 물러나며 페이드 */
     @keyframes fxpreshake { 0%,100%{transform:translateX(0) rotate(0)} 25%{transform:translateX(-3px) rotate(-2deg)} 75%{transform:translateX(3px) rotate(2deg)} }
     @keyframes fxhit { 0%{transform:translateX(0) rotate(0)} 20%{transform:translateX(10px) rotate(6deg)} 45%{transform:translateX(-8px) rotate(-5deg)} 70%{transform:translateX(5px) rotate(3deg)} 100%{transform:translateX(0) rotate(0)} }
     @keyframes fxtremble { 0%,100%{transform:translate(0,0)} 25%{transform:translate(-2px,1px)} 50%{transform:translate(2px,-1px)} 75%{transform:translate(-1px,-1px)} }
     @keyframes fxleak { 0%{opacity:0;transform:translate(-50%,-50%) scale(.3)} 55%{opacity:.6} 100%{opacity:.5;transform:translate(-50%,-50%) scale(calc(1.7 * var(--lk,1)))} }
-    /* 검은 고양이: 걷기 스텝(background-position 8프레임) / 왼쪽 밖→알 옆 / 앞발 톡(오른쪽으로) / 물러나며 페이드. x는 --cat-arr 기준 */
+    /* 연출 고양이: 기본 고양이 걷기 스텝(배경 8프레임) / 등장→도착 이동 / 앞발 톡(--poke) / 물러나며 페이드. from/to/poke는 슬롯(fxc-l/r) 변수 */
     @keyframes fxcatstep { from{background-position-x:0} to{background-position-x:calc(var(--cat) * -8)} }
-    @keyframes fxcatwalk { from{transform:translateX(-760px)} to{transform:translateX(var(--cat-arr))} }
-    @keyframes fxcattap { 0%{transform:translateX(var(--cat-arr))} 45%{transform:translateX(calc(var(--cat-arr) + 30px))} 100%{transform:translateX(var(--cat-arr))} }
-    @keyframes fxcatleave { from{transform:translateX(var(--cat-arr));opacity:1} to{transform:translateX(-240px);opacity:0} }
+    @keyframes fxcatwalk { from{transform:translateX(var(--from))} to{transform:translateX(var(--to))} }
+    @keyframes fxcattap { 0%{transform:translateX(var(--to))} 45%{transform:translateX(calc(var(--to) + var(--poke)))} 100%{transform:translateX(var(--to))} }
+    @keyframes fxcatleave { from{transform:translateX(var(--to));opacity:1} to{transform:translateX(var(--from));opacity:0} }
     /* 껍질 조각: 위로 튀었다가 좌우·아래로 흩어져 놓인다 */
     @keyframes fxshell {
       0%{ opacity:0; transform:translate(-50%,-50%) rotate(0) scale(.4); }
