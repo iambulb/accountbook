@@ -1,5 +1,5 @@
 /* 알뜰(Eggarden) 서비스워커 — 오프라인 앱 셸 캐시 */
-const CACHE_VERSION = 'eggarden-v3.217.0';
+const CACHE_VERSION = 'eggarden-v3.218.0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -20,6 +20,8 @@ const APP_SHELL = [
   './icons/wordmark-altteul.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',
+  './assets/fx/gachacat/walk.png',
+  './assets/fx/gachacat/still.png',
   // @gen:pet-shell — 자동생성(tools/build_pets.py). tools/pets.json 편집 후 재실행.
   './assets/pets/cat/cat_mackerel/walk.png',
   './assets/pets/cat/cat_mackerel/south.png',

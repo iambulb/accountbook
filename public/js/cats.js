@@ -569,88 +569,6 @@
     // 물음표(R/O/Y/G/B/P)는 흰색으로 대비, 외곽(X)은 은은한 중립색 → "온몸이 움직이는 무지개빛"인 알/상자.
     const EGG_PAL_RB={X:'#968c76',W:'RAINBOW',S:'RAINBOW',R:'#FBFBFD',O:'#FBFBFD',Y:'#FBFBFD',G:'#FBFBFD',B:'#FBFBFD',P:'#FBFBFD'};   // 무지개알도 바깥 진한 테두리
     const BOX_PAL_RB={X:'#9aa2b0',W:'RAINBOW',C:'RAINBOW',L:'RAINBOW',R:'#FBFBFD',O:'#FBFBFD',Y:'#FBFBFD',G:'#FBFBFD',B:'#FBFBFD',P:'#FBFBFD'};
-    // 은화 속 검은 고양이 — 특별↑ 오픈 연출에서 오른쪽에서 슥 들어와 앞발로 알/상자를 톡 건드린다.
-    // 옆모습 실사풍 검은 고양이 3프레임(가챠 오픈용): 걷기 A/B(다리 교차)로 도도하게 걸어나와, TAP(앞발 들어 왼쪽 앞으로 뻗음)으로 알을 톡. 꼬리 세움·등 털광택(b)·호박 눈. 어두운 무대에서 실루엣 읽히게 외곽선(K)>몸(B).
-    const M_GCAT_A = [
-      ".......................................",
-      "................................KK.....",
-      "...............................KBbK....",
-      "..............................KBbBK....",
-      "....KK....KK.................KKBbBK....",
-      "...KBnK..KBnK..............KKBBbBK.....",
-      "...KBBK.KBBBK...........bbbbBBBBBK.....",
-      "..KKBBKKBBBBKbbbbbbbbbbbBBBBBBBBBK.....",
-      ".KPYiBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.....",
-      ".KPBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.....",
-      ".KBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.....",
-      "..KBBBBBBBBBBBBBBBBBBBBBBBBBBBBBK......",
-      "..KBBBBBBBddddddddddddddBBBBBBBBK......",
-      "..KBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.......",
-      "...KBBBBBBBBBBBBBBBBBBBBBBBBBBK........",
-      "...KBBBBBBBBBBBBBBBBBBBBBBBBBBK........",
-      "...KBBK..KBBK........KBBK...KBBK.......",
-      "...KBBK..KBBK........KBBK...KBBK.......",
-      "...KBBK..KBBK........KBBK...KBBK.......",
-      "...KBBK..KBBK........KBBK...KBBK.......",
-      "..KPPBK.KBBK........KBBK...KBPPK.......",
-      "..KKKKK.KKKK........KKKK...KKKKK.......",
-      ".......................................",
-      "......................................."
-    ];
-    const M_GCAT_B = [
-      ".......................................",
-      "................................KK.....",
-      "...............................KBbK....",
-      "..............................KBbBK....",
-      "....KK....KK.................KKBbBK....",
-      "...KBnK..KBnK..............KKBBbBK.....",
-      "...KBBK.KBBBK...........bbbbBBBBBK.....",
-      "..KKBBKKBBBBKbbbbbbbbbbbBBBBBBBBBK.....",
-      ".KPYiBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.....",
-      ".KPBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.....",
-      ".KBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.....",
-      "..KBBBBBBBBBBBBBBBBBBBBBBBBBBBBBK......",
-      "..KBBBBBBBddddddddddddddBBBBBBBBK......",
-      "..KBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.......",
-      "...KBBBBBBBBBBBBBBBBBBBBBBBBBBK........",
-      "...KBBBBBBBBBBBBBBBBBBBBBBBBBBK........",
-      "..KBBK....KBBK.......KBBK..KBBK........",
-      "..KBBK....KBBK.......KBBK..KBBK........",
-      "..KBBK....KBBK.......KBBK..KBBK........",
-      "..KBBK....KBBK.......KBBK..KBBK........",
-      ".KPPBK...KBBK.......KBBK..KBPPK........",
-      ".KKKKK...KKKK.......KKKK..KKKKK........",
-      ".......................................",
-      "......................................."
-    ];
-    const M_GCAT_TAP = [
-      ".......................................",
-      "................................KK.....",
-      "...............................KBbK....",
-      "..............................KBbBK....",
-      "....KK....KK.................KKBbBK....",
-      "...KBnK..KBnK..............KKBBbBK.....",
-      "...KBBK.KBBBK...........bbbbBBBBBK.....",
-      "..KKBBKKBBBBKbbbbbbbbbbbBBBBBBBBBK.....",
-      ".KPYiBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.....",
-      ".KPBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.....",
-      ".KBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.....",
-      "..KBBBBBBBBBBBBBBBBBBBBBBBBBBBBBK......",
-      "..KBBBBBBBddddddddddddddBBBBBBBBK......",
-      "..KBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.......",
-      "...KBBBBBBBBBBBBBBBBBBBBBBBBBBK........",
-      "...KBBBBBBBBBBBBBBBBBBBBBBBBBBK........",
-      "...KBBK.............KBBK...KBBK........",
-      "...KBBK.............KBBK...KBBK........",
-      "PKBBBK.............KBBK...KBBK.........",
-      "KPBBK..............KBBK...KBBK.........",
-      ".KK.....KBBK.......KBBK...KBPPK........",
-      "........KKKK.......KKKK...KKKKK........",
-      ".......................................",
-      "......................................."
-    ];
-    // K=외곽선(먹) B=몸 검정 b=등 털광택 d=배 그림자 Y=눈(호박) i=세로동공(암) P=코·발끝 젤리(분홍) n=귀속(어두운 분홍)
-    const GCAT_PAL={K:'#0a0b0e',B:'#22252c',b:'#343c4a',d:'#15171c',Y:'#C99A34',i:'#0a0b0e',P:'#d18a9c',n:'#7a4b58'};
 
     // 카탈로그(코드 상수) — 저장은 보유 id만. id는 종·색 구분(예: cat_calico, dog_corgi), species는 분류/필터용.
     // 새 동물(네발 짐승) 처리 규칙은 docs/pet-asset-pipeline.md 참고.
@@ -1185,7 +1103,6 @@
     ];
     const SPARK_PAL={X:'currentColor',H:'#ffffff'};
     function sparkSvg(opt){ return pxSvg(M_SPARK, SPARK_PAL, opt); }
-    function gcatSvg(fr, opt){ return pxSvg(fr==='b'?M_GCAT_B:(fr==='tap'?M_GCAT_TAP:M_GCAT_A), GCAT_PAL, opt); }   // 가챠 검은 고양이: 'a'/'b' 걷기·'tap' 앞발 톡
     // 알뜰샵·팔레트·격자용 대표 아트(물그릇은 물 채운 파란 그릇으로 구분 표시)
     function furnMatrix(id){ return {cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT,catwheel:M_CATWHEEL}[id]; }
     function furnSvg(id, opt){ return pxSvg(furnMatrix(id), FURN_PALS[id], opt); }
@@ -1365,6 +1282,7 @@
       watchCatalogPets();   // 런타임 펫(전역 catalogPets) 병합 리스너
       watchMyLikes();       // 내가 받은 집 좋아요 총합
       loadNotices();        // 📢 공지(config/notices) 구독 — 배포 없이 공지 갱신
+      loadFeaturedPet();    // 🌟 이달의 펫 수동 선정(config/featuredPet) 구독 — 개발자가 고르면 전역 반영
       startCatLoop();   // 통합 걷기 엔진(단일 rAF, 보이는 무대만 애니메이션)
       // 앱을 켜둔 동안에도 그릇 3시간 만료→똥 정산이 돌도록 주기 점검(다마고치)
       if(state._petTimer) clearInterval(state._petTimer);
@@ -2888,10 +2806,29 @@
     function isGachaOnlyCat(id){ return tierRank(petTierOf(id)) >= tierRank('epic'); }
     function itemTierOf(id){ return effItemTier()[id]||'normal'; }
     function isGachaOnlyItem(id){ return tierRank(itemTierOf(id)) >= tierRank('epic'); }   // 특별↑ 가구는 랜덤박스 전용
-    // 🌟 시즌: 이달의 펫 — 매월(KST) 은화로 살 수 있는 등급(특별 미만) 중 하나가 자동 선정, 20% 할인. 모든 사용자 동일.
+    // 🌟 시즌: 이달의 펫 — 매월(KST) 은화로 살 수 있는 등급(특별 미만) 중 하나. 모든 사용자 동일, 20% 할인.
+    //  · 우선순위: ① 개발자 수동 선정(전역 config/featuredPet/{monthKey}=id, 관리자만 쓰기) ② 없으면 월키 해시 자동 선정.
+    //  · 해시 자동은 후보 목록 길이에 의존해 펫을 추가/삭제하면 그 달 자동 선정이 바뀜 → 수동 선정을 두면 그런 변동 없이 고정된다.
     const FEATURED_DISCOUNT = 0.2;
+    let _featuredMap = {};   // { 'M2026-07': 'cat_xxx', ... } — RTDB config/featuredPet 구독값(loadFeaturedPet)
+    function loadFeaturedPet(){ try{ db.ref('config/featuredPet').on('value', function(s){ _featuredMap = s.val() || {};
+      if(typeof rerender==='function') rerender(); if(state && state._sheetRefresh) state._sheetRefresh(); }); }catch(e){} }
     function featuredEligibleIds(){ return PET_CATALOG.filter(c=>!isGachaOnlyCat(c.id)).map(c=>c.id); }
-    function featuredCatId(){ return featuredPetOfMonth(kstMonthKey(), featuredEligibleIds()); }
+    function featuredCatId(){ const mk=kstMonthKey();
+      const ov=_featuredMap && _featuredMap[mk];   // 개발자 수동 선정 우선(존재·미삭제 펫이면)
+      if(ov && PET_CATALOG.some(c=>c.id===ov && !c.deleted)) return ov;
+      return featuredPetOfMonth(mk, featuredEligibleIds()); }
+    // ---- dev: 이달의 펫 직접 선정(전역) ----
+    function setFeaturedPet(id){ if(!(typeof isDev==='function'&&isDev())) return;
+      try{ db.ref('config/featuredPet/'+kstMonthKey()).set(id).then(function(){ toast('이달의 펫: '+catName(id)); if(typeof openDevFeatured==='function') openDevFeatured(); }).catch(function(){ toast('실패 — 관리자 계정만 설정할 수 있어요', true); }); }catch(e){} }
+    function clearFeaturedPet(){ if(!(typeof isDev==='function'&&isDev())) return;
+      try{ db.ref('config/featuredPet/'+kstMonthKey()).remove().then(function(){ toast('자동 선정으로 되돌렸어요'); if(typeof openDevFeatured==='function') openDevFeatured(); }).catch(function(){ toast('실패 — 관리자 계정만', true); }); }catch(e){} }
+    function openDevFeatured(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
+      const mk=kstMonthKey(), cur=featuredCatId(), manual=!!(_featuredMap&&_featuredMap[mk]), ids=featuredEligibleIds();
+      let h='<div class="note">'+monthLabelKo()+' <b>이달의 펫</b>을 직접 선정해요. 선정하면 <b>모든 사용자에게 즉시 반영</b>(전역 config, 관리자 계정만 쓰기). 선정하지 않으면 월키 해시로 자동 선정되며, 펫을 추가/삭제하면 자동 선정 펫이 바뀔 수 있어요.</div>';
+      h+='<div class="row" style="justify-content:space-between;align-items:center;margin:6px 2px 10px;"><span>현재: <b>'+catNameSpan(cur,catName(cur))+'</b> <span class="pill">'+(manual?'수동 선정':'자동(해시)')+'</span></span>'+(manual?'<button class="chip" onclick="clearFeaturedPet()">자동으로 되돌리기</button>':'')+'</div>';
+      h+='<div class="dexgrid">'+ids.map(function(id){ const on=id===cur; return '<div class="dexcell" role="button" tabindex="0" onclick="setFeaturedPet(\''+id+'\')" style="cursor:pointer;'+(on?'outline:2px solid var(--primary);outline-offset:1px;border-radius:12px;':'')+'"><div class="dexpic">'+catFace(id,{h:48})+'</div><div class="dexnm">'+catNameSpan(id,catName(id))+(on?' ✓':'')+'</div></div>'; }).join('')+'</div>';
+      openSheet('이달의 펫 선정', h); }
     function isFeaturedCat(id){ return !!id && id===featuredCatId(); }
     function catBuyPrice(id){ const c=PET_CATALOG.find(x=>x.id===id); if(!c) return 0; return isFeaturedCat(id)?Math.max(1,Math.round((c.price||0)*(1-FEATURED_DISCOUNT))):(c.price||0); }
     function monthLabelKo(){ const n=parseInt(kstMonthKey().slice(6),10)||0; return n+'월'; }
@@ -3242,11 +3179,9 @@
     // ===== 📢 소식(알림·이벤트·공지) — 알뜰 아이콘 '소식' 화면 =====
     // 업데이트 공지 — 기본값(폴백). 운영은 RTDB config/notices(관리자만 쓰기)에서 덮어씀(loadNotices). 최신순.
     // 업데이트 내역(요약) — 최신순. RTDB config/notices가 있으면 그걸로 덮어씀(아래는 기본값).
+    // 업데이트 내역 기본값(요약) — 최신순. RTDB config/notices가 있으면 그걸로 덮어씀. 시즌·친구선물 홍보는 이벤트·알림 섹션에 이미 나오므로 여기(업데이트 내역)엔 넣지 않는다.
     let NOTICES = [
-      { date:'2026-07-04', t:'소식 화면 개편 · 업데이트 내역', s:'공지를 업데이트 내역으로 정리하고, 확성기 아이콘·레이아웃을 다듬었어요' },
-      { date:'2026-07-03', t:'친구 집 캠 · 뽑기 연출 개선', s:'친구 집 가구가 움직이고, 방문 중에도 내 펫이 계속 돌아다녀요. 전설·한정 뽑기엔 검은 고양이가 톡!' },
-      { date:'2026-07-01', t:'🌟 이달의 펫 시즌 할인', s:'매월 은화로 살 수 있는 펫 하나가 20% 할인으로 바뀌어요' },
-      { date:'2026-06-28', t:'🎁 친구 응원 선물', s:'친구 집에서 하루 한 번 응원 선물을 주고받을 수 있어요' }
+      { date:'2026-07-04', t:'소식 화면 개편 · 업데이트 내역', s:'공지를 업데이트 내역으로 정리하고, 확성기 아이콘·레이아웃을 다듬었어요' }
     ];
     // RTDB config/notices(공개 읽기·관리자 쓰기)에서 공지를 읽어 NOTICES를 갱신. 없으면 위 기본값 유지.
     function loadNotices(){ try{ db.ref('config/notices').on('value', function(s){ const v=s.val(); let arr=[];
@@ -3256,11 +3191,17 @@
     }); }catch(e){} }
     // 안 본 공지 기준일 — 계정(RTDB game.newsSeenAt)과 기기(localStorage) 중 더 최신 사용(기기 간 동기화).
     function newsSeenAt(){ let g=(state.game&&state.game.newsSeenAt)||''; let l=''; try{ l=localStorage.getItem('newsSeenAt')||''; }catch(e){} return g>l?g:l; }
-    function latestNoticeDate(){ return NOTICES.reduce(function(m,n){ return n.date>m?n.date:m; }, ''); }
+    // 시즌·친구선물 홍보 공지 판별(이벤트/알림 섹션에 이미 노출) → 업데이트 내역에서 제외. 개발자 changelog가 실수로 걸리지 않게 문구를 좁게 매칭.
+    function isPromoNotice(n){ const t=(n&&n.t)||''; return /이달의\s*펫|시즌\s*할인|응원\s*선물/.test(t); }
+    // 개발자 업데이트 내역만(홍보 제외). 실시간(RTDB config/notices) 추가분도 이 필터를 거친다.
+    function updateNotices(){ return NOTICES.filter(function(n){ return !isPromoNotice(n); }); }
+    // 그중 '최신 1건'만 노출(이전 내역은 사라짐). 날짜 최대값으로 선택(배열 정렬에 의존하지 않음).
+    function latestUpdate(){ return updateNotices().reduce(function(m,n){ return (!m || (n.date||'')>(m.date||''))?n:m; }, null); }
+    function latestNoticeDate(){ const u=latestUpdate(); return u?(u.date||''):''; }
     function markNewsSeen(){ const d=latestNoticeDate(); try{ localStorage.setItem('newsSeenAt', d); }catch(e){}
       try{ if(typeof gameRef==='function' && state.uid && d) gameRef().child('newsSeenAt').set(d); }catch(e){}   // 계정 동기화
       updateNewsBadge(); refreshMoreBadges(); }   // 로컬 저장으로 안 본 공지=0 됐으니 더보기 '소식' 뱃지도 즉시 갱신(RTDB set이 값 동일이면 리스너가 안 뜨므로 여기서 직접)
-    function unseenNoticeCount(){ const s=newsSeenAt(); return NOTICES.filter(function(n){ return n.date>s; }).length; }
+    function unseenNoticeCount(){ const u=latestUpdate(); return (u && (u.date||'')>newsSeenAt())?1:0; }   // 노출은 최신 1건뿐 → 뱃지도 0/1
     function giftUnread(){ return giftCount() + (typeof mailCount==='function'?mailCount():0); }   // 안 받은 선물 = 코드보상(gifts) + 친구선물(mailbox)
     function newsUnread(){ return giftUnread() + unseenNoticeCount(); }   // (브랜드 아이콘) 뱃지 = 안 받은 선물(코드+친구) + 안 본 공지
     // 아직 안 쓴 프로모 쿠폰 개수(state.game.codes에 없는 PROMO_CODES 키 수).
@@ -3290,8 +3231,11 @@
         h+='<div class="featbanner" role="button" tabindex="0" onclick="openCatHouse(\'shop\')"><span class="fstar">'+sparkSvg({h:20})+'</span><div class="fb-txt"><b>'+monthLabelKo()+' 이달의 펫 · '+catNameSpan(fid,fc.name)+'</b><span class="s">이번 달만 '+Math.round(FEATURED_DISCOUNT*100)+'% 할인 — '+catBuyPrice(fid)+' 은화'+(ownsCat(fid)?' (보유 완료)':' · 사러가기')+'</span></div><span class="fb-face">'+catFace(fid,{h:40})+'</span></div>'; } }
       else { h+='<div class="note" style="margin:2px 0 6px;">진행 중인 이벤트가 곧 열려요.</div>'; }
       h+='<div class="sech" style="margin-top:16px;"><span class="l"><span class="sech-ic">'+megaSvg({h:16})+'</span> 업데이트 내역</span></div>';
-      // 항목들을 카드(.newscard)로 묶어 '업데이트 내역' 안에 속한 것으로 명확히 보이게(레이아웃 개편).
-      h+='<div class="newscard">'+NOTICES.map(function(n){ return '<div class="newsupd"><span class="nu-ic">'+noticeIcon(n)+'</span><div class="nu-tx"><b>'+escapeHtml(noticeTitle(n))+'</b><span>'+escapeHtml(n.s)+'</span></div></div>'; }).join('')+'</div>';
+      // 시즌·친구선물 홍보 제외, 개발자가 실시간(RTDB)으로 올리는 최신 업데이트 '1건'만 카드로 노출(이전 내역은 사라짐).
+      const _u=latestUpdate();
+      h+='<div class="newscard">'+(_u
+        ? '<div class="newsupd"><span class="nu-ic">'+noticeIcon(_u)+'</span><div class="nu-tx"><b>'+escapeHtml(noticeTitle(_u))+'</b><span>'+escapeHtml(_u.s||'')+'</span></div></div>'
+        : '<div class="note" style="margin:8px 2px;">최근 업데이트 소식이 없어요.</div>')+'</div>';
       h+='<div class="cnote"><b><span style="display:inline-flex;vertical-align:-2px">'+ticketSvg({h:14})+'</span> 쿠폰</b> — 더보기 → 코드 입력에서 사용하세요</div>';
       const _codes=(state.game&&state.game.codes)||{};
       // 코드는 대문자로 안내(입력은 redeemCode가 소문자로 정규화해 대소문자 무관). used 판정은 저장 키(소문자 code) 그대로.
@@ -3411,15 +3355,13 @@
       it.classList.add('fx-preshake');
       let t0=680;
       if(catShow){
-        // 옆모습 검은 고양이가 오른쪽에서 도도하게 천천히 걸어나와(2프레임 걸음) 앞발로 알을 톡 → 그 자리에서 알이 열림
-        st.insertAdjacentHTML('beforeend','<div class="fx-cat walkin" id="fxCat">'+gcatSvg('a',{h:112})+'</div>');
-        let wf=false; const wi=setInterval(()=>{ const c=$('fxCat'); if(!c){ clearInterval(wi); return; } wf=!wf; c.innerHTML=gcatSvg(wf?'b':'a',{h:112}); }, 175);   // 걸음 2프레임 교차
-        _fxTimers.push(wi);   // 닫기/재시작 시 정리(clearTimeout/Interval 호환)
-        _fxT(()=>{ clearInterval(wi); const c=$('fxCat'); if(c){ c.innerHTML=gcatSvg('tap',{h:112}); c.classList.remove('walkin'); c.classList.add('arr','tap'); } }, 1300);   // 도착 → 앞발 톡 포즈
-        _fxT(()=>{ it.classList.remove('fx-preshake'); void it.offsetWidth; it.classList.add('fx-hit'); }, 1440);   // 앞발이 닿는 순간 알/상자가 톡 튕김
-        _fxT(()=>{ const c=$('fxCat'); if(c){ c.classList.remove('tap'); c.classList.add('leave'); } it.classList.remove('fx-hit'); }, 1620);   // 톡 후 물러나며 흐려짐(빛이 덮음)
-        _fxT(()=>{ const c=$('fxCat'); if(c) c.remove(); }, 2160);
-        t0=1600;   // 톡 직후 그 자리에서 알 오픈
+        // 귀여운 검은 고양이(PNG 스프라이트 시트)가 왼쪽에서 도도하게 천천히 걸어나와(걷기 6프레임 steps) 앞발로 알을 톡 → 그 자리에서 알이 열림
+        st.insertAdjacentHTML('beforeend','<div class="fx-cat walkin" id="fxCat"></div>');   // 걷기/정지·이동은 CSS(.fx-cat)에서
+        _fxT(()=>{ const c=$('fxCat'); if(c){ c.classList.remove('walkin'); c.classList.add('arr','tap'); } }, 1400);   // 도착 → 정지 스틸 + 앞발 톡
+        _fxT(()=>{ it.classList.remove('fx-preshake'); void it.offsetWidth; it.classList.add('fx-hit'); }, 1560);   // 앞발이 닿는 순간 알/상자가 톡 튕김
+        _fxT(()=>{ const c=$('fxCat'); if(c){ c.classList.remove('tap'); c.classList.add('leave'); } it.classList.remove('fx-hit'); }, 1740);   // 톡 후 물러나며 흐려짐(빛이 덮음)
+        _fxT(()=>{ const c=$('fxCat'); if(c) c.remove(); }, 2320);
+        t0=1720;   // 톡 직후 그 자리에서 알 오픈
       }
       _fxT(()=>{
         st.style.color=t.color;   // 열리는 순간부터 등급색 — 빛·픽셀 파티클·버스트·등장이 currentColor로 등급색을 따른다(그 전엔 흰빛이라 등급 스포일러 방지)

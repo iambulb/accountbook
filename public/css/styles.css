@@ -1126,21 +1126,21 @@
       transform:translate(-50%,-50%) scale(.4); opacity:0; filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));
       animation:fxshell .8s cubic-bezier(.2,.85,.3,1) forwards; }
     .fx-shell .px { display:block; }
-    /* 옆모습 검은 고양이(가챠 오픈) — 오른쪽 화면 밖에서 도도하게 천천히 걸어나와(2프레임 걸음) 앞발(스프라이트 왼쪽)로 알을 톡. top/도착 x(40px)는 알 위치에 맞춰 튜닝 가능 */
-    .fx-cat { position:absolute; left:50%; top:54%; z-index:4; transform:translate(260px,-50%); image-rendering:pixelated; }
-    .fx-cat .px { height:112px; filter:drop-shadow(0 6px 12px rgba(0,0,0,.55)); }
-    .fx-cat.walkin { animation:fxcatwalk 1.3s cubic-bezier(.33,.05,.28,1) forwards; }   /* 천천히 걸어 들어옴 */
-    .fx-cat.arr { transform:translate(40px,-50%); }                                       /* 알 옆 도착 위치 고정 */
-    .fx-cat.tap .px { animation:fxcattap .42s ease; }                                     /* 앞발로 톡(살짝 앞으로) */
-    .fx-cat.leave { animation:fxcatleave .54s ease-in forwards; }                          /* 톡 후 물러나며 흐려짐 */
+    /* 검은 고양이(가챠 오픈) — PNG 스프라이트 시트(walk.png 6프레임 48×48). 왼쪽 화면 밖에서 도도하게 걸어나와(steps 걷기) 앞발(스프라이트 앞=오른쪽)로 알을 톡. 도착 x(-70px)·margin-top·크기(96)는 알 위치에 맞춰 튜닝 가능 */
+    .fx-cat { position:absolute; left:50%; top:50%; z-index:4; width:96px; height:96px; margin:-58px 0 0 -48px; background:url('../assets/fx/gachacat/walk.png') 0 0 / 576px 96px no-repeat; image-rendering:pixelated; transform:translateX(-300px); filter:drop-shadow(0 6px 12px rgba(0,0,0,.5)); }
+    .fx-cat.walkin { animation:fxcatstep .66s steps(6) infinite, fxcatwalk 1.4s cubic-bezier(.33,.05,.28,1) forwards; }   /* 걷기(6프레임) + 왼쪽 밖→알 옆 */
+    .fx-cat.arr { background-image:url('../assets/fx/gachacat/still.png'); background-size:96px 96px; background-position:0 0; transform:translateX(-70px); }   /* 도착=옆모습 정지 */
+    .fx-cat.tap { animation:fxcattap .42s ease; }                                          /* 앞발로 톡(알 쪽=오른쪽으로 살짝) */
+    .fx-cat.leave { animation:fxcatleave .55s ease-in forwards; }                          /* 톡 후 물러나며 페이드 */
     @keyframes fxpreshake { 0%,100%{transform:translateX(0) rotate(0)} 25%{transform:translateX(-3px) rotate(-2deg)} 75%{transform:translateX(3px) rotate(2deg)} }
     @keyframes fxhit { 0%{transform:translateX(0) rotate(0)} 20%{transform:translateX(10px) rotate(6deg)} 45%{transform:translateX(-8px) rotate(-5deg)} 70%{transform:translateX(5px) rotate(3deg)} 100%{transform:translateX(0) rotate(0)} }
     @keyframes fxtremble { 0%,100%{transform:translate(0,0)} 25%{transform:translate(-2px,1px)} 50%{transform:translate(2px,-1px)} 75%{transform:translate(-1px,-1px)} }
     @keyframes fxleak { 0%{opacity:0;transform:translate(-50%,-50%) scale(.3)} 55%{opacity:.6} 100%{opacity:.5;transform:translate(-50%,-50%) scale(calc(1.7 * var(--lk,1)))} }
-    /* 검은 고양이: 오른쪽 밖 → 알 옆 걸어오기 / 앞발 톡(안쪽 스프라이트만 살짝 앞으로) / 톡 후 물러나며 페이드 */
-    @keyframes fxcatwalk { from{transform:translate(260px,-50%)} to{transform:translate(40px,-50%)} }
-    @keyframes fxcattap { 0%{transform:translateX(0)} 45%{transform:translateX(-14px)} 100%{transform:translateX(0)} }
-    @keyframes fxcatleave { from{transform:translate(40px,-50%);opacity:1} to{transform:translate(150px,-50%);opacity:0} }
+    /* 검은 고양이: 걷기 스텝(background-position 6프레임) / 왼쪽 밖→알 옆 이동 / 앞발 톡(오른쪽으로) / 물러나며 페이드 */
+    @keyframes fxcatstep { from{background-position-x:0} to{background-position-x:-576px} }
+    @keyframes fxcatwalk { from{transform:translateX(-300px)} to{transform:translateX(-70px)} }
+    @keyframes fxcattap { 0%{transform:translateX(-70px)} 45%{transform:translateX(-52px)} 100%{transform:translateX(-70px)} }
+    @keyframes fxcatleave { from{transform:translateX(-70px);opacity:1} to{transform:translateX(-160px);opacity:0} }
     /* 껍질 조각: 위로 튀었다가 좌우·아래로 흩어져 놓인다 */
     @keyframes fxshell {
       0%{ opacity:0; transform:translate(-50%,-50%) rotate(0) scale(.4); }
