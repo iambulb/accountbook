@@ -874,6 +874,22 @@
     ];
     const HEART_PAL={H:'#F0546A',L:'#FF9DAF'}, HEART_PAL_OFF={H:'#c4cad3',L:'#dde1e7'};
     function heartSvg(opt){ opt=opt||{}; return pxSvg(M_HEART, opt.off?HEART_PAL_OFF:HEART_PAL, opt); }
+    // ⭐ 별(대표 방 즐겨찾기) 픽셀 아트 — S=몸체(골드)·H=하이라이트. opt.off=회색(미지정 방). 좋아요 하트와 같은 톤·연출 패턴.
+    const M_STAR = [
+      '.....S.....',
+      '....SSS....',
+      '...SSHSS...',
+      '.SSSSSSSSS.',
+      '..SSSSSSS..',
+      '...SSSSS...',
+      '...SSSSS...',
+      '..SSS.SSS..',
+      '..SS...SS..',
+      '.SS.....SS.',
+      '.S.......S.'
+    ];
+    const STAR_PAL={S:'#f7c045',H:'#ffe9ad'}, STAR_PAL_OFF={S:'#c4cad3',H:'#dde1e7'};
+    function starSvg(opt){ opt=opt||{}; return pxSvg(M_STAR, opt.off?STAR_PAL_OFF:STAR_PAL, opt); }
     // 👥 친구(사람 둘) 픽셀 아트 — 더보기 친구 타일용. A=앞사람(하이라이트 L), B=뒷사람. 은화/좋아요와 같은 톤(몸체+하이라이트).
     const M_PEOPLE = [
       ".AAA...BBB..",
@@ -1426,6 +1442,10 @@
           R.placed={}; R.active=[]; R.poops=0; g.home.changedAt=new Date().toISOString(); return g;
         }).then(r=>{ if(r&&r.committed) toast('방을 비웠어요'); renderCatHouse(); }); }); }   // 비운 뒤 알뜰홈으로 복귀
     function setShowRoom(idx){ gameRef().child('home/showRoom').set(idx).then(()=>{ touchHome(); refreshCatSheet(); toast('대표 방으로 지정했어요 ★'); }); closeRoomMenu(); }
+    // 방 썸네일의 ⭐(즐겨찾기) 탭 = 이 방을 대표 방(친구·랭킹에 보임)으로 지정 + 별 팝 연출(좋아요와 동일). 이미 대표면 안내만.
+    function favRoom(idx, ev){ if(ev){ if(ev.stopPropagation) ev.stopPropagation(); const t=ev.currentTarget, r=t&&t.getBoundingClientRect&&t.getBoundingClientRect(); if(typeof starBurst==='function'&&r) starBurst(r.left+r.width/2, r.top+r.height/2); }
+      if(idx===(homeH().showRoom|0)){ toast('이미 대표 방이에요 ★'); return; }
+      gameRef().child('home/showRoom').set(idx).then(()=>{ touchHome(); refreshCatSheet(); toast('대표 방으로 지정했어요 ★'); }); }
     // 방 순서 이동(dir=-1 앞/+1 뒤). current·showRoom가 옮겨진 방을 따라가도록 인덱스 보정.
     function moveRoom(idx, dir){ const j=idx+dir; if(j<0||j>=roomCount()) return;
       gameRef().transaction(g=>{ g=normalizeGame(g); const rs=g.home.rooms; if(!rs[idx]||!rs[j]) return g;
@@ -2080,11 +2100,16 @@
       const n=litters.length?Math.min(room().poops||0, litters.length*5):0;
       for(let i=0;i<n;i++) litters[i%litters.length]._poops.push(i/litters.length|0);
     }
+    // 캠 원근에서 열(column) 좌측% 앵커를 오른쪽으로 소폭 확장하는 채움 계수.
+    // 좌측하단 앵커라 c=1은 0%(왼쪽 벽에 붙음)를 유지하고, 오른쪽 열일수록 더 밀려 맨 끝 가구가 오른쪽 벽까지 닿는다.
+    // (예전: (c-1)/12 → 맨 오른쪽 열이 91.67%에 머물러 벽까지 공백. overflow:hidden이 살짝 넘치는 부분을 크롭.)
+    // propMarkup의 x와 buildActors의 가구 중앙 x(leftEdge)에 동일 적용 → 펫 상호작용 정렬 유지.
+    const CAM_FILL_X = 1.06;
     // 배치물 하나의 마크업(그릇=탭 급여·채움 반영, 화장실=똥 수거). isDock이면 dock 크기.
     function propMarkup(p, isDock, plain, live){
       const foot=itemFoot(p.itemId);
       // 앵커=배치칸 "좌측하단". x는 발자국 좌측 edge(가운데 정렬 X, CSS translateX(0)), 바닥은 발자국 앞줄(front row) 기준.
-      const x=((p.c-1)/12*100).toFixed(2);
+      const x=((p.c-1)/12*100*CAM_FILL_X).toFixed(2);
       const frontRow=p.r + foot.h - 1;   // 발자국에서 가장 앞(가까운) 줄에 바닥을 둠 → 가구가 위로 뜨지 않음
       // 반전: 격자 윗줄(작은 r)=방 뒤(멀리, 위·작게), 아랫줄(큰 r)=방 앞(가까이, 아래·크게)
       const depth=(12-frontRow)/11; const bottom=(3+depth*46).toFixed(1); const fh=furnRoomH(p.itemId,isDock,depth);   // dock·홈 동일 깊이 매핑(바닥 54%) → 뒤 가구가 펫과 같은 바닥선에 정렬
@@ -2237,7 +2262,7 @@
       const props = hasRoom ? plist.map(p=>{ const foot=itemFoot(p.itemId), depth=(12-(p.r+foot.h-1))/11;   // propMarkup과 동일(앞줄 기준)
         const fh=furnRoomH(p.itemId, isDock, depth);   // 렌더 높이와 동일 → 캣타워 층 lift가 실제 높이에 맞음
         // 가구는 좌측하단 앵커 → 그래픽 중앙 x = 좌측 edge + fh*aspect/2. 고양이가 이 중앙에 서서 상호작용(캣타워 중앙에 앉기).
-        const leftEdge=(p.c-1)/12*W; return { x: leftEdge + fh*furnAspect(p.itemId)/2, itemId:p.itemId, fh, key:p.key, depth }; }) : [];
+        const leftEdge=(p.c-1)/12*W*CAM_FILL_X; return { x: leftEdge + fh*furnAspect(p.itemId)/2, itemId:p.itemId, fh, key:p.key, depth }; }) : [];
       // 고양이마다 성격(속도·유휴빈도·방향전환·가구선호)을 랜덤 부여 → 개별적으로 움직임
       // 스프라이트 고양이는 정사각(폭=높이), SVG 고양이는 가로세로비 ~26/14.
       const sid=stage.id||'s';   // 무대별 지속키 prefix — 같은 펫 id가 dock·내 방·친구 방에 동시에 있어도 x/depth가 안 섞이게
@@ -2423,6 +2448,21 @@
         document.body.appendChild(el); setTimeout(()=>el.remove(), 820+i*16);
       }
     }
+    // ⭐ 대표 방 지정 팝: 큰 별이 살짝 떠오르고 + 작은 별들이 위 부채꼴로 '뿅'(좋아요 연출과 동일 클래스 재사용, 별은 골드색을 자체 팔레트로 가짐). reduced-motion이면 작은 별 생략.
+    function starBurst(cx,cy){
+      if(typeof starSvg!=='function') return; cx=cx||innerWidth/2; cy=cy||innerHeight/2;
+      const big=document.createElement('div'); big.className='heartfx'; big.innerHTML=starSvg({h:24});
+      big.style.left=cx+'px'; big.style.top=cy+'px'; document.body.appendChild(big); setTimeout(()=>big.remove(), 820);
+      try{ if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return; }catch(e){}
+      const N=6;
+      for(let i=0;i<N;i++){ const el=document.createElement('div'); el.className='likepop';
+        const ang=(-90+(i-(N-1)/2)*26)*Math.PI/180, dist=20+Math.random()*20;
+        el.style.setProperty('--tx',(Math.cos(ang)*dist).toFixed(1)+'px'); el.style.setProperty('--ty',(Math.sin(ang)*dist).toFixed(1)+'px');
+        el.style.left=cx+'px'; el.style.top=cy+'px'; el.style.animationDelay=(i*16)+'ms';
+        el.innerHTML=starSvg({h:10+Math.floor(Math.random()*6)});
+        document.body.appendChild(el); setTimeout(()=>el.remove(), 820+i*16);
+      }
+    }
     // 쓰다듬기: 펫별 3시간에 1번만(RTDB owned.cats[id].pettedAt로 지속). 쿨다운 중엔 하트 연출 없음 — 실제 쓰다듬었을 때만 액션.
     function bumpAffection(id, x, y){
       if(!id || !ownsCat(id)) return;
@@ -2517,7 +2557,7 @@
       const rep=idx===(homeH().showRoom|0);   // 대표 방(친구·랭킹 노출)
       return '<div class="rmthumb'+(on?' on':'')+'" role="button" tabindex="0" aria-pressed="'+on+'" onpointerdown="rmDown(event,'+idx+')" onclick="rmTap('+idx+')" title="'+escapeHtml(r.name||('방 '+(idx+1)))+(rep?' · 대표 방':'')+'">'+
         '<span class="rmscene" style="background:'+wallCss(r.wallpaper||'default')+'">'+dots+'</span>'+
-        (rep?'<span class="rmrep" role="img" aria-label="대표 방(친구에게 보이는 방)" title="대표 방(친구에게 보이는 방)">★</span>':'')+
+        '<button class="rmfav'+(rep?' on':'')+'" aria-pressed="'+rep+'" aria-label="'+(rep?'대표 방(친구에게 보임)':'이 방을 대표 방으로 지정')+'" title="'+(rep?'대표 방 · 친구에게 보임':'대표 방으로 지정 ★')+'" onclick="event.stopPropagation();favRoom('+idx+',event)">'+starSvg({h:14,off:!rep})+'</button>'+
         '<span class="rmbar"><span class="rmname">'+(r.emoji?r.emoji+' ':'')+escapeHtml(r.name||('방 '+(idx+1)))+'</span><span class="rmpets">🐾'+pets+'</span></span>'+
         '<button class="rm-edit" aria-label="방 관리" onclick="event.stopPropagation();openRoomMenu('+idx+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
       '</div>';
