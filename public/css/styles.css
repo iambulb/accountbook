@@ -649,7 +649,7 @@
     .cd-empty { position:absolute; left:2px; bottom:16px; font-size:11.5px; font-weight:600; color:var(--sub); }
     .catdock.hidden { display:none; }
     /* dock = 컴팩트 웹캠 방(벽지 배경 + 가구 + 걷는 고양이) */
-    .cd-room { position:relative; height:110px; overflow:hidden; isolation:isolate; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }   /* 캠 세로 확장. isolation=방 하나를 독립 스택 컨텍스트로 → 펫·가구가 각자 z-index로 상호 가림하되 방 밖(헤더 등)엔 안 샘. 드래그 시 이미지/텍스트 선택 방지 */
+    .cd-room { position:relative; height:160px; overflow:hidden; isolation:isolate; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }   /* 캠 세로(110→160px): 벽 밴드+걸이 가구(mount r1 bottom 87%)가 안 잘리게 확장 — 벽 아이템 픽셀높이(base11×ROOM_H≈15px)가 방높이에 안 비례하므로, 15/160≈9%로 알뜰홈(22/244)과 같은 비율. 원근 %(54/46/58)는 그대로 두면 자동 정합. isolation=방 하나를 독립 스택 컨텍스트로 → 펫·가구가 각자 z-index로 상호 가림하되 방 밖(헤더 등)엔 안 샘. 드래그 시 이미지/텍스트 선택 방지 */
     .cd-room svg, .cd-room img { -webkit-user-drag:none; user-drag:none; }
     .cd-room .cr-wall { position:absolute; inset:0; z-index:0; }
     /* 알뜰홈(.catroom) 캠과 동일 비율: 바닥 54%·벽지 46%·무대 58%. 펫이 알뜰홈처럼 맨 뒤 벽지까지 걸어가 닿는다(예전 dock 66%는 바닥이 너무 커 펫이 벽에 못 닿고 가구와 깊이도 안 맞았음). */
