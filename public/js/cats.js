@@ -619,7 +619,7 @@
       { id:'tower',   name:'캣타워', price:35, size:2,    footW:1, footH:2, desc:'3층 발판 — 한 층에 올라가 쉬어요.' },
       { id:'scratcher', name:'스크래처', price:18, size:2, footW:1, footH:1, desc:'옆에서 잠시 머물며 발톱을 갈아요.' },
       { id:'litterbox', name:'화장실', price:25, size:1, footW:1, footH:1, desc:'비운 그릇 수만큼 똥이 쌓여요. 탭해 치우면 은화!' },
-      { id:'pethouse', name:'펫하우스', price:45, size:2, footW:2, footH:2, desc:'펫이 안에 들어가 정면을 보며 아늑하게 쉬어요.' },
+      { id:'pethouse', name:'펫하우스', price:45, size:2, footW:1, footH:1, desc:'펫이 안에 들어가 정면을 보며 아늑하게 쉬어요.' },   // 점유칸 1×1(캠 렌더 크기 ROOM_H는 그대로 유지 — 좁은 칸에 큰 집)
       { id:'catwheel', name:'캣휠', price:60, size:2, footW:2, footH:2, desc:'고양이가 안에서 달리며 운동하는 러닝휠.' },
       { id:'plant',    name:'화분',   price:22, size:1, footW:1, footH:1, desc:'초록 화분. 고양이가 곁에서 잠시 쉬어요.' }
     ];
@@ -2144,16 +2144,17 @@
       const n=litters.length?Math.min(room().poops||0, litters.length*5):0;
       for(let i=0;i<n;i++) litters[i%litters.length]._poops.push(i/litters.length|0);
     }
-    // 캠 원근에서 열(column) 좌측% 앵커를 오른쪽으로 소폭 확장하는 채움 계수.
-    // 좌측하단 앵커라 c=1은 0%(왼쪽 벽에 붙음)를 유지하고, 오른쪽 열일수록 더 밀려 맨 끝 가구가 오른쪽 벽까지 닿는다.
-    // (예전: (c-1)/12 → 맨 오른쪽 열이 91.67%에 머물러 벽까지 공백. overflow:hidden이 살짝 넘치는 부분을 크롭.)
-    // propMarkup의 x와 buildActors의 가구 중앙 x(leftEdge)에 동일 적용 → 펫 상호작용 정렬 유지.
-    const CAM_FILL_X = 1.06;
     // 배치물 하나의 마크업(그릇=탭 급여·채움 반영, 화장실=똥 수거). isDock이면 dock 크기.
     function propMarkup(p, isDock, plain, live){
       const foot=itemFoot(p.itemId);
-      // 앵커=배치칸 "좌측하단". x는 발자국 좌측 edge(가운데 정렬 X, CSS translateX(0)), 바닥은 발자국 앞줄(front row) 기준.
-      const x=((p.c-1)/12*100*CAM_FILL_X).toFixed(2);
+      // 가로 앵커=발자국 "가운데 정렬 + 양끝 벽 스냅"(camAnchorMode). CSS left% + translateX(--crtx)로 픽셀 폭을 몰라도 자동 정렬.
+      //  left  : left 0%   / --crtx 0     → 그래픽 좌변이 왼쪽 벽에 밀착
+      //  right : left 100% / --crtx -100% → 그래픽 우변이 오른쪽 벽에 밀착
+      //  center: 발자국 중앙% / --crtx -50% → 칸 안에서 가운데(중간 가구가 좌우로 고르게 참)
+      const mode=camAnchorMode(p.c, foot.w);
+      const leftPct = mode==='left'?0 : mode==='right'?100 : (gridLeftFrac(p.c)+gridSpanFrac(foot.w)/2)*100;
+      const txPct   = mode==='left'?0 : mode==='right'?-100 : -50;
+      const x=leftPct.toFixed(2);
       const frontRow=p.r + foot.h - 1;   // 발자국에서 가장 앞(가까운) 줄에 바닥을 둠 → 가구가 위로 뜨지 않음
       // 반전: 격자 윗줄(작은 r)=방 뒤(멀리, 위·작게), 아랫줄(큰 r)=방 앞(가까이, 아래·크게)
       const depth=(12-frontRow)/11; const bottom=(3+depth*46).toFixed(1); const fh=furnRoomH(p.itemId,isDock,depth);   // dock·홈 동일 깊이 매핑(바닥 54%) → 뒤 가구가 펫과 같은 바닥선에 정렬
@@ -2165,7 +2166,7 @@
       let inner=tap? furnRoomSvg(p.itemId,p.key,{h:fh}) : (live&&FURN_ANIM[p.itemId] ? furnLiveSvg(p.itemId,{h:fh}) : furnSvg(p.itemId,{h:fh}));
       if(!plain && p.itemId==='litterbox'){ const slots=p._poops||[]; const ph=Math.max(6,Math.round(fh*0.32));
         inner+=slots.map(s=>'<span class="poop" onclick="collectPoop(event)" style="left:'+(20+(s%3)*26)+'%;top:'+(30+((s/3|0)*20))+'%;height:'+ph+'px" title="치우기 +'+POOP_REWARD+' 은화">'+poopSvg({h:ph})+'</span>').join(''); }
-      return '<div class="cr-prop'+(tap?' cr-tap':'')+(p.itemId==='litterbox'?' cr-litter':'')+'" style="left:'+x+'%;bottom:'+bottom+'%;z-index:'+z+';"'+(tap?' onclick="event.stopPropagation();feedBowl(\''+p.key+'\')"':'')+'>'+inner+'</div>';
+      return '<div class="cr-prop'+(tap?' cr-tap':'')+(p.itemId==='litterbox'?' cr-litter':'')+'" style="left:'+x+'%;bottom:'+bottom+'%;z-index:'+z+';--crtx:'+txPct+'%;transform:translateX(var(--crtx));"'+(tap?' onclick="event.stopPropagation();feedBowl(\''+p.key+'\')"':'')+'>'+inner+'</div>';
     }
     // 우측 상단 "일괄 돌보기" 버튼(밥·물 채우고 똥 치우기) — dock·홈 공용
     function batchBtnHtml(){ return '<button class="cr-batch" onclick="event.stopPropagation();batchCare(this)" aria-label="일괄 돌보기: 밥·물 채우고 똥 치우기">돌보기</button>'; }
@@ -2305,8 +2306,11 @@
       const plist = (isFriend && state._friendCam) ? state._friendCam.placedList : placedList();   // 친구 방이면 친구 가구로 상호작용
       const props = hasRoom ? plist.map(p=>{ const foot=itemFoot(p.itemId), depth=(12-(p.r+foot.h-1))/11;   // propMarkup과 동일(앞줄 기준)
         const fh=furnRoomH(p.itemId, isDock, depth);   // 렌더 높이와 동일 → 캣타워 층 lift가 실제 높이에 맞음
-        // 가구는 좌측하단 앵커 → 그래픽 중앙 x = 좌측 edge + fh*aspect/2. 고양이가 이 중앙에 서서 상호작용(캣타워 중앙에 앉기).
-        const leftEdge=(p.c-1)/12*W*CAM_FILL_X; return { x: leftEdge + fh*furnAspect(p.itemId)/2, itemId:p.itemId, fh, key:p.key, depth }; }) : [];
+        // 그래픽 중앙 x — propMarkup의 camAnchorMode(가운데/양끝 스냅)와 동일하게 계산해 펫이 가구 중앙에 정렬(캣타워 중앙 앉기).
+        // 그래픽 폭 w=fh*aspect. left=w/2, right=W-w/2, center=발자국 중앙*W.
+        const mode=camAnchorMode(p.c, foot.w), w=fh*furnAspect(p.itemId);
+        const cx = mode==='left'? w/2 : mode==='right'? W-w/2 : (gridLeftFrac(p.c)+gridSpanFrac(foot.w)/2)*W;
+        return { x: cx, itemId:p.itemId, fh, key:p.key, depth }; }) : [];
       // 고양이마다 성격(속도·유휴빈도·방향전환·가구선호)을 랜덤 부여 → 개별적으로 움직임
       // 스프라이트 고양이는 정사각(폭=높이), SVG 고양이는 가로세로비 ~26/14.
       const sid=stage.id||'s';   // 무대별 지속키 prefix — 같은 펫 id가 dock·내 방·친구 방에 동시에 있어도 x/depth가 안 섞이게
@@ -2596,7 +2600,7 @@
       const on=idx===roomIdx(); r=r||{};
       const placed=r.placed||{};
       const dots=Object.keys(placed).map(k=>{ const pr=k.split('_'), rr=+pr[0], cc=+pr[1], foot=itemFoot(placed[k].itemId);
-        return '<i class="rmf" style="left:'+((cc-1)/12*100).toFixed(1)+'%;top:'+((rr-1)/12*100).toFixed(1)+'%;width:'+(foot.w/12*100).toFixed(1)+'%;height:'+(foot.h/12*100).toFixed(1)+'%"></i>'; }).join('');
+        return '<i class="rmf" style="left:'+(gridLeftFrac(cc)*100).toFixed(1)+'%;top:'+(gridLeftFrac(rr)*100).toFixed(1)+'%;width:'+(gridSpanFrac(foot.w)*100).toFixed(1)+'%;height:'+(gridSpanFrac(foot.h)*100).toFixed(1)+'%"></i>'; }).join('');
       const pets=(r.active||[]).filter(ownsCat).length;
       const rep=idx===(homeH().showRoom|0);   // 대표 방(친구·랭킹 노출)
       return '<div class="rmthumb'+(on?' on':'')+'" role="button" tabindex="0" aria-pressed="'+on+'" onpointerdown="rmDown(event,'+idx+')" onclick="rmTap('+idx+')" title="'+escapeHtml(r.name||('방 '+(idx+1)))+(rep?' · 대표 방':'')+'">'+
@@ -3351,8 +3355,8 @@
       const rr=Math.min(13-foot.h,Math.max(1,r)), cc=Math.min(13-foot.w,Math.max(1,c));
       const ok=areaFree(rr,cc,foot.w,foot.h,placed,key);
       g.hidden=false; g.className='gdrop'+(ok?'':' bad');
-      g.style.left=((cc-1)/12*100)+'%'; g.style.top=((rr-1)/12*100)+'%';
-      g.style.width=(foot.w/12*100)+'%'; g.style.height=(foot.h/12*100)+'%';
+      g.style.left=(gridLeftFrac(cc)*100)+'%'; g.style.top=(gridLeftFrac(rr)*100)+'%';
+      g.style.width=(gridSpanFrac(foot.w)*100)+'%'; g.style.height=(gridSpanFrac(foot.h)*100)+'%';
     }
     function hideDropPreview(){ const g=$('gdrop'); if(g) g.hidden=true; }
     // ---- 배치된 가구 탭 → 회수/판매 메뉴 ----
@@ -3389,7 +3393,7 @@
       const placed=room().placed||{};
       // 배치된 가구를 격자 위 절대좌표로(발자국 크기만큼 영역 차지). 드래그=이동, 탭=회수/판매.
       const items=Object.keys(placed).map(key=>{ const pr=key.split('_'), r=+pr[0], c=+pr[1], id=placed[key].itemId, foot=itemFoot(id);
-        const left=((c-1)/12*100).toFixed(3), top=((r-1)/12*100).toFixed(3), w=(foot.w/12*100).toFixed(3), h=(foot.h/12*100).toFixed(3);
+        const left=(gridLeftFrac(c)*100).toFixed(3), top=(gridLeftFrac(r)*100).toFixed(3), w=(gridSpanFrac(foot.w)*100).toFixed(3), h=(gridSpanFrac(foot.h)*100).toFixed(3);
         // 배치칸(발자국)에 꽉 차게 그림
         return '<div class="gitem" style="left:'+left+'%;top:'+top+'%;width:'+w+'%;height:'+h+'%" onpointerdown="giDown(event,\''+key+'\')" onclick="event.stopPropagation()">'+
           '<span class="gsc">'+furnSvg(id,{fit:true})+'</span></div>'; }).join('');

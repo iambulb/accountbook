@@ -879,8 +879,8 @@
     .prog-pill { font-size:12px; font-weight:800; color:var(--sub); flex:none; }
     /* 방에 배치된 가구 */
     .cr-props { position:absolute; left:0; right:0; bottom:0; top:0; }   /* z-index 제거(auto) → 가구(.cr-prop)와 펫(.cd-actor)이 같은 방 컨텍스트에서 각자 깊이 z로 상호 가림 */
-    /* 앵커=배치칸 좌측하단: 가로 중앙정렬 안 함(left=칸 좌측 edge), bottom이 바닥 기준 */
-    .cr-prop { position:absolute; transform:translateX(0); transform-origin:left bottom; color:var(--text2); }
+    /* 가로 앵커=발자국 가운데/양끝 스냅: propMarkup이 left%와 --crtx(0/-50%/-100%)를 인라인으로 준다. bottom이 바닥 기준 */
+    .cr-prop { position:absolute; transform:translateX(var(--crtx,0)); transform-origin:center bottom; color:var(--text2); }
     .cr-prop .px { display:block; }
     /* 캠 전용 가구 연출: base(정지) 위에 fx(움직이는 부품)만 오버레이해 회전/흔들림. image-rendering 유지(도트 유지). */
     .cr-prop .fwrap { position:relative; display:inline-block; line-height:0; }
@@ -901,7 +901,7 @@
     @media (prefers-reduced-motion:reduce){ .cr-prop .ffx .px { animation:none; } }
     /* 다마고치: 탭 가능한 그릇 / 화장실 위 똥 / 똥 수거 획득 연출 */
     .cr-prop.cr-tap { cursor:pointer; z-index:2; }
-    .cr-prop.cr-tap:active { transform:scale(.92); }
+    .cr-prop.cr-tap:active { transform:translateX(var(--crtx,0)) scale(.92); }   /* 탭 축소가 가로 앵커(--crtx)를 잃지 않게 합성 */
     .cr-prop.cr-litter { z-index:2; }
     .cr-prop .poop { position:absolute; transform:translate(-50%,-50%); cursor:pointer; z-index:3; filter:drop-shadow(0 1px 1px rgba(0,0,0,.35)); animation:poopIn .2s ease; }
     .cr-prop .poop:active { transform:translate(-50%,-50%) scale(.8); }
