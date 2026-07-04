@@ -3180,6 +3180,7 @@
     // 업데이트 공지 — 기본값(폴백). 운영은 RTDB config/notices(관리자만 쓰기)에서 덮어씀(loadNotices). 최신순.
     // 업데이트 내역(요약) — 최신순. RTDB config/notices가 있으면 그걸로 덮어씀(아래는 기본값).
     // 업데이트 내역 기본값(요약) — 최신순. RTDB config/notices가 있으면 그걸로 덮어씀. 시즌·친구선물 홍보는 이벤트·알림 섹션에 이미 나오므로 여기(업데이트 내역)엔 넣지 않는다.
+    // 🔒 여기(및 config/notices)는 일반 사용자에게 그대로 노출된다. 개발자 모드·치트·내부 도구 등 비공개 변경은 절대 넣지 말 것(운영 유출 크리티컬). 방어로 isDevNotice가 한 번 더 거른다.
     let NOTICES = [
       { date:'2026-07-04', t:'소식 화면 개편 · 업데이트 내역', s:'공지를 업데이트 내역으로 정리하고, 확성기 아이콘·레이아웃을 다듬었어요' }
     ];
@@ -3193,8 +3194,11 @@
     function newsSeenAt(){ let g=(state.game&&state.game.newsSeenAt)||''; let l=''; try{ l=localStorage.getItem('newsSeenAt')||''; }catch(e){} return g>l?g:l; }
     // 시즌·친구선물 홍보 공지 판별(이벤트/알림 섹션에 이미 노출) → 업데이트 내역에서 제외. 개발자 changelog가 실수로 걸리지 않게 문구를 좁게 매칭.
     function isPromoNotice(n){ const t=(n&&n.t)||''; return /이달의\s*펫|시즌\s*할인|응원\s*선물/.test(t); }
-    // 개발자 업데이트 내역만(홍보 제외). 실시간(RTDB config/notices) 추가분도 이 필터를 거친다.
-    function updateNotices(){ return NOTICES.filter(function(n){ return !isPromoNotice(n); }); }
+    // 🔒 개발자/내부 전용 문구는 사용자 대면 업데이트 내역에 절대 노출 금지(운영 배포 시 프라이빗 정보 유출 방지). config/notices에 실수로 들어와도 이 필터로 방어.
+    //    ⚠️ 정책: 개발자 모드·치트·내부 도구 관련 변경은 NOTICES/config/notices에 넣지 말 것(개발용 CHANGELOG.md와 별개). 자세한 규칙은 CLAUDE.md·docs/deploy 참고.
+    function isDevNotice(n){ const t=(((n&&n.t)||'')+' '+((n&&n.s)||'')); return /개발자|디버그|debug|dev\s*mode|내부용|internal|치트|cheat|재화\s*지급|콘솔|console/i.test(t); }
+    // 사용자 대면 업데이트 내역(홍보·개발자/내부 문구 제외). 실시간(RTDB config/notices) 추가분도 이 필터를 거친다.
+    function updateNotices(){ return NOTICES.filter(function(n){ return !isPromoNotice(n) && !isDevNotice(n); }); }
     // 그중 '최신 1건'만 노출(이전 내역은 사라짐). 날짜 최대값으로 선택(배열 정렬에 의존하지 않음).
     function latestUpdate(){ return updateNotices().reduce(function(m,n){ return (!m || (n.date||'')>(m.date||''))?n:m; }, null); }
     function latestNoticeDate(){ const u=latestUpdate(); return u?(u.date||''):''; }
@@ -3422,7 +3426,13 @@
       h+='<div class="tx-sub" style="margin:8px 2px 6px;">랜덤박스</div><div class="chip-row">'+TIERS.map(t=>'<button class="chip" onclick="devPreview(\'box\',\''+t.id+'\')"><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
       h+='<div class="sec-title" style="margin-top:18px;">다마고치 테스트(즉시)</div>';
       h+='<div class="note" style="margin-bottom:8px;">3시간을 기다리지 않고 급여·배변·수거를 바로 확인. 순서: <b>사료·물 +10</b> → 홈에서 그릇 채우기(또는 <b>그릇 다 채우기</b>) → <b>그릇 만료→똥</b> → 똥 탭/일괄 돌보기.</div>';
-      h+='<div class="chip-row"><button class="chip" onclick="devGiveConsum()">사료·물 +10</button><button class="chip" onclick="devFillAll()">그릇 다 채우기</button><button class="chip" onclick="devExpireBowls()">그릇 만료→똥</button><button class="chip" onclick="devAddPoop()">똥 +3</button><button class="chip" onclick="devAddCoins()">은화 +100</button></div>';
+      h+='<div class="chip-row"><button class="chip" onclick="devGiveConsum()">사료·물 +10</button><button class="chip" onclick="devFillAll()">그릇 다 채우기</button><button class="chip" onclick="devExpireBowls()">그릇 만료→똥</button><button class="chip" onclick="devAddPoop()">똥 +3</button></div>';
+      // 재화 추가(지급) — 은화·금화·펫알·랜덤박스·무지개알·무지개박스를 입력 수량만큼 내 계정에 지급
+      h+='<div class="sec-title" style="margin-top:18px;">재화 추가(지급)</div>';
+      h+='<div class="note" style="margin-bottom:8px;">입력한 수량만큼 <b>내 계정</b>에 지급해요(비우면 건너뜀, 음수면 차감·0 미만은 안 됨).</div>';
+      { const cur6=[['coins','은화',coinSvg({h:18})],['gold','금화',goldSvg({h:18})],['egg','펫알',eggSvg(0,{h:18})],['box','랜덤박스',boxSvg({h:18})],['rainbow_egg','무지개알',rainbowEggSvg({h:18})],['rainbow_box','무지개박스',rainbowBoxSvg({h:18})]];
+        h+=cur6.map(function(c){ return '<div class="row" style="padding:5px 2px;align-items:center;"><span style="display:flex;align-items:center;gap:8px;min-width:0;"><span style="display:inline-flex;flex:none;">'+c[2]+'</span>'+c[1]+'</span><input class="input" style="width:120px;text-align:right;" inputmode="numeric" id="dv_'+c[0]+'" placeholder="0"></div>'; }).join(''); }
+      h+='<button class="btn" style="margin-top:12px;" onclick="devGrantCurrency()">지급</button>';
       h+='<div class="sec-title" style="margin-top:18px;">등급 확률(%)</div>';
       h+=TIERS.map(t=>'<div class="row" style="padding:5px 2px;"><span><b class="tier-'+t.id+'">'+t.name+'</b></span><input class="input" style="width:96px;text-align:right;" inputmode="decimal" id="dp_'+t.id+'" value="'+(tp[t.id]!=null?tp[t.id]:t.p)+'"></div>').join('');
       h+='<div class="sec-title" style="margin-top:18px;">펫알 — 고양이 등급</div>';
@@ -3454,3 +3464,17 @@
     function devExpireBowls(){ if(!isDev())return; gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoom(g); const pl=R.placed||{}; let poop=0; Object.keys(pl).forEach(k=>{ const e=pl[k]; if(e&&e.filledAt&&(e.itemId==='bowl'||e.itemId==='waterbowl')){ e.filledAt=null; poop++; } }); if(poop) R.poops=(Number(R.poops)||0)+poop; return g; }).then(r=>{ if(r&&r.committed) toast('채워진 그릇 만료 → 똥 생성'); }); }
     function devAddPoop(){ if(!isDev())return; gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoom(g); R.poops=(Number(R.poops)||0)+3; return g; }).then(r=>{ if(r&&r.committed) toast('똥 +3'); }); }
     function devAddCoins(){ if(!isDev())return; gameRef().transaction(g=>{ g=normalizeGame(g); g.coins+=100; return g; }).then(r=>{ if(r&&r.committed) toast('은화 +100'); }); }
+    // 재화 지급(개발자): dv_* 입력값을 읽어 은화·금화·소비템(펫알/박스/무지개알/무지개박스)을 한 트랜잭션에 지급.
+    function devGrantCurrency(){ if(!isDev())return;
+      const rd=id=>{ const v=parseInt(val('dv_'+id),10); return isNaN(v)?0:v; };
+      const c=rd('coins'), gd=rd('gold'), eg=rd('egg'), bx=rd('box'), re=rd('rainbow_egg'), rb=rd('rainbow_box');
+      if(!(c||gd||eg||bx||re||rb)){ toast('수량을 입력하세요', true); return; }
+      gameRef().transaction(g=>{ g=normalizeGame(g);
+        if(c)  g.coins=clampCoins((g.coins||0)+c);
+        if(gd) g.gold=clampGold((g.gold||0)+gd);
+        if(eg) g.consum.egg=clampConsum((g.consum.egg||0)+eg);
+        if(bx) g.consum.box=clampConsum((g.consum.box||0)+bx);
+        if(re) g.consum.rainbow_egg=clampConsum((g.consum.rainbow_egg||0)+re);
+        if(rb) g.consum.rainbow_box=clampConsum((g.consum.rainbow_box||0)+rb);
+        return g; }).then(r=>{ if(r&&r.committed){ toast('재화 지급 완료 🎁'); if(state._sheetRefresh) state._sheetRefresh(); } });
+    }
