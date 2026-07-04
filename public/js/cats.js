@@ -3355,7 +3355,7 @@
           return '<div class="wallcard'+(applied?' on':'')+'"><div class="wallsw" style="background:'+floorCss(f.id)+'"></div>'+
             '<div class="wallmeta"><b>'+f.name+'</b>'+price+'</div>'+act+'</div>';
         }).join('')+'</div>';
-        h+='<div class="note"><b>바닥 스킨</b>은 방마다 <b>적용</b>으로 바꿔요. <b>특별↑ 등급</b> 바닥은 <b>랜덤박스</b>로만 나와요.</div>';
+        h+='<div class="note"><b>바닥 스킨</b>은 <b>알뜰홈 방꾸미기</b>에서 방마다 골라 깔아요. <b>특별↑ 등급</b> 바닥은 <b>랜덤박스</b>로만 나와요.</div>';
         return h;
       }
 
@@ -3364,8 +3364,7 @@
         h+='<div class="wallgrid">'+WALLPAPER_CATALOG.map(w=>{
           const owned=ownsWall(w.id), applied=cur===w.id;
           let act;
-          if(applied) act='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>적용됨</span>';
-          else if(owned) act='<button class="buy ghost" onclick="applyWall(\''+w.id+'\')">적용</button>';
+          if(owned) act='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>보유중</span>';
           else if(isGachaOnlyWall(w.id)) act='<span class="owntag" style="color:var(--sub);"><span class="ci" style="vertical-align:-2px">'+boxSvg({h:14})+'</span>랜덤박스</span>';
           else if(coins()>=wallBuyPrice(w.id)) act='<button class="buy" aria-label="'+w.name+' 벽지 구매('+wallBuyPrice(w.id)+' 은화)" onclick="buyWall(\''+w.id+'\')">구매</button>';
           else act='<button class="buy dis" disabled>'+(wallBuyPrice(w.id)-coins())+' 부족</button>';
@@ -3374,7 +3373,7 @@
           return '<div class="wallcard'+(applied?' on':'')+'"><div class="wallsw" style="background:'+wallCss(w.id)+'"></div>'+
             '<div class="wallmeta"><b>'+w.name+'</b>'+price+'</div>'+act+'</div>';
         }).join('')+'</div>';
-        h+='<div class="note"><b>벽지</b> 구매하면 바로 적용돼요(<b>벽돌</b>은 랜덤박스 전용). 보유한 벽지는 <b>적용</b>으로 바꿀 수 있어요.</div>';
+        h+='<div class="note"><b>벽지</b>는 <b>알뜰홈 벽꾸미기</b>에서 방마다 골라 적용해요(<b>벽돌</b>은 랜덤박스 전용).</div>';
         return h;
       }
       if(_shopSub==='cats'){
