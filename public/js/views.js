@@ -1063,6 +1063,11 @@
       h+='<div class="card" style="padding:4px 12px;">'+(list.length?list.map(function(t){ return todoRow(t,false); }).join(''):'<div class="empty" style="padding:22px 6px;">반복 할일이 없어요</div>')+'</div>';
       openSheet('반복 할일', h);
     }
+    // 리포트 카테고리 범례 값 표시 토글(% ↔ 금액). 전체 재렌더 없이 DOM 클래스만 바꿔 즉시 반영 + state로 유지.
+    function setRepVal(amt){ state._repShowAmt=!!amt;
+      document.querySelectorAll('.legend').forEach(el=>el.classList.toggle('amt', !!amt));
+      document.querySelectorAll('.repvalseg').forEach(seg=>{ const b=seg.querySelectorAll('button'); if(b[0])b[0].classList.toggle('on', !amt); if(b[1])b[1].classList.toggle('on', !!amt); });
+    }
     function renderStats(){
       if(typeof markReportSeen==='function') markReportSeen();   // 🐱 주간 미션: 리포트 확인
       const m=state.month, list=monthTx(m);
@@ -1086,12 +1091,12 @@
       const cd={}; list.filter(t=>isActual(t)&&t.category).forEach(t=>{ cd[t.category]=(cd[t.category]||0)+(Number(t.amount)||0); });
       let cats=Object.keys(cd).map(k=>({name:k,val:cd[k]})).sort((a,b)=>b.val-a.val);
       const totCat=cats.reduce((s,c)=>s+c.val,0);
-      h+='<div class="sech"><span class="l">카테고리별</span><span class="s">'+(+mo)+'월</span></div>';
+      h+='<div class="sech"><span class="l">카테고리별</span><span style="display:flex;align-items:center;gap:8px;">'+(totCat>0?'<span class="repvalseg"><button class="'+(!state._repShowAmt?'on':'')+'" onclick="setRepVal(0)" aria-label="비율(%)로 보기">%</button><button class="'+(state._repShowAmt?'on':'')+'" onclick="setRepVal(1)" aria-label="금액으로 보기">금액</button></span>':'')+'<span class="s">'+(+mo)+'월</span></span></div>';
       if(totCat>0){
         let segs = cats.length>6 ? cats.slice(0,5).concat([{name:'기타',val:cats.slice(5).reduce((s,c)=>s+c.val,0),etc:true}]) : cats;
         let acc=0; const stops=segs.map(s=>{ const p0=acc/totCat*100, p1=(acc+s.val)/totCat*100; const col=s.etc?'var(--soft2)':catColor(s.name); acc+=s.val; return col+' '+p0.toFixed(2)+'% '+p1.toFixed(2)+'%'; });
         h+='<div class="donut-wrap"><div class="donut" style="background:conic-gradient('+stops.join(',')+')"><div class="ic"><b>'+shortAmt(totCat)+'</b><span>총지출</span></div></div>'+
-          '<div class="legend">'+segs.map(s=>'<div class="lgi"><i style="background:'+(s.etc?'var(--soft2)':catColor(s.name))+'"></i><span class="ln">'+escapeHtml(s.name)+'</span><span class="lp">'+Math.round(s.val/totCat*100)+'%</span></div>').join('')+'</div></div>';
+          '<div class="legend'+(state._repShowAmt?' amt':'')+'">'+segs.map(s=>'<div class="lgi"><i style="background:'+(s.etc?'var(--soft2)':catColor(s.name))+'"></i><span class="ln">'+escapeHtml(s.name)+'</span><span class="lp">'+Math.round(s.val/totCat*100)+'%</span><span class="lv">'+won(s.val)+'</span></div>').join('')+'</div></div>';
       } else h+='<div class="empty" style="padding:24px;">이 달 지출 데이터가 없습니다</div>';
       // 💡 인사이트: 전월 대비 가장 크게 늘어난 카테고리(의미 있는 금액만)
       const pcd={}; monthTx(shiftMonth(m,-1)).filter(t=>isActual(t)&&t.category).forEach(t=>{ pcd[t.category]=(pcd[t.category]||0)+(Number(t.amount)||0); });

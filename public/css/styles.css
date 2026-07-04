@@ -196,6 +196,13 @@
     .lgi i { width:9px; height:9px; border-radius:3px; flex:none; }
     .lgi .ln { flex:1; font-weight:600; color:var(--text2); }
     .lgi .lp { font-weight:800; color:var(--sub); }
+    .lgi .lv { font-weight:800; color:var(--text2); display:none; white-space:nowrap; }   /* 금액 표시(토글) */
+    .legend.amt .lp { display:none; }
+    .legend.amt .lv { display:inline; }
+    /* 리포트 카테고리 값 표시 토글(% ↔ 금액) */
+    .repvalseg { display:inline-flex; gap:2px; background:var(--soft); border-radius:8px; padding:2px; }
+    .repvalseg button { font-size:11px; font-weight:800; color:var(--sub); padding:3px 9px; border-radius:6px; line-height:1.3; }
+    .repvalseg button.on { background:var(--card); color:var(--text); box-shadow:0 1px 2px rgba(0,0,0,.08); }
     .bars6 { display:flex; align-items:flex-end; gap:8px; height:120px; padding:8px 2px 0; }
     .bars6 .b { flex:1; display:flex; flex-direction:column; align-items:center; gap:7px; justify-content:flex-end; height:100%; }
     .bars6 .bar { width:60%; background:var(--soft2); border-radius:6px 6px 3px 3px; min-height:3px; }
