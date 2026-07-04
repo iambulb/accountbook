@@ -1557,6 +1557,7 @@
       wallclock:{type:'swing', move:['K','O'] },       // 추(봉+놋쇠)만 좌우로(몸통·시계판 정지)
       hangplant:{type:'swing', move:['K','P','p','G','L','l','g'] }, // 걸이 아래 전체가 살랑(천장 걸이 X 정지)
       mobile:  { type:'swing', move:['K','M','A','a','B','b','C','c'] }, // 막대+매달린 별·달·하트 전체가 살랑(걸이 X 정지)
+      chandelier:{type:'sway', move:['K','f','F','H','Y','y','C','c','o'] }, // 천장에서 전체가 은은하게 흔들(매다는형, 상단 피벗) — 촛불·크리스털 반짝임 포함
       jingleball:{type:'swing', move:['X','B','b','L','D','S'] },  // 공 전체가 바닥에서 통통(바닥 접점 중심)
       neon:    {type:'blink',  move:['N','H'] },   // 네온 하트 전체가 깜빡(밝기 스텝)
       sconce:  {type:'flicker',move:['F','Y'] }    // 벽등 불빛만 일렁

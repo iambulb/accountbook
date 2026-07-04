@@ -919,6 +919,7 @@
     .cr-prop .ffx-wallclock .px { transform-origin:50% 52%; animation-duration:2s; }     /* 추 피벗 */
     .cr-prop .ffx-hangplant .px { transform-origin:50% 4%; animation-duration:5s; }      /* 천장 걸이 */
     .cr-prop .ffx-mobile .px    { transform-origin:50% 6%; animation-duration:6s; }      /* 걸이 */
+    .cr-prop .ffx-chandelier .px{ transform-origin:50% 4%; animation-duration:6.8s; }    /* 천장 체인 피벗에서 은은하게 흔들(대형 매다는 가구는 느리게) */
     .cr-prop .ffx-jingleball .px{ transform-origin:50% 94%; animation-duration:1.6s; }   /* 바닥 접점에서 통통 */
     @keyframes ffspin  { to { transform:rotate(360deg); } }
     @keyframes ffswing { 0%,100%{ transform:rotate(-6deg); } 50%{ transform:rotate(6deg); } }
