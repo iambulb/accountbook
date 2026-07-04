@@ -582,10 +582,10 @@
       { id:'cat_mackerel', species:'cat', name:'고등어', price:50, desc:'쿨그레이 줄무늬. 차분하게 방을 돌아다녀요.' },
       { id:'cat_cheese', species:'cat', name:'치즈', price:100, desc:'웜오렌지. 활발하게 뛰어다니는 개냥이.' },
       { id:'cat_calico', species:'cat', name:'삼색', price:200, desc:'검정·주황 어우러진 삼색(토터셸). 도도하게 창가에 앉아요.' },
-      { id:'cat_black', species:'cat', name:'까망', price:400, desc:'노란 눈의 까만 고양이. 조용히 방을 지켜요.' },
-      { id:'cat_white', species:'cat', name:'하양', price:400, desc:'파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요.' },
+      { id:'cat_black', species:'cat', name:'까망', price:200, desc:'노란 눈의 까만 고양이. 조용히 방을 지켜요.' },
+      { id:'cat_white', species:'cat', name:'하양', price:200, desc:'파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요.' },
       { id:'cat_fluffy', species:'cat', name:'복슬이', price:200, desc:'복슬복슬한 털에 파란 눈. 나른하게 졸며 방을 거닐어요.' },
-      { id:'cat_tuxedo', species:'cat', name:'턱시도', price:800, desc:'검은 정장에 하얀 셔츠·발. 단정하게 걸어다녀요.' },
+      { id:'cat_tuxedo', species:'cat', name:'턱시도', price:200, desc:'검은 정장에 하얀 셔츠·발. 단정하게 걸어다녀요.' },
       { id:'cat_chaos', species:'cat', name:'카오스', price:200, desc:'다크그레이+브라운 소용돌이 무늬. 종잡을 수 없이 쏘다녀요.' },
       { id:'cat_siamese', species:'cat', name:'샴', price:800, desc:'크림빛 몸에 짙은 포인트. 우아하게 방을 누벼요.' },
       { id:'cat_bengal', species:'cat', name:'황토', price:100, desc:'골든빛 몸에 동글동글 반점. 야무지게 돌아다녀요.' },
@@ -599,7 +599,9 @@
       { id:'cat_persian', species:'cat', name:'펠시안', price:400, desc:'납작한 얼굴에 복슬복슬 긴 털. 우아하게 방을 누벼요.' },
       { id:'tiger_white', species:'tiger', name:'백호', price:1500, desc:'푸른 눈의 새하얀 호랑이. 늠름하게 방을 누벼요.' },
       { id:'cat_russianblue', species:'cat', name:'러시안블루', price:400, desc:'은청빛 짧은 털에 초록 눈. 조용히 방을 거닐어요.' },
-      { id:'cat_bengal2', species:'cat', name:'벵갈', price:800, desc:'야생미 물씬 로제트 무늬. 날렵하게 방을 쏘다녀요.' }
+      { id:'cat_bengal2', species:'cat', name:'벵갈', price:800, desc:'야생미 물씬 로제트 무늬. 날렵하게 방을 쏘다녀요.' },
+      { id:'dog_mutt', species:'dog', name:'시고르자브', price:200, desc:'어느 동네에나 있는 씩씩한 잡종견. 꼬리 흔들며 졸졸 따라다녀요.' },
+      { id:'cat_panther', species:'cat', name:'블랙팬서', price:1500, desc:'칠흑빛 근육질의 흑표범. 소리 없이 방을 누비는 한정판 위엄.' }
     ];
     // @gen:end
     // 종(species) → 알뜰샵 분류 라벨. 품종(샴·벵갈 등)은 표시하지 않고 종만 노출.
@@ -608,7 +610,7 @@
     // 구 id(고양이 전용 시절) → 신 id. RTDB 보유/활성 데이터 하위호환(normalizeGame에서 적용).
     // 구 id→신 id 매핑(수동 유지, @gen 마커 밖). 런타임 펫 정적 승격 시 tools/pet_maint.mjs(apply) 가 아래 앵커 앞에 rt_xxx:'static_id' 를 자동 삽입한다.
     const PET_ID_MIGRATE = { mackerel:'cat_mackerel', cheese:'cat_cheese', calico:'cat_calico', black:'cat_black', white:'cat_white',
-      rt_mr3n1k85:'lion_mane', rt_mr3n6laq:'cat_persian', rt_mr3nx5r4:'tiger_white', rt_mr3nyl3p:'cat_russianblue', rt_mr3ocsnm:'cat_bengal2', /* @rtmigrate */ };
+      rt_mr3n1k85:'lion_mane', rt_mr3n6laq:'cat_persian', rt_mr3nx5r4:'tiger_white', rt_mr3nyl3p:'cat_russianblue', rt_mr3ocsnm:'cat_bengal2', rt_mr5qur7u:'dog_mutt', rt_mr5sv8x4:'cat_panther', /* @rtmigrate */ };
     // size = 표시 배율(1=기본, 팔레트 아이콘 크기에 반영). footW×footH = 배치 격자 점유(가로×세로 칸). 캣타워=1×2, 스크래처=1×1, 화장실=1×1(정사각), 방석·밥그릇=1×1(작게, 밥그릇<방석). itemFoot()/furnScale()로 배치·팔레트에 반영.
     const ITEM_CATALOG = [
       { id:'cushion', name:'방석',   price:15, size:0.6,  footW:1, footH:1, desc:'고양이가 위에 잠시 올라가 쉬어요.' },
@@ -756,7 +758,9 @@
       cat_persian:{ walk:'assets/pets/cat/cat_persian/walk.png', frames:6, stills:true },
       tiger_white:{ walk:'assets/pets/tiger/tiger_white/walk.png', frames:6, stills:true, scale:5 },
       cat_russianblue:{ walk:'assets/pets/cat/cat_russianblue/walk.png', frames:6, stills:true },
-      cat_bengal2:{ walk:'assets/pets/cat/cat_bengal2/walk.png', frames:6, stills:true }
+      cat_bengal2:{ walk:'assets/pets/cat/cat_bengal2/walk.png', frames:6, stills:true },
+      dog_mutt:{ walk:'assets/pets/dog/dog_mutt/walk.png', frames:6, stills:true },
+      cat_panther:{ walk:'assets/pets/cat/cat_panther/walk.png', frames:6, stills:true, scale:3 }
     };
     // @gen:end
     function hasSprite(id){ return !!PET_SPRITES[id]; }
@@ -1245,7 +1249,8 @@
       missionLogs: g.missionLogs||{},          // 체크인 로그: {missionId:{'YYYY-MM-DD':{done,paid,at}}}
       streak: (g.streak && typeof g.streak==='object') ? g.streak : { last:'', count:0, best:0 },   // 로그인(출석) 연속: {last,count,best,lastReward?}
       gifts: normalizeGifts(g.gifts),   // 선물함(코드 보상 대기 목록)
-      mail: (g.mail && typeof g.mail==='object') ? g.mail : {}   // 친구 선물 발신 하루 카운트 {free:{day:n},egg:{day:n}}
+      mail: (g.mail && typeof g.mail==='object') ? g.mail : {},   // 친구 선물 발신 하루 카운트 {free:{day:n},egg:{day:n}}
+      bcSeen: (g.bcSeen && typeof g.bcSeen==='object') ? g.bcSeen : {}   // 전체 선물(config/broadcast) 이미 받은 id 마커(멱등)
     }); }
     // 선물함 목록을 항상 배열로 정규화(RTDB가 객체로 돌려줄 수 있어 방어)
     function normalizeGifts(x){ if(Array.isArray(x)) return x.filter(Boolean); if(x&&typeof x==='object') return Object.keys(x).map(k=>x[k]).filter(Boolean); return []; }
@@ -1286,6 +1291,7 @@
       loadNotices();        // 📢 공지(config/notices) 구독 — 배포 없이 공지 갱신
       loadFeaturedPet();    // 🌟 이달의 펫 수동 선정(config/featuredPet) 구독 — 개발자가 고르면 전역 반영
       loadGachaFx();        // 🎬 가챠 오픈 연출 펫(config/gachaFx: a=1번/왼쪽·b=2번/오른쪽) 구독 — 미지정이면 기본 검은고양이
+      loadBroadcasts();     // 📣 전체 선물(config/broadcast) 구독 — 개발자가 넣으면 각 사용자 선물함으로 1회 수령
       startCatLoop();   // 통합 걷기 엔진(단일 rAF, 보이는 무대만 애니메이션)
       // 앱을 켜둔 동안에도 그릇 3시간 만료→똥 정산이 돌도록 주기 점검(다마고치)
       if(state._petTimer) clearInterval(state._petTimer);
@@ -1503,10 +1509,14 @@
       rainbow_egg:{ name:'무지개알',  icon:o=>rainbowEggSvg(o),   use:'rb_egg' },  // 특별↑ 확률 오픈
       rainbow_box:{ name:'무지개박스',icon:o=>rainbowBoxSvg(o),   use:'rb_box' }
     };
-    // 선물 1건의 아이콘/이름(+선택적 메시지)
-    function giftView(gf){ if(gf.type==='coins') return { icon:coinSvg({h:30}), name:(gf.qty||0).toLocaleString()+' 은화', msg:gf.msg||'' };
-      if(gf.type==='gold') return { icon:goldSvg({h:30}), name:(gf.qty||1).toLocaleString()+' 금화', msg:gf.msg||'' };
-      const m=CONSUM_META[gf.key]||{name:gf.key,icon:()=>''}; return { icon:m.icon({h:34}), name:m.name+' '+(gf.qty||1)+'개', msg:gf.msg||'' }; }
+    // 선물 1건의 출처/사유 텍스트(어떤 행위·보상으로 받았는지). 메시지(운영·축하)가 있으면 우선, 없으면 코드/유형에서 파생.
+    function giftSource(gf){ if(gf.msg) return gf.msg; if(gf.bc) return '운영자 선물'; if(gf.code) return '코드 '+String(gf.code).toUpperCase(); if(gf.welcome) return '회원가입 축하'; return ''; }
+    // 선물 1건의 아이콘/이름(+출처 텍스트 sub)
+    function giftView(gf){ let icon, name;
+      if(gf.type==='coins'){ icon=coinSvg({h:30}); name=(gf.qty||0).toLocaleString()+' 은화'; }
+      else if(gf.type==='gold'){ icon=goldSvg({h:30}); name=(gf.qty||1).toLocaleString()+' 금화'; }
+      else { const m=CONSUM_META[gf.key]||{name:gf.key,icon:()=>''}; icon=m.icon({h:34}); name=m.name+' '+(gf.qty||1)+'개'; }
+      return { icon:icon, name:name, msg:gf.msg||'', sub:giftSource(gf) }; }
     // 🎉 회원가입 축하 선물 — 신규 계정 첫 진입 시 1회(멱등: users/{uid}/welcomeGift 플래그). 은화100 + 펫알1 + 축하 메시지.
     function grantWelcomeGift(){
       if(!state.uid || typeof db==='undefined' || !db) return;
@@ -1535,8 +1545,8 @@
           }
           if(gifts.length){
             if(mail.length) h+='<div class="sech"><span class="l">코드 보상</span><span class="s">'+gifts.length+'개</span></div>';
-            h+=gifts.map((gf,i)=>{ const v=giftView(gf); return '<div class="giftrow"><span class="gfic">'+v.icon+'</span><span class="gftx"><b class="gfnm">'+escapeHtml(v.name)+'</b>'+(v.msg?'<span class="gfmsg">'+escapeHtml(v.msg)+'</span>':'')+'</span><button class="buy" onclick="claimGift('+i+')">받기</button></div>'; }).join('');
-            h+='<button class="btn" style="margin-top:12px;" onclick="claimAllGifts()">코드 보상 모두 받기</button>';
+            h+=gifts.map((gf,i)=>{ const v=giftView(gf); return '<div class="giftrow"><span class="gfic">'+v.icon+'</span><span class="gftx"><b class="gfnm">'+escapeHtml(v.name)+'</b>'+(v.sub?'<span class="gfmsg">'+escapeHtml(v.sub)+'</span>':'')+'</span><button class="buy" onclick="claimGift('+i+')">받기</button></div>'; }).join('');
+            h+='<button class="btn" style="margin-top:12px;" onclick="claimAllGifts()">모두 받기</button>';
           }
         }
         h+='</div>'; return h;
@@ -1556,6 +1566,44 @@
       let n=0;
       gameRef().transaction(g=>{ g=normalizeGame(g); n=g.gifts.length; g.gifts.forEach(gf=>applyGiftToGame(g,gf)); g.gifts=[]; return g; })
         .then(r=>{ if(r&&r.committed){ toast(n?('🎁 선물 '+n+'개 모두 받음'):'받을 선물이 없어요'); if(state._sheetRefresh) state._sheetRefresh(); } });
+    }
+    // ===== 📣 전체 선물(broadcast) — 개발자가 config/broadcast에 넣으면 모든 사용자가 자기 선물함으로 1회 수령 =====
+    // 규칙: config 쓰기=관리자만, 읽기=로그인 전체. 각 사용자는 자기 game.gifts에만 쓰므로 서버 없이 안전하게 전파. bcSeen 마커로 멱등.
+    let _broadcasts={};
+    function loadBroadcasts(){ try{ db.ref('config/broadcast').on('value', function(s){ _broadcasts=s.val()||{}; claimBroadcasts(); }); }catch(e){} }
+    function claimBroadcasts(){ if(!state.uid || !gameRef) return; const bc=_broadcasts||{}; const ids=Object.keys(bc); if(!ids.length) return;
+      let added=0;
+      gameRef().transaction(g=>{ g=normalizeGame(g); added=0;
+        ids.forEach(function(id){ if(g.bcSeen[id]) return; const b=bc[id]; g.bcSeen[id]=true;   // 형식 이상해도 마커는 찍어 재시도 방지
+          if(!b || !b.type || !(b.type==='coins'||b.type==='gold'||b.type==='consum')) return;
+          const gift={ type:b.type, qty:Math.max(1, Number(b.qty)||1), at:b.at||new Date().toISOString(), bc:true };
+          if(b.type==='consum'){ if(!b.key) return; gift.key=b.key; }
+          if(b.msg) gift.msg=String(b.msg).slice(0,200);
+          g.gifts.push(gift); added++; });
+        return g;
+      }).then(function(r){ if(r&&r.committed&&added){ if(typeof toast==='function') toast('🎁 운영자 선물 '+added+'개가 선물함에 도착했어요!'); if(typeof updateNewsBadge==='function') updateNewsBadge(); if(state._sheetRefresh) state._sheetRefresh(); } }).catch(function(){});
+    }
+    // 개발자: 전체 사용자에게 선물 보내기(메시지 포함) → config/broadcast에 새 항목 push
+    function sendBroadcast(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용', true); return; }
+      const type=val('bc_type'), qty=Math.floor(Number(val('bc_qty'))||0), msg=(val('bc_msg')||'').trim();
+      if(!type){ toast('종류를 선택하세요', true); return; }
+      if(qty<=0){ toast('수량을 1 이상 입력하세요', true); return; }
+      const consumKeys=['egg','box','rainbow_egg','rainbow_box'];
+      const gift = (consumKeys.indexOf(type)>=0) ? { type:'consum', key:type, qty:qty } : { type:type, qty:qty };   // coins/gold는 그대로
+      if(msg) gift.msg=msg.slice(0,200);
+      gift.at=new Date().toISOString();
+      if(!confirm('전체 사용자에게 이 선물을 보낼까요?\n'+(giftView(gift).name)+(msg?('\n"'+msg+'"'):'')+'\n(되돌리기 어려움 — config/broadcast에서 삭제하면 이후 신규 전파만 멈춤)')) return;
+      db.ref('config/broadcast').push(gift).then(function(){ toast('📣 전체 선물을 보냈어요 — 각 사용자가 접속 시 받습니다'); if(typeof openDevBroadcast==='function') openDevBroadcast(); }).catch(_cfgWriteErr);
+    }
+    function openDevBroadcast(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용', true); return; }
+      const opts=[['coins','은화'],['gold','금화'],['egg','펫알'],['box','랜덤박스'],['rainbow_egg','무지개알'],['rainbow_box','무지개박스']];
+      let h='<div class="note">전체 사용자 선물함에 아이템을 넣어요. <b>메시지</b>도 함께 표시됩니다(예: 오류로 인한 사과의 선물입니다). 각 사용자가 접속 시 자기 선물함으로 1회 수령(멱등). 전역 <b>config/broadcast</b>(관리자만 쓰기)에 저장.</div>';
+      h+='<div class="field"><label for="bc_type">종류</label><select class="input" id="bc_type">'+opts.map(function(o){ return '<option value="'+o[0]+'">'+o[1]+'</option>'; }).join('')+'</select></div>';
+      h+='<div class="field"><label for="bc_qty">수량</label><input class="input" id="bc_qty" inputmode="numeric" placeholder="예: 100" value="1"></div>';
+      h+='<div class="field"><label for="bc_msg">메시지(선택)</label><input class="input" id="bc_msg" maxlength="200" placeholder="예: 오류로 인한 사과의 선물입니다"></div>';
+      h+='<button class="btn" style="margin-top:6px;" onclick="sendBroadcast()">전체에게 보내기</button>';
+      const cnt=Object.keys(_broadcasts||{}).length; h+='<div class="note" style="margin-top:12px;">현재 전파 중인 전체 선물: <b>'+cnt+'</b>개. 오래된 선물은 Firebase 콘솔 <code>config/broadcast</code>에서 삭제하면 신규 사용자 전파가 멈춥니다(이미 받은 사람은 유지).</div>';
+      openSheet('전체 선물 보내기', h);
     }
     // ===== 🎁 친구 선물(mailbox) — 크로스유저 선물함 =====
     // 발신: 펫알 선물(은화 100 지불) · 무료 응원 선물(하루 제한, 물/사료/은화/금화 랜덤). 둘 다 친구에게만(규칙 강제).
@@ -2840,7 +2888,7 @@
     }
     // 테스트 배정(등급당 1) — 펫알=고양이 / 랜덤박스=가구
     // @gen:pet-tier — 자동생성(tools/build_pets.py). tools/pets.json 의 tier 편집 후 재실행.
-    const CAT_TIER = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'epic', cat_white:'epic', cat_fluffy:'rare', cat_tuxedo:'legend', cat_chaos:'rare', cat_siamese:'legend', cat_bengal:'uncommon', cat_fold:'rare', cat_bora:'epic', cat_choco:'uncommon', cat_kitten:'normal', cat_pink:'legend', tiger_orange:'limited', lion_mane:'limited', cat_persian:'epic', tiger_white:'limited', cat_russianblue:'epic', cat_bengal2:'legend' };
+    const CAT_TIER = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'rare', cat_white:'rare', cat_fluffy:'rare', cat_tuxedo:'rare', cat_chaos:'rare', cat_siamese:'legend', cat_bengal:'uncommon', cat_fold:'rare', cat_bora:'epic', cat_choco:'uncommon', cat_kitten:'normal', cat_pink:'legend', tiger_orange:'limited', lion_mane:'limited', cat_persian:'epic', tiger_white:'limited', cat_russianblue:'epic', cat_bengal2:'legend', dog_mutt:'rare', cat_panther:'limited' };
     // @gen:end
     const ITEM_TIER = { cushion:'normal', bowl:'uncommon', scratcher:'rare', pethouse:'epic', tower:'legend', catwheel:'limited' };
     // 등급별 알뜰샵 가격(은화) — 확률(60/20/15/3.8/1/0.2%)에 맞춰 등급이 오를수록 약 2배씩.

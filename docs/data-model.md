@@ -31,7 +31,8 @@ users/{uid}            : { name, email, photo(프로필 사진 base64 data URL),
                              gifts:[ { type:'coins'|'consum', key?, qty, code, at } … ],  // 🎁 선물함(코드 보상 대기 목록) — 받기(claimGift) 시 은화는 coins로, 아이템은 consum(가방)으로
                              codes:{ {code}:{at, n} },                // 사용한 프로모/치트 코드(일반 1회·개발자 무한). n=사용 횟수
                              newsSeenAt:"YYYY-MM-DD",                 // 📢 마지막으로 '본' 공지 날짜(소식 화면 진입 시 markNewsSeen). 기기(localStorage)와 함께 더 최신을 사용해 기기 간 동기화
-                             mail:{ free:{ "YYYY-MM-DD":count }, freeTo:{ "YYYY-MM-DD":{ {uid}:1 } }, egg:{ "YYYY-MM-DD":count } }  // 🎁 친구 선물 발신 하루 횟수(kstDayKey). 무료 응원=**친구당 하루 1번**(freeTo) + **전체 하루 5번**(free), 펫알=전체 하루 5번(egg). 클라이언트 게이트
+                             mail:{ free:{ "YYYY-MM-DD":count }, freeTo:{ "YYYY-MM-DD":{ {uid}:1 } }, egg:{ "YYYY-MM-DD":count } },  // 🎁 친구 선물 발신 하루 횟수(kstDayKey). 무료 응원=**친구당 하루 1번**(freeTo) + **전체 하루 5번**(free), 펫알=전체 하루 5번(egg). 클라이언트 게이트
+                             bcSeen:{ {pushId}:true }  // 📣 이미 받은 전체 선물(config/broadcast) id 마커 — claimBroadcasts 멱등(재수령 방지). 선물함 gift에는 {msg, bc:true}로 사유 표시
                            } }
 workspaces/{wsId}      : { name, photo(가계부 사진 base64 data URL, 선택), type:'personal'|'group', code(그룹), ownerUid, createdAt,
                            members:{ {uid}:{ name, role:'owner'|'member', joinedAt } } }
@@ -45,6 +46,7 @@ catalogPetArt/{id}     : { walk, south, north, east, west(=data URL PNG) }  // �
 config/notices         : [ { date:"YYYY-MM-DD", t, s } … ]  // 📢 소식 화면 공지(업데이트 내역). 읽기=로그인 전체, 쓰기=개발자 이메일만(규칙). 앱이 loadNotices로 구독해 배포 없이 공지 갱신(비어있으면 cats.js 기본 NOTICES 폴백). Firebase 콘솔 또는 개발자 계정에서 편집. 🔒 일반 사용자에게 노출됨 — 개발자 모드·치트·내부 도구 등 비공개 내용은 절대 넣지 말 것(방어로 isDevNotice가 필터). CLAUDE.md '운영 유출 금지' 참고
 config/featuredPet     : { "M2026-07": "cat_id", … }         // 🌟 이달의 펫 수동 선정(월키→펫 id). 읽기=로그인 전체, 쓰기=개발자 이메일만(규칙). loadFeaturedPet 구독, featuredCatId가 해당 월 값 있으면 우선 사용(없으면 featuredPetOfMonth 해시 폴백). 개발자 모드 '이달의 펫 선정'(openDevFeatured)에서 편집
 config/gachaFx         : { a:"pet_id", b:"pet_id" }           // 🎬 가챠 오픈 연출 펫(a=연출1번/왼쪽 등장, b=연출2번/오른쪽 등장). 읽기=로그인 전체, 쓰기=개발자 이메일만(규칙). loadGachaFx 구독, fxClimax가 지정 펫을 걸어와 톡 치게 연출(미지정이면 기본 검은 고양이). 개발자 모드 '펫 관리'(setGachaFxSlot)에서 편집
+config/broadcast/{pushId} : { type:'coins'|'gold'|'consum', key?, qty, msg?, at }  // 📣 전체 선물(운영자 → 모든 사용자 선물함). 읽기=로그인 전체, 쓰기=개발자 이메일만(규칙). loadBroadcasts 구독 → claimBroadcasts가 각 사용자 game.gifts에 1회 추가(game.bcSeen[pushId] 마커로 멱등). msg=선물함에 표시할 사유(예: 오류 사과). 개발자 모드 '전체 선물 보내기'(sendBroadcast)에서 push. 오래된 항목은 콘솔에서 삭제(신규 전파만 멈춤, 이미 받은 사람 유지)
 ws/{wsId}/             : 가계부 데이터 (아래 노드들)
   ├─ accounts/{id}
   ├─ creditCards/{id}
