@@ -748,6 +748,10 @@
     .rmhint-star { display:inline-flex; align-items:center; }
     .rmhint-star .px { display:block; }
     .rmhint-x { color:var(--sub); }
+    /* 빈 대표 방 경고 */
+    .rmwarn { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:11.5px; line-height:1.5; margin:6px 2px 2px; padding:7px 10px; border-radius:9px; color:var(--text); background:color-mix(in srgb,#f7c045 20%,transparent); border:1px solid color-mix(in srgb,#f7c045 45%,transparent); }
+    .rmwarn-star { display:inline-flex; align-items:center; flex:none; }
+    .rmwarn-star .px { display:block; }
     .rmthumb.rmdragging { z-index:6; opacity:.92; box-shadow:0 6px 18px rgba(0,0,0,.28); touch-action:none; }
     .rmdropline { position:fixed; width:3px; border-radius:2px; background:var(--accent,#4a90d9); z-index:8; pointer-events:none; box-shadow:0 0 6px color-mix(in srgb,var(--accent,#4a90d9) 70%,transparent); }
     /* 로그인 스트릭 배지 */

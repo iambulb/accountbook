@@ -1164,7 +1164,19 @@
     // 고양이 상호작용(캣타워 3층 올라가기 등)이 맞아떨어지도록 렌더·엔진(fh)이 같은 값을 쓴다. depth(뒤로 갈수록) 작게.
     // 방 렌더 높이 배율(실물감) — 캣타워 제일 큼, 스크래처는 고양이 키만큼, 화장실=낮은 상자, 방석·그릇 작게.
     const ROOM_H = { tower:6.2, scratcher:1.9, pethouse:2.8, catwheel:3.0, plant:1.5, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6 };
-    // 가구 그래픽 가로세로비(cols/rows) — 좌측하단 앵커라 그래픽 중앙 x = 좌측 edge + fh*aspect/2 (고양이가 가구 중앙에 서게).
+    // ---- 배치 격자(12칸) 가로 좌표 공유 헬퍼 ----
+    // 에디터(평면 그리드)·드롭프리뷰·썸네일은 gridLeftFrac/gridSpanFrac(칸 좌측 edge·폭)을 그대로 쓴다.
+    // 캠(원근)은 camAnchorMode로 발자국을 "가운데 정렬 + 양끝 벽 스냅" 배치해 좌우 벽까지 고르게 채운다.
+    const GRID_N = 12;
+    function gridLeftFrac(c){ return (c-1)/GRID_N; }       // 칸 좌측 edge 비율(0~1)
+    function gridSpanFrac(n){ return n/GRID_N; }           // n칸 폭/높이 비율
+    // 캠 가로 앵커 모드: 왼쪽 벽에 닿는 열=left(좌측 밀착), 오른쪽 벽=right(우측 밀착), 그 외=center(발자국 중앙).
+    // (footW 최대 2라 left·right 동시 스냅은 없음 — center 폴백.)
+    function camAnchorMode(c, footW){ const right=c+footW-1;
+      if(c===1 && right!==GRID_N) return 'left';
+      if(right===GRID_N && c!==1) return 'right';
+      return 'center'; }
+    // 가구 그래픽 가로세로비(cols/rows) — 그래픽 폭 = fh*aspect. 캠 중심 x 계산(buildActors)에 사용.
     const FURN_ASPECT = { tower:0.533, scratcher:0.636, pethouse:1.05, catwheel:1.0, plant:0.6, litterbox:1.167, cushion:1.778, bowl:1.778, waterbowl:1.778 };
     function furnAspect(id){ return FURN_ASPECT[id]||1; }
     function furnRoomH(id, isDock, depth){
@@ -1417,9 +1429,14 @@
       const others=[]; for(let i=0;i<rc;i++){ if(i!==idx) others.push(i); }
       if(others.length){ body+='<div class="sech" style="margin-top:14px;"><span class="l">벽지 가져오기</span></div>'+
         '<div class="row" style="flex-wrap:wrap;gap:8px;">'+others.map(i=>{ const nm=(h.rooms[i].name)||('방 '+(i+1)); return '<button class="btn ghost" onclick="copyRoomWall('+i+','+idx+')"><span class="wsw" style="background:'+wallCss(h.rooms[i].wallpaper||'default')+'"></span>'+escapeHtml(nm)+'</button>'; }).join('')+'</div>'; }
-      body+='<div class="sech" style="margin-top:14px;"><span class="l">방 비우기</span></div>'+
-        '<p class="muted" style="font-size:12px;margin:0 0 8px;line-height:1.5;">이 방의 가구는 인벤토리로 돌아가고(다른 방에 다시 놓을 수 있어요), 활성 펫은 대기 상태가 됩니다.</p>'+
+      // 방 복제(가구·벽지 통째 복사) — 방이 남았을 때만
+      if(rc<MAX_ROOMS){ body+='<div class="sech" style="margin-top:14px;"><span class="l">방 복제</span><span class="s">가구·벽지 복사</span></div>'+
+        '<p class="muted" style="font-size:12px;margin:0 0 8px;line-height:1.5;">벽지·이모지와 배치 가구를 새 방으로 복사해요(보유가 부족한 가구는 제외, 펫은 복사 안 함).</p>'+
+        '<button class="btn ghost" onclick="duplicateRoom('+idx+')">이 방 복제 📑</button>'; }
+      body+='<div class="sech" style="margin-top:14px;"><span class="l">방 비우기 · 삭제</span></div>'+
+        '<p class="muted" style="font-size:12px;margin:0 0 8px;line-height:1.5;">비우기=가구·펫만 초기화(방은 유지). 삭제=방 자체를 제거(환불 없음). 둘 다 가구는 인벤토리로 돌아가요.</p>'+
         '<button class="btn danger ghost" onclick="clearRoom('+idx+')">이 방 비우기</button>'+
+        (rc>BASE_ROOMS?'<button class="btn danger ghost" style="margin-top:6px;" onclick="deleteRoom('+idx+')">이 방 삭제 (환불 없음)</button>':'')+
         '<button class="btn ghost" style="margin-top:6px;" onclick="closeRoomMenu()">닫기</button>';
       const wrap=document.createElement('div'); wrap.id='roomMenu'; wrap.className='gimenu-scrim';
       wrap.onclick=function(e){ if(e.target===wrap) closeRoomMenu(); };
@@ -1441,6 +1458,33 @@
         gameRef().transaction(g=>{ g=normalizeGame(g); const R=g.home.rooms[idx]; if(!R) return g;
           R.placed={}; R.active=[]; R.poops=0; g.home.changedAt=new Date().toISOString(); return g;
         }).then(r=>{ if(r&&r.committed) toast('방을 비웠어요'); renderCatHouse(); }); }); }   // 비운 뒤 알뜰홈으로 복귀
+    // 🗑️ 방 삭제(환불 없음) — 방을 rooms에서 제거하고 roomSlots 감소. 가구는 전역 인벤토리로 자동 복귀(placed-count 모델), 펫은 대기. current·showRoom 인덱스 remap. 최소 1개는 남긴다.
+    function deleteRoom(idx){ if(roomCount()<=BASE_ROOMS){ toast('방은 최소 1개는 있어야 해요'); return; } closeRoomMenu();
+      confirmSheet('이 방을 삭제할까요?\n방 안의 가구는 인벤토리로 돌아가고(다시 배치 가능), 활성 펫은 대기 상태가 됩니다. 환불은 없어요.', ()=>{
+        gameRef().transaction(g=>{ g=normalizeGame(g); const rs=g.home.rooms; if(!rs||rs.length<=1||idx<0||idx>=rs.length) return;
+          rs.splice(idx,1);
+          g.home.roomSlots=Math.max(BASE_ROOMS, Math.min(MAX_ROOMS, rs.length));
+          const remap=v=>{ v=v|0; if(v===idx) return Math.min(rs.length-1, idx); return v>idx? v-1 : v; };
+          g.home.current=Math.max(0, Math.min(rs.length-1, remap(g.home.current)));
+          g.home.showRoom=Math.max(0, Math.min(rs.length-1, remap(g.home.showRoom)));
+          g.home.changedAt=new Date().toISOString(); return g;
+        }).then(r=>{ if(r&&r.committed){ toast('방을 삭제했어요'); renderCatHouse(); } });
+      }, {title:'방 삭제', okLabel:'삭제', danger:true}); }
+    // 📑 방 복제 — 벽지·이모지·이름(+' 복사')과 배치 가구를 새 방으로 복사. 단 전역 인벤토리(보유 qty − 전 방 배치)를 넘지 않게 '남는 가구만' 복사(초과분은 제외). 펫·똥은 복사 안 함(한 펫 한 방).
+    function duplicateRoom(idx){ if(roomCount()>=MAX_ROOMS){ toast('방을 모두 열어서 더 복제할 수 없어요(최대 '+MAX_ROOMS+')'); return; } closeRoomMenu();
+      gameRef().transaction(g=>{ g=normalizeGame(g); const rs=g.home.rooms; const src=rs&&rs[idx]; if(!src||rs.length>=MAX_ROOMS) return;
+        const items=(g.owned&&g.owned.items)||{};
+        const placedAll={}; rs.forEach(R=>{ const p=(R&&R.placed)||{}; Object.keys(p).forEach(k=>{ const id=p[k]&&p[k].itemId; if(id) placedAll[id]=(placedAll[id]||0)+1; }); });
+        const sp=src.placed||{}, newPlaced={};
+        Object.keys(sp).forEach(k=>{ const id=sp[k]&&sp[k].itemId; if(!id) return; const own=Number(items[id]&&items[id].qty)||0, used=placedAll[id]||0;
+          if(used<own){ newPlaced[k]={ itemId:id }; placedAll[id]=used+1; } });   // 남으면 복사, 부족하면 건너뜀
+        const nm=((src.name||('방 '+(idx+1)))+' 복사').slice(0,8);
+        rs.push({ name:nm, wallpaper:src.wallpaper||'default', emoji:src.emoji||'', placed:newPlaced, active:[], poops:0 });
+        g.home.roomSlots=Math.min(MAX_ROOMS, Math.max(rs.length, (g.home.roomSlots|0)));
+        g.home.current=rs.length-1; g.home.changedAt=new Date().toISOString(); return g;
+      }).then(r=>{ if(r&&r.committed){ const h=r.snapshot.val()&&r.snapshot.val().home, arr=h&&h.rooms; const nr=arr&&arr[arr.length-1], srcR=arr&&arr[idx];
+          const srcN=(srcR&&srcR.placed)?Object.keys(srcR.placed).length:0, newN=(nr&&nr.placed)?Object.keys(nr.placed).length:0, sk=Math.max(0,srcN-newN);
+          renderCatHouse(); toast(sk?('방을 복제했어요 (가구 '+sk+'개는 보유 부족으로 제외)'):'방을 복제했어요 🏠'); } }); }
     function setShowRoom(idx){ gameRef().child('home/showRoom').set(idx).then(()=>{ touchHome(); refreshCatSheet(); toast('대표 방으로 지정했어요 ★'); }); closeRoomMenu(); }
     // 방 썸네일의 ⭐(즐겨찾기) 탭 = 이 방을 대표 방(친구·랭킹에 보임)으로 지정 + 별 팝 연출(좋아요와 동일). 이미 대표면 안내만.
     function favRoom(idx, ev){ if(ev){ if(ev.stopPropagation) ev.stopPropagation(); const t=ev.currentTarget, r=t&&t.getBoundingClientRect&&t.getBoundingClientRect(); if(typeof starBurst==='function'&&r) starBurst(r.left+r.width/2, r.top+r.height/2); }
@@ -2570,6 +2614,10 @@
       h+='</div>';
       // 범례: '지금 보는 방(파란 테두리)'과 '친구에게 보이는 대표 방(★)'을 구분해 혼동 방지(#4). 별을 눌러 대표 방 지정.
       h+='<p class="rmhint muted">지금 보는 방 <span class="rmhint-cur"></span> · 친구·랭킹이 보는 <b>대표 방</b> <span class="rmhint-star">'+starSvg({h:11})+'</span> <span class="rmhint-x">— 별을 눌러 지정</span></p>';
+      // 빈 대표 방 경고(#3): 대표 방에 가구·펫이 하나도 없으면 친구·랭킹에 빈 방으로 보이므로 안내.
+      const repI=Math.min(rc-1, Math.max(0, (homeH().showRoom|0))), repR=rooms[repI]||{};
+      const repEmpty=!(repR.placed && Object.keys(repR.placed).length) && !((repR.active||[]).filter(ownsCat).length);
+      if(repEmpty) h+='<p class="rmwarn"><span class="rmwarn-star">'+starSvg({h:11})+'</span> 대표 방이 비어 있어요 — 친구·랭킹에 <b>빈 방</b>으로 보여요. 가구·펫을 배치하거나 꾸민 방을 대표(★)로 지정하세요.</p>';
       return h;
     }
     // ===== 우리집 펫 리스트 정렬·검색(수백 마리 관리) =====

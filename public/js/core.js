@@ -71,7 +71,7 @@
     function getCat(name){ return state.categories.find(c=>c.name===name); }
     function getAcct(id){ return state.accounts.find(a=>a.id===id); }
     function getCard(id){ return state.creditCards.find(c=>c.id===id); }
-    function acctName(id){ const a=getAcct(id); return a?a.name:(id||''); }
+    function acctName(id){ const a=getAcct(id); return a?a.name:(id?'(삭제된 계좌)':''); }   // 없는 계좌면 id 원문 대신 안내(삭제된 계좌가 거래에 걸릴 때 id 노출 방지)
     function catIcon(name){ const c=getCat(name); return c?c.icon:'🏷️'; }
     // ===== 카테고리 색/아이콘 (핸드오프 v2: 차분한 솔리드 + 13% 알파 tint + 라인 SVG) =====
     // 기본 카테고리는 핸드오프 팔레트로 색을 오버라이드(저장값과 무관). 커스텀은 저장된 색 사용.
@@ -742,7 +742,7 @@
       attach('accounts', s=>{
         if(!s.exists() && !seededAcc){ seededAcc=true; db.ref(wp('accounts')).set(buildDefaultAccounts()); return; }
         const o=s.val()||{}; state.accounts=Object.keys(o).map(k=>Object.assign({id:k},o[k])).sort((a,b)=>(a.order||0)-(b.order||0));
-        migrateAccounts();
+        migrateAccounts(); normalizeAccountOwners();   // 레거시 uid owner → 이름(멱등)
         recv.acc=true; rerender(); maybeBoot();
       });
       attach('creditCards', s=>{
@@ -838,6 +838,13 @@
         if(a.provider===undefined) upd['accounts/'+a.id+'/provider']='manual';
         if(a.visibility===undefined) upd['accounts/'+a.id+'/visibility']='full';
       });
+      if(Object.keys(upd).length) db.ref(wsRoot()).update(upd);
+    }
+    // 레거시 정리(멱등): owner가 멤버 uid로 저장된 계좌 → 이름으로 정규화하고 uid는 ownerUid로 보존. wsMeta(멤버) 로드 후에만 동작하며, 고칠 게 없으면 쓰지 않아 자동 종료.
+    function normalizeAccountOwners(){
+      const mm=(state.wsMeta&&state.wsMeta.members)||{}; if(!Object.keys(mm).length) return;
+      const upd={};
+      (state.accounts||[]).forEach(a=>{ if(a.owner && mm[a.owner]){ upd['accounts/'+a.id+'/owner']=mm[a.owner].name||a.owner; if(a.ownerUid===undefined) upd['accounts/'+a.id+'/ownerUid']=a.owner; } });
       if(Object.keys(upd).length) db.ref(wsRoot()).update(upd);
     }
 

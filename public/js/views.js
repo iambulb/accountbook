@@ -517,7 +517,7 @@
       // 소비 대상(누구의 소비) — 지출/선불결제/포인트사용에서만 선택, 그 외엔 본인
       const _csel = $('sConsumer') ? (val('sConsumer')||defaultOwnerUid()) : defaultOwnerUid();
       const _cmem = (state.wsMeta&&state.wsMeta.members)||{};
-      const consumer = _csel==='공동' ? '공동' : (_cmem[_csel] ? (_cmem[_csel].name||state.userName) : (_csel===state.uid?(state.userName||'공동'):_csel));
+      const consumer = resolveOwnerName(_csel);   // 소비대상을 이름으로 정규화(계좌·정기와 동일 헬퍼로 일원화)
       const tx={ type:sheetType, date:iso, user:consumer, amount:rawAmount,
         desc: desc||(hasCat?(sheetCat||TYPE_LABEL[sheetType]):TYPE_LABEL[sheetType]),
         isActualExpense: !!ACTUAL_DEFAULT[sheetType] };
