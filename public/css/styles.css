@@ -1134,7 +1134,8 @@
     @keyframes fxhit { 0%{transform:translateX(0) rotate(0)} 20%{transform:translateX(10px) rotate(6deg)} 45%{transform:translateX(-8px) rotate(-5deg)} 70%{transform:translateX(5px) rotate(3deg)} 100%{transform:translateX(0) rotate(0)} }
     @keyframes fxtremble { 0%,100%{transform:translate(0,0)} 25%{transform:translate(-2px,1px)} 50%{transform:translate(2px,-1px)} 75%{transform:translate(-1px,-1px)} }
     @keyframes fxleak { 0%{opacity:0;transform:translate(-50%,-50%) scale(.3)} 55%{opacity:.6} 100%{opacity:.5;transform:translate(-50%,-50%) scale(calc(1.7 * var(--lk,1)))} }
-    @keyframes fxpaw { 0%{transform:translate(230px,-50%)} 40%{transform:translate(26px,-50%) rotate(-3deg)} 54%{transform:translate(56px,-50%) rotate(0deg)} 68%{transform:translate(34px,-50%)} 100%{transform:translate(230px,-50%)} }
+    /* 살짝 다가와(48px) 한 번 톡 건드리고(30px, 발 기울임) 물러나 사라짐(230px) — 과하지 않게 한 번만 */
+    @keyframes fxpaw { 0%{transform:translate(230px,-50%)} 34%{transform:translate(48px,-50%) rotate(-1deg)} 46%{transform:translate(30px,-50%) rotate(-5deg)} 60%{transform:translate(50px,-50%) rotate(0deg)} 100%{transform:translate(230px,-50%)} }
     /* 껍질 조각: 위로 튀었다가 좌우·아래로 흩어져 놓인다 */
     @keyframes fxshell {
       0%{ opacity:0; transform:translate(-50%,-50%) rotate(0) scale(.4); }

@@ -568,31 +568,34 @@
     const EGG_PAL_RB={X:'#968c76',W:'RAINBOW',S:'RAINBOW',R:'#FBFBFD',O:'#FBFBFD',Y:'#FBFBFD',G:'#FBFBFD',B:'#FBFBFD',P:'#FBFBFD'};   // 무지개알도 바깥 진한 테두리
     const BOX_PAL_RB={X:'#9aa2b0',W:'RAINBOW',C:'RAINBOW',L:'RAINBOW',R:'#FBFBFD',O:'#FBFBFD',Y:'#FBFBFD',G:'#FBFBFD',B:'#FBFBFD',P:'#FBFBFD'};
     // 은화 속 검은 고양이 — 특별↑ 오픈 연출에서 오른쪽에서 슥 들어와 앞발로 알/상자를 톡 건드린다.
-    // 정면 검은 고양이(발광 노란 눈·분홍 코/귀속·수염)가 왼쪽으로 앞발(분홍 젤리)을 뻗은 상세 도트. 어두운 무대 위에서 실루엣이 또렷하게 읽히도록 외곽선(K)을 몸(B)보다 진하게.
+    // 정면 검은 고양이(둥근 귀·큰 노란 눈+검은 동공·분홍 코/귀속·발바닥 젤리·꼬리)가 왼쪽으로 앞발을 뻗어 톡 건드리는 상세 큐티 도트. 수염 없음. 어두운 무대에서 실루엣이 또렷하게 읽히도록 외곽선(K)을 몸(B)보다 진하게.
     const M_COINCAT = [
-      "....................KK..KK......",
-      "...................KBBK..KBBK...",
-      "..................KBPBK.KBPBK...",
-      ".................KBBPBKKBPBBK...",
-      "................KBBBBBBBBBBBBK..",
-      "................KbBBBBBBBBBBBK..",
-      "................KBBBBBBBBBBBBK..",
-      ".............WWWKBBYYBBYYBBBBK..",
-      "..............WWKBBYsBBYsBBBBKWW",
-      "...............WKBBYYBBYYBBBBKW.",
-      "................KBBBBBPPBBBBBK..",
-      "....KKKKKKKKKKKKKBBBBBBBBBBBBK..",
-      "...KBBBBddddddBBBBBBBBBBBBBBBK..",
-      "..KBPPBKKKKKKKKKBBBBBBBBBBBBBK..",
-      "..KBPPBK.......KBddddddddddBBK..",
-      "..KBPPBK.......KBddddddddddBBK..",
-      "...KBBK........KBBBBBBBBBBBBBK..",
-      "....KK.........KBBBK....KBBBK...",
-      "...............KBBK.....KBBK....",
-      "...............KKK......KKK....."
+      "................................",
+      ".............KK.......KK........",
+      "............KBBK.....KBBK.......",
+      "...........KBppK.....KppBK......",
+      "..........KBBBBKKKKKKKBBBBK.....",
+      ".........KbBBBBBBBBBBBBBBBbK....",
+      ".........KBBBBBBBBBBBBBBBBBK....",
+      ".........KBBYYYBBBBBBYYYBBBK....",
+      ".........KBBYKsYBBBBYKsYBBBK....",
+      ".........KBBYYYBBBBBBYYYBBBK....",
+      ".........KBBBBBBBpPpBBBBBBBK....",
+      ".........KbBBBBBBmPmBBBBBBBK....",
+      ".........KBBBBBmBBBmBBBBBBBK....",
+      "..........KBBBBBBBBBBBBBBBK.....",
+      ".....KKKKKKKBBBBBBBBBBBBBK......",
+      "...KKPPPPPKKKBBBBBBBBBBBK.......",
+      "..KPppppppPKKBBBBBBBBBBK...KK...",
+      "..KPPBpBpBPKKBBBBBBBBBK..KBBBK..",
+      "...KKKKKKKKKKBBBBBBBBBK.KBBBBBK.",
+      "...........KBBBBBBBBBBK.KBBBBBK.",
+      "...........KBBBK..KBBBK.KKBBKK..",
+      "...........KBBK....KBBK..KKKK...",
+      "...........KKK......KKK........."
     ];
-    // K=외곽선(먹) B=몸 검정 b=하이라이트(등 윤곽 빛) d=배 그림자 Y=눈(노랑 발광) s=눈 반짝 P=분홍(코·귀속·발바닥 젤리) W=수염(흰)
-    const COINCAT_PAL={K:'#0e0f13',B:'#24272e',b:'#363b45',d:'#191b20',Y:'#F7D24E',s:'#FFF2B0',P:'#E88aa0',W:'#E9EDF5'};
+    // K=외곽선(먹) B=몸 검정 b=하이라이트(등 윤곽 빛) Y=눈(노랑 발광) s=눈 반짝 P=분홍(코·귀속·발바닥) p=진한 분홍(음영) m=입·코 음영
+    const COINCAT_PAL={K:'#0e0f13',B:'#24272e',b:'#3a4150',Y:'#F7D24E',s:'#FFF6C8',P:'#E88aa0',p:'#c96f88',m:'#7a3a4a'};
 
     // 카탈로그(코드 상수) — 저장은 보유 id만. id는 종·색 구분(예: cat_calico, dog_corgi), species는 분류/필터용.
     // 새 동물(네발 짐승) 처리 규칙은 docs/pet-asset-pipeline.md 참고.
@@ -3315,11 +3318,12 @@
       }
       return s;
     }
-    // 오픈 직전 연출: (흔들림·흰빛) → [전설·한정만: 검은 고양이 앞발로 톡] → (열리는 순간부터 등급색) 빛 새어나옴 → 버스트(알=껍질 조각 튐) → 등장
+    // 오픈 직전 연출: (흔들림·흰빛) → [확률로: 검은 고양이 앞발로 톡] → (열리는 순간부터 등급색) 빛 새어나옴 → 버스트(알=껍질 조각 튐) → 등장
     function fxClimax(){
       const fx=$('catFx'), st=fx&&fx.querySelector('.fx-stage'), it=$('fxItem'); if(!st||!it) return;
       const t=tierInfo(_fx.res.tier), epic=['epic','legend','limited'].indexOf(_fx.res.tier)>=0, lim=_fx.res.tier==='limited';
-      const catShow=['legend','limited'].indexOf(_fx.res.tier)>=0;   // 검은 고양이 앞발 연출은 전설·한정에만(등장 자체가 고등급 스포일러라 특별엔 안 보임)
+      // 검은 고양이 앞발 연출 = 고등급 티저. 등급별 확률: 특별(epic) 10%·전설 90%·한정 100% (그 미만 0%). 등장 자체가 '뭔가 좋은 게 나온다'는 힌트.
+      const catShow=Math.random() < (({ epic:0.10, legend:0.90, limited:1.0 })[_fx.res.tier] || 0);
       const rank=Math.max(0, TIER_ORDER.indexOf(_fx.res.tier));   // 0(일반)~5(한정)
       const lk=(1+rank*0.15).toFixed(2);                          // 등급 높을수록 빛이 크고 밝게
       const isEgg=_fx.kind==='egg';
