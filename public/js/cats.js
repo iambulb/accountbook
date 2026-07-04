@@ -446,10 +446,10 @@
     ];
     // 선풍기(16×22 가로세로비 0.727): 케이지 림(X)+날개(G 회전, 캠에서만 spin)+허브(h)+목(N)+받침(S/s). ※ B(진한 하늘색 날개)는 팔레트 미등록=투명(뒷배경 비침).
     const M_FAN = [
-      "......XXXX......","....XXBBBBXX....","...XGBBBBBBGX...","..XGGGBBBBGGGX..",
-      ".XXGGGBBBBGGGXX.",".XGGGGGBBGGGGGX.",".XGGGGGhhGGGGGX.",".XGGGGhhhhBBBBX.",
+      "......XXXX......","....XXBBBBXX....","...X.BBBBBB.X...","..XGGGBBBBGGGX..",
+      ".XXGGGBBBBGGGXX.",".X.GGGGBBGGGG.X.",".X.GGGGhhGGGG.X.",".XGGGGhhhhBBBBX.",
       ".XBBBBBhhBBBBBX.",".XBBBBBGGBBBBBX.",".XXBBBGGGGBBBXX.","..XBBBGGGGBBBX..",
-      "...XBGGGGGGBX...","....XXGGGGXX....","......XXXX......",".......NN.......",
+      "...XB.GGGG.BX...","....XX....XX....","......XXXX......",".......NN.......",
       ".......NN.......",".......NN.......",".....SSSSSS.....","....SSSSSSSS....",
       "...SSSSSSSSSS...","...ssssssssss..."
     ];
