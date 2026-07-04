@@ -2567,7 +2567,10 @@
       let h='<div class="sech"><span class="l">내 방</span><span class="s">'+rc+' / '+MAX_ROOMS+'</span></div><div class="rmstrip">';
       for(let i=0;i<rc;i++) h+=roomThumb(rooms[i]||{},i);
       if(rc<MAX_ROOMS) h+='<button class="rmthumb locked" onclick="buyRoom()" aria-label="방 확장(금화 '+ROOM_PRICE+')"><span class="rmlock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span class="rmgold">'+goldSvg({h:12})+ROOM_PRICE+'</span></button>';
-      return h+'</div>';
+      h+='</div>';
+      // 범례: '지금 보는 방(파란 테두리)'과 '친구에게 보이는 대표 방(★)'을 구분해 혼동 방지(#4). 별을 눌러 대표 방 지정.
+      h+='<p class="rmhint muted">지금 보는 방 <span class="rmhint-cur"></span> · 친구·랭킹이 보는 <b>대표 방</b> <span class="rmhint-star">'+starSvg({h:11})+'</span> <span class="rmhint-x">— 별을 눌러 지정</span></p>';
+      return h;
     }
     // ===== 우리집 펫 리스트 정렬·검색(수백 마리 관리) =====
     let _petSort='recent', _petQuery='';

@@ -661,6 +661,13 @@
     //    따라서 화면에 owner/t.user를 표시하거나 비교할 땐 **반드시 ownerName()으로 이름 해석**한다(uid 원문 노출 방지 — 예: 자산 계좌 옆 uid가 뜨던 버그).
     // 소유자 → 표시 이름: 멤버면 이름, 아니면(공동·레거시 이름·미상 uid) 값 그대로.
     function ownerName(uid){ const m=(state.wsMeta&&state.wsMeta.members)||{}; return (m[uid]&&m[uid].name)||uid; }
+    // ⭐ ownerOptions 선택값(uid|'공동'|레거시 이름)을 **저장용 이름**으로 정규화 — owner/소비대상은 이름으로 저장한다(거래 tx.user와 동일 패턴).
+    //    새 저장 경로(계좌·정기 등)는 반드시 이걸 거쳐, uid가 데이터에 그대로 박히지 않게 한다. (표시 방어는 ownerName, 저장 방어는 이 함수.)
+    function resolveOwnerName(sel){ const m=(state.wsMeta&&state.wsMeta.members)||{};
+      if(!sel || sel==='공동') return sel||'공동';
+      if(m[sel]) return m[sel].name||state.userName||sel;   // 멤버 uid → 이름
+      if(sel===state.uid) return state.userName||'공동';     // 내 uid → 내 이름
+      return sel; }                                          // 레거시 이름/미상은 그대로
     function defaultOwnerUid(){ const s=state.wsSettings&&state.wsSettings.defaultOwner; if(s==='me') return state.uid; if(s==='common') return '공동'; return isGroupWs()?'공동':state.uid; }
     // 소비 대상 옵션: 값=멤버 uid(표시=이름) + 공동. selected는 uid|'공동'|레거시 이름(옵션으로 보존).
     function ownerOptions(selected){

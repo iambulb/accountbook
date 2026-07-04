@@ -44,6 +44,7 @@
 - **RTDB 규칙은 순수 JSON**: `database.rules.json` 에는 주석·추가 키를 넣지 마세요. 멤버십(`workspaces` 쓰기)이 먼저 커밋된 뒤에야 `ws` 쓰기가 통과하므로, 합류·생성은 2단계로 처리합니다.
 - **단방향 렌더**: RTDB 리스너가 데이터를 받을 때마다 `rerender()` 로 현재 화면을 다시 그립니다. 상태는 전역 `state` 객체에 모읍니다.
 - **XSS 방지**: 사용자 입력은 `escapeHtml()` 후 `innerHTML` 에 넣습니다.
+- **⭐ 소유자·소비대상(person 필드)은 이름으로 저장·표시**: `ownerOptions`(계좌 소유자 `aOwner`·거래/정기 소비대상 `sConsumer`/`rConsumer`·할일 담당자 `tdAssign` 등)의 **선택값은 멤버 uid**다. **저장할 땐 `resolveOwnerName()`로 이름으로 정규화**(uid 원문 저장 금지 — 필요하면 `userUid`/`ownerUid`로 uid를 *병행* 저장), **화면 표시·필터 비교할 땐 `ownerName()`로 해석**한다. 이 규칙을 어기면 자산·거래에 `455ab…` 같은 **uid가 그대로 노출**된다(실제 발생했던 버그). 거래는 이미 이 패턴(`user`=이름+`userUid`=uid)을 따르니 새 person 필드도 동일하게.
 - **접근성(A11y)**: `public/js/main.js` 의 `a11yDecorate`(+MutationObserver)가 재렌더 시 자동으로 `.switch`→`role=switch`, `onclick` 달린 `div`→`role=button`+`tabindex`, `.field` 라벨↔입력을 연결하고, 전역 키보드 핸들러가 Enter/Space 활성화·Esc 닫기·포커스 트랩을 처리합니다. 새 UI를 만들 때: 가능하면 `<button>` 사용, 아이콘만 있는 버튼엔 `aria-label` 추가, 폼 입력엔 `id` 부여(라벨 자동 연결). 시트는 `openSheet/closeSheet`(포커스 이동/복원 내장)로 엽니다.
 - **언어/스타일**: 주석·UI 라벨·토스트·커밋 메시지는 **한국어**. 들여쓰기·압축 헬퍼 스타일은 기존 파일 관례를 따릅니다.
 

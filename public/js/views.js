@@ -1,7 +1,7 @@
 // ===== 홈(달력/목록) =====
     function renderCalendar(){
       const m=state.month, allList=monthTx(m);
-      const list = state.memberFilter ? allList.filter(t=>(t.user||'')===state.memberFilter) : allList;
+      const list = state.memberFilter ? allList.filter(t=>ownerName(t.user||'')===state.memberFilter) : allList;   // t.user가 레거시 uid여도 이름으로 정규화 비교(멤버 필터 견고)
       const inc=sumBy(list,'income');
       const actual=actualSpend(list);
       const charge=sumBy(list,'prepaid_charge');
@@ -1253,12 +1253,14 @@
     function onCardPeriodChange(){ const w=$('cStartWrap'); if(w) w.style.display=(val('cPeriod')==='custom')?'':'none'; }
     function saveAcct(id){
       const name=val('aName').trim(); if(!name){ toast('이름을 입력하세요', true); return; }
-      const owner=val('aOwner'), type=val('aType');
+      const _osel=val('aOwner'), owner=resolveOwnerName(_osel), type=val('aType');   // owner는 이름으로 정규화 저장(uid 원문 저장 방지 — tx.user와 동일 패턴)
       const colorMap={'현경':'#f04452','구근':'#3182f6','공동':'#1b9e5f'};
       const key=id||('acc_'+Date.now());
+      const _amem=(state.wsMeta&&state.wsMeta.members)||{};
       const data={ name, type, provider:val('aProvider'), owner, visibility:val('aVis'),
         initialBalance:parseAmount(val('aInit')), memo:val('aMemo').trim(),
         color:(getAcct(id)||{}).color||colorMap[owner]||'#3182f6', order:(getAcct(id)||{}).order||state.accounts.length+1 };
+      if(_amem[_osel]||_osel===state.uid) data.ownerUid=_osel;   // 멤버 소유자는 uid 병행 저장(동명이인·개명 견고)
       const updates={}; updates['accounts/'+key]=data;
       if(type==='credit_card'){
         updates['creditCards/'+key]={ cardName:name, cardCompany:val('cCompany').trim(),
@@ -2048,7 +2050,7 @@
         startDate: val('rStart')||todayStr(), endDate: val('rEnd')||null,
         day: (freq==='monthly')?Number(val('rDay')||1):((r&&r.day)||1),
         weekday: (freq==='weekly')?Number(val('rWeekday')||0):((r&&r.weekday)||0),
-        user: $('rConsumer')?(val('rConsumer')||state.userName):(r?(r.user||state.userName):state.userName),
+        user: resolveOwnerName($('rConsumer')?(val('rConsumer')||state.userName):(r?(r.user||state.userName):state.userName)),   // 정기결제 소비대상도 이름으로 정규화 저장
         autoCreate: $('rAuto')?$('rAuto').classList.contains('on'):true,
         status: r?(ruleStatus(r)==='ended'?'active':ruleStatus(r)):'active',
         visibility: val('rVis'), memo: val('rMemo').trim(),
