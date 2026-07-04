@@ -117,7 +117,7 @@
     .topbar h2 { font-size:21px; font-weight:800; letter-spacing:-.02em; }
     /* 좌상단 브랜드: 앱 아이콘 + '알뜰' 도트 워드마크(현재화면 제목 대체) */
     .brand { display:flex; align-items:center; gap:8px; position:relative; }
-    .brand-ic { width:28px; height:28px; border-radius:7px; display:block; image-rendering:pixelated; }
+    .brand-ic { width:36px; height:36px; border-radius:9px; display:block; image-rendering:pixelated; }
     .brand-wm { height:19px; width:auto; display:block; image-rendering:pixelated; }
     /* 오늘 미처리 있을 때 로고 위 작은 점(숫자 없음). 빨강 회피 → --income 톤, 카드색 링으로 분리 */
     .home-badge { position:absolute; top:-2px; left:20px; width:7px; height:7px; border-radius:50%; background:var(--income); box-shadow:0 0 0 2px var(--card); }
