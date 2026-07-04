@@ -907,21 +907,28 @@
     ];
     const GEAR_PAL={G:'#7c8698',H:'#aeb6c4',S:'#5f6875'};
     function gearSvg(opt){ return pxSvg(M_GEAR, GEAR_PAL, opt); }
-    // 🔔 알림 종(픽셀) — 대칭 종 + 링 손잡이(O=구멍) + 플레어 림 + 클래퍼. B=몸체(앰버)·D=림/클래퍼·L=좌상단 하이라이트. 설정 '알림' 행 등에 사용.
+    // 🔔 알림 종(픽셀) — 디테일 종: 링 손잡이(구멍) + 둥근 어깨 + 세로 몸체 + 플레어 림(D) + 클래퍼. 좌상단 하이라이트(H)·우측 그림자(S)로 입체감, 외곽선(K). 세로가 길어 '찌부' 안 됨(15×18). 소식 타일·설정 '알림'·소식 헤딩·푸시 토스트 공용.
     const M_BELL = [
-      '.....B.....',
-      '....BOB....',
-      '....BBB....',
-      '...LBBBB...',
-      '..LBBBBBB..',
-      '.LBBBBBBBB.',
-      '.BBBBBBBBB.',
-      'BBBBBBBBBBB',
-      'BBBBBBBBBBB',
-      'DDDDDDDDDDD',
-      '....DDD....'
+      '......KKK......',
+      '......K.K......',
+      '......KBK......',
+      '.....KHBSK.....',
+      '....KHHBSSK....',
+      '...KHHBBBSSK...',
+      '..KHHBBBBSSSK..',
+      '.KHHBBBBBSSSSK.',
+      '.KHBBBBBBSSSSK.',
+      '.KHBBBBBBSSSSK.',
+      '.KBBBBBBBSSSSK.',
+      '.KBBBBBBBSSSSK.',
+      '.KBBBBBBBSSSSK.',
+      'KDDDDDDDDDDDDDK',
+      'KDDDDDDDDDDDDDK',
+      '.KKKKKKKKKKKKK.',
+      '......HBD......',
+      '......DDD......'
     ];
-    const BELL_PAL={B:'#f7c045',D:'#d79a2a',L:'#ffe9ad',O:'#9c6a15'};
+    const BELL_PAL={K:'#8a5a12',D:'#c9881f',B:'#f7c045',H:'#ffe9ad',S:'#df9f2b'};
     function bellSvg(opt){ return pxSvg(M_BELL, BELL_PAL, opt); }
     // 📢 확성기(공지사항) 픽셀 — 오른쪽으로 벌어진 삼각 나팔 + 입구 테두리(M) + 금색 음파(S). R=몸체·H=하이라이트.
     // 확성기(공지·업데이트 내역) — 상세 도트: 마우스피스(하이라이트)→원뿔→벨 림→금색 사운드웨이브 2겹 + 손잡이.

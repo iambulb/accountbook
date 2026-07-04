@@ -657,7 +657,9 @@
 
     function isGroupWs(){ return state.wsMeta && state.wsMeta.type==='group'; }
     function wsMemberNames(){ const m=(state.wsMeta&&state.wsMeta.members)||{}; return Object.keys(m).map(k=>m[k].name).filter(Boolean); }
-    // 소유자 선택 옵션: 현재 워크스페이스 멤버 + 공동 (+ 기존 값 보존)
+    // ⚠️ owner/소비대상(user) 규칙: `ownerOptions`가 값=**멤버 uid**로 저장한다(+'공동'·레거시 이름 섞임).
+    //    따라서 화면에 owner/t.user를 표시하거나 비교할 땐 **반드시 ownerName()으로 이름 해석**한다(uid 원문 노출 방지 — 예: 자산 계좌 옆 uid가 뜨던 버그).
+    // 소유자 → 표시 이름: 멤버면 이름, 아니면(공동·레거시 이름·미상 uid) 값 그대로.
     function ownerName(uid){ const m=(state.wsMeta&&state.wsMeta.members)||{}; return (m[uid]&&m[uid].name)||uid; }
     function defaultOwnerUid(){ const s=state.wsSettings&&state.wsSettings.defaultOwner; if(s==='me') return state.uid; if(s==='common') return '공동'; return isGroupWs()?'공동':state.uid; }
     // 소비 대상 옵션: 값=멤버 uid(표시=이름) + 공동. selected는 uid|'공동'|레거시 이름(옵션으로 보존).
@@ -1081,7 +1083,8 @@
 
     function prepaidAccounts(){ return state.accounts.filter(a=>PREPAID_TYPES.includes(a.type)); }
     function prepaidTotal(){ return prepaidAccounts().filter(canSee).reduce((s,a)=>s+accountBalance(a.id),0); }
-    function canSee(item){ if((item.visibility||'full')!=='private') return true; return item.owner===state.userName || item.owner==='공동'; }
+    // owner는 멤버 uid·'공동'·(레거시)이름이 섞일 수 있어 셋 다 처리 — uid면 ownerName으로 내 이름과 비교(내 비공개 항목이 안 숨겨지게)
+    function canSee(item){ if((item.visibility||'full')!=='private') return true; const o=item.owner; return o==='공동' || o===state.uid || ownerName(o)===state.userName; }
     function visibleAccounts(){ return state.accounts.filter(canSee); }
     function acctGroup(a){ if(CARD_TYPES.includes(a.type)) return 'card'; if(PREPAID_TYPES.includes(a.type)) return 'prepaid'; if(a.type==='other') return 'other'; return 'cash'; }
 
@@ -1132,7 +1135,7 @@
       return state.transactions.filter(t=>{
         if(!isActual(t)) return false;                              // 실제소비만 (충전·이체·조정·환불·대출상환 제외)
         if(b.categoryName && t.category!==b.categoryName) return false;
-        if(b.scope==='personal' && b.owner && b.owner!=='공동' && t.user!==b.owner) return false;
+        if(b.scope==='personal' && b.owner && b.owner!=='공동' && ownerName(t.user)!==ownerName(b.owner)) return false;   // uid·이름 혼재 대응 — 이름으로 정규화해 같은 사람이면 포함
         const d=parseDate(t.date); return !(d<p.start||d>p.end);
       });
     }
