@@ -1728,6 +1728,47 @@
       h+='</div>';
       openSheet('개발자 모드', h);
     }
+    // 개발자 · 사용자 현황: 전체 유저를 가입순으로 10명씩 페이지네이션. 프로필+계정번호(친구코드)만 표시(이메일 X), 접속중=무지개 테두리, 하단=접속중/총 인원.
+    const DEV_USERS_PER=10;
+    function openDevUsers(){
+      if(!(typeof isDev==='function' && isDev())){ toast('개발자 전용'); return; }
+      openSheet('사용자 현황', '<div class="note">불러오는 중…</div>');
+      Promise.all([ db.ref('users').once('value'), db.ref('presence').once('value') ]).then(function(res){
+        const usersSnap=res[0].val()||{}, pres=res[1].val()||{};
+        const list=Object.keys(usersSnap).map(function(uid){ const u=usersSnap[uid]||{};
+          return { uid:uid, name:(u.name||''), code:(u.friendCode||''), photo:(u.photo||''), at:(u.createdAt||'') }; });
+        list.sort(function(a,b){ return String(a.at).localeCompare(String(b.at)); });   // 가입 순서(createdAt ISO 오름차순)
+        state._devUsers={ list:list, online:pres||{}, page:0 };
+        renderDevUsers();
+      }).catch(function(e){
+        openSheet('사용자 현황', '<div class="note">불러오기 실패: '+escapeHtml((e&&e.message)||String(e))+'</div>'+
+          '<div class="note" style="margin-top:8px;">개발자 계정이어야 하고, <b>DB 규칙</b>(<code>users</code> 개발자 읽기 · <code>presence</code>)이 배포돼 있어야 해요 — <code>firebase deploy --only database</code>.</div>');
+      });
+    }
+    function devUsersPage(d){ const s=state._devUsers; if(!s) return;
+      const pages=Math.max(1, Math.ceil(s.list.length/DEV_USERS_PER));
+      s.page=Math.max(0, Math.min(pages-1, s.page+d)); renderDevUsers(); }
+    function renderDevUsers(){
+      const s=state._devUsers; if(!s) return;
+      const total=s.list.length, online=Object.keys(s.online||{}).length;
+      const pages=Math.max(1, Math.ceil(total/DEV_USERS_PER)); const pg=Math.min(s.page||0, pages-1);
+      const start=pg*DEV_USERS_PER, rows=s.list.slice(start, start+DEV_USERS_PER);
+      let h='<div class="usrlist">';
+      h+= rows.length ? rows.map(function(u, i){ const on=!!(s.online&&s.online[u.uid]); const num=start+i+1;
+          return '<div class="usrrow'+(on?' usr-online':'')+'">'+
+            '<span class="usr-rank">'+num+'</span>'+
+            '<span class="usr-av">'+avatarHtml(u.uid, u.name, 40, u.photo||'')+'</span>'+
+            '<span class="usr-info"><span class="usr-nm">'+escapeHtml(u.name||'(이름없음)')+'</span>'+
+              '<span class="usr-code">'+escapeHtml(u.code||'—')+'</span></span>'+
+            (on?'<span class="usr-dot">접속중</span>':'')+'</div>'; }).join('')
+        : '<div class="empty">사용자가 없어요</div>';
+      h+='</div>';
+      h+='<div class="usr-nav"><button class="btn ghost sm"'+(pg<=0?' disabled':'')+' onclick="devUsersPage(-1)">‹ 이전</button>'+
+         '<span class="usr-pg">'+(pg+1)+' / '+pages+'</span>'+
+         '<button class="btn ghost sm"'+(pg>=pages-1?' disabled':'')+' onclick="devUsersPage(1)">다음 ›</button></div>';
+      h+='<div class="usr-sum"><b class="on">'+online+'</b>명 접속중 · 총 <b>'+total+'</b>명 가입</div>';
+      openSheet('사용자 현황', h);
+    }
 
     // ===== 예산 =====
     const PERIOD_LABEL={ weekly:'주간', monthly:'월간', yearly:'연간', custom:'사용자지정' };

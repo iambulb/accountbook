@@ -1,6 +1,7 @@
 {
   "rules": {
     "users": {
+      ".read": "auth != null && auth.token.email === 'canel94@gmail.com'",
       "$uid": {
         ".read":  "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid",
@@ -25,6 +26,11 @@
 
     "homeCam": {
       ".read": "auth != null",
+      "$uid": { ".write": "auth != null && auth.uid === $uid" }
+    },
+
+    "presence": {
+      ".read": "auth != null && auth.token.email === 'canel94@gmail.com'",
       "$uid": { ".write": "auth != null && auth.uid === $uid" }
     },
 
