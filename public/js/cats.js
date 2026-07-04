@@ -568,34 +568,32 @@
     const EGG_PAL_RB={X:'#968c76',W:'RAINBOW',S:'RAINBOW',R:'#FBFBFD',O:'#FBFBFD',Y:'#FBFBFD',G:'#FBFBFD',B:'#FBFBFD',P:'#FBFBFD'};   // 무지개알도 바깥 진한 테두리
     const BOX_PAL_RB={X:'#9aa2b0',W:'RAINBOW',C:'RAINBOW',L:'RAINBOW',R:'#FBFBFD',O:'#FBFBFD',Y:'#FBFBFD',G:'#FBFBFD',B:'#FBFBFD',P:'#FBFBFD'};
     // 은화 속 검은 고양이 — 특별↑ 오픈 연출에서 오른쪽에서 슥 들어와 앞발로 알/상자를 톡 건드린다.
-    // 정면 검은 고양이(둥근 귀·큰 노란 눈+검은 동공·분홍 코/귀속·발바닥 젤리·꼬리)가 왼쪽으로 앞발을 뻗어 톡 건드리는 상세 큐티 도트. 수염 없음. 어두운 무대에서 실루엣이 또렷하게 읽히도록 외곽선(K)을 몸(B)보다 진하게.
+    // 정면 실사풍 검은 고양이(까망이): 둥근 귀+분홍 귀속, 작은 호박색 슬릿 눈(세로동공), 작은 분홍 코+입 음영, 검은 앞발을 왼쪽으로 뻗어 톡(발끝에 작은 분홍 젤리만). 수염 없음. 어두운 무대에서 실루엣이 읽히게 외곽선(K)을 몸(B)보다 진하게.
     const M_COINCAT = [
       "................................",
-      ".............KK.......KK........",
-      "............KBBK.....KBBK.......",
-      "...........KBppK.....KppBK......",
-      "..........KBBBBKKKKKKKBBBBK.....",
-      ".........KbBBBBBBBBBBBBBBBbK....",
-      ".........KBBBBBBBBBBBBBBBBBK....",
-      ".........KBBYYYBBBBBBYYYBBBK....",
-      ".........KBBYKsYBBBBYKsYBBBK....",
-      ".........KBBYYYBBBBBBYYYBBBK....",
-      ".........KBBBBBBBpPpBBBBBBBK....",
-      ".........KbBBBBBBmPmBBBBBBBK....",
-      ".........KBBBBBmBBBmBBBBBBBK....",
-      "..........KBBBBBBBBBBBBBBBK.....",
-      ".....KKKKKKKBBBBBBBBBBBBBK......",
-      "...KKPPPPPKKKBBBBBBBBBBBK.......",
-      "..KPppppppPKKBBBBBBBBBBK...KK...",
-      "..KPPBpBpBPKKBBBBBBBBBK..KBBBK..",
-      "...KKKKKKKKKKBBBBBBBBBK.KBBBBBK.",
-      "...........KBBBBBBBBBBK.KBBBBBK.",
-      "...........KBBBK..KBBBK.KKBBKK..",
-      "...........KBBK....KBBK..KKKK...",
-      "...........KKK......KKK........."
+      ".............KK......KK.........",
+      "............KBBK....KBBK........",
+      "...........KBpBK....KBpBK.......",
+      "..........KBBBBKKKKKKBBBBK......",
+      ".........KBbBBBBBBBBBBBBbBK.....",
+      ".........KBBBBBBBBBBBBBBBBK.....",
+      ".........KBBYiBBBBBBBBiYBBK.....",
+      ".........KBBYiBBBBBBBBiYBBK.....",
+      ".........KBBBBBBBPPBBBBBBBK.....",
+      ".........KBBBBBBBmmBBBBBBBK.....",
+      "..........KBBBBBBBBBBBBBBK......",
+      "..........KBBBBBBBBBBBBBBK......",
+      "...........KBBBBBBBBBBBBK.......",
+      ".....KKKKKKKKBBBBBBBBBBBK.......",
+      "..KKKBBBBBBBBBBBBBBBBBBBK.......",
+      ".KBbbBBBBBBBBBBBBBBBBBBBK.......",
+      ".KPpPBKKBBBBBBBBBBBBBBBBK.......",
+      ".KKKKK..KBBBBK....KBBBBBK.......",
+      "........KBBBK......KBBBK........",
+      "........KKK........KKK.........."
     ];
-    // K=외곽선(먹) B=몸 검정 b=하이라이트(등 윤곽 빛) Y=눈(노랑 발광) s=눈 반짝 P=분홍(코·귀속·발바닥) p=진한 분홍(음영) m=입·코 음영
-    const COINCAT_PAL={K:'#0e0f13',B:'#24272e',b:'#3a4150',Y:'#F7D24E',s:'#FFF6C8',P:'#E88aa0',p:'#c96f88',m:'#7a3a4a'};
+    // K=외곽선(먹) B=몸 검정 b=털 광택 하이라이트 Y=눈(호박) i=세로동공(암) P=분홍(코·귀속·발끝 젤리) p=진한 분홍 m=입·코 음영
+    const COINCAT_PAL={K:'#0b0c10',B:'#23262d',b:'#343b47',Y:'#C79A34',i:'#0b0c10',P:'#E58aa0',p:'#c46e86',m:'#7a3a4a'};
 
     // 카탈로그(코드 상수) — 저장은 보유 id만. id는 종·색 구분(예: cat_calico, dog_corgi), species는 분류/필터용.
     // 새 동물(네발 짐승) 처리 규칙은 docs/pet-asset-pipeline.md 참고.
@@ -808,7 +806,8 @@
     function catFace(id, opt){ opt=opt||{}; const h=opt.h||48;
       if(hasSprite(id)){ const sp=PET_SPRITES[id]; ensurePetArt(id); const s=Math.round(h);
         if(sp.runtime && !sp.urls) return _petPlaceholder(s);   // 아트 지연 로딩 중이면 도트 알
-        return '<img class="catpx" src="'+sprStill(id,'south')+'" alt="" width="'+s+'" height="'+s+'" loading="lazy">'; }
+        // opt.eager=즉시 로딩(뽑기 등장처럼 '바로 보여야' 하는 곳). 기본은 lazy(카드·그리드 성능). lazy면 갓 삽입된 이미지를 브라우저가 늦게 불러 등장이 ~1초 지연됨.
+        return '<img class="catpx" src="'+sprStill(id,'south')+'" alt="" width="'+s+'" height="'+s+'"'+(opt.eager?' decoding="sync"':' loading="lazy"')+'>'; }
       return catFront(id, opt); }
     const POSE_M = { sit:M_CAT_SIT, loaf:M_CAT_LOAF, sleep:M_CAT_SLEEP };
     function catPose(id, pose, opt){ return pxSvg(POSE_M[pose]||M_CAT_SIDE_A, CAT_PALS[id], opt); }
@@ -2050,7 +2049,7 @@
     function applyDepth(a){ const d=a.depth=Math.max(0,Math.min(1,a.depth||0));
       a.scale=depthScale(d); a.rise=d*(a.riseMax||0);
       const z=Math.max(1, Math.round(12 - d*11)); if(a._z!==z){ a._z=z; a.el.style.zIndex=z; }
-      if(a.id){ _petDepth[a.id]=d; _petVz[a.id]=a.vz||0; } }   // 재빌드 때 이어받도록 지속
+      if(a.pkey){ _petDepth[a.pkey]=d; _petVz[a.pkey]=a.vz||0; } }   // 재빌드 때 이어받도록 지속(무대별 키 — dock/내 방/친구 방의 같은 id가 안 섞이게)
     // 액터의 위치(x)·올림(lift)·깊이(scale/rise)·방향(scaleX)을 transform 하나로 — 전부 합성(페인트 0).
     // transform-origin:center bottom 이라 배율은 발밑 기준(발이 바닥선에 유지)·좌우반전은 중심축. 시각 중심 x=a.x+sw/2는 배율과 무관하게 유지.
     // ⚠️ left/top은 절대 매 프레임 건드리지 않는다(레이아웃·페인트 유발). x는 정수 px 스냅.
@@ -2058,7 +2057,7 @@
         fp=(a.footPad!=null?a.footPad:PET_FOOT_PAD),          // 펫별 발밑 여백 비율(측정값, 없으면 기본) — 호랑이 등 큰 동물은 여백↑
         pad=(a.spr?Math.round((a.hh||0)*fp*s):0),             // 발밑 여백 상쇄(렌더높이×비율×스케일) → 발이 바닥선에 닿게
         up=Math.round((a.rise||0)+(lift!=null?lift:(a.lift||0)))-pad;
-      a.el.style.transform='translate3d('+Math.round(a.x)+'px,'+(-up)+'px,0) scale('+(s*d)+','+s+')'; if(a.id!=null) _petX[a.id]=a.x; }
+      a.el.style.transform='translate3d('+Math.round(a.x)+'px,'+(-up)+'px,0) scale('+(s*d)+','+s+')'; if(a.pkey) _petX[a.pkey]=a.x; }
     // 스프라이트 프레임 아래 투명 여백 비율을 실제 이미지 알파로 1회 측정(펫별로 다름)→캐시.
     const _footPad={};
     function measureFootPad(id, cb){
@@ -2086,18 +2085,21 @@
       else s.classList.remove('idle'); }   // 일반: .idle 제거 → CSS 걷기 필름(csprFilm) 재생
     function actorShowStill(a, face){ if(!a.spr) return; const s=a.el.querySelector('.cspr'); if(!s) return;
       s.style.setProperty('--idle','url('+sprStill(a.id,face)+')'); s.classList.add('idle'); }
-    const _eng={ raf:0, stage:null, actors:[], last:0, dirty:false };
+    // 여러 무대를 '동시에' 애니메이션한다: groups=[{stage, actors}]. 예) 친구 집 방문 중에도 하단 dock 캠은 계속 로밍.
+    const _eng={ raf:0, groups:[], last:0, dirty:false };
     function markCatDirty(){ _eng.dirty=true; if(typeof startCatLoop==='function') startCatLoop(); }
     // 리사이즈·기기 회전 시 무대 폭이 바뀌므로 재빌드(디바운스) — 안 하면 펫이 옛 폭으로 클램프돼 화면 밖/좌측 몰림
     if(typeof window!=='undefined'){ let _rzT=0; const _catResize=()=>{ clearTimeout(_rzT); _rzT=setTimeout(function(){ if(typeof markCatDirty==='function') markCatDirty(); }, 200); };
       window.addEventListener('resize', _catResize); window.addEventListener('orientationchange', _catResize); }
-    function stopWalk(){ _eng.actors=[]; _eng.stage=null; }
-    function activeStage(){
-      const fr=$('frStage'); if(fr) return fr;   // 친구 집 방문 중이면 친구 무대 우선(단일 엔진 재사용)
+    function stopWalk(){ _eng.groups=[]; }
+    // 지금 애니메이션해야 할 무대들(중복 없이). 시트로 열린 방(친구=frStage·내 알뜰홈=crStage)과 하단 dock 캠(cdStage)을 함께 굴린다.
+    function activeStages(){
+      const out=[];
+      const fr=$('frStage'); if(fr) out.push(fr);                                   // 친구 집 방문 중인 방
       const sheetOpen=$('sheet')&&$('sheet').classList.contains('on');
-      if(sheetOpen && _catTab==='home'){ const s=$('crStage'); if(s) return s; }
-      if(dockMode()!=='hidden'){ const s=$('cdStage'); if(s) return s; }
-      return null;
+      if(sheetOpen && _catTab==='home'){ const s=$('crStage'); if(s && out.indexOf(s)<0) out.push(s); }   // 내 알뜰홈 시트의 방
+      if(dockMode()!=='hidden'){ const s=$('cdStage'); if(s && out.indexOf(s)<0) out.push(s); }            // 하단 dock 캠(시트가 떠 있어도 계속 로밍)
+      return out;
     }
     function buildActors(stage){
       const acts=Array.from(stage.querySelectorAll('.cd-actor')); if(!acts.length) return [];
@@ -2120,13 +2122,15 @@
         const leftEdge=(p.c-1)/12*W; return { x: leftEdge + fh*furnAspect(p.itemId)/2, itemId:p.itemId, fh, key:p.key, depth }; }) : [];
       // 고양이마다 성격(속도·유휴빈도·방향전환·가구선호)을 랜덤 부여 → 개별적으로 움직임
       // 스프라이트 고양이는 정사각(폭=높이), SVG 고양이는 가로세로비 ~26/14.
+      const sid=stage.id||'s';   // 무대별 지속키 prefix — 같은 펫 id가 dock·내 방·친구 방에 동시에 있어도 x/depth가 안 섞이게
       return acts.map(el=>{ const id=el.getAttribute('data-cat'), spr=hasSprite(id), fw=!!(spr&&PET_SPRITES[id]&&PET_SPRITES[id].frontWalk);
+        const pkey=(id!=null?sid+':'+id:null);
         const v=0.14+Math.random()*0.18;   // 속도 폭을 조금 좁혀 걸음이 차분하게(주기는 walkDur로 이동속도에 맞춤)
         const ah=+el.dataset.hh||hh;   // 펫별 렌더 높이(크기 배율 반영). 없으면 무대 기본값.
-        const a={ el, id, spr, frontWalk:fw, x:(id!=null&&_petX[id]!=null?_petX[id]:(parseFloat(el.style.left)||0)), dir:Math.random()<0.5?-1:1, _pdir:0,
+        const a={ el, id, pkey, spr, frontWalk:fw, x:(pkey&&_petX[pkey]!=null?_petX[pkey]:(parseFloat(el.style.left)||0)), dir:Math.random()<0.5?-1:1, _pdir:0,
         v:v, t:Math.random()*6, frame:0, fc:Math.random()*170, W, hh:ah,
         sw:(spr?ah:Math.round(ah*26/14)), props, lift:0,
-        depth:(id!=null&&_petDepth[id]!=null?_petDepth[id]:Math.random()), vz:(id!=null&&_petVz[id]!=null?_petVz[id]:0), riseMax:riseMax, _z:0,   // 앞뒤(깊이) 원근 — 재빌드 시 이전 depth/vz 이어받아 순간이동 방지(신규 펫만 랜덤 시작)
+        depth:(pkey&&_petDepth[pkey]!=null?_petDepth[pkey]:Math.random()), vz:(pkey&&_petVz[pkey]!=null?_petVz[pkey]:0), riseMax:riseMax, _z:0,   // 앞뒤(깊이) 원근 — 재빌드 시 이전 depth/vz 이어받아 순간이동 방지(신규 펫만 랜덤 시작)
         mode:'roam', pause:0, goal:null, pose:null, resKey:null, resFloor:null,
         // 유휴(그 자리에 멈춰 정면 보기) — 자주·오래 서서 정면을 보도록(poseDur에서 시간 늘림)
         idle:0.0032+Math.random()*0.005, turn:0.004+Math.random()*0.010, seek:0.005+Math.random()*0.009, cool:0 };
@@ -2176,11 +2180,11 @@
         actorShowStill(a, 'south'); setXform(a, 1); a._pdir=1; }
       else { a.el.innerHTML=catPose(id, pose, {h:a.hh});
         setXform(a, a.dir); a._pdir=a.dir; } }
-    // 가구 점유: 한 가구엔 1마리(캣타워만 3층=최대 3마리, 층당 1마리). resKey=예약한 가구, resFloor=캣타워 층(0~2).
-    function occupantsOf(key, self){ let n=0; const floors={}; _eng.actors.forEach(o=>{ if(o!==self && o.resKey===key){ n++; if(o.resFloor!=null) floors[o.resFloor]=true; } }); return {n, floors}; }
+    // 가구 점유: 한 가구엔 1마리(캣타워만 3층=최대 3마리, 층당 1마리). resKey=예약한 가구, resFloor=캣타워 층(0~2). acts=같은 무대의 액터들(무대별로 따로 점유 판정).
+    function occupantsOf(key, self, acts){ let n=0; const floors={}; (acts||[]).forEach(o=>{ if(o!==self && o.resKey===key){ n++; if(o.resFloor!=null) floors[o.resFloor]=true; } }); return {n, floors}; }
     function releaseRes(a){ a.resKey=null; a.resFloor=null; }
-    function stepActors(dt){
-      _eng.actors.forEach(a=>{
+    function stepActors(dt, actors){
+      actors.forEach(a=>{
         if(a.mode==='drag') return;   // 손으로 집어 든 펫은 엔진이 건드리지 않음(드래그가 위치 제어)
         a.t+=dt*0.004; if(a.cool>0)a.cool-=dt; if(a.dcool>0)a.dcool-=dt; const id=a.id;
         if(a.mode==='pause'){ a.pause-=dt; if(a.pause<=0){ a.mode='roam'; a.fc=999; a.dir=Math.random()<0.5?-1:1; a.lift=0; releaseRes(a);   // 내려와 재출발(자리 반납)
@@ -2205,9 +2209,9 @@
         }
         // 가구로 이동 결정(가구 있을 때, 쿨다운 후)
         if(a.mode==='roam' && a.props.length && a.cool<=0 && Math.random()<a.seek){
-          const avail=a.props.filter(p=>occupantsOf(p.key,a).n < (p.itemId==='tower'?3:1));   // 빈 가구만(캣타워는 남은 층 있으면)
+          const avail=a.props.filter(p=>occupantsOf(p.key,a,actors).n < (p.itemId==='tower'?3:1));   // 빈 가구만(캣타워는 남은 층 있으면)
           if(avail.length){ const g=avail[Math.floor(Math.random()*avail.length)]; a.resKey=g.key;
-            if(g.itemId==='tower'){ const used=occupantsOf(g.key,a).floors; a.resFloor=[0,1,2].find(f=>!used[f]); if(a.resFloor==null) a.resFloor=0; } else a.resFloor=null;
+            if(g.itemId==='tower'){ const used=occupantsOf(g.key,a,actors).floors; a.resFloor=[0,1,2].find(f=>!used[f]); if(a.resFloor==null) a.resFloor=0; } else a.resFloor=null;
             a.goal=g; a.mode='goal'; } }
         // 가구 도착: "고양이 중심"(a.x+sw/2) 기준으로 가구 중앙(goal.x)에 섬. 깊이도 가구 쪽으로 맞춰 걸어감.
         // ⚠️ x에 다 왔는데 깊이 수렴을 기다리며 방향이 매 프레임 뒤집혀 "제자리 좌우 춤"추던 버그 → x 도착 시 위치를 스냅하고 방향을 고정한 채 대기.
@@ -2231,12 +2235,12 @@
         // 이동·방향·깊이를 transform 하나로(translate3d+scale) — 전부 합성, 매 프레임 페인트 0 → 깜빡임 근본 제거
         applyDepth(a); setXform(a); a._pdir=a.dir;
       });
-      separatePets();   // 같은 배치칸(열·행) 겹침 방지
+      separatePets(actors);   // 같은 배치칸(열·행) 겹침 방지(무대 안에서만)
     }
     // 배치칸 기반 겹침 방지: 두 펫이 같은 칸(같은 열 && 같은 행/깊이)이면 이동 중인 펫을 밀어내고 멀어지는 방향으로 전환.
     // 열=x(W/12 폭), 행=depth(1/11 단위). 열이 같아도 행(깊이)이 다르면 앞뒤로 겹쳐 보이는 것이라 허용(원근·가림 유지).
-    function separatePets(){
-      const acts=_eng.actors; if(acts.length<2) return;
+    function separatePets(acts){
+      if(!acts || acts.length<2) return;
       const colW=(acts[0].W||160)/12, rowD=1/11, moved=[];
       const mov=a=>(a.mode==='roam');   // 자유 로밍 펫만 분리 대상 — goal(가구로 가는)·pause(앉은)·drag는 겹침분리에 관여 안 함(가구로 가는 펫이 다른 펫에 안 막히고 겹쳐 지나감)
       for(let i=0;i<acts.length;i++) for(let j=i+1;j<acts.length;j++){
@@ -2262,9 +2266,11 @@
     function catLoop(ts){
       if(document.hidden){ _eng.raf=0; return; }   // 탭 숨김 → 루프 정지(복귀 시 visibilitychange로 재개, 유휴 배터리 절약)
       const dt=_eng.last?Math.min(50,ts-_eng.last):16; _eng.last=ts;
-      const stage=activeStage();
-      if(stage!==_eng.stage || _eng.dirty){ _eng.stage=stage; _eng.dirty=false; _eng.actors= stage? buildActors(stage):[]; }
-      if(stage && _eng.actors.length && !reducedMotion()) stepActors(dt);
+      const want=activeStages();
+      // 무대 집합이 바뀌었거나 dirty면 그룹 재구성 — 유지되는 무대의 액터는 재사용해 애니메이션 상태 보존, 새 무대만 buildActors.
+      const changed=_eng.dirty || _eng.groups.length!==want.length || _eng.groups.some(g=>want.indexOf(g.stage)<0);
+      if(changed){ _eng.groups=want.map(st=>{ const ex=_eng.dirty?null:_eng.groups.find(g=>g.stage===st); return ex||{ stage:st, actors:buildActors(st) }; }); _eng.dirty=false; }
+      if(!reducedMotion()) _eng.groups.forEach(g=>{ if(g.actors.length) stepActors(dt, g.actors); });   // 모든 무대(dock + 열린 방)를 함께 굴림
       _eng.raf=requestAnimationFrame(catLoop);
     }
     function startCatLoop(){ if(!_eng.raf && !(typeof document!=='undefined'&&document.hidden)) _eng.raf=requestAnimationFrame(catLoop); }
@@ -2320,7 +2326,8 @@
     }
     function petGrabDown(e){
       const el=(e.target&&e.target.closest)?e.target.closest('.cd-actor'):null; if(!el) return;
-      const a=_eng.actors.find(x=>x.el===el); if(!a) return;
+      let a=null; for(let gi=0;gi<_eng.groups.length;gi++){ const f=_eng.groups[gi].actors.find(x=>x.el===el); if(f){ a=f; break; } }   // 여러 무대 중 이 액터가 속한 무대에서 찾음
+      if(!a) return;
       e.preventDefault();   // 캠 이미지가 선택/네이티브 드래그되는 것 방지
       const stage=el.parentElement, sx=e.clientX, pid=e.pointerId; let started=false, lastX=e.clientX;   // pid: 멀티터치 시 이 포인터 이벤트만 처리(다른 손가락이 다른 펫을 같이 끌던 버그 방지)
       const begin=()=>{ started=true; _petDrag=a; a.mode='drag'; a.goal=null; if(typeof releaseRes==='function') releaseRes(a);
@@ -2505,7 +2512,7 @@
     // 친구 방 HTML(.catroom + #frStage). name=친구 닉네임.
     function friendRoomHtml(fg, name){
       const wall=friendRoom(fg).wallpaper||'default';
-      const props=friendPlacedList(fg).sort((a,b)=>a.r-b.r).map(p=>propMarkup(p,false,true)).join('');   // plain=true(정적)
+      const props=friendPlacedList(fg).sort((a,b)=>a.r-b.r).map(p=>propMarkup(p,false,true,true)).join('');   // plain=true(읽기전용·똥/탭 없음) + live=true(캣휠·화분·캣타워·스크래처 연출은 친구 방에서도 움직이게)
       return '<div class="catroom" id="friendRoom"><div class="cr-wall" style="background:'+wallCss(wall)+'"></div><div class="cr-floor"></div><div class="cr-base"></div>'+
         '<span class="cr-cam"><i></i>LIVE · '+escapeHtml(name||'친구')+'의 집</span>'+
         '<div class="cr-props">'+props+'</div><div class="cr-stage" id="frStage"></div></div>';
@@ -3256,6 +3263,7 @@
       const fx=$('catFx'); if(!fx){ toast((kind==='egg'?'펫알':'랜덤박스')+' 획득!'); return; }
       _fxClear();   // 이전 FX 잔여 타이머 취소(빠른 재오픈 교차 방지)
       _fx={ kind, res, dup, refund:refund||0, stage:0, rainbow:!!rainbow, gold: rainbow?0:1 };   // 무지개는 금화로 샀으니 금화 보상 없음
+      if(kind==='egg' && typeof hasSprite==='function' && hasSprite(res.id)){ try{ const _pi=new Image(); _pi.src=sprStill(res.id,'south'); if(_pi.decode) _pi.decode().catch(function(){}); }catch(e){} }   // 등장 스프라이트 미리 로드·디코드(연출 도는 동안) → 마지막에 바로 표시
       if(reducedMotion()){ fxReveal(); return; }   // 모션 최소화: 바로 결과
       const art = rainbow ? (kind==='egg'? rainbowEggSvg({h:150}) : rainbowBoxSvg({h:150}))
                           : (kind==='egg'? eggSvg(0,{h:150}) : boxSvg({h:150}));
@@ -3366,7 +3374,7 @@
       const rb=!!_fx.rainbow;                                             // 무지개(승급 또는 무지개알 구매)
       const conf=rb?32:(rank<=0?0:rank<=1?10:rank<=2?16:20+(rank-2)*8);   // 등급↑ 컨페티 더 많이(일반=없음)
       const tw=5+rank*3;                                                  // 트윙클 수(등급↑ 많이)
-      const art=_fx.kind==='egg'?catFace(_fx.res.id,{h:118}):furnSvg(_fx.res.id,{h:104});
+      const art=_fx.kind==='egg'?catFace(_fx.res.id,{h:118,eager:true}):furnSvg(_fx.res.id,{h:104});   // eager: 등장 즉시 표시(lazy면 ~1초 늦게 뜸)
       fx.innerHTML='<div class="fx-scrim"></div><div class="fx-reveal tier-'+t.id+' rank-'+rank+(rb?' rev-rb':'')+'">'+
         '<div class="fx-art pop">'+
           '<span class="fx-aurawrap">'+lightLayers({aura:210, rays:250})+'</span>'+   // 펫 뒤 픽셀 오오라(+특별↑은 발산 광선까지 CSS로 표시)
