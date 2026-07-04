@@ -1880,11 +1880,18 @@
       }).then(()=>{ toast((editing?'저장':'추가')+' 완료! 🐾'); closeSheet(); })
         .catch(e=>{ toast((editing?'저장':'추가')+' 실패: '+((e&&e.message)||e), true); const b=$('dpBtn'); if(b){ b.disabled=false; b.textContent=editing?'저장':'추가'; } });
     }
-    function devSelectPet(id){ const prev=document.querySelector('.petmg-list'); const st=prev?prev.scrollTop:0;   // 재렌더로 스크롤이 위로 튀지 않게 위치 보존
-      state._devPetSel=(state._devPetSel===id?null:id); openDevPetManager();
-      const cur=document.querySelector('.petmg-list'); if(cur) cur.scrollTop=st; }
-    // 기존 인라인 아트(catalogPets/{id}.walk…) → 분리 노드 catalogPetArt/{id}로 1회 이전(멱등). canel94로 1회 실행.
+    function devSelectPet(id){ const wrap=document.querySelector('.petmg-list');
+      const prevSel=state._devPetSel; state._devPetSel=(prevSel===id?null:id); const newSel=state._devPetSel;
+      if(!wrap){ openDevPetManager(); return; }   // 시트가 없으면 전체 렌더
+      // 이전·현재 선택 행만 갱신(.sel 토글 + 썸네일 걷기/정면 스왑) → 목록 재빌드·스크롤 튐 없음
+      [prevSel, newSel].forEach(function(pid){ if(!pid) return; const row=wrap.querySelector('.petmg-row[data-pid="'+pid+'"]'); if(!row) return;
+        const on=pid===newSel; row.classList.toggle('sel', on);
+        const th=row.querySelector('.pm-thumb'); if(th) th.innerHTML = on?catActorHTML(pid,52):catFace(pid,{h:52}); });
+      const act=document.getElementById('pmActions'); if(act) act.innerHTML=devPetActionsHtml(); }
+    // 기존 인라인 아트(catalogPets/{id}.walk…) → 분리 노드 catalogPetArt/{id}로 1회 이전(멱등). canel94로 1회 실행. RTDB 일괄 쓰기라 확인 후 실행.
     function migrateCatalogArtOnce(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
+      confirmSheet('예전 인라인 펫 아트를 catalogPetArt로 분리 이전할까요?\nRTDB에 일괄 쓰기가 발생합니다(이미 이전된 항목은 건너뜀).', _migrateCatalogArtOnce, {title:'이미지 분리 이전(1회)', okLabel:'이전 실행', danger:false}); }
+    function _migrateCatalogArtOnce(){ if(!(typeof isDev==='function'&&isDev())) return;
       catalogRef().once('value').then(s=>{ const recs=s.val()||{}; const upd={}; let n=0;
         Object.keys(recs).forEach(id=>{ const r=recs[id]||{}; if(!r.walk) return;   // 이미 이전됨/이미지 없음
           upd['catalogPetArt/'+id]={ walk:r.walk, south:r.south, north:r.north, east:r.east, west:r.west };
@@ -1913,37 +1920,44 @@
       if(sp.urls) doExport(sp.urls);
       else if(_petArt[id] && _petArt[id].urls) doExport(_petArt[id].urls);
       else db.ref('catalogPetArt/'+id).once('value').then(s=>doExport(s.val())).catch(e=>toast('불러오기 실패: '+((e&&e.message)||e), true)); }
-    // 개발자 펫 관리: 전체 목록(삭제된 펫=회색·"삭제됨") + 선택 후 [추가][수정][삭제/복구]
-    function openDevPetManager(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
-      const list=allPetsForDev(), sel=state._devPetSel, selPet=sel?list.find(p=>p.id===sel):null;
-      let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 10px;line-height:1.5;">펫을 선택해 <b>수정/삭제</b>하거나 <b>추가</b>로 새 펫(zip)을 올려요. 삭제=앱에서 숨김(이미지 보존)이라 <b>복구</b> 가능.</p>';
-      h+='<div class="petmg-list">'+list.map(p=>{ const on=p.id===sel; const tag=(SPECIES_LABEL[p.species]||p.species); const tn=((typeof TIERS!=='undefined'&&TIERS.find(t=>t.id===p.tier))||{}).name||p.tier;
-        const art=on?catActorHTML(p.id,52):catFace(p.id,{h:52});   // 선택 시 옆으로 걷는 스프라이트, 아니면 정면 썸네일
-        return '<button class="petmg-row'+(on?' sel':'')+(p.deleted?' del':'')+'" onclick="devSelectPet(\''+p.id+'\')">'+
-          '<span class="pm-thumb">'+art+'</span>'+
-          '<span class="pm-txt"><span class="pm-nm">'+escapeHtml(p.name||p.id)+'</span>'+
-          '<span class="pm-meta">'+escapeHtml(tag)+' · '+escapeHtml(tn)+(p.runtime?' · 런타임':'')+(p.deleted?' · 삭제됨':'')+'</span></span></button>'; }).join('')+'</div>';
+    // 개발자 펫 관리: 전체 목록(삭제된 펫=회색·"삭제됨") + 선택 후 [추가][수정][삭제/복구] + 가챠 연출 펫 지정.
+    // 선택 토글은 시트 전체가 아니라 목록 행(2개)+액션영역(#pmActions)만 부분 갱신(devSelectPet) → 스크롤 유지·재빌드 비용 절감.
+    function devPetRowHtml(p, sel){ const on=p.id===sel; const tag=(SPECIES_LABEL[p.species]||p.species); const tn=((typeof TIERS!=='undefined'&&TIERS.find(t=>t.id===p.tier))||{}).name||p.tier;
+      const art=on?catActorHTML(p.id,52):catFace(p.id,{h:52});   // 선택 시 옆으로 걷는 스프라이트, 아니면 정면 썸네일
+      return '<button class="petmg-row'+(on?' sel':'')+(p.deleted?' del':'')+'" data-pid="'+p.id+'" onclick="devSelectPet(\''+p.id+'\')">'+
+        '<span class="pm-thumb">'+art+'</span>'+
+        '<span class="pm-txt"><span class="pm-nm">'+escapeHtml(p.name||p.id)+'</span>'+
+        '<span class="pm-meta">'+escapeHtml(tag)+' · '+escapeHtml(tn)+(p.runtime?' · 런타임':'')+(p.deleted?' · 삭제됨':'')+'</span></span></button>'; }
+    // 목록 아래 액션영역(선택 상태에 따라 바뀌는 부분) — 부분 갱신 대상.
+    function devPetActionsHtml(){ const list=allPetsForDev(), sel=state._devPetSel, selPet=sel?list.find(p=>p.id===sel):null;
       const dr = (selPet&&selPet.deleted) ? '<button class="btn" onclick="restorePet(\''+sel+'\')">복구</button>'
         : '<button class="btn danger"'+(sel?'':' disabled')+(sel?' onclick="deletePetSoft(\''+sel+'\')"':'')+'>삭제</button>';
-      h+='<div class="petmg-btns"><button class="btn ghost" onclick="openDevPetAdd()">추가</button>'+
+      let h='<div class="petmg-btns"><button class="btn ghost" onclick="openDevPetAdd()">추가</button>'+
          '<button class="btn"'+(sel?'':' disabled')+(sel?' onclick="openDevPetEdit(\''+sel+'\')"':'')+'>수정</button>'+dr+'</div>';
-      // 🎬 가챠 오픈 연출 펫 지정: 선택 펫을 연출 1번(왼쪽) / 2번(오른쪽) 슬롯에 배정(다시 누르면 해제). 미지정이면 기본 검은 고양이.
+      // 🎬 가챠 오픈 연출 펫 지정(전역 config/gachaFx — 모든 사용자에게 즉시 적용). 선택 펫을 연출 1번(왼쪽)/2번(오른쪽)에 배정(다시 누르면 해제).
+      h+='<div class="sec-title" style="margin-top:14px;">가챠 오픈 연출 펫 <span class="pill">전역 · 모든 사용자</span></div>';
       if(sel && selPet && !selPet.deleted){
         const sa=gachaFxSlotOf(sel);   // 'a'|'b'|null (현재 이 펫이 배정된 슬롯)
-        h+='<div class="petmg-btns" style="margin-top:6px;">'+
+        h+='<div class="petmg-btns">'+
            '<button class="btn'+(sa==='a'?'':' ghost')+'" onclick="setGachaFxSlot(\'a\',\''+sel+'\')">연출 1번(왼쪽)'+(sa==='a'?' ✓':'')+'</button>'+
            '<button class="btn'+(sa==='b'?'':' ghost')+'" onclick="setGachaFxSlot(\'b\',\''+sel+'\')">연출 2번(오른쪽)'+(sa==='b'?' ✓':'')+'</button></div>';
-        const an=(_gachaFx&&_gachaFx.a)?catName(_gachaFx.a):'기본 검은 고양이', bn=(_gachaFx&&_gachaFx.b)?catName(_gachaFx.b):'없음';
-        h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:8px 2px 0;">펫알·박스 열 때 걸어와 톡 치는 연출 펫이에요. <b>1번</b>=왼쪽에서, <b>2번</b>=오른쪽에서 등장(크기는 펫 배율만큼). 현재 1번=<b>'+escapeHtml(an)+'</b> · 2번=<b>'+escapeHtml(bn)+'</b>.</p>';
       } else {
-        h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:8px 2px 0;">펫을 선택하면 <b>가챠 오픈 연출</b>(펫알·박스 열 때 걸어와 톡 치는 펫)로 지정할 수 있어요.</p>';
+        h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:6px 2px 0;">펫을 선택하면 연출 <b>1번(왼쪽)</b>·<b>2번(오른쪽)</b>으로 지정할 수 있어요.</p>';
       }
+      h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:8px 2px 0;">펫알·박스 열 때 걸어와 톡 치는 연출 펫이에요. <b>1번</b>=왼쪽, <b>2번</b>=오른쪽에서 등장(둘 다면 <b>1번 끝난 뒤 2번</b> 순차, 크기는 펫 배율만큼). 현재 1번=<b>'+escapeHtml(gachaFxSlotDesc('a'))+'</b> · 2번=<b>'+escapeHtml(gachaFxSlotDesc('b'))+'</b>.</p>';
+      h+='<div class="petmg-btns" style="margin-top:8px;"><button class="btn ghost" onclick="devPreviewGachaFx()">▶︎ 연출 미리보기</button></div>';
+      return h; }
+    function openDevPetManager(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
+      const list=allPetsForDev(), sel=state._devPetSel;
+      let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 10px;line-height:1.5;">펫을 선택해 <b>수정/삭제</b>하거나 <b>추가</b>로 새 펫(zip)을 올려요. 삭제=앱에서 숨김(이미지 보존)이라 <b>복구</b> 가능.</p>';
+      h+='<div class="petmg-list">'+list.map(p=>devPetRowHtml(p, sel)).join('')+'</div>';
+      h+='<div id="pmActions">'+devPetActionsHtml()+'</div>';
       openSheet('펫 관리', h); }
 
     // 개발자 데이터 정리: 런타임 펫 정적 승격(내보내기) + 구 인라인 아트 1회 분리 이전.
     function openDevDataTools(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
       const runtimes=allPetsForDev().filter(p=>p.runtime && !p.deleted);
-      let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 10px;line-height:1.5;">RTDB에 저장된 데이터를 파일 에셋으로 옮겨 부담을 줄이는 <b>정리 도구</b>예요. 실행 전 백업/배포 순서를 지켜요.</p>';
+      let h='<div class="note"><span class="pill">전역 데이터</span> RTDB에 저장된 데이터를 파일 에셋으로 옮겨 부담을 줄이는 <b>정리 도구</b>예요. 실행 전 백업/배포 순서를 지켜요.</div>';
       h+='<div class="field"><label>런타임 펫 정적 승격</label>';
       if(runtimes.length){
         h+='<div class="petmg-list">'+runtimes.map(p=>{
@@ -2818,7 +2832,7 @@
     const TIER_PRICE = { normal:50, uncommon:100, rare:200, epic:400, legend:800, limited:1500 };
     PET_CATALOG.forEach(c=>{ const t=CAT_TIER[c.id]; if(t&&TIER_PRICE[t]!=null) c.price=TIER_PRICE[t]; });
     // ---- 개발자 모드(등록된 개발자 이메일 전용): 확률·구성 로컬 오버라이드 ----
-    const DEV_EMAILS=['canel94@gmail.com'];   // 소문자로 등록(비교 시 소문자화)
+    const DEV_EMAILS=['canel94@gmail.com'];   // 소문자로 등록(비교 시 소문자화). ⚠️ database.rules.json 의 config 쓰기 규칙(현재 canel94@gmail.com 하드코딩)과 반드시 동기화 — 여기만 추가하면 개발자 UI는 뜨지만 전역(config/*) 쓰기는 규칙에서 막혀 조용히 실패한다.
     function isDev(){ return DEV_EMAILS.indexOf((state.userEmail||'').toLowerCase())>=0; }
     function devOn(){ return isDev() && localStorage.getItem('catDev')==='1'; }
     function toggleDevMode(){ if(!isDev()) return; localStorage.setItem('catDev', devOn()?'0':'1'); }
@@ -3417,7 +3431,8 @@
       const fx=$('catFx'), st=fx&&fx.querySelector('.fx-stage'), it=$('fxItem'); if(!st||!it) return;
       const t=tierInfo(_fx.res.tier), epic=['epic','legend','limited'].indexOf(_fx.res.tier)>=0, lim=_fx.res.tier==='limited';
       // 검은 고양이 앞발 연출 = 고등급 티저. 등급별 확률: 특별(epic) 10%·전설 90%·한정 100% (그 미만 0%). 등장 자체가 '뭔가 좋은 게 나온다'는 힌트.
-      const catShow=Math.random() < (({ epic:0.10, legend:0.90, limited:1.0 })[_fx.res.tier] || 0);
+      const catShow = _fxForceCat || (Math.random() < (({ epic:0.10, legend:0.90, limited:1.0 })[_fx.res.tier] || 0));
+      _fxForceCat=false;   // 미리보기 강제 플래그는 1회성
       const rank=Math.max(0, TIER_ORDER.indexOf(_fx.res.tier));   // 0(일반)~5(한정)
       const lk=(1+rank*0.15).toFixed(2);                          // 등급 높을수록 빛이 크고 밝게
       const isEgg=_fx.kind==='egg';
@@ -3487,14 +3502,14 @@
         '<div class="fx-confetti">'+(conf?fxConfetti(conf):'')+'</div></div>';
       fx.className='fx on reveal';
     }
-    function closeFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx=null; }
+    function closeFx(){ _fxClear(); _fxForceCat=false; const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx=null; }   // 미리보기를 climax 전에 닫아도 강제 플래그가 다음 실전 뽑기로 새지 않게 리셋
 
     // ================= 개발자 패널: 펫알/박스 확률·구성 =================
     function openDevGacha(){
       if(!isDev()) return;
       const cfg=devCfg(), tp=cfg.tiers||{}, ct=effCatTier(), it=effItemTier();
       const tierOpt=(cur)=>TIERS.map(t=>'<option value="'+t.id+'"'+(cur===t.id?' selected':'')+'>'+t.name+'</option>').join('');
-      let h='<div class="note">개발자 전용 · 이 기기(브라우저)에만 적용됩니다. 확률 합이 100이 아니어도 비율로 반영돼요.</div>';
+      let h='<div class="note"><span class="pill">이 기기만</span> 개발자 전용 · 이 설정(확률·등급·연출/다마고치 테스트)은 <b>이 기기(브라우저)에만</b> 적용됩니다(재화 지급은 내 계정에 반영). 확률 합이 100이 아니어도 비율로 반영돼요.</div>';
       h+='<div class="sec-title">연출 테스트(무료)</div>';
       h+='<div class="tx-sub" style="margin:0 2px 6px;">펫알</div><div class="chip-row">'+TIERS.map(t=>'<button class="chip" onclick="devPreview(\'egg\',\''+t.id+'\')"><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
       h+='<div class="tx-sub" style="margin:8px 2px 6px;">랜덤박스</div><div class="chip-row">'+TIERS.map(t=>'<button class="chip" onclick="devPreview(\'box\',\''+t.id+'\')"><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
