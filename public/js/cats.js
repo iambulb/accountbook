@@ -2715,7 +2715,7 @@
       if(stage.dataset.sig===sig && stage.querySelector('.cd-actor')) return;
       stage.dataset.sig=sig;
       if(!list.length){ stage.innerHTML='<span class="cd-empty">고양이를 입양해 보세요</span>'; markCatDirty(); return; }
-      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,48,96); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(12+i*54)+'px;">'+catActorHTML(id,s)+'</div>'; }).join('');
+      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,24,48); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(12+i*54)+'px;">'+catActorHTML(id,s)+'</div>'; }).join('');
       markCatDirty();
     }
     // ---- 통합 걷기 엔진: 단일 rAF가 "지금 보이는 무대"(시트 방 또는 dock)만 애니메이션 ----
@@ -3264,7 +3264,7 @@
       const sig='c:'+list.join(',');   // 같은 고양이면 재생성 안 함(애니메이션 유지)
       if(stage.dataset.sig===sig && stage.querySelector('.cd-actor')) return;
       stage.dataset.sig=sig;
-      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,64,200); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+catActorHTML(id,s)+'</div>'; }).join('');
+      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,100); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+catActorHTML(id,s)+'</div>'; }).join('');
       markCatDirty();   // 통합 엔진이 시트 방 무대를 자동으로 잡아 애니메이션
     }
     // ===== 친구 집(펫캠) — 남의 game으로 읽기전용 방 렌더 + 로밍(엔진 재사용) =====
@@ -3287,7 +3287,7 @@
       const list=friendActiveCats(fg).slice(0, Math.min(MAX_SLOTS, Math.max(BASE_SLOTS, (fg.home&&fg.home.slots)||BASE_SLOTS)));
       ensurePetArtMany(list);
       stage.dataset.hh=64;
-      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,64,200); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+catActorHTML(id,s)+'</div>'; }).join('');
+      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,100); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+catActorHTML(id,s)+'</div>'; }).join('');
       markCatDirty();
     }
     let _shopSub='cats';
