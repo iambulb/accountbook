@@ -1103,7 +1103,23 @@
     function sparkSvg(opt){ return pxSvg(M_SPARK, SPARK_PAL, opt); }
     function pawSvg(opt){ return pxSvg(M_PAW, PAW_PAL, opt); }
     // 알뜰샵·팔레트·격자용 대표 아트(물그릇은 물 채운 파란 그릇으로 구분 표시)
-    function furnSvg(id, opt){ const M={cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT,catwheel:M_CATWHEEL}[id]; return pxSvg(M, FURN_PALS[id], opt); }
+    function furnMatrix(id){ return {cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT,catwheel:M_CATWHEEL}[id]; }
+    function furnSvg(id, opt){ return pxSvg(furnMatrix(id), FURN_PALS[id], opt); }
+    // 캠 전용 연출(움직이는 부분만 오버레이로 분리해 CSS 애니메이션): 같은 매트릭스를 팔레트만 나눠 두 겹으로 그림.
+    //  base=움직이는 글자 제외, fx=그 글자만 → 완벽히 겹쳐 정지 배경 + 움직이는 부품(캣휠 트레드 회전·펫알 방울 흔들림·화분 잎 살랑).
+    const FURN_ANIM = {   // move=오버레이(움직이는)로 뺄 글자, type=애니메이션 종류(spin/swing/sway)
+      catwheel:{ type:'spin',  move:['T','H'] },   // 트레드+하이라이트만 회전(림·롤러·스탠드는 정지)
+      tower:   { type:'swing', move:['T','O','K'] },   // 매달린 장난감 공(빨강 T·하이라이트 O)+끈(K)
+      scratcher:{type:'swing', move:['T','O','H'] },   // 매달린 공(O)+하이라이트(H)+끈(T)
+      plant:   { type:'sway',  move:['G','L','l'] }    // 잎+줄기(화분 P/p/X는 정지)
+    };
+    function palPick(pal, keys, keep){ const o={}; Object.keys(pal).forEach(function(k){ const on=keys.indexOf(k)>=0; if(on===keep) o[k]=pal[k]; }); return o; }
+    // 연출 있는 가구를 base+fx 두 겹 SVG로. (연출 없으면 일반 furnSvg 반환)
+    function furnLiveSvg(id, opt){ const a=FURN_ANIM[id]; if(!a) return furnSvg(id, opt);
+      const M=furnMatrix(id), pal=FURN_PALS[id];
+      const base=pxSvg(M, palPick(pal, a.move, false), opt);           // 움직이는 글자 제외(정지 배경)
+      const fx=pxSvg(M, palPick(pal, a.move, true), {fit:true});       // 그 글자만(오버레이, 부모 크기 채움)
+      return '<span class="fwrap">'+base+'<span class="ffx ffx-'+a.type+' ffx-'+id+'">'+fx+'</span></span>'; }
     // 방(홈·dock)용 — 채움 상태 반영: 밥그릇=빈/사료, 물그릇=빈(회색)/물.
     function furnRoomSvg(itemId, key, opt){
       if(itemId==='bowl')      return pxSvg(isFilled(key)?M_BOWL_FOOD:M_BOWL, FURN_PALS.bowl, opt);
@@ -1945,7 +1961,7 @@
       for(let i=0;i<n;i++) litters[i%litters.length]._poops.push(i/litters.length|0);
     }
     // 배치물 하나의 마크업(그릇=탭 급여·채움 반영, 화장실=똥 수거). isDock이면 dock 크기.
-    function propMarkup(p, isDock, plain){
+    function propMarkup(p, isDock, plain, live){
       const foot=itemFoot(p.itemId);
       // 앵커=배치칸 "좌측하단". x는 발자국 좌측 edge(가운데 정렬 X, CSS translateX(0)), 바닥은 발자국 앞줄(front row) 기준.
       const x=((p.c-1)/12*100).toFixed(2);
@@ -1956,7 +1972,8 @@
       // (밥·물그릇/화장실의 고정 z-index:2가 이 깊이 순서를 깨뜨리던 문제 → 인라인 z-index로 덮어씀)
       const z=Math.max(1, Math.round(frontRow));
       const tap=!plain && (p.itemId==='bowl'||p.itemId==='waterbowl');   // 친구 방(plain)은 밥그릇 채움·똥·탭 없이 정적 렌더
-      let inner=tap? furnRoomSvg(p.itemId,p.key,{h:fh}) : furnSvg(p.itemId,{h:fh});
+      // 캠(dock·홈 LIVE)에서만 연출(live) — 미리보기/친구 방/샵/팔레트는 정적. 연출 가구는 base+fx 두 겹으로.
+      let inner=tap? furnRoomSvg(p.itemId,p.key,{h:fh}) : (live&&FURN_ANIM[p.itemId] ? furnLiveSvg(p.itemId,{h:fh}) : furnSvg(p.itemId,{h:fh}));
       if(!plain && p.itemId==='litterbox'){ const slots=p._poops||[]; const ph=Math.max(6,Math.round(fh*0.32));
         inner+=slots.map(s=>'<span class="poop" onclick="collectPoop(event)" style="left:'+(20+(s%3)*26)+'%;top:'+(30+((s/3|0)*20))+'%;height:'+ph+'px" title="치우기 +'+POOP_REWARD+' 은화">'+poopSvg({h:ph})+'</span>').join(''); }
       return '<div class="cr-prop'+(tap?' cr-tap':'')+(p.itemId==='litterbox'?' cr-litter':'')+'" style="left:'+x+'%;bottom:'+bottom+'%;z-index:'+z+';"'+(tap?' onclick="event.stopPropagation();feedBowl(\''+p.key+'\')"':'')+'>'+inner+'</div>';
@@ -1969,7 +1986,7 @@
       reconcilePets();   // 캠 화면에서도 3시간 만료→똥 정산
       // 원근: 뒤(행 큰 값)일수록 위로·작게, 앞(행 작은 값)일수록 아래로·크게. 앞 가구가 뒤 가구를 덮도록 뒤부터.
       const list=placedList().sort((a,b)=>a.r-b.r); distributePoops(list);
-      box.innerHTML=list.map(p=>propMarkup(p,true)).join('');
+      box.innerHTML=list.map(p=>propMarkup(p,true,false,true)).join('');   // live=true → dock 캠 연출
     }
     // 활성 고양이를 dock 무대에 액터로 배치(없으면 안내)
     function renderDockCats(){
@@ -2003,7 +2020,7 @@
     // ⚠️ 깊이(depth)·드리프트속도(vz)는 펫 id별로 지속시킨다 — buildActors가 markCatDirty(코인·급여·멤버 등 RTDB 갱신)마다
     // 재실행되는데, 그때 depth를 Math.random()으로 다시 굴리면 **보고 있는 도중 앞뒤로 순간이동**하는 것처럼 보인다.
     // 마지막 depth/vz를 여기 저장해 두고 재빌드 때 그대로 이어받아, 맨앞↔맨뒤로 한 번에 튀는 일을 원천 차단한다.
-    let _petDepth={}, _petVz={};
+    let _petDepth={}, _petVz={}, _petX={};   // depth·vz에 더해 가로위치 x도 지속 → 무대 재빌드(시트 닫힘·아트 로드) 때 좌측(0)으로 몰리는 것 방지
     // depth로부터 배율·바닥올림(rise)·z-index를 액터에 반영. z는 가구 frontRow(=12-depth*11)와 같은 척도라 상호 가림이 맞물린다.
     function applyDepth(a){ const d=a.depth=Math.max(0,Math.min(1,a.depth||0));
       a.scale=depthScale(d); a.rise=d*(a.riseMax||0);
@@ -2016,7 +2033,7 @@
         fp=(a.footPad!=null?a.footPad:PET_FOOT_PAD),          // 펫별 발밑 여백 비율(측정값, 없으면 기본) — 호랑이 등 큰 동물은 여백↑
         pad=(a.spr?Math.round((a.hh||0)*fp*s):0),             // 발밑 여백 상쇄(렌더높이×비율×스케일) → 발이 바닥선에 닿게
         up=Math.round((a.rise||0)+(lift!=null?lift:(a.lift||0)))-pad;
-      a.el.style.transform='translate3d('+Math.round(a.x)+'px,'+(-up)+'px,0) scale('+(s*d)+','+s+')'; }
+      a.el.style.transform='translate3d('+Math.round(a.x)+'px,'+(-up)+'px,0) scale('+(s*d)+','+s+')'; if(a.id!=null) _petX[a.id]=a.x; }
     // 스프라이트 프레임 아래 투명 여백 비율을 실제 이미지 알파로 1회 측정(펫별로 다름)→캐시.
     const _footPad={};
     function measureFootPad(id, cb){
@@ -2046,6 +2063,9 @@
       s.style.setProperty('--idle','url('+sprStill(a.id,face)+')'); s.classList.add('idle'); }
     const _eng={ raf:0, stage:null, actors:[], last:0, dirty:false };
     function markCatDirty(){ _eng.dirty=true; }
+    // 리사이즈·기기 회전 시 무대 폭이 바뀌므로 재빌드(디바운스) — 안 하면 펫이 옛 폭으로 클램프돼 화면 밖/좌측 몰림
+    if(typeof window!=='undefined'){ let _rzT=0; const _catResize=()=>{ clearTimeout(_rzT); _rzT=setTimeout(function(){ if(typeof markCatDirty==='function') markCatDirty(); }, 200); };
+      window.addEventListener('resize', _catResize); window.addEventListener('orientationchange', _catResize); }
     function stopWalk(){ _eng.actors=[]; _eng.stage=null; }
     function activeStage(){
       const fr=$('frStage'); if(fr) return fr;   // 친구 집 방문 중이면 친구 무대 우선(단일 엔진 재사용)
@@ -2078,7 +2098,7 @@
       return acts.map(el=>{ const id=el.getAttribute('data-cat'), spr=hasSprite(id), fw=!!(spr&&PET_SPRITES[id]&&PET_SPRITES[id].frontWalk);
         const v=0.14+Math.random()*0.18;   // 속도 폭을 조금 좁혀 걸음이 차분하게(주기는 walkDur로 이동속도에 맞춤)
         const ah=+el.dataset.hh||hh;   // 펫별 렌더 높이(크기 배율 반영). 없으면 무대 기본값.
-        const a={ el, id, spr, frontWalk:fw, x:(parseFloat(el.style.left)||0), dir:Math.random()<0.5?-1:1, _pdir:0,
+        const a={ el, id, spr, frontWalk:fw, x:(id!=null&&_petX[id]!=null?_petX[id]:(parseFloat(el.style.left)||0)), dir:Math.random()<0.5?-1:1, _pdir:0,
         v:v, t:Math.random()*6, frame:0, fc:Math.random()*170, W, hh:ah,
         sw:(spr?ah:Math.round(ah*26/14)), props, lift:0,
         depth:(id!=null&&_petDepth[id]!=null?_petDepth[id]:Math.random()), vz:(id!=null&&_petVz[id]!=null?_petVz[id]:0), riseMax:riseMax, _z:0,   // 앞뒤(깊이) 원근 — 재빌드 시 이전 depth/vz 이어받아 순간이동 방지(신규 펫만 랜덤 시작)
@@ -2086,6 +2106,7 @@
         // 유휴(그 자리에 멈춰 정면 보기) — 자주·오래 서서 정면을 보도록(poseDur에서 시간 늘림)
         idle:0.0032+Math.random()*0.005, turn:0.004+Math.random()*0.010, seek:0.005+Math.random()*0.009, cool:0 };
         a.footPad=(typeof _footPad!=='undefined'&&_footPad[id]!=null?_footPad[id]:null); if(spr) measureFootPad(id,function(fp){ a.footPad=fp; setXform(a); });
+        a.x=Math.max(2, Math.min(a.x, Math.max(2, W-a.sw)));   // 지속된 x를 현재 무대 폭에 클램프(리사이즈/회전·무대전환 시 화면 밖 방지)
         setWalkDur(a); el.style.left='0px'; applyDepth(a); setXform(a); a._pdir=a.dir;   // 위치·올림·깊이·방향 전부 transform(합성). left는 0 고정 → 걷는 동안 메인스레드 페인트 0
         // 액터는 항상 'roam'(이동)으로 시작. DOM 재사용(markCatDirty·무대 재부착)으로 남아있던 정지스틸(.idle)을
         // 반드시 이동 표시로 초기화 → "정면 이미지로 이동" 버그 원천 차단.
@@ -2274,12 +2295,13 @@
       const el=(e.target&&e.target.closest)?e.target.closest('.cd-actor'):null; if(!el) return;
       const a=_eng.actors.find(x=>x.el===el); if(!a) return;
       e.preventDefault();   // 캠 이미지가 선택/네이티브 드래그되는 것 방지
-      const stage=el.parentElement, sx=e.clientX; let started=false, lastX=e.clientX;
+      const stage=el.parentElement, sx=e.clientX, pid=e.pointerId; let started=false, lastX=e.clientX;   // pid: 멀티터치 시 이 포인터 이벤트만 처리(다른 손가락이 다른 펫을 같이 끌던 버그 방지)
       const begin=()=>{ started=true; _petDrag=a; a.mode='drag'; a.goal=null; if(typeof releaseRes==='function') releaseRes(a);
         a.lift=0; a.el.classList.add('cdgrab');   // 드래그 중에도 발이 바닥/커서에 붙게 — 들어올림 제거(집기 피드백은 그림자 cdgrab). setXform이 발밑 여백도 상쇄
         if(a.spr) actorShowStill(a,'south'); setXform(a, a.spr?1:a.dir);
       };
-      const mv=(ev)=>{ if(!started){ if(Math.abs(ev.clientX-sx)>3||Math.abs(ev.clientY-e.clientY)>3) begin(); else return; }   // 살짝만 끌어도 바로 집힘(꾹 누를 필요 없음)
+      const mv=(ev)=>{ if(ev.pointerId!==pid) return;   // 이 드래그의 포인터만
+        if(!started){ if(Math.abs(ev.clientX-sx)>3||Math.abs(ev.clientY-e.clientY)>3) begin(); else return; }   // 살짝만 끌어도 바로 집힘(꾹 누를 필요 없음)
         ev.preventDefault(); const r=stage.getBoundingClientRect(), W=a.W||r.width;
         let x=ev.clientX-r.left-a.sw/2; x=Math.max(2, Math.min(W-a.sw, x));
         if(ev.clientX<lastX-1) a.dir=-1; else if(ev.clientX>lastX+1) a.dir=1; lastX=ev.clientX;
@@ -2291,7 +2313,7 @@
         if(started){ a.el.classList.remove('cdgrab'); a.mode='roam'; a.lift=0; a.fc=999; a.cool=700; actorShowMoving(a); setXform(a); a._pdir=a.dir;
           _petDrag=null; _petJustDragged=true; setTimeout(()=>{ _petJustDragged=false; }, 260); }   // 놓은 자리에서 다시 배회
       };
-      const end=(ev)=>{ if(!started && ev && ev.type==='pointerup') bumpAffection(el.getAttribute('data-cat'), ev.clientX, ev.clientY); cleanup(); };   // 안 끌고 뗌=쓰다듬기(애정+1)
+      const end=(ev)=>{ if(ev && ev.pointerId!==pid) return; if(!started && ev && ev.type==='pointerup') bumpAffection(el.getAttribute('data-cat'), ev.clientX, ev.clientY); cleanup(); };   // 안 끌고 뗌=쓰다듬기(애정+1)
       window.addEventListener('pointermove',mv); window.addEventListener('pointerup',end); window.addEventListener('pointercancel',end);
     }
     if(typeof document!=='undefined') document.addEventListener('pointerdown', petGrabDown, true);
@@ -2315,7 +2337,8 @@
         return h;
       };
       openSheet('알뜰홈', build());
-      state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const st=b.scrollTop;
+      state._sheetRefresh=()=>{ if(_drag||_pal||_rmDrag) return;   // 드래그(배치) 중엔 재렌더 스킵 — 드래그 요소가 뜯겨 스크롤 잠금이 남는 것 방지(드래그 끝나면 배치 커밋이 다시 리프레시)
+        const b=$('sheetBody'); if(!b) return; const st=b.scrollTop;
         const pal=b.querySelector('.palette'); const palL=pal?pal.scrollLeft:0;   // 배치 팔레트(가로 스크롤) 위치 보존 — 스크롤해 아이템 선택 시 처음으로 안 튀게(우리집 펫은 세로 그리드라 세로 scrollTop만 보존)
         const keepGrid=(_catTab==='home')?b.querySelector('#petGrid'):null;   // 기존 펫 그리드 노드 보존(빈 placeholder로 되붙여 수백 타일 재파싱·이미지 리로드 회피)
         b.innerHTML=build();
@@ -2907,6 +2930,14 @@
     function _tmBlock(e){ if(e.cancelable) e.preventDefault(); }              // 드래그 armed 동안 네이티브 스크롤 차단
     function lockDragScroll(){ document.body.classList.add('dragging'); document.addEventListener('touchmove', _tmBlock, {passive:false}); }
     function unlockDragScroll(){ document.body.classList.remove('dragging'); document.removeEventListener('touchmove', _tmBlock, {passive:false}); }
+    // 드래그(가구·팔레트·방썸네일) 강제 취소 + 스크롤 잠금 해제 — 시트가 닫히거나 드래그 도중 재렌더로 요소가 사라져 pointerup을 못 받을 때 _tmBlock(터치 스크롤 차단)이 영구히 남는 것 방지. core.closeSheet가 호출.
+    function cancelCatDrags(){
+      if(_drag){ try{ _drag.el.classList.remove('drag'); _drag.el.style.transform=''; }catch(_){} _drag=null; }
+      if(_pal){ try{ if(_pal.ghost) _pal.ghost.remove(); }catch(_){} _pal=null; }
+      if(_rmDrag){ _rmDrag=null; }
+      if(typeof hideDropPreview==='function') hideDropPreview();
+      unlockDragScroll();
+    }
     function clearLongPress(){ if(!_lp) return; const p=_lp; _lp=null; clearTimeout(p.timer);
       p.el.removeEventListener('pointermove', p.onMove); p.el.removeEventListener('pointerup', p.onUp); p.el.removeEventListener('pointercancel', p.onCancel);
       if(p.el.classList) p.el.classList.remove('lp-hold'); }

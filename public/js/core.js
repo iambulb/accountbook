@@ -214,7 +214,8 @@
     function closeSheet(){
       const sh=$('sheet');
       state._sheetRefresh=null;
-      document.body.classList.remove('dragging');   // 드래그 도중 시트가 닫혀도 스크롤 잠금 해제
+      if(typeof cancelCatDrags==='function') cancelCatDrags();   // 드래그 도중 시트가 닫혀도 드래그 상태·스크롤 잠금(_tmBlock) 완전 해제
+      document.body.classList.remove('dragging');
       $('overlay').classList.remove('on');
       sh.classList.remove('on');
       const rf=sh._returnFocus; sh._returnFocus=null;
