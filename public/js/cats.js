@@ -437,7 +437,260 @@
       "..XDDDDDDDDDDDDX..",
       "...DDDDDDDDDDDD..."
     ];
-    const FURN_PALS={ cushion:{X:'#4a5361',C:'#9aa4b2',D:'#79838f',L:'#c2cad4',B:'#5b6470'}, bowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',F:'#d68b4a',f:'#b06a2e',g:'#efb37a'}, waterbowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',A:'#5aa9e6',a:'#3f86c4',h:'#bfe2fb'}, tower:{X:'#5e3f22',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#5e3f22',W:'#c99a5f',C:'#a87c46',L:'#e6c085',S:'#d8b98a',R:'#b8935f',T:'#6b4a2a',O:'#d9694e',H:'#f2a98f'}, litterbox:{X:'#7a808a',W:'#c9ced6',D:'#9aa0aa',S:'#f4efe4',s:'#e7e0d0',k:'#d6ccb8'}, pethouse:{X:'#5a4632',R:'#d9694e',r:'#b8503a',H:'#f0967a',W:'#e8c98f',w:'#d4b06a',D:'#2c2420',d:'#46382c'}, plant:{X:'#7c5028',L:'#7cc652',G:'#4e9636',P:'#c8763e',p:'#a85e2c',l:'#9ad86a',S:'#6f9440'}, catwheel:{X:'#2f6f68',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',R:'#c9a06a',D:'#6b5842'}, rug:{X:'#7a2f38',B:'#c0505e',C:'#a5424e',L:'#e6b3a0',F:'#efe3cf'}, window:{X:'#6b4a2a',W:'#9a734a',w:'#b58d5e',S:'#bfe3f5',C:'#ffffff',U:'#ffd968',u:'#f2b93c'}, fishtank:{X:'#5b7b86',G:'#bfe6ef',A:'#5aa9e6',a:'#3f86c4',P:'#4e9636',p:'#7cc652',F:'#f2933c',f:'#ffd27a',b:'#dff3ff',R:'#cdb98c',D:'#3a5a63'} };
+    // 벽난로(18×16 가로세로비 1.125): 벽돌(K/k)+맨틀(W/w)+아궁이(D)+장작(W/w)+불꽃(f 노랑·F 주황·r 빨강, 캠에서만 일렁임 flicker).
+    const M_FIREPLACE = [
+      "XXXXXXXXXXXXXXXXXX","XwwwwwwwwwwwwwwwwX","XWWWWWWWWWWWWWWWWX","XKkKKkKKkKKkKKkKKX",
+      "XKkKDDDDDDDDDDKkKX","XkKkDDDDffDDDDkKkX","XKkKDDDfFFfDDDKkKX","XkKkDDffFrFfDDkKkX",
+      "XKkKDDfFrrrFfDKkKX","XkKkDDfFrrrFFDkKkX","XKkKDDWwWWwWWDKkKX","XkKkDDWWwWWwWDkKkX",
+      "XKkKDDDDDDDDDDKkKX","XKkKKkKKkKKkKKkKKX","XSSSSSSSSSSSSSSSSX","ssssssssssssssssss"
+    ];
+    // 선풍기(16×22 가로세로비 0.727): 케이지 림(X)+날개(B/G 회전, 캠에서만 spin)+허브(h)+목(N)+받침(S/s).
+    const M_FAN = [
+      "......XXXX......","....XXBBBBXX....","...XGBBBBBBGX...","..XGGGBBBBGGGX..",
+      ".XXGGGBBBBGGGXX.",".XGGGGGBBGGGGGX.",".XGGGGGhhGGGGGX.",".XGGGGhhhhBBBBX.",
+      ".XBBBBBhhBBBBBX.",".XBBBBBGGBBBBBX.",".XXBBBGGGGBBBXX.","..XBBBGGGGBBBX..",
+      "...XBGGGGGGBX...","....XXGGGGXX....","......XXXX......",".......NN.......",
+      ".......NN.......",".......NN.......",".....SSSSSS.....","....SSSSSSSS....",
+      "...SSSSSSSSSS...","...ssssssssss..."
+    ];
+    // 해먹(20×16 가로세로비 1.25): 걸이(X/W)+끈(K)+천 요람(C/c 음영·L 밝음, 캠에서만 살랑 swing). 펫이 안에 올라가 쉼.
+    const M_HAMMOCK = [
+      ".........XX.........",".........WW.........","........WWWW........",".......K....K.......",
+      "......K......K......",".....K........K.....","...CCCCCCCCCCCCCC...","..CLLLLLLLLLLLLLLC..",
+      "..CLLLLLLLLLLLLLLC..","..CcLLLLLLLLLLLLcC..","...CccccccccccccC...","....CCCCCCCCCCCC....",
+      "....................","....................","....................","...................."
+    ];
+    // 낚싯대 장난감(16×20 가로세로비 0.8): 받침(S/s)+대(R)+줄(K)+깃털 장난감(F/f·T 술, 캠에서만 흔들 swing). 펫이 옆에서 톡톡.
+    const M_TEASER = [
+      ".......RRRRRRR..",".......R.....K..",".......R.....K..",".......R.....K..",
+      ".......R.....K..",".......R....FfF.",".......R...FfffF",".......R...FfffF",
+      ".......R....FfF.",".......R.....T..",".......R........",".......R........",
+      ".......R........",".......R........",".......R........",".......R........",
+      ".....SSSSS......","....SSSSSSS.....","...SSSSSSSSS....","....sssssss....."
+    ];
+    // 벽시계(14×22 가로세로비 0.636): 나무 몸통(W/w)+시계판(L·D 바늘)+추(K 봉·O 놋쇠, 캠에서만 좌우로 흔들 swing).
+    const M_WALLCLOCK = [
+      "....XXXXXX....","...XWWWWWWX...","..XWwwwwwwWX..",".XWLLLLLLLLWX.",".XLLLLLLLLLLX.",
+      ".XLLLDDLLLLLX.",".XLLLLDLLLLLX.",".XLLLLDDDLLLX.",".XLLLLLLLLLLX.",".XWLLLLLLLLWX.",
+      "..XWWWWWWWWX..","...XWWWWWWX...","...XWDDDDWX...","...XWDKDDWX...","...XWDKDDWX...",
+      "...XWDKDDWX...","...XWDKDDWX...","...XWDOODWX...","...XWDOODWX...","...XWWWWWWX...",
+      "....XWWWWX....","....XXXXXX...."
+    ];
+    // 행잉플랜트(14×20 가로세로비 0.7): 천장 걸이(X)+끈(K)+화분(P/p)+늘어진 덩굴 잎(G/L/l/g, 캠에서만 전체가 살랑 swing).
+    const M_HANGPLANT = [
+      "......XX......",".....K..K.....","....K....K....","...K......K...","...PPPPPPPP...",
+      "...PppppppP...","...PppppppP...","...PppppppP...","....PPPPPP....","...GLgLGgLG...",
+      "..GLlGLgLGlG..","..gLGLlLGLgL..","...GlLGgLlG...","....GLgLG.....","....gLLGl.....",
+      ".....GLG......",".....gLl......","......G.......","..............",".............."
+    ];
+    // 모빌(18×15 가로세로비 1.2): 걸이(X)+막대(M)+끈(K)+별(A)·달(B)·하트(C) 매달림(캠에서만 전체가 살랑 swing).
+    const M_MOBILE = [
+      "........XX........","........KK........","...MMMMMMMMMMMM...","....K....K....K...",
+      "....K....K....K...","....A...BB...C.C..","...AaA..Bb...CcC..","....A...BB....C...",
+      "..................","..................","..................","..................",
+      "..................","..................",".................."
+    ];
+    // 방울공(12×12 가로세로비 1.0): 공(B/b 음영·L 하이라이트·X 외곽)+방울선(D)+방울(S). 캠에서만 통통 흔들(swing).
+    const M_JINGLEBALL = [
+      "............","...XXXXXX...","..XXLBBBXX..",".XXLLLBBBXX.",".XLLLLBBBBX.",".XDDDDDDDDX.",
+      ".XDDDDDDDDX.",".XBBBBBBbbX.",".XXBBSSbbXX.","..XXBBbbXX..","...XXXXXX...","............"
+    ];
+    // ===== 🧵 바닥/벽지/구조물 픽셀 타일 (build_assets.py 생성) =====
+    const M_FLOOR_WOOD = [
+      'LLLLLLLLLLLLLLLL',
+      'LLLGLLLLGLLLLGLL',
+      'LLLLLLLLLLLLLLLL',
+      'SSSSSSSSSSSSSSSS',
+      'MMMMMMMMMMMMMMMM',
+      'MMMMMMMMGMMMMMMG',
+      'MMMMMMGMMMMMGGMM',
+      'SSSSSSSSSSSSSSSS',
+      'LLLLLLLLLLLLLLLL',
+      'LGLLLLLGLGGLLLLG',
+      'LGLLLLLLLLLLLLLL',
+      'SSSSSSSSSSSSSSSS',
+      'MMMMMMMMMMMMMMMM',
+      'MMMMMMGGMMMGMMMM',
+      'MGMMMMMMMMMMMMMM',
+      'SSSSSSSSSSSSSSSS',
+    ];
+    const M_FLOOR_CHECKER = [
+      'GGGGGGGGGGGGGGGG',
+      'GAAAAAAAGBBBBBBB',
+      'GAAAAAAAGBBBBBBB',
+      'GAAAAAAAGBBBBBBB',
+      'GAAAAAAAGBBBBBBB',
+      'GAAAAAAAGBBBBBBB',
+      'GAAAAAAAGBBBBBBB',
+      'GAAAAAAAGBBBBBBB',
+      'GGGGGGGGGGGGGGGG',
+      'GBBBBBBBGAAAAAAA',
+      'GBBBBBBBGAAAAAAA',
+      'GBBBBBBBGAAAAAAA',
+      'GBBBBBBBGAAAAAAA',
+      'GBBBBBBBGAAAAAAA',
+      'GBBBBBBBGAAAAAAA',
+      'GBBBBBBBGAAAAAAA',
+    ];
+    const M_FLOOR_GRASS = [
+      'GgpgGGgGgGggGGgG',
+      'GGGGGgGGggGGGGGG',
+      'GggGgGGGGGGGGGfG',
+      'GgGggfgGgGGGGGGG',
+      'GgGGGGgGGGGGGGgG',
+      'gggGgGgGgGGGGGGG',
+      'GgGggGGGGGgGGGGG',
+      'GGGggGGGGGgGggGg',
+      'GggggGgGGgGGGgGG',
+      'GGggGGGggGGgGgGG',
+      'GGGGgGGGGGGGGGGG',
+      'GGGggGGGGGGGGGGG',
+      'ggGGGGGGgGGGGGgg',
+      'ggGGGGGgggGGgGGg',
+      'GGggGGGGGGGpGGGG',
+      'GGggGGGGGGGGGgGG',
+    ];
+    const M_FLOOR_ONDOL = [
+      'AAAAAAAAAAAAAAAA',
+      'AAAAAAAAAAAAAAAA',
+      'sAaAaAaAaAaAaAaA',
+      'AAAAAAAAAAAAAAAA',
+      'AAAAAAAAAAAAAAAA',
+      'AaAaAaAaAaAaAaAa',
+      'AAAAAAAAAAAAAAAA',
+      'AAAAsAsAAAAAAAAA',
+      'aAaAaAaAaAaAaAaA',
+      'AAAAAAAAAAAAAAAA',
+      'AAAAAAAAAAAAAAAA',
+      'AaAaAaAaAaAaAaAs',
+      'AAAAsAAAAAAAAAAA',
+      'AAAAAAAAAAAAAAAA',
+      'aAaAaAaAaAaAaAaA',
+      'AAAAAAAAsAAAAAAs',
+    ];
+    const M_FLOOR_STARRY = [
+      'NNnNNNNNNnNNNnNs',
+      'nnNNNyNNNNNNNnNN',
+      'NNNNnnsnNNNNnNnN',
+      'nnNNnNnNNNnsNNsn',
+      'NsNNnNNNNnNNNNNN',
+      'nnNnNNnNNnNNnNNN',
+      'NNNNNNnNNnNNnnNs',
+      'nnNnnNNNynNnNnNN',
+      'NnNNNsNNnNNNNNNN',
+      'NNNnnNNNNNNnnnNN',
+      'NnNnNNnnnnnnNNnn',
+      'NnnNNyNNNNnnnNnN',
+      'NnNnNNNNNNNnNNNN',
+      'NNnNNnNNNNnnnNNN',
+      'NNnnnnNNNNNNNNNn',
+      'nNNNnNnNNnNNNNnN',
+    ];
+    const M_FLOOR_SAND = [
+      'dShddShdShddShdS',
+      'SSShdddSSShdddSS',
+      'SSShhddSSShhddSS',
+      'SddSSSSSddcSSSSd',
+      'dhSdSSSdhSccSSdh',
+      'SShSdShSShSdShSS',
+      'SSSSSddSSSSSddSS',
+      'SddhhhSSddhhhSSd',
+      'dSSdSSSdSSdSSSdS',
+      'hhSSdSShhSSdSShh',
+      'SShSSddSShSSddSS',
+      'SddcSSSSddSSSSSd',
+      'dSSdhhSdSSdhhSdS',
+      'SSSSdSSSSSSdSSSS',
+      'hhSSSddhhSSSddhh',
+      'SddSSShSddSSShSd',
+    ];
+    const M_FLOOR_TATAMI = [
+      'bbbbbbbbbbbbbbbb',
+      'btttttttbtTtTtTt',
+      'bTTTTTTTbtTtTtTt',
+      'btttttttbtTtTtTt',
+      'bTTTTTTTbtTtTtTt',
+      'btttttttbtTtTtTt',
+      'bTTTTTTTbtTtTtTt',
+      'btttttttbtTtTtTt',
+      'bTTTTTTTbtTtTtTt',
+      'btttttttbtTtTtTt',
+      'bTTTTTTTbtTtTtTt',
+      'btttttttbtTtTtTt',
+      'bTTTTTTTbtTtTtTt',
+      'btttttttbtTtTtTt',
+      'bTTTTTTTbtTtTtTt',
+      'bbbbbbbbbbbbbbbb',
+    ];
+    const M_FLOOR_BRICKPATH = [
+      'MMMMMMMMMMMMMMMM',
+      'MHHHHHHHMHHHHHHH',
+      'MHBBBBBSMHBBBBBS',
+      'MSSSSSSSMSSSSSSS',
+      'MMMMMMMMMMMMMMMM',
+      'HHHHMHHHHHHHMHHH',
+      'BBBSMHBBBBBSMHBB',
+      'SSSSMSSSSSSSMSSS',
+      'MMMMMMMMMMMMMMMM',
+      'MHHHHHHHMHHHHHHH',
+      'MHBBBBBSMHBBBBBS',
+      'MSSSSSSSMSSSSSSS',
+      'MMMMMMMMMMMMMMMM',
+      'HHHHMHHHHHHHMHHH',
+      'BBBSMHBBBBBSMHBB',
+      'SSSSMSSSSSSSMSSS',
+    ];
+    const M_WALL_BRICK = [
+      'MMMMMMMMMMMMMMMM',
+      'MHHHHHHHMHHHHHHH',
+      'MHBBBBBSMHBBBBBS',
+      'MSSSSSSSMSSSSSSS',
+      'MMMMMMMMMMMMMMMM',
+      'HHHHMHHHHHHHMHHH',
+      'BBBSMHBBBBBSMHBB',
+      'SSSSMSSSSSSSMSSS',
+      'MMMMMMMMMMMMMMMM',
+      'MHHHHHHHMHHHHHHH',
+      'MHBBBBBSMHBBBBBS',
+      'MSSSSSSSMSSSSSSS',
+      'MMMMMMMMMMMMMMMM',
+      'HHHHMHHHHHHHMHHH',
+      'BBBSMHBBBBBSMHBB',
+      'SSSSMSSSSSSSMSSS',
+    ];
+    const M_POND = [
+      '..............................',
+      '........kkkkkHHHHkkkkk........',
+      '.....kkkwwwmmmmmmmmwwwkkk.....',
+      '...kkHwmmmmSmmmmmmmmmmmwHkk...',
+      '..kkwmPPPPPmmmmmmmmrrmmmmwkk..',
+      '.kHwmPPPFPPPWWWWWWWmmmrmmmwHk.',
+      'kKwmPPPFYFmmPWWWWWWWWmmrmmmwKk',
+      'kHwmmpppFpppWWWoOXOWtWmmmmmwHk',
+      'KHwmmrpppppWWWWOOOOotWmmrmmwHK',
+      'KKwmmSmmWWWWWWWWWOoWPPPPrmmwKK',
+      'KKwmmmmmWWWWWWWWWWPPPPPPPPmwKK',
+      'kKwmmmrmmWWWWWWWWPPPPPPmmmPwKk',
+      '.KKwmmmrmmmWSWWWWppppppmmmpKK.',
+      '..KKwmmmmrrmmmmmmmppppppppKK..',
+      '...KKKwmmmmmmmmmmmmmppppKKK...',
+      '.....KKKwwwmmmmmmmmwwwKKK.....',
+      '........KKKKKKKKKKKKKK........',
+      '..............................',
+    ];
+    const FLOOR_PALS = {
+      wood: {L:'#e2b578', M:'#d3a260', G:'#c08f4c', S:'#9a6a34'},
+      checker: {A:'#efe7d6', B:'#dbe0e7', G:'#cdd2d8'},
+      grass: {G:'#93c56d', g:'#79b154', f:'#ffd24a', p:'#ff9ec2'},
+      ondol: {A:'#e9cb8d', a:'#ddbd77', s:'#d0aa62'},
+      starry: {N:'#2b2f58', n:'#343a68', s:'#eaeeff', y:'#fff0b8'},
+      sand: {S:'#efdcae', d:'#d8bd88', h:'#f7ecd2', c:'#ef9aa8'},
+      tatami: {T:'#d2d8a0', t:'#c1c887', b:'#8a945a'},
+      brickpath: {B:'#c07a56', H:'#d59a75', S:'#8a4f37', M:'#ddd0bd'},
+      brickwall: {B:'#cf8a63', H:'#e7ab84', S:'#95533a', M:'#efe4d3'}
+    };
+    const POND_PAL = {K:'#9aa1ab', k:'#7c828d', H:'#c3c9d1', W:'#c9ebf7', m:'#93d3ee', w:'#5cabd6', r:'#e0f4fc', S:'#ffffff', P:'#63b25f', p:'#4a9247', F:'#ff9ec2', Y:'#ffe14a', O:'#ff8a3d', o:'#e0662a', X:'#ffffff', t:'#ff8a3d'};
+    const FURN_PALS={ pond:POND_PAL, cushion:{X:'#4a5361',C:'#9aa4b2',D:'#79838f',L:'#c2cad4',B:'#5b6470'}, bowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',F:'#d68b4a',f:'#b06a2e',g:'#efb37a'}, waterbowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',A:'#5aa9e6',a:'#3f86c4',h:'#bfe2fb'}, tower:{X:'#5e3f22',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#5e3f22',W:'#c99a5f',C:'#a87c46',L:'#e6c085',S:'#d8b98a',R:'#b8935f',T:'#6b4a2a',O:'#d9694e',H:'#f2a98f'}, litterbox:{X:'#7a808a',W:'#c9ced6',D:'#9aa0aa',S:'#f4efe4',s:'#e7e0d0',k:'#d6ccb8'}, pethouse:{X:'#5a4632',R:'#d9694e',r:'#b8503a',H:'#f0967a',W:'#e8c98f',w:'#d4b06a',D:'#2c2420',d:'#46382c'}, plant:{X:'#7c5028',L:'#7cc652',G:'#4e9636',P:'#c8763e',p:'#a85e2c',l:'#9ad86a',S:'#6f9440'}, catwheel:{X:'#2f6f68',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',R:'#c9a06a',D:'#6b5842'}, rug:{X:'#7a2f38',B:'#c0505e',C:'#a5424e',L:'#e6b3a0',F:'#efe3cf'}, window:{X:'#6b4a2a',W:'#9a734a',w:'#b58d5e',S:'#bfe3f5',C:'#ffffff',U:'#ffd968',u:'#f2b93c'}, fishtank:{X:'#5b7b86',G:'#bfe6ef',A:'#5aa9e6',a:'#3f86c4',P:'#4e9636',p:'#7cc652',F:'#f2933c',f:'#ffd27a',b:'#dff3ff',R:'#cdb98c',D:'#3a5a63'}, fireplace:{X:'#4a3626',W:'#7a5230',w:'#9c6f3f',K:'#b0563f',k:'#c8785a',D:'#241a13',f:'#ffd54a',F:'#f2913c',r:'#e05230',S:'#9298a2',s:'#767c86'}, fan:{X:'#3f5a63',G:'#cfe6ee',B:'#6fb8c9',h:'#e0b84a',N:'#7a828c',S:'#9298a2',s:'#6f747c'}, hammock:{X:'#5a4632',W:'#7a5a3a',K:'#b7a78f',C:'#3c7d6d',c:'#2f6357',L:'#5bb39d'}, teaser:{R:'#6b7280',K:'#b0b6bd',F:'#e2607a',f:'#f2a7b8',T:'#c94a66',S:'#7a5230',s:'#9c6f3f'}, wallclock:{X:'#3a2e22',W:'#8a5a34',w:'#a8763f',L:'#f2e6c8',D:'#2a221a',K:'#6b5a3a',O:'#e0b84a'}, hangplant:{X:'#5a4632',K:'#b7a78f',P:'#c8763e',p:'#a85e2c',G:'#4e9636',L:'#7cc652',l:'#9ad86a',g:'#3f7a2c'}, mobile:{X:'#5a4632',K:'#b7a78f',M:'#7a5a3a',A:'#f2c84b',a:'#d6a832',B:'#8fb8e6',b:'#6f97c4',C:'#f2a7b8',c:'#d98098'}, jingleball:{X:'#8a3a2c',B:'#e0552f',b:'#b8452a',L:'#f2a06a',D:'#7a2f22',S:'#ffd24a'} };
     const POOP_PAL={X:'#4a3218',K:'#7a5230'};
     const FOOD_PAL={F:'#d68b4a',D:'#8a5427',L:'#f2e4c6',K:'#7a4a20'};
     const WATER_PAL={A:'#5aa9e6',D:'#3f86c4',H:'#c7e6ff',L:'#eaf6ff'};
@@ -668,6 +921,7 @@
       rt_mr3n1k85:'lion_mane', rt_mr3n6laq:'cat_persian', rt_mr3nx5r4:'tiger_white', rt_mr3nyl3p:'cat_russianblue', rt_mr3ocsnm:'cat_bengal2', rt_mr5qur7u:'dog_mutt', rt_mr5sv8x4:'cat_panther', /* @rtmigrate */ };
     // size = 표시 배율(1=기본, 팔레트 아이콘 크기에 반영). footW×footH = 배치 격자 점유(가로×세로 칸). 캣타워=1×2, 스크래처=1×1, 화장실=1×1(정사각), 방석·밥그릇=1×1(작게, 밥그릇<방석). itemFoot()/furnScale()로 배치·팔레트에 반영.
     const ITEM_CATALOG = [
+      { id:'pond',     name:'연못',   price:70, size:2.6, footW:3, footH:2, floor:true, desc:'수련·잉어가 사는 작은 연못. 물 위에 다른 가구를 올릴 수 있어요.' },
       { id:'cushion', name:'방석',   price:15, size:0.6,  footW:1, footH:1, desc:'고양이가 위에 잠시 올라가 쉬어요.' },
       { id:'bowl',    name:'밥그릇', price:20, size:0.45, footW:1, footH:1, desc:'홈에서 탭해 사료를 채워요(3시간 뒤 비워짐).' },
       { id:'waterbowl', name:'물그릇', price:20, size:0.45, footW:1, footH:1, desc:'홈에서 탭해 물을 채워요(3시간 뒤 비워짐).' },
@@ -677,9 +931,17 @@
       { id:'pethouse', name:'펫하우스', price:45, size:2, footW:1, footH:1, desc:'펫이 안에 들어가 정면을 보며 아늑하게 쉬어요.' },   // 점유칸 1×1(캠 렌더 크기 ROOM_H는 그대로 유지 — 좁은 칸에 큰 집)
       { id:'catwheel', name:'캣휠', price:60, size:2, footW:2, footH:2, desc:'고양이가 안에서 달리며 운동하는 러닝휠.' },
       { id:'plant',    name:'화분',   price:22, size:1, footW:1, footH:1, desc:'초록 화분. 고양이가 곁에서 잠시 쉬어요.' },
-      { id:'rug',      name:'러그',   price:28, size:2, footW:2, footH:2, floor:true, desc:'바닥에 까는 러그. 높이가 없어 위에 다른 가구를 올릴 수 있어요.' },   // floor:true = 바닥 아이템(겹침 허용·맨 뒤 렌더)
-      { id:'window',   name:'창문',   price:55, size:2, footW:1, footH:1, desc:'해와 흘러가는 구름이 보이는 창문. 곁에서 볕을 쬐며 쉬어요.' },
-      { id:'fishtank', name:'어항',   price:70, size:1.6, footW:1, footH:1, desc:'금붕어가 헤엄치는 어항. 고양이가 앞에서 구경해요.' }
+      { id:'rug',      name:'러그',   price:200, size:2, footW:2, footH:2, floor:true, desc:'바닥에 까는 러그. 높이가 없어 위에 다른 가구를 올릴 수 있어요.' },   // 희귀 등급가. floor:true = 바닥 아이템(겹침 허용·맨 뒤 렌더)
+      { id:'window',   name:'창문',   price:800, size:2, footW:1, footH:1, desc:'해와 흘러가는 구름이 보이는 창문. 곁에서 볕을 쬐며 쉬어요.' },   // 전설 등급가
+      { id:'fishtank', name:'어항',   price:400, size:1.6, footW:1, footH:1, desc:'금붕어가 헤엄치는 어항. 고양이가 앞에서 구경해요.' },   // 특별 등급가
+      { id:'fireplace', name:'벽난로', price:200, size:2, footW:2, footH:1, desc:'불꽃이 일렁이는 벽난로. 앞에서 몸을 말고 아늑하게 쉬어요.' },
+      { id:'fan',      name:'선풍기', price:120, size:1.6, footW:1, footH:1, desc:'날개가 도는 선풍기. 곁에서 바람을 쐬며 쉬어요.' },
+      { id:'hammock',  name:'해먹',   price:90, size:2, footW:2, footH:1, desc:'살랑이는 그물 침대. 펫이 안에 올라가 눕습니다.' },
+      { id:'teaser',   name:'낚싯대장난감', price:50, size:1.4, footW:1, footH:1, desc:'깃털이 흔들리는 낚싯대. 옆에서 톡톡 건드려요.' },
+      { id:'wallclock', name:'벽시계', price:60, size:1.4, footW:1, footH:1, desc:'추가 좌우로 흔들리는 벽시계 장식.' },
+      { id:'hangplant', name:'행잉플랜트', price:40, size:1.4, footW:1, footH:1, desc:'덩굴이 살랑이는 매달린 화분 장식.' },
+      { id:'mobile',   name:'모빌',   price:70, size:1.4, footW:1, footH:1, desc:'별·달·하트가 살랑이는 모빌 장식.' },
+      { id:'jingleball', name:'방울공', price:30, size:1, footW:1, footH:1, desc:'통통 흔들리는 방울 공. 펫이 굴리며 놀아요.' }
     ];
     // 소비 아이템(배치 불가) — 홈에서 밥그릇/물그릇을 탭해 채울 때 소모. 알뜰샵 "소비" 탭에서 구매.
     const CONSUM_CATALOG = [
@@ -700,9 +962,10 @@
       { id:'sunset',  name:'노을',  price:30, css:'linear-gradient(180deg,#ffd0a6 0%,#ffb3c9 100%)' },
       { id:'forest',  name:'숲',    price:25, css:'linear-gradient(180deg,#bfe6c0 0%,#eaf6e2 100%)' },
       { id:'ocean',   name:'바다',  price:25, css:'linear-gradient(180deg,#a6d8ef 0%,#d9f0f5 100%)' },
-      { id:'lavender',name:'라벤더',price:30, css:'linear-gradient(180deg,#e0d0f5 0%,#f3ecfb 100%)' }
+      { id:'lavender',name:'라벤더',price:30, css:'linear-gradient(180deg,#e0d0f5 0%,#f3ecfb 100%)' },
+      { id:'brick',   name:'벽돌',  price:35, tile:{ m:M_WALL_BRICK, pal:FLOOR_PALS.brickwall, tw:22, th:22 } }
     ];
-    function wallCss(id){ const w=WALLPAPER_CATALOG.find(x=>x.id===id); return (w||WALLPAPER_CATALOG[0]).css; }
+    function wallCss(id){ const w=WALLPAPER_CATALOG.find(x=>x.id===id)||WALLPAPER_CATALOG[0]; return w.tile? tileBg(w.tile.m, w.tile.pal, w.tile.tw, w.tile.th) : w.css; }
     function ownsWall(id){ return id==='default' || !!(state.game&&state.game.owned.wallpapers[id]); }
     // ---- 여러 방(프리셋) 접근자 — 모든 방별 읽기/쓰기는 반드시 이 헬퍼를 거친다(현재 방 기준). ----
     function homeH(){ return (state.game&&state.game.home)||{ rooms:[{active:[],placed:{},wallpaper:'default',poops:0,name:'방 1'}], current:0, roomSlots:BASE_ROOMS, slots:BASE_SLOTS }; }
@@ -726,6 +989,22 @@
       }).catch(()=>{}).then(()=>{ state._homeMigrating=false; });
     }
     function currentWall(){ return room().wallpaper||'default'; }
+    // 바닥 스킨(픽셀 타일) - 벽지처럼 방마다 적용. .cr-floor 배경에 반복 타일(SVG data URI). default=단색.
+    function tileBg(M, pal, tw, th){ try{ const svg=pxSvg(M, pal, {}); return "url('data:image/svg+xml,"+encodeURIComponent(svg)+"') 0 0 / "+tw+"px "+th+"px repeat, var(--soft2)"; }catch(e){ return 'var(--soft2)'; } }
+    const FLOOR_CATALOG = [
+      { id:'default',   name:'기본',     price:0 },
+      { id:'wood',      name:'원목마루', price:30, m:M_FLOOR_WOOD,      pal:FLOOR_PALS.wood,      tw:26, th:26 },
+      { id:'checker',   name:'체크타일', price:28, m:M_FLOOR_CHECKER,   pal:FLOOR_PALS.checker,   tw:26, th:26 },
+      { id:'grass',     name:'잔디정원', price:32, m:M_FLOOR_GRASS,     pal:FLOOR_PALS.grass,     tw:24, th:24 },
+      { id:'ondol',     name:'한옥장판', price:28, m:M_FLOOR_ONDOL,     pal:FLOOR_PALS.ondol,     tw:24, th:24 },
+      { id:'starry',    name:'별밤바닥', price:35, m:M_FLOOR_STARRY,    pal:FLOOR_PALS.starry,    tw:26, th:26 },
+      { id:'sand',      name:'모래사장', price:28, m:M_FLOOR_SAND,      pal:FLOOR_PALS.sand,      tw:26, th:26 },
+      { id:'tatami',    name:'다다미',   price:30, m:M_FLOOR_TATAMI,    pal:FLOOR_PALS.tatami,    tw:26, th:26 },
+      { id:'brickpath', name:'벽돌길',   price:30, m:M_FLOOR_BRICKPATH, pal:FLOOR_PALS.brickpath, tw:26, th:26 }
+    ];
+    function floorCss(id){ const f=FLOOR_CATALOG.find(x=>x.id===id)||FLOOR_CATALOG[0]; return f.m? tileBg(f.m, f.pal, f.tw, f.th) : 'var(--soft2)'; }
+    function currentFloor(){ return room().floor||'default'; }
+    function ownsFloor(id){ return id==='default' || !!(state.game&&state.game.owned&&state.game.owned.floors&&state.game.owned.floors[id]); }
     // 미션 정의(일일). reward=은화. check(ctx)=완료 여부(현재 워크스페이스 활동 읽어 판정)
     const DAILY_MISSIONS = [
       { id:'record', period:'day', name:'오늘 1건 추가', reward:5, icon:'<path d="M12 4v16M8 8l4-4 4 4"/><rect x="4" y="18" width="16" height="3" rx="1"/>',
@@ -1210,17 +1489,26 @@
     const SPARK_PAL={X:'currentColor',H:'#ffffff'};
     function sparkSvg(opt){ return pxSvg(M_SPARK, SPARK_PAL, opt); }
     // 알뜰샵·팔레트·격자용 대표 아트(물그릇은 물 채운 파란 그릇으로 구분 표시)
-    function furnMatrix(id){ return {cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT,catwheel:M_CATWHEEL,rug:M_RUG,window:M_WINDOW,fishtank:M_FISHTANK}[id]; }
+    function furnMatrix(id){ return {pond:M_POND,cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT,catwheel:M_CATWHEEL,rug:M_RUG,window:M_WINDOW,fishtank:M_FISHTANK,fireplace:M_FIREPLACE,fan:M_FAN,hammock:M_HAMMOCK,teaser:M_TEASER,wallclock:M_WALLCLOCK,hangplant:M_HANGPLANT,mobile:M_MOBILE,jingleball:M_JINGLEBALL}[id]; }
     function furnSvg(id, opt){ return pxSvg(furnMatrix(id), FURN_PALS[id], opt); }
     // 캠 전용 연출(움직이는 부분만 오버레이로 분리해 CSS 애니메이션): 같은 매트릭스를 팔레트만 나눠 두 겹으로 그림.
     //  base=움직이는 글자 제외, fx=그 글자만 → 완벽히 겹쳐 정지 배경 + 움직이는 부품(캣휠 트레드 회전·펫알 방울 흔들림·화분 잎 살랑).
-    const FURN_ANIM = {   // move=오버레이(움직이는)로 뺄 글자, type=애니메이션 종류(spin/swing/sway)
+    const FURN_ANIM = {
+      pond:    { type:'drift', move:['O','o','X','t'] },   // move=오버레이(움직이는)로 뺄 글자, type=애니메이션 종류(spin/swing/sway/drift/flicker)
       catwheel:{ type:'spin',  move:['X','W','H','T'] },   // 링(림·밴드·하이라이트·발판) 전체가 축 중심으로 제자리 회전 — 롤러 R·스탠드 D만 정지
       tower:   { type:'swing', move:['T','O','K'] },   // 매달린 장난감 공(빨강 T·하이라이트 O)+끈(K)
       scratcher:{type:'swing', move:['T','O','H'] },   // 매달린 공(O)+하이라이트(H)+끈(T)
       plant:   { type:'sway',  move:['G','L','l'] },   // 잎만 살랑(줄기 S·화분 P/p/X는 정지)
       window:  { type:'drift', move:['C'] },           // 구름만 좌우로 천천히 흘러감(하늘 S·해 U/u·틀은 정지)
-      fishtank:{ type:'drift', move:['F','f','b'] }    // 금붕어+기포만 헤엄치듯 좌우로(물 A·수초 P·자갈 R은 정지)
+      fishtank:{ type:'drift', move:['F','f','b'] },   // 금붕어+기포만 헤엄치듯 좌우로(물 A·수초 P·자갈 R은 정지)
+      fireplace:{type:'flicker',move:['f','F','r'] },  // 불꽃만 일렁임(벽돌·맨틀·장작은 정지)
+      fan:     { type:'spin',  move:['B','G','h'] },   // 케이지 안 날개 전체가 회전(림 X·목·받침은 정지)
+      hammock: { type:'swing', move:['K','C','c','L'] },// 끈+천 요람이 매단 지점에서 살랑(걸이 X/W 정지)
+      teaser:  { type:'swing', move:['K','F','f','T'] },// 줄+깃털 장난감이 대 끝에서 흔들(대 R·받침 정지)
+      wallclock:{type:'swing', move:['K','O'] },       // 추(봉+놋쇠)만 좌우로(몸통·시계판 정지)
+      hangplant:{type:'swing', move:['K','P','p','G','L','l','g'] }, // 걸이 아래 전체가 살랑(천장 걸이 X 정지)
+      mobile:  { type:'swing', move:['K','M','A','a','B','b','C','c'] }, // 막대+매달린 별·달·하트 전체가 살랑(걸이 X 정지)
+      jingleball:{type:'swing', move:['X','B','b','L','D','S'] }  // 공 전체가 바닥에서 통통(바닥 접점 중심)
     };
     function palPick(pal, keys, keep){ const o={}; Object.keys(pal).forEach(function(k){ const on=keys.indexOf(k)>=0; if(on===keep) o[k]=pal[k]; }); return o; }
     // 연출 있는 가구를 base+fx 두 겹 SVG로. (연출 없으면 일반 furnSvg 반환)
@@ -1242,7 +1530,7 @@
     // 방(dock·홈)에서의 가구 렌더 높이(px) — 발자국 세로 칸수(footH)에 비례해 키움(캣타워 6칸=제일 큼, 스크래처 1칸=고양이 키만큼, 방석·밥그릇 1칸).
     // 고양이 상호작용(캣타워 3층 올라가기 등)이 맞아떨어지도록 렌더·엔진(fh)이 같은 값을 쓴다. depth(뒤로 갈수록) 작게.
     // 방 렌더 높이 배율(실물감) — 캣타워 제일 큼, 스크래처는 고양이 키만큼, 화장실=낮은 상자, 방석·그릇 작게.
-    const ROOM_H = { tower:6.2, scratcher:1.9, pethouse:2.8, catwheel:3.0, plant:1.5, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6, rug:1.2, window:2.6, fishtank:1.7 };
+    const ROOM_H = { pond:2.2, tower:6.2, scratcher:1.9, pethouse:2.8, catwheel:3.0, plant:1.5, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6, rug:1.2, window:2.6, fishtank:1.7, fireplace:2.6, fan:2.7, hammock:1.7, teaser:2.4, wallclock:2.6, hangplant:2.4, mobile:1.7, jingleball:0.7 };
     // ---- 배치 격자(12칸) 가로 좌표 공유 헬퍼 ----
     // 에디터(평면 그리드)·드롭프리뷰·썸네일은 gridLeftFrac/gridSpanFrac(칸 좌측 edge·폭)을 그대로 쓴다.
     // 캠(원근)은 camAnchorMode로 발자국을 "가운데 정렬 + 양끝 벽 스냅" 배치해 좌우 벽까지 고르게 채운다.
@@ -1256,7 +1544,7 @@
       if(right===GRID_N && c!==1) return 'right';
       return 'center'; }
     // 가구 그래픽 가로세로비(cols/rows) — 그래픽 폭 = fh*aspect. 캠 중심 x 계산(buildActors)에 사용.
-    const FURN_ASPECT = { tower:0.533, scratcher:0.636, pethouse:1.05, catwheel:1.0, plant:0.6, litterbox:1.167, cushion:1.778, bowl:1.778, waterbowl:1.778, rug:2.4, window:0.9, fishtank:1.125 };
+    const FURN_ASPECT = { pond:1.667, tower:0.533, scratcher:0.636, pethouse:1.05, catwheel:1.0, plant:0.6, litterbox:1.167, cushion:1.778, bowl:1.778, waterbowl:1.778, rug:2.4, window:0.9, fishtank:1.125, fireplace:1.125, fan:0.727, hammock:1.25, teaser:0.8, wallclock:0.636, hangplant:0.7, mobile:1.2, jingleball:1.0 };
     function furnAspect(id){ return FURN_ASPECT[id]||1; }
     function furnRoomH(id, isDock, depth){
       const mult = ROOM_H[id] || 1;
@@ -1355,7 +1643,7 @@
     function maxChip(){ return ' <span class="maxchip">최대</span>'; }
     function normalizeGame(g){ g=g||{}; return migratePetIds({
       coins: clampCoins(g.coins), gold: clampGold(g.gold),
-      owned:{ cats:(g.owned&&g.owned.cats)||{}, items:(g.owned&&g.owned.items)||{}, wallpapers:(g.owned&&g.owned.wallpapers)||{} },
+      owned:{ cats:(g.owned&&g.owned.cats)||{}, items:(g.owned&&g.owned.items)||{}, wallpapers:(g.owned&&g.owned.wallpapers)||{}, floors:(g.owned&&g.owned.floors)||{} },
       consum:{ food:clampConsum(g.consum&&g.consum.food), water:clampConsum(g.consum&&g.consum.water), egg:clampConsum(g.consum&&g.consum.egg), box:clampConsum(g.consum&&g.consum.box), rainbow_egg:clampConsum(g.consum&&g.consum.rainbow_egg), rainbow_box:clampConsum(g.consum&&g.consum.rainbow_box) },
       home: normalizeHome(g.home, HOME_OPTS),   // 여러 방(프리셋): rooms[]·current·roomSlots·slots·changedAt (레거시 flat 자동 이관)
       missions: g.missions||{}, progress: g.progress||{}, codes: g.codes||{},
@@ -1426,7 +1714,7 @@
     }
     // 친구·랭킹에 공개할 '대표 방' 스냅샷. 사적인 다른 방은 담지 않는다.
     function repRoomSnapshot(){ const h=homeH(); const rooms=h.rooms||[]; const i=Math.min(rooms.length-1, Math.max(0, (h.showRoom!=null?h.showRoom:0)|0)); const r=rooms[i]||rooms[0]||{};
-      return { name:r.name||'', emoji:r.emoji||'', wallpaper:r.wallpaper||'default', placed:r.placed||{}, active:(r.active||[]).filter(ownsCat), slots:slotCount(), poops:Number(r.poops)||0, changedAt:h.changedAt||'' }; }
+      return { name:r.name||'', emoji:r.emoji||'', wallpaper:r.wallpaper||'default', floor:r.floor||'default', placed:r.placed||{}, active:(r.active||[]).filter(ownsCat), slots:slotCount(), poops:Number(r.poops)||0, changedAt:h.changedAt||'' }; }
     // homeCam/{uid} 에 기록(내용 바뀔 때만). users/{uid}/game 은 규칙상 소유자만 읽으므로 친구는 이 노드로만 내 집을 본다.
     function writeHomeCam(){ if(!state.uid||!state.game) return; const snap=repRoomSnapshot(); const sig=JSON.stringify(snap);
       if(sig===state._lastCamSig) return; state._lastCamSig=sig;
@@ -2209,7 +2497,7 @@
       d.className='catdock';
       // 웹캠 정면 방: 벽지(배경) + 바닥 + 배치 가구(배경) + 걷는 고양이
       d.innerHTML='<div class="cd-room">'+
-        '<div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div>'+
+        '<div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor" style="background:'+floorCss(currentFloor())+'"></div><div class="cr-base"></div>'+
         '<span class="cr-cam cd-cam" role="button" tabindex="0" aria-label="알뜰홈 열기" onclick="event.stopPropagation();coinTap(this)"><i></i>LIVE · <span class="cd-camtxt" id="cdCamTxt">'+(room().emoji?room().emoji+' ':'')+escapeHtml(room().name||'우리집')+'</span></span>'+
         batchBtnHtml()+
         '<div class="cr-props" id="cdProps"></div><div class="cr-stage" id="cdStage"></div></div>';
@@ -2434,6 +2722,16 @@
       if(it==='fishtank') return { lift:0, face:'south', dx:Math.round(a.sw*0.25), pose:'sit', dur:16000+Math.random()*24000 };
       // 창문: 곁에 앉아 볕을 쬐며 쉼(정면, 약 18~44초).
       if(it==='window') return { lift:0, face:'south', dx:Math.round(a.sw*0.35)*(Math.random()<0.5?1:-1), pose:'loaf', dur:18000+Math.random()*26000 };
+      // 벽난로: 앞에서 정면으로 몸 말고 아늑하게 오래 쉼(약 24~54초).
+      if(it==='fireplace') return { lift:0, face:'south', dx:Math.round(a.sw*0.3)*(Math.random()<0.5?1:-1), pose:'loaf', dur:24000+Math.random()*30000 };
+      // 선풍기: 곁에서 바람 쐬며 쉼.
+      if(it==='fan') return { lift:0, face:'south', dx:0, pose:'loaf', dur:16000+Math.random()*20000 };
+      // 해먹: 그물 안으로 올라가(lift) 정면 보며 오래 누움(약 30~70초).
+      if(it==='hammock') return { lift:Math.round(fh*0.42), face:'south', dx:0, pose:'loaf', dur:30000+Math.random()*40000 };
+      // 낚싯대 장난감: 옆에서 앉아 깃털을 톡톡(약 12~28초).
+      if(it==='teaser') return { lift:0, face:(Math.random()<0.5?'east':'west'), dx:Math.round(a.sw*0.4)*(Math.random()<0.5?1:-1), pose:'sit', dur:12000+Math.random()*16000 };
+      // 방울공: 옆에서 앉아 공을 굴리며 놈(약 10~24초).
+      if(it==='jingleball') return { lift:0, face:'south', dx:Math.round(a.sw*0.3), pose:'sit', dur:10000+Math.random()*14000 };
       return { lift:0, face:'south', dx:0, pose:'loaf', dur:22000+Math.random()*26000 };
     }
     // 가구에 도착 → 자리 잡고 머무름(랜덤 시간). 스프라이트는 해당 방향 정지, SVG는 포즈. lift로 발판/방석 위로 올림.
@@ -2771,7 +3069,7 @@
       const litters=list.filter(p=>p.itemId==='litterbox');
       const props=list.map(p=>propMarkup(p,false,false,true)).join('');   // live=true → 홈 LIVE 캠 연출
       const roomName=(room().name)||'우리집';
-      let h=roomStripHtml()+'<div class="catroom" id="catRoom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div><span class="cr-cam"><i></i>LIVE · '+escapeHtml(roomName)+'</span>'+batchBtnHtml()+'<div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div></div>';
+      let h=roomStripHtml()+'<div class="catroom" id="catRoom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor" style="background:'+floorCss(currentFloor())+'"></div><div class="cr-base"></div><span class="cr-cam"><i></i>LIVE · '+escapeHtml(roomName)+'</span>'+batchBtnHtml()+'<div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div></div>';
       // 빈 방(가구·펫 없음) 안내 — 방 확장 직후 '사라진 것처럼' 보이는 혼동 방지
       if(!list.length && !cats.length) h+='<div class="hintline" style="margin:8px 0 0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>새 방이에요! 아래에서 <b>펫을 내보내고</b>, <b>배치</b> 탭에서 가구를 놓아보세요. (다른 방과 따로 저장돼요)</div>';
       // 안내: 그릇 채우기 / 똥 수거
@@ -2815,7 +3113,7 @@
     function friendRoomHtml(fg, name){
       const wall=friendRoom(fg).wallpaper||'default';
       const props=friendPlacedList(fg).sort((a,b)=>a.r-b.r).map(p=>propMarkup(p,false,true,true)).join('');   // plain=true(읽기전용·똥/탭 없음) + live=true(캣휠·화분·캣타워·스크래처 연출은 친구 방에서도 움직이게)
-      return '<div class="catroom" id="friendRoom"><div class="cr-wall" style="background:'+wallCss(wall)+'"></div><div class="cr-floor"></div><div class="cr-base"></div>'+
+      return '<div class="catroom" id="friendRoom"><div class="cr-wall" style="background:'+wallCss(wall)+'"></div><div class="cr-floor" style="background:'+floorCss(friendRoom(fg).floor||'default')+'"></div><div class="cr-base"></div>'+
         '<span class="cr-cam"><i></i>LIVE · '+escapeHtml(name||'친구')+'의 집</span>'+
         '<div class="cr-props">'+props+'</div><div class="cr-stage" id="frStage"></div></div>';
     }
@@ -2835,7 +3133,7 @@
     function selectShopCat(id){ _shopSelCat=(_shopSelCat===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     // 알뜰샵 서브탭(펫/가구/소비/벽지/가챠) — cathead(sticky) 안에 넣어 스크롤해도 상단 고정. '펫'=구 '고양이'(호랑이·사자 등 포함이라 펫으로 통일). ('가챠' 탭 키는 내부적으로 'event' 유지)
     function shopSubsegHtml(){
-      const tabs=[['cats','펫'],['furn','가구'],['consum','소비'],['wall','벽지'],['event','가챠']];
+      const tabs=[['cats','펫'],['furn','가구'],['consum','소비'],['wall','벽지'],['floor','바닥'],['event','가챠']];
       return '<div class="subseg">'+tabs.map(function(t){ return '<button class="'+(_shopSub===t[0]?'on':'')+'" onclick="setShopSub(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
     }
     function catShopHtml(){
@@ -2878,6 +3176,22 @@
         h+=gachaInfoHtml();
         return h;
       }
+      if(_shopSub==='floor'){
+        const cur=currentFloor();
+        h+='<div class="wallgrid">'+FLOOR_CATALOG.map(f=>{
+          const owned=ownsFloor(f.id), applied=cur===f.id, tier=(f.id==='default')?null:floorTierOf(f.id);
+          let act;
+          if(applied) act='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>적용됨</span>';
+          else if(owned) act='<button class="buy ghost" onclick="applyFloor(\''+f.id+'\')">적용</button>';
+          else act='<span class="owntag" style="color:var(--sub);"><span class="ci" style="vertical-align:-2px">'+boxSvg({h:14})+'</span>랜덤박스</span>';
+          const badge=tier?('<span class="tagmini tier-'+tier+'">'+((TIERS.find(t=>t.id===tier)||{}).name||tier)+'</span>'):'';
+          return '<div class="wallcard'+(applied?' on':'')+'"><div class="wallsw" style="background:'+floorCss(f.id)+'"></div>'+
+            '<div class="wallmeta"><b>'+f.name+'</b>'+badge+'</div>'+act+'</div>';
+        }).join('')+'</div>';
+        h+='<div class="note"><b>바닥 스킨</b>은 <b>랜덤박스</b>에서만 나와요(전부 특별↑ 등급). 보유한 바닥은 방마다 <b>적용</b>으로 바꿀 수 있어요.</div>';
+        return h;
+      }
+
       if(_shopSub==='wall'){
         const cur=currentWall();
         h+='<div class="wallgrid">'+WALLPAPER_CATALOG.map(w=>{
@@ -2885,13 +3199,14 @@
           let act;
           if(applied) act='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>적용됨</span>';
           else if(owned) act='<button class="buy ghost" onclick="applyWall(\''+w.id+'\')">적용</button>';
+          else if(isGachaOnlyWall(w.id)) act='<span class="owntag" style="color:var(--sub);"><span class="ci" style="vertical-align:-2px">'+boxSvg({h:14})+'</span>랜덤박스</span>';
           else if(coins()>=w.price) act='<button class="buy" aria-label="'+w.name+' 벽지 구매('+w.price+' 은화)" onclick="buyWall(\''+w.id+'\')">구매</button>';
           else act='<button class="buy dis" disabled>'+(w.price-coins())+' 부족</button>';
-          const price=w.price?('<span class="price"><span class="ci">'+coinSvg({h:15})+'</span>'+w.price+'</span>'):'<span class="price" style="color:var(--sub)">무료</span>';
-          return '<div class="wallcard'+(applied?' on':'')+'"><div class="wallsw" style="background:'+w.css+'"></div>'+
+          const price=isGachaOnlyWall(w.id)?('<span class="tagmini tier-epic">'+((TIERS.find(t=>t.id==='epic')||{}).name||'특별')+'</span>'):(w.price?('<span class="price"><span class="ci">'+coinSvg({h:15})+'</span>'+w.price+'</span>'):'<span class="price" style="color:var(--sub)">무료</span>');
+          return '<div class="wallcard'+(applied?' on':'')+'"><div class="wallsw" style="background:'+wallCss(w.id)+'"></div>'+
             '<div class="wallmeta"><b>'+w.name+'</b>'+price+'</div>'+act+'</div>';
         }).join('')+'</div>';
-        h+='<div class="note"><b>벽지</b> 구매하면 바로 적용돼요. 보유한 벽지는 <b>적용</b>으로 언제든 바꿀 수 있어요.</div>';
+        h+='<div class="note"><b>벽지</b> 구매하면 바로 적용돼요(<b>벽돌</b>은 랜덤박스 전용). 보유한 벽지는 <b>적용</b>으로 바꿀 수 있어요.</div>';
         return h;
       }
       if(_shopSub==='cats'){
@@ -3052,6 +3367,7 @@
     // 벽지 구매(구매 시 자동 적용) / 적용
     function buyWall(id){
       const w=WALLPAPER_CATALOG.find(x=>x.id===id); if(!w) return;
+      if(isGachaOnlyWall(id)){ toast('벽돌 벽지는 랜덤박스로만 나와요'); if(typeof setShopSub==='function') setShopSub('event'); return; }
       if(ownsWall(id)){ applyWall(id); return; }
       if(coins()<w.price){ toast((w.price-coins())+' 은화 부족', true); return; }
       gameRef().transaction(g=>{ g=normalizeGame(g); if(g.coins<w.price||g.owned.wallpapers[id]) return;
@@ -3059,6 +3375,13 @@
       }).then(res=>{ if(res.committed) toast(w.name+' 벽지 적용! 🎨'); });
     }
     function applyWall(id){ if(!ownsWall(id)){ toast('먼저 구매하세요', true); return; } gameRef().child(roomChild('wallpaper')).set(id); toast('벽지를 적용했어요'); }
+    function buyFloor(id){ const f=FLOOR_CATALOG.find(x=>x.id===id); if(!f) return; if(ownsFloor(id)){ applyFloor(id); return; }
+      if(coins()<f.price){ toast((f.price-coins())+' 은화 부족', true); return; }
+      gameRef().transaction(g=>{ g=normalizeGame(g); g.owned.floors=g.owned.floors||{}; if(g.coins<f.price||g.owned.floors[id]) return;
+        g.coins-=f.price; g.owned.floors[id]={boughtAt:new Date().toISOString()}; gRoom(g).floor=id; return g;
+      }).then(res=>{ if(res.committed) toast(f.name+' 바닥 적용!'); });
+    }
+    function applyFloor(id){ if(!ownsFloor(id)){ toast('먼저 구매하세요', true); return; } gameRef().child(roomChild('floor')).set(id); toast('바닥을 적용했어요'); }
 
     // ================= 가챠 탭: 뽑기(펫알·랜덤박스) =================
     // 등급/확률(합 100). color=이름 텍스트/후광 색, limited는 CSS 레인보우.
@@ -3100,7 +3423,27 @@
     // @gen:pet-tier — 자동생성(tools/build_pets.py). tools/pets.json 의 tier 편집 후 재실행.
     const CAT_TIER = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'rare', cat_white:'rare', cat_fluffy:'rare', cat_tuxedo:'rare', cat_chaos:'rare', cat_siamese:'legend', cat_bengal:'uncommon', cat_fold:'rare', cat_bora:'epic', cat_choco:'uncommon', cat_kitten:'normal', cat_pink:'legend', tiger_orange:'limited', lion_mane:'limited', cat_persian:'epic', tiger_white:'limited', cat_russianblue:'epic', cat_bengal2:'legend', dog_mutt:'rare', cat_panther:'limited' };
     // @gen:end
-    const ITEM_TIER = { cushion:'normal', bowl:'uncommon', scratcher:'rare', pethouse:'epic', tower:'legend', catwheel:'limited' };
+    const ITEM_TIER = { pond:'limited', cushion:'normal', bowl:'uncommon', scratcher:'rare', pethouse:'epic', tower:'legend', catwheel:'limited' };
+    const FLOOR_TIER = { wood:'epic', checker:'epic', grass:'legend', ondol:'epic', starry:'epic', sand:'legend', tatami:'epic', brickpath:'epic' };   // 바닥 스킨 등급(랜덤박스 전용). 모래사장·잔디정원=전설, 나머지=특별.
+    // 🎁 랜덤박스 통합 풀: 가구(it:)+바닥(fl:)+가챠 벽지(wl:brick). 타입 프리픽스로 지급 대상 구분. 벽돌 벽지=특별, 연못은 ITEM_TIER에서 한정.
+    function boxPool(){ const m={}; const it=effItemTier(); Object.keys(it).forEach(k=>{ m['it:'+k]=it[k]; });
+      Object.keys(FLOOR_TIER).forEach(k=>{ m['fl:'+k]=FLOOR_TIER[k]; }); m['wl:brick']='epic'; return m; }
+    function rollBoxReward(tiers){ const raw=rollFromPool(boxPool(), tiers); if(!raw) return null; const p=raw.id.split(':');
+      return { id:p.slice(1).join(':'), tier:raw.tier, type:(p[0]==='fl'?'floor':(p[0]==='wl'?'wall':'item')) }; }
+    function grantBoxReward(g, res){   // 지급 + (바닥/벽지 중복이면) 환급 은화 반환
+      if(res.type==='floor'){ g.owned.floors=g.owned.floors||{}; if(g.owned.floors[res.id]) return Math.round((TIER_PRICE[res.tier]||0)*0.2); g.owned.floors[res.id]={boughtAt:new Date().toISOString()}; return 0; }
+      if(res.type==='wall'){ if(g.owned.wallpapers[res.id]) return Math.round((TIER_PRICE[res.tier]||0)*0.2); g.owned.wallpapers[res.id]={boughtAt:new Date().toISOString()}; return 0; }
+      g.owned.items[res.id]=g.owned.items[res.id]||{qty:0,boughtAt:new Date().toISOString()}; g.owned.items[res.id].qty=(Number(g.owned.items[res.id].qty)||0)+1; return 0; }
+    function isGachaOnlyFloor(id){ return id!=='default' && !!FLOOR_TIER[id]; }   // 모든 바닥 스킨=랜덤박스 전용
+    function isGachaOnlyWall(id){ return id==='brick'; }                          // 벽돌 벽지=랜덤박스 전용
+    function floorTierOf(id){ return FLOOR_TIER[id]||'normal'; }
+    // 랜덤박스 보상(바닥/벽지/가구) 등장 아트·이름
+    function rewardBoxArt(res){ if(res.type==='floor') return '<div class="fx-tile" style="width:104px;height:104px;border-radius:16px;box-shadow:0 6px 16px rgba(0,0,0,.25);background:'+floorCss(res.id)+'"></div>';
+      if(res.type==='wall') return '<div class="fx-tile" style="width:104px;height:104px;border-radius:16px;box-shadow:0 6px 16px rgba(0,0,0,.25);background:'+wallCss(res.id)+'"></div>';
+      return furnSvg(res.id,{h:104}); }
+    function rewardName(res){ if(res.type==='floor') return ((FLOOR_CATALOG.find(x=>x.id===res.id)||{}).name||res.id)+' 바닥';
+      if(res.type==='wall') return ((WALLPAPER_CATALOG.find(x=>x.id===res.id)||{}).name||res.id)+' 벽지';
+      return itemName('box', res.id); }
     // 등급별 알뜰샵 가격(은화) — 확률(60/20/15/3.8/1/0.2%)에 맞춰 등급이 오를수록 약 2배씩.
     // 알 100은화(+금화1·중복은 그 펫 가격의 20% 환급) 대비, 흔한 등급은 알보다 싸게·희귀 등급은 비싸게 → 직접구매 vs 뽑기 선택 성립.
     // CAT_TIER를 단일 소스로 삼아 PET_CATALOG.price를 산정(새 고양이도 등급만 지정하면 자동 가격).
@@ -3190,11 +3533,17 @@
       const tiers=effTiers(), catBy=effCatTier(), itemBy=effItemTier();
       const secRows=(items,byMap,key)=> tiers.map(t=>{ const ns=items.filter(x=>byMap[x.id]===t.id).map(x=>x[key]); if(!ns.length) return '';
         return '<div class="gi-row"><b class="tier-'+t.id+'">'+t.name+'</b><span class="gi-p">'+t.p+'%</span><span class="gi-list">'+escapeHtml(ns.join(', '))+'</span></div>'; }).join('');
+      const boxList=ITEM_CATALOG.filter(x=>itemBy[x.id]).map(x=>({name:x.name,t:itemBy[x.id]}))
+        .concat(FLOOR_CATALOG.filter(f=>FLOOR_TIER[f.id]).map(f=>({name:f.name+' 바닥',t:FLOOR_TIER[f.id]})))
+        .concat([{name:'벽돌 벽지',t:'epic'}]);
+      const boxRows=tiers.map(t=>{ const ns=boxList.filter(x=>x.t===t.id).map(x=>x.name); if(!ns.length) return '';
+        return '<div class="gi-row"><b class="tier-'+t.id+'">'+t.name+'</b><span class="gi-p">'+t.p+'%</span><span class="gi-list">'+escapeHtml(ns.join(', '))+'</span></div>'; }).join('');
       return '<details class="gacha-info"><summary>📋 펫알·랜덤박스 구성·확률 보기</summary><div class="gi-body">'+
         '<div class="gi-sec"><div class="gi-h">🥚 펫알 · 고양이</div>'+secRows(PET_CATALOG,catBy,'name')+'</div>'+
-        '<div class="gi-sec"><div class="gi-h">🎁 랜덤박스 · 가구</div>'+secRows(ITEM_CATALOG,itemBy,'name')+'</div>'+
+        '<div class="gi-sec"><div class="gi-h">🎁 랜덤박스 · 가구·바닥·벽지</div>'+boxRows+'</div>'+
         '</div></details>';
     }
+
     // 확률은 합이 100이 아니어도 총합 기준 비율로 적용(개발 편의)
     function rollTier(tiers){ const arr=tiers||effTiers(); const total=arr.reduce((s,t)=>s+(Number(t.p)||0),0)||1; const r=Math.random()*total; let acc=0; for(const t of arr){ acc+=(Number(t.p)||0); if(r<acc) return t.id; } return arr[0].id; }
     // 등급 롤 → 해당 등급 풀에서 랜덤. 비면 한 단계 아래로 내려가며 탐색. tiers를 주면 그 확률표로(무지개=특별↑ 전용).
@@ -3212,9 +3561,12 @@
     // 구매+롤(원자적): 은화-100, 금화+1, 지급(신규 고양이/가구 or 중복 펫 환급). 성공 시 연출.
     function openGacha(kind){
       if(coins()<GACHA_PRICE){ toast((GACHA_PRICE-coins())+' 은화 부족', true); return; }
-      const res = rollFromPool(kind==='egg'?effCatTier():effItemTier()); if(!res) return;
-      const dup = kind==='egg' && ownsCat(res.id);
-      const refund = dup ? petDupRefund(res.id) : 0;
+      let res, dup=false, refund=0;
+      if(kind==='egg'){ res=rollFromPool(effCatTier()); if(!res) return; dup=ownsCat(res.id); refund=dup?petDupRefund(res.id):0; }
+      else { res=rollBoxReward(); if(!res) return;
+        if(res.type==='floor') dup=ownsFloor(res.id)&&res.id!=='default';
+        else if(res.type==='wall') dup=ownsWall(res.id)&&res.id!=='default';
+        refund=dup?Math.round((TIER_PRICE[res.tier]||0)*0.2):0; }
       gameRef().transaction(g=>{
         g=normalizeGame(g);
         if(g.coins<GACHA_PRICE) return;
@@ -3222,10 +3574,7 @@
         if(kind==='egg'){
           if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
           else { g.coins+=refund; }
-        } else {
-          g.owned.items[res.id]=g.owned.items[res.id]||{qty:0,boughtAt:new Date().toISOString()};
-          g.owned.items[res.id].qty=(Number(g.owned.items[res.id].qty)||0)+1;
-        }
+        } else { const rf=grantBoxReward(g,res); if(rf) g.coins+=rf; }
         return g;
       }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund); });
     }
@@ -3249,19 +3598,19 @@
     function useRainbow(kind){
       const key=rainbowKey(kind);
       if(consumQty(key)<1){ toast(rainbowName(kind)+'이 없어요', true); return; }
-      const res=rollFromPool(kind==='egg'?effCatTier():effItemTier(), RAINBOW_TIERS); if(!res) return;
-      const dup=kind==='egg' && ownsCat(res.id);
-      const refund=dup?petDupRefund(res.id):0;
+      let res, dup=false, refund=0;
+      if(kind==='egg'){ res=rollFromPool(effCatTier(), RAINBOW_TIERS); if(!res) return; dup=ownsCat(res.id); refund=dup?petDupRefund(res.id):0; }
+      else { res=rollBoxReward(RAINBOW_TIERS); if(!res) return;
+        if(res.type==='floor') dup=ownsFloor(res.id)&&res.id!=='default';
+        else if(res.type==='wall') dup=ownsWall(res.id)&&res.id!=='default';
+        refund=dup?Math.round((TIER_PRICE[res.tier]||0)*0.2):0; }
       gameRef().transaction(g=>{ g=normalizeGame(g);
         if((Number(g.consum[key])||0)<1) return;
         g.consum[key]-=1;
         if(kind==='egg'){
           if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
           else { g.coins+=refund; }
-        } else {
-          g.owned.items[res.id]=g.owned.items[res.id]||{qty:0,boughtAt:new Date().toISOString()};
-          g.owned.items[res.id].qty=(Number(g.owned.items[res.id].qty)||0)+1;
-        }
+        } else { const rf=grantBoxReward(g,res); if(rf) g.coins+=rf; }
         return g;
       }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund, true); });
     }
@@ -3493,7 +3842,7 @@
         return '<button class="pitem'+(_selItem===it.id?' on':'')+'" onpointerdown="palDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selItem(\''+it.id+'\')"><span class="pic">'+furnSvg(it.id,{h:picH})+'</span><span>'+it.name+'</span><span class="pq">'+foot.w+'×'+foot.h+' · 남은 '+itemRemaining(it.id)+'</span></button>'; }).join('');
       // 미니 웹캠 프리뷰: 현재 배치를 실제 방 뷰로 보여줘 방향 헷갈림 방지(표시 전용)
       const plist=placedList().sort((a,b)=>a.r-b.r); distributePoops(plist);
-      const preview='<div class="miniroom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div><span class="cr-cam"><i></i>미리보기</span><div class="cr-props">'+plist.map(p=>propMarkup(p,true)).join('')+'</div></div>';
+      const preview='<div class="miniroom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor" style="background:'+floorCss(currentFloor())+'"></div><div class="cr-base"></div><span class="cr-cam"><i></i>미리보기</span><div class="cr-props">'+plist.map(p=>propMarkup(p,true)).join('')+'</div></div>';
       const dragHint='<div class="hintline" style="margin:8px 0 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5V5.5a1.5 1.5 0 0 1 3 0v5"/><path d="M12 10V4.5a1.5 1.5 0 0 1 3 0V10"/><path d="M15 9.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-1a6 6 0 0 1-5.2-3l-2-3.5a1.5 1.5 0 0 1 2.6-1.5L9 14"/></svg><b>꾹 눌러서</b> 끌면 배치·이동돼요(짧게 탭하면 선택·메뉴). 화면 스크롤과 겹치지 않아요.</div>';
       return roomStripHtml()+'<div class="editwrap">'+preview+grid+dragHint+'<div class="palette">'+pal+'</div></div>';   // 어느 방을 꾸미는지 선택·표시
     }
@@ -3816,7 +4165,7 @@
       const rb=!!_fx.rainbow;                                             // 무지개(승급 또는 무지개알 구매)
       const conf=rb?32:(rank<=0?0:rank<=1?10:rank<=2?16:20+(rank-2)*8);   // 등급↑ 컨페티 더 많이(일반=없음)
       const tw=5+rank*3;                                                  // 트윙클 수(등급↑ 많이)
-      const art=_fx.kind==='egg'?catFace(_fx.res.id,{h:118,eager:true}):furnSvg(_fx.res.id,{h:104});   // eager: 등장 즉시 표시(lazy면 ~1초 늦게 뜸)
+      const art=_fx.kind==='egg'?catFace(_fx.res.id,{h:118,eager:true}):rewardBoxArt(_fx.res);   // eager: 등장 즉시 표시(lazy면 ~1초 늦게 뜸)
       fx.innerHTML='<div class="fx-scrim"></div><div class="fx-reveal tier-'+t.id+' rank-'+rank+(rb?' rev-rb':'')+'">'+
         '<div class="fx-art pop">'+
           '<span class="fx-aurawrap">'+lightLayers({aura:210, rays:250})+'</span>'+   // 펫 뒤 픽셀 오오라(+특별↑은 발산 광선까지 CSS로 표시)
@@ -3826,7 +4175,7 @@
           '<span class="fx-artimg">'+art+'</span>'+
         '</div>'+
         '<div class="fx-tier">'+t.name+'</div>'+
-        '<div class="fx-name">'+(_fx.kind==='egg'?catNameSpan(_fx.res.id,catName(_fx.res.id)):escapeHtml(itemName(_fx.kind,_fx.res.id)))+'</div>'+
+        '<div class="fx-name">'+(_fx.kind==='egg'?catNameSpan(_fx.res.id,catName(_fx.res.id)):escapeHtml(rewardName(_fx.res)))+'</div>'+
         '<div class="fx-reward">'+(_fx.gold?'<span class="rw"><span class="ci">'+goldSvg({h:18})+'</span>+1 금화</span>':'')+
           (_fx.dup?'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>+'+_fx.refund+' 은화 (중복)</span>':'')+'</div>'+
         '<button class="btn" onclick="closeFx()">확인</button>'+

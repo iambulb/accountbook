@@ -170,7 +170,8 @@
         wallpaper: r.wallpaper || 'default',
         placed: (r.placed && typeof r.placed === 'object') ? r.placed : {},
         active: Array.isArray(r.active) ? r.active.slice() : [],
-        poops: Number(r.poops) || 0
+        poops: Number(r.poops) || 0,
+        floor: r.floor || 'default'
       };
     }
     var rooms = (Array.isArray(h.rooms) && h.rooms.length)

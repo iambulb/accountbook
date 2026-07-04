@@ -893,6 +893,7 @@
     .cr-prop .ffx-swing .px { animation:ffswing 3.4s ease-in-out infinite; }
     .cr-prop .ffx-sway .px  { animation:ffsway 4.6s ease-in-out infinite; }
     .cr-prop .ffx-drift .px { animation:ffdrift 10s ease-in-out infinite; }   /* 좌우로 천천히 이동(구름·금붕어) */
+    .cr-prop .ffx-flicker .px { animation:ffflicker 0.85s ease-in-out infinite; transform-origin:50% 62%; }   /* 불꽃 일렁임(밑동 기준) */
     /* 회전/흔들림 중심(부품 위치) — 가구별 */
     .cr-prop .ffx-catwheel .px  { transform-origin:47.9% 43.75%; }   /* 휠 축(정중심) → 링 전체가 제자리 회전(옆으로 흔들림 방지) */
     .cr-prop .ffx-tower .px     { transform-origin:84% 20%; }   /* 끈 매단 지점 */
@@ -900,10 +901,18 @@
     .cr-prop .ffx-plant .px     { transform-origin:50% 57%; }   /* 잎 아래(줄기 위) → 잎만 좌우로 기울어 살랑 */
     .cr-prop .ffx-window .px    { animation-duration:16s; }   /* 구름은 아주 느리게 흘러감 */
     .cr-prop .ffx-fishtank .px  { animation-duration:6s; }    /* 금붕어는 조금 더 활발하게 */
+    .cr-prop .ffx-fan .px       { transform-origin:47% 32%; animation-duration:2.6s; }   /* 케이지 정중심에서 날개 회전 */
+    .cr-prop .ffx-hammock .px   { transform-origin:50% 6%; animation-duration:4.6s; }    /* 걸이 매단 지점 */
+    .cr-prop .ffx-teaser .px    { transform-origin:81% 3%; animation-duration:2.6s; }    /* 대 끝(줄 매단 지점) */
+    .cr-prop .ffx-wallclock .px { transform-origin:50% 52%; animation-duration:2s; }     /* 추 피벗 */
+    .cr-prop .ffx-hangplant .px { transform-origin:50% 4%; animation-duration:5s; }      /* 천장 걸이 */
+    .cr-prop .ffx-mobile .px    { transform-origin:50% 6%; animation-duration:6s; }      /* 걸이 */
+    .cr-prop .ffx-jingleball .px{ transform-origin:50% 94%; animation-duration:1.6s; }   /* 바닥 접점에서 통통 */
     @keyframes ffspin  { to { transform:rotate(360deg); } }
     @keyframes ffswing { 0%,100%{ transform:rotate(-6deg); } 50%{ transform:rotate(6deg); } }
     @keyframes ffsway  { 0%,100%{ transform:rotate(-4.5deg); } 50%{ transform:rotate(4.5deg); } }
     @keyframes ffdrift { 0%,100%{ transform:translateX(-4%); } 50%{ transform:translateX(4%); } }
+    @keyframes ffflicker { 0%,100%{ transform:scaleY(1) translateX(0); } 30%{ transform:scaleY(1.08) translateX(-4%); } 55%{ transform:scaleY(0.94) translateX(3%); } 80%{ transform:scaleY(1.05) translateX(-2%); } }
     @media (prefers-reduced-motion:reduce){ .cr-prop .ffx .px { animation:none; } }
     /* 다마고치: 탭 가능한 그릇 / 화장실 위 똥 / 똥 수거 획득 연출 */
     .cr-prop.cr-tap { cursor:pointer; z-index:2; }
