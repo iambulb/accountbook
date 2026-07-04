@@ -378,7 +378,7 @@
       "....XppX....",
       ".....XX....."
     ];
-    const FURN_PALS={ cushion:{X:'#4a5361',C:'#9aa4b2',D:'#79838f',L:'#c2cad4',B:'#5b6470'}, bowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',F:'#d68b4a',f:'#b06a2e',g:'#efb37a'}, waterbowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',A:'#5aa9e6',a:'#3f86c4',h:'#bfe2fb'}, tower:{X:'#5e3f22',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#5e3f22',W:'#c99a5f',C:'#a87c46',L:'#e6c085',S:'#d8b98a',R:'#b8935f',T:'#6b4a2a',O:'#d9694e',H:'#f2a98f'}, litterbox:{X:'#7a808a',W:'#c9ced6',D:'#9aa0aa',S:'#ece3cc',s:'#d8caa6',k:'#bca97e'}, pethouse:{X:'#5a4632',R:'#d9694e',r:'#b8503a',W:'#e8c98f',w:'#d4b06a',D:'#2c2420'}, plant:{X:'#7c5028',L:'#7cc652',G:'#4e9636',P:'#c8763e',p:'#a85e2c',l:'#9ad86a',S:'#6b4a2a'}, catwheel:{X:'#2f6f68',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',R:'#c9a06a',D:'#6b5842'} };
+    const FURN_PALS={ cushion:{X:'#4a5361',C:'#9aa4b2',D:'#79838f',L:'#c2cad4',B:'#5b6470'}, bowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',F:'#d68b4a',f:'#b06a2e',g:'#efb37a'}, waterbowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',A:'#5aa9e6',a:'#3f86c4',h:'#bfe2fb'}, tower:{X:'#5e3f22',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#5e3f22',W:'#c99a5f',C:'#a87c46',L:'#e6c085',S:'#d8b98a',R:'#b8935f',T:'#6b4a2a',O:'#d9694e',H:'#f2a98f'}, litterbox:{X:'#7a808a',W:'#c9ced6',D:'#9aa0aa',S:'#f4efe4',s:'#e7e0d0',k:'#d6ccb8'}, pethouse:{X:'#5a4632',R:'#d9694e',r:'#b8503a',W:'#e8c98f',w:'#d4b06a',D:'#2c2420'}, plant:{X:'#7c5028',L:'#7cc652',G:'#4e9636',P:'#c8763e',p:'#a85e2c',l:'#9ad86a',S:'#6b4a2a'}, catwheel:{X:'#2f6f68',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',R:'#c9a06a',D:'#6b5842'} };
     const POOP_PAL={X:'#4a3218',K:'#7a5230'};
     const FOOD_PAL={F:'#d68b4a',D:'#8a5427',L:'#f2e4c6',K:'#7a4a20'};
     const WATER_PAL={A:'#5aa9e6',D:'#3f86c4',H:'#c7e6ff',L:'#eaf6ff'};
@@ -567,11 +567,32 @@
     // 물음표(R/O/Y/G/B/P)는 흰색으로 대비, 외곽(X)은 은은한 중립색 → "온몸이 움직이는 무지개빛"인 알/상자.
     const EGG_PAL_RB={X:'#968c76',W:'RAINBOW',S:'RAINBOW',R:'#FBFBFD',O:'#FBFBFD',Y:'#FBFBFD',G:'#FBFBFD',B:'#FBFBFD',P:'#FBFBFD'};   // 무지개알도 바깥 진한 테두리
     const BOX_PAL_RB={X:'#9aa2b0',W:'RAINBOW',C:'RAINBOW',L:'RAINBOW',R:'#FBFBFD',O:'#FBFBFD',Y:'#FBFBFD',G:'#FBFBFD',B:'#FBFBFD',P:'#FBFBFD'};
-    // 은화 속 검은 고양이의 앞발(특별↑ 연출에서 톡 건드림)
-    const M_PAW = [
-      "...XXXXX..","..XBBBBBX.",".XBBBBBBBX",".XBPBPBPBX",".XBBBBBBBX",".XBBPPBBBX",".XBBPPBBBX","..XBBBBBX.","...XXXXX.."
+    // 은화 속 검은 고양이 — 특별↑ 오픈 연출에서 오른쪽에서 슥 들어와 앞발로 알/상자를 톡 건드린다.
+    // 정면 검은 고양이(발광 노란 눈·분홍 코/귀속·수염)가 왼쪽으로 앞발(분홍 젤리)을 뻗은 상세 도트. 어두운 무대 위에서 실루엣이 또렷하게 읽히도록 외곽선(K)을 몸(B)보다 진하게.
+    const M_COINCAT = [
+      "....................KK..KK......",
+      "...................KBBK..KBBK...",
+      "..................KBPBK.KBPBK...",
+      ".................KBBPBKKBPBBK...",
+      "................KBBBBBBBBBBBBK..",
+      "................KbBBBBBBBBBBBK..",
+      "................KBBBBBBBBBBBBK..",
+      ".............WWWKBBYYBBYYBBBBK..",
+      "..............WWKBBYsBBYsBBBBKWW",
+      "...............WKBBYYBBYYBBBBKW.",
+      "................KBBBBBPPBBBBBK..",
+      "....KKKKKKKKKKKKKBBBBBBBBBBBBK..",
+      "...KBBBBddddddBBBBBBBBBBBBBBBK..",
+      "..KBPPBKKKKKKKKKBBBBBBBBBBBBBK..",
+      "..KBPPBK.......KBddddddddddBBK..",
+      "..KBPPBK.......KBddddddddddBBK..",
+      "...KBBK........KBBBBBBBBBBBBBK..",
+      "....KK.........KBBBK....KBBBK...",
+      "...............KBBK.....KBBK....",
+      "...............KKK......KKK....."
     ];
-    const PAW_PAL={X:'#181a1e',B:'#2b2e34',P:'#E08b9d'};
+    // K=외곽선(먹) B=몸 검정 b=하이라이트(등 윤곽 빛) d=배 그림자 Y=눈(노랑 발광) s=눈 반짝 P=분홍(코·귀속·발바닥 젤리) W=수염(흰)
+    const COINCAT_PAL={K:'#0e0f13',B:'#24272e',b:'#363b45',d:'#191b20',Y:'#F7D24E',s:'#FFF2B0',P:'#E88aa0',W:'#E9EDF5'};
 
     // 카탈로그(코드 상수) — 저장은 보유 id만. id는 종·색 구분(예: cat_calico, dog_corgi), species는 분류/필터용.
     // 새 동물(네발 짐승) 처리 규칙은 docs/pet-asset-pipeline.md 참고.
@@ -1101,7 +1122,7 @@
     ];
     const SPARK_PAL={X:'currentColor',H:'#ffffff'};
     function sparkSvg(opt){ return pxSvg(M_SPARK, SPARK_PAL, opt); }
-    function pawSvg(opt){ return pxSvg(M_PAW, PAW_PAL, opt); }
+    function coinCatSvg(opt){ return pxSvg(M_COINCAT, COINCAT_PAL, opt); }
     // 알뜰샵·팔레트·격자용 대표 아트(물그릇은 물 채운 파란 그릇으로 구분 표시)
     function furnMatrix(id){ return {cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT,catwheel:M_CATWHEEL}[id]; }
     function furnSvg(id, opt){ return pxSvg(furnMatrix(id), FURN_PALS[id], opt); }
@@ -1793,7 +1814,9 @@
     }
     function ensurePetArtMany(ids){ (ids||[]).forEach(ensurePetArt); }   // 방/독 진입 시 소유 펫만 선로드
     // 아트 도착 → 무대 sig 무효화(스프라이트 src 갱신)하고 방/독·열린 시트 재렌더.
-    function _petArtRerender(){ const cd=$('cdStage'); if(cd) cd.dataset.sig=''; const cr=$('crStage'); if(cr) cr.dataset.sig='';
+    let _artRerenderT=0;
+    function _petArtRerender(){ clearTimeout(_artRerenderT); _artRerenderT=setTimeout(_petArtRerenderNow, 80); }   // 여러 런타임 펫 아트가 잇달아 도착해도 무대 재빌드를 1회로 합침(재빌드 폭주 방지)
+    function _petArtRerenderNow(){ const cd=$('cdStage'); if(cd) cd.dataset.sig=''; const cr=$('crStage'); if(cr) cr.dataset.sig='';
       if(typeof renderDockCats==='function') renderDockCats();
       if(typeof mountRoomWalk==='function') mountRoomWalk();
       if(state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh(); }
@@ -2062,7 +2085,7 @@
     function actorShowStill(a, face){ if(!a.spr) return; const s=a.el.querySelector('.cspr'); if(!s) return;
       s.style.setProperty('--idle','url('+sprStill(a.id,face)+')'); s.classList.add('idle'); }
     const _eng={ raf:0, stage:null, actors:[], last:0, dirty:false };
-    function markCatDirty(){ _eng.dirty=true; }
+    function markCatDirty(){ _eng.dirty=true; if(typeof startCatLoop==='function') startCatLoop(); }
     // 리사이즈·기기 회전 시 무대 폭이 바뀌므로 재빌드(디바운스) — 안 하면 펫이 옛 폭으로 클램프돼 화면 밖/좌측 몰림
     if(typeof window!=='undefined'){ let _rzT=0; const _catResize=()=>{ clearTimeout(_rzT); _rzT=setTimeout(function(){ if(typeof markCatDirty==='function') markCatDirty(); }, 200); };
       window.addEventListener('resize', _catResize); window.addEventListener('orientationchange', _catResize); }
@@ -2235,13 +2258,15 @@
       moved.forEach(a=>{ applyDepth(a); setXform(a); a._pdir=a.dir; });   // 밀린 펫만 트랜스폼 갱신
     }
     function catLoop(ts){
+      if(document.hidden){ _eng.raf=0; return; }   // 탭 숨김 → 루프 정지(복귀 시 visibilitychange로 재개, 유휴 배터리 절약)
       const dt=_eng.last?Math.min(50,ts-_eng.last):16; _eng.last=ts;
       const stage=activeStage();
       if(stage!==_eng.stage || _eng.dirty){ _eng.stage=stage; _eng.dirty=false; _eng.actors= stage? buildActors(stage):[]; }
-      if(stage && _eng.actors.length && !document.hidden && !reducedMotion()) stepActors(dt);
+      if(stage && _eng.actors.length && !reducedMotion()) stepActors(dt);
       _eng.raf=requestAnimationFrame(catLoop);
     }
-    function startCatLoop(){ if(!_eng.raf) _eng.raf=requestAnimationFrame(catLoop); }
+    function startCatLoop(){ if(!_eng.raf && !(typeof document!=='undefined'&&document.hidden)) _eng.raf=requestAnimationFrame(catLoop); }
+    if(typeof document!=='undefined') document.addEventListener('visibilitychange', function(){ if(!document.hidden){ _eng.last=0; startCatLoop(); } });   // 탭 복귀 시 루프 재개
 
     // ===== 캠/방에서 펫을 바로 끌어(드래그) 좌우로 이동 =====
     let _petDrag=null, _petJustDragged=false;
@@ -2330,7 +2355,9 @@
       const build=()=>{
         // 상단(금화·은화 + 홈/알뜰샵/배치/미션 탭)은 스크롤해도 고정(sticky), 그 아래 콘텐츠만 스크롤
         let h='<div class="cathead"><div class="coinbar"><span class="coin"><span class="ci">'+goldSvg({h:20})+'</span>'+gold().toLocaleString()+(atMaxGold()?maxChip():'')+'<small>금화</small></span><span class="coin"><span class="ci">'+coinSvg({h:20})+'</span>'+coins().toLocaleString()+(atMaxCoins()?maxChip():'')+'<small>은화</small></span></div>';
-        h+='<div class="catseg">'+[['home','홈'],['shop','알뜰샵'],['place','배치']].map(function(t){ return '<button class="'+(_catTab===t[0]?'on':'')+'" onclick="setCatTab(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div></div>';
+        h+='<div class="catseg">'+[['home','홈'],['shop','알뜰샵'],['place','배치']].map(function(t){ return '<button class="'+(_catTab===t[0]?'on':'')+'" onclick="setCatTab(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
+        if(_catTab==='shop') h+=shopSubsegHtml();   // 알뜰샵 서브탭도 sticky 헤더 안에서 고정
+        h+='</div>';   // .cathead 닫기(여기까지 sticky)
         if(_catTab==='shop') h+=catShopHtml();
         else if(_catTab==='place') h+=catPlaceHtml();
         else h+=catHomeHtml();   // home(및 미상 탭) → 홈
@@ -2339,11 +2366,13 @@
       openSheet('알뜰홈', build());
       state._sheetRefresh=()=>{ if(_drag||_pal||_rmDrag) return;   // 드래그(배치) 중엔 재렌더 스킵 — 드래그 요소가 뜯겨 스크롤 잠금이 남는 것 방지(드래그 끝나면 배치 커밋이 다시 리프레시)
         const b=$('sheetBody'); if(!b) return; const st=b.scrollTop;
+        const _ae=document.activeElement, _sf=!!(_ae&&_ae.classList&&_ae.classList.contains('petsearch')), _ss=_sf?_ae.selectionStart:0, _se=_sf?_ae.selectionEnd:0;   // 검색 입력 포커스/커서 보존(백그라운드 갱신이 입력 중 포커스를 뺏지 않게)
         const pal=b.querySelector('.palette'); const palL=pal?pal.scrollLeft:0;   // 배치 팔레트(가로 스크롤) 위치 보존 — 스크롤해 아이템 선택 시 처음으로 안 튀게(우리집 펫은 세로 그리드라 세로 scrollTop만 보존)
         const keepGrid=(_catTab==='home')?b.querySelector('#petGrid'):null;   // 기존 펫 그리드 노드 보존(빈 placeholder로 되붙여 수백 타일 재파싱·이미지 리로드 회피)
         b.innerHTML=build();
         if(_catTab==='home'){ const ph=b.querySelector('#petGrid'); if(keepGrid && ph) ph.replaceWith(keepGrid); renderPetGrid(); }   // 되살린 그리드에 바뀐 타일만 갱신(없으면 채움)
         b.scrollTop=st;
+        if(_sf){ const _ns=b.querySelector('.petsearch'); if(_ns){ try{ _ns.focus(); _ns.setSelectionRange(_ss,_se); }catch(_){} } }   // 검색 포커스·커서 복원
         const npal=b.querySelector('.palette'); if(npal) npal.scrollLeft=palL;
         if(_catTab==='home') mountRoomWalk(); };
       if(_catTab==='home'){ setTimeout(mountRoomWalk, 30); renderPetGrid(); }
@@ -2429,7 +2458,7 @@
       // 배치된 가구를 방 바닥에 매핑. 그릇=탭 급여·채움 반영, 화장실=똥 수거(공용 헬퍼).
       const list=placedList().sort((a,b)=>a.r-b.r); distributePoops(list);
       const litters=list.filter(p=>p.itemId==='litterbox');
-      const props=list.map(p=>propMarkup(p,false)).join('');
+      const props=list.map(p=>propMarkup(p,false,false,true)).join('');   // live=true → 홈 LIVE 캠 연출
       const roomName=(room().name)||'우리집';
       let h=roomStripHtml()+'<div class="catroom" id="catRoom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor"></div><div class="cr-base"></div><span class="cr-cam"><i></i>LIVE · '+escapeHtml(roomName)+'</span>'+batchBtnHtml()+'<div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div></div>';
       // 빈 방(가구·펫 없음) 안내 — 방 확장 직후 '사라진 것처럼' 보이는 혼동 방지
@@ -2493,8 +2522,13 @@
     // 알뜰샵에서 미리보기로 "선택"한 펫 — 선택하면 카드가 강조되고 썸네일이 옆으로 걷는 스프라이트(우리집 펫 카드와 동일)로 바뀐다.
     let _shopSelCat=null;
     function selectShopCat(id){ _shopSelCat=(_shopSelCat===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
+    // 알뜰샵 서브탭(펫/가구/소비/벽지/이벤트) — cathead(sticky) 안에 넣어 스크롤해도 상단 고정. '펫'=구 '고양이'(호랑이·사자 등 포함이라 펫으로 통일).
+    function shopSubsegHtml(){
+      const tabs=[['cats','펫'],['furn','가구'],['consum','소비'],['wall','벽지'],['event','이벤트']];
+      return '<div class="subseg">'+tabs.map(function(t){ return '<button class="'+(_shopSub===t[0]?'on':'')+'" onclick="setShopSub(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
+    }
     function catShopHtml(){
-      let h='<div class="subseg"><button class="'+(_shopSub==='cats'?'on':'')+'" onclick="setShopSub(\'cats\')">고양이</button><button class="'+(_shopSub==='furn'?'on':'')+'" onclick="setShopSub(\'furn\')">가구</button><button class="'+(_shopSub==='consum'?'on':'')+'" onclick="setShopSub(\'consum\')">소비</button><button class="'+(_shopSub==='wall'?'on':'')+'" onclick="setShopSub(\'wall\')">벽지</button><button class="'+(_shopSub==='event'?'on':'')+'" onclick="setShopSub(\'event\')">이벤트</button></div>';
+      let h='';
       if(_shopSub==='consum'){
         h+=CONSUM_CATALOG.map(c=>{
           const enough=coins()>=c.price;
@@ -3206,7 +3240,9 @@
     }
 
     // ================= 뽑기 오픈 연출(#catFx 풀스크린) =================
-    let _fx=null;
+    let _fx=null, _fxTimers=[];
+    function _fxT(fn,ms){ const id=setTimeout(fn,ms); _fxTimers.push(id); return id; }   // 가챠 FX 타이머 추적 → 닫기/재시작 시 일괄 취소(빠른 닫기→재오픈 교차 방지)
+    function _fxClear(){ _fxTimers.forEach(clearTimeout); _fxTimers=[]; }
     function itemName(kind,id){ return kind==='egg'?catName(id):((ITEM_CATALOG.find(x=>x.id===id)||{}).name||id); }
     function fxParticles(n,cls){ let s=''; for(let i=0;i<(n||14);i++){ const a=(i/(n||14))*360+Math.random()*30, d=60+Math.random()*90; const dx=Math.round(Math.cos(a*Math.PI/180)*d), dy=Math.round(Math.sin(a*Math.PI/180)*d); const del=(Math.random()*0.12).toFixed(2); s+='<span class="'+(cls||'fx-particle')+'" style="--dx:'+dx+'px;--dy:'+dy+'px;animation-delay:'+del+'s"></span>'; } return s; }
     // 픽셀 컨페티(도트) — 둥근 조각 대신 각진 픽셀 블록이 흔들리며 떨어짐. n=개수(등급↑ 많이), 3가지 픽셀 모양(s0~s2).
@@ -3216,6 +3252,7 @@
       return s; }
     function runGachaFx(kind, res, dup, refund, rainbow){
       const fx=$('catFx'); if(!fx){ toast((kind==='egg'?'펫알':'랜덤박스')+' 획득!'); return; }
+      _fxClear();   // 이전 FX 잔여 타이머 취소(빠른 재오픈 교차 방지)
       _fx={ kind, res, dup, refund:refund||0, stage:0, rainbow:!!rainbow, gold: rainbow?0:1 };   // 무지개는 금화로 샀으니 금화 보상 없음
       if(reducedMotion()){ fxReveal(); return; }   // 모션 최소화: 바로 결과
       const art = rainbow ? (kind==='egg'? rainbowEggSvg({h:150}) : rainbowBoxSvg({h:150}))
@@ -3291,20 +3328,20 @@
       it.classList.add('fx-preshake');
       let t0=680;
       if(epic){
-        setTimeout(()=>{ st.insertAdjacentHTML('beforeend','<div class="fx-paw" id="fxPaw">'+pawSvg({h:66})+'</div>'); const p=$('fxPaw'); if(p){ void p.offsetWidth; p.classList.add('tap'); } }, 460);
-        setTimeout(()=>{ it.classList.remove('fx-preshake'); void it.offsetWidth; it.classList.add('fx-hit'); }, 660);
-        setTimeout(()=>{ const p=$('fxPaw'); if(p) p.remove(); it.classList.remove('fx-hit'); }, 980);
-        t0=1120;
+        _fxT(()=>{ st.insertAdjacentHTML('beforeend','<div class="fx-paw" id="fxPaw">'+coinCatSvg({h:120})+'</div>'); const p=$('fxPaw'); if(p){ void p.offsetWidth; p.classList.add('tap'); } }, 440);   // 검은 고양이가 오른쪽에서 슥 등장
+        _fxT(()=>{ it.classList.remove('fx-preshake'); void it.offsetWidth; it.classList.add('fx-hit'); }, 700);   // 앞발이 닿는 순간 알/상자가 톡 튕김
+        _fxT(()=>{ const p=$('fxPaw'); if(p) p.remove(); it.classList.remove('fx-hit'); }, 1140);   // 고양이 퇴장 후 제거
+        t0=1240;
       }
-      setTimeout(()=>{
+      _fxT(()=>{
         it.classList.remove('fx-preshake','fx-hit'); void it.offsetWidth; it.classList.add('fx-tremble');
         if(isEgg){ it.innerHTML=eggCrackSvg(t.color, _fx.rainbow, {h:150}); fxCrackChips(4); }   // 알이 크게 갈라지고 틈새로 등급색 빛
         else { it.innerHTML=boxOpenSvg(t.color, _fx.rainbow, {h:150}); it.classList.add('fx-ajar'); }   // 박스: 뚜껑 열리고 틈새로 등급색 빛
         // 갈라진 틈으로 새어나오는 등급색 픽셀 빛 — 은은한 오오라 + 역회전 광선 2겹(둥근 글로우 금지, 도트). 등급↑ 크고 밝게(--lk)
         st.insertAdjacentHTML('afterbegin','<div class="fx-cracklight" style="color:'+t.color+';--lk:'+lk+'">'+lightLayers({aura:170, rays:220})+'</div>');
       }, t0);
-      setTimeout(()=>{ fxBurst(epic, isEgg, rank); }, t0+700);
-      setTimeout(fxReveal, t0+700+(isEgg?560:320));   // 알은 껍질 조각이 옆으로 흩어져 앉을 시간을 조금 더 준다
+      _fxT(()=>{ fxBurst(epic, isEgg, rank); }, t0+700);
+      _fxT(fxReveal, t0+700+(isEgg?560:320));   // 알은 껍질 조각이 옆으로 흩어져 앉을 시간을 조금 더 준다
     }
     function fxBurst(big, isEgg, rank){
       const st=$('catFx').querySelector('.fx-stage'); if(!st) return;
@@ -3341,7 +3378,7 @@
         '<div class="fx-confetti">'+(conf?fxConfetti(conf):'')+'</div></div>';
       fx.className='fx on reveal';
     }
-    function closeFx(){ const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx=null; }
+    function closeFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx=null; }
 
     // ================= 개발자 패널: 펫알/박스 확률·구성 =================
     function openDevGacha(){
