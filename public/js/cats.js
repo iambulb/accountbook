@@ -241,10 +241,30 @@
       ".XXXXXXXXXXXXXX.",
       "..XXX......XXX.."
     ];
+    // 스크래처(1×1) — 캣타워처럼 디테일하게: 카펫 캡 + 시살(밧줄) 감은 기둥(S 밝은 밧줄/R 홈 교대) + 매달린 장난감 공(O) + 발 달린 카펫 베이스. 14×22 → 가로세로비 ≈0.636.
     const M_SCRATCHER = [
-      "................",".....XXXXXX.....","....XWWWWWWX....","....XWWWWWWX....",".....XXPPXX.....",
-      "......XPPX......","......XPPX......","......XPPX......","......XPPX......","......XPPX......",
-      "......XPPX......","......XPPX......",".....XXPPXX.....","...XXWWWWWWXX...","..XWWWWWWWWWWX..","..XXXXXXXXXXXX.."
+      "....LWWWWL....",
+      "...XWWWWWWX...",
+      "...XCCCCCCX...",
+      "....XSSSSXT...",
+      "....XRRRRX.T..",
+      "....XSSSSXHOO.",
+      "....XRRRRXOOO.",
+      "....XSSSSX.OO.",
+      "....XRRRRX....",
+      "....XSSSSX....",
+      "....XRRRRX....",
+      "....XSSSSX....",
+      "....XRRRRX....",
+      "....XSSSSX....",
+      "....XRRRRX....",
+      "....XSSSSX....",
+      "..LLLLLLLLLL..",
+      ".XWWWWWWWWWWX.",
+      ".XWWWWWWWWWWX.",
+      ".XCCCCCCCCCCX.",
+      ".XXXXXXXXXXXX.",
+      "..XX......XX.."
     ];
     // 펫하우스(3×3): 박공 지붕 + 정면 아치 출입구. 출입구 안(D=어두운 실내) 앞에 펫이 앉아 정면(south)을 봄. 24×20 → 가로세로비 1.2.
     const M_PETHOUSE = [
@@ -321,7 +341,7 @@
       ".PPPPPP.",
       "..XXXX.."
     ];
-    const FURN_PALS={ cushion:{X:'#5b6470',C:'#a9b2be',D:'#868f9c'}, bowl:{X:'#5b6470',W:'#d0d6dd',F:'#d68b4a'}, waterbowl:{X:'#5b6470',W:'#d0d6dd',A:'#5aa9e6'}, tower:{X:'#5e3f22',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#6f4c28',W:'#c99a5f',P:'#d8b98a'}, litterbox:{X:'#8a8f98',W:'#c9ced6',S:'#e6dcc3'}, pethouse:{X:'#5a4632',R:'#d9694e',W:'#e8c98f',D:'#2c2420'}, plant:{X:'#7c5028',L:'#7cc652',G:'#4e9636',P:'#c8763e'}, catwheel:{X:'#2f6f68',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',R:'#c9a06a',D:'#6b5842'} };
+    const FURN_PALS={ cushion:{X:'#5b6470',C:'#a9b2be',D:'#868f9c'}, bowl:{X:'#5b6470',W:'#d0d6dd',F:'#d68b4a'}, waterbowl:{X:'#5b6470',W:'#d0d6dd',A:'#5aa9e6'}, tower:{X:'#5e3f22',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#5e3f22',W:'#c99a5f',C:'#a87c46',L:'#e6c085',S:'#d8b98a',R:'#b8935f',T:'#6b4a2a',O:'#d9694e',H:'#f2a98f'}, litterbox:{X:'#8a8f98',W:'#c9ced6',S:'#e6dcc3'}, pethouse:{X:'#5a4632',R:'#d9694e',W:'#e8c98f',D:'#2c2420'}, plant:{X:'#7c5028',L:'#7cc652',G:'#4e9636',P:'#c8763e'}, catwheel:{X:'#2f6f68',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',R:'#c9a06a',D:'#6b5842'} };
     const POOP_PAL={X:'#4a3218',K:'#7a5230'};
     const FOOD_PAL={F:'#d68b4a',D:'#8a5427',L:'#f2e4c6',K:'#7a4a20'};
     const WATER_PAL={A:'#5aa9e6',D:'#3f86c4',H:'#c7e6ff',L:'#eaf6ff'};
@@ -1057,12 +1077,12 @@
     function consumSvg(id, opt){ return id==='food'?pxSvg(M_FOOD,FOOD_PAL,opt):pxSvg(M_WATER,WATER_PAL,opt); }
     // 가구 표시 배율(ITEM_CATALOG.size) — 캣타워·스크래처=2(크게), 방석=0.7·밥그릇=0.5(작게)
     function furnScale(id){ const it=ITEM_CATALOG.find(x=>x.id===id); return (it&&it.size)||1; }
-    // 방(dock·홈)에서의 가구 렌더 높이(px) — 발자국 세로 칸수(footH)에 비례해 키움(캣타워 6칸=제일 큼, 스크래처 2칸, 방석·밥그릇 1칸).
+    // 방(dock·홈)에서의 가구 렌더 높이(px) — 발자국 세로 칸수(footH)에 비례해 키움(캣타워 6칸=제일 큼, 스크래처 1칸=고양이 키만큼, 방석·밥그릇 1칸).
     // 고양이 상호작용(캣타워 3층 올라가기 등)이 맞아떨어지도록 렌더·엔진(fh)이 같은 값을 쓴다. depth(뒤로 갈수록) 작게.
     // 방 렌더 높이 배율(실물감) — 캣타워 제일 큼, 스크래처는 고양이 키만큼, 화장실=낮은 상자, 방석·그릇 작게.
-    const ROOM_H = { tower:6.2, scratcher:2.9, pethouse:2.8, catwheel:3.0, plant:2, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6 };
+    const ROOM_H = { tower:6.2, scratcher:1.9, pethouse:2.8, catwheel:3.0, plant:2, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6 };
     // 가구 그래픽 가로세로비(cols/rows) — 좌측하단 앵커라 그래픽 중앙 x = 좌측 edge + fh*aspect/2 (고양이가 가구 중앙에 서게).
-    const FURN_ASPECT = { tower:0.533, scratcher:1.0, pethouse:1.2, catwheel:1.04, plant:0.57, litterbox:1.18, cushion:2.29, bowl:2.0, waterbowl:2.0 };
+    const FURN_ASPECT = { tower:0.533, scratcher:0.636, pethouse:1.2, catwheel:1.04, plant:0.57, litterbox:1.18, cushion:2.29, bowl:2.0, waterbowl:2.0 };
     function furnAspect(id){ return FURN_ASPECT[id]||1; }
     function furnRoomH(id, isDock, depth){
       const mult = ROOM_H[id] || 1;
@@ -1220,6 +1240,7 @@
       renderDockProps();
       renderDockCats();
       if(state.view==='home' && typeof renderHome==='function') renderHome();   // 홈의 미션·은화 즉시 반영
+      refreshMoreBadges();   // 더보기 그리드 알림 뱃지(선물함·소식…)가 game 변화(선물 받기·쿠폰 사용·공지 확인)에 즉시 반영되도록
       if(state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh();
       writeHomeCam();   // 대표 방 공개 스냅샷 갱신(친구·랭킹이 이것만 읽음 — 다른 방은 비공개)
     }
@@ -2259,10 +2280,13 @@
       openSheet('알뜰홈', build());
       state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const st=b.scrollTop;
         const pal=b.querySelector('.palette'); const palL=pal?pal.scrollLeft:0;   // 배치 팔레트(가로 스크롤) 위치 보존 — 스크롤해 아이템 선택 시 처음으로 안 튀게(우리집 펫은 세로 그리드라 세로 scrollTop만 보존)
-        b.innerHTML=build(); b.scrollTop=st;
+        const keepGrid=(_catTab==='home')?b.querySelector('#petGrid'):null;   // 기존 펫 그리드 노드 보존(빈 placeholder로 되붙여 수백 타일 재파싱·이미지 리로드 회피)
+        b.innerHTML=build();
+        if(_catTab==='home'){ const ph=b.querySelector('#petGrid'); if(keepGrid && ph) ph.replaceWith(keepGrid); renderPetGrid(); }   // 되살린 그리드에 바뀐 타일만 갱신(없으면 채움)
+        b.scrollTop=st;
         const npal=b.querySelector('.palette'); if(npal) npal.scrollLeft=palL;
-        if(_catTab==='home'){ mountRoomWalk(); applyPetFilter(); } };   // 재렌더 후 현재 검색어 재적용
-      if(_catTab==='home'){ setTimeout(mountRoomWalk, 30); applyPetFilter(); }
+        if(_catTab==='home') mountRoomWalk(); };
+      if(_catTab==='home'){ setTimeout(mountRoomWalk, 30); renderPetGrid(); }
     }
     // 방 미니 미리보기 썸네일(프리셋): 벽지 bg + 가구 위치 축소 + 이름 + 펫수. 탭=전환, ✎=이름변경.
     function roomThumb(r, idx){
@@ -2305,6 +2329,38 @@
       return l; }
     function petCtlBar(){ return '<div class="petctl"><select class="petsort" aria-label="펫 정렬" onchange="setPetSort(this.value)">'+PET_SORTS.map(o=>'<option value="'+o[0]+'"'+(_petSort===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+
       '<input class="petsearch" type="search" inputmode="search" placeholder="이름 검색" value="'+escapeHtml(_petQuery)+'" oninput="setPetQuery(this.value)" aria-label="펫 이름 검색"></div>'; }
+    // ===== 우리집 펫 그리드: 타일 단위 메모이즈(수백 마리 재파싱·이미지 리로드 회피) =====
+    // 타일 콘텐츠 시그니처 — 상태(방)·현재방·애정레벨·이름이 바뀐 타일만 다시 그린다.
+    function petTileSig(id){ const ro=petRoomIndex(id); const lv=affectionLevel((ownedCatsMap()[id]||{}).affection).level; return ro+'|'+roomIdx()+'|'+lv+'|'+catName(id); }
+    function petTileHtml(id){
+      const rooms=homeH().rooms||[]; const roomOf=petRoomIndex(id), here=roomOf===roomIdx();
+      const roomNm=roomOf>=0?((rooms[roomOf]&&rooms[roomOf].name)||('방 '+(roomOf+1))):'';
+      const lv=affectionLevel((ownedCatsMap()[id]||{}).affection).level;
+      const stt=here?'이 방':(roomOf>=0?roomNm:'대기');
+      return '<div class="catchip'+(here?' on':(roomOf>=0?' elsewhere':''))+'" data-id="'+id+'" data-tsig="'+escapeHtml(petTileSig(id))+'" data-name="'+escapeHtml(catName(id))+'" role="button" tabindex="0" aria-pressed="'+here+'" onclick="toggleActiveCat(\''+id+'\')" title="'+escapeHtml(catName(id))+' · '+escapeHtml(stt)+' · Lv.'+lv+'">'+
+        '<div class="cpic">'+catFace(id,{h:44})+'</div>'+
+        (roomOf>=0&&!here?'<span class="croom">'+escapeHtml(roomNm)+'</span>':'')+
+        (here?'<span class="csel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>':'')+
+        '<button class="cn-edit" aria-label="이름 짓기" onclick="event.stopPropagation();openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
+        '<div class="cn">'+catNameSpan(id,catName(id))+'</div>'+
+        '<div class="clv" aria-label="애정 레벨 '+lv+'"><span class="clv-h">'+heartSvg({h:9})+'</span>Lv.'+lv+'</div>'+
+      '</div>';
+    }
+    // #petGrid 갱신: 정렬 순서가 같으면 시그니처 바뀐 타일만 교체(in-place, 펫 탭=1개만), 순서 바뀌면(정렬 변경) 통째로.
+    function renderPetGrid(){
+      const el=$('petGrid'); if(!el) return;
+      const ids=sortOwnedPets(ownedCatList());
+      const orderSig=_petSort+'|'+ids.join(',');
+      if(el.getAttribute('data-order')===orderSig && el.childElementCount===ids.length){
+        const kids=el.children;
+        for(let i=0;i<ids.length;i++){ const id=ids[i], c=kids[i]; if(c.getAttribute('data-tsig')!==petTileSig(id)){
+          const tmp=document.createElement('div'); tmp.innerHTML=petTileHtml(id); const nn=tmp.firstElementChild; if(nn) el.replaceChild(nn,c); } }
+      } else {
+        el.setAttribute('data-order', orderSig);
+        el.innerHTML=ids.map(petTileHtml).join('');
+      }
+      if((_petQuery||'').trim()) applyPetFilter();   // 검색 중이면 새 타일 표시 반영(검색어 없으면 전부 표시라 생략)
+    }
     function catHomeHtml(){
       reconcilePets();   // 3시간 지난 그릇 비우고 똥 정산(멱등)
       const cats=activeCats();
@@ -2329,22 +2385,9 @@
       slotRow+='</div>';
       h+=slotRow;
       if(!owned.length) h+='<div class="empty" style="padding:20px;">아직 펫이 없어요. 알뜰샵에서 입양해 보세요 🐾</div>';
-      else { const rooms=homeH().rooms||[]; if(owned.length>=5) h+=petCtlBar();
-        const sorted=sortOwnedPets(owned);
-        // 수집형 인벤토리 그리드(5열·세로 나열). 정면 정지 초상(정렬 그리드는 정적이 깔끔·성능↑). 상태는 테두리+뱃지(이 방=강조+체크, 다른 방=방이름, 대기=기본). 걷는 모습은 위 방 무대에.
-        h+='<div class="catchips">'+sorted.map(id=>{
-        const roomOf=petRoomIndex(id), here=roomOf===roomIdx();     // 이 방/다른 방/대기 3상태(한 펫당 한 방)
-        const roomNm=roomOf>=0?((rooms[roomOf]&&rooms[roomOf].name)||('방 '+(roomOf+1))):'';
-        const lv=affectionLevel((ownedCatsMap()[id]||{}).affection).level;
-        const st=here?'이 방':(roomOf>=0?roomNm:'대기');
-        return '<div class="catchip'+(here?' on':(roomOf>=0?' elsewhere':''))+'" data-name="'+escapeHtml(catName(id))+'" role="button" tabindex="0" aria-pressed="'+here+'" onclick="toggleActiveCat(\''+id+'\')" title="'+escapeHtml(catName(id))+' · '+escapeHtml(st)+' · Lv.'+lv+'">'+
-          '<div class="cpic">'+catFace(id,{h:44})+'</div>'+
-          (roomOf>=0&&!here?'<span class="croom">'+escapeHtml(roomNm)+'</span>':'')+
-          (here?'<span class="csel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>':'')+
-          '<button class="cn-edit" aria-label="이름 짓기" onclick="event.stopPropagation();openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
-          '<div class="cn">'+catNameSpan(id,catName(id))+'</div>'+
-          '<div class="clv" aria-label="애정 레벨 '+lv+'"><span class="clv-h">'+heartSvg({h:9})+'</span>Lv.'+lv+'</div>'+
-        '</div>'; }).join('')+'</div>';
+      else { if(owned.length>=5) h+=petCtlBar();
+        // 수집형 인벤토리 그리드(5열·세로). 타일은 renderPetGrid가 채우고 타일 단위로 메모이즈(수백 마리 재파싱 회피). 걷는 모습은 위 방 무대에.
+        h+='<div class="catchips" id="petGrid"></div>';
         h+='<div id="petSearchEmpty" class="empty" style="display:none;padding:14px;">검색 결과가 없어요</div>';
         h+='<div class="hintline" style="margin-top:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>펫을 탭하면 <b>이 방</b>으로 옮겨져요(한 펫은 한 방에만, 방당 최대 '+sc+'마리). 다시 탭하면 대기.'+(sc<MAX_SLOTS?' 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장.':'')+'</div>'; }
       return h;
@@ -3017,7 +3060,7 @@
     function latestNoticeDate(){ return NOTICES.reduce(function(m,n){ return n.date>m?n.date:m; }, ''); }
     function markNewsSeen(){ const d=latestNoticeDate(); try{ localStorage.setItem('newsSeenAt', d); }catch(e){}
       try{ if(typeof gameRef==='function' && state.uid && d) gameRef().child('newsSeenAt').set(d); }catch(e){}   // 계정 동기화
-      updateNewsBadge(); }
+      updateNewsBadge(); refreshMoreBadges(); }   // 로컬 저장으로 안 본 공지=0 됐으니 더보기 '소식' 뱃지도 즉시 갱신(RTDB set이 값 동일이면 리스너가 안 뜨므로 여기서 직접)
     function unseenNoticeCount(){ const s=newsSeenAt(); return NOTICES.filter(function(n){ return n.date>s; }).length; }
     function giftUnread(){ return giftCount() + (typeof mailCount==='function'?mailCount():0); }   // 안 받은 선물 = 코드보상(gifts) + 친구선물(mailbox)
     function newsUnread(){ return giftUnread() + unseenNoticeCount(); }   // (브랜드 아이콘) 뱃지 = 안 받은 선물(코드+친구) + 안 본 공지
@@ -3028,6 +3071,9 @@
     function newsMoreCount(){ return unusedCouponCount() + unseenNoticeCount(); }
     // 좌상단 브랜드(알뜰 메인) 아이콘 = 소식 진입. 그 위에 안 받은 선물(코드+친구)+안 본 공지 수를 뱃지로.
     function updateNewsBadge(){ const el=$('newsBadge'); if(!el) return; const n=newsUnread(); if(n>0){ el.textContent=n>9?'9+':String(n); el.hidden=false; } else { el.hidden=true; el.textContent=''; } }
+    // 더보기 그리드의 알림 뱃지(선물함=giftUnread·소식=newsMoreCount 등)는 renderMore 시점에만 계산된다.
+    // game/localStorage가 바뀌어도(선물 받기·쿠폰 사용·공지 확인) 더보기 화면이 다시 안 그려지면 뱃지가 남으므로, 더보기 탭이 떠 있으면 즉시 재렌더해 알림을 지운다.
+    function refreshMoreBadges(){ if(state.view==='mode' && state.tab==='more' && typeof renderMore==='function') renderMore(); }
     // 쿠폰 보상 픽셀 아이콘(PROMO_CODES 타입별) — 이모지 대신 도트 아이콘 재사용.
     function couponIcon(d){ if(d.type==='coins') return coinSvg({h:15}); if(d.key==='rainbow_egg') return rainbowEggSvg({h:16}); if(d.key==='rainbow_box') return rainbowBoxSvg({h:16}); if(d.key==='egg') return eggSvg(0,{h:16}); if(d.key==='box') return boxSvg({h:16}); return coinSvg({h:15}); }
     // 공지 왼쪽 픽셀 아이콘 — 제목 키워드로 선택(선물=giftSvg·시즌 할인=seasonSvg·그 외=확성기). 제목 앞 이모지는 표시에서 제거.
