@@ -921,27 +921,27 @@
       rt_mr3n1k85:'lion_mane', rt_mr3n6laq:'cat_persian', rt_mr3nx5r4:'tiger_white', rt_mr3nyl3p:'cat_russianblue', rt_mr3ocsnm:'cat_bengal2', rt_mr5qur7u:'dog_mutt', rt_mr5sv8x4:'cat_panther', /* @rtmigrate */ };
     // size = 표시 배율(1=기본, 팔레트 아이콘 크기에 반영). footW×footH = 배치 격자 점유(가로×세로 칸). 캣타워=1×2, 스크래처=1×1, 화장실=1×1(정사각), 방석·밥그릇=1×1(작게, 밥그릇<방석). itemFoot()/furnScale()로 배치·팔레트에 반영.
     const ITEM_CATALOG = [
-      { id:'pond',     name:'연못',   price:70, size:2.6, footW:3, footH:2, floor:true, desc:'수련·잉어가 사는 작은 연못. 물 위에 다른 가구를 올릴 수 있어요.' },
-      { id:'cushion', name:'방석',   price:15, size:0.6,  footW:1, footH:1, desc:'고양이가 위에 잠시 올라가 쉬어요.' },
-      { id:'bowl',    name:'밥그릇', price:20, size:0.45, footW:1, footH:1, desc:'홈에서 탭해 사료를 채워요(3시간 뒤 비워짐).' },
-      { id:'waterbowl', name:'물그릇', price:20, size:0.45, footW:1, footH:1, desc:'홈에서 탭해 물을 채워요(3시간 뒤 비워짐).' },
-      { id:'tower',   name:'캣타워', price:35, size:2,    footW:1, footH:2, desc:'3층 발판 — 한 층에 올라가 쉬어요.' },
-      { id:'scratcher', name:'스크래처', price:18, size:2, footW:1, footH:1, desc:'옆에서 잠시 머물며 발톱을 갈아요.' },
-      { id:'litterbox', name:'화장실', price:25, size:1, footW:1, footH:1, desc:'비운 그릇 수만큼 똥이 쌓여요. 탭해 치우면 은화!' },
-      { id:'pethouse', name:'펫하우스', price:45, size:2, footW:1, footH:1, desc:'펫이 안에 들어가 정면을 보며 아늑하게 쉬어요.' },   // 점유칸 1×1(캠 렌더 크기 ROOM_H는 그대로 유지 — 좁은 칸에 큰 집)
-      { id:'catwheel', name:'캣휠', price:60, size:2, footW:2, footH:2, desc:'고양이가 안에서 달리며 운동하는 러닝휠.' },
-      { id:'plant',    name:'화분',   price:22, size:1, footW:1, footH:1, desc:'초록 화분. 고양이가 곁에서 잠시 쉬어요.' },
-      { id:'rug',      name:'러그',   price:200, size:2, footW:2, footH:2, floor:true, desc:'바닥에 까는 러그. 높이가 없어 위에 다른 가구를 올릴 수 있어요.' },   // 희귀 등급가. floor:true = 바닥 아이템(겹침 허용·맨 뒤 렌더)
-      { id:'window',   name:'창문',   price:800, size:2, footW:1, footH:1, wall:true, desc:'벽에 거는 창문. 해와 구름이 흘러가요.' },   // 전설 등급가 · 벽 가구
-      { id:'fishtank', name:'어항',   price:400, size:1.6, footW:1, footH:1, desc:'금붕어가 헤엄치는 어항. 고양이가 앞에서 구경해요.' },   // 특별 등급가
-      { id:'fireplace', name:'벽난로', price:800, size:2, footW:2, footH:1, wall:true, desc:'벽에 두는 벽난로. 불꽃이 일렁여요.' },   // 벽 가구(맨 아래 벽칸=바닥선)
-      { id:'fan',      name:'선풍기', price:800, size:1.6, footW:1, footH:1, desc:'날개가 도는 선풍기. 곁에서 바람을 쐬며 쉬어요.' },
-      { id:'hammock',  name:'해먹',   price:800, size:2, footW:2, footH:1, desc:'살랑이는 그물 침대. 펫이 안에 올라가 눕습니다.' },
-      { id:'teaser',   name:'낚싯대장난감', price:800, size:1.4, footW:1, footH:1, desc:'깃털이 흔들리는 낚싯대. 옆에서 톡톡 건드려요.' },
-      { id:'wallclock', name:'벽시계', price:800, size:1.4, footW:1, footH:1, wall:true, desc:'벽에 거는 벽시계. 추가 좌우로 흔들려요.' },
-      { id:'hangplant', name:'행잉플랜트', price:800, size:1.4, footW:1, footH:1, wall:true, desc:'벽·천장에 매다는 화분. 덩굴이 살랑여요.' },
-      { id:'mobile',   name:'모빌',   price:800, size:1.4, footW:1, footH:1, wall:true, desc:'천장에 매다는 모빌. 별·달·하트가 살랑여요.' },
-      { id:'jingleball', name:'방울공', price:800, size:1, footW:1, footH:1, desc:'통통 흔들리는 방울 공. 펫이 굴리며 놀아요.' }
+      { id:'pond', cat:'rest',     name:'연못',   price:70, size:2.6, footW:3, footH:2, floor:true, desc:'수련·잉어가 사는 작은 연못. 물 위에 다른 가구를 올릴 수 있어요.' },
+      { id:'cushion', cat:'rest', name:'방석',   price:15, size:0.6,  footW:1, footH:1, desc:'고양이가 위에 잠시 올라가 쉬어요.' },
+      { id:'bowl', cat:'care',    name:'밥그릇', price:20, size:0.45, footW:1, footH:1, desc:'홈에서 탭해 사료를 채워요(3시간 뒤 비워짐).' },
+      { id:'waterbowl', cat:'care', name:'물그릇', price:20, size:0.45, footW:1, footH:1, desc:'홈에서 탭해 물을 채워요(3시간 뒤 비워짐).' },
+      { id:'tower', cat:'rest',   name:'캣타워', price:35, size:2,    footW:1, footH:2, desc:'3층 발판 — 한 층에 올라가 쉬어요.' },
+      { id:'scratcher', cat:'play', name:'스크래처', price:18, size:2, footW:1, footH:1, desc:'옆에서 잠시 머물며 발톱을 갈아요.' },
+      { id:'litterbox', cat:'care', name:'화장실', price:25, size:1, footW:1, footH:1, desc:'비운 그릇 수만큼 똥이 쌓여요. 탭해 치우면 은화!' },
+      { id:'pethouse', cat:'rest', name:'펫하우스', price:45, size:2, footW:1, footH:1, desc:'펫이 안에 들어가 정면을 보며 아늑하게 쉬어요.' },   // 점유칸 1×1(캠 렌더 크기 ROOM_H는 그대로 유지 — 좁은 칸에 큰 집)
+      { id:'catwheel', cat:'play', name:'캣휠', price:60, size:2, footW:2, footH:2, desc:'고양이가 안에서 달리며 운동하는 러닝휠.' },
+      { id:'plant', cat:'decor',    name:'화분',   price:22, size:1, footW:1, footH:1, desc:'초록 화분. 고양이가 곁에서 잠시 쉬어요.' },
+      { id:'rug', cat:'decor',      name:'러그',   price:200, size:2, footW:2, footH:2, floor:true, desc:'바닥에 까는 러그. 높이가 없어 위에 다른 가구를 올릴 수 있어요.' },   // 희귀 등급가. floor:true = 바닥 아이템(겹침 허용·맨 뒤 렌더)
+      { id:'window', cat:'decor',   name:'창문',   price:800, size:2, footW:1, footH:1, wall:true, desc:'벽에 거는 창문. 해와 구름이 흘러가요.' },   // 전설 등급가 · 벽 가구
+      { id:'fishtank', cat:'decor', name:'어항',   price:400, size:1.6, footW:1, footH:1, desc:'금붕어가 헤엄치는 어항. 고양이가 앞에서 구경해요.' },   // 특별 등급가
+      { id:'fireplace', cat:'decor', name:'벽난로', price:800, size:2, footW:2, footH:1, wall:true, desc:'벽에 두는 벽난로. 불꽃이 일렁여요.' },   // 벽 가구(맨 아래 벽칸=바닥선)
+      { id:'fan', cat:'decor',      name:'선풍기', price:800, size:1.6, footW:1, footH:1, desc:'날개가 도는 선풍기. 곁에서 바람을 쐬며 쉬어요.' },
+      { id:'hammock', cat:'rest',  name:'해먹',   price:800, size:2, footW:2, footH:1, desc:'살랑이는 그물 침대. 펫이 안에 올라가 눕습니다.' },
+      { id:'teaser', cat:'play',   name:'낚싯대장난감', price:800, size:1.4, footW:1, footH:1, desc:'깃털이 흔들리는 낚싯대. 옆에서 톡톡 건드려요.' },
+      { id:'wallclock', cat:'decor', name:'벽시계', price:800, size:1.4, footW:1, footH:1, wall:true, desc:'벽에 거는 벽시계. 추가 좌우로 흔들려요.' },
+      { id:'hangplant', cat:'decor', name:'행잉플랜트', price:800, size:1.4, footW:1, footH:1, wall:true, desc:'벽·천장에 매다는 화분. 덩굴이 살랑여요.' },
+      { id:'mobile', cat:'decor',   name:'모빌',   price:800, size:1.4, footW:1, footH:1, wall:true, desc:'천장에 매다는 모빌. 별·달·하트가 살랑여요.' },
+      { id:'jingleball', cat:'play', name:'방울공', price:800, size:1, footW:1, footH:1, desc:'통통 흔들리는 방울 공. 펫이 굴리며 놀아요.' }
     ];
     // 소비 아이템(배치 불가) — 홈에서 밥그릇/물그릇을 탭해 채울 때 소모. 알뜰샵 "소비" 탭에서 구매.
     const CONSUM_CATALOG = [
@@ -2506,8 +2506,9 @@
     function wallRowHtml(w){ return fmRowHtml('wall', w.id, w.name, '<span class="fm-swatch" style="background:'+wallCss(w.id)+'"></span>', wallTierOf(w.id), wallBuyPrice(w.id), isGachaOnlyWall(w.id), fmOver(_wallCfg,w.id)); }
     function floorRowHtml(f){ return fmRowHtml('floor', f.id, f.name, '<span class="fm-swatch" style="background:'+floorCss(f.id)+'"></span>', floorTierOf(f.id), floorBuyPrice(f.id), isGachaOnlyFloor(f.id), fmOver(_floorCfg,f.id)); }
     // 전역 저장(관리자만) — onchange 즉시 반영. price 빈값/음수면 오버라이드 제거(기본값 복귀).
+    // 등급 선택 시 가격 오버라이드를 지워 가격이 등급가(TIER_PRICE)를 따르게 한다(관리 화면이 즉시 재렌더돼 금액 반영).
     function setFurnTier(id, tier){ if(!(typeof isDev==='function'&&isDev())) return;
-      db.ref('config/furniture/'+id+'/tier').set(tier).then(function(){ const it=ITEM_CATALOG.find(x=>x.id===id); toast((it?it.name:id)+' 등급 = '+(tierInfo(tier).name)); }).catch(_cfgWriteErr); }
+      db.ref('config/furniture/'+id).update({tier:tier, price:null}).then(function(){ const it=ITEM_CATALOG.find(x=>x.id===id); toast((it?it.name:id)+' 등급 = '+tierInfo(tier).name+' · 가격 '+(TIER_PRICE[tier]||0)+' 은화'); }).catch(_cfgWriteErr); }
     function setFurnPrice(id, val){ if(!(typeof isDev==='function'&&isDev())) return;
       const n=parseInt(val,10); const ref=db.ref('config/furniture/'+id+'/price');
       const it=ITEM_CATALOG.find(x=>x.id===id);
@@ -2517,7 +2518,7 @@
       db.ref('config/furniture/'+id).remove().then(function(){ const it=ITEM_CATALOG.find(x=>x.id===id); toast((it?it.name:id)+' 기본값으로 되돌렸어요'); }).catch(_cfgWriteErr); }
     // 벽지(config/wallpaper) 전역 저장
     function setWallTier(id, tier){ if(!(typeof isDev==='function'&&isDev())) return;
-      db.ref('config/wallpaper/'+id+'/tier').set(tier).then(function(){ const w=WALLPAPER_CATALOG.find(x=>x.id===id); toast((w?w.name:id)+' 벽지 등급 = '+(tierInfo(tier).name)); }).catch(_cfgWriteErr); }
+      db.ref('config/wallpaper/'+id).update({tier:tier, price:null}).then(function(){ const w=WALLPAPER_CATALOG.find(x=>x.id===id); toast((w?w.name:id)+' 벽지 등급 = '+tierInfo(tier).name+' · 가격 '+(TIER_PRICE[tier]||0)+' 은화'); }).catch(_cfgWriteErr); }
     function setWallPrice(id, val){ if(!(typeof isDev==='function'&&isDev())) return;
       const n=parseInt(val,10); const ref=db.ref('config/wallpaper/'+id+'/price'); const w=WALLPAPER_CATALOG.find(x=>x.id===id);
       if(isNaN(n)||n<0){ ref.set(null).then(function(){ toast((w?w.name:id)+' 벽지 가격 기본값'); }).catch(_cfgWriteErr); }
@@ -2526,7 +2527,7 @@
       db.ref('config/wallpaper/'+id).remove().then(function(){ const w=WALLPAPER_CATALOG.find(x=>x.id===id); toast((w?w.name:id)+' 벽지 기본값으로 되돌렸어요'); }).catch(_cfgWriteErr); }
     // 바닥 스킨(config/floor) 전역 저장
     function setFloorTier(id, tier){ if(!(typeof isDev==='function'&&isDev())) return;
-      db.ref('config/floor/'+id+'/tier').set(tier).then(function(){ const f=FLOOR_CATALOG.find(x=>x.id===id); toast((f?f.name:id)+' 바닥 등급 = '+(tierInfo(tier).name)); }).catch(_cfgWriteErr); }
+      db.ref('config/floor/'+id).update({tier:tier, price:null}).then(function(){ const f=FLOOR_CATALOG.find(x=>x.id===id); toast((f?f.name:id)+' 바닥 등급 = '+tierInfo(tier).name+' · 가격 '+(TIER_PRICE[tier]||0)+' 은화'); }).catch(_cfgWriteErr); }
     function setFloorPrice(id, val){ if(!(typeof isDev==='function'&&isDev())) return;
       const n=parseInt(val,10); const ref=db.ref('config/floor/'+id+'/price'); const f=FLOOR_CATALOG.find(x=>x.id===id);
       if(isNaN(n)||n<0){ ref.set(null).then(function(){ toast((f?f.name:id)+' 바닥 가격 기본값'); }).catch(_cfgWriteErr); }
@@ -3514,7 +3515,7 @@
     // 벽지 등급: WALL_TIER 기본값에 전역 config/wallpaper 병합. 가격: config 오버라이드 ← WALLPAPER_CATALOG.price.
     function effWallTier(){ const base=Object.assign({}, WALL_TIER); if(_wallCfg){ Object.keys(_wallCfg).forEach(function(id){ const t=_wallCfg[id]&&_wallCfg[id].tier; if(t) base[id]=t; }); } return base; }
     function wallTierOf(id){ return effWallTier()[id]||'normal'; }
-    function wallBuyPrice(id){ const o=_wallCfg&&_wallCfg[id]; if(o&&o.price!=null&&o.price!==''&&!isNaN(o.price)) return Math.max(0,Number(o.price)); const w=WALLPAPER_CATALOG.find(x=>x.id===id); return w?(w.price||0):0; }
+    function wallBuyPrice(id){ const o=_wallCfg&&_wallCfg[id]; if(o&&o.price!=null&&o.price!==''&&!isNaN(o.price)) return Math.max(0,Number(o.price)); if(id==='default') return 0; return TIER_PRICE[wallTierOf(id)]||0; }   // 등급가(펫·가구와 동일)
     // 🎁 랜덤박스 통합 풀: 가구(it:)는 전 등급이 풀에 들어가 낮은 등급 롤도 채운다. 바닥(fl:)·벽지(wl:)는 목록 자체가 특별↑(가챠 전용). 타입 프리픽스로 지급 대상 구분.
     //  · 판매 제외(가챠 전용) 판정은 등급 기반(isGachaOnlyItem/Floor/Wall = tier≥epic) — 등급만 지정하면 "특별↑=박스에서만"이 자동 적용된다.
     function boxPool(){ const m={}; const it=effItemTier(), fl=effFloorTier(), wl=effWallTier();
@@ -3533,7 +3534,7 @@
     // 바닥 스킨 등급: FLOOR_TIER 기본값에 전역 config/floor 병합. 가격: config 오버라이드 ← FLOOR_CATALOG.price.
     function effFloorTier(){ const base=Object.assign({}, FLOOR_TIER); if(_floorCfg){ Object.keys(_floorCfg).forEach(function(id){ const t=_floorCfg[id]&&_floorCfg[id].tier; if(t) base[id]=t; }); } return base; }
     function floorTierOf(id){ return effFloorTier()[id]||'normal'; }
-    function floorBuyPrice(id){ const o=_floorCfg&&_floorCfg[id]; if(o&&o.price!=null&&o.price!==''&&!isNaN(o.price)) return Math.max(0,Number(o.price)); const f=FLOOR_CATALOG.find(x=>x.id===id); return f?(f.price||0):0; }
+    function floorBuyPrice(id){ const o=_floorCfg&&_floorCfg[id]; if(o&&o.price!=null&&o.price!==''&&!isNaN(o.price)) return Math.max(0,Number(o.price)); if(id==='default') return 0; return TIER_PRICE[floorTierOf(id)]||0; }   // 등급가(펫·가구와 동일)
     // 랜덤박스 보상(바닥/벽지/가구) 등장 아트·이름
     function rewardBoxArt(res){ if(res.type==='floor') return '<div class="fx-tile" style="width:104px;height:104px;border-radius:16px;box-shadow:0 6px 16px rgba(0,0,0,.25);background:'+floorCss(res.id)+'"></div>';
       if(res.type==='wall') return '<div class="fx-tile" style="width:104px;height:104px;border-radius:16px;box-shadow:0 6px 16px rgba(0,0,0,.25);background:'+wallCss(res.id)+'"></div>';
@@ -3985,11 +3986,7 @@
     function setPlaceMode(m){ _placeMode=m; if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     // 배치 인벤토리 분류 — 보유 가구를 케어/휴식/놀이/장식 탭으로 나눠 보여준다(펫 인벤토리와 동일한 방식·정렬/검색 없음).
     const PLACE_CATS = [['care','케어'],['rest','휴식'],['play','놀이'],['decor','장식']];
-    const PLACE_CAT = { bowl:'care', waterbowl:'care', litterbox:'care',
-      cushion:'rest', tower:'rest', pethouse:'rest', hammock:'rest', pond:'rest',
-      scratcher:'play', catwheel:'play', teaser:'play', jingleball:'play',
-      plant:'decor', rug:'decor', fishtank:'decor', fan:'decor' };
-    function placeCatOf(id){ return PLACE_CAT[id]||'decor'; }
+    function placeCatOf(id){ const it=ITEM_CATALOG.find(x=>x.id===id); return (it&&it.cat)||'decor'; }   // 분류 단일 소스 = ITEM_CATALOG 의 cat 필드(없으면 장식 폴백)
     let _placeCat=null;
     function setPlaceCat(c){ _placeCat=c; if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     // 팔레트 아이콘 높이 = 방 렌더 크기(ROOM_H)에 sqrt로 완만 비례(작은 그릇은 작게·큰 캣타워는 크게, 극단비 압축). 16~30px 클램프.
@@ -4011,10 +4008,10 @@
           const left=(gridLeftFrac(c)*100).toFixed(3), top=(((r-1)/WALL_ROWS)*100).toFixed(3), ww=(gridSpanFrac(w)*100).toFixed(3), hh=(100/WALL_ROWS).toFixed(3);
           return '<div class="gitem" style="left:'+left+'%;top:'+top+'%;width:'+ww+'%;height:'+hh+'%" onclick="event.stopPropagation();openItemMenu(\''+key+'\',true)"><span class="gsc">'+furnSvg(id,{fit:true})+'</span></div>'; }).join('');
         const wgrid='<div class="gridwall" id="wallGrid" onclick="wallPlaceClick(event)">'+witems+'</div>';
-        const wpal=ITEM_CATALOG.filter(it=>isWallItem(it.id) && itemQty(it.id)>0).map(it=>
-          '<button class="pitem'+(_selWall===it.id?' on':'')+'" onclick="selWallItem(\''+it.id+'\')"><span class="pic">'+furnSvg(it.id,{h:palPicH(it.id)})+'</span><span>'+it.name+'</span><span class="pq">남은 '+itemRemaining(it.id)+'</span></button>').join('');
+        const wpal=ITEM_CATALOG.filter(it=>isWallItem(it.id) && itemQty(it.id)>0).map(it=>{ const rem=itemRemaining(it.id), sold=rem<=0;
+          return '<button class="pitem'+(_selWall===it.id?' on':'')+(sold?' soldout':'')+'" onclick="selWallItem(\''+it.id+'\')"><span class="pic">'+furnSvg(it.id,{h:palPicH(it.id)})+'</span><span>'+it.name+'</span><span class="pq">'+(sold?'전부 배치됨':'남은 '+rem)+'</span></button>'; }).join('');
         const wallHint='<div class="hintline" style="margin:8px 0 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16"/></svg>벽 가구를 <b>선택</b>하고 <b>벽 격자를 탭</b>해 걸어요(위=천장·아래=바닥선). 배치된 항목을 탭하면 회수/판매. <b>특별↑ 벽 가구는 랜덤박스로만</b> 얻어요.</div>';
-        body=wgrid+wallHint+'<div class="palette catinv">'+(wpal||'<div class="palempty">보유한 벽 가구가 없어요<br><span>랜덤박스에서 벽 가구를 모아보세요</span></div>')+'</div>';
+        body=wgrid+wallHint+'<div class="palette catinv">'+(wpal||'<div class="palempty">보유한 벽 가구가 없어요<br><span>랜덤박스에서 벽 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>')+'</div>';
       } else {
         // 바닥 격자(12×12) — 기존 방꾸미기(드래그 이동·롱프레스). 벽 가구는 팔레트에서 제외.
         const placed=room().placed||{};
@@ -4026,11 +4023,11 @@
         const owned=ITEM_CATALOG.filter(it=>!isWallItem(it.id) && itemQty(it.id)>0);
         if(!_placeCat || !PLACE_CATS.some(c=>c[0]===_placeCat)) _placeCat=(PLACE_CATS.find(c=>owned.some(it=>placeCatOf(it.id)===c[0]))||PLACE_CATS[0])[0];
         const catTabs='<div class="subseg placecat">'+PLACE_CATS.map(c=>{ const n=owned.filter(it=>placeCatOf(it.id)===c[0]).length;
-          return '<button class="'+(_placeCat===c[0]?'on':'')+'" onclick="setPlaceCat(\''+c[0]+'\')">'+c[1]+(n?' <b>'+n+'</b>':'')+'</button>'; }).join('')+'</div>';
-        const pal=owned.filter(it=>placeCatOf(it.id)===_placeCat).map(it=>{ const foot=itemFoot(it.id);
-          return '<button class="pitem'+(_selItem===it.id?' on':'')+'" onpointerdown="palDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selItem(\''+it.id+'\')"><span class="pic">'+furnSvg(it.id,{h:palPicH(it.id)})+'</span><span>'+it.name+'</span><span class="pq">'+foot.w+'×'+foot.h+' · 남은 '+itemRemaining(it.id)+'</span></button>'; }).join('');
+          return '<button class="'+(_placeCat===c[0]?'on':'')+(n?'':' dim')+'" onclick="setPlaceCat(\''+c[0]+'\')">'+c[1]+(n?' <b>'+n+'</b>':'')+'</button>'; }).join('')+'</div>';
+        const pal=owned.filter(it=>placeCatOf(it.id)===_placeCat).map(it=>{ const foot=itemFoot(it.id), rem=itemRemaining(it.id), sold=rem<=0;
+          return '<button class="pitem'+(_selItem===it.id?' on':'')+(sold?' soldout':'')+'" onpointerdown="palDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selItem(\''+it.id+'\')"><span class="pic">'+furnSvg(it.id,{h:palPicH(it.id)})+'</span><span>'+it.name+'</span><span class="pq">'+(sold?'전부 배치됨':foot.w+'×'+foot.h+' · 남은 '+rem)+'</span></button>'; }).join('');
         const dragHint='<div class="hintline" style="margin:8px 0 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5V5.5a1.5 1.5 0 0 1 3 0v5"/><path d="M12 10V4.5a1.5 1.5 0 0 1 3 0V10"/><path d="M15 9.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-1a6 6 0 0 1-5.2-3l-2-3.5a1.5 1.5 0 0 1 2.6-1.5L9 14"/></svg><b>꾹 눌러서</b> 끌면 배치·이동돼요(짧게 탭하면 선택·메뉴). 화면 스크롤과 겹치지 않아요.</div>';
-        const palBody=pal||'<div class="palempty">이 분류에 보유한 가구가 없어요<br><span>알뜰샵·랜덤박스에서 가구를 모아보세요</span></div>';
+        const palBody=pal||'<div class="palempty">이 분류에 보유한 가구가 없어요<br><span>알뜰샵·랜덤박스에서 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>';
         body=grid+dragHint+catTabs+'<div class="palette catinv">'+palBody+'</div>';
       }
       return roomStripHtml()+'<div class="editwrap">'+preview+toggle+body+'</div>';
