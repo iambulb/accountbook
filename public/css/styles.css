@@ -876,7 +876,7 @@
     .cr-prop .ffx-swing .px { animation:ffswing 3.4s ease-in-out infinite; }
     .cr-prop .ffx-sway .px  { animation:ffsway 4.6s ease-in-out infinite; }
     /* 회전/흔들림 중심(부품 위치) — 가구별 */
-    .cr-prop .ffx-catwheel .px  { transform-origin:47.8% 41%; }   /* 휠 정중심 → 제자리 회전(옆으로 흔들림 방지) */
+    .cr-prop .ffx-catwheel .px  { transform-origin:47.9% 43.75%; }   /* 휠 축(정중심) → 링 전체가 제자리 회전(옆으로 흔들림 방지) */
     .cr-prop .ffx-tower .px     { transform-origin:84% 20%; }   /* 끈 매단 지점 */
     .cr-prop .ffx-scratcher .px { transform-origin:75% 13%; }   /* 끈 매단 지점 */
     .cr-prop .ffx-plant .px     { transform-origin:50% 57%; }   /* 잎 아래(줄기 위) → 잎만 좌우로 기울어 살랑 */
@@ -1318,13 +1318,16 @@
     .newsalert .nai .px { display:block; }
     .newsalert .nat { flex:1; min-width:0; } .newsalert .nat b { font-size:14px; } .newsalert .nat span { display:block; font-size:12px; color:var(--sub); margin-top:1px; }
     .newsalert .buy { flex:none; }
-    .newsupd { display:flex; gap:10px; align-items:flex-start; padding:8px 2px; border-bottom:1px solid var(--line); }
+    /* 업데이트 내역 항목을 감싸는 카드 — 항목들이 '업데이트 내역' 섹션 안에 속한 것으로 명확히 보이게 */
+    .newscard { border:1px solid var(--bd); border-radius:13px; background:var(--soft); padding:2px 13px; margin-top:2px; }
+    .newsupd { display:flex; gap:11px; align-items:flex-start; padding:11px 0; border-bottom:1px solid var(--line); }
+    .newscard .newsupd:last-child { border-bottom:none; }   /* 카드 마지막 항목은 구분선 없음 */
     .newsupd .nu-ic { flex:0 0 auto; display:inline-flex; margin-top:1px; }
     .newsupd .nu-tx { flex:1 1 auto; min-width:0; }
     .newsupd b { font-size:13px; font-weight:750; } .newsupd .nu-tx span { display:block; font-size:12px; color:var(--sub); margin-top:2px; line-height:1.45; }
-    .cnote { font-size:12.5px; color:var(--sub); margin:22px 2px 8px; padding-left:11px; border-left:3px solid var(--gold,#e0a43c); line-height:1.5; }
+    .cnote { font-size:12.5px; color:var(--sub); margin:26px 2px 12px; padding-left:11px; border-left:3px solid var(--gold,#e0a43c); line-height:1.5; }
     .cnote b { color:var(--text); }
-    .cpn { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 12px; border:1px solid var(--bd); border-radius:11px; background:var(--bg); margin-top:7px; }
+    .cpn { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 13px; border:1px solid var(--bd); border-radius:11px; background:var(--bg); margin-top:10px; }
     .cpn code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-weight:700; font-size:12px; color:var(--text); background:var(--soft); padding:3px 8px; border-radius:7px; }
     .cpn .rw { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--sub); white-space:nowrap; }
     .cpn .rw .ci { display:inline-flex; } .cpn .rw .px { display:block; }

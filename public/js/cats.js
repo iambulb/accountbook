@@ -319,31 +319,33 @@
       "..XWwWXDDDDDDDDXWwWX..",
       "..XXXXXDDDDDDDDXXXXX.."
     ];
-    // 캣휠(러닝휠): 세로로 선 큰 링(러닝 트랙, X=림 테두리·W=밴드·H=하이라이트·T=트레드 슬랫) + 롤러(R)·나무 스탠드(D). 2×2, 가로세로비 ≈ 24/23.
+    // 캣휠(러닝휠): 러닝 트랙 링(X=림·W=밴드·H=하이라이트·T=러닝 발판(rung)) + 가운데 축(허브) + 롤러(R)·나무 스탠드(D). 캠에선 링 전체가 제자리 회전.
+    // 맨 위 1줄 여백(윗부분 잘려 보이지 않게). 24×24, 가로세로비 1.0. 회전 중심 ≈ (47.9%, 43.75%).
     const M_CATWHEEL = [
-      ".......XXXHHHXXX........",
-      ".....XXHTHHHHHTHXX......",
-      "....XXHHHXXXXXHHHXX.....",
-      "...XXHHXX.....XXHHXX....",
-      "..XXWHX.........XWWXX...",
-      "..XWWX...........XWWX...",
-      "..XTWX...........XWTX...",
-      ".XWWX.............XWWX..",
-      ".XWWX.............XWWX..",
-      ".XWWX.............XWWX..",
-      ".XWWX.............XWWX..",
-      ".XWWX.............XWWX..",
-      ".XXTXX...........XXTXX..",
-      "..XWWX...........XWWX...",
-      "..XWWWX.........XWWWX...",
-      "...XWWWX.......XWWWX....",
-      "....XWWWXXXXXXXWWWX.....",
-      ".....XWWTWWWWWTWWX......",
-      "......XXWWWWWWWXX.......",
-      ".......RRXXXXXXRR.......",
-      ".......DDDDDDDDDR.......",
-      ".....DDDDDDDDDDDDD......",
-      "...DDDDDDDDDDDDDDDDD...."
+      "........................",
+      "...........XX...........",
+      "........XXXHHXXX........",
+      "......XXTTHHHHTTXX......",
+      ".....XHHHXXXXXXHHWX.....",
+      "....XWHXX......XXWWX....",
+      "....XWXX........XXWX....",
+      "...XTWX..........XWTX...",
+      "...XTX............XTX...",
+      "...XWX.....XX.....XWX...",
+      "..XWWX....XWWX....XWWX..",
+      "..XWWX....XWWX....XWWX..",
+      "...XWX.....XX.....XWX...",
+      "...XTX............XTX...",
+      "...XTWX..........XWTX...",
+      "....XWXX........XXWX....",
+      "....XWWXX......XXWWX....",
+      ".....XWWWXXXXXXWWWX.....",
+      "......XXTTWWWWTTXX......",
+      "........RRXWWRRX........",
+      "........RR...RR.........",
+      "......DDDDDDDDDDD.......",
+      "...DDDDDDDDDDDDDDDDD....",
+      "DDDDDDDDDDDDDDDDDDDDDDD."
     ];
     const CAT_PALS = {
       cat_mackerel:{X:'#3b4048',B:'#9AA6B4',L:'#D8DDE3',S:'#6E7A8A',E:'#22242b',P:'#E08b9d',I:'#E6A9B4'},
@@ -998,20 +1000,24 @@
     const BELL_PAL={B:'#f7c045',D:'#d79a2a',L:'#ffe9ad',O:'#9c6a15'};
     function bellSvg(opt){ return pxSvg(M_BELL, BELL_PAL, opt); }
     // 📢 확성기(공지사항) 픽셀 — 오른쪽으로 벌어진 삼각 나팔 + 입구 테두리(M) + 금색 음파(S). R=몸체·H=하이라이트.
+    // 확성기(공지·업데이트 내역) — 상세 도트: 마우스피스(하이라이트)→원뿔→벨 림→금색 사운드웨이브 2겹 + 손잡이.
     const M_MEGA = [
-      "........M...",
-      ".......RM.S.",
-      ".....RRRM...",
-      "....RRRRM.S.",
-      "..RRRRRRM...",
-      ".HRRRRRRM.SS",
-      "..RRRRRRM...",
-      "....RRRRM.S.",
-      ".....RRRM...",
-      ".......RM.S.",
-      "........M..."
+      "..................",
+      "..........KKK.....",
+      "........KKMMMK....",
+      "......KKMMMMMK...S",
+      "....KKMMMMMMMK.S.S",
+      "..KKMHMMMMMMMK.S.S",
+      ".KKMHHMMMMMMMK.S.S",
+      "..KKMHMMMMMMMK.S.S",
+      "....KKMMMMMMMK.S.S",
+      "......KKMMMMMK...S",
+      "........KKmMMK....",
+      ".....GGG..KKK.....",
+      "....GGG...........",
+      "...GG............."
     ];
-    const MEGA_PAL={R:'#f06e5a',H:'#ffc9ba',M:'#963628',S:'#e0a43c'};
+    const MEGA_PAL={K:'#7a2b1e',M:'#f06e5a',m:'#d24632',H:'#ffcdbe',S:'#e0a43c',G:'#6b5138'};
     function megaSvg(opt){ return pxSvg(M_MEGA, MEGA_PAL, opt); }
     // 📋 미션(체크리스트 클립보드) 픽셀 — 금색 집게 + 흰 종이 + 초록 체크 항목. 더보기 '미션' 진입 아이콘.
     const M_MISSION = [
@@ -1186,7 +1192,7 @@
     // 캠 전용 연출(움직이는 부분만 오버레이로 분리해 CSS 애니메이션): 같은 매트릭스를 팔레트만 나눠 두 겹으로 그림.
     //  base=움직이는 글자 제외, fx=그 글자만 → 완벽히 겹쳐 정지 배경 + 움직이는 부품(캣휠 트레드 회전·펫알 방울 흔들림·화분 잎 살랑).
     const FURN_ANIM = {   // move=오버레이(움직이는)로 뺄 글자, type=애니메이션 종류(spin/swing/sway)
-      catwheel:{ type:'spin',  move:['T','H'] },   // 정지된 림 안에서 트레드·하이라이트만 제자리 회전(림 픽셀이 뭉개지지 않게 링은 고정 → 바퀴 도는 느낌만)
+      catwheel:{ type:'spin',  move:['X','W','H','T'] },   // 링(림·밴드·하이라이트·발판) 전체가 축 중심으로 제자리 회전 — 롤러 R·스탠드 D만 정지
       tower:   { type:'swing', move:['T','O','K'] },   // 매달린 장난감 공(빨강 T·하이라이트 O)+끈(K)
       scratcher:{type:'swing', move:['T','O','H'] },   // 매달린 공(O)+하이라이트(H)+끈(T)
       plant:   { type:'sway',  move:['G','L','l'] }    // 잎만 살랑(줄기 S·화분 P/p/X는 정지)
@@ -1213,7 +1219,7 @@
     // 방 렌더 높이 배율(실물감) — 캣타워 제일 큼, 스크래처는 고양이 키만큼, 화장실=낮은 상자, 방석·그릇 작게.
     const ROOM_H = { tower:6.2, scratcher:1.9, pethouse:2.8, catwheel:3.0, plant:2, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6 };
     // 가구 그래픽 가로세로비(cols/rows) — 좌측하단 앵커라 그래픽 중앙 x = 좌측 edge + fh*aspect/2 (고양이가 가구 중앙에 서게).
-    const FURN_ASPECT = { tower:0.533, scratcher:0.636, pethouse:1.1, catwheel:1.04, plant:0.6, litterbox:1.167, cushion:1.778, bowl:1.778, waterbowl:1.778 };
+    const FURN_ASPECT = { tower:0.533, scratcher:0.636, pethouse:1.1, catwheel:1.0, plant:0.6, litterbox:1.167, cushion:1.778, bowl:1.778, waterbowl:1.778 };
     function furnAspect(id){ return FURN_ASPECT[id]||1; }
     function furnRoomH(id, isDock, depth){
       const mult = ROOM_H[id] || 1;
@@ -3235,8 +3241,10 @@
     }
     // ===== 📢 소식(알림·이벤트·공지) — 알뜰 아이콘 '소식' 화면 =====
     // 업데이트 공지 — 기본값(폴백). 운영은 RTDB config/notices(관리자만 쓰기)에서 덮어씀(loadNotices). 최신순.
+    // 업데이트 내역(요약) — 최신순. RTDB config/notices가 있으면 그걸로 덮어씀(아래는 기본값).
     let NOTICES = [
-      { date:'2026-07-04', t:'소식 화면 · 미션 정리', s:'알뜰 아이콘=소식(알림·이벤트·공지), 미션은 더보기로 모음. 친구 선물 알림 반영' },
+      { date:'2026-07-04', t:'소식 화면 개편 · 업데이트 내역', s:'공지를 업데이트 내역으로 정리하고, 확성기 아이콘·레이아웃을 다듬었어요' },
+      { date:'2026-07-03', t:'친구 집 캠 · 뽑기 연출 개선', s:'친구 집 가구가 움직이고, 방문 중에도 내 펫이 계속 돌아다녀요. 전설·한정 뽑기엔 검은 고양이가 톡!' },
       { date:'2026-07-01', t:'🌟 이달의 펫 시즌 할인', s:'매월 은화로 살 수 있는 펫 하나가 20% 할인으로 바뀌어요' },
       { date:'2026-06-28', t:'🎁 친구 응원 선물', s:'친구 집에서 하루 한 번 응원 선물을 주고받을 수 있어요' }
     ];
@@ -3268,7 +3276,7 @@
     // 쿠폰 보상 픽셀 아이콘(PROMO_CODES 타입별) — 이모지 대신 도트 아이콘 재사용.
     function couponIcon(d){ if(d.type==='coins') return coinSvg({h:15}); if(d.key==='rainbow_egg') return rainbowEggSvg({h:16}); if(d.key==='rainbow_box') return rainbowBoxSvg({h:16}); if(d.key==='egg') return eggSvg(0,{h:16}); if(d.key==='box') return boxSvg({h:16}); return coinSvg({h:15}); }
     // 공지 왼쪽 픽셀 아이콘 — 제목 키워드로 선택(선물=giftSvg·시즌 할인=seasonSvg·그 외=확성기). 제목 앞 이모지는 표시에서 제거.
-    function noticeIcon(n){ const t=(n&&n.t)||''; if(/선물/.test(t)) return giftSvg({h:24}); if(/할인|시즌|이달의\s*펫/.test(t)) return seasonSvg({h:24}); return megaSvg({h:20}); }
+    function noticeIcon(n){ const t=(n&&n.t)||''; if(/선물/.test(t)) return giftSvg({h:17}); if(/할인|시즌|이달의\s*펫/.test(t)) return seasonSvg({h:17}); return megaSvg({h:16}); }   // 항목 아이콘 작게(24/20→17/16)
     function noticeTitle(n){ return ((n&&n.t)||'').replace(/^\s*(?:\p{Extended_Pictographic}[️‍]*)+\s*/u, ''); }
     function catNewsHtml(){
       let h='';
@@ -3281,8 +3289,9 @@
       if(fid){ const fc=PET_CATALOG.find(function(x){ return x.id===fid; }); if(fc){
         h+='<div class="featbanner" role="button" tabindex="0" onclick="openCatHouse(\'shop\')"><span class="fstar">'+sparkSvg({h:20})+'</span><div class="fb-txt"><b>'+monthLabelKo()+' 이달의 펫 · '+catNameSpan(fid,fc.name)+'</b><span class="s">이번 달만 '+Math.round(FEATURED_DISCOUNT*100)+'% 할인 — '+catBuyPrice(fid)+' 은화'+(ownsCat(fid)?' (보유 완료)':' · 사러가기')+'</span></div><span class="fb-face">'+catFace(fid,{h:40})+'</span></div>'; } }
       else { h+='<div class="note" style="margin:2px 0 6px;">진행 중인 이벤트가 곧 열려요.</div>'; }
-      h+='<div class="sech" style="margin-top:16px;"><span class="l"><span class="sech-ic">'+megaSvg({h:15})+'</span> 공지사항</span></div>';
-      h+=NOTICES.map(function(n){ return '<div class="newsupd"><span class="nu-ic">'+noticeIcon(n)+'</span><div class="nu-tx"><b>'+escapeHtml(noticeTitle(n))+'</b><span>'+escapeHtml(n.s)+'</span></div></div>'; }).join('');
+      h+='<div class="sech" style="margin-top:16px;"><span class="l"><span class="sech-ic">'+megaSvg({h:16})+'</span> 업데이트 내역</span></div>';
+      // 항목들을 카드(.newscard)로 묶어 '업데이트 내역' 안에 속한 것으로 명확히 보이게(레이아웃 개편).
+      h+='<div class="newscard">'+NOTICES.map(function(n){ return '<div class="newsupd"><span class="nu-ic">'+noticeIcon(n)+'</span><div class="nu-tx"><b>'+escapeHtml(noticeTitle(n))+'</b><span>'+escapeHtml(n.s)+'</span></div></div>'; }).join('')+'</div>';
       h+='<div class="cnote"><b><span style="display:inline-flex;vertical-align:-2px">'+ticketSvg({h:14})+'</span> 쿠폰</b> — 더보기 → 코드 입력에서 사용하세요</div>';
       const _codes=(state.game&&state.game.codes)||{};
       // 코드는 대문자로 안내(입력은 redeemCode가 소문자로 정규화해 대소문자 무관). used 판정은 저장 키(소문자 code) 그대로.
