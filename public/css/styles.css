@@ -735,6 +735,7 @@
     .rmthumb:active { transform:scale(.96); }
     .rmthumb.on { border-color:var(--accent,#4a90d9); box-shadow:0 0 0 2px color-mix(in srgb,var(--accent,#4a90d9) 40%,transparent); }
     .rmthumb .rmscene { display:block; position:relative; width:100%; aspect-ratio:12/9; overflow:hidden; }
+    .rmthumb .rmfloorb { position:absolute; left:0; right:0; bottom:0; height:56%; image-rendering:pixelated; z-index:0; }   /* 방 썸네일에 바닥 스킨 반영(캠처럼 아래=바닥) */
     .rmthumb .rmf { position:absolute; background:color-mix(in srgb,var(--text) 42%,transparent); border-radius:2px; }
     .rmthumb .rmfw { background:color-mix(in srgb,var(--primary) 60%,transparent); border-radius:1px; }   /* 벽 가구 점 — 뒤 벽 띠(색 구분) */
     .rmthumb .rmbar { display:flex; align-items:center; justify-content:space-between; gap:4px; padding:4px 6px; font-size:10.5px; font-weight:800; color:var(--text); background:var(--card); }
@@ -913,6 +914,10 @@
     .cr-prop .ffx-plant .px     { transform-origin:50% 57%; }   /* 잎 아래(줄기 위) → 잎만 좌우로 기울어 살랑 */
     .cr-prop .ffx-window .px    { animation-duration:16s; }   /* 구름은 아주 느리게 흘러감 */
     .cr-prop .ffx-fishtank .px  { animation-name:fffish; animation-duration:3.4s; animation-timing-function:ease-in-out; }    /* 금붕어 활발하게: 좌우+상하 보빙, 빠르게(전용 keyframe fffish) */
+    /* 연못 3레이어: 물고기(활발)·수련잎(잔잔)·물 반짝임(잔잔) — 각기 다른 keyframe/속도 */
+    .cr-prop .ffx-pondfish .px  { animation-name:ffpondfish; animation-duration:2.8s; animation-timing-function:ease-in-out; }
+    .cr-prop .ffx-pondleaf .px  { animation-name:ffleaf; animation-duration:5.6s; animation-timing-function:ease-in-out; }
+    .cr-prop .ffx-pondwater .px { animation-name:ffripple; animation-duration:4.6s; animation-timing-function:ease-in-out; }
     .cr-prop .ffx-fan .px       { transform-origin:47% 32%; animation-duration:2.6s; }   /* 케이지 정중심에서 날개 회전 */
     .cr-prop .ffx-hammock .px   { transform-origin:50% 6%; animation-duration:4.6s; }    /* 걸이 매단 지점 */
     .cr-prop .ffx-teaser .px    { transform-origin:81% 3%; animation-duration:2.6s; }    /* 대 끝(줄 매단 지점) */
@@ -927,6 +932,12 @@
     @keyframes ffdrift { 0%,100%{ transform:translateX(-4%); } 50%{ transform:translateX(4%); } }
     /* 금붕어 헤엄: 좌우로 다트하며 위아래로 살짝 보빙(활발) */
     @keyframes fffish { 0%{ transform:translate(-6%,2%); } 22%{ transform:translate(4%,-3%); } 46%{ transform:translate(13%,1%); } 60%{ transform:translate(20%,-2%); } 80%{ transform:translate(7%,3%); } 100%{ transform:translate(-6%,2%); } }   /* 왼쪽 유리~오른쪽 수초 앞까지 활발하게 왕복(수초 침범 방지 상한 +20%) */
+    /* 연못 물고기: 좌우로 다트하며 위아래 보빙(활발, 연못 폭에 맞춰 ±5% 정도) */
+    @keyframes ffpondfish { 0%{ transform:translate(-5%,1%); } 25%{ transform:translate(-1%,-2.5%); } 50%{ transform:translate(5%,1%); } 72%{ transform:translate(1.5%,-1.5%); } 100%{ transform:translate(-5%,1%); } }
+    /* 연못 수련잎: 아주 잔잔히 좌우+상하로 살랑 */
+    @keyframes ffleaf { 0%,100%{ transform:translate(-1.2%,0.6%); } 50%{ transform:translate(1.2%,-0.6%); } }
+    /* 연못 물결/반짝임: 하이라이트가 잔잔히 좌우로 일렁 */
+    @keyframes ffripple { 0%,100%{ transform:translateX(-1%); } 50%{ transform:translateX(1.2%); } }
     @keyframes ffflicker { 0%,100%{ transform:scaleY(1) translateX(0); } 30%{ transform:scaleY(1.08) translateX(-4%); } 55%{ transform:scaleY(0.94) translateX(3%); } 80%{ transform:scaleY(1.05) translateX(-2%); } }
     @keyframes ffblink { 0%,72%,100%{ opacity:1; } 76%,80%{ opacity:.32; } 84%{ opacity:.9; } 88%,92%{ opacity:.4; } }   /* 대부분 켜짐 + 가끔 짧게 깜빡 */
     @media (prefers-reduced-motion:reduce){ .cr-prop .ffx .px { animation:none; } }
@@ -954,8 +965,11 @@
     .placemode { margin:2px 0 10px; }
     /* 🧲 벽 배치 정렬 스냅 가이드(드래그 중 다른 가구/중앙과 열이 맞으면 세로선) */
     .gridwall .wsnap { position:absolute; top:0; bottom:0; width:0; border-left:2px dashed var(--primary); transform:translateX(-1px); pointer-events:none; z-index:60; opacity:.9; }
-    .gridwall .wsnap[hidden] { display:none; }
-    .cr-wallprop { pointer-events:none; }   /* 캠 벽 가구는 표시 전용(뒤 벽면 z:0) */
+    .gridwall .wsnaph { position:absolute; left:0; right:0; height:0; border-top:2px dashed var(--primary); transform:translateY(-1px); pointer-events:none; z-index:60; opacity:.9; }
+    .gridwall .wsnap[hidden], .gridwall .wsnaph[hidden] { display:none; }
+    /* 캠 벽 가구는 표시 전용(뒤 벽면 z:0). 은은한 그림자로 벽지 대비/입체감(어두운 벽지에서도 묻히지 않게). */
+    .cr-wallprop { pointer-events:none; filter:drop-shadow(0 1px 1.2px rgba(0,0,0,.3)); }
+    .tagmini.wall { background:color-mix(in srgb,var(--primary) 20%,transparent); color:var(--primary); }   /* 알뜰샵 '벽' 가구 배지 */
     .cr-wall-hang { transform-origin:center top; }   /* 매다는형(모빌·행잉플랜트)은 위(천장) 기준 */
     /* 드래그(배치·이동) 중엔 뒤 시트 본문이 스크롤·이동하지 않도록 잠금 */
     body.dragging .sheet-body { overflow:hidden; }
