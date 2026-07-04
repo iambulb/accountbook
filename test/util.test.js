@@ -381,6 +381,17 @@ test('sumPlacedItem: 모든 방에 배치된 같은 가구 개수 합(전역 인
   assert.strictEqual(U.sumPlacedItem(null, 'cushion'), 0);    // 방어
 });
 
+test('sumPlacedItem: 바닥(placed)+벽(wallPlaced) 합산(벽꾸미기 복제 방지)', () => {
+  const rooms = [
+    { placed: { '1_1': { itemId: 'cushion' } }, wallPlaced: { '4_2': { itemId: 'window' } } },
+    { wallPlaced: { '1_5': { itemId: 'window' }, '2_6': { itemId: 'fireplace' } } },   // placed 없음(벽만)
+    { placed: { '3_3': { itemId: 'cushion' } } },                                       // wallPlaced 없음(바닥만)
+  ];
+  assert.strictEqual(U.sumPlacedItem(rooms, 'window'), 2);      // 방1 벽 + 방2 벽
+  assert.strictEqual(U.sumPlacedItem(rooms, 'fireplace'), 1);   // 방2 벽
+  assert.strictEqual(U.sumPlacedItem(rooms, 'cushion'), 2);     // 방1 바닥 + 방3 바닥(벽 없어도 안전)
+});
+
 test('normalizeHome: 상한/클램프 + 방 데이터 손실 방지', () => {
   // roomSlots 과다 → MAX(5)로, current 음수 → 0
   const a = U.normalizeHome({ rooms: [{}], roomSlots: 99, current: -5, slots: 999 });

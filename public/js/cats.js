@@ -934,7 +934,7 @@
       { id:'rug', cat:'decor',      name:'러그',   price:200, size:2, footW:2, footH:2, floor:true, desc:'바닥에 까는 러그. 높이가 없어 위에 다른 가구를 올릴 수 있어요.' },   // 희귀 등급가. floor:true = 바닥 아이템(겹침 허용·맨 뒤 렌더)
       { id:'window', cat:'decor',   name:'창문',   price:800, size:2, footW:1, footH:1, wall:true, desc:'벽에 거는 창문. 해와 구름이 흘러가요.' },   // 전설 등급가 · 벽 가구
       { id:'fishtank', cat:'decor', name:'어항',   price:400, size:1.6, footW:1, footH:1, desc:'금붕어가 헤엄치는 어항. 고양이가 앞에서 구경해요.' },   // 특별 등급가
-      { id:'fireplace', cat:'decor', name:'벽난로', price:800, size:2, footW:2, footH:1, wall:true, desc:'벽에 두는 벽난로. 불꽃이 일렁여요.' },   // 벽 가구(맨 아래 벽칸=바닥선)
+      { id:'fireplace', cat:'decor', name:'벽난로', price:800, size:2, footW:1, footH:1, wall:true, desc:'벽에 두는 벽난로. 불꽃이 일렁여요.' },   // 벽 가구 1×1(창문처럼 벽 1칸 — 주변 침범 방지)
       { id:'fan', cat:'decor',      name:'선풍기', price:800, size:1.6, footW:1, footH:1, desc:'날개가 도는 선풍기. 곁에서 바람을 쐬며 쉬어요.' },
       { id:'hammock', cat:'rest',  name:'해먹',   price:800, size:2, footW:2, footH:1, desc:'살랑이는 그물 침대. 펫이 안에 올라가 눕습니다.' },
       { id:'teaser', cat:'play',   name:'낚싯대장난감', price:800, size:1.4, footW:1, footH:1, desc:'깃털이 흔들리는 낚싯대. 옆에서 톡톡 건드려요.' },
@@ -1534,7 +1534,7 @@
     // 방(dock·홈)에서의 가구 렌더 높이(px) — 발자국 세로 칸수(footH)에 비례해 키움(캣타워 6칸=제일 큼, 스크래처 1칸=고양이 키만큼, 방석·밥그릇 1칸).
     // 고양이 상호작용(캣타워 3층 올라가기 등)이 맞아떨어지도록 렌더·엔진(fh)이 같은 값을 쓴다. depth(뒤로 갈수록) 작게.
     // 방 렌더 높이 배율(실물감) — 캣타워 제일 큼, 스크래처는 고양이 키만큼, 화장실=낮은 상자, 방석·그릇 작게.
-    const ROOM_H = { pond:2.2, tower:6.2, scratcher:1.9, pethouse:2.8, catwheel:3.0, plant:1.5, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6, rug:1.2, window:1.4, fishtank:1.7, fireplace:2.6, fan:2.7, hammock:1.7, teaser:2.4, wallclock:1.4, hangplant:1.4, mobile:1.4, jingleball:0.7 };   // 걸이형 1×1 벽 가구(window/wallclock/hangplant/mobile)=1.4: 벽 1칸(WALL_STEP 9.3%≈1행)에 맞춰 겹침 방지. 벽난로(fireplace)는 바닥선에 서는 2×1 대형이라 예외.
+    const ROOM_H = { pond:2.2, tower:6.2, scratcher:1.9, pethouse:2.8, catwheel:3.0, plant:1.5, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6, rug:1.2, window:1.4, fishtank:1.7, fireplace:1.4, fan:2.7, hammock:1.7, teaser:2.4, wallclock:1.4, hangplant:1.4, mobile:1.4, jingleball:0.7 };   // 1×1 벽 가구(window/fireplace/wallclock/hangplant/mobile)=1.4: 벽 1칸(WALL_STEP 9.3%≈1행)에 맞춰 겹침 방지(벽난로도 1×1로 통일).
     // ---- 배치 격자(12칸) 가로 좌표 공유 헬퍼 ----
     // 에디터(평면 그리드)·드롭프리뷰·썸네일은 gridLeftFrac/gridSpanFrac(칸 좌측 edge·폭)을 그대로 쓴다.
     // 캠(원근)은 camAnchorMode로 발자국을 "가운데 정렬 + 양끝 벽 스냅" 배치해 좌우 벽까지 고르게 채운다.
@@ -3749,6 +3749,7 @@
     function wallFoot(id){ return { w:itemFoot(id).w, h:1 }; }   // 벽 가구는 가로 footW × 세로 1칸 점유
     function furnWallH(id, isDock){ return furnRoomH(id, isDock, 0); }   // 벽 가구 크기 = 원근 없는 앞크기(depth 0)
     function wallPlacedList(){ const p=room().wallPlaced||{}; return Object.keys(p).map(k=>({key:k, r:+k.split('_')[0], c:+k.split('_')[1], itemId:p[k].itemId})); }
+    function wallPlacedItemId(key){ const p=room().wallPlaced||{}; return p[key]&&p[key].itemId; }
     function wallOccupiedCells(wp, ignoreKey){ const occ={}; Object.keys(wp||{}).forEach(k=>{ if(k===ignoreKey) return;
       const pr=k.split('_'), r=+pr[0], c=+pr[1], w=wallFoot(wp[k].itemId).w; for(let dc=0;dc<w;dc++) occ[r+'_'+(c+dc)]=1; }); return occ; }
     function wallAreaFree(r,c,w,wp,ignoreKey){ if(r<1||c<1||r>WALL_ROWS||c+w-1>WALL_COLS) return false;
@@ -3777,6 +3778,7 @@
     }
     // 벽 격자 탭 → 선택한 벽 가구 배치(탭 방식, 롱프레스 드래그 없음).
     function wallPlaceClick(e){
+      if(_justDragged) return;                          // 드래그 직후 발생하는 click 무시(이동/드래그배치와 겹침 방지)
       const grid=$('wallGrid'); if(!grid) return;
       if(!_selWall){ toast('걸 가구를 먼저 선택하세요'); return; }
       if(itemRemaining(_selWall)<=0){ toast('배치할 수량이 없어요(랜덤박스로 획득)', true); return; }
@@ -3854,7 +3856,10 @@
       if(_drag){ try{ _drag.el.classList.remove('drag'); _drag.el.style.transform=''; }catch(_){} _drag=null; }
       if(_pal){ try{ if(_pal.ghost) _pal.ghost.remove(); }catch(_){} _pal=null; }
       if(_rmDrag){ _rmDrag=null; }
+      if(_wdrag){ try{ _wdrag.el.classList.remove('drag'); _wdrag.el.style.transform=''; }catch(_){} _wdrag=null; }
+      if(_wpal){ try{ if(_wpal.ghost) _wpal.ghost.remove(); }catch(_){} _wpal=null; }
       if(typeof hideDropPreview==='function') hideDropPreview();
+      if(typeof hideWallDropPreview==='function') hideWallDropPreview();
       unlockDragScroll();
     }
     function clearLongPress(){ if(!_lp) return; const p=_lp; _lp=null; clearTimeout(p.timer);
@@ -3963,6 +3968,90 @@
       g.style.width=(gridSpanFrac(foot.w)*100)+'%'; g.style.height=(gridSpanFrac(foot.h)*100)+'%';
     }
     function hideDropPreview(){ const g=$('gdrop'); if(g) g.hidden=true; }
+    // ---- 벽꾸미기 격자 드래그(방꾸미기 로직 이식) — 세로 4칸(WALL_ROWS)·깊이 없음, 겹침만 검증 ----
+    function wallDropCell(grid, x, y, w){   // 포인터=발자국 가운데, 벽 격자로 클램프
+      const p=wallCellFromPoint(grid, x, y);
+      let c=p.c-Math.round((w-1)/2), r=p.r;
+      c=Math.max(1, Math.min(WALL_COLS+1-w, c)); r=Math.max(1, Math.min(WALL_ROWS, r));
+      return { r, c };
+    }
+    function showWallDropPreview(r,c,w,key){
+      const g=$('wgdrop'); if(!g) return; const wp=room().wallPlaced||{};
+      const rr=Math.min(WALL_ROWS,Math.max(1,r)), cc=Math.min(WALL_COLS+1-w,Math.max(1,c));
+      const ok=wallAreaFree(rr,cc,w,wp,key);
+      g.hidden=false; g.className='gdrop'+(ok?'':' bad');
+      g.style.left=(gridLeftFrac(cc)*100)+'%'; g.style.top=(((rr-1)/WALL_ROWS)*100)+'%';
+      g.style.width=(gridSpanFrac(w)*100)+'%'; g.style.height=(100/WALL_ROWS)+'%';
+    }
+    function hideWallDropPreview(){ const g=$('wgdrop'); if(g) g.hidden=true; }
+    // 배치된 벽 가구 드래그로 이동(꾹 눌러 시작=롱프레스, 짧게 탭=회수/판매 메뉴)
+    let _wdrag=null;
+    function wallGiDown(e, key){
+      e.stopPropagation();
+      const grid=$('wallGrid'); if(!grid) return; const pid=e.pointerId;
+      beginLongPress(e,
+        (el, sx, sy)=>{ _wdrag={ key, el, grid, sx, sy, w:wallFoot(wallPlacedItemId(key)).w };
+          lockDragScroll(); try{ el.setPointerCapture(pid); }catch(_){}
+          el.classList.add('drag');
+          el.onpointermove=wallGiMove; el.onpointerup=wallGiUp; el.onpointercancel=wallGiUp; },
+        ()=>{ openItemMenu(key, true); });
+    }
+    function wallGiMove(e){
+      if(!_wdrag) return;
+      const dx=e.clientX-_wdrag.sx, dy=e.clientY-_wdrag.sy;
+      _wdrag.el.style.transform='translate('+dx+'px,'+dy+'px)';
+      const cell=wallDropCell(_wdrag.grid, e.clientX, e.clientY, _wdrag.w);
+      showWallDropPreview(cell.r, cell.c, _wdrag.w, _wdrag.key);
+    }
+    function wallGiUp(e){
+      if(!_wdrag) return; const d=_wdrag; _wdrag=null;
+      unlockDragScroll();
+      d.el.onpointermove=null; d.el.onpointerup=null; d.el.onpointercancel=null;
+      hideWallDropPreview(); d.el.classList.remove('drag');
+      _justDragged=true; setTimeout(()=>{ _justDragged=false; }, 80);
+      const cell=wallDropCell(d.grid, e.clientX, e.clientY, d.w), r=cell.r, c=cell.c, newKey=r+'_'+c;
+      const resetEl=()=>{ d.el.style.transform=''; };
+      if(newKey===d.key){ resetEl(); return; }
+      const wp=room().wallPlaced||{};
+      if(!wallAreaFree(r,c,d.w,wp,d.key)){ toast('그 자리엔 걸 수 없어요(겹침)', true); resetEl(); return; }
+      gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoom(g); const pl=R.wallPlaced||{};
+        const it=pl[d.key]; if(!it) return;                               // 원본 없음(레이스)
+        if(!wallAreaFree(r,c,d.w,pl,d.key)) return;                        // 겹침(자기 제외)
+        delete pl[d.key]; pl[newKey]={itemId:it.itemId}; g.home.changedAt=new Date().toISOString(); return g;
+      }).then(()=>{ touchHome(); });
+    }
+    // 팔레트 벽 가구를 벽 격자로 드래그해 새로 배치(꾹 눌러 드래그, 짧게 탭=선택 토글)
+    let _wpal=null;
+    function wallPalDown(e, id){
+      beginLongPress(e,
+        (el, sx, sy)=>{ if(itemRemaining(id)<=0){ toast(catFurnName(id)+' 남은 수량이 없어요(랜덤박스로 획득)', true); return; }
+          _wpal={ id, w:wallFoot(id).w, sx, sy, ghost:null };
+          lockDragScroll();
+          const g=document.createElement('div'); g.className='palghost'; g.innerHTML=furnSvg(id,{h:44});
+          g.style.left=sx+'px'; g.style.top=sy+'px'; document.body.appendChild(g); _wpal.ghost=g;
+          window.addEventListener('pointermove', wallPalMove); window.addEventListener('pointerup', wallPalUp); window.addEventListener('pointercancel', wallPalUp); },
+        ()=>{ selWallItem(id); });
+    }
+    function wallPalMove(e){
+      if(!_wpal) return;
+      if(_wpal.ghost){ _wpal.ghost.style.left=e.clientX+'px'; _wpal.ghost.style.top=e.clientY+'px'; }
+      const grid=$('wallGrid'); if(!grid) return; const r=grid.getBoundingClientRect();
+      if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){ const cell=wallDropCell(grid,e.clientX,e.clientY,_wpal.w); showWallDropPreview(cell.r,cell.c,_wpal.w,null); }
+      else hideWallDropPreview();
+    }
+    function wallPalUp(e){
+      if(!_wpal) return; const d=_wpal; _wpal=null;
+      unlockDragScroll();
+      window.removeEventListener('pointermove',wallPalMove); window.removeEventListener('pointerup',wallPalUp); window.removeEventListener('pointercancel',wallPalUp);
+      if(d.ghost) d.ghost.remove(); hideWallDropPreview();
+      if(e.type==='pointercancel') return;      // 취소 → 배치 안 함
+      const grid=$('wallGrid'); if(!grid) return; const r=grid.getBoundingClientRect();
+      if(!(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)) return;   // 격자 밖 → 취소
+      if(itemRemaining(d.id)<=0){ toast('남은 수량이 없어요', true); return; }
+      const cell=wallDropCell(grid,e.clientX,e.clientY,d.w), rr=cell.r, cc=cell.c;
+      if(!wallAreaFree(rr,cc,d.w,room().wallPlaced||{},null)){ toast('그 자리엔 걸 수 없어요(겹침)', true); return; }
+      wallPlaceItemTx(d.id, rr, cc);
+    }
     // ---- 배치된 가구 탭 → 회수/판매 메뉴 ----
     function openItemMenu(key, wall){
       closeItemMenu();
@@ -4018,11 +4107,11 @@
         const wp=room().wallPlaced||{};
         const witems=Object.keys(wp).map(key=>{ const pr=key.split('_'), r=+pr[0], c=+pr[1], id=wp[key].itemId, w=wallFoot(id).w;
           const left=(gridLeftFrac(c)*100).toFixed(3), top=(((r-1)/WALL_ROWS)*100).toFixed(3), ww=(gridSpanFrac(w)*100).toFixed(3), hh=(100/WALL_ROWS).toFixed(3);
-          return '<div class="gitem" style="left:'+left+'%;top:'+top+'%;width:'+ww+'%;height:'+hh+'%" onclick="event.stopPropagation();openItemMenu(\''+key+'\',true)"><span class="gsc">'+furnSvg(id,{fit:true})+'</span></div>'; }).join('');
-        const wgrid='<div class="gridwall" id="wallGrid" onclick="wallPlaceClick(event)">'+witems+'</div>';
+          return '<div class="gitem" style="left:'+left+'%;top:'+top+'%;width:'+ww+'%;height:'+hh+'%" onpointerdown="wallGiDown(event,\''+key+'\')" onclick="event.stopPropagation()"><span class="gsc">'+furnSvg(id,{fit:true})+'</span></div>'; }).join('');
+        const wgrid='<div class="gridwall" id="wallGrid" onclick="wallPlaceClick(event)">'+witems+'<div class="gdrop" id="wgdrop" hidden></div></div>';
         const wpal=ITEM_CATALOG.filter(it=>isWallItem(it.id) && itemQty(it.id)>0).map(it=>{ const rem=itemRemaining(it.id), sold=rem<=0;
-          return '<button class="pitem'+(_selWall===it.id?' on':'')+(sold?' soldout':'')+'"'+(sold?' aria-disabled="true"':'')+' onclick="selWallItem(\''+it.id+'\')"><span class="pic">'+furnSvg(it.id,{h:palPicH(it.id)})+'</span><span>'+it.name+'</span><span class="pq">'+(sold?'전부 배치됨':'남은 '+rem)+'</span></button>'; }).join('');
-        const wallHint='<div class="hintline" style="margin:8px 0 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16"/></svg>벽 가구를 <b>선택</b>하고 <b>벽 격자를 탭</b>해 걸어요(위=천장·아래=바닥선). 배치된 항목을 탭하면 회수/판매. <b>특별↑ 벽 가구는 랜덤박스로만</b> 얻어요.</div>';
+          return '<button class="pitem'+(_selWall===it.id?' on':'')+(sold?' soldout':'')+'"'+(sold?' aria-disabled="true"':'')+' onpointerdown="wallPalDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selWallItem(\''+it.id+'\')"><span class="pic">'+furnSvg(it.id,{h:palPicH(it.id)})+'</span><span>'+it.name+'</span><span class="pq">'+(sold?'전부 배치됨':'남은 '+rem)+'</span></button>'; }).join('');
+        const wallHint='<div class="hintline" style="margin:8px 0 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16"/></svg>벽 가구를 <b>탭해 선택</b>하거나 <b>꾹 눌러 격자로 끌어</b> 걸어요(위=천장·아래=바닥선). 걸린 항목은 <b>꾹 눌러 드래그로 이동</b>, 짧게 탭하면 회수/판매. <b>특별↑ 벽 가구는 랜덤박스로만</b> 얻어요.</div>';
         body=wgrid+wallHint+'<div class="palette catinv">'+(wpal||'<div class="palempty">보유한 벽 가구가 없어요<br><span>랜덤박스에서 벽 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>')+'</div>';
       } else {
         // 바닥 격자(12×12) — 기존 방꾸미기(드래그 이동·롱프레스). 벽 가구는 팔레트에서 제외.
