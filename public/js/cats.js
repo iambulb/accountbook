@@ -2331,7 +2331,9 @@
       '<input class="petsearch" type="search" inputmode="search" placeholder="이름 검색" value="'+escapeHtml(_petQuery)+'" oninput="setPetQuery(this.value)" aria-label="펫 이름 검색"></div>'; }
     // ===== 우리집 펫 그리드: 타일 단위 메모이즈(수백 마리 재파싱·이미지 리로드 회피) =====
     // 타일 콘텐츠 시그니처 — 상태(방)·현재방·애정레벨·이름이 바뀐 타일만 다시 그린다.
-    function petTileSig(id){ const ro=petRoomIndex(id); const lv=affectionLevel((ownedCatsMap()[id]||{}).affection).level; return ro+'|'+roomIdx()+'|'+lv+'|'+catName(id); }
+    function petTileSig(id){ const ro=petRoomIndex(id); const here=ro===roomIdx(); const rooms=homeH().rooms||[];
+      const rnm=(ro>=0&&!here)?((rooms[ro]&&rooms[ro].name)||('방 '+(ro+1))):'';   // elsewhere일 때만 방이름 뱃지 표시 → 시그니처에 포함(방 전환/이름변경 시 필요한 타일만 갱신)
+      const lv=affectionLevel((ownedCatsMap()[id]||{}).affection).level; return (here?'H':ro)+'|'+rnm+'|'+lv+'|'+catName(id); }
     function petTileHtml(id){
       const rooms=homeH().rooms||[]; const roomOf=petRoomIndex(id), here=roomOf===roomIdx();
       const roomNm=roomOf>=0?((rooms[roomOf]&&rooms[roomOf].name)||('방 '+(roomOf+1))):'';
