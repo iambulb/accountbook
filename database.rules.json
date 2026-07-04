@@ -18,7 +18,8 @@
               ".validate": "newData.hasChildren(['type','qty','from']) && newData.child('from').val() === auth.uid && newData.child('qty').isNumber() && ((newData.child('type').val() === 'coins' && newData.child('qty').val() > 0 && newData.child('qty').val() <= 10) || (newData.child('type').val() === 'consum' && newData.child('qty').val() > 0 && newData.child('qty').val() <= 3 && (newData.child('key').val() === 'egg' || newData.child('key').val() === 'water' || newData.child('key').val() === 'food')))"
             }
           }
-        }
+        },
+        "adminGifts": { ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'canel94@gmail.com')" }
       }
     },
 

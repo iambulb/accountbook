@@ -26,6 +26,7 @@ users/{uid}/{friends,friendReqs} : 친구 관계·요청   // 당사자 두 명�
 | `users/{uid}/friends/{fid}`·`friendReqs/{fid}` | 로그인 | **당사자 두 명만**(`$uid` 또는 `$fid`) |
 | `users/{uid}/homeLikes/{visitor}` | 로그인 | **방문자 자신만**(`auth.uid === $visitor`) — 남의 집에 좋아요를 남기되 자기 항목만 |
 | `users/{uid}/mailbox/{sender}/{gid}` | **수령자(본인)만**(부모 owner-read) | **수령자 본인 또는 친구인 발신자만** — 친구 검증(`friends/{auth.uid}` 존재) + 엔트리 `.validate`로 상한(coins≤10·consum≤3·key∈{egg,water,food}·from=auth.uid). **금화(gold) 선물은 규칙상 차단**(크로스유저 통화 민팅 방지) |
+| `users/{uid}/adminGifts/{pushId}` | **본인만**(부모 owner-read) | **관리자 이메일 또는 본인** — 🎁 운영자가 특정 유저에게 보내는 비공개 선물(관리자 write) + 본인이 수령 후 삭제(write). 상한 없음(관리자 신뢰). 앱 `claimAdminGifts`가 받아 game.gifts로 옮기고 삭제 |
 | `homeCam/{uid}` | 로그인(전역) — 친구·랭킹이 보는 **대표 방** 스냅샷 | **본인만** |
 | `rankings/{uid}` | 로그인 | **본인만**(`auth.uid === $uid`) — 공개 랭킹 경량 인덱스(name/likes/private) |
 | `config/notices` | 로그인(전역) | **개발자 이메일만**(`auth.token.email`) — 📢 소식 공지. 배포 없이 Firebase 콘솔/개발자 계정에서 편집(`loadNotices`가 구독) |

@@ -1292,6 +1292,7 @@
       loadFeaturedPet();    // 🌟 이달의 펫 수동 선정(config/featuredPet) 구독 — 개발자가 고르면 전역 반영
       loadGachaFx();        // 🎬 가챠 오픈 연출 펫(config/gachaFx: a=1번/왼쪽·b=2번/오른쪽) 구독 — 미지정이면 기본 검은고양이
       loadBroadcasts();     // 📣 전체 선물(config/broadcast) 구독 — 개발자가 넣으면 각 사용자 선물함으로 1회 수령
+      loadMyAdminGifts();   // 🎁 내게 온 특정-유저 선물(users/{uid}/adminGifts) 수령 → 선물함으로 옮기고 삭제
       startCatLoop();   // 통합 걷기 엔진(단일 rAF, 보이는 무대만 애니메이션)
       // 앱을 켜둔 동안에도 그릇 3시간 만료→똥 정산이 돌도록 주기 점검(다마고치)
       if(state._petTimer) clearInterval(state._petTimer);
@@ -1583,27 +1584,47 @@
         return g;
       }).then(function(r){ if(r&&r.committed&&added){ if(typeof toast==='function') toast('🎁 운영자 선물 '+added+'개가 선물함에 도착했어요!'); if(typeof updateNewsBadge==='function') updateNewsBadge(); if(state._sheetRefresh) state._sheetRefresh(); } }).catch(function(){});
     }
-    // 개발자: 전체 사용자에게 선물 보내기(메시지 포함) → config/broadcast에 새 항목 push
+    // ===== 🎁 특정 유저 선물(users/{uid}/adminGifts) — 개발자가 넣으면 그 유저만 자기 선물함으로 수령(비공개, 규칙: 관리자·본인 쓰기) =====
+    let _admClaim={};
+    function loadMyAdminGifts(){ if(!state.uid) return; try{ db.ref('users/'+state.uid+'/adminGifts').on('value', function(s){ const v=s.val(); if(v) claimAdminGifts(v); }); }catch(e){} }
+    function claimAdminGifts(map){ if(!state.uid) return; const ids=Object.keys(map||{}).filter(function(id){ return !_admClaim[id] && map[id] && map[id].type; }); if(!ids.length) return;
+      ids.forEach(function(id){ _admClaim[id]=1; });
+      const gifts=ids.map(function(id){ const b=map[id]; if(!(b.type==='coins'||b.type==='gold'||b.type==='consum')) return null; const gift={ type:b.type, qty:Math.max(1, Number(b.qty)||1), at:b.at||new Date().toISOString(), bc:true }; if(b.type==='consum'){ if(!b.key) return null; gift.key=b.key; } if(b.msg) gift.msg=String(b.msg).slice(0,200); return gift; }).filter(Boolean);
+      gameRef().transaction(function(g){ g=normalizeGame(g); gifts.forEach(function(gf){ g.gifts.push(gf); }); return g; })
+        .then(function(r){ const upd={}; ids.forEach(function(id){ upd['users/'+state.uid+'/adminGifts/'+id]=null; }); db.ref().update(upd); ids.forEach(function(id){ delete _admClaim[id]; });
+          if(r&&r.committed&&gifts.length){ if(typeof toast==='function') toast('🎁 운영자 선물 '+gifts.length+'개가 선물함에 도착했어요!'); if(typeof updateNewsBadge==='function') updateNewsBadge(); if(state._sheetRefresh) state._sheetRefresh(); } })
+        .catch(function(){ ids.forEach(function(id){ delete _admClaim[id]; }); });
+    }
+    // 개발자: 선물 보내기 — 받는 사람(친구코드) 비우면 전체(config/broadcast, 공개), 채우면 그 유저에게만(users/{uid}/adminGifts, 비공개).
     function sendBroadcast(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용', true); return; }
-      const type=val('bc_type'), qty=Math.floor(Number(val('bc_qty'))||0), msg=(val('bc_msg')||'').trim();
+      const type=val('bc_type'), qty=Math.floor(Number(val('bc_qty'))||0), msg=(val('bc_msg')||'').trim(), to=(val('bc_to')||'').trim().toUpperCase();
       if(!type){ toast('종류를 선택하세요', true); return; }
       if(qty<=0){ toast('수량을 1 이상 입력하세요', true); return; }
       const consumKeys=['egg','box','rainbow_egg','rainbow_box'];
       const gift = (consumKeys.indexOf(type)>=0) ? { type:'consum', key:type, qty:qty } : { type:type, qty:qty };   // coins/gold는 그대로
       if(msg) gift.msg=msg.slice(0,200);
       gift.at=new Date().toISOString();
+      if(to){   // 특정 유저(친구코드) → users/{uid}/adminGifts (비공개)
+        if(!confirm('이 코드('+to+') 사용자에게 보낼까요?\n'+giftView(gift).name+(msg?('\n"'+msg+'"'):''))) return;
+        db.ref('friendCodes/'+to).once('value').then(function(s){ const uid=s.val(); if(!uid){ toast('그 코드의 사용자를 못 찾았어요', true); return; }
+          db.ref('users/'+uid+'/adminGifts').push(gift).then(function(){ toast('🎁 그 사용자 선물함에 보냈어요 — 접속 시 받습니다'); if(typeof openDevBroadcast==='function') openDevBroadcast(); }).catch(function(e){ console.error('adminGift', e); toast('전송 실패 — 관리자 계정/규칙 배포 확인', true); }); })
+          .catch(function(){ toast('코드 조회 실패', true); });
+        return;
+      }
+      // 전체(broadcast, 공개)
       if(!confirm('전체 사용자에게 이 선물을 보낼까요?\n'+(giftView(gift).name)+(msg?('\n"'+msg+'"'):'')+'\n(되돌리기 어려움 — config/broadcast에서 삭제하면 이후 신규 전파만 멈춤)')) return;
       db.ref('config/broadcast').push(gift).then(function(){ toast('📣 전체 선물을 보냈어요 — 각 사용자가 접속 시 받습니다'); if(typeof openDevBroadcast==='function') openDevBroadcast(); }).catch(_cfgWriteErr);
     }
     function openDevBroadcast(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용', true); return; }
       const opts=[['coins','은화'],['gold','금화'],['egg','펫알'],['box','랜덤박스'],['rainbow_egg','무지개알'],['rainbow_box','무지개박스']];
-      let h='<div class="note">전체 사용자 선물함에 아이템을 넣어요. <b>메시지</b>도 함께 표시됩니다(예: 오류로 인한 사과의 선물입니다). 각 사용자가 접속 시 자기 선물함으로 1회 수령(멱등). 전역 <b>config/broadcast</b>(관리자만 쓰기)에 저장.</div>';
+      let h='<div class="note">선물함에 아이템+<b>메시지</b>를 넣어 보내요(예: 오류로 인한 사과의 선물). <b>받는 사람</b>을 <b>비우면 전체</b>(공개 config/broadcast), <b>친구코드</b>를 넣으면 <b>그 사용자에게만 비공개</b>로 갑니다. 각 사용자는 접속 시 1회 수령.</div>';
+      h+='<div class="field"><label for="bc_to">받는 사람(친구코드)</label><input class="input" id="bc_to" maxlength="6" autocapitalize="characters" spellcheck="false" placeholder="비우면 전체 · 예: ABC123" style="text-transform:uppercase;"></div>';
       h+='<div class="field"><label for="bc_type">종류</label><select class="input" id="bc_type">'+opts.map(function(o){ return '<option value="'+o[0]+'">'+o[1]+'</option>'; }).join('')+'</select></div>';
       h+='<div class="field"><label for="bc_qty">수량</label><input class="input" id="bc_qty" inputmode="numeric" placeholder="예: 100" value="1"></div>';
       h+='<div class="field"><label for="bc_msg">메시지(선택)</label><input class="input" id="bc_msg" maxlength="200" placeholder="예: 오류로 인한 사과의 선물입니다"></div>';
-      h+='<button class="btn" style="margin-top:6px;" onclick="sendBroadcast()">전체에게 보내기</button>';
-      const cnt=Object.keys(_broadcasts||{}).length; h+='<div class="note" style="margin-top:12px;">현재 전파 중인 전체 선물: <b>'+cnt+'</b>개. 오래된 선물은 Firebase 콘솔 <code>config/broadcast</code>에서 삭제하면 신규 사용자 전파가 멈춥니다(이미 받은 사람은 유지).</div>';
-      openSheet('전체 선물 보내기', h);
+      h+='<button class="btn" style="margin-top:6px;" onclick="sendBroadcast()">보내기</button>';
+      const cnt=Object.keys(_broadcasts||{}).length; h+='<div class="note" style="margin-top:12px;">전체 선물(공개)로 전파 중: <b>'+cnt+'</b>개. 오래된 전체 선물은 콘솔 <code>config/broadcast</code>에서 삭제하면 신규 전파가 멈춰요(특정 유저 선물은 그 유저가 받으면 자동 삭제).</div>';
+      openSheet('선물 보내기', h);
     }
     // ===== 🎁 친구 선물(mailbox) — 크로스유저 선물함 =====
     // 발신: 펫알 선물(은화 100 지불) · 무료 응원 선물(하루 제한, 물/사료/은화/금화 랜덤). 둘 다 친구에게만(규칙 강제).
