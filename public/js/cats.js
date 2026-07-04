@@ -1939,8 +1939,8 @@
       if(sel && selPet && !selPet.deleted){
         const sa=gachaFxSlotOf(sel);   // 'a'|'b'|null (현재 이 펫이 배정된 슬롯)
         h+='<div class="petmg-btns">'+
-           '<button class="btn'+(sa==='a'?'':' ghost')+'" onclick="setGachaFxSlot(\'a\',\''+sel+'\')">연출 1번(왼쪽)'+(sa==='a'?' ✓':'')+'</button>'+
-           '<button class="btn'+(sa==='b'?'':' ghost')+'" onclick="setGachaFxSlot(\'b\',\''+sel+'\')">연출 2번(오른쪽)'+(sa==='b'?' ✓':'')+'</button></div>';
+           '<button class="btn'+(sa==='a'?'':' ghost')+'" aria-pressed="'+(sa==='a'?'true':'false')+'" onclick="setGachaFxSlot(\'a\',\''+sel+'\')">연출 1번(왼쪽)'+(sa==='a'?' ✓':'')+'</button>'+
+           '<button class="btn'+(sa==='b'?'':' ghost')+'" aria-pressed="'+(sa==='b'?'true':'false')+'" onclick="setGachaFxSlot(\'b\',\''+sel+'\')">연출 2번(오른쪽)'+(sa==='b'?' ✓':'')+'</button></div>';
       } else {
         h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:6px 2px 0;">펫을 선택하면 연출 <b>1번(왼쪽)</b>·<b>2번(오른쪽)</b>으로 지정할 수 있어요.</p>';
       }
@@ -2856,7 +2856,6 @@
       if(typeof rerender==='function') rerender(); if(state && state._sheetRefresh) state._sheetRefresh(); }); }catch(e){} }
     // 🎬 가챠 오픈 연출에 등장하는 펫(개발자 지정, 전역). a=1번(왼쪽에서 등장·오른쪽 봄)·b=2번(오른쪽에서 등장·왼쪽 봄). 미지정이면 기본 검은고양이 스프라이트.
     let _gachaFx={};
-    let _fxForceCat=false;   // 개발자 '연출 미리보기'용 1회성 강제 플래그(등급 확률과 무관하게 고양이 연출을 무조건 표시). fxClimax가 읽고 즉시 끔.
     function loadGachaFx(){ try{ db.ref('config/gachaFx').on('value', function(s){ _gachaFx=s.val()||{}; }); }catch(e){} }
     function gachaFxSlotOf(id){ if(_gachaFx&&_gachaFx.a===id) return 'a'; if(_gachaFx&&_gachaFx.b===id) return 'b'; return null; }
     function gachaSlotLabel(slot){ return slot==='a'?'1(왼쪽)':'2(오른쪽)'; }
@@ -2875,10 +2874,20 @@
       if(cur===id){ apply(); return; }   // 해제는 확인 없이
       const sp=PET_SPRITES[id]||{}; const fw=sp.frontWalk?'\n※ 이 펫은 걷기 모션이 없어 옆 정지 스틸로 등장해요.':'';
       confirmSheet('연출 '+lbl+'번을 “'+catName(id)+'”(으)로 지정할까요?\n모든 사용자에게 즉시 적용됩니다.'+fw, apply, {title:'가챠 연출 펫 지정', okLabel:'지정', danger:false}); }
-    // 연출 미리보기(개발자): 현재 지정된 연출 펫으로 고양이 연출을 강제 재생(전설 등급 더미 알). 지정 없으면 기본 검은 고양이.
+    // 연출 미리보기(개발자): 3탭·리빌 없이 고양이 연출 시퀀스만 바로 재생하고 자동 종료. reduced-motion도 무시(연출 확인이 목적). 지정 없으면 기본 검은 고양이.
     function devPreviewGachaFx(){ if(!(typeof isDev==='function'&&isDev())) return;
-      const pid=(_gachaFx&&(_gachaFx.a||_gachaFx.b)) || (PET_CATALOG[0]&&PET_CATALOG[0].id);
-      closeSheet(); _fx=null; _fxForceCat=true; runGachaFx('egg', { id:pid, tier:'legend' }, false); }
+      const fx=$('catFx'); if(!fx){ toast('미리보기를 열 수 없어요', true); return; }
+      closeSheet(); _fxClear();
+      _fx={ kind:'egg', preview:true, busy:true, rainbow:false, gold:0, res:{ id:(_gachaFx&&(_gachaFx.a||_gachaFx.b))||(PET_CATALOG[0]&&PET_CATALOG[0].id), tier:'legend' } };
+      fx.innerHTML='<div class="fx-scrim"></div><div class="fx-stage">'+
+        '<div class="fx-item pop fx-egg" id="fxItem">'+eggSvg(2,{h:150})+'</div>'+
+        '<div class="fx-hint" id="fxHint">연출 미리보기</div></div>';
+      fx.className='fx on';
+      const st=fx.querySelector('.fx-stage'), it=$('fxItem'); if(!st||!it) return;
+      st.style.color='#ffffff'; it.classList.add('fx-preshake');
+      const tLast=fxCatSeqSchedule(st, it);
+      _fxT(()=>{ it.classList.remove('fx-preshake'); void it.offsetWidth; it.classList.add('fx-hit'); const h=$('fxHint'); if(h) h.textContent='미리보기 완료'; }, tLast);   // 마지막 톡 순간 알 톡
+      _fxT(()=>{ closeFx(); }, tLast+1000); }   // 잠시 뒤 자동 종료
     function featuredEligibleIds(){ return PET_CATALOG.filter(c=>!isGachaOnlyCat(c.id)).map(c=>c.id); }
     function featuredCatId(){ const mk=kstMonthKey();
       const ov=_featuredMap && _featuredMap[mk];   // 개발자 수동 선정 우선(존재·미삭제 펫이면)
@@ -3427,12 +3436,26 @@
       else { el.innerHTML='<div class="fxc-in"></div>'; }
       st.appendChild(el);
     }
+    // 가챠 연출 고양이 시퀀스를 _fxT 타이머로 예약(1번 왼쪽 → 끝나면 2번 오른쪽, 순차). 알 무대(st)·아이템(it)에 동작하고 '마지막 고양이가 톡 치는 시각(=알 오픈 타이밍)'을 ms로 반환. fxClimax(실전)·devPreviewGachaFx(미리보기) 공용.
+    function fxCatSeqSchedule(st, it){
+      const a=_gachaFx&&_gachaFx.a, b=_gachaFx&&_gachaFx.b, any=a||b;
+      const seq=[]; if(a || !any) seq.push({side:'l', id:any?a:null}); if(b) seq.push({side:'r', id:b});
+      const WALK=1800, TAP=160, HIT=180, STEP=2760;   // 한 마리 구간: 등장(WALK)→톡(TAP 뒤 HIT 충격)→퇴장(STEP에서 제거)
+      const catAt=side=>st.querySelector('.fx-cat.fxc-'+side);
+      seq.forEach((c, i)=>{ const base=i*STEP, isLast=i===seq.length-1;
+        _fxT(()=>{ fxSpawnCat(st, c.side, c.id); }, base);   // 등장(walkin)
+        _fxT(()=>{ const el=catAt(c.side); if(el){ el.classList.remove('walkin'); el.classList.add('arr','tap'); } }, base+WALK);   // 도착 → 앞발 톡(펫 .cspr은 계속 걷고, 기본 고양이는 CSS로 정지 스틸)
+        _fxT(()=>{ it.classList.remove('fx-preshake'); void it.offsetWidth; it.classList.add('fx-hit'); }, base+WALK+TAP);   // 앞발이 닿는 순간 알/상자가 톡 튕김
+        _fxT(()=>{ const el=catAt(c.side); if(el){ el.classList.remove('tap'); el.classList.add('leave'); } it.classList.remove('fx-hit'); if(!isLast){ void it.offsetWidth; it.classList.add('fx-preshake'); } }, base+WALK+TAP+HIT);   // 톡 후 물러나며 흐려짐, 다음 고양이 있으면 알은 다시 들썩이며 대기
+        _fxT(()=>{ const el=catAt(c.side); if(el) el.remove(); }, base+STEP);
+      });
+      return (seq.length-1)*STEP+2120;   // 마지막 고양이가 톡 친 직후(=알 오픈 타이밍)
+    }
     function fxClimax(){
       const fx=$('catFx'), st=fx&&fx.querySelector('.fx-stage'), it=$('fxItem'); if(!st||!it) return;
       const t=tierInfo(_fx.res.tier), epic=['epic','legend','limited'].indexOf(_fx.res.tier)>=0, lim=_fx.res.tier==='limited';
       // 검은 고양이 앞발 연출 = 고등급 티저. 등급별 확률: 특별(epic) 10%·전설 90%·한정 100% (그 미만 0%). 등장 자체가 '뭔가 좋은 게 나온다'는 힌트.
-      const catShow = _fxForceCat || (Math.random() < (({ epic:0.10, legend:0.90, limited:1.0 })[_fx.res.tier] || 0));
-      _fxForceCat=false;   // 미리보기 강제 플래그는 1회성
+      const catShow = Math.random() < (({ epic:0.10, legend:0.90, limited:1.0 })[_fx.res.tier] || 0);
       const rank=Math.max(0, TIER_ORDER.indexOf(_fx.res.tier));   // 0(일반)~5(한정)
       const lk=(1+rank*0.15).toFixed(2);                          // 등급 높을수록 빛이 크고 밝게
       const isEgg=_fx.kind==='egg';
@@ -3440,22 +3463,8 @@
       const hint=$('fxHint'); if(hint) hint.remove();
       it.classList.add('fx-preshake');
       let t0=680;
-      if(catShow){
-        // 개발자가 지정한 펫(config/gachaFx)이 도도하게 걸어나와 앞발로 알을 톡 → 그 자리서 알 오픈. 미지정이면 기본 검은고양이(왼쪽 1마리).
-        // 순서(사용자 지침): 1번(왼쪽)이 등장~톡~퇴장을 마친 뒤에 2번(오른쪽)이 시작(동시 등장 아님). 알은 마지막 고양이가 톡 친 직후 열림.
-        const a=_gachaFx&&_gachaFx.a, b=_gachaFx&&_gachaFx.b, any=a||b;
-        const seq=[]; if(a || !any) seq.push({side:'l', id:any?a:null}); if(b) seq.push({side:'r', id:b});
-        const WALK=1800, TAP=160, HIT=180, STEP=2760;   // 한 마리 구간: 등장(WALK)→톡(TAP 뒤 HIT 충격)→퇴장(STEP에서 제거)
-        const catAt=side=>st.querySelector('.fx-cat.fxc-'+side);
-        seq.forEach((c, i)=>{ const base=i*STEP, isLast=i===seq.length-1;
-          _fxT(()=>{ fxSpawnCat(st, c.side, c.id); }, base);   // 등장(walkin)
-          _fxT(()=>{ const el=catAt(c.side); if(el){ el.classList.remove('walkin'); el.classList.add('arr','tap'); } }, base+WALK);   // 도착 → 앞발 톡(펫 .cspr은 계속 걷고, 기본 고양이는 CSS로 정지 스틸)
-          _fxT(()=>{ it.classList.remove('fx-preshake'); void it.offsetWidth; it.classList.add('fx-hit'); }, base+WALK+TAP);   // 앞발이 닿는 순간 알/상자가 톡 튕김
-          _fxT(()=>{ const el=catAt(c.side); if(el){ el.classList.remove('tap'); el.classList.add('leave'); } it.classList.remove('fx-hit'); if(!isLast){ void it.offsetWidth; it.classList.add('fx-preshake'); } }, base+WALK+TAP+HIT);   // 톡 후 물러나며 흐려짐, 다음 고양이 있으면 알은 다시 들썩이며 대기
-          _fxT(()=>{ const el=catAt(c.side); if(el) el.remove(); }, base+STEP);
-        });
-        t0=(seq.length-1)*STEP+2120;   // 마지막 고양이가 톡 친 직후 그 자리에서 알 오픈
-      }
+      // 개발자가 지정한 펫(config/gachaFx)이 도도하게 걸어나와 앞발로 알을 톡 → 그 자리서 알 오픈. 1번(왼쪽) 끝난 뒤 2번(오른쪽) 순차. 미지정이면 기본 검은고양이(왼쪽 1마리).
+      if(catShow) t0=fxCatSeqSchedule(st, it);   // 마지막 고양이가 톡 친 직후 알 오픈
       _fxT(()=>{
         st.style.color=t.color;   // 열리는 순간부터 등급색 — 빛·픽셀 파티클·버스트·등장이 currentColor로 등급색을 따른다(그 전엔 흰빛이라 등급 스포일러 방지)
         it.classList.remove('fx-preshake','fx-hit'); void it.offsetWidth; it.classList.add('fx-tremble');
@@ -3502,7 +3511,7 @@
         '<div class="fx-confetti">'+(conf?fxConfetti(conf):'')+'</div></div>';
       fx.className='fx on reveal';
     }
-    function closeFx(){ _fxClear(); _fxForceCat=false; const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx=null; }   // 미리보기를 climax 전에 닫아도 강제 플래그가 다음 실전 뽑기로 새지 않게 리셋
+    function closeFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx=null; }
 
     // ================= 개발자 패널: 펫알/박스 확률·구성 =================
     function openDevGacha(){
