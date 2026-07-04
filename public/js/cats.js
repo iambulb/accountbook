@@ -446,8 +446,8 @@
     ];
     // 선풍기(16×22 가로세로비 0.727): 케이지 림(X)+날개(G 회전, 캠에서만 spin)+허브(h)+목(N)+받침(S/s). ※ B(진한 하늘색 날개)는 팔레트 미등록=투명(뒷배경 비침).
     const M_FAN = [
-      "......XXXX......","....XXBBBBXX....","...X.BBBBBB.X...","..XGGGBBBBGGGX..",
-      ".XXGGGBBBBGGGXX.",".X.GGGGBBGGGG.X.",".X.GGGGhhGGGG.X.",".XGGGGhhhhBBBBX.",
+      "......XXXX......","....XXBBBBXX....","...X.BBBBBB.X...","..X.GGBBBBGG.X..",
+      ".XX.GGBBBBGG.XX.",".X.GGGGBBGGGG.X.",".X.GGGGhhGGGG.X.",".X.GGGhhhhBBBBX.",
       ".XBBBBBhhBBBBBX.",".XBBBBBGGBBBBBX.",".XXBBBGGGGBBBXX.","..XBBBGGGGBBBX..",
       "...XB.GGGG.BX...","....XX....XX....","......XXXX......",".......NN.......",
       ".......NN.......",".......NN.......",".....SSSSSS.....","....SSSSSSSS....",
@@ -4020,7 +4020,7 @@
       const dx=e.clientX-_wdrag.sx, dy=e.clientY-_wdrag.sy;
       _wdrag.el.style.transform='translate('+dx+'px,'+dy+'px)';
       const cell=wallDropCell(_wdrag.grid, e.clientX, e.clientY, _wdrag.w);
-      showWallDropPreview(cell.r, cell.c, _wdrag.w, _wdrag.key);
+      showWallDropPreview(wallSnapRow(wallPlacedItemId(_wdrag.key), cell.r), cell.c, _wdrag.w, _wdrag.key);
     }
     function wallGiUp(e){
       if(!_wdrag) return; const d=_wdrag; _wdrag=null;
@@ -4028,7 +4028,7 @@
       d.el.onpointermove=null; d.el.onpointerup=null; d.el.onpointercancel=null;
       hideWallDropPreview(); d.el.classList.remove('drag');
       _justDragged=true; setTimeout(()=>{ _justDragged=false; }, 80);
-      const cell=wallDropCell(d.grid, e.clientX, e.clientY, d.w), r=cell.r, c=cell.c, newKey=r+'_'+c;
+      const cell=wallDropCell(d.grid, e.clientX, e.clientY, d.w), c=cell.c, r=wallSnapRow(wallPlacedItemId(d.key), cell.r), newKey=r+'_'+c;
       const resetEl=()=>{ d.el.style.transform=''; };
       if(newKey===d.key){ resetEl(); return; }
       const wp=room().wallPlaced||{};
@@ -4055,7 +4055,7 @@
       if(!_wpal) return;
       if(_wpal.ghost){ _wpal.ghost.style.left=e.clientX+'px'; _wpal.ghost.style.top=e.clientY+'px'; }
       const grid=$('wallGrid'); if(!grid) return; const r=grid.getBoundingClientRect();
-      if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){ const cell=wallDropCell(grid,e.clientX,e.clientY,_wpal.w); showWallDropPreview(cell.r,cell.c,_wpal.w,null); }
+      if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){ const cell=wallDropCell(grid,e.clientX,e.clientY,_wpal.w); showWallDropPreview(wallSnapRow(_wpal.id,cell.r),cell.c,_wpal.w,null); }
       else hideWallDropPreview();
     }
     function wallPalUp(e){
@@ -4067,7 +4067,7 @@
       const grid=$('wallGrid'); if(!grid) return; const r=grid.getBoundingClientRect();
       if(!(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)) return;   // 격자 밖 → 취소
       if(itemRemaining(d.id)<=0){ toast('남은 수량이 없어요', true); return; }
-      const cell=wallDropCell(grid,e.clientX,e.clientY,d.w), rr=cell.r, cc=cell.c;
+      const cell=wallDropCell(grid,e.clientX,e.clientY,d.w), cc=cell.c, rr=wallSnapRow(d.id, cell.r);
       if(!wallAreaFree(rr,cc,d.w,room().wallPlaced||{},null)){ toast('그 자리엔 걸 수 없어요(겹침)', true); return; }
       wallPlaceItemTx(d.id, rr, cc);
     }
