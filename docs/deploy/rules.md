@@ -75,4 +75,4 @@ users/{uid}/{friends,friendReqs} : 친구 관계·요청   // 당사자 두 명�
 - **`catalogPets`**: 런타임 펫 **메타데이터**(앱 dev zip 업로드). 읽기=로그인 전체, 쓰기=개발자 이메일(`auth.token.email` 화이트리스트)만. 규칙 변경 후 `npx firebase-tools deploy --only database` 로 배포해야 업로드가 동작한다.
 - **`catalogPetArt`**: 런타임 펫 **스프라이트 이미지**(base64, 메타와 분리). 읽기·쓰기 규칙은 `catalogPets`와 동일(개발자 이메일만 쓰기). 이미지 분리 저장(지연 로딩)을 위해 추가됐으므로, **이 노드도 배포돼야** dev 업로드가 동작한다.
 - **`config/notices`**: 📢 소식 화면 **공지 목록**(`[{date,t,s}]`). 읽기=로그인 전체, 쓰기=개발자 이메일만. 앱이 `loadNotices`로 구독하므로 **배포 없이** Firebase 콘솔(또는 개발자 계정)에서 공지를 추가/수정하면 즉시 반영된다(비어있으면 `cats.js`의 기본 `NOTICES` 폴백). **규칙 배포 필요**: `npx firebase-tools deploy --only database`.
-- **`config/furniture/{itemId}`**: 🪑 기구물 **전역 등급/가격**(`{tier,price}`). `config` 규칙(읽기=로그인 전체·쓰기=개발자 이메일만)이 **하위까지 그대로 커버**하므로 **규칙 파일 변경·재배포 불필요**. 개발자 모드 '기구물 관리'에서 편집(`loadFurnCfg` 구독). 특별↑ 등급은 자동 랜덤박스 전용.
+- **`config/furniture/{itemId}` · `config/wallpaper/{id}` · `config/floor/{id}`**: 🪑 비(非)펫 아이템(가구·벽지·바닥 스킨)의 **전역 등급/가격**(`{tier,price}`). `config` 규칙(읽기=로그인 전체·쓰기=개발자 이메일만)이 **하위까지 그대로 커버**하므로 **규칙 파일 변경·재배포 불필요**. 개발자 모드 '기구물 관리'의 가구/벽지/바닥 탭에서 편집(`loadFurnCfg`/`loadWallCfg`/`loadFloorCfg` 구독). 특별↑ 등급은 자동 랜덤박스 전용.
