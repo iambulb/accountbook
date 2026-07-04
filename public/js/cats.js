@@ -1119,7 +1119,7 @@
         //  - 이동 중엔 east(옆) 스틸을 보여주고 scaleX로 방향을 뒤집음, 정지/reduced-motion이면 south(정면).
         const idleOn = rm || fw;
         const face = (fw && !rm) ? 'east' : 'south';
-        return '<div class="cspr'+(idleOn?' idle':'')+'" style="width:'+s+'px;height:'+s+'px;--sheet:url('+sprWalkUrl(sp)+');--idle:url('+sprStill(id,face)+');--fw:'+(s*sp.frames)+'px;"><i class="csprf"></i></div>'; }
+        return '<div class="cspr'+(idleOn?' idle':'')+'" style="width:'+s+'px;height:'+s+'px;--sheet:url('+sprWalkUrl(sp)+');--idle:url('+sprStill(id,face)+');--fw:'+(s*sp.frames)+'px;"><i class="csprf" style="animation-timing-function:steps('+(sp.frames||6)+')"></i></div>'; }
       return catSide(id, 0, {h:h});
     }
     // 정면 썸네일(걷지 않는 표시용: 알뜰샵 카드·보유 칩·뽑기 결과 등).
@@ -1534,7 +1534,7 @@
     // 방(dock·홈)에서의 가구 렌더 높이(px) — 발자국 세로 칸수(footH)에 비례해 키움(캣타워 6칸=제일 큼, 스크래처 1칸=고양이 키만큼, 방석·밥그릇 1칸).
     // 고양이 상호작용(캣타워 3층 올라가기 등)이 맞아떨어지도록 렌더·엔진(fh)이 같은 값을 쓴다. depth(뒤로 갈수록) 작게.
     // 방 렌더 높이 배율(실물감) — 캣타워 제일 큼, 스크래처는 고양이 키만큼, 화장실=낮은 상자, 방석·그릇 작게.
-    const ROOM_H = { pond:2.2, tower:6.2, scratcher:1.9, pethouse:2.8, catwheel:3.0, plant:1.5, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6, rug:1.2, window:1.4, fishtank:1.7, fireplace:1.4, fan:2.7, hammock:1.7, teaser:2.4, wallclock:1.4, hangplant:1.4, mobile:1.4, jingleball:0.7 };   // 1×1 벽 가구(window/fireplace/wallclock/hangplant/mobile)=1.4: 벽 1칸(WALL_STEP 9.3%≈1행)에 맞춰 겹침 방지(벽난로도 1×1로 통일).
+    const ROOM_H = { pond:2.2, tower:6.2, scratcher:1.9, pethouse:2.8, catwheel:3.0, plant:1.5, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6, rug:1.2, window:1.4, fishtank:1.4, fireplace:1.4, fan:2.7, hammock:1.7, teaser:2.4, wallclock:1.4, hangplant:1.4, mobile:1.4, jingleball:0.7 };   // 1×1 벽 가구(window/fireplace/wallclock/hangplant/mobile)=1.4: 벽 1칸(WALL_STEP 9.3%≈1행)에 맞춰 겹침 방지(벽난로도 1×1로 통일).
     // ---- 배치 격자(12칸) 가로 좌표 공유 헬퍼 ----
     // 에디터(평면 그리드)·드롭프리뷰·썸네일은 gridLeftFrac/gridSpanFrac(칸 좌측 edge·폭)을 그대로 쓴다.
     // 캠(원근)은 camAnchorMode로 발자국을 "가운데 정렬 + 양끝 벽 스냅" 배치해 좌우 벽까지 고르게 채운다.
@@ -2271,6 +2271,7 @@
         else if(hasArt){ sp.needArt=true; sp.artAt=r.at||''; }   // 신: catalogPetArt/{id}에서 지연 로드(ensurePetArt)
         if(r.scale!=null) sp.scale=Number(r.scale)||1;
         if(r.frontWalk!=null) sp.frontWalk=!!r.frontWalk;
+        if(r.frames!=null) sp.frames=Math.max(2, Number(r.frames)||6);   // 걷기 프레임 수(6·8 등) — 없으면 기본 6(구 레코드 하위호환)
         if(isNew){ sp.runtime=true; sp.walk=sp.walk||''; }
         PET_SPRITES[id]=sp;
         const tier = r.tier || CAT_TIER[id] || 'normal'; CAT_TIER[id]=tier;
@@ -2340,17 +2341,20 @@
     function _processPetZip(file){
       return loadJSZip().then(JSZip=>JSZip.loadAsync(file)).then(zip=>{
         const names=Object.keys(zip.files);
-        let frameNames=names.filter(n=>/\/Walk\/east\/frame_\d+\.png$/i.test(n)).sort(); let frontWalk=false;
-        if(frameNames.length<6){ const s=names.filter(n=>/\/Walk\/south\/frame_\d+\.png$/i.test(n)).sort(); if(s.length>=6){ frameNames=s; frontWalk=true; } }
-        if(frameNames.length<6) throw new Error('걷기 프레임(Walk/east 6장)을 못 찾음');
-        return Promise.all(frameNames.slice(0,6).map(n=>zip.files[n].async('blob').then(_blobToImg))).then(frames=>{
+        // frame_0..frame_N 를 프레임 번호로 자연 정렬(문자열 정렬이면 frame_10<frame_2 로 어긋남 — 8장↑ 대비)
+        const byFrame=(a,b)=>((+((a.match(/frame_(\d+)/i)||[])[1]||0))-(+((b.match(/frame_(\d+)/i)||[])[1]||0)));
+        let frameNames=names.filter(n=>/\/Walk\/east\/frame_\d+\.png$/i.test(n)).sort(byFrame); let frontWalk=false;
+        if(frameNames.length<2){ const s=names.filter(n=>/\/Walk\/south\/frame_\d+\.png$/i.test(n)).sort(byFrame); if(s.length>=2){ frameNames=s; frontWalk=true; } }
+        if(frameNames.length<2) throw new Error('걷기 프레임(Walk/east frame_*.png)을 못 찾음');
+        const nf=Math.min(frameNames.length, 12);   // 걷기 장수를 zip 그대로(6·8 등, 최대 12) — 고등급 8프레임 등 부드러운 모션 지원
+        return Promise.all(frameNames.slice(0,nf).map(n=>zip.files[n].async('blob').then(_blobToImg))).then(frames=>{
           const w=frames[0].naturalWidth||48, hgt=frames[0].naturalHeight||48;
-          const cv=document.createElement('canvas'); cv.width=w*6; cv.height=hgt; const ctx=cv.getContext('2d');
+          const cv=document.createElement('canvas'); cv.width=w*nf; cv.height=hgt; const ctx=cv.getContext('2d');
           ctx.imageSmoothingEnabled=false; frames.forEach((im,i)=>ctx.drawImage(im,i*w,0,w,hgt));
           const walk=cv.toDataURL('image/png');
           return Promise.all(['south','north','east','west'].map(f=>{ const k=names.find(n=>new RegExp('/rotations/'+f+'\\.png$','i').test(n));
             return k ? zip.files[k].async('base64').then(b=>'data:image/png;base64,'+b) : Promise.resolve(walk); }))
-            .then(rots=>({ walk, south:rots[0], north:rots[1], east:rots[2], west:rots[3], frontWalk }));
+            .then(rots=>({ walk, south:rots[0], north:rots[1], east:rots[2], west:rots[3], frontWalk, frames:nf }));
         });
       });
     }
@@ -2385,9 +2389,9 @@
         const id=editing?_devPetTarget:('rt_'+Date.now().toString(36));
         if(art){
           // 메타는 catalogPets/{id}, 이미지는 분리 노드 catalogPetArt/{id} — 원자 다중경로 업데이트(메타 필드는 개별 경로로 병합).
-          fields.frontWalk=art.frontWalk; fields.hasArt=true;
+          fields.frontWalk=art.frontWalk; fields.hasArt=true; fields.frames=art.frames||6;
           const upd={};
-          ['name','species','speciesLabel','tier','scale','by','at','frontWalk','hasArt'].forEach(k=>{ if(fields[k]!==undefined) upd['catalogPets/'+id+'/'+k]=fields[k]; });
+          ['name','species','speciesLabel','tier','scale','by','at','frontWalk','hasArt','frames'].forEach(k=>{ if(fields[k]!==undefined) upd['catalogPets/'+id+'/'+k]=fields[k]; });
           upd['catalogPetArt/'+id]={ walk:art.walk, south:art.south, north:art.north, east:art.east, west:art.west };
           delete _petArt[id];   // 세션 캐시 무효화(새 아트)
           return db.ref().update(upd);
@@ -3745,9 +3749,16 @@
     // ===== 🧱 벽꾸미기(벽 격자) — 바닥(placed)과 별개의 wallPlaced 레이어 =====
     // 벽 영역은 무대 위 46%(바닥선 bottom:54% 위). 가로 12칸 × 세로 4칸(위=천장 r1 … 아래=바닥선 r4). 깊이 없음(뒤 벽 평면).
     const WALL_COLS = 12, WALL_ROWS = 4;
-    const WALL_BASE = 54, WALL_STEP = 9.3;   // r행 바닥%(reuse .cr-prop bottom 앵커): r4=54(바닥선)·r1≈81.9(천장쪽)
+    // 세로 앵커 3종(고도화):
+    //  · floor(바닥형=벽난로): 맨 뒤 '바닥선'(뒤 바닥 가구와 동일 bottom% = 3+1*46=49)에 서고 depth1 크기 → 캠에서 바닥에 붙음(붕 뜸 해결). 행 무시(항상 바닥).
+    //  · mount(거는형=창문·벽시계): 벽 밴드 안에서 행이 높이(r4=바닥근처54%…r1=천장쪽). bottom 앵커.
+    //  · hang(매다는형=모빌·행잉플랜트): 천장쪽 top 앵커로 아래로 늘어짐(행이 낮을수록 위).
+    const WALL_MOUNT_BASE = 54, WALL_MOUNT_STEP = 11;   // mount r행 bottom%: r4=54 … r1=87
+    const WALL_ANCHOR = { fireplace:'floor', window:'mount', wallclock:'mount', hangplant:'hang', mobile:'hang' };
+    function wallAnchorOf(id){ return WALL_ANCHOR[id] || 'mount'; }
+    function wallSnapRow(id, r){ return wallAnchorOf(id)==='floor' ? WALL_ROWS : r; }   // 바닥형은 항상 맨 아래 행(바닥선) — 배치/이동/프리뷰 모두 스냅
     function wallFoot(id){ return { w:itemFoot(id).w, h:1 }; }   // 벽 가구는 가로 footW × 세로 1칸 점유
-    function furnWallH(id, isDock){ return furnRoomH(id, isDock, 0); }   // 벽 가구 크기 = 원근 없는 앞크기(depth 0)
+    function furnWallH(id, isDock){ return furnRoomH(id, isDock, 0); }   // mount/hang 크기 = 원근 없는 앞크기(depth 0)
     function wallPlacedList(){ const p=room().wallPlaced||{}; return Object.keys(p).map(k=>({key:k, r:+k.split('_')[0], c:+k.split('_')[1], itemId:p[k].itemId})); }
     function wallPlacedItemId(key){ const p=room().wallPlaced||{}; return p[key]&&p[key].itemId; }
     function wallOccupiedCells(wp, ignoreKey){ const occ={}; Object.keys(wp||{}).forEach(k=>{ if(k===ignoreKey) return;
@@ -3756,14 +3767,21 @@
       const occ=wallOccupiedCells(wp,ignoreKey); for(let dc=0;dc<w;dc++) if(occ[r+'_'+(c+dc)]) return false; return true; }
     function wallCellFromPoint(grid, x, y){ const rc=grid.getBoundingClientRect(), cw=rc.width/WALL_COLS, ch=rc.height/WALL_ROWS;
       const c=Math.floor((x-rc.left)/cw)+1, r=Math.floor((y-rc.top)/ch)+1; return { r:Math.min(WALL_ROWS,Math.max(1,r)), c:Math.min(WALL_COLS,Math.max(1,c)) }; }
-    // 벽 가구 캠 렌더 — 가로 앵커는 바닥과 동일(camAnchorMode), 세로는 벽 밴드 안 bottom%(깊이 없음), z=0(맨 뒤 벽 평면).
+    // 벽 가구 캠 렌더 — 가로 앵커는 바닥과 동일(camAnchorMode), 세로는 앵커 종류에 따라(floor/mount/hang), z=0(맨 뒤 벽 평면).
     function wallPropMarkup(p, isDock, live){
-      const foot=wallFoot(p.itemId), mode=camAnchorMode(p.c, foot.w);
+      const foot=wallFoot(p.itemId), mode=camAnchorMode(p.c, foot.w), anchor=wallAnchorOf(p.itemId);
       const leftPct = mode==='left'?0 : mode==='right'?100 : (gridLeftFrac(p.c)+gridSpanFrac(foot.w)/2)*100;
       const txPct = mode==='left'?0 : mode==='right'?-100 : -50, x=leftPct.toFixed(2);
-      const bottom=(WALL_BASE + (WALL_ROWS - p.r)*WALL_STEP).toFixed(1), fh=furnWallH(p.itemId, isDock);
+      let vpos, fh;
+      if(anchor==='floor'){        // 바닥형: 맨 뒤 바닥 가구와 동일한 '바닥선'(3+1*46=49% bottom)에 서서 바닥에 붙음(붕 뜸 해결). 크기는 다른 벽 가구와 동일(furnWallH).
+        fh=furnWallH(p.itemId, isDock); vpos='bottom:'+(3+1*46).toFixed(1)+'%';
+      } else if(anchor==='hang'){  // 매다는형: 천장쪽 top 앵커로 아래로 늘어짐(행이 낮을수록 위)
+        fh=furnWallH(p.itemId, isDock); vpos='top:'+(((p.r-1)/WALL_ROWS)*46).toFixed(1)+'%';
+      } else {                     // 거는형(mount): 벽 밴드 안 bottom%(행=높이)
+        fh=furnWallH(p.itemId, isDock); vpos='bottom:'+(WALL_MOUNT_BASE + (WALL_ROWS - p.r)*WALL_MOUNT_STEP).toFixed(1)+'%';
+      }
       const inner = live&&FURN_ANIM[p.itemId] ? furnLiveSvg(p.itemId,{h:fh}) : furnSvg(p.itemId,{h:fh});
-      return '<div class="cr-prop cr-wallprop" style="left:'+x+'%;bottom:'+bottom+'%;z-index:0;--crtx:'+txPct+'%;transform:translateX(var(--crtx));">'+inner+'</div>';
+      return '<div class="cr-prop cr-wallprop cr-wall-'+anchor+'" style="left:'+x+'%;'+vpos+';z-index:0;--crtx:'+txPct+'%;transform:translateX(var(--crtx));">'+inner+'</div>';
     }
     let _selWall=null;
     function selWallItem(id){ if(itemRemaining(id)<=0){ toast(catFurnName(id)+' 전부 배치됨 — 회수하거나 더 얻어야 걸 수 있어요', true); return; } _selWall=(_selWall===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
@@ -3784,6 +3802,7 @@
       if(itemRemaining(_selWall)<=0){ toast('배치할 수량이 없어요(랜덤박스로 획득)', true); return; }
       const w=wallFoot(_selWall).w, p=wallCellFromPoint(grid, e.clientX, e.clientY);
       let c=Math.max(1, Math.min(WALL_COLS+1-w, p.c-Math.round((w-1)/2))), r=p.r;
+      if(wallAnchorOf(_selWall)==='floor') r=WALL_ROWS;   // 바닥형은 항상 맨 아래 행(바닥선) — 캠에서 바닥에 서므로 에디터도 바닥 행에 고정
       if(!wallAreaFree(r,c,w,room().wallPlaced||{},null)){ toast('그 자리엔 걸 수 없어요(겹침)', true); return; }
       wallPlaceItemTx(_selWall, r, c);
     }
