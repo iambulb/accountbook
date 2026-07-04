@@ -621,7 +621,7 @@
       { id:'litterbox', name:'화장실', price:25, size:1, footW:1, footH:1, desc:'비운 그릇 수만큼 똥이 쌓여요. 탭해 치우면 은화!' },
       { id:'pethouse', name:'펫하우스', price:45, size:2, footW:2, footH:2, desc:'펫이 안에 들어가 정면을 보며 아늑하게 쉬어요.' },
       { id:'catwheel', name:'캣휠', price:60, size:2, footW:2, footH:2, desc:'고양이가 안에서 달리며 운동하는 러닝휠.' },
-      { id:'plant',    name:'화분',   price:22, size:1, footW:1, footH:2, desc:'초록 화분. 고양이가 곁에서 잠시 쉬어요.' }
+      { id:'plant',    name:'화분',   price:22, size:1, footW:1, footH:1, desc:'초록 화분. 고양이가 곁에서 잠시 쉬어요.' }
     ];
     // 소비 아이템(배치 불가) — 홈에서 밥그릇/물그릇을 탭해 채울 때 소모. 알뜰샵 "소비" 탭에서 구매.
     const CONSUM_CATALOG = [
@@ -1140,7 +1140,7 @@
     // 방(dock·홈)에서의 가구 렌더 높이(px) — 발자국 세로 칸수(footH)에 비례해 키움(캣타워 6칸=제일 큼, 스크래처 1칸=고양이 키만큼, 방석·밥그릇 1칸).
     // 고양이 상호작용(캣타워 3층 올라가기 등)이 맞아떨어지도록 렌더·엔진(fh)이 같은 값을 쓴다. depth(뒤로 갈수록) 작게.
     // 방 렌더 높이 배율(실물감) — 캣타워 제일 큼, 스크래처는 고양이 키만큼, 화장실=낮은 상자, 방석·그릇 작게.
-    const ROOM_H = { tower:6.2, scratcher:1.9, pethouse:2.8, catwheel:3.0, plant:2, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6 };
+    const ROOM_H = { tower:6.2, scratcher:1.9, pethouse:2.8, catwheel:3.0, plant:1.5, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6 };
     // 가구 그래픽 가로세로비(cols/rows) — 좌측하단 앵커라 그래픽 중앙 x = 좌측 edge + fh*aspect/2 (고양이가 가구 중앙에 서게).
     const FURN_ASPECT = { tower:0.533, scratcher:0.636, pethouse:1.05, catwheel:1.0, plant:0.6, litterbox:1.167, cushion:1.778, bowl:1.778, waterbowl:1.778 };
     function furnAspect(id){ return FURN_ASPECT[id]||1; }
