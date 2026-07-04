@@ -653,8 +653,8 @@
     .cd-room svg, .cd-room img { -webkit-user-drag:none; user-drag:none; }
     .cd-room .cr-wall { position:absolute; inset:0; z-index:0; }
     /* 알뜰홈(.catroom) 캠과 동일 비율: 바닥 54%·벽지 46%·무대 58%. 펫이 알뜰홈처럼 맨 뒤 벽지까지 걸어가 닿는다(예전 dock 66%는 바닥이 너무 커 펫이 벽에 못 닿고 가구와 깊이도 안 맞았음). */
-    .cd-room .cr-floor { position:absolute; left:0; right:0; bottom:0; height:54%; background:var(--soft2); z-index:0; }
-    .cd-room .cr-base { position:absolute; left:0; right:0; bottom:54%; height:1px; background:var(--bd); z-index:1; }
+    .cd-room .cr-floor { position:absolute; left:0; right:0; bottom:0; height:calc(54% + 1px); background:var(--soft2); z-index:0; }   /* 경계 1px을 바닥으로 채움(흰 경계선 제거) */
+    .cd-room .cr-base { position:absolute; left:0; right:0; bottom:54%; height:1px; background:transparent; z-index:1; }
     .cd-room .cr-props { position:absolute; inset:0; }   /* z-index 제거(auto) → 가구(.cr-prop)와 펫(.cd-actor)이 같은 방 컨텍스트에서 각자 z로 상호 가림 */
     .cd-room .cr-stage { position:absolute; left:0; right:0; bottom:0; height:58%; pointer-events:none; }   /* z-index 제거(auto): 펫이 무대 단위로 항상 앞이 아니라, 깊이 z로 가구와 섞임 */
     .cd-room .cd-coin { position:absolute; top:5px; left:12px; z-index:45; cursor:pointer; }   /* 원근 z(≤12)보다 높게 → 펫/가구가 배지를 가리지 않음 */
@@ -667,7 +667,7 @@
     .cd-coin.tap { animation:coinpress .18s ease; }
     @keyframes coinpress { 40%{ transform:scale(.84); } 100%{ transform:scale(1); } }
     .cd-room .cd-actor { bottom:0; }   /* 맨 앞(depth0) 펫 발이 캠 최하단에 닿게 */
-    .cr-floor { position:absolute; left:0; right:0; bottom:0; height:54%; background:var(--soft2); z-index:0; }
+    .cr-floor { position:absolute; left:0; right:0; bottom:0; height:calc(54% + 1px); background:var(--soft2); z-index:0; }   /* 경계 1px을 바닥으로 채움(흰 경계선 제거) */
     /* 🧵 집꾸미기 픽셀 타일 배경(canvas PNG)을 크게 반복해도 도트가 뭉개지지 않게 */
     .cr-floor, .cr-wall, .cd-room .cr-floor, .wallsw, .fx-tile { image-rendering:pixelated; }
     /* 벽지 알뜰샵 */
@@ -702,7 +702,7 @@
     /* 방(웹캠 — 위에서 아래로 내려다보는 뷰: 바닥을 넓게, 벽지는 좁게) */
     .catroom { position:relative; height:244px; border-radius:16px; overflow:hidden; isolation:isolate; border:1px solid var(--bd); margin:4px 0 6px; }   /* 세로 확대: 큰 캣타워가 잘리지 않게. isolation=방을 독립 스택 컨텍스트로 → 펫·가구가 각자 z로 상호 가림하되 방 밖(sticky 헤더 등)엔 안 샘 */
     .cr-wall { position:absolute; inset:0; z-index:0; background:linear-gradient(180deg,color-mix(in srgb,var(--soft) 60%,var(--card)) 0%,var(--soft) 46%,var(--soft2) 46%,var(--soft2) 100%); }   /* 벽지 세로 소폭 연장(42→46%) */
-    .cr-base { position:absolute; left:0; right:0; bottom:54%; height:1px; background:var(--bd); z-index:1; }   /* 바닥 뒤끝(벽 경계) = 배치 맨 뒤 행 */
+    .cr-base { position:absolute; left:0; right:0; bottom:54%; height:1px; background:transparent; z-index:1; }   /* 바닥 뒤끝(벽 경계) = 배치 맨 뒤 행. 흰 경계선 제거(바닥이 1px 위까지 채움) */
     /* 웹캠 방: LIVE 배지를 좌측 상단으로 */
     .cr-cam { position:absolute; top:8px; left:12px; display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:800; color:var(--sub); background:var(--card); border:1px solid var(--bd); border-radius:20px; padding:4px 10px 4px 8px; z-index:45; }   /* 원근 z(≤12)보다 높게 */
     .cr-cam i { width:6px; height:6px; border-radius:50%; background:var(--expense); flex:none; }
@@ -718,7 +718,7 @@
     @keyframes coinbump { 0%,100%{transform:scale(1)} 42%{transform:scale(1.22)} }
     /* 배치 탭 미니 웹캠 프리뷰(현재 배치를 방 뷰로 보여줘 앞=아래/뒤=위 방향 안내, 표시 전용) */
     .miniroom { position:relative; height:120px; border-radius:12px; overflow:hidden; isolation:isolate; border:1px solid var(--bd); margin:2px 0 12px; }   /* isolation=미니룸을 독립 스택 컨텍스트로 → 내부 '미리보기' 배지(z45)가 스크롤 시 sticky 헤더 위로 새어보이던 버그 방지 */
-    .miniroom .cr-floor { height:52%; }
+    .miniroom .cr-floor { height:calc(52% + 1px); }
     .miniroom .cr-base { bottom:52%; }
     .miniroom .cr-props { pointer-events:none; }
     .miniroom .cr-cam { font-size:9px; padding:3px 8px 3px 6px; top:6px; left:8px; }

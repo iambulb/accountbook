@@ -974,7 +974,7 @@
       { id:'mobile', cat:'decor',   name:'모빌',   price:800, size:1.4, footW:1, footH:1, wall:true, desc:'천장에 매다는 모빌. 별·달·하트가 살랑여요.' },
       { id:'jingleball', cat:'play', name:'방울공', price:800, size:1, footW:1, footH:1, desc:'통통 흔들리는 방울 공. 펫이 굴리며 놀아요.' },
       { id:'frame',  cat:'decor', name:'액자',   price:800, size:1.4, footW:1, footH:1, wall:true, desc:'벽에 거는 풍경 액자.' },
-      { id:'shelf',  cat:'decor', name:'벽 선반', price:800, size:1.4, footW:1, footH:1, wall:true, desc:'벽에 다는 선반. 소품이 올려져 있어요.' },
+      { id:'shelf',  cat:'decor', name:'벽 선반', price:800, size:1.4, footW:2, footH:1, wall:true, desc:'벽에 다는 선반. 소품이 올려져 있어요.' },
       { id:'mirror', cat:'decor', name:'거울',   price:800, size:1.4, footW:1, footH:1, wall:true, desc:'벽에 거는 금테 거울.' },
       { id:'neon',   cat:'decor', name:'네온사인', price:800, size:1.4, footW:1, footH:1, wall:true, desc:'벽에 다는 네온 하트. 은은하게 깜빡여요.' },
       { id:'sconce', cat:'decor', name:'벽등',   price:800, size:1.4, footW:1, footH:1, wall:true, desc:'벽에 다는 등불. 불빛이 일렁여요.' }
