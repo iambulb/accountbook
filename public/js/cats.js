@@ -2080,7 +2080,7 @@
       const x=((p.c-1)/12*100).toFixed(2);
       const frontRow=p.r + foot.h - 1;   // 발자국에서 가장 앞(가까운) 줄에 바닥을 둠 → 가구가 위로 뜨지 않음
       // 반전: 격자 윗줄(작은 r)=방 뒤(멀리, 위·작게), 아랫줄(큰 r)=방 앞(가까이, 아래·크게)
-      const depth=(12-frontRow)/11; const bottom=(isDock?(3+depth*38):(3+depth*46)).toFixed(1); const fh=furnRoomH(p.itemId,isDock,depth);
+      const depth=(12-frontRow)/11; const bottom=(3+depth*46).toFixed(1); const fh=furnRoomH(p.itemId,isDock,depth);   // dock·홈 동일 깊이 매핑(바닥 54%) → 뒤 가구가 펫과 같은 바닥선에 정렬
       // 원근 가림: 앞(frontRow 큰 값)일수록 z-index를 높여 앞 가구가 뒤 가구를 덮게 한다.
       // (밥·물그릇/화장실의 고정 z-index:2가 이 깊이 순서를 깨뜨리던 문제 → 인라인 z-index로 덮어씀)
       const z=Math.max(1, Math.round(frontRow));
@@ -2222,9 +2222,9 @@
       const roomEl = stage.closest('.catroom') || stage.closest('.cd-room');
       const roomH = (roomEl && roomEl.clientHeight) || (isDock?110:244);
       // 위에서 내려다보는(탑다운) 느낌: 맨 앞(depth0)=바닥 앞끝, 맨 뒤(depth1)=바닥 뒤끝(벽지 경계)에 닿게.
-      // depth1 발높이 ≈ base + riseMax 이므로, 바닥 세로비(홈 cr-floor 54%·dock 66%)에 맞춰 뒤 펫이 벽에 닿도록 폭을 키움.
+      // dock·홈(.catroom) 둘 다 바닥 54%로 통일 → 같은 riseMax 비율(0.53)로 뒤 펫이 벽지 경계에 닿는다(예전 dock 0.61은 바닥 66% 기준이라 벽에 못 닿았음).
       // (발밑 여백 상쇄 pad는 깊이와 무관하게 적용되어 맨 앞은 여전히 바닥에 붙음 — 뜨는 문제 재발 없음.)
-      const riseMax = roomH*(isDock?0.61:0.53);
+      const riseMax = roomH*0.53;
       // 가구 위치(발자국 중앙 x)·렌더 높이(fh)·깊이(depth) — 상호작용 시 올라갈 높이·앞뒤 정렬(가림)에 사용
       const plist = (isFriend && state._friendCam) ? state._friendCam.placedList : placedList();   // 친구 방이면 친구 가구로 상호작용
       const props = hasRoom ? plist.map(p=>{ const foot=itemFoot(p.itemId), depth=(12-(p.r+foot.h-1))/11;   // propMarkup과 동일(앞줄 기준)

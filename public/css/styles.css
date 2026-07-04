@@ -651,10 +651,11 @@
     .cd-room { position:relative; height:110px; overflow:hidden; isolation:isolate; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }   /* 캠 세로 확장. isolation=방 하나를 독립 스택 컨텍스트로 → 펫·가구가 각자 z-index로 상호 가림하되 방 밖(헤더 등)엔 안 샘. 드래그 시 이미지/텍스트 선택 방지 */
     .cd-room svg, .cd-room img { -webkit-user-drag:none; user-drag:none; }
     .cd-room .cr-wall { position:absolute; inset:0; z-index:0; }
-    .cd-room .cr-floor { position:absolute; left:0; right:0; bottom:0; height:66%; background:var(--soft2); z-index:0; }
-    .cd-room .cr-base { position:absolute; left:0; right:0; bottom:66%; height:1px; background:var(--bd); z-index:1; }
+    /* 알뜰홈(.catroom) 캠과 동일 비율: 바닥 54%·벽지 46%·무대 58%. 펫이 알뜰홈처럼 맨 뒤 벽지까지 걸어가 닿는다(예전 dock 66%는 바닥이 너무 커 펫이 벽에 못 닿고 가구와 깊이도 안 맞았음). */
+    .cd-room .cr-floor { position:absolute; left:0; right:0; bottom:0; height:54%; background:var(--soft2); z-index:0; }
+    .cd-room .cr-base { position:absolute; left:0; right:0; bottom:54%; height:1px; background:var(--bd); z-index:1; }
     .cd-room .cr-props { position:absolute; inset:0; }   /* z-index 제거(auto) → 가구(.cr-prop)와 펫(.cd-actor)이 같은 방 컨텍스트에서 각자 z로 상호 가림 */
-    .cd-room .cr-stage { position:absolute; left:0; right:0; bottom:0; height:66%; pointer-events:none; }   /* z-index 제거(auto): 펫이 무대 단위로 항상 앞이 아니라, 깊이 z로 가구와 섞임 */
+    .cd-room .cr-stage { position:absolute; left:0; right:0; bottom:0; height:58%; pointer-events:none; }   /* z-index 제거(auto): 펫이 무대 단위로 항상 앞이 아니라, 깊이 z로 가구와 섞임 */
     .cd-room .cd-coin { position:absolute; top:5px; left:12px; z-index:45; cursor:pointer; }   /* 원근 z(≤12)보다 높게 → 펫/가구가 배지를 가리지 않음 */
     /* dock 캠 LIVE 배지(은화 대신) — 탭하면 알뜰홈. 방 이름이 길면 말줄임. */
     .cd-room .cr-cam.cd-cam { top:5px; left:12px; cursor:pointer; max-width:72%; }
