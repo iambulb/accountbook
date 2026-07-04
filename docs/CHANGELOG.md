@@ -8,6 +8,10 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 리팩터 — 🧪 벽 격자 순수 로직을 util.js로 추출(단위 테스트)
+- 벽 배치 격자 계산을 **DOM/카탈로그 비의존 순수 함수**로 util.js에 분리: `wallOccupiedCellsPure`·`wallAreaFreePure`(격자 cols/rows·발자국 너비 주입)·`wallSnapRowPure`(앵커→행 스냅). `cats.js`는 카탈로그 값(`wallFoot`·`wallAnchorOf`·`WALL_COLS/ROWS`)을 주입하는 **얇은 래퍼**만 유지(동작 동일).
+- **회귀 테스트 3개 추가**(`test/util.test.js`, 총 44개 통과): 점유 칸 확장·격자 경계/겹침·바닥형 행 스냅. `sw.js` `v3.286.0`.
+
 ### 수정·고도화 — 🛡️ 저장 실패 처리·접근성·성능(코드 검토 반영)
 - **저장 실패가 조용히 묻히던 문제 수정**: 거래·할일·예산·구독·목적별·경조사·대출 저장이 fire-and-forget이라 서버 거부(규칙/검증) 시에도 성공 표시되던 것 → `.catch(_saveErr)`로 **실패 시 안내 토스트**(낙관적 쓰기·오프라인 동작은 유지).
 - **접근성**: 거래 입력 폼(`.txfield`)에 스크린리더 라벨 자동 부여(`aria-label`), 에러 토스트를 `aria-live=assertive`+표시 연장, 동명이인 비공개 오노출 방지(`canSee`가 `ownerUid` 우선).

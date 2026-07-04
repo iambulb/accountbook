@@ -924,8 +924,11 @@
     .cr-prop .ffx-wallclock .px { transform-origin:50% 52%; animation-duration:2s; }     /* 추 피벗 */
     .cr-prop .ffx-hangplant .px { transform-origin:50% 4%; animation-duration:5s; }      /* 천장 걸이 */
     .cr-prop .ffx-mobile .px    { transform-origin:50% 6%; animation-duration:6s; }      /* 걸이 */
-    .cr-prop .ffx-chandelier .px{ transform-origin:50% 4%; animation-duration:6.8s; }    /* 천장 체인 피벗에서 은은하게 흔들(대형 매다는 가구는 느리게) */
+    .cr-prop .ffx-chandelier .px{ transform-origin:50% 3%; animation-duration:4.2s; }    /* 천장 체인 피벗에서 흔들 — 더 활발하게(느린 6.8s→4.2s) */
     .cr-prop .ffx-jingleball .px{ transform-origin:50% 94%; animation-duration:1.6s; }   /* 바닥 접점에서 통통 */
+    .cr-prop .ffx-neon .px      { animation-name:ffneon; animation-duration:1.9s; }      /* 네온: 더 잦고 불규칙한 파르르 깜빡 */
+    .cr-prop .ffx-sconce .px    { animation-name:ffflame; animation-duration:0.62s; transform-origin:50% 34%; }   /* 촛불: 크고 빠른 일렁(밑동 기준) */
+    .cr-prop .ffx-mirror .px    { animation:ffsheen 3.8s ease-in-out infinite; }         /* 거울: 사선 광택이 반짝 스윕 */
     @keyframes ffspin  { to { transform:rotate(360deg); } }
     @keyframes ffswing { 0%,100%{ transform:rotate(-6deg); } 50%{ transform:rotate(6deg); } }
     @keyframes ffsway  { 0%,100%{ transform:rotate(-4.5deg); } 50%{ transform:rotate(4.5deg); } }
@@ -940,6 +943,12 @@
     @keyframes ffripple { 0%,100%{ transform:translateX(-1%); } 50%{ transform:translateX(1.2%); } }
     @keyframes ffflicker { 0%,100%{ transform:scaleY(1) translateX(0); } 30%{ transform:scaleY(1.08) translateX(-4%); } 55%{ transform:scaleY(0.94) translateX(3%); } 80%{ transform:scaleY(1.05) translateX(-2%); } }
     @keyframes ffblink { 0%,72%,100%{ opacity:1; } 76%,80%{ opacity:.32; } 84%{ opacity:.9; } 88%,92%{ opacity:.4; } }   /* 대부분 켜짐 + 가끔 짧게 깜빡 */
+    /* 네온: 더 잦고 불규칙하게 파르르(steps 기반 base와 함께 sharp on/off) */
+    @keyframes ffneon { 0%,56%,100%{ opacity:1; } 59%,62%{ opacity:.3; } 65%{ opacity:1; } 78%,81%{ opacity:.5; } 84%{ opacity:1; } 92%{ opacity:.28; } 95%{ opacity:1; } }
+    /* 벽등 촛불: 크고 빠르게 일렁(세로 스케일+좌우) */
+    @keyframes ffflame { 0%,100%{ transform:scaleY(1) translateX(0); } 20%{ transform:scaleY(1.2) translateX(-7%); } 45%{ transform:scaleY(.86) translateX(6%); } 70%{ transform:scaleY(1.13) translateX(-4%); } 88%{ transform:scaleY(.95) translateX(3%); } }
+    /* 거울 광택: 사선으로 스윕하며 밝아졌다 사라짐 */
+    @keyframes ffsheen { 0%,100%{ transform:translate(-5%,-5%); opacity:.2; } 45%{ transform:translate(5%,5%); opacity:1; } 58%{ transform:translate(5%,5%); opacity:.2; } }
     @media (prefers-reduced-motion:reduce){ .cr-prop .ffx .px { animation:none; } }
     /* 다마고치: 탭 가능한 그릇 / 화장실 위 똥 / 똥 수거 획득 연출 */
     .cr-prop.cr-tap { cursor:pointer; z-index:2; }
