@@ -297,27 +297,29 @@
       "..XX......XX.."
     ];
     // 펫하우스(2×2): 박공 지붕(R 지붕·r 기와줄)+ 통나무 벽(W/w 널결)+ 정면 출입구(D=어두운 실내). 출입구 안 앞에 펫이 앉아 정면(south)을 봄. 22×20 → 가로세로비 1.1.
+    // 펫하우스(개집) — 사다리꼴(윗변 짧고 밑변 넓은) 지붕 + 처마 돌출 + 아치형 문. 22×21, 가로세로비 ≈1.05.
     const M_PETHOUSE = [
-      "..........XX..........",
-      ".........XRRX.........",
-      "........XRrRRX........",
-      ".......XRRrRRRX.......",
-      "......XRRRrRRRRX......",
-      ".....XRRrRRRrRRRX.....",
-      "....XRRRRrRRRrRRRX....",
-      "...XRRrRRRRrRRRrRRX...",
-      "..XRRRRrRRRRrRRRrRRX..",
-      "..XXXXXXXXXXXXXXXXXX..",
-      "..XWwWWwWWWWwWWwWWWX..",
-      "..XWWWWWWWWWWWWWWWWX..",
-      "..XWwWWDDDDDDDDWWwWX..",
-      "..XWWWXDDDDDDDDXWWWX..",
-      "..XWwWXDDDDDDDDXWwWX..",
-      "..XWWWXDDDDDDDDXWWWX..",
-      "..XWwWXDDDDDDDDXWwWX..",
-      "..XWWWXDDDDDDDDXWWWX..",
-      "..XWwWXDDDDDDDDXWwWX..",
-      "..XXXXXDDDDDDDDXXXXX.."
+      "......XRrRRRrRRX......",
+      ".....XHrRHRrHRRrX.....",
+      ".....XrRRRrRRRrRX.....",
+      "....XrRRRrRRRrRRRX....",
+      "...XrRRRrRRRrRRRrRX...",
+      "..XrRRRrRRRrRRRrRRRX..",
+      "..XRRRrRRRrRRRrRRRrX..",
+      ".XRRRrRRRrRRRrRRRrRRX.",
+      "XXXXXXXXXXXXXXXXXXXXXX",
+      "...XWWWWWWWWWWWWWWX...",
+      "...XWWWWWWWWWWWWWWX...",
+      "...XWWWWWDDDDWWWWWX...",
+      "...XwwwwDDDDDDwwwwX...",
+      "...XWWWWDDDDDDWWWWX...",
+      "...XWWWWDDDDDDWWWWX...",
+      "...XWWWWDDDDDDWWWWX...",
+      "...XwwwwDDDDDDwwwwX...",
+      "...XWWWWDDDDDDWWWWX...",
+      "...XWWWWDDDDDDWWWWX...",
+      "...XWWWWddddddWWWWX...",
+      "...XXXXXXXXXXXXXXXX..."
     ];
     // 캣휠(러닝휠): 러닝 트랙 링(X=림·W=밴드·H=하이라이트·T=러닝 발판(rung)) + 가운데 축(허브) + 롤러(R)·나무 스탠드(D). 캠에선 링 전체가 제자리 회전.
     // 맨 위 1줄 여백(윗부분 잘려 보이지 않게). 24×24, 가로세로비 1.0. 회전 중심 ≈ (47.9%, 43.75%).
@@ -380,7 +382,7 @@
       "....XppX....",
       ".....XX....."
     ];
-    const FURN_PALS={ cushion:{X:'#4a5361',C:'#9aa4b2',D:'#79838f',L:'#c2cad4',B:'#5b6470'}, bowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',F:'#d68b4a',f:'#b06a2e',g:'#efb37a'}, waterbowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',A:'#5aa9e6',a:'#3f86c4',h:'#bfe2fb'}, tower:{X:'#5e3f22',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#5e3f22',W:'#c99a5f',C:'#a87c46',L:'#e6c085',S:'#d8b98a',R:'#b8935f',T:'#6b4a2a',O:'#d9694e',H:'#f2a98f'}, litterbox:{X:'#7a808a',W:'#c9ced6',D:'#9aa0aa',S:'#f4efe4',s:'#e7e0d0',k:'#d6ccb8'}, pethouse:{X:'#5a4632',R:'#d9694e',r:'#b8503a',W:'#e8c98f',w:'#d4b06a',D:'#2c2420'}, plant:{X:'#7c5028',L:'#7cc652',G:'#4e9636',P:'#c8763e',p:'#a85e2c',l:'#9ad86a',S:'#6f9440'}, catwheel:{X:'#2f6f68',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',R:'#c9a06a',D:'#6b5842'} };
+    const FURN_PALS={ cushion:{X:'#4a5361',C:'#9aa4b2',D:'#79838f',L:'#c2cad4',B:'#5b6470'}, bowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',F:'#d68b4a',f:'#b06a2e',g:'#efb37a'}, waterbowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',A:'#5aa9e6',a:'#3f86c4',h:'#bfe2fb'}, tower:{X:'#5e3f22',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#5e3f22',W:'#c99a5f',C:'#a87c46',L:'#e6c085',S:'#d8b98a',R:'#b8935f',T:'#6b4a2a',O:'#d9694e',H:'#f2a98f'}, litterbox:{X:'#7a808a',W:'#c9ced6',D:'#9aa0aa',S:'#f4efe4',s:'#e7e0d0',k:'#d6ccb8'}, pethouse:{X:'#5a4632',R:'#d9694e',r:'#b8503a',H:'#f0967a',W:'#e8c98f',w:'#d4b06a',D:'#2c2420',d:'#46382c'}, plant:{X:'#7c5028',L:'#7cc652',G:'#4e9636',P:'#c8763e',p:'#a85e2c',l:'#9ad86a',S:'#6f9440'}, catwheel:{X:'#2f6f68',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',R:'#c9a06a',D:'#6b5842'} };
     const POOP_PAL={X:'#4a3218',K:'#7a5230'};
     const FOOD_PAL={F:'#d68b4a',D:'#8a5427',L:'#f2e4c6',K:'#7a4a20'};
     const WATER_PAL={A:'#5aa9e6',D:'#3f86c4',H:'#c7e6ff',L:'#eaf6ff'};
@@ -1136,7 +1138,7 @@
     // 방 렌더 높이 배율(실물감) — 캣타워 제일 큼, 스크래처는 고양이 키만큼, 화장실=낮은 상자, 방석·그릇 작게.
     const ROOM_H = { tower:6.2, scratcher:1.9, pethouse:2.8, catwheel:3.0, plant:2, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6 };
     // 가구 그래픽 가로세로비(cols/rows) — 좌측하단 앵커라 그래픽 중앙 x = 좌측 edge + fh*aspect/2 (고양이가 가구 중앙에 서게).
-    const FURN_ASPECT = { tower:0.533, scratcher:0.636, pethouse:1.1, catwheel:1.0, plant:0.6, litterbox:1.167, cushion:1.778, bowl:1.778, waterbowl:1.778 };
+    const FURN_ASPECT = { tower:0.533, scratcher:0.636, pethouse:1.05, catwheel:1.0, plant:0.6, litterbox:1.167, cushion:1.778, bowl:1.778, waterbowl:1.778 };
     function furnAspect(id){ return FURN_ASPECT[id]||1; }
     function furnRoomH(id, isDock, depth){
       const mult = ROOM_H[id] || 1;
@@ -2063,9 +2065,10 @@
       a.el.style.transform='translate3d('+Math.round(a.x)+'px,'+(-up)+'px,0) scale('+(s*d)+','+s+')'; if(a.pkey) _petX[a.pkey]=a.x; }
     // 스프라이트 프레임 아래 투명 여백 비율을 실제 이미지 알파로 1회 측정(펫별로 다름)→캐시.
     const _footPad={};
-    function measureFootPad(id, cb){
-      if(_footPad[id]!=null){ cb&&cb(_footPad[id]); return; }
-      const sp=PET_SPRITES[id]; if(!sp){ _footPad[id]=PET_FOOT_PAD; cb&&cb(_footPad[id]); return; }
+    // face=측정할 방향 스틸(기본 south=정면). 가챠 연출은 옆으로 걸어오니 'east'로 측정해야 발끝-알 바닥 정합이 정확. 방향별 여백이 달라 캐시 키를 id:face 로 분리.
+    function measureFootPad(id, cb, face){ face=face||'south'; const key=id+':'+face;
+      if(_footPad[key]!=null){ cb&&cb(_footPad[key]); return; }
+      const sp=PET_SPRITES[id]; if(!sp){ _footPad[key]=PET_FOOT_PAD; cb&&cb(_footPad[key]); return; }
       if(sp.runtime && sp.needArt && !sp.urls){ cb&&cb(PET_FOOT_PAD); return; }   // 아트 로딩 전(투명 픽셀)엔 측정·캐시 금지 — 로드 후 재측정
       const img=new Image(); img.crossOrigin='anonymous';
       img.onload=function(){ try{
@@ -2073,10 +2076,10 @@
           const cv=document.createElement('canvas'); cv.width=w; cv.height=h; const ctx=cv.getContext('2d');
           ctx.drawImage(img,0,0); const px=ctx.getImageData(0,0,w,h).data; let bottom=-1;
           for(let y=h-1;y>=0&&bottom<0;y--){ for(let x=0;x<w;x++){ if(px[(y*w+x)*4+3]>16){ bottom=y; break; } } }
-          _footPad[id]=(bottom<0)?PET_FOOT_PAD:Math.max(0,(h-1-bottom)/h);
-        }catch(e){ _footPad[id]=PET_FOOT_PAD; } cb&&cb(_footPad[id]); };
-      img.onerror=function(){ _footPad[id]=PET_FOOT_PAD; cb&&cb(_footPad[id]); };
-      img.src=sprStill(id,'south');
+          _footPad[key]=(bottom<0)?PET_FOOT_PAD:Math.max(0,(h-1-bottom)/h);
+        }catch(e){ _footPad[key]=PET_FOOT_PAD; } cb&&cb(_footPad[key]); };
+      img.onerror=function(){ _footPad[key]=PET_FOOT_PAD; cb&&cb(_footPad[key]); };
+      img.src=sprStill(id,face);
     }
     // ⚠️ 핵심 불변식(INVARIANT): "정면(south) 이미지로 이동 금지".
     // 스프라이트 액터의 이동/정지 비주얼(.cspr)은 반드시 아래 두 함수로만 바꾼다 — 모든 상태 전환(roam·pause)과
@@ -2141,7 +2144,7 @@
         mode:'roam', pause:0, goal:null, pose:null, resKey:null, resFloor:null,
         // 유휴(그 자리에 멈춰 정면 보기) — 자주·오래 서서 정면을 보도록(poseDur에서 시간 늘림)
         idle:0.0032+Math.random()*0.005, turn:0.004+Math.random()*0.010, seek:0.005+Math.random()*0.009, cool:0 };
-        a.footPad=(typeof _footPad!=='undefined'&&_footPad[id]!=null?_footPad[id]:null); if(spr) measureFootPad(id,function(fp){ a.footPad=fp; setXform(a); });
+        a.footPad=(typeof _footPad!=='undefined'&&_footPad[id+':south']!=null?_footPad[id+':south']:null); if(spr) measureFootPad(id,function(fp){ a.footPad=fp; setXform(a); });
         a.x=Math.max(2, Math.min(a.x, Math.max(2, W-a.sw)));   // 지속된 x를 현재 무대 폭에 클램프(리사이즈/회전·무대전환 시 화면 밖 방지)
         setWalkDur(a); el.style.left='0px'; applyDepth(a); setXform(a); a._pdir=a.dir;   // 위치·올림·깊이·방향 전부 transform(합성). left는 0 고정 → 걷는 동안 메인스레드 페인트 0
         // 액터는 항상 'roam'(이동)으로 시작. DOM 재사용(markCatDirty·무대 재부착)으로 남아있던 정지스틸(.idle)을
@@ -2839,23 +2842,42 @@
       if(typeof rerender==='function') rerender(); if(state && state._sheetRefresh) state._sheetRefresh(); }); }catch(e){} }
     // 🎬 가챠 오픈 연출에 등장하는 펫(개발자 지정, 전역). a=1번(왼쪽에서 등장·오른쪽 봄)·b=2번(오른쪽에서 등장·왼쪽 봄). 미지정이면 기본 검은고양이 스프라이트.
     let _gachaFx={};
+    let _fxForceCat=false;   // 개발자 '연출 미리보기'용 1회성 강제 플래그(등급 확률과 무관하게 고양이 연출을 무조건 표시). fxClimax가 읽고 즉시 끔.
     function loadGachaFx(){ try{ db.ref('config/gachaFx').on('value', function(s){ _gachaFx=s.val()||{}; }); }catch(e){} }
     function gachaFxSlotOf(id){ if(_gachaFx&&_gachaFx.a===id) return 'a'; if(_gachaFx&&_gachaFx.b===id) return 'b'; return null; }
+    function gachaSlotLabel(slot){ return slot==='a'?'1(왼쪽)':'2(오른쪽)'; }
+    // 슬롯 지정 펫 이름 + 경고(삭제되어 스프라이트 없음 ⚠ / frontWalk=걷기 모션 없음). 미지정이면 기본/없음.
+    function gachaFxSlotDesc(slot){ const id=_gachaFx&&_gachaFx[slot]; if(!id) return slot==='a'?'기본 검은 고양이':'없음';
+      let s=catName(id);
+      if(typeof hasSprite==='function' && !hasSprite(id)) s+=' ⚠삭제됨';
+      else if((PET_SPRITES[id]||{}).frontWalk) s+=' (걷기없음)';
+      return s; }
     function setGachaFxSlot(slot, id){ if(!(typeof isDev==='function'&&isDev())) return;
-      const cur=_gachaFx&&_gachaFx[slot]; const other=(slot==='a')?'b':'a'; const upd={};
-      if(cur===id){ upd['config/gachaFx/'+slot]=null; }                          // 같은 슬롯 재탭=해제
-      else { upd['config/gachaFx/'+slot]=id; if(_gachaFx&&_gachaFx[other]===id) upd['config/gachaFx/'+other]=null; }   // 다른 슬롯에 이미 있으면 옮김
-      db.ref().update(upd).then(function(){ toast('연출 '+(slot==='a'?'1(왼쪽)':'2(오른쪽)')+'번 '+((cur===id)?'해제':('= '+catName(id)))); if(typeof openDevPetManager==='function') openDevPetManager(); }).catch(function(){ toast('실패 — 관리자 계정만', true); }); }
+      const cur=_gachaFx&&_gachaFx[slot]; const other=(slot==='a')?'b':'a'; const lbl=gachaSlotLabel(slot);
+      const apply=function(){ const upd={};
+        if(cur===id){ upd['config/gachaFx/'+slot]=null; }                          // 같은 슬롯 재탭=해제
+        else { upd['config/gachaFx/'+slot]=id; if(_gachaFx&&_gachaFx[other]===id) upd['config/gachaFx/'+other]=null; }   // 다른 슬롯에 이미 있으면 옮김
+        db.ref().update(upd).then(function(){ toast('연출 '+lbl+'번 '+((cur===id)?'해제':('= '+catName(id)))); if(typeof openDevPetManager==='function') openDevPetManager(); }).catch(function(){ toast('실패 — 관리자 계정만', true); }); };
+      if(cur===id){ apply(); return; }   // 해제는 확인 없이
+      const sp=PET_SPRITES[id]||{}; const fw=sp.frontWalk?'\n※ 이 펫은 걷기 모션이 없어 옆 정지 스틸로 등장해요.':'';
+      confirmSheet('연출 '+lbl+'번을 “'+catName(id)+'”(으)로 지정할까요?\n모든 사용자에게 즉시 적용됩니다.'+fw, apply, {title:'가챠 연출 펫 지정', okLabel:'지정', danger:false}); }
+    // 연출 미리보기(개발자): 현재 지정된 연출 펫으로 고양이 연출을 강제 재생(전설 등급 더미 알). 지정 없으면 기본 검은 고양이.
+    function devPreviewGachaFx(){ if(!(typeof isDev==='function'&&isDev())) return;
+      const pid=(_gachaFx&&(_gachaFx.a||_gachaFx.b)) || (PET_CATALOG[0]&&PET_CATALOG[0].id);
+      closeSheet(); _fx=null; _fxForceCat=true; runGachaFx('egg', { id:pid, tier:'legend' }, false); }
     function featuredEligibleIds(){ return PET_CATALOG.filter(c=>!isGachaOnlyCat(c.id)).map(c=>c.id); }
     function featuredCatId(){ const mk=kstMonthKey();
       const ov=_featuredMap && _featuredMap[mk];   // 개발자 수동 선정 우선(존재·미삭제 펫이면)
       if(ov && PET_CATALOG.some(c=>c.id===ov && !c.deleted)) return ov;
       return featuredPetOfMonth(mk, featuredEligibleIds()); }
     // ---- dev: 이달의 펫 직접 선정(전역) ----
-    function setFeaturedPet(id){ if(!(typeof isDev==='function'&&isDev())) return;
-      try{ db.ref('config/featuredPet/'+kstMonthKey()).set(id).then(function(){ toast('이달의 펫: '+catName(id)); if(typeof openDevFeatured==='function') openDevFeatured(); }).catch(function(){ toast('실패 — 관리자 계정만 설정할 수 있어요', true); }); }catch(e){} }
-    function clearFeaturedPet(){ if(!(typeof isDev==='function'&&isDev())) return;
-      try{ db.ref('config/featuredPet/'+kstMonthKey()).remove().then(function(){ toast('자동 선정으로 되돌렸어요'); if(typeof openDevFeatured==='function') openDevFeatured(); }).catch(function(){ toast('실패 — 관리자 계정만', true); }); }catch(e){} }
+    // 쓰기 실패 안내 — 성공 콜백의 예외를 권한 실패로 오인하지 않게 UI 갱신은 try로 감싸고, 실패 시 실제 오류코드를 보여준다.
+    //  PERMISSION_DENIED면 대개 config 쓰기 '규칙 미배포'(웹 배포와 별개 — `firebase deploy --only database` 필요)거나 관리자 계정 아님.
+    function _cfgWriteErr(e){ console.error('config write', e); const c=(e&&(e.code||e.message))||''; toast('저장 실패'+(c?'('+c+')':'')+' — DB 규칙(config 쓰기) 미배포이거나 관리자 계정이 아님', true); }
+    function setFeaturedPet(id){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용', true); return; }
+      db.ref('config/featuredPet/'+kstMonthKey()).set(id).then(function(){ toast('이달의 펫: '+catName(id)); try{ openDevFeatured(); }catch(e){} }).catch(_cfgWriteErr); }
+    function clearFeaturedPet(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용', true); return; }
+      db.ref('config/featuredPet/'+kstMonthKey()).remove().then(function(){ toast('자동 선정으로 되돌렸어요'); try{ openDevFeatured(); }catch(e){} }).catch(_cfgWriteErr); }
     function openDevFeatured(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
       const mk=kstMonthKey(), cur=featuredCatId(), manual=!!(_featuredMap&&_featuredMap[mk]), ids=featuredEligibleIds();
       let h='<div class="note">'+monthLabelKo()+' <b>이달의 펫</b>을 직접 선정해요. 선정하면 <b>모든 사용자에게 즉시 반영</b>(전역 config, 관리자 계정만 쓰기). 선정하지 않으면 월키 해시로 자동 선정되며, 펫을 추가/삭제하면 자동 선정 펫이 바뀔 수 있어요.</div>';
@@ -3387,7 +3409,7 @@
       el.className='fx-cat walkin fxc-'+side+(isPet?' fxc-pet':' fxc-gc');
       el.style.setProperty('--cat', size+'px'); el.style.setProperty('--foot','0.06');
       if(isPet){ ensurePetArt(id); el.innerHTML='<div class="fxc-in">'+catActorHTML(id, size)+'</div>';
-        if(typeof measureFootPad==='function') measureFootPad(id, function(fp){ el.style.setProperty('--foot', (fp!=null?fp:0.06).toFixed(3)); }); }
+        if(typeof measureFootPad==='function') measureFootPad(id, function(fp){ el.style.setProperty('--foot', (fp!=null?fp:0.06).toFixed(3)); }, 'east'); }   // 연출은 옆(east)으로 걸으니 east 스틸 여백으로 발끝 정합
       else { el.innerHTML='<div class="fxc-in"></div>'; }
       st.appendChild(el);
     }
