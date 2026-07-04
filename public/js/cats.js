@@ -135,37 +135,67 @@
       "..XXSSSSXX..",
       "....XXXX...."
     ];
+    // 방석(1×1): 푹신한 쿠션 — L=하이라이트/C=천/D=음영/B=가운데 단추(터프팅). 16×9 → 가로세로비 ≈1.78.
     const M_CUSHION = [
-      "................","...XXXXXXXX.....","..XCCCCCCCCX....",".XCCCCCCCCCCX...",
-      ".XCDDDDDDDDCX...","..XXCCCCCCXX....","....XXXXXX......"
+      "................",
+      "...XXXXXXXXXX...",
+      "..XLLLLLLLLCCX..",
+      ".XLLLLLLLLLCCCX.",
+      ".XLLLLBBLLLCCCX.",
+      ".XLLDDBBDDLCCCX.",
+      ".XDDCCCCCCCCDDX.",
+      "..XXDCCCCCCDXX..",
+      "...XXXXXXXXXX..."
     ];
-    // 밥그릇: 기본은 빈 그릇(밥 이미지 제거). 홈에서 탭해 사료를 채우면 M_BOWL_FOOD로 표시.
+    // 밥그릇/물그릇(1×1): 도자기 그릇 — L=림 하이라이트/W=몸체/D=음영/베이스. 빈 그릇은 이 매트릭스. 16×9 → 가로세로비 ≈1.78.
+    // 홈에서 탭해 채우면 밥=M_BOWL_FOOD(사료 F/f/g), 물=M_WATERBOWL_WATER(물 A/a/h 리플)로 표시.
     const M_BOWL = [
-      "................","................","...XXXXXXXXX....","..XWWWWWWWWWWX..",
-      "..XWWWWWWWWWWX..","...XWWWWWWWWX...","....XXXXXXXX....","................"
+      "................",
+      "................",
+      "..XXXXXXXXXXXX..",
+      ".XLLLLLLLLLLLLX.",
+      ".XWWWWWWWWWWWWX.",
+      ".XDWWWWWWWWWWDX.",
+      "..XDWWWWWWWWDX..",
+      "...XXDDDDDDXX...",
+      ".....XXXXXX....."
     ];
     const M_BOWL_FOOD = [
-      "................",".....FFFFF......","...XFFFFFFFX....","..XWFFFFFFFWX...",
-      "..XWWWWWWWWWWX..","...XWWWWWWWWX...","....XXXXXXXX....","................"
+      "................",
+      ".....gFFg.......",
+      "...XXFFFFXX.....",
+      "..XLFFfFFfFLX...",
+      ".XLFFFFFFFFFFLX.",
+      ".XWWWWWWWWWWWWX.",
+      "..XDWWWWWWWWDX..",
+      "...XXDDDDDDXX...",
+      ".....XXXXXX....."
     ];
-    // 물그릇 채움(물=A). 빈 물그릇은 M_BOWL(회색)로 표시.
     const M_WATERBOWL_WATER = [
-      "................","................","...XXXXXXXXX....","..XAAAAAAAAAAX..",
-      "..XAAAAAAAAAAX..","...XAAAAAAAAX...","....XXXXXXXX....","................"
+      "................",
+      "................",
+      "..XXXXXXXXXXXX..",
+      ".XLLLLLLLLLLLLX.",
+      ".XWAAAAhAAAAAWX.",
+      ".XDAAAaAAAAAADX.",
+      "..XDAAAAAAAADX..",
+      "...XXDDDDDDXX...",
+      ".....XXXXXX....."
     ];
-    // 펫 화장실(1×1): 1칸에 거의 꽉 차는 정사각 오픈 모래 트레이(X=림 외곽, W=안쪽 림, S=모래). 비운 그릇 수만큼 똥이 모래 위에 쌓임. 가로세로비 ≈ 13/11.
+    // 펫 화장실(1×1): 오픈 모래 트레이 — 알갱이 텍스처(S/s/k 디더)로 모래를 표현, 앞벽(W)+베이스. 비운 그릇 수만큼 똥이 모래 위에 쌓임. 14×12 → 가로세로비 ≈1.17.
     const M_LITTER = [
-      ".............",
-      "..XXXXXXXXX..",
-      ".XWWWWWWWWWX.",
-      ".XWSSSSSSSWX.",
-      ".XWSSSSSSSWX.",
-      ".XWSSSSSSSWX.",
-      ".XWSSSSSSSWX.",
-      ".XWWWWWWWWWX.",
-      "XWWWWWWWWWWWX",
-      ".XXXXXXXXXXX.",
-      "............."
+      "..............",
+      ".XXXXXXXXXXXX.",
+      ".XsSSsSkSsSSX.",
+      ".XSskSSsSSksX.",
+      ".XsSSkSsSSsSX.",
+      ".XSkSsSSskSsX.",
+      ".XssSkSsSkSsX.",
+      ".XWWWWWWWWWWX.",
+      "XWWWWWWWWWWWWX",
+      "XWDDDDDDDDDDWX",
+      ".XXXXXXXXXXXX.",
+      ".............."
     ];
     const M_POOP = [
       "........","...XX...","..XKKX..",".XKKKKX.",".XKKKKX.","..XKKX..","...XX...","........"
@@ -266,28 +296,28 @@
       ".XXXXXXXXXXXX.",
       "..XX......XX.."
     ];
-    // 펫하우스(3×3): 박공 지붕 + 정면 아치 출입구. 출입구 안(D=어두운 실내) 앞에 펫이 앉아 정면(south)을 봄. 24×20 → 가로세로비 1.2.
+    // 펫하우스(2×2): 박공 지붕(R 지붕·r 기와줄)+ 통나무 벽(W/w 널결)+ 정면 출입구(D=어두운 실내). 출입구 안 앞에 펫이 앉아 정면(south)을 봄. 22×20 → 가로세로비 1.1.
     const M_PETHOUSE = [
-      "...........XX...........",
-      "..........XRRX..........",
-      ".........XRRRRX.........",
-      "........XRRRRRRX........",
-      ".......XRRRRRRRRX.......",
-      "......XRRRRRRRRRRX......",
-      ".....XRRRRRRRRRRRRX.....",
-      "....XRRRRRRRRRRRRRRX....",
-      "...XRRRRRRRRRRRRRRRRX...",
-      "...XXXXXXXXXXXXXXXXXX...",
-      "....XWWWWWWWWWWWWWWX....",
-      "....XWWWWWWDDWWWWWWX....",
-      "....XWWWWWDDDDWWWWWX....",
-      "....XWWWWDDDDDDWWWWX....",
-      "....XWWWDDDDDDDDWWWX....",
-      "....XWWWDDDDDDDDWWWX....",
-      "....XWWWDDDDDDDDWWWX....",
-      "....XWWWDDDDDDDDWWWX....",
-      "....XWWWDDDDDDDDWWWX....",
-      "....XXXXDDDDDDDDXXXX...."
+      "..........XX..........",
+      ".........XRRX.........",
+      "........XRrRRX........",
+      ".......XRRrRRRX.......",
+      "......XRRRrRRRRX......",
+      ".....XRRrRRRrRRRX.....",
+      "....XRRRRrRRRrRRRX....",
+      "...XRRrRRRRrRRRrRRX...",
+      "..XRRRRrRRRRrRRRrRRX..",
+      "..XXXXXXXXXXXXXXXXXX..",
+      "..XWwWWwWWWWwWWwWWWX..",
+      "..XWWWWWWWWWWWWWWWWX..",
+      "..XWwWWDDDDDDDDWWwWX..",
+      "..XWWWXDDDDDDDDXWWWX..",
+      "..XWwWXDDDDDDDDXWwWX..",
+      "..XWWWXDDDDDDDDXWWWX..",
+      "..XWwWXDDDDDDDDXWwWX..",
+      "..XWWWXDDDDDDDDXWWWX..",
+      "..XWwWXDDDDDDDDXWwWX..",
+      "..XXXXXDDDDDDDDXXXXX.."
     ];
     // 캣휠(러닝휠): 세로로 선 큰 링(러닝 트랙, X=림 테두리·W=밴드·H=하이라이트·T=트레드 슬랫) + 롤러(R)·나무 스탠드(D). 2×2, 가로세로비 ≈ 24/23.
     const M_CATWHEEL = [
@@ -325,23 +355,30 @@
     const COIN_PAL={X:'#6f7681',S:'#d6dbe1',D:'#a8afb8',A:'#4a4f57',E:'#d6dbe1',P:'#cf8f6c'};
     const GOLD_PAL={X:'#8a6a1e',S:'#F4D06B',D:'#caa23a',A:'#7a5a12',E:'#fff0b8',P:'#cf8f6c'};   // 금화(은화와 동형, 금색)
     // 화분(장식): 초록 잎(L=밝은 초록, G=진한 초록 테두리) + 테라코타 화분(P) + 화분 테두리(X). 세로형(8×14).
+    // 화분(1×1, 세로형): 무성한 잎(G 진초록·L 잎·l 하이라이트) + 테라코타 화분(P/p 음영·X 외곽) + 줄기(L). 12×20 → 가로세로비 0.6.
     const M_PLANT = [
-      "...GG...",
-      "..GLLG..",
-      ".GLLLLG.",
-      ".GLLLLG.",
-      "GLLGGLLG",
-      ".GLLLLG.",
-      ".GLLLLG.",
-      "..GLLG..",
-      "...GG...",
-      "...LL...",
-      ".XPPPPX.",
-      ".PPPPPP.",
-      ".PPPPPP.",
-      "..XXXX.."
+      "....GG......",
+      "...GllG.GG..",
+      "..GlLLGGllG.",
+      ".GLLLLlLLLG.",
+      ".GLlGLLLGLG.",
+      "GLLLGLlGLLLG",
+      ".GLLLLLLLLG.",
+      ".lGLLLLLLGl.",
+      "..GLLGGLLG..",
+      "...GLLLLG...",
+      "....GllG....",
+      ".....GG.....",
+      ".....LL.....",
+      "....XPPX....",
+      "...XPppPX...",
+      "...PppppP...",
+      "...PppppP...",
+      "...pPPPPp...",
+      "....XppX....",
+      ".....XX....."
     ];
-    const FURN_PALS={ cushion:{X:'#5b6470',C:'#a9b2be',D:'#868f9c'}, bowl:{X:'#5b6470',W:'#d0d6dd',F:'#d68b4a'}, waterbowl:{X:'#5b6470',W:'#d0d6dd',A:'#5aa9e6'}, tower:{X:'#5e3f22',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#5e3f22',W:'#c99a5f',C:'#a87c46',L:'#e6c085',S:'#d8b98a',R:'#b8935f',T:'#6b4a2a',O:'#d9694e',H:'#f2a98f'}, litterbox:{X:'#8a8f98',W:'#c9ced6',S:'#e6dcc3'}, pethouse:{X:'#5a4632',R:'#d9694e',W:'#e8c98f',D:'#2c2420'}, plant:{X:'#7c5028',L:'#7cc652',G:'#4e9636',P:'#c8763e'}, catwheel:{X:'#2f6f68',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',R:'#c9a06a',D:'#6b5842'} };
+    const FURN_PALS={ cushion:{X:'#4a5361',C:'#9aa4b2',D:'#79838f',L:'#c2cad4',B:'#5b6470'}, bowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',F:'#d68b4a',f:'#b06a2e',g:'#efb37a'}, waterbowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',A:'#5aa9e6',a:'#3f86c4',h:'#bfe2fb'}, tower:{X:'#5e3f22',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#5e3f22',W:'#c99a5f',C:'#a87c46',L:'#e6c085',S:'#d8b98a',R:'#b8935f',T:'#6b4a2a',O:'#d9694e',H:'#f2a98f'}, litterbox:{X:'#7a808a',W:'#c9ced6',D:'#9aa0aa',S:'#ece3cc',s:'#d8caa6',k:'#bca97e'}, pethouse:{X:'#5a4632',R:'#d9694e',r:'#b8503a',W:'#e8c98f',w:'#d4b06a',D:'#2c2420'}, plant:{X:'#7c5028',L:'#7cc652',G:'#4e9636',P:'#c8763e',p:'#a85e2c',l:'#9ad86a',S:'#6b4a2a'}, catwheel:{X:'#2f6f68',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',R:'#c9a06a',D:'#6b5842'} };
     const POOP_PAL={X:'#4a3218',K:'#7a5230'};
     const FOOD_PAL={F:'#d68b4a',D:'#8a5427',L:'#f2e4c6',K:'#7a4a20'};
     const WATER_PAL={A:'#5aa9e6',D:'#3f86c4',H:'#c7e6ff',L:'#eaf6ff'};
@@ -1082,7 +1119,7 @@
     // 방 렌더 높이 배율(실물감) — 캣타워 제일 큼, 스크래처는 고양이 키만큼, 화장실=낮은 상자, 방석·그릇 작게.
     const ROOM_H = { tower:6.2, scratcher:1.9, pethouse:2.8, catwheel:3.0, plant:2, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6 };
     // 가구 그래픽 가로세로비(cols/rows) — 좌측하단 앵커라 그래픽 중앙 x = 좌측 edge + fh*aspect/2 (고양이가 가구 중앙에 서게).
-    const FURN_ASPECT = { tower:0.533, scratcher:0.636, pethouse:1.2, catwheel:1.04, plant:0.57, litterbox:1.18, cushion:2.29, bowl:2.0, waterbowl:2.0 };
+    const FURN_ASPECT = { tower:0.533, scratcher:0.636, pethouse:1.1, catwheel:1.04, plant:0.6, litterbox:1.167, cushion:1.778, bowl:1.778, waterbowl:1.778 };
     function furnAspect(id){ return FURN_ASPECT[id]||1; }
     function furnRoomH(id, isDock, depth){
       const mult = ROOM_H[id] || 1;

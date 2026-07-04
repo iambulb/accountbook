@@ -361,7 +361,7 @@
     .prow .editk { flex:none; color:var(--sub); opacity:.55; display:flex; }
     .prow .editk svg { width:18px; height:18px; }
     .grow .mstack { flex:none; }
-    .grow .cnt { font-size:11.5px; font-weight:700; color:var(--card); background:var(--primary); border-radius:20px; padding:6px 13px; flex:none; }
+    .prow .cnt, .grow .cnt { font-size:11.5px; font-weight:700; color:var(--card); background:var(--primary); border-radius:20px; padding:6px 13px; flex:none; }
     /* 그룹 멤버 아바타 겹침 나열 */
     .mstack { display:flex; align-items:center; min-width:0; cursor:pointer; background:none; border:0; padding:0; }
     /* 소유자 왕관(픽셀) — 이름 옆 인라인 정렬 */

@@ -1607,13 +1607,16 @@
     function renderMore(){
       const ws=state.wsMeta||{}; const isGroup=ws.type==='group'; const memCount=Object.keys(ws.members||{}).length;
       let h='<div class="more-wrap">';
-      // 상단: 내 프로필 — 아바타 44 + 이름(flex) + 편집 chevron(우측)
+      // 상단: 내 프로필 — 아바타 44 + 이름(flex) + 받은 좋아요 + (개인이면 전환 버튼) + 편집 chevron(우측)
+      // 개인 사용자는 프로필=워크스페이스라 아래 컨텍스트 행이 얼굴 아바타를 중복 표시했다 → 전환 버튼만 이 행으로 올리고 둘째 줄은 생략(그룹만 별도 행). 버튼은 행 전체 openProfileSheet와 안 겹치게 stopPropagation.
+      const switchBtn = isGroup ? '' : '<button class="cnt" onclick="event.stopPropagation();openWorkspaceSheet()">전환</button>';
       h+='<div class="prow" onclick="openProfileSheet()">'+
          avatarHtml(state.uid, state.userName, 44)+
          '<div class="pnm"><b>'+escapeHtml(state.userName||'사용자')+'</b><span>내 프로필</span></div>'+
          '<span class="likemini" title="받은 좋아요">'+(typeof heartSvg==='function'?heartSvg({h:14}):'❤')+' '+(state.myLikeCount||0)+'</span>'+
+         switchBtn+
          '<span class="editk">'+MORE_ICON.chev+'</span></div>';
-      // 그 아래: 현재 컨텍스트 — 개인 프로필(내 아바타·'개인 프로필', 편집 없음=사용자 프로필 소관) / 그룹(그룹 사진·이름·멤버, 소유자만 편집). 칩과 일치시킴.
+      // 그 아래: 현재 컨텍스트 — 그룹일 때만(그룹 사진·이름·멤버, 소유자만 편집). 개인은 위 프로필 행에 전환 버튼만.
       if(isGroup){
         const canEditWs = isWsOwner();
         h+='<div class="grow"'+(canEditWs?' onclick="openWsProfileSheet()"':'')+'>'+
@@ -1621,11 +1624,6 @@
            '<div class="gnm"><b>'+escapeHtml(ws.name||'가계부')+'</b><span>'+('그룹 · 멤버 '+memCount+'명')+'</span></div>'+
            memberAvatarStack(ws, 26)+
            '<button class="cnt" onclick="event.stopPropagation();openWorkspaceSheet()">전환</button></div>';
-      } else {
-        h+='<div class="grow">'+
-           avatarHtml(state.uid, state.userName||'', 44)+
-           '<div class="gnm"><b>개인 프로필</b><span>나만 보는 가계부 · 할일</span></div>'+
-           '<button class="cnt" onclick="openWorkspaceSheet()">전환</button></div>';
       }
       // 4열 기능 그리드 — 할일 모드면 할일 전용, 아니면 가계부 전용(알뜰홈·설정은 공용)
       h+='<div class="grid4">';
