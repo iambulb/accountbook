@@ -3645,12 +3645,10 @@
     }
     function closeFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx=null; }
 
-    // ================= 개발자 패널: 펫알/박스 확률·구성 =================
+    // ================= 개발자 패널: 재화관리(연출/다마고치 테스트 · 재화 지급) =================
     function openDevGacha(){
       if(!isDev()) return;
-      const cfg=devCfg(), tp=cfg.tiers||{}, ct=effCatTier(), it=effItemTier();
-      const tierOpt=(cur)=>TIERS.map(t=>'<option value="'+t.id+'"'+(cur===t.id?' selected':'')+'>'+t.name+'</option>').join('');
-      let h='<div class="note"><span class="pill">이 기기만</span> 개발자 전용 · 이 설정(확률·등급·연출/다마고치 테스트)은 <b>이 기기(브라우저)에만</b> 적용됩니다(재화 지급은 내 계정에 반영). 확률 합이 100이 아니어도 비율로 반영돼요.</div>';
+      let h='<div class="note"><span class="pill">이 기기만</span> 개발자 전용 · 이 설정(연출/다마고치 테스트)은 <b>이 기기(브라우저)에만</b> 적용됩니다(재화 지급은 내 계정에 반영).</div>';
       h+='<div class="sec-title">연출 테스트(무료)</div>';
       h+='<div class="tx-sub" style="margin:0 2px 6px;">펫알</div><div class="chip-row">'+TIERS.map(t=>'<button class="chip" onclick="devPreview(\'egg\',\''+t.id+'\')"><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
       h+='<div class="tx-sub" style="margin:8px 2px 6px;">랜덤박스</div><div class="chip-row">'+TIERS.map(t=>'<button class="chip" onclick="devPreview(\'box\',\''+t.id+'\')"><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
@@ -3663,15 +3661,7 @@
       { const cur6=[['coins','은화',coinSvg({h:18})],['gold','금화',goldSvg({h:18})],['egg','펫알',eggSvg(0,{h:18})],['box','랜덤박스',boxSvg({h:18})],['rainbow_egg','무지개알',rainbowEggSvg({h:18})],['rainbow_box','무지개박스',rainbowBoxSvg({h:18})]];
         h+=cur6.map(function(c){ return '<div class="row" style="padding:5px 2px;align-items:center;"><span style="display:flex;align-items:center;gap:8px;min-width:0;"><span style="display:inline-flex;flex:none;">'+c[2]+'</span>'+c[1]+'</span><input class="input" style="width:120px;text-align:right;" inputmode="numeric" id="dv_'+c[0]+'" placeholder="0"></div>'; }).join(''); }
       h+='<button class="btn" style="margin-top:12px;" onclick="devGrantCurrency()">지급</button>';
-      h+='<div class="sec-title" style="margin-top:18px;">등급 확률(%)</div>';
-      h+=TIERS.map(t=>'<div class="row" style="padding:5px 2px;"><span><b class="tier-'+t.id+'">'+t.name+'</b></span><input class="input" style="width:96px;text-align:right;" inputmode="decimal" id="dp_'+t.id+'" value="'+(tp[t.id]!=null?tp[t.id]:t.p)+'"></div>').join('');
-      h+='<div class="sec-title" style="margin-top:18px;">펫알 — 고양이 등급</div>';
-      h+=PET_CATALOG.map(c=>'<div class="row" style="padding:5px 2px;"><span>'+c.name+'</span><select class="input" style="width:120px;" id="dc_'+c.id+'">'+tierOpt(ct[c.id])+'</select></div>').join('');
-      h+='<div class="sec-title" style="margin-top:18px;">랜덤박스 — 가구 등급</div>';
-      h+=ITEM_CATALOG.map(i=>'<div class="row" style="padding:5px 2px;"><span>'+i.name+'</span><select class="input" style="width:120px;" id="di_'+i.id+'">'+tierOpt(it[i.id])+'</select></div>').join('');
-      h+='<button class="btn" style="margin-top:14px;" onclick="saveDevGacha()">저장</button>';
-      h+='<button class="btn ghost" style="margin-top:8px;" onclick="resetDevGacha()">기본값으로 초기화</button>';
-      openSheet('개발자 · 펫알/박스', h);
+      openSheet('개발자 · 재화관리', h);
     }
     function saveDevGacha(){
       const c={ tiers:{}, catTier:{}, itemTier:{} };

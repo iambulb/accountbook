@@ -179,7 +179,7 @@
       else if(e.credit&&!e.debit) sub=acctName(t.to);
       else sub=(t.category?t.category+' · ':'')+acctName(t.from);
       if(!['expense','income','transfer'].includes(t.type)) sub=TYPE_LABEL[t.type]+' · '+sub;
-      sub+=' · '+escapeHtml(t.user||'');
+      sub+=' · '+escapeHtml(ownerName(t.user||''));   // t.user(소비 대상)도 멤버 uid로 저장될 수 있어 ownerName으로 이름 해석
       const rec=t.recurringId?'<span class="pill">🔁</span>':'';
       const cardPill=(getCard(t.from)&&(t.type==='expense'||t.type==='prepaid_charge')&&t.cardPerformanceIncluded===false)?'<span class="pill">실적제외</span>':'';
       const pbPill=t.purposeBookId?'<span class="pill">'+escapeHtml(t.purposeBookName||'목적')+'</span>':'';
@@ -1218,7 +1218,7 @@
       const bal=accountBalance(a.id);
       const prov=(a.provider&&a.provider!=='manual')?'<span class="pill">'+(PROVIDER_LABEL[a.provider]||a.provider)+'</span>':'';
       const vis=(a.visibility&&a.visibility!=='full')?'<span class="pill">'+(a.visibility==='private'?'개인':'잔액만')+'</span>':'';
-      const sub=(ACCT_TYPE_LABEL[a.type]||a.type)+(a.owner?' · '+escapeHtml(a.owner):'');
+      const sub=(ACCT_TYPE_LABEL[a.type]||a.type)+(a.owner?' · '+escapeHtml(ownerName(a.owner)):'');   // owner는 멤버 uid로 저장될 수 있어 반드시 ownerName으로 이름 해석(uid 그대로 노출 방지)
       return '<div class="acct" onclick="openAcctSheet(\''+a.id+'\')"><div class="acct-dot">'+acctIcon(a.type)+'</div>'+
         '<div style="min-width:0;" class="acct-nm"><b>'+escapeHtml(a.name)+prov+vis+'</b><span>'+sub+'</span></div>'+
         '<div class="acct-bal '+(bal<0?'red':'')+'">'+won(bal)+'</div></div>';
@@ -1718,7 +1718,7 @@
       h+=lrow(MORE_ICON.gear,'개발자 모드','toggleDevMode();openDevModeSheet()', devOn()?'켜짐':'꺼짐');
       if(devOn()){
         h+=lrow((typeof peopleSvg==='function'?peopleSvg({h:20}):MORE_ICON.gear),'사용자 현황','closeSheet();openDevUsers()');
-        h+=lrow(MORE_ICON.gift,'펫알 · 박스 설정','closeSheet();openDevGacha()');
+        h+=lrow(MORE_ICON.gift,'재화관리','closeSheet();openDevGacha()');
         h+=lrow((typeof goldSvg==='function'?goldSvg({h:21}):MORE_ICON.cat),'펫 (추가 · 수정 · 삭제)','closeSheet();openDevPetManager()');
         h+=lrow((typeof sparkSvg==='function'?sparkSvg({h:20}):MORE_ICON.gear),'이달의 펫 선정','closeSheet();openDevFeatured()');
         h+=lrow((typeof giftSvg==='function'?giftSvg({h:21}):MORE_ICON.gift),'전체 선물 보내기','closeSheet();openDevBroadcast()');
@@ -2762,7 +2762,7 @@
       const rows=monthTx(state.month).sort((a,b)=>new Date(a.date)-new Date(b.date));
       if(!rows.length){ toast('이번달 거래가 없습니다', true); return; }
       const header=['날짜','유형','사용자','카테고리','출금','입금','금액','실제소비','카드실적금액','원통화','외화금액','환율','환율원본','환율일자','설명','메모'];
-      const lines=rows.map(t=>[ (t.date||'').substring(0,10), TYPE_LABEL[t.type]||t.type, t.user||'', t.category||'', acctName(t.from), acctName(t.to), t.amount||0, (isActual(t)?(Number(t.amount)||0):0), (t.cardPerformanceIncluded?(t.cardPerformanceAmount!=null?t.cardPerformanceAmount:t.amount):0), t.currency||'', (t.foreignAmount!=null?t.foreignAmount:''), (t.fxRate!=null?t.fxRate:''), t.fxSource||'', t.fxDate||'', t.desc||'', t.memo||'' ]
+      const lines=rows.map(t=>[ (t.date||'').substring(0,10), TYPE_LABEL[t.type]||t.type, ownerName(t.user||''), t.category||'', acctName(t.from), acctName(t.to), t.amount||0, (isActual(t)?(Number(t.amount)||0):0), (t.cardPerformanceIncluded?(t.cardPerformanceAmount!=null?t.cardPerformanceAmount:t.amount):0), t.currency||'', (t.foreignAmount!=null?t.foreignAmount:''), (t.fxRate!=null?t.fxRate:''), t.fxSource||'', t.fxDate||'', t.desc||'', t.memo||'' ]
         .map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
       const csv='﻿'+[header.join(','),...lines].join('\r\n');
       const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
