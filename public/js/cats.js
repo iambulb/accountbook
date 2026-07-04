@@ -965,7 +965,7 @@
       { id:'lavender',name:'라벤더',price:30, css:'linear-gradient(180deg,#e0d0f5 0%,#f3ecfb 100%)' },
       { id:'brick',   name:'벽돌',  price:35, tile:{ m:M_WALL_BRICK, pal:FLOOR_PALS.brickwall, tw:22, th:22 } }
     ];
-    function wallCss(id){ const w=WALLPAPER_CATALOG.find(x=>x.id===id)||WALLPAPER_CATALOG[0]; return w.tile? tileBg(w.tile.m, w.tile.pal, w.tile.tw, w.tile.th) : w.css; }
+    function wallCss(id){ const w=WALLPAPER_CATALOG.find(x=>x.id===id)||WALLPAPER_CATALOG[0]; if(!w.tile) return w.css; if(_tileBgCache['w:'+id]) return _tileBgCache['w:'+id]; return (_tileBgCache['w:'+id]=tileBg(w.tile.m, w.tile.pal, w.tile.tw, w.tile.th)); }
     function ownsWall(id){ return id==='default' || !!(state.game&&state.game.owned.wallpapers[id]); }
     // ---- 여러 방(프리셋) 접근자 — 모든 방별 읽기/쓰기는 반드시 이 헬퍼를 거친다(현재 방 기준). ----
     function homeH(){ return (state.game&&state.game.home)||{ rooms:[{active:[],placed:{},wallpaper:'default',poops:0,name:'방 1'}], current:0, roomSlots:BASE_ROOMS, slots:BASE_SLOTS }; }
@@ -990,7 +990,11 @@
     }
     function currentWall(){ return room().wallpaper||'default'; }
     // 바닥 스킨(픽셀 타일) - 벽지처럼 방마다 적용. .cr-floor 배경에 반복 타일(SVG data URI). default=단색.
-    function tileBg(M, pal, tw, th){ try{ const svg=pxSvg(M, pal, {}).replace('<svg ', '<svg width="'+M[0].length+'" height="'+M.length+'" '); return "url('data:image/svg+xml,"+encodeURIComponent(svg)+"') 0 0 / "+tw+"px "+th+"px repeat, var(--soft2)"; }catch(e){ return 'var(--soft2)'; } }
+    const _tileBgCache={};
+    // 🧵 집꾸미기 타일 배경 = canvas → PNG data URI (반드시! SVG data URI는 인트린식 크기 문제로 배경 이미지가 브라우저에서 래스터화 안 돼 회색만 보임). image-rendering:pixelated + background-size로 크게 반복.
+    function tileBg(M, pal, tw, th){ try{ const cols=M[0].length, rows=M.length, cv=document.createElement('canvas'); cv.width=cols; cv.height=rows; const cx=cv.getContext('2d');
+        for(let y=0;y<rows;y++){ const rw=M[y]; for(let x=0;x<cols;x++){ const ch=rw[x]; if(ch==='.'||ch===' ')continue; const c=pal[ch]; if(!c)continue; cx.fillStyle=c; cx.fillRect(x,y,1,1); } }
+        return "url('"+cv.toDataURL()+"') 0 0 / "+tw+"px "+th+"px repeat"; }catch(e){ return 'var(--soft2)'; } }
     const FLOOR_CATALOG = [
       { id:'default',   name:'기본',     price:0 },
       { id:'wood',      name:'원목마루', price:30, m:M_FLOOR_WOOD,      pal:FLOOR_PALS.wood,      tw:26, th:26 },
@@ -1002,7 +1006,7 @@
       { id:'tatami',    name:'다다미',   price:30, m:M_FLOOR_TATAMI,    pal:FLOOR_PALS.tatami,    tw:26, th:26 },
       { id:'brickpath', name:'벽돌길',   price:30, m:M_FLOOR_BRICKPATH, pal:FLOOR_PALS.brickpath, tw:26, th:26 }
     ];
-    function floorCss(id){ const f=FLOOR_CATALOG.find(x=>x.id===id)||FLOOR_CATALOG[0]; return f.m? tileBg(f.m, f.pal, f.tw, f.th) : 'var(--soft2)'; }
+    function floorCss(id){ if(_tileBgCache['f:'+id]) return _tileBgCache['f:'+id]; const f=FLOOR_CATALOG.find(x=>x.id===id)||FLOOR_CATALOG[0]; const v=f.m? tileBg(f.m, f.pal, f.tw, f.th) : 'var(--soft2)'; return (_tileBgCache['f:'+id]=v); }
     function currentFloor(){ return room().floor||'default'; }
     function ownsFloor(id){ return id==='default' || !!(state.game&&state.game.owned&&state.game.owned.floors&&state.game.owned.floors[id]); }
     // 미션 정의(일일). reward=은화. check(ctx)=완료 여부(현재 워크스페이스 활동 읽어 판정)

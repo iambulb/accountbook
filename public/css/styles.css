@@ -667,6 +667,8 @@
     @keyframes coinpress { 40%{ transform:scale(.84); } 100%{ transform:scale(1); } }
     .cd-room .cd-actor { bottom:0; }   /* 맨 앞(depth0) 펫 발이 캠 최하단에 닿게 */
     .cr-floor { position:absolute; left:0; right:0; bottom:0; height:54%; background:var(--soft2); z-index:0; }
+    /* 🧵 집꾸미기 픽셀 타일 배경(canvas PNG)을 크게 반복해도 도트가 뭉개지지 않게 */
+    .cr-floor, .cr-wall, .cd-room .cr-floor, .wallsw, .fx-tile { image-rendering:pixelated; }
     /* 벽지 알뜰샵 */
     .wallgrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
     .wallcard { background:var(--card); border:1.5px solid var(--bd); border-radius:14px; padding:10px; display:flex; flex-direction:column; gap:8px; }

@@ -20,7 +20,7 @@
 
 ### 수정 — 🩹 바닥 스킨·벽돌 벽지가 회색으로만 보이던 버그
 - **원인**: 타일 배경 SVG(data URI)에 `width`/`height`가 없어 브라우저가 배경 이미지로 **래스터화하지 않음**(→ `var(--soft2)` 폴백 회색만 표시). `viewBox`만으로는 인트린식 크기가 없어 렌더 실패.
-- **수정**: `tileBg`가 SVG에 `width`/`height`(=매트릭스 cols/rows)를 주입 → 인트린식 크기 확보. `background-size`로 26px 타일 반복 정상 렌더. 바닥·벽돌 벽지·등장 연출 스와치 모두 반영. `sw.js` `v3.254.0`.
+- **수정**: 타일 배경 렌더를 **SVG data URI → canvas PNG data URI**(`tileBg`)로 교체. SVG는 인트린식 크기가 없어 배경 이미지로 래스터화되지 않아 회색만 보였음(width/height 주입으로도 불안정). canvas에 1칸=1px로 그려 `toDataURL()` PNG를 `background-size`+`image-rendering:pixelated`로 반복 → 확실히 렌더. id별 캐시(`_tileBgCache`). 바닥·벽돌 벽지·알뜰샵 스와치·랜덤박스 연출 모두 반영. **CLAUDE.md에 재발방지 규칙 문서화**. `sw.js` `v3.256.0`.
 
 ### 변경 — 🎁 바닥·벽돌벽지·연못을 랜덤박스 전용으로(등급 부여)
 - **랜덤박스에서만 획득**: 바닥 스킨 8종·벽돌 벽지·연못을 알뜰샵에서 **직접 구매 불가**로 바꾸고 **랜덤박스(가챠) 전용**으로. 박스 풀에 통합(`boxPool`: 가구+바닥+벽돌, 타입 프리픽스 `it:`/`fl:`/`wl:`), 타입별 지급(`grantBoxReward`: `owned.floors`/`owned.wallpapers`/`owned.items`), 등장 연출도 바닥/벽지는 타일 스와치로 표시(`rewardBoxArt`/`rewardName`).
