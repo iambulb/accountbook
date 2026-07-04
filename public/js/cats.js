@@ -2093,12 +2093,16 @@
       window.addEventListener('resize', _catResize); window.addEventListener('orientationchange', _catResize); }
     function stopWalk(){ _eng.groups=[]; }
     // 지금 애니메이션해야 할 무대들(중복 없이). 시트로 열린 방(친구=frStage·내 알뜰홈=crStage)과 하단 dock 캠(cdStage)을 함께 굴린다.
+    // ⚠️ 시트 무대는 반드시 '시트가 열려 있을 때만' 포함한다 — closeSheet는 #sheetBody를 비우지 않아 닫힌 뒤에도 #frStage/#crStage가 DOM에 남는다.
+    //    (예전 단일 무대 엔진은 남은 frStage를 계속 활성 무대로 잡아, 친구 집을 닫아도 dock 캠이 영영 멈춰 앱 재시작 전까지 안 움직였다.)
     function activeStages(){
       const out=[];
-      const fr=$('frStage'); if(fr) out.push(fr);                                   // 친구 집 방문 중인 방
       const sheetOpen=$('sheet')&&$('sheet').classList.contains('on');
-      if(sheetOpen && _catTab==='home'){ const s=$('crStage'); if(s && out.indexOf(s)<0) out.push(s); }   // 내 알뜰홈 시트의 방
-      if(dockMode()!=='hidden'){ const s=$('cdStage'); if(s && out.indexOf(s)<0) out.push(s); }            // 하단 dock 캠(시트가 떠 있어도 계속 로밍)
+      if(sheetOpen){
+        const fr=$('frStage'); if(fr) out.push(fr);                                             // 친구 집 방문 중인 방
+        const cr=$('crStage'); if(cr && _catTab==='home' && out.indexOf(cr)<0) out.push(cr);    // 내 알뜰홈 시트의 방
+      }
+      if(dockMode()!=='hidden'){ const s=$('cdStage'); if(s && out.indexOf(s)<0) out.push(s); }  // 하단 dock 캠(시트가 떠 있어도 계속 로밍)
       return out;
     }
     function buildActors(stage){
@@ -2266,11 +2270,14 @@
     function catLoop(ts){
       if(document.hidden){ _eng.raf=0; return; }   // 탭 숨김 → 루프 정지(복귀 시 visibilitychange로 재개, 유휴 배터리 절약)
       const dt=_eng.last?Math.min(50,ts-_eng.last):16; _eng.last=ts;
-      const want=activeStages();
-      // 무대 집합이 바뀌었거나 dirty면 그룹 재구성 — 유지되는 무대의 액터는 재사용해 애니메이션 상태 보존, 새 무대만 buildActors.
-      const changed=_eng.dirty || _eng.groups.length!==want.length || _eng.groups.some(g=>want.indexOf(g.stage)<0);
-      if(changed){ _eng.groups=want.map(st=>{ const ex=_eng.dirty?null:_eng.groups.find(g=>g.stage===st); return ex||{ stage:st, actors:buildActors(st) }; }); _eng.dirty=false; }
-      if(!reducedMotion()) _eng.groups.forEach(g=>{ if(g.actors.length) stepActors(dt, g.actors); });   // 모든 무대(dock + 열린 방)를 함께 굴림
+      // ⚠️ 한 프레임에서 예외가 나도 루프를 '영구' 종료시키지 않게 try/catch — 아래 requestAnimationFrame은 무조건 다시 예약(예전엔 예외 시 재예약이 건너뛰어져 앱 재시작 전까지 펫이 완전 정지했다).
+      try{
+        const want=activeStages();
+        // 무대 집합이 바뀌었거나 dirty면 그룹 재구성 — 유지되는 무대의 액터는 재사용해 애니메이션 상태 보존, 새 무대만 buildActors.
+        const changed=_eng.dirty || _eng.groups.length!==want.length || _eng.groups.some(g=>want.indexOf(g.stage)<0);
+        if(changed){ _eng.groups=want.map(st=>{ const ex=_eng.dirty?null:_eng.groups.find(g=>g.stage===st); return ex||{ stage:st, actors:buildActors(st) }; }); _eng.dirty=false; }
+        if(!reducedMotion()) _eng.groups.forEach(g=>{ if(g.actors.length) stepActors(dt, g.actors); });   // 모든 무대(dock + 열린 방)를 함께 굴림
+      }catch(e){ /* 이 프레임만 건너뛰고 다음 프레임 계속 */ }
       _eng.raf=requestAnimationFrame(catLoop);
     }
     function startCatLoop(){ if(!_eng.raf && !(typeof document!=='undefined'&&document.hidden)) _eng.raf=requestAnimationFrame(catLoop); }
