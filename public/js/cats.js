@@ -2258,10 +2258,8 @@
       };
       openSheet('알뜰홈', build());
       state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const st=b.scrollTop;
-        const chips=b.querySelector('.catchips'); const chipsL=chips?chips.scrollLeft:0;   // 우리집 펫 카드(가로 스크롤 strip) 위치 보존 — 선택 시 재렌더로 첫 카드로 튀지 않게
-        const pal=b.querySelector('.palette'); const palL=pal?pal.scrollLeft:0;   // 배치 팔레트(가로 스크롤) 위치 보존 — 스크롤해 아이템 선택 시 처음으로 안 튀게
+        const pal=b.querySelector('.palette'); const palL=pal?pal.scrollLeft:0;   // 배치 팔레트(가로 스크롤) 위치 보존 — 스크롤해 아이템 선택 시 처음으로 안 튀게(우리집 펫은 세로 그리드라 세로 scrollTop만 보존)
         b.innerHTML=build(); b.scrollTop=st;
-        const nchips=b.querySelector('.catchips'); if(nchips) nchips.scrollLeft=chipsL;
         const npal=b.querySelector('.palette'); if(npal) npal.scrollLeft=palL;
         if(_catTab==='home'){ mountRoomWalk(); applyPetFilter(); } };   // 재렌더 후 현재 검색어 재적용
       if(_catTab==='home'){ setTimeout(mountRoomWalk, 30); applyPetFilter(); }
@@ -3022,7 +3020,12 @@
       updateNewsBadge(); }
     function unseenNoticeCount(){ const s=newsSeenAt(); return NOTICES.filter(function(n){ return n.date>s; }).length; }
     function giftUnread(){ return giftCount() + (typeof mailCount==='function'?mailCount():0); }   // 안 받은 선물 = 코드보상(gifts) + 친구선물(mailbox)
-    function newsUnread(){ return giftUnread() + unseenNoticeCount(); }   // 뱃지 = 안 받은 선물(코드+친구) + 안 본 공지
+    function newsUnread(){ return giftUnread() + unseenNoticeCount(); }   // (브랜드 아이콘) 뱃지 = 안 받은 선물(코드+친구) + 안 본 공지
+    // 아직 안 쓴 프로모 쿠폰 개수(state.game.codes에 없는 PROMO_CODES 키 수).
+    function unusedCouponCount(){ const codes=(state.game&&state.game.codes)||{}; return Object.keys(PROMO_CODES).filter(function(c){ return !codes[c]; }).length; }
+    // 더보기 '소식' 셀 뱃지 = 안 쓴 쿠폰 + 안 본 공지 (선물은 제외 — 선물 알림은 '선물함' 셀과 브랜드 아이콘에만 표시해 중복/혼동 방지).
+    // 소식 탭 진입(markNewsSeen) 후엔 안 본 공지=0 → 안 쓴 쿠폰 수만 남는다.
+    function newsMoreCount(){ return unusedCouponCount() + unseenNoticeCount(); }
     // 좌상단 브랜드(알뜰 메인) 아이콘 = 소식 진입. 그 위에 안 받은 선물(코드+친구)+안 본 공지 수를 뱃지로.
     function updateNewsBadge(){ const el=$('newsBadge'); if(!el) return; const n=newsUnread(); if(n>0){ el.textContent=n>9?'9+':String(n); el.hidden=false; } else { el.hidden=true; el.textContent=''; } }
     // 쿠폰 보상 픽셀 아이콘(PROMO_CODES 타입별) — 이모지 대신 도트 아이콘 재사용.
@@ -3045,7 +3048,8 @@
       h+=NOTICES.map(function(n){ return '<div class="newsupd"><span class="nu-ic">'+noticeIcon(n)+'</span><div class="nu-tx"><b>'+escapeHtml(noticeTitle(n))+'</b><span>'+escapeHtml(n.s)+'</span></div></div>'; }).join('');
       h+='<div class="cnote"><b><span style="display:inline-flex;vertical-align:-2px">'+ticketSvg({h:14})+'</span> 쿠폰</b> — 더보기 → 코드 입력에서 사용하세요</div>';
       const _codes=(state.game&&state.game.codes)||{};
-      h+=Object.keys(PROMO_CODES).map(function(code){ const d=PROMO_CODES[code]; const used=!!_codes[code]; return '<div class="cpn'+(used?' used':'')+'"><code>'+code+'</code><span class="rw"><span class="ci">'+couponIcon(d)+'</span>'+d.label+(used?'<span class="cused">사용완료</span>':'')+'</span></div>'; }).join('');
+      // 코드는 대문자로 안내(입력은 redeemCode가 소문자로 정규화해 대소문자 무관). used 판정은 저장 키(소문자 code) 그대로.
+      h+=Object.keys(PROMO_CODES).map(function(code){ const d=PROMO_CODES[code]; const used=!!_codes[code]; return '<div class="cpn'+(used?' used':'')+'"><code>'+escapeHtml(code.toUpperCase())+'</code><span class="rw"><span class="ci">'+couponIcon(d)+'</span>'+d.label+(used?'<span class="cused">사용완료</span>':'')+'</span></div>'; }).join('');
       return h;
     }
     function catMissionHtml(){

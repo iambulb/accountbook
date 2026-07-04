@@ -746,13 +746,9 @@
     .dexcell .dexlv { font-size:9px; color:#e0567a; letter-spacing:-1px; }
     .dexcell.locked .dexpic { filter:brightness(0) opacity(.26); }   /* 미보유=실루엣 */
     .dexcell.locked { opacity:.9; }
-    /* 펫 칩 애정 하트 */
-    .catchip .caff { font-size:9px; color:#e0567a; letter-spacing:-1px; line-height:1; margin-top:1px; }
     /* 쓰다듬기 하트 연출 */
     .heartfx { position:fixed; z-index:60; transform:translate(-50%,-50%); font-size:20px; color:#ff5d7a; pointer-events:none; animation:heartrise .8s ease-out forwards; }
     .heartfx .px { display:block; }   /* 픽셀 하트(heartSvg) 렌더 */
-    /* 우리집 펫 카드 — 이름 옆 애정 레벨 배지 */
-    .catchip .cn-lv { display:inline-block; margin-left:4px; font-size:10px; font-weight:800; color:#e0567a; vertical-align:1px; }
     @keyframes heartrise { 0%{ opacity:0; transform:translate(-50%,-50%) scale(.6);} 25%{ opacity:1;} 100%{ opacity:0; transform:translate(-50%,-160%) scale(1.1);} }
     /* 거래 검색 버튼 · 빠른입력 칩 */
     .chip.srch { margin-left:auto; display:inline-flex; align-items:center; gap:4px; }
@@ -798,8 +794,10 @@
     .catchip { position:relative; box-sizing:border-box; background:var(--card); border:1.5px solid var(--bd); border-radius:12px; padding:5px 4px 7px; text-align:center; transition:transform .08s, border-color .12s, background .12s; cursor:pointer; }
     .catchip .cpic { width:100%; aspect-ratio:1; background:var(--soft); border-radius:9px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
     .catchip .cpic .cspr, .catchip .cpic .catpx, .catchip .cpic .px, .catchip .cpic svg, .catchip .cpic img { display:block; max-width:100%; height:auto; }
+    .catchip .cpic .px, .catchip .cpic svg { width:44px; }   /* 폴백 SVG(스프라이트 없는 펫·로딩 플레이스홀더)도 스프라이트 img처럼 44 폭 고정 — 없으면 height:auto가 .cpic를 가득 채워 스프라이트보다 크게 보임 */
     .catchip .cn-edit { position:absolute; top:3px; right:3px; z-index:2; transform:translateZ(0); width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; color:var(--sub); background:color-mix(in srgb,var(--card) 78%,transparent); }
     .catchip .cn-edit svg { width:10px; height:10px; }
+    .catchip .cn-edit::before { content:''; position:absolute; inset:-7px; }   /* 히트영역 확장(시각 18px 유지, 터치 타깃 ≈32px) — 오탭 방지 */
     .catchip .cn-edit:active { transform:scale(.88); }
     .catchip:active { transform:scale(.94); }
     .catchip.on { border-color:var(--primary); background:color-mix(in srgb,var(--primary) 8%,var(--card)); }

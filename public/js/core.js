@@ -23,7 +23,7 @@
       friends:{}, friendReqs:{}, todoPublic:false, friendCode:'', friendPub:{},   // 친구 관계·받은 요청·내 공개 플래그·내 코드·친구별 공개여부(users/{uid}/…)
       friendLikes:{}, friendHomeChangedByUid:{}, myLikeCount:0, _friendCam:null,   // 친구별 집 좋아요수·집 변경시각 / 내 받은 좋아요 / 방문 중 친구 캠 컨텍스트
       profilePublic:true,   // 내 프로필 공개 여부(비공개면 랭킹·비친구에게 은화+'알뜰' 익명)
-      friendTodosByUid:{}, _feedFriend:null,   // 공개 친구별 개인 할일(피드) / '친구들' 피드에서 선택한 친구(null=전체)
+      friendTodosByUid:{},   // 공개 친구별 개인 할일(피드)
       friendTodos:[], _friendTodosUid:null,   // 현재 열람 중인 친구의 개인 할일(임시 리스너)
       _todoFeed: false,   // 개인 프로필 할일에서 '친구들' 피드 보기(그룹 컨텍스트에선 미사용). 스코프(개인/그룹)는 현재 컨텍스트로 결정.
       recentWs: (function(){ let l=null,t=null; try{ l=localStorage.getItem('recentWs_ledger')||null; t=localStorage.getItem('recentWs_todo')||null; }catch(e){} return { ledger:l, todo:t }; })(),   // 모드별(가계부/할일) 최근 컨텍스트 wsId — 토글해도 각자 마지막 그룹/개인프로필 유지
@@ -555,8 +555,14 @@
       catch(e){ toast('그룹 나가기에 실패했어요. 잠시 후 다시 시도해 주세요', true); return; }
       if(typeof closeSheet==='function') closeSheet();   // 열려 있던 '그룹 관리' 시트를 닫아 결과가 바로 보이게
       await loadMyWorkspaces();
-      if(!state.memberships.length){ await createPersonalWorkspace(true); await loadMyWorkspaces(); }
-      await switchWorkspace(state.memberships[0].id);
+      const personalId='ws_'+state.uid;
+      if(!(state.memberships||[]).some(w=>w.id===personalId)){ await createPersonalWorkspace(true); await loadMyWorkspaces(); }   // 개인 프로필 항상 보장
+      // 모드별 최근 컨텍스트에 남은 '떠난 그룹' 잔재 정리(현재 모드 외 다른 모드 포함) — 무효면 개인 프로필로
+      ['ledger','todo'].forEach(m=>{ if(!(state.memberships||[]).some(w=>w.id===state.recentWs[m])){ state.recentWs[m]=personalId;
+        try{ localStorage.setItem('recentWs_'+m, personalId); }catch(e){}
+        db.ref('users/'+state.uid+'/recentWs/'+m).set(personalId).catch(()=>{}); } });
+      // 지금 보고 있던 컨텍스트를 나간 경우에만 전환(배경 그룹을 나가면 현재 화면 유지)
+      if(state.wsId===wsId){ const fb=state.memberships.find(w=>w.id===personalId)||state.memberships[0]; if(fb) await switchWorkspace(fb.id); }
       toast('그룹에서 나갔어요');
     }
 

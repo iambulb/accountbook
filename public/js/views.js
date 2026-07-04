@@ -608,8 +608,6 @@
     // ===== 할일(투두) 모드 화면 =====
     let _todoFilter='all', _todoSel=null;
     function setTodoFilter(f){ _todoFilter=f; renderTodoList(); }
-    // 개인 탭에서 보고 있는 대상(친구 uid 또는 나)
-    function todoViewUid(){ return state._todoFriend || state.uid; }
     // 개인(user-global)+그룹(ws) 할일 합본 — 조회/편집 대상 찾기용
     function allTodos(){ return (state.myTodos||[]).concat(state.todos||[]); }
     // 할일 쓰기 경로: 개인=users/{uid}/todos, 그룹=ws/{wsId}/todos
@@ -625,32 +623,16 @@
     function setTodoFeed(on){ state._todoFeed=!!on; if(!on) clearFriendView(); _todoFilter='all'; rerender(); }
     function isPersonalWs(){ return ((state.wsMeta&&state.wsMeta.type)||'')==='personal'; }
     function todoScopeSeg(){
-      if(!isPersonalWs()) return '';   // 그룹 컨텍스트: 그룹 할일 전용(세그먼트 없음)
+      if(!isPersonalWs() || state.tab!=='todo') return '';   // 개인 프로필의 할일 리스트 탭에서만 [내 할일|친구들](친구 피드는 이 탭에서만 렌더). 그룹 컨텍스트·캘린더/완료엔 세그먼트 없음
       const f=!!state._todoFeed || (!!state._todoFriend && state._todoFriend!==state.uid);
       return '<div class="seg todoseg"><button class="'+(f?'':'on')+'" onclick="setTodoFeed(false)">내 할일</button><button class="'+(f?'on':'')+'" onclick="setTodoFeed(true)">친구들</button></div>'; }
     // 개인 프로필에서 친구를 보고 있는지 = 읽기전용
     function todoReadOnly(){ return isPersonalWs() && !!state._todoFriend && state._todoFriend!==state.uid; }
-    function setTodoFriend(uid){ if(!uid||uid===state.uid){ clearFriendView(); renderTodoList(); } else { viewFriendTodos(uid); } }
     // 현재 열람 중인 친구 할일 리스너 해제 + 내 목록 복귀
     function clearFriendView(){ if(state._friendTodosRef){ try{ state._friendTodosRef.off(); }catch(e){} state._friendTodosRef=null; } state._todoFriend=null; state._friendTodosUid=null; state.friendTodos=[]; }
     // 표시 이름: 나 → 내 이름, 친구 → friends[uid].name, 폴백 멤버명
     function friendDisplayName(uid){ if(uid===state.uid) return state.userName||'나'; const f=(state.friends&&state.friends[uid]); if(f&&f.name) return f.name; const m=(state.wsMeta&&state.wsMeta.members)||{}; return (m[uid]&&m[uid].name)||'친구'; }
     function todoMemberName(uid){ return friendDisplayName(uid); }
-    // 개인 탭 상단 친구 스트립: 나 + '할일 공개(todoPublic)'한 친구들(이름순). 우측에 내 공개 토글.
-    function todoFriendStrip(){
-      const meUid=state.uid; const view=todoViewUid();
-      const friends=Object.keys(state.friends||{}).filter(function(u){ return state.friendPub && state.friendPub[u]; })
-        .sort(function(a,b){ return String(friendDisplayName(a)).localeCompare(friendDisplayName(b)); });
-      const order=[meUid].concat(friends);
-      const shareOn=!!state.todoPublic;
-      const av=order.map(function(uid){ const nm=friendDisplayName(uid); const sel=(uid===view)?' sel':'';
-        const label=(uid===meUid)?'나':escapeHtml(nm);
-        return '<button class="tdfr'+sel+'" onclick="setTodoFriend(\''+uid+'\')" aria-label="'+escapeHtml(nm)+' 할일 보기">'+avatarHtml(uid,nm,40)+'<span class="tdfrnm">'+label+'</span></button>'; }).join('');
-      return '<div class="tdfriends"><div class="tdfr-scroll">'+av+'</div>'+
-        '<button class="tdshare'+(shareOn?' on':'')+'" onclick="toggleTodoPublic()" aria-label="내 할일 공개 토글" aria-pressed="'+shareOn+'">'+
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+(shareOn?'<circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8l7.4-4.3M8.3 13.2l7.4 4.3"/>':'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0"/>')+'</svg>'+
-        '<span>'+(shareOn?'공개중':'비공개')+'</span></button></div>';
-    }
     // 내 개인 할일 공개 on/off(user-global) — 친구 스트립·열람 대상.
     function toggleTodoPublic(){ if(!state.uid) return; const on=!!state.todoPublic; db.ref('users/'+state.uid+'/todoPublic').set(!on); toast(!on?'개인 할일을 친구에게 공개합니다':'공개를 껐습니다'); }
     function openTodoShareSheet(){
@@ -688,16 +670,6 @@
         .catch(function(){ toast('요청 실패', true); }); }
     function removeFriend(uid){ confirmSheet('친구를 삭제할까요?', function(){ const upd={}; upd['users/'+state.uid+'/friends/'+uid]=null; upd['users/'+uid+'/friends/'+state.uid]=null;
       db.ref().update(upd).then(function(){ if(state._todoFriend===uid) clearFriendView(); toast('친구를 삭제했어요'); rerender(); }); }); }
-    // 친구 개인 할일 열람(공개한 친구만) — 임시 리스너로 state.friendTodos 채우고 개인 화면 읽기전용
-    function viewFriendTodos(uid){
-      db.ref('users/'+uid+'/todoPublic').once('value').then(function(s){
-        if(!s.val()){ toast('아직 할일을 공개하지 않은 친구예요', true); return; }
-        clearFriendView(); state._todoFeed=true; state._todoFriend=uid; state._friendTodosUid=uid;
-        const ref=db.ref('users/'+uid+'/todos'); state._friendTodosRef=ref;
-        ref.on('value', function(s2){ const o=s2.val()||{}; state.friendTodos=Object.keys(o).map(function(k){ return Object.assign({id:k,scope:'personal',ownerUid:uid},o[k]); }); rerender(); });
-        if(typeof go==='function') go('todo'); else rerender();
-      });
-    }
     // 친구 관리 시트(더보기 공용) — 내 할일 공개 토글·친구 코드 복사/추가·받은 요청·친구 목록(삭제). 열람은 '친구들' 피드에서.
     function openFriendsSheet(){
       const build=function(){
@@ -899,7 +871,6 @@
       list.sort(function(a,b){ return (a.createdAt||'').localeCompare(b.createdAt||''); }); return list; }   // 오래된→최신 순 재생
     function ensureStoryEl(){ let el=$('storyView'); if(!el){ el=document.createElement('div'); el.id='storyView'; el.className='storyview'; el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true'); document.body.appendChild(el); } return el; }
     function openMyStory(){ if(typeof openCatHouse==='function') openCatHouse('home'); }   // 내 스토리 = 내 알뜰홈 홈(라이브 캠)
-    function openMyStoryTodos(){ if(!storyTodos(state.uid).length){ openTodoEdit(); return; } _openStory([state.uid], 0); }   // (레거시 풀스크린 페이저)
     function openFriendStory(uid){
       const pub=Object.keys(state.friends||{}).filter(function(u){ return state.friendPub && state.friendPub[u]; });
       const order=friendFeedOrder(state.friendTodosByUid, pub, ymd(new Date())).map(function(r){ return r.uid; }).filter(function(u){ return storyTodos(u).length; });
@@ -1067,7 +1038,8 @@
       return h; }
     // 완료 리포트(할일 모드 더보기) — 전체 완료율 + 스코프별 + 멤버별 완료 기여
     function openTodoReport(){
-      const all=state.todos||[]; const total=all.length, doneN=all.filter(t=>t.done).length; const rate=total?Math.round(doneN/total*100):0;
+      // 스코프 인지: 개인 프로필=내 개인 할일(myTodos·user-global), 그룹=그룹 할일(ws). 개인 프로필의 ws 노드는 migratePersonalTodos로 비워져 있음.
+      const all=(isPersonalWs()?(state.myTodos||[]):(state.todos||[])); const total=all.length, doneN=all.filter(t=>t.done).length; const rate=total?Math.round(doneN/total*100):0;
       const p=all.filter(t=>todoScope(t)==='personal'), g=all.filter(t=>todoScope(t)==='group');
       const mem=(state.wsMeta&&state.wsMeta.members)||{};
       let h='<div class="card" style="padding:16px;text-align:center;">'+
@@ -1076,7 +1048,7 @@
         '<div style="height:8px;border-radius:6px;background:var(--soft);margin-top:12px;overflow:hidden;"><div style="height:100%;width:'+rate+'%;background:var(--primary);"></div></div></div>';
       h+='<div class="sech"><span class="l">구성</span></div><div class="card" style="padding:4px 12px;">'+
         '<div class="tdrow"><span class="tdtitle">개인</span>'+todoDoneChip(p)+'</div>'+
-        '<div class="tdrow"><span class="tdtitle">그룹</span>'+todoDoneChip(g)+'</div></div>';
+        (isPersonalWs()?'':'<div class="tdrow"><span class="tdtitle">그룹</span>'+todoDoneChip(g)+'</div>')+'</div>';   // 개인 프로필엔 그룹 행(0/0) 숨김
       const byMem={}; all.forEach(t=>{ if(t.done && t.doneByUid) byMem[t.doneByUid]=(byMem[t.doneByUid]||0)+1; });
       const uids=Object.keys(byMem).sort((a,b)=>byMem[b]-byMem[a]);
       if(uids.length){ h+='<div class="sech"><span class="l">완료 기여</span></div><div class="card" style="padding:4px 12px;">'+
@@ -1086,7 +1058,7 @@
     function todoDoneChip(list){ return '<span class="tdue">'+list.filter(t=>t.done).length+' / '+list.length+'</span>'; }
     // 반복 할일 관리(할일 모드 더보기)
     function openRepeatTodos(){
-      const list=(state.todos||[]).filter(t=>t.repeat && t.repeat!=='none').sort((a,b)=>(a.dueDate||'9999-99').localeCompare(b.dueDate||'9999-99'));
+      const list=(isPersonalWs()?(state.myTodos||[]):(state.todos||[])).filter(t=>t.repeat && t.repeat!=='none').sort((a,b)=>(a.dueDate||'9999-99').localeCompare(b.dueDate||'9999-99'));   // 개인 프로필=내 개인 할일, 그룹=그룹 할일
       let h='<p class="muted" style="margin:2px 2px 12px;line-height:1.5;">매주·매월 반복 예정 할일이에요. 완료하면 다음 회차로 넘어가요. 매일 하는 습관은 <b>미션 탭 · 내 미션</b>에서 관리해요.</p>';
       h+='<div class="card" style="padding:4px 12px;">'+(list.length?list.map(function(t){ return todoRow(t,false); }).join(''):'<div class="empty" style="padding:22px 6px;">반복 할일이 없어요</div>')+'</div>';
       openSheet('반복 할일', h);
@@ -1641,14 +1613,20 @@
          '<div class="pnm"><b>'+escapeHtml(state.userName||'사용자')+'</b><span>내 프로필</span></div>'+
          '<span class="likemini" title="받은 좋아요">'+(typeof heartSvg==='function'?heartSvg({h:14}):'❤')+' '+(state.myLikeCount||0)+'</span>'+
          '<span class="editk">'+MORE_ICON.chev+'</span></div>';
-      // 그 아래: 현재 가계부/그룹 — 아바타 44 + 이름(flex) + 멤버 아바타 + 전환(우측)
-      const wsSub = isGroup ? ('그룹 · 멤버 '+memCount+'명') : '개인 가계부';
-      const canEditWs = !isGroup || isWsOwner();
-      h+='<div class="grow"'+(canEditWs?' onclick="openWsProfileSheet()"':'')+'>'+
-         wsAvatarHtml(ws.name, ws.photo, 44)+
-         '<div class="gnm"><b>'+escapeHtml(ws.name||'가계부')+'</b><span>'+wsSub+'</span></div>'+
-         (isGroup?memberAvatarStack(ws, 26):'')+
-         '<button class="cnt" onclick="event.stopPropagation();openWorkspaceSheet()">전환</button></div>';
+      // 그 아래: 현재 컨텍스트 — 개인 프로필(내 아바타·'개인 프로필', 편집 없음=사용자 프로필 소관) / 그룹(그룹 사진·이름·멤버, 소유자만 편집). 칩과 일치시킴.
+      if(isGroup){
+        const canEditWs = isWsOwner();
+        h+='<div class="grow"'+(canEditWs?' onclick="openWsProfileSheet()"':'')+'>'+
+           wsAvatarHtml(ws.name, ws.photo, 44)+
+           '<div class="gnm"><b>'+escapeHtml(ws.name||'가계부')+'</b><span>'+('그룹 · 멤버 '+memCount+'명')+'</span></div>'+
+           memberAvatarStack(ws, 26)+
+           '<button class="cnt" onclick="event.stopPropagation();openWorkspaceSheet()">전환</button></div>';
+      } else {
+        h+='<div class="grow">'+
+           avatarHtml(state.uid, state.userName||'', 44)+
+           '<div class="gnm"><b>개인 프로필</b><span>나만 보는 가계부 · 할일</span></div>'+
+           '<button class="cnt" onclick="openWorkspaceSheet()">전환</button></div>';
+      }
       // 4열 기능 그리드 — 할일 모드면 할일 전용, 아니면 가계부 전용(알뜰홈·설정은 공용)
       h+='<div class="grid4">';
       // 기본 메뉴 아이콘은 라인 SVG(MORE_ICON) 유지. 알뜰홈=코인·선물함=선물상자·가방=갈색 가방(픽셀 아트).
@@ -1673,7 +1651,7 @@
       h+='<div class="gsep"><span>공통</span></div>';
       h+='<div class="grid4">';
       h+=gcell(coinSvg({h:26}),'알뜰홈','openCatHouse()');
-      h+=gcell((typeof bellSvg==='function'?bellSvg({h:26}):'🔔'),'소식','openNews()', (typeof newsUnread==='function'?newsUnread():0));
+      h+=gcell((typeof bellSvg==='function'?bellSvg({h:26}):'🔔'),'소식','openNews()', (typeof newsMoreCount==='function'?newsMoreCount():0));   // 선물 제외: 안 쓴 쿠폰+안 본 공지만(선물은 선물함 셀에)
       h+=gcell((typeof missionSvg==='function'?missionSvg({h:26}):'📋'),'미션','openMissions()');
       h+=gcell((typeof dexSvg==='function'?dexSvg({h:26}):'📖'),'펫도감','openPetDex()');
       h+=gcell(giftSvg({h:26}),'선물함','openGiftbox()', (typeof giftUnread==='function'?giftUnread():0));
