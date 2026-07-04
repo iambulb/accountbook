@@ -728,6 +728,7 @@
     .rmthumb.on { border-color:var(--accent,#4a90d9); box-shadow:0 0 0 2px color-mix(in srgb,var(--accent,#4a90d9) 40%,transparent); }
     .rmthumb .rmscene { display:block; position:relative; width:100%; aspect-ratio:12/9; overflow:hidden; }
     .rmthumb .rmf { position:absolute; background:color-mix(in srgb,var(--text) 42%,transparent); border-radius:2px; }
+    .rmthumb .rmfw { background:color-mix(in srgb,var(--primary) 60%,transparent); border-radius:1px; }   /* 벽 가구 점 — 뒤 벽 띠(색 구분) */
     .rmthumb .rmbar { display:flex; align-items:center; justify-content:space-between; gap:4px; padding:4px 6px; font-size:10.5px; font-weight:800; color:var(--text); background:var(--card); }
     .rmthumb .rmname { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .rmthumb .rmpets { flex:none; color:var(--sub); font-weight:700; }
@@ -988,6 +989,8 @@
     .pitem.soldout .pq { color:var(--primary); opacity:.9; }
     /* 보유 가구가 없는 카테고리 탭 — 흐리게(탭하면 빈 상태 안내) */
     .subseg.placecat button.dim { opacity:.4; }
+    /* 알뜰샵 가구 탭의 기능분류 필터(전체/케어/휴식/놀이/장식) */
+    .subseg.shopfurncat { margin-bottom:10px; }
     /* 팔레트에서 그리드로 드래그 중 따라다니는 고스트 */
     .palghost { position:fixed; transform:translate(-50%,-50%); pointer-events:none; z-index:98; opacity:.9; filter:drop-shadow(0 4px 10px rgba(0,0,0,.35)); }
     /* block+절대배치: flex로 두면 문장 속 <b>가 각각 별도 flex 아이템으로 쪼개져(“펫을 탭하면 | 이 방 | 으로…”) 줄바꿈이 어긋나던 버그 → 텍스트는 일반 인라인 흐름으로 두고 아이콘만 왼쪽에 걸어 hanging-indent */

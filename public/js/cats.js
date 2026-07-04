@@ -1534,7 +1534,7 @@
     // 방(dock·홈)에서의 가구 렌더 높이(px) — 발자국 세로 칸수(footH)에 비례해 키움(캣타워 6칸=제일 큼, 스크래처 1칸=고양이 키만큼, 방석·밥그릇 1칸).
     // 고양이 상호작용(캣타워 3층 올라가기 등)이 맞아떨어지도록 렌더·엔진(fh)이 같은 값을 쓴다. depth(뒤로 갈수록) 작게.
     // 방 렌더 높이 배율(실물감) — 캣타워 제일 큼, 스크래처는 고양이 키만큼, 화장실=낮은 상자, 방석·그릇 작게.
-    const ROOM_H = { pond:2.2, tower:6.2, scratcher:1.9, pethouse:2.8, catwheel:3.0, plant:1.5, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6, rug:1.2, window:2.6, fishtank:1.7, fireplace:2.6, fan:2.7, hammock:1.7, teaser:2.4, wallclock:2.6, hangplant:2.4, mobile:1.7, jingleball:0.7 };
+    const ROOM_H = { pond:2.2, tower:6.2, scratcher:1.9, pethouse:2.8, catwheel:3.0, plant:1.5, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6, rug:1.2, window:1.4, fishtank:1.7, fireplace:2.6, fan:2.7, hammock:1.7, teaser:2.4, wallclock:1.4, hangplant:1.4, mobile:1.4, jingleball:0.7 };   // 걸이형 1×1 벽 가구(window/wallclock/hangplant/mobile)=1.4: 벽 1칸(WALL_STEP 9.3%≈1행)에 맞춰 겹침 방지. 벽난로(fireplace)는 바닥선에 서는 2×1 대형이라 예외.
     // ---- 배치 격자(12칸) 가로 좌표 공유 헬퍼 ----
     // 에디터(평면 그리드)·드롭프리뷰·썸네일은 gridLeftFrac/gridSpanFrac(칸 좌측 edge·폭)을 그대로 쓴다.
     // 캠(원근)은 camAnchorMode로 발자국을 "가운데 정렬 + 양끝 벽 스냅" 배치해 좌우 벽까지 고르게 채운다.
@@ -1830,7 +1830,7 @@
     function clearRoom(idx){ closeRoomMenu();   // 모달을 먼저 닫아야 확인 시트가 보인다(모달 z-index가 더 위)
       confirmSheet('이 방의 가구·펫을 모두 비울까요? (가구는 인벤토리로 돌아가요)', ()=>{
         gameRef().transaction(g=>{ g=normalizeGame(g); const R=g.home.rooms[idx]; if(!R) return g;
-          R.placed={}; R.active=[]; R.poops=0; g.home.changedAt=new Date().toISOString(); return g;
+          R.placed={}; R.wallPlaced={}; R.active=[]; R.poops=0; g.home.changedAt=new Date().toISOString(); return g;   // 바닥+벽 가구 모두 인벤토리로 회수
         }).then(r=>{ if(r&&r.committed) toast('방을 비웠어요'); renderCatHouse(); }); }); }   // 비운 뒤 알뜰홈으로 복귀
     // 🗑️ 방 삭제(환불 없음) — 방을 rooms에서 제거하고 roomSlots 감소. 가구는 전역 인벤토리로 자동 복귀(placed-count 모델), 펫은 대기. current·showRoom 인덱스 remap. 최소 1개는 남긴다.
     function deleteRoom(idx){ if(roomCount()<=BASE_ROOMS){ toast('방은 최소 1개는 있어야 해요'); return; } closeRoomMenu();
@@ -1848,16 +1848,18 @@
     function duplicateRoom(idx){ if(roomCount()>=MAX_ROOMS){ toast('방을 모두 열어서 더 복제할 수 없어요(최대 '+MAX_ROOMS+')'); return; } closeRoomMenu();
       gameRef().transaction(g=>{ g=normalizeGame(g); const rs=g.home.rooms; const src=rs&&rs[idx]; if(!src||rs.length>=MAX_ROOMS) return;
         const items=(g.owned&&g.owned.items)||{};
-        const placedAll={}; rs.forEach(R=>{ const p=(R&&R.placed)||{}; Object.keys(p).forEach(k=>{ const id=p[k]&&p[k].itemId; if(id) placedAll[id]=(placedAll[id]||0)+1; }); });
-        const sp=src.placed||{}, newPlaced={};
-        Object.keys(sp).forEach(k=>{ const id=sp[k]&&sp[k].itemId; if(!id) return; const own=Number(items[id]&&items[id].qty)||0, used=placedAll[id]||0;
-          if(used<own){ newPlaced[k]={ itemId:id }; placedAll[id]=used+1; } });   // 남으면 복사, 부족하면 건너뜀
+        const placedAll={}; rs.forEach(R=>{ const p=(R&&R.placed)||{}; Object.keys(p).forEach(k=>{ const id=p[k]&&p[k].itemId; if(id) placedAll[id]=(placedAll[id]||0)+1; });
+          const wp=(R&&R.wallPlaced)||{}; Object.keys(wp).forEach(k=>{ const id=wp[k]&&wp[k].itemId; if(id) placedAll[id]=(placedAll[id]||0)+1; }); });   // 바닥+벽 합산(전역 인벤토리)
+        const copyMap=srcMap=>{ const out={}; Object.keys(srcMap||{}).forEach(k=>{ const id=srcMap[k]&&srcMap[k].itemId; if(!id) return;
+          const own=Number(items[id]&&items[id].qty)||0, used=placedAll[id]||0; if(used<own){ out[k]={ itemId:id }; placedAll[id]=used+1; } }); return out; };   // 남으면 복사·부족하면 건너뜀
+        const newPlaced=copyMap(src.placed), newWallPlaced=copyMap(src.wallPlaced);
         const nm=((src.name||('방 '+(idx+1)))+' 복사').slice(0,8);
-        rs.push({ name:nm, wallpaper:src.wallpaper||'default', emoji:src.emoji||'', placed:newPlaced, active:[], poops:0 });
+        rs.push({ name:nm, wallpaper:src.wallpaper||'default', emoji:src.emoji||'', placed:newPlaced, wallPlaced:newWallPlaced, active:[], poops:0 });
         g.home.roomSlots=Math.min(MAX_ROOMS, Math.max(rs.length, (g.home.roomSlots|0)));
         g.home.current=rs.length-1; g.home.changedAt=new Date().toISOString(); return g;
       }).then(r=>{ if(r&&r.committed){ const h=r.snapshot.val()&&r.snapshot.val().home, arr=h&&h.rooms; const nr=arr&&arr[arr.length-1], srcR=arr&&arr[idx];
-          const srcN=(srcR&&srcR.placed)?Object.keys(srcR.placed).length:0, newN=(nr&&nr.placed)?Object.keys(nr.placed).length:0, sk=Math.max(0,srcN-newN);
+          const cnt=o=>((o&&o.placed)?Object.keys(o.placed).length:0)+((o&&o.wallPlaced)?Object.keys(o.wallPlaced).length:0);
+          const srcN=cnt(srcR), newN=cnt(nr), sk=Math.max(0,srcN-newN);
           renderCatHouse(); toast(sk?('방을 복제했어요 (가구 '+sk+'개는 보유 부족으로 제외)'):'방을 복제했어요 🏠'); } }); }
     function setShowRoom(idx){ gameRef().child('home/showRoom').set(idx).then(()=>{ touchHome(); refreshCatSheet(); toast('대표 방으로 지정했어요 ★'); }); closeRoomMenu(); }
     // 방 썸네일의 ⭐(즐겨찾기) 탭 = 이 방을 대표 방(친구·랭킹에 보임)으로 지정 + 별 팝 연출(좋아요와 동일). 이미 대표면 안내만.
@@ -3059,10 +3061,14 @@
       const placed=r.placed||{};
       const dots=Object.keys(placed).map(k=>{ const pr=k.split('_'), rr=+pr[0], cc=+pr[1], foot=itemFoot(placed[k].itemId);
         return '<i class="rmf" style="left:'+(gridLeftFrac(cc)*100).toFixed(1)+'%;top:'+(gridLeftFrac(rr)*100).toFixed(1)+'%;width:'+(gridSpanFrac(foot.w)*100).toFixed(1)+'%;height:'+(gridSpanFrac(foot.h)*100).toFixed(1)+'%"></i>'; }).join('');
+      // 벽 가구 점(평면 썸네일에선 '뒤 벽'=맨 위 얇은 띠에 열 위치로 표시, 색으로 구분)
+      const wp=r.wallPlaced||{};
+      const wdots=Object.keys(wp).map(k=>{ const pr=k.split('_'), cc=+pr[1], w=(itemFoot(wp[k].itemId).w);
+        return '<i class="rmf rmfw" style="left:'+(gridLeftFrac(cc)*100).toFixed(1)+'%;top:1.5%;width:'+(gridSpanFrac(w)*100).toFixed(1)+'%;height:9%"></i>'; }).join('');
       const pets=(r.active||[]).filter(ownsCat).length;
       const rep=idx===(homeH().showRoom|0);   // 대표 방(친구·랭킹 노출)
       return '<div class="rmthumb'+(on?' on':'')+'" role="button" tabindex="0" aria-pressed="'+on+'" onpointerdown="rmDown(event,'+idx+')" onclick="rmTap('+idx+')" title="'+escapeHtml(r.name||('방 '+(idx+1)))+(rep?' · 대표 방':'')+'">'+
-        '<span class="rmscene" style="background:'+wallCss(r.wallpaper||'default')+'">'+dots+'</span>'+
+        '<span class="rmscene" style="background:'+wallCss(r.wallpaper||'default')+'">'+wdots+dots+'</span>'+
         '<button class="rmfav'+(rep?' on':'')+'" aria-pressed="'+rep+'" aria-label="'+(rep?'대표 방(친구에게 보임)':'이 방을 대표 방으로 지정')+'" title="'+(rep?'대표 방 · 친구에게 보임':'대표 방으로 지정 ★')+'" onclick="event.stopPropagation();favRoom('+idx+',event)">'+starSvg({h:14,off:!rep})+'</button>'+
         '<span class="rmbar"><span class="rmname">'+(r.emoji?r.emoji+' ':'')+escapeHtml(r.name||('방 '+(idx+1)))+'</span><span class="rmpets">🐾'+pets+'</span></span>'+
         '<button class="rm-edit" aria-label="방 관리" onclick="event.stopPropagation();openRoomMenu('+idx+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
@@ -3078,7 +3084,7 @@
       h+='<p class="rmhint muted">지금 보는 방 <span class="rmhint-cur"></span> · 친구·랭킹이 보는 <b>대표 방</b> <span class="rmhint-star">'+starSvg({h:11})+'</span> <span class="rmhint-x">— 별을 눌러 지정</span></p>';
       // 빈 대표 방 경고(#3): 대표 방에 가구·펫이 하나도 없으면 친구·랭킹에 빈 방으로 보이므로 안내.
       const repI=Math.min(rc-1, Math.max(0, (homeH().showRoom|0))), repR=rooms[repI]||{};
-      const repEmpty=!(repR.placed && Object.keys(repR.placed).length) && !((repR.active||[]).filter(ownsCat).length);
+      const repEmpty=!(repR.placed && Object.keys(repR.placed).length) && !(repR.wallPlaced && Object.keys(repR.wallPlaced).length) && !((repR.active||[]).filter(ownsCat).length);
       if(repEmpty) h+='<p class="rmwarn"><span class="rmwarn-star">'+starSvg({h:11})+'</span> 대표 방이 비어 있어요 — 친구·랭킹에 <b>빈 방</b>으로 보여요. 가구·펫을 배치하거나 꾸민 방을 대표(★)로 지정하세요.</p>';
       return h;
     }
@@ -3202,6 +3208,8 @@
     }
     let _shopSub='cats';
     function setShopSub(s){ _shopSub=s; renderCatHouse(); }
+    let _shopFurnCat='all';   // 알뜰샵 가구 탭의 기능분류 필터(전체/케어/휴식/놀이/장식) — 배치 인벤토리와 같은 ITEM_CATALOG.cat 기준
+    function setShopFurnCat(c){ _shopFurnCat=c; renderCatHouse(); }
     // 알뜰샵에서 미리보기로 "선택"한 펫 — 선택하면 카드가 강조되고 썸네일이 옆으로 걷는 스프라이트(우리집 펫 카드와 동일)로 바뀐다.
     let _shopSelCat=null;
     function selectShopCat(id){ _shopSelCat=(_shopSelCat===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
@@ -3320,7 +3328,10 @@
         h+='<div class="note">펫을 <b>탭하면 선택</b>돼요 — 카드가 강조되고 미리보기 펫이 <b>옆으로 걸어다녀요</b>. <b>중복 소유</b> 펫은 종당 1마리, 구매하면 자동으로 집에 들어와 걸어다녀요.</div>';
       } else {
         // 등급 낮은 것부터. 특별(epic) 이상 가구는 알뜰샵 직접 구매 불가 → 랜덤박스(가챠) 전용 표기.
-        const items=ITEM_CATALOG.slice().sort((a,b)=>tierRank(itemTierOf(a.id))-tierRank(itemTierOf(b.id)));
+        const FSHOP_CATS=[['all','전체']].concat(PLACE_CATS);
+        if(!FSHOP_CATS.some(c=>c[0]===_shopFurnCat)) _shopFurnCat='all';
+        h+='<div class="subseg shopfurncat">'+FSHOP_CATS.map(c=>'<button class="'+(_shopFurnCat===c[0]?'on':'')+'" onclick="setShopFurnCat(\''+c[0]+'\')">'+c[1]+'</button>').join('')+'</div>';
+        const items=ITEM_CATALOG.slice().sort((a,b)=>tierRank(itemTierOf(a.id))-tierRank(itemTierOf(b.id))).filter(it=>_shopFurnCat==='all'||placeCatOf(it.id)===_shopFurnCat);
         h+=items.map(it=>{
           const price=itemBuyPrice(it.id), enough=coins()>=price, gachaOnly=isGachaOnlyItem(it.id);
           let act, priceHtml;
@@ -3725,7 +3736,7 @@
       }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund, true); });
     }
     let _selItem=null;
-    function selItem(id){ _selItem=(_selItem===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }   // _sheetRefresh=팔레트·펫칩 가로 스크롤 위치 보존(선택 시 처음으로 안 튐)
+    function selItem(id){ if(itemRemaining(id)<=0){ toast(catFurnName(id)+' 전부 배치됨 — 회수하거나 더 얻어야 놓을 수 있어요', true); return; } _selItem=(_selItem===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }   // 남은 0(전부 배치)은 선택 불가·안내. _sheetRefresh=팔레트·펫칩 위치 보존(선택 시 처음으로 안 튐)
     const ITEM_SELL = 10;   // 기구물 판매가(은화)
     function itemFoot(id){ const it=ITEM_CATALOG.find(x=>x.id===id); return { w:(it&&it.footW)||1, h:(it&&it.footH)||1 }; }
     function isFloorItem(id){ const it=ITEM_CATALOG.find(x=>x.id===id); return !!(it&&it.floor); }   // 러그 등 바닥 아이템 — 겹침 무시(밑에 깔림)
@@ -3754,7 +3765,7 @@
       return '<div class="cr-prop cr-wallprop" style="left:'+x+'%;bottom:'+bottom+'%;z-index:0;--crtx:'+txPct+'%;transform:translateX(var(--crtx));">'+inner+'</div>';
     }
     let _selWall=null;
-    function selWallItem(id){ _selWall=(_selWall===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
+    function selWallItem(id){ if(itemRemaining(id)<=0){ toast(catFurnName(id)+' 전부 배치됨 — 회수하거나 더 얻어야 걸 수 있어요', true); return; } _selWall=(_selWall===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     // 벽 배치 트랜잭션(전역 인벤토리 재검증·겹침 재검증). placed와 별개 wallPlaced에 기록.
     function wallPlaceItemTx(sel, r, c){ const w=wallFoot(sel).w;
       gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoom(g); R.wallPlaced=R.wallPlaced||{};
@@ -3784,7 +3795,7 @@
     }
     // (r,c)에서 w×h 발자국이 격자 안에 들어가고 다른 가구와 안 겹치는지. floorItem=true(러그)면 겹침 무시(격자 안이면 어디든 OK — 다른 가구 밑에 깔림).
     function areaFree(r,c,w,h,placed,ignoreKey,floorItem){
-      if(r<1||c<1||r+h-1>12||c+w-1>12) return false;
+      if(r<1||c<1||r+h-1>GRID_N||c+w-1>GRID_N) return false;   // 방 넓이 확장 시 GRID_N 한 곳만 바꾸면 정합
       if(floorItem) return true;
       const occ=occupiedCells(placed, ignoreKey);
       for(let dr=0;dr<h;dr++)for(let dc=0;dc<w;dc++) if(occ[(r+dr)+'_'+(c+dc)]) return false;
@@ -3989,7 +4000,7 @@
     function placeCatOf(id){ const it=ITEM_CATALOG.find(x=>x.id===id); return (it&&it.cat)||'decor'; }   // 분류 단일 소스 = ITEM_CATALOG 의 cat 필드(없으면 장식 폴백)
     let _placeCat=null;
     // 탭 전환은 시트 전체를 재빌드(_sheetRefresh)한다. 펫 그리드(수백 타일)와 달리 가구는 ~20종뿐이라 부분 메모이즈(petTileHtml류)는 불필요 — 의도적으로 단순 유지.
-    function setPlaceCat(c){ _placeCat=c; if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
+    function setPlaceCat(c){ _placeCat=c; if(_selItem && placeCatOf(_selItem)!==c) _selItem=null; if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }   // 탭을 벗어난 선택은 해제 — "보이는 것만 선택됨" 유지(안 보이는 가구가 그리드 탭에 놓이는 혼동 방지)
     // 팔레트 아이콘 높이 = 방 렌더 크기(ROOM_H)에 sqrt로 완만 비례(작은 그릇은 작게·큰 캣타워는 크게, 극단비 압축). 16~30px 클램프.
     function palPicH(id){ const rh=(ROOM_H[id]||1); return Math.max(16,Math.min(30,Math.round(11+Math.sqrt(rh)*7.5))); }
     function catPlaceHtml(){
@@ -4010,7 +4021,7 @@
           return '<div class="gitem" style="left:'+left+'%;top:'+top+'%;width:'+ww+'%;height:'+hh+'%" onclick="event.stopPropagation();openItemMenu(\''+key+'\',true)"><span class="gsc">'+furnSvg(id,{fit:true})+'</span></div>'; }).join('');
         const wgrid='<div class="gridwall" id="wallGrid" onclick="wallPlaceClick(event)">'+witems+'</div>';
         const wpal=ITEM_CATALOG.filter(it=>isWallItem(it.id) && itemQty(it.id)>0).map(it=>{ const rem=itemRemaining(it.id), sold=rem<=0;
-          return '<button class="pitem'+(_selWall===it.id?' on':'')+(sold?' soldout':'')+'" onclick="selWallItem(\''+it.id+'\')"><span class="pic">'+furnSvg(it.id,{h:palPicH(it.id)})+'</span><span>'+it.name+'</span><span class="pq">'+(sold?'전부 배치됨':'남은 '+rem)+'</span></button>'; }).join('');
+          return '<button class="pitem'+(_selWall===it.id?' on':'')+(sold?' soldout':'')+'"'+(sold?' aria-disabled="true"':'')+' onclick="selWallItem(\''+it.id+'\')"><span class="pic">'+furnSvg(it.id,{h:palPicH(it.id)})+'</span><span>'+it.name+'</span><span class="pq">'+(sold?'전부 배치됨':'남은 '+rem)+'</span></button>'; }).join('');
         const wallHint='<div class="hintline" style="margin:8px 0 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16"/></svg>벽 가구를 <b>선택</b>하고 <b>벽 격자를 탭</b>해 걸어요(위=천장·아래=바닥선). 배치된 항목을 탭하면 회수/판매. <b>특별↑ 벽 가구는 랜덤박스로만</b> 얻어요.</div>';
         body=wgrid+wallHint+'<div class="palette catinv">'+(wpal||'<div class="palempty">보유한 벽 가구가 없어요<br><span>랜덤박스에서 벽 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>')+'</div>';
       } else {
@@ -4023,10 +4034,10 @@
         const grid='<div class="grid12" id="placeGrid" onclick="placeClick(event)">'+items+'<div class="gdrop" id="gdrop" hidden></div></div>';
         const owned=ITEM_CATALOG.filter(it=>!isWallItem(it.id) && itemQty(it.id)>0);
         if(!_placeCat || !PLACE_CATS.some(c=>c[0]===_placeCat)) _placeCat=(PLACE_CATS.find(c=>owned.some(it=>placeCatOf(it.id)===c[0]))||PLACE_CATS[0])[0];
-        const catTabs='<div class="subseg placecat">'+PLACE_CATS.map(c=>{ const n=owned.filter(it=>placeCatOf(it.id)===c[0]).length;
-          return '<button class="'+(_placeCat===c[0]?'on':'')+(n?'':' dim')+'" onclick="setPlaceCat(\''+c[0]+'\')">'+c[1]+(n?' <b>'+n+'</b>':'')+'</button>'; }).join('')+'</div>';
+        const catTabs='<div class="subseg placecat">'+PLACE_CATS.map(c=>{ const inCat=owned.filter(it=>placeCatOf(it.id)===c[0]), nOwn=inCat.length, nAvail=inCat.filter(it=>itemRemaining(it.id)>0).length;
+          return '<button class="'+(_placeCat===c[0]?'on':'')+(nOwn?'':' dim')+'"'+(nOwn?'':' aria-disabled="true"')+' onclick="setPlaceCat(\''+c[0]+'\')">'+c[1]+(nAvail?' <b>'+nAvail+'</b>':'')+'</button>'; }).join('')+'</div>';
         const pal=owned.filter(it=>placeCatOf(it.id)===_placeCat).map(it=>{ const foot=itemFoot(it.id), rem=itemRemaining(it.id), sold=rem<=0;
-          return '<button class="pitem'+(_selItem===it.id?' on':'')+(sold?' soldout':'')+'" onpointerdown="palDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selItem(\''+it.id+'\')"><span class="pic">'+furnSvg(it.id,{h:palPicH(it.id)})+'</span><span>'+it.name+'</span><span class="pq">'+(sold?'전부 배치됨':foot.w+'×'+foot.h+' · 남은 '+rem)+'</span></button>'; }).join('');
+          return '<button class="pitem'+(_selItem===it.id?' on':'')+(sold?' soldout':'')+'"'+(sold?' aria-disabled="true"':'')+' onpointerdown="palDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selItem(\''+it.id+'\')"><span class="pic">'+furnSvg(it.id,{h:palPicH(it.id)})+'</span><span>'+it.name+'</span><span class="pq">'+(sold?'전부 배치됨':foot.w+'×'+foot.h+' · 남은 '+rem)+'</span></button>'; }).join('');
         const dragHint='<div class="hintline" style="margin:8px 0 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5V5.5a1.5 1.5 0 0 1 3 0v5"/><path d="M12 10V4.5a1.5 1.5 0 0 1 3 0V10"/><path d="M15 9.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-1a6 6 0 0 1-5.2-3l-2-3.5a1.5 1.5 0 0 1 2.6-1.5L9 14"/></svg><b>꾹 눌러서</b> 끌면 배치·이동돼요(짧게 탭하면 선택·메뉴). 화면 스크롤과 겹치지 않아요.</div>';
         const palBody=pal||'<div class="palempty">이 분류에 보유한 가구가 없어요<br><span>알뜰샵·랜덤박스에서 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>';
         body=grid+dragHint+catTabs+'<div class="palette catinv">'+palBody+'</div>';
