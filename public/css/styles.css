@@ -982,6 +982,12 @@
     .subseg.placecat b { font-weight:900; margin-left:3px; opacity:.72; font-size:10px; }
     .palempty { grid-column:1/-1; text-align:center; padding:20px 8px; color:var(--sub); font-size:12.5px; font-weight:700; line-height:1.55; }
     .palempty span { display:inline-block; margin-top:2px; font-size:11px; opacity:.8; font-weight:600; }
+    .palcta { display:inline-block; margin-top:12px; padding:8px 16px; border-radius:999px; background:var(--primary); color:#fff; font-size:12px; font-weight:800; }
+    /* 전부 배치돼 남은 수량이 없는 가구 — 흐리게 + 배치 불가 커서(탭하면 안내 토스트) */
+    .pitem.soldout { opacity:.42; cursor:not-allowed; }
+    .pitem.soldout .pq { color:var(--primary); opacity:.9; }
+    /* 보유 가구가 없는 카테고리 탭 — 흐리게(탭하면 빈 상태 안내) */
+    .subseg.placecat button.dim { opacity:.4; }
     /* 팔레트에서 그리드로 드래그 중 따라다니는 고스트 */
     .palghost { position:fixed; transform:translate(-50%,-50%); pointer-events:none; z-index:98; opacity:.9; filter:drop-shadow(0 4px 10px rgba(0,0,0,.35)); }
     /* block+절대배치: flex로 두면 문장 속 <b>가 각각 별도 flex 아이템으로 쪼개져(“펫을 탭하면 | 이 방 | 으로…”) 줄바꿈이 어긋나던 버그 → 텍스트는 일반 인라인 흐름으로 두고 아이콘만 왼쪽에 걸어 hanging-indent */

@@ -3988,6 +3988,7 @@
     const PLACE_CATS = [['care','케어'],['rest','휴식'],['play','놀이'],['decor','장식']];
     function placeCatOf(id){ const it=ITEM_CATALOG.find(x=>x.id===id); return (it&&it.cat)||'decor'; }   // 분류 단일 소스 = ITEM_CATALOG 의 cat 필드(없으면 장식 폴백)
     let _placeCat=null;
+    // 탭 전환은 시트 전체를 재빌드(_sheetRefresh)한다. 펫 그리드(수백 타일)와 달리 가구는 ~20종뿐이라 부분 메모이즈(petTileHtml류)는 불필요 — 의도적으로 단순 유지.
     function setPlaceCat(c){ _placeCat=c; if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     // 팔레트 아이콘 높이 = 방 렌더 크기(ROOM_H)에 sqrt로 완만 비례(작은 그릇은 작게·큰 캣타워는 크게, 극단비 압축). 16~30px 클램프.
     function palPicH(id){ const rh=(ROOM_H[id]||1); return Math.max(16,Math.min(30,Math.round(11+Math.sqrt(rh)*7.5))); }
