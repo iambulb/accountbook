@@ -50,6 +50,7 @@ config/announce/{pushId} : { title, body, at }              // 📢 소식 화�
 config/featuredPet     : { "M2026-07": "cat_id", … }         // 🌟 이달의 펫 수동 선정(월키→펫 id). 읽기=로그인 전체, 쓰기=개발자 이메일만(규칙). loadFeaturedPet 구독, featuredCatId가 해당 월 값 있으면 우선 사용(없으면 featuredPetOfMonth 해시 폴백). 개발자 모드 '이달의 펫 선정'(openDevFeatured)에서 편집
 config/gachaFx         : { a:"pet_id", b:"pet_id" }           // 🎬 가챠 오픈 연출 펫(a=연출1번/왼쪽 등장, b=연출2번/오른쪽 등장). 읽기=로그인 전체, 쓰기=개발자 이메일만(규칙). loadGachaFx 구독, fxClimax가 지정 펫을 걸어와 톡 치게 연출(미지정이면 기본 검은 고양이). 개발자 모드 '펫 관리'(setGachaFxSlot)에서 편집
 config/broadcast/{pushId} : { type:'coins'|'gold'|'consum', key?, qty, msg?, at }  // 📣 전체 선물(운영자 → 모든 사용자 선물함). 읽기=로그인 전체, 쓰기=개발자 이메일만(규칙). loadBroadcasts 구독 → claimBroadcasts가 각 사용자 game.gifts에 1회 추가(game.bcSeen[pushId] 마커로 멱등). msg=선물함에 표시할 사유(예: 오류 사과). 개발자 모드 '전체 선물 보내기'(sendBroadcast)에서 push. 오래된 항목은 콘솔에서 삭제(신규 전파만 멈춤, 이미 받은 사람 유지)
+config/furniture/{itemId} : { tier?, price? }                 // 🪑 기구물 전역 등급/가격 오버라이드. 읽기=로그인 전체, 쓰기=개발자 이메일만(규칙). loadFurnCfg 구독 → effItemTier(등급)·itemBuyPrice(은화가)가 기본값(ITEM_TIER/ITEM_CATALOG.price)에 병합. 미설정=기본값, 항목 remove=기본값 복귀. 특별(epic)↑ 등급은 isGachaOnlyItem으로 자동 랜덤박스 전용. 개발자 모드 '기구물 관리'(openDevFurnManager·setFurnTier/setFurnPrice/resetFurn)에서 편집
 ws/{wsId}/             : 가계부 데이터 (아래 노드들)
   ├─ accounts/{id}
   ├─ creditCards/{id}

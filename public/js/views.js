@@ -1723,6 +1723,7 @@
         h+=lrow((typeof peopleSvg==='function'?peopleSvg({h:20}):MORE_ICON.gear),'사용자 현황','closeSheet();openDevUsers()');
         h+=lrow(MORE_ICON.gift,'재화관리','closeSheet();openDevGacha()');
         h+=lrow((typeof goldSvg==='function'?goldSvg({h:21}):MORE_ICON.cat),'펫 (추가 · 수정 · 삭제)','closeSheet();openDevPetManager()');
+        h+=lrow((typeof furnSvg==='function'?furnSvg('tower',{h:22}):MORE_ICON.gear),'기구물 관리','closeSheet();openDevFurnManager()');
         h+=lrow((typeof sparkSvg==='function'?sparkSvg({h:20}):MORE_ICON.gear),'이달의 펫 선정','closeSheet();openDevFeatured()');
         h+=lrow((typeof giftSvg==='function'?giftSvg({h:21}):MORE_ICON.gift),'전체 선물 보내기','closeSheet();openDevBroadcast()');
         h+=lrow((typeof megaSvg==='function'?megaSvg({h:20}):MORE_ICON.gear),'공지사항 관리','closeSheet();openDevAnnounce()');
