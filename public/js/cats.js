@@ -490,13 +490,13 @@
       "..................","..................","..................","..................",
       "..................","..................",".................."
     ];
-    // 샹들리에(16×17 가로세로비 0.94): 천장 체인(K)+금속 프레임(f 그림자·F 중간·H 하이라이트)+크리스털(C 밝음·c 그림자)+반짝임(o 흰빛)+촛불(Y 노랑·y 주황) — 매다는형(hang) 벽 가구, 한정 등급.
+    // 샹들리에(20×20 가로세로비 1.0): 체인(K)+금속 프레임(f 그림자·F 중간·H 하이라이트)+촛불 팔(W 초·Y 노랑·y 주황)+크리스털(C 밝음·c 그림자·o 반짝임) — 매다는형(hang) 벽 가구, 한정 등급.
     const M_CHANDELIER = [
-      ".......KK.......",".......KK.......","......fFFf......",".....fFHHFf.....",
-      "....yFHHHHFy....","...yYFHHHHFYy...","...FHCCCCCCHF...","..FHCCoCCoCCHF..",
-      "..FCCoCCCCoCCF..","..FCCCCooCCCCF..","..fCCoCCCCoCCf..","...FCCCooCCCF...",
-      "..c.fCCooCCf.c..","..C..FCooCF..C..","..c...fCCf...c..",".......CC.......",
-      ".......oo......."
+      ".........KK.........",".........KK.........","........fFFf........",".......fFHHFf.......",
+      "........fFFf........","...y..yFHHFy..y.....","..yYy.WFHHFW.yYy....","..WHW.FHHHHF.WHW....",
+      ".fFFFFFHHHHFFFFFf...","fF..FfFHHHHFfF..Ff..",".c...FFHHHHFF...c...",".Cc..fFHooHFf..cC...",
+      "..Cc..FCooCF..cC....","...c..fCooCf..c.....","...Cc..CooC..cC.....","....c...oo...c......",
+      ".....c..CC..c.......","......c.oo.c........",".......CooC.........","........oo.........."
     ];
     // 방울공(12×12 가로세로비 1.0): 공(B/b 음영·L 하이라이트·X 외곽)+방울선(D)+방울(S). 캠에서만 통통 흔들(swing).
     const M_JINGLEBALL = [
@@ -3847,15 +3847,15 @@
     const WALL_MOUNT_BASE = 54, WALL_MOUNT_STEP = 11;   // mount r행 bottom%: r4=54 … r1=87
     const WALL_ANCHOR = { fireplace:'floor', window:'mount', wallclock:'mount', hangplant:'hang', mobile:'hang', chandelier:'hang', garland:'hang', tapestry:'hang' };
     function wallAnchorOf(id){ return WALL_ANCHOR[id] || 'mount'; }
-    function wallSnapRow(id, r){ return wallAnchorOf(id)==='floor' ? WALL_ROWS : r; }   // 바닥형은 항상 맨 아래 행(바닥선) — 배치/이동/프리뷰 모두 스냅
     function wallFoot(id){ return { w:itemFoot(id).w, h:1 }; }   // 벽 가구는 가로 footW × 세로 1칸 점유
+    const _wallFootW = id => wallFoot(id).w;   // 순수 헬퍼(util.js)에 주입할 발자국 너비 함수
     function furnWallH(id, isDock){ return furnRoomH(id, isDock, 0); }   // mount/hang 크기 = 원근 없는 앞크기(depth 0)
     function wallPlacedList(){ const p=room().wallPlaced||{}; return Object.keys(p).map(k=>({key:k, r:+k.split('_')[0], c:+k.split('_')[1], itemId:p[k].itemId})); }
     function wallPlacedItemId(key){ const p=room().wallPlaced||{}; return p[key]&&p[key].itemId; }
-    function wallOccupiedCells(wp, ignoreKey){ const occ={}; Object.keys(wp||{}).forEach(k=>{ if(k===ignoreKey) return;
-      const pr=k.split('_'), r=+pr[0], c=+pr[1], w=wallFoot(wp[k].itemId).w; for(let dc=0;dc<w;dc++) occ[r+'_'+(c+dc)]=1; }); return occ; }
-    function wallAreaFree(r,c,w,wp,ignoreKey){ if(r<1||c<1||r>WALL_ROWS||c+w-1>WALL_COLS) return false;
-      const occ=wallOccupiedCells(wp,ignoreKey); for(let dc=0;dc<w;dc++) if(occ[r+'_'+(c+dc)]) return false; return true; }
+    // 격자 순수 로직은 util.js(wall*Pure)에 있고, 여기선 카탈로그 값(발자국·앵커·격자 크기)을 주입하는 얇은 래퍼만 둔다(단위 테스트 가능).
+    function wallSnapRow(id, r){ return wallSnapRowPure(wallAnchorOf(id), r, WALL_ROWS); }   // 바닥형은 항상 맨 아래 행(바닥선)
+    function wallOccupiedCells(wp, ignoreKey){ return wallOccupiedCellsPure(wp, ignoreKey, _wallFootW); }
+    function wallAreaFree(r,c,w,wp,ignoreKey){ return wallAreaFreePure(r,c,w,wp,ignoreKey, _wallFootW, WALL_COLS, WALL_ROWS); }
     function wallCellFromPoint(grid, x, y){ const rc=grid.getBoundingClientRect(), cw=rc.width/WALL_COLS, ch=rc.height/WALL_ROWS;
       const c=Math.floor((x-rc.left)/cw)+1, r=Math.floor((y-rc.top)/ch)+1; return { r:Math.min(WALL_ROWS,Math.max(1,r)), c:Math.min(WALL_COLS,Math.max(1,c)) }; }
     // 벽 가구 캠 렌더 — 가로 앵커는 바닥과 동일(camAnchorMode), 세로는 앵커 종류에 따라(floor/mount/hang), z=0(맨 뒤 벽 평면).

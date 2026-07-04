@@ -392,6 +392,40 @@ test('sumPlacedItem: 바닥(placed)+벽(wallPlaced) 합산(벽꾸미기 복제 �
   assert.strictEqual(U.sumPlacedItem(rooms, 'cushion'), 2);     // 방1 바닥 + 방3 바닥(벽 없어도 안전)
 });
 
+// ===== 🧱 벽꾸미기 격자 순수 로직 =====
+const wf1 = () => 1;                                   // 모든 가구 가로 1칸
+const wfMap = m => id => (m[id] || 1);                 // itemId별 가로 칸수
+
+test('wallOccupiedCellsPure: 발자국 너비만큼 점유 칸 확장(ignoreKey 제외)', () => {
+  const wp = { '1_1': { itemId: 'frame' }, '4_5': { itemId: 'shelf' } };
+  const footW = wfMap({ frame: 1, shelf: 2 });
+  assert.deepStrictEqual(U.wallOccupiedCellsPure(wp, null, footW), { '1_1': 1, '4_5': 1, '4_6': 1 });   // 선반=2칸
+  assert.deepStrictEqual(U.wallOccupiedCellsPure(wp, '4_5', footW), { '1_1': 1 });                       // ignoreKey로 자기 제외
+  assert.deepStrictEqual(U.wallOccupiedCellsPure(null, null, footW), {});                                // 방어
+});
+
+test('wallAreaFreePure: 격자 경계 + 겹침 판정(cols×rows·footW 주입)', () => {
+  const wp = { '2_3': { itemId: 'frame' } };
+  const F = (r, c, w, ignore) => U.wallAreaFreePure(r, c, w, wp, ignore, wf1, 12, 4);
+  assert.strictEqual(F(1, 1, 1), true);      // 빈 칸
+  assert.strictEqual(F(2, 3, 1), false);     // 이미 점유
+  assert.strictEqual(F(0, 1, 1), false);     // 행 경계(<1)
+  assert.strictEqual(F(5, 1, 1), false);     // 행 경계(>rows=4)
+  assert.strictEqual(F(1, 12, 2), false);    // 열 경계(c+w-1>cols)
+  assert.strictEqual(F(1, 11, 2), true);     // 오른쪽 끝 2칸 딱 맞음
+  assert.strictEqual(F(2, 3, 1, '2_3'), true);   // ignoreKey=자기 자신이면 겹침 무시(이동)
+  // 2칸 가구가 점유칸(3)을 가로로 덮으면 겹침
+  const F2 = (r, c, w) => U.wallAreaFreePure(r, c, w, wp, null, wf1, 12, 4);
+  assert.strictEqual(F2(2, 2, 2), false);    // 2~3칸 → 3 겹침
+});
+
+test('wallSnapRowPure: 바닥형(floor)은 맨 아래 행으로 스냅, 그 외는 그대로', () => {
+  assert.strictEqual(U.wallSnapRowPure('floor', 2, 4), 4);   // 벽난로 → 항상 바닥 행
+  assert.strictEqual(U.wallSnapRowPure('floor', 1, 4), 4);
+  assert.strictEqual(U.wallSnapRowPure('mount', 2, 4), 2);   // 창문 → 요청 행 유지
+  assert.strictEqual(U.wallSnapRowPure('hang', 1, 4), 1);    // 모빌 → 그대로
+});
+
 test('normalizeHome: 상한/클램프 + 방 데이터 손실 방지', () => {
   // roomSlots 과다 → MAX(5)로, current 음수 → 0
   const a = U.normalizeHome({ rooms: [{}], roomSlots: 99, current: -5, slots: 999 });

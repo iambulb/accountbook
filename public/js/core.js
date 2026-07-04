@@ -170,9 +170,10 @@
     // icon(선택): 신뢰된 SVG 마크업(우리 코드에서만 전달) → 아이콘만 innerHTML, msg는 항상 textContent(XSS 안전).
     function toast(msg, err, icon){
       const t=$('toast'); t.className='toast on'+(err?' err':'')+(icon?' hasic':'');
+      t.setAttribute('aria-live', err?'assertive':'polite');   // 에러는 즉시(assertive)로 스크린리더에 알림
       if(icon){ t.innerHTML='<span class="toast-ic"></span><span class="toast-msg"></span>'; t.firstChild.innerHTML=icon; t.lastChild.textContent=msg; }
       else { t.textContent=msg; }
-      clearTimeout(t._t); t._t=setTimeout(()=>{ t.className='toast'; }, 2200);
+      clearTimeout(t._t); t._t=setTimeout(()=>{ t.className='toast'; }, err?3600:2200);   // 에러는 좀 더 오래 표시
     }
 
     // ===== 시트 =====
@@ -351,8 +352,10 @@
     // ===== 워크스페이스 부트스트랩 =====
     async function enterApp(user){
       state.uid=user.uid; state.userEmail=user.email||'';
+      const _slowBoot=setTimeout(()=>{ try{ toast('연결이 지연되고 있어요 — 네트워크를 확인해 주세요', true); }catch(_){} }, 6000);   // 오프라인/느린 네트워크: 부팅 데이터(once)가 안 풀릴 때 안내
       try{
         const s=await db.ref('users/'+user.uid).once('value');
+        clearTimeout(_slowBoot);
         let u=s.val()||{};
         if(!u.name){
           u.name = pendingSignupName || (user.email||'사용자').split('@')[0];
@@ -384,7 +387,7 @@
         if(justSignedUp){ justSignedUp=false; try{ if(typeof grantWelcomeGift==='function') setTimeout(grantWelcomeGift, 900); }catch(e){ console.warn('welcome gift', e); } }   // 🎉 신규 가입 축하 선물(멱등)
         try{ if(typeof maybeOnboard==='function') setTimeout(maybeOnboard, 1300); }catch(e){}   // 🧭 첫 사용자 온보딩(users/{uid}/onboarded 1회)
         try{ if(typeof initPush==='function') setTimeout(initPush, 1600); }catch(e){}   // 🔔 알림 토큰 조용히 갱신(권한 이미 허용 시)
-      }catch(e){ toast(e.message||'로그인 처리 중 오류', true); }
+      }catch(e){ clearTimeout(_slowBoot); toast(e.message||'로그인 처리 중 오류', true); }
     }
 
     // 개인 할일·친구 그래프(user-global) 상시 리스너 — 워크스페이스 전환과 무관하게 유지.
@@ -1098,7 +1101,8 @@
     function prepaidAccounts(){ return state.accounts.filter(a=>PREPAID_TYPES.includes(a.type)); }
     function prepaidTotal(){ return prepaidAccounts().filter(canSee).reduce((s,a)=>s+accountBalance(a.id),0); }
     // owner는 멤버 uid·'공동'·(레거시)이름이 섞일 수 있어 셋 다 처리 — uid면 ownerName으로 내 이름과 비교(내 비공개 항목이 안 숨겨지게)
-    function canSee(item){ if((item.visibility||'full')!=='private') return true; const o=item.owner; return o==='공동' || o===state.uid || ownerName(o)===state.userName; }
+    function canSee(item){ if((item.visibility||'full')!=='private') return true; const o=item.owner;
+      return o==='공동' || o===state.uid || item.ownerUid===state.uid || (!item.ownerUid && ownerName(o)===state.userName); }   // uid 우선(동명이인 오노출 방지) — ownerUid 있으면 이름 폴백 안 함
     function visibleAccounts(){ return state.accounts.filter(canSee); }
     function acctGroup(a){ if(CARD_TYPES.includes(a.type)) return 'card'; if(PREPAID_TYPES.includes(a.type)) return 'prepaid'; if(a.type==='other') return 'other'; return 'cash'; }
 
@@ -1211,7 +1215,11 @@
       if(typeof applyHomeBadge==='function') applyHomeBadge(document, state.view, pend.total);   // 로고 점(util, jsdom 테스트됨)
       if(typeof applyTodoTabDot==='function') applyTodoTabDot(document, pend.todos);              // 할일 탭 점(util, jsdom 테스트됨)
     }
-    function rerender(){
+    let _rerenderRAF=0;
+    function rerender(){   // 코얼레싱: 여러 RTDB 리스너가 연달아 호출해도 한 프레임에 실제 렌더 1회(부팅·데이터 변경 시 재계산/재데코 폭주 방지). 렌더 직후 동기로 새 DOM을 읽는 호출자는 없음(검토 확인).
+      if(_rerenderRAF) return; _rerenderRAF=requestAnimationFrame(()=>{ _rerenderRAF=0; _rerenderNow(); });
+    }
+    function _rerenderNow(){
       document.body.classList.toggle('home-view', state.view==='home');   // 홈에선 바텀 탭바 숨김(CSS)
       updateHomeBadge();
       if(state.view==='home'){

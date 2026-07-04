@@ -561,8 +561,8 @@
       if(sheetTx){
         const old=state.transactions.find(x=>x.ownerUid===sheetTx.ownerUid&&x.id===sheetTx.id);
         if(old&&old.recurringId) tx.recurringId=old.recurringId;
-        db.ref(wp('transactions/'+sheetTx.ownerUid+'/'+sheetTx.id)).set(tx); toast('수정되었습니다');
-      } else { db.ref(wp('transactions/'+state.uid+'/'+Date.now())).set(tx); toast('저장되었습니다'); budgetPreWarn(tx); }
+        db.ref(wp('transactions/'+sheetTx.ownerUid+'/'+sheetTx.id)).set(tx).catch(_saveErr); toast('수정되었습니다');
+      } else { db.ref(wp('transactions/'+state.uid+'/'+Date.now())).set(tx).catch(_saveErr); toast('저장되었습니다'); budgetPreWarn(tx); }
       closeSheet();
     }
     // 예산 사전 경고: 이 지출로 관련 예산이 임계(alertThreshold) 또는 100%를 처음 넘으면 비차단 토스트(저장은 그대로).
@@ -1026,7 +1026,7 @@
         createdByUid:t?(t.createdByUid||state.uid||''):(state.uid||''), createdAt:t?(t.createdAt||now):now, updatedAt:now,
         sortOrder:t?(t.sortOrder!=null?t.sortOrder:Date.now()):Date.now() };
       const ref=scope==='personal'?db.ref('users/'+state.uid+'/todos/'+key):db.ref(wp('todos/'+key));
-      ref.set(data); toast(t?'수정되었습니다':'추가되었습니다'); closeSheet();
+      ref.set(data).catch(_saveErr); toast(t?'수정되었습니다':'추가되었습니다'); closeSheet();
     }
     function deleteTodo(id){ const t=allTodos().find(x=>x.id===id); if(!t) return; confirmSheet('이 할일을 삭제할까요?', ()=>{ todoDbRef(t).remove(); toast('삭제되었습니다'); closeSheet(); }); }
     // 목적별 가계부(여행 등) 상세에 붙이는 연결된 할일 요약 카드
@@ -1064,6 +1064,7 @@
       openSheet('반복 할일', h);
     }
     // 리포트 카테고리 범례 값 표시 토글(% ↔ 금액). 전체 재렌더 없이 DOM 클래스만 바꿔 즉시 반영 + state로 유지.
+    function _saveErr(){ toast('저장 실패 — 네트워크·권한을 확인해 다시 시도하세요', true); }   // 낙관적 쓰기(오프라인 유지) + 서버 거부(규칙/검증) 시에만 뜸
     function setRepVal(amt){ state._repShowAmt=!!amt;
       document.querySelectorAll('.legend').forEach(el=>el.classList.toggle('amt', !!amt));
       document.querySelectorAll('.repvalseg').forEach(seg=>{ const b=seg.querySelectorAll('button'); if(b[0])b[0].classList.toggle('on', !amt); if(b[1])b[1].classList.toggle('on', !!amt); });
@@ -1841,7 +1842,7 @@
         purposeBookId: b?(b.purposeBookId||null):null,
         createdAt: b?(b.createdAt||now):now, updatedAt:now };
       const key=id||('bg_'+Date.now());
-      db.ref(wp('budgets/'+key)).set(data); toast(b?'수정되었습니다':'추가되었습니다'); openBudgetSheet();
+      db.ref(wp('budgets/'+key)).set(data).catch(_saveErr); toast(b?'수정되었습니다':'추가되었습니다'); openBudgetSheet();
     }
     function deleteBudget(id){ confirmSheet('이 예산을 삭제할까요?', ()=>{ db.ref(wp('budgets/'+id)).remove(); toast('삭제되었습니다'); openBudgetSheet(); }); }
 
@@ -2199,7 +2200,7 @@
         recurringId, status: s?(s.status||'active'):'active', visibility:vis,
         owner: s?(s.owner||(vis==='private'?state.userName:defaultOwnerName())):(vis==='private'?state.userName:defaultOwnerName()),
         memo:val('subMemo').trim(), createdAt: s?(s.createdAt||now):now, updatedAt:now };
-      db.ref(wp('subscriptions/'+key)).set(data); toast(s?'수정되었습니다':'추가되었습니다'); closeSheet();
+      db.ref(wp('subscriptions/'+key)).set(data).catch(_saveErr); toast(s?'수정되었습니다':'추가되었습니다'); closeSheet();
       setTimeout(()=>{ if(recMode==='auto') runRecurring(); openSubscriptions(); }, 300);
     }
     function deleteSub(id){ confirmSheet('이 구독을 삭제할까요? (연결된 정기거래는 유지됩니다)', ()=>{ db.ref(wp('subscriptions/'+id)).remove(); toast('삭제되었습니다'); openSubscriptions(); }); }
@@ -2431,7 +2432,7 @@
         owner: p?(p.owner||(vis==='private'?state.userName:defaultOwnerName())):(vis==='private'?state.userName:defaultOwnerName()),
         memo:val('pbMemo').trim(), createdAt: p?(p.createdAt||now):now, updatedAt:now };
       const key=id||('pb_'+Date.now());
-      db.ref(wp('purposeBooks/'+key)).set(data); toast(p?'수정되었습니다':'추가되었습니다'); openPurposeBooks();
+      db.ref(wp('purposeBooks/'+key)).set(data).catch(_saveErr); toast(p?'수정되었습니다':'추가되었습니다'); openPurposeBooks();
     }
     function deletePb(id){ confirmSheet('이 목적별 가계부를 삭제할까요? (연결된 거래는 유지됩니다)', ()=>{ db.ref(wp('purposeBooks/'+id)).remove(); toast('삭제되었습니다'); openPurposeBooks(); }); }
 
@@ -2589,7 +2590,7 @@
         memo:val('plMemo').trim(), status:($('plStatus')?val('plStatus'):(pl?(pl.status||'planned'):'planned')),
         createdAt: pl?(pl.createdAt||now):now, updatedAt:now };
       const key=id||('plan_'+Date.now());
-      db.ref(wp('plannedGiftEvents/'+key)).set(data); toast(pl?'수정되었습니다':'추가되었습니다'); openGiftBook('planned');
+      db.ref(wp('plannedGiftEvents/'+key)).set(data).catch(_saveErr); toast(pl?'수정되었습니다':'추가되었습니다'); openGiftBook('planned');
     }
     function deletePlanned(id){ confirmSheet('이 예정을 삭제할까요?', ()=>{ db.ref(wp('plannedGiftEvents/'+id)).remove(); toast('삭제되었습니다'); openGiftBook('planned'); }); }
     function completePlanned(id){
@@ -2615,7 +2616,7 @@
       const now=new Date().toISOString(), p=id?state.people.find(x=>x.id===id):null;
       const data={ name, relation:val('perRel'), memo:val('perMemo').trim(), createdAt:p?(p.createdAt||now):now, updatedAt:now };
       const key=id||('per_'+Date.now());
-      db.ref(wp('people/'+key)).set(data); toast(p?'수정되었습니다':'추가되었습니다'); openGiftBook('people');
+      db.ref(wp('people/'+key)).set(data).catch(_saveErr); toast(p?'수정되었습니다':'추가되었습니다'); openGiftBook('people');
     }
     function deletePerson(id){ confirmSheet('이 인맥을 삭제할까요? (경조사비 기록은 유지됩니다)', ()=>{ db.ref(wp('people/'+id)).remove(); toast('삭제되었습니다'); openGiftBook('people'); }); }
 
@@ -2701,7 +2702,7 @@
         account: $('lAcct')?val('lAcct'):'', memo:val('lMemo').trim(), status:l?(l.status||'active'):'active',
         visibility:vis, owner:l?(l.owner||state.userName):state.userName, createdAt:l?(l.createdAt||now):now, updatedAt:now };
       const key=id||('loan_'+Date.now());
-      db.ref(wp('loans/'+key)).set(data); toast(l?'수정되었습니다':'추가되었습니다'); openLoanBook();
+      db.ref(wp('loans/'+key)).set(data).catch(_saveErr); toast(l?'수정되었습니다':'추가되었습니다'); openLoanBook();
     }
     function deleteLoan(id){
       confirmSheet('이 대출을 삭제할까요? (상환 기록도 함께 삭제됩니다)', ()=>{
@@ -2754,7 +2755,7 @@
       const linkedPrincipalTxId  = upsertLoanTx(p?(p.linkedPrincipalTxId||null):null, principalAmount, borrowed?'대출상환':'원금회수', '원금', false,    'lpp_'+key);
       const data={ id:key, loanId, date, principalAmount, interestAmount, account:acct||'', memo,
         linkedTransactionId, linkedPrincipalTxId, createdAt:p?(p.createdAt||now):now, updatedAt:now };
-      db.ref(wp('loanPayments/'+key)).set(data); toast(p?'수정되었습니다':'기록되었습니다'); openLoanDetail(loanId);
+      db.ref(wp('loanPayments/'+key)).set(data).catch(_saveErr); toast(p?'수정되었습니다':'기록되었습니다'); openLoanDetail(loanId);
     }
     function deleteLoanPayment(loanId, id){
       const p=state.loanPayments.find(x=>x.id===id);

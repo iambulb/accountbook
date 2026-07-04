@@ -46,6 +46,11 @@
         const lab=f.querySelector('label'), inp=f.querySelector('input,select,textarea');
         if(lab && inp && !lab.htmlFor && inp.id) lab.htmlFor=inp.id;
       });
+      // 3b) .txfield(거래/정기 입력)은 <label> 대신 span.k 유사라벨 → 입력에 aria-label 복사(스크린리더 대응)
+      root.querySelectorAll('.txfield').forEach(f=>{
+        const k=f.querySelector('.k'), inp=f.querySelector('input,select,textarea');
+        if(k && inp && !inp.getAttribute('aria-label')){ const t=(k.textContent||'').trim(); if(t) inp.setAttribute('aria-label', t); }
+      });
     }
     // 탭바 현재 위치 표시
     function syncTabCurrent(){ document.querySelectorAll('.tabbar .tab').forEach(t=>{ if(t.classList.contains('on')) t.setAttribute('aria-current','page'); else t.removeAttribute('aria-current'); }); }
@@ -74,10 +79,13 @@
       if(e.shiftKey && (a===first||a===container)){ e.preventDefault(); last.focus(); }
       else if(!e.shiftKey && a===last){ e.preventDefault(); first.focus(); }
     }
-    // 동적 컨테이너 관찰 → 새로 그릴 때마다 자동 데코레이트
+    // 동적 컨테이너 관찰 → 새로 그릴 때마다 자동 데코레이트(rAF 코얼레싱: 한 프레임의 여러 변경을 1회로 합쳐 재데코 폭주 방지)
+    let _a11yRAF=0; const _a11yTargets=new Set();
+    function _a11ySchedule(el){ _a11yTargets.add(el); if(_a11yRAF) return;
+      _a11yRAF=requestAnimationFrame(()=>{ _a11yRAF=0; const t=[..._a11yTargets]; _a11yTargets.clear(); t.forEach(a11yDecorate); }); }
     ['content','sheetBody'].forEach(id=>{
       const el=document.getElementById(id);
-      if(el && window.MutationObserver){ new MutationObserver(()=>a11yDecorate(el)).observe(el, {childList:true, subtree:true}); }
+      if(el && window.MutationObserver){ new MutationObserver(()=>_a11ySchedule(el)).observe(el, {childList:true, subtree:true}); }
     });
     a11yDecorate(document.body);
     syncTabCurrent();

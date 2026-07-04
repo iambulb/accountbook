@@ -203,6 +203,29 @@
     }); return n;
   }
 
+  // ===== 🧱 벽꾸미기(벽 격자) 순수 로직 — 격자 cols/rows·발자국 너비(footW)를 인자로 받아 DOM/카탈로그 비의존(단위 테스트 가능). cats.js 가 얇은 래퍼로 카탈로그 값을 주입해 호출한다. =====
+  // placed = { "r_c": {itemId} } (r=행 1..rows·c=열 1..cols), footW = function(itemId)->가로 점유 칸수, ignoreKey = 이동 중 자기 제외.
+  function wallOccupiedCellsPure(placed, ignoreKey, footW) {
+    var occ = {};
+    Object.keys(placed || {}).forEach(function (k) {
+      if (k === ignoreKey) return;
+      var pr = k.split('_'), r = +pr[0], c = +pr[1], w = footW(placed[k].itemId);
+      for (var dc = 0; dc < w; dc++) occ[r + '_' + (c + dc)] = 1;
+    });
+    return occ;
+  }
+  // (r,c)에서 가로 w칸이 격자(cols×rows) 안에 들어가고 다른 가구와 안 겹치는지.
+  function wallAreaFreePure(r, c, w, placed, ignoreKey, footW, cols, rows) {
+    if (r < 1 || c < 1 || r > rows || c + w - 1 > cols) return false;
+    var occ = wallOccupiedCellsPure(placed, ignoreKey, footW);
+    for (var dc = 0; dc < w; dc++) if (occ[r + '_' + (c + dc)]) return false;
+    return true;
+  }
+  // 바닥형(floor) 앵커 벽 가구는 항상 맨 아래 행(rows)에 스냅, 그 외 앵커는 요청 행 그대로.
+  function wallSnapRowPure(anchor, r, rows) {
+    return anchor === 'floor' ? rows : r;
+  }
+
   // ===== 게임 리텐션(순수) =====
   // 로그인(출석) 연속일 → 마일스톤 보상 {coins,gold}. 마일스톤(3·7·14·30)에서만 지급, 30 이후는 매 30일 반복.
   function loginStreakReward(day) {
@@ -298,7 +321,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, sumPlacedItem: sumPlacedItem, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift };
+  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);
