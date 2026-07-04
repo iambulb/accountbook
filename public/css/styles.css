@@ -379,6 +379,7 @@
     .gcell { display:flex; flex-direction:column; align-items:center; gap:7px; padding:3px 0; transition:transform .08s; }
     .gic { width:58px; height:58px; border-radius:18px; background:var(--soft); display:flex; align-items:center; justify-content:center; color:var(--text); position:relative; }
     .gic svg { width:28px; height:28px; }
+    .gic-app { width:100%; height:100%; display:block; image-rendering:pixelated; border-radius:18px; object-fit:cover; }   /* 알뜰홈 앱 아이콘은 박스에 꽉 차게(브랜드 타일) */
     .gcell .glabel { font-size:11.5px; font-weight:600; color:var(--text2); }
     .gbadge { position:absolute; top:-3px; right:-3px; min-width:16px; height:16px; border-radius:9px; background:var(--expense); color:#fff; font-size:9px; font-weight:800; display:flex; align-items:center; justify-content:center; padding:0 4px; }
     .lst { margin-top:18px; }

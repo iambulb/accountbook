@@ -1650,7 +1650,7 @@
       // 공통(모드 무관) 아이콘 — 가운데 '공통' 라벨 구분선으로 분리
       h+='<div class="gsep"><span>공통</span></div>';
       h+='<div class="grid4">';
-      h+=gcell('<img class="gic-app" src="icons/icon.svg" alt="" width="28" height="28" style="display:block;image-rendering:pixelated;border-radius:6px;">','알뜰홈','openCatHouse()');
+      h+=gcell('<img class="gic-app" src="icons/icon.svg" alt="">','알뜰홈','openCatHouse()');
       h+=gcell((typeof shopSvg==='function'?shopSvg({h:26}):'🏪'),'알뜰샵','openShop()');
       h+=gcell((typeof bellSvg==='function'?bellSvg({h:26}):'🔔'),'소식','openNews()', (typeof newsMoreCount==='function'?newsMoreCount():0));   // 선물 제외: 안 쓴 쿠폰+안 본 공지만(선물은 선물함 셀에)
       h+=gcell((typeof missionSvg==='function'?missionSvg({h:26}):'📋'),'미션','openMissions()');
