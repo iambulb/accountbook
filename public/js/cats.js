@@ -495,6 +495,37 @@
       "............","...XXXXXX...","..XXLBBBXX..",".XXLLLBBBXX.",".XLLLLBBBBX.",".XDDDDDDDDX.",
       ".XDDDDDDDDX.",".XBBBBBBbbX.",".XXBBSSbbXX.","..XXBBbbXX..","...XXXXXX...","............"
     ];
+    // ===== 🖼️ 벽 가구 콘텐츠(전부 wall:true, mount 앵커) =====
+    // 액자(16×15): 금테(X/W/w)+풍경(하늘 S·해 U·구름 c·언덕 G/g·나무 t/T).
+    const M_FRAME = [
+      "XXXXXXXXXXXXXXXX","XWWWWWWWWWWWWWWX","XWwwwwwwwwwwwwWX","XWwSSSSSSSUUSwWX","XWwSSSSSSSUUSwWX",
+      "XWwSSSSSSSSSSwWX","XWwSScSSSSSSSwWX","XWwScccSSSSSSwWX","XWwGGGGGGGGGGwWX","XWwGtGGGGtGGGwWX",
+      "XWwGTGGGGTGGGwWX","XWwgGGGGGGGggwWX","XWwwwwwwwwwwwwWX","XWWWWWWWWWWWWWWX","XXXXXXXXXXXXXXXX"
+    ];
+    // 벽 선반(20×12): 원목 널(W/w)+금속 브래킷(K)+위 소품(화분 G/L/P·책 B/r/o·컵 C/c).
+    const M_SHELF = [
+      "....GG.....BB.......","...GLLG...BBBB..CC..","..GLLLLG..BrrB.CccC.","...PppP...BBBB.CccC.",
+      "...PppP...BooB..CC..","WWWWWWWWWWWWWWWWWWWW","wwwwwwwwwwwwwwwwwwww","..K..............K..",
+      "..K..............K..","..KK............KK..","....................","...................."
+    ];
+    // 거울(12×20): 금테 타원(X/W/w)+반사면(A)+사선 광택(h).
+    const M_MIRROR = [
+      "....XXXX....","..XXWWWWXX..",".XWWwwwwWWX.","XWwAAAAAAwWX","XWwAAAAhAwWX","XWwAAAhAAwWX",
+      "XWwAAhAAAwWX","XWwAhAAAAwWX","XWwhAAAAAwWX","XWwAAAAAAwWX","XWwAAAAAAwWX","XWwAAAAAAwWX",
+      "XWwAAAAAAwWX","XWwAAAAAAwWX",".XWwAAAAwWX.","..XWwwwwWX..","...XWWWWX...","....XXXX....","............","............"
+    ];
+    // 네온 하트(16×14, blink): 네온관(N 분홍·H 하이라이트) — 캠에서 깜빡.
+    const M_NEON = [
+      "................","...NN.....NN....","..NHHN...NHHN...",".NHHHHN.NHHHHN..",".NHHHHHNHHHHHN..",
+      ".NHHHHHHHHHHHN..","..NHHHHHHHHHN...","...NHHHHHHHN....","....NHHHHHN.....",".....NHHHN......",
+      "......NHN.......",".......N........","................","................"
+    ];
+    // 벽등(12×18, flicker): 금속 브래킷(K)+전구 불빛(F 주황·Y 노랑) — 캠에서 일렁.
+    const M_SCONCE = [
+      "....KK......","....KK......","...KKKK.....","...K..K.....","..KK..KK....",".KK....KK...",
+      ".K......K...",".K.FFFF.K...",".K.FYYF.K...","...FYYYF....","...FYYYF....","...FYYYF....",
+      "....FYF.....","....FYF.....","....KKK.....","....KK......","....KK......","............"
+    ];
     // ===== 🧵 바닥/벽지/구조물 픽셀 타일 (build_assets.py 생성) =====
     const M_FLOOR_WOOD = [
       'LLLLLLLLLLLLLLLL',
@@ -690,7 +721,7 @@
       brickwall: {B:'#cf8a63', H:'#e7ab84', S:'#95533a', M:'#efe4d3'}
     };
     const POND_PAL = {K:'#9aa1ab', k:'#7c828d', H:'#c3c9d1', W:'#c9ebf7', m:'#93d3ee', w:'#5cabd6', r:'#e0f4fc', S:'#ffffff', P:'#63b25f', p:'#4a9247', F:'#ff9ec2', Y:'#ffe14a', O:'#ff8a3d', o:'#e0662a', X:'#ffffff', t:'#ff8a3d'};
-    const FURN_PALS={ pond:POND_PAL, cushion:{X:'#4a5361',C:'#9aa4b2',D:'#79838f',L:'#c2cad4',B:'#5b6470'}, bowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',F:'#d68b4a',f:'#b06a2e',g:'#efb37a'}, waterbowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',A:'#5aa9e6',a:'#3f86c4',h:'#bfe2fb'}, tower:{X:'#5e3f22',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#5e3f22',W:'#c99a5f',C:'#a87c46',L:'#e6c085',S:'#d8b98a',R:'#b8935f',T:'#6b4a2a',O:'#d9694e',H:'#f2a98f'}, litterbox:{X:'#7a808a',W:'#c9ced6',D:'#9aa0aa',S:'#f4efe4',s:'#e7e0d0',k:'#d6ccb8'}, pethouse:{X:'#5a4632',R:'#d9694e',r:'#b8503a',H:'#f0967a',W:'#e8c98f',w:'#d4b06a',D:'#2c2420',d:'#46382c'}, plant:{X:'#7c5028',L:'#7cc652',G:'#4e9636',P:'#c8763e',p:'#a85e2c',l:'#9ad86a',S:'#6f9440'}, catwheel:{X:'#2f6f68',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',R:'#c9a06a',D:'#6b5842'}, rug:{X:'#7a2f38',B:'#c0505e',C:'#a5424e',L:'#e6b3a0',F:'#efe3cf'}, window:{X:'#6b4a2a',W:'#9a734a',w:'#b58d5e',S:'#bfe3f5',C:'#ffffff',U:'#ffd968',u:'#f2b93c'}, fishtank:{X:'#5b7b86',G:'#bfe6ef',A:'#5aa9e6',a:'#3f86c4',P:'#4e9636',p:'#7cc652',F:'#f2933c',f:'#ffd27a',b:'#dff3ff',R:'#cdb98c',D:'#3a5a63'}, fireplace:{X:'#4a3626',W:'#7a5230',w:'#9c6f3f',K:'#b0563f',k:'#c8785a',D:'#241a13',f:'#ffd54a',F:'#f2913c',r:'#e05230',S:'#9298a2',s:'#767c86'}, fan:{X:'#3f5a63',G:'#cfe6ee',L:'#eef7fb',D:'#a7cdda',h:'#e0b84a',N:'#7a828c',S:'#9298a2',s:'#6f747c'}, hammock:{X:'#5a4632',W:'#7a5a3a',K:'#b7a78f',C:'#3c7d6d',c:'#2f6357',L:'#5bb39d'}, teaser:{R:'#6b7280',K:'#b0b6bd',F:'#e2607a',f:'#f2a7b8',T:'#c94a66',S:'#7a5230',s:'#9c6f3f'}, wallclock:{X:'#3a2e22',W:'#8a5a34',w:'#a8763f',L:'#f2e6c8',D:'#2a221a',K:'#6b5a3a',O:'#e0b84a'}, hangplant:{X:'#5a4632',K:'#b7a78f',P:'#c8763e',p:'#a85e2c',G:'#4e9636',L:'#7cc652',l:'#9ad86a',g:'#3f7a2c'}, mobile:{X:'#5a4632',K:'#b7a78f',M:'#7a5a3a',A:'#f2c84b',a:'#d6a832',B:'#8fb8e6',b:'#6f97c4',C:'#f2a7b8',c:'#d98098'}, jingleball:{X:'#8a3a2c',B:'#e0552f',b:'#b8452a',L:'#f2a06a',D:'#7a2f22',S:'#ffd24a'} };
+    const FURN_PALS={ pond:POND_PAL, cushion:{X:'#4a5361',C:'#9aa4b2',D:'#79838f',L:'#c2cad4',B:'#5b6470'}, bowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',F:'#d68b4a',f:'#b06a2e',g:'#efb37a'}, waterbowl:{X:'#4a5361',W:'#d0d6dd',L:'#eef1f5',D:'#aab2bc',A:'#5aa9e6',a:'#3f86c4',h:'#bfe2fb'}, tower:{X:'#5e3f22',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#5e3f22',W:'#c99a5f',C:'#a87c46',L:'#e6c085',S:'#d8b98a',R:'#b8935f',T:'#6b4a2a',O:'#d9694e',H:'#f2a98f'}, litterbox:{X:'#7a808a',W:'#c9ced6',D:'#9aa0aa',S:'#f4efe4',s:'#e7e0d0',k:'#d6ccb8'}, pethouse:{X:'#5a4632',R:'#d9694e',r:'#b8503a',H:'#f0967a',W:'#e8c98f',w:'#d4b06a',D:'#2c2420',d:'#46382c'}, plant:{X:'#7c5028',L:'#7cc652',G:'#4e9636',P:'#c8763e',p:'#a85e2c',l:'#9ad86a',S:'#6f9440'}, catwheel:{X:'#2f6f68',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',R:'#c9a06a',D:'#6b5842'}, rug:{X:'#7a2f38',B:'#c0505e',C:'#a5424e',L:'#e6b3a0',F:'#efe3cf'}, window:{X:'#6b4a2a',W:'#9a734a',w:'#b58d5e',S:'#bfe3f5',C:'#ffffff',U:'#ffd968',u:'#f2b93c'}, fishtank:{X:'#5b7b86',G:'#bfe6ef',A:'#5aa9e6',a:'#3f86c4',P:'#4e9636',p:'#7cc652',F:'#f2933c',f:'#ffd27a',b:'#dff3ff',R:'#cdb98c',D:'#3a5a63'}, fireplace:{X:'#4a3626',W:'#7a5230',w:'#9c6f3f',K:'#b0563f',k:'#c8785a',D:'#241a13',f:'#ffd54a',F:'#f2913c',r:'#e05230',S:'#9298a2',s:'#767c86'}, fan:{X:'#3f5a63',G:'#cfe6ee',L:'#eef7fb',D:'#a7cdda',h:'#e0b84a',N:'#7a828c',S:'#9298a2',s:'#6f747c'}, hammock:{X:'#5a4632',W:'#7a5a3a',K:'#b7a78f',C:'#3c7d6d',c:'#2f6357',L:'#5bb39d'}, teaser:{R:'#6b7280',K:'#b0b6bd',F:'#e2607a',f:'#f2a7b8',T:'#c94a66',S:'#7a5230',s:'#9c6f3f'}, wallclock:{X:'#3a2e22',W:'#8a5a34',w:'#a8763f',L:'#f2e6c8',D:'#2a221a',K:'#6b5a3a',O:'#e0b84a'}, hangplant:{X:'#5a4632',K:'#b7a78f',P:'#c8763e',p:'#a85e2c',G:'#4e9636',L:'#7cc652',l:'#9ad86a',g:'#3f7a2c'}, mobile:{X:'#5a4632',K:'#b7a78f',M:'#7a5a3a',A:'#f2c84b',a:'#d6a832',B:'#8fb8e6',b:'#6f97c4',C:'#f2a7b8',c:'#d98098'}, jingleball:{X:'#8a3a2c',B:'#e0552f',b:'#b8452a',L:'#f2a06a',D:'#7a2f22',S:'#ffd24a'}, frame:{X:'#4a3626',W:'#caa23a',w:'#e6c96b',S:'#bfe3f5',U:'#ffd968',c:'#ffffff',G:'#5aa860',g:'#3f7a48',t:'#7a5230',T:'#4e9636'}, shelf:{W:'#9a734a',w:'#6b4a2a',K:'#5a5f68',G:'#4e9636',L:'#7cc652',P:'#c8763e',p:'#a85e2c',B:'#d9694e',r:'#f0967a',o:'#b8503a',C:'#8fb8e6',c:'#bfe3f5'}, mirror:{X:'#8a6a1e',W:'#e6c96b',w:'#caa23a',A:'#bcd3dc',h:'#ffffff'}, neon:{N:'#ff4f9d',H:'#ffa6cf'}, sconce:{K:'#7a828c',F:'#f2913c',Y:'#ffd54a'} };
     const POOP_PAL={X:'#4a3218',K:'#7a5230'};
     const FOOD_PAL={F:'#d68b4a',D:'#8a5427',L:'#f2e4c6',K:'#7a4a20'};
     const WATER_PAL={A:'#5aa9e6',D:'#3f86c4',H:'#c7e6ff',L:'#eaf6ff'};
@@ -941,7 +972,12 @@
       { id:'wallclock', cat:'decor', name:'벽시계', price:800, size:1.4, footW:1, footH:1, wall:true, desc:'벽에 거는 벽시계. 추가 좌우로 흔들려요.' },
       { id:'hangplant', cat:'decor', name:'행잉플랜트', price:800, size:1.4, footW:1, footH:1, wall:true, desc:'벽·천장에 매다는 화분. 덩굴이 살랑여요.' },
       { id:'mobile', cat:'decor',   name:'모빌',   price:800, size:1.4, footW:1, footH:1, wall:true, desc:'천장에 매다는 모빌. 별·달·하트가 살랑여요.' },
-      { id:'jingleball', cat:'play', name:'방울공', price:800, size:1, footW:1, footH:1, desc:'통통 흔들리는 방울 공. 펫이 굴리며 놀아요.' }
+      { id:'jingleball', cat:'play', name:'방울공', price:800, size:1, footW:1, footH:1, desc:'통통 흔들리는 방울 공. 펫이 굴리며 놀아요.' },
+      { id:'frame',  cat:'decor', name:'액자',   price:800, size:1.4, footW:1, footH:1, wall:true, desc:'벽에 거는 풍경 액자.' },
+      { id:'shelf',  cat:'decor', name:'벽 선반', price:800, size:1.4, footW:1, footH:1, wall:true, desc:'벽에 다는 선반. 소품이 올려져 있어요.' },
+      { id:'mirror', cat:'decor', name:'거울',   price:800, size:1.4, footW:1, footH:1, wall:true, desc:'벽에 거는 금테 거울.' },
+      { id:'neon',   cat:'decor', name:'네온사인', price:800, size:1.4, footW:1, footH:1, wall:true, desc:'벽에 다는 네온 하트. 은은하게 깜빡여요.' },
+      { id:'sconce', cat:'decor', name:'벽등',   price:800, size:1.4, footW:1, footH:1, wall:true, desc:'벽에 다는 등불. 불빛이 일렁여요.' }
     ];
     // 소비 아이템(배치 불가) — 홈에서 밥그릇/물그릇을 탭해 채울 때 소모. 알뜰샵 "소비" 탭에서 구매.
     const CONSUM_CATALOG = [
@@ -1493,7 +1529,7 @@
     const SPARK_PAL={X:'currentColor',H:'#ffffff'};
     function sparkSvg(opt){ return pxSvg(M_SPARK, SPARK_PAL, opt); }
     // 알뜰샵·팔레트·격자용 대표 아트(물그릇은 물 채운 파란 그릇으로 구분 표시)
-    function furnMatrix(id){ return {pond:M_POND,cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT,catwheel:M_CATWHEEL,rug:M_RUG,window:M_WINDOW,fishtank:M_FISHTANK,fireplace:M_FIREPLACE,fan:M_FAN,hammock:M_HAMMOCK,teaser:M_TEASER,wallclock:M_WALLCLOCK,hangplant:M_HANGPLANT,mobile:M_MOBILE,jingleball:M_JINGLEBALL}[id]; }
+    function furnMatrix(id){ return {pond:M_POND,cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT,catwheel:M_CATWHEEL,rug:M_RUG,window:M_WINDOW,fishtank:M_FISHTANK,fireplace:M_FIREPLACE,fan:M_FAN,hammock:M_HAMMOCK,teaser:M_TEASER,wallclock:M_WALLCLOCK,hangplant:M_HANGPLANT,mobile:M_MOBILE,jingleball:M_JINGLEBALL,frame:M_FRAME,shelf:M_SHELF,mirror:M_MIRROR,neon:M_NEON,sconce:M_SCONCE}[id]; }
     function furnSvg(id, opt){ return pxSvg(furnMatrix(id), FURN_PALS[id], opt); }
     // 캠 전용 연출(움직이는 부분만 오버레이로 분리해 CSS 애니메이션): 같은 매트릭스를 팔레트만 나눠 두 겹으로 그림.
     //  base=움직이는 글자 제외, fx=그 글자만 → 완벽히 겹쳐 정지 배경 + 움직이는 부품(캣휠 트레드 회전·펫알 방울 흔들림·화분 잎 살랑).
@@ -1512,7 +1548,9 @@
       wallclock:{type:'swing', move:['K','O'] },       // 추(봉+놋쇠)만 좌우로(몸통·시계판 정지)
       hangplant:{type:'swing', move:['K','P','p','G','L','l','g'] }, // 걸이 아래 전체가 살랑(천장 걸이 X 정지)
       mobile:  { type:'swing', move:['K','M','A','a','B','b','C','c'] }, // 막대+매달린 별·달·하트 전체가 살랑(걸이 X 정지)
-      jingleball:{type:'swing', move:['X','B','b','L','D','S'] }  // 공 전체가 바닥에서 통통(바닥 접점 중심)
+      jingleball:{type:'swing', move:['X','B','b','L','D','S'] },  // 공 전체가 바닥에서 통통(바닥 접점 중심)
+      neon:    {type:'blink',  move:['N','H'] },   // 네온 하트 전체가 깜빡(밝기 스텝)
+      sconce:  {type:'flicker',move:['F','Y'] }    // 벽등 불빛만 일렁
     };
     function palPick(pal, keys, keep){ const o={}; Object.keys(pal).forEach(function(k){ const on=keys.indexOf(k)>=0; if(on===keep) o[k]=pal[k]; }); return o; }
     // 연출 있는 가구를 base+fx 두 겹 SVG로. (연출 없으면 일반 furnSvg 반환)
@@ -1534,7 +1572,7 @@
     // 방(dock·홈)에서의 가구 렌더 높이(px) — 발자국 세로 칸수(footH)에 비례해 키움(캣타워 6칸=제일 큼, 스크래처 1칸=고양이 키만큼, 방석·밥그릇 1칸).
     // 고양이 상호작용(캣타워 3층 올라가기 등)이 맞아떨어지도록 렌더·엔진(fh)이 같은 값을 쓴다. depth(뒤로 갈수록) 작게.
     // 방 렌더 높이 배율(실물감) — 캣타워 제일 큼, 스크래처는 고양이 키만큼, 화장실=낮은 상자, 방석·그릇 작게.
-    const ROOM_H = { pond:2.2, tower:6.2, scratcher:1.9, pethouse:2.8, catwheel:3.0, plant:1.5, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6, rug:1.2, window:1.4, fishtank:1.4, fireplace:1.4, fan:2.7, hammock:1.7, teaser:2.4, wallclock:1.4, hangplant:1.4, mobile:1.4, jingleball:0.7 };   // 1×1 벽 가구(window/fireplace/wallclock/hangplant/mobile)=1.4: 벽 1칸(WALL_STEP 9.3%≈1행)에 맞춰 겹침 방지(벽난로도 1×1로 통일).
+    const ROOM_H = { pond:2.2, tower:6.2, scratcher:1.9, pethouse:2.8, catwheel:3.0, plant:1.5, litterbox:1.5, cushion:1, bowl:0.6, waterbowl:0.6, rug:1.2, window:1.4, fishtank:1.4, fireplace:1.4, fan:2.7, hammock:1.7, teaser:2.4, wallclock:1.4, hangplant:1.4, mobile:1.4, jingleball:0.7, frame:1.4, shelf:1.4, mirror:1.4, neon:1.4, sconce:1.4 };   // 1×1 벽 가구=1.4: 벽 1칸에 맞춰 겹침 방지.
     // ---- 배치 격자(12칸) 가로 좌표 공유 헬퍼 ----
     // 에디터(평면 그리드)·드롭프리뷰·썸네일은 gridLeftFrac/gridSpanFrac(칸 좌측 edge·폭)을 그대로 쓴다.
     // 캠(원근)은 camAnchorMode로 발자국을 "가운데 정렬 + 양끝 벽 스냅" 배치해 좌우 벽까지 고르게 채운다.
@@ -1548,7 +1586,7 @@
       if(right===GRID_N && c!==1) return 'right';
       return 'center'; }
     // 가구 그래픽 가로세로비(cols/rows) — 그래픽 폭 = fh*aspect. 캠 중심 x 계산(buildActors)에 사용.
-    const FURN_ASPECT = { pond:1.667, tower:0.533, scratcher:0.636, pethouse:1.05, catwheel:1.0, plant:0.6, litterbox:1.167, cushion:1.778, bowl:1.778, waterbowl:1.778, rug:2.4, window:0.9, fishtank:1.125, fireplace:1.125, fan:0.727, hammock:1.25, teaser:0.8, wallclock:0.636, hangplant:0.7, mobile:1.2, jingleball:1.0 };
+    const FURN_ASPECT = { pond:1.667, tower:0.533, scratcher:0.636, pethouse:1.05, catwheel:1.0, plant:0.6, litterbox:1.167, cushion:1.778, bowl:1.778, waterbowl:1.778, rug:2.4, window:0.9, fishtank:1.125, fireplace:1.125, fan:0.727, hammock:1.25, teaser:0.8, wallclock:0.636, hangplant:0.7, mobile:1.2, jingleball:1.0, frame:1.067, shelf:1.667, mirror:0.6, neon:1.143, sconce:0.667 };
     function furnAspect(id){ return FURN_ASPECT[id]||1; }
     function furnRoomH(id, isDock, depth){
       const mult = ROOM_H[id] || 1;
@@ -3479,6 +3517,15 @@
       }).then(res=>{ if(res.committed) toast(f.name+' 바닥 적용!'); });
     }
     function applyFloor(id){ if(!ownsFloor(id)){ toast('먼저 구매하세요', true); return; } gameRef().child(roomChild('floor')).set(id); toast('바닥을 적용했어요'); }
+    // 배치 에디터용 스킨 선택기 — 방꾸미기=바닥·벽꾸미기=벽지. 보유한 것만 스와치로 보여주고 탭하면 현재 방에 바로 적용.
+    function skinPickerHtml(kind){
+      const isFloor=kind==='floor';
+      const cat=isFloor?FLOOR_CATALOG:WALLPAPER_CATALOG, owns=isFloor?ownsFloor:ownsWall, cur=isFloor?currentFloor():currentWall(), cssOf=isFloor?floorCss:wallCss, fn=isFloor?'applyFloor':'applyWall', lab=isFloor?'바닥':'벽지';
+      const owned=cat.filter(x=>owns(x.id));
+      const sw=owned.map(x=>{ const on=cur===x.id;
+        return '<button class="skinsw'+(on?' on':'')+'" onclick="'+fn+'(\''+x.id+'\')" aria-label="'+escapeHtml(x.name)+(on?' 적용됨':' 적용')+'"><span class="sw" style="background:'+cssOf(x.id)+'"></span><span class="nm">'+escapeHtml(x.name)+'</span>'+(on?'<i class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></i>':'')+'</button>'; }).join('');
+      return '<div class="skinsel"><div class="skinlab">'+lab+' 선택 <span class="sc">보유 '+owned.length+'</span></div><div class="skinrow">'+sw+'</div><div class="skinhint">탭하면 이 방에 바로 적용돼요. 더 많은 '+lab+'은 알뜰샵·랜덤박스에서 얻어요.</div></div>';
+    }
 
     // ================= 가챠 탭: 뽑기(펫알·랜덤박스) =================
     // 등급/확률(합 100). color=이름 텍스트/후광 색, limited는 CSS 레인보우.
@@ -3521,7 +3568,8 @@
     const CAT_TIER = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'rare', cat_white:'rare', cat_fluffy:'rare', cat_tuxedo:'rare', cat_chaos:'rare', cat_siamese:'legend', cat_bengal:'uncommon', cat_fold:'rare', cat_bora:'epic', cat_choco:'uncommon', cat_kitten:'normal', cat_pink:'legend', tiger_orange:'limited', lion_mane:'limited', cat_persian:'epic', tiger_white:'limited', cat_russianblue:'epic', cat_bengal2:'legend', dog_mutt:'rare', cat_panther:'limited' };
     // @gen:end
     const ITEM_TIER = { pond:'limited', cushion:'normal', bowl:'uncommon', scratcher:'rare', pethouse:'epic', tower:'legend', catwheel:'limited',
-      rug:'rare', fishtank:'epic', window:'legend', fireplace:'legend', fan:'legend', hammock:'legend', teaser:'legend', wallclock:'legend', hangplant:'legend', mobile:'legend', jingleball:'legend' };   // 러그=희귀·어항=특별·창문 등 장식 가구=전설. 특별↑은 아래 isGachaOnlyItem로 자동 랜덤박스 전용
+      rug:'rare', fishtank:'epic', window:'legend', fireplace:'legend', fan:'legend', hammock:'legend', teaser:'legend', wallclock:'legend', hangplant:'legend', mobile:'legend', jingleball:'legend',
+      frame:'legend', shelf:'legend', mirror:'legend', neon:'legend', sconce:'legend' };   // 러그=희귀·어항=특별·창문 등 장식/벽 가구=전설. 특별↑은 아래 isGachaOnlyItem로 자동 랜덤박스 전용
     // 🪑 비(非)펫 아이템 전역 등급/가격 오버라이드 — 관리자 쓰기·전체 읽기. 미설정은 기본값(_TIER 상수/카탈로그 price).
     //   config/furniture/{id}:{tier,price} = 가구, config/wallpaper/{id} = 벽지, config/floor/{id} = 바닥 스킨.
     let _furnCfg={}, _wallCfg={}, _floorCfg={};
@@ -4001,8 +4049,13 @@
       g.hidden=false; g.className='gdrop'+(ok?'':' bad');
       g.style.left=(gridLeftFrac(cc)*100)+'%'; g.style.top=(((rr-1)/WALL_ROWS)*100)+'%';
       g.style.width=(gridSpanFrac(w)*100)+'%'; g.style.height=(100/WALL_ROWS)+'%';
+      // 🧲 정렬 스냅 가이드: 드래그 항목 중심 열이 다른 벽 가구 중심 또는 격자 중앙과 맞으면 세로 가이드선 표시.
+      const gv=$('wsnap'); if(gv){ const cen=(cc-1)+w/2; let align=null;
+        if(Math.abs(cen-WALL_COLS/2)<0.001) align=WALL_COLS/2;   // 격자 중앙
+        else Object.keys(wp).forEach(k=>{ if(k===key) return; const pr=k.split('_'), oc=+pr[1], ow=wallFoot(wp[k].itemId).w, ocen=(oc-1)+ow/2; if(Math.abs(cen-ocen)<0.001) align=ocen; });
+        if(align!=null){ gv.hidden=false; gv.style.left=(align/WALL_COLS*100)+'%'; } else gv.hidden=true; }
     }
-    function hideWallDropPreview(){ const g=$('wgdrop'); if(g) g.hidden=true; }
+    function hideWallDropPreview(){ const g=$('wgdrop'); if(g) g.hidden=true; const gv=$('wsnap'); if(gv) gv.hidden=true; }
     // 배치된 벽 가구 드래그로 이동(꾹 눌러 시작=롱프레스, 짧게 탭=회수/판매 메뉴)
     let _wdrag=null;
     function wallGiDown(e, key){
@@ -4127,11 +4180,11 @@
         const witems=Object.keys(wp).map(key=>{ const pr=key.split('_'), r=+pr[0], c=+pr[1], id=wp[key].itemId, w=wallFoot(id).w;
           const left=(gridLeftFrac(c)*100).toFixed(3), top=(((r-1)/WALL_ROWS)*100).toFixed(3), ww=(gridSpanFrac(w)*100).toFixed(3), hh=(100/WALL_ROWS).toFixed(3);
           return '<div class="gitem" style="left:'+left+'%;top:'+top+'%;width:'+ww+'%;height:'+hh+'%" onpointerdown="wallGiDown(event,\''+key+'\')" onclick="event.stopPropagation()"><span class="gsc">'+furnSvg(id,{fit:true})+'</span></div>'; }).join('');
-        const wgrid='<div class="gridwall" id="wallGrid" onclick="wallPlaceClick(event)">'+witems+'<div class="gdrop" id="wgdrop" hidden></div></div>';
+        const wgrid='<div class="gridwall" id="wallGrid" onclick="wallPlaceClick(event)">'+witems+'<div class="gdrop" id="wgdrop" hidden></div><div class="wsnap" id="wsnap" hidden></div></div>';
         const wpal=ITEM_CATALOG.filter(it=>isWallItem(it.id) && itemQty(it.id)>0).map(it=>{ const rem=itemRemaining(it.id), sold=rem<=0;
           return '<button class="pitem'+(_selWall===it.id?' on':'')+(sold?' soldout':'')+'"'+(sold?' aria-disabled="true"':'')+' onpointerdown="wallPalDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selWallItem(\''+it.id+'\')"><span class="pic">'+furnSvg(it.id,{h:palPicH(it.id)})+'</span><span>'+it.name+'</span><span class="pq">'+(sold?'전부 배치됨':'남은 '+rem)+'</span></button>'; }).join('');
         const wallHint='<div class="hintline" style="margin:8px 0 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16"/></svg>벽 가구를 <b>탭해 선택</b>하거나 <b>꾹 눌러 격자로 끌어</b> 걸어요(위=천장·아래=바닥선). 걸린 항목은 <b>꾹 눌러 드래그로 이동</b>, 짧게 탭하면 회수/판매. <b>특별↑ 벽 가구는 랜덤박스로만</b> 얻어요.</div>';
-        body=wgrid+wallHint+'<div class="palette catinv">'+(wpal||'<div class="palempty">보유한 벽 가구가 없어요<br><span>랜덤박스에서 벽 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>')+'</div>';
+        body=wgrid+wallHint+'<div class="palette catinv">'+(wpal||'<div class="palempty">보유한 벽 가구가 없어요<br><span>랜덤박스에서 벽 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>')+'</div>'+skinPickerHtml('wall');
       } else {
         // 바닥 격자(12×12) — 기존 방꾸미기(드래그 이동·롱프레스). 벽 가구는 팔레트에서 제외.
         const placed=room().placed||{};
@@ -4148,7 +4201,7 @@
           return '<button class="pitem'+(_selItem===it.id?' on':'')+(sold?' soldout':'')+'"'+(sold?' aria-disabled="true"':'')+' onpointerdown="palDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selItem(\''+it.id+'\')"><span class="pic">'+furnSvg(it.id,{h:palPicH(it.id)})+'</span><span>'+it.name+'</span><span class="pq">'+(sold?'전부 배치됨':foot.w+'×'+foot.h+' · 남은 '+rem)+'</span></button>'; }).join('');
         const dragHint='<div class="hintline" style="margin:8px 0 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5V5.5a1.5 1.5 0 0 1 3 0v5"/><path d="M12 10V4.5a1.5 1.5 0 0 1 3 0V10"/><path d="M15 9.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-1a6 6 0 0 1-5.2-3l-2-3.5a1.5 1.5 0 0 1 2.6-1.5L9 14"/></svg><b>꾹 눌러서</b> 끌면 배치·이동돼요(짧게 탭하면 선택·메뉴). 화면 스크롤과 겹치지 않아요.</div>';
         const palBody=pal||'<div class="palempty">이 분류에 보유한 가구가 없어요<br><span>알뜰샵·랜덤박스에서 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>';
-        body=grid+dragHint+catTabs+'<div class="palette catinv">'+palBody+'</div>';
+        body=grid+dragHint+catTabs+'<div class="palette catinv">'+palBody+'</div>'+skinPickerHtml('floor');
       }
       return roomStripHtml()+'<div class="editwrap">'+preview+toggle+body+'</div>';
     }

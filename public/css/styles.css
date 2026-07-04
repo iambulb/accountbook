@@ -898,6 +898,7 @@
     .cr-prop .ffx-sway .px  { animation:ffsway 4.6s ease-in-out infinite; }
     .cr-prop .ffx-drift .px { animation:ffdrift 10s ease-in-out infinite; }   /* 좌우로 천천히 이동(구름·금붕어) */
     .cr-prop .ffx-flicker .px { animation:ffflicker 0.85s ease-in-out infinite; transform-origin:50% 62%; }   /* 불꽃 일렁임(밑동 기준) */
+    .cr-prop .ffx-blink .px { animation:ffblink 2.4s steps(1,end) infinite; }   /* 네온 깜빡(밝기 스텝) */
     /* 회전/흔들림 중심(부품 위치) — 가구별 */
     .cr-prop .ffx-catwheel .px  { transform-origin:47.9% 43.75%; }   /* 휠 축(정중심) → 링 전체가 제자리 회전(옆으로 흔들림 방지) */
     .cr-prop .ffx-tower .px     { transform-origin:84% 20%; }   /* 끈 매단 지점 */
@@ -919,6 +920,7 @@
     /* 금붕어 헤엄: 좌우로 다트하며 위아래로 살짝 보빙(활발) */
     @keyframes fffish { 0%{ transform:translate(-4%,2%); } 25%{ transform:translate(-1%,-3%); } 50%{ transform:translate(4%,1%); } 75%{ transform:translate(1%,-2%); } 100%{ transform:translate(-4%,2%); } }
     @keyframes ffflicker { 0%,100%{ transform:scaleY(1) translateX(0); } 30%{ transform:scaleY(1.08) translateX(-4%); } 55%{ transform:scaleY(0.94) translateX(3%); } 80%{ transform:scaleY(1.05) translateX(-2%); } }
+    @keyframes ffblink { 0%,72%,100%{ opacity:1; } 76%,80%{ opacity:.32; } 84%{ opacity:.9; } 88%,92%{ opacity:.4; } }   /* 대부분 켜짐 + 가끔 짧게 깜빡 */
     @media (prefers-reduced-motion:reduce){ .cr-prop .ffx .px { animation:none; } }
     /* 다마고치: 탭 가능한 그릇 / 화장실 위 똥 / 똥 수거 획득 연출 */
     .cr-prop.cr-tap { cursor:pointer; z-index:2; }
@@ -942,6 +944,9 @@
       background-image:linear-gradient(var(--bd) 1px, transparent 1px), linear-gradient(90deg, var(--bd) 1px, transparent 1px);
       background-size:calc(100%/12) calc(100%/4); }
     .placemode { margin:2px 0 10px; }
+    /* 🧲 벽 배치 정렬 스냅 가이드(드래그 중 다른 가구/중앙과 열이 맞으면 세로선) */
+    .gridwall .wsnap { position:absolute; top:0; bottom:0; width:0; border-left:2px dashed var(--primary); transform:translateX(-1px); pointer-events:none; z-index:60; opacity:.9; }
+    .gridwall .wsnap[hidden] { display:none; }
     .cr-wallprop { pointer-events:none; }   /* 캠 벽 가구는 표시 전용(뒤 벽면 z:0) */
     .cr-wall-hang { transform-origin:center top; }   /* 매다는형(모빌·행잉플랜트)은 위(천장) 기준 */
     /* 드래그(배치·이동) 중엔 뒤 시트 본문이 스크롤·이동하지 않도록 잠금 */
@@ -995,6 +1000,18 @@
     .subseg.placecat button.dim { opacity:.4; }
     /* 알뜰샵 가구 탭의 기능분류 필터(전체/케어/휴식/놀이/장식) */
     .subseg.shopfurncat { margin-bottom:10px; }
+    /* 배치 에디터 스킨 선택기(방꾸미기=바닥·벽꾸미기=벽지) — 보유 스와치 가로 스크롤, 탭해 적용 */
+    .skinsel { margin:12px 0 2px; }
+    .skinlab { font-size:12.5px; font-weight:800; color:var(--text2); margin-bottom:7px; display:flex; align-items:center; gap:6px; }
+    .skinlab .sc { font-size:10.5px; font-weight:700; color:var(--sub); }
+    .skinrow { display:flex; gap:8px; overflow-x:auto; padding:2px 0 6px; -webkit-overflow-scrolling:touch; }
+    .skinsw { flex:0 0 auto; width:60px; border-radius:12px; border:1.5px solid transparent; background:var(--soft); padding:5px 5px 6px; display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; position:relative; color:var(--text2); }
+    .skinsw.on { border-color:var(--primary); background:var(--card); color:var(--text); }
+    .skinsw .sw { width:100%; height:38px; border-radius:8px; border:1px solid var(--bd); image-rendering:pixelated; }
+    .skinsw .nm { font-size:10px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+    .skinsw .ck { position:absolute; top:-6px; right:-6px; width:19px; height:19px; border-radius:6px; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; }
+    .skinsw .ck svg { width:12px; height:12px; }
+    .skinhint { font-size:10.5px; color:var(--sub); margin-top:4px; }
     /* 팔레트에서 그리드로 드래그 중 따라다니는 고스트 */
     .palghost { position:fixed; transform:translate(-50%,-50%); pointer-events:none; z-index:98; opacity:.9; filter:drop-shadow(0 4px 10px rgba(0,0,0,.35)); }
     /* block+절대배치: flex로 두면 문장 속 <b>가 각각 별도 flex 아이템으로 쪼개져(“펫을 탭하면 | 이 방 | 으로…”) 줄바꿈이 어긋나던 버그 → 텍스트는 일반 인라인 흐름으로 두고 아이콘만 왼쪽에 걸어 hanging-indent */
