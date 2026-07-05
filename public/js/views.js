@@ -1650,7 +1650,7 @@
         h+=gcell(MORE_ICON.settle,'정산','openSettlementOverview()');
         h+=gcell(MORE_ICON.gift,'경조사비','openGiftBook()');
         h+=gcell(MORE_ICON.loan,'대출/이자','openLoanBook()');
-        h+=gcell((typeof cheeseCatSvg==='function'?cheeseCatSvg({h:26}):MORE_ICON.category),'카테고리','openCategorySheet()');
+        h+=gcell(MORE_ICON.category,'카테고리','openCategorySheet()');
       }
       h+='</div>';   // 모드 전용 그리드 닫기
       // 공통(모드 무관) 아이콘 — 가운데 '공통' 라벨 구분선으로 분리
@@ -1892,12 +1892,12 @@
       const usedCount=name? state.transactions.filter(t=>t.category===name).length : 0;
       const canRename = !!c && usedCount===0;
       window._catColor = c?(c.color||CAT_PALETTE[0]):CAT_PALETTE[0];
-      window._catIcon = (c && c.iconKey && CAT_SVG[c.iconKey]) ? c.iconKey : ((c && CAT_META[c.name]) ? CAT_META[c.name].i : 'tag');
+      window._catIcon = (c && c.iconKey && (c.iconKey==='cheesecat' || CAT_SVG[c.iconKey])) ? c.iconKey : ((c && CAT_META[c.name]) ? CAT_META[c.name].i : 'tag');
       let h='';
       if(c && !canRename) h+='<div class="field"><label>이름</label><input class="input" value="'+escapeHtml(c.name)+'" disabled><div class="tx-sub" style="margin-top:4px;">거래에 사용 중이라 이름 변경 불가(비활성화 권장)</div></div>';
       else h+='<div class="field"><label>이름</label><input class="input" id="catName" value="'+escapeHtml(c?c.name:'')+'" placeholder="예: 반려동물"></div>';
       h+='<div class="field"><label>유형</label><select class="input" id="catType">'+CAT_TYPES.map(p=>'<option value="'+p[0]+'"'+(((c&&c.type===p[0])||(!c&&p[0]==='expense'))?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div>';
-      h+='<label style="font-size:13px;font-weight:600;color:var(--sub);">아이콘</label><div class="icon-grid" id="catIcons">'+Object.keys(CAT_SVG).map(k=>'<button type="button" class="icon-tile'+(k===window._catIcon?' on':'')+'" data-key="'+k+'" onclick="pickCatIcon(this)">'+svgWrap(CAT_SVG[k])+'</button>').join('')+'</div>';
+      h+='<label style="font-size:13px;font-weight:600;color:var(--sub);">아이콘</label><div class="icon-grid" id="catIcons">'+Object.keys(CAT_SVG).concat(CAT_PIX_ICONS).map(k=>'<button type="button" class="icon-tile'+(k===window._catIcon?' on':'')+'" data-key="'+k+'" onclick="pickCatIcon(this)">'+catIconMarkup(k)+'</button>').join('')+'</div>';
       h+='<label style="font-size:13px;font-weight:600;color:var(--sub);">색상</label><div class="swatch-grid" id="catColors">'+CAT_PALETTE.map(p=>'<button type="button" class="swatch'+(p===window._catColor?' on':'')+'" data-color="'+p+'" style="background:'+p+';" onclick="pickCatColor(this)"></button>').join('')+'</div>';
       h+='<div class="form-2"><div class="field"><label>공개 범위</label><select class="input" id="catVis">'+VISIBILITY.map(p=>'<option value="'+p[0]+'"'+(((c&&c.visibility===p[0])||(!c&&p[0]===defaultVisibility()))?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div>'+
         '<div class="field"><label>활성</label><select class="input" id="catActive"><option value="1"'+((!c||c.isActive!==false)?' selected':'')+'>활성</option><option value="0"'+((c&&c.isActive===false)?' selected':'')+'>비활성</option></select></div></div>';

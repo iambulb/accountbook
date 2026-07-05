@@ -152,12 +152,19 @@
       let h=0, s=String(name||''); for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0;
       return CAT_FALLBACK[h % CAT_FALLBACK.length];
     }
-    // 카테고리 라인 SVG: 저장된 iconKey 우선 → 이름 기본 매핑(CAT_META) → tag. 색은 currentColor.
+    // 카테고리 아이콘 픽커에 추가로 노출하는 '픽셀아트' 아이콘 키(라인 CAT_SVG 외). 예: 치즈냥이(cheesecat).
+    const CAT_PIX_ICONS = ['cheesecat'];
+    // 카테고리 아이콘 키 → 마크업. 기본은 라인 SVG(CAT_SVG)지만, 픽셀 특수 아이콘은 전용 픽셀 렌더러(cats.js)를 쓴다.
+    function catIconMarkup(key){
+      if(key==='cheesecat') return (typeof cheeseCatSvg==='function') ? cheeseCatSvg() : svgWrap(CAT_SVG.tag);
+      return svgWrap(CAT_SVG[key]||CAT_SVG.tag);
+    }
+    // 카테고리 아이콘: 저장된 iconKey 우선(픽셀 특수키 포함) → 이름 기본 매핑(CAT_META) → tag. 라인 아이콘 색은 currentColor.
     function catSvgIcon(name){
       const c=getCat(name);
-      if(c && c.iconKey && CAT_SVG[c.iconKey]) return svgWrap(CAT_SVG[c.iconKey]);
+      if(c && c.iconKey && (c.iconKey==='cheesecat' || CAT_SVG[c.iconKey])) return catIconMarkup(c.iconKey);
       const m=CAT_META[name];
-      return svgWrap(CAT_SVG[(m && CAT_SVG[m.i])?m.i:'tag']);
+      return catIconMarkup((m && CAT_SVG[m.i])?m.i:'tag');
     }
     // 카테고리 tint 타일 인라인 스타일(배경=13% 알파, 글자=솔리드 색)
     function catTileStyle(name){ const c=catColor(name); return 'background:'+hexA(c,.13)+';color:'+c+';'; }

@@ -135,7 +135,7 @@
       "..XXSSSSXX..",
       "....XXXX...."
     ];
-    // 🧀 치즈(오렌지 태비) 고양이 얼굴 — 은화 속 고양이 얼굴처럼 간결한 도트, 치즈색. 더보기 '카테고리' 타일 아이콘. 16×15.
+    // 🧀 치즈(오렌지 태비) 고양이 얼굴 — 은화 속 고양이 얼굴처럼 간결한 도트, 치즈색. 거래 카테고리 아이콘 선택지(CAT_PIX_ICONS). 16×15.
     //  X=외곽 O=오렌지 o=진한 줄무늬(태비) L=밝은 하이라이트 P=분홍(코·귀속) E=눈 W=흰 입주변
     const M_CHEESECAT = [
       "..XX........XX..",
@@ -1349,7 +1349,7 @@
     const POSE_M = { sit:M_CAT_SIT, loaf:M_CAT_LOAF, sleep:M_CAT_SLEEP };
     function catPose(id, pose, opt){ return pxSvg(POSE_M[pose]||M_CAT_SIDE_A, CAT_PALS[id], opt); }
     function coinSvg(opt){ return pxSvg(M_COIN, COIN_PAL, opt); }
-    function cheeseCatSvg(opt){ return pxSvg(M_CHEESECAT, CHEESECAT_PAL, opt); }   // 🧀 치즈냥이 얼굴(더보기 '카테고리' 아이콘)
+    function cheeseCatSvg(opt){ return pxSvg(M_CHEESECAT, CHEESECAT_PAL, opt); }   // 🧀 치즈냥이 얼굴(거래 카테고리 아이콘 선택지)
     function goldSvg(opt){ return pxSvg(M_COIN, GOLD_PAL, opt); }
     // 🏪 알뜰샵 아이콘 — 은화(코인) 팔레트 기반 상점(스토어프론트): 줄무늬 차양(R/W) + 은색 몸체(S/A/D) + 은화 속 동물얼굴(E 눈·P 코)을 간판으로 유지. 더보기 '알뜰샵' 타일용.
     const M_SHOP = [
