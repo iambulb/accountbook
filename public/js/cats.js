@@ -4076,8 +4076,8 @@
         else if(k<0.68) el='<span class="pk-tuft pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+tuftSvg({h:S(6+r*3)})+'</span>';
         else el='<span class="pk-flower pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+flowerSvg(['r','y','p'][Math.floor(pkRand(i,56)*3)],{h:S(7+r*3)})+'</span>';
         farline+=el; }
-      // 🌳 가까운 나무 5그루 — 가로 '레인'으로 고르게(겹침 방지) · 크기 1.5배 · 뒤쪽만 · z<펫. 가운데(i=2)는 오른쪽으로 살짝(+9%). 오른쪽서 두번째(i=3)는 더 앞으로(d-0.14=크게·낮게·앞) + 오른쪽으로(+5%)
-      let trees=''; for(let i=0;i<5;i++){ const d=0.5+pkRand(i,11)*0.28-(i===3?0.14:0), l=((i+0.5)/5*88+6+(pkRand(i,12)-0.5)*6+(i===2?9:0)+(i===3?5:0)).toFixed(1),
+      // 🌳 가까운 나무 5그루 — 가로 '레인'으로 고르게(겹침 방지) · 크기 1.5배 · 뒤쪽만 · z<펫. 가운데(i=2)는 오른쪽으로 살짝(+9%). 오른쪽서 두번째(i=3)는 거의 맨앞(d=0.18=크게·낮게·앞, 아주 앞에서 살짝만 뒤) + 오른쪽으로(+5%)
+      let trees=''; for(let i=0;i<5;i++){ const d=(i===3?0.18:0.5+pkRand(i,11)*0.28), l=((i+0.5)/5*88+6+(pkRand(i,12)-0.5)*6+(i===2?9:0)+(i===3?5:0)).toFixed(1),
         sc=1-d*0.5, bot=(d*70).toFixed(1), z=Math.round(2+(1-d)*2), pine=pkRand(i,13)<0.45;
         const inner = pine ? '<span class="pk-canopy">'+pineSvg({h:S(Math.max(16,Math.round(69*sc)))})+'</span>'
           : '<span class="pk-canopy">'+treeTopSvg({h:S(Math.max(16,Math.round(51*sc)))})+'</span><span class="pk-trunk">'+trunkSvg({h:S(Math.max(8,Math.round(24*sc)))})+'</span>';
