@@ -61,26 +61,26 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 |---|---|---|---|
 <!-- @gen:pet-idtable — 자동생성(tools/build_pets.py). 상세 설명은 pet-list.md 참고 -->
 | simple_pixel_art_cat_grey_mackerel_tabby_with_dark.zip | `cat_mackerel` | 고등어 | Walk/east 옆걷기 정상 |
-| simple_pixel_art_cat_orange_tabby_chubby_with_crea.zip | `cat_cheese` | 치즈 | Walk/east 옆걷기 정상 |
-| chibi_pixel_art_tortoiseshell_cat_mixed_black_and.zip | `cat_calico` | 삼색 | Walk/east 옆걷기 정상 |
-| simple_pixel_art_cat_black_yellow_eyes_extra_round.zip | `cat_black` | 까망 | Walk/east 옆걷기 정상 |
+| simple_pixel_art_cat_orange_tabby_chubby_with_crea.zip | `cat_cheese` | 뒤뚱 | Walk/east 옆걷기 정상 |
+| chibi_pixel_art_tortoiseshell_cat_mixed_black_and.zip | `cat_calico` | 길냥 | Walk/east 옆걷기 정상 |
+| simple_pixel_art_cat_black_yellow_eyes_extra_round.zip | `cat_black` | 네로 | Walk/east 옆걷기 정상 |
 | chibi_pixel_art_white_cat_pale_blue_eyes_sleepy_fa.zip | `cat_white` | 하양 | Walk/east 옆걷기 정상 |
 | simple_pixel_art_white_cat_fluffy_fur_pale_blue_ey.zip | `cat_fluffy` | 복슬이 | Walk/east 옆걷기 정상 |
-| simple_pixel_art_tuxedo_cat_black_body_with_white.zip | `cat_tuxedo` | 턱시도 | Walk/east 옆걷기 정상 |
-| simple_pixel_art_chaos_cat_dark_grey_and_brown_swir.zip | `cat_chaos` | 카오스 | Walk/east 옆걷기 정상 |
-| chibi_pixel_art_siamese_cat_cream_body_with_dark_fa.zip | `cat_siamese` | 샴 | Walk/east 옆걷기 정상 |
+| simple_pixel_art_tuxedo_cat_black_body_with_white.zip | `cat_tuxedo` | 검정얼룩이 | Walk/east 옆걷기 정상 |
+| simple_pixel_art_chaos_cat_dark_grey_and_brown_swir.zip | `cat_chaos` | 골목대장 | Walk/east 옆걷기 정상 |
+| chibi_pixel_art_siamese_cat_cream_body_with_dark_fa.zip | `cat_siamese` | 삼삼이 | Walk/east 옆걷기 정상 |
 | chibi_pixel_art_golden_cat_a_few_simple_round_spot.zip | `cat_bengal` | 황토 | Walk/east 옆걷기 정상 |
 | chibi_pixel_art_grey_cat_small_folded-down_ears_ro.zip | `cat_fold` | 폴드 | Walk/east 옆걷기 정상 |
 | chibi_pixel_art_white_cat_one_blue_eye_one_amber_e.zip | `cat_bora` | 보라 | Walk/east 옆걷기 정상 |
 | simple_pixel_art_chocolate_brown_cat_cream_muzzle.zip | `cat_choco` | 초코 | Walk/east 옆걷기 정상 |
 | simple_pixel_art_orange_tabby_kitten_a_few_cheese.zip | `cat_kitten` | 아깽이 | Walk/east 옆걷기 정상 |
-| simple_pixel_art_pink_sphynx_cat_hairless_wrinkled.zip | `cat_pink` | 스핑크스 | Walk/east 옆걷기 정상 |
+| simple_pixel_art_pink_sphynx_cat_hairless_wrinkled.zip | `cat_pink` | 핑크 | Walk/east 옆걷기 정상 |
 | simple_pixel_art_orange_tiger_bold_black_stripes_c.zip | `tiger_orange` | 고랑이 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `lion_mane` | 갈기냥 | Walk/east 옆걷기 정상 |
-| (정적 승격) | `cat_persian` | 펠시안 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_persian` | 페르시안(흰색) | Walk/east 옆걷기 정상 |
 | (정적 승격) | `tiger_white` | 백호 | Walk/east 옆걷기 정상 |
-| (정적 승격) | `cat_russianblue` | 러시안블루 | Walk/east 옆걷기 정상 |
-| (정적 승격) | `cat_bengal2` | 벵갈 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_russianblue` | 블루 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_bengal2` | 얼룩이 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_mutt` | 시고르자브 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `cat_panther` | 블랙팬서 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_baekgu` | 백구 | Walk/east 옆걷기 정상 |
@@ -112,7 +112,7 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 | (정적 승격) | `dog_papillon` | 파피용 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_newfoundland` | 뉴펀들랜드 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_beardedcollie` | 비어디드콜리 | Walk/east 옆걷기 정상 |
-| (정적 승격) | `dog_afghanhound` | 아프간하운드 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `dog_afghanhound` | 보더콜리 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_rottweiler` | 로트와일러 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_pointer` | 포인터 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_pharaohhound` | 파라오하운드 | Walk/east 옆걷기 정상 |
@@ -146,6 +146,59 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 | (정적 승격) | `dog_ridgeback` | 로디지안리지백 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_irishsetter` | 아이리시세터 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_airedale` | 에어데일테일러 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `dog_samoyed` | 사모예드 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `dog_husky` | 시베리안허스키 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_mackerel2` | 고등어 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_calico2` | 칼리코 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_white2` | 하양 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_cheese2` | 치즈 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_tuxedo2` | 턱시도 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_siamese2` | 샴 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_bengal3` | 벵갈 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_russianblue2` | 러시안블루 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_scottishfold` | 스코티시폴드 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_black2` | 까망 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_seolleong` | 설렁 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_persiangray` | 페르시안(회색) | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_mainecoon` | 메인쿤(갈색태비) | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_americanshorthair` | 아메리칸숏헤어(실버태비) | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_ragdoll` | 랙돌(포인트) | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_turkishangora` | 터키시앙고라(흰색) | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_munchkin` | 먼치킨(삼색) | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_norwegian` | 노르웨이숲(갈색) | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_bombay` | 봄베이(검정) | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_abyssinian` | 아비시니안(갈색) | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_sphynx` | 스핑크스(핑크) | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_british` | 브리티시숏헤어(그레이) | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_bengalsnow` | 벵갈(스노우) | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_longhaircalico` | 장모 삼색 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_tortie` | 토터셸(카오스) | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_siamesechoco` | 샴(초콜릿포인트) | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_cornishrex` | 코니시렉스 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_ocicat` | 오시캣 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_selkirkrex` | 셀커크렉스 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_korat` | 코랫 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_manx` | 맹크스 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_americancurl` | 아메리칸컬 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_devonrex` | 데본렉스 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_turkishvan` | 터키시반(반무늬) | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_bobtail` | 밥테일 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_burmese` | 버미즈 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_himalayan` | 히말라얀 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_creamtabby` | 크림태비 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_lilac` | 라일락 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_somali` | 소말리 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_leopardcat` | 삵 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_lynx` | 시라소니 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_cheetah` | 치타 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_jaguar` | 재규어 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_puma` | 퓨마 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_snowleopard` | 눈표범 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_caracal` | 카라칼 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_leopard` | 표범 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_blackpanther` | 흑표범 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_ocelot` | 오셀롯 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_sandcat` | 모래고양이 | Walk/east 옆걷기 정상 |
 <!-- @gen:end -->
 
 새 zip이 오면: 사용자가 id를 지정하면 그걸 쓰고, 없으면 종·색에서 합리적 slug(`<species>_<색>`)를 만들어 **이 표에 한 줄 추가**하고, 이름은 위 규칙대로 센스껏 짓는다.
@@ -153,7 +206,7 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 ### ⚠️ 옆걷기(east) 없는 펫 — 이미지 재취득 대상
 `animations/Walk/east`(옆보기 걷기)가 **없는** zip은 `walk.png`가 정면이 되어 `frontWalk:true`로 처리(이동 중 옆 정지스틸만 보이고 걷기 애니 없음). 그런 펫은 옆걷기 포함 zip으로 다시 받아 재생성하고 `frontWalk`를 해제한다.
 
-**현재 재취득 대상: 없음** — <!--@gen:cats-count-->86<!--@gen:end-->종 전부 `Walk/east` 옆걷기 보유. (과거 `cat_white`가 south만 있었으나 east 시트로 재취득 완료.) 새 펫 추가 시 east 유무를 확인해 이 목록을 갱신한다.
+**현재 재취득 대상: 없음** — <!--@gen:cats-count-->139<!--@gen:end-->종 전부 `Walk/east` 옆걷기 보유. (과거 `cat_white`가 south만 있었으나 east 시트로 재취득 완료.) 새 펫 추가 시 east 유무를 확인해 이 목록을 갱신한다.
 
 ## ✅ 펫 추가 체크리스트 (에셋만 넣고 끝내지 말 것 — 코드+문서 함께 반영)
 > **규칙**: 펫을 추가/변경/제거하면 아래 코드 **3곳**과 문서 **3곳**을 같은 커밋에서 모두 갱신한다. 하나라도 빠지면 미완성으로 본다. (이 규칙은 `CLAUDE.md`의 "문서 최신화 규칙" 표 — *기능 추가·변경·제거 → features.md*, *모든 사용자 체감 변경 → CHANGELOG* — 의 펫 전용 상세판이다.)
