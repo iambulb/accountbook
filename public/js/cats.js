@@ -135,6 +135,26 @@
       "..XXSSSSXX..",
       "....XXXX...."
     ];
+    // 🧀 치즈(오렌지 태비) 고양이 얼굴 — 은화 속 고양이 얼굴처럼 간결한 도트, 치즈색. 더보기 '카테고리' 타일 아이콘. 16×15.
+    //  X=외곽 O=오렌지 o=진한 줄무늬(태비) L=밝은 하이라이트 P=분홍(코·귀속) E=눈 W=흰 입주변
+    const M_CHEESECAT = [
+      "..XX........XX..",
+      ".XOOX......XOOX.",
+      ".XOPOX....XOPOX.",
+      ".XOPPOXXXXOPPOX.",
+      ".XOOoOOOOOOoOOX.",
+      "XOOoOoOOOOoOoOOX",
+      "XOOoOOOOOOOOoOOX",
+      "XOLOOOOOOOOOOLOX",
+      "XOOEEOOOOOOEEOOX",
+      "XOOEEOOooOOEEOOX",
+      "XOOOOOoPPoOOOOOX",
+      "XOOWWWWPPWWWWOOX",
+      ".XOWWWoWWoWWOOX.",
+      ".XOOWWWWWWWWOOX.",
+      "..XXOOOOOOOOXX.."
+    ];
+    const CHEESECAT_PAL = {X:'#8a4e1e',O:'#f2a03c',o:'#d9772a',L:'#ffca77',P:'#ec9090',E:'#4a3a24',W:'#fff2dc'};
     // 방석(1×1): 푹신한 쿠션 — L=하이라이트/C=천/D=음영/B=가운데 단추(터프팅). 16×9 → 가로세로비 ≈1.78.
     const M_CUSHION = [
       "................",
@@ -1203,6 +1223,7 @@
     const POSE_M = { sit:M_CAT_SIT, loaf:M_CAT_LOAF, sleep:M_CAT_SLEEP };
     function catPose(id, pose, opt){ return pxSvg(POSE_M[pose]||M_CAT_SIDE_A, CAT_PALS[id], opt); }
     function coinSvg(opt){ return pxSvg(M_COIN, COIN_PAL, opt); }
+    function cheeseCatSvg(opt){ return pxSvg(M_CHEESECAT, CHEESECAT_PAL, opt); }   // 🧀 치즈냥이 얼굴(더보기 '카테고리' 아이콘)
     function goldSvg(opt){ return pxSvg(M_COIN, GOLD_PAL, opt); }
     // 🏪 알뜰샵 아이콘 — 은화(코인) 팔레트 기반 상점(스토어프론트): 줄무늬 차양(R/W) + 은색 몸체(S/A/D) + 은화 속 동물얼굴(E 눈·P 코)을 간판으로 유지. 더보기 '알뜰샵' 타일용.
     const M_SHOP = [
@@ -2438,12 +2459,29 @@
         });
       });
     }
+    // 기존 분류 목록(species→label) — SPECIES_LABEL(런타임 펫 포함) + PET_CATALOG 종 합집합.
+    function _speciesOptions(){ const map={};
+      Object.keys(SPECIES_LABEL||{}).forEach(s=>{ map[s]=SPECIES_LABEL[s]; });
+      (PET_CATALOG||[]).forEach(c=>{ if(c.species && !map[c.species]) map[c.species]=c.species; });
+      return Object.keys(map).map(s=>({species:s, label:map[s]})); }
+    // 분류 드롭다운 변경 — '직접 입력'이면 코드·라벨 텍스트 입력을 펼치고, 기존 분류면 접는다(값은 submitDevPet이 select에서 읽음).
+    function onDevSpeciesChange(){ const sel=$('dpSpeciesSel'), wrap=$('dpCustomWrap'); if(!sel||!wrap) return;
+      const custom=sel.value==='__custom__'; wrap.style.display=custom?'block':'none';
+      if(custom){ const sp=$('dpSpecies'); if(sp&&typeof sp.focus==='function') setTimeout(()=>sp.focus(),0); } }
     function _petFormHtml(pre){ pre=pre||{};
       const tierOpts=(typeof TIERS!=='undefined'?TIERS:[{id:'normal',name:'일반'}]).map(t=>'<option value="'+t.id+'"'+(pre.tier===t.id?' selected':'')+'>'+t.name+'</option>').join('');
       let h='<div class="field"><label>zip 파일'+(pre.id?' <span class="pill">재업로드 시에만 디자인 교체</span>':'')+'</label><input type="file" id="dpZip" accept=".zip,application/zip" class="input"></div>';
       h+='<div class="field"><label>이름</label><input class="input" id="dpName" value="'+escapeHtml(pre.name||'')+'" placeholder="예: 고랑이" maxlength="16"></div>';
-      h+='<div class="field"><label>분류 라벨(알뜰샵 태그)</label><input class="input" id="dpSpeciesLabel" value="'+escapeHtml(pre.speciesLabel||'')+'" placeholder="예: 호랑이" maxlength="8"></div>';
-      h+='<div class="field"><label>분류 코드(species)</label><input class="input" id="dpSpecies" value="'+escapeHtml(pre.species||'cat')+'" placeholder="cat/dog/tiger…" maxlength="12"></div>';
+      // 분류: 기존 분류는 드롭다운으로 선택, 목록에 없으면 '직접 입력'으로 코드·라벨 텍스트 입력.
+      const _curSp=(pre.species!=null&&pre.species!=='')?pre.species:(pre.id?'':'cat');
+      const _spOpts=_speciesOptions(), _known=_spOpts.some(o=>o.species===_curSp), _custom=!!_curSp&&!_known;
+      h+='<div class="field"><label>분류</label><select class="input" id="dpSpeciesSel" onchange="onDevSpeciesChange()">'+
+        _spOpts.map(o=>'<option value="'+escapeHtml(o.species)+'"'+((_curSp===o.species)?' selected':'')+'>'+escapeHtml(o.label)+' · '+escapeHtml(o.species)+'</option>').join('')+
+        '<option value="__custom__"'+(_custom?' selected':'')+'>➕ 직접 입력(새 분류)</option></select></div>';
+      h+='<div id="dpCustomWrap" style="display:'+(_custom?'block':'none')+'">'+
+        '<div class="field"><label>분류 코드(species)</label><input class="input" id="dpSpecies" value="'+escapeHtml(_custom?pre.species:'')+'" placeholder="cat/dog/tiger…" maxlength="12"></div>'+
+        '<div class="field"><label>분류 라벨(알뜰샵 태그)</label><input class="input" id="dpSpeciesLabel" value="'+escapeHtml(_custom?(pre.speciesLabel||''):'')+'" placeholder="예: 호랑이" maxlength="8"></div>'+
+        '</div>';
       h+='<div class="row" style="gap:8px;"><div class="field" style="flex:1;"><label>등급</label><select class="input" id="dpTier">'+tierOpts+'</select></div>'+
          '<div class="field" style="flex:1;"><label>크기(배율)</label><input class="input" id="dpScale" type="number" step="0.1" min="0.3" value="'+(pre.scale||1)+'"></div></div>';
       return h; }

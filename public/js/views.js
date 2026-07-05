@@ -1650,7 +1650,7 @@
         h+=gcell(MORE_ICON.settle,'정산','openSettlementOverview()');
         h+=gcell(MORE_ICON.gift,'경조사비','openGiftBook()');
         h+=gcell(MORE_ICON.loan,'대출/이자','openLoanBook()');
-        h+=gcell(MORE_ICON.category,'카테고리','openCategorySheet()');
+        h+=gcell((typeof cheeseCatSvg==='function'?cheeseCatSvg({h:26}):MORE_ICON.category),'카테고리','openCategorySheet()');
       }
       h+='</div>';   // 모드 전용 그리드 닫기
       // 공통(모드 무관) 아이콘 — 가운데 '공통' 라벨 구분선으로 분리
