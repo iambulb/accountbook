@@ -4295,17 +4295,19 @@
     function monthLabelKo(){ const n=parseInt(kstMonthKey().slice(6),10)||0; return n+'월'; }
     // 가챠 탭 하단: 펫알·랜덤박스 구성(등급별 목록)과 확률을 접이식으로 표시.
     function gachaInfoHtml(){
-      const tiers=effTiers().filter(function(t){ return t.id!=='exclusive'; }), catBy=effCatTier(), itemBy=effItemTier();   // 한정은 기본 펫알/박스에 없음 → 확률보기에서 숨김(뜰알 카드에 별도 표기)
-      const secRows=(items,byMap,key)=> tiers.map(t=>{ const ns=items.filter(x=>byMap[x.id]===t.id && (t.id!=='exclusive'||isExGachaActive(x.id))).map(x=>x[key]); if(!ns.length) return '';   // 한정은 활성(exActive) 펫만 표기
-        return '<div class="gi-row"><b class="tier-'+t.id+'">'+t.name+'</b><span class="gi-p">'+t.p+'%</span><span class="gi-list">'+escapeHtml(ns.join(', '))+'</span></div>'; }).join('');
-      const boxList=ITEM_CATALOG.filter(x=>itemBy[x.id]).map(x=>({name:x.name,t:itemBy[x.id]}))
-        .concat(FLOOR_CATALOG.filter(f=>FLOOR_TIER[f.id]).map(f=>({name:f.name+' 바닥',t:FLOOR_TIER[f.id]})))
-        .concat(WALLPAPER_CATALOG.filter(w=>WALL_TIER[w.id]).map(w=>({name:w.name+' 벽지',t:WALL_TIER[w.id]})));
-      const boxRows=tiers.map(t=>{ const ns=boxList.filter(x=>x.t===t.id).map(x=>x.name); if(!ns.length) return '';
-        return '<div class="gi-row"><b class="tier-'+t.id+'">'+t.name+'</b><span class="gi-p">'+t.p+'%</span><span class="gi-list">'+escapeHtml(ns.join(', '))+'</span></div>'; }).join('');
-      return '<details class="gacha-info"><summary>📋 펫알·랜덤박스 구성·확률 보기</summary><div class="gi-body">'+
-        '<div class="gi-sec"><div class="gi-h">🥚 펫알 · 고양이</div>'+secRows(PET_CATALOG,catBy,'name')+'</div>'+
+      const tiers=effTiers().filter(function(t){ return t.id!=='exclusive'; }), catBy=effCatTier(), itemBy=effItemTier();   // 한정은 기본 펫알/박스엔 없음(뜰알 섹션에서만)
+      // 등급명 + 확률만 표기(펫·아이템 이름 목록은 생략). 해당 등급에 내용이 있는 등급만.
+      const row=(t)=> '<div class="gi-row"><b class="tier-'+t.id+'">'+t.name+'</b><span class="gi-p">'+t.p+'%</span></div>';
+      const petRows=tiers.filter(t=>PET_CATALOG.some(x=>catBy[x.id]===t.id)).map(row).join('');
+      const boxHas=tid=> ITEM_CATALOG.some(x=>itemBy[x.id]===tid) || FLOOR_CATALOG.some(f=>FLOOR_TIER[f.id]===tid) || WALLPAPER_CATALOG.some(w=>WALL_TIER[w.id]===tid);
+      const boxRows=tiers.filter(t=>boxHas(t.id)).map(row).join('');
+      // 🌱 뜰알(한정 픽업) 확률표 — DDEUL_TIERS. 한정(exclusive)은 활성 픽업 펫이 있을 때만 표기.
+      const ddeulRows=DDEUL_TIERS.map(dt=>{ if(dt.id==='exclusive' && !LIMITED_PICKUP.some(pickupExists)) return ''; const ti=tierInfo(dt.id);
+        return '<div class="gi-row"><b class="tier-'+dt.id+'">'+ti.name+'</b><span class="gi-p">'+dt.p+'%</span></div>'; }).join('');
+      return '<details class="gacha-info"><summary>📋 등급별 확률 보기</summary><div class="gi-body">'+
+        '<div class="gi-sec"><div class="gi-h">🥚 펫알 · 고양이</div>'+petRows+'</div>'+
         '<div class="gi-sec"><div class="gi-h">🎁 랜덤박스 · 가구·바닥·벽지</div>'+boxRows+'</div>'+
+        '<div class="gi-sec"><div class="gi-h">🌱 뜰알 · 한정 픽업</div>'+ddeulRows+'</div>'+
         '</div></details>';
     }
 
@@ -5049,7 +5051,7 @@
     function runGachaFx(kind, res, dup, refund, rainbow, isNew){
       const fx=$('catFx'); if(!fx){ toast((kind==='egg'?'펫알':'랜덤박스')+' 획득!'); return; }
       _fxClear();   // 이전 FX 잔여 타이머 취소(빠른 재오픈 교차 방지)
-      _fx={ kind, res, dup, refund:refund||0, stage:0, rainbow:!!rainbow, gold: rainbow?0:1, isNew:!!isNew };   // 무지개는 금화로 샀으니 금화 보상 없음. isNew=처음 획득(NEW 배지)
+      _fx={ kind, res, dup, refund:refund||0, stage:0, rainbow:!!rainbow, gold: (rainbow||kind==='ddeul')?0:1, isNew:!!isNew };   // 무지개·뜰알은 금화 보상 없음(뜰알은 금화 소모). isNew=처음 획득(NEW 배지)
       if(isEggKind(kind) && typeof hasSprite==='function' && hasSprite(res.id)){ try{ const _pi=new Image(); _pi.src=sprStill(res.id,'south'); if(_pi.decode) _pi.decode().catch(function(){}); }catch(e){} }   // 등장 스프라이트 미리 로드·디코드(펫알·뜰알 공통) → 마지막에 바로 표시
       if(typeof prewarmGachaFxPads==='function') prewarmGachaFxPads();   // 연출 고양이 발끝 여백 미리 측정(탭하는 동안 캐시 완료 → 첫 등장 세로 점프 방지)
       if(reducedMotion()){ fxReveal(); return; }   // 모션 최소화: 바로 결과
