@@ -4028,37 +4028,45 @@
     // 🌈 한정 픽업(가챠 배너): [펫1(왼쪽), 펫2(오른쪽)]. 픽업 대상을 바꾸려면 이 배열만 수정. 존재하는 펫만 배너에 뜬다.
     const LIMITED_PICKUP = ['cat_leopardcat','cat_leopard'];   // 첫 한정 픽업: 펫1=삵 · 펫2=표범
     function pickupExists(id){ return !!id && PET_CATALOG.some(c=>c.id===id); }
-    // 씬 데코 배치(제각각·안정) — 위치·크기·애니 지연을 고정 배열로 둬 매 렌더 동일(랜덤 아님). 바람 연출은 CSS.
-    const PK_CLOUDS=[{w:1,t:'w',l:6,y:9,h:26,d:42},{w:0,t:'p',l:60,y:15,h:20,d:56},{w:2,t:'b',l:40,y:5,h:15,d:34},{w:0,t:'w',l:80,y:26,h:18,d:48},{w:2,t:'p',l:22,y:30,h:12,d:62}];
-    const PK_TREES=[{k:'pine',l:7,b:2,h:44,z:2,s:0},{k:'top',l:88,b:4,h:40,z:3,s:1},{k:'top',l:82,b:-4,h:66,z:16,s:2}];   // 뒤 소나무·뒤 활엽수(작게) + 앞 큰 활엽수(원근)
-    const PK_FLOWERS=[{l:16,t:'r',b:6},{l:30,t:'y',b:14},{l:46,t:'p',b:4},{l:63,t:'r',b:16},{l:73,t:'y',b:8},{l:92,t:'p',b:12},{l:38,t:'r',b:22}];
-    const PK_TUFTS=[{l:4,b:4},{l:20,b:18},{l:34,b:6},{l:52,b:20},{l:58,b:5},{l:68,b:22},{l:78,b:6},{l:96,b:16},{l:12,b:26},{l:86,b:26}];
-    const PK_SOIL=[{l:5,b:20,w:20},{l:44,b:8,w:16},{l:70,b:24,w:22},{l:26,b:5,w:14}];   // 흙 패치(불규칙)
-    // 가챠 탭 상단 한정 픽업 배너 — 하늘(흘러가는 구름)+연한 무지개(1초 뒤 사르르)+뜰(흙·풀·꽃·원근 나무, 바람에 살랑)에 로그인 알, 픽업 펫 둘은 캠 엔진(#pkStage)으로 양옆에서 걸어와 자유 배회.
+    // 결정적 의사난수(0~1) — 인덱스·시드로 매 렌더 동일한 "랜덤 배치"(Math.random은 재렌더마다 튀어 금지).
+    function pkRand(i,s){ const x=Math.sin((i+1)*12.9898+s*4.1414)*43758.5453; return x-Math.floor(x); }
+    // 가챠 탭 상단 한정 픽업 배너 — 하늘(흐르는 구름 다수)+넓고 연한 무지개(1초 뒤 사르르)+뜰(흙·풀·꽃·원근 나무를 필드 전체에 원근 분포, 바람에 살랑) 가운데 로그인 알, 픽업 펫 둘은 캠 엔진(#pkStage)으로 걸어와 자유 배회.
+    //  · 깊이 d(0=앞·크게·아래 ~ 1=뒤·작게·위): bottom%=d*범위, 크기=1-d*0.5. 나무는 뒤쪽(d 큼)만 → 펫 안 가림+하늘 안 침범.
     function limitedPickupBanner(){
       const p1=LIMITED_PICKUP[0], p2=LIMITED_PICKUP[1];
       if(!pickupExists(p1) && !pickupExists(p2)) return '';
-      const H=58;   // 펫 렌더 기준 높이(원근 배율로 앞=1.5·뒤=0.86 → 화면상 2배↑ 커보임)
+      const H=78;   // 펫 렌더 기준 높이(원근 배율 앞1.5=~117·뒤0.86=~67 → 기본보다 2배↑ 크게)
       const tag=(n,id)=> pickupExists(id) ? '<span class="pk-tag"><b>펫'+n+'</b> '+catNameSpan(id,catName(id))+'</span>' : '';
-      const clouds=PK_CLOUDS.map((c,i)=>'<span class="pk-cloud" style="left:'+c.l+'%;top:'+c.y+'%;--d:'+c.d+'s;--i:'+i+'">'+cloudSvg(c.w,c.t,{h:c.h})+'</span>').join('');
-      const trees=PK_TREES.map((t,i)=> t.k==='pine'
-          ? '<span class="pk-tree pk-pine" style="left:'+t.l+'%;bottom:'+t.b+'px;z-index:'+t.z+';--i:'+i+'"><span class="pk-canopy">'+pineSvg({h:t.h})+'</span></span>'
-          : '<span class="pk-tree" style="left:'+t.l+'%;bottom:'+t.b+'px;z-index:'+t.z+';--i:'+i+'"><span class="pk-canopy">'+treeTopSvg({h:Math.round(t.h*0.72)})+'</span><span class="pk-trunk">'+trunkSvg({h:Math.round(t.h*0.34)})+'</span></span>').join('');
-      const flowers=PK_FLOWERS.map((f,i)=>'<span class="pk-flower" style="left:'+f.l+'%;bottom:'+f.b+'px;--i:'+i+'">'+flowerSvg(f.t,{h:15})+'</span>').join('');
-      const tufts=PK_TUFTS.map((g,i)=>'<span class="pk-tuft" style="left:'+g.l+'%;bottom:'+g.b+'px;--i:'+i+'">'+tuftSvg({h:11})+'</span>').join('');
-      const soil=PK_SOIL.map(s=>'<span class="pk-soil" style="left:'+s.l+'%;bottom:'+s.b+'px;width:'+s.w+'px"></span>').join('');
+      // ☁️ 하늘: 흐르는 구름 15개(제각각 높이·모양·색·속도·위상)
+      let clouds=''; for(let i=0;i<15;i++){ const y=(2+pkRand(i,1)*30).toFixed(1), h=Math.round(11+pkRand(i,2)*17),
+        w=Math.floor(pkRand(i,3)*3), tn=['w','p','b'][Math.floor(pkRand(i,4)*3)], dur=(26+pkRand(i,5)*44).toFixed(1);
+        clouds+='<span class="pk-cloud" style="top:'+y+'%;--d:'+dur+'s;--i:'+i+'">'+cloudSvg(w,tn,{h:h})+'</span>'; }
+      // 🌳 나무: 6그루 뒤쪽(d 0.5~0.88)만 · 원근 축소 · z<펫(안 가림)
+      let trees=''; for(let i=0;i<6;i++){ const d=0.5+pkRand(i,11)*0.38, l=(5+pkRand(i,12)*90).toFixed(1),
+        sc=1-d*0.5, bot=(d*76).toFixed(1), z=Math.round(1+(1-d)*3), pine=pkRand(i,13)<0.45;
+        const inner = pine ? '<span class="pk-canopy">'+pineSvg({h:Math.max(12,Math.round(46*sc))})+'</span>'
+          : '<span class="pk-canopy">'+treeTopSvg({h:Math.max(12,Math.round(34*sc))})+'</span><span class="pk-trunk">'+trunkSvg({h:Math.max(6,Math.round(16*sc))})+'</span>';
+        trees+='<span class="pk-tree'+(pine?' pk-pine':'')+'" style="left:'+l+'%;bottom:'+bot+'%;z-index:'+z+';--i:'+i+'">'+inner+'</span>'; }
+      // 🌸 꽃 16 · 🌱 풀 18: 필드 전체(앞~뒤)에 원근 분포
+      let flowers=''; for(let i=0;i<16;i++){ const d=pkRand(i,21)*0.82, l=(3+pkRand(i,22)*94).toFixed(1),
+        sc=1-d*0.5, bot=(d*76).toFixed(1), tn=['r','y','p'][Math.floor(pkRand(i,23)*3)];
+        flowers+='<span class="pk-flower" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+flowerSvg(tn,{h:Math.max(9,Math.round(16*sc))})+'</span>'; }
+      let tufts=''; for(let i=0;i<18;i++){ const d=pkRand(i,31)*0.85, l=(2+pkRand(i,32)*96).toFixed(1),
+        sc=1-d*0.5, bot=(d*80).toFixed(1);
+        tufts+='<span class="pk-tuft" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+tuftSvg({h:Math.max(7,Math.round(12*sc))})+'</span>'; }
+      // 🟫 흙: 9군데 군데군데(원근)
+      let soil=''; for(let i=0;i<9;i++){ const d=pkRand(i,41)*0.7, l=(3+pkRand(i,42)*90).toFixed(1),
+        sc=1-d*0.45, bot=(d*72).toFixed(1), w=Math.round((10+pkRand(i,43)*16)*sc);
+        soil+='<span class="pk-soil" style="left:'+l+'%;bottom:'+bot+'%;width:'+w+'px"></span>'; }
       const actor=(id,lx)=> pickupExists(id) ? '<div class="cd-actor" data-cat="'+id+'" data-hh="'+H+'" style="left:'+lx+'px;">'+catActorHTML(id,H)+'</div>' : '';
       return '<div class="pickbanner">'+
         '<div class="pk-head"><span class="pk-title tier-rainbow">✨ 한정 픽업</span>'+tag(1,p1)+tag(2,p2)+'</div>'+
         '<div class="pkscene">'+
           '<div class="pk-sky" aria-hidden="true">'+clouds+'</div>'+
-          '<div class="pk-rainbow" aria-hidden="true">'+rainbowArcSvg({h:64})+'</div>'+
-          '<div class="pk-field" aria-hidden="true">'+
-            '<div class="pk-grass"></div>'+soil+
-            '<div class="pk-egg"><img src="'+assetUrl('icons/egg-garden.svg')+'" alt=""></div>'+
-            '<div class="cd-room pkstage" id="pkStage" data-noprops="1" data-hh="'+H+'" aria-hidden="true">'+actor(p1,14)+actor(p2,99999)+'</div>'+
-            tufts+flowers+trees+
-          '</div>'+
+          '<div class="pk-rainbow" aria-hidden="true">'+rainbowArcSvg({cols:53,rows:14,h:50})+'</div>'+
+          '<div class="pk-field" aria-hidden="true"><div class="pk-grass"></div>'+soil+tufts+flowers+trees+
+            '<div class="pk-egg"><img src="'+assetUrl('icons/egg-garden.svg')+'" alt=""></div></div>'+
+          '<div class="cd-room pkstage" id="pkStage" data-noprops="1" data-hh="'+H+'" aria-hidden="true">'+actor(p1,14)+actor(p2,99999)+'</div>'+
         '</div></div>'; }
     // 등급 '이름' 라벨을 등급 색으로(펫 이름이 아니라 등급명). 한정(exclusive)=무지개(.tier-rainbow), 그 외=인라인 색(신화=#ff5fa2 등). 도감 등급 헤더 등 공용.
     function tierLabelHtml(tierId){ const ti=tierInfo(tierId); const nm=escapeHtml(ti.name);
