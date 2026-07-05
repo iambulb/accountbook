@@ -1504,11 +1504,11 @@
     function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); if(rainbow) pal.X='RAINBOW'; return pxSvg(M_EGG_C3, pal, opt); }   // 무지개알 열 때: 테두리(X)까지 무지개색
     // 픽셀 껍질 조각 렌더(A=큰 곡면, B=삼각, C=작은 조각). rainbow면 무지갯빛 껍질.
     // 🌱 뜰알(한정 픽업) — 로그인 메인 아이콘(egg-garden.svg)의 '고양이 얼굴 알' + 뜰(풀밭·흙) 픽셀. 무지개는 rainbowArcSvg 재사용.
-    const M_DDEUL=[   // 🥚 뜰알 — 흰 알(X 외곽·S 링·W 흰·w 그림자) + 검은 고양이(B/E 노란눈/P 분홍코) + 밑에 흙 묻음(R/r/o)·이끼(G/g) + 위 꽃잎(F/f/Y/t). 17×17.
-      ".................","...........YF....","...........FFf...",".......XSXFFfF...","......XWWSXtt....",".....XWWWWSX.....","....XWWWWWWSX....",
-      "....XBBWWWBBX....","...XWBBBBBBBWX...","...XBBBBBBBBBX...","...XBBEBBBEBBX...","...XBBBBBBBBBX...","...XBBBBPPBBBX...","....XoBBBBBoX....",
-      "....GgBorowgG....","....GGrRRRrGG....",".....g.rRr.g....."];
-    const DDEUL_PAL={X:'#8a8172',S:'#cfc8ba',W:'#FBFBFD',w:'#e9e3d6',B:'#26262c',b:'#3a3a42',E:'#f4cc4e',P:'#f2a0b4',R:'#a6703f',r:'#7c5028',o:'#8a5a30',G:'#7cc652',g:'#5aa63c',F:'#f9b9d0',f:'#ef8fb4',Y:'#ffe06a',t:'#5aa63c'};
+    const M_DDEUL=[   // 🥚 뜰알 — 기본 펫알과 같은 알 실루엣(X 외곽·S 링 명암·W 흰) + 검은 고양이(B·H 음영·E 노란눈·P 분홍코). 실루엣 '바깥'에만 꽃잎(F/f/Y/t)·흙(R/r/o)·이끼(G/g) 부착. 17×18.
+      ".......XSSX.FfF..","......XSWWSXYFFf.",".....XSWWWWSXtFt.",".....XBWWWBBX....","....XBHHHHHBWX...","...XBBBBBBBBBWX..","...XBBBBBBBBBWX..",
+      "..XWBBEBBBEBBWS..","..XWBBEBBBEBBWS..","..XWBBBBPBBBBWS..","..XWWBBBPBBBWWS..","...XWBBHBHBBWSX..","..GXWWBBBBBWWSX..","..g.XWWWWWWWWXg..",
+      "...o.XWWWWWWXo...","....R.XXXXXXR....",".....GoRRRoG.....",".......rrr......."];
+    const DDEUL_PAL={X:'#968c76',S:'#d2ccbe',W:'#FBFBFD',B:'#26262c',H:'#33333b',E:'#f4cc4e',P:'#f2a0b4',R:'#a6703f',r:'#7c5028',o:'#8a5a30',G:'#7cc652',g:'#5aa63c',F:'#f9b9d0',f:'#ef8fb4',Y:'#ffe06a',t:'#5aa63c'};
     const M_DDEUL_FLOOR=[   // 뜰 바닥 = 풀밭(G/g) + 흙(R/r)
       "...GGGGGGGGGGGGGGGGGG...",".GGGGGGGGGGGGGGGGGGGGGG.","gggggggggggggggggggggggg","RRRRRRRRRRRRRRRRRRRRRRRR",".rrrrrrrrrrrrrrrrrrrrrr."];
     const DDEUL_FLOOR_PAL={G:'#7cc652',g:'#5aa63c',R:'#a6703f',r:'#7c5028'};
@@ -3128,7 +3128,7 @@
       if(stage.dataset.sig===sig && stage.querySelector('.cd-actor')) return;
       stage.dataset.sig=sig;
       if(!list.length){ stage.innerHTML='<span class="cd-empty">고양이를 입양해 보세요</span>'; markCatDirty(); return; }
-      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,24,90); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(12+i*54)+'px;">'+catActorHTML(id,s)+'</div>'; }).join('');
+      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,24,120); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(12+i*54)+'px;">'+catActorHTML(id,s)+'</div>'; }).join('');
       markCatDirty();
     }
     // ---- 통합 걷기 엔진: 단일 rAF가 "지금 보이는 무대"(시트 방 또는 dock)만 애니메이션 ----
@@ -3680,7 +3680,7 @@
       const sig='c:'+list.join(',');   // 같은 고양이면 재생성 안 함(애니메이션 유지)
       if(stage.dataset.sig===sig && stage.querySelector('.cd-actor')) return;
       stage.dataset.sig=sig;
-      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,180); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+catActorHTML(id,s)+'</div>'; }).join('');
+      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+catActorHTML(id,s)+'</div>'; }).join('');
       markCatDirty();   // 통합 엔진이 시트 방 무대를 자동으로 잡아 애니메이션
     }
     // ===== 친구 집(펫캠) — 남의 game으로 읽기전용 방 렌더 + 로밍(엔진 재사용) =====
@@ -3704,7 +3704,7 @@
       const list=friendActiveCats(fg).slice(0, Math.min(MAX_SLOTS, Math.max(BASE_SLOTS, (fg.home&&fg.home.slots)||BASE_SLOTS)));
       ensurePetArtMany(list);
       stage.dataset.hh=64;
-      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,180); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+catActorHTML(id,s)+'</div>'; }).join('');
+      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+catActorHTML(id,s)+'</div>'; }).join('');
       markCatDirty();
     }
     let _shopSub='cats';
