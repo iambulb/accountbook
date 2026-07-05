@@ -1504,11 +1504,12 @@
     function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); if(rainbow) pal.X='RAINBOW'; return pxSvg(M_EGG_C3, pal, opt); }   // 무지개알 열 때: 테두리(X)까지 무지개색
     // 픽셀 껍질 조각 렌더(A=큰 곡면, B=삼각, C=작은 조각). rainbow면 무지갯빛 껍질.
     // 🌱 뜰알(한정 픽업) — 로그인 메인 아이콘(egg-garden.svg)의 '고양이 얼굴 알' + 뜰(풀밭·흙) 픽셀. 무지개는 rainbowArcSvg 재사용.
-    const M_DDEUL=[   // 🥚 뜰알 — 기본 펫알과 같은 알 실루엣(X 외곽·S 링 명암·W 흰) + 검은 고양이(B·H 음영·E 노란눈·P 분홍코). 실루엣 '바깥'에만 꽃잎(F/f/Y/t)·흙(R/r/o)·이끼(G/g) 부착. 17×18.
-      ".......XSSX.FfF..","......XSWWSXYFFf.",".....XSWWWWSXtFt.",".....XBWWWBBX....","....XBHHHHHBWX...","...XBBBBBBBBBWX..","...XBBBBBBBBBWX..",
-      "..XWBBEBBBEBBWS..","..XWBBEBBBEBBWS..","..XWBBBBPBBBBWS..","..XWWBBBPBBBWWS..","...XWBBHBHBBWSX..","..GXWWBBBBBWWSX..","..g.XWWWWWWWWXg..",
-      "...o.XWWWWWWXo...","....R.XXXXXXR....",".....GoRRRoG.....",".......rrr......."];
-    const DDEUL_PAL={X:'#968c76',S:'#d2ccbe',W:'#FBFBFD',B:'#26262c',H:'#33333b',E:'#f4cc4e',P:'#f2a0b4',R:'#a6703f',r:'#7c5028',o:'#8a5a30',G:'#7cc652',g:'#5aa63c',F:'#f9b9d0',f:'#ef8fb4',Y:'#ffe06a',t:'#5aa63c'};
+    const M_DDEUL=[   // 🥚 뜰알(24×15) — 기본 펫알 실루엣(X 외곽·S 링 명암·W 흰) + 메인 아이콘풍 둥근 검은 고양이(B·H 음영·E 노란눈·P/p 분홍코). 알 '위'에 꽃 한 송이 자람(꽃 F/f/C·중심 Y·줄기 t/T), '밑·옆'에 흙(R/r/o)·이끼(G/g). 실루엣 바깥에만 자연물.
+      "......fff......","......FCF......","......CYC......",".......T.......","......tt.......",".......t.......",
+      "......XSSX.....",".....XSWWSX....","....XSWWWWSX...","....XBWWWBWX...","...XBBBBBBBWX..","..XWBHHHHHBWWX.","..XBBBBBBBBBWX.",
+      ".XWBBEBBBEBBWS.",".XWBBeBBBeBBWS.",".XWBBBBPBBBBWS.",".XWWBBBpBBBWWS.","..XWWBHBHBWWSX.","G.XWWWWWWWWWSXG","g..XWWWWWWWWX.g",
+      "..o.XWWWWWWXo..",".....XXXXXX....","....GoRRRoG....","......rrr......"];
+    const DDEUL_PAL={X:'#968c76',S:'#d2ccbe',W:'#FBFBFD',B:'#2b2b31',H:'#3c3c45',E:'#f4cc4e',e:'#caa02f',P:'#f2a0b4',p:'#d97f97',R:'#a6703f',r:'#7c5028',o:'#8a5a30',G:'#7cc652',g:'#5aa63c',F:'#f9b9d0',f:'#ef8fb4',C:'#ff9ec2',Y:'#ffe06a',t:'#4e9636',T:'#3f7a2c'};
     const M_DDEUL_FLOOR=[   // 뜰 바닥 = 풀밭(G/g) + 흙(R/r)
       "...GGGGGGGGGGGGGGGGGG...",".GGGGGGGGGGGGGGGGGGGGGG.","gggggggggggggggggggggggg","RRRRRRRRRRRRRRRRRRRRRRRR",".rrrrrrrrrrrrrrrrrrrrrr."];
     const DDEUL_FLOOR_PAL={G:'#7cc652',g:'#5aa63c',R:'#a6703f',r:'#7c5028'};
@@ -3707,7 +3708,7 @@
       stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+catActorHTML(id,s)+'</div>'; }).join('');
       markCatDirty();
     }
-    let _shopSub='cats';
+    let _shopSub='event';   // 알뜰샵 진입 시 기본=가챠 탭(맨 왼쪽)
     function setShopSub(s){ _shopSub=s; _shopSelCat=null; renderCatHouse(); }
     let _shopFurnCat='all';   // 알뜰샵 가구 탭의 기능분류 필터(전체/케어/휴식/놀이/장식) — 배치 인벤토리와 같은 ITEM_CATALOG.cat 기준
     function setShopFurnCat(c){ _shopFurnCat=c; renderCatHouse(); }
@@ -3723,7 +3724,7 @@
     function selectShopCat(id){ _shopSelCat=(_shopSelCat===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     // 알뜰샵 서브탭(펫/가구/소비/벽지/가챠) — cathead(sticky) 안에 넣어 스크롤해도 상단 고정. '펫'=구 '고양이'(호랑이·사자 등 포함이라 펫으로 통일). ('가챠' 탭 키는 내부적으로 'event' 유지)
     function shopSubsegHtml(){
-      const tabs=[['cats','펫'],['furn','가구'],['consum','소비'],['wall','벽지'],['floor','바닥'],['event','가챠']];
+      const tabs=[['event','가챠'],['cats','펫'],['furn','가구'],['consum','소비'],['wall','벽지'],['floor','바닥']];
       return '<div class="subseg">'+tabs.map(function(t){ return '<button class="'+(_shopSub===t[0]?'on':'')+'" onclick="setShopSub(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
     }
     function catShopHtml(){
@@ -3742,6 +3743,14 @@
       }
       if(_shopSub==='event'){
         h+=limitedPickupBanner();   // 🌈 한정 픽업 배너(무지개+뜰의 알+양옆 걷는 픽업 펫)
+        // 🌱 뜰알(한정 픽업) — 한정픽업 배너 바로 아래(픽업 테마 묶음). 은화로 여는 픽업 펫알. 활성 한정 펫(삵·표범)이 낮은 확률로 등장.
+        { const pk=LIMITED_PICKUP.filter(pickupExists).map(id=>catNameSpan(id,catName(id))).join('·');
+          const dEnough=coins()>=DDEUL_PRICE;
+          const dact=dEnough?'<button class="buy" aria-label="뜰알 구매('+DDEUL_PRICE+' 은화)" onclick="openDdeul()">구매</button>':'<button class="buy dis" disabled>'+(DDEUL_PRICE-coins())+' 부족</button>';
+          h+='<div class="shopcard ddeul-card"><div class="thumb">'+ddeulEggSvg({h:64})+'</div>'+
+            '<div class="meta"><b class="tier-rainbow">뜰알</b> <span class="tagmini tier-rainbow">한정 픽업</span><div class="desc"><b class="tier-rainbow">한정 0.5%</b>로 픽업 펫'+(pk?'('+pk+')':'')+'! 신화 0.5%·그 외는 기본 확률.</div>'+
+            '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+DDEUL_PRICE+'</span></div>'+
+            '<div class="act">'+dact+'</div></div>'; }
         const enough=coins()>=GACHA_PRICE;
         const gacha=[['egg','펫알','알을 열면 고양이가 랜덤으로! 등급이 높을수록 귀해요.', eggSvg(0,{h:66})],
                      ['box','랜덤박스','상자를 열면 가구·구조물이 랜덤으로 나와요.', boxSvg({h:56})]];
@@ -3752,14 +3761,6 @@
             '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+GACHA_PRICE+'</span></div>'+
             '<div class="act">'+act+'</div></div>';
         }).join('');
-        // 🌱 뜰알(한정 픽업) — 은화로 여는 픽업 펫알. 활성 한정 펫(삵·표범)이 낮은 확률로 등장.
-        { const pk=LIMITED_PICKUP.filter(pickupExists).map(id=>catNameSpan(id,catName(id))).join('·');
-          const dEnough=coins()>=DDEUL_PRICE;
-          const dact=dEnough?'<button class="buy" aria-label="뜰알 구매('+DDEUL_PRICE+' 은화)" onclick="openDdeul()">구매</button>':'<button class="buy dis" disabled>'+(DDEUL_PRICE-coins())+' 부족</button>';
-          h+='<div class="shopcard ddeul-card"><div class="thumb">'+ddeulEggSvg({h:64})+'</div>'+
-            '<div class="meta"><b class="tier-rainbow">뜰알</b> <span class="tagmini tier-rainbow">한정 픽업</span><div class="desc"><b class="tier-rainbow">한정 0.5%</b>로 픽업 펫'+(pk?'('+pk+')':'')+'! 신화 0.5%·그 외는 기본 확률.</div>'+
-            '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+DDEUL_PRICE+'</span></div>'+
-            '<div class="act">'+dact+'</div></div>'; }
         // ✨ 무지개알/무지개박스 — 금화로 구매하는 소비템(특별↑ 확정). 보유하면 "사용"으로 오픈.
         const rb=[['egg','무지개알','열면 특별90 · 전설8 · 신화2%. 특별↑ 고양이만!', rainbowEggSvg({h:66,cls:'rb-thumb'})],
                   ['box','무지개박스','열면 특별90 · 전설8 · 신화2%. 특별↑ 가구만!', rainbowBoxSvg({h:56,cls:'rb-thumb'})]];
@@ -4036,17 +4037,25 @@
     function limitedPickupBanner(){
       const p1=LIMITED_PICKUP[0], p2=LIMITED_PICKUP[1];
       if(!pickupExists(p1) && !pickupExists(p2)) return '';
-      const H=78;   // 펫 렌더 기준 높이(원근 배율 앞1.5=~117·뒤0.86=~67 → 기본보다 2배↑ 크게)
+      const H=92;   // 펫 렌더 기준 높이(원근 앞배율 1.5=~138 → 기본(≈48)의 약 3배 크게)
       const tag=(n,id)=> pickupExists(id) ? '<span class="pk-tag"><b>펫'+n+'</b> '+catNameSpan(id,catName(id))+'</span>' : '';
       // ☁️ 하늘: 흐르는 구름 15개(제각각 높이·모양·색·속도·위상)
       let clouds=''; for(let i=0;i<15;i++){ const y=(2+pkRand(i,1)*30).toFixed(1), h=Math.round(11+pkRand(i,2)*17),
         w=Math.floor(pkRand(i,3)*3), tn=['w','p','b'][Math.floor(pkRand(i,4)*3)], dur=(26+pkRand(i,5)*44).toFixed(1);
         clouds+='<span class="pk-cloud" style="top:'+y+'%;--d:'+dur+'s;--i:'+i+'">'+cloudSvg(w,tn,{h:h})+'</span>'; }
-      // 🌳 나무: 6그루 뒤쪽(d 0.5~0.88)만 · 원근 축소 · z<펫(안 가림)
-      let trees=''; for(let i=0;i<6;i++){ const d=0.5+pkRand(i,11)*0.38, l=(5+pkRand(i,12)*90).toFixed(1),
-        sc=1-d*0.5, bot=(d*76).toFixed(1), z=Math.round(1+(1-d)*3), pine=pkRand(i,13)<0.45;
-        const inner = pine ? '<span class="pk-canopy">'+pineSvg({h:Math.max(12,Math.round(46*sc))})+'</span>'
-          : '<span class="pk-canopy">'+treeTopSvg({h:Math.max(12,Math.round(34*sc))})+'</span><span class="pk-trunk">'+trunkSvg({h:Math.max(6,Math.round(16*sc))})+'</span>';
+      // 🏔️ 지평선 원근 레이어 — 먼 나무/풀/꽃을 아주 작게(뒤쪽 d 0.9+), 가로로 고르게 → 깊이감(먼 숲 가장자리)
+      let farline=''; for(let i=0;i<18;i++){ const l=((i+0.4)/18*100).toFixed(1), bot=(83+pkRand(i,53)*11).toFixed(1), k=pkRand(i,54), r=pkRand(i,55);
+        let el;
+        if(k<0.42) el='<span class="pk-tree pk-far pk-pine" style="left:'+l+'%;bottom:'+bot+'%;z-index:1;--i:'+i+'"><span class="pk-canopy">'+pineSvg({h:Math.round(13+r*9)})+'</span></span>';
+        else if(k<0.62) el='<span class="pk-tree pk-far" style="left:'+l+'%;bottom:'+bot+'%;z-index:1;--i:'+i+'"><span class="pk-canopy">'+treeTopSvg({h:Math.round(11+r*7)})+'</span></span>';
+        else if(k<0.83) el='<span class="pk-tuft pk-far" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+tuftSvg({h:Math.round(6+r*3)})+'</span>';
+        else el='<span class="pk-flower pk-far" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+flowerSvg(['r','y','p'][Math.floor(pkRand(i,56)*3)],{h:Math.round(7+r*3)})+'</span>';
+        farline+=el; }
+      // 🌳 가까운 나무 5그루 — 가로 '레인'으로 고르게(겹침 방지) · 크기 1.5배 · 뒤쪽(d 0.5~0.78) · z<펫
+      let trees=''; for(let i=0;i<5;i++){ const d=0.5+pkRand(i,11)*0.28, l=((i+0.5)/5*88+6+(pkRand(i,12)-0.5)*6).toFixed(1),
+        sc=1-d*0.5, bot=(d*70).toFixed(1), z=Math.round(2+(1-d)*2), pine=pkRand(i,13)<0.45;
+        const inner = pine ? '<span class="pk-canopy">'+pineSvg({h:Math.max(16,Math.round(69*sc))})+'</span>'
+          : '<span class="pk-canopy">'+treeTopSvg({h:Math.max(16,Math.round(51*sc))})+'</span><span class="pk-trunk">'+trunkSvg({h:Math.max(8,Math.round(24*sc))})+'</span>';
         trees+='<span class="pk-tree'+(pine?' pk-pine':'')+'" style="left:'+l+'%;bottom:'+bot+'%;z-index:'+z+';--i:'+i+'">'+inner+'</span>'; }
       // 🌸 꽃 16 · 🌱 풀 18: 필드 전체(앞~뒤)에 원근 분포
       let flowers=''; for(let i=0;i<16;i++){ const d=pkRand(i,21)*0.82, l=(3+pkRand(i,22)*94).toFixed(1),
@@ -4064,8 +4073,8 @@
         '<div class="pk-head"><span class="pk-title tier-rainbow">✨ 한정 픽업</span>'+tag(1,p1)+tag(2,p2)+'</div>'+
         '<div class="pkscene">'+
           '<div class="pk-sky" aria-hidden="true">'+clouds+'</div>'+
-          '<div class="pk-rainbow" aria-hidden="true">'+rainbowArcSvg({cols:61,rows:12,h:46})+'</div>'+
-          '<div class="pk-field" aria-hidden="true"><div class="pk-grass"></div>'+soil+tufts+flowers+trees+
+          '<div class="pk-rainbow" aria-hidden="true">'+rainbowArcSvg({cols:77,rows:11,h:44})+'</div>'+
+          '<div class="pk-field" aria-hidden="true"><div class="pk-grass"></div>'+soil+farline+tufts+flowers+trees+
             '<div class="pk-egg"><img src="'+assetUrl('icons/egg-garden.svg')+'" alt=""></div></div>'+
           '<div class="cd-room pkstage" id="pkStage" data-noprops="1" data-hh="'+H+'" aria-hidden="true">'+actor(p1,14)+actor(p2,99999)+'</div>'+
         '</div></div>'; }

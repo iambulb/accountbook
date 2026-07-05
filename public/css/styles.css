@@ -1091,6 +1091,8 @@
     .fx-stage, .fx-reveal { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:24px; }
     .fx-item { position:relative; z-index:2; cursor:pointer; filter:drop-shadow(0 12px 24px rgba(0,0,0,.4)); }
     .fx-item .px { width:auto; height:150px; }
+    .fx-item.fx-ddeulegg .px { height:226px; }   /* 뜰알은 꽃·흙까지 포함(24행)이라 더 크게 — 알 실루엣(16행)이 펫알(150px)과 같아지게 */
+    .shopcard.ddeul-card .thumb .px { height:84px; width:auto; }   /* 샵 카드에서 알이 작아 보이지 않게 썸네일 꽉 채움 */
     .fx-egg.pop { animation:fxpop .4s cubic-bezier(.2,1.4,.4,1), fxfloat 2.2s ease-in-out .4s infinite; }
     .fx-box.pop { animation:fxpop .4s cubic-bezier(.2,1.4,.4,1); }
     .fx-item.shake { animation:fxshake .3s ease; }
@@ -1467,7 +1469,7 @@
     .pk-title { font-size:13.5px; font-weight:900; letter-spacing:.02em; }
     .pk-tag { font-size:12.5px; font-weight:700; color:var(--sub); display:inline-flex; align-items:center; gap:4px; }
     .pk-tag b { color:var(--text); font-weight:800; }
-    .pkscene { position:relative; height:148px; overflow:hidden; background:linear-gradient(#bfe6ff 0%, #dcf3ff 60%); }
+    .pkscene { position:relative; height:156px; overflow:hidden; background:linear-gradient(#bfe6ff 0%, #dcf3ff 60%); }
     :root[data-theme="dark"] .pkscene { background:linear-gradient(#1f2b44,#26364f); }
     .pkscene .px, .pkscene img { image-rendering:pixelated; }
     /* 하늘·흐르는 구름(제각각 높이·모양·색·속도·위상) — 벽지 밴드는 하늘/무지개/구름만(풀·나무 없음) */
@@ -1477,7 +1479,7 @@
     @keyframes pkcloud { from{ transform:translateX(-64px);} to{ transform:translateX(600px);} }
     /* 무지개 — 넓고 길게·연하게, 지평선(뜰 뒤)에서 솟아 배너 진입 1초 뒤 사르르 */
     .pk-rainbow { position:absolute; left:50%; bottom:60%; transform:translateX(-50%); z-index:1; opacity:0; animation:pkrainbowin 1.4s ease 1s forwards; pointer-events:none; }
-    .pk-rainbow .px { height:46px; width:auto; opacity:.5; }
+    .pk-rainbow .px { height:44px; width:auto; opacity:.5; }
     @keyframes pkrainbowin { from{ opacity:0; transform:translateX(-50%) translateY(7px) scale(.92);} to{ opacity:1; transform:translateX(-50%) translateY(0) scale(1);} }
     /* 뜰(들판) — 흙 보이고 풀·꽃·나무는 필드 안에만(overflow:hidden으로 하늘 침범 방지) */
     .pk-field { position:absolute; left:0; right:0; bottom:0; height:60%; z-index:1; overflow:hidden; }
@@ -1496,6 +1498,10 @@
     .pk-flower, .pk-tuft { position:absolute; display:block; transform-origin:center bottom; animation:pkbend 2.6s ease-in-out infinite; animation-delay:calc(var(--i) * -.35s); z-index:2; }
     .pk-tuft { animation-duration:2s; z-index:1; }
     @keyframes pkbend { 0%,100%{ transform:translateX(-50%) rotate(-5deg);} 50%{ transform:translateX(-50%) rotate(5deg);} }
+    /* 지평선 원근 레이어(먼 나무/풀/꽃) — 아주 작고 살랑도 은은하게(먼 느낌) */
+    .pk-far { opacity:.9; }
+    .pk-far.pk-tree .pk-canopy { animation-duration:5.2s; }
+    .pk-tuft.pk-far, .pk-flower.pk-far { animation-duration:4.6s; }
     /* 로그인 알(egg-garden) — 뜰 가운데(앞쪽 말고 중앙으로) */
     .pk-egg { position:absolute; left:50%; bottom:30%; transform:translateX(-50%); z-index:3; }
     .pk-egg img { display:block; height:50px; width:auto; filter:drop-shadow(0 3px 0 rgba(0,0,0,.14)); }
