@@ -1709,14 +1709,21 @@
     const SPARK_PAL={X:'currentColor',H:'#ffffff'};
     function sparkSvg(opt){ return pxSvg(M_SPARK, SPARK_PAL, opt); }
     // 🌈 "NEW" 배지 — 처음 획득한 펫/아이템 뽑기 등장 시 위에 띄우는 디테일 픽셀 글자.
-    //   색은 움직이는 무지개(pxSvg 'RAINBOW' = 수직 스크롤 애니 그라디언트, 도트 유지). 글자별로 물결처럼 위아래로 흔들린다(.fx-new-ch, CSS fxnewbob).
-    const M_LN=[   // N
-      "X...X","XX..X","XX..X","X.X.X","X.X.X","X..XX","X...X"];
-    const M_LE=[   // E
-      "XXXXX","X....","X....","XXXX.","X....","X....","XXXXX"];
-    const M_LW=[   // W
-      "X.....X","X.....X","X.....X","X..X..X","X.X.X.X","XX...XX","X.....X"];
-    const NEW_PAL={X:'RAINBOW'};
+    //   굵은 베벨 글자: 본체 X=움직이는 무지개(pxSvg 'RAINBOW' 수직 스크롤 애니), 상/좌=하이라이트 H, 하/우=그림자 D, 외곽선 O로 명암(입체감)을 살림.
+    //   세 글자 모두 16행이라 h로 크기를 맞추면 칸 크기·정렬이 동일. 글자별로 물결처럼 위아래로 흔들린다(.fx-new-ch, CSS fxnewbob).
+    const M_LN=[   // N (13×16)
+      ".OOOO....OOO.","OHHHHO..OHHHO","OHXXXHO.OHXDO","OHXXXDO.OHXDO","OHXXXXHOOHXDO","OHXXDXDOOHXDO",
+      "OHXDOHXHOHXDO","OHXDOOHDOHXDO","OHXDOOHXHXXDO","OHXDO.OHXXXDO","OHXDO.OHXXXDO","OHXDO..OHXXDO",
+      "OHXDO..OHXXDO","OHXDO...OHXDO","OHDDO...OHXDO",".OOO.....OHDO"];
+    const M_LE=[   // E (12×16)
+      ".OOOOOOOOOO.","OHHHHHHHHHHO","OHXXXXXXXXDO","OHXXDDDDDDDO","OHXDOOOOOOO.","OHXDOOOOOO..",
+      "OHXXHHHHHHO.","OHXXXXXXXDO.","OHXXDDDDDDO.","OHXDOOOOOO..","OHXDO.......","OHXDOOOOOOO.",
+      "OHXXHHHHHHHO","OHXXXXXXXXDO","OHDDDDDDDDDO",".OOOOOOOOOO."];
+    const M_LW=[   // W (17×16)
+      ".OOO...........OO","OHHHO.........OHH","OHXXHO.......OHXD","OHXXDO.......OHXD","OHXXDO.......OHXD",".OHXXHO.OOO.OHXXD",
+      ".OHXXDOOHHHOOHXXD",".OHXXDOOHXDOOHXXD","..OHXXHHXXXHHXXDO","..OHXXXXXXXXXXXDO","...OHXXXXXXXXXDO.","...OHXXXXXXXXXDO.",
+      "...OHXXXXXXXXXDO.","....OHXXXXXXXDO..","....OHXXXDXXXDO..","....OHDDDOHDDDO.."];
+    const NEW_PAL={O:'#241d38',X:'RAINBOW',H:'#ffffff',D:'#553a86'};
     function newBadgeSvg(opt){ opt=opt||{}; const h=opt.h||30;
       const chs=[M_LN,M_LE,M_LW].map((m,i)=>'<span class="fx-new-ch" style="--i:'+i+'">'+pxSvg(m,NEW_PAL,{h:h})+'</span>').join('');
       return '<div class="fx-new" aria-hidden="true">'+chs+'</div>'; }
