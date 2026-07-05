@@ -1095,6 +1095,24 @@
     .fx-box.pop { animation:fxpop .4s cubic-bezier(.2,1.4,.4,1); }
     .fx-item.shake { animation:fxshake .3s ease; }
     .fx-item.fx-open { animation:fxopen .45s ease forwards; }
+    /* 🌱 뜰알 오픈: 뜰(풀밭·흙) 바닥 위에 알 — 흔들림·나머지 연출은 기본 알과 동일 */
+    .fx-ddeul .fx-ground { position:absolute; left:0; right:0; bottom:0; text-align:center; line-height:0; z-index:1; pointer-events:none; }
+    .fx-ddeul .fx-ground .px { display:inline-block; width:min(92%,460px); height:auto; image-rendering:pixelated; }
+    .fx-ddeul .fx-item { margin-bottom:6%; }   /* 알이 뜰 위에 놓인 느낌으로 살짝 아래 */
+    /* 🌈 한정(무지개) 리빌: 로그인 화면 같은 하늘 + 왼→오로 그려지는 무지개(샤라라) */
+    .fx-sky { position:absolute; inset:0; z-index:1; overflow:hidden; background:linear-gradient(180deg,#a9dbff 0%,#cdeeff 55%,#eafaff 100%); animation:fxfade .35s ease; }
+    .fx-sky .fx-cloud { position:absolute; z-index:1; image-rendering:pixelated; opacity:.95; }
+    .fx-sky .fx-cloud .px { display:block; }
+    .fx-sky .fx-cloud-a { top:15%; left:-14%; animation:fxclouddrift 17s linear infinite; }
+    .fx-sky .fx-cloud-b { top:29%; left:-22%; animation:fxclouddrift 24s linear -8s infinite; }
+    @keyframes fxclouddrift { from{ transform:translateX(0); } to{ transform:translateX(135vw); } }
+    .fx-sky .fx-sky-rb { position:absolute; left:50%; bottom:30%; transform:translateX(-50%); z-index:2; line-height:0; clip-path:inset(0 100% 0 0); animation:fxrbdraw 1.15s .1s ease-out forwards; }
+    .fx-sky .fx-sky-rb .px { display:block; image-rendering:pixelated; height:auto; width:min(84vw,440px); }
+    .fx-sky .fx-rb-spark { position:absolute; top:-6%; bottom:-6%; left:0; width:16px; z-index:3; pointer-events:none; background:linear-gradient(90deg,transparent,rgba(255,255,255,.95),transparent); mix-blend-mode:screen; animation:fxrbspark 1.15s .1s ease-out forwards; }
+    @keyframes fxrbdraw { from{ clip-path:inset(0 100% 0 0); } to{ clip-path:inset(0 0 0 0); } }
+    @keyframes fxrbspark { 0%{ left:-4%; opacity:.95; } 88%{ opacity:.95; } 100%{ left:100%; opacity:0; } }
+    .fx-reveal.rev-ddeul { z-index:2; }   /* 펫·텍스트는 하늘·무지개 위에 */
+    @media (prefers-reduced-motion: reduce){ .fx-sky .fx-cloud{ animation:none; } .fx-sky .fx-sky-rb{ animation:none; clip-path:none; } .fx-sky .fx-rb-spark{ display:none; } }
     .fx-hint { position:relative; z-index:2; color:#fff; font-size:14px; font-weight:800; opacity:.9; animation:fxblink 1s ease-in-out infinite; }
     /* 열림 순간 빛 — 은은하게(강한 흰 폭광 대신 부드러운 블룸) */
     .fx-flash { position:absolute; left:50%; top:50%; width:18px; height:18px; transform:translate(-50%,-50%); border-radius:50%;
@@ -1446,32 +1464,49 @@
     .featbanner .fb-txt .s { font-size:12px; color:var(--muted); }
     .featbanner .fb-face { flex:0 0 auto; display:inline-flex; }
     .shopcard.petpick.feat { border-color:color-mix(in srgb, var(--gold, #f2b134) 55%, transparent); }
-    /* 🌈 한정 픽업 배너(가챠 탭) — 무지개 아치 + 뜰(잔디)의 알 + 양옆에서 가운데로 걸어오는 픽업 펫(픽셀아트) */
+    /* 🌈 한정 픽업 배너(가챠 탭) — 하늘(흐르는 구름)+연한 무지개(1초 뒤 사르르)+뜰(흙·풀·꽃·원근 나무, 바람에 살랑)+캠 엔진(#pkStage)으로 배회하는 픽업 펫. 전부 픽셀아트. */
     .pickbanner { margin:2px 0 12px; border-radius:16px; overflow:hidden; border:1.5px solid color-mix(in srgb,#9B6FC8 40%,var(--line)); background:var(--card); }
     .pk-head { display:flex; align-items:center; gap:6px 12px; flex-wrap:wrap; padding:9px 12px 8px; }
     .pk-title { font-size:13.5px; font-weight:900; letter-spacing:.02em; }
     .pk-tag { font-size:12.5px; font-weight:700; color:var(--sub); display:inline-flex; align-items:center; gap:4px; }
     .pk-tag b { color:var(--text); font-weight:800; }
-    .pick-scene { position:relative; height:98px; overflow:hidden; background:#cdeeff; }
-    :root[data-theme="dark"] .pick-scene { background:#23304a; }
-    @media (prefers-color-scheme: dark){ .pick-scene { background:#23304a; } }
-    :root[data-theme="light"] .pick-scene { background:#cdeeff; }
-    .pk-rainbow { position:absolute; left:50%; top:9px; transform:translateX(-50%); z-index:1; }
-    .pk-rainbow .px { height:46px; width:auto; image-rendering:pixelated; }
-    .pk-ground { position:absolute; left:0; right:0; bottom:0; height:26px; z-index:2; background:#57bf67; border-top:3px solid #79d67f; }
-    .pk-ground::before { content:''; position:absolute; left:0; right:0; top:-6px; height:6px; background:repeating-linear-gradient(90deg,#79d67f 0 2px, transparent 2px 5px); }
-    :root[data-theme="dark"] .pk-ground { background:#3a7d47; border-top-color:#4f9a5b; }
-    :root[data-theme="dark"] .pk-ground::before { background:repeating-linear-gradient(90deg,#4f9a5b 0 2px, transparent 2px 5px); }
-    .pk-egg { position:absolute; left:50%; bottom:18px; transform:translateX(-50%); z-index:3; }
-    .pk-egg img { display:block; height:46px; width:auto; image-rendering:pixelated; filter:drop-shadow(0 3px 0 rgba(0,0,0,.14)); }
-    .pk-pet { position:absolute; bottom:17px; z-index:4; }
-    .pk-pet .cspr, .pk-pet .catpx, .pk-pet .px { image-rendering:pixelated; }
-    .pk-pet.pk-left { left:9%; animation:pkwalkL 2.2s ease-in-out infinite; }
-    .pk-pet.pk-right { right:9%; animation:pkwalkR 2.2s ease-in-out infinite; }
-    .pk-pet.pk-right .cspr, .pk-pet.pk-right .catpx, .pk-pet.pk-right .px { transform:scaleX(-1); }   /* 오른쪽 펫은 가운데(왼쪽)를 바라봄 */
-    @keyframes pkwalkL { 0%,100%{ transform:translateX(0); } 50%{ transform:translateX(11px); } }
-    @keyframes pkwalkR { 0%,100%{ transform:translateX(0); } 50%{ transform:translateX(-11px); } }
-    @media (prefers-reduced-motion: reduce){ .pk-pet.pk-left, .pk-pet.pk-right { animation:none; } }
+    .pkscene { position:relative; height:150px; overflow:hidden; background:linear-gradient(#bfe6ff 0%, #dcf3ff 46%); }
+    :root[data-theme="dark"] .pkscene { background:linear-gradient(#1f2b44,#26364f); }
+    .pkscene .px, .pkscene img { image-rendering:pixelated; }
+    /* 하늘·흐르는 구름(제각각 높이·모양·색·속도·위상) */
+    .pk-sky { position:absolute; left:0; right:0; top:0; height:56%; z-index:0; overflow:hidden; pointer-events:none; }
+    .pk-cloud { position:absolute; left:0; display:block; opacity:.96; will-change:transform;
+      animation:pkcloud var(--d,44s) linear infinite; animation-delay:calc(var(--i) * -9s); }
+    @keyframes pkcloud { from{ transform:translateX(-64px);} to{ transform:translateX(600px);} }
+    /* 무지개 — 넓고 길게·연하게, 배너 진입 1초 뒤 사르르 */
+    .pk-rainbow { position:absolute; left:50%; top:5px; transform:translateX(-50%); z-index:1; opacity:0; animation:pkrainbowin 1.4s ease 1s forwards; pointer-events:none; }
+    .pk-rainbow .px { height:64px; width:auto; opacity:.5; }
+    @keyframes pkrainbowin { from{ opacity:0; transform:translateX(-50%) translateY(7px) scale(.92);} to{ opacity:1; transform:translateX(-50%) translateY(0) scale(1);} }
+    /* 뜰(들판) — 흙 보이고 풀·꽃 제각각 */
+    .pk-field { position:absolute; left:0; right:0; bottom:0; height:54%; z-index:1; }
+    .pk-grass { position:absolute; inset:0; background:#5fbf6a; z-index:0; }
+    .pk-grass::before { content:''; position:absolute; left:0; right:0; top:0; height:5px; background:repeating-linear-gradient(90deg,#7ad57f 0 2px, transparent 2px 5px); }
+    :root[data-theme="dark"] .pk-grass { background:#3a7d47; }
+    .pk-soil { position:absolute; height:5px; border-radius:2px; background:#a9764a; box-shadow:0 -2px 0 #c08e5e inset; z-index:1; }
+    :root[data-theme="dark"] .pk-soil { background:#6e4e30; box-shadow:0 -2px 0 #855f3c inset; }
+    /* 나무(캐노피만 바람에 살랑) */
+    .pk-tree { position:absolute; display:flex; flex-direction:column; align-items:center; transform:translateX(-50%); }
+    .pk-tree .pk-canopy { display:block; transform-origin:center bottom; animation:pksway 3.4s ease-in-out infinite; animation-delay:calc(var(--i) * -.6s); }
+    .pk-tree .pk-trunk { display:block; margin-top:-2px; }
+    .pk-tree.pk-pine .pk-canopy { animation-duration:4.2s; }
+    @keyframes pksway { 0%,100%{ transform:rotate(-2.5deg);} 50%{ transform:rotate(2.5deg);} }
+    /* 꽃·풀(바람에 흔들) */
+    .pk-flower, .pk-tuft { position:absolute; display:block; transform-origin:center bottom; animation:pkbend 2.6s ease-in-out infinite; animation-delay:calc(var(--i) * -.35s); z-index:2; }
+    .pk-tuft { animation-duration:2s; z-index:1; }
+    @keyframes pkbend { 0%,100%{ transform:translateX(-50%) rotate(-5deg);} 50%{ transform:translateX(-50%) rotate(5deg);} }
+    /* 로그인 알(egg-garden) — 뜰 가운데 */
+    .pk-egg { position:absolute; left:50%; bottom:12px; transform:translateX(-50%); z-index:2; }
+    .pk-egg img { display:block; height:54px; width:auto; filter:drop-shadow(0 3px 0 rgba(0,0,0,.14)); }
+    /* 픽업 펫 무대 = 필드 크기 미니 캠(.cd-room 원근 재사용, 사용자 가구 없음) — 배너 펫은 비상호작용(스크롤 방해 방지) */
+    #pkStage.pkstage { position:absolute; inset:0; height:auto; z-index:5; overflow:visible; background:none; }
+    .pkstage .cd-actor { pointer-events:none; }
+    .pkstage .cd-actor .cspr { image-rendering:pixelated; }
+    @media (prefers-reduced-motion: reduce){ .pk-cloud, .pk-tree .pk-canopy, .pk-flower, .pk-tuft { animation:none; } .pk-rainbow { opacity:1; animation:none; } }
     .shopcard .featrib { position:absolute; left:6px; top:6px; display:inline-flex; align-items:center; gap:3px;
       font-size:10px; font-weight:800; color:#7a5200; background:var(--gold, #f2b134); padding:2px 6px; border-radius:999px; z-index:2; }
     .shopcard .featrib svg { color:#7a5200; }
