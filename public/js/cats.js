@@ -969,27 +969,90 @@
     const PET_CATALOG = [
       { id:'cat_mackerel', species:'cat', name:'고등어', price:50, desc:'쿨그레이 줄무늬. 차분하게 방을 돌아다녀요.' },
       { id:'cat_cheese', species:'cat', name:'치즈', price:100, desc:'웜오렌지. 활발하게 뛰어다니는 개냥이.' },
-      { id:'cat_calico', species:'cat', name:'삼색', price:200, desc:'검정·주황 어우러진 삼색(토터셸). 도도하게 창가에 앉아요.' },
-      { id:'cat_black', species:'cat', name:'까망', price:200, desc:'노란 눈의 까만 고양이. 조용히 방을 지켜요.' },
-      { id:'cat_white', species:'cat', name:'하양', price:200, desc:'파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요.' },
-      { id:'cat_fluffy', species:'cat', name:'복슬이', price:200, desc:'복슬복슬한 털에 파란 눈. 나른하게 졸며 방을 거닐어요.' },
-      { id:'cat_tuxedo', species:'cat', name:'턱시도', price:200, desc:'검은 정장에 하얀 셔츠·발. 단정하게 걸어다녀요.' },
-      { id:'cat_chaos', species:'cat', name:'카오스', price:200, desc:'다크그레이+브라운 소용돌이 무늬. 종잡을 수 없이 쏘다녀요.' },
+      { id:'cat_calico', species:'cat', name:'삼색', price:100, desc:'검정·주황 어우러진 삼색(토터셸). 도도하게 창가에 앉아요.' },
+      { id:'cat_black', species:'cat', name:'까망', price:50, desc:'노란 눈의 까만 고양이. 조용히 방을 지켜요.' },
+      { id:'cat_white', species:'cat', name:'하양', price:50, desc:'파란 눈의 새하얀 고양이. 볕에서 낮잠을 즐겨요.' },
+      { id:'cat_fluffy', species:'cat', name:'복슬이', price:50, desc:'복슬복슬한 털에 파란 눈. 나른하게 졸며 방을 거닐어요.' },
+      { id:'cat_tuxedo', species:'cat', name:'턱시도', price:100, desc:'검은 정장에 하얀 셔츠·발. 단정하게 걸어다녀요.' },
+      { id:'cat_chaos', species:'cat', name:'카오스', price:100, desc:'다크그레이+브라운 소용돌이 무늬. 종잡을 수 없이 쏘다녀요.' },
       { id:'cat_siamese', species:'cat', name:'샴', price:800, desc:'크림빛 몸에 짙은 포인트. 우아하게 방을 누벼요.' },
-      { id:'cat_bengal', species:'cat', name:'황토', price:100, desc:'골든빛 몸에 동글동글 반점. 야무지게 돌아다녀요.' },
-      { id:'cat_fold', species:'cat', name:'폴드', price:200, desc:'접힌 귀가 매력. 얌전히 자리를 지켜요.' },
+      { id:'cat_bengal', species:'cat', name:'황토', price:50, desc:'골든빛 몸에 동글동글 반점. 야무지게 돌아다녀요.' },
+      { id:'cat_fold', species:'cat', name:'폴드', price:50, desc:'접힌 귀가 매력. 얌전히 자리를 지켜요.' },
       { id:'cat_bora', species:'cat', name:'보라', price:400, desc:'한쪽은 파랑·한쪽은 호박색 오드아이. 신비롭게 거닐어요.' },
-      { id:'cat_choco', species:'cat', name:'초코', price:100, desc:'초콜릿빛 갈색 털에 크림색 입가·가슴. 느긋하게 방을 거닐어요.' },
+      { id:'cat_choco', species:'cat', name:'초코', price:50, desc:'초콜릿빛 갈색 털에 크림색 입가·가슴. 느긋하게 방을 거닐어요.' },
       { id:'cat_kitten', species:'cat', name:'아깽이', price:50, desc:'치즈빛 오렌지 태비 아기고양이. 뒤뚱뒤뚱 방을 쏘다녀요.' },
       { id:'cat_pink', species:'cat', name:'스핑크스', price:800, desc:'털 없는 분홍빛 주름 피부. 도도하게 방을 누벼요.' },
       { id:'tiger_orange', species:'tiger', name:'고랑이', price:1500, desc:'볼드한 검은 줄무늬의 오렌지 호랑이. 위풍당당하게 방을 누벼요.' },
       { id:'lion_mane', species:'lion', name:'갈기냥', price:1500, desc:'풍성한 갈기의 황금빛 사자. 위풍당당하게 방을 거닐어요.' },
-      { id:'cat_persian', species:'cat', name:'펠시안', price:400, desc:'납작한 얼굴에 복슬복슬 긴 털. 우아하게 방을 누벼요.' },
+      { id:'cat_persian', species:'cat', name:'펠시안', price:800, desc:'납작한 얼굴에 복슬복슬 긴 털. 우아하게 방을 누벼요.' },
       { id:'tiger_white', species:'tiger', name:'백호', price:1500, desc:'푸른 눈의 새하얀 호랑이. 늠름하게 방을 누벼요.' },
       { id:'cat_russianblue', species:'cat', name:'러시안블루', price:400, desc:'은청빛 짧은 털에 초록 눈. 조용히 방을 거닐어요.' },
-      { id:'cat_bengal2', species:'cat', name:'벵갈', price:800, desc:'야생미 물씬 로제트 무늬. 날렵하게 방을 쏘다녀요.' },
+      { id:'cat_bengal2', species:'cat', name:'벵갈', price:400, desc:'야생미 물씬 로제트 무늬. 날렵하게 방을 쏘다녀요.' },
       { id:'dog_mutt', species:'dog', name:'시고르자브', price:200, desc:'어느 동네에나 있는 씩씩한 잡종견. 꼬리 흔들며 졸졸 따라다녀요.' },
-      { id:'cat_panther', species:'cat', name:'블랙팬서', price:1500, desc:'칠흑빛 근육질의 흑표범. 소리 없이 방을 누비는 한정판 위엄.' }
+      { id:'cat_panther', species:'cat', name:'블랙팬서', price:1500, desc:'칠흑빛 근육질의 흑표범. 소리 없이 방을 누비는 한정판 위엄.' },
+      { id:'dog_baekgu', species:'dog', name:'백구', price:50, desc:'온 동네가 아는 새하얀 토종개. 사람만 보면 꼬리가 헬리콥터.' },
+      { id:'dog_shiba', species:'dog', name:'시바', price:400, desc:'새침한 표정 뒤에 장난기 가득. 마음을 열면 껌딱지가 돼요.' },
+      { id:'dog_corgi', species:'dog', name:'코기', price:800, desc:'짧은 다리로 통통, 복슬 엉덩이가 트레이드마크.' },
+      { id:'dog_dalmatian', species:'dog', name:'달마시안', price:100, desc:'까만 점박이 무늬가 하나하나 다 달라요. 달리기라면 자신 있음.' },
+      { id:'dog_dachshund', species:'dog', name:'닥스훈트', price:400, desc:'기다란 소시지 몸에 씩씩한 성격. 굴 파기 챔피언.' },
+      { id:'dog_bulldog', species:'dog', name:'불독', price:50, desc:'주름진 얼굴로 뚱한 척, 사실은 애교쟁이 순둥이.' },
+      { id:'dog_injeolmi', species:'dog', name:'인절미', price:800, desc:'말랑말랑 콩고물 빛 털뭉치. 안으면 떡처럼 쫀득.' },
+      { id:'dog_poodle', species:'dog', name:'스탠다드푸들', price:200, desc:'우아한 곱슬머리 신사. 똑똑하기로 소문났어요.' },
+      { id:'dog_beagle', species:'dog', name:'비글', price:200, desc:'코가 이끄는 대로 온 집안 탐험. 호기심 대장.' },
+      { id:'dog_sukhee', species:'dog', name:'숙희', price:800, desc:'동네 골목대장 누렁이. 정 많고 의리 넘쳐요.' },
+      { id:'dog_doberman', species:'dog', name:'도베르만', price:800, desc:'날렵한 근육질 경비대장. 겉은 시크, 속은 다정.' },
+      { id:'dog_pug', species:'dog', name:'퍼그', price:800, desc:'찌글 주름과 똥그란 눈망울. 코고는 소리마저 사랑스러워.' },
+      { id:'dog_shepherd', species:'dog', name:'저먼셰퍼드', price:800, desc:'믿음직한 명견. 한번 주인은 영원한 주인.' },
+      { id:'dog_bordercollie', species:'dog', name:'보더콜리', price:400, desc:'천재 견공. 눈빛만으로 양떼도 척척.' },
+      { id:'dog_spitz', species:'dog', name:'스피츠', price:50, desc:'새하얀 솜뭉치. 방긋 웃는 여우상 미소.' },
+      { id:'dog_jackrussell', species:'dog', name:'잭러셀테리어', price:800, desc:'작은 몸에 에너지 폭발. 잠시도 가만 못 있어요.' },
+      { id:'dog_labrador', species:'dog', name:'레브라도', price:400, desc:'물놀이라면 사족을 못 써요. 세상 다정한 리트리버.' },
+      { id:'dog_chowchow', species:'dog', name:'차우차우', price:400, desc:'복슬복슬 사자 갈기에 보라색 혀. 도도한 곰인형.' },
+      { id:'dog_cardigancorgi', species:'dog', name:'카디건코기', price:400, desc:'긴 꼬리 달린 코기. 짧은 다리로 총총총.' },
+      { id:'dog_greyhound', species:'dog', name:'그레이하운드', price:800, desc:'바람보다 빠른 질주 본능. 쉴 땐 세상 게을러요.' },
+      { id:'dog_shihtzu', species:'dog', name:'시츄', price:100, desc:'우아한 긴 털의 궁중견. 방석 위가 내 왕좌.' },
+      { id:'dog_stbernard', species:'dog', name:'세인트버나드', price:400, desc:'산악 구조견의 후예. 커다란 덩치에 순한 마음.' },
+      { id:'dog_bostonterrier', species:'dog', name:'보스턴테리어', price:200, desc:'턱시도 입은 신사견. 동글 눈망울이 매력.' },
+      { id:'dog_bassethound', species:'dog', name:'바셋하운드', price:800, desc:'축 처진 귀와 슬픈 눈. 느긋한 산책 파트너.' },
+      { id:'dog_happy', species:'dog', name:'해피', price:50, desc:'이름처럼 늘 행복 가득. 웃는 얼굴이 트레이드마크.' },
+      { id:'dog_welshterrier', species:'dog', name:'웰시테리어', price:800, desc:'곱슬 갈색 털의 꼬마 신사. 용감함은 대형견급.' },
+      { id:'dog_papillon', species:'dog', name:'파피용', price:100, desc:'나비 날개 같은 귀가 팔랑팔랑. 작지만 똑똑해요.' },
+      { id:'dog_newfoundland', species:'dog', name:'뉴펀들랜드', price:800, desc:'물속 구조 전문 거인. 곰만 한 덩치에 천사 마음.' },
+      { id:'dog_beardedcollie', species:'dog', name:'비어디드콜리', price:800, desc:'수염 난 장발 목양견. 바람에 휘날리는 털결.' },
+      { id:'dog_afghanhound', species:'dog', name:'아프간하운드', price:800, desc:'실크 같은 긴 털을 휘날리는 귀족. 우아함 그 자체.' },
+      { id:'dog_rottweiler', species:'dog', name:'로트와일러', price:400, desc:'든든한 경비견. 무뚝뚝해 보여도 가족 바보.' },
+      { id:'dog_pointer', species:'dog', name:'포인터', price:400, desc:'사냥감을 코로 가리키는 명사수. 늘씬한 근육질.' },
+      { id:'dog_pharaohhound', species:'dog', name:'파라오하운드', price:800, desc:'고대 벽화에서 걸어 나온 듯한 우아한 사냥개.' },
+      { id:'dog_westie', species:'dog', name:'웨스트하이랜더테리어', price:50, desc:'새하얀 털뭉치 꼬마. 당당한 걸음걸이가 매력.' },
+      { id:'dog_weimaraner', species:'dog', name:'바이마라너', price:400, desc:'은빛 회색 털에 호수빛 눈동자. 우아한 사냥개.' },
+      { id:'dog_collie', species:'dog', name:'콜리', price:400, desc:'영리한 목양견. 부드러운 갈기가 바람에 살랑.' },
+      { id:'dog_englishbulldog', species:'dog', name:'잉글리시불독', price:400, desc:'묵직한 주름 신사. 느긋함이 몸에 뱄어요.' },
+      { id:'dog_keeshond', species:'dog', name:'키스혼드', price:800, desc:'복슬복슬 회색 솜사자. 웃는 여우상 표정.' },
+      { id:'dog_frenchbulldog', species:'dog', name:'프렌치불독', price:400, desc:'박쥐 귀에 납작 얼굴. 코믹한 표정의 애교쟁이.' },
+      { id:'dog_yorkshire', species:'dog', name:'요크셔테리어', price:100, desc:'비단결 털의 작은 요정. 도도함은 대형견 못지않아요.' },
+      { id:'dog_toypoodle', species:'dog', name:'토이푸들', price:100, desc:'동글동글 곱슬 인형. 어딜 가나 시선 강탈.' },
+      { id:'dog_sheltie', species:'dog', name:'셰틀랜드십독', price:200, desc:'미니 콜리. 영리하고 재빠른 꼬마 목동.' },
+      { id:'dog_minpin', species:'dog', name:'미니어처핀셔', price:400, desc:'작지만 당당한 꼬마 대장. 총총 걷는 발걸음이 야무져요.' },
+      { id:'dog_schnauzer', species:'dog', name:'슈나우저', price:400, desc:'멋진 콧수염 신사. 눈썹까지 완벽한 스타일.' },
+      { id:'dog_goldendoodle', species:'dog', name:'골든두들', price:800, desc:'곱슬 황금빛 인형. 안으면 구름처럼 폭신.' },
+      { id:'dog_bernese', species:'dog', name:'버니즈마운틴독', price:800, desc:'삼색 털의 산악 거인. 든든하고 다정한 대형견.' },
+      { id:'dog_cavalier', species:'dog', name:'캐벌리어스파니엘', price:200, desc:'물결치는 귀와 그렁한 눈. 무릎 위가 명당.' },
+      { id:'dog_akita', species:'dog', name:'아키타', price:800, desc:'충직함의 상징. 곰 같은 얼굴에 의리 가득.' },
+      { id:'dog_whippet', species:'dog', name:'휘핏', price:800, desc:'날씬한 스프린터. 달릴 땐 총알, 쉴 땐 이불속.' },
+      { id:'dog_oldenglishsheepdog', species:'dog', name:'올드잉글리시쉽독', price:400, desc:'눈을 덮은 장발 목양견. 걸어다니는 복슬 대걸레.' },
+      { id:'dog_vizsla', species:'dog', name:'비즐라', price:400, desc:'황금빛 구릿빛 사냥개. 늘 주인 곁에 껌딱지.' },
+      { id:'dog_englishsetter', species:'dog', name:'잉글리시셰터', price:800, desc:'우아한 물결무늬 털. 들판을 누비는 사냥 명견.' },
+      { id:'dog_jindo', species:'dog', name:'진돗개', price:1500, desc:'충직한 토종 명견. 한번 정한 주인은 끝까지.' },
+      { id:'dog_chinesecrested', species:'dog', name:'차이니즈크레스티드', price:400, desc:'머리와 발끝에만 깃털 장식. 독특한 멋쟁이.' },
+      { id:'dog_scottie', species:'dog', name:'스코티시테리어', price:400, desc:'까만 수염 신사. 짧은 다리로 당당하게 총총.' },
+      { id:'dog_pomeranian', species:'dog', name:'포메라니안', price:50, desc:'폭신 솜뭉치 여우. 방긋 미소가 심쿵 포인트.' },
+      { id:'dog_sharpei', species:'dog', name:'샤페이', price:400, desc:'주름 가득 접힌 얼굴. 진지한 표정의 순둥이.' },
+      { id:'dog_greatdane', species:'dog', name:'그레이트데인', price:800, desc:'우아한 거인. 세상 점잖은 대형견 신사.' },
+      { id:'dog_bullterrier', species:'dog', name:'불테리어', price:800, desc:'달걀형 얼굴에 개구쟁이 성격. 근육질 장난꾸러기.' },
+      { id:'dog_boxer', species:'dog', name:'복서', price:400, desc:'탄탄한 근육에 장난기 만점. 영원한 대형 강아지.' },
+      { id:'dog_ridgeback', species:'dog', name:'로디지안리지백', price:400, desc:'등줄기 갈기가 트레이드마크. 늠름한 사냥꾼.' },
+      { id:'dog_irishsetter', species:'dog', name:'아이리시세터', price:400, desc:'붉은 비단 털을 휘날리는 미남. 활발한 사냥개.' },
+      { id:'dog_airedale', species:'dog', name:'에어데일테일러', price:800, desc:'테리어의 왕. 곱슬 갈색 털에 당당한 기품.' }
     ];
     // @gen:end
     // 종(species) → 알뜰샵 분류 라벨. 품종(샴·벵갈 등)은 표시하지 않고 종만 노출.
@@ -998,7 +1061,7 @@
     // 구 id(고양이 전용 시절) → 신 id. RTDB 보유/활성 데이터 하위호환(normalizeGame에서 적용).
     // 구 id→신 id 매핑(수동 유지, @gen 마커 밖). 런타임 펫 정적 승격 시 tools/pet_maint.mjs(apply) 가 아래 앵커 앞에 rt_xxx:'static_id' 를 자동 삽입한다.
     const PET_ID_MIGRATE = { mackerel:'cat_mackerel', cheese:'cat_cheese', calico:'cat_calico', black:'cat_black', white:'cat_white',
-      rt_mr3n1k85:'lion_mane', rt_mr3n6laq:'cat_persian', rt_mr3nx5r4:'tiger_white', rt_mr3nyl3p:'cat_russianblue', rt_mr3ocsnm:'cat_bengal2', rt_mr5qur7u:'dog_mutt', rt_mr5sv8x4:'cat_panther', /* @rtmigrate */ };
+      rt_mr3n1k85:'lion_mane', rt_mr3n6laq:'cat_persian', rt_mr3nx5r4:'tiger_white', rt_mr3nyl3p:'cat_russianblue', rt_mr3ocsnm:'cat_bengal2', rt_mr5qur7u:'dog_mutt', rt_mr5sv8x4:'cat_panther', rt_mr6f1mcd:'dog_baekgu', rt_mr6fb7oe:'dog_shiba', rt_mr6ghss6:'dog_corgi', rt_mr6ij84x:'dog_dalmatian', rt_mr6vozwl:'dog_dachshund', rt_mr6vpzna:'dog_bulldog', rt_mr6w3rjq:'dog_injeolmi', rt_mr6w4ovu:'dog_poodle', rt_mr6w5cl3:'dog_beagle', rt_mr6w8o44:'dog_sukhee', rt_mr6wuyag:'dog_doberman', rt_mr6wxyrh:'dog_pug', rt_mr6wyfrw:'dog_shepherd', rt_mr6x6muv:'dog_bordercollie', rt_mr6xcd01:'dog_spitz', rt_mr6xgk7i:'dog_jackrussell', rt_mr6xs8ht:'dog_labrador', rt_mr6xw297:'dog_chowchow', rt_mr6xx5v2:'dog_cardigancorgi', rt_mr6y1pec:'dog_greyhound', rt_mr6y86lf:'dog_shihtzu', rt_mr6y9bl4:'dog_stbernard', rt_mr6yciq6:'dog_bostonterrier', rt_mr6yf6sy:'dog_bassethound', rt_mr6yju2g:'dog_happy', rt_mr6ym6ic:'dog_welshterrier', rt_mr6ynrtb:'dog_papillon', rt_mr6yvytf:'dog_newfoundland', rt_mr6z60s1:'dog_beardedcollie', rt_mr6zdf4e:'dog_afghanhound', rt_mr6zee7k:'dog_rottweiler', rt_mr6zhnai:'dog_pointer', rt_mr6zp2sc:'dog_pharaohhound', rt_mr7002ni:'dog_westie', rt_mr701o1a:'dog_weimaraner', rt_mr7034ct:'dog_collie', rt_mr704oaj:'dog_englishbulldog', rt_mr708yql:'dog_keeshond', rt_mr70icee:'dog_frenchbulldog', rt_mr70kz8k:'dog_yorkshire', rt_mr70nete:'dog_toypoodle', rt_mr70olr0:'dog_sheltie', rt_mr70tagm:'dog_minpin', rt_mr70zr4e:'dog_schnauzer', rt_mr711ipv:'dog_goldendoodle', rt_mr712r5w:'dog_bernese', rt_mr714u27:'dog_cavalier', rt_mr71f4s6:'dog_akita', rt_mr71g2qv:'dog_whippet', rt_mr71j3o8:'dog_oldenglishsheepdog', rt_mr71p8a9:'dog_vizsla', rt_mr71pvl2:'dog_englishsetter', rt_mr71sjl4:'dog_jindo', rt_mr720kdq:'dog_chinesecrested', rt_mr721yww:'dog_scottie', rt_mr7250fd:'dog_pomeranian', rt_mr72622k:'dog_sharpei', rt_mr72coei:'dog_greatdane', rt_mr72gm4s:'dog_bullterrier', rt_mr72hfg6:'dog_boxer', rt_mr72jmjd:'dog_ridgeback', rt_mr72kqss:'dog_irishsetter', rt_mr72nlf9:'dog_airedale', /* @rtmigrate */ };
     // size = 표시 배율(1=기본, 팔레트 아이콘 크기에 반영). footW×footH = 배치 격자 점유(가로×세로 칸). 캣타워=1×2, 스크래처=1×1, 화장실=1×1(정사각), 방석·밥그릇=1×1(작게, 밥그릇<방석). itemFoot()/furnScale()로 배치·팔레트에 반영.
     const ITEM_CATALOG = [
       { id:'pond', cat:'rest',     name:'연못',   price:70, size:2.6, footW:3, footH:2, floor:true, desc:'수련·잉어가 사는 작은 연못. 물 위에 다른 가구를 올릴 수 있어요.' },
@@ -1168,29 +1231,92 @@
     function _petPlaceholder(s){ return '<span class="petph" style="width:'+s+'px;height:'+s+'px;display:inline-flex;align-items:flex-end;justify-content:center;overflow:hidden;">'+eggSvg(0,{h:Math.round(s*0.72)})+'</span>'; }
     // @gen:pet-sprites — 자동생성(tools/build_pets.py). tools/pets.json 편집 후 재실행.
     const PET_SPRITES = {
-      cat_mackerel:{ walk:'assets/pets/cat/cat_mackerel/walk.png', frames:6, stills:true },
-      cat_cheese:{ walk:'assets/pets/cat/cat_cheese/walk.png', frames:6, stills:true },
+      cat_mackerel:{ walk:'assets/pets/cat/cat_mackerel/walk.png', frames:6, stills:true, scale:0.7 },
+      cat_cheese:{ walk:'assets/pets/cat/cat_cheese/walk.png', frames:6, stills:true, scale:0.7 },
       cat_calico:{ walk:'assets/pets/cat/cat_calico/walk.png', frames:6, stills:true },
-      cat_black:{ walk:'assets/pets/cat/cat_black/walk.png', frames:6, stills:true },
-      cat_white:{ walk:'assets/pets/cat/cat_white/walk.png', frames:6, stills:true },
-      cat_fluffy:{ walk:'assets/pets/cat/cat_fluffy/walk.png', frames:6, stills:true },
-      cat_tuxedo:{ walk:'assets/pets/cat/cat_tuxedo/walk.png', frames:6, stills:true },
-      cat_chaos:{ walk:'assets/pets/cat/cat_chaos/walk.png', frames:6, stills:true },
-      cat_siamese:{ walk:'assets/pets/cat/cat_siamese/walk.png', frames:6, stills:true },
+      cat_black:{ walk:'assets/pets/cat/cat_black/walk.png', frames:6, stills:true, scale:0.7 },
+      cat_white:{ walk:'assets/pets/cat/cat_white/walk.png', frames:6, stills:true, scale:0.7 },
+      cat_fluffy:{ walk:'assets/pets/cat/cat_fluffy/walk.png', frames:6, stills:true, scale:0.7 },
+      cat_tuxedo:{ walk:'assets/pets/cat/cat_tuxedo/walk.png', frames:6, stills:true, scale:0.6 },
+      cat_chaos:{ walk:'assets/pets/cat/cat_chaos/walk.png', frames:6, stills:true, scale:0.5 },
+      cat_siamese:{ walk:'assets/pets/cat/cat_siamese/walk.png', frames:6, stills:true, scale:0.8 },
       cat_bengal:{ walk:'assets/pets/cat/cat_bengal/walk.png', frames:6, stills:true },
-      cat_fold:{ walk:'assets/pets/cat/cat_fold/walk.png', frames:6, stills:true },
+      cat_fold:{ walk:'assets/pets/cat/cat_fold/walk.png', frames:6, stills:true, scale:0.7 },
       cat_bora:{ walk:'assets/pets/cat/cat_bora/walk.png', frames:6, stills:true },
-      cat_choco:{ walk:'assets/pets/cat/cat_choco/walk.png', frames:6, stills:true },
-      cat_kitten:{ walk:'assets/pets/cat/cat_kitten/walk.png', frames:6, stills:true, scale:0.5 },
+      cat_choco:{ walk:'assets/pets/cat/cat_choco/walk.png', frames:6, stills:true, scale:0.7 },
+      cat_kitten:{ walk:'assets/pets/cat/cat_kitten/walk.png', frames:6, stills:true, scale:0.4 },
       cat_pink:{ walk:'assets/pets/cat/cat_pink/walk.png', frames:6, stills:true },
       tiger_orange:{ walk:'assets/pets/tiger/tiger_orange/walk.png', frames:6, stills:true, scale:5 },
       lion_mane:{ walk:'assets/pets/lion/lion_mane/walk.png', frames:6, stills:true, scale:5 },
-      cat_persian:{ walk:'assets/pets/cat/cat_persian/walk.png', frames:6, stills:true },
+      cat_persian:{ walk:'assets/pets/cat/cat_persian/walk.png', frames:6, stills:true, scale:0.7 },
       tiger_white:{ walk:'assets/pets/tiger/tiger_white/walk.png', frames:6, stills:true, scale:5 },
       cat_russianblue:{ walk:'assets/pets/cat/cat_russianblue/walk.png', frames:6, stills:true },
       cat_bengal2:{ walk:'assets/pets/cat/cat_bengal2/walk.png', frames:6, stills:true },
       dog_mutt:{ walk:'assets/pets/dog/dog_mutt/walk.png', frames:6, stills:true },
-      cat_panther:{ walk:'assets/pets/cat/cat_panther/walk.png', frames:6, stills:true, scale:3 }
+      cat_panther:{ walk:'assets/pets/cat/cat_panther/walk.png', frames:6, stills:true, scale:3 },
+      dog_baekgu:{ walk:'assets/pets/dog/dog_baekgu/walk.png', frames:8, stills:true },
+      dog_shiba:{ walk:'assets/pets/dog/dog_shiba/walk.png', frames:8, stills:true },
+      dog_corgi:{ walk:'assets/pets/dog/dog_corgi/walk.png', frames:6, stills:true, scale:1.2 },
+      dog_dalmatian:{ walk:'assets/pets/dog/dog_dalmatian/walk.png', frames:6, stills:true, scale:1.4 },
+      dog_dachshund:{ walk:'assets/pets/dog/dog_dachshund/walk.png', frames:6, stills:true, scale:0.8 },
+      dog_bulldog:{ walk:'assets/pets/dog/dog_bulldog/walk.png', frames:6, stills:true, scale:1.2 },
+      dog_injeolmi:{ walk:'assets/pets/dog/dog_injeolmi/walk.png', frames:6, stills:true, scale:1.4 },
+      dog_poodle:{ walk:'assets/pets/dog/dog_poodle/walk.png', frames:6, stills:true, scale:2 },
+      dog_beagle:{ walk:'assets/pets/dog/dog_beagle/walk.png', frames:6, stills:true },
+      dog_sukhee:{ walk:'assets/pets/dog/dog_sukhee/walk.png', frames:6, stills:true, scale:2 },
+      dog_doberman:{ walk:'assets/pets/dog/dog_doberman/walk.png', frames:8, stills:true, scale:2 },
+      dog_pug:{ walk:'assets/pets/dog/dog_pug/walk.png', frames:8, stills:true },
+      dog_shepherd:{ walk:'assets/pets/dog/dog_shepherd/walk.png', frames:8, stills:true, scale:2 },
+      dog_bordercollie:{ walk:'assets/pets/dog/dog_bordercollie/walk.png', frames:8, stills:true, scale:1.2 },
+      dog_spitz:{ walk:'assets/pets/dog/dog_spitz/walk.png', frames:6, stills:true },
+      dog_jackrussell:{ walk:'assets/pets/dog/dog_jackrussell/walk.png', frames:6, stills:true },
+      dog_labrador:{ walk:'assets/pets/dog/dog_labrador/walk.png', frames:6, stills:true, scale:1.5 },
+      dog_chowchow:{ walk:'assets/pets/dog/dog_chowchow/walk.png', frames:6, stills:true, scale:1.6 },
+      dog_cardigancorgi:{ walk:'assets/pets/dog/dog_cardigancorgi/walk.png', frames:6, stills:true, scale:1.2 },
+      dog_greyhound:{ walk:'assets/pets/dog/dog_greyhound/walk.png', frames:6, stills:true, scale:1.8 },
+      dog_shihtzu:{ walk:'assets/pets/dog/dog_shihtzu/walk.png', frames:6, stills:true, scale:0.7 },
+      dog_stbernard:{ walk:'assets/pets/dog/dog_stbernard/walk.png', frames:6, stills:true, scale:1.5 },
+      dog_bostonterrier:{ walk:'assets/pets/dog/dog_bostonterrier/walk.png', frames:6, stills:true },
+      dog_bassethound:{ walk:'assets/pets/dog/dog_bassethound/walk.png', frames:6, stills:true, scale:1.4 },
+      dog_happy:{ walk:'assets/pets/dog/dog_happy/walk.png', frames:6, stills:true },
+      dog_welshterrier:{ walk:'assets/pets/dog/dog_welshterrier/walk.png', frames:6, stills:true, scale:1.4 },
+      dog_papillon:{ walk:'assets/pets/dog/dog_papillon/walk.png', frames:6, stills:true, scale:0.8 },
+      dog_newfoundland:{ walk:'assets/pets/dog/dog_newfoundland/walk.png', frames:6, stills:true, scale:3 },
+      dog_beardedcollie:{ walk:'assets/pets/dog/dog_beardedcollie/walk.png', frames:6, stills:true, scale:1.2 },
+      dog_afghanhound:{ walk:'assets/pets/dog/dog_afghanhound/walk.png', frames:6, stills:true, scale:1.2 },
+      dog_rottweiler:{ walk:'assets/pets/dog/dog_rottweiler/walk.png', frames:6, stills:true, scale:1.2 },
+      dog_pointer:{ walk:'assets/pets/dog/dog_pointer/walk.png', frames:6, stills:true },
+      dog_pharaohhound:{ walk:'assets/pets/dog/dog_pharaohhound/walk.png', frames:6, stills:true, scale:1.4 },
+      dog_westie:{ walk:'assets/pets/dog/dog_westie/walk.png', frames:6, stills:true, scale:0.7 },
+      dog_weimaraner:{ walk:'assets/pets/dog/dog_weimaraner/walk.png', frames:6, stills:true, scale:1.2 },
+      dog_collie:{ walk:'assets/pets/dog/dog_collie/walk.png', frames:6, stills:true, scale:1.2 },
+      dog_englishbulldog:{ walk:'assets/pets/dog/dog_englishbulldog/walk.png', frames:6, stills:true, scale:1.2 },
+      dog_keeshond:{ walk:'assets/pets/dog/dog_keeshond/walk.png', frames:6, stills:true, scale:1.5 },
+      dog_frenchbulldog:{ walk:'assets/pets/dog/dog_frenchbulldog/walk.png', frames:6, stills:true },
+      dog_yorkshire:{ walk:'assets/pets/dog/dog_yorkshire/walk.png', frames:6, stills:true, scale:0.6 },
+      dog_toypoodle:{ walk:'assets/pets/dog/dog_toypoodle/walk.png', frames:6, stills:true, scale:0.6 },
+      dog_sheltie:{ walk:'assets/pets/dog/dog_sheltie/walk.png', frames:6, stills:true },
+      dog_minpin:{ walk:'assets/pets/dog/dog_minpin/walk.png', frames:6, stills:true, scale:0.8 },
+      dog_schnauzer:{ walk:'assets/pets/dog/dog_schnauzer/walk.png', frames:6, stills:true },
+      dog_goldendoodle:{ walk:'assets/pets/dog/dog_goldendoodle/walk.png', frames:6, stills:true },
+      dog_bernese:{ walk:'assets/pets/dog/dog_bernese/walk.png', frames:6, stills:true, scale:2.5 },
+      dog_cavalier:{ walk:'assets/pets/dog/dog_cavalier/walk.png', frames:6, stills:true },
+      dog_akita:{ walk:'assets/pets/dog/dog_akita/walk.png', frames:6, stills:true, scale:2.5 },
+      dog_whippet:{ walk:'assets/pets/dog/dog_whippet/walk.png', frames:6, stills:true },
+      dog_oldenglishsheepdog:{ walk:'assets/pets/dog/dog_oldenglishsheepdog/walk.png', frames:6, stills:true, scale:1.2 },
+      dog_vizsla:{ walk:'assets/pets/dog/dog_vizsla/walk.png', frames:6, stills:true, scale:1.2 },
+      dog_englishsetter:{ walk:'assets/pets/dog/dog_englishsetter/walk.png', frames:6, stills:true, scale:1.4 },
+      dog_jindo:{ walk:'assets/pets/dog/dog_jindo/walk.png', frames:6, stills:true, scale:2 },
+      dog_chinesecrested:{ walk:'assets/pets/dog/dog_chinesecrested/walk.png', frames:6, stills:true },
+      dog_scottie:{ walk:'assets/pets/dog/dog_scottie/walk.png', frames:6, stills:true },
+      dog_pomeranian:{ walk:'assets/pets/dog/dog_pomeranian/walk.png', frames:6, stills:true, scale:0.7 },
+      dog_sharpei:{ walk:'assets/pets/dog/dog_sharpei/walk.png', frames:6, stills:true, scale:1.5 },
+      dog_greatdane:{ walk:'assets/pets/dog/dog_greatdane/walk.png', frames:6, stills:true, scale:2.5 },
+      dog_bullterrier:{ walk:'assets/pets/dog/dog_bullterrier/walk.png', frames:6, stills:true, scale:1.4 },
+      dog_boxer:{ walk:'assets/pets/dog/dog_boxer/walk.png', frames:6, stills:true, scale:1.5 },
+      dog_ridgeback:{ walk:'assets/pets/dog/dog_ridgeback/walk.png', frames:6, stills:true },
+      dog_irishsetter:{ walk:'assets/pets/dog/dog_irishsetter/walk.png', frames:6, stills:true },
+      dog_airedale:{ walk:'assets/pets/dog/dog_airedale/walk.png', frames:6, stills:true, scale:2.2 }
     };
     // @gen:end
     function hasSprite(id){ return !!PET_SPRITES[id]; }
@@ -2500,7 +2626,11 @@
       const fi=$('dpZip'), file=fi&&fi.files&&fi.files[0], editing=!!_devPetTarget;
       if(!editing && !file){ toast('zip 파일을 선택하세요', true); return; }
       const btn=$('dpBtn'); if(btn){ btn.disabled=true; btn.textContent='처리 중…'; }
-      const fields={ name, species:(val('dpSpecies')||'cat').trim()||'cat', speciesLabel:(val('dpSpeciesLabel')||'').trim(),
+      // 분류: 드롭다운이 기존 분류면 그 값(라벨은 SPECIES_LABEL에서), '직접 입력'이면 코드·라벨 텍스트에서.
+      const _spSel=val('dpSpeciesSel'), _useCustom=(!_spSel||_spSel==='__custom__');
+      const _species=_useCustom?((val('dpSpecies')||'cat').trim()||'cat'):_spSel;
+      const _label=_useCustom?((val('dpSpeciesLabel')||'').trim()):((SPECIES_LABEL&&SPECIES_LABEL[_spSel])||_spSel);
+      const fields={ name, species:_species, speciesLabel:_label,
         tier:val('dpTier')||'normal', scale:Number(val('dpScale'))||1, by:state.userEmail||'', at:new Date().toISOString() };
       const p = file ? _processPetZip(file) : Promise.resolve(null);
       p.then(art=>{
@@ -3339,6 +3469,13 @@
     function setShopSub(s){ _shopSub=s; _shopSelCat=null; renderCatHouse(); }
     let _shopFurnCat='all';   // 알뜰샵 가구 탭의 기능분류 필터(전체/케어/휴식/놀이/장식) — 배치 인벤토리와 같은 ITEM_CATALOG.cat 기준
     function setShopFurnCat(c){ _shopFurnCat=c; renderCatHouse(); }
+    let _shopPetSpecies='all';   // 알뜰샵 펫 탭의 종(species) 필터(전체/고양이/강아지/…) — 카탈로그에 존재하는 종만 노출
+    function setShopPetSpecies(s){ _shopPetSpecies=s; _shopSelCat=null; renderCatHouse(); }
+    // 펫 탭 종 필터 탭 목록 — SPECIES_LABEL 순서로, 카탈로그에 실제 있는 종만(전체 먼저)
+    function shopPetSpeciesTabs(){ const order=Object.keys(SPECIES_LABEL); const present=[];
+      PET_CATALOG.forEach(function(c){ if(present.indexOf(c.species)<0) present.push(c.species); });
+      present.sort(function(a,b){ const ia=order.indexOf(a), ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); });
+      return [['all','전체']].concat(present.map(function(sp){ return [sp, SPECIES_LABEL[sp]||sp]; })); }
     // 알뜰샵에서 미리보기로 "선택"한 펫 — 선택하면 카드가 강조되고 썸네일이 옆으로 걷는 스프라이트(우리집 펫 카드와 동일)로 바뀐다.
     let _shopSelCat=null;
     function selectShopCat(id){ _shopSelCat=(_shopSelCat===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
@@ -3423,8 +3560,12 @@
       }
       if(_shopSub==='cats'){
         const owntag='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>보유</span>';
-        // 등급 낮은 것부터 높은 순으로 정렬. 특별(epic) 이상은 알뜰샵 직접 구매 불가 → 펫알(가챠) 전용 표기.
-        const cats=PET_CATALOG.slice().sort((a,b)=>tierRank(petTierOf(a.id))-tierRank(petTierOf(b.id)));
+        // 종(species) 필터 탭 — 카탈로그에 있는 종이 2개↑일 때만 노출(가구 탭의 shopfurncat 미러)
+        const PSHOP_TABS=shopPetSpeciesTabs();
+        if(!PSHOP_TABS.some(t=>t[0]===_shopPetSpecies)) _shopPetSpecies='all';
+        if(PSHOP_TABS.length>2) h+='<div class="subseg shopfurncat">'+PSHOP_TABS.map(t=>'<button class="'+(_shopPetSpecies===t[0]?'on':'')+'" onclick="setShopPetSpecies(\''+t[0]+'\')">'+escapeHtml(t[1])+'</button>').join('')+'</div>';
+        // 등급 낮은 것부터 높은 순으로 정렬. 특별(epic) 이상은 알뜰샵 직접 구매 불가 → 펫알(가챠) 전용 표기. 선택 종만 필터.
+        const cats=PET_CATALOG.slice().filter(c=>_shopPetSpecies==='all'||c.species===_shopPetSpecies).sort((a,b)=>tierRank(petTierOf(a.id))-tierRank(petTierOf(b.id)));
         // 🌟 이달의 펫 배너(미보유·구매 가능한 등급일 때만 강조)
         { const fid=featuredCatId();
           if(fid){ const fc=PET_CATALOG.find(x=>x.id===fid); if(fc){
@@ -3651,7 +3792,7 @@
     }
     // 테스트 배정(등급당 1) — 펫알=고양이 / 랜덤박스=가구
     // @gen:pet-tier — 자동생성(tools/build_pets.py). tools/pets.json 의 tier 편집 후 재실행.
-    const CAT_TIER = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'rare', cat_black:'rare', cat_white:'rare', cat_fluffy:'rare', cat_tuxedo:'rare', cat_chaos:'rare', cat_siamese:'legend', cat_bengal:'uncommon', cat_fold:'rare', cat_bora:'epic', cat_choco:'uncommon', cat_kitten:'normal', cat_pink:'legend', tiger_orange:'limited', lion_mane:'limited', cat_persian:'epic', tiger_white:'limited', cat_russianblue:'epic', cat_bengal2:'legend', dog_mutt:'rare', cat_panther:'limited' };
+    const CAT_TIER = { cat_mackerel:'normal', cat_cheese:'uncommon', cat_calico:'uncommon', cat_black:'normal', cat_white:'normal', cat_fluffy:'normal', cat_tuxedo:'uncommon', cat_chaos:'uncommon', cat_siamese:'legend', cat_bengal:'normal', cat_fold:'normal', cat_bora:'epic', cat_choco:'normal', cat_kitten:'normal', cat_pink:'legend', tiger_orange:'limited', lion_mane:'limited', cat_persian:'legend', tiger_white:'limited', cat_russianblue:'epic', cat_bengal2:'epic', dog_mutt:'rare', cat_panther:'limited', dog_baekgu:'normal', dog_shiba:'epic', dog_corgi:'legend', dog_dalmatian:'uncommon', dog_dachshund:'epic', dog_bulldog:'normal', dog_injeolmi:'legend', dog_poodle:'rare', dog_beagle:'rare', dog_sukhee:'legend', dog_doberman:'legend', dog_pug:'legend', dog_shepherd:'legend', dog_bordercollie:'epic', dog_spitz:'normal', dog_jackrussell:'legend', dog_labrador:'epic', dog_chowchow:'epic', dog_cardigancorgi:'epic', dog_greyhound:'legend', dog_shihtzu:'uncommon', dog_stbernard:'epic', dog_bostonterrier:'rare', dog_bassethound:'legend', dog_happy:'normal', dog_welshterrier:'legend', dog_papillon:'uncommon', dog_newfoundland:'legend', dog_beardedcollie:'legend', dog_afghanhound:'legend', dog_rottweiler:'epic', dog_pointer:'epic', dog_pharaohhound:'legend', dog_westie:'normal', dog_weimaraner:'epic', dog_collie:'epic', dog_englishbulldog:'epic', dog_keeshond:'legend', dog_frenchbulldog:'epic', dog_yorkshire:'uncommon', dog_toypoodle:'uncommon', dog_sheltie:'rare', dog_minpin:'epic', dog_schnauzer:'epic', dog_goldendoodle:'legend', dog_bernese:'legend', dog_cavalier:'rare', dog_akita:'legend', dog_whippet:'legend', dog_oldenglishsheepdog:'epic', dog_vizsla:'epic', dog_englishsetter:'legend', dog_jindo:'limited', dog_chinesecrested:'epic', dog_scottie:'epic', dog_pomeranian:'normal', dog_sharpei:'epic', dog_greatdane:'legend', dog_bullterrier:'legend', dog_boxer:'epic', dog_ridgeback:'epic', dog_irishsetter:'epic', dog_airedale:'legend' };
     // @gen:end
     const ITEM_TIER = { pond:'limited', cushion:'normal', bowl:'uncommon', scratcher:'rare', pethouse:'epic', tower:'legend', catwheel:'limited',
       rug:'rare', fishtank:'epic', window:'legend', fireplace:'legend', fan:'legend', hammock:'legend', teaser:'legend', wallclock:'legend', hangplant:'legend', mobile:'legend', chandelier:'limited', jingleball:'legend',
