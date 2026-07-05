@@ -858,6 +858,7 @@
     .shopcard .meta { flex:1; min-width:0; }
     .shopcard .meta b { font-size:15px; font-weight:800; display:flex; align-items:center; gap:6px; }
     .shopcard .meta .desc { font-size:11.5px; color:var(--sub); font-weight:500; margin-top:3px; line-height:1.4; }
+    .shopcard .meta .desc b { display:inline; font-size:inherit; font-weight:800; }   /* 설명 속 강조는 인라인(제목 b의 flex 블록화 방지 → 한 줄 유지) */
     .shopcard .meta .price { display:inline-flex; align-items:center; gap:5px; font-size:13px; font-weight:800; margin-top:8px; }
     .shopcard .meta .price .ci { width:17px; height:17px; display:inline-flex; }
     .shopcard .act { flex:none; }

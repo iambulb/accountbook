@@ -3775,7 +3775,7 @@
           const dEnough=coins()>=DDEUL_PRICE && gold()>=DDEUL_GOLD;
           const dact=dEnough?'<button class="buy" aria-label="뜰알 구매('+DDEUL_PRICE+' 은화·금화 '+DDEUL_GOLD+')" onclick="openDdeul()">구매</button>':'<button class="buy dis" disabled>'+(coins()<DDEUL_PRICE?(DDEUL_PRICE-coins())+' 은화 부족':'금화 '+(DDEUL_GOLD-gold())+' 부족')+'</button>';
           h+='<div class="shopcard ddeul-card"><div class="thumb">'+ddeulEggSvg({h:64})+'</div>'+
-            '<div class="meta"><b class="tier-rainbow">뜰알</b> <span class="tagmini tier-rainbow">한정 픽업</span><div class="desc">'+(pk?'<b class="tier-rainbow">'+pk+'</b> · ':'')+'한정 펫은 오직 뜰알에서만!</div>'+
+            '<div class="meta"><b class="tier-rainbow ddeul-title">뜰알 <span class="tagmini tier-rainbow">한정 픽업</span></b><div class="desc ddeul-desc">'+(pk?'<b class="ddeul-pk tier-rainbow">'+pk+'</b> · ':'')+'한정 펫은 오직 뜰알에서만!</div>'+
             '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+DDEUL_PRICE+' <span class="ci">'+goldSvg({h:16})+'</span>'+DDEUL_GOLD+'</span></div>'+
             '<div class="act">'+dact+'</div></div>'; }
         const enough=coins()>=GACHA_PRICE;
