@@ -1504,13 +1504,15 @@
     function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); if(rainbow) pal.X='RAINBOW'; return pxSvg(M_EGG_C3, pal, opt); }   // 무지개알 열 때: 테두리(X)까지 무지개색
     // 픽셀 껍질 조각 렌더(A=큰 곡면, B=삼각, C=작은 조각). rainbow면 무지갯빛 껍질.
     // 🌱 뜰알(한정 픽업) — 로그인 메인 아이콘(egg-garden.svg)의 '고양이 얼굴 알' + 뜰(풀밭·흙) 픽셀. 무지개는 rainbowArcSvg 재사용.
-    const M_DDEUL=[   // 🥚 뜰알(41×22) — 처음부터 새로 그린 '둥근 타원(계란형)' 알(펫알 무시). 위쪽이 뾰족하지 않게 둥글고, 4톤 명암(I 하이라이트·W 라이트·S 미드·D 섀도)+X 외곽선으로 곡면 광택. 안쪽 둥근 검은 고양이(B·H 이마/귀 음영·회색눈 E 1px씩·분홍입 P 가로2px·뾰족 귀). 알 '위' 꽃 한 송이(F/f/C·중심 Y·줄기 t/T), 알 '하단 실루엣'에 흙(R/r/o/n)·이끼(G/g/m) 덕지덕지.
-      "..........fff.........","..........FCF.........","..........CYC.........","..........fff.........","...........T..........","..........tt..........",".........t.t..........",
-      "........XXXXXX........","......XXWWWWWWXX......",".....XWWWWWWWWWWX.....","....XWWWIIIIWWWWWX....","....XWWIIIIWWWWWWX....","...XWWIIIIIWWWWWWDX...","...XWIIIIIWWWWWWWDX...","..XWIIIIIWWWWWWWWWDX..","..XWIIIIWWWWWWWWWSDX..",
-      ".XWIIIIWWWWWWWWWSSSDX.",".XWIIIWWBWWWWWBWSSSDX.",".XWIIWWBHBBBBBHBWSSDX.",".XWIWWWBBBBBBBBBWSSDX.",".XWWWWBBBHHHHHBBWSSDX.","XWWWWBBBBBBBBBBBBSSDDX","XWWWWBBBBBBBBBBBBSSDDX","XWWWBBBBBBBBBBBBBBSDDX","XWWWBBBBEBBBBBEBBBSDDX","XWWWBBBBBBBBBBBBBBSDDX",
-      "RXWWWBBBBBBBBBBBBSSDXR","rXWWWBBBBBPPBBBBBSSDXr","RGDDWSBBBBBBBBBBSSDDXR","GXDDSSSBBBBBBBBSSSDDg.",".RXDDSSSSBBBBSSSSDDGR.",".RgDDDSSSSSSSSSSDDDXr.",".rRGDDDmSSSSSSSmDDXrR.","..RXDDDDSmSSSmDDDDgR..","..rRXDDDgDDmDDgDDGRR..",
-      "...RrXgDDDDDDDDXgRR...","...rRRrGXGXGXGXrRRr...","....RrRRrRRrRRrRRr....",".....RRroorRnorRr.....",".....RrRRrrnrRRrR.....",".......RrRRrRRr......."];
-    const DDEUL_PAL={X:'#8d8368',D:'#cfc7b4',S:'#e4ddcc',W:'#f6f2e8',I:'#fffdf6',B:'#2b2b31',H:'#3c3c45',E:'#c9ccd4',P:'#f2a0b4',R:'#9c6a3c',r:'#754b26',o:'#835530',n:'#5e3a1c',G:'#6fbf46',g:'#4e9636',m:'#8ed46f',F:'#f9b9d0',f:'#ef8fb4',C:'#ff9ec2',Y:'#ffe06a',t:'#4e9636',T:'#3f7a2c'};
+    const M_DDEUL=[   // 🥚 뜰알(24×31) — 더 둥글고(세로 축소) 4톤 명암(I 하이라이트·W 라이트·S 미드·D 섀도)+X 외곽선. 안쪽 검은 고양이(B, 이마/귀 음영 H·안쪽귀 j·연회색눈 E·분홍코 P, 귀 사이 '틈'을 비워 뾰족 귀 2개). 흙(R/r/o/n)·이끼(G/g/m)는 알 하단 '실루엣 안'에 섞어 넣어(길어지지 않게) 알과 합쳐 봄. 알 위 꽃 한 송이(F/f/C·중심 Y·줄기 t/T).
+      "...........fCf..........","...........CYC..........","...........fCf..........","............t...........","...........tT..........",
+      "..........XXXX..........","........XXXXXXXX........",".......XXIIIIWWXX.......","......XIIIIIWWWWWX......",".....XIIIIIWWWWWWSX.....",
+      "....XXIIIIWWWWWWSSXX....","....XIIIIWWWWWWSSSSX....","...XIIIIWWWWWWWSSSSSX...","...XIIBBWWWWWWSSBBSSX...","..XIIIBHBWWWWSSBHBSSSX..",
+      "..XIIBBHBBWWSSBBHBBSDX..","..XIIBBBBBBBBBBBBBBDDX..","..XIWBBBBBBBBBBBBBBDDX..",".XIIWHBBBBBBBBBBBBHDDDX.",".XIWWBBBjEEBBEEjBBBDDDX.",
+      "..XWWBBBjEEBBEEjBBBDDX..","..XWWBBBBBBBBBBBBBBDDX..","..XWWWBBBBBoPoBBBBBDDX..","..XWWWBBBBBBBBBBBBDDDX..","...XWSSBBBBBBBBBBDDDX...",
+      "...XSSSSBBBBBBBBDDDDX...","....RrSSSSBBBBDDnRDX....","....XRrGSSDDDDGrRoXX....",".....RromDDDDmrRrXX.....","......RronRnroRRRg......",
+      "........roRnrRRX........"];
+    const DDEUL_PAL={X:'#8d8368',D:'#d8d0bd',S:'#eae3d2',W:'#f7f3ea',I:'#fffef8',B:'#2b2b31',H:'#43434e',j:'#20202a',E:'#d7dae2',P:'#f2a0b4',R:'#9c6a3c',r:'#754b26',o:'#835530',n:'#5e3a1c',G:'#6fbf46',g:'#4e9636',m:'#8ed46f',F:'#f9b9d0',f:'#ef8fb4',C:'#ff9ec2',Y:'#ffe06a',t:'#4e9636',T:'#3f7a2c'};
     const M_DDEUL_FLOOR=[   // 뜰 바닥 = 풀밭(G/g) + 흙(R/r)
       "...GGGGGGGGGGGGGGGGGG...",".GGGGGGGGGGGGGGGGGGGGGG.","gggggggggggggggggggggggg","RRRRRRRRRRRRRRRRRRRRRRRR",".rrrrrrrrrrrrrrrrrrrrrr."];
     const DDEUL_FLOOR_PAL={G:'#7cc652',g:'#5aa63c',R:'#a6703f',r:'#7c5028'};
@@ -1528,16 +1530,16 @@
     function auraSvg(color, opt){ return pxSvg(M_AURA, {X:color||'currentColor',H:'#ffffff'}, opt); }
     function spark4Svg(color, opt){ return pxSvg(M_SPARK4, {X:color||'currentColor',H:'#ffffff'}, opt); }   // 뽑기 트윙클용(색 지정 4점 별). 아이콘용 sparkSvg(opt)와 구분.
     // 층층 픽셀 빛: 은은한 오오라 + 서로 반대로 도는 광선 2겹(그냥 회전만 하지 않고 맥동·역회전으로 살아있게). 색은 currentColor(등급색) 상속.
-    function lightLayers(o){ o=o||{}; const a=o.aura||200, r=o.rays||240;
-      return '<span class="ll-aura">'+auraSvg('currentColor',{h:a})+'</span>'+
-             '<span class="ll-rays a">'+raysSvg('currentColor',{h:r})+'</span>'+
-             '<span class="ll-rays b">'+raysSvg('currentColor',{h:Math.round(r*0.72)})+'</span>'; }
+    function lightLayers(o){ o=o||{}; const a=o.aura||200, r=o.rays||240, c=o.rainbow?'RAINBOW':'currentColor';   // rainbow=true면 빛 자체가 움직이는 무지개(한정 전용)
+      return '<span class="ll-aura">'+auraSvg(c,{h:a})+'</span>'+
+             '<span class="ll-rays a">'+raysSvg(c,{h:r})+'</span>'+
+             '<span class="ll-rays b">'+raysSvg(c,{h:Math.round(r*0.72)})+'</span>'; }
     // 펫 주변을 도는 트윙클 도트 — 등장 후 펫 둘레에 은은히 깜빡이며 흩뿌려짐(등급색).
-    function fxAuraTwinkles(n){ n=n||6; let s='';
+    function fxAuraTwinkles(n, rainbow){ n=n||6; let s=''; const cc=rainbow?'RAINBOW':'currentColor';
       for(let i=0;i<n;i++){ const a=(i/n)*360+Math.random()*24, d=52+Math.random()*30;
         const x=Math.round(Math.cos(a*Math.PI/180)*d), y=Math.round(Math.sin(a*Math.PI/180)*d);
         const h=12+Math.round(Math.random()*8), del=(Math.random()*1.1).toFixed(2), du=(1.1+Math.random()*0.7).toFixed(2);
-        s+='<span class="fx-tw" style="--tx:'+x+'px;--ty:'+y+'px;animation-delay:'+del+'s;animation-duration:'+du+'s">'+spark4Svg('currentColor',{h:h})+'</span>'; }
+        s+='<span class="fx-tw" style="--tx:'+x+'px;--ty:'+y+'px;animation-delay:'+del+'s;animation-duration:'+du+'s">'+spark4Svg(cc,{h:h})+'</span>'; }
       return s; }
     // 랜덤박스 오픈: 뚜껑 열리고 틈새로 등급색 빛(Z). rainbow면 몸체는 무지갯빛 유지.
     function boxOpenSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?BOX_PAL_RB:BOX_PAL, {Z:tierColor||'#FBFBFD'}); return pxSvg(M_BOX_OPEN, pal, opt); }
@@ -4122,6 +4124,14 @@
       const tag=(id)=> pickupExists(id) ? '<span class="pk-tag">'+catNameSpan(id,catName(id))+'</span>' : '';
       const sep=(pickupExists(p1)&&pickupExists(p2))?'<span class="pk-tag" style="opacity:.5;">·</span>':'';
       return '<div class="pickbanner"><div class="pk-head"><span class="pk-title tier-rainbow">✨ 지금 이 펫만! 한정 픽업</span>'+tag(p1)+sep+tag(p2)+'</div>'+pickupSceneHtml('banner')+'</div>'; }
+    // 🏠 전설/신화 등장 배경 = 내 알뜰홈 방(현재 방의 벽지·바닥·배치 가구, 캠 연출) 전체화면. 펫(등장)·무대 없이 배경만.
+    function roomBackdropHtml(){
+      const spH=splitProps(placedList().sort((a,b)=>a.r-b.r), p=>propMarkup(p,false,false,true));   // live=true → 캠과 동일한 가구 연출
+      const props=spH.floor+wallPlacedList().map(p=>wallPropMarkup(p,false,true)).join('')+spH.other;
+      return '<div class="pk-roombg" aria-hidden="true"><div class="catroom">'+
+        '<div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div>'+
+        '<div class="cr-floor" style="background:'+floorCss(currentFloor())+'"></div><div class="cr-base"></div>'+
+        '<div class="cr-props">'+props+'</div></div></div>'; }
     // 등급 '이름' 라벨을 등급 색으로(펫 이름이 아니라 등급명). 한정(exclusive)=무지개(.tier-rainbow), 그 외=인라인 색(신화=#ff5fa2 등). 도감 등급 헤더 등 공용.
     function tierLabelHtml(tierId){ const ti=tierInfo(tierId); const nm=escapeHtml(ti.name);
       if(tierId==='exclusive') return '<span class="tier-rainbow">'+nm+'</span>';
@@ -5155,7 +5165,7 @@
     }
     function fxClimax(){
       const fx=$('catFx'), st=fx&&fx.querySelector('.fx-stage'), it=$('fxItem'); if(!st||!it) return;
-      const t=tierInfo(_fx.res.tier), epic=['epic','legend','limited'].indexOf(_fx.res.tier)>=0, lim=_fx.res.tier==='limited';
+      const t=tierInfo(_fx.res.tier), epic=['epic','legend','limited'].indexOf(_fx.res.tier)>=0, lim=_fx.res.tier==='limited', exL=_fx.res.tier==='exclusive';   // exL=한정 → 빛을 무지개로
       // 검은 고양이 앞발 연출 = 고등급 티저. 등급별 확률: 특별(epic) 10%·전설 90%·한정 100% (그 미만 0%). 등장 자체가 '뭔가 좋은 게 나온다'는 힌트.
       const catShow = Math.random() < (({ epic:0.10, legend:0.90, limited:1.0, exclusive:1.0 })[_fx.res.tier] || 0);   // 한정도 100% 연출 펫 등장(개발자 지정 펫)
       const rank=Math.max(0, TIER_ORDER.indexOf(_fx.res.tier));   // 0(일반)~5(신화)~6(한정)
@@ -5174,7 +5184,7 @@
         else if(isEgg){ it.innerHTML=eggCrackSvg(t.color, _fx.rainbow, {h:150}); fxCrackChips(4); }   // 알이 크게 갈라지고 틈새로 등급색 빛
         else { it.innerHTML=boxOpenSvg(t.color, _fx.rainbow, {h:150}); it.classList.add('fx-ajar'); }   // 박스: 뚜껑 열리고 틈새로 등급색 빛
         // 갈라진 틈으로 새어나오는 등급색 픽셀 빛 — 은은한 오오라 + 역회전 광선 2겹(둥근 글로우 금지, 도트). 등급↑ 크고 밝게(--lk)
-        st.insertAdjacentHTML('afterbegin','<div class="fx-cracklight" style="color:'+t.color+';--lk:'+lk+'">'+lightLayers({aura:170, rays:220})+'</div>');
+        st.insertAdjacentHTML('afterbegin','<div class="fx-cracklight" style="color:'+t.color+';--lk:'+lk+'">'+lightLayers({aura:170, rays:220, rainbow:exL})+'</div>');   // 한정=틈새로 새는 빛도 무지개
       }, t0);
       _fxT(()=>{ fxBurst(epic, isEgg, rank); }, t0+700);
       _fxT(fxReveal, t0+700+(isEgg?560:320));   // 알은 껍질 조각이 옆으로 흩어져 앉을 시간을 조금 더 준다
@@ -5183,10 +5193,11 @@
       const st=$('catFx').querySelector('.fx-stage'); if(!st) return;
       const it=$('fxItem'); if(it) it.style.visibility='hidden';
       rank=rank||0;
+      const bc=(_fx&&_fx.res&&_fx.res.tier==='exclusive')?'RAINBOW':'currentColor';   // 한정 버스트 광선=무지개
       const parts=12+rank*7;                          // 등급 높을수록 픽셀 파티클 더 많이(화려하게)
-      const rays=(rank>=3)?'<div class="fx-pixrays">'+raysSvg('currentColor',{h:360})+'</div>':'';       // 특별↑ 등급색 픽셀 광선(선버스트)
+      const rays=(rank>=3)?'<div class="fx-pixrays">'+raysSvg(bc,{h:360})+'</div>':'';       // 특별↑ 등급색(한정=무지개) 픽셀 광선(선버스트)
       const sparks=(rank>=3)?fxSparkles(6+rank*3):'';             // 특별↑ 추가 반짝임(등급색)
-      st.insertAdjacentHTML('beforeend','<div class="fx-pixflash">'+raysSvg('currentColor',{h:150})+'</div>'+rays+sparks+(isEgg?fxShells():'')+fxParticles(parts));
+      st.insertAdjacentHTML('beforeend','<div class="fx-pixflash">'+raysSvg(bc,{h:150})+'</div>'+rays+sparks+(isEgg?fxShells():'')+fxParticles(parts));
       const h=$('fxHint'); if(h) h.remove();
     }
     // 등장 연출 — 등급마다 화려함이 다르게 (CSS .fx-reveal.rank-N/.rev-rb로 계단식 확대):
@@ -5195,17 +5206,19 @@
       if(!_fx) return; const fx=$('catFx'); const t=tierInfo(_fx.res.tier);
       const rank=Math.max(0, TIER_ORDER.indexOf(_fx.res.tier));
       const rb=!!_fx.rainbow;                                             // 무지개(승급 또는 무지개알 구매)
+      const ex=_fx.res.tier==='exclusive';                               // 🌈 한정 펫 → 빛·프레임(박스)을 무지개로
       const conf=rb?32:(rank<=0?0:rank<=1?10:rank<=2?16:20+(rank-2)*8);   // 등급↑ 컨페티 더 많이(일반=없음)
       const tw=5+rank*3;                                                  // 트윙클 수(등급↑ 많이)
       const art=isEggKind(_fx.kind)?catFace(_fx.res.id,{h:118,eager:true}):rewardBoxArt(_fx.res);   // eager: 등장 즉시 표시(lazy면 ~1초 늦게 뜸)
-      // 🌈 뜰알에서 한정(무지개)이 뜨면: 로그인 화면 같은 하늘 + 왼→오로 샤라라 그려지는 무지개
+      // 🌈 뜰알에서 한정(무지개)이 뜨면: 픽업 배너 씬 전체를 배경으로. 🏠 전설/신화 펫이면: 내 알뜰홈 방(벽지·바닥·배치 가구)을 배경으로.
       const ddeulEx = _fx.kind==='ddeul' && _fx.res.tier==='exclusive';
-      const skyLayer = ddeulEx ? pickupSceneHtml('reveal') : '';   // 🌲 한정 등장 배경 = 픽업 배너 씬(pickupSceneHtml) 재사용 — 배너와 같은 배치(하늘·구름·무지개·원근 숲·꽃·나비). 전체화면·데코 확대, 알·배회펫 없이 배경만.
-      fx.innerHTML='<div class="fx-scrim"></div>'+skyLayer+'<div class="fx-reveal tier-'+t.id+' rank-'+rank+(rb?' rev-rb':'')+(ddeulEx?' rev-ddeul':'')+'">'+
+      const roomBg  = !ddeulEx && isEggKind(_fx.kind) && (_fx.res.tier==='legend' || _fx.res.tier==='limited');   // 전설·신화 펫 등장 = 내 방 배경
+      const skyLayer = ddeulEx ? pickupSceneHtml('reveal') : (roomBg ? roomBackdropHtml() : '');   // 배너 씬(pickupSceneHtml) 또는 내 방(roomBackdropHtml) 재사용 — 배경만(알·무대 없음)
+      fx.innerHTML='<div class="fx-scrim"></div>'+skyLayer+'<div class="fx-reveal tier-'+t.id+' rank-'+rank+((rb||ex)?' rev-rb':'')+(ddeulEx?' rev-ddeul':'')+(roomBg?' rev-room':'')+'">'+   // 한정도 rev-rb(무지개 프레임=박스)
         '<div class="fx-art pop">'+
-          '<span class="fx-aurawrap">'+lightLayers({aura:210, rays:250})+'</span>'+   // 펫 뒤 픽셀 오오라(+특별↑은 발산 광선까지 CSS로 표시)
+          '<span class="fx-aurawrap">'+lightLayers({aura:210, rays:250, rainbow:ex})+'</span>'+   // 펫 뒤 픽셀 오오라(한정=무지개 빛). 특별↑은 발산 광선까지 CSS로 표시
           '<span class="fx-ring"></span>'+                                            // 전설↑/무지개: 픽셀 링 충격파(CSS)
-          '<span class="fx-twinkles">'+fxAuraTwinkles(tw)+'</span>'+                   // 펫 둘레 트윙클 도트
+          '<span class="fx-twinkles">'+fxAuraTwinkles(tw, ex)+'</span>'+                // 펫 둘레 트윙클 도트(한정=무지개)
           '<span class="fx-frame"></span>'+
           '<span class="fx-artimg">'+art+'</span>'+
           (_fx.isNew?newBadgeSvg({h:30}):'')+                                          // 🌈 처음 획득: 무지개 픽셀 "NEW" 배지(펫/아이템 위에서 물결)

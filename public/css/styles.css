@@ -1476,6 +1476,12 @@
     .pkscene.pk-reveal { position:absolute; inset:0; height:100%; z-index:1; border-radius:0; animation:fxfade .4s ease; }
     .pkscene.pk-reveal::after { content:''; position:absolute; inset:0; z-index:8; pointer-events:none;
       background:linear-gradient(180deg, rgba(0,0,0,.10) 0%, transparent 26%, transparent 66%, rgba(0,0,0,.16) 100%); }   /* 상·하 살짝 어둡게 → 가운데 등장 펫이 배경에 안 묻힘 */
+    /* 🏠 전설/신화 등장 배경 = 내 알뜰홈 방 전체화면(벽지·바닥·배치 가구). 펫·텍스트(.fx-reveal.rev-room z-index:2)는 이 위에. */
+    .pk-roombg { position:absolute; inset:0; z-index:1; overflow:hidden; animation:fxfade .4s ease; }
+    .pk-roombg .catroom { position:absolute; inset:0; width:auto; height:100%; border:0; border-radius:0; margin:0; }
+    .pk-roombg::after { content:''; position:absolute; inset:0; z-index:9; pointer-events:none;
+      background:linear-gradient(180deg, rgba(0,0,0,.14) 0%, transparent 22%, transparent 60%, rgba(0,0,0,.24) 100%); }   /* 상·하 어둡게 → 등장 펫 대비 */
+    .fx-reveal.rev-room { z-index:2; }   /* 펫·텍스트는 방 배경 위에 */
     /* 하늘·흐르는 구름(제각각 높이·모양·색·속도·위상) — 벽지 밴드는 하늘/무지개/구름만(풀·나무 없음) */
     .pk-sky { position:absolute; left:0; right:0; top:0; height:40%; z-index:0; overflow:hidden; pointer-events:none; }
     .pk-cloud { position:absolute; left:0; display:block; opacity:.96; will-change:transform;
