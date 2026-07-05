@@ -199,6 +199,14 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 | (정적 승격) | `cat_blackpanther` | 흑표범 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `cat_ocelot` | 오셀롯 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `cat_sandcat` | 모래고양이 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_mainecoonsmoke` | 메인쿤(블랙스모크) | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_mainecoonred` | 메인쿤(레드태비) | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_bengalsilver` | 벵갈(실버) | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_peterbald` | 피더볼드 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_toyger` | 토이거 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_singapura` | 싱가푸라 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_havanabrown` | 하바나브라운 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_ragamuffin` | 라가머핀 | Walk/east 옆걷기 정상 |
 <!-- @gen:end -->
 
 새 zip이 오면: 사용자가 id를 지정하면 그걸 쓰고, 없으면 종·색에서 합리적 slug(`<species>_<색>`)를 만들어 **이 표에 한 줄 추가**하고, 이름은 위 규칙대로 센스껏 짓는다.
@@ -206,7 +214,7 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 ### ⚠️ 옆걷기(east) 없는 펫 — 이미지 재취득 대상
 `animations/Walk/east`(옆보기 걷기)가 **없는** zip은 `walk.png`가 정면이 되어 `frontWalk:true`로 처리(이동 중 옆 정지스틸만 보이고 걷기 애니 없음). 그런 펫은 옆걷기 포함 zip으로 다시 받아 재생성하고 `frontWalk`를 해제한다.
 
-**현재 재취득 대상: 없음** — <!--@gen:cats-count-->139<!--@gen:end-->종 전부 `Walk/east` 옆걷기 보유. (과거 `cat_white`가 south만 있었으나 east 시트로 재취득 완료.) 새 펫 추가 시 east 유무를 확인해 이 목록을 갱신한다.
+**현재 재취득 대상: 없음** — <!--@gen:cats-count-->147<!--@gen:end-->종 전부 `Walk/east` 옆걷기 보유. (과거 `cat_white`가 south만 있었으나 east 시트로 재취득 완료.) 새 펫 추가 시 east 유무를 확인해 이 목록을 갱신한다.
 
 ## ✅ 펫 추가 체크리스트 (에셋만 넣고 끝내지 말 것 — 코드+문서 함께 반영)
 > **규칙**: 펫을 추가/변경/제거하면 아래 코드 **3곳**과 문서 **3곳**을 같은 커밋에서 모두 갱신한다. 하나라도 빠지면 미완성으로 본다. (이 규칙은 `CLAUDE.md`의 "문서 최신화 규칙" 표 — *기능 추가·변경·제거 → features.md*, *모든 사용자 체감 변경 → CHANGELOG* — 의 펫 전용 상세판이다.)

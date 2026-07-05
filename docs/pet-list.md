@@ -2,9 +2,9 @@
 
 현재 앱에 구현된 펫 목록입니다. 데이터 소스는 `public/js/cats.js` 의 `PET_CATALOG`(이름·종·가격·설명)·`CAT_TIER`(등급)·`PET_SPRITES`(아트)이며, **이 문서는 그 코드를 근거로 손으로 정리한 요약**입니다. 펫을 추가·수정하면 이 표도 함께 갱신하세요(추가 절차는 [pet-asset-pipeline.md](pet-asset-pipeline.md)).
 
-- **총 <!--@gen:count-->139<!--@gen:end-->종** (고양이 `cat`·호랑이 `tiger`·사자 `lion`).
+- **총 <!--@gen:count-->147<!--@gen:end-->종** (고양이 `cat`·호랑이 `tiger`·사자 `lion`).
 - **가격은 등급으로 자동 산정**됩니다: `TIER_PRICE = { 일반 50 · 고급 100 · 희귀 200 · 특별 400 · 전설 800 · 한정 1500 }` 을 `CAT_TIER` 기준으로 `PET_CATALOG.price` 에 적용.
-- **아트**: <!--@gen:count2-->139<!--@gen:end-->종 전부 PixelLab **PNG 스프라이트 시트**(288×48, 옆보기 east 6프레임) + 정지 4방향(south/north/east/west). 시트가 없는 동물만 SVG 폴백을 씁니다(현재 해당 없음).
+- **아트**: <!--@gen:count2-->147<!--@gen:end-->종 전부 PixelLab **PNG 스프라이트 시트**(288×48, 옆보기 east 6프레임) + 정지 4방향(south/north/east/west). 시트가 없는 동물만 SVG 폴백을 씁니다(현재 해당 없음).
 
 ## 목록
 
@@ -150,6 +150,14 @@
 | 137 | 흑표범 | `cat_blackpanther` | 고양이 | 5× | exclusive | 50 | `public/assets/pets/cat/cat_blackpanther/` | PNG 스프라이트 8프레임 | 칠흑빛 멜라닌 표범. 어둠 속을 소리 없이 활보. |
 | 138 | 오셀롯 | `cat_ocelot` | 고양이 | 4× | exclusive | 50 | `public/assets/pets/cat/cat_ocelot/` | PNG 스프라이트 8프레임 | 보석 같은 반점의 밤의 사냥꾼. 작지만 강인한 야생. |
 | 139 | 모래고양이 | `cat_sandcat` | 고양이 | 1× | 특별 | 400 | `public/assets/pets/cat/cat_sandcat/` | PNG 스프라이트 6프레임 | 사막의 작은 요정. 큰 귀로 모래 밑 소리도 들어요. |
+| 140 | 메인쿤(블랙스모크) | `cat_mainecoonsmoke` | 고양이 | 1.2× | 전설 | 800 | `public/assets/pets/cat/cat_mainecoonsmoke/` | PNG 스프라이트 6프레임 | 은빛 스모크가 감도는 거대 장모. 온순한 숲의 거인. |
+| 141 | 메인쿤(레드태비) | `cat_mainecoonred` | 고양이 | 1.2× | 특별 | 400 | `public/assets/pets/cat/cat_mainecoonred/` | PNG 스프라이트 6프레임 | 붉은 태비의 풍성한 장모. 다정한 대형 고양이. |
+| 142 | 벵갈(실버) | `cat_bengalsilver` | 고양이 | 1× | 특별 | 400 | `public/assets/pets/cat/cat_bengalsilver/` | PNG 스프라이트 6프레임 | 은빛 바탕에 검은 로제트. 차가운 야생미의 표범 무늬. |
+| 143 | 피더볼드 | `cat_peterbald` | 고양이 | 1× | 전설 | 800 | `public/assets/pets/cat/cat_peterbald/` | PNG 스프라이트 6프레임 | 털 없는 매끈한 피부의 우아한 묘. 따뜻한 온기의 애교쟁이. |
+| 144 | 토이거 | `cat_toyger` | 고양이 | 1.2× | 한정 | 1500 | `public/assets/pets/cat/cat_toyger/` | PNG 스프라이트 6프레임 | 미니 호랑이를 닮은 줄무늬. 집 안의 작은 맹수. |
+| 145 | 싱가푸라 | `cat_singapura` | 고양이 | 0.5× | 특별 | 400 | `public/assets/pets/cat/cat_singapura/` | PNG 스프라이트 6프레임 | 세상에서 가장 작은 품종. 큰 눈망울의 요정 고양이. |
+| 146 | 하바나브라운 | `cat_havanabrown` | 고양이 | 1× | 특별 | 400 | `public/assets/pets/cat/cat_havanabrown/` | PNG 스프라이트 6프레임 | 초콜릿빛 윤기나는 갈색 털에 초록 눈. 다정한 껌딱지. |
+| 147 | 라가머핀 | `cat_ragamuffin` | 고양이 | 1× | 전설 | 800 | `public/assets/pets/cat/cat_ragamuffin/` | PNG 스프라이트 6프레임 | 안으면 축 늘어지는 복슬 장모. 순둥순둥 인형 고양이. |
 <!-- @gen:end -->
 
 ## 이미지 폴더 구조

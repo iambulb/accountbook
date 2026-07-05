@@ -157,6 +157,14 @@
     { "id": "cat_leopard", "species": "cat", "name": "표범", "tier": "exclusive", "scale": 5, "desc": "나무 위의 은밀한 사냥꾼. 우아한 로제트 무늬.", "zip": "", "frontWalk": false, "frames": 8 },
     { "id": "cat_blackpanther", "species": "cat", "name": "흑표범", "tier": "exclusive", "scale": 5, "desc": "칠흑빛 멜라닌 표범. 어둠 속을 소리 없이 활보.", "zip": "", "frontWalk": false, "frames": 8 },
     { "id": "cat_ocelot", "species": "cat", "name": "오셀롯", "tier": "exclusive", "scale": 4, "desc": "보석 같은 반점의 밤의 사냥꾼. 작지만 강인한 야생.", "zip": "", "frontWalk": false, "frames": 8 },
-    { "id": "cat_sandcat", "species": "cat", "name": "모래고양이", "tier": "epic", "scale": 1, "desc": "사막의 작은 요정. 큰 귀로 모래 밑 소리도 들어요.", "zip": "", "frontWalk": false, "frames": 6 }
+    { "id": "cat_sandcat", "species": "cat", "name": "모래고양이", "tier": "epic", "scale": 1, "desc": "사막의 작은 요정. 큰 귀로 모래 밑 소리도 들어요.", "zip": "", "frontWalk": false, "frames": 6 },
+    { "id": "cat_mainecoonsmoke", "species": "cat", "name": "메인쿤(블랙스모크)", "tier": "legend", "scale": 1.2, "desc": "은빛 스모크가 감도는 거대 장모. 온순한 숲의 거인.", "zip": "", "frontWalk": false, "frames": 6 },
+    { "id": "cat_mainecoonred", "species": "cat", "name": "메인쿤(레드태비)", "tier": "epic", "scale": 1.2, "desc": "붉은 태비의 풍성한 장모. 다정한 대형 고양이.", "zip": "", "frontWalk": false, "frames": 6 },
+    { "id": "cat_bengalsilver", "species": "cat", "name": "벵갈(실버)", "tier": "epic", "scale": 1, "desc": "은빛 바탕에 검은 로제트. 차가운 야생미의 표범 무늬.", "zip": "", "frontWalk": false, "frames": 6 },
+    { "id": "cat_peterbald", "species": "cat", "name": "피더볼드", "tier": "legend", "scale": 1, "desc": "털 없는 매끈한 피부의 우아한 묘. 따뜻한 온기의 애교쟁이.", "zip": "", "frontWalk": false, "frames": 6 },
+    { "id": "cat_toyger", "species": "cat", "name": "토이거", "tier": "limited", "scale": 1.2, "desc": "미니 호랑이를 닮은 줄무늬. 집 안의 작은 맹수.", "zip": "", "frontWalk": false, "frames": 6 },
+    { "id": "cat_singapura", "species": "cat", "name": "싱가푸라", "tier": "epic", "scale": 0.5, "desc": "세상에서 가장 작은 품종. 큰 눈망울의 요정 고양이.", "zip": "", "frontWalk": false, "frames": 6 },
+    { "id": "cat_havanabrown", "species": "cat", "name": "하바나브라운", "tier": "epic", "scale": 1, "desc": "초콜릿빛 윤기나는 갈색 털에 초록 눈. 다정한 껌딱지.", "zip": "", "frontWalk": false, "frames": 6 },
+    { "id": "cat_ragamuffin", "species": "cat", "name": "라가머핀", "tier": "legend", "scale": 1, "desc": "안으면 축 늘어지는 복슬 장모. 순둥순둥 인형 고양이.", "zip": "", "frontWalk": false, "frames": 6 }
   ]
 }
