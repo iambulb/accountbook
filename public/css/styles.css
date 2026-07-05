@@ -1472,6 +1472,10 @@
     .pkscene { position:relative; height:156px; overflow:hidden; background:linear-gradient(#bfe6ff 0%, #dcf3ff 60%); }
     :root[data-theme="dark"] .pkscene { background:linear-gradient(#1f2b44,#26364f); }
     .pkscene .px, .pkscene img { image-rendering:pixelated; }
+    /* 🌲 뜰알 한정 등장 배경 = 픽업 씬 전체화면(리빌). 펫·텍스트(.fx-reveal.rev-ddeul z-index:2)는 이 위에. */
+    .pkscene.pk-reveal { position:absolute; inset:0; height:100%; z-index:1; border-radius:0; animation:fxfade .4s ease; }
+    .pkscene.pk-reveal::after { content:''; position:absolute; inset:0; z-index:8; pointer-events:none;
+      background:linear-gradient(180deg, rgba(0,0,0,.10) 0%, transparent 26%, transparent 66%, rgba(0,0,0,.16) 100%); }   /* 상·하 살짝 어둡게 → 가운데 등장 펫이 배경에 안 묻힘 */
     /* 하늘·흐르는 구름(제각각 높이·모양·색·속도·위상) — 벽지 밴드는 하늘/무지개/구름만(풀·나무 없음) */
     .pk-sky { position:absolute; left:0; right:0; top:0; height:40%; z-index:0; overflow:hidden; pointer-events:none; }
     .pk-cloud { position:absolute; left:0; display:block; opacity:.96; will-change:transform;
@@ -1510,14 +1514,14 @@
     .pk-bfly .bf-wing { display:block; transform-origin:center; image-rendering:pixelated; animation:pkflap var(--fd,.42s) ease-in-out infinite; }
     @keyframes pkbfly { 0%,100%{ transform:translate(0,0);} 20%{ transform:translate(10px,-9px);} 45%{ transform:translate(22px,3px);} 70%{ transform:translate(7px,12px);} }
     @keyframes pkflap { 0%,100%{ transform:scaleX(1);} 50%{ transform:scaleX(.5);} }
-    /* 🦅 독수리 2마리 — 구름처럼 가로질러(pkcloud 재사용) + 날개 두 프레임 교차로 퍼덕임 */
-    .pk-bird { position:absolute; left:0; z-index:1; opacity:.9; will-change:transform; animation:pkcloud var(--d,36s) linear infinite; }
-    .pk-bird .bird-f { display:block; image-rendering:pixelated; }
-    .pk-bird .bird-b { position:absolute; top:0; left:0; }
-    .pk-bird .bird-a { animation:pkbirdA .5s steps(1) infinite; }
-    .pk-bird .bird-b { animation:pkbirdB .5s steps(1) infinite; }
-    @keyframes pkbirdA { 0%,49%{ opacity:1;} 50%,100%{ opacity:0;} }
-    @keyframes pkbirdB { 0%,49%{ opacity:0;} 50%,100%{ opacity:1;} }
+    /* 🪨 원근 큐 — 징검다리·울타리(필드=펫 뒤), 바위(무대 안=겹침), 전경 프레임(무대 앞). 전부 도트(pixelated). */
+    .pk-stone, .pk-fence, .pk-rock, .pk-frame { position:absolute; display:block; transform:translateX(-50%); image-rendering:pixelated; }
+    .pk-stone .px, .pk-fence .px, .pk-rock .px, .pk-frame .px { image-rendering:pixelated; }
+    .pk-fence, .pk-frame { transform-origin:center bottom; }
+    .pk-frame { bottom:0; animation:pkbend 3.2s ease-in-out infinite; }   /* 맨 앞 큰 풀·꽃이 바람에 살랑 */
+    /* 🌑 깊이 그림자 — 기본 캠엔 없음, 배너(pkstage)에서만. 액터 scale 안에서 렌더돼 앞=크게·뒤=작게. --pad(발밑 여백, 언스케일 px)로 발끝에 정렬. */
+    .cd-shadow { display:none; }
+    .pkstage .cd-shadow { display:block; position:absolute; left:50%; bottom:var(--pad,0px); transform:translateX(-50%); z-index:0; opacity:.24; pointer-events:none; }
     /* 로그인 알(egg-garden) — 뜰 가운데(앞쪽 말고 중앙으로) */
     .pk-egg { position:absolute; left:50%; bottom:30%; transform:translateX(-50%); z-index:3; }
     .pk-egg img { display:block; height:50px; width:auto; filter:drop-shadow(0 3px 0 rgba(0,0,0,.14)); }
@@ -1525,7 +1529,7 @@
     #pkStage.pkstage { position:absolute; left:0; right:0; bottom:0; height:60%; z-index:5; overflow:visible; background:none; }
     .pkstage .cd-actor { pointer-events:none; }
     .pkstage .cd-actor .cspr { image-rendering:pixelated; }
-    @media (prefers-reduced-motion: reduce){ .pk-cloud, .pk-tree .pk-canopy, .pk-flower, .pk-tuft, .pk-bfly, .pk-bfly .bf-wing, .pk-bird, .pk-bird .bird-a, .pk-bird .bird-b { animation:none; } .pk-rainbow { opacity:1; animation:none; } .pk-bird .bird-b { opacity:0; } }
+    @media (prefers-reduced-motion: reduce){ .pk-cloud, .pk-tree .pk-canopy, .pk-flower, .pk-tuft, .pk-frame, .pk-bfly, .pk-bfly .bf-wing { animation:none; } .pk-rainbow { opacity:1; animation:none; } }
     .shopcard .featrib { position:absolute; left:6px; top:6px; display:inline-flex; align-items:center; gap:3px;
       font-size:10px; font-weight:800; color:#7a5200; background:var(--gold, #f2b134); padding:2px 6px; border-radius:999px; z-index:2; }
     .shopcard .featrib svg { color:#7a5200; }

@@ -1901,11 +1901,23 @@
     const M_BFLY=[".WWW.WWW.","WWWWBWWWW","WWWHBHWWW",".WWHBHWW.","..WHBHW..","..WWBWW..","...W.W..."];
     const BFLY_PALS={o:{W:'#ff9d3c',H:'#ffd27a',B:'#3a2a18'},b:{W:'#5aa9ff',H:'#a9d4ff',B:'#22314a'},p:{W:'#ff7fbf',H:'#ffc3e0',B:'#4a2238'},y:{W:'#ffd84a',H:'#fff0a8',B:'#4a3a12'}};
     function butterflySvg(tint,opt){ return pxSvg(M_BFLY, BFLY_PALS[tint||'o'], opt); }
-    // 🦅 독수리 실루엣(13×5) 2프레임 — 날개 위(A)/아래(B)로 교차해 퍼덕임. 어두운 실루엣이라 라이트·다크 하늘에서 다 보임. 구름처럼 하늘을 가로질러 날아감(.pk-bird).
-    const M_EAGLE_A=["XX.........XX",".XXX.....XXX.","..XXXX.XXXX..","....XXHXX....",".....XXX....."];
-    const M_EAGLE_B=["XX.........XX",".XXXX...XXXX.","...XXXHXXX...",".....XXX.....","............."];
-    const EAGLE_PAL={X:'#3d3226',H:'#6b563d'};
-    function eagleSvg(frame,opt){ return pxSvg(frame?M_EAGLE_B:M_EAGLE_A, EAGLE_PAL, opt); }
+    // 🪨 원근 큐 에셋(한정 픽업 배너) — 깊이에 따라 크기·바닥선을 펫과 같은 척도로 배치해 펫이 앞뒤로 움직일 때 원근을 읽히게 함. 전부 도트(crispEdges).
+    // 징검다리(디딤돌): 앞→뒤 한 줄, 뒤로 갈수록 작게 → 선 원근. 펫 발밑에 깔려 거의 안 가림.
+    const M_STONE=[".SSSSS.","SLLLLLS","SLLLLDS",".SDDDD."];
+    const STONE_PAL={S:'#7c828b',L:'#c7ccd2',D:'#9aa0a7'};
+    function stoneSvg(opt){ return pxSvg(M_STONE, STONE_PAL, opt); }
+    // 중간 바위(boulder): 펫이 뒤에선 그 뒤로(가려짐), 앞에선 앞으로 지나가는 겹침(occlusion) 큐 — z를 펫과 같은 12-depth*11 척도로.
+    const M_ROCK=["...RRR...",".RRLLLRR.","RRLLLLLRR","RLLLLLLDR","RLLLLDDDR","RRLDDDDRR",".RRRRRRR."];
+    const ROCK_PAL={R:'#5f6670',L:'#9aa2ac',D:'#727a85'};
+    function rockSvg(opt){ return pxSvg(M_ROCK, ROCK_PAL, opt); }
+    // 낮은 말뚝 울타리(3말뚝+2레일): 옆쪽에 앞→뒤로 작아지게 놓아 선 원근. 낮아서 펫을 덜 가림(필드=펫 뒤).
+    const M_FENCE=[".T...T...T.","TWT.TWT.TWT","RRRRRRRRRRR","TWT.TWT.TWT","TWT.TWT.TWT","RRRRRRRRRRR","TWT.TWT.TWT"];
+    const FENCE_PAL={T:'#6f4a2a',W:'#b08a5c',R:'#8a6038'};
+    function fenceSvg(opt){ return pxSvg(M_FENCE, FENCE_PAL, opt); }
+    // 깊이 그림자(납작 타원): 펫 발밑에 깔려 depth(액터 scale 그대로)에 따라 커지고 작아짐 → 접지감+깊이. 색은 CSS opacity로 은은하게. 가림 0.
+    const M_SHADOW=[".SSSSSSS.","SSSSSSSSS",".SSSSSSS."];
+    const SHADOW_PAL={S:'#12240c'};
+    function shadowSvg(opt){ return pxSvg(M_SHADOW, SHADOW_PAL, opt); }
     // 알뜰샵·팔레트·격자용 대표 아트(물그릇은 물 채운 파란 그릇으로 구분 표시)
     function furnMatrix(id){ return {pond:M_POND,cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT,catwheel:M_CATWHEEL,rug:M_RUG,window:M_WINDOW,fishtank:M_FISHTANK,fireplace:M_FIREPLACE,fan:M_FAN,hammock:M_HAMMOCK,teaser:M_TEASER,wallclock:M_WALLCLOCK,hangplant:M_HANGPLANT,mobile:M_MOBILE,chandelier:M_CHANDELIER,jingleball:M_JINGLEBALL,frame:M_FRAME,shelf:M_SHELF,mirror:M_MIRROR,neon:M_NEON,sconce:M_SCONCE,garland:M_GARLAND,poster:M_POSTER,tapestry:M_TAPESTRY}[id]; }
     function furnSvg(id, opt){ return pxSvg(furnMatrix(id), FURN_PALS[id], opt); }
@@ -3174,7 +3186,9 @@
         fp=(a.footPad!=null?a.footPad:PET_FOOT_PAD),          // 펫별 발밑 여백 비율(측정값, 없으면 기본) — 호랑이 등 큰 동물은 여백↑
         pad=(a.spr?Math.round((a.hh||0)*fp*s):0),             // 발밑 여백 상쇄(렌더높이×비율×스케일) → 발이 바닥선에 닿게
         up=Math.round((a.rise||0)+(lift!=null?lift:(a.lift||0)))-pad;
-      a.el.style.transform='translate3d('+Math.round(a.x)+'px,'+(-up)+'px,0) scale('+(s*d)+','+s+')'; if(a.pkey) _petX[a.pkey]=a.x; }
+      a.el.style.transform='translate3d('+Math.round(a.x)+'px,'+(-up)+'px,0) scale('+(s*d)+','+s+')'; if(a.pkey) _petX[a.pkey]=a.x;
+      // 깊이 그림자(.cd-shadow, 배너에서만) 정렬용 발밑 여백을 언스케일 px로 노출 — 액터 scale 안에서 렌더돼 발끝선에 붙는다. 값이 바뀔 때만 기록(핫패스 부담 0).
+      const pu=(a.spr?Math.round((a.hh||0)*fp):0); if(a._padUn!==pu){ a._padUn=pu; a.el.style.setProperty('--pad', pu+'px'); } }
     // 스프라이트 프레임 아래 투명 여백 비율을 실제 이미지 알파로 1회 측정(펫별로 다름)→캐시.
     const _footPad={};
     // 임의 이미지 URL의 하단 투명여백 비율(0~1)을 알파로 측정 → cb(비율|null). 캐시는 호출측 책임.
@@ -3758,7 +3772,7 @@
           const dEnough=coins()>=DDEUL_PRICE;
           const dact=dEnough?'<button class="buy" aria-label="뜰알 구매('+DDEUL_PRICE+' 은화)" onclick="openDdeul()">구매</button>':'<button class="buy dis" disabled>'+(DDEUL_PRICE-coins())+' 부족</button>';
           h+='<div class="shopcard ddeul-card"><div class="thumb">'+ddeulEggSvg({h:64})+'</div>'+
-            '<div class="meta"><b class="tier-rainbow">뜰알</b> <span class="tagmini tier-rainbow">한정 픽업</span><div class="desc"><b class="tier-rainbow">한정 5%</b>로 픽업 펫'+(pk?'('+pk+')':'')+'! 신화 0.5%·그 외는 기본 확률.</div>'+
+            '<div class="meta"><b class="tier-rainbow">뜰알</b> <span class="tagmini tier-rainbow">한정 픽업</span><div class="desc">뜰에서 피어난 특별한 알. '+(pk?'지금은 '+pk+' 픽업 중 — ':'')+'오직 뜰알에서만 만날 수 있는 <b class="tier-rainbow">한정 픽업 펫</b>을 품고 있어요.</div>'+
             '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+DDEUL_PRICE+'</span></div>'+
             '<div class="act">'+dact+'</div></div>'; }
         const enough=coins()>=GACHA_PRICE;
@@ -4025,10 +4039,10 @@
       { id:'epic',     name:'특별', p:6,   color:'#9B6FC8' },
       { id:'legend',   name:'전설', p:3,   color:'#E0A43C' },
       { id:'limited',  name:'신화', p:1,   color:'#ff5fa2' },   // 신화(구 '한정') — 핑크 텍스트·연출. id는 하위호환 위해 'limited' 유지
-      { id:'exclusive',name:'한정', p:0,   color:'#F2C84B' }    // 한정(최상위·무지개) — 기본 펫알/무지개알엔 0(안 나옴). 오직 '뜰알'(한정 픽업)에서만 DDEUL_TIERS로 5% 등장
+      { id:'exclusive',name:'한정', p:0,   color:'#F2C84B' }    // 한정(최상위·무지개) — 기본 펫알/무지개알엔 0(안 나옴). 오직 '뜰알'(한정 픽업)에서만 DDEUL_TIERS로 0.5% 등장
     ];
-    // 🌱 뜰알(한정 픽업 뽑기) 전용 확률표 — 한정 5%(활성 한정 펫=삵·표범만 풀에), 신화 0.5%. 나머지는 일반에서 흡수. 합 100.
-    const DDEUL_TIERS=[{id:'normal',p:40.5},{id:'uncommon',p:30},{id:'rare',p:15},{id:'epic',p:6},{id:'legend',p:3},{id:'limited',p:0.5},{id:'exclusive',p:5}];
+    // 🌱 뜰알(한정 픽업 뽑기) 전용 확률표 — 기본과 같지만 신화 1→0.5, 한정 0.5 추가(활성 한정 펫=삵·표범만 풀에). 합 100.
+    const DDEUL_TIERS=[{id:'normal',p:45},{id:'uncommon',p:30},{id:'rare',p:15},{id:'epic',p:6},{id:'legend',p:3},{id:'limited',p:0.5},{id:'exclusive',p:0.5}];
     // (구) NO_GACHA_TIERS 제거 — 한정은 '전부 제외'가 아니라 펫별 exActive로 선별 포함. 박스(가구)엔 한정 아이템이 없으므로 boxPool에서 한정을 걸러 안전 유지.
     const TIER_ORDER = TIERS.map(t=>t.id);   // 높은 등급이 비면 한 단계씩 낮춰 대체할 때 사용
     function tierInfo(id){ return TIERS.find(t=>t.id===id)||TIERS[0]; }
@@ -4044,60 +4058,70 @@
     function pkRand(i,s){ const x=Math.sin((i+1)*12.9898+s*4.1414)*43758.5453; return x-Math.floor(x); }
     // 가챠 탭 상단 한정 픽업 배너 — 하늘(흐르는 구름 다수)+넓고 연한 무지개(1초 뒤 사르르)+뜰(흙·풀·꽃·원근 나무를 필드 전체에 원근 분포, 바람에 살랑) 가운데 로그인 알, 픽업 펫 둘은 캠 엔진(#pkStage)으로 걸어와 자유 배회.
     //  · 깊이 d(0=앞·크게·아래 ~ 1=뒤·작게·위): bottom%=d*범위, 크기=1-d*0.5. 나무는 뒤쪽(d 큼)만 → 펫 안 가림+하늘 안 침범.
-    function limitedPickupBanner(){
-      const p1=LIMITED_PICKUP[0], p2=LIMITED_PICKUP[1];
-      if(!pickupExists(p1) && !pickupExists(p2)) return '';
-      const H=92;   // 펫 렌더 기준 높이(원근 앞배율 1.5=~138 → 기본(≈48)의 약 3배 크게)
-      const tag=(n,id)=> pickupExists(id) ? '<span class="pk-tag"><b>펫'+n+'</b> '+catNameSpan(id,catName(id))+'</span>' : '';
+    function pickupSceneHtml(mode){
+      const reveal = mode==='reveal', sz = reveal?1.85:1, S = h=>Math.max(1,Math.round(h*sz));   // 리빌은 전체화면 배경 → 데코 크게
+      const p1=LIMITED_PICKUP[0], p2=LIMITED_PICKUP[1], H=92;   // 펫 렌더 기준 높이(원근 앞배율 1.5=~138 → 기본(≈48)의 약 3배)
       // ☁️ 하늘: 흐르는 구름 15개(제각각 높이·모양·색·속도·위상)
       let clouds=''; for(let i=0;i<15;i++){ const y=(2+pkRand(i,1)*30).toFixed(1), h=Math.round(11+pkRand(i,2)*17),
         w=Math.floor(pkRand(i,3)*3), tn=['w','p','b'][Math.floor(pkRand(i,4)*3)], dur=(26+pkRand(i,5)*44).toFixed(1);
-        clouds+='<span class="pk-cloud" style="top:'+y+'%;--d:'+dur+'s;--i:'+i+'">'+cloudSvg(w,tn,{h:h})+'</span>'; }
-      // 🏔️ 지평선 원근 레이어 — 먼 나무/풀/꽃을 아주 작게, 벽지·하늘 경계(seam)에 얹어 위로 자라게(.pk-horizon는 overflow:visible라 나무 윗부분이 안 잘림). 꽃 비중↑(벽지쪽 꽃 더 많이).
+        clouds+='<span class="pk-cloud" style="top:'+y+'%;--d:'+dur+'s;--i:'+i+'">'+cloudSvg(w,tn,{h:S(h)})+'</span>'; }
+      // 🏔️ 지평선 원근 레이어 — 먼 나무/풀/꽃을 아주 작게, 벽지·하늘 경계(seam)에 얹어 위로 자라게(.pk-horizon는 overflow:visible라 안 잘림). 꽃 비중↑.
       let farline=''; for(let i=0;i<22;i++){ const l=((i+0.4)/22*100).toFixed(1), bot=(pkRand(i,53)*7).toFixed(1), k=pkRand(i,54), r=pkRand(i,55);
         let el;
-        if(k<0.34) el='<span class="pk-tree pk-far pk-pine" style="left:'+l+'%;bottom:'+bot+'px;z-index:1;--i:'+i+'"><span class="pk-canopy">'+pineSvg({h:Math.round(13+r*9)})+'</span></span>';
-        else if(k<0.52) el='<span class="pk-tree pk-far" style="left:'+l+'%;bottom:'+bot+'px;z-index:1;--i:'+i+'"><span class="pk-canopy">'+treeTopSvg({h:Math.round(11+r*7)})+'</span></span>';
-        else if(k<0.68) el='<span class="pk-tuft pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+tuftSvg({h:Math.round(6+r*3)})+'</span>';
-        else el='<span class="pk-flower pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+flowerSvg(['r','y','p'][Math.floor(pkRand(i,56)*3)],{h:Math.round(7+r*3)})+'</span>';
+        if(k<0.34) el='<span class="pk-tree pk-far pk-pine" style="left:'+l+'%;bottom:'+bot+'px;z-index:1;--i:'+i+'"><span class="pk-canopy">'+pineSvg({h:S(13+r*9)})+'</span></span>';
+        else if(k<0.52) el='<span class="pk-tree pk-far" style="left:'+l+'%;bottom:'+bot+'px;z-index:1;--i:'+i+'"><span class="pk-canopy">'+treeTopSvg({h:S(11+r*7)})+'</span></span>';
+        else if(k<0.68) el='<span class="pk-tuft pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+tuftSvg({h:S(6+r*3)})+'</span>';
+        else el='<span class="pk-flower pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+flowerSvg(['r','y','p'][Math.floor(pkRand(i,56)*3)],{h:S(7+r*3)})+'</span>';
         farline+=el; }
-      // 🌳 가까운 나무 5그루 — 가로 '레인'으로 고르게(겹침 방지) · 크기 1.5배 · 뒤쪽(d 0.5~0.78) · z<펫
-      let trees=''; for(let i=0;i<5;i++){ const d=0.5+pkRand(i,11)*0.28, l=((i+0.5)/5*88+6+(pkRand(i,12)-0.5)*6+(i===2?9:0)).toFixed(1),   // 가운데(i=2) 나무는 오른쪽으로 살짝(+9%)
+      // 🌳 가까운 나무 5그루 — 가로 '레인'으로 고르게(겹침 방지) · 크기 1.5배 · 뒤쪽만 · z<펫. 가운데(i=2)는 오른쪽으로 살짝(+9%)
+      let trees=''; for(let i=0;i<5;i++){ const d=0.5+pkRand(i,11)*0.28, l=((i+0.5)/5*88+6+(pkRand(i,12)-0.5)*6+(i===2?9:0)).toFixed(1),
         sc=1-d*0.5, bot=(d*70).toFixed(1), z=Math.round(2+(1-d)*2), pine=pkRand(i,13)<0.45;
-        const inner = pine ? '<span class="pk-canopy">'+pineSvg({h:Math.max(16,Math.round(69*sc))})+'</span>'
-          : '<span class="pk-canopy">'+treeTopSvg({h:Math.max(16,Math.round(51*sc))})+'</span><span class="pk-trunk">'+trunkSvg({h:Math.max(8,Math.round(24*sc))})+'</span>';
+        const inner = pine ? '<span class="pk-canopy">'+pineSvg({h:S(Math.max(16,Math.round(69*sc)))})+'</span>'
+          : '<span class="pk-canopy">'+treeTopSvg({h:S(Math.max(16,Math.round(51*sc)))})+'</span><span class="pk-trunk">'+trunkSvg({h:S(Math.max(8,Math.round(24*sc)))})+'</span>';
         trees+='<span class="pk-tree'+(pine?' pk-pine':'')+'" style="left:'+l+'%;bottom:'+bot+'%;z-index:'+z+';--i:'+i+'">'+inner+'</span>'; }
       // 🌸 꽃 16 · 🌱 풀 18: 필드 전체(앞~뒤)에 원근 분포
       let flowers=''; for(let i=0;i<16;i++){ const d=pkRand(i,21)*0.82, l=(3+pkRand(i,22)*94).toFixed(1),
         sc=1-d*0.5, bot=(d*76).toFixed(1), tn=['r','y','p'][Math.floor(pkRand(i,23)*3)];
-        flowers+='<span class="pk-flower" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+flowerSvg(tn,{h:Math.max(9,Math.round(16*sc))})+'</span>'; }
+        flowers+='<span class="pk-flower" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+flowerSvg(tn,{h:S(Math.max(9,Math.round(16*sc)))})+'</span>'; }
       let tufts=''; for(let i=0;i<18;i++){ const d=pkRand(i,31)*0.85, l=(2+pkRand(i,32)*96).toFixed(1),
         sc=1-d*0.5, bot=(d*80).toFixed(1);
-        tufts+='<span class="pk-tuft" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+tuftSvg({h:Math.max(7,Math.round(12*sc))})+'</span>'; }
+        tufts+='<span class="pk-tuft" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+tuftSvg({h:S(Math.max(7,Math.round(12*sc)))})+'</span>'; }
       // 🟫 흙: 9군데 군데군데(원근)
       let soil=''; for(let i=0;i<9;i++){ const d=pkRand(i,41)*0.7, l=(3+pkRand(i,42)*90).toFixed(1),
-        sc=1-d*0.45, bot=(d*72).toFixed(1), w=Math.round((10+pkRand(i,43)*16)*sc);
+        sc=1-d*0.45, bot=(d*72).toFixed(1), w=S(Math.round((10+pkRand(i,43)*16)*sc));
         soil+='<span class="pk-soil" style="left:'+l+'%;bottom:'+bot+'%;width:'+w+'px"></span>'; }
-      // 🦋 나비 5마리 — 서로 간격 두고(고른 분포) 랜덤 배치, 각자 살랑살랑 주변을 날아다니며 날개를 팔랑임(결정적 pkRand로 재렌더 안정)
+      // 🪨 원근 큐 — 징검다리 길 + 낮은 울타리(둘 다 필드=펫 뒤라 안 가림). 발밑 깊이선(bottom%=depth*53)에 맞춰 크기=펫과 같은 depthScale → 펫이 뒤로 가면 작은 돌·울타리 옆에 서서 깊이가 읽힘.
+      let stones=''; const SN=6;
+      for(let i=0;i<SN;i++){ const d=0.05+(i/(SN-1))*0.82, l=(50+(i%2?6:-6)+(pkRand(i,71)-0.5)*5).toFixed(1);
+        stones+='<span class="pk-stone" style="left:'+l+'%;bottom:'+(d*53).toFixed(1)+'%;z-index:1;">'+stoneSvg({h:S(Math.max(6,Math.round(14*depthScale(d))))})+'</span>'; }
+      let fence=''; [0.1,0.42,0.74].forEach(function(d){ const l=(10+d*9).toFixed(1);
+        fence+='<span class="pk-fence" style="left:'+l+'%;bottom:'+(d*53).toFixed(1)+'%;z-index:1;">'+fenceSvg({h:S(Math.max(8,Math.round(20*depthScale(d))))})+'</span>'; });
+      // 🦋 나비 5마리 — 고른 분포·각자 살랑살랑 날며 날개 팔랑(결정적 pkRand로 재렌더 안정)
       let bflies=''; const BFT=['o','b','p','y','o'];
       for(let i=0;i<5;i++){ const l=(12+((i+pkRand(i,61)*0.7)/5)*74).toFixed(1), b=(24+pkRand(i,62)*52).toFixed(1),
-        hh=Math.round(9+pkRand(i,63)*4), dur=(7.5+pkRand(i,64)*5).toFixed(1), del=(-pkRand(i,65)*8).toFixed(2), fdur=(0.34+pkRand(i,66)*0.22).toFixed(2);
+        hh=S(Math.round(9+pkRand(i,63)*4)), dur=(7.5+pkRand(i,64)*5).toFixed(1), del=(-pkRand(i,65)*8).toFixed(2), fdur=(0.34+pkRand(i,66)*0.22).toFixed(2);
         bflies+='<span class="pk-bfly" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;--fd:'+fdur+'s;animation-delay:'+del+'s;--i:'+i+'"><span class="bf-wing">'+butterflySvg(BFT[i],{h:hh})+'</span></span>'; }
-      // 🦅 독수리 2마리 — 서로 다른 높이에서 구름처럼 하늘을 가로질러 날개 퍼덕이며 날아감
-      const eagle=(top,dur,delay,hh)=> '<span class="pk-bird" style="top:'+top+'%;--d:'+dur+'s;animation-delay:'+delay+'s;"><span class="bird-f bird-a">'+eagleSvg(0,{h:hh})+'</span><span class="bird-f bird-b">'+eagleSvg(1,{h:hh})+'</span></span>';
-      const birds=eagle(10,34,-5,16)+eagle(24,46,-22,12);
-      const actor=(id,lx)=> pickupExists(id) ? '<div class="cd-actor" data-cat="'+id+'" data-hh="'+H+'" style="left:'+lx+'px;">'+catActorHTML(id,H)+'</div>' : '';
-      return '<div class="pickbanner">'+
-        '<div class="pk-head"><span class="pk-title tier-rainbow">✨ 한정 픽업</span>'+tag(1,p1)+tag(2,p2)+'</div>'+
-        '<div class="pkscene">'+
-          '<div class="pk-sky" aria-hidden="true">'+clouds+birds+'</div>'+
-          '<div class="pk-rainbow" aria-hidden="true">'+rainbowArcSvg({cols:95,rows:11,h:44})+'</div>'+
-          '<div class="pk-horizon" aria-hidden="true">'+farline+'</div>'+
-          '<div class="pk-field" aria-hidden="true"><div class="pk-grass"></div>'+soil+tufts+flowers+trees+
-            '<div class="pk-egg"><img src="'+assetUrl('icons/egg-garden.svg')+'" alt=""></div></div>'+
-          '<div class="pk-air" aria-hidden="true">'+bflies+'</div>'+
-          '<div class="cd-room pkstage" id="pkStage" data-noprops="1" data-hh="'+H+'" aria-hidden="true">'+actor(p1,14)+actor(p2,99999)+'</div>'+
-        '</div></div>'; }
+      // 🌑 깊이 그림자(펫 발밑, 액터 scale 그대로라 앞=크게·뒤=작게) — .cd-shadow는 배너(pkstage)에서만 보임(CSS). --pad(발밑 여백)로 발끝에 정렬.
+      const actor=(id,lx)=> pickupExists(id) ? '<div class="cd-actor" data-cat="'+id+'" data-hh="'+H+'" style="left:'+lx+'px;"><span class="cd-shadow">'+shadowSvg({h:9})+'</span>'+catActorHTML(id,H)+'</div>' : '';
+      // 🪨 중간 바위(겹침 큐, z=펫과 같은 12-depth*11 → 그보다 뒤 펫은 바위 뒤로 가려짐) + 🌿 전경 프레이밍(맨 앞 큰 풀·꽃, z 최상). 무대(pkstage) 안에 둠.
+      const rock  = mode==='reveal' ? '' : '<span class="pk-rock" style="left:30%;bottom:'+(0.4*53).toFixed(1)+'%;z-index:'+Math.round(12-0.4*11)+';">'+rockSvg({h:Math.round(26*depthScale(0.4))})+'</span>';
+      const frame = mode==='reveal' ? '' : '<span class="pk-frame" style="left:3%;z-index:20;">'+tuftSvg({h:34})+'</span><span class="pk-frame" style="left:97%;z-index:20;">'+flowerSvg('p',{h:30})+'</span>';
+      const egg   = mode==='reveal' ? '' : '<div class="pk-egg"><img src="'+assetUrl('icons/egg-garden.svg')+'" alt=""></div>';   // 리빌은 알 대신 등장 펫이 주인공
+      const stage = mode==='reveal' ? '' : '<div class="cd-room pkstage" id="pkStage" data-noprops="1" data-hh="'+H+'" aria-hidden="true">'+rock+actor(p1,14)+actor(p2,99999)+frame+'</div>';   // 리빌엔 배회 픽업펫 없음
+      return '<div class="pkscene'+(mode==='reveal'?' pk-reveal':'')+'" aria-hidden="true">'+
+          '<div class="pk-sky">'+clouds+'</div>'+
+          '<div class="pk-rainbow">'+rainbowArcSvg({cols:95,rows:11,h:S(44)})+'</div>'+
+          '<div class="pk-horizon">'+farline+'</div>'+
+          '<div class="pk-field"><div class="pk-grass"></div>'+soil+stones+fence+tufts+flowers+trees+egg+'</div>'+
+          '<div class="pk-air">'+bflies+'</div>'+stage+
+        '</div>'; }
+    // 가챠 탭 상단 한정 픽업 배너 = 헤더 + 픽업 씬(배너 모드).
+    function limitedPickupBanner(){
+      const p1=LIMITED_PICKUP[0], p2=LIMITED_PICKUP[1];
+      if(!pickupExists(p1) && !pickupExists(p2)) return '';
+      const tag=(id)=> pickupExists(id) ? '<span class="pk-tag">'+catNameSpan(id,catName(id))+'</span>' : '';
+      const sep=(pickupExists(p1)&&pickupExists(p2))?'<span class="pk-tag" style="opacity:.5;">·</span>':'';
+      return '<div class="pickbanner"><div class="pk-head"><span class="pk-title tier-rainbow">✨ 지금 이 펫만! 한정 픽업</span>'+tag(p1)+sep+tag(p2)+'</div>'+pickupSceneHtml('banner')+'</div>'; }
     // 등급 '이름' 라벨을 등급 색으로(펫 이름이 아니라 등급명). 한정(exclusive)=무지개(.tier-rainbow), 그 외=인라인 색(신화=#ff5fa2 등). 도감 등급 헤더 등 공용.
     function tierLabelHtml(tierId){ const ti=tierInfo(tierId); const nm=escapeHtml(ti.name);
       if(tierId==='exclusive') return '<span class="tier-rainbow">'+nm+'</span>';
@@ -4320,7 +4344,7 @@
         return g;
       }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund, false, isNew); });
     }
-    // 🌱 뜰알(한정 픽업) — 은화로 여는 펫알. DDEUL_TIERS(한정 5% 포함, 활성 한정 펫만)로 롤, 오픈 연출은 뜰+무지개.
+    // 🌱 뜰알(한정 픽업) — 은화로 여는 펫알. DDEUL_TIERS(한정 0.5% 포함, 활성 한정 펫만)로 롤, 오픈 연출은 뜰+무지개.
     const DDEUL_PRICE=300;   // 은화(프리미엄 픽업). 조정 가능.
     function openDdeul(){
       if(coins()<DDEUL_PRICE){ toast((DDEUL_PRICE-coins())+' 은화 부족', true); return; }
@@ -5176,7 +5200,7 @@
       const art=isEggKind(_fx.kind)?catFace(_fx.res.id,{h:118,eager:true}):rewardBoxArt(_fx.res);   // eager: 등장 즉시 표시(lazy면 ~1초 늦게 뜸)
       // 🌈 뜰알에서 한정(무지개)이 뜨면: 로그인 화면 같은 하늘 + 왼→오로 샤라라 그려지는 무지개
       const ddeulEx = _fx.kind==='ddeul' && _fx.res.tier==='exclusive';
-      const skyLayer = ddeulEx ? '<div class="fx-sky" aria-hidden="true"><span class="fx-cloud fx-cloud-a">'+ddeulCloudSvg({h:16})+'</span><span class="fx-cloud fx-cloud-b">'+ddeulCloudSvg({h:12})+'</span><span class="fx-sky-rb">'+rainbowArcSvg({h:150})+'<span class="fx-rb-spark"></span></span></div>' : '';
+      const skyLayer = ddeulEx ? pickupSceneHtml('reveal') : '';   // 🌲 한정 등장 배경 = 픽업 배너 씬 재사용(하늘·구름·무지개·독수리·숲·꽃·나비, 전체화면)
       fx.innerHTML='<div class="fx-scrim"></div>'+skyLayer+'<div class="fx-reveal tier-'+t.id+' rank-'+rank+(rb?' rev-rb':'')+(ddeulEx?' rev-ddeul':'')+'">'+
         '<div class="fx-art pop">'+
           '<span class="fx-aurawrap">'+lightLayers({aura:210, rays:250})+'</span>'+   // 펫 뒤 픽셀 오오라(+특별↑은 발산 광선까지 CSS로 표시)
