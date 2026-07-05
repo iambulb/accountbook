@@ -1896,6 +1896,15 @@
     const M_TUFT=["G.g.G","GgGgG","GGGGG",".ggg."];
     const TUFT_PAL={G:'#5bb85b',g:'#3f9a45',H:'#8fd47f'};
     function tuftSvg(opt){ return pxSvg(M_TUFT, TUFT_PAL, opt); }
+    // 🦋 나비(9×7) — 큰 윗날개+좁아지는 아랫날개+어두운 몸통. 색은 tint별(주황/파랑/분홍/노랑). 배너에서 살랑살랑 날아다님(.pk-bfly).
+    const M_BFLY=[".WWW.WWW.","WWWWBWWWW","WWWHBHWWW",".WWHBHWW.","..WHBHW..","..WWBWW..","...W.W..."];
+    const BFLY_PALS={o:{W:'#ff9d3c',H:'#ffd27a',B:'#3a2a18'},b:{W:'#5aa9ff',H:'#a9d4ff',B:'#22314a'},p:{W:'#ff7fbf',H:'#ffc3e0',B:'#4a2238'},y:{W:'#ffd84a',H:'#fff0a8',B:'#4a3a12'}};
+    function butterflySvg(tint,opt){ return pxSvg(M_BFLY, BFLY_PALS[tint||'o'], opt); }
+    // 🦅 독수리 실루엣(13×5) 2프레임 — 날개 위(A)/아래(B)로 교차해 퍼덕임. 어두운 실루엣이라 라이트·다크 하늘에서 다 보임. 구름처럼 하늘을 가로질러 날아감(.pk-bird).
+    const M_EAGLE_A=["XX.........XX",".XXX.....XXX.","..XXXX.XXXX..","....XXHXX....",".....XXX....."];
+    const M_EAGLE_B=["XX.........XX",".XXXX...XXXX.","...XXXHXXX...",".....XXX.....","............."];
+    const EAGLE_PAL={X:'#3d3226',H:'#6b563d'};
+    function eagleSvg(frame,opt){ return pxSvg(frame?M_EAGLE_B:M_EAGLE_A, EAGLE_PAL, opt); }
     // 알뜰샵·팔레트·격자용 대표 아트(물그릇은 물 채운 파란 그릇으로 구분 표시)
     function furnMatrix(id){ return {pond:M_POND,cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT,catwheel:M_CATWHEEL,rug:M_RUG,window:M_WINDOW,fishtank:M_FISHTANK,fireplace:M_FIREPLACE,fan:M_FAN,hammock:M_HAMMOCK,teaser:M_TEASER,wallclock:M_WALLCLOCK,hangplant:M_HANGPLANT,mobile:M_MOBILE,chandelier:M_CHANDELIER,jingleball:M_JINGLEBALL,frame:M_FRAME,shelf:M_SHELF,mirror:M_MIRROR,neon:M_NEON,sconce:M_SCONCE,garland:M_GARLAND,poster:M_POSTER,tapestry:M_TAPESTRY}[id]; }
     function furnSvg(id, opt){ return pxSvg(furnMatrix(id), FURN_PALS[id], opt); }
@@ -4043,16 +4052,16 @@
       let clouds=''; for(let i=0;i<15;i++){ const y=(2+pkRand(i,1)*30).toFixed(1), h=Math.round(11+pkRand(i,2)*17),
         w=Math.floor(pkRand(i,3)*3), tn=['w','p','b'][Math.floor(pkRand(i,4)*3)], dur=(26+pkRand(i,5)*44).toFixed(1);
         clouds+='<span class="pk-cloud" style="top:'+y+'%;--d:'+dur+'s;--i:'+i+'">'+cloudSvg(w,tn,{h:h})+'</span>'; }
-      // 🏔️ 지평선 원근 레이어 — 먼 나무/풀/꽃을 아주 작게(뒤쪽 d 0.9+), 가로로 고르게 → 깊이감(먼 숲 가장자리)
-      let farline=''; for(let i=0;i<18;i++){ const l=((i+0.4)/18*100).toFixed(1), bot=(83+pkRand(i,53)*11).toFixed(1), k=pkRand(i,54), r=pkRand(i,55);
+      // 🏔️ 지평선 원근 레이어 — 먼 나무/풀/꽃을 아주 작게, 벽지·하늘 경계(seam)에 얹어 위로 자라게(.pk-horizon는 overflow:visible라 나무 윗부분이 안 잘림). 꽃 비중↑(벽지쪽 꽃 더 많이).
+      let farline=''; for(let i=0;i<22;i++){ const l=((i+0.4)/22*100).toFixed(1), bot=(pkRand(i,53)*7).toFixed(1), k=pkRand(i,54), r=pkRand(i,55);
         let el;
-        if(k<0.42) el='<span class="pk-tree pk-far pk-pine" style="left:'+l+'%;bottom:'+bot+'%;z-index:1;--i:'+i+'"><span class="pk-canopy">'+pineSvg({h:Math.round(13+r*9)})+'</span></span>';
-        else if(k<0.62) el='<span class="pk-tree pk-far" style="left:'+l+'%;bottom:'+bot+'%;z-index:1;--i:'+i+'"><span class="pk-canopy">'+treeTopSvg({h:Math.round(11+r*7)})+'</span></span>';
-        else if(k<0.83) el='<span class="pk-tuft pk-far" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+tuftSvg({h:Math.round(6+r*3)})+'</span>';
-        else el='<span class="pk-flower pk-far" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+flowerSvg(['r','y','p'][Math.floor(pkRand(i,56)*3)],{h:Math.round(7+r*3)})+'</span>';
+        if(k<0.34) el='<span class="pk-tree pk-far pk-pine" style="left:'+l+'%;bottom:'+bot+'px;z-index:1;--i:'+i+'"><span class="pk-canopy">'+pineSvg({h:Math.round(13+r*9)})+'</span></span>';
+        else if(k<0.52) el='<span class="pk-tree pk-far" style="left:'+l+'%;bottom:'+bot+'px;z-index:1;--i:'+i+'"><span class="pk-canopy">'+treeTopSvg({h:Math.round(11+r*7)})+'</span></span>';
+        else if(k<0.68) el='<span class="pk-tuft pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+tuftSvg({h:Math.round(6+r*3)})+'</span>';
+        else el='<span class="pk-flower pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+flowerSvg(['r','y','p'][Math.floor(pkRand(i,56)*3)],{h:Math.round(7+r*3)})+'</span>';
         farline+=el; }
       // 🌳 가까운 나무 5그루 — 가로 '레인'으로 고르게(겹침 방지) · 크기 1.5배 · 뒤쪽(d 0.5~0.78) · z<펫
-      let trees=''; for(let i=0;i<5;i++){ const d=0.5+pkRand(i,11)*0.28, l=((i+0.5)/5*88+6+(pkRand(i,12)-0.5)*6).toFixed(1),
+      let trees=''; for(let i=0;i<5;i++){ const d=0.5+pkRand(i,11)*0.28, l=((i+0.5)/5*88+6+(pkRand(i,12)-0.5)*6+(i===2?9:0)).toFixed(1),   // 가운데(i=2) 나무는 오른쪽으로 살짝(+9%)
         sc=1-d*0.5, bot=(d*70).toFixed(1), z=Math.round(2+(1-d)*2), pine=pkRand(i,13)<0.45;
         const inner = pine ? '<span class="pk-canopy">'+pineSvg({h:Math.max(16,Math.round(69*sc))})+'</span>'
           : '<span class="pk-canopy">'+treeTopSvg({h:Math.max(16,Math.round(51*sc))})+'</span><span class="pk-trunk">'+trunkSvg({h:Math.max(8,Math.round(24*sc))})+'</span>';
@@ -4068,14 +4077,24 @@
       let soil=''; for(let i=0;i<9;i++){ const d=pkRand(i,41)*0.7, l=(3+pkRand(i,42)*90).toFixed(1),
         sc=1-d*0.45, bot=(d*72).toFixed(1), w=Math.round((10+pkRand(i,43)*16)*sc);
         soil+='<span class="pk-soil" style="left:'+l+'%;bottom:'+bot+'%;width:'+w+'px"></span>'; }
+      // 🦋 나비 5마리 — 서로 간격 두고(고른 분포) 랜덤 배치, 각자 살랑살랑 주변을 날아다니며 날개를 팔랑임(결정적 pkRand로 재렌더 안정)
+      let bflies=''; const BFT=['o','b','p','y','o'];
+      for(let i=0;i<5;i++){ const l=(12+((i+pkRand(i,61)*0.7)/5)*74).toFixed(1), b=(24+pkRand(i,62)*52).toFixed(1),
+        hh=Math.round(9+pkRand(i,63)*4), dur=(7.5+pkRand(i,64)*5).toFixed(1), del=(-pkRand(i,65)*8).toFixed(2), fdur=(0.34+pkRand(i,66)*0.22).toFixed(2);
+        bflies+='<span class="pk-bfly" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;--fd:'+fdur+'s;animation-delay:'+del+'s;--i:'+i+'"><span class="bf-wing">'+butterflySvg(BFT[i],{h:hh})+'</span></span>'; }
+      // 🦅 독수리 2마리 — 서로 다른 높이에서 구름처럼 하늘을 가로질러 날개 퍼덕이며 날아감
+      const eagle=(top,dur,delay,hh)=> '<span class="pk-bird" style="top:'+top+'%;--d:'+dur+'s;animation-delay:'+delay+'s;"><span class="bird-f bird-a">'+eagleSvg(0,{h:hh})+'</span><span class="bird-f bird-b">'+eagleSvg(1,{h:hh})+'</span></span>';
+      const birds=eagle(10,34,-5,16)+eagle(24,46,-22,12);
       const actor=(id,lx)=> pickupExists(id) ? '<div class="cd-actor" data-cat="'+id+'" data-hh="'+H+'" style="left:'+lx+'px;">'+catActorHTML(id,H)+'</div>' : '';
       return '<div class="pickbanner">'+
         '<div class="pk-head"><span class="pk-title tier-rainbow">✨ 한정 픽업</span>'+tag(1,p1)+tag(2,p2)+'</div>'+
         '<div class="pkscene">'+
-          '<div class="pk-sky" aria-hidden="true">'+clouds+'</div>'+
-          '<div class="pk-rainbow" aria-hidden="true">'+rainbowArcSvg({cols:77,rows:11,h:44})+'</div>'+
-          '<div class="pk-field" aria-hidden="true"><div class="pk-grass"></div>'+soil+farline+tufts+flowers+trees+
+          '<div class="pk-sky" aria-hidden="true">'+clouds+birds+'</div>'+
+          '<div class="pk-rainbow" aria-hidden="true">'+rainbowArcSvg({cols:95,rows:11,h:44})+'</div>'+
+          '<div class="pk-horizon" aria-hidden="true">'+farline+'</div>'+
+          '<div class="pk-field" aria-hidden="true"><div class="pk-grass"></div>'+soil+tufts+flowers+trees+
             '<div class="pk-egg"><img src="'+assetUrl('icons/egg-garden.svg')+'" alt=""></div></div>'+
+          '<div class="pk-air" aria-hidden="true">'+bflies+'</div>'+
           '<div class="cd-room pkstage" id="pkStage" data-noprops="1" data-hh="'+H+'" aria-hidden="true">'+actor(p1,14)+actor(p2,99999)+'</div>'+
         '</div></div>'; }
     // 등급 '이름' 라벨을 등급 색으로(펫 이름이 아니라 등급명). 한정(exclusive)=무지개(.tier-rainbow), 그 외=인라인 색(신화=#ff5fa2 등). 도감 등급 헤더 등 공용.
