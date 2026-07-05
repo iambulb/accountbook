@@ -1102,6 +1102,17 @@
     .fx-art { position:relative; z-index:2; display:grid; place-items:center; }
     .fx-artimg { position:relative; z-index:2; display:block; filter:drop-shadow(0 10px 22px rgba(0,0,0,.45)); }
     .fx-artimg .px { width:auto; height:118px; }
+    /* 🌈 처음 획득 "NEW" 배지 — 펫/아이템 위에 뜨고, 움직이는 무지개(pxSvg RAINBOW) 픽셀 글자가 글자별로 물결처럼 흔들림 */
+    .fx-new { position:absolute; left:50%; bottom:100%; margin-bottom:10px; z-index:5;
+      display:flex; gap:5px; align-items:flex-end; transform:translateX(-50%);
+      pointer-events:none; animation:fxnewpop .42s cubic-bezier(.2,1.5,.4,1) both; }
+    .fx-new-ch { display:inline-flex; transform-origin:center bottom;
+      animation:fxnewbob 1.15s ease-in-out calc(var(--i) * .13s) infinite; }   /* 글자별 지연 = 물결(웨이브) */
+    .fx-new-ch .px { display:block; height:30px; width:auto; image-rendering:pixelated;
+      filter:drop-shadow(1px 0 0 #1a1730) drop-shadow(-1px 0 0 #1a1730) drop-shadow(0 1px 0 #1a1730) drop-shadow(0 -1px 0 #1a1730); }   /* 블러 없는 4방향 = 크리스프 1px 외곽선 */
+    @keyframes fxnewpop { 0%{ opacity:0; transform:translateX(-50%) scale(.4) translateY(8px); } 100%{ opacity:1; transform:translateX(-50%) scale(1) translateY(0); } }
+    @keyframes fxnewbob { 0%,100%{ transform:translateY(0); } 45%{ transform:translateY(-28%); } }
+    @media (prefers-reduced-motion: reduce){ .fx-new, .fx-new-ch { animation:none !important; } }
     /* 펫 뒤·주변 은은한 픽셀 오오라 — 펫(아트) 중심에 정렬(화면 정중앙 아님) */
     .fx-aurawrap, .fx-twinkles { position:absolute; left:50%; top:50%; width:0; height:0; pointer-events:none; }
     .fx-aurawrap { z-index:0; }

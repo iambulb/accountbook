@@ -1708,6 +1708,18 @@
     ];
     const SPARK_PAL={X:'currentColor',H:'#ffffff'};
     function sparkSvg(opt){ return pxSvg(M_SPARK, SPARK_PAL, opt); }
+    // 🌈 "NEW" 배지 — 처음 획득한 펫/아이템 뽑기 등장 시 위에 띄우는 디테일 픽셀 글자.
+    //   색은 움직이는 무지개(pxSvg 'RAINBOW' = 수직 스크롤 애니 그라디언트, 도트 유지). 글자별로 물결처럼 위아래로 흔들린다(.fx-new-ch, CSS fxnewbob).
+    const M_LN=[   // N
+      "X...X","XX..X","XX..X","X.X.X","X.X.X","X..XX","X...X"];
+    const M_LE=[   // E
+      "XXXXX","X....","X....","XXXX.","X....","X....","XXXXX"];
+    const M_LW=[   // W
+      "X.....X","X.....X","X.....X","X..X..X","X.X.X.X","XX...XX","X.....X"];
+    const NEW_PAL={X:'RAINBOW'};
+    function newBadgeSvg(opt){ opt=opt||{}; const h=opt.h||30;
+      const chs=[M_LN,M_LE,M_LW].map((m,i)=>'<span class="fx-new-ch" style="--i:'+i+'">'+pxSvg(m,NEW_PAL,{h:h})+'</span>').join('');
+      return '<div class="fx-new" aria-hidden="true">'+chs+'</div>'; }
     // 알뜰샵·팔레트·격자용 대표 아트(물그릇은 물 채운 파란 그릇으로 구분 표시)
     function furnMatrix(id){ return {pond:M_POND,cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT,catwheel:M_CATWHEEL,rug:M_RUG,window:M_WINDOW,fishtank:M_FISHTANK,fireplace:M_FIREPLACE,fan:M_FAN,hammock:M_HAMMOCK,teaser:M_TEASER,wallclock:M_WALLCLOCK,hangplant:M_HANGPLANT,mobile:M_MOBILE,chandelier:M_CHANDELIER,jingleball:M_JINGLEBALL,frame:M_FRAME,shelf:M_SHELF,mirror:M_MIRROR,neon:M_NEON,sconce:M_SCONCE,garland:M_GARLAND,poster:M_POSTER,tapestry:M_TAPESTRY}[id]; }
     function furnSvg(id, opt){ return pxSvg(furnMatrix(id), FURN_PALS[id], opt); }
@@ -2396,6 +2408,7 @@
       const res=rollFromPool(kind==='egg'?effCatTier():effItemTier()); if(!res) return;   // 일반 확률표(effTiers)
       const dup=kind==='egg' && ownsCat(res.id);
       const refund=dup?petDupRefund(res.id):0;
+      const isNew=gachaNew(kind,res);   // 지급 전 판정(NEW 배지)
       gameRef().transaction(g=>{ g=normalizeGame(g);
         if((Number(g.consum[key])||0)<1) return;
         g.consum[key]-=1; g.gold=clampGold((g.gold||0)+1);
@@ -2407,7 +2420,7 @@
           g.owned.items[res.id].qty=(Number(g.owned.items[res.id].qty)||0)+1;
         }
         return g;
-      }).then(r=>{ if(r&&r.committed){ runGachaFx(kind, res, dup, refund); if(state._sheetRefresh) setTimeout(()=>{ if(state._sheetRefresh) state._sheetRefresh(); }, 50); } });
+      }).then(r=>{ if(r&&r.committed){ runGachaFx(kind, res, dup, refund, false, isNew); if(state._sheetRefresh) setTimeout(()=>{ if(state._sheetRefresh) state._sheetRefresh(); }, 50); } });
     }
     // 미션 수동 수령(완료 판정 후)
     function claimMission(id){
@@ -3958,6 +3971,12 @@
     const GACHA_PRICE=100;
     // 중복 펫 환급 = 해당 펫 가격의 20%(등급가 기준). 가구(박스)는 중복 개념 없이 수량 누적(환급 없음).
     function petDupRefund(id){ const c=PET_CATALOG.find(x=>x.id===id); return c?Math.round((c.price||0)*0.2):0; }
+    // 🌈 처음 획득 판정 — 뽑기 결과를 지급하기 "전" 보유 여부로 판단(등장 시 NEW 배지). 반드시 트랜잭션 커밋 전에 호출한다(커밋 후엔 리스너로 보유가 반영돼 오판).
+    function gachaNew(kind, res){ if(!res) return false;
+      if(kind==='egg') return !ownsCat(res.id);
+      if(res.type==='floor') return !ownsFloor(res.id);   // default는 항상 보유 → NEW 아님
+      if(res.type==='wall') return !ownsWall(res.id);
+      return ((typeof itemQty==='function'?itemQty(res.id):0)===0); }   // 가구: 처음 보유(수량 0)면 NEW
     // 구매+롤(원자적): 은화-100, 금화+1, 지급(신규 고양이/가구 or 중복 펫 환급). 성공 시 연출.
     function openGacha(kind){
       if(coins()<GACHA_PRICE){ toast((GACHA_PRICE-coins())+' 은화 부족', true); return; }
@@ -3967,6 +3986,7 @@
         if(res.type==='floor') dup=ownsFloor(res.id)&&res.id!=='default';
         else if(res.type==='wall') dup=ownsWall(res.id)&&res.id!=='default';
         refund=dup?Math.round((TIER_PRICE[res.tier]||0)*0.2):0; }
+      const isNew=gachaNew(kind,res);   // 지급 전 판정(NEW 배지)
       gameRef().transaction(g=>{
         g=normalizeGame(g);
         if(g.coins<GACHA_PRICE) return;
@@ -3976,7 +3996,7 @@
           else { g.coins+=refund; }
         } else { const rf=grantBoxReward(g,res); if(rf) g.coins+=rf; }
         return g;
-      }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund); });
+      }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund, false, isNew); });
     }
     // ===== ✨ 무지개알/무지개박스: 금화로 구매하는 소비템 → 사용 시 특별90·전설8·한정2% 가챠 =====
     const RAINBOW_TIERS=[{id:'epic',p:90},{id:'legend',p:8},{id:'limited',p:2}];   // 한정 콘텐츠 없으면 rollFromPool이 전설로 폴백
@@ -4004,6 +4024,7 @@
         if(res.type==='floor') dup=ownsFloor(res.id)&&res.id!=='default';
         else if(res.type==='wall') dup=ownsWall(res.id)&&res.id!=='default';
         refund=dup?Math.round((TIER_PRICE[res.tier]||0)*0.2):0; }
+      const isNew=gachaNew(kind,res);   // 지급 전 판정(NEW 배지)
       gameRef().transaction(g=>{ g=normalizeGame(g);
         if((Number(g.consum[key])||0)<1) return;
         g.consum[key]-=1;
@@ -4012,7 +4033,7 @@
           else { g.coins+=refund; }
         } else { const rf=grantBoxReward(g,res); if(rf) g.coins+=rf; }
         return g;
-      }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund, true); });
+      }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund, true, isNew); });
     }
     let _selItem=null;
     function selItem(id){ if(itemRemaining(id)<=0){ toast(catFurnName(id)+' 전부 배치됨 — 회수하거나 더 얻어야 놓을 수 있어요', true); return; } _selItem=(_selItem===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }   // 남은 0(전부 배치)은 선택 불가·안내. _sheetRefresh=팔레트·펫칩 위치 보존(선택 시 처음으로 안 튐)
@@ -4608,10 +4629,10 @@
       for(let i=0;i<n;i++){ const x=Math.round(Math.random()*100), r=(Math.round(Math.random()*4)*90), del=(Math.random()*0.7).toFixed(2), dur=(1.1+Math.random()*0.9).toFixed(2), sw=(Math.random()*50-25).toFixed(0), sh=i%3;
         s+='<span class="fx-conf s'+sh+'" style="left:'+x+'%;color:'+cols[i%6]+';--r:'+r+'deg;--sw:'+sw+'px;animation-delay:'+del+'s;animation-duration:'+dur+'s"></span>'; }
       return s; }
-    function runGachaFx(kind, res, dup, refund, rainbow){
+    function runGachaFx(kind, res, dup, refund, rainbow, isNew){
       const fx=$('catFx'); if(!fx){ toast((kind==='egg'?'펫알':'랜덤박스')+' 획득!'); return; }
       _fxClear();   // 이전 FX 잔여 타이머 취소(빠른 재오픈 교차 방지)
-      _fx={ kind, res, dup, refund:refund||0, stage:0, rainbow:!!rainbow, gold: rainbow?0:1 };   // 무지개는 금화로 샀으니 금화 보상 없음
+      _fx={ kind, res, dup, refund:refund||0, stage:0, rainbow:!!rainbow, gold: rainbow?0:1, isNew:!!isNew };   // 무지개는 금화로 샀으니 금화 보상 없음. isNew=처음 획득(NEW 배지)
       if(kind==='egg' && typeof hasSprite==='function' && hasSprite(res.id)){ try{ const _pi=new Image(); _pi.src=sprStill(res.id,'south'); if(_pi.decode) _pi.decode().catch(function(){}); }catch(e){} }   // 등장 스프라이트 미리 로드·디코드(연출 도는 동안) → 마지막에 바로 표시
       if(typeof prewarmGachaFxPads==='function') prewarmGachaFxPads();   // 연출 고양이 발끝 여백 미리 측정(탭하는 동안 캐시 완료 → 첫 등장 세로 점프 방지)
       if(reducedMotion()){ fxReveal(); return; }   // 모션 최소화: 바로 결과
@@ -4762,6 +4783,7 @@
           '<span class="fx-twinkles">'+fxAuraTwinkles(tw)+'</span>'+                   // 펫 둘레 트윙클 도트
           '<span class="fx-frame"></span>'+
           '<span class="fx-artimg">'+art+'</span>'+
+          (_fx.isNew?newBadgeSvg({h:30}):'')+                                          // 🌈 처음 획득: 무지개 픽셀 "NEW" 배지(펫/아이템 위에서 물결)
         '</div>'+
         '<div class="fx-tier">'+t.name+'</div>'+
         '<div class="fx-name">'+(_fx.kind==='egg'?catNameSpan(_fx.res.id,catName(_fx.res.id)):escapeHtml(rewardName(_fx.res)))+'</div>'+
@@ -4804,7 +4826,7 @@
       const map = kind==='egg'? effCatTier() : effItemTier();
       let id = Object.keys(map).find(k=>map[k]===tierId);
       if(!id) id = kind==='egg' ? (Object.keys(map)[0]||'cat_mackerel') : (Object.keys(map)[0]||'cushion');
-      closeSheet(); _fx=null; runGachaFx(kind, { id, tier:tierId }, false);
+      closeSheet(); _fx=null; runGachaFx(kind, { id, tier:tierId }, false, 0, false, true);   // 미리보기는 NEW 배지도 함께 표시
     }
     // ---- 다마고치 테스트(개발자 전용, 즉시) ----
     function devGiveConsum(){ if(!isDev())return; gameRef().transaction(g=>{ g=normalizeGame(g); g.consum.food+=10; g.consum.water+=10; return g; }).then(r=>{ if(r&&r.committed) toast('사료·물 +10'); }); }
