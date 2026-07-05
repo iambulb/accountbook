@@ -4352,14 +4352,15 @@
       }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund, false, isNew); });
     }
     // 🌱 뜰알(한정 픽업) — 은화로 여는 펫알. DDEUL_TIERS(한정 0.5% 포함, 활성 한정 펫만)로 롤, 오픈 연출은 뜰+무지개.
-    const DDEUL_PRICE=300;   // 은화(프리미엄 픽업). 조정 가능.
+    const DDEUL_PRICE=100, DDEUL_GOLD=1;   // 프리미엄 픽업: 은화 100 + 금화 1. 열 때 펫알과 동일하게 금화 1 보상(금화는 net 0, 금화 보유가 게이트).
     function openDdeul(){
       if(coins()<DDEUL_PRICE){ toast((DDEUL_PRICE-coins())+' 은화 부족', true); return; }
+      if(gold()<DDEUL_GOLD){ toast('금화 '+(DDEUL_GOLD-gold())+' 부족', true); return; }
       const res=rollFromPool(gachaCatTierMap(), DDEUL_TIERS); if(!res) return;
       const dup=ownsCat(res.id), refund=dup?petDupRefund(res.id):0;
       const isNew=gachaNew('ddeul',res);
-      gameRef().transaction(g=>{ g=normalizeGame(g); if(g.coins<DDEUL_PRICE) return;
-        g.coins-=DDEUL_PRICE; g.gold=(g.gold||0)+1;
+      gameRef().transaction(g=>{ g=normalizeGame(g); if(g.coins<DDEUL_PRICE || (g.gold||0)<DDEUL_GOLD) return;
+        g.coins-=DDEUL_PRICE; g.gold=(g.gold||0)-DDEUL_GOLD+1;   // 금화 -1(가격) +1(펫알과 동일 보상) = net 0
         if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
         else { g.coins+=refund; }
         return g;
@@ -4367,7 +4368,7 @@
     }
     // ===== ✨ 무지개알/무지개박스: 금화로 구매하는 소비템 → 사용 시 특별90·전설8·한정2% 가챠 =====
     const RAINBOW_TIERS=[{id:'epic',p:90},{id:'legend',p:8},{id:'limited',p:2}];   // limited=신화. 한정(exclusive)은 무지개알엔 없음 — 오직 뜰알에서만. 콘텐츠 없으면 rollFromPool이 한 단계 아래로 폴백
-    const RAINBOW_PRICE_GOLD={ egg:100, box:100 };   // 무지개알·무지개박스 모두 금화100
+    const RAINBOW_PRICE_GOLD={ egg:10, box:10 };   // 무지개알·무지개박스 모두 금화10
     function rbPriceGold(kind){ return RAINBOW_PRICE_GOLD[kind==='egg'?'egg':'box']; }
     function rainbowKey(kind){ return kind==='egg'?'rainbow_egg':'rainbow_box'; }
     function rainbowName(kind){ return kind==='egg'?'무지개알':'무지개박스'; }
