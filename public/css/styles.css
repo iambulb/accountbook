@@ -1095,10 +1095,7 @@
     .fx-box.pop { animation:fxpop .4s cubic-bezier(.2,1.4,.4,1); }
     .fx-item.shake { animation:fxshake .3s ease; }
     .fx-item.fx-open { animation:fxopen .45s ease forwards; }
-    /* 🌱 뜰알 오픈: 뜰(풀밭·흙) 바닥 위에 알 — 흔들림·나머지 연출은 기본 알과 동일 */
-    .fx-ddeul .fx-ground { position:absolute; left:0; right:0; bottom:0; text-align:center; line-height:0; z-index:1; pointer-events:none; }
-    .fx-ddeul .fx-ground .px { display:inline-block; width:min(92%,460px); height:auto; image-rendering:pixelated; }
-    .fx-ddeul .fx-item { margin-bottom:6%; }   /* 알이 뜰 위에 놓인 느낌으로 살짝 아래 */
+    /* 🌱 뜰알 오픈: 밑에 흙·이끼가 붙은 고양이얼굴 알(자체 완결) — 흔들림·나머지 연출은 기본 알과 동일 */
     /* 🌈 한정(무지개) 리빌: 로그인 화면 같은 하늘 + 왼→오로 그려지는 무지개(샤라라) */
     .fx-sky { position:absolute; inset:0; z-index:1; overflow:hidden; background:linear-gradient(180deg,#a9dbff 0%,#cdeeff 55%,#eafaff 100%); animation:fxfade .35s ease; }
     .fx-sky .fx-cloud { position:absolute; z-index:1; image-rendering:pixelated; opacity:.95; }
@@ -1470,20 +1467,20 @@
     .pk-title { font-size:13.5px; font-weight:900; letter-spacing:.02em; }
     .pk-tag { font-size:12.5px; font-weight:700; color:var(--sub); display:inline-flex; align-items:center; gap:4px; }
     .pk-tag b { color:var(--text); font-weight:800; }
-    .pkscene { position:relative; height:142px; overflow:hidden; background:linear-gradient(#bfe6ff 0%, #dcf3ff 60%); }
+    .pkscene { position:relative; height:148px; overflow:hidden; background:linear-gradient(#bfe6ff 0%, #dcf3ff 60%); }
     :root[data-theme="dark"] .pkscene { background:linear-gradient(#1f2b44,#26364f); }
     .pkscene .px, .pkscene img { image-rendering:pixelated; }
     /* 하늘·흐르는 구름(제각각 높이·모양·색·속도·위상) — 벽지 밴드는 하늘/무지개/구름만(풀·나무 없음) */
-    .pk-sky { position:absolute; left:0; right:0; top:0; height:38%; z-index:0; overflow:hidden; pointer-events:none; }
+    .pk-sky { position:absolute; left:0; right:0; top:0; height:40%; z-index:0; overflow:hidden; pointer-events:none; }
     .pk-cloud { position:absolute; left:0; display:block; opacity:.96; will-change:transform;
       animation:pkcloud var(--d,44s) linear infinite; animation-delay:calc(var(--i) * -9s); }
     @keyframes pkcloud { from{ transform:translateX(-64px);} to{ transform:translateX(600px);} }
     /* 무지개 — 넓고 길게·연하게, 지평선(뜰 뒤)에서 솟아 배너 진입 1초 뒤 사르르 */
-    .pk-rainbow { position:absolute; left:50%; bottom:58%; transform:translateX(-50%); z-index:1; opacity:0; animation:pkrainbowin 1.4s ease 1s forwards; pointer-events:none; }
-    .pk-rainbow .px { height:50px; width:auto; opacity:.5; }
+    .pk-rainbow { position:absolute; left:50%; bottom:60%; transform:translateX(-50%); z-index:1; opacity:0; animation:pkrainbowin 1.4s ease 1s forwards; pointer-events:none; }
+    .pk-rainbow .px { height:46px; width:auto; opacity:.5; }
     @keyframes pkrainbowin { from{ opacity:0; transform:translateX(-50%) translateY(7px) scale(.92);} to{ opacity:1; transform:translateX(-50%) translateY(0) scale(1);} }
     /* 뜰(들판) — 흙 보이고 풀·꽃·나무는 필드 안에만(overflow:hidden으로 하늘 침범 방지) */
-    .pk-field { position:absolute; left:0; right:0; bottom:0; height:66%; z-index:1; overflow:hidden; }
+    .pk-field { position:absolute; left:0; right:0; bottom:0; height:60%; z-index:1; overflow:hidden; }
     .pk-grass { position:absolute; inset:0; background:#5fbf6a; z-index:0; }
     .pk-grass::before { content:''; position:absolute; left:0; right:0; top:0; height:5px; background:repeating-linear-gradient(90deg,#7ad57f 0 2px, transparent 2px 5px); }
     :root[data-theme="dark"] .pk-grass { background:#3a7d47; }
@@ -1503,7 +1500,7 @@
     .pk-egg { position:absolute; left:50%; bottom:30%; transform:translateX(-50%); z-index:3; }
     .pk-egg img { display:block; height:50px; width:auto; filter:drop-shadow(0 3px 0 rgba(0,0,0,.14)); }
     /* 픽업 펫 무대 = 필드 크기 미니 캠(.cd-room 원근 재사용, 사용자 가구 없음) — pk-field 형제(overflow:visible로 큰 앞 펫이 하늘로 넘어도 OK, 필드 데코는 필드 안에만). 배너 펫은 비상호작용(스크롤 방해 방지) */
-    #pkStage.pkstage { position:absolute; left:0; right:0; bottom:0; height:66%; z-index:5; overflow:visible; background:none; }
+    #pkStage.pkstage { position:absolute; left:0; right:0; bottom:0; height:60%; z-index:5; overflow:visible; background:none; }
     .pkstage .cd-actor { pointer-events:none; }
     .pkstage .cd-actor .cspr { image-rendering:pixelated; }
     @media (prefers-reduced-motion: reduce){ .pk-cloud, .pk-tree .pk-canopy, .pk-flower, .pk-tuft { animation:none; } .pk-rainbow { opacity:1; animation:none; } }

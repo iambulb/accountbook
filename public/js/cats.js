@@ -1504,10 +1504,11 @@
     function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); if(rainbow) pal.X='RAINBOW'; return pxSvg(M_EGG_C3, pal, opt); }   // 무지개알 열 때: 테두리(X)까지 무지개색
     // 픽셀 껍질 조각 렌더(A=큰 곡면, B=삼각, C=작은 조각). rainbow면 무지갯빛 껍질.
     // 🌱 뜰알(한정 픽업) — 로그인 메인 아이콘(egg-garden.svg)의 '고양이 얼굴 알' + 뜰(풀밭·흙) 픽셀. 무지개는 rainbowArcSvg 재사용.
-    const M_DDEUL=[   // 고양이 얼굴 알(X 외곽·S 링·W 흰·D 회색 고양이·E 귀·P 코) — 오픈 무대에서 흔들릴 알
-      ".....XSSX.....","....XSWWSX....","...XSWWWWSX...","...XWWWWWWX...","..XWDDWWDDWX..",".XWDDDDDDDDWX.",
-      ".XWDDDDDDDDWX.","XWWDDEDDEDDWSX","XWWDDDDDDDDWSX","XWWDDDPPDDDWSX","XWWWDDDDDDWWSX",".XWWWDDDDWWWX.",".XWWWWWWWWWWX."];
-    const DDEUL_PAL={X:'#968c76',S:'#d2ccbe',W:'#FBFBFD',D:'#4a4f57',E:'#d6dbe1',P:'#cf8f6c'};
+    const M_DDEUL=[   // 🥚 뜰알 — 흰 알(X 외곽·S 링·W 흰·w 그림자) + 검은 고양이(B/E 노란눈/P 분홍코) + 밑에 흙 묻음(R/r/o)·이끼(G/g) + 위 꽃잎(F/f/Y/t). 17×17.
+      ".................","...........YF....","...........FFf...",".......XSXFFfF...","......XWWSXtt....",".....XWWWWSX.....","....XWWWWWWSX....",
+      "....XBBWWWBBX....","...XWBBBBBBBWX...","...XBBBBBBBBBX...","...XBBEBBBEBBX...","...XBBBBBBBBBX...","...XBBBBPPBBBX...","....XoBBBBBoX....",
+      "....GgBorowgG....","....GGrRRRrGG....",".....g.rRr.g....."];
+    const DDEUL_PAL={X:'#8a8172',S:'#cfc8ba',W:'#FBFBFD',w:'#e9e3d6',B:'#26262c',b:'#3a3a42',E:'#f4cc4e',P:'#f2a0b4',R:'#a6703f',r:'#7c5028',o:'#8a5a30',G:'#7cc652',g:'#5aa63c',F:'#f9b9d0',f:'#ef8fb4',Y:'#ffe06a',t:'#5aa63c'};
     const M_DDEUL_FLOOR=[   // 뜰 바닥 = 풀밭(G/g) + 흙(R/r)
       "...GGGGGGGGGGGGGGGGGG...",".GGGGGGGGGGGGGGGGGGGGGG.","gggggggggggggggggggggggg","RRRRRRRRRRRRRRRRRRRRRRRR",".rrrrrrrrrrrrrrrrrrrrrr."];
     const DDEUL_FLOOR_PAL={G:'#7cc652',g:'#5aa63c',R:'#a6703f',r:'#7c5028'};
@@ -4063,7 +4064,7 @@
         '<div class="pk-head"><span class="pk-title tier-rainbow">✨ 한정 픽업</span>'+tag(1,p1)+tag(2,p2)+'</div>'+
         '<div class="pkscene">'+
           '<div class="pk-sky" aria-hidden="true">'+clouds+'</div>'+
-          '<div class="pk-rainbow" aria-hidden="true">'+rainbowArcSvg({cols:53,rows:14,h:50})+'</div>'+
+          '<div class="pk-rainbow" aria-hidden="true">'+rainbowArcSvg({cols:61,rows:12,h:46})+'</div>'+
           '<div class="pk-field" aria-hidden="true"><div class="pk-grass"></div>'+soil+tufts+flowers+trees+
             '<div class="pk-egg"><img src="'+assetUrl('icons/egg-garden.svg')+'" alt=""></div></div>'+
           '<div class="cd-room pkstage" id="pkStage" data-noprops="1" data-hh="'+H+'" aria-hidden="true">'+actor(p1,14)+actor(p2,99999)+'</div>'+
@@ -4967,7 +4968,6 @@
       const hint = isDdeul? '뜰알을 탭해서 깨보세요! (3번)' : (isEggKind(kind)? '알을 탭해서 깨보세요! (3번)' : '상자를 탭해서 열어보세요!');
       fx.innerHTML='<div class="fx-scrim"></div><div class="fx-stage'+(rainbow?' fx-rb':'')+(isDdeul?' fx-ddeul':'')+'">'+
         (rainbow?fxSparkles(16):'')+
-        (isDdeul?'<div class="fx-ground" aria-hidden="true">'+ddeulFloorSvg({fit:true})+'</div>':'')+
         '<div class="fx-item pop '+(isEggKind(kind)?'fx-egg':'fx-box')+(isDdeul?' fx-ddeulegg':'')+(rainbow?' fx-rainbow':'')+'" id="fxItem" role="button" aria-label="'+hint+'" onclick="fxTap()">'+art+'</div>'+
         '<div class="fx-hint" id="fxHint">'+hint+'</div></div>';
       fx.className='fx on';
