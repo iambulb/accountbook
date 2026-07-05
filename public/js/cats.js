@@ -1504,15 +1504,15 @@
     function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); if(rainbow) pal.X='RAINBOW'; return pxSvg(M_EGG_C3, pal, opt); }   // 무지개알 열 때: 테두리(X)까지 무지개색
     // 픽셀 껍질 조각 렌더(A=큰 곡면, B=삼각, C=작은 조각). rainbow면 무지갯빛 껍질.
     // 🌱 뜰알(한정 픽업) — 로그인 메인 아이콘(egg-garden.svg)의 '고양이 얼굴 알' + 뜰(풀밭·흙) 픽셀. 무지개는 rainbowArcSvg 재사용.
-    const M_DDEUL=[   // 🥚 뜰알(24×31) — 더 둥글고(세로 축소) 4톤 명암(I 하이라이트·W 라이트·S 미드·D 섀도)+X 외곽선. 안쪽 검은 고양이(B, 이마/귀 음영 H·안쪽귀 j·연회색눈 E·분홍코 P, 귀 사이 '틈'을 비워 뾰족 귀 2개). 흙(R/r/o/n)·이끼(G/g/m)는 알 하단 '실루엣 안'에 섞어 넣어(길어지지 않게) 알과 합쳐 봄. 알 위 꽃 한 송이(F/f/C·중심 Y·줄기 t/T).
+    const M_DDEUL=[   // 🥚 뜰알(24×31) — 둥근 계란형(4톤 명암 I·W·S·D + X외곽). 검은 고양이: 귀는 '안쪽으로' 뾰족(안쪽이 꼭짓점, 바깥으로 완만히 내려와 둥글게)+안쪽귀 음영 H, 눈은 회색 1px(E), 입은 멍때리며 벌린 4px(윗입술 P·안쪽 어둠 Q·양옆 음영 q). 이끼(G/g/m)는 '우측 하단→우측 알쪽'으로 타고 오르게, 흙(R/r/o/n)은 하단 실루엣 안에 섞음. 알 위 꽃 한 송이(F/f/C·Y·t/T).
       "...........fCf..........","...........CYC..........","...........fCf..........","............t...........","...........tT..........",
       "..........XXXX..........","........XXXXXXXX........",".......XXIIIIWWXX.......","......XIIIIIWWWWWX......",".....XIIIIIWWWWWWSX.....",
-      "....XXIIIIWWWWWWSSXX....","....XIIIIWWWWWWSSSSX....","...XIIIIWWWWWWWSSSSSX...","...XIIBBWWWWWWSSBBSSX...","..XIIIBHBWWWWSSBHBSSSX..",
-      "..XIIBBHBBWWSSBBHBBSDX..","..XIIBBBBBBBBBBBBBBDDX..","..XIWBBBBBBBBBBBBBBDDX..",".XIIWHBBBBBBBBBBBBHDDDX.",".XIWWBBBjEEBBEEjBBBDDDX.",
-      "..XWWBBBjEEBBEEjBBBDDX..","..XWWBBBBBBBBBBBBBBDDX..","..XWWWBBBBBoPoBBBBBDDX..","..XWWWBBBBBBBBBBBBDDDX..","...XWSSBBBBBBBBBBDDDX...",
-      "...XSSSSBBBBBBBBDDDDX...","....RrSSSSBBBBDDnRDX....","....XRrGSSDDDDGrRoXX....",".....RromDDDDmrRrXX.....","......RronRnroRRRg......",
-      "........roRnrRRX........"];
-    const DDEUL_PAL={X:'#8d8368',D:'#d8d0bd',S:'#eae3d2',W:'#f7f3ea',I:'#fffef8',B:'#2b2b31',H:'#43434e',j:'#20202a',E:'#d7dae2',P:'#f2a0b4',R:'#9c6a3c',r:'#754b26',o:'#835530',n:'#5e3a1c',G:'#6fbf46',g:'#4e9636',m:'#8ed46f',F:'#f9b9d0',f:'#ef8fb4',C:'#ff9ec2',Y:'#ffe06a',t:'#4e9636',T:'#3f7a2c'};
+      "....XXIIIIWWWWWWSSXX....","....XIIIIWWWWWWSSSSX....","...XIIIIWWWWWWWSSSSSX...","...XIIIIBBWWWWBBSSSSX...","..XIIIIBBHWWWSHBBSSSSX..",
+      "..XIIBBBBBWWSSBBBBBSDX..","..XIIBBBBBBBBBBBBBBDDX..","..XIWBBBBBBBBBBBBBBDDX..",".XIIWHBBBBBBBBBBBBHDDDX.",".XIWWBBBEBBBBBBEBBBDDDX.",
+      "..XWWBBBBBBBBBBBBBBGDX..","..XWWBBBBBBBBBBBBBBgDX..","..XWWWBBBBqPPqBBBBgGDX..","..XWWWBBBBqQQqBBBBGgDX..","...XWSSBBBBBBBBBBgGgX...",
+      "...XRrSSBBBBBBBBgGgDX...","....XRrrSSBBBBrmgGXX....","....XRronSDDDogGgXXX....",".....RRronRnrgGgGrX.....","......XRroRnrRRoXX......",
+      "........XXXXXXXX........"];
+    const DDEUL_PAL={X:'#8d8368',D:'#d8d0bd',S:'#eae3d2',W:'#f7f3ea',I:'#fffef8',B:'#2b2b31',H:'#45454f',E:'#9a9aa4',P:'#f2a0b4',Q:'#7a3a48',q:'#b56576',R:'#9c6a3c',r:'#754b26',o:'#835530',n:'#5e3a1c',G:'#6fbf46',g:'#4e9636',m:'#8ed46f',F:'#f9b9d0',f:'#ef8fb4',C:'#ff9ec2',Y:'#ffe06a',t:'#4e9636',T:'#3f7a2c'};
     const M_DDEUL_FLOOR=[   // 뜰 바닥 = 풀밭(G/g) + 흙(R/r)
       "...GGGGGGGGGGGGGGGGGG...",".GGGGGGGGGGGGGGGGGGGGGG.","gggggggggggggggggggggggg","RRRRRRRRRRRRRRRRRRRRRRRR",".rrrrrrrrrrrrrrrrrrrrrr."];
     const DDEUL_FLOOR_PAL={G:'#7cc652',g:'#5aa63c',R:'#a6703f',r:'#7c5028'};
@@ -4352,7 +4352,7 @@
       }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund, false, isNew); });
     }
     // 🌱 뜰알(한정 픽업) — 은화로 여는 펫알. DDEUL_TIERS(한정 0.5% 포함, 활성 한정 펫만)로 롤, 오픈 연출은 뜰+무지개.
-    const DDEUL_PRICE=100, DDEUL_GOLD=1;   // 프리미엄 픽업: 은화 100 + 금화 1. 열 때 펫알과 동일하게 금화 1 보상(금화는 net 0, 금화 보유가 게이트).
+    const DDEUL_PRICE=100, DDEUL_GOLD=1;   // 프리미엄 픽업: 은화 100 + 금화 1(실제 소모, 금화 보상 없음).
     function openDdeul(){
       if(coins()<DDEUL_PRICE){ toast((DDEUL_PRICE-coins())+' 은화 부족', true); return; }
       if(gold()<DDEUL_GOLD){ toast('금화 '+(DDEUL_GOLD-gold())+' 부족', true); return; }
@@ -4360,7 +4360,7 @@
       const dup=ownsCat(res.id), refund=dup?petDupRefund(res.id):0;
       const isNew=gachaNew('ddeul',res);
       gameRef().transaction(g=>{ g=normalizeGame(g); if(g.coins<DDEUL_PRICE || (g.gold||0)<DDEUL_GOLD) return;
-        g.coins-=DDEUL_PRICE; g.gold=(g.gold||0)-DDEUL_GOLD+1;   // 금화 -1(가격) +1(펫알과 동일 보상) = net 0
+        g.coins-=DDEUL_PRICE; g.gold=(g.gold||0)-DDEUL_GOLD;   // 은화 100 + 금화 1 소모(금화 보상 없음)
         if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
         else { g.coins+=refund; }
         return g;
