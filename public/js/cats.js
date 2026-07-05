@@ -1722,7 +1722,7 @@
     const M_LW=[   // W (17×16)
       ".OOO...........OO","OHHHO.........OHH","OHXXHO.......OHXD","OHXXDO.......OHXD","OHXXDO.......OHXD",".OHXXHO.OOO.OHXXD",
       ".OHXXDOOHHHOOHXXD",".OHXXDOOHXDOOHXXD","..OHXXHHXXXHHXXDO","..OHXXXXXXXXXXXDO","...OHXXXXXXXXXDO.","...OHXXXXXXXXXDO.",
-      "...OHXXXXXXXXXDO.","....OHXXXXXXXDO..","....OHXXXDXXXDO..","....OHDDDOHDDDO.."];
+      "...OHXXXXXXXXXDO.","....OHXXO.OXXDO..","....OHXXO.OXXDO..","....OHDDO.OHDDO.."];
     const NEW_PAL={O:'#241d38',X:'RAINBOW',H:'#ffffff',D:'#553a86'};
     function newBadgeSvg(opt){ opt=opt||{}; const h=opt.h||30;
       const chs=[M_LN,M_LE,M_LW].map((m,i)=>'<span class="fx-new-ch" style="--i:'+i+'">'+pxSvg(m,NEW_PAL,{h:h})+'</span>').join('');
@@ -2397,7 +2397,7 @@
         else h+=rows.map(k=>{ const m=CONSUM_META[k], q=consumQty(k);
           const useBtn = m.use ? '<button class="buy'+((k==='rainbow_egg'||k==='rainbow_box')?' rb-use':'')+'" onclick="useBagItem(\''+k+'\')">사용</button>'
                                : '<span class="qty" style="font-size:11px;color:var(--sub)">홈에서 그릇 탭</span>';
-          return '<div class="bagrow"><span class="bgic">'+m.icon({h:34})+'</span><b class="bgnm'+((k==='rainbow_egg'||k==='rainbow_box')?' tier-limited':'')+'">'+m.name+'</b><span class="qty">보유 '+q.toLocaleString()+(q>=MAX_CONSUM?maxChip():'')+'</span>'+useBtn+'</div>'; }).join('');
+          return '<div class="bagrow"><span class="bgic">'+m.icon({h:34})+'</span><b class="bgnm'+((k==='rainbow_egg'||k==='rainbow_box')?' tier-rainbow':'')+'">'+m.name+'</b><span class="qty">보유 '+q.toLocaleString()+(q>=MAX_CONSUM?maxChip():'')+'</span>'+useBtn+'</div>'; }).join('');
         h+='<div class="note" style="margin-top:12px;">사료·물은 홈 화면에서 <b>밥·물 그릇을 탭</b>해 사용해요. 펫알·랜덤박스·무지개 아이템은 여기서 <b>사용</b>하면 열려요.</div></div>';
         return h;
       };
@@ -2779,7 +2779,7 @@
         TIERS.map(function(t){ return '<option value="'+t.id+'"'+(t.id===tier?' selected':'')+'>'+t.name+'</option>'; }).join('')+'</select>';
       const priceInp='<span class="fm-price"><span class="ci">'+coinSvg({h:14})+'</span><input class="input" type="number" inputmode="numeric" min="0" value="'+price+'"'+(gacha?' disabled':'')+' onchange="'+P[1]+'(\''+id+'\',this.value)" aria-label="'+escapeHtml(name)+' 은화 가격"></span>';
       const gachaTog='<label class="fm-gacha"><span>가챠전용</span><span class="switch'+(gacha?' on':'')+'" role="switch" aria-checked="'+gacha+'" tabindex="0" onclick="'+P[3]+'(\''+id+'\')" aria-label="'+escapeHtml(name)+' 가챠전용"><i></i></span></label>';
-      const badge=gacha?'<span class="fm-badge tier-limited">'+boxSvg({h:13})+' 랜덤박스 전용</span>':'';
+      const badge=gacha?'<span class="fm-badge tier-rainbow">'+boxSvg({h:13})+' 랜덤박스 전용</span>':'';
       const reset=overridden?'<button class="fm-reset" onclick="'+P[2]+'(\''+id+'\')" aria-label="기본값으로">기본값</button>':'';
       return '<div class="fmrow'+(gacha?' gacha':'')+'">'+
         '<span class="fm-thumb">'+thumb+'</span>'+
@@ -3549,15 +3549,15 @@
         // ✨ 무지개알/무지개박스 — 금화로 구매하는 소비템(특별↑ 확정). 보유하면 "사용"으로 오픈.
         const rb=[['egg','무지개알','열면 특별90 · 전설8 · 한정2%. 특별↑ 고양이만!', rainbowEggSvg({h:66,cls:'rb-thumb'})],
                   ['box','무지개박스','열면 특별90 · 전설8 · 한정2%. 특별↑ 가구만!', rainbowBoxSvg({h:56,cls:'rb-thumb'})]];
-        h+='<div class="rb-hh"><span class="tier-limited">✨ 무지개</span> · 금화 전용 · 특별↑ 확정</div>';
+        h+='<div class="rb-hh"><span class="tier-rainbow">✨ 무지개</span> · 금화 전용 · 특별↑ 확정</div>';
         h+=rb.map(([k,nm,desc,art])=>{ const key=rainbowKey(k), qty=consumQty(key), price=rbPriceGold(k), canBuy=gold()>=price;
           const buy=canBuy?'<button class="buy" aria-label="'+nm+' 구매(금화 '+price+')" onclick="buyRainbow(\''+k+'\')">구매</button>':'<button class="buy dis" disabled>금화 '+(price-gold())+' 부족</button>';
           const use=qty>0?'<button class="buy rb-use" aria-label="'+nm+' 사용" onclick="useRainbow(\''+k+'\')">사용</button>':'';
           return '<div class="shopcard rb-card"><div class="thumb rb-thumb-wrap">'+art+'</div>'+
-            '<div class="meta"><b class="tier-limited">'+nm+'</b><div class="desc">'+desc+'</div>'+
+            '<div class="meta"><b class="tier-rainbow">'+nm+'</b><div class="desc">'+desc+'</div>'+
             '<span class="price"><span class="ci">'+goldSvg({h:16})+'</span>'+price+'</span></div>'+
             '<div class="act">'+buy+use+'<span class="qty">보유 '+qty.toLocaleString()+(qty>=MAX_CONSUM?maxChip():'')+'</span></div></div>'; }).join('');
-        h+='<div class="note">열 때마다 <b>금화 1개</b> 지급(무지개 제외·중복 펫은 <b>그 펫 가격의 20% 은화</b> 환급). <b>특별 등급 이상</b>은 펫알/랜덤박스로만 나오며, <b class="tier-limited">무지개</b>는 <b>금화로 구매·사용</b>해 특별↑을 확정으로 뽑아요.</div>';
+        h+='<div class="note">열 때마다 <b>금화 1개</b> 지급(무지개 제외·중복 펫은 <b>그 펫 가격의 20% 은화</b> 환급). <b>특별 등급 이상</b>은 펫알/랜덤박스로만 나오며, <b class="tier-rainbow">무지개</b>는 <b>금화로 구매·사용</b>해 특별↑을 확정으로 뽑아요.</div>';
         h+=gachaInfoHtml();
         return h;
       }
@@ -3612,7 +3612,7 @@
           const feat=isFeaturedCat(c.id), bp=catBuyPrice(c.id), enough=coins()>=bp;
           let act, priceHtml;
           if(gachaOnly){
-            priceHtml='<span class="price gachaonly">'+eggSvg(0,{h:16})+'<b class="tier-limited">펫알 전용</b></span>';
+            priceHtml='<span class="price gachaonly">'+eggSvg(0,{h:16})+'<b class="tier-rainbow">펫알 전용</b></span>';
             act= owned ? owntag : '<button class="buy ghost" aria-label="'+c.name+'은 펫알에서 뽑기" onclick="event.stopPropagation();setShopSub(\'event\')">펫알 뽑기</button>';
           } else {
             priceHtml= feat
@@ -3640,7 +3640,7 @@
           const price=itemBuyPrice(it.id), enough=coins()>=price, gachaOnly=isGachaOnlyItem(it.id);
           let act, priceHtml;
           if(gachaOnly){
-            priceHtml='<span class="price gachaonly">'+boxSvg({h:16})+'<b class="tier-limited">랜덤박스 전용</b></span>';
+            priceHtml='<span class="price gachaonly">'+boxSvg({h:16})+'<b class="tier-rainbow">랜덤박스 전용</b></span>';
             act='<button class="buy ghost" aria-label="'+it.name+'은 랜덤박스에서 뽑기" onclick="setShopSub(\'event\')">랜덤박스 뽑기</button>';
           } else {
             priceHtml='<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+price+'</span>';
@@ -3799,15 +3799,17 @@
       { id:'rare',     name:'희귀', p:15,  color:'#3182F6' },
       { id:'epic',     name:'특별', p:3.8, color:'#9B6FC8' },
       { id:'legend',   name:'전설', p:1,   color:'#E0A43C' },
-      { id:'limited',  name:'한정', p:0.2, color:'#ff5fa2' }
+      { id:'limited',  name:'신화', p:0.2, color:'#ff5fa2' },   // 신화(구 '한정') — 핑크 텍스트·연출. id는 하위호환 위해 'limited' 유지
+      { id:'exclusive',name:'한정', p:0,   color:'#F2C84B' }    // 한정(신규 최상위) — 무지개 텍스트·연출. p:0 = 가챠 미출현(지금은 판매·가챠 모두 제외), rank>epic이라 자동 판매 숨김
     ];
+    const NO_GACHA_TIERS = { exclusive:true };   // 가챠(펫알·랜덤박스) 풀에서 완전 제외할 등급 — 한정은 지금은 안 나옴
     const TIER_ORDER = TIERS.map(t=>t.id);   // 높은 등급이 비면 한 단계씩 낮춰 대체할 때 사용
     function tierInfo(id){ return TIERS.find(t=>t.id===id)||TIERS[0]; }
-    // 동물 이름을 등급 색으로 표기. 일반(흰색)은 밝은 배경에서 안 보이므로 기본 잉크색, 한정은 무지개(.tier-limited).
+    // 동물 이름을 등급 색으로 표기. 일반(흰색)은 밝은 배경에서 안 보이므로 기본 잉크색, 한정(exclusive)은 무지개(.tier-rainbow), 신화(limited)는 핑크(등급색 인라인).
     function catTierColor(id){ const t=CAT_TIER[id]||'normal'; return t==='normal' ? 'var(--text)' : tierInfo(t).color; }
     function catNameSpan(id, name){ const t=CAT_TIER[id]||'normal'; const n=escapeHtml(name);
-      if(t==='limited') return '<span class="tier-limited">'+n+'</span>';
-      return '<span style="color:'+catTierColor(id)+'">'+n+'</span>'; }
+      if(t==='exclusive') return '<span class="tier-rainbow">'+n+'</span>';   // 한정 = 무지개
+      return '<span style="color:'+catTierColor(id)+'">'+n+'</span>'; }   // 신화=핑크(#ff5fa2) 등 등급색
     // 고양이 이름 변경(개별) — owned.cats[id].name에 저장. 등급색은 catNameSpan로 유지.
     function openRenameCat(id){
       closeRename();
@@ -3875,7 +3877,7 @@
     // 등급별 알뜰샵 가격(은화) — 확률(60/20/15/3.8/1/0.2%)에 맞춰 등급이 오를수록 약 2배씩.
     // 알 100은화(+금화1·중복은 그 펫 가격의 20% 환급) 대비, 흔한 등급은 알보다 싸게·희귀 등급은 비싸게 → 직접구매 vs 뽑기 선택 성립.
     // CAT_TIER를 단일 소스로 삼아 PET_CATALOG.price를 산정(새 고양이도 등급만 지정하면 자동 가격).
-    const TIER_PRICE = { normal:50, uncommon:100, rare:200, epic:400, legend:800, limited:1500 };
+    const TIER_PRICE = { normal:50, uncommon:100, rare:200, epic:400, legend:800, limited:1500, exclusive:3000 };   // 한정(exclusive)=비매지만 환급·표시용 값
     PET_CATALOG.forEach(c=>{ const t=CAT_TIER[c.id]; if(t&&TIER_PRICE[t]!=null) c.price=TIER_PRICE[t]; });
     ITEM_CATALOG.forEach(c=>{ const t=ITEM_TIER[c.id]||'normal'; if(TIER_PRICE[t]!=null) c.price=TIER_PRICE[t]; });   // 기구물도 펫과 동일 등급 가격(TIER_PRICE) — 새 기구물은 ITEM_TIER 등급만 지정하면 자동 가격
     // ---- 개발자 모드(등록된 개발자 이메일 전용): 확률·구성 로컬 오버라이드 ----
@@ -3988,6 +3990,7 @@
     function rollTier(tiers){ const arr=tiers||effTiers(); const total=arr.reduce((s,t)=>s+(Number(t.p)||0),0)||1; const r=Math.random()*total; let acc=0; for(const t of arr){ acc+=(Number(t.p)||0); if(r<acc) return t.id; } return arr[0].id; }
     // 등급 롤 → 해당 등급 풀에서 랜덤. 비면 한 단계 아래로 내려가며 탐색. tiers를 주면 그 확률표로(무지개=특별↑ 전용).
     function rollFromPool(tierMap, tiers){
+      { const src=tierMap; tierMap={}; Object.keys(src).forEach(function(k){ if(!NO_GACHA_TIERS[src[k]]) tierMap[k]=src[k]; }); }   // 가챠 제외 등급(한정)은 풀에서 완전히 뺀다
       let ti=TIER_ORDER.indexOf(rollTier(tiers));
       for(; ti>=0; ti--){ const tier=TIER_ORDER[ti]; const pool=Object.keys(tierMap).filter(k=>tierMap[k]===tier);
         if(pool.length) return { id:pool[Math.floor(Math.random()*pool.length)], tier }; }
@@ -4697,7 +4700,7 @@
     // ✨ 무지개 승급: 결과 등급이 특별↑이면 확률로 알을 무지개알로 변신(특별 50% · 전설/한정 100%).
     //    시각·연출만 무지개로 바뀌고 결과 펫·보상(_fx.gold)은 그대로. 3번째 탭에서 무지개 오픈 연출로 열린다.
     function maybeRainbowUpgrade(){
-      const tier=_fx.res.tier; const chance=(tier==='epic')?0.5:((tier==='legend'||tier==='limited')?1:0);
+      const tier=_fx.res.tier; const chance=(tier==='epic')?0.5:((tier==='legend'||tier==='limited')?1:0);   // 특별50%·전설/신화100% 무지개알 승급(승급 연출은 그대로). 신화 텍스트색은 핑크지만 알 열 때 무지개알 승급 유지
       if(chance<=0 || Math.random()>=chance) return;
       _fx.rainbow=true; _fx.rbUpgrade=true;
       const it=$('fxItem'), st=$('catFx')&&$('catFx').querySelector('.fx-stage');
@@ -4764,7 +4767,7 @@
       const t=tierInfo(_fx.res.tier), epic=['epic','legend','limited'].indexOf(_fx.res.tier)>=0, lim=_fx.res.tier==='limited';
       // 검은 고양이 앞발 연출 = 고등급 티저. 등급별 확률: 특별(epic) 10%·전설 90%·한정 100% (그 미만 0%). 등장 자체가 '뭔가 좋은 게 나온다'는 힌트.
       const catShow = Math.random() < (({ epic:0.10, legend:0.90, limited:1.0 })[_fx.res.tier] || 0);
-      const rank=Math.max(0, TIER_ORDER.indexOf(_fx.res.tier));   // 0(일반)~5(한정)
+      const rank=Math.max(0, TIER_ORDER.indexOf(_fx.res.tier));   // 0(일반)~5(신화)~6(한정)
       const lk=(1+rank*0.15).toFixed(2);                          // 등급 높을수록 빛이 크고 밝게
       const isEgg=_fx.kind==='egg';
       st.style.color='#ffffff';   // 오픈 전(흔들림·고양이)엔 흰빛 — 등급색을 미리 깔면 열기 전에 등급이 새므로, 실제 열리는 순간(t0)부터 등급색으로 바꾼다

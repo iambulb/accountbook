@@ -1066,13 +1066,16 @@
     .gi-row b { flex:none; width:34px; font-weight:800; }
     .gi-p { flex:none; width:38px; color:var(--sub); font-weight:700; }
     .gi-list { flex:1; min-width:0; color:var(--text2); }
-    /* 등급 색(텍스트) — 한정은 레인보우 */
+    /* 등급 색(텍스트) — 신화=핑크, 한정=레인보우(.tier-rainbow) */
     .tier-normal { color:var(--text); } [data-theme="dark"] .tier-normal { color:#fff; }
     .tier-uncommon { color:#2FAE7A; } .tier-rare { color:#3182F6; } .tier-epic { color:#9B6FC8; } .tier-legend { color:#E0A43C; }
-    .tier-limited { background:linear-gradient(90deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8,#F04452); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:rainbow 2.4s linear infinite; }
+    .tier-limited { color:#ff5fa2; }   /* 신화 = 핑크 */
+    /* 무지개 텍스트 — 한정 등급(.tier-exclusive) · 무지개알/박스 소비템 · 랜덤박스 배지 공용 */
+    .tier-rainbow, .tier-exclusive { background:linear-gradient(90deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8,#F04452); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:rainbow 2.4s linear infinite; }
     /* 리스트(그리드·도감)의 한정펫 이름은 무한 레인보우 애니를 끄고 정적 그라데이션(수십 개 동시 애니 배터리 소모 방지). 애니는 가챠 연출 등 단발에서만. */
-    .catchip .cn .tier-limited, .dexnm .tier-limited { animation:none; }
+    .catchip .cn .tier-rainbow, .dexnm .tier-rainbow, .catchip .cn .tier-exclusive, .dexnm .tier-exclusive { animation:none; }
     @keyframes rainbow { to { background-position:200% 0; } }
+    @keyframes mythicpulse { 0%,100%{ text-shadow:0 0 8px rgba(255,95,162,.45); } 50%{ text-shadow:0 0 16px rgba(255,95,162,.85); } }
 
     /* ===== 🥚 뽑기 오픈 연출 (#catFx) ===== */
     .fx { position:fixed; inset:0; z-index:80; display:none; }
@@ -1134,9 +1137,11 @@
     .fx-reveal .btn { position:relative; z-index:2; width:auto; min-width:160px; margin-top:6px; }
     /* 등급 후광/텍스트 색 상속 */
     .fx-reveal.tier-normal { color:#c9ccd2; } .fx-reveal.tier-uncommon { color:#2FAE7A; } .fx-reveal.tier-rare { color:#3182F6; }
-    .fx-reveal.tier-epic { color:#9B6FC8; } .fx-reveal.tier-legend { color:#E0A43C; } .fx-reveal.tier-limited { color:#ff5fa2; }
+    .fx-reveal.tier-epic { color:#9B6FC8; } .fx-reveal.tier-legend { color:#E0A43C; } .fx-reveal.tier-limited { color:#ff5fa2; } .fx-reveal.tier-exclusive { color:#F2C84B; }
     .fx-reveal .fx-tier { color:inherit; }
-    .fx-reveal.tier-limited .fx-tier { background:linear-gradient(90deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8,#F04452); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:rainbow 2s linear infinite; }
+    .fx-reveal.tier-limited .fx-tier { color:#ff5fa2; text-shadow:0 0 10px rgba(255,95,162,.6); animation:mythicpulse 1.4s ease-in-out infinite; }   /* 신화 = 핑크(글로우 펄스) */
+    .fx-reveal.tier-exclusive .fx-tier { background:linear-gradient(90deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8,#F04452); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:rainbow 2s linear infinite; }   /* 한정 = 무지개 */
+    .fx-reveal.tier-limited .fx-frame { display:block; inset:-11px; border-width:4px; border-color:transparent; box-shadow:0 0 0 4px #ff5fa2, 0 0 18px 6px rgba(255,95,162,.5); animation:fxframe 1s steps(2) infinite; }   /* 신화 핑크 프레임(연출) */
     .fx-confetti { position:absolute; inset:0; overflow:hidden; z-index:1; pointer-events:none; }
     /* 픽셀 컨페티 — 각진 도트 블록(둥근 조각 금지). currentColor=조각 색(인라인), 3가지 모양 s0~s2. */
     .fx-conf { position:absolute; top:-16px; width:4px; height:4px; background:currentColor; border-radius:0; image-rendering:pixelated;
@@ -1171,7 +1176,7 @@
     @keyframes fxpixflash { 0%{opacity:1;transform:translate(-50%,-50%) scale(.4) rotate(0)} 100%{opacity:0;transform:translate(-50%,-50%) scale(2.6) rotate(45deg)} }
     @keyframes fxpixspin { to{ transform:translate(-50%,-50%) rotate(360deg); } }
     /* 모션 최소화: 오오라·광선·트윙클 정지(정적으로만 표시) */
-    @media (prefers-reduced-motion: reduce){ .ll-aura,.ll-rays,.fx-tw,.tier-limited{ animation:none; } .fx-conf,.fx-confetti{ animation:none; opacity:0; } }
+    @media (prefers-reduced-motion: reduce){ .ll-aura,.ll-rays,.fx-tw,.tier-rainbow,.tier-exclusive{ animation:none; } .fx-conf,.fx-confetti{ animation:none; opacity:0; } }
     /* 등장 픽셀 프레임 — 등급색 각진 테두리(등급↑=두껍고 진하게, 한정=무지개 글로우) */
     .fx-frame { position:absolute; inset:-8px; z-index:1; border:3px solid currentColor; image-rendering:pixelated; opacity:.55; animation:fxframe 1.4s steps(2) infinite; }
     .fx-reveal.rank-3 .fx-frame, .fx-reveal.rank-4 .fx-frame, .fx-reveal.rank-5 .fx-frame { inset:-11px; border-width:4px; opacity:.75; }
