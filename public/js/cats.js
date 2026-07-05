@@ -3758,7 +3758,7 @@
           const dEnough=coins()>=DDEUL_PRICE;
           const dact=dEnough?'<button class="buy" aria-label="뜰알 구매('+DDEUL_PRICE+' 은화)" onclick="openDdeul()">구매</button>':'<button class="buy dis" disabled>'+(DDEUL_PRICE-coins())+' 부족</button>';
           h+='<div class="shopcard ddeul-card"><div class="thumb">'+ddeulEggSvg({h:64})+'</div>'+
-            '<div class="meta"><b class="tier-rainbow">뜰알</b> <span class="tagmini tier-rainbow">한정 픽업</span><div class="desc"><b class="tier-rainbow">한정 0.5%</b>로 픽업 펫'+(pk?'('+pk+')':'')+'! 신화 0.5%·그 외는 기본 확률.</div>'+
+            '<div class="meta"><b class="tier-rainbow">뜰알</b> <span class="tagmini tier-rainbow">한정 픽업</span><div class="desc"><b class="tier-rainbow">한정 5%</b>로 픽업 펫'+(pk?'('+pk+')':'')+'! 신화 0.5%·그 외는 기본 확률.</div>'+
             '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+DDEUL_PRICE+'</span></div>'+
             '<div class="act">'+dact+'</div></div>'; }
         const enough=coins()>=GACHA_PRICE;
@@ -4025,10 +4025,10 @@
       { id:'epic',     name:'특별', p:6,   color:'#9B6FC8' },
       { id:'legend',   name:'전설', p:3,   color:'#E0A43C' },
       { id:'limited',  name:'신화', p:1,   color:'#ff5fa2' },   // 신화(구 '한정') — 핑크 텍스트·연출. id는 하위호환 위해 'limited' 유지
-      { id:'exclusive',name:'한정', p:0,   color:'#F2C84B' }    // 한정(최상위·무지개) — 기본 펫알/무지개알엔 0(안 나옴). 오직 '뜰알'(한정 픽업)에서만 DDEUL_TIERS로 0.5% 등장
+      { id:'exclusive',name:'한정', p:0,   color:'#F2C84B' }    // 한정(최상위·무지개) — 기본 펫알/무지개알엔 0(안 나옴). 오직 '뜰알'(한정 픽업)에서만 DDEUL_TIERS로 5% 등장
     ];
-    // 🌱 뜰알(한정 픽업 뽑기) 전용 확률표 — 기본과 같지만 신화 1→0.5, 한정 0.5 추가(활성 한정 펫=삵·표범만 풀에). 합 100.
-    const DDEUL_TIERS=[{id:'normal',p:45},{id:'uncommon',p:30},{id:'rare',p:15},{id:'epic',p:6},{id:'legend',p:3},{id:'limited',p:0.5},{id:'exclusive',p:0.5}];
+    // 🌱 뜰알(한정 픽업 뽑기) 전용 확률표 — 한정 5%(활성 한정 펫=삵·표범만 풀에), 신화 0.5%. 나머지는 일반에서 흡수. 합 100.
+    const DDEUL_TIERS=[{id:'normal',p:40.5},{id:'uncommon',p:30},{id:'rare',p:15},{id:'epic',p:6},{id:'legend',p:3},{id:'limited',p:0.5},{id:'exclusive',p:5}];
     // (구) NO_GACHA_TIERS 제거 — 한정은 '전부 제외'가 아니라 펫별 exActive로 선별 포함. 박스(가구)엔 한정 아이템이 없으므로 boxPool에서 한정을 걸러 안전 유지.
     const TIER_ORDER = TIERS.map(t=>t.id);   // 높은 등급이 비면 한 단계씩 낮춰 대체할 때 사용
     function tierInfo(id){ return TIERS.find(t=>t.id===id)||TIERS[0]; }
@@ -4320,7 +4320,7 @@
         return g;
       }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund, false, isNew); });
     }
-    // 🌱 뜰알(한정 픽업) — 은화로 여는 펫알. DDEUL_TIERS(한정 0.5% 포함, 활성 한정 펫만)로 롤, 오픈 연출은 뜰+무지개.
+    // 🌱 뜰알(한정 픽업) — 은화로 여는 펫알. DDEUL_TIERS(한정 5% 포함, 활성 한정 펫만)로 롤, 오픈 연출은 뜰+무지개.
     const DDEUL_PRICE=300;   // 은화(프리미엄 픽업). 조정 가능.
     function openDdeul(){
       if(coins()<DDEUL_PRICE){ toast((DDEUL_PRICE-coins())+' 은화 부족', true); return; }
