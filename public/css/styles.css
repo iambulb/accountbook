@@ -1110,7 +1110,7 @@
     .fx-sky .fx-rb-spark { position:absolute; top:-6%; bottom:-6%; left:0; width:16px; z-index:3; pointer-events:none; background:linear-gradient(90deg,transparent,rgba(255,255,255,.95),transparent); mix-blend-mode:screen; animation:fxrbspark 1.15s .1s ease-out forwards; }
     @keyframes fxrbdraw { from{ clip-path:inset(0 100% 0 0); } to{ clip-path:inset(0 0 0 0); } }
     @keyframes fxrbspark { 0%{ left:-4%; opacity:.95; } 88%{ opacity:.95; } 100%{ left:100%; opacity:0; } }
-    .fx-reveal.rev-ddeul { z-index:2; }   /* 펫·텍스트는 하늘·무지개 위에 */
+    .fx-reveal.rev-scene { z-index:2; }   /* 전설·신화·한정: 펫·텍스트는 픽업 씬 배경 위에 */
     @media (prefers-reduced-motion: reduce){ .fx-sky .fx-cloud{ animation:none; } .fx-sky .fx-sky-rb{ animation:none; clip-path:none; } .fx-sky .fx-rb-spark{ display:none; } }
     .fx-hint { position:relative; z-index:2; color:#fff; font-size:14px; font-weight:800; opacity:.9; animation:fxblink 1s ease-in-out infinite; }
     /* 열림 순간 빛 — 은은하게(강한 흰 폭광 대신 부드러운 블룸) */
@@ -1474,17 +1474,10 @@
     .pkscene { position:relative; height:156px; overflow:hidden; background:linear-gradient(#bfe6ff 0%, #dcf3ff 60%); }
     :root[data-theme="dark"] .pkscene { background:linear-gradient(#1f2b44,#26364f); }
     .pkscene .px, .pkscene img { image-rendering:pixelated; }
-    /* 🌲 뜰알 한정 등장 배경 = 픽업 씬 전체화면(리빌). 펫·텍스트(.fx-reveal.rev-ddeul z-index:2)는 이 위에. */
+    /* 🌲 전설·신화·한정 등장 배경 = 픽업 씬 전체화면(리빌, 배회 픽업 펫 #pkRevStage 포함). 펫·텍스트(.fx-reveal.rev-scene z-index:2)는 이 위에. */
     .pkscene.pk-reveal { position:absolute; inset:0; height:100%; z-index:1; border-radius:0; animation:fxfade .4s ease; }
     .pkscene.pk-reveal::after { content:''; position:absolute; inset:0; z-index:8; pointer-events:none;
       background:linear-gradient(180deg, rgba(0,0,0,.10) 0%, transparent 26%, transparent 66%, rgba(0,0,0,.16) 100%); }   /* 상·하 살짝 어둡게 → 가운데 등장 펫이 배경에 안 묻힘 */
-    /* 🏠 전설/신화 등장 배경 = 내 알뜰홈 방 전체화면(벽지·바닥·배치 가구). 펫·텍스트(.fx-reveal.rev-room z-index:2)는 이 위에. */
-    .pk-roombg { position:absolute; inset:0; z-index:1; overflow:hidden; animation:fxfade .4s ease; }
-    .pk-roombg .catroom { position:absolute; inset:0; width:auto; height:100%; border:0; border-radius:0; margin:0; }
-    .pk-roombg .cd-actor { pointer-events:none; }   /* 배경 방 펫은 배회만(드래그·탭 없음) */
-    .pk-roombg::after { content:''; position:absolute; inset:0; z-index:9; pointer-events:none;
-      background:linear-gradient(180deg, rgba(0,0,0,.14) 0%, transparent 22%, transparent 60%, rgba(0,0,0,.24) 100%); }   /* 상·하 어둡게 → 등장 펫 대비 */
-    .fx-reveal.rev-room { z-index:2; }   /* 펫·텍스트는 방 배경 위에 */
     /* 하늘·흐르는 구름(제각각 높이·모양·색·속도·위상) — 벽지 밴드는 하늘/무지개/구름만(풀·나무 없음) */
     .pk-sky { position:absolute; left:0; right:0; top:0; height:40%; z-index:0; overflow:hidden; pointer-events:none; }
     .pk-cloud { position:absolute; left:0; display:block; opacity:.96; will-change:transform;
@@ -1535,7 +1528,7 @@
     .pk-egg { position:absolute; left:50%; bottom:30%; transform:translateX(-50%); z-index:3; }
     .pk-egg img { display:block; height:50px; width:auto; filter:drop-shadow(0 3px 0 rgba(0,0,0,.14)); }
     /* 픽업 펫 무대 = 필드 크기 미니 캠(.cd-room 원근 재사용, 사용자 가구 없음) — pk-field 형제(overflow:visible로 큰 앞 펫이 하늘로 넘어도 OK, 필드 데코는 필드 안에만). 배너 펫은 비상호작용(스크롤 방해 방지) */
-    #pkStage.pkstage { position:absolute; left:0; right:0; bottom:0; height:60%; z-index:5; overflow:visible; background:none; }
+    .pkstage { position:absolute; left:0; right:0; bottom:0; height:60%; z-index:5; overflow:visible; background:none; }   /* 배너 #pkStage + 리빌 #pkRevStage 공용 */
     .pkstage .cd-actor { pointer-events:none; }
     .pkstage .cd-actor .cspr { image-rendering:pixelated; }
     @media (prefers-reduced-motion: reduce){ .pk-cloud, .pk-tree .pk-canopy, .pk-flower, .pk-tuft, .pk-frame, .pk-bfly, .pk-bfly .bf-wing { animation:none; } .pk-rainbow { opacity:1; animation:none; } }

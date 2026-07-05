@@ -3255,7 +3255,7 @@
         const pk=$('pkStage'); if(pk && out.indexOf(pk)<0) out.push(pk);                         // 🌈 알뜰샵 가챠 탭 한정 픽업 배너 씬(있을 때만 = 그 탭일 때만 DOM 존재)
       }
       if(dockMode()!=='hidden'){ const s=$('cdStage'); if(s && out.indexOf(s)<0) out.push(s); }  // 하단 dock 캠(시트가 떠 있어도 계속 로밍)
-      const rb=$('rbStage'); if(rb && out.indexOf(rb)<0) out.push(rb);                            // 🏠 전설/신화 등장 배경 방의 활성 펫(등장 연출 떠 있을 때만 DOM 존재)
+      const pr=$('pkRevStage'); if(pr && out.indexOf(pr)<0) out.push(pr);                          // 🌲 전설/신화/한정 등장 연출 배경 씬의 픽업 펫 배회(연출 떠 있을 때만 DOM 존재)
       return out;
     }
     function buildActors(stage){
@@ -4110,7 +4110,9 @@
       const rock  = mode==='reveal' ? '' : '<span class="pk-rock" style="left:30%;bottom:'+(0.4*53).toFixed(1)+'%;z-index:'+Math.round(12-0.4*11)+';">'+rockSvg({h:Math.round(26*depthScale(0.4))})+'</span>';
       const frame = mode==='reveal' ? '' : '<span class="pk-frame" style="left:3%;z-index:20;">'+tuftSvg({h:34})+'</span><span class="pk-frame" style="left:97%;z-index:20;">'+flowerSvg('p',{h:30})+'</span>';
       const egg   = mode==='reveal' ? '' : '<div class="pk-egg"><img src="'+assetUrl('icons/egg-garden.svg')+'" alt=""></div>';   // 리빌은 알 대신 등장 펫이 주인공
-      const stage = mode==='reveal' ? '' : '<div class="cd-room pkstage" id="pkStage" data-noprops="1" data-hh="'+H+'" aria-hidden="true">'+rock+actor(p1,14)+actor(p2,99999)+frame+'</div>';   // 리빌엔 배회 픽업펫 없음
+      // 픽업 펫 2마리는 배너·리빌 둘 다 배회(리빌은 별도 무대 id로 배너 #pkStage와 안 겹치게). rock/frame은 배너 전용(reveal이면 빈 문자열).
+      const stageId = mode==='reveal' ? 'pkRevStage' : 'pkStage';
+      const stage = '<div class="cd-room pkstage" id="'+stageId+'" data-noprops="1" data-hh="'+H+'" aria-hidden="true">'+rock+actor(p1,14)+actor(p2,99999)+frame+'</div>';
       return '<div class="pkscene'+(mode==='reveal'?' pk-reveal':'')+'" aria-hidden="true">'+
           '<div class="pk-sky">'+clouds+'</div>'+
           '<div class="pk-rainbow">'+rainbowArcSvg({cols:95,rows:11,h:S(44)})+'</div>'+
@@ -4125,18 +4127,7 @@
       const tag=(id)=> pickupExists(id) ? '<span class="pk-tag">'+catNameSpan(id,catName(id))+'</span>' : '';
       const sep=(pickupExists(p1)&&pickupExists(p2))?'<span class="pk-tag" style="opacity:.5;">·</span>':'';
       return '<div class="pickbanner"><div class="pk-head"><span class="pk-title tier-rainbow">✨ 지금 이 펫만! 한정 픽업</span>'+tag(p1)+sep+tag(p2)+'</div>'+pickupSceneHtml('banner')+'</div>'; }
-    // 🏠 전설/신화 등장 배경 = 내 알뜰홈 방(현재 방의 벽지·바닥·배치 가구 + 활성 펫들, 캠 연출) 전체화면. 등장 펫은 앞(주인공)이라 배경 펫에서 제외.
-    function roomBackdropHtml(){
-      const spH=splitProps(placedList().sort((a,b)=>a.r-b.r), p=>propMarkup(p,false,false,true));   // live=true → 캠과 동일한 가구 연출
-      const props=spH.floor+wallPlacedList().map(p=>wallPropMarkup(p,false,true)).join('')+spH.other;
-      const revId=_fx&&_fx.res&&_fx.res.id;
-      const pets=activeCats().filter(id=>id!==revId).slice(0,slotCount());   // 현재 방 활성 펫(등장 펫 제외) — #rbStage에서 엔진이 배회시킴
-      if(typeof ensurePetArtMany==='function') ensurePetArtMany(pets);
-      const stage='<div class="cr-stage" id="rbStage" data-hh="72">'+pets.map((id,i)=>{ const s=petActorPx(id,32,180); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*72)+'px;">'+catActorHTML(id,s)+'</div>'; }).join('')+'</div>';
-      return '<div class="pk-roombg" aria-hidden="true"><div class="catroom">'+
-        '<div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div>'+
-        '<div class="cr-floor" style="background:'+floorCss(currentFloor())+'"></div><div class="cr-base"></div>'+
-        '<div class="cr-props">'+props+'</div>'+stage+'</div></div>'; }
+    // (구 roomBackdropHtml 제거 — 전설·신화도 픽업 배너 씬으로 통일. 배경은 pickupSceneHtml('reveal').)
     // 등급 '이름' 라벨을 등급 색으로(펫 이름이 아니라 등급명). 한정(exclusive)=무지개(.tier-rainbow), 그 외=인라인 색(신화=#ff5fa2 등). 도감 등급 헤더 등 공용.
     function tierLabelHtml(tierId){ const ti=tierInfo(tierId); const nm=escapeHtml(ti.name);
       if(tierId==='exclusive') return '<span class="tier-rainbow">'+nm+'</span>';
@@ -5215,11 +5206,10 @@
       const conf=rb?32:(rank<=0?0:rank<=1?10:rank<=2?16:20+(rank-2)*8);   // 등급↑ 컨페티 더 많이(일반=없음)
       const tw=5+rank*3;                                                  // 트윙클 수(등급↑ 많이)
       const art=isEggKind(_fx.kind)?catFace(_fx.res.id,{h:118,eager:true}):rewardBoxArt(_fx.res);   // eager: 등장 즉시 표시(lazy면 ~1초 늦게 뜸)
-      // 🌈 뜰알에서 한정(무지개)이 뜨면: 픽업 배너 씬 전체를 배경으로. 🏠 전설/신화 펫이면: 내 알뜰홈 방(벽지·바닥·배치 가구)을 배경으로.
-      const ddeulEx = _fx.kind==='ddeul' && _fx.res.tier==='exclusive';
-      const roomBg  = !ddeulEx && isEggKind(_fx.kind) && (_fx.res.tier==='legend' || _fx.res.tier==='limited');   // 전설·신화 펫 등장 = 내 방 배경
-      const skyLayer = ddeulEx ? pickupSceneHtml('reveal') : (roomBg ? roomBackdropHtml() : '');   // 배너 씬(pickupSceneHtml) 또는 내 방(roomBackdropHtml) 재사용 — 배경만(알·무대 없음)
-      fx.innerHTML='<div class="fx-scrim"></div>'+skyLayer+'<div class="fx-reveal tier-'+t.id+' rank-'+rank+((rb||ex)?' rev-rb':'')+(ddeulEx?' rev-ddeul':'')+(roomBg?' rev-room':'')+'">'+   // 한정도 rev-rb(무지개 프레임=박스)
+      // 🌲 전설·신화·한정 펫 등장 = 픽업 배너 씬 전체를 배경으로(픽업 펫 2마리도 씬에서 배회). 그 외 등급은 기본 연출.
+      const sceneBg = isEggKind(_fx.kind) && (_fx.res.tier==='legend' || _fx.res.tier==='limited' || _fx.res.tier==='exclusive');
+      const skyLayer = sceneBg ? pickupSceneHtml('reveal') : '';   // 배너 씬(pickupSceneHtml) 재사용 — 배경 + 배회 픽업 펫(알·헤더 없음)
+      fx.innerHTML='<div class="fx-scrim"></div>'+skyLayer+'<div class="fx-reveal tier-'+t.id+' rank-'+rank+((rb||ex)?' rev-rb':'')+(sceneBg?' rev-scene':'')+'">'+   // 한정도 rev-rb(무지개 프레임=박스)
         '<div class="fx-art pop">'+
           '<span class="fx-aurawrap">'+lightLayers({aura:210, rays:250, rainbow:ex})+'</span>'+   // 펫 뒤 픽셀 오오라(한정=무지개 빛). 특별↑은 발산 광선까지 CSS로 표시
           '<span class="fx-ring"></span>'+                                            // 전설↑/무지개: 픽셀 링 충격파(CSS)
