@@ -3775,7 +3775,7 @@
           const dEnough=coins()>=DDEUL_PRICE;
           const dact=dEnough?'<button class="buy" aria-label="뜰알 구매('+DDEUL_PRICE+' 은화)" onclick="openDdeul()">구매</button>':'<button class="buy dis" disabled>'+(DDEUL_PRICE-coins())+' 부족</button>';
           h+='<div class="shopcard ddeul-card"><div class="thumb">'+ddeulEggSvg({h:64})+'</div>'+
-            '<div class="meta"><b class="tier-rainbow">뜰알</b> <span class="tagmini tier-rainbow">한정 픽업</span><div class="desc">뜰에서 피어난 특별한 알. '+(pk?'지금은 '+pk+' 픽업 중 — ':'')+'오직 뜰알에서만 만날 수 있는 <b class="tier-rainbow">한정 픽업 펫</b>을 품고 있어요.</div>'+
+            '<div class="meta"><b class="tier-rainbow">뜰알</b> <span class="tagmini tier-rainbow">한정 픽업</span><div class="desc">'+(pk?'지금 픽업 <b class="tier-rainbow">'+pk+'</b> · ':'')+'한정 펫은 오직 뜰알에서만!</div>'+
             '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+DDEUL_PRICE+'</span></div>'+
             '<div class="act">'+dact+'</div></div>'; }
         const enough=coins()>=GACHA_PRICE;
