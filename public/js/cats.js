@@ -1084,7 +1084,7 @@
       { id:'wallclock', cat:'decor', name:'벽시계', price:800, size:1.4, footW:1, footH:1, wall:true, desc:'벽에 거는 벽시계. 추가 좌우로 흔들려요.' },
       { id:'hangplant', cat:'decor', name:'행잉플랜트', price:800, size:1.4, footW:1, footH:1, wall:true, desc:'벽·천장에 매다는 화분. 덩굴이 살랑여요.' },
       { id:'mobile', cat:'decor',   name:'모빌',   price:800, size:1.4, footW:1, footH:1, wall:true, desc:'천장에 매다는 모빌. 별·달·하트가 살랑여요.' },
-      { id:'chandelier', cat:'decor', name:'샹들리에', price:1500, size:2, footW:2, footH:1, wall:true, desc:'천장에 매다는 화려한 크리스털 샹들리에. 따뜻한 촛불과 크리스털이 반짝여요.' },   // 한정 등급 · 매다는형(hang) 벽 가구
+      { id:'chandelier', cat:'decor', name:'샹들리에', price:1500, size:2, footW:2, footH:1, wall:true, desc:'천장에 매다는 화려한 크리스털 샹들리에. 따뜻한 촛불과 크리스털이 반짝여요.' },   // 신화 등급(id 'limited') · 매다는형(hang) 벽 가구
       { id:'jingleball', cat:'play', name:'방울공', price:800, size:1, footW:1, footH:1, desc:'통통 흔들리는 방울 공. 펫이 굴리며 놀아요.' },
       { id:'frame',  cat:'decor', name:'액자',   price:800, size:1.4, footW:1, footH:1, wall:true, desc:'벽에 거는 풍경 액자.' },
       { id:'shelf',  cat:'decor', name:'벽 선반', price:800, size:1.4, footW:2, footH:1, wall:true, desc:'벽에 다는 선반. 소품이 올려져 있어요.' },
@@ -2661,9 +2661,10 @@
         tier:val('dpTier')||'normal', scale:Number(val('dpScale'))||1,
         gachaOnly:($('dpGacha')?$('dpGacha').classList.contains('on'):false),   // 가챠전용 전역 오버라이드
         by:state.userEmail||'', at:new Date().toISOString() };
+      let savedId=editing?_devPetTarget:null;
       const p = file ? _processPetZip(file) : Promise.resolve(null);
       p.then(art=>{
-        const id=editing?_devPetTarget:('rt_'+Date.now().toString(36));
+        const id=editing?_devPetTarget:('rt_'+Date.now().toString(36)); savedId=id;
         if(art){
           // 메타는 catalogPets/{id}, 이미지는 분리 노드 catalogPetArt/{id} — 원자 다중경로 업데이트(메타 필드는 개별 경로로 병합).
           fields.frontWalk=art.frontWalk; fields.hasArt=true; fields.frames=art.frames||6;
@@ -2675,7 +2676,10 @@
         }
         // 이미지 없는 수정(메타만) — 기존처럼 병합 update
         return catalogRef().child(id).update(fields);
-      }).then(()=>{ toast((editing?'저장':'추가')+' 완료! 🐾'); closeSheet(); })
+      }).then(()=>{ toast((editing?'저장':'추가')+' 완료! 🐾');
+          // 메인으로 나가지 않고 펫 관리 목록으로 복귀(방금 편집/추가한 펫을 선택 상태로)
+          state._devPetSel=savedId; _devPetTarget=null;
+          if(typeof openDevPetManager==='function') openDevPetManager(); else closeSheet(); })
         .catch(e=>{ toast((editing?'저장':'추가')+' 실패: '+((e&&e.message)||e), true); const b=$('dpBtn'); if(b){ b.disabled=false; b.textContent=editing?'저장':'추가'; } });
     }
     function devSelectPet(id){ const wrap=document.querySelector('.petmg-list');
@@ -2722,7 +2726,7 @@
     // 선택 토글은 시트 전체가 아니라 목록 행(2개)+액션영역(#pmActions)만 부분 갱신(devSelectPet) → 스크롤 유지·재빌드 비용 절감.
     function devPetRowHtml(p, sel){ const on=p.id===sel; const tag=(SPECIES_LABEL[p.species]||p.species);
       const art=on?catActorHTML(p.id,52):catFace(p.id,{h:52});   // 선택 시 옆으로 걷는 스프라이트, 아니면 정면 썸네일
-      const gacha=isGachaOnlyCat(p.id), nmColor=(p.tier&&p.tier!=='normal')?tierInfo(p.tier).color:'inherit';
+      const gacha=isGachaOnlyCat(p.id);
       // 🐾 기구물 관리처럼 목록 행에서 바로 등급·가챠전용 변경(전역 catalogPets/{id} 오버라이드 — 모든 사용자 반영)
       const tierSel='<select class="input fm-tier" onchange="setPetTier(\''+p.id+'\',this.value)" aria-label="'+escapeHtml(p.name||p.id)+' 등급">'+
         TIERS.map(function(t){ return '<option value="'+t.id+'"'+(t.id===p.tier?' selected':'')+'>'+t.name+'</option>'; }).join('')+'</select>';
@@ -2731,7 +2735,7 @@
       return '<div class="petmg-row petcfg'+(on?' sel':'')+(p.deleted?' del':'')+(gacha?' gacha':'')+'" data-pid="'+p.id+'">'+
         '<button class="pm-main" onclick="devSelectPet(\''+p.id+'\')" aria-label="'+escapeHtml(p.name||p.id)+' 선택">'+
           '<span class="pm-thumb">'+art+'</span>'+
-          '<span class="pm-txt"><span class="pm-nm" style="color:'+nmColor+'">'+escapeHtml(p.name||p.id)+'</span>'+
+          '<span class="pm-txt"><span class="pm-nm">'+catNameSpan(p.id, p.name||p.id)+'</span>'+
           '<span class="pm-meta">'+escapeHtml(tag)+(p.runtime?' · 런타임':'')+(p.deleted?' · 삭제됨':'')+'</span></span>'+
         '</button>'+
         '<div class="pm-cfg">'+badge+'<div class="pm-cfgctl">'+tierSel+gachaTog+'</div></div>'+
@@ -3423,7 +3427,7 @@
     // 타일 콘텐츠 시그니처 — 상태(방)·현재방·애정레벨·이름이 바뀐 타일만 다시 그린다.
     function petTileSig(id){ const ro=petRoomIndex(id); const here=ro===roomIdx(); const rooms=homeH().rooms||[];
       const rnm=(ro>=0&&!here)?((rooms[ro]&&rooms[ro].name)||('방 '+(ro+1))):'';   // elsewhere일 때만 방이름 뱃지 표시 → 시그니처에 포함(방 전환/이름변경 시 필요한 타일만 갱신)
-      const lv=affectionLevel((ownedCatsMap()[id]||{}).affection).level; return (here?'H':ro)+'|'+rnm+'|'+lv+'|'+catName(id)+'|'+(CAT_TIER[id]||'normal'); }   // tier 포함(이름색·한정 연출은 등급에 의존 → applyCatalog로 등급만 바뀌어도 갱신)
+      const lv=affectionLevel((ownedCatsMap()[id]||{}).affection).level; return (here?'H':ro)+'|'+rnm+'|'+lv+'|'+catName(id)+'|'+(CAT_TIER[id]||'normal'); }   // tier 포함(이름색·등급 연출은 등급에 의존 → applyCatalog로 등급만 바뀌어도 갱신)
     function petTileHtml(id){
       const rooms=homeH().rooms||[]; const roomOf=petRoomIndex(id), here=roomOf===roomIdx();
       const roomNm=roomOf>=0?((rooms[roomOf]&&rooms[roomOf].name)||('방 '+(roomOf+1))):'';
@@ -3565,8 +3569,8 @@
             '<div class="act">'+act+'</div></div>';
         }).join('');
         // ✨ 무지개알/무지개박스 — 금화로 구매하는 소비템(특별↑ 확정). 보유하면 "사용"으로 오픈.
-        const rb=[['egg','무지개알','열면 특별90 · 전설8 · 한정2%. 특별↑ 고양이만!', rainbowEggSvg({h:66,cls:'rb-thumb'})],
-                  ['box','무지개박스','열면 특별90 · 전설8 · 한정2%. 특별↑ 가구만!', rainbowBoxSvg({h:56,cls:'rb-thumb'})]];
+        const rb=[['egg','무지개알','열면 특별90 · 전설8 · 신화2%. 특별↑ 고양이만!', rainbowEggSvg({h:66,cls:'rb-thumb'})],
+                  ['box','무지개박스','열면 특별90 · 전설8 · 신화2%. 특별↑ 가구만!', rainbowBoxSvg({h:56,cls:'rb-thumb'})]];
         h+='<div class="rb-hh"><span class="tier-rainbow">✨ 무지개</span> · 금화 전용 · 특별↑ 확정</div>';
         h+=rb.map(([k,nm,desc,art])=>{ const key=rainbowKey(k), qty=consumQty(key), price=rbPriceGold(k), canBuy=gold()>=price;
           const buy=canBuy?'<button class="buy" aria-label="'+nm+' 구매(금화 '+price+')" onclick="buyRainbow(\''+k+'\')">구매</button>':'<button class="buy dis" disabled>금화 '+(price-gold())+' 부족</button>';
@@ -4047,7 +4051,7 @@
       }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund, false, isNew); });
     }
     // ===== ✨ 무지개알/무지개박스: 금화로 구매하는 소비템 → 사용 시 특별90·전설8·한정2% 가챠 =====
-    const RAINBOW_TIERS=[{id:'epic',p:90},{id:'legend',p:8},{id:'limited',p:2}];   // 한정 콘텐츠 없으면 rollFromPool이 전설로 폴백
+    const RAINBOW_TIERS=[{id:'epic',p:90},{id:'legend',p:8},{id:'limited',p:2}];   // limited=신화. 신화 콘텐츠 없으면 rollFromPool이 전설로 폴백
     const RAINBOW_PRICE_GOLD={ egg:100, box:100 };   // 무지개알·무지개박스 모두 금화100
     function rbPriceGold(kind){ return RAINBOW_PRICE_GOLD[kind==='egg'?'egg':'box']; }
     function rainbowKey(kind){ return kind==='egg'?'rainbow_egg':'rainbow_box'; }
@@ -4526,17 +4530,36 @@
     }
     // 🐾 컬렉션 도감: 전체 펫 그리드(보유=컬러/미보유=실루엣), 진행도 N/총. 애정 레벨 하트 표시.
     function ownedCatsMap(){ return (state.game&&state.game.owned&&state.game.owned.cats)||{}; }
+    let _dexTab='all';   // 도감 종별 탭('all'=전체 / species 코드)
+    function setDexTab(t){ _dexTab=t; if(state._sheetRefresh) state._sheetRefresh(); }
+    function dexSpeciesList(){ const seen={}, list=[]; PET_CATALOG.forEach(c=>{ const s=c.species||'cat'; if(!seen[s]){ seen[s]=1; list.push(s); } }); return list; }   // 도감 등장 종(순서 유지·중복 제거)
     function openPetDex(){
-      const owned=ownedCatsMap(), all=PET_CATALOG.slice().sort((a,b)=> (TIER_ORDER.indexOf(CAT_TIER[a.id])-TIER_ORDER.indexOf(CAT_TIER[b.id])) || 0);
-      const prog=dexProgress(owned, PET_CATALOG.map(c=>c.id));
-      let h='<div class="dexhead"><div class="row" style="justify-content:space-between;"><b>수집</b><span class="s">'+prog.owned+' / '+prog.total+' ('+prog.pct+'%)</span></div><div class="bar"><i style="width:'+prog.pct+'%"></i></div></div>';
-      h+='<div class="dexgrid">'+all.map(c=>{ const has=!!owned[c.id]; const lv=has?affectionLevel(owned[c.id].affection).level:0;
-        return '<div class="dexcell'+(has?'':' locked')+'" title="'+escapeHtml(has?catName(c.id):'미보유')+'">'+
-          '<div class="dexpic">'+catFace(c.id,{h:54})+'</div>'+
-          '<div class="dexnm">'+(has?catNameSpan(c.id,catName(c.id)):'<span class="q">???</span>')+'</div>'+
-          (lv>0?'<div class="dexlv" style="display:inline-flex;gap:1px" aria-label="애정 레벨 '+lv+'">'+heartSvg({h:9}).repeat(lv)+'</div>':'')+
-        '</div>'; }).join('')+'</div>';
-      openSheet('펫 도감', h);
+      const build=()=>{
+        const owned=ownedCatsMap(), species=dexSpeciesList();
+        if(_dexTab!=='all' && species.indexOf(_dexTab)<0) _dexTab='all';   // 사라진 종 방어
+        const pool=PET_CATALOG.filter(c=> _dexTab==='all' || (c.species||'cat')===_dexTab);
+        const prog=dexProgress(owned, pool.map(c=>c.id));   // 현재 탭 기준 진행도
+        let h='<div class="dexhead"><div class="row" style="justify-content:space-between;"><b>수집'+(_dexTab!=='all'?' · '+escapeHtml(SPECIES_LABEL[_dexTab]||_dexTab):'')+'</b><span class="s">'+prog.owned+' / '+prog.total+' ('+prog.pct+'%)</span></div><div class="bar"><i style="width:'+prog.pct+'%"></i></div></div>';
+        // 종별 탭(전체 + 종). 옆으로 스크롤(.subseg).
+        const tabs=[['all','전체']].concat(species.map(s=>[s,(SPECIES_LABEL[s]||s)]));
+        h+='<div class="subseg dextabs">'+tabs.map(function(t){ const id=t[0], nm=t[1], n=PET_CATALOG.filter(c=>id==='all'||(c.species||'cat')===id).length;
+          return '<button class="'+(_dexTab===id?'on':'')+'" onclick="setDexTab(\''+id+'\')">'+escapeHtml(nm)+' <b>'+n+'</b></button>'; }).join('')+'</div>';
+        const cell=function(c){ const has=!!owned[c.id], lv=has?affectionLevel(owned[c.id].affection).level:0;
+          return '<div class="dexcell'+(has?'':' locked')+'" title="'+escapeHtml(has?catName(c.id):'미보유')+'">'+
+            '<div class="dexpic">'+catFace(c.id,{h:54})+'</div>'+
+            '<div class="dexnm">'+(has?catNameSpan(c.id,catName(c.id)):'<span class="q">???</span>')+'</div>'+
+            (lv>0?'<div class="dexlv" style="display:inline-flex;gap:1px" aria-label="애정 레벨 '+lv+'">'+heartSvg({h:9}).repeat(lv)+'</div>':'')+
+          '</div>'; };
+        // 등급별 그룹 — 연한 구분선(.dexgh) + 간격(.dexgroup)으로 살짝 구분. 전체 등급 리스트는 그대로 다 보임.
+        TIER_ORDER.forEach(function(tid){ const grp=pool.filter(c=>CAT_TIER[c.id]===tid); if(!grp.length) return;
+          const ti=tierInfo(tid), owN=grp.filter(c=>owned[c.id]).length;
+          h+='<div class="dexgroup"><div class="dexgh"><span class="dexgt" style="color:'+ti.color+'">'+escapeHtml(ti.name)+'</span><span class="dexgn">'+owN+'/'+grp.length+'</span></div>'+
+             '<div class="dexgrid">'+grp.map(cell).join('')+'</div></div>';
+        });
+        return h;
+      };
+      openSheet('펫 도감', build());
+      state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const st=b.scrollTop; b.innerHTML=build(); b.scrollTop=st; };
     }
     // ===== 📢 소식(알림·이벤트·공지) — 알뜰 아이콘 '소식' 화면 =====
     // 업데이트 공지 — 기본값(폴백). 운영은 RTDB config/notices(관리자만 쓰기)에서 덮어씀(loadNotices). 최신순.
@@ -4834,7 +4857,7 @@
           (_fx.isNew?newBadgeSvg({h:30}):'')+                                          // 🌈 처음 획득: 무지개 픽셀 "NEW" 배지(펫/아이템 위에서 물결)
         '</div>'+
         '<div class="fx-tier">'+t.name+'</div>'+
-        '<div class="fx-name">'+(_fx.kind==='egg'?catNameSpan(_fx.res.id,catName(_fx.res.id)):escapeHtml(rewardName(_fx.res)))+'</div>'+
+        '<div class="fx-name">'+(_fx.kind==='egg'?catNameSpan(_fx.res.id,catName(_fx.res.id)):(_fx.res.tier==='exclusive'?'<span class="tier-rainbow">'+escapeHtml(rewardName(_fx.res))+'</span>':escapeHtml(rewardName(_fx.res))))+'</div>'+
         '<div class="fx-reward">'+(_fx.gold?'<span class="rw"><span class="ci">'+goldSvg({h:18})+'</span>+1 금화</span>':'')+
           (_fx.dup?'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>+'+_fx.refund+' 은화 (중복)</span>':'')+'</div>'+
         '<button class="btn" onclick="closeFx()">확인</button>'+
