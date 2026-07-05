@@ -1189,7 +1189,7 @@
       background:linear-gradient(120deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8,#F04452); background-size:300% 100%; animation:rainbow 3s linear infinite; }
     .rb-card > * { position:relative; z-index:1; }
     .rb-thumb-wrap { filter:drop-shadow(0 0 6px rgba(255,255,255,.5)); }
-    .buy.rb-use { background:linear-gradient(90deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8); background-size:200% 100%; color:#fff; animation:rainbow 2.4s linear infinite; }
+    .buy.rb-use { margin-left:8px; background:linear-gradient(90deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8); background-size:200% 100%; color:#fff; animation:rainbow 2.4s linear infinite; }
     /* 🎁 선물함 / 🎒 가방 목록 행 */
     .giftbox, .bag { display:flex; flex-direction:column; gap:8px; }
     .giftrow, .bagrow { display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--bd); border-radius:12px; padding:8px 12px; }
