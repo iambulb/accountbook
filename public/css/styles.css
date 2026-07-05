@@ -1502,6 +1502,22 @@
     .pk-far { opacity:.9; }
     .pk-far.pk-tree .pk-canopy { animation-duration:5.2s; }
     .pk-tuft.pk-far, .pk-flower.pk-far { animation-duration:4.6s; }
+    /* 지평선(벽지·하늘 경계) 레이어 — overflow:visible라 먼 나무 윗부분이 필드에 안 잘림. 자식은 seam에서 위로 자람. */
+    .pk-horizon { position:absolute; left:0; right:0; bottom:60%; height:0; z-index:1; overflow:visible; pointer-events:none; }
+    /* 🦋 나비 레이어(씬 전체) — 각 나비가 살랑살랑 주변을 날아다니고 날개를 팔랑임 */
+    .pk-air { position:absolute; inset:0; z-index:4; overflow:hidden; pointer-events:none; }
+    .pk-bfly { position:absolute; z-index:4; will-change:transform; animation:pkbfly var(--d,9s) ease-in-out infinite; animation-delay:calc(var(--i) * -1.3s); }
+    .pk-bfly .bf-wing { display:block; transform-origin:center; image-rendering:pixelated; animation:pkflap var(--fd,.42s) ease-in-out infinite; }
+    @keyframes pkbfly { 0%,100%{ transform:translate(0,0);} 20%{ transform:translate(10px,-9px);} 45%{ transform:translate(22px,3px);} 70%{ transform:translate(7px,12px);} }
+    @keyframes pkflap { 0%,100%{ transform:scaleX(1);} 50%{ transform:scaleX(.5);} }
+    /* 🦅 독수리 2마리 — 구름처럼 가로질러(pkcloud 재사용) + 날개 두 프레임 교차로 퍼덕임 */
+    .pk-bird { position:absolute; left:0; z-index:1; opacity:.9; will-change:transform; animation:pkcloud var(--d,36s) linear infinite; }
+    .pk-bird .bird-f { display:block; image-rendering:pixelated; }
+    .pk-bird .bird-b { position:absolute; top:0; left:0; }
+    .pk-bird .bird-a { animation:pkbirdA .5s steps(1) infinite; }
+    .pk-bird .bird-b { animation:pkbirdB .5s steps(1) infinite; }
+    @keyframes pkbirdA { 0%,49%{ opacity:1;} 50%,100%{ opacity:0;} }
+    @keyframes pkbirdB { 0%,49%{ opacity:0;} 50%,100%{ opacity:1;} }
     /* 로그인 알(egg-garden) — 뜰 가운데(앞쪽 말고 중앙으로) */
     .pk-egg { position:absolute; left:50%; bottom:30%; transform:translateX(-50%); z-index:3; }
     .pk-egg img { display:block; height:50px; width:auto; filter:drop-shadow(0 3px 0 rgba(0,0,0,.14)); }
@@ -1509,7 +1525,7 @@
     #pkStage.pkstage { position:absolute; left:0; right:0; bottom:0; height:60%; z-index:5; overflow:visible; background:none; }
     .pkstage .cd-actor { pointer-events:none; }
     .pkstage .cd-actor .cspr { image-rendering:pixelated; }
-    @media (prefers-reduced-motion: reduce){ .pk-cloud, .pk-tree .pk-canopy, .pk-flower, .pk-tuft { animation:none; } .pk-rainbow { opacity:1; animation:none; } }
+    @media (prefers-reduced-motion: reduce){ .pk-cloud, .pk-tree .pk-canopy, .pk-flower, .pk-tuft, .pk-bfly, .pk-bfly .bf-wing, .pk-bird, .pk-bird .bird-a, .pk-bird .bird-b { animation:none; } .pk-rainbow { opacity:1; animation:none; } .pk-bird .bird-b { opacity:0; } }
     .shopcard .featrib { position:absolute; left:6px; top:6px; display:inline-flex; align-items:center; gap:3px;
       font-size:10px; font-weight:800; color:#7a5200; background:var(--gold, #f2b134); padding:2px 6px; border-radius:999px; z-index:2; }
     .shopcard .featrib svg { color:#7a5200; }
