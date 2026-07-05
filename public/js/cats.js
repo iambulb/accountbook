@@ -5200,7 +5200,7 @@
       const art=isEggKind(_fx.kind)?catFace(_fx.res.id,{h:118,eager:true}):rewardBoxArt(_fx.res);   // eager: 등장 즉시 표시(lazy면 ~1초 늦게 뜸)
       // 🌈 뜰알에서 한정(무지개)이 뜨면: 로그인 화면 같은 하늘 + 왼→오로 샤라라 그려지는 무지개
       const ddeulEx = _fx.kind==='ddeul' && _fx.res.tier==='exclusive';
-      const skyLayer = ddeulEx ? pickupSceneHtml('reveal') : '';   // 🌲 한정 등장 배경 = 픽업 배너 씬 재사용(하늘·구름·무지개·독수리·숲·꽃·나비, 전체화면)
+      const skyLayer = ddeulEx ? pickupSceneHtml('reveal') : '';   // 🌲 한정 등장 배경 = 픽업 배너 씬(pickupSceneHtml) 재사용 — 배너와 같은 배치(하늘·구름·무지개·원근 숲·꽃·나비). 전체화면·데코 확대, 알·배회펫 없이 배경만.
       fx.innerHTML='<div class="fx-scrim"></div>'+skyLayer+'<div class="fx-reveal tier-'+t.id+' rank-'+rank+(rb?' rev-rb':'')+(ddeulEx?' rev-ddeul':'')+'">'+
         '<div class="fx-art pop">'+
           '<span class="fx-aurawrap">'+lightLayers({aura:210, rays:250})+'</span>'+   // 펫 뒤 픽셀 오오라(+특별↑은 발산 광선까지 CSS로 표시)
