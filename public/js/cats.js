@@ -1504,12 +1504,13 @@
     function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); if(rainbow) pal.X='RAINBOW'; return pxSvg(M_EGG_C3, pal, opt); }   // 무지개알 열 때: 테두리(X)까지 무지개색
     // 픽셀 껍질 조각 렌더(A=큰 곡면, B=삼각, C=작은 조각). rainbow면 무지갯빛 껍질.
     // 🌱 뜰알(한정 픽업) — 로그인 메인 아이콘(egg-garden.svg)의 '고양이 얼굴 알' + 뜰(풀밭·흙) 픽셀. 무지개는 rainbowArcSvg 재사용.
-    const M_DDEUL=[   // 🥚 뜰알(24×15) — 펫알/무지개알 '테두리(X 외곽·S 링 명암·W 흰)'를 그대로 온전히 쓰고, 그 위에만 얹음: 안쪽 둥근 검은 고양이(B·H 음영·회색눈 E 1px씩·분홍입 P 가로2px), 알 '위' 꽃 한 송이(F/f/C·중심 Y·줄기 t/T), 알 '하단 실루엣'에 덕지덕지 붙은 흙(R/r/o/n)·이끼(G/g/m). 실루엣(테두리)은 훼손하지 않음.
-      "......fff......","......FCF......","......CYC......",".......T.......","......tt.......",".......t.......",
-      "......XSSX.....",".....XSWWSX....","....XSWWWWSX...","....XWWWWWWX...","...XBBWWWBBWX..","..XWBHHHHHBWWX.","..XWBBBBBBBWWX.",
-      ".XWWBBBBBBBWWS.",".XWBBEBBBEBBWS.",".XWBBBBBBBBBWS.",".XWWBBBPPBBWWS.","G.XWBBBBBBBWSXG","g.XWWBBBBBWWSXg","GG.mmWWWWWmWXGG",
-      "Rog.XGgWWGWXgoR","...G.XXXXXXG...","...oRrRRRro....","....RRrRn......"];
-    const DDEUL_PAL={X:'#968c76',S:'#d2ccbe',W:'#FBFBFD',B:'#2b2b31',H:'#3c3c45',E:'#c9ccd4',P:'#f2a0b4',R:'#9c6a3c',r:'#754b26',o:'#835530',n:'#5e3a1c',G:'#6fbf46',g:'#4e9636',m:'#8ed46f',F:'#f9b9d0',f:'#ef8fb4',C:'#ff9ec2',Y:'#ffe06a',t:'#4e9636',T:'#3f7a2c'};
+    const M_DDEUL=[   // 🥚 뜰알(41×22) — 처음부터 새로 그린 '둥근 타원(계란형)' 알(펫알 무시). 위쪽이 뾰족하지 않게 둥글고, 4톤 명암(I 하이라이트·W 라이트·S 미드·D 섀도)+X 외곽선으로 곡면 광택. 안쪽 둥근 검은 고양이(B·H 이마/귀 음영·회색눈 E 1px씩·분홍입 P 가로2px·뾰족 귀). 알 '위' 꽃 한 송이(F/f/C·중심 Y·줄기 t/T), 알 '하단 실루엣'에 흙(R/r/o/n)·이끼(G/g/m) 덕지덕지.
+      "..........fff.........","..........FCF.........","..........CYC.........","..........fff.........","...........T..........","..........tt..........",".........t.t..........",
+      "........XXXXXX........","......XXWWWWWWXX......",".....XWWWWWWWWWWX.....","....XWWWIIIIWWWWWX....","....XWWIIIIWWWWWWX....","...XWWIIIIIWWWWWWDX...","...XWIIIIIWWWWWWWDX...","..XWIIIIIWWWWWWWWWDX..","..XWIIIIWWWWWWWWWSDX..",
+      ".XWIIIIWWWWWWWWWSSSDX.",".XWIIIWWBWWWWWBWSSSDX.",".XWIIWWBHBBBBBHBWSSDX.",".XWIWWWBBBBBBBBBWSSDX.",".XWWWWBBBHHHHHBBWSSDX.","XWWWWBBBBBBBBBBBBSSDDX","XWWWWBBBBBBBBBBBBSSDDX","XWWWBBBBBBBBBBBBBBSDDX","XWWWBBBBEBBBBBEBBBSDDX","XWWWBBBBBBBBBBBBBBSDDX",
+      "RXWWWBBBBBBBBBBBBSSDXR","rXWWWBBBBBPPBBBBBSSDXr","RGDDWSBBBBBBBBBBSSDDXR","GXDDSSSBBBBBBBBSSSDDg.",".RXDDSSSSBBBBSSSSDDGR.",".RgDDDSSSSSSSSSSDDDXr.",".rRGDDDmSSSSSSSmDDXrR.","..RXDDDDSmSSSmDDDDgR..","..rRXDDDgDDmDDgDDGRR..",
+      "...RrXgDDDDDDDDXgRR...","...rRRrGXGXGXGXrRRr...","....RrRRrRRrRRrRRr....",".....RRroorRnorRr.....",".....RrRRrrnrRRrR.....",".......RrRRrRRr......."];
+    const DDEUL_PAL={X:'#8d8368',D:'#cfc7b4',S:'#e4ddcc',W:'#f6f2e8',I:'#fffdf6',B:'#2b2b31',H:'#3c3c45',E:'#c9ccd4',P:'#f2a0b4',R:'#9c6a3c',r:'#754b26',o:'#835530',n:'#5e3a1c',G:'#6fbf46',g:'#4e9636',m:'#8ed46f',F:'#f9b9d0',f:'#ef8fb4',C:'#ff9ec2',Y:'#ffe06a',t:'#4e9636',T:'#3f7a2c'};
     const M_DDEUL_FLOOR=[   // 뜰 바닥 = 풀밭(G/g) + 흙(R/r)
       "...GGGGGGGGGGGGGGGGGG...",".GGGGGGGGGGGGGGGGGGGGGG.","gggggggggggggggggggggggg","RRRRRRRRRRRRRRRRRRRRRRRR",".rrrrrrrrrrrrrrrrrrrrrr."];
     const DDEUL_FLOOR_PAL={G:'#7cc652',g:'#5aa63c',R:'#a6703f',r:'#7c5028'};
