@@ -1373,6 +1373,17 @@
     .petmg-row .pm-txt { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
     .petmg-row .pm-nm { font-size:14.5px; font-weight:700; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .petmg-row .pm-meta { font-size:12px; color:var(--sub); font-weight:600; }
+    /* 목록 행에서 등급·가챠전용 인라인 편집(기구물 관리와 동일 방식) */
+    .petmg-row.petcfg { flex-wrap:wrap; }
+    .petmg-row.petcfg.gacha { border-color:color-mix(in srgb,var(--primary) 30%,var(--line)); }
+    .petmg-row .pm-main { flex:1 1 100%; display:flex; align-items:center; gap:12px; min-width:0; text-align:left; background:none; border:0; padding:0; color:inherit; }
+    .petmg-row .pm-cfg { flex:1 1 100%; display:flex; align-items:center; gap:6px 10px; flex-wrap:wrap; padding-left:64px; }
+    .petmg-row .pm-cfg .fm-badge { display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:800; }
+    .petmg-row .pm-cfg .fm-badge svg { display:block; }
+    .petmg-row .pm-cfgctl { display:flex; align-items:center; gap:8px 10px; flex-wrap:wrap; }
+    .petmg-row .fm-tier { width:96px; flex:none; padding:6px 8px; }
+    .petmg-row .fm-gacha { display:inline-flex; align-items:center; gap:6px; flex:none; font-size:11.5px; font-weight:700; color:var(--sub); cursor:pointer; }
+    .petmg-row .fm-gacha .switch { flex:none; }
     .petmg-btns { display:flex; gap:8px; }
     .petmg-btns .btn { margin-top:0; flex:1; }
     /* 🪑 개발자 · 기구물 관리(카테고리 탭 · 이미지 · 등급/은화가) */

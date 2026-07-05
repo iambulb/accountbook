@@ -2720,12 +2720,22 @@
       else db.ref('catalogPetArt/'+id).once('value').then(s=>doExport(s.val())).catch(e=>toast('불러오기 실패: '+((e&&e.message)||e), true)); }
     // 개발자 펫 관리: 전체 목록(삭제된 펫=회색·"삭제됨") + 선택 후 [추가][수정][삭제/복구] + 가챠 연출 펫 지정.
     // 선택 토글은 시트 전체가 아니라 목록 행(2개)+액션영역(#pmActions)만 부분 갱신(devSelectPet) → 스크롤 유지·재빌드 비용 절감.
-    function devPetRowHtml(p, sel){ const on=p.id===sel; const tag=(SPECIES_LABEL[p.species]||p.species); const tn=((typeof TIERS!=='undefined'&&TIERS.find(t=>t.id===p.tier))||{}).name||p.tier;
+    function devPetRowHtml(p, sel){ const on=p.id===sel; const tag=(SPECIES_LABEL[p.species]||p.species);
       const art=on?catActorHTML(p.id,52):catFace(p.id,{h:52});   // 선택 시 옆으로 걷는 스프라이트, 아니면 정면 썸네일
-      return '<button class="petmg-row'+(on?' sel':'')+(p.deleted?' del':'')+'" data-pid="'+p.id+'" onclick="devSelectPet(\''+p.id+'\')">'+
-        '<span class="pm-thumb">'+art+'</span>'+
-        '<span class="pm-txt"><span class="pm-nm">'+escapeHtml(p.name||p.id)+'</span>'+
-        '<span class="pm-meta">'+escapeHtml(tag)+' · '+escapeHtml(tn)+(p.runtime?' · 런타임':'')+(p.deleted?' · 삭제됨':'')+'</span></span></button>'; }
+      const gacha=isGachaOnlyCat(p.id), nmColor=(p.tier&&p.tier!=='normal')?tierInfo(p.tier).color:'inherit';
+      // 🐾 기구물 관리처럼 목록 행에서 바로 등급·가챠전용 변경(전역 catalogPets/{id} 오버라이드 — 모든 사용자 반영)
+      const tierSel='<select class="input fm-tier" onchange="setPetTier(\''+p.id+'\',this.value)" aria-label="'+escapeHtml(p.name||p.id)+' 등급">'+
+        TIERS.map(function(t){ return '<option value="'+t.id+'"'+(t.id===p.tier?' selected':'')+'>'+t.name+'</option>'; }).join('')+'</select>';
+      const gachaTog='<label class="fm-gacha"><span>가챠전용</span><span class="switch'+(gacha?' on':'')+'" role="switch" aria-checked="'+gacha+'" tabindex="0" onclick="setPetGacha(\''+p.id+'\')" aria-label="'+escapeHtml(p.name||p.id)+' 가챠전용"><i></i></span></label>';
+      const badge=gacha?'<span class="fm-badge tier-rainbow">'+boxSvg({h:13})+' 랜덤박스 전용</span>':'';
+      return '<div class="petmg-row petcfg'+(on?' sel':'')+(p.deleted?' del':'')+(gacha?' gacha':'')+'" data-pid="'+p.id+'">'+
+        '<button class="pm-main" onclick="devSelectPet(\''+p.id+'\')" aria-label="'+escapeHtml(p.name||p.id)+' 선택">'+
+          '<span class="pm-thumb">'+art+'</span>'+
+          '<span class="pm-txt"><span class="pm-nm" style="color:'+nmColor+'">'+escapeHtml(p.name||p.id)+'</span>'+
+          '<span class="pm-meta">'+escapeHtml(tag)+(p.runtime?' · 런타임':'')+(p.deleted?' · 삭제됨':'')+'</span></span>'+
+        '</button>'+
+        '<div class="pm-cfg">'+badge+'<div class="pm-cfgctl">'+tierSel+gachaTog+'</div></div>'+
+      '</div>'; }
     // 목록 아래 액션영역(선택 상태에 따라 바뀌는 부분) — 부분 갱신 대상.
     function devPetActionsHtml(){ const list=allPetsForDev(), sel=state._devPetSel, selPet=sel?list.find(p=>p.id===sel):null;
       const dr = (selPet&&selPet.deleted) ? '<button class="btn" onclick="restorePet(\''+sel+'\')">복구</button>'
@@ -2746,11 +2756,14 @@
       h+='<div class="petmg-btns" style="margin-top:8px;"><button class="btn ghost" onclick="devPreviewGachaFx()">▶︎ 연출 미리보기</button></div>';
       return h; }
     function openDevPetManager(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
-      const list=allPetsForDev(), sel=state._devPetSel;
-      let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 10px;line-height:1.5;">펫을 선택해 <b>수정/삭제</b>하거나 <b>추가</b>로 새 펫(zip)을 올려요. 삭제=앱에서 숨김(이미지 보존)이라 <b>복구</b> 가능.</p>';
-      h+='<div class="petmg-list">'+list.map(p=>devPetRowHtml(p, sel)).join('')+'</div>';
-      h+='<div id="pmActions">'+devPetActionsHtml()+'</div>';
-      openSheet('펫 관리', h); }
+      const build=()=>{ const list=allPetsForDev(), sel=state._devPetSel;
+        let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 10px;line-height:1.5;">펫을 선택해 <b>수정/삭제</b>하거나 <b>추가</b>로 새 펫(zip)을 올려요. 삭제=앱에서 숨김(이미지 보존)이라 <b>복구</b> 가능. 각 행에서 <b>등급·가챠전용</b>을 바로 바꿀 수 있어요(<span class="pill">전역 · 모든 사용자</span>, 기구물 관리와 동일).</p>';
+        h+='<div class="petmg-list">'+list.map(p=>devPetRowHtml(p, sel)).join('')+'</div>';
+        h+='<div id="pmActions">'+devPetActionsHtml()+'</div>';
+        return h; };
+      openSheet('펫 관리', build());
+      // 등급·가챠전용 변경(catalogPets 리스너) 시 목록 갱신 — 스크롤·선택 유지
+      state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const st=b.scrollTop; b.innerHTML=build(); b.scrollTop=st; }; }
 
     // ===== 🪑 기구물 관리(개발자·전역) — 타입 탭(가구·벽지·바닥)으로 펫이 아닌 모든 아이템의 이미지·등급·은화가 편집. 특별↑ 등급은 자동 랜덤박스 전용 =====
     const FURN_TYPES = [['item','가구'],['wall','벽지'],['floor','바닥']];
@@ -2825,6 +2838,11 @@
       db.ref('config/floor/'+id).remove().then(function(){ const f=FLOOR_CATALOG.find(x=>x.id===id); toast((f?f.name:id)+' 바닥 기본값으로 되돌렸어요'); }).catch(_cfgWriteErr); }
     function setFloorGacha(id){ if(!(typeof isDev==='function'&&isDev())) return; const on=!isGachaOnlyFloor(id); const f=FLOOR_CATALOG.find(x=>x.id===id);
       db.ref('config/floor/'+id+'/gacha').set(on).then(function(){ toast((f?f.name:id)+' 바닥'+(on?' 가챠전용 ON(판매 숨김)':' 가챠전용 OFF(은화 판매)')); }).catch(_cfgWriteErr); }
+    // 🐾 펫 등급/가챠전용 전역 오버라이드(config/furniture 와 달리 펫은 catalogPets/{id} 레코드에 저장 — applyCatalog가 CAT_TIER·_petGachaOnly에 반영). 정적 펫이면 부분 오버라이드 레코드가 생기고, 런타임 펫이면 기존 레코드의 해당 필드만 갱신(다른 필드·이미지 보존).
+    function setPetTier(id, tier){ if(!(typeof isDev==='function'&&isDev())) return;
+      db.ref('catalogPets/'+id+'/tier').set(tier).then(function(){ toast((catName(id)||id)+' 등급 = '+tierInfo(tier).name); }).catch(_cfgWriteErr); }
+    function setPetGacha(id){ if(!(typeof isDev==='function'&&isDev())) return; const on=!isGachaOnlyCat(id);
+      db.ref('catalogPets/'+id+'/gachaOnly').set(on).then(function(){ toast((catName(id)||id)+(on?' 가챠전용 ON(펫알 전용·판매 숨김)':' 가챠전용 OFF(은화 판매 허용)')); }).catch(_cfgWriteErr); }
 
     // 개발자 데이터 정리: 런타임 펫 정적 승격(내보내기) + 구 인라인 아트 1회 분리 이전.
     function openDevDataTools(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
