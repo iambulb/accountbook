@@ -781,6 +781,13 @@
     .dexcell .dexlv { font-size:9px; color:#e0567a; letter-spacing:-1px; }
     .dexcell.locked .dexpic { filter:brightness(0) opacity(.26); }   /* 미보유=실루엣 */
     .dexcell.locked { opacity:.9; }
+    /* 도감: 종별 탭 + 등급별 그룹(연한 구분선·간격으로 살짝 구분) */
+    .dextabs { margin:0 2px 12px; }
+    .dexgroup { margin-top:16px; }
+    .dexgroup:first-of-type { margin-top:4px; }
+    .dexgh { display:flex; align-items:center; justify-content:space-between; padding-bottom:6px; margin-bottom:9px; border-bottom:1px solid color-mix(in srgb,var(--bd) 55%,transparent); }
+    .dexgh .dexgt { font-size:12.5px; font-weight:800; letter-spacing:-.2px; }
+    .dexgh .dexgn { font-size:11px; font-weight:700; color:var(--sub); }
     /* 쓰다듬기 하트 연출 */
     .heartfx { position:fixed; z-index:60; transform:translate(-50%,-50%); font-size:20px; color:#ff5d7a; pointer-events:none; animation:heartrise .8s ease-out forwards; }
     .heartfx .px { display:block; }   /* 픽셀 하트(heartSvg) 렌더 */
