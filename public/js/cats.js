@@ -1504,12 +1504,12 @@
     function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); if(rainbow) pal.X='RAINBOW'; return pxSvg(M_EGG_C3, pal, opt); }   // 무지개알 열 때: 테두리(X)까지 무지개색
     // 픽셀 껍질 조각 렌더(A=큰 곡면, B=삼각, C=작은 조각). rainbow면 무지갯빛 껍질.
     // 🌱 뜰알(한정 픽업) — 로그인 메인 아이콘(egg-garden.svg)의 '고양이 얼굴 알' + 뜰(풀밭·흙) 픽셀. 무지개는 rainbowArcSvg 재사용.
-    const M_DDEUL=[   // 🥚 뜰알(24×15) — 기본 펫알 실루엣(X 외곽·S 링 명암·W 흰) + 메인 아이콘풍 둥근 검은 고양이(B·H 음영·E 노란눈·P/p 분홍코). 알 '위'에 꽃 한 송이 자람(꽃 F/f/C·중심 Y·줄기 t/T), '밑·옆'에 흙(R/r/o)·이끼(G/g). 실루엣 바깥에만 자연물.
+    const M_DDEUL=[   // 🥚 뜰알(24×15) — 펫알/무지개알 '테두리(X 외곽·S 링 명암·W 흰)'를 그대로 온전히 쓰고, 그 위에만 얹음: 안쪽 둥근 검은 고양이(B·H 음영·회색눈 E 1px씩·분홍입 P 가로2px), 알 '위' 꽃 한 송이(F/f/C·중심 Y·줄기 t/T), 알 '하단 실루엣'에 덕지덕지 붙은 흙(R/r/o/n)·이끼(G/g/m). 실루엣(테두리)은 훼손하지 않음.
       "......fff......","......FCF......","......CYC......",".......T.......","......tt.......",".......t.......",
-      "......XSSX.....",".....XSWWSX....","....XSWWWWSX...","....XBWWWBWX...","...XBBBBBBBWX..","..XWBHHHHHBWWX.","..XBBBBBBBBBWX.",
-      ".XWBBEBBBEBBWS.",".XWBBeBBBeBBWS.",".XWBBBBPBBBBWS.",".XWWBBBpBBBWWS.","..XWWBHBHBWWSX.","G.XWWWWWWWWWSXG","g..XWWWWWWWWX.g",
-      "..o.XWWWWWWXo..",".....XXXXXX....","....GoRRRoG....","......rrr......"];
-    const DDEUL_PAL={X:'#968c76',S:'#d2ccbe',W:'#FBFBFD',B:'#2b2b31',H:'#3c3c45',E:'#f4cc4e',e:'#caa02f',P:'#f2a0b4',p:'#d97f97',R:'#a6703f',r:'#7c5028',o:'#8a5a30',G:'#7cc652',g:'#5aa63c',F:'#f9b9d0',f:'#ef8fb4',C:'#ff9ec2',Y:'#ffe06a',t:'#4e9636',T:'#3f7a2c'};
+      "......XSSX.....",".....XSWWSX....","....XSWWWWSX...","....XWWWWWWX...","...XBBWWWBBWX..","..XWBHHHHHBWWX.","..XWBBBBBBBWWX.",
+      ".XWWBBBBBBBWWS.",".XWBBEBBBEBBWS.",".XWBBBBBBBBBWS.",".XWWBBBPPBBWWS.","G.XWBBBBBBBWSXG","g.XWWBBBBBWWSXg","GG.mmWWWWWmWXGG",
+      "Rog.XGgWWGWXgoR","...G.XXXXXXG...","...oRrRRRro....","....RRrRn......"];
+    const DDEUL_PAL={X:'#968c76',S:'#d2ccbe',W:'#FBFBFD',B:'#2b2b31',H:'#3c3c45',E:'#c9ccd4',P:'#f2a0b4',R:'#9c6a3c',r:'#754b26',o:'#835530',n:'#5e3a1c',G:'#6fbf46',g:'#4e9636',m:'#8ed46f',F:'#f9b9d0',f:'#ef8fb4',C:'#ff9ec2',Y:'#ffe06a',t:'#4e9636',T:'#3f7a2c'};
     const M_DDEUL_FLOOR=[   // 뜰 바닥 = 풀밭(G/g) + 흙(R/r)
       "...GGGGGGGGGGGGGGGGGG...",".GGGGGGGGGGGGGGGGGGGGGG.","gggggggggggggggggggggggg","RRRRRRRRRRRRRRRRRRRRRRRR",".rrrrrrrrrrrrrrrrrrrrrr."];
     const DDEUL_FLOOR_PAL={G:'#7cc652',g:'#5aa63c',R:'#a6703f',r:'#7c5028'};
@@ -4210,9 +4210,9 @@
     function devPreviewGachaFx(){ if(!(typeof isDev==='function'&&isDev())) return;
       const fx=$('catFx'); if(!fx){ toast('미리보기를 열 수 없어요', true); return; }
       closeSheet(); _fxClear(); prewarmGachaFxPads();   // 발끝 여백 미리 측정(등장 전 값 준비)
-      _fx={ kind:'egg', preview:true, busy:true, rainbow:false, gold:0, res:{ id:(_gachaFx&&(_gachaFx.a||_gachaFx.b))||(PET_CATALOG[0]&&PET_CATALOG[0].id), tier:'exclusive' } };   // 한정 시나리오로 미리보기(지정 펫이 연출에 반영되는 등급)
-      fx.innerHTML='<div class="fx-scrim"></div><div class="fx-stage">'+
-        '<div class="fx-item pop fx-egg" id="fxItem">'+eggSvg(2,{h:150})+'</div>'+
+      _fx={ kind:'ddeul', preview:true, busy:true, rainbow:false, gold:0, res:{ id:(_gachaFx&&(_gachaFx.a||_gachaFx.b))||(PET_CATALOG[0]&&PET_CATALOG[0].id), tier:'exclusive' } };   // 한정 시나리오 = 뜰알 기준(지정 펫이 연출에 반영되는 등급)
+      fx.innerHTML='<div class="fx-scrim"></div><div class="fx-stage fx-ddeul">'+
+        '<div class="fx-item pop fx-egg fx-ddeulegg" id="fxItem">'+ddeulEggSvg({h:132})+'</div>'+
         '<div class="fx-hint" id="fxHint">연출 미리보기</div></div>';
       fx.className='fx on';
       const st=fx.querySelector('.fx-stage'), it=$('fxItem'); if(!st||!it) return;
@@ -4835,10 +4835,25 @@
     ];
     // RTDB config/notices(공개 읽기·관리자 쓰기)에서 공지를 읽어 NOTICES를 갱신. 없으면 위 기본값 유지.
     function loadNotices(){ try{ db.ref('config/notices').on('value', function(s){ const v=s.val(); let arr=[];
-      if(Array.isArray(v)) arr=v; else if(v&&typeof v==='object') arr=Object.keys(v).map(function(k){ return v[k]; });
+      if(Array.isArray(v)) arr=v.map(function(n,i){ return Object.assign({id:String(i)}, n); });
+      else if(v&&typeof v==='object') arr=Object.keys(v).map(function(k){ return Object.assign({id:k}, v[k]); });
       arr=(arr||[]).filter(function(n){ return n && n.date && n.t; }).sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
-      if(arr.length){ NOTICES=arr; if(typeof updateNewsBadge==='function') updateNewsBadge(); }
+      if(arr.length){ NOTICES=arr; if(typeof updateNewsBadge==='function') updateNewsBadge(); if(state._sheetRefresh) state._sheetRefresh(); }
     }); }catch(e){} }
+    // 개발자: 업데이트 내역(날짜+제목+요약) 등록·수정·삭제 → config/notices(관리자 쓰기·전체 읽기). config/notices에 push 저장하면 실시간 반영.
+    // ⚠️ 개발자/내부 문구는 넣지 말 것(사용자 대면). isDevNotice/isPromoNotice가 화면에서 한 번 더 걸러내지만 애초에 넣지 않기가 1차 방어.
+    let _noticeEditId=null;
+    function saveNotice(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용', true); return; }
+      const date=(val('nt_date')||'').trim(), t=(val('nt_title')||'').trim(), s=(val('nt_body')||'').trim();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){ toast('날짜를 YYYY-MM-DD로 입력하세요', true); return; }
+      if(!t){ toast('제목을 입력하세요', true); return; }
+      const rec={ date:date, t:t.slice(0,80), s:s.slice(0,300) };
+      if(_noticeEditId){ const id=_noticeEditId; db.ref('config/notices/'+id).set(rec).then(function(){ _noticeEditId=null; toast('📝 업데이트 내역을 수정했어요'); if(typeof openDevAnnounce==='function') openDevAnnounce(); }).catch(_cfgWriteErr); return; }
+      db.ref('config/notices').push(rec).then(function(){ toast('📝 업데이트 내역을 등록했어요'); if(typeof openDevAnnounce==='function') openDevAnnounce(); }).catch(_cfgWriteErr); }
+    function editNotice(id){ if(!(typeof isDev==='function'&&isDev())) return; _noticeEditId=id; if(typeof openDevAnnounce==='function') openDevAnnounce(); }
+    function cancelNoticeEdit(){ _noticeEditId=null; if(typeof openDevAnnounce==='function') openDevAnnounce(); }
+    function deleteNotice(id){ if(!(typeof isDev==='function'&&isDev())) return;
+      db.ref('config/notices/'+id).remove().then(function(){ if(_noticeEditId===id) _noticeEditId=null; toast('업데이트 내역을 삭제했어요'); if(typeof openDevAnnounce==='function') openDevAnnounce(); }).catch(_cfgWriteErr); }
     // 📢 운영자 공지(제목+내용) — config/announce(관리자 쓰기·전체 읽기). 소식 '공지사항'에 업데이트 내역과 함께 표시. 개발자 모드 '공지사항 관리'에서 등록/삭제.
     let ANNOUNCE=[];
     function loadAnnounce(){ try{ db.ref('config/announce').on('value', function(s){ const v=s.val(); let arr=[];
@@ -4871,6 +4886,20 @@
       const list=announceList();
       h+='<div class="sech" style="margin-top:18px;"><span class="l">등록된 공지</span><span class="s">'+list.length+'개</span></div>';
       h+= list.length ? list.map(function(a){ return '<div class="giftrow'+(_annEditId===a.id?' on':'')+'"><span class="gftx"><b class="gfnm">'+escapeHtml(a.title||'')+'</b>'+(a.body?'<span class="gfmsg">'+escapeHtml(a.body)+'</span>':'')+'</span><span style="display:flex;gap:6px;flex:none;"><button class="chip" onclick="editAnnounce(\''+a.id+'\')">수정</button><button class="chip" onclick="deleteAnnounce(\''+a.id+'\')">삭제</button></span></div>'; }).join('') : '<div class="note" style="margin:6px 2px;">등록된 공지가 없어요.</div>';
+
+      // ── 업데이트 내역(config/notices) 관리 ──────────────────────────
+      const nEditing=_noticeEditId?NOTICES.filter(function(n){ return n.id===_noticeEditId; })[0]:null; if(_noticeEditId && !nEditing) _noticeEditId=null;
+      const nd=nEditing?(nEditing.date||''):kstDayKey(), nt=nEditing?(nEditing.t||''):'', ns=nEditing?(nEditing.s||''):'';
+      h+='<div class="sech" style="margin-top:22px;"><span class="l">업데이트 내역</span><span class="s">소식 화면</span></div>';
+      h+='<div class="note">소식 화면 <b>업데이트 내역</b>에 표시할 항목(날짜·제목·요약)을 등록·수정해요. 전역 <b>config/notices</b>(관리자만 쓰기·전체 읽기)에 저장돼 <b>배포 없이</b> 최신 1건이 사용자에게 반영됩니다. ⚠️ 개발자 모드·치트·내부 도구 등 비공개 변경은 넣지 마세요(개발용 CHANGELOG.md와 별개).</div>';
+      if(nEditing) h+='<div class="note" style="border-left:3px solid var(--primary);">✏️ <b>업데이트 내역 수정 중</b> — 저장하면 이 항목이 바뀝니다.</div>';
+      h+='<div class="field"><label for="nt_date">날짜</label><input class="input" id="nt_date" maxlength="10" placeholder="2026-07-05" value="'+escapeHtml(nd)+'"></div>';
+      h+='<div class="field"><label for="nt_title">제목</label><input class="input" id="nt_title" maxlength="80" placeholder="예: 알뜰샵 개편" value="'+escapeHtml(nt)+'"></div>';
+      h+='<div class="field"><label for="nt_body">요약</label><textarea class="input" id="nt_body" rows="2" maxlength="300" placeholder="예: 가챠 탭을 앞으로 옮기고 한정 픽업 배너를 추가했어요">'+escapeHtml(ns)+'</textarea></div>';
+      h+='<div class="row" style="gap:8px;margin-top:4px;"><button class="btn" style="flex:1;" onclick="saveNotice()">'+(nEditing?'수정 저장':'내역 등록')+'</button>'+(nEditing?'<button class="btn ghost" style="flex:none;" onclick="cancelNoticeEdit()">취소</button>':'')+'</div>';
+      const nlist=NOTICES.slice().sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+      h+='<div class="sech" style="margin-top:14px;"><span class="l">등록된 내역</span><span class="s">'+nlist.length+'개</span></div>';
+      h+= nlist.length ? nlist.map(function(n){ const dev=isDevNotice(n)||isPromoNotice(n); return '<div class="giftrow'+(_noticeEditId===n.id?' on':'')+'"><span class="gftx"><b class="gfnm">'+escapeHtml(n.date||'')+' · '+escapeHtml(noticeTitle(n))+(dev?' <span style="color:var(--expense);font-size:11px;">(비노출)</span>':'')+'</b>'+(n.s?'<span class="gfmsg">'+escapeHtml(n.s)+'</span>':'')+'</span>'+(n.id!=null?'<span style="display:flex;gap:6px;flex:none;"><button class="chip" onclick="editNotice(\''+n.id+'\')">수정</button><button class="chip" onclick="deleteNotice(\''+n.id+'\')">삭제</button></span>':'<span class="chip" style="flex:none;opacity:.6;">기본값</span>')+'</div>'; }).join('') : '<div class="note" style="margin:6px 2px;">등록된 내역이 없어요.</div>';
       openSheet('공지사항 관리', h); }
     // 안 본 공지 기준일 — 계정(RTDB game.newsSeenAt)과 기기(localStorage) 중 더 최신 사용(기기 간 동기화).
     function newsSeenAt(){ let g=(state.game&&state.game.newsSeenAt)||''; let l=''; try{ l=localStorage.getItem('newsSeenAt')||''; }catch(e){} return g>l?g:l; }
@@ -4913,6 +4942,7 @@
       if(gc>0){ h+='<div class="newsalert" role="button" tabindex="0" onclick="openGiftbox()"><span class="nai">'+giftSvg({h:30})+'</span><div class="nat"><b>선물 '+gc+'개가 도착했어요</b><span>탭해서 선물함에서 받으세요</span></div><span class="buy">받기</span></div>'; }
       else { h+='<div class="note" style="margin:2px 0 6px;">받을 선물이 없어요. 친구 집에서 응원 선물을 주고받거나 코드를 입력해 보세요.</div>'; }
       h+='<div class="sech" style="margin-top:16px;"><span class="l"><span class="sech-ic" style="color:var(--gold,#e0a43c);">'+sparkSvg({h:15})+'</span> 이벤트</span></div>';
+      h+=limitedPickupBanner();   // 🌈 한정 픽업 배너(있을 때만) — 이달의 할인펫 배너 위에
       const fid=featuredCatId();
       if(fid){ const fc=PET_CATALOG.find(function(x){ return x.id===fid; }); if(fc){
         h+='<div class="featbanner" role="button" tabindex="0" onclick="openShop()"><span class="fstar">'+sparkSvg({h:20})+'</span><div class="fb-txt"><b>'+monthLabelKo()+' 이달의 펫 · '+catNameSpan(fid,fc.name)+'</b><span class="s">이번 달만 '+Math.round(FEATURED_DISCOUNT*100)+'% 할인 — '+catBuyPrice(fid)+' 은화'+(ownsCat(fid)?' (보유 완료)':' · 사러가기')+'</span></div><span class="fb-face">'+catFace(fid,{h:40})+'</span></div>'; } }
@@ -4968,7 +4998,7 @@
       const fx=$('catFx'); if(!fx){ toast((kind==='egg'?'펫알':'랜덤박스')+' 획득!'); return; }
       _fxClear();   // 이전 FX 잔여 타이머 취소(빠른 재오픈 교차 방지)
       _fx={ kind, res, dup, refund:refund||0, stage:0, rainbow:!!rainbow, gold: rainbow?0:1, isNew:!!isNew };   // 무지개는 금화로 샀으니 금화 보상 없음. isNew=처음 획득(NEW 배지)
-      if(kind==='egg' && typeof hasSprite==='function' && hasSprite(res.id)){ try{ const _pi=new Image(); _pi.src=sprStill(res.id,'south'); if(_pi.decode) _pi.decode().catch(function(){}); }catch(e){} }   // 등장 스프라이트 미리 로드·디코드(연출 도는 동안) → 마지막에 바로 표시
+      if(isEggKind(kind) && typeof hasSprite==='function' && hasSprite(res.id)){ try{ const _pi=new Image(); _pi.src=sprStill(res.id,'south'); if(_pi.decode) _pi.decode().catch(function(){}); }catch(e){} }   // 등장 스프라이트 미리 로드·디코드(펫알·뜰알 공통) → 마지막에 바로 표시
       if(typeof prewarmGachaFxPads==='function') prewarmGachaFxPads();   // 연출 고양이 발끝 여백 미리 측정(탭하는 동안 캐시 완료 → 첫 등장 세로 점프 방지)
       if(reducedMotion()){ fxReveal(); return; }   // 모션 최소화: 바로 결과
       const isDdeul = kind==='ddeul';
@@ -5151,8 +5181,12 @@
       if(!isDev()) return;
       let h='<div class="note"><span class="pill">이 기기만</span> 개발자 전용 · 이 설정(연출/다마고치 테스트)은 <b>이 기기(브라우저)에만</b> 적용됩니다(재화 지급은 내 계정에 반영).</div>';
       h+='<div class="sec-title">연출 테스트(무료)</div>';
-      h+='<div class="tx-sub" style="margin:0 2px 6px;">펫알</div><div class="chip-row">'+TIERS.map(t=>'<button class="chip" onclick="devPreview(\'egg\',\''+t.id+'\')"><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
-      h+='<div class="tx-sub" style="margin:8px 2px 6px;">랜덤박스</div><div class="chip-row">'+TIERS.map(t=>'<button class="chip" onclick="devPreview(\'box\',\''+t.id+'\')"><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
+      // 한정(exclusive)은 기본 펫알/박스엔 없고 '뜰알'에서만 나옴 → 펫알·박스 행에선 제외하고, 아래 뜰알 행에서 한정 연출을 미리본다.
+      const previewTiers=TIERS.filter(t=>t.id!=='exclusive');
+      h+='<div class="tx-sub" style="margin:0 2px 6px;">펫알</div><div class="chip-row">'+previewTiers.map(t=>'<button class="chip" onclick="devPreview(\'egg\',\''+t.id+'\')"><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
+      h+='<div class="tx-sub" style="margin:8px 2px 6px;">랜덤박스</div><div class="chip-row">'+previewTiers.map(t=>'<button class="chip" onclick="devPreview(\'box\',\''+t.id+'\')"><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
+      // 🌱 뜰알(한정 픽업) — 뜰알 기준 연출 미리보기. 한정은 뜰알에서만 나오므로 '한정' 연출은 여기서 확인(뜰+하늘+무지개, 픽업 펫=삵·표범).
+      h+='<div class="tx-sub" style="margin:8px 2px 6px;">🌱 뜰알(한정 픽업)</div><div class="chip-row">'+TIERS.map(t=>'<button class="chip" onclick="devPreview(\'ddeul\',\''+t.id+'\')"><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
       h+='<div class="sec-title" style="margin-top:18px;">다마고치 테스트(즉시)</div>';
       h+='<div class="note" style="margin-bottom:8px;">3시간을 기다리지 않고 급여·배변·수거를 바로 확인. 순서: <b>사료·물 +10</b> → 홈에서 그릇 채우기(또는 <b>그릇 다 채우기</b>) → <b>그릇 만료→똥</b> → 똥 탭/일괄 돌보기.</div>';
       h+='<div class="chip-row"><button class="chip" onclick="devGiveConsum()">사료·물 +10</button><button class="chip" onclick="devFillAll()">그릇 다 채우기</button><button class="chip" onclick="devExpireBowls()">그릇 만료→똥</button><button class="chip" onclick="devAddPoop()">똥 +3</button></div>';
@@ -5174,9 +5208,10 @@
     function resetDevGacha(){ localStorage.removeItem('catDevCfg'); toast('기본값으로 초기화'); openDevGacha(); }
     // 연출만 미리보기(은화 소모·지급 없음)
     function devPreview(kind, tierId){
-      const map = kind==='egg'? effCatTier() : effItemTier();
+      const map = isEggKind(kind)? effCatTier() : effItemTier();   // 뜰알(ddeul)도 펫알과 동일하게 펫 등급 맵 사용
       let id = Object.keys(map).find(k=>map[k]===tierId);
-      if(!id) id = kind==='egg' ? (Object.keys(map)[0]||'cat_mackerel') : (Object.keys(map)[0]||'cushion');
+      if(kind==='ddeul' && tierId==='exclusive'){ const pk=(typeof LIMITED_PICKUP!=='undefined') && LIMITED_PICKUP.find(pickupExists); if(pk) id=pk; }   // 한정 = 픽업 펫(삵·표범)으로 연출
+      if(!id) id = isEggKind(kind) ? (Object.keys(map)[0]||'cat_mackerel') : (Object.keys(map)[0]||'cushion');
       closeSheet(); _fx=null; runGachaFx(kind, { id, tier:tierId }, false, 0, false, true);   // 미리보기는 NEW 배지도 함께 표시
     }
     // ---- 다마고치 테스트(개발자 전용, 즉시) ----
