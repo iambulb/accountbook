@@ -1870,26 +1870,26 @@
     function newBadgeSvg(opt){ opt=opt||{}; const h=opt.h||30;
       const chs=[M_LN,M_LE,M_LW].map((m,i)=>'<span class="fx-new-ch" style="--i:'+i+'">'+pxSvg(m,NEW_PAL,{h:h})+'</span>').join('');
       return '<div class="fx-new" aria-hidden="true">'+chs+'</div>'; }
-    // 🌈 픽셀 무지개 아치(한정 픽업 배너용) — 바닥 중앙 기준 6밴드 동심원 아치(가운데 비움, 밴드 두께=R/6로 아치 전체를 채움). 넓고 길게. 연하게는 CSS opacity로.
+    // 🌈 픽셀 무지개 아치(한정 픽업 배너용) — 바닥 중앙 기준 7밴드 동심원 아치(빨~보 6색 + 안쪽 연한 흰띠로 결 살림). 넓고 길게. 연하게는 CSS opacity로.
     function rainbowArcSvg(opt){ opt=opt||{}; const cols=opt.cols||41, rows=opt.rows||15;
-      const RB=['#F04452','#F0883C','#F2C84B','#2FAE7A','#3182F6','#9B6FC8'], cx=(cols-1)/2, R=rows, t=R/6; let r='';
+      const RB=['#F04452','#F0883C','#F2C84B','#2FAE7A','#3182F6','#9B6FC8','#eef4ff'], cx=(cols-1)/2, R=rows, t=R/7; let r='';
       for(let y=0;y<rows;y++) for(let x=0;x<cols;x++){ const dx=x-cx, dy=(rows-0.4-y); if(dy<0) continue;
-        const d=Math.sqrt(dx*dx+dy*dy), band=Math.floor((R-d)/t); if(band>=0&&band<6) r+='<rect x="'+x+'" y="'+y+'" width="1.05" height="1.05" fill="'+RB[band]+'"/>'; }
+        const d=Math.sqrt(dx*dx+dy*dy), band=Math.floor((R-d)/t); if(band>=0&&band<7) r+='<rect x="'+x+'" y="'+y+'" width="1.05" height="1.05" fill="'+RB[band]+'"/>'; }
       const wh=opt.h?('height="'+opt.h+'"'):(opt.w?('width="'+opt.w+'"'):'');
       return '<svg class="px '+(opt.cls||'')+'" viewBox="0 0 '+cols+' '+rows+'" '+wh+' shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet">'+r+'</svg>'; }
     // 🌳🌸☁️ 한정 픽업 배너 씬 픽셀 에셋(구름·나무·꽃·풀) — 전부 pxSvg(crispEdges) 도트. 팔레트에 없는 글자는 투명.
-    const M_CLOUD1=["....WWWW.....","..WWHHHHWW...",".WHHWWWWHHW..","WWWWWWWWWWWWW",".SSSSSSSSSSS."];
-    const M_CLOUD2=[".....WWWWWW......","...WWHHHHHHWW....",".WWHHWWWWWWHHWW..","WWWWWWWWWWWWWWWWW","WWWWWWWWWWWWWWWWW",".SSSSSSSSSSSSSS.."];
-    const M_CLOUD3=["..WWW..",".WHHHW.","WWWWWWW",".SSSSS."];
-    const CLOUD_PALS={w:{W:'#ffffff',H:'#f4f9ff',S:'#d9e6f2'},p:{W:'#ffe9f2',H:'#fff4f9',S:'#f4cfe0'},b:{W:'#eaf4ff',H:'#f6fbff',S:'#cfe2f5'}};
+    const M_CLOUD1=[".....HHHHHH.....","...HHWWWWWWHH...","..HWWWWWWWWWWH..",".HWWWWWWWWWWWWH.","HWWWWWWWWWWWWWWH","WWWWWWWWWWWWWWWW",".SSSSSSSSSSSSSS."];
+    const M_CLOUD2=["...HHHH...",".HHWWWWHH.","HWWWWWWWWH","WWWWWWWWWW",".SSSSSSSS."];
+    const M_CLOUD3=["..HHH..",".HWWWH.","WWWWWWW",".SSSSS."];
+    const CLOUD_PALS={w:{W:'#ffffff',H:'#eef6ff',S:'#d3e4f3'},p:{W:'#fff2f8',H:'#ffe9f2',S:'#f2cfe0'},b:{W:'#f0f8ff',H:'#e4f1ff',S:'#cfe2f5'}};
     function cloudSvg(which,tint,opt){ const M=[M_CLOUD1,M_CLOUD2,M_CLOUD3][which]||M_CLOUD1; return pxSvg(M, CLOUD_PALS[tint||'w'], opt); }
-    // 활엽수: 캐노피(H하이라이트/L기본/D그림자/X외곽) + 트렁크 분리(캐노피만 바람에 살랑)
-    const M_TREETOP=["...XXXXX...",".XXHHHHHXX.","XHHLLLLLHHX","XHLLLLLLLHX","XLLLLLLLLDX","XLLLLLLLDDX",".XLLLLDDDX.","..XXDDDXX..","....XXX...."];
-    const M_TRUNK=[".TT.",".Tt.",".Tt.","TTtt"];
-    const TREE_PAL={T:'#7a4a25',t:'#5e3718',L:'#5bb85b',l:'#3f9a45',H:'#8fd47f',D:'#2f7a38',X:'#25602c'};
-    // 침엽수(삼각) — 원근 뒤쪽용
-    const M_PINE=["...H...","..HLL..","..LLl..",".HLLLl.",".LLLll.","HLLLLll","LLLLlll","...T...","...T..."];
-    const PINE_PAL={T:'#7a4a25',L:'#3f9a55',l:'#2f7a44',H:'#6fc47f',X:'#245c34'};
+    // 활엽수: 둥근 캐노피(H하이라이트/L기본/l중간/D그림자/X외곽, 클럼프 음영) + 트렁크(T/w/t 나뭇결) 분리(캐노피만 바람에 살랑)
+    const M_TREETOP=["....HHH......","..HHLLLHH....",".HLLLLLLLH...","HLLLLLLlLLH..","HLLHLLLllLDH.","HLLLLLllllLDH",".HLLLlllllDDH",".HLLLllllDDD.","..HLLllDDDD..","...XLllDDX...","....XXDX....."];
+    const M_TRUNK=[".TTt.",".Twt.",".Twt.","TTwtt"];
+    const TREE_PAL={T:'#6e4426',w:'#875733',t:'#543216',L:'#5bb85b',l:'#4a9f4a',H:'#86d67f',D:'#2f7a38',X:'#245c2c'};
+    // 침엽수(3단 삼각) — 눈빛 하이라이트(H)+음영(l/D)+나뭇결 기둥. 원근 뒤쪽용
+    const M_PINE=["....H....","...HLD...","...LLl...","..HLLLD..","..LLLll..",".HLLLLlD.",".LLLLlll.","HLLLLLllD","LLLLLllll","..LLll...","...TT....","...Tt...."];
+    const PINE_PAL={H:'#8fe08a',L:'#4aa85a',l:'#347a44',D:'#245c34',T:'#6e4426',t:'#543216'};
     function treeTopSvg(opt){ return pxSvg(M_TREETOP, TREE_PAL, opt); }
     function trunkSvg(opt){ return pxSvg(M_TRUNK, TREE_PAL, opt); }
     function pineSvg(opt){ return pxSvg(M_PINE, PINE_PAL, opt); }
@@ -1905,16 +1905,16 @@
     function butterflySvg(tint,opt){ return pxSvg(M_BFLY, BFLY_PALS[tint||'o'], opt); }
     // 🪨 원근 큐 에셋(한정 픽업 배너) — 깊이에 따라 크기·바닥선을 펫과 같은 척도로 배치해 펫이 앞뒤로 움직일 때 원근을 읽히게 함. 전부 도트(crispEdges).
     // 징검다리(디딤돌): 앞→뒤 한 줄, 뒤로 갈수록 작게 → 선 원근. 펫 발밑에 깔려 거의 안 가림.
-    const M_STONE=[".SSSSS.","SLLLLLS","SLLLLDS",".SDDDD."];
-    const STONE_PAL={S:'#7c828b',L:'#c7ccd2',D:'#9aa0a7'};
+    const M_STONE=["..XXXXX..",".XLLLLLX.","XLILLMMDX","XMMMMMDDX",".XDDDDDX."];
+    const STONE_PAL={X:'#6f757e',L:'#cfd4da',I:'#eef0f3',M:'#a6acb4',D:'#858b94'};
     function stoneSvg(opt){ return pxSvg(M_STONE, STONE_PAL, opt); }
-    // 중간 바위(boulder): 펫이 뒤에선 그 뒤로(가려짐), 앞에선 앞으로 지나가는 겹침(occlusion) 큐 — z를 펫과 같은 12-depth*11 척도로.
-    const M_ROCK=["...RRR...",".RRLLLRR.","RRLLLLLRR","RLLLLLLDR","RLLLLDDDR","RRLDDDDRR",".RRRRRRR."];
-    const ROCK_PAL={R:'#5f6670',L:'#9aa2ac',D:'#727a85'};
+    // 중간 바위(boulder): 이끼(G/g) 얹힌 3면 음영 바위. 펫이 뒤에선 그 뒤로(가려짐), 앞에선 앞으로 지나가는 겹침(occlusion) 큐 — z를 펫과 같은 12-depth*11 척도로.
+    const M_ROCK=["...gGGg....","..XXXXXX...",".XLLLLMMX..","XLLLLLMMMX.","XLLLMMMMMDX","XLMMMMMMDDX","XMMMMMDDDDX",".XMMDDDDDX.","..XXXXXXX.."];
+    const ROCK_PAL={X:'#565c66',L:'#9aa2ac',M:'#7c838d',D:'#626973',G:'#6fbf46',g:'#4e9636'};
     function rockSvg(opt){ return pxSvg(M_ROCK, ROCK_PAL, opt); }
-    // 낮은 말뚝 울타리(3말뚝+2레일): 옆쪽에 앞→뒤로 작아지게 놓아 선 원근. 낮아서 펫을 덜 가림(필드=펫 뒤).
-    const M_FENCE=[".T...T...T.","TWT.TWT.TWT","RRRRRRRRRRR","TWT.TWT.TWT","TWT.TWT.TWT","RRRRRRRRRRR","TWT.TWT.TWT"];
-    const FENCE_PAL={T:'#6f4a2a',W:'#b08a5c',R:'#8a6038'};
+    // 낮은 말뚝 울타리(뾰족 말뚝 3+나뭇결+2레일): 옆쪽에 앞→뒤로 작아지게 놓아 선 원근. 낮아서 펫을 덜 가림(필드=펫 뒤).
+    const M_FENCE=[".T....T....T.","TWwT.TWwT.TWw","TWwT.TWwT.TWw","RRRRRRRRRRRRR","TWwT.TWwT.TWw","TWwT.TWwT.TWw","RRRRRRRRRRRRR","TWwT.TWwT.TWw","TWwT.TWwT.TWw"];
+    const FENCE_PAL={T:'#5f3e22',W:'#c39a63',w:'#96703f',R:'#8a6038'};
     function fenceSvg(opt){ return pxSvg(M_FENCE, FENCE_PAL, opt); }
     // 깊이 그림자(납작 타원): 펫 발밑에 깔려 depth(액터 scale 그대로)에 따라 커지고 작아짐 → 접지감+깊이. 색은 CSS opacity로 은은하게. 가림 0.
     const M_SHADOW=[".SSSSSSS.","SSSSSSSSS",".SSSSSSS."];
@@ -3255,6 +3255,7 @@
         const pk=$('pkStage'); if(pk && out.indexOf(pk)<0) out.push(pk);                         // 🌈 알뜰샵 가챠 탭 한정 픽업 배너 씬(있을 때만 = 그 탭일 때만 DOM 존재)
       }
       if(dockMode()!=='hidden'){ const s=$('cdStage'); if(s && out.indexOf(s)<0) out.push(s); }  // 하단 dock 캠(시트가 떠 있어도 계속 로밍)
+      const rb=$('rbStage'); if(rb && out.indexOf(rb)<0) out.push(rb);                            // 🏠 전설/신화 등장 배경 방의 활성 펫(등장 연출 떠 있을 때만 DOM 존재)
       return out;
     }
     function buildActors(stage){
@@ -4124,14 +4125,18 @@
       const tag=(id)=> pickupExists(id) ? '<span class="pk-tag">'+catNameSpan(id,catName(id))+'</span>' : '';
       const sep=(pickupExists(p1)&&pickupExists(p2))?'<span class="pk-tag" style="opacity:.5;">·</span>':'';
       return '<div class="pickbanner"><div class="pk-head"><span class="pk-title tier-rainbow">✨ 지금 이 펫만! 한정 픽업</span>'+tag(p1)+sep+tag(p2)+'</div>'+pickupSceneHtml('banner')+'</div>'; }
-    // 🏠 전설/신화 등장 배경 = 내 알뜰홈 방(현재 방의 벽지·바닥·배치 가구, 캠 연출) 전체화면. 펫(등장)·무대 없이 배경만.
+    // 🏠 전설/신화 등장 배경 = 내 알뜰홈 방(현재 방의 벽지·바닥·배치 가구 + 활성 펫들, 캠 연출) 전체화면. 등장 펫은 앞(주인공)이라 배경 펫에서 제외.
     function roomBackdropHtml(){
       const spH=splitProps(placedList().sort((a,b)=>a.r-b.r), p=>propMarkup(p,false,false,true));   // live=true → 캠과 동일한 가구 연출
       const props=spH.floor+wallPlacedList().map(p=>wallPropMarkup(p,false,true)).join('')+spH.other;
+      const revId=_fx&&_fx.res&&_fx.res.id;
+      const pets=activeCats().filter(id=>id!==revId).slice(0,slotCount());   // 현재 방 활성 펫(등장 펫 제외) — #rbStage에서 엔진이 배회시킴
+      if(typeof ensurePetArtMany==='function') ensurePetArtMany(pets);
+      const stage='<div class="cr-stage" id="rbStage" data-hh="72">'+pets.map((id,i)=>{ const s=petActorPx(id,32,180); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*72)+'px;">'+catActorHTML(id,s)+'</div>'; }).join('')+'</div>';
       return '<div class="pk-roombg" aria-hidden="true"><div class="catroom">'+
         '<div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div>'+
         '<div class="cr-floor" style="background:'+floorCss(currentFloor())+'"></div><div class="cr-base"></div>'+
-        '<div class="cr-props">'+props+'</div></div></div>'; }
+        '<div class="cr-props">'+props+'</div>'+stage+'</div></div>'; }
     // 등급 '이름' 라벨을 등급 색으로(펫 이름이 아니라 등급명). 한정(exclusive)=무지개(.tier-rainbow), 그 외=인라인 색(신화=#ff5fa2 등). 도감 등급 헤더 등 공용.
     function tierLabelHtml(tierId){ const ti=tierInfo(tierId); const nm=escapeHtml(ti.name);
       if(tierId==='exclusive') return '<span class="tier-rainbow">'+nm+'</span>';

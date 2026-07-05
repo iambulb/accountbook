@@ -1213,6 +1213,8 @@
     /* ✨ 무지개 등장: 프레임을 무지갯빛으로 + 등급명 무지개 */
     .fx-reveal.rev-rb .fx-frame { display:block; inset:-11px; border-width:4px; border-color:transparent; box-shadow:0 0 0 4px #ff5fa2, 0 0 0 8px #F2C84B, 0 0 18px 6px rgba(255,95,162,.5); animation:fxframe 1s steps(2) infinite; }
     .fx-reveal.rev-rb .fx-tier { background:linear-gradient(90deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8,#F04452); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:rainbow 2s linear infinite; }
+    /* 🌈 한정(exclusive): 등장 프레임(박스)을 풀 스펙트럼 무지개 테두리로 — 무지개 빛(ll-rays RAINBOW)과 한 세트 */
+    .fx-reveal.tier-exclusive .fx-frame { display:block; inset:-11px; border:4px solid transparent; border-image:linear-gradient(90deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8,#F04452) 1; box-shadow:0 0 18px 6px rgba(155,111,200,.4); opacity:.9; animation:fxframe 1s steps(2) infinite; }
     /* ✨ 무지개 승급 순간(2번째 탭) 흰 픽셀 방사 번쩍(1회) */
     .fx-upgrade { position:absolute; left:50%; top:50%; z-index:4; transform:translate(-50%,-50%) scale(.4); image-rendering:pixelated; color:#fff; animation:fxupg .72s steps(6) forwards; pointer-events:none; }
     .fx-upgrade .px { display:block; }
@@ -1479,6 +1481,7 @@
     /* 🏠 전설/신화 등장 배경 = 내 알뜰홈 방 전체화면(벽지·바닥·배치 가구). 펫·텍스트(.fx-reveal.rev-room z-index:2)는 이 위에. */
     .pk-roombg { position:absolute; inset:0; z-index:1; overflow:hidden; animation:fxfade .4s ease; }
     .pk-roombg .catroom { position:absolute; inset:0; width:auto; height:100%; border:0; border-radius:0; margin:0; }
+    .pk-roombg .cd-actor { pointer-events:none; }   /* 배경 방 펫은 배회만(드래그·탭 없음) */
     .pk-roombg::after { content:''; position:absolute; inset:0; z-index:9; pointer-events:none;
       background:linear-gradient(180deg, rgba(0,0,0,.14) 0%, transparent 22%, transparent 60%, rgba(0,0,0,.24) 100%); }   /* 상·하 어둡게 → 등장 펫 대비 */
     .fx-reveal.rev-room { z-index:2; }   /* 펫·텍스트는 방 배경 위에 */
