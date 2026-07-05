@@ -2749,7 +2749,8 @@
          '<div class="switch'+(pre.gachaOnly?' on':'')+'" id="dpGacha" role="switch" aria-checked="'+(pre.gachaOnly?'true':'false')+'" onclick="this.classList.toggle(\'on\')"><i></i></div></div>'+
          '<div class="tx-sub" style="margin-top:2px;line-height:1.5;">켜면 <b>알뜰샵 판매목록에서 숨김</b>(펫알 가챠에는 항상 포함). 끄면 등급에 맞춰 <b>은화로 판매</b>돼요.</div></div>';
       return h; }
-    function syncPetGacha(){ const t=val('dpTier')||'normal'; const sw=$('dpGacha'); if(sw) sw.classList.toggle('on', tierRank(t)>=tierRank('epic')); }
+    // 등급 바꾸면 가챠전용 토글을 등급 기본값으로 스냅 — 단 '추가'일 때만(수정 중엔 사용자가 이미 정한 값을 존중해 스냅하지 않음: 해제가 저장 직전 다시 켜지던 문제 방지).
+    function syncPetGacha(){ if(_devPetTarget) return; const t=val('dpTier')||'normal'; const sw=$('dpGacha'); if(sw) sw.classList.toggle('on', tierRank(t)>=tierRank('epic')); }
     function devPetInfo(id){ const c=PET_CATALOG.find(x=>x.id===id)||_deletedPets[id]; if(!c) return null; const sp=PET_SPRITES[id]||{};
       return { id, name:c.name, species:c.species, speciesLabel:(SPECIES_LABEL[c.species]||''), tier:CAT_TIER[id]||'normal', scale:sp.scale||1, gachaOnly:isGachaOnlyCat(id) }; }
     function openDevPetAdd(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; } _devPetTarget=null;
