@@ -71,6 +71,7 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 | chibi_pixel_art_siamese_cat_cream_body_with_dark_fa.zip | `cat_siamese` | 삼삼이 | Walk/east 옆걷기 정상 |
 | chibi_pixel_art_golden_cat_a_few_simple_round_spot.zip | `cat_bengal` | 황토 | Walk/east 옆걷기 정상 |
 | chibi_pixel_art_grey_cat_small_folded-down_ears_ro.zip | `cat_fold` | 폴드 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `cat_bora` | 보라 | Walk/east 옆걷기 정상 |
 | simple_pixel_art_chocolate_brown_cat_cream_muzzle.zip | `cat_choco` | 초코 | Walk/east 옆걷기 정상 |
 | simple_pixel_art_orange_tabby_kitten_a_few_cheese.zip | `cat_kitten` | 아깽이 | Walk/east 옆걷기 정상 |
 | simple_pixel_art_pink_sphynx_cat_hairless_wrinkled.zip | `cat_pink` | 핑크 | Walk/east 옆걷기 정상 |
@@ -82,6 +83,7 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 | (정적 승격) | `cat_bengal2` | 얼룩이 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_mutt` | 시고르자브 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `cat_panther` | 블랙팬서 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `dog_baekgu` | 백구 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_shiba` | 시바 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_corgi` | 코기 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_dalmatian` | 달마시안 | Walk/east 옆걷기 정상 |
@@ -90,9 +92,11 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 | (정적 승격) | `dog_injeolmi` | 인절미 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_poodle` | 스탠다드푸들 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_beagle` | 비글 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `dog_sukhee` | 숙희 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_doberman` | 도베르만 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_pug` | 퍼그 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_shepherd` | 저먼셰퍼드 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `dog_bordercollie` | 보더콜리 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_spitz` | 스피츠 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_jackrussell` | 잭러셀테리어 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_labrador` | 레브라도 | Walk/east 옆걷기 정상 |
@@ -107,6 +111,7 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 | (정적 승격) | `dog_welshterrier` | 웰시테리어 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_papillon` | 파피용 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_newfoundland` | 뉴펀들랜드 | Walk/east 옆걷기 정상 |
+| (정적 승격) | `dog_beardedcollie` | 비어디드콜리 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_afghanhound` | 보더콜리 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_rottweiler` | 로트와일러 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `dog_pointer` | 포인터 | Walk/east 옆걷기 정상 |
@@ -209,7 +214,7 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 ### ⚠️ 옆걷기(east) 없는 펫 — 이미지 재취득 대상
 `animations/Walk/east`(옆보기 걷기)가 **없는** zip은 `walk.png`가 정면이 되어 `frontWalk:true`로 처리(이동 중 옆 정지스틸만 보이고 걷기 애니 없음). 그런 펫은 옆걷기 포함 zip으로 다시 받아 재생성하고 `frontWalk`를 해제한다.
 
-**현재 재취득 대상: 없음** — <!--@gen:cats-count-->142<!--@gen:end-->종 전부 `Walk/east` 옆걷기 보유. (과거 `cat_white`가 south만 있었으나 east 시트로 재취득 완료.) 새 펫 추가 시 east 유무를 확인해 이 목록을 갱신한다.
+**현재 재취득 대상: 없음** — <!--@gen:cats-count-->147<!--@gen:end-->종 전부 `Walk/east` 옆걷기 보유. (과거 `cat_white`가 south만 있었으나 east 시트로 재취득 완료.) 새 펫 추가 시 east 유무를 확인해 이 목록을 갱신한다.
 
 ## ✅ 펫 추가 체크리스트 (에셋만 넣고 끝내지 말 것 — 코드+문서 함께 반영)
 > **규칙**: 펫을 추가/변경/제거하면 아래 코드 **3곳**과 문서 **3곳**을 같은 커밋에서 모두 갱신한다. 하나라도 빠지면 미완성으로 본다. (이 규칙은 `CLAUDE.md`의 "문서 최신화 규칙" 표 — *기능 추가·변경·제거 → features.md*, *모든 사용자 체감 변경 → CHANGELOG* — 의 펫 전용 상세판이다.)

@@ -978,6 +978,7 @@
       { id:'cat_siamese', species:'cat', name:'삼삼이', price:100, desc:'크림빛 몸에 짙은 포인트. 우아하게 방을 누벼요.' },
       { id:'cat_bengal', species:'cat', name:'황토', price:50, desc:'골든빛 몸에 동글동글 반점. 야무지게 돌아다녀요.' },
       { id:'cat_fold', species:'cat', name:'폴드', price:50, desc:'접힌 귀가 매력. 얌전히 자리를 지켜요.' },
+      { id:'cat_bora', species:'cat', name:'보라', price:400, desc:'한쪽은 파랑·한쪽은 호박색 오드아이. 신비롭게 거닐어요.' },
       { id:'cat_choco', species:'cat', name:'초코', price:50, desc:'초콜릿빛 갈색 털에 크림색 입가·가슴. 느긋하게 방을 거닐어요.' },
       { id:'cat_kitten', species:'cat', name:'아깽이', price:50, desc:'치즈빛 오렌지 태비 아기고양이. 뒤뚱뒤뚱 방을 쏘다녀요.' },
       { id:'cat_pink', species:'cat', name:'핑크', price:400, desc:'털 없는 분홍빛 주름 피부. 도도하게 방을 누벼요.' },
@@ -989,6 +990,7 @@
       { id:'cat_bengal2', species:'cat', name:'얼룩이', price:100, desc:'야생미 물씬 로제트 무늬. 날렵하게 방을 쏘다녀요.' },
       { id:'dog_mutt', species:'dog', name:'시고르자브', price:200, desc:'어느 동네에나 있는 씩씩한 잡종견. 꼬리 흔들며 졸졸 따라다녀요.' },
       { id:'cat_panther', species:'cat', name:'블랙팬서', price:1500, desc:'칠흑빛 근육질의 흑표범. 소리 없이 방을 누비는 한정판 위엄.' },
+      { id:'dog_baekgu', species:'dog', name:'백구', price:50, desc:'온 동네가 아는 새하얀 토종개. 사람만 보면 꼬리가 헬리콥터.' },
       { id:'dog_shiba', species:'dog', name:'시바', price:400, desc:'새침한 표정 뒤에 장난기 가득. 마음을 열면 껌딱지가 돼요.' },
       { id:'dog_corgi', species:'dog', name:'코기', price:800, desc:'짧은 다리로 통통, 복슬 엉덩이가 트레이드마크.' },
       { id:'dog_dalmatian', species:'dog', name:'달마시안', price:100, desc:'까만 점박이 무늬가 하나하나 다 달라요. 달리기라면 자신 있음.' },
@@ -997,9 +999,11 @@
       { id:'dog_injeolmi', species:'dog', name:'인절미', price:800, desc:'말랑말랑 콩고물 빛 털뭉치. 안으면 떡처럼 쫀득.' },
       { id:'dog_poodle', species:'dog', name:'스탠다드푸들', price:200, desc:'우아한 곱슬머리 신사. 똑똑하기로 소문났어요.' },
       { id:'dog_beagle', species:'dog', name:'비글', price:200, desc:'코가 이끄는 대로 온 집안 탐험. 호기심 대장.' },
+      { id:'dog_sukhee', species:'dog', name:'숙희', price:800, desc:'동네 골목대장 누렁이. 정 많고 의리 넘쳐요.' },
       { id:'dog_doberman', species:'dog', name:'도베르만', price:800, desc:'날렵한 근육질 경비대장. 겉은 시크, 속은 다정.' },
       { id:'dog_pug', species:'dog', name:'퍼그', price:800, desc:'찌글 주름과 똥그란 눈망울. 코고는 소리마저 사랑스러워.' },
       { id:'dog_shepherd', species:'dog', name:'저먼셰퍼드', price:800, desc:'믿음직한 명견. 한번 주인은 영원한 주인.' },
+      { id:'dog_bordercollie', species:'dog', name:'보더콜리', price:400, desc:'천재 견공. 눈빛만으로 양떼도 척척.' },
       { id:'dog_spitz', species:'dog', name:'스피츠', price:50, desc:'새하얀 솜뭉치. 방긋 웃는 여우상 미소.' },
       { id:'dog_jackrussell', species:'dog', name:'잭러셀테리어', price:800, desc:'작은 몸에 에너지 폭발. 잠시도 가만 못 있어요.' },
       { id:'dog_labrador', species:'dog', name:'레브라도', price:400, desc:'물놀이라면 사족을 못 써요. 세상 다정한 리트리버.' },
@@ -1014,6 +1018,7 @@
       { id:'dog_welshterrier', species:'dog', name:'웰시테리어', price:800, desc:'곱슬 갈색 털의 꼬마 신사. 용감함은 대형견급.' },
       { id:'dog_papillon', species:'dog', name:'파피용', price:100, desc:'나비 날개 같은 귀가 팔랑팔랑. 작지만 똑똑해요.' },
       { id:'dog_newfoundland', species:'dog', name:'뉴펀들랜드', price:800, desc:'물속 구조 전문 거인. 곰만 한 덩치에 천사 마음.' },
+      { id:'dog_beardedcollie', species:'dog', name:'비어디드콜리', price:800, desc:'수염 난 장발 목양견. 바람에 휘날리는 털결.' },
       { id:'dog_afghanhound', species:'dog', name:'보더콜리', price:800, desc:'실크 같은 긴 털을 휘날리는 귀족. 우아함 그 자체.' },
       { id:'dog_rottweiler', species:'dog', name:'로트와일러', price:400, desc:'든든한 경비견. 무뚝뚝해 보여도 가족 바보.' },
       { id:'dog_pointer', species:'dog', name:'포인터', price:400, desc:'사냥감을 코로 가리키는 명사수. 늘씬한 근육질.' },
@@ -1300,6 +1305,7 @@
       cat_siamese:{ walk:'assets/pets/cat/cat_siamese/walk.png', frames:6, stills:true, scale:0.8 },
       cat_bengal:{ walk:'assets/pets/cat/cat_bengal/walk.png', frames:6, stills:true },
       cat_fold:{ walk:'assets/pets/cat/cat_fold/walk.png', frames:6, stills:true, scale:0.7 },
+      cat_bora:{ walk:'assets/pets/cat/cat_bora/walk.png', frames:6, stills:true },
       cat_choco:{ walk:'assets/pets/cat/cat_choco/walk.png', frames:6, stills:true, scale:0.7 },
       cat_kitten:{ walk:'assets/pets/cat/cat_kitten/walk.png', frames:6, stills:true, scale:0.4 },
       cat_pink:{ walk:'assets/pets/cat/cat_pink/walk.png', frames:6, stills:true },
@@ -1311,6 +1317,7 @@
       cat_bengal2:{ walk:'assets/pets/cat/cat_bengal2/walk.png', frames:6, stills:true, scale:0.7 },
       dog_mutt:{ walk:'assets/pets/dog/dog_mutt/walk.png', frames:6, stills:true },
       cat_panther:{ walk:'assets/pets/cat/cat_panther/walk.png', frames:6, stills:true, scale:3 },
+      dog_baekgu:{ walk:'assets/pets/dog/dog_baekgu/walk.png', frames:8, stills:true },
       dog_shiba:{ walk:'assets/pets/dog/dog_shiba/walk.png', frames:8, stills:true },
       dog_corgi:{ walk:'assets/pets/dog/dog_corgi/walk.png', frames:6, stills:true, scale:1.2 },
       dog_dalmatian:{ walk:'assets/pets/dog/dog_dalmatian/walk.png', frames:6, stills:true, scale:1.4 },
@@ -1319,9 +1326,11 @@
       dog_injeolmi:{ walk:'assets/pets/dog/dog_injeolmi/walk.png', frames:6, stills:true, scale:1.4 },
       dog_poodle:{ walk:'assets/pets/dog/dog_poodle/walk.png', frames:6, stills:true, scale:2 },
       dog_beagle:{ walk:'assets/pets/dog/dog_beagle/walk.png', frames:6, stills:true },
+      dog_sukhee:{ walk:'assets/pets/dog/dog_sukhee/walk.png', frames:6, stills:true, scale:2 },
       dog_doberman:{ walk:'assets/pets/dog/dog_doberman/walk.png', frames:8, stills:true, scale:2 },
       dog_pug:{ walk:'assets/pets/dog/dog_pug/walk.png', frames:8, stills:true },
       dog_shepherd:{ walk:'assets/pets/dog/dog_shepherd/walk.png', frames:8, stills:true, scale:2 },
+      dog_bordercollie:{ walk:'assets/pets/dog/dog_bordercollie/walk.png', frames:8, stills:true, scale:1.2 },
       dog_spitz:{ walk:'assets/pets/dog/dog_spitz/walk.png', frames:6, stills:true },
       dog_jackrussell:{ walk:'assets/pets/dog/dog_jackrussell/walk.png', frames:6, stills:true },
       dog_labrador:{ walk:'assets/pets/dog/dog_labrador/walk.png', frames:6, stills:true, scale:1.5 },
@@ -1336,6 +1345,7 @@
       dog_welshterrier:{ walk:'assets/pets/dog/dog_welshterrier/walk.png', frames:6, stills:true, scale:1.4 },
       dog_papillon:{ walk:'assets/pets/dog/dog_papillon/walk.png', frames:6, stills:true, scale:0.8 },
       dog_newfoundland:{ walk:'assets/pets/dog/dog_newfoundland/walk.png', frames:6, stills:true, scale:3 },
+      dog_beardedcollie:{ walk:'assets/pets/dog/dog_beardedcollie/walk.png', frames:6, stills:true, scale:1.2 },
       dog_afghanhound:{ walk:'assets/pets/dog/dog_afghanhound/walk.png', frames:6, stills:true, scale:1.4 },
       dog_rottweiler:{ walk:'assets/pets/dog/dog_rottweiler/walk.png', frames:6, stills:true, scale:1.2 },
       dog_pointer:{ walk:'assets/pets/dog/dog_pointer/walk.png', frames:6, stills:true },
@@ -2526,7 +2536,7 @@
     function useHeldGacha(kind){
       const key=kind;   // consum.egg / consum.box
       if(consumQty(key)<1){ toast('보유한 '+(kind==='egg'?'펫알':'랜덤박스')+'이 없어요', true); return; }
-      const res=rollFromPool(kind==='egg'?effCatTier():effItemTier()); if(!res) return;   // 일반 확률표(effTiers)
+      const res=rollFromPool(kind==='egg'?gachaCatTierMap():effItemTier()); if(!res) return;   // 일반 확률표(effTiers). 펫알=활성 한정만 포함(gachaCatTierMap)
       const dup=kind==='egg' && ownsCat(res.id);
       const refund=dup?petDupRefund(res.id):0;
       const isNew=gachaNew(kind,res);   // 지급 전 판정(NEW 배지)
@@ -2609,6 +2619,11 @@
     const STATIC_CATALOG=[], STATIC_SPRITES={}, STATIC_TIER={}, STATIC_SPECIES={}; let _staticCaptured=false;
     let _deletedPets={};   // 소프트 삭제된 펫 {id:{id,name,species,tier,...}} — dev 관리 화면 표시용
     let _petGachaOnly={};   // 펫 가챠전용 전역 오버라이드 {id:true|false} — catalogPets/{id}.gachaOnly 에서 채움. 미설정=등급 기반 기본값
+    let _petExActive={};    // 한정(exclusive) 펫 '가챠 등장' 전역 오버라이드 {id:true|false} — catalogPets/{id}.exActive. 미설정=EX_ACTIVE_DEFAULT
+    const EX_ACTIVE_DEFAULT={ cat_leopardcat:true, cat_leopard:true };   // 지금은 삵·표범만 한정 가챠에 등장(나머지 한정 펫은 비활성). 개발자 토글로 변경 가능
+    function isExGachaActive(id){ return _petExActive[id]!=null ? _petExActive[id] : !!EX_ACTIVE_DEFAULT[id]; }   // 한정 펫이 가챠 한정 리스트에 들어가는지
+    // 펫알 가챠용 등급맵 = effCatTier()에서 '비활성 한정 펫'을 뺀 것(활성 한정만 풀·확률에 포함). 그 외 등급은 그대로.
+    function gachaCatTierMap(){ const src=effCatTier(), r={}; Object.keys(src).forEach(function(k){ if(src[k]==='exclusive' && !isExGachaActive(k)) return; r[k]=src[k]; }); return r; }
     function catalogRef(){ return db.ref('catalogPets'); }
     function captureStatic(){ if(_staticCaptured) return; _staticCaptured=true;
       PET_CATALOG.forEach(c=>STATIC_CATALOG.push(Object.assign({},c)));
@@ -2622,7 +2637,7 @@
       Object.keys(PET_SPRITES).forEach(k=>delete PET_SPRITES[k]); Object.keys(STATIC_SPRITES).forEach(k=>PET_SPRITES[k]=Object.assign({},STATIC_SPRITES[k]));
       Object.keys(CAT_TIER).forEach(k=>delete CAT_TIER[k]); Object.keys(STATIC_TIER).forEach(k=>CAT_TIER[k]=STATIC_TIER[k]);
       Object.keys(SPECIES_LABEL).forEach(k=>delete SPECIES_LABEL[k]); Object.keys(STATIC_SPECIES).forEach(k=>SPECIES_LABEL[k]=STATIC_SPECIES[k]);
-      _deletedPets={}; _petGachaOnly={};
+      _deletedPets={}; _petGachaOnly={}; _petExActive={};
       // 2) catalog 레코드 적용(신규/오버라이드/삭제)
       Object.keys(recs).forEach(id=>{ const r=recs[id]||{}; const isNew=isRuntimePet(id);
         const hasArt=!!(r.walk || r.hasArt);   // 인라인 이미지(구 레코드) 또는 분리 노드 catalogPetArt(신)
@@ -2638,6 +2653,7 @@
         PET_SPRITES[id]=sp;
         const tier = r.tier || CAT_TIER[id] || 'normal'; CAT_TIER[id]=tier;
         if(r.gachaOnly!=null) _petGachaOnly[id]=!!r.gachaOnly;   // 가챠전용 전역 오버라이드(true=판매목록 숨김, false=등급 무관 판매 허용)
+        if(r.exActive!=null) _petExActive[id]=!!r.exActive;      // 한정 가챠 등장 전역 오버라이드
         const ci=PET_CATALOG.findIndex(x=>x.id===id);
         const base = ci>=0 ? PET_CATALOG[ci] : { id, species:'cat', name:id, desc:'' };
         if(r.speciesLabel && (r.species||base.species)) SPECIES_LABEL[r.species||base.species]=r.speciesLabel;
@@ -2846,6 +2862,9 @@
       const tierSel='<select class="input fm-tier" onchange="setPetTier(\''+p.id+'\',this.value)" aria-label="'+escapeHtml(p.name||p.id)+' 등급">'+
         TIERS.map(function(t){ return '<option value="'+t.id+'"'+(t.id===p.tier?' selected':'')+'>'+t.name+'</option>'; }).join('')+'</select>';
       const gachaTog='<label class="fm-gacha"><span>가챠전용</span><span class="switch'+(gacha?' on':'')+'" role="switch" aria-checked="'+gacha+'" tabindex="0" onclick="setPetGacha(\''+p.id+'\')" aria-label="'+escapeHtml(p.name||p.id)+' 가챠전용"><i></i></span></label>';
+      // 한정(exclusive) 등급 펫만: '가챠 등장' 토글(ON=가챠 한정 리스트·확률에 포함). 다른 등급엔 표시 안 함.
+      const exOn=isExGachaActive(p.id);
+      const exTog=(p.tier==='exclusive')?'<label class="fm-gacha"><span>가챠 등장</span><span class="switch'+(exOn?' on':'')+'" role="switch" aria-checked="'+exOn+'" tabindex="0" onclick="setPetExActive(\''+p.id+'\')" aria-label="'+escapeHtml(p.name||p.id)+' 가챠 등장"><i></i></span></label>':'';
       const badge=gacha?'<span class="fm-badge tier-rainbow">'+boxSvg({h:13})+' 랜덤박스 전용</span>':'';
       return '<div class="petmg-row petcfg'+(on?' sel':'')+(p.deleted?' del':'')+(gacha?' gacha':'')+'" data-pid="'+p.id+'">'+
         '<button class="pm-main" onclick="devSelectPet(\''+p.id+'\')" aria-label="'+escapeHtml(p.name||p.id)+' 선택">'+
@@ -2853,7 +2872,7 @@
           '<span class="pm-txt"><span class="pm-nm">'+catNameSpan(p.id, p.name||p.id)+'</span>'+
           '<span class="pm-meta">'+escapeHtml(tag)+(p.runtime?' · 런타임':'')+(p.deleted?' · 삭제됨':'')+'</span></span>'+
         '</button>'+
-        '<div class="pm-cfg">'+badge+'<div class="pm-cfgctl">'+tierSel+gachaTog+'</div></div>'+
+        '<div class="pm-cfg">'+badge+'<div class="pm-cfgctl">'+tierSel+gachaTog+exTog+'</div></div>'+
       '</div>'; }
     // 목록 아래 액션영역(선택 상태에 따라 바뀌는 부분) — 부분 갱신 대상.
     function devPetActionsHtml(){ const list=allPetsForDev(), sel=state._devPetSel, selPet=sel?list.find(p=>p.id===sel):null;
@@ -2862,7 +2881,7 @@
       let h='<div class="petmg-btns"><button class="btn ghost" onclick="openDevPetAdd()">추가</button>'+
          '<button class="btn"'+(sel?'':' disabled')+(sel?' onclick="openDevPetEdit(\''+sel+'\')"':'')+'>수정</button>'+dr+'</div>';
       // 🎬 가챠 오픈 연출 펫 지정(전역 config/gachaFx — 모든 사용자에게 즉시 적용). 선택 펫을 연출 1번(왼쪽)/2번(오른쪽)에 배정(다시 누르면 해제).
-      h+='<div class="sec-title" style="margin-top:14px;">가챠 오픈 연출 펫 <span class="pill">전역 · 모든 사용자</span></div>';
+      h+='<div class="sec-title" style="margin-top:14px;">가챠 오픈 연출 펫 <span class="pill">한정 뽑기 전용</span></div>';
       if(sel && selPet && !selPet.deleted){
         const sa=gachaFxSlotOf(sel);   // 'a'|'b'|null (현재 이 펫이 배정된 슬롯)
         h+='<div class="petmg-btns">'+
@@ -2871,7 +2890,7 @@
       } else {
         h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:6px 2px 0;">펫을 선택하면 연출 <b>1번(왼쪽)</b>·<b>2번(오른쪽)</b>으로 지정할 수 있어요.</p>';
       }
-      h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:8px 2px 0;">펫알·박스 열 때 걸어와 톡 치는 연출 펫이에요. <b>1번</b>=왼쪽, <b>2번</b>=오른쪽에서 등장(둘 다면 <b>1번 끝난 뒤 2번</b> 순차, 크기는 펫 배율만큼). 현재 1번=<b>'+escapeHtml(gachaFxSlotDesc('a'))+'</b> · 2번=<b>'+escapeHtml(gachaFxSlotDesc('b'))+'</b>.</p>';
+      h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:8px 2px 0;">여기 지정한 펫은 <b>한정(무지개) 등급을 뽑을 때만</b> 연출에 등장해요. <b>그 외 등급</b>(특별·전설·신화)은 <b>전설·신화 펫 중 랜덤 2마리</b>가 걸어나와 톡 칩니다. <b>1번</b>=왼쪽, <b>2번</b>=오른쪽(둘 다면 <b>1번 끝난 뒤 2번</b> 순차, 크기는 펫 배율만큼). 현재 1번=<b>'+escapeHtml(gachaFxSlotDesc('a'))+'</b> · 2번=<b>'+escapeHtml(gachaFxSlotDesc('b'))+'</b>.</p>';
       h+='<div class="petmg-btns" style="margin-top:8px;"><button class="btn ghost" onclick="devPreviewGachaFx()">▶︎ 연출 미리보기</button></div>';
       return h; }
     function openDevPetManager(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
@@ -2962,6 +2981,9 @@
       db.ref('catalogPets/'+id+'/tier').set(tier).then(function(){ toast((catName(id)||id)+' 등급 = '+tierInfo(tier).name); }).catch(_cfgWriteErr); }
     function setPetGacha(id){ if(!(typeof isDev==='function'&&isDev())) return; const on=!isGachaOnlyCat(id);
       db.ref('catalogPets/'+id+'/gachaOnly').set(on).then(function(){ toast((catName(id)||id)+(on?' 가챠전용 ON(펫알 전용·판매 숨김)':' 가챠전용 OFF(은화 판매 허용)')); }).catch(_cfgWriteErr); }
+    // 한정 펫 '가챠 등장' 토글 — ON=가챠 한정 리스트·확률에 포함, OFF=제외. catalogPets/{id}.exActive 전역 저장.
+    function setPetExActive(id){ if(!(typeof isDev==='function'&&isDev())) return; const on=!isExGachaActive(id);
+      db.ref('catalogPets/'+id+'/exActive').set(on).then(function(){ toast((catName(id)||id)+(on?' 가챠 등장 ON(한정 리스트 포함)':' 가챠 등장 OFF(가챠 제외)')); }).catch(_cfgWriteErr); }
 
     // 개발자 데이터 정리: 런타임 펫 정적 승격(내보내기) + 구 인라인 아트 1회 분리 이전.
     function openDevDataTools(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
@@ -3937,9 +3959,9 @@
       { id:'epic',     name:'특별', p:3.8, color:'#9B6FC8' },
       { id:'legend',   name:'전설', p:1,   color:'#E0A43C' },
       { id:'limited',  name:'신화', p:0.2, color:'#ff5fa2' },   // 신화(구 '한정') — 핑크 텍스트·연출. id는 하위호환 위해 'limited' 유지
-      { id:'exclusive',name:'한정', p:0,   color:'#F2C84B' }    // 한정(신규 최상위) — 무지개 텍스트·연출. p:0 = 가챠 미출현(지금은 판매·가챠 모두 제외), rank>epic이라 자동 판매 숨김
+      { id:'exclusive',name:'한정', p:0.05, color:'#F2C84B' }   // 한정(신규 최상위) — 무지개 텍스트·연출. 가챠엔 '활성(exActive) 한정 펫'만 등장(지금은 삵·표범), rank>epic이라 판매는 자동 숨김
     ];
-    const NO_GACHA_TIERS = { exclusive:true };   // 가챠(펫알·랜덤박스) 풀에서 완전 제외할 등급 — 한정은 지금은 안 나옴
+    // (구) NO_GACHA_TIERS 제거 — 한정은 '전부 제외'가 아니라 펫별 exActive로 선별 포함. 박스(가구)엔 한정 아이템이 없으므로 boxPool에서 한정을 걸러 안전 유지.
     const TIER_ORDER = TIERS.map(t=>t.id);   // 높은 등급이 비면 한 단계씩 낮춰 대체할 때 사용
     function tierInfo(id){ return TIERS.find(t=>t.id===id)||TIERS[0]; }
     // 동물 이름을 등급 색으로 표기. 일반(흰색)은 밝은 배경에서 안 보이므로 기본 잉크색, 한정(exclusive)은 무지개(.tier-rainbow), 신화(limited)는 핑크(등급색 인라인).
@@ -3972,7 +3994,7 @@
     }
     // 테스트 배정(등급당 1) — 펫알=고양이 / 랜덤박스=가구
     // @gen:pet-tier — 자동생성(tools/build_pets.py). tools/pets.json 의 tier 편집 후 재실행.
-    const CAT_TIER = { cat_mackerel:'normal', cat_cheese:'normal', cat_calico:'normal', cat_black:'normal', cat_white:'normal', cat_fluffy:'normal', cat_tuxedo:'normal', cat_chaos:'normal', cat_siamese:'uncommon', cat_bengal:'normal', cat_fold:'normal', cat_choco:'normal', cat_kitten:'normal', cat_pink:'epic', tiger_orange:'limited', lion_mane:'limited', cat_persian:'legend', tiger_white:'limited', cat_russianblue:'normal', cat_bengal2:'uncommon', dog_mutt:'rare', cat_panther:'limited', dog_shiba:'epic', dog_corgi:'legend', dog_dalmatian:'uncommon', dog_dachshund:'epic', dog_bulldog:'normal', dog_injeolmi:'legend', dog_poodle:'rare', dog_beagle:'rare', dog_doberman:'legend', dog_pug:'legend', dog_shepherd:'legend', dog_spitz:'normal', dog_jackrussell:'legend', dog_labrador:'epic', dog_chowchow:'epic', dog_cardigancorgi:'epic', dog_greyhound:'legend', dog_shihtzu:'uncommon', dog_stbernard:'epic', dog_bostonterrier:'rare', dog_bassethound:'legend', dog_happy:'normal', dog_welshterrier:'legend', dog_papillon:'uncommon', dog_newfoundland:'legend', dog_afghanhound:'legend', dog_rottweiler:'epic', dog_pointer:'epic', dog_pharaohhound:'legend', dog_westie:'normal', dog_weimaraner:'epic', dog_collie:'epic', dog_englishbulldog:'epic', dog_keeshond:'legend', dog_frenchbulldog:'epic', dog_yorkshire:'uncommon', dog_toypoodle:'uncommon', dog_sheltie:'rare', dog_minpin:'epic', dog_schnauzer:'epic', dog_goldendoodle:'uncommon', dog_bernese:'legend', dog_cavalier:'rare', dog_akita:'legend', dog_whippet:'legend', dog_oldenglishsheepdog:'epic', dog_vizsla:'epic', dog_englishsetter:'legend', dog_jindo:'limited', dog_chinesecrested:'epic', dog_scottie:'epic', dog_pomeranian:'normal', dog_sharpei:'epic', dog_greatdane:'legend', dog_bullterrier:'legend', dog_boxer:'epic', dog_ridgeback:'epic', dog_irishsetter:'epic', dog_airedale:'legend', dog_samoyed:'legend', dog_husky:'legend', cat_mackerel2:'epic', cat_calico2:'epic', cat_white2:'epic', cat_cheese2:'epic', cat_tuxedo2:'epic', cat_siamese2:'legend', cat_bengal3:'legend', cat_russianblue2:'epic', cat_scottishfold:'epic', cat_black2:'epic', cat_seolleong:'uncommon', cat_persiangray:'epic', cat_mainecoon:'legend', cat_americanshorthair:'epic', cat_ragdoll:'legend', cat_turkishangora:'epic', cat_munchkin:'epic', cat_norwegian:'epic', cat_bombay:'epic', cat_abyssinian:'epic', cat_sphynx:'legend', cat_british:'epic', cat_bengalsnow:'legend', cat_longhaircalico:'uncommon', cat_tortie:'epic', cat_siamesechoco:'epic', cat_cornishrex:'epic', cat_ocicat:'legend', cat_selkirkrex:'epic', cat_korat:'epic', cat_manx:'epic', cat_americancurl:'rare', cat_devonrex:'epic', cat_turkishvan:'epic', cat_bobtail:'epic', cat_burmese:'epic', cat_himalayan:'epic', cat_creamtabby:'rare', cat_lilac:'epic', cat_somali:'legend', cat_leopardcat:'exclusive', cat_lynx:'exclusive', cat_cheetah:'exclusive', cat_jaguar:'exclusive', cat_puma:'exclusive', cat_snowleopard:'exclusive', cat_caracal:'exclusive', cat_leopard:'exclusive', cat_blackpanther:'exclusive', cat_ocelot:'exclusive', cat_sandcat:'epic', cat_mainecoonsmoke:'legend', cat_mainecoonred:'epic', cat_bengalsilver:'epic', cat_peterbald:'legend', cat_toyger:'limited', cat_singapura:'epic', cat_havanabrown:'epic', cat_ragamuffin:'legend' };
+    const CAT_TIER = { cat_mackerel:'normal', cat_cheese:'normal', cat_calico:'normal', cat_black:'normal', cat_white:'normal', cat_fluffy:'normal', cat_tuxedo:'normal', cat_chaos:'normal', cat_siamese:'uncommon', cat_bengal:'normal', cat_fold:'normal', cat_bora:'epic', cat_choco:'normal', cat_kitten:'normal', cat_pink:'epic', tiger_orange:'limited', lion_mane:'limited', cat_persian:'legend', tiger_white:'limited', cat_russianblue:'normal', cat_bengal2:'uncommon', dog_mutt:'rare', cat_panther:'limited', dog_baekgu:'normal', dog_shiba:'epic', dog_corgi:'legend', dog_dalmatian:'uncommon', dog_dachshund:'epic', dog_bulldog:'normal', dog_injeolmi:'legend', dog_poodle:'rare', dog_beagle:'rare', dog_sukhee:'legend', dog_doberman:'legend', dog_pug:'legend', dog_shepherd:'legend', dog_bordercollie:'epic', dog_spitz:'normal', dog_jackrussell:'legend', dog_labrador:'epic', dog_chowchow:'epic', dog_cardigancorgi:'epic', dog_greyhound:'legend', dog_shihtzu:'uncommon', dog_stbernard:'epic', dog_bostonterrier:'rare', dog_bassethound:'legend', dog_happy:'normal', dog_welshterrier:'legend', dog_papillon:'uncommon', dog_newfoundland:'legend', dog_beardedcollie:'legend', dog_afghanhound:'legend', dog_rottweiler:'epic', dog_pointer:'epic', dog_pharaohhound:'legend', dog_westie:'normal', dog_weimaraner:'epic', dog_collie:'epic', dog_englishbulldog:'epic', dog_keeshond:'legend', dog_frenchbulldog:'epic', dog_yorkshire:'uncommon', dog_toypoodle:'uncommon', dog_sheltie:'rare', dog_minpin:'epic', dog_schnauzer:'epic', dog_goldendoodle:'uncommon', dog_bernese:'legend', dog_cavalier:'rare', dog_akita:'legend', dog_whippet:'legend', dog_oldenglishsheepdog:'epic', dog_vizsla:'epic', dog_englishsetter:'legend', dog_jindo:'limited', dog_chinesecrested:'epic', dog_scottie:'epic', dog_pomeranian:'normal', dog_sharpei:'epic', dog_greatdane:'legend', dog_bullterrier:'legend', dog_boxer:'epic', dog_ridgeback:'epic', dog_irishsetter:'epic', dog_airedale:'legend', dog_samoyed:'legend', dog_husky:'legend', cat_mackerel2:'epic', cat_calico2:'epic', cat_white2:'epic', cat_cheese2:'epic', cat_tuxedo2:'epic', cat_siamese2:'legend', cat_bengal3:'legend', cat_russianblue2:'epic', cat_scottishfold:'epic', cat_black2:'epic', cat_seolleong:'uncommon', cat_persiangray:'epic', cat_mainecoon:'legend', cat_americanshorthair:'epic', cat_ragdoll:'legend', cat_turkishangora:'epic', cat_munchkin:'epic', cat_norwegian:'epic', cat_bombay:'epic', cat_abyssinian:'epic', cat_sphynx:'legend', cat_british:'epic', cat_bengalsnow:'legend', cat_longhaircalico:'uncommon', cat_tortie:'epic', cat_siamesechoco:'epic', cat_cornishrex:'epic', cat_ocicat:'legend', cat_selkirkrex:'epic', cat_korat:'epic', cat_manx:'epic', cat_americancurl:'rare', cat_devonrex:'epic', cat_turkishvan:'epic', cat_bobtail:'epic', cat_burmese:'epic', cat_himalayan:'epic', cat_creamtabby:'rare', cat_lilac:'epic', cat_somali:'legend', cat_leopardcat:'exclusive', cat_lynx:'exclusive', cat_cheetah:'exclusive', cat_jaguar:'exclusive', cat_puma:'exclusive', cat_snowleopard:'exclusive', cat_caracal:'exclusive', cat_leopard:'exclusive', cat_blackpanther:'exclusive', cat_ocelot:'exclusive', cat_sandcat:'epic', cat_mainecoonsmoke:'legend', cat_mainecoonred:'epic', cat_bengalsilver:'epic', cat_peterbald:'legend', cat_toyger:'limited', cat_singapura:'epic', cat_havanabrown:'epic', cat_ragamuffin:'legend' };
     // @gen:end
     const ITEM_TIER = { pond:'limited', cushion:'normal', bowl:'uncommon', scratcher:'rare', pethouse:'epic', tower:'legend', catwheel:'limited',
       rug:'rare', fishtank:'epic', window:'legend', fireplace:'legend', fan:'legend', hammock:'legend', teaser:'legend', wallclock:'legend', hangplant:'legend', mobile:'legend', chandelier:'limited', jingleball:'legend',
@@ -3989,9 +4011,9 @@
     // 🎁 랜덤박스 통합 풀: 가구(it:)는 전 등급이 풀에 들어가 낮은 등급 롤도 채운다. 바닥(fl:)·벽지(wl:)는 목록 자체가 특별↑(가챠 전용). 타입 프리픽스로 지급 대상 구분.
     //  · 판매 제외(가챠 전용) 판정은 등급 기반(isGachaOnlyItem/Floor/Wall = tier≥epic) — 등급만 지정하면 "특별↑=박스에서만"이 자동 적용된다.
     function boxPool(){ const m={}; const it=effItemTier(), fl=effFloorTier(), wl=effWallTier();
-      Object.keys(it).forEach(k=>{ m['it:'+k]=it[k]; });
-      Object.keys(fl).forEach(k=>{ m['fl:'+k]=fl[k]; });
-      Object.keys(wl).forEach(k=>{ m['wl:'+k]=wl[k]; }); return m; }
+      Object.keys(it).forEach(k=>{ if(it[k]!=='exclusive') m['it:'+k]=it[k]; });   // 한정 아이템은 랜덤박스에서 제외(현재 한정 가구·바닥·벽지 없음, 안전 가드)
+      Object.keys(fl).forEach(k=>{ if(fl[k]!=='exclusive') m['fl:'+k]=fl[k]; });
+      Object.keys(wl).forEach(k=>{ if(wl[k]!=='exclusive') m['wl:'+k]=wl[k]; }); return m; }
     function rollBoxReward(tiers){ const raw=rollFromPool(boxPool(), tiers); if(!raw) return null; const p=raw.id.split(':');
       return { id:p.slice(1).join(':'), tier:raw.tier, type:(p[0]==='fl'?'floor':(p[0]==='wl'?'wall':'item')) }; }
     function grantBoxReward(g, res){   // 지급 + (바닥/벽지 중복이면) 환급 은화 반환
@@ -4079,7 +4101,7 @@
     function devPreviewGachaFx(){ if(!(typeof isDev==='function'&&isDev())) return;
       const fx=$('catFx'); if(!fx){ toast('미리보기를 열 수 없어요', true); return; }
       closeSheet(); _fxClear(); prewarmGachaFxPads();   // 발끝 여백 미리 측정(등장 전 값 준비)
-      _fx={ kind:'egg', preview:true, busy:true, rainbow:false, gold:0, res:{ id:(_gachaFx&&(_gachaFx.a||_gachaFx.b))||(PET_CATALOG[0]&&PET_CATALOG[0].id), tier:'legend' } };
+      _fx={ kind:'egg', preview:true, busy:true, rainbow:false, gold:0, res:{ id:(_gachaFx&&(_gachaFx.a||_gachaFx.b))||(PET_CATALOG[0]&&PET_CATALOG[0].id), tier:'exclusive' } };   // 한정 시나리오로 미리보기(지정 펫이 연출에 반영되는 등급)
       fx.innerHTML='<div class="fx-scrim"></div><div class="fx-stage">'+
         '<div class="fx-item pop fx-egg" id="fxItem">'+eggSvg(2,{h:150})+'</div>'+
         '<div class="fx-hint" id="fxHint">연출 미리보기</div></div>';
@@ -4114,7 +4136,7 @@
     // 가챠 탭 하단: 펫알·랜덤박스 구성(등급별 목록)과 확률을 접이식으로 표시.
     function gachaInfoHtml(){
       const tiers=effTiers(), catBy=effCatTier(), itemBy=effItemTier();
-      const secRows=(items,byMap,key)=> tiers.map(t=>{ const ns=items.filter(x=>byMap[x.id]===t.id).map(x=>x[key]); if(!ns.length) return '';
+      const secRows=(items,byMap,key)=> tiers.map(t=>{ const ns=items.filter(x=>byMap[x.id]===t.id && (t.id!=='exclusive'||isExGachaActive(x.id))).map(x=>x[key]); if(!ns.length) return '';   // 한정은 활성(exActive) 펫만 표기
         return '<div class="gi-row"><b class="tier-'+t.id+'">'+t.name+'</b><span class="gi-p">'+t.p+'%</span><span class="gi-list">'+escapeHtml(ns.join(', '))+'</span></div>'; }).join('');
       const boxList=ITEM_CATALOG.filter(x=>itemBy[x.id]).map(x=>({name:x.name,t:itemBy[x.id]}))
         .concat(FLOOR_CATALOG.filter(f=>FLOOR_TIER[f.id]).map(f=>({name:f.name+' 바닥',t:FLOOR_TIER[f.id]})))
@@ -4131,7 +4153,6 @@
     function rollTier(tiers){ const arr=tiers||effTiers(); const total=arr.reduce((s,t)=>s+(Number(t.p)||0),0)||1; const r=Math.random()*total; let acc=0; for(const t of arr){ acc+=(Number(t.p)||0); if(r<acc) return t.id; } return arr[0].id; }
     // 등급 롤 → 해당 등급 풀에서 랜덤. 비면 한 단계 아래로 내려가며 탐색. tiers를 주면 그 확률표로(무지개=특별↑ 전용).
     function rollFromPool(tierMap, tiers){
-      { const src=tierMap; tierMap={}; Object.keys(src).forEach(function(k){ if(!NO_GACHA_TIERS[src[k]]) tierMap[k]=src[k]; }); }   // 가챠 제외 등급(한정)은 풀에서 완전히 뺀다
       let ti=TIER_ORDER.indexOf(rollTier(tiers));
       for(; ti>=0; ti--){ const tier=TIER_ORDER[ti]; const pool=Object.keys(tierMap).filter(k=>tierMap[k]===tier);
         if(pool.length) return { id:pool[Math.floor(Math.random()*pool.length)], tier }; }
@@ -4152,7 +4173,7 @@
     function openGacha(kind){
       if(coins()<GACHA_PRICE){ toast((GACHA_PRICE-coins())+' 은화 부족', true); return; }
       let res, dup=false, refund=0;
-      if(kind==='egg'){ res=rollFromPool(effCatTier()); if(!res) return; dup=ownsCat(res.id); refund=dup?petDupRefund(res.id):0; }
+      if(kind==='egg'){ res=rollFromPool(gachaCatTierMap()); if(!res) return; dup=ownsCat(res.id); refund=dup?petDupRefund(res.id):0; }
       else { res=rollBoxReward(); if(!res) return;
         if(res.type==='floor') dup=ownsFloor(res.id)&&res.id!=='default';
         else if(res.type==='wall') dup=ownsWall(res.id)&&res.id!=='default';
@@ -4170,7 +4191,7 @@
       }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund, false, isNew); });
     }
     // ===== ✨ 무지개알/무지개박스: 금화로 구매하는 소비템 → 사용 시 특별90·전설8·한정2% 가챠 =====
-    const RAINBOW_TIERS=[{id:'epic',p:90},{id:'legend',p:8},{id:'limited',p:2}];   // limited=신화. 신화 콘텐츠 없으면 rollFromPool이 전설로 폴백
+    const RAINBOW_TIERS=[{id:'epic',p:90},{id:'legend',p:7.5},{id:'limited',p:2},{id:'exclusive',p:0.5}];   // limited=신화·exclusive=한정(활성 펫만). 콘텐츠 없으면 rollFromPool이 한 단계 아래로 폴백
     const RAINBOW_PRICE_GOLD={ egg:100, box:100 };   // 무지개알·무지개박스 모두 금화100
     function rbPriceGold(kind){ return RAINBOW_PRICE_GOLD[kind==='egg'?'egg':'box']; }
     function rainbowKey(kind){ return kind==='egg'?'rainbow_egg':'rainbow_box'; }
@@ -4190,7 +4211,7 @@
       const key=rainbowKey(kind);
       if(consumQty(key)<1){ toast(rainbowName(kind)+'이 없어요', true); return; }
       let res, dup=false, refund=0;
-      if(kind==='egg'){ res=rollFromPool(effCatTier(), RAINBOW_TIERS); if(!res) return; dup=ownsCat(res.id); refund=dup?petDupRefund(res.id):0; }
+      if(kind==='egg'){ res=rollFromPool(gachaCatTierMap(), RAINBOW_TIERS); if(!res) return; dup=ownsCat(res.id); refund=dup?petDupRefund(res.id):0; }
       else { res=rollBoxReward(RAINBOW_TIERS); if(!res) return;
         if(res.type==='floor') dup=ownsFloor(res.id)&&res.id!=='default';
         else if(res.type==='wall') dup=ownsWall(res.id)&&res.id!=='default';
@@ -4908,8 +4929,18 @@
       st.appendChild(el);
     }
     // 가챠 연출 고양이 시퀀스를 _fxT 타이머로 예약(1번 왼쪽 → 끝나면 2번 오른쪽, 순차). 알 무대(st)·아이템(it)에 동작하고 '마지막 고양이가 톡 치는 시각(=알 오픈 타이밍)'을 ms로 반환. fxClimax(실전)·devPreviewGachaFx(미리보기) 공용.
+    // 가챠 연출에 걸어나올 펫 2마리 선정. 한정(exclusive) 뽑기 → 개발자 지정(config/gachaFx a/b). 그 외 → 전설·신화 등급 펫 중 랜덤 2마리(스프라이트 보유).
+    function fxCatPickIds(){
+      if(_fx && _fx.res && _fx.res.tier==='exclusive') return { a:(_gachaFx&&_gachaFx.a)||null, b:(_gachaFx&&_gachaFx.b)||null };
+      const pool=PET_CATALOG.filter(function(c){ const t=CAT_TIER[c.id]; return (t==='legend'||t==='limited') && typeof hasSprite==='function' && hasSprite(c.id); }).map(function(c){ return c.id; });
+      if(!pool.length) return { a:null, b:null };
+      const a=pool[Math.floor(Math.random()*pool.length)];
+      let b=pool[Math.floor(Math.random()*pool.length)];
+      if(pool.length>1){ let g=0; while(b===a && g<6){ b=pool[Math.floor(Math.random()*pool.length)]; g++; } }
+      return { a:a, b:b };
+    }
     function fxCatSeqSchedule(st, it){
-      const a=_gachaFx&&_gachaFx.a, b=_gachaFx&&_gachaFx.b, any=a||b;
+      const pick=fxCatPickIds(); const a=pick.a, b=pick.b, any=a||b;
       const seq=[]; if(a || !any) seq.push({side:'l', id:any?a:null}); if(b) seq.push({side:'r', id:b});
       const WALK=1800, TAP=160, HIT=180, STEP=2760;   // 한 마리 구간: 등장(WALK)→톡(TAP 뒤 HIT 충격)→퇴장(STEP에서 제거)
       const catAt=side=>st.querySelector('.fx-cat.fxc-'+side);
@@ -4926,7 +4957,7 @@
       const fx=$('catFx'), st=fx&&fx.querySelector('.fx-stage'), it=$('fxItem'); if(!st||!it) return;
       const t=tierInfo(_fx.res.tier), epic=['epic','legend','limited'].indexOf(_fx.res.tier)>=0, lim=_fx.res.tier==='limited';
       // 검은 고양이 앞발 연출 = 고등급 티저. 등급별 확률: 특별(epic) 10%·전설 90%·한정 100% (그 미만 0%). 등장 자체가 '뭔가 좋은 게 나온다'는 힌트.
-      const catShow = Math.random() < (({ epic:0.10, legend:0.90, limited:1.0 })[_fx.res.tier] || 0);
+      const catShow = Math.random() < (({ epic:0.10, legend:0.90, limited:1.0, exclusive:1.0 })[_fx.res.tier] || 0);   // 한정도 100% 연출 펫 등장(개발자 지정 펫)
       const rank=Math.max(0, TIER_ORDER.indexOf(_fx.res.tier));   // 0(일반)~5(신화)~6(한정)
       const lk=(1+rank*0.15).toFixed(2);                          // 등급 높을수록 빛이 크고 밝게
       const isEgg=_fx.kind==='egg';
