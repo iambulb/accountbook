@@ -2494,6 +2494,7 @@
     //  · deleted:true = 소프트 삭제(이미지·정의 유지, 알뜰샵/가챠/목록에서 숨김). 개발자 펫 관리 화면에서 복구 가능.
     const STATIC_CATALOG=[], STATIC_SPRITES={}, STATIC_TIER={}, STATIC_SPECIES={}; let _staticCaptured=false;
     let _deletedPets={};   // 소프트 삭제된 펫 {id:{id,name,species,tier,...}} — dev 관리 화면 표시용
+    let _petGachaOnly={};   // 펫 가챠전용 전역 오버라이드 {id:true|false} — catalogPets/{id}.gachaOnly 에서 채움. 미설정=등급 기반 기본값
     function catalogRef(){ return db.ref('catalogPets'); }
     function captureStatic(){ if(_staticCaptured) return; _staticCaptured=true;
       PET_CATALOG.forEach(c=>STATIC_CATALOG.push(Object.assign({},c)));
@@ -2507,7 +2508,7 @@
       Object.keys(PET_SPRITES).forEach(k=>delete PET_SPRITES[k]); Object.keys(STATIC_SPRITES).forEach(k=>PET_SPRITES[k]=Object.assign({},STATIC_SPRITES[k]));
       Object.keys(CAT_TIER).forEach(k=>delete CAT_TIER[k]); Object.keys(STATIC_TIER).forEach(k=>CAT_TIER[k]=STATIC_TIER[k]);
       Object.keys(SPECIES_LABEL).forEach(k=>delete SPECIES_LABEL[k]); Object.keys(STATIC_SPECIES).forEach(k=>SPECIES_LABEL[k]=STATIC_SPECIES[k]);
-      _deletedPets={};
+      _deletedPets={}; _petGachaOnly={};
       // 2) catalog 레코드 적용(신규/오버라이드/삭제)
       Object.keys(recs).forEach(id=>{ const r=recs[id]||{}; const isNew=isRuntimePet(id);
         const hasArt=!!(r.walk || r.hasArt);   // 인라인 이미지(구 레코드) 또는 분리 노드 catalogPetArt(신)
@@ -2522,6 +2523,7 @@
         if(isNew){ sp.runtime=true; sp.walk=sp.walk||''; }
         PET_SPRITES[id]=sp;
         const tier = r.tier || CAT_TIER[id] || 'normal'; CAT_TIER[id]=tier;
+        if(r.gachaOnly!=null) _petGachaOnly[id]=!!r.gachaOnly;   // 가챠전용 전역 오버라이드(true=판매목록 숨김, false=등급 무관 판매 허용)
         const ci=PET_CATALOG.findIndex(x=>x.id===id);
         const base = ci>=0 ? PET_CATALOG[ci] : { id, species:'cat', name:id, desc:'' };
         if(r.speciesLabel && (r.species||base.species)) SPECIES_LABEL[r.species||base.species]=r.speciesLabel;
@@ -2628,11 +2630,16 @@
         '<div class="field"><label>분류 코드(species)</label><input class="input" id="dpSpecies" value="'+escapeHtml(_custom?pre.species:'')+'" placeholder="cat/dog/tiger…" maxlength="12"></div>'+
         '<div class="field"><label>분류 라벨(알뜰샵 태그)</label><input class="input" id="dpSpeciesLabel" value="'+escapeHtml(_custom?(pre.speciesLabel||''):'')+'" placeholder="예: 호랑이" maxlength="8"></div>'+
         '</div>';
-      h+='<div class="row" style="gap:8px;"><div class="field" style="flex:1;"><label>등급</label><select class="input" id="dpTier">'+tierOpts+'</select></div>'+
+      h+='<div class="row" style="gap:8px;"><div class="field" style="flex:1;"><label>등급</label><select class="input" id="dpTier" onchange="syncPetGacha()">'+tierOpts+'</select></div>'+
          '<div class="field" style="flex:1;"><label>크기(배율)</label><input class="input" id="dpScale" type="number" step="0.1" min="0.3" value="'+(pre.scale||1)+'"></div></div>';
+      // 가챠전용 토글 — 켜면 알뜰샵 판매목록에서 숨김(펫알 가챠 풀엔 항상 포함). 등급 바꾸면 기본값(특별↑) 자동 반영.
+      h+='<div class="field"><div class="menu-item" style="padding:6px 2px;"><span>가챠전용(알뜰샵 판매 숨김)</span>'+
+         '<div class="switch'+(pre.gachaOnly?' on':'')+'" id="dpGacha" role="switch" aria-checked="'+(pre.gachaOnly?'true':'false')+'" onclick="this.classList.toggle(\'on\')"><i></i></div></div>'+
+         '<div class="tx-sub" style="margin-top:2px;line-height:1.5;">켜면 <b>알뜰샵 판매목록에서 숨김</b>(펫알 가챠에는 항상 포함). 끄면 등급에 맞춰 <b>은화로 판매</b>돼요.</div></div>';
       return h; }
+    function syncPetGacha(){ const t=val('dpTier')||'normal'; const sw=$('dpGacha'); if(sw) sw.classList.toggle('on', tierRank(t)>=tierRank('epic')); }
     function devPetInfo(id){ const c=PET_CATALOG.find(x=>x.id===id)||_deletedPets[id]; if(!c) return null; const sp=PET_SPRITES[id]||{};
-      return { id, name:c.name, species:c.species, speciesLabel:(SPECIES_LABEL[c.species]||''), tier:CAT_TIER[id]||'normal', scale:sp.scale||1 }; }
+      return { id, name:c.name, species:c.species, speciesLabel:(SPECIES_LABEL[c.species]||''), tier:CAT_TIER[id]||'normal', scale:sp.scale||1, gachaOnly:isGachaOnlyCat(id) }; }
     function openDevPetAdd(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; } _devPetTarget=null;
       let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 12px;line-height:1.5;">PixelLab export <b>zip</b>을 올리고 이름·분류·등급·크기만 정하면 추가됩니다. 앱에서 바로 처리(옆걷기 시트+4방향 생성)해 <b>모든 사용자</b>에게 반영돼요.</p>';
       h+=_petFormHtml({})+'<button class="btn" id="dpBtn" onclick="submitDevPet()">추가</button>';
@@ -2651,7 +2658,9 @@
       const _species=_useCustom?((val('dpSpecies')||'cat').trim()||'cat'):_spSel;
       const _label=_useCustom?((val('dpSpeciesLabel')||'').trim()):((SPECIES_LABEL&&SPECIES_LABEL[_spSel])||_spSel);
       const fields={ name, species:_species, speciesLabel:_label,
-        tier:val('dpTier')||'normal', scale:Number(val('dpScale'))||1, by:state.userEmail||'', at:new Date().toISOString() };
+        tier:val('dpTier')||'normal', scale:Number(val('dpScale'))||1,
+        gachaOnly:($('dpGacha')?$('dpGacha').classList.contains('on'):false),   // 가챠전용 전역 오버라이드
+        by:state.userEmail||'', at:new Date().toISOString() };
       const p = file ? _processPetZip(file) : Promise.resolve(null);
       p.then(art=>{
         const id=editing?_devPetTarget:('rt_'+Date.now().toString(36));
@@ -2659,7 +2668,7 @@
           // 메타는 catalogPets/{id}, 이미지는 분리 노드 catalogPetArt/{id} — 원자 다중경로 업데이트(메타 필드는 개별 경로로 병합).
           fields.frontWalk=art.frontWalk; fields.hasArt=true; fields.frames=art.frames||6;
           const upd={};
-          ['name','species','speciesLabel','tier','scale','by','at','frontWalk','hasArt','frames'].forEach(k=>{ if(fields[k]!==undefined) upd['catalogPets/'+id+'/'+k]=fields[k]; });
+          ['name','species','speciesLabel','tier','scale','gachaOnly','by','at','frontWalk','hasArt','frames'].forEach(k=>{ if(fields[k]!==undefined) upd['catalogPets/'+id+'/'+k]=fields[k]; });
           upd['catalogPetArt/'+id]={ walk:art.walk, south:art.south, north:art.north, east:art.east, west:art.west };
           delete _petArt[id];   // 세션 캐시 무효화(새 아트)
           return db.ref().update(upd);
@@ -2753,7 +2762,7 @@
       state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const st=b.scrollTop; b.innerHTML=build(); b.scrollTop=st; }; }
     function setFurnSub(s){ _furnSub=s; if(state._sheetRefresh) state._sheetRefresh(); }
     function furnMgrHtml(){
-      let h='<div class="note"><span class="pill">전역 · 모든 사용자</span> 변경은 <b>즉시 저장·전 사용자 반영</b>돼요(관리자 계정만 쓰기 가능). <b>특별 등급 이상</b>은 자동으로 <b>랜덤박스 전용</b>이 됩니다.</div>';
+      let h='<div class="note"><span class="pill">전역 · 모든 사용자</span> 변경은 <b>즉시 저장·전 사용자 반영</b>돼요(관리자 계정만 쓰기 가능). <b>특별 등급 이상</b>은 기본적으로 <b>랜덤박스 전용</b>이며, <b>가챠전용</b> 토글로 개별 지정할 수 있어요(켜면 알뜰샵 판매목록에서 숨김 · 어느 쪽이든 랜덤박스 풀엔 포함).</div>';
       h+='<div class="subseg">'+FURN_TYPES.map(function(c){ return '<button class="'+(_furnSub===c[0]?'on':'')+'" onclick="setFurnSub(\''+c[0]+'\')">'+c[1]+'</button>'; }).join('')+'</div>';
       let rows;
       if(_furnSub==='wall') rows=WALLPAPER_CATALOG.filter(w=>w.id!=='default').map(wallRowHtml);
@@ -2762,19 +2771,20 @@
       h+='<div class="fmlist">'+rows.join('')+'</div>';
       return h;
     }
-    function fmOver(cfg, id){ return !!(cfg && cfg[id] && (cfg[id].tier!=null || cfg[id].price!=null)); }
+    function fmOver(cfg, id){ return !!(cfg && cfg[id] && (cfg[id].tier!=null || cfg[id].price!=null || cfg[id].gacha!=null)); }
     // 공용 행: kind=item|wall|floor 에 따라 저장 함수(setFurnTier/setWallTier/setFloorTier…)만 다르다.
     function fmRowHtml(kind, id, name, thumb, tier, price, gacha, overridden){
-      const P=({item:['setFurnTier','setFurnPrice','resetFurn'],wall:['setWallTier','setWallPrice','resetWall'],floor:['setFloorTier','setFloorPrice','resetFloor']})[kind];
+      const P=({item:['setFurnTier','setFurnPrice','resetFurn','setFurnGacha'],wall:['setWallTier','setWallPrice','resetWall','setWallGacha'],floor:['setFloorTier','setFloorPrice','resetFloor','setFloorGacha']})[kind];
       const tierSel='<select class="input fm-tier" onchange="'+P[0]+'(\''+id+'\',this.value)" aria-label="'+escapeHtml(name)+' 등급">'+
         TIERS.map(function(t){ return '<option value="'+t.id+'"'+(t.id===tier?' selected':'')+'>'+t.name+'</option>'; }).join('')+'</select>';
       const priceInp='<span class="fm-price"><span class="ci">'+coinSvg({h:14})+'</span><input class="input" type="number" inputmode="numeric" min="0" value="'+price+'"'+(gacha?' disabled':'')+' onchange="'+P[1]+'(\''+id+'\',this.value)" aria-label="'+escapeHtml(name)+' 은화 가격"></span>';
+      const gachaTog='<label class="fm-gacha"><span>가챠전용</span><span class="switch'+(gacha?' on':'')+'" role="switch" aria-checked="'+gacha+'" tabindex="0" onclick="'+P[3]+'(\''+id+'\')" aria-label="'+escapeHtml(name)+' 가챠전용"><i></i></span></label>';
       const badge=gacha?'<span class="fm-badge tier-limited">'+boxSvg({h:13})+' 랜덤박스 전용</span>':'';
       const reset=overridden?'<button class="fm-reset" onclick="'+P[2]+'(\''+id+'\')" aria-label="기본값으로">기본값</button>':'';
       return '<div class="fmrow'+(gacha?' gacha':'')+'">'+
         '<span class="fm-thumb">'+thumb+'</span>'+
         '<div class="fm-body"><div class="fm-top"><b class="tier-'+tier+'">'+escapeHtml(name)+'</b>'+badge+reset+'</div>'+
-          '<div class="fm-ctl">'+tierSel+priceInp+'</div></div></div>';
+          '<div class="fm-ctl">'+tierSel+priceInp+gachaTog+'</div></div></div>';
     }
     function itemRowHtml(it){ return fmRowHtml('item', it.id, it.name, '<span class="furnfit">'+furnSvg(it.id,{fit:true})+'</span>', itemTierOf(it.id), itemBuyPrice(it.id), isGachaOnlyItem(it.id), fmOver(_furnCfg,it.id)); }
     function wallRowHtml(w){ return fmRowHtml('wall', w.id, w.name, '<span class="fm-swatch" style="background:'+wallCss(w.id)+'"></span>', wallTierOf(w.id), wallBuyPrice(w.id), isGachaOnlyWall(w.id), fmOver(_wallCfg,w.id)); }
@@ -2790,6 +2800,9 @@
       else { ref.set(n).then(function(){ toast((it?it.name:id)+' 가격 = '+n+' 은화'); }).catch(_cfgWriteErr); } }
     function resetFurn(id){ if(!(typeof isDev==='function'&&isDev())) return;
       db.ref('config/furniture/'+id).remove().then(function(){ const it=ITEM_CATALOG.find(x=>x.id===id); toast((it?it.name:id)+' 기본값으로 되돌렸어요'); }).catch(_cfgWriteErr); }
+    // 가챠전용 토글(현재 유효값을 뒤집어 저장) — 켜면 알뜰샵 판매목록 숨김, 꺼면 은화 판매. 어느 쪽이든 랜덤박스 풀엔 그대로.
+    function setFurnGacha(id){ if(!(typeof isDev==='function'&&isDev())) return; const on=!isGachaOnlyItem(id); const it=ITEM_CATALOG.find(x=>x.id===id);
+      db.ref('config/furniture/'+id+'/gacha').set(on).then(function(){ toast((it?it.name:id)+(on?' 가챠전용 ON(판매 숨김)':' 가챠전용 OFF(은화 판매)')); }).catch(_cfgWriteErr); }
     // 벽지(config/wallpaper) 전역 저장
     function setWallTier(id, tier){ if(!(typeof isDev==='function'&&isDev())) return;
       db.ref('config/wallpaper/'+id).update({tier:tier, price:null}).then(function(){ const w=WALLPAPER_CATALOG.find(x=>x.id===id); toast((w?w.name:id)+' 벽지 등급 = '+tierInfo(tier).name+' · 가격 '+(TIER_PRICE[tier]||0)+' 은화'); }).catch(_cfgWriteErr); }
@@ -2799,6 +2812,8 @@
       else { ref.set(n).then(function(){ toast((w?w.name:id)+' 벽지 가격 = '+n+' 은화'); }).catch(_cfgWriteErr); } }
     function resetWall(id){ if(!(typeof isDev==='function'&&isDev())) return;
       db.ref('config/wallpaper/'+id).remove().then(function(){ const w=WALLPAPER_CATALOG.find(x=>x.id===id); toast((w?w.name:id)+' 벽지 기본값으로 되돌렸어요'); }).catch(_cfgWriteErr); }
+    function setWallGacha(id){ if(!(typeof isDev==='function'&&isDev())) return; const on=!isGachaOnlyWall(id); const w=WALLPAPER_CATALOG.find(x=>x.id===id);
+      db.ref('config/wallpaper/'+id+'/gacha').set(on).then(function(){ toast((w?w.name:id)+' 벽지'+(on?' 가챠전용 ON(판매 숨김)':' 가챠전용 OFF(은화 판매)')); }).catch(_cfgWriteErr); }
     // 바닥 스킨(config/floor) 전역 저장
     function setFloorTier(id, tier){ if(!(typeof isDev==='function'&&isDev())) return;
       db.ref('config/floor/'+id).update({tier:tier, price:null}).then(function(){ const f=FLOOR_CATALOG.find(x=>x.id===id); toast((f?f.name:id)+' 바닥 등급 = '+tierInfo(tier).name+' · 가격 '+(TIER_PRICE[tier]||0)+' 은화'); }).catch(_cfgWriteErr); }
@@ -2808,6 +2823,8 @@
       else { ref.set(n).then(function(){ toast((f?f.name:id)+' 바닥 가격 = '+n+' 은화'); }).catch(_cfgWriteErr); } }
     function resetFloor(id){ if(!(typeof isDev==='function'&&isDev())) return;
       db.ref('config/floor/'+id).remove().then(function(){ const f=FLOOR_CATALOG.find(x=>x.id===id); toast((f?f.name:id)+' 바닥 기본값으로 되돌렸어요'); }).catch(_cfgWriteErr); }
+    function setFloorGacha(id){ if(!(typeof isDev==='function'&&isDev())) return; const on=!isGachaOnlyFloor(id); const f=FLOOR_CATALOG.find(x=>x.id===id);
+      db.ref('config/floor/'+id+'/gacha').set(on).then(function(){ toast((f?f.name:id)+' 바닥'+(on?' 가챠전용 ON(판매 숨김)':' 가챠전용 OFF(은화 판매)')); }).catch(_cfgWriteErr); }
 
     // 개발자 데이터 정리: 런타임 펫 정적 승격(내보내기) + 구 인라인 아트 1회 분리 이전.
     function openDevDataTools(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
@@ -3546,7 +3563,7 @@
       }
       if(_shopSub==='floor'){
         const cur=currentFloor();
-        h+='<div class="wallgrid">'+FLOOR_CATALOG.map(f=>{
+        h+='<div class="wallgrid">'+FLOOR_CATALOG.filter(f=>!isGachaOnlyFloor(f.id)).map(f=>{   // 가챠전용 바닥은 판매목록에서 숨김(랜덤박스 풀엔 그대로)
           const owned=ownsFloor(f.id), applied=cur===f.id, gacha=isGachaOnlyFloor(f.id), fp=floorBuyPrice(f.id);
           let act;
           if(owned) act='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>보유중</span>';
@@ -3563,7 +3580,7 @@
 
       if(_shopSub==='wall'){
         const cur=currentWall();
-        h+='<div class="wallgrid">'+WALLPAPER_CATALOG.map(w=>{
+        h+='<div class="wallgrid">'+WALLPAPER_CATALOG.filter(w=>!isGachaOnlyWall(w.id)).map(w=>{   // 가챠전용 벽지는 판매목록에서 숨김(랜덤박스 풀엔 그대로)
           const owned=ownsWall(w.id), applied=cur===w.id;
           let act;
           if(owned) act='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>보유중</span>';
@@ -3585,7 +3602,7 @@
         if(!PSHOP_TABS.some(t=>t[0]===_shopPetSpecies)) _shopPetSpecies='all';
         if(PSHOP_TABS.length>2) h+='<div class="subseg shopfurncat">'+PSHOP_TABS.map(t=>'<button class="'+(_shopPetSpecies===t[0]?'on':'')+'" onclick="setShopPetSpecies(\''+t[0]+'\')">'+escapeHtml(t[1])+'</button>').join('')+'</div>';
         // 등급 낮은 것부터 높은 순으로 정렬. 특별(epic) 이상은 알뜰샵 직접 구매 불가 → 펫알(가챠) 전용 표기. 선택 종만 필터.
-        const cats=PET_CATALOG.slice().filter(c=>_shopPetSpecies==='all'||c.species===_shopPetSpecies).sort((a,b)=>tierRank(petTierOf(a.id))-tierRank(petTierOf(b.id)));
+        const cats=PET_CATALOG.slice().filter(c=>!isGachaOnlyCat(c.id) && (_shopPetSpecies==='all'||c.species===_shopPetSpecies)).sort((a,b)=>tierRank(petTierOf(a.id))-tierRank(petTierOf(b.id)));   // 가챠전용 펫은 판매목록에서 숨김(가챠 풀엔 그대로 있음)
         // 🌟 이달의 펫 배너(미보유·구매 가능한 등급일 때만 강조) — 선택한 종과 맞을 때만(전체 포함)
         { const fid=featuredCatId();
           if(fid){ const fc=PET_CATALOG.find(x=>x.id===fid); if(fc && (_shopPetSpecies==='all'||fc.species===_shopPetSpecies)){
@@ -3618,7 +3635,7 @@
         const FSHOP_CATS=[['all','전체']].concat(PLACE_CATS);
         if(!FSHOP_CATS.some(c=>c[0]===_shopFurnCat)) _shopFurnCat='all';
         h+='<div class="subseg shopfurncat">'+FSHOP_CATS.map(c=>'<button class="'+(_shopFurnCat===c[0]?'on':'')+'" onclick="setShopFurnCat(\''+c[0]+'\')">'+c[1]+'</button>').join('')+'</div>';
-        const items=ITEM_CATALOG.slice().sort((a,b)=>tierRank(itemTierOf(a.id))-tierRank(itemTierOf(b.id))).filter(it=>_shopFurnCat==='all'||placeCatOf(it.id)===_shopFurnCat);
+        const items=ITEM_CATALOG.slice().sort((a,b)=>tierRank(itemTierOf(a.id))-tierRank(itemTierOf(b.id))).filter(it=>!isGachaOnlyItem(it.id) && (_shopFurnCat==='all'||placeCatOf(it.id)===_shopFurnCat));   // 가챠전용 가구는 판매목록에서 숨김(랜덤박스 풀엔 그대로)
         h+=items.map(it=>{
           const price=itemBuyPrice(it.id), enough=coins()>=price, gachaOnly=isGachaOnlyItem(it.id);
           let act, priceHtml;
@@ -3839,8 +3856,11 @@
       if(res.type==='wall'){ if(g.owned.wallpapers[res.id]) return Math.round((TIER_PRICE[res.tier]||0)*0.2); g.owned.wallpapers[res.id]={boughtAt:new Date().toISOString()}; return 0; }
       if(g.owned.items[res.id]&&(Number(g.owned.items[res.id].qty)||0)>0) return Math.round((TIER_PRICE[res.tier]||0)*0.2);   // 이미 보유(qty>0) → 펫처럼 환급
       g.owned.items[res.id]={qty:1,boughtAt:new Date().toISOString()}; return 0; }
-    function isGachaOnlyFloor(id){ return id!=='default' && tierRank(floorTierOf(id)) >= tierRank('epic'); }   // 특별↑ 바닥=랜덤박스 전용
-    function isGachaOnlyWall(id){ return tierRank(wallTierOf(id)) >= tierRank('epic'); }                       // 특별↑ 벽지=랜덤박스 전용
+    // 가챠전용 판정: 전역 오버라이드(config/*.gacha, 개발자 토글)가 있으면 그 값, 없으면 등급 기반 기본값(특별↑=가챠전용).
+    //   가챠전용=true → 알뜰샵 판매목록에서 숨김. false → 등급 무관 은화 판매. 어느 쪽이든 가챠(펫알/랜덤박스) 풀에는 항상 포함.
+    function gachaOverride(cfg, id){ const o=cfg&&cfg[id]; return (o&&o.gacha!=null)?!!o.gacha:null; }
+    function isGachaOnlyFloor(id){ if(id==='default') return false; const ov=gachaOverride(_floorCfg,id); return ov!=null?ov:(tierRank(floorTierOf(id)) >= tierRank('epic')); }   // 특별↑ 바닥=랜덤박스 전용(오버라이드 우선)
+    function isGachaOnlyWall(id){ if(id==='default') return false; const ov=gachaOverride(_wallCfg,id); return ov!=null?ov:(tierRank(wallTierOf(id)) >= tierRank('epic')); }         // 특별↑ 벽지=랜덤박스 전용(오버라이드 우선)
     // 바닥 스킨 등급: FLOOR_TIER 기본값에 전역 config/floor 병합. 가격: config 오버라이드 ← FLOOR_CATALOG.price.
     function effFloorTier(){ const base=Object.assign({}, FLOOR_TIER); if(_floorCfg){ Object.keys(_floorCfg).forEach(function(id){ const t=_floorCfg[id]&&_floorCfg[id].tier; if(t) base[id]=t; }); } return base; }
     function floorTierOf(id){ return effFloorTier()[id]||'normal'; }
@@ -3877,9 +3897,9 @@
     // 등급 랭크(낮을수록 흔함). 특별(epic) 이상은 알뜰샵 직접 구매 불가 — 펫알(가챠) 전용.
     function tierRank(tier){ return Math.max(0, TIER_ORDER.indexOf(tier||'normal')); }
     function petTierOf(id){ return effCatTier()[id]||'normal'; }
-    function isGachaOnlyCat(id){ return tierRank(petTierOf(id)) >= tierRank('epic'); }
+    function isGachaOnlyCat(id){ if(_petGachaOnly[id]!=null) return _petGachaOnly[id]; return tierRank(petTierOf(id)) >= tierRank('epic'); }   // 오버라이드(catalogPets.gachaOnly) 우선, 없으면 특별↑
     function itemTierOf(id){ return effItemTier()[id]||'normal'; }
-    function isGachaOnlyItem(id){ return tierRank(itemTierOf(id)) >= tierRank('epic'); }   // 특별↑ 가구는 랜덤박스 전용
+    function isGachaOnlyItem(id){ const ov=gachaOverride(_furnCfg,id); return ov!=null?ov:(tierRank(itemTierOf(id)) >= tierRank('epic')); }   // 오버라이드(config/furniture.gacha) 우선, 없으면 특별↑
     // 🌟 시즌: 이달의 펫 — 매월(KST) 은화로 살 수 있는 등급(특별 미만) 중 하나. 모든 사용자 동일, 20% 할인.
     //  · 우선순위: ① 개발자 수동 선정(전역 config/featuredPet/{monthKey}=id, 관리자만 쓰기) ② 없으면 월키 해시 자동 선정.
     //  · 해시 자동은 후보 목록 길이에 의존해 펫을 추가/삭제하면 그 달 자동 선정이 바뀜 → 수동 선정을 두면 그런 변동 없이 고정된다.
