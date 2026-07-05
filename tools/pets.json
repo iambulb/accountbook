@@ -16,7 +16,8 @@
     "lion": "사자"
   },
   "ignoreZips": [
-    "simple_pixel_art_calico_cat_white_with_orange_three.zip"
+    "simple_pixel_art_calico_cat_white_with_orange_three.zip",
+    "chibi_pixel_art_white_cat_one_blue_eye_one_amber_e.zip"
   ],
   "pets": [
     { "id": "cat_mackerel", "species": "cat", "name": "고등어", "tier": "normal", "scale": 0.7, "desc": "쿨그레이 줄무늬. 차분하게 방을 돌아다녀요.", "zip": "simple_pixel_art_cat_grey_mackerel_tabby_with_dark.zip", "frontWalk": false },
@@ -30,7 +31,6 @@
     { "id": "cat_siamese", "species": "cat", "name": "삼삼이", "tier": "uncommon", "scale": 0.8, "desc": "크림빛 몸에 짙은 포인트. 우아하게 방을 누벼요.", "zip": "chibi_pixel_art_siamese_cat_cream_body_with_dark_fa.zip", "frontWalk": false },
     { "id": "cat_bengal", "species": "cat", "name": "황토", "tier": "normal", "desc": "골든빛 몸에 동글동글 반점. 야무지게 돌아다녀요.", "zip": "chibi_pixel_art_golden_cat_a_few_simple_round_spot.zip", "frontWalk": false },
     { "id": "cat_fold", "species": "cat", "name": "폴드", "tier": "normal", "scale": 0.7, "desc": "접힌 귀가 매력. 얌전히 자리를 지켜요.", "zip": "chibi_pixel_art_grey_cat_small_folded-down_ears_ro.zip", "frontWalk": false },
-    { "id": "cat_bora", "species": "cat", "name": "보라", "tier": "epic", "desc": "한쪽은 파랑·한쪽은 호박색 오드아이. 신비롭게 거닐어요.", "zip": "chibi_pixel_art_white_cat_one_blue_eye_one_amber_e.zip", "frontWalk": false },
     { "id": "cat_choco", "species": "cat", "name": "초코", "tier": "normal", "scale": 0.7, "desc": "초콜릿빛 갈색 털에 크림색 입가·가슴. 느긋하게 방을 거닐어요.", "zip": "simple_pixel_art_chocolate_brown_cat_cream_muzzle.zip", "frontWalk": false },
     { "id": "cat_kitten", "species": "cat", "name": "아깽이", "tier": "normal", "scale": 0.4, "desc": "치즈빛 오렌지 태비 아기고양이. 뒤뚱뒤뚱 방을 쏘다녀요.", "zip": "simple_pixel_art_orange_tabby_kitten_a_few_cheese.zip", "frontWalk": false },
     { "id": "cat_pink", "species": "cat", "name": "핑크", "tier": "epic", "scale": 1, "desc": "털 없는 분홍빛 주름 피부. 도도하게 방을 누벼요.", "zip": "simple_pixel_art_pink_sphynx_cat_hairless_wrinkled.zip", "frontWalk": false },
@@ -42,7 +42,6 @@
     { "id": "cat_bengal2", "species": "cat", "name": "얼룩이", "tier": "uncommon", "scale": 0.7, "desc": "야생미 물씬 로제트 무늬. 날렵하게 방을 쏘다녀요.", "zip": "", "frontWalk": false },
     { "id": "dog_mutt", "species": "dog", "name": "시고르자브", "tier": "rare", "scale": 1, "desc": "어느 동네에나 있는 씩씩한 잡종견. 꼬리 흔들며 졸졸 따라다녀요.", "zip": "", "frontWalk": false },
     { "id": "cat_panther", "species": "cat", "name": "블랙팬서", "tier": "limited", "scale": 3, "desc": "칠흑빛 근육질의 흑표범. 소리 없이 방을 누비는 한정판 위엄.", "zip": "", "frontWalk": false },
-    { "id": "dog_baekgu", "species": "dog", "name": "백구", "tier": "normal", "scale": 1, "desc": "온 동네가 아는 새하얀 토종개. 사람만 보면 꼬리가 헬리콥터.", "zip": "", "frontWalk": false, "frames": 8 },
     { "id": "dog_shiba", "species": "dog", "name": "시바", "tier": "epic", "scale": 1, "desc": "새침한 표정 뒤에 장난기 가득. 마음을 열면 껌딱지가 돼요.", "zip": "", "frontWalk": false, "frames": 8 },
     { "id": "dog_corgi", "species": "dog", "name": "코기", "tier": "legend", "scale": 1.2, "desc": "짧은 다리로 통통, 복슬 엉덩이가 트레이드마크.", "zip": "", "frontWalk": false, "frames": 6 },
     { "id": "dog_dalmatian", "species": "dog", "name": "달마시안", "tier": "uncommon", "scale": 1.4, "desc": "까만 점박이 무늬가 하나하나 다 달라요. 달리기라면 자신 있음.", "zip": "", "frontWalk": false, "frames": 6 },
@@ -51,11 +50,9 @@
     { "id": "dog_injeolmi", "species": "dog", "name": "인절미", "tier": "legend", "scale": 1.4, "desc": "말랑말랑 콩고물 빛 털뭉치. 안으면 떡처럼 쫀득.", "zip": "", "frontWalk": false, "frames": 6 },
     { "id": "dog_poodle", "species": "dog", "name": "스탠다드푸들", "tier": "rare", "scale": 2, "desc": "우아한 곱슬머리 신사. 똑똑하기로 소문났어요.", "zip": "", "frontWalk": false, "frames": 6 },
     { "id": "dog_beagle", "species": "dog", "name": "비글", "tier": "rare", "scale": 1, "desc": "코가 이끄는 대로 온 집안 탐험. 호기심 대장.", "zip": "", "frontWalk": false, "frames": 6 },
-    { "id": "dog_sukhee", "species": "dog", "name": "숙희", "tier": "legend", "scale": 2, "desc": "동네 골목대장 누렁이. 정 많고 의리 넘쳐요.", "zip": "", "frontWalk": false, "frames": 6 },
     { "id": "dog_doberman", "species": "dog", "name": "도베르만", "tier": "legend", "scale": 2, "desc": "날렵한 근육질 경비대장. 겉은 시크, 속은 다정.", "zip": "", "frontWalk": false, "frames": 8 },
     { "id": "dog_pug", "species": "dog", "name": "퍼그", "tier": "legend", "scale": 1, "desc": "찌글 주름과 똥그란 눈망울. 코고는 소리마저 사랑스러워.", "zip": "", "frontWalk": false, "frames": 8 },
     { "id": "dog_shepherd", "species": "dog", "name": "저먼셰퍼드", "tier": "legend", "scale": 2, "desc": "믿음직한 명견. 한번 주인은 영원한 주인.", "zip": "", "frontWalk": false, "frames": 8 },
-    { "id": "dog_bordercollie", "species": "dog", "name": "보더콜리", "tier": "epic", "scale": 1.2, "desc": "천재 견공. 눈빛만으로 양떼도 척척.", "zip": "", "frontWalk": false, "frames": 8 },
     { "id": "dog_spitz", "species": "dog", "name": "스피츠", "tier": "normal", "scale": 1, "desc": "새하얀 솜뭉치. 방긋 웃는 여우상 미소.", "zip": "", "frontWalk": false, "frames": 6 },
     { "id": "dog_jackrussell", "species": "dog", "name": "잭러셀테리어", "tier": "legend", "scale": 1, "desc": "작은 몸에 에너지 폭발. 잠시도 가만 못 있어요.", "zip": "", "frontWalk": false, "frames": 6 },
     { "id": "dog_labrador", "species": "dog", "name": "레브라도", "tier": "epic", "scale": 1.5, "desc": "물놀이라면 사족을 못 써요. 세상 다정한 리트리버.", "zip": "", "frontWalk": false, "frames": 6 },
@@ -70,7 +67,6 @@
     { "id": "dog_welshterrier", "species": "dog", "name": "웰시테리어", "tier": "legend", "scale": 1.4, "desc": "곱슬 갈색 털의 꼬마 신사. 용감함은 대형견급.", "zip": "", "frontWalk": false, "frames": 6 },
     { "id": "dog_papillon", "species": "dog", "name": "파피용", "tier": "uncommon", "scale": 0.8, "desc": "나비 날개 같은 귀가 팔랑팔랑. 작지만 똑똑해요.", "zip": "", "frontWalk": false, "frames": 6 },
     { "id": "dog_newfoundland", "species": "dog", "name": "뉴펀들랜드", "tier": "legend", "scale": 3, "desc": "물속 구조 전문 거인. 곰만 한 덩치에 천사 마음.", "zip": "", "frontWalk": false, "frames": 6 },
-    { "id": "dog_beardedcollie", "species": "dog", "name": "비어디드콜리", "tier": "legend", "scale": 1.2, "desc": "수염 난 장발 목양견. 바람에 휘날리는 털결.", "zip": "", "frontWalk": false, "frames": 6 },
     { "id": "dog_afghanhound", "species": "dog", "name": "보더콜리", "tier": "legend", "scale": 1.4, "desc": "실크 같은 긴 털을 휘날리는 귀족. 우아함 그 자체.", "zip": "", "frontWalk": false, "frames": 6 },
     { "id": "dog_rottweiler", "species": "dog", "name": "로트와일러", "tier": "epic", "scale": 1.2, "desc": "든든한 경비견. 무뚝뚝해 보여도 가족 바보.", "zip": "", "frontWalk": false, "frames": 6 },
     { "id": "dog_pointer", "species": "dog", "name": "포인터", "tier": "epic", "scale": 1, "desc": "사냥감을 코로 가리키는 명사수. 늘씬한 근육질.", "zip": "", "frontWalk": false, "frames": 6 },
