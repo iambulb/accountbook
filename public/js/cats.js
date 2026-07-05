@@ -3772,11 +3772,11 @@
         h+=limitedPickupBanner();   // 🌈 한정 픽업 배너(무지개+뜰의 알+양옆 걷는 픽업 펫)
         // 🌱 뜰알(한정 픽업) — 한정픽업 배너 바로 아래(픽업 테마 묶음). 은화로 여는 픽업 펫알. 활성 한정 펫(삵·표범)이 낮은 확률로 등장.
         { const pk=LIMITED_PICKUP.filter(pickupExists).map(id=>catNameSpan(id,catName(id))).join('·');
-          const dEnough=coins()>=DDEUL_PRICE;
-          const dact=dEnough?'<button class="buy" aria-label="뜰알 구매('+DDEUL_PRICE+' 은화)" onclick="openDdeul()">구매</button>':'<button class="buy dis" disabled>'+(DDEUL_PRICE-coins())+' 부족</button>';
+          const dEnough=coins()>=DDEUL_PRICE && gold()>=DDEUL_GOLD;
+          const dact=dEnough?'<button class="buy" aria-label="뜰알 구매('+DDEUL_PRICE+' 은화·금화 '+DDEUL_GOLD+')" onclick="openDdeul()">구매</button>':'<button class="buy dis" disabled>'+(coins()<DDEUL_PRICE?(DDEUL_PRICE-coins())+' 은화 부족':'금화 '+(DDEUL_GOLD-gold())+' 부족')+'</button>';
           h+='<div class="shopcard ddeul-card"><div class="thumb">'+ddeulEggSvg({h:64})+'</div>'+
-            '<div class="meta"><b class="tier-rainbow">뜰알</b> <span class="tagmini tier-rainbow">한정 픽업</span><div class="desc">'+(pk?'지금 픽업 <b class="tier-rainbow">'+pk+'</b> · ':'')+'한정 펫은 오직 뜰알에서만!</div>'+
-            '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+DDEUL_PRICE+'</span></div>'+
+            '<div class="meta"><b class="tier-rainbow">뜰알</b> <span class="tagmini tier-rainbow">한정 픽업</span><div class="desc">'+(pk?'<b class="tier-rainbow">'+pk+'</b> · ':'')+'한정 펫은 오직 뜰알에서만!</div>'+
+            '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+DDEUL_PRICE+' <span class="ci">'+goldSvg({h:16})+'</span>'+DDEUL_GOLD+'</span></div>'+
             '<div class="act">'+dact+'</div></div>'; }
         const enough=coins()>=GACHA_PRICE;
         const gacha=[['egg','펫알','알을 열면 고양이가 랜덤으로! 등급이 높을수록 귀해요.', eggSvg(0,{h:66})],
@@ -4076,14 +4076,15 @@
         else if(k<0.68) el='<span class="pk-tuft pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+tuftSvg({h:S(6+r*3)})+'</span>';
         else el='<span class="pk-flower pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+flowerSvg(['r','y','p'][Math.floor(pkRand(i,56)*3)],{h:S(7+r*3)})+'</span>';
         farline+=el; }
-      // 🌳 가까운 나무 5그루 — 가로 '레인'으로 고르게(겹침 방지) · 크기 1.5배 · 뒤쪽만 · z<펫. 가운데(i=2)는 오른쪽으로 살짝(+9%)
-      let trees=''; for(let i=0;i<5;i++){ const d=0.5+pkRand(i,11)*0.28, l=((i+0.5)/5*88+6+(pkRand(i,12)-0.5)*6+(i===2?9:0)).toFixed(1),
+      // 🌳 가까운 나무 5그루 — 가로 '레인'으로 고르게(겹침 방지) · 크기 1.5배 · 뒤쪽만 · z<펫. 가운데(i=2)는 오른쪽으로 살짝(+9%). 오른쪽서 두번째(i=3)는 더 앞으로(d-0.14=크게·낮게·앞) + 오른쪽으로(+5%)
+      let trees=''; for(let i=0;i<5;i++){ const d=0.5+pkRand(i,11)*0.28-(i===3?0.14:0), l=((i+0.5)/5*88+6+(pkRand(i,12)-0.5)*6+(i===2?9:0)+(i===3?5:0)).toFixed(1),
         sc=1-d*0.5, bot=(d*70).toFixed(1), z=Math.round(2+(1-d)*2), pine=pkRand(i,13)<0.45;
         const inner = pine ? '<span class="pk-canopy">'+pineSvg({h:S(Math.max(16,Math.round(69*sc)))})+'</span>'
           : '<span class="pk-canopy">'+treeTopSvg({h:S(Math.max(16,Math.round(51*sc)))})+'</span><span class="pk-trunk">'+trunkSvg({h:S(Math.max(8,Math.round(24*sc)))})+'</span>';
         trees+='<span class="pk-tree'+(pine?' pk-pine':'')+'" style="left:'+l+'%;bottom:'+bot+'%;z-index:'+z+';--i:'+i+'">'+inner+'</span>'; }
       // 🌸 꽃 16 · 🌱 풀 18: 필드 전체(앞~뒤)에 원근 분포
-      let flowers=''; for(let i=0;i<16;i++){ const d=pkRand(i,21)*0.82, l=(3+pkRand(i,22)*94).toFixed(1),
+      // 꽃 16 — 가로로 고르게 벌려(간격 ≈5.6%, 서로/큰 요소와 안 겹치게) + 앞쪽 필드 위주(d 0~0.6)로 낮게 깔아 나무·바위에 안 가리게
+      let flowers=''; for(let i=0;i<16;i++){ const d=pkRand(i,21)*0.6, l=(5+(i+0.5)/16*90+(pkRand(i,22)-0.5)*3.5).toFixed(1),
         sc=1-d*0.5, bot=(d*76).toFixed(1), tn=['r','y','p'][Math.floor(pkRand(i,23)*3)];
         flowers+='<span class="pk-flower" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+flowerSvg(tn,{h:S(Math.max(9,Math.round(16*sc)))})+'</span>'; }
       let tufts=''; for(let i=0;i<18;i++){ const d=pkRand(i,31)*0.85, l=(2+pkRand(i,32)*96).toFixed(1),
@@ -4107,7 +4108,7 @@
       // 🌑 깊이 그림자(펫 발밑, 액터 scale 그대로라 앞=크게·뒤=작게) — .cd-shadow는 배너(pkstage)에서만 보임(CSS). --pad(발밑 여백)로 발끝에 정렬.
       const actor=(id,lx)=> pickupExists(id) ? '<div class="cd-actor" data-cat="'+id+'" data-hh="'+H+'" style="left:'+lx+'px;"><span class="cd-shadow">'+shadowSvg({h:9})+'</span>'+catActorHTML(id,H)+'</div>' : '';
       // 🪨 중간 바위(겹침 큐, z=펫과 같은 12-depth*11 → 그보다 뒤 펫은 바위 뒤로 가려짐) + 🌿 전경 프레이밍(맨 앞 큰 풀·꽃, z 최상). 무대(pkstage) 안에 둠.
-      const rock  = mode==='reveal' ? '' : '<span class="pk-rock" style="left:30%;bottom:'+(0.4*53).toFixed(1)+'%;z-index:'+Math.round(12-0.4*11)+';">'+rockSvg({h:Math.round(26*depthScale(0.4))})+'</span>';
+      const rock  = mode==='reveal' ? '' : '<span class="pk-rock" style="left:25%;bottom:'+(0.4*53).toFixed(1)+'%;z-index:'+Math.round(12-0.4*11)+';">'+rockSvg({h:Math.round(26*depthScale(0.4))})+'</span>';
       const frame = mode==='reveal' ? '' : '<span class="pk-frame" style="left:3%;z-index:20;">'+tuftSvg({h:34})+'</span><span class="pk-frame" style="left:97%;z-index:20;">'+flowerSvg('p',{h:30})+'</span>';
       const egg   = mode==='reveal' ? '' : '<div class="pk-egg"><img src="'+assetUrl('icons/egg-garden.svg')+'" alt=""></div>';   // 리빌은 알 대신 등장 펫이 주인공
       // 픽업 펫 2마리는 배너·리빌 둘 다 배회(리빌은 별도 무대 id로 배너 #pkStage와 안 겹치게). rock/frame은 배너 전용(reveal이면 빈 문자열).
