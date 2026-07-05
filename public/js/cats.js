@@ -1851,6 +1851,13 @@
     function newBadgeSvg(opt){ opt=opt||{}; const h=opt.h||30;
       const chs=[M_LN,M_LE,M_LW].map((m,i)=>'<span class="fx-new-ch" style="--i:'+i+'">'+pxSvg(m,NEW_PAL,{h:h})+'</span>').join('');
       return '<div class="fx-new" aria-hidden="true">'+chs+'</div>'; }
+    // 🌈 픽셀 무지개 아치(한정 픽업 배너용) — 바닥 중앙 기준 6밴드 동심원 아치(가운데 비움). 도트 유지(crispEdges).
+    function rainbowArcSvg(opt){ opt=opt||{}; const cols=opt.cols||27, rows=opt.rows||10;
+      const RB=['#F04452','#F0883C','#F2C84B','#2FAE7A','#3182F6','#9B6FC8'], cx=(cols-1)/2, R=rows; let r='';
+      for(let y=0;y<rows;y++) for(let x=0;x<cols;x++){ const dx=x-cx, dy=(rows-0.4-y); if(dy<0) continue;
+        const d=Math.sqrt(dx*dx+dy*dy), band=Math.floor(R-d); if(band>=0&&band<6) r+='<rect x="'+x+'" y="'+y+'" width="1.05" height="1.05" fill="'+RB[band]+'"/>'; }
+      const wh=opt.h?('height="'+opt.h+'"'):(opt.w?('width="'+opt.w+'"'):'');
+      return '<svg class="px '+(opt.cls||'')+'" viewBox="0 0 '+cols+' '+rows+'" '+wh+' shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet">'+r+'</svg>'; }
     // 알뜰샵·팔레트·격자용 대표 아트(물그릇은 물 채운 파란 그릇으로 구분 표시)
     function furnMatrix(id){ return {pond:M_POND,cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT,catwheel:M_CATWHEEL,rug:M_RUG,window:M_WINDOW,fishtank:M_FISHTANK,fireplace:M_FIREPLACE,fan:M_FAN,hammock:M_HAMMOCK,teaser:M_TEASER,wallclock:M_WALLCLOCK,hangplant:M_HANGPLANT,mobile:M_MOBILE,chandelier:M_CHANDELIER,jingleball:M_JINGLEBALL,frame:M_FRAME,shelf:M_SHELF,mirror:M_MIRROR,neon:M_NEON,sconce:M_SCONCE,garland:M_GARLAND,poster:M_POSTER,tapestry:M_TAPESTRY}[id]; }
     function furnSvg(id, opt){ return pxSvg(furnMatrix(id), FURN_PALS[id], opt); }
@@ -3695,6 +3702,7 @@
         return h;
       }
       if(_shopSub==='event'){
+        h+=limitedPickupBanner();   // 🌈 한정 픽업 배너(무지개+뜰의 알+양옆 걷는 픽업 펫)
         const enough=coins()>=GACHA_PRICE;
         const gacha=[['egg','펫알','알을 열면 고양이가 랜덤으로! 등급이 높을수록 귀해요.', eggSvg(0,{h:66})],
                      ['box','랜덤박스','상자를 열면 가구·구조물이 랜덤으로 나와요.', boxSvg({h:56})]];
@@ -3969,6 +3977,23 @@
     function catNameSpan(id, name){ const t=CAT_TIER[id]||'normal'; const n=escapeHtml(name);
       if(t==='exclusive') return '<span class="tier-rainbow">'+n+'</span>';   // 한정 = 무지개
       return '<span style="color:'+catTierColor(id)+'">'+n+'</span>'; }   // 신화=핑크(#ff5fa2) 등 등급색
+    // 🌈 한정 픽업(가챠 배너): [펫1(왼쪽), 펫2(오른쪽)]. 픽업 대상을 바꾸려면 이 배열만 수정. 존재하는 펫만 배너에 뜬다.
+    const LIMITED_PICKUP = ['cat_leopardcat','cat_leopard'];   // 첫 한정 픽업: 펫1=삵 · 펫2=표범
+    function pickupExists(id){ return !!id && PET_CATALOG.some(c=>c.id===id); }
+    // 가챠 탭 상단 한정 픽업 배너 — 무지개 아치 아래 뜰(잔디)에 로그인 알(egg-garden)이 놓이고, 픽업 펫 둘이 양옆에서 가운데를 보고 걸어온다(픽셀아트).
+    function limitedPickupBanner(){
+      const p1=LIMITED_PICKUP[0], p2=LIMITED_PICKUP[1];
+      if(!pickupExists(p1) && !pickupExists(p2)) return '';
+      const tag=(n,id)=> pickupExists(id) ? '<span class="pk-tag"><b>펫'+n+'</b> '+catNameSpan(id,catName(id))+'</span>' : '';
+      const pet=(id,side)=> pickupExists(id) ? '<div class="pk-pet pk-'+side+'" aria-hidden="true">'+catActorHTML(id,46)+'</div>' : '';
+      return '<div class="pickbanner">'+
+        '<div class="pk-head"><span class="pk-title tier-rainbow">✨ 한정 픽업</span>'+tag(1,p1)+tag(2,p2)+'</div>'+
+        '<div class="pick-scene">'+
+          '<div class="pk-rainbow" aria-hidden="true">'+rainbowArcSvg({h:46})+'</div>'+
+          pet(p1,'left')+pet(p2,'right')+
+          '<div class="pk-egg" aria-hidden="true"><img src="'+assetUrl('icons/egg-garden.svg')+'" alt=""></div>'+
+          '<div class="pk-ground" aria-hidden="true"></div>'+
+        '</div></div>'; }
     // 등급 '이름' 라벨을 등급 색으로(펫 이름이 아니라 등급명). 한정(exclusive)=무지개(.tier-rainbow), 그 외=인라인 색(신화=#ff5fa2 등). 도감 등급 헤더 등 공용.
     function tierLabelHtml(tierId){ const ti=tierInfo(tierId); const nm=escapeHtml(ti.name);
       if(tierId==='exclusive') return '<span class="tier-rainbow">'+nm+'</span>';

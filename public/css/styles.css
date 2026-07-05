@@ -1446,6 +1446,32 @@
     .featbanner .fb-txt .s { font-size:12px; color:var(--muted); }
     .featbanner .fb-face { flex:0 0 auto; display:inline-flex; }
     .shopcard.petpick.feat { border-color:color-mix(in srgb, var(--gold, #f2b134) 55%, transparent); }
+    /* 🌈 한정 픽업 배너(가챠 탭) — 무지개 아치 + 뜰(잔디)의 알 + 양옆에서 가운데로 걸어오는 픽업 펫(픽셀아트) */
+    .pickbanner { margin:2px 0 12px; border-radius:16px; overflow:hidden; border:1.5px solid color-mix(in srgb,#9B6FC8 40%,var(--line)); background:var(--card); }
+    .pk-head { display:flex; align-items:center; gap:6px 12px; flex-wrap:wrap; padding:9px 12px 8px; }
+    .pk-title { font-size:13.5px; font-weight:900; letter-spacing:.02em; }
+    .pk-tag { font-size:12.5px; font-weight:700; color:var(--sub); display:inline-flex; align-items:center; gap:4px; }
+    .pk-tag b { color:var(--text); font-weight:800; }
+    .pick-scene { position:relative; height:98px; overflow:hidden; background:#cdeeff; }
+    :root[data-theme="dark"] .pick-scene { background:#23304a; }
+    @media (prefers-color-scheme: dark){ .pick-scene { background:#23304a; } }
+    :root[data-theme="light"] .pick-scene { background:#cdeeff; }
+    .pk-rainbow { position:absolute; left:50%; top:9px; transform:translateX(-50%); z-index:1; }
+    .pk-rainbow .px { height:46px; width:auto; image-rendering:pixelated; }
+    .pk-ground { position:absolute; left:0; right:0; bottom:0; height:26px; z-index:2; background:#57bf67; border-top:3px solid #79d67f; }
+    .pk-ground::before { content:''; position:absolute; left:0; right:0; top:-6px; height:6px; background:repeating-linear-gradient(90deg,#79d67f 0 2px, transparent 2px 5px); }
+    :root[data-theme="dark"] .pk-ground { background:#3a7d47; border-top-color:#4f9a5b; }
+    :root[data-theme="dark"] .pk-ground::before { background:repeating-linear-gradient(90deg,#4f9a5b 0 2px, transparent 2px 5px); }
+    .pk-egg { position:absolute; left:50%; bottom:18px; transform:translateX(-50%); z-index:3; }
+    .pk-egg img { display:block; height:46px; width:auto; image-rendering:pixelated; filter:drop-shadow(0 3px 0 rgba(0,0,0,.14)); }
+    .pk-pet { position:absolute; bottom:17px; z-index:4; }
+    .pk-pet .cspr, .pk-pet .catpx, .pk-pet .px { image-rendering:pixelated; }
+    .pk-pet.pk-left { left:9%; animation:pkwalkL 2.2s ease-in-out infinite; }
+    .pk-pet.pk-right { right:9%; animation:pkwalkR 2.2s ease-in-out infinite; }
+    .pk-pet.pk-right .cspr, .pk-pet.pk-right .catpx, .pk-pet.pk-right .px { transform:scaleX(-1); }   /* 오른쪽 펫은 가운데(왼쪽)를 바라봄 */
+    @keyframes pkwalkL { 0%,100%{ transform:translateX(0); } 50%{ transform:translateX(11px); } }
+    @keyframes pkwalkR { 0%,100%{ transform:translateX(0); } 50%{ transform:translateX(-11px); } }
+    @media (prefers-reduced-motion: reduce){ .pk-pet.pk-left, .pk-pet.pk-right { animation:none; } }
     .shopcard .featrib { position:absolute; left:6px; top:6px; display:inline-flex; align-items:center; gap:3px;
       font-size:10px; font-weight:800; color:#7a5200; background:var(--gold, #f2b134); padding:2px 6px; border-radius:999px; z-index:2; }
     .shopcard .featrib svg { color:#7a5200; }
