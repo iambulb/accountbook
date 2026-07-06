@@ -1399,11 +1399,17 @@
     @keyframes llpulse { 0%,100%{ opacity:.12; } 50%{ opacity:.26; } }
     /* 갈라진 틈으로 새어나오는 빛: 껍질과 함께 자라나며 등장(내부 광선은 자체 회전·맥동) */
     .fx-cracklight { position:absolute; left:50%; top:50%; z-index:1; transform:translate(-50%,-50%) scale(.3); opacity:0; animation:fxlight .7s steps(6) forwards; }
+    /* 🥚 펫알·무지개알 오픈: 틈새 빛을 은은·연하게(작고 흐리게, 쏟아지는 파문 제거) */
+    .fx-cracklight.soft { animation:fxlightsoft .7s steps(6) forwards; }
+    .fx-cracklight.soft .ll-rays.b { display:none; }
+    .fx-cracklight.soft .ll-rays.a { opacity:.16; }
+    .fx-cracklight.soft .ll-aura { opacity:.17; }
     .fx-pixflash { position:absolute; left:50%; top:50%; z-index:2; transform:translate(-50%,-50%) scale(.4); image-rendering:pixelated; animation:fxpixflash .5s steps(5) forwards; }
     .fx-pixflash .px { display:block; }
     .fx-pixrays { position:absolute; left:50%; top:50%; z-index:0; transform:translate(-50%,-50%); opacity:.5; image-rendering:pixelated; animation:fxpixspin 9s steps(12) infinite; }
     .fx-pixrays .px { display:block; opacity:.55; }
     @keyframes fxlight { 0%{opacity:0;transform:translate(-50%,-50%) scale(.3)} 55%{opacity:.95} 100%{opacity:.8;transform:translate(-50%,-50%) scale(calc(1.6 * var(--lk,1)))} }
+    @keyframes fxlightsoft { 0%{opacity:0;transform:translate(-50%,-50%) scale(.35)} 55%{opacity:.5} 100%{opacity:.4;transform:translate(-50%,-50%) scale(calc(1.12 * var(--lk,1)))} }   /* 연한 빛: 작고 흐리게 */
     @keyframes fxpixflash { 0%{opacity:1;transform:translate(-50%,-50%) scale(.4) rotate(0)} 100%{opacity:0;transform:translate(-50%,-50%) scale(2.6) rotate(45deg)} }
     @keyframes fxpixspin { to{ transform:translate(-50%,-50%) rotate(360deg); } }
     /* 모션 최소화: 오오라·광선·트윙클 정지(정적으로만 표시) */

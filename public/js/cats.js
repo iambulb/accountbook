@@ -1576,6 +1576,8 @@
     function rainbowEggStage(stage, opt){ return pxSvg([M_EGG,M_EGG_C1,M_EGG_C2][stage]||M_EGG, EGG_PAL_RB, opt); }
     // 3번째 탭: 크게 갈라진 알 + 틈새로 새어나오는 등급색 빛(L=등급색). rainbow면 껍질은 무지갯빛 유지.
     function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); if(rainbow) pal.X='RAINBOW'; return pxSvg(M_EGG_C3, pal, opt); }   // 무지개알 열 때: 테두리(X)까지 무지개색
+    // 등급색을 흰빛 쪽으로 섞어 '연하게'(파스텔) — 오픈 순간 틈새 빛을 은은하게. hex(#rrggbb) 아니면 따뜻한 기본 빛.
+    function softTier(hex){ if(typeof hex!=='string'||hex[0]!=='#'||hex.length<7) return '#fff3c8'; const p=i=>parseInt(hex.substr(i,2),16), m=v=>Math.round(v+(255-v)*0.55), h=v=>('0'+m(v).toString(16)).slice(-2); return '#'+h(p(1))+h(p(3))+h(p(5)); }
     // 🪺 10연차 둥지 — 위에서 내려다보는(top-down) 타원 바구니(96×112, 2배 해상도). 엮인 짚 림 + 나뭇가지·흙·이끼(M/m/g), 어두운 구멍에 알이 담김. 앞호(M_NEST_FRONT)가 아래쪽 알을 덮어 담긴 느낌. PIL 라이트/다크 검수.
     const M_NEST = [
       "................................................................................................",
@@ -5936,11 +5938,12 @@
       _fxT(()=>{
         st.style.color=t.color;   // 열리는 순간부터 등급색 — 빛·픽셀 파티클·버스트·등장이 currentColor로 등급색을 따른다(그 전엔 흰빛이라 등급 스포일러 방지)
         it.classList.remove('fx-preshake','fx-hit','shake','boxshake'); void it.offsetWidth; it.classList.add('fx-tremble');
+        const softC = isEgg && _fx.kind!=='ddeul';   // 🥚 펫알·무지개알: '조금만 덜 열리고' 등급색 빛을 은은·연하게
         if(_fx.kind==='ddeul'){ it.innerHTML=ddeulFxHtml(); fxCrackChips(4); }   // 뜰알: 고양이 얼굴 알이 크게 들썩(꽃도 크게 흔들림)+껍질 조각 튐 후 버스트
-        else if(isEgg){ it.innerHTML=eggCrackSvg(t.color, _fx.rainbow, {h:150}); fxCrackChips(4); }   // 알이 크게 갈라지고 틈새로 등급색 빛
+        else if(isEgg){ it.innerHTML=pxSvg(M_EGG_C2, Object.assign({}, _fx.rainbow?EGG_PAL_RB:EGG_PAL, {L:softTier(t.color)}), {h:150}); fxCrackChips(2); }   // 덜 열린(C2) + 연한 등급색 빛(살짝만 새어나옴)
         else { it.innerHTML=boxOpenSvg(t.color, _fx.rainbow, {h:150}); it.classList.add('fx-ajar'); }   // 박스: 뚜껑 열리고 틈새로 등급색 빛
-        // 갈라진 틈으로 새어나오는 등급색 픽셀 빛 — 은은한 오오라 + 역회전 광선 2겹(둥근 글로우 금지, 도트). 등급↑ 크고 밝게(--lk)
-        st.insertAdjacentHTML('afterbegin','<div class="fx-cracklight" style="color:'+t.color+';--lk:'+lk+'">'+lightLayers({aura:170, rays:220, rainbow:exL})+'</div>');   // 한정=틈새로 새는 빛도 무지개
+        // 갈라진 틈으로 새어나오는 등급색 픽셀 빛 — 도트 오오라(+광선). softC면 작고·연하게(광선 파문 제거).
+        st.insertAdjacentHTML('afterbegin','<div class="fx-cracklight'+(softC?' soft':'')+'" style="color:'+(exL?t.color:(softC?softTier(t.color):t.color))+';--lk:'+(1+rank*(softC?0.07:0.15)).toFixed(2)+'">'+lightLayers({aura:(softC?110:170), rays:(softC?120:220), rainbow:exL})+'</div>');   // 한정=틈새로 새는 빛도 무지개
       }, t0);
       _fxT(()=>{ fxBurst(epic, isEgg, rank); }, t0+700);
       _fxT(fxReveal, t0+700+(isEgg?560:320));   // 알은 껍질 조각이 옆으로 흩어져 앉을 시간을 조금 더 준다
