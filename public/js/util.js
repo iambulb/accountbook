@@ -241,10 +241,10 @@
     ids.forEach(function (id) { if (owned && owned[id]) o++; });
     return { owned: o, total: ids.length, pct: ids.length ? Math.round(o / ids.length * 100) : 0 };
   }
-  // 펫 애정도 레벨(임계 30/120/350/800/1800 — 최대 5레벨, 극악 난이도: 쓰다듬기 3시간당 +1이라 만렙까지 수백 일). 수치는 조정 예정. {level(0~5), next(다음 임계 or null), pct(다음까지 %)}.
+  // 펫 애정도 레벨(임계 1/3/7/14/21 — 최대 5레벨). 하루 1번 쓰다듬기 +1 → 첫 쓰다듬기에 바로 Lv.1, 이후 3·7·14·21일 누적. {level(0~5), next(다음 임계 or null), pct(다음까지 %)}.
   function affectionLevel(aff) {
     aff = Math.max(0, Math.floor(Number(aff) || 0));
-    var TH = [30, 120, 350, 800, 1800], level = 0;
+    var TH = [1, 3, 7, 14, 21], level = 0;
     for (var i = 0; i < TH.length; i++) { if (aff >= TH[i]) level = i + 1; }
     var prev = level > 0 ? TH[level - 1] : 0, next = level < TH.length ? TH[level] : null;
     return { level: level, next: next, pct: next != null ? Math.round((aff - prev) / (next - prev) * 100) : 100 };

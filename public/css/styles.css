@@ -800,6 +800,13 @@
     .heartfx { position:fixed; z-index:60; transform:translate(-50%,-50%); font-size:20px; color:#ff5d7a; pointer-events:none; animation:heartrise .8s ease-out forwards; }
     .heartfx .px { display:block; }   /* 픽셀 하트(heartSvg) 렌더 */
     @keyframes heartrise { 0%{ opacity:0; transform:translate(-50%,-50%) scale(.6);} 25%{ opacity:1;} 100%{ opacity:0; transform:translate(-50%,-160%) scale(1.1);} }
+    /* 💗 애정 레벨업 "UP!" — 하트 옆에서 두둥(팝 오버슈트→상승→페이드). 분홍 픽셀 + 크리스프 진분홍 외곽선(0 blur). */
+    .lvlup { position:fixed; z-index:62; transform:translate(-50%,-50%); pointer-events:none; will-change:transform,opacity; image-rendering:pixelated;
+      filter:drop-shadow(1px 0 #a8235c) drop-shadow(-1px 0 #a8235c) drop-shadow(0 1px #a8235c) drop-shadow(0 -1px #a8235c);
+      animation:lvlupPop 1.15s cubic-bezier(.34,1.56,.64,1) forwards; }
+    .lvlup .px { display:block; image-rendering:pixelated; }
+    @keyframes lvlupPop { 0%{ opacity:0; transform:translate(-50%,-50%) scale(.2) rotate(-8deg);} 32%{ opacity:1; transform:translate(-50%,-64%) scale(1.28) rotate(3deg);} 48%{ transform:translate(-50%,-70%) scale(1.0) rotate(0);} 78%{ opacity:1; transform:translate(-50%,-84%) scale(1.0);} 100%{ opacity:0; transform:translate(-50%,-104%) scale(.92);} }
+    @media (prefers-reduced-motion: reduce){ .lvlup { animation:lvlupFade .9s ease-out forwards; } @keyframes lvlupFade { 0%{opacity:0} 15%{opacity:1} 75%{opacity:1} 100%{opacity:0; transform:translate(-50%,-90%)} } }
     /* 거래 검색 버튼 · 빠른입력 칩 */
     .chip.srch { margin-left:auto; display:inline-flex; align-items:center; gap:4px; }
     .chip.srch svg { width:14px; height:14px; }
@@ -1108,11 +1115,15 @@
     .fx-ddeulegg.shake .fx-ddflower { animation:fxflwswing .44s ease; }
     .fx-ddeulegg.fx-tremble .fx-ddflower { animation:fxflwswing .2s ease infinite; }
     @keyframes fxflwswing { 0%,100%{transform:rotate(0)} 14%{transform:rotate(-27deg)} 40%{transform:rotate(24deg)} 64%{transform:rotate(-15deg)} 85%{transform:rotate(8deg)} }
-    /* 🌈 뜰알: 알 위쪽에 무지개가 스르르 뜬다 */
-    /* 무지개: 이전보다 ~3배 크게 + 밑동에서 '스르르'(천천히) 피어오르듯 서서히 등장(펫알 무지개알 승급과 같은 2번째 탭에 트리거) */
-    .fx-ddrainbow { position:absolute; left:50%; top:4%; transform:translateX(-50%); transform-origin:50% 100%; z-index:1; line-height:0; opacity:0; pointer-events:none; animation:fxddrb 2.6s cubic-bezier(.2,.7,.25,1) forwards; }
-    .fx-ddrainbow .px { display:block; image-rendering:pixelated; height:auto; width:min(220vw,900px); opacity:.9; }
-    @keyframes fxddrb { 0%{opacity:0; transform:translateX(-50%) scale(.5);} 55%{opacity:.85;} 100%{opacity:1; transform:translateX(-50%) scale(1);} }
+    /* ☁️ 뜰알: 위쪽 하늘에 구름 몇 개가 천천히 흐른다 */
+    .fx-ddclouds { position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none; animation:fxfade .5s ease; }
+    .fx-ddcloud { position:absolute; left:0; image-rendering:pixelated; opacity:.9; will-change:transform; animation:fxddclouddrift var(--d,34s) linear infinite; }
+    .fx-ddcloud .px { display:block; }
+    @keyframes fxddclouddrift { from{ transform:translateX(-24vw);} to{ transform:translateX(120vw);} }
+    /* 🌈 뜰알: 화면 안에서 양옆까지 감싸는 둥근(반원) 아치가 '왼→오로 펼쳐지듯' 등장(펫알 무지개알 승급과 같은 2번째 탭에 트리거) */
+    .fx-ddrainbow { position:absolute; left:50%; bottom:42%; transform:translateX(-50%); z-index:1; line-height:0; pointer-events:none; clip-path:inset(0 100% 0 0); animation:fxddraw 1.7s ease-out .12s forwards; }
+    .fx-ddrainbow .px { display:block; image-rendering:pixelated; height:auto; width:min(96vw,470px); opacity:.88; }
+    @keyframes fxddraw { from{ clip-path:inset(0 100% 0 0);} to{ clip-path:inset(0 0 0 0);} }
     /* 🦋 뜰알: 나비 5마리가 알 주변을 팔랑팔랑 날아다닌다(배너 나비 재사용) */
     .fx-ddbflies { position:absolute; inset:0; z-index:3; pointer-events:none; }
     .fx-ddbfly { position:absolute; left:50%; top:50%; image-rendering:pixelated; animation:fxddfly var(--d,7s) ease-in-out infinite; }
@@ -1123,7 +1134,7 @@
     .fx-ddbfly-3 { margin:96px 0 0 128px; }
     .fx-ddbfly-4 { margin:-40px 0 0 -128px; }
     @keyframes fxddfly { 0%,100%{transform:translate(0,0)} 25%{transform:translate(16px,-13px)} 50%{transform:translate(28px,7px)} 75%{transform:translate(9px,17px)} }
-    @media (prefers-reduced-motion: reduce){ .fx-ddbfly, .fx-ddbfly .bf-wing, .fx-ddrainbow { animation:none; } .fx-ddrainbow { opacity:1; } }
+    @media (prefers-reduced-motion: reduce){ .fx-ddbfly, .fx-ddbfly .bf-wing, .fx-ddrainbow, .fx-ddcloud { animation:none; } .fx-ddrainbow { opacity:1; clip-path:none; } }
     .shopcard.ddeul-card .thumb .px { height:84px; width:auto; }   /* 샵 카드에서 알이 작아 보이지 않게 썸네일 꽉 채움 */
     .fx-egg.pop { animation:fxpop .4s cubic-bezier(.2,1.4,.4,1), fxfloat 2.2s ease-in-out .4s infinite; }
     .fx-box.pop { animation:fxpop .4s cubic-bezier(.2,1.4,.4,1); }

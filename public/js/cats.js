@@ -3487,6 +3487,12 @@
       const el=document.createElement('div'); el.className='heartfx'; el.innerHTML=(typeof heartSvg==='function')?heartSvg({h:22}):'❤';
       el.style.left=cx+'px'; el.style.top=cy+'px'; document.body.appendChild(el); setTimeout(()=>{ el.remove(); }, 820);
       if(typeof likeBurst==='function') likeBurst(cx,cy); }
+    // 💗 애정 레벨업 연출: 하트 오른쪽 옆에 분홍 픽셀 "UP!" 이 두둥(팝 오버슈트+상승) 하고 사라짐.
+    function affLevelFx(x,y){
+      const el=document.createElement('div'); el.className='lvlup'; el.innerHTML=(typeof upSvg==='function')?upSvg({h:18}):'UP!';
+      el.style.left=((x||innerWidth/2)+22)+'px'; el.style.top=((y||innerHeight/2)-4)+'px';
+      document.body.appendChild(el); setTimeout(()=>{ el.remove(); }, 1200);
+    }
     // ❤ 좋아요 팝: (cx,cy) 근처에서 작은 픽셀 하트들이 위쪽 부채꼴로 '뿅' 튀어올랐다 사라짐. prefers-reduced-motion이면 생략.
     function likeBurst(cx,cy){
       if(typeof heartSvg!=='function') return;
@@ -3539,7 +3545,7 @@
       }).then(res=>{ if(res&&res.committed&&did){ heartFx(x,y);   // 실제 쓰다듬었을 때만 하트 액션
         const dGold=(_affLevelUp&&_affLevelUp.gold)||0;
         rewardFly(x, y, PET_PET_REWARD, dGold, beforeCoins, beforeGold);   // 은화(+만렙 금화)가 지갑으로 스르르 날아가며 카운트업
-        if(_affLevelUp){ const g=_affLevelUp.gold; toast('❤ '+catName(_affLevelUp.id)+' 애정 레벨 '+_affLevelUp.level+(g?' · 만렙! 금화 +'+g:'')+' · 은화 +'+PET_PET_REWARD); _affLevelUp=null; }
+        if(_affLevelUp){ affLevelFx(x,y); const g=_affLevelUp.gold; toast('❤ '+catName(_affLevelUp.id)+' 애정 레벨 '+_affLevelUp.level+(g?' · 만렙! 금화 +'+g:'')+' · 은화 +'+PET_PET_REWARD); _affLevelUp=null; }
         else toast('❤ '+catName(id)+' 쓰다듬기 · 애정 +1 · 은화 +'+PET_PET_REWARD); } });
     }
     function petGrabDown(e){
@@ -5125,11 +5131,17 @@
     // 🌈🦋 뜰알 전용 연출 — 알 위쪽에 픽업 배너의 무지개가 '스르르'(천천히) 크게 뜨고, 배너의 나비 5마리가 알 주변을 팔랑팔랑 날아다닌다.
     //   펫알의 무지개알 승급(maybeRainbowUpgrade)과 '같은 타이밍'(2번째 탭)에 등장 — 처음부터 보이지 않게. 중복 생성 방지.
     function ddeulPickupFx(st){ if(!st || st.querySelector('.fx-ddrainbow')) return;
-      st.insertAdjacentHTML('afterbegin','<div class="fx-ddrainbow" aria-hidden="true">'+rainbowArcSvg({cols:63,rows:11})+'</div>');
+      // ☁️ 흐르는 구름 몇 개(위쪽 하늘)
+      const CL=[{t:8,w:2,tn:'w',h:32,d:34,dl:-6},{t:18,w:1,tn:'b',h:22,d:47,dl:-27},{t:4,w:0,tn:'w',h:40,d:28,dl:-15},{t:25,w:1,tn:'w',h:18,d:56,dl:-41}];
+      let c=''; CL.forEach(function(o){ c+='<span class="fx-ddcloud" style="top:'+o.t+'%;--d:'+o.d+'s;animation-delay:'+o.dl+'s">'+cloudSvg(o.w,o.tn,{h:o.h})+'</span>'; });
+      st.insertAdjacentHTML('afterbegin','<div class="fx-ddclouds" aria-hidden="true">'+c+'</div>');
+      // 🌈 무지개 — 화면 안에서 양옆까지 감싸는 둥근(반원) 아치가 왼→오로 펼쳐진다
+      st.insertAdjacentHTML('afterbegin','<div class="fx-ddrainbow" aria-hidden="true">'+rainbowArcSvg({cols:41,rows:19})+'</div>');
+      // 🦋 나비 5마리
       const T=['o','b','p','y','o']; let b='';
       for(let i=0;i<5;i++){ b+='<span class="fx-ddbfly fx-ddbfly-'+i+'" style="--d:'+(6.4+i*0.7).toFixed(1)+'s;--fd:'+(0.36+i*0.03).toFixed(2)+'s;animation-delay:'+(-i*0.8).toFixed(1)+'s"><span class="bf-wing">'+butterflySvg(T[i],{h:13+(i%2)*3})+'</span></span>'; }
       st.insertAdjacentHTML('beforeend','<div class="fx-ddbflies" aria-hidden="true">'+b+'</div>');
-      const hint=$('fxHint'); if(hint) hint.textContent='🌈 무지개가 피어나요! 한 번 더 탭!'; }
+      const hint=$('fxHint'); if(hint) hint.textContent='🌈 무지개가 펼쳐져요! 한 번 더 탭!'; }
     // ✨ 반짝이는 도트 스파클(무지개알/박스 대기 연출) — 흰 픽셀 점이 제각기 깜빡이며 흩뿌려짐
     function fxSparkles(n){ let s=''; for(let i=0;i<(n||12);i++){ const x=Math.round(Math.random()*100), y=Math.round(Math.random()*100), del=(Math.random()*1.4).toFixed(2), sc=(0.7+Math.random()*1.2).toFixed(2), du=(0.9+Math.random()*0.9).toFixed(2); s+='<span class="fx-spark" style="left:'+x+'%;top:'+y+'%;--sc:'+sc+';animation-delay:'+del+'s;animation-duration:'+du+'s"></span>'; } return s; }
     // 탭할 때마다 껍질 조각이 사방으로 튀는 연출(단계가 오를수록 더 많이) — 알이 점점 더 깨지는 느낌.

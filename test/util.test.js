@@ -298,14 +298,14 @@ test('dexProgress: 보유/전체/퍼센트', () => {
   assert.deepStrictEqual(U.dexProgress(null, ['a']), { owned: 0, total: 1, pct: 0 });
 });
 
-test('affectionLevel: 임계 30/120/350/800/1800 레벨·다음·진행%(최대 5, 극악)', () => {
-  assert.deepStrictEqual(U.affectionLevel(0), { level: 0, next: 30, pct: 0 });
-  assert.deepStrictEqual(U.affectionLevel(15), { level: 0, next: 30, pct: 50 });
-  assert.deepStrictEqual(U.affectionLevel(30), { level: 1, next: 120, pct: 0 });
-  assert.deepStrictEqual(U.affectionLevel(75), { level: 1, next: 120, pct: 50 });
-  assert.deepStrictEqual(U.affectionLevel(350), { level: 3, next: 800, pct: 0 });
-  assert.deepStrictEqual(U.affectionLevel(800), { level: 4, next: 1800, pct: 0 });
-  assert.deepStrictEqual(U.affectionLevel(1800), { level: 5, next: null, pct: 100 });
+test('affectionLevel: 임계 1/3/7/14/21 레벨·다음·진행%(첫 쓰다듬기에 Lv.1, 최대 5)', () => {
+  assert.deepStrictEqual(U.affectionLevel(0), { level: 0, next: 1, pct: 0 });
+  assert.deepStrictEqual(U.affectionLevel(1), { level: 1, next: 3, pct: 0 });
+  assert.deepStrictEqual(U.affectionLevel(2), { level: 1, next: 3, pct: 50 });
+  assert.deepStrictEqual(U.affectionLevel(3), { level: 2, next: 7, pct: 0 });
+  assert.deepStrictEqual(U.affectionLevel(7), { level: 3, next: 14, pct: 0 });
+  assert.deepStrictEqual(U.affectionLevel(14), { level: 4, next: 21, pct: 0 });
+  assert.deepStrictEqual(U.affectionLevel(21), { level: 5, next: null, pct: 100 });
   assert.deepStrictEqual(U.affectionLevel(9999), { level: 5, next: null, pct: 100 });
 });
 
