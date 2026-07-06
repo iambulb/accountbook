@@ -872,7 +872,14 @@
     /* 수집형 인벤토리 — 5열 그리드(세로로 길게 나열, 시트가 세로 스크롤). 축소 타일: 초상 + 이름 + 애정레벨, 상태는 테두리+뱃지. */
     .catchips { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:7px; padding-bottom:2px; align-items:start; }
     /* 4행 초과 시 내부 스크롤(높이는 JS가 정확히 4행으로 설정). overflow-x:hidden 필수 — overflow-y만 주면 스펙상 overflow-x가 auto로 계산돼 좌우로 드리프트한다. touch-action/overscroll로 바깥 시트 스크롤과 안 싸우게. */
-    .catchips.scroll4 { overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; touch-action:pan-y; -webkit-overflow-scrolling:touch; }
+    /* + '인벤토리 트레이' 포인트: 연한 배경 패널 + 안쪽 그림자 + 얇은 스크롤바로 "여기가 스크롤되는 인벤토리 영역"임을 구분. 패딩은 fitPetGridRows가 높이 계산에 반영. */
+    .catchips.scroll4 { box-sizing:border-box; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; touch-action:pan-y; -webkit-overflow-scrolling:touch;
+      background:color-mix(in srgb,var(--soft) 70%,transparent); border:1px solid var(--bd); border-radius:14px; padding:9px; margin-top:2px;
+      box-shadow:inset 0 3px 6px -4px rgba(0,0,0,.22), inset 0 -3px 6px -4px rgba(0,0,0,.22);
+      scrollbar-width:thin; scrollbar-color:var(--bd) transparent; }
+    .catchips.scroll4::-webkit-scrollbar { width:6px; }
+    .catchips.scroll4::-webkit-scrollbar-thumb { background:var(--bd); border-radius:3px; }
+    .catchips.scroll4::-webkit-scrollbar-track { background:transparent; }
     .catchip { position:relative; box-sizing:border-box; background:var(--card); border:1.5px solid var(--bd); border-radius:12px; padding:5px 4px 7px; text-align:center; transition:transform .08s, border-color .12s, background .12s; cursor:pointer; }
     .catchip .cpic { width:100%; aspect-ratio:1; box-sizing:border-box; background:var(--soft); border-radius:9px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
     /* 등급색 테두리(펫이 담긴 rect) — 안쪽 .cpic에 두께감 있는 등급색(흰색 금지=중립 회색). 바깥 .catchip 테두리는 선택상태(on/elsewhere) 유지. */
@@ -1273,6 +1280,45 @@
                        50%{ opacity:.92; transform:translate(calc(-50% + var(--tx,0px)),calc(-50% + var(--ty,0px))) scale(1); } }
     .fx-tier { position:relative; z-index:2; font-size:22px; font-weight:900; letter-spacing:.02em; }
     .fx-name { position:relative; z-index:2; color:#fff; font-size:17px; font-weight:800; margin-top:-6px; }
+    /* ===== 🥚×10 10연차 연출 (.ten-*) — 기존 .fx-*·.pkscene·.fx-cat·.fx-ddbfly 재사용, 오케스트레이션 레이어만 추가 ===== */
+    .ten-wrap { position:absolute; inset:0; z-index:2; overflow:hidden; }
+    .ten-wrap .pkscene { position:absolute; inset:0; }
+    .ten-wrap .pk-rainbow { opacity:0; }                                   /* 하늘 무지개 기본 숨김 */
+    .ten-wrap.rainbow-on .pk-rainbow { opacity:1; animation:ten-rbdraw 1.6s ease-out both; }   /* 탭2: 신화/한정 있으면 스르르 */
+    .ten-nest { position:absolute; left:50%; bottom:8%; transform:translateX(-50%); z-index:3; width:min(88vw,360px); display:flex; align-items:flex-end; justify-content:center; }
+    .ten-nest.drop { animation:ten-drop .9s cubic-bezier(.2,.8,.3,1) both; }
+    .ten-nest.shake { animation:ten-shake .46s ease; }
+    .ten-nestart { position:absolute; left:50%; bottom:-3%; transform:translateX(-50%); width:114%; z-index:0; line-height:0; pointer-events:none; }
+    .ten-nestart .px { display:block; width:100%; height:auto; image-rendering:pixelated; filter:drop-shadow(0 8px 14px rgba(0,0,0,.42)); }
+    .ten-grid { position:relative; z-index:1; display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:5px 24px; padding:0 9% 10%; }
+    .ten-egg { position:relative; display:flex; align-items:flex-end; justify-content:center; min-height:54px; cursor:pointer; }
+    .ten-egg .px { display:block; image-rendering:pixelated; filter:drop-shadow(0 4px 6px rgba(0,0,0,.3)); }
+    .ten-egg.shake { animation:fxshake .44s ease; transform-origin:50% 90%; }
+    .ten-egg.hit { animation:fxhit .5s ease; }
+    .ten-egg.open .px { filter:drop-shadow(0 0 7px currentColor) drop-shadow(0 4px 6px rgba(0,0,0,.3)); }
+    .ten-crlight { position:absolute; left:50%; top:38%; width:0; height:0; z-index:2; pointer-events:none; }
+    .ten-eggfx { position:absolute; inset:0; z-index:3; pointer-events:none; }
+    .ten-bflies { position:absolute; left:50%; top:42%; width:0; height:0; z-index:4; pointer-events:none; }
+    .ten-bfly { top:0; left:0; }
+    /* 카메오(알별) — .fx-cat 변형: left=알 중심(JS 주입), from/to·poke를 펫 크기 비례로 */
+    .ten-cat.fxc-l { --from:calc(-54vw - var(--cat)); --to:calc(var(--cat) * -0.60); --poke:calc(var(--cat) * 0.16); }
+    .ten-cat.fxc-r { --from:calc(54vw + var(--cat));  --to:calc(var(--cat) *  0.60); --poke:calc(var(--cat) * -0.16); }
+    .ten-hint { position:absolute; left:0; right:0; bottom:2%; z-index:5; text-align:center; color:#fff; font-size:14px; font-weight:800; opacity:.92; animation:fxblink 1s ease-in-out infinite; pointer-events:none; }
+    .ten-count { position:relative; z-index:4; color:#fff; font-size:13px; font-weight:800; opacity:.82; margin-bottom:2px; letter-spacing:.06em; }
+    .ten-nexthint { position:relative; z-index:2; color:#fff; font-size:13px; font-weight:700; opacity:.78; margin-top:4px; animation:fxblink 1.2s ease-in-out infinite; }
+    .ten-card { cursor:pointer; }
+    .ten-final .ten-nest { bottom:13%; }
+    .ten-fintitle { position:absolute; left:0; right:0; top:11%; z-index:4; text-align:center; }
+    .ten-takebtn { position:absolute; left:50%; bottom:4%; transform:translateX(-50%); z-index:6; }
+    .ten-bob { display:inline-block; animation:ten-bob 1.8s ease-in-out infinite; }
+    .ten-bob .px, .ten-bob .catpx { display:block; image-rendering:pixelated; }
+    @keyframes ten-drop { 0%{ transform:translate(-50%,-135%); opacity:0; } 55%{ opacity:1; } 80%{ transform:translate(-50%,3%); } 100%{ transform:translate(-50%,0); opacity:1; } }
+    @keyframes ten-shake { 0%,100%{ transform:translate(-50%,0) rotate(0); } 20%{ transform:translate(-51.2%,0) rotate(-1.4deg); } 55%{ transform:translate(-48.8%,0) rotate(1.4deg); } 80%{ transform:translate(-50.5%,0) rotate(-.6deg); } }
+    @keyframes ten-rbdraw { 0%{ opacity:0; clip-path:inset(0 100% 0 0); } 100%{ opacity:1; clip-path:inset(0 0 0 0); } }
+    @keyframes ten-bob { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-2px); } }
+    @media (prefers-reduced-motion: reduce){ .ten-nest.drop, .ten-nest.shake, .ten-bob, .ten-bfly, .ten-bfly .bf-wing { animation:none; } .ten-wrap.rainbow-on .pk-rainbow { animation:none; opacity:1; } }
+    body.lite .ten-bob, body.lite .ten-bfly, body.lite .ten-bfly .bf-wing { animation:none !important; }
+    body.lite .ten-eggfx, body.lite .ten-crlight .ll-rays { display:none !important; }
     /* 🔤 픽셀(도트) 텍스트 이미지 — 리빌 등급명/이름. 확대해도 안 뭉개지게 pixelated + 살짝 위아래 흔들림(가독성 유지). */
     .pxtext { display:block; margin:0 auto; image-rendering:pixelated; }
     .fx-tier .pxtext { filter:drop-shadow(0 2px 3px rgba(0,0,0,.45)); }

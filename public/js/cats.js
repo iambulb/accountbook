@@ -3897,11 +3897,12 @@
     // 펫 그리드를 정확히 4행 높이로 제한(초과 시 내부 스크롤). 카드 높이는 aspect-ratio라 이미지 로딩과 무관하게 즉시 확정.
     function fitPetGridRows(el){
       const first=el.querySelector('.catchip'); const rows4=4; if(!first){ el.style.maxHeight=''; el.classList.remove('scroll4'); return; }
-      const cs=getComputedStyle(el);   // 열수·간격을 CSS에서 읽어 하드코딩 결합 제거(그리드 바꿔도 자동)
-      const cols=(cs.gridTemplateColumns||'').split(' ').filter(Boolean).length||5;
-      const gap=parseFloat(cs.rowGap||cs.gap)||7;
+      const cols=(getComputedStyle(el).gridTemplateColumns||'').split(' ').filter(Boolean).length||5;
       if(Math.ceil(el.childElementCount/cols)<=rows4){ el.style.maxHeight=''; el.classList.remove('scroll4'); return; }
-      const ch=first.offsetHeight; if(ch>0){ el.style.maxHeight=(ch*rows4+gap*(rows4-1)+2)+'px'; el.classList.add('scroll4'); }
+      el.classList.add('scroll4');   // 트레이 패딩·테두리가 적용된 뒤 높이 계산(패딩만큼 4행이 잘리지 않게)
+      const cs=getComputedStyle(el), gap=parseFloat(cs.rowGap||cs.gap)||7;
+      const padY=(parseFloat(cs.paddingTop)||0)+(parseFloat(cs.paddingBottom)||0)+(parseFloat(cs.borderTopWidth)||0)+(parseFloat(cs.borderBottomWidth)||0);
+      const ch=first.offsetHeight; if(ch>0) el.style.maxHeight=(ch*rows4+gap*(rows4-1)+padY+2)+'px';
     }
     function catHomeHtml(){
       reconcilePets();   // 3시간 지난 그릇 비우고 똥 정산(멱등)
@@ -5708,7 +5709,7 @@
       const wr=wrap.getBoundingClientRect(), er=eggEl.getBoundingClientRect();
       const cx=wr.width?((er.left+er.width/2 - wr.left)/wr.width*100):50;
       el.style.left=Math.max(4,Math.min(96,cx)).toFixed(2)+'%';
-      el.style.setProperty('--floor', (eggEl.offsetTop+eggEl.offsetHeight)+'px');
+      el.style.setProperty('--floor', Math.round(er.bottom - wr.top)+'px');   // 알 바닥의 wrap 기준 절대 Y(offsetParent 불일치 방지)
       const fpKey=isPet?(id+':fxwalk'):'_gc', fpDef=(isPet&&typeof PET_FOOT_PAD!=='undefined')?PET_FOOT_PAD:(typeof GACHACAT_FOOT_DEFAULT!=='undefined'?GACHACAT_FOOT_DEFAULT:0.1);
       el.style.setProperty('--foot', (typeof _footPad!=='undefined'&&_footPad[fpKey]!=null?_footPad[fpKey]:fpDef).toFixed(3));
       if(isPet){ ensurePetArt(id); el.innerHTML='<div class="fxc-in">'+catActorHTML(id, size)+'</div>'; }
@@ -5751,7 +5752,7 @@
       if(_fx10.stage===1) tenTapShake(1);
       else if(_fx10.stage===2) tenTap2();
     }
-    function tenTapShake(stage){ const nest=document.querySelector('.ten-nest'); if(nest){ nest.classList.remove('shake'); void nest.offsetWidth; nest.classList.add('shake'); }
+    function tenTapShake(stage){ const nest=document.querySelector('.ten-nest'); if(nest){ nest.classList.remove('drop','shake'); void nest.offsetWidth; nest.classList.add('shake'); }
       _fx10.items.forEach(function(it){ const el=$('tenEgg'+it.i); if(!el) return; el.innerHTML=tenEggSvg(it, stage);
         el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); });
       const hint=$('tenHint'); if(hint && stage<2) hint.textContent='한 번 더!'; }
