@@ -4978,7 +4978,7 @@
     function monthLabelKo(){ const n=parseInt(kstMonthKey().slice(6),10)||0; return n+'월'; }
     // 가챠 구분별 짧은 설명(뜰알/펫알/랜덤박스/무지개) — 해당 탭에 맞는 한 줄.
     function gachaNoteFor(tab){
-      if(tab==='ddeul')   return '🌱 <b class="tier-rainbow">한정 펫</b>은 오직 뜰알에서만! 열면 <b>금화 1개</b> 지급(중복 펫은 20% 은화 환급).';
+      if(tab==='ddeul')   return '🌱 <b class="tier-rainbow">한정 펫</b>은 오직 뜰알에서만! 살 때 <b>금화 1개를 소모</b>해요(펫알과 달리 금화 보상 없음, 중복 펫은 20% 은화 환급).';
       if(tab==='box')     return '🎁 열면 <b>가구·바닥·벽지</b>가 랜덤으로 — <b>특별↑ 장식</b>도 여기서. 열 때마다 <b>금화 1개</b>.';
       if(tab==='rainbow') return '✨ <b class="tier-rainbow">무지개</b>는 <b>금화</b>로 사서 <b>특별↑을 확정</b>으로 뽑아요(금화 보상 없음).';
       return '🥚 열면 <b>고양이</b>가 랜덤으로 — <b>특별↑</b>도 여기서. 열 때마다 <b>금화 1개</b>(중복 펫은 20% 은화 환급).';   // egg
@@ -6119,7 +6119,8 @@
     }
     // 진입점 — items=[{id,tier,kind,rainbow,dup,refund,isNew}]×10
     function runTenGachaFx(list, opts){ opts=opts||{}; _fxClear(); _fx=null;
-      const items=(list||[]).slice(0,TEN_N).map(function(it,i){ return Object.assign({ kind:'egg' }, it, { i:i, col:i%TEN_COLS, row:(i/TEN_COLS|0), side:(i%TEN_COLS===0?'l':'r') }); });
+      // side = 알의 '실제 화면 위치'(TEN_POS 흩뿌림 x) 기준 좌/우 → 카메오가 가까운 쪽에서 걸어와 알을 지나치지 않게(격자 i%2는 흩뿌림과 안 맞아 반대편서 걸어와 다른 알을 지나쳐 치던 버그).
+      const items=(list||[]).slice(0,TEN_N).map(function(it,i){ return Object.assign({ kind:'egg' }, it, { i:i, col:i%TEN_COLS, row:(i/TEN_COLS|0), side:((TEN_POS[i]&&TEN_POS[i][0]<50)?'l':'r') }); });
       _fx10={ items:items, order:tenShuffle(items.length), stage:0, busy:true, phase:'nest', ridx:0, preview:!!opts.preview,
         skyRainbow: items.some(function(x){ return x.tier==='limited'||x.tier==='exclusive'; }) };
       items.forEach(function(x){ if(hasSprite(x.id)) ensurePetArt(x.id); });
