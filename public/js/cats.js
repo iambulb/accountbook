@@ -5632,8 +5632,8 @@
           '<span class="fx-artimg">'+art+'</span>'+
           (_fx.isNew?newBadgeSvg({h:30}):'')+                                          // 🌈 처음 획득: 무지개 픽셀 "NEW" 배지(펫/아이템 위에서 물결)
         '</div>'+
-        '<div class="fx-tier">'+pixelTextHtml(t.name, (t.id==='exclusive'?'RAINBOW':(t.color||'#ffffff')), {h:40, base:11, cls:'fx-pxtier'})+'</div>'+
-        '<div class="fx-name">'+pixelTextHtml((isEggKind(_fx.kind)?catName(_fx.res.id):rewardName(_fx.res)), (_fx.res.tier==='exclusive'?'RAINBOW':(t.color||'#ffffff')), {h:30, base:12, cls:'fx-pxname'})+'</div>'+
+        '<div class="fx-tier">'+pixelTextHtml(t.name, (t.id==='exclusive'?'RAINBOW':(t.color||'#ffffff')), {h:40, base:15, cls:'fx-pxtier'})+'</div>'+
+        '<div class="fx-name">'+pixelTextHtml((isEggKind(_fx.kind)?catName(_fx.res.id):rewardName(_fx.res)), (_fx.res.tier==='exclusive'?'RAINBOW':(t.color||'#ffffff')), {h:30, base:16, cls:'fx-pxname'})+'</div>'+
         '<div class="fx-reward">'+(_fx.gold?'<span class="rw"><span class="ci">'+goldSvg({h:18})+'</span>+1 금화</span>':'')+
           (_fx.dup?'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>+'+_fx.refund+' 은화 (중복)</span>':'')+'</div>'+
         '<button class="btn" onclick="closeFx()">확인</button>'+
