@@ -1528,6 +1528,27 @@
     function rainbowEggStage(stage, opt){ return pxSvg([M_EGG,M_EGG_C1,M_EGG_C2][stage]||M_EGG, EGG_PAL_RB, opt); }
     // 3번째 탭: 크게 갈라진 알 + 틈새로 새어나오는 등급색 빛(L=등급색). rainbow면 껍질은 무지갯빛 유지.
     function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); if(rainbow) pal.X='RAINBOW'; return pxSvg(M_EGG_C3, pal, opt); }   // 무지개알 열 때: 테두리(X)까지 무지개색
+    // 🪺 10연차 둥지(짜인 잔가지 바구니) — 넓고 얕은 그릇, 3톤(잔가지·짚·하이라이트)+외곽선. PIL 라이트/다크 검수 완료. 알 2×5 그리드가 위에 얹힌다. 맨윗줄 비움.
+    const M_NEST = [
+      "....................................",
+      "......KKKKKKKKKKKKKKKKKKKKKKKK......",
+      ".....KKBHSBHSBHSBHSBHSBHSBHSBKK.....",
+      "....KBSHccccccccccccccccccccccHSBK..",
+      "..KBHccccccccccccccccccccccccccHSBK.",
+      ".KBSHcccccccccccccccccccccccHSBK....",
+      ".KBHcccccccccccccccccccccccccBSK....",
+      ".KSBccccccccccccccccccccccccSHBK....",
+      ".KBHSBHSBHSBHSBHSBHSBHSBHSBHBSBK....",
+      "..KBSBHSBHSBHSBHSBHSBHSBHSBHSBK.....",
+      "..KHBSBHSBHSBHSBHSBHSBHSBHSBHBK.....",
+      "...KBHSBHSBHSBHSBHSBHSBHSBHSK.......",
+      "....KBSBHSBHSBHSBHSBHSBHSBK.........",
+      ".....KKBHSBHSBHSBHSBHSBKK...........",
+      ".......KKKKKKKKKKKKKKKK.............",
+      "...................................."
+    ];
+    const NEST_PAL={ K:'#3a2416', B:'#6b4423', S:'#a9793f', H:'#c99a5a', c:'#442b18' };   // 진갈 외곽선·잔가지·짚·하이라이트·안쪽그늘
+    function nestSvg(opt){ return pxSvg(M_NEST, NEST_PAL, opt); }
     // 픽셀 껍질 조각 렌더(A=큰 곡면, B=삼각, C=작은 조각). rainbow면 무지갯빛 껍질.
     // 🌱 뜰알(한정 픽업) — 로그인 메인 아이콘(egg-garden.svg)의 '고양이 얼굴 알' + 뜰(풀밭·흙) 픽셀. 무지개는 rainbowArcSvg 재사용.
     const M_DDEUL=[   // 🥚 뜰알(24×31) — 둥근 계란형(4톤 명암 I·W·S·D + X외곽). 검은 고양이: 귀는 '위로' 향한 둥근 돔형+안쪽귀 음영 H, 눈은 회색 1px(E, 안쪽으로 붙임), 입은 멍때리며 벌린 4px(윗입술 P·안쪽 어둠 Q·양옆 음영 q). 하단+우측하단은 '실루엣까지' 흙(o/R/r/n 4톤)·이끼(m/G/g 3톤)가 섞여 덮이고, 이끼는 우측을 타고 오름. 알 위 꽃 한 송이(F/f/C·Y·t/T).
@@ -5227,8 +5248,8 @@
         h+='<div class="subseg dextabs">'+tabs.map(function(t){ const id=t[0], nm=t[1], n=PET_CATALOG.filter(c=>id==='all'||(c.species||'cat')===id).length;
           return '<button class="'+(_dexTab===id?'on':'')+'" onclick="setDexTab(\''+id+'\')">'+escapeHtml(nm)+' <b>'+n+'</b></button>'; }).join('')+'</div>';
         const cell=function(c){ const has=!!owned[c.id], lv=has?affectionLevel(owned[c.id].affection).level:0;
-          return '<div class="dexcell'+(has?'':' locked')+'" title="'+escapeHtml(has?catName(c.id):'미보유')+'">'+
-            '<div class="dexpic'+(has?' tbring tb-'+(CAT_TIER[c.id]||'normal'):'')+'">'+catFace(c.id,{h:54})+'</div>'+   // 소유 셀만 등급 링(미소유는 스포일러 방지로 중립)
+          return '<div class="dexcell'+(has?' tbring tb-'+(CAT_TIER[c.id]||'normal'):' locked')+'" title="'+escapeHtml(has?catName(c.id):'미보유')+'">'+   // 소유 셀은 등급색을 바깥 라운드 카드 테두리에(미소유는 스포일러 방지로 중립)
+            '<div class="dexpic">'+catFace(c.id,{h:54})+'</div>'+
             '<div class="dexnm">'+(has?catNameSpan(c.id,catName(c.id)):'<span class="q">???</span>')+'</div>'+
             (lv>0?'<div class="dexlv" style="display:inline-flex;gap:1px" aria-label="애정 레벨 '+lv+'">'+heartSvg({h:9}).repeat(lv)+'</div>':'')+
           '</div>'; };
@@ -5642,6 +5663,161 @@
     }
     function closeFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx=null; }
 
+    // ================= 🥚×10 10연차 뽑기 연출 (개발자 미리보기 전용 · 인벤토리 무소모) =================
+    // 단일 뽑기(_fx)와 완전 분리된 _fx10 상태로 구동. 타이머는 전부 _fxT/_fxClear 경유. 배경은 pickupSceneHtml('reveal')(캐시) 재사용.
+    // 흐름: 둥지 하강 → 탭1 흔들 → 탭2 무지개알/나비+하늘무지개 → 탭3 카메오 툭치기·오픈 → 결과 10장(무작위) → 둥지에 펫 10마리 정면.
+    let _fx10=null;
+    const TEN_N=10, TEN_COLS=2;
+    const TEN_DROP=900, TEN_WALK=1800, TEN_TAP=160, TEN_HIT=180, TEN_STEP=1600;   // 길이감 튜닝 손잡이
+    function tenShuffle(n){ const a=Array.from({length:n},(_,i)=>i); for(let i=n-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+    function tenScaleFor(id){ const base=50, s=petScale(id), sc=(s>=2?s*0.5:s); return Math.round(base*Math.max(0.85, Math.min(sc,1.5))); }   // 큰 펫(호랑이·곰)은 배율 반감(뒤 가림 완화), 최대 1.5×
+    function tenCardSceneBg(it){ return it.kind!=='box' && (it.tier==='limited' || it.tier==='exclusive'); }   // 개별카드 픽업 씬 배경 = 신화/한정만
+    function tenEggSvg(it, stage){ const h=52;
+      if(it.kind==='ddeul') return ddeulEggSvg({h:h});
+      if(it.rainbow && it._rbShown) return rainbowEggStage(Math.min(stage,2),{h:h});
+      return eggSvg(stage,{h:h}); }
+    // 둥지 + 2×5 알(또는 피날레 펫) 그리드
+    function tenNestHtml(items, mode){
+      const cells=items.map(function(it){ let inner;
+        if(mode==='finale'){ inner='<span class="ten-bob" style="animation-delay:'+((it.i%5)*0.13+ (it.col*0.06)).toFixed(2)+'s">'+catFace(it.id,{h:tenScaleFor(it.id),eager:true})+'</span>'; }
+        else { inner=tenEggSvg(it, 0); }
+        return '<div class="ten-egg" id="tenEgg'+it.i+'" data-i="'+it.i+'">'+inner+'</div>'; }).join('');
+      return '<div class="ten-nest'+(mode==='finale'?' finale':'')+'"><div class="ten-nestart">'+nestSvg({h:150})+'</div><div class="ten-grid">'+cells+'</div></div>';
+    }
+    // 알 주변 나비(뜰알 승급) — ddeulPickupFx 나비 루프를 알 셀 기준 소반경으로 스코프
+    function tenEggButterflies(eggEl, it){
+      const N=liteMode()?2:4, T=['o','b','p','y']; let b='';
+      for(let i=0;i<N;i++){ const ang=((i+Math.random()*0.7)/N)*Math.PI*2, rx=20+Math.random()*16, ry=16+Math.random()*16;
+        const mx=Math.round(Math.cos(ang)*rx), my=Math.round(Math.sin(ang)*ry);
+        const hh=9+Math.round(Math.random()*3), dur=(5+Math.random()*4).toFixed(1), del=(-Math.random()*6).toFixed(2);
+        b+='<span class="fx-ddbfly ten-bfly" style="margin:'+my+'px 0 0 '+mx+'px;--d:'+dur+'s;animation-delay:'+del+'s;'+bflyDriftVars(Math.random)+'"><span class="bf-wing">'+butterflySvg(T[i%T.length],{h:hh})+'</span></span>'; }
+      const wrap=document.createElement('span'); wrap.className='ten-bflies'; wrap.innerHTML=b; eggEl.appendChild(wrap);
+    }
+    // 카메오 펫 선정: 한정=픽업 펫(삵·표범), 그 외 전설↑=전설/신화 스프라이트 랜덤
+    function tenCameoPet(it){ if(it.tier==='exclusive'){ const pk=LIMITED_PICKUP.find(pickupExists); if(pk) return pk; }
+      const pool=PET_CATALOG.filter(function(c){ const t=CAT_TIER[c.id]; return (t==='legend'||t==='limited') && hasSprite(c.id); }).map(function(c){ return c.id; });
+      return pool.length?pool[Math.floor(Math.random()*pool.length)]:it.id; }
+    // 카메오 1마리 생성 — fxSpawnCat 클론이되 '그 알'의 가로중심(left%)·바닥(--floor)에 정합
+    function tenSpawnCameo(wrap, it, side, id){
+      const eggEl=$('tenEgg'+it.i); if(!eggEl||!wrap) return;
+      const isPet=!!(id && hasSprite(id));
+      const size=isPet?Math.max(90, Math.min(230, Math.round(120*petScale(id)))):150;
+      const el=document.createElement('div');
+      el.className='fx-cat ten-cat walkin fxc-'+side+(isPet?' fxc-pet':' fxc-gc');
+      el.setAttribute('data-i', it.i); el.style.setProperty('--cat', size+'px');
+      const wr=wrap.getBoundingClientRect(), er=eggEl.getBoundingClientRect();
+      const cx=wr.width?((er.left+er.width/2 - wr.left)/wr.width*100):50;
+      el.style.left=Math.max(4,Math.min(96,cx)).toFixed(2)+'%';
+      el.style.setProperty('--floor', (eggEl.offsetTop+eggEl.offsetHeight)+'px');
+      const fpKey=isPet?(id+':fxwalk'):'_gc', fpDef=(isPet&&typeof PET_FOOT_PAD!=='undefined')?PET_FOOT_PAD:(typeof GACHACAT_FOOT_DEFAULT!=='undefined'?GACHACAT_FOOT_DEFAULT:0.1);
+      el.style.setProperty('--foot', (typeof _footPad!=='undefined'&&_footPad[fpKey]!=null?_footPad[fpKey]:fpDef).toFixed(3));
+      if(isPet){ ensurePetArt(id); el.innerHTML='<div class="fxc-in">'+catActorHTML(id, size)+'</div>'; }
+      else { el.innerHTML='<div class="fxc-in"></div>'; }
+      if(typeof measureFxFoot==='function') measureFxFoot(isPet?id:null, function(fp){ el.style.setProperty('--foot', fp.toFixed(3)); });
+      wrap.appendChild(el);
+    }
+    // 알 오픈(크랙+틈새빛)
+    function tenOpenEgg(it){ const el=$('tenEgg'+it.i); if(!el||it._open) return; it._open=true;
+      const t=tierInfo(it.tier), ex=it.tier==='exclusive';
+      el.classList.add('open'); el.style.color=ex?'':(t.color||'#fff');
+      el.innerHTML=(it.kind==='ddeul'?ddeulEggSvg({h:52}):eggCrackSvg(t.color, !!(it.rainbow&&it._rbShown), {h:52}))+
+        '<span class="ten-crlight">'+lightLayers({aura:64, rays:82, rainbow:ex})+'</span>';
+      el.classList.remove('shake'); void el.offsetWidth; el.classList.add('hit');
+      if(!liteMode()){ const s=document.createElement('span'); s.className='ten-eggfx'; s.innerHTML=fxSparkles(5); el.appendChild(s); }
+    }
+    // 진입점 — items=[{id,tier,kind,rainbow,dup,refund,isNew}]×10
+    function runTenGachaFx(list, opts){ opts=opts||{}; _fxClear(); _fx=null;
+      const items=(list||[]).slice(0,TEN_N).map(function(it,i){ return Object.assign({ kind:'egg' }, it, { i:i, col:i%TEN_COLS, row:(i/TEN_COLS|0), side:(i%TEN_COLS===0?'l':'r') }); });
+      _fx10={ items:items, order:tenShuffle(items.length), stage:0, busy:true, phase:'nest', ridx:0, preview:!!opts.preview,
+        skyRainbow: items.some(function(x){ return x.tier==='limited'||x.tier==='exclusive'; }) };
+      items.forEach(function(x){ if(hasSprite(x.id)) ensurePetArt(x.id); });
+      if(typeof prewarmGachaFxPads==='function') prewarmGachaFxPads();
+      const fx=$('catFx'); if(!fx) return;
+      const rm=reducedMotion();
+      fx.innerHTML='<div class="fx-scrim"></div><div class="ten-wrap" id="tenWrap" role="button" tabindex="0" onclick="tenTap()">'+
+        pickupSceneHtml('reveal')+tenNestHtml(items, 'eggs')+
+        '<div class="ten-hint" id="tenHint">'+(rm?'탭하여 결과 보기':'둥지를 탭하세요')+'</div></div>';
+      fx.className='fx on ten';
+      if(rm){ _fx10.busy=false; return; }
+      const nest=fx.querySelector('.ten-nest'); if(nest) nest.classList.add('drop');
+      _fxT(function(){ _fx10.busy=false; }, TEN_DROP+120);
+    }
+    function tenTap(){ if(!_fx10||_fx10.busy) return;
+      if(_fx10.phase==='reveal'){ tenRevealNext(); return; }
+      if(_fx10.phase!=='nest') return;
+      if(reducedMotion()){ _fx10.busy=true; tenBeginReveal(); return; }
+      _fx10.stage++;
+      if(_fx10.stage>=3){ _fx10.busy=true; tenClimax(); return; }
+      if(_fx10.stage===1) tenTapShake(1);
+      else if(_fx10.stage===2) tenTap2();
+    }
+    function tenTapShake(stage){ const nest=document.querySelector('.ten-nest'); if(nest){ nest.classList.remove('shake'); void nest.offsetWidth; nest.classList.add('shake'); }
+      _fx10.items.forEach(function(it){ const el=$('tenEgg'+it.i); if(!el) return; el.innerHTML=tenEggSvg(it, stage);
+        el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); });
+      const hint=$('tenHint'); if(hint && stage<2) hint.textContent='한 번 더!'; }
+    function tenTap2(){ _fx10.items.forEach(function(it){ if(it.kind==='egg' && it.rainbow) it._rbShown=true; });
+      tenTapShake(2);
+      if(_fx10.skyRainbow){ const w=$('tenWrap'); if(w) w.classList.add('rainbow-on'); }
+      _fx10.items.forEach(function(it){ const el=$('tenEgg'+it.i); if(!el) return;
+        if(it.kind==='egg' && it.rainbow && !liteMode()){ const s=document.createElement('span'); s.className='ten-eggfx'; s.innerHTML=fxSparkles(6); el.appendChild(s); }
+        if(it.kind==='ddeul' && (it.tier==='exclusive' || Math.random()<rbUpgradeChance(it.tier))) tenEggButterflies(el, it); });
+      const hint=$('tenHint'); if(hint) hint.textContent='마지막 탭!'; }
+    function tenClimax(){ const wrap=$('tenWrap'); if(!wrap) return; const hint=$('tenHint'); if(hint) hint.textContent='';
+      const legend=tierRank('legend'), lanes={ l:[], r:[] };
+      _fx10.items.forEach(function(it){ if(tierRank(it.tier)>=legend) lanes[it.side].push(it); });
+      let maxEnd=0;
+      ['l','r'].forEach(function(side){ lanes[side].forEach(function(it, k){ const base=k*TEN_STEP, id=tenCameoPet(it);
+        _fxT(function(){ tenSpawnCameo(wrap, it, side, id); }, base);
+        _fxT(function(){ const el=wrap.querySelector('.ten-cat[data-i="'+it.i+'"]'); if(el){ el.classList.remove('walkin'); el.classList.add('arr','tap'); } }, base+TEN_WALK);
+        _fxT(function(){ tenOpenEgg(it); }, base+TEN_WALK+TEN_TAP);
+        _fxT(function(){ const el=wrap.querySelector('.ten-cat[data-i="'+it.i+'"]'); if(el){ el.classList.remove('tap'); el.classList.add('leave'); } }, base+TEN_WALK+TEN_TAP+TEN_HIT);
+        _fxT(function(){ const el=wrap.querySelector('.ten-cat[data-i="'+it.i+'"]'); if(el) el.remove(); }, base+TEN_WALK+TEN_TAP+TEN_HIT+900);
+        maxEnd=Math.max(maxEnd, base+TEN_WALK+TEN_TAP+TEN_HIT+900); }); });
+      const openAt=Math.max(600, maxEnd?maxEnd-700:600);
+      _fxT(function(){ _fx10.items.forEach(function(it){ if(tierRank(it.tier)<legend) tenOpenEgg(it); }); }, openAt);
+      _fxT(function(){ tenBeginReveal(); }, Math.max(maxEnd, openAt)+800);
+    }
+    function tenBeginReveal(){ _fx10.phase='reveal'; _fx10.ridx=0; _fx10.busy=false; tenShowCard(0); }
+    function tenRevealNext(){ if(_fx10.busy) return; _fx10.ridx++;
+      if(_fx10.ridx>=_fx10.items.length){ tenFinale(); return; } tenShowCard(_fx10.ridx); }
+    function tenShowCard(n){ const it=_fx10.items[_fx10.order[n]]; const fx=$('catFx'); if(!fx) return;
+      const sceneBg=tenCardSceneBg(it);
+      fx.innerHTML='<div class="fx-scrim"></div>'+(sceneBg?pickupSceneHtml('reveal'):'')+tenRevealCardHtml(it, n+1, _fx10.items.length);
+      fx.className='fx on reveal ten-reveal'; }
+    function tenRevealCardHtml(it, n, total){ const t=tierInfo(it.tier), rank=tierRank(it.tier), ex=it.tier==='exclusive', rb=!!it.rainbow;
+      const conf=rb?28:(rank<=0?0:rank<=2?12:20+(rank-2)*8), tw=5+rank*3, sceneBg=tenCardSceneBg(it);
+      return '<div class="fx-reveal ten-card tier-'+t.id+' rank-'+rank+((rb||ex)?' rev-rb':'')+(sceneBg?' rev-scene':'')+'" onclick="tenRevealNext()">'+
+        '<div class="ten-count">'+n+' / '+total+'</div>'+
+        '<div class="fx-art pop"><span class="fx-aurawrap">'+lightLayers({aura:210, rays:250, rainbow:ex})+'</span>'+
+          '<span class="fx-ring"></span><span class="fx-twinkles">'+fxAuraTwinkles(tw, ex)+'</span><span class="fx-frame"></span>'+
+          '<span class="fx-artimg">'+catFace(it.id,{h:118,eager:true})+'</span>'+(it.isNew?newBadgeSvg({h:28}):'')+'</div>'+
+        '<div class="fx-tier">'+pixelTextHtml(t.name, (ex?'RAINBOW':(t.color||'#ffffff')), {h:38, base:11})+'</div>'+
+        '<div class="fx-name">'+pixelTextHtml(catName(it.id), (ex?'RAINBOW':(t.color||'#ffffff')), {h:28, base:12})+'</div>'+
+        '<div class="fx-reward">'+(it.dup?'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>+'+it.refund+' 은화 (중복)</span>':'')+'</div>'+
+        '<div class="ten-nexthint">'+(n<total?'탭하여 다음 ('+n+'/'+total+')':'탭하여 마무리')+'</div>'+
+        '<div class="fx-confetti">'+(conf?fxConfetti(conf):'')+'</div></div>'; }
+    function tenFinale(){ _fx10.phase='finale'; _fx10.busy=false; const fx=$('catFx'); if(!fx) return;
+      fx.innerHTML='<div class="fx-scrim"></div><div class="ten-wrap ten-final'+(_fx10.skyRainbow?' rainbow-on':'')+'">'+
+        pickupSceneHtml('reveal')+tenNestHtml(_fx10.items, 'finale')+
+        '<div class="ten-fintitle">'+pixelTextHtml('10연차 완료!', '#ffffff', {h:28, base:12})+'</div>'+
+        '<button class="btn ten-takebtn" onclick="closeTenFx()">펫 데려가기</button></div>';
+      fx.className='fx on reveal ten-finale'; }
+    function closeTenFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx10=null; }
+    // 개발자 미리보기: 시나리오별 강제 결과 10개 → 연출만 재생(인벤토리 무소모)
+    function devPreview10(scenario, kind){ if(!isDev()) return; kind=kind||'egg';
+      const map=gachaCatTierMap(), fullMap=effCatTier();
+      function rollOne(){ const r=(kind==='ddeul')?rollFromPool(fullMap, DDEUL_TIERS):rollFromPool(map); return r||{ id:(Object.keys(fullMap)[0]||'cat_mackerel'), tier:'normal' }; }
+      function memberOf(tier){ if(tier==='exclusive'){ const pk=LIMITED_PICKUP.find(pickupExists); if(pk) return pk; } const r=pickTierMember(fullMap, tier); return r?r.id:(Object.keys(fullMap)[0]||'cat_mackerel'); }
+      let raw=[];
+      if(scenario==='legendUp'){ const tiers=(kind==='ddeul')?['legend','limited','exclusive']:['legend','limited']; for(let i=0;i<10;i++){ const t=tiers[Math.floor(Math.random()*tiers.length)]; raw.push({ id:memberOf(t), tier:t }); } }
+      else { for(let i=0;i<10;i++) raw.push(rollOne());
+        if(scenario==='oneLimited') raw[Math.floor(Math.random()*10)]={ id:memberOf('limited'), tier:'limited' };
+        else if(scenario==='oneExclusive') raw[Math.floor(Math.random()*10)]={ id:memberOf('exclusive'), tier:'exclusive' }; }
+      const list=raw.map(function(r){ const dup=ownsCat(r.id);
+        return { id:r.id, tier:r.tier, kind:kind, rainbow:(kind==='egg' && Math.random()<rbUpgradeChance(r.tier)), dup:dup, refund:dup?petDupRefund(r.id):0, isNew:!dup }; });
+      closeSheet(); _fx=null; runTenGachaFx(list, { preview:true });
+    }
+
     // ================= 개발자 패널: 재화관리(연출/다마고치 테스트 · 재화 지급) =================
     function openDevGacha(){
       if(!isDev()) return;
@@ -5653,6 +5829,16 @@
       h+='<div class="tx-sub" style="margin:8px 2px 6px;">랜덤박스</div><div class="chip-row">'+previewTiers.map(t=>'<button class="chip" onclick="devPreview(\'box\',\''+t.id+'\')"><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
       // 🌱 뜰알(한정 픽업) — 뜰알 기준 연출 미리보기. 한정은 뜰알에서만 나오므로 '한정' 연출은 여기서 확인(뜰+하늘+무지개, 픽업 펫=삵·표범).
       h+='<div class="tx-sub" style="margin:8px 2px 6px;">🌱 뜰알(한정 픽업)</div><div class="chip-row">'+TIERS.map(t=>'<button class="chip" onclick="devPreview(\'ddeul\',\''+t.id+'\')"><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
+      // 🥚×10 10연차 연출 확인(개발자 미리보기 전용) — 시나리오별 강제 결과로 연출만 재생. 한정(exclusive)은 뜰알에서만.
+      h+='<div class="tx-sub" style="margin:12px 2px 6px;">🥚×10 10연차(펫알)</div><div class="chip-row">'+
+        '<button class="chip" onclick="devPreview10(\'random\',\'egg\')">랜덤</button>'+
+        '<button class="chip" onclick="devPreview10(\'legendUp\',\'egg\')">전부 전설↑</button>'+
+        '<button class="chip" onclick="devPreview10(\'oneLimited\',\'egg\')">신화 1개</button></div>';
+      h+='<div class="tx-sub" style="margin:8px 2px 6px;">🌱×10 10연차(뜰알)</div><div class="chip-row">'+
+        '<button class="chip" onclick="devPreview10(\'random\',\'ddeul\')">랜덤</button>'+
+        '<button class="chip" onclick="devPreview10(\'legendUp\',\'ddeul\')">전부 전설↑</button>'+
+        '<button class="chip" onclick="devPreview10(\'oneLimited\',\'ddeul\')">신화 1개</button>'+
+        '<button class="chip" onclick="devPreview10(\'oneExclusive\',\'ddeul\')">한정 포함</button></div>';
       h+='<div class="sec-title" style="margin-top:18px;">다마고치 테스트(즉시)</div>';
       h+='<div class="note" style="margin-bottom:8px;">3시간을 기다리지 않고 급여·배변·수거를 바로 확인. 순서: <b>사료·물 +10</b> → 홈에서 그릇 채우기(또는 <b>그릇 다 채우기</b>) → <b>그릇 만료→똥</b> → 똥 탭/일괄 돌보기.</div>';
       h+='<div class="chip-row"><button class="chip" onclick="devGiveConsum()">사료·물 +10</button><button class="chip" onclick="devFillAll()">그릇 다 채우기</button><button class="chip" onclick="devExpireBowls()">그릇 만료→똥</button><button class="chip" onclick="devAddPoop()">똥 +3</button></div>';

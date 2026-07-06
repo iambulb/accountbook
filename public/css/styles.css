@@ -871,7 +871,8 @@
     .catchip .clv .clv-h .px { display:block; }
     /* 수집형 인벤토리 — 5열 그리드(세로로 길게 나열, 시트가 세로 스크롤). 축소 타일: 초상 + 이름 + 애정레벨, 상태는 테두리+뱃지. */
     .catchips { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:7px; padding-bottom:2px; align-items:start; }
-    .catchips.scroll4 { overflow-y:auto; -webkit-overflow-scrolling:touch; }   /* 4행 초과 시 내부 스크롤(높이는 JS가 정확히 4행으로 설정) */
+    /* 4행 초과 시 내부 스크롤(높이는 JS가 정확히 4행으로 설정). overflow-x:hidden 필수 — overflow-y만 주면 스펙상 overflow-x가 auto로 계산돼 좌우로 드리프트한다. touch-action/overscroll로 바깥 시트 스크롤과 안 싸우게. */
+    .catchips.scroll4 { overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; touch-action:pan-y; -webkit-overflow-scrolling:touch; }
     .catchip { position:relative; box-sizing:border-box; background:var(--card); border:1.5px solid var(--bd); border-radius:12px; padding:5px 4px 7px; text-align:center; transition:transform .08s, border-color .12s, background .12s; cursor:pointer; }
     .catchip .cpic { width:100%; aspect-ratio:1; box-sizing:border-box; background:var(--soft); border-radius:9px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
     /* 등급색 테두리(펫이 담긴 rect) — 안쪽 .cpic에 두께감 있는 등급색(흰색 금지=중립 회색). 바깥 .catchip 테두리는 선택상태(on/elsewhere) 유지. */
