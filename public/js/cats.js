@@ -4374,8 +4374,9 @@
         gbActionsHtml('ddeul')+gbPityHtml('ddeul')+'</div>';
     }
     // 🥚 펫알 배너 = 뜰알(한정 픽업) 틀 기반(가로 pickbanner) + 노을 씬. 둥지·알 없음, 상단 문구·1회/10회·천장 문구 포함.
+    // ⚠️ 컨테이너 class에 gb-egg 쓰지 말 것 — .gb-egg는 gbNestHtml 알 스프라이트용 position:absolute 규칙이라 배너 레이아웃을 깨뜨림(세로로 길어지고 안 맞던 버그).
     function eggBannerHtml(){
-      return '<div class="gbanner gb-egg">'+
+      return '<div class="gbanner gb-eggbn">'+
         '<div class="pickbanner"><div class="pk-head"><span class="pk-title gb-sunset-t">🌇 펫알 · 노을 픽업</span><span class="pk-tag">매일 만나는 새 친구</span></div>'+sunsetSceneHtml()+'</div>'+
         gbActionsHtml('egg')+gbPityHtml('egg')+'</div>';
     }
@@ -4385,6 +4386,16 @@
         '<div class="gb-scene">'+pickupSceneHtml('banner')+gbNestHtml(boxSvg({h:52}))+'</div>'+
         gbActionsHtml('box')+gbPityHtml('box')+'</div>';
     }
+    // 🌈 무지개 배너 = 밤 씬(nightSceneHtml) + 둥지 속 무지개알 + 찬란한 무지개 오오라/트윙클.
+    function rainbowBannerHtml(){
+      const nest='<div class="gb-nest"><div class="gb-nestback">'+nestSvg({})+'</div>'+
+        '<div class="gb-egg gb-rbegg"><span class="gb-rbaura">'+lightLayers({aura:112,rays:134,rainbow:true})+'</span>'+
+          '<span class="gb-rbtw">'+fxAuraTwinkles(9,true)+'</span>'+rainbowEggSvg({h:62})+'</div>'+
+        '<div class="gb-nestfront">'+nestFrontSvg({})+'</div></div>';
+      return '<div class="gbanner gb-rainbow"><div class="gb-head"><b class="gb-t tier-rainbow">🌈 무지개 · 밤</b></div>'+
+        '<div class="gb-scene">'+nightSceneHtml()+nest+'</div>'+
+        gbActionsHtml('egg')+gbPityHtml('egg')+'</div>';
+    }
     // 배너 버튼 → 미리보기(소모 없음). 1회=강제 전설 단발 연출, 10회=10연차 연출(박스 10연차는 준비 전). 실전 연결은 추후.
     function devBannerPull(kind, ten){
       if(!(typeof isDev==='function'&&isDev())) return;
@@ -4393,14 +4404,14 @@
     }
     // 개발자 배너 관리 — 탭별(뜰알/펫알/랜덤박스) 배너 미리보기(시트).
     let _bannerTab='ddeul';
-    const BANNER_TABS=[['ddeul','뜰알'],['egg','펫알'],['box','랜덤박스']];
+    const BANNER_TABS=[['ddeul','뜰알'],['egg','펫알'],['box','랜덤박스'],['rainbow','무지개']];
     function setBannerTab(t){ _bannerTab=t||'ddeul'; if(state._sheetRefresh) state._sheetRefresh(); }
     function openDevBannerManager(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
       const build=()=>{
         if(!BANNER_TABS.some(t=>t[0]===_bannerTab)) _bannerTab='ddeul';
         let h='<div class="note">가챠 배너 미리보기 — 탭별로 확인. <b>펫알·랜덤박스</b>는 지금 동일 배경(추후 전용 배너로 분화). 버튼은 <b>미리보기</b>(1회=강제 전설·10회=연출)로 실전 연결·소모 없음.</div>';
         h+='<div class="subseg">'+BANNER_TABS.map(t=>'<button class="'+(_bannerTab===t[0]?'on':'')+'" onclick="setBannerTab(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div>';
-        h+=(_bannerTab==='ddeul'?ddeulBannerHtml():_bannerTab==='egg'?eggBannerHtml():boxBannerHtml());
+        h+=(_bannerTab==='ddeul'?ddeulBannerHtml():_bannerTab==='egg'?eggBannerHtml():_bannerTab==='box'?boxBannerHtml():rainbowBannerHtml());
         return h;
       };
       openSheet('배너 관리', build());
