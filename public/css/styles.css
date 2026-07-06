@@ -1538,8 +1538,8 @@
       animation:pkcloud var(--d,44s) linear infinite; animation-delay:calc(var(--i) * -9s); }
     @keyframes pkcloud { from{ transform:translateX(-64px);} to{ transform:translateX(600px);} }
     /* 무지개 — 넓고 길게·연하게, 지평선(뜰 뒤)에서 솟아 배너 진입 1초 뒤 사르르 */
-    .pk-rainbow { position:absolute; left:50%; bottom:60%; transform:translateX(-50%); z-index:1; opacity:0; animation:pkrainbowin 1.4s ease 1s forwards; pointer-events:none; }
-    .pk-rainbow .px { height:44px; width:auto; opacity:.5; }
+    .pk-rainbow { position:absolute; left:50%; bottom:54%; transform:translateX(-50%); z-index:1; opacity:0; animation:pkrainbowin 1.4s ease 1s forwards; pointer-events:none; }
+    .pk-rainbow .px { width:auto; opacity:.8; }   /* 로그인 무지개(파스텔)라 살짝 진하게, 높이는 SVG h(리빌은 S배율)로 */
     @keyframes pkrainbowin { from{ opacity:0; transform:translateX(-50%) translateY(7px) scale(.92);} to{ opacity:1; transform:translateX(-50%) translateY(0) scale(1);} }
     /* 뜰(들판) — 흙 보이고 풀·꽃·나무는 필드 안에만(overflow:hidden으로 하늘 침범 방지) */
     .pk-field { position:absolute; left:0; right:0; bottom:0; height:60%; z-index:1; overflow:hidden; }
