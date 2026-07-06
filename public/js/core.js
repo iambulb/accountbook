@@ -451,6 +451,8 @@
           if(s.val()!==true) return;
           ref.onDisconnect().remove();
           ref.set(firebase.database.ServerValue.TIMESTAMP).catch(function(){});   // 규칙 미배포면 조용히 무시
+          // 🗓️ 마지막 접속 시각을 users/{uid}/lastSeen에 영구 기록(끊겨도 유지) → 개발자 '사용자 현황'의 '오늘 접속자 수' 집계용
+          try{ db.ref('users/'+state.uid+'/lastSeen').set(firebase.database.ServerValue.TIMESTAMP).catch(function(){}); }catch(e){}
         });
       }catch(e){}
     }

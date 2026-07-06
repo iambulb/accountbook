@@ -1746,7 +1746,7 @@
       Promise.all([ db.ref('users').once('value'), db.ref('presence').once('value') ]).then(function(res){
         const usersSnap=res[0].val()||{}, pres=res[1].val()||{};
         const list=Object.keys(usersSnap).map(function(uid){ const u=usersSnap[uid]||{};
-          return { uid:uid, name:(u.name||''), code:(u.friendCode||''), photo:(u.photo||''), at:(u.createdAt||'') }; });
+          return { uid:uid, name:(u.name||''), code:(u.friendCode||''), photo:(u.photo||''), at:(u.createdAt||''), lastSeen:(u.lastSeen||0) }; });
         list.sort(function(a,b){ return String(a.at).localeCompare(String(b.at)); });   // 가입 순서(createdAt ISO 오름차순)
         state._devUsers={ list:list, online:pres||{}, page:0 };
         renderDevUsers();
@@ -1758,9 +1758,12 @@
     function devUsersPage(d){ const s=state._devUsers; if(!s) return;
       const pages=Math.max(1, Math.ceil(s.list.length/DEV_USERS_PER));
       s.page=Math.max(0, Math.min(pages-1, s.page+d)); renderDevUsers(); }
+    // 오늘(KST) 0시 이후 마지막 접속 기록이 있는 사용자 수 = 오늘 접속자 수. KST 자정의 실제 UTC ms 기준으로 비교.
+    function _todayKstStartMs(){ const k=new Date(Date.now()+9*3600000); return Date.UTC(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate()) - 9*3600000; }
     function renderDevUsers(){
       const s=state._devUsers; if(!s) return;
       const total=s.list.length, online=Object.keys(s.online||{}).length;
+      const t0=_todayKstStartMs(), todayN=s.list.filter(function(u){ return (Number(u.lastSeen)||0) >= t0; }).length;
       const pages=Math.max(1, Math.ceil(total/DEV_USERS_PER)); const pg=Math.min(s.page||0, pages-1);
       const start=pg*DEV_USERS_PER, rows=s.list.slice(start, start+DEV_USERS_PER);
       let h='<div class="usrlist">';
@@ -1776,7 +1779,7 @@
       h+='<div class="usr-nav"><button class="btn ghost sm"'+(pg<=0?' disabled':'')+' onclick="devUsersPage(-1)">‹ 이전</button>'+
          '<span class="usr-pg">'+(pg+1)+' / '+pages+'</span>'+
          '<button class="btn ghost sm"'+(pg>=pages-1?' disabled':'')+' onclick="devUsersPage(1)">다음 ›</button></div>';
-      h+='<div class="usr-sum"><b class="on">'+online+'</b>명 접속중 · 총 <b>'+total+'</b>명 가입</div>';
+      h+='<div class="usr-sum"><b class="on">'+online+'</b>명 접속중 · 오늘 <b>'+todayN+'</b>명 접속 · 총 <b>'+total+'</b>명 가입</div>';
       openSheet('사용자 현황', h);
     }
 
