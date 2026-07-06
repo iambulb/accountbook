@@ -1732,6 +1732,7 @@
         h+=lrow(MORE_ICON.gift,'재화관리','closeSheet();openDevGacha()');
         h+=lrow((typeof goldSvg==='function'?goldSvg({h:21}):MORE_ICON.cat),'펫 관리','closeSheet();openDevPetManager()');
         h+=lrow((typeof furnSvg==='function'?furnSvg('tower',{h:22}):MORE_ICON.gear),'기구물 관리','closeSheet();openDevFurnManager()');
+        h+=lrow((typeof ddeulEggSvg==='function'?ddeulEggSvg({h:20}):MORE_ICON.gift),'배너 관리','closeSheet();openDevBannerManager()');
         h+=lrow((typeof sparkSvg==='function'?sparkSvg({h:20}):MORE_ICON.gear),'이달의 펫 선정','closeSheet();openDevFeatured()');
         h+=lrow((typeof giftSvg==='function'?giftSvg({h:21}):MORE_ICON.gift),'전체 선물 보내기','closeSheet();openDevBroadcast()');
         h+=lrow((typeof megaSvg==='function'?megaSvg({h:20}):MORE_ICON.gear),'공지사항 관리','closeSheet();openDevAnnounce()');

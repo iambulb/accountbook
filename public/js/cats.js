@@ -779,126 +779,110 @@
     // 🥚 펫알(24×28) — 뜰알과 같은 해상도·톤의 크림색 계란: 4톤 구면 명암(I 하이라이트·W 기본·S 음영·D 깊은음영)+X외곽,
     //   가운데 무지개 물음표(Q=RAINBOW/무지개알은 흰색), 잔점(k) 몇 개. 균열1~3(C1·C2·C3)은 같은 실루엣에 금이 번지고 마지막에 쩍 갈라진다.
     const M_EGG = [
-      ".........XXXXXX.........",
-      "........XIIIIIIX........",
-      ".......XIIIIIIIIX.......",
-      "......XIIIIIIIIIWX......",
-      ".....XIIIIIIIIIWWWX.....",
-      ".....XIIIIIIIIIWWWX.....",
-      "....XIIIIIIIIIWWWWWX....",
-      "....XIIIIIIIIWWWWWSX....",
-      "....XIIIIIIIIWWWWWSX....",
-      "...XIIIIIIIIWWWWWSSSX...",
-      "...XIIIIIIIWWWWWSSSSX...",
-      "...XIIIIIIQQQQWWSSSSX...",
-      "...XIIIIIQQWWQQSSSSSX...",
-      "...XIIIIIWWWWQQSSSSSX...",
-      "..XIIIIIIWWWQQSSSSSSDX..",
-      "..XIIIIIWWWQQSSSkSSDDX..",
-      "..XIIIIWWWWQQSSSSSDDDX..",
-      "..XIIIIWWWWWSSSSSSDDDX..",
-      "...XIIkWWWWQQSSSSDDDX...",
-      "...XIWWWWWSQQSSSDDDDX...",
-      "...XIWWWWWSSSSSSDDDDX...",
-      "...XWWWWWSSSSSSDDDDDX...",
-      "....XWWWkSSSSSDDDDDX....",
-      ".....XWWSSSSSSDDDDX.....",
-      ".....XWSSSSSSDDDDDX.....",
-      "......XXSSSSDDDDXX......",
       "........XXXXXXXX........",
+      ".......XIIIIIIIIX.......",
+      "......XIIIIIIIIIIX......",
+      ".....XIIIIIIIIIIWWX.....",
+      "....XIIIIIIIIIIIWWWX....",
+      "...XIIIIIIIIIIIWWWWWX...",
+      "...XIIIIIIIIIIWWWWWWX...",
+      "..XIIIIIIIIIIWWWWWWSSX..",
+      "..XIIIIIIIIIWWWWWWSSSX..",
+      "..XIIIIIIIQQQQWWWSSSSX..",
+      "..XIIIIIIQQWWQQWSSSSSX..",
+      ".XIIIIIIIWWWWQQSSSSSSSX.",
+      ".XIIIIIIWWWWQQSSSSSSSDX.",
+      ".XIIIIIIWWWQQSSSkSSSDDX.",
+      ".XIIIIIWWWWQQSSSSSSDDDX.",
+      ".XIIIIWWWWWWSSSSSSDDDDX.",
+      ".XIIIWkWWWWQQSSSSDDDDDX.",
+      "..XIWWWWWWSQQSSSDDDDDX..",
+      "..XWWWWWWSSSSSSSDDDDDX..",
+      "...XWWWWSSSSSSSDDDDDX...",
+      "....XWWSkSSSSSDDDDDX....",
+      ".....XXSSSSSSDDDDXX.....",
+      ".......XXXXXXXXXX.......",
       "........................"
     ];
     // 균열1: 위쪽부터 지그재그 잔금(X)이 생기고 옆에 그림자(S)가 져 쩌저적 갈라짐 시작
     const M_EGG_C1 = [
-      ".........XXXXXX.........",
-      "........XIIIIIIX........",
-      ".......XIIIXSIIIX.......",
-      "......XIIIIXSIIIWX......",
-      ".....XIIIIIIIXSXWWX.....",
-      ".....XIIIIIIIXSWWWX.....",
-      "....XIIIIIIIXSWWWWWX....",
-      "....XIIIIIIIIWXSWWSX....",
-      "....XIIIIIIXIXSWWWSX....",
-      "...XIIIIIIIXSWWWWSSSX...",
-      "...XIIIIIIIWXSWWSSSSX...",
-      "...XIIIIIIQQQXSWSSSSX...",
-      "...XIIIIIQQWWQXSXSSSX...",
-      "...XIIIIIWWWWXQSSSSSX...",
-      "..XIIIIIIWWWXQSSSSSSDX..",
-      "..XIIIIIWWWQQSSSkSSDDX..",
-      "..XIIIIWWWWQQSSSSSDDDX..",
-      "..XIIIIWWWWWSSSSSSDDDX..",
-      "...XIIkWWWWQQSSSSDDDX...",
-      "...XIWWWWWSQQSSSDDDDX...",
-      "...XIWWWWWSSSSSSDDDDX...",
-      "...XWWWWWSSSSSSDDDDDX...",
-      "....XWWWkSSSSSDDDDDX....",
-      ".....XWWSSSSSSDDDDX.....",
-      ".....XWSSSSSSDDDDDX.....",
-      "......XXSSSSDDDDXX......",
       "........XXXXXXXX........",
+      ".......XIIIIIIIIX.......",
+      "......XIIIIXSIIIIX......",
+      ".....XIIIIIXSIIIWWX.....",
+      "....XIIIIIIIIXSXWWWX....",
+      "...XIIIIIIIIIXSWWWWWX...",
+      "...XIIIIIIIIXSWWWWWWX...",
+      "..XIIIIIIIIIIWXSWWWSSX..",
+      "..XIIIIIIIIXWXSWWWSSSX..",
+      "..XIIIIIIIQXQQWWWSSSSX..",
+      "..XIIIIIIQQWXQQWSSSSSX..",
+      ".XIIIIIIIWWWWXQSSSSSSSX.",
+      ".XIIIIIIWWWWQQXSXSSSSDX.",
+      ".XIIIIIIWWWQQSSSkSSSDDX.",
+      ".XIIIIIWWWWQQSSSSSSDDDX.",
+      ".XIIIIWWWWWWSSSSSSDDDDX.",
+      ".XIIIWkWWWWQQSSSSDDDDDX.",
+      "..XIWWWWWWSQQSSSDDDDDX..",
+      "..XWWWWWWSSSSSSSDDDDDX..",
+      "...XWWWWSSSSSSSDDDDDX...",
+      "....XWWSkSSSSSDDDDDX....",
+      ".....XXSSSSSSDDDDXX.....",
+      ".......XXXXXXXXXX.......",
       "........................"
     ];
     // 균열2: 금이 전체로 번지고 위쪽이 살짝 벌어져(틈'.'+따뜻한 빛 L) 틈이 보인다. 물음표도 갈라지기 시작.
     const M_EGG_C2 = [
-      ".........XXXXXX.........",
-      "........XIIIIIIX........",
-      ".......XIIL.SIIIX.......",
-      "......XIIIL.SIIIWX......",
-      ".....XIIIIIIL.SWWWX.....",
-      ".....XIIIIIIL.SWWWX.....",
-      "....XIIIIIIL.SWWWWWX....",
-      "....XIIIIIIIIL.SWWSX....",
-      "....XIIIIIIIL.SWWWSX....",
-      "...XIIIIIIL.SWWWWSSSX...",
-      "...XIIIIIIIL.SWWSSSSX...",
-      "...XIIIIIIQQQXSWSSSSX...",
-      "...XIIIIIQQWWQXSSSSSX...",
-      "...XIIIIIWWWWXQSSSSSX...",
-      "..XIIIIIIWWWXQSSSSSSDX..",
-      "..XIIIIIWWWXQSSSkSSDDX..",
-      "..XIIIIWWWWXQSSSSSDDDX..",
-      "..XIIIIWWWWWXSSSSSDDDX..",
-      "...XIIkWWWWQQXSSSDDDX...",
-      "...XIWWWWWSQQXSSDDDDX...",
-      "...XIWWWWWSSXSSSDDDDX...",
-      "...XWWWWWSSSXSSDDDDDX...",
-      "....XWWWkSSSXSDDDDDX....",
-      ".....XWWSSSSXSDDDDX.....",
-      ".....XWSSSSSSDDDDDX.....",
-      "......XXSSSSDDDDXX......",
       "........XXXXXXXX........",
+      ".......XIIIIIIIIX.......",
+      "......XIIIL.SIIIIX......",
+      ".....XIIIIL.SIIIWWX.....",
+      "....XIIIIIIIL.SIWWWX....",
+      "...XIIIIIIIIL.SWWWWWX...",
+      "...XIIIIIIIL.SWWWWWWX...",
+      "..XIIIIIIIIIIL.SWWWSSX..",
+      "..XIIIIIIIIIL.SWWWSSSX..",
+      "..XIIIIIIIL.QQWWWSSSSX..",
+      "..XIIIIIIQQWXQQWSSSSSX..",
+      ".XIIIIIIIWWWWXQSSSSSSSX.",
+      ".XIIIIIIWWWWQQXSSSSSSDX.",
+      ".XIIIIIIWWWQQXSSkSSSDDX.",
+      ".XIIIIIWWWWQXSSSSSSDDDX.",
+      ".XIIIIWWWWWXSSSSSSDDDDX.",
+      ".XIIIWkWWWWXQSSSSDDDDDX.",
+      "..XIWWWWWWSQXSSSDDDDDX..",
+      "..XWWWWWWSSSSXSSDDDDDX..",
+      "...XWWWWSSSSSXSDDDDDX...",
+      "....XWWSkSSSXSDDDDDX....",
+      ".....XXSSSSSSDDDDXX.....",
+      ".......XXXXXXXXXX.......",
       "........................"
     ];
     // 균열3(3번째 탭): 알이 정중앙에서 쩍! 크게 갈라져 좌우 껍질로 나뉘고, 벌어진 틈(L)으로 등급색 빛이 쏟아진다. L=빛(렌더 시 등급색).
     const M_EGG_C3 = [
-      ".........XXLLXX.........",
-      "........XXLLLLXX........",
-      ".......XIXLLLXIIX.......",
-      "......XIXLLLLXIIWX......",
-      ".....XIIIXLLLLLXWWX.....",
-      ".....XIIIXLLLLLXWWX.....",
-      "....XIIIXLLLLLLXWWWX....",
-      "....XIIIIXLLLLLLXWSX....",
-      "....XIIIXLLLLLLLXWSX....",
-      "...XIIIXLLLLLLLXWSSSX...",
-      "...XIIIXLLLLLLLLXSSSX...",
-      "...XIIIIXLLLLLLLXSSSX...",
-      "...XIIIIXLLLLLLLLXSSX...",
-      "...XIIIXLLLLLLLLLXSSX...",
-      "..XIIIIXLLLLLLLLXSSSDX..",
-      "..XIIIXLLLLLLLLLXSSDDX..",
-      "..XIIIXLLLLLLLLLXSDDDX..",
-      "..XIIIIXLLLLLLLLXSDDDX..",
-      "...XIIkXLLLLLLLLLXDDX...",
-      "...XIWWXLLLLLLLLLXDDX...",
-      "...XIWWXLLLLLLLLXDDDX...",
-      "...XWWWXLLLLLLLLXDDDX...",
+      "........XXXLLXXX........",
+      ".......XIIXLLXIIX.......",
+      "......XIIXLLLXIIIX......",
+      ".....XIIXLLLLLXIWWX.....",
+      "....XIIIIXLLLLLXWWWX....",
+      "...XIIIIIXLLLLLXWWWWX...",
+      "...XIIIIXLLLLLLXWWWWX...",
+      "..XIIIIIIXLLLLLLXWWSSX..",
+      "..XIIIIIXLLLLLLLXWSSSX..",
+      "..XIIIIXLLLLLLLXWSSSSX..",
+      "..XIIIIXLLLLLLLLXSSSSX..",
+      ".XIIIIIXLLLLLLLLLXSSSSX.",
+      ".XIIIIIIXLLLLLLLLXSSSDX.",
+      ".XIIIIIXLLLLLLLLLXSSDDX.",
+      ".XIIIIIXLLLLLLLLXSSDDDX.",
+      ".XIIIIXLLLLLLLLLXSDDDDX.",
+      ".XIIIWXLLLLLLLLLXDDDDDX.",
+      "..XIWWWXLLLLLLLLXDDDDX..",
+      "..XWWWWWXLLLLLLLLXDDDX..",
+      "...XWWWWXLLLLLLLXDDDX...",
       "....XWWXLLLLLLLLXDDX....",
-      ".....XWXLLLLLLLLXDX.....",
-      ".....XWXLLLLLLLXDDX.....",
-      "......XXLLLLLLLXXX......",
-      "........XXLLLLLX........",
+      ".....XXSXLLLLLLXDXX.....",
+      ".......XXLLLLLLXX.......",
       "........................"
     ];
     // 🥚 깨진 껍질 조각(픽셀아트) — 크림 껍질(I 하이라이트·W 기본·S 음영)+X 테두리. 오픈 순간 사방으로 튕겨나감(알과 같은 톤).
@@ -1592,68 +1576,161 @@
     function rainbowEggStage(stage, opt){ return pxSvg([M_EGG,M_EGG_C1,M_EGG_C2][stage]||M_EGG, EGG_PAL_RB, opt); }
     // 3번째 탭: 크게 갈라진 알 + 틈새로 새어나오는 등급색 빛(L=등급색). rainbow면 껍질은 무지갯빛 유지.
     function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); if(rainbow) pal.X='RAINBOW'; return pxSvg(M_EGG_C3, pal, opt); }   // 무지개알 열 때: 테두리(X)까지 무지개색
-    // 🪺 10연차 둥지 — 세로형 디테일 바구니(34×40). 위브(H하이라이트/S짚/B잔가지/D그림자)+외곽선(K), 위쪽 캐비티(c)에 알이 담김. PIL 라이트/다크 검수 완료. 앞테두리(M_NEST_FRONT)는 아래쪽 알을 덮어 '담긴' 느낌.
+    // 🪺 10연차 둥지 — 위에서 내려다보는(top-down) 타원 바구니(64×74, 2배 해상도). 엮인 짚 림 + 나뭇가지·흙·이끼(M/m/g), 어두운 구멍에 알이 담김. 앞호(M_NEST_FRONT)가 아래쪽 알을 덮어 담긴 느낌. PIL 라이트/다크 검수.
     const M_NEST = [
-      "..................................",
-      "..................................",
-      "..................................",
-      ".KKHHHBHHHBHHHBHHHBHHHBHHHBHHHBKK.",
-      ".KKSSDccccccccccccccccccccccDSBKK.",
-      ".KKDDDccccccccccccccccccccccDDKKK.",
-      ".KKHBDccccccccccccccccccccccDHHKK.",
-      "..KKBDccccccccccccccccccccccDSKK..",
-      "...KKDDccccccccccccccccccccDKDK...",
-      "...KHHDccccccccccccccccccccDHHK...",
-      "...KSSBDccccccccccccccccccDSSSK...",
-      "...KDDKDDccccccccccccccccDKDDDK...",
-      "...KBHHHBDccccccccccccccDHHHBHK...",
-      "...KBSSSBSSSBSSSBSSSBSSSBSSSBSK...",
-      "...KKDDDKDDDKDDDKDDDKDDDKDDDKDK...",
-      "...KHHBHHHBHHHBHHHBHHHBHHHBHHHK...",
-      "...KSSBSSSBSSSBSSSBSSSBSSSBSSSK...",
-      "...KDDKDDDKDDDKDDDKDDDKDDDKDDDK...",
-      "...KKHHHBHHHBHHHBHHHBHHHBHHHBKK...",
-      "...KKSSSBSSSBSSSBSSSBSSSBSSSBKK...",
-      "...KKDDDKDDDKDDDKDDDKDDDKDDDKKK...",
-      "...KKHBHHHBHHHBHHHBHHHBHHHBHHKK...",
-      "...KKSBSSSBSSSBSSSBSSSBSSSBSSKK...",
-      "...KKDKDDDKDDDKDDDKDDDKDDDKDDKK...",
-      "...KKHHHBHHHBHHHBHHHBHHHBHHHBKK...",
-      "...KKSSSBSSSBSSSBSSSBSSSBSSSBKK...",
-      "...KKDDDKDDDKDDDKDDDKDDDKDDDKKK...",
-      "...KKHBHHHBHHHBHHHBHHHBHHHBHHKK...",
-      "...KKSBSSSBSSSBSSSBSSSBSSSBSSKK...",
-      "....KDKDDDKDDDKDDDKDDDKDDDKDDK....",
-      "....KHHHBHHHBHHHBHHHBHHHBHHHBK....",
-      "....KSSSBSSSBSSSBSSSBSSSBSSSBK....",
-      "....KKDDKDDDKDDDKDDDKDDDKDDDKK....",
-      ".....KBHHHBHHHBHHHBHHHBHHHBHK.....",
-      ".....KKSSSBSSSBSSSBSSSBSSSBKK.....",
-      "......KKDDKDDDKDDDKDDDKDDDKK......",
-      ".......KKHHHBHHHBHHHBHHHBKK.......",
-      ".........KSSBSSSBSSSBSSSK.........",
-      "...........KKDDDKDDDKDK...........",
-      "................KK................"
+      "................................................................",
+      "............................K...........D.......................",
+      "............................D...........D.......................",
+      "...........................KKKKMKKKKK...D.......................",
+      "..................D....KKKBBBDDmDDDDHHKMK.......................",
+      "...................D.KKmBDSSSgSSSSSDDDDDHKK.....................",
+      "...................KHHDMSSHHBHHHmHHHHHSDDmBHK...................",
+      "..................KmMDSHMBDSSSSSSSSDDDHHHSMDBK..................",
+      "..............D.KMDDSHHDSSSHHHHHHHHHHSDMMBHSSBBK................",
+      "........D..DK..KHDDHHDDSHBBBDSSSSSSDDHHHSSDBHSSBK..K............",
+      ".........KD.DKKDSSHMDSHBBSSSSHHHHHHSDDDDHHSSBMSSMKD.............",
+      "..........K..KDSHHDDHHDDSHHBBDDDDDDHHHHDSDBHSSBHSDK.............",
+      "...........DKDSHHSSHDDSHBBDSSSSSSSSMDDMHHSmBBSSHMSDK............",
+      "...........KDSHDSHHDmHHDSSSHSSSSDSSSHSDDBBMSMBHSDHSDK...........",
+      "..........KBSHDSHHSSHDmDHSSSDSSSSSSmSSmHSSMMSSHHSDHSHK..........",
+      "..........BSHHMHHSSHDDHSDSSgSSSDgSSSSSDSSHSDHgSHHSHMmH..........",
+      ".........KDSBSHHSHHSSMSSSSSDSSbbmbDSmSSSSDHSSHmSHHDHSDK.........",
+      "........KBSHDSHSHmSSKSgDSSSbbbDbbbbbbDSSSSSKSSHHSHSDHMMK........",
+      "........BSHMSBSSHSSKSSSSgbDbbbbbmDbbbbmSDSSSKSSHSDHDDHDH........",
+      ".......KBSBSHBSBSSKSSSDbbbbbmDbbbbgbDbbbgSSDSKSSHMDHDHMDK.......",
+      "....DD.HDHDSBSHDSKDSSSbbbDbbbbbbDbbbbbbDbbSSSSKSDHDHSDHSB.......",
+      "......KDSHDHSHBSHmSSSDbbbbbbDbbbmbbDmbbbbbDSSSSmDDHDHSBSBK......",
+      "......HDHDSDSBSHgDSSbbbbgbbbbbbDbbbbbbDbbbbbSDSSHDHDMSDHSB......",
+      ".....KDDHDHDHBSKSSSbDbgbbbgDbbbmbbDbbbbbbmbbbSSSKmDMSHSBSBK.....",
+      ".....KDHDmHDHMHSDSSbbbbDbbmbbbDbbbbbbDbbmbbgDSSSSHSBSBSBMDK.....",
+      ".....HDHDHDHDSKgSSbDgbbbbbgbgccccDcbbbbbDmbbbbSDSKSBHDHSHSH.....",
+      "...DKDSHDHDHDHSDSSbbbbDbbbbccDccccccDbbbbbbDbbgSSSHSHSBSHSDK....",
+      "....KDHDSmSHMKSSSbDbbbbbbDccccccgcccccbDbmgbbbDSSSKSBSDSDHDK....",
+      ".D..HSHSHmHDSKDgSbbbbgbbbccccccccccccccbgbggbbbSSDKSDHDMSHSH....",
+      "..DDHSHSHSHSHSSSbmbbbbbmDccgccccccccmcDcbbbbbDbbSSSHSHSHSHSH....",
+      "....HSHSHSMSKDSSbbbbDbbbcccccccccccccgccbDgbbbbbDgSmSHSHSmSH....",
+      "DKDKBSDSHSHSKSSSDbbbbbbDccccmcgccccccccccbbbDbbbSSSKSHSHSDSDmD..",
+      "...KDHMSBSMSKSSSbbbDbbbcccccmcccccgcccccDbbmbbbgSgSKSDSmSDHDKD..",
+      "...KDHDHDHDHKSSDbbbbbbDccccgcccccccccccccbbDbbbbbSDKHDHDHDHMK...",
+      "...KSHSHDHDHKSSbbbDbbbccccmcccccccccccccccbbbgDbbSSKHDHDHDHDK...",
+      "...KSHSHSHSHKSDbbbbbbDcccccgcccccccccccmccDbbbbbbDSKHDHDHDHDK...",
+      "...KSHSHSHSHKSSbbDbbbbccccccccccccccccccccbbbDbbbSSKSDSMSDSDK...",
+      "...KSHSHSHSHKgSbgbbbDmcccgcccccccccccccccDbbbbbbDSSKSDSDSDSDK...",
+      "...KSHSHSHSmKSSbDmbbbbcmccccgcccccccccccccbbDbbbbmSKSDSDSDSDK...",
+      "...KSHSHDHDHKSSbbbbDbbgcccccccccccccccccDcbbbbbDgSSKSDSDSDSDK...",
+      "...KDHDHDHMHKSSDbbmbbbDccmccccccccccccccgmbgbbbbbSDKSDSDSDSDK...",
+      "...KDHDSDmDSKSSSgbDbbbbcccccccmccccccccDcbbbbbDgSSmKSDmDSDSDK...",
+      "...KDSBSBSBSKSDSbbbmbDbcgcccccmccccccccccbDbbbbbSDSKSBSBSBSDK...",
+      "....BSBSBSBSKgmSbDbbbgbgDmccccccccccccDcbgbbbDbbSSgKSBSBSBSB....",
+      "....BmBSBSHSMDSSbbbbDbbbcccccccccgccccccbDbbbbbgDSSBBSSBSBSBK...",
+      "....HMHSHDHBSKSSDbbbbbgDbccccccccccccDcbbbbgDbbSSSKBBmDSSSSSDKD.",
+      "....KDHBmBSHDKSSSbbDbbbbbbDccccccDcgccbbDbbbbbbDSSKBBBBBBBDK....",
+      "..KDKBSBDHDHDMSDSSbbbbDbgbbccDccccccDbbbbbgDbbSgSSBBBBBmBBBM....",
+      ".....BDHDHDHMSKSSSDbbbbbbDbbbcccDccbbbbDbbbbbbDSSKBDBDBMBMB.....",
+      ".....KDHDSHDHDHSSSSgbDbbbbbbmbbbbbbDbbbbbbDbbSSSSBBBBBmDBDKDDD..",
+      ".....KDDHDHDHDSKSDSbbbbbDbbbbbbDbbbbbbDbbbgbbDSSKBDBBBBBBDK.KD..",
+      "......HDHDSDSHSHSSSSDbbbbbbDbbbbbbDbbbgbbDgbSSSSBDMDMBDmBBDD....",
+      ".....DKDSHDHSHDSHSSSSbbDbbbbbbDmbbbbbDbbbbbSDSSBMDBDBBBBDK......",
+      "...DDD.HMHDSMSHDMKSDSSbbbbDbbbbbbDbbbbbbDbgSSSKBMBDBBDBBB.......",
+      "..K....KDSHMHDSHSSKSSmmbbbbbbDbbbbmbDbbbbSSDSKBBBDDBDBBDK.......",
+      "........HSHDSHSSMSSKSSSSSDbbbbbbDgbbbbbgSSSSKmBMBDBDDBDB........",
+      "........KDSHDSBSHBSMKDSmSSSbDbbmbbbDbSSSSSDKBmBBBMBDBDDK........",
+      ".........KDSHSHBSHBgSHSSDSSSSSbDbbSgmSDSSSBBBBBBBBDBMDK.........",
+      "..........HSHBSHMSSBDDHSSSSDSmSmSSDSSSSSSBBDBBBBBBmBDM..........",
+      "..........KHSHBSHBSSHDDDSSSSSSDSSSmSSDSBBBDBBBBBBBBBBK..........",
+      "...........MBSHBSHHDDHHDMSSSSSSSSDSSBMDDDBMBDMBBBBMBK...........",
+      "............KBSHBSSHmDSSSDDSSSSSBBmDDDDBBBBDBBBBBBBK.D..........",
+      ".............KBSHHDDHHDMSSSSSBBBBBBBBBBDBDBBBmBBmBK..K..........",
+      "..............KBSSHDDSSSDSgSSSSSBBBBDDDDBBBBDMBBBK..............",
+      "...............KHDDHHDDSSmSDDSgSBBBDDBBBBBDBBBBBK.D.............",
+      "................KHDDSSSDSSSSSSBBBBBBBBDDDBMBBDBK................",
+      "..................KHDDSSSSDSSSSSBBBDDDBBBBBDBK..................",
+      "..................DKSSDSSSSSSmBBBBBBBBBDDDMBK...................",
+      "..................D.DKKSDDSSSSSSBBBDDDDDBKK.D...................",
+      "...................KDD.KKKSSDBDDDMBDBBKKK...K...................",
+      "...................DD......KKKKKKKKKK........D..................",
+      "...................DD............D..............................",
+      "....................K............K..............................",
+      ".................................D.............................."
     ];
-    // 앞테두리(near lip) — 아래쪽 알을 덮어 바구니에 담긴 느낌(z가 알보다 위). 위치는 M_NEST와 동일 좌표.
+    // 앞호(near rim) — 아래쪽 림만: 알을 덮어 바구니에 담긴 느낌(z가 알보다 위). 좌표는 M_NEST와 동일.
     const M_NEST_FRONT = [
-      "..................................","..................................","..................................","..................................",
-      "..................................","..................................","..................................","..................................",
-      "..................................","..................................","..................................","..................................",
-      "..................................","..................................","..................................","..................................",
-      "..................................","..................................","..................................","..................................",
-      "..................................","..................................","..................................","..................................",
-      "........KHHHHHHHHHHHHHHHHK........",
-      "......KSSSSSSSSSSSSSSSSSSSSK......",
-      "....KKDDDDDDDDDDDDDDDDDDDDDDKK....",
-      "....KHHHHHHHHHHHHHHHHHHHHHHHHK....",
-      "....KKSSSSSSSSSSSSSSSSSSSSSSKK....",
-      "......KDDDDDDDDDDDDDDDDDDDDK......",
-      "........KKHHHHHHHHHHHHHHKK........",
-      "..................................","..................................","..................................","..................................",
-      "..................................","..................................","..................................","..................................",".................................."
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "................................................................",
+      "..................D...........m........D......D.................",
+      ".............SDS...m.D........m...........D.....SDS.............",
+      "..........BSK.mS.D......Dm............D......D..SS.KSB..........",
+      "......BSBSHSMDSS....D....................D......DSSBBSSBSB......",
+      "....HMHSHDHBSKSSD......D.............D......D..SSSKBBmDSSSSSD...",
+      "....KDHBmBSHDKSSS..D......D......D......D......DSSKBBBBBBBDK....",
+      "..KDKBSBDHDHDMSDSS....D......D......D......D..S.SSBBBBBmBBBM....",
+      ".....BDHDHDHMSKSSSD......D......D......D......DSSKBDBDBMBMB.....",
+      ".....KDHDSHDHDHSSSS..D......m......D......D..SSSSBBBBBmDBDKDDD..",
+      ".....KDDHDHDHDSKSDS.....D......D......D......DSSKBDBBBBBBDK.KD..",
+      "......HDHDSDSHSHSSSSD......D......D......D..SSSSBDMDMBDmBBDD....",
+      ".....DKDSHDHSHDSHSSSS..D......Dm.....D.....SDSSBMDBDBBBBDK......",
+      "...DDD.HMHDSMSHDMKSDSS....D......D......D..SSSKBMBDBBDBBB.......",
+      "..K....KDSHMHDSHSSKSSmm......D....m.D....SSDSKBBBDDBDBBDK.......",
+      "........HSHDSHSSMSSKSSSSSD......D.......SSSSKmBMBDBDDBDB........",
+      "........KDSHDSBSHBSMKDSmSSS.D..m...D.SSSSSDKBmBBBMBDBDDK........",
+      ".........KDSHSHBSHB.SHSSDSSSSS.D..S.mSDSSSBBBBBBBBDBMDK.........",
+      "..........HSHBSHMSSBDDHSSSSDSmSmSSDSSSSSSBBDBBBBBBmBDM..........",
+      "..........KHSHBSHBSSHDDDSSSSSSDSSSmSSDSBBBDBBBBBBBBBBK..........",
+      "...........MBSHBSHHDDHHDMSSSSSSSSDSSBMDDDBMBDMBBBBMBK...........",
+      "............KBSHBSSHmDSSSDDSSSSSBBmDDDDBBBBDBBBBBBBK.D..........",
+      ".............KBSHHDDHHDMSSSSSBBBBBBBBBBDBDBBBmBBmBK..K..........",
+      "..............KBSSHDDSSSDS.SSSSSBBBBDDDDBBBBDMBBBK..............",
+      "...............KHDDHHDDSSmSDDS.SBBBDDBBBBBDBBBBBK.D.............",
+      "................KHDDSSSDSSSSSSBBBBBBBBDDDBMBBDBK................",
+      "..................KHDDSSSSDSSSSSBBBDDDBBBBBDBK..................",
+      "..................DKSSDSSSSSSmBBBBBBBBBDDDMBK...................",
+      "..................D.DKKSDDSSSSSSBBBDDDDDBKK.D...................",
+      "...................KDD.KKKSSDBDDDMBDBBKKK...K...................",
+      "...................DD......KKKKKKKKKK........D..................",
+      "...................DD............D..............................",
+      "....................K............K..............................",
+      ".................................D.............................."
     ];
-    const NEST_PAL={ K:'#342012', D:'#4a2e18', B:'#6b4423', S:'#a6783e', H:'#cea060', c:'#3c2614' };   // 외곽선·그림자·잔가지·짚·하이라이트·안쪽 캐비티
+    const NEST_PAL={ K:'#2e1d10', D:'#4a2e18', B:'#6b4423', S:'#a6783e', H:'#c99d5c', c:'#382616', b:'#2a1c10', M:'#6f8f4a', m:'#56743a', g:'#3a2a18' };   // 외곽선·그림자·잔가지·짚·하이라이트·구멍바닥(어둡/밝)·이끼(밝/진)·흙
     function nestSvg(opt){ return pxSvg(M_NEST, NEST_PAL, opt); }
     function nestFrontSvg(opt){ return pxSvg(M_NEST_FRONT, NEST_PAL, opt); }
     // 픽셀 껍질 조각 렌더(A=큰 곡면, B=삼각, C=작은 조각). rainbow면 무지갯빛 껍질.
@@ -4143,6 +4220,51 @@
       }
       return h;
     }
+    // ===== 🎰 가챠 배너(세로 확장·둥지형) — 개발자 '배너 관리'에서 탭별 미리보기. 지금은 개발자 전용, 추후 실전 탭에 얹고 탭별 전용 배너로 분화. =====
+    // 공통 조각(둥지+알·1/10 버튼·천장 안내). 각 배너 함수는 독립 인스턴스라 나중에 개별 수정 가능.
+    function gbNestHtml(eggHtml){ return '<div class="gb-nest"><div class="gb-nestback">'+nestSvg({})+'</div><div class="gb-egg">'+eggHtml+'</div><div class="gb-nestfront">'+nestFrontSvg({})+'</div></div>'; }
+    function gbActionsHtml(kind){ return '<div class="gb-actions"><button class="gb-btn" onclick="devBannerPull(\''+kind+'\',false)">1회 뽑기</button><button class="gb-btn gb-btn10" onclick="devBannerPull(\''+kind+'\',true)">10회 연속</button></div>'; }
+    function gbPityHtml(kind){ const left=pityRemain(pityGet(kind), (typeof PITY_N!=='undefined'?PITY_N:100)); return '<div class="gb-pity"><span class="pity-chip">'+sparkSvg({h:11})+(typeof PITY_N!=='undefined'?PITY_N:100)+'번 안에 <b>신화 이상 확정</b> · 남은 <b>'+left+'뽑</b></span></div>'; }
+    // 🌱 뜰알 전용 배너(세로 크게·둥지에 뜰알)
+    function ddeulBannerHtml(){
+      return '<div class="gbanner gb-ddeul"><div class="gb-head"><span class="pk-title tier-rainbow">✨ 뜰알 · 한정 픽업</span></div>'+
+        '<div class="gb-scene">'+pickupSceneHtml('banner')+gbNestHtml(ddeulEggSvg({h:60}))+'</div>'+
+        gbActionsHtml('ddeul')+gbPityHtml('ddeul')+'</div>';
+    }
+    // 🥚 펫알 전용 배너(추후 독립 수정 — 지금은 동일 배경, 별개 인스턴스)
+    function eggBannerHtml(){
+      return '<div class="gbanner gb-egg"><div class="gb-head"><b class="gb-t">🥚 펫알</b></div>'+
+        '<div class="gb-scene">'+pickupSceneHtml('banner')+gbNestHtml(eggSvg(0,{h:62}))+'</div>'+
+        gbActionsHtml('egg')+gbPityHtml('egg')+'</div>';
+    }
+    // 🎁 랜덤박스 전용 배너(추후 독립 수정 — 지금은 동일 배경, 별개 인스턴스)
+    function boxBannerHtml(){
+      return '<div class="gbanner gb-box"><div class="gb-head"><b class="gb-t">🎁 랜덤박스</b></div>'+
+        '<div class="gb-scene">'+pickupSceneHtml('banner')+gbNestHtml(boxSvg({h:52}))+'</div>'+
+        gbActionsHtml('box')+gbPityHtml('box')+'</div>';
+    }
+    // 배너 버튼 → 미리보기(소모 없음). 1회=강제 전설 단발 연출, 10회=10연차 연출(박스 10연차는 준비 전). 실전 연결은 추후.
+    function devBannerPull(kind, ten){
+      if(!(typeof isDev==='function'&&isDev())) return;
+      if(ten){ if(kind==='box'){ toast('랜덤박스 10연차 연출은 준비 중이에요'); return; } devPreview10('random', kind); }
+      else devPreview(kind, 'legend');
+    }
+    // 개발자 배너 관리 — 탭별(뜰알/펫알/랜덤박스) 배너 미리보기(시트).
+    let _bannerTab='ddeul';
+    const BANNER_TABS=[['ddeul','뜰알'],['egg','펫알'],['box','랜덤박스']];
+    function setBannerTab(t){ _bannerTab=t||'ddeul'; if(state._sheetRefresh) state._sheetRefresh(); }
+    function openDevBannerManager(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
+      const build=()=>{
+        if(!BANNER_TABS.some(t=>t[0]===_bannerTab)) _bannerTab='ddeul';
+        let h='<div class="note">가챠 배너 미리보기 — 탭별로 확인. <b>펫알·랜덤박스</b>는 지금 동일 배경(추후 전용 배너로 분화). 버튼은 <b>미리보기</b>(1회=강제 전설·10회=연출)로 실전 연결·소모 없음.</div>';
+        h+='<div class="subseg">'+BANNER_TABS.map(t=>'<button class="'+(_bannerTab===t[0]?'on':'')+'" onclick="setBannerTab(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div>';
+        h+=(_bannerTab==='ddeul'?ddeulBannerHtml():_bannerTab==='egg'?eggBannerHtml():boxBannerHtml());
+        return h;
+      };
+      openSheet('배너 관리', build());
+      state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const st=b.scrollTop; b.innerHTML=build(); b.scrollTop=st; if(typeof pkObserveScenes==='function') pkObserveScenes(); };
+      if(typeof pkObserveScenes==='function') pkObserveScenes();
+    }
     let _shopFurnCat=lsGet('shopFurnCat','all');   // 알뜰샵 가구 탭의 기능분류 필터(전체/케어/휴식/놀이/장식) — 배치 인벤토리와 같은 ITEM_CATALOG.cat 기준
     function setShopFurnCat(c){ _shopFurnCat=c||'all'; lsSet('shopFurnCat',_shopFurnCat); renderCatHouse(); }
     let _furnSort=lsGet('furnSort','tierdesc');   // 알뜰샵 가구 정렬
@@ -5821,7 +5943,9 @@
             '<span class="ten-bob" style="animation-delay:'+((it.i%5)*0.13+(it.col*0.06)).toFixed(2)+'s">'+catFace(it.id,{h:ph,eager:true})+'</span>'; }
         else { inner=tenEggSvg(it, 0); }
         return '<div class="ten-egg" id="tenEgg'+it.i+'" data-i="'+it.i+'">'+inner+'</div>'; }).join('');
-      return '<div class="ten-nest'+(mode==='finale'?' finale':'')+'">'+
+      if(mode==='finale')   // 피날레: 둥지 없이 펫만(등급색 실루엣 뒤배경). 알 위치와 동일하게 같은 그리드/좌표 유지.
+        return '<div class="ten-nest finale"><div class="ten-grid">'+cells+'</div></div>';
+      return '<div class="ten-nest">'+
         '<div class="ten-nestback">'+nestSvg({})+'</div>'+
         '<div class="ten-grid">'+cells+'</div>'+
         '<div class="ten-nestfront">'+nestFrontSvg({})+'</div></div>';
@@ -5853,7 +5977,7 @@
     }
     // 알 주변 나비(뜰알 승급) — ddeulPickupFx 나비 루프를 알 셀 기준 소반경으로 스코프
     function tenEggButterflies(eggEl, it){
-      const N=liteMode()?2:4, T=['o','b','p','y']; let b='';
+      const N=liteMode()?3:6, T=['o','b','p','y','o','b']; let b='';
       for(let i=0;i<N;i++){ const ang=((i+Math.random()*0.7)/N)*Math.PI*2, rx=20+Math.random()*16, ry=16+Math.random()*16;
         const mx=Math.round(Math.cos(ang)*rx), my=Math.round(Math.sin(ang)*ry);
         const hh=9+Math.round(Math.random()*3), dur=(5+Math.random()*4).toFixed(1), del=(-Math.random()*6).toFixed(2);
