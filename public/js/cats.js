@@ -4341,7 +4341,7 @@
           '<div class="act">'+dact+pityChip('ddeul')+'</div></div>';
         h+=heldOpenCard('ddeul');
       } else if(tab==='egg' || tab==='box'){
-        const k=tab, nm=k==='egg'?'펫알':'랜덤박스', desc=k==='egg'?'알을 열면 고양이가 랜덤으로! 등급이 높을수록 귀해요.':'상자를 열면 가구·구조물이 랜덤으로 나와요.', art=k==='egg'?eggSvg(0,{h:66}):boxSvg({h:56});
+        const k=tab, nm=k==='egg'?'펫알':'랜덤박스', desc=k==='egg'?'알을 열면 펫이 랜덤으로!<br>등급이 높을수록 귀해요.':'상자를 열면 가구·구조물이 랜덤으로 나와요.', art=k==='egg'?eggSvg(0,{h:66}):boxSvg({h:56});
         const act=(coins()>=GACHA_PRICE)?'<button class="buy" aria-label="'+nm+' 구매('+GACHA_PRICE+' 은화)" onclick="openGacha(\''+k+'\')">구매</button>':'<button class="buy dis" disabled>'+(GACHA_PRICE-coins())+' 부족</button>';
         h+='<div class="shopcard"><div class="thumb">'+art+'</div>'+
           '<div class="meta"><b>'+nm+'</b><div class="desc">'+desc+'</div>'+
@@ -5145,7 +5145,7 @@
       if(tab==='ddeul')   return '🌱 <b class="tier-rainbow">한정 펫</b>은 오직 뜰알에서만! 살 때 <b>금화 1개를 소모</b>해요(펫알과 달리 금화 보상 없음, 중복 펫은 20% 은화 환급).';
       if(tab==='box')     return '🎁 열면 <b>가구·바닥·벽지</b>가 랜덤으로 — <b>특별↑ 장식</b>도 여기서. 열 때마다 <b>금화 1개</b>.';
       if(tab==='rainbow') return '✨ <b class="tier-rainbow">무지개</b>는 <b>금화</b>로 사서 <b>특별↑을 확정</b>으로 뽑아요(금화 보상 없음).';
-      return '🥚 열면 <b>고양이</b>가 랜덤으로 — <b>특별↑</b>도 여기서. 열 때마다 <b>금화 1개</b>(중복 펫은 20% 은화 환급).';   // egg
+      return '🥚 열면 <b>펫</b>이 랜덤으로 — <b>특별↑</b>도 여기서. 열 때마다 <b>금화 1개</b><br>(중복 펫은 20% 은화 환급).';   // egg
     }
     // 가챠 탭 하단: 선택한 구분의 등급별 확률만 접이식으로 표시.
     function gachaInfoHtml(tab){
@@ -6306,8 +6306,9 @@
       items.forEach(function(x){ if(hasSprite(x.id)) ensurePetArt(x.id); });
       if(typeof prewarmGachaFxPads==='function') prewarmGachaFxPads();
       const fx=$('catFx'); if(!fx) return;
+      if(!fx._tenTapBound){ fx._tenTapBound=true; fx.addEventListener('pointerup', tenTapDelegate); }   // 🍏 iOS: div 인라인 onclick(자식→부모 위임)이 안 먹는 문제 → 포인터업으로 위임(한 번만 바인딩)
       const rm=reducedMotion();
-      fx.innerHTML='<div class="fx-scrim"></div><div class="ten-wrap" id="tenWrap" role="button" tabindex="0" onclick="tenTap()">'+
+      fx.innerHTML='<div class="fx-scrim"></div><div class="ten-wrap" id="tenWrap" role="button" tabindex="0">'+
         pickupSceneHtml('reveal')+tenMeadowHtml()+tenNestHtml(items, 'eggs')+
         '<div class="ten-hint" id="tenHint">'+pixelTextHtml(rm?'탭하여 결과 보기':'둥지를 탭하세요', '#ffffff', {h:16})+'</div></div>';
       fx.className='fx on ten';
@@ -6315,6 +6316,11 @@
       const nest=fx.querySelector('.ten-nest'); if(nest) nest.classList.add('drop');
       _fxT(function(){ _fx10.busy=false; }, TEN_DROP+120);
     }
+    // 🍏 iOS Safari 대응: div의 인라인 onclick(자식→부모 위임)은 cursor:pointer가 있어도 SVG/자식 탭에서 click이 안 생기는 경우가 있다.
+    //  → #catFx에 pointerup 하나만 위임 바인딩(포인터 이벤트는 iOS서도 자식 탭에서 정상 발생·버블). 현재 단계에 맞는 핸들러로 라우팅. 버튼(SKIP·입양)은 자체 onclick으로 처리하므로 무시.
+    function tenTapDelegate(e){ if(!_fx10) return;
+      if(e && e.target && e.target.closest && e.target.closest('button,.ten-skip,.ten-takebtn')) return;
+      if(_fx10.phase==='finale') tenFinaleTap(); else tenTap(); }
     function tenTap(){ if(!_fx10||_fx10.busy) return;
       if(_fx10.phase==='reveal'){ tenRevealNext(); return; }
       if(_fx10.phase==='opened'){ tenBeginReveal(); return; }   // 3탭 후 알 빛나는 상태 → 1초 뒤 활성화된 탭으로 결과 진입
@@ -6380,7 +6386,7 @@
       holder.innerHTML=tenRevealCardHtml(it, n+1, _fx10.items.length); }
     function tenRevealCardHtml(it, n, total){ const t=tierInfo(it.tier), rank=tierRank(it.tier), ex=it.tier==='exclusive', rb=!!it.rainbow;
       const conf=rb?28:(rank<=0?0:rank<=2?12:20+(rank-2)*8), tw=5+rank*3;
-      return '<div class="fx-reveal ten-card rev-scene tier-'+t.id+' rank-'+rank+((rb||ex)?' rev-rb':'')+'" onclick="tenRevealNext()">'+
+      return '<div class="fx-reveal ten-card rev-scene tier-'+t.id+' rank-'+rank+((rb||ex)?' rev-rb':'')+'">'+
         '<button class="ten-skip" onclick="event.stopPropagation();tenSkip()" aria-label="건너뛰기(신화·한정·처음 얻는 펫 제외 한 번에)">'+pixelTextHtml('SKIP', '#ffffff', {h:16})+'</button>'+
         '<div class="ten-count">'+pixelTextHtml(n+' / '+total, '#ffffff', {h:15})+'</div>'+
         '<div class="fx-art pop"><span class="fx-aurawrap">'+lightLayers({aura:210, rays:250, rainbow:ex})+'</span>'+
@@ -6393,7 +6399,7 @@
         '<div class="fx-confetti">'+(conf?fxConfetti(conf):'')+'</div></div>'; }
     function tenFinale(){ _fx10.phase='finale'; _fx10.busy=false; _fx10._roaming=false; const fx=$('catFx'); if(!fx) return;
       const rm=reducedMotion();
-      fx.innerHTML='<div class="fx-scrim"></div><div class="ten-wrap ten-final" id="tenWrap" onclick="tenFinaleTap()">'+
+      fx.innerHTML='<div class="fx-scrim"></div><div class="ten-wrap ten-final" id="tenWrap">'+
         pickupSceneHtml('reveal')+tenMeadowHtml()+tenNestHtml(_fx10.items, 'finale')+
         '<div class="ten-fintitle">'+pixelTextHtml('10연차 완료!', '#ffffff', {h:28, base:12})+'</div>'+
         '<div class="ten-hint" id="tenHint">'+(rm?'':pixelTextHtml('탭해주세요', '#ffffff', {h:16}))+'</div>'+   // 탭 전까지 펫 정지 유지, 탭하면 배회 시작(자동 1초 배회 제거)

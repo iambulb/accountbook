@@ -8,6 +8,9 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 수정 — 🍏 아이폰에서 10연차 탭이 안 먹던 것(2차, 확실한 수정)
+- `cursor:pointer`만으론 부족했음 — iOS Safari는 **자식(SVG 둥지·씬)을 탭해 부모 div의 인라인 `onclick`으로 위임될 때 click을 안 만드는** 케이스가 있음. → 10연차 탭을 **포인터 이벤트(`pointerup`)로 위임**하도록 변경: `#catFx`에 `tenTapDelegate`를 한 번만 바인딩해 현재 단계(nest/reveal/finale)로 라우팅(포인터 이벤트는 iOS서도 자식 탭에서 정상 발생·버블). 둥지/카드/피날레의 인라인 onclick 제거(SKIP·입양 버튼은 native button이라 그대로 동작). `sw.js` `v3.412.0`.
+
 ### 수정 — 🍏 아이폰(iOS)에서 10연차 둥지 탭이 안 먹던 것
 - iOS Safari는 **`cursor:pointer`가 있는 요소에서만 div 탭에 click 이벤트를 생성**하는데, 10연차 둥지/피날레 무대(`.ten-wrap`)에 그게 빠져 있어 **아이폰에서 "둥지를 탭하세요"가 안 넘어가고 흔들림도 안 나던** 것을 수정(`.ten-wrap { cursor:pointer }` 추가, PC는 원래 정상). 리빌 카드(`.ten-card`)·단일 뽑기 알(`.fx-item`)은 이미 있어 정상이었음. `sw.js` `v3.411.0`.
 
