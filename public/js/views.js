@@ -988,6 +988,7 @@
     function openTodoEdit(id, presetPb){
       if(!id) state._todoFriend=null;   // 새 할일은 항상 내 목록으로(친구 읽기전용 뷰였어도)
       const t=id?allTodos().find(x=>x.id===id):null;
+      const defDue=t?(t.dueDate||''):(_todoSel||todayStr());   // 신규 할일 마감일 기본값 = 달력에서 선택한 날(없으면 오늘). 가계부 거래폼과 동일 관례.
       // 스코프: 편집=기존 할일 값, 신규=현재 세그먼트. 개인은 담당자 없음(소유자=나), 그룹은 담당배정.
       const scope=t?todoScope(t):(isPersonalWs()?'personal':'group');
       const asel=t?(t.assignedUid||'공동'):(state.uid||'공동');
@@ -997,8 +998,8 @@
       let h='<input type="hidden" id="tdScope" value="'+scope+'">';
       h+='<div class="field"><label>할 일</label><input class="input" id="tdTitle" value="'+escapeHtml(t?(t.title||''):'')+'" placeholder="예: 장보기, 항공권 예약"></div>';
       if(scope==='group') h+='<div class="form-2"><div class="field"><label>담당자</label><select class="input" id="tdAssign">'+ownerOptions(asel)+'</select></div>'+
-        '<div class="field"><label>마감일</label><input type="date" class="input" id="tdDue" value="'+(t&&t.dueDate?t.dueDate:'')+'"></div></div>';
-      else h+='<div class="field"><label>마감일</label><input type="date" class="input" id="tdDue" value="'+(t&&t.dueDate?t.dueDate:'')+'"></div>';
+        '<div class="field"><label>마감일</label><input type="date" class="input" id="tdDue" value="'+defDue+'"></div></div>';
+      else h+='<div class="field"><label>마감일</label><input type="date" class="input" id="tdDue" value="'+defDue+'"></div>';
       var repOpts=[['none','반복 없음'],['weekly','매주'],['monthly','매월']]; if(rep==='daily') repOpts.splice(1,0,['daily','매일(기존)']);   // 매일은 신규 제외(습관=내 미션), 레거시 값은 보존
       h+='<div class="form-2"><div class="field"><label>반복</label><select class="input" id="tdRepeat">'+repOpts.map(function(o){ return '<option value="'+o[0]+'"'+(rep===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
         '<div class="field"><label>가계부 연결</label><select class="input" id="tdPb"><option value="">연결 안 함</option>'+pbs.map(function(p){ return '<option value="'+p.id+'"'+(pbSel===p.id?' selected':'')+'>'+(p.icon||'📒')+' '+escapeHtml(p.name)+'</option>'; }).join('')+'</select></div></div>';
