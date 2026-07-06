@@ -3032,8 +3032,8 @@
       h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:8px 2px 0;">여기 지정한 펫은 <b>한정(무지개) 등급을 뽑을 때만</b> 연출에 등장해요. <b>그 외 등급</b>(특별·전설·신화)은 <b>전설·신화 펫 중 랜덤 2마리</b>가 걸어나와 톡 칩니다. <b>1번</b>=왼쪽, <b>2번</b>=오른쪽(둘 다면 <b>1번 끝난 뒤 2번</b> 순차, 크기는 펫 배율만큼). 현재 1번=<b>'+escapeHtml(gachaFxSlotDesc('a'))+'</b> · 2번=<b>'+escapeHtml(gachaFxSlotDesc('b'))+'</b>.</p>';
       h+='<div class="petmg-btns" style="margin-top:8px;"><button class="btn ghost" onclick="devPreviewGachaFx()">▶︎ 연출 미리보기</button></div>';
       return h; }
-    let _devPetSpecies='all';   // 개발자 펫 관리 종류 탭
-    function setDevPetSpecies(s){ _devPetSpecies=s||'all'; if(state._sheetRefresh) state._sheetRefresh(); }
+    let _devPetSpecies=lsGet('devPetSpecies','all');   // 개발자 펫 관리 종류 탭
+    function setDevPetSpecies(s){ _devPetSpecies=s||'all'; lsSet('devPetSpecies',_devPetSpecies); if(state._sheetRefresh) state._sheetRefresh(); }
     function openDevPetManager(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
       const build=()=>{ const all=allPetsForDev(), sel=state._devPetSel;
         // 종류 탭(삭제·런타임 포함 존재하는 종, SPECIES_LABEL 순 + 개수 배지)
@@ -3731,10 +3731,13 @@
       return h;
     }
     // ===== 우리집 펫 리스트 정렬·검색(수백 마리 관리) =====
-    let _petSort='recent', _homeSpecies='all';   // 홈 펫: 정렬 + 종류(species) 탭 (검색 제거, 도감식 종류 구분)
+    // 브라우징 선택(탭·정렬) 유지 — 프라이빗 모드/차단 시 안전(try). 도감/상점/개발자 탭도 공유.
+    function lsGet(k, def){ try{ const v=localStorage.getItem(k); return v==null?def:v; }catch(e){ return def; } }
+    function lsSet(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
+    let _petSort=lsGet('petSort','recent'), _homeSpecies=lsGet('homeSpecies','all');   // 홈 펫: 정렬 + 종류(species) 탭 (검색 제거, 도감식 종류 구분)
     const PET_SORTS=[['recent','최신순'],['aff','애정도순'],['tier','등급순']];
-    function setPetSort(v){ _petSort=v||'recent'; if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
-    function setHomeSpecies(s){ _homeSpecies=s||'all'; if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
+    function setPetSort(v){ _petSort=v||'recent'; lsSet('petSort',_petSort); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
+    function setHomeSpecies(s){ _homeSpecies=s||'all'; lsSet('homeSpecies',_homeSpecies); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     // 보유 펫 정렬 — recent(최신 획득=boughtAt)·aff(애정도)·tier(등급, 상위 먼저).
     function sortOwnedPets(ids){ const l=ids.slice();
       const rank=id=>tierRank(CAT_TIER[id]||'normal'), aff=id=>Number((ownedCatsMap()[id]||{}).affection)||0, bat=id=>((ownedCatsMap()[id]||{}).boughtAt)||'', nm=id=>catName(id)||'';
@@ -4277,7 +4280,7 @@
       const tag=(id)=> pickupExists(id) ? '<span class="pk-tag">'+catNameSpan(id,catName(id))+'</span>' : '';
       const sep=(pickupExists(p1)&&pickupExists(p2))?'<span class="pk-tag" style="opacity:.5;">·</span>':'';
       return '<div class="pickbanner"><div class="pk-head"><span class="pk-title tier-rainbow">✨ 지금 이 펫만! 한정 픽업</span>'+tag(p1)+sep+tag(p2)+'</div>'+pickupSceneHtml('banner')+'</div>'; }
-    // (구 roomBackdropHtml 제거 — 전설·신화도 픽업 배너 씬으로 통일. 배경은 pickupSceneHtml('reveal').)
+    // (구 roomBackdropHtml 제거 — 신화·한정 등장만 픽업 배너 씬 배경(전설 제외). 배경은 pickupSceneHtml('reveal').)
     // 등급 '이름' 라벨을 등급 색으로(펫 이름이 아니라 등급명). 한정(exclusive)=무지개(.tier-rainbow), 그 외=인라인 색(신화=#ff5fa2 등). 도감 등급 헤더 등 공용.
     function tierLabelHtml(tierId){ const ti=tierInfo(tierId); const nm=escapeHtml(ti.name);
       if(tierId==='exclusive') return '<span class="tier-rainbow">'+nm+'</span>';
@@ -5400,7 +5403,7 @@
       const tw=5+rank*3;                                                  // 트윙클 수(등급↑ 많이)
       const art=isEggKind(_fx.kind)?catFace(_fx.res.id,{h:118,eager:true}):rewardBoxArt(_fx.res);   // eager: 등장 즉시 표시(lazy면 ~1초 늦게 뜸)
       // 🌲 전설·신화·한정 펫 등장 = 픽업 배너 씬 전체를 배경으로(픽업 펫 2마리도 씬에서 배회). 그 외 등급은 기본 연출.
-      const sceneBg = isEggKind(_fx.kind) && (_fx.res.tier==='legend' || _fx.res.tier==='limited' || _fx.res.tier==='exclusive');
+      const sceneBg = isEggKind(_fx.kind) && (_fx.res.tier==='limited' || _fx.res.tier==='exclusive');   // 픽업 씬 배경 = 신화(limited)·한정(exclusive)만(전설 제외)
       const skyLayer = sceneBg ? pickupSceneHtml('reveal') : '';   // 배너 씬(pickupSceneHtml) 재사용 — 배경 + 배회 픽업 펫(알·헤더 없음)
       fx.innerHTML='<div class="fx-scrim"></div>'+skyLayer+'<div class="fx-reveal tier-'+t.id+' rank-'+rank+((rb||ex)?' rev-rb':'')+(sceneBg?' rev-scene':'')+'">'+   // 한정도 rev-rb(무지개 프레임=박스)
         '<div class="fx-art pop">'+
