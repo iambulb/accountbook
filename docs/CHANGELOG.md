@@ -8,6 +8,9 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 변경 — 🎟️ 쿠폰 개편: EGGARDENTODO 삭제 + EGGARDENEGGARDEN(뜰알 10개) 추가
+- 쿠폰 `EGGARDENTODO`(무지개박스 1개) 삭제. 새 쿠폰 `EGGARDENEGGARDEN` 추가 — 보상 **뜰알 10개**, 소식 화면 **쿠폰 목록 최상단**에 노출(`PROMO_CODES` 첫 키). 쿠폰 아이콘에 뜰알 케이스 추가. `sw.js` `v3.366.0`.
+
 ### 변경 — 🐾 펫 목록 도감화(종류 탭·등급 테두리·정렬·4행 스크롤)
 - **알뜰홈 홈 펫 목록**: 기존 **검색·정렬 드롭다운 제거** → **도감식 종류(species) 탭**(전체·고양이·강아지…·개수 배지, 2종↑, `homeSpeciesTabs`/`setHomeSpecies`) + **정렬 `최신순·애정도순·등급순`**(`sortOwnedPets` 재활용). **펫 초상 rect(`.cpic`)에 등급색 테두리**(일반=중립회색·…·신화 핑크·**한정 무지개 border-image**)로 등급을 한눈에. **4행까지 보이고 초과분은 내부 스크롤**(`fitPetGridRows`가 카드 높이×4로 정확히 제한, `.catchips.scroll4`). 검색 관련 코드(`_petQuery`/`applyPetFilter`/`.petsearch` 포커스 복원) 정리.
 - **개발자 펫 관리**: 메뉴 라벨 `펫 (추가 · 수정 · 삭제)` → **`펫 관리`**. 목록을 **도감식 종류 탭 + 등급별 섹션**(`_devPetSpecies`/`setDevPetSpecies`, 삭제됨은 맨 끝)으로 정리(행 마크업·부분 갱신 유지). `sw.js` `v3.365.0`.
