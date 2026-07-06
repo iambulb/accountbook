@@ -1809,7 +1809,7 @@
       "...XSSSSBBBBBBBBggggg...","....XSSSSSBBBBRRgggg....","....XnRRRRRRRRggRggg....",".....nnRRrrrrrggrgg.....","......nnrrrrrgrrgg......",
       "........ngnnngnn........"];
     const DDEUL_PAL={X:'#8d8368',D:'#d8d0bd',S:'#eae3d2',W:'#f7f3ea',I:'#fffef8',B:'#2b2b31',H:'#45454f',E:'#9a9aa4',P:'#f2a0b4',Q:'#7a3a48',q:'#b56576',R:'#9c6a3c',r:'#6f4a25',o:'#b3844e',n:'#523118',G:'#5aa63c',g:'#3f7a2c',m:'#8ed46f',F:'#f9b9d0',f:'#ef8fb4',C:'#ff9ec2',Y:'#ffe06a',t:'#4e9636',T:'#3f7a2c'};
-    function ddeulEggSvg(opt){ return pxSvg(M_DDEUL, DDEUL_PAL, opt); }
+    function ddeulEggSvg(opt, flw){ return pxSvg(M_DDEUL, flw?Object.assign({},DDEUL_PAL,flw):DDEUL_PAL, opt); }   // flw={C,F,f} 주면 꽃잎 색만 교체
     // 🌸 뜰알 FX 분리 렌더 — 오픈 연출에서 '꽃'과 '알 몸통'을 따로 그려, 알이 흔들릴 때 꽃이 줄기에서 더 크게 흔들리게(CSS .fx-ddflower). 몸통=꽃 뺀 알(M_DDEUL 5행부터).
     const M_DDEUL_FLW=[".fCf.",".CYC.",".fCf.","..t..","..T.."];
     const M_DDEUL_BODY=M_DDEUL.slice(5);
@@ -4441,6 +4441,8 @@
     function gbPityHtml(kind){ const left=pityRemain(pityGet(kind), (typeof PITY_N!=='undefined'?PITY_N:100)); return '<div class="gb-pity"><span class="pity-chip">'+sparkSvg({h:11})+(typeof PITY_N!=='undefined'?PITY_N:100)+'번 안에 <b>신화 이상 확정</b> · 남은 <b>'+left+'뽑</b></span></div>'; }
     // 배너 공용 중앙 센터피스 — 뜰알 .pk-egg 위치(중앙 하단)에 아이콘/상자 + 반짝임 FX(도트). 둥지 대체.
     function gbCenterHtml(inner, fx, cls){ return '<div class="gb-center '+(cls||'')+'">'+(fx?'<span class="gb-cfx">'+fx+'</span>':'')+'<span class="gb-cicon">'+inner+'</span></div>'; }
+    // 🌈 배너 알 공용 무지개 연출 — 무지개 오오라+광선(lightLayers rainbow) + 무지개 트윙클. 뜰알·펫알·랜덤박스 센터 공용.
+    function gbRainbowFx(){ return '<span class="gb-rbaura">'+lightLayers({aura:98,rays:118,rainbow:true})+'</span>'+fxAuraTwinkles(9,true); }
     // 🌱 뜰알 배너 = 한정 픽업 씬 + 알뜰 아이콘(기본색) 중앙 + 무지개빛 반짝임.
     function ddeulBannerHtml(){
       const p1=LIMITED_PICKUP[0], p2=LIMITED_PICKUP[1];
@@ -4448,7 +4450,7 @@
       const sep=(pickupExists(p1)&&pickupExists(p2))?'<span class="pk-tag" style="opacity:.5;">·</span>':'';
       const pk=LIMITED_PICKUP.filter(pickupExists).map(id=>catNameSpan(id,catName(id))).join('·');
       return '<div class="gbanner gb-ddeul"><div class="gb-head"><span class="pk-title tier-rainbow">✨ 지금 이 펫만! 한정 픽업</span>'+tag(p1)+sep+tag(p2)+'</div>'+
-        '<div class="gb-scene">'+pickupSceneHtml('banner')+gbCenterHtml(eggGardenSvg(EGG_DEFAULT,{h:54}), fxAuraTwinkles(8,true), 'gb-rb')+'</div>'+
+        '<div class="gb-scene">'+pickupSceneHtml('banner')+gbCenterHtml(ddeulEggSvg({h:56}), gbRainbowFx(), 'gb-rb gb-eglow')+'</div>'+
         // 🌱 배너 이미지 아래 — 뜰알 이미지·설명·소모재화
         '<div class="gb-item"><div class="gb-item-ic">'+ddeulEggSvg({h:52})+'</div>'+
           '<div class="gb-item-meta"><b class="tier-rainbow">뜰알 <span class="tagmini tier-rainbow">한정 픽업</span></b>'+
@@ -4467,7 +4469,7 @@
     // 🥚 펫알 배너 = 노을 씬 + 배너 이미지 아래 펫알 이미지·설명·소모재화 + 1뽑/10뽑(소모재화).
     function eggBannerHtml(){
       return '<div class="gbanner gb-eggbn"><div class="gb-head"><b class="gb-t gb-sunset-t">🌇 펫알 · 노을 픽업</b><span class="pk-tag">매일 만나는 새 친구</span></div>'+
-        '<div class="gb-scene">'+sunsetSceneHtml()+gbCenterHtml(eggGardenSvg(EGG_SUNSET,{h:54}), fxAuraTwinkles(8,false), 'gb-sun')+'</div>'+
+        '<div class="gb-scene">'+sunsetSceneHtml()+gbCenterHtml(eggSvg(0,{h:56}), gbRainbowFx(), 'gb-rb gb-eglow')+'</div>'+
         // 🥚 배너 이미지 아래 — 펫알 이미지·설명·소모재화
         '<div class="gb-item"><div class="gb-item-ic">'+eggSvg(0,{h:52})+'</div>'+
           '<div class="gb-item-meta"><b>펫알</b>'+
@@ -4478,7 +4480,7 @@
     // 🎁 랜덤박스 배너 = 낮 씬 + 상자 중앙(둥지 없음) + 반짝임.
     function boxBannerHtml(){
       return '<div class="gbanner gb-box"><div class="gb-head"><b class="gb-t">🎁 랜덤박스</b></div>'+
-        '<div class="gb-scene">'+pickupSceneHtml('banner')+gbCenterHtml(boxSvg({h:52}), fxAuraTwinkles(7,false), 'gb-boxfx')+'</div>'+
+        '<div class="gb-scene">'+pickupSceneHtml('banner')+gbCenterHtml(boxSvg({h:54}), gbRainbowFx(), 'gb-rb gb-eglow')+'</div>'+
         gbActionsHtml('box')+gbPityHtml('box')+'</div>';
     }
     // 🌈 무지개 배너 = 밤 씬 + 알뜰 아이콘(야광색) 중앙(둥지 없음) + 찬란한 무지개 오오라·트윙클.
@@ -6308,7 +6310,7 @@
     function tenShuffle(n){ const a=Array.from({length:n},(_,i)=>i); for(let i=n-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
     function tenScaleFor(id){ return petActorPx(id, 44, 110); }   // 실제 설정 크기(petScale 비례, 룸/dock·배회와 동일 표기) — 반감 없음
     function tenEggSvg(it, stage){
-      if(it.kind==='ddeul') return '<span class="ten-ddeulegg">'+ddeulFxHtml()+'</span>';   // 뜰알: 알뽑기와 동일하게 꽃+몸통 분리(탭 시 꽃 팔랑)
+      if(it.kind==='ddeul'){ if(!it._flw) it._flw=randDdeulFlower(); return '<span class="ten-ddeulegg">'+ddeulFxHtml(it._flw)+'</span>'; }   // 뜰알: 꽃+몸통 분리(탭 시 꽃 팔랑) + 알마다 꽃 색 랜덤
       if(it.rainbow && it._rbShown) return rainbowEggStage(Math.min(stage,2),{h:52});   // h 속성으로 크기 확정(오픈 알과 동일) — width:100%/height:auto 는 WebView서 작게 뭉개짐
       return eggSvg(stage,{h:52}); }
     // 둥지(뒤판+앞테두리) + 알 10개 흩뿌림(TEN_POS, 비겹침) / 피날레 펫. 알·펫 위치 동일(같은 좌표·z).
@@ -6405,7 +6407,7 @@
     function tenOpenEgg(it){ const el=$('tenEgg'+it.i); if(!el||it._open) return; it._open=true;
       const t=tierInfo(it.tier), ex=it.tier==='exclusive';
       el.classList.add('open'); el.style.color=ex?'':(t.color||'#fff');
-      el.innerHTML=(it.kind==='ddeul'?ddeulEggSvg({h:52}):eggCrackSvg(t.color, !!(it.rainbow&&it._rbShown), {h:52}))+
+      el.innerHTML=(it.kind==='ddeul'?ddeulEggSvg({h:52}, it._flw):eggCrackSvg(t.color, !!(it.rainbow&&it._rbShown), {h:52}))+
         '<span class="ten-crlight">'+lightLayers({aura:64, rays:82, rainbow:ex})+'</span>';
       el.classList.remove('shake','tremble'); void el.offsetWidth; el.classList.add('hit');
       if(!liteMode()){ const s=document.createElement('span'); s.className='ten-eggfx'; s.innerHTML=fxSparkles(5); el.appendChild(s); }

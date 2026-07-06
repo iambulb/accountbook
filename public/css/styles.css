@@ -1854,6 +1854,7 @@
     .gb-boxfx .gb-cfx { color:#c2d6ec; }
     .gb-sun .gb-cicon .px { filter:drop-shadow(0 0 5px rgba(255,170,90,.6)) drop-shadow(0 3px 0 rgba(0,0,0,.16)); }   /* 노을 아이콘 글로우 */
     .gb-glow .gb-cicon .px { filter:drop-shadow(0 0 6px rgba(176,255,160,.75)) drop-shadow(0 2px 0 rgba(0,0,0,.22)); }   /* 무지개=야광 아이콘 글로우 */
+    .gb-eglow .gb-cicon .px { filter:drop-shadow(0 0 7px rgba(255,255,255,.8)) drop-shadow(0 2px 0 rgba(0,0,0,.2)); }   /* 뜰알·펫알·랜덤박스 배너: 알이 무지개빛에 은은히 빛나는 흰 글로우(무지개 오오라는 뒤 .gb-rbaura) */
     /* ☀️ 노을 해(가운데) */
     /* ☀️ 지는 해 — .pk-sky 하단(수평선)에 중심을 두고 아래 절반은 sky overflow:hidden가 클립 → 절반만 노출 */
     .pk-sun { position:absolute; left:50%; bottom:0; transform:translate(-50%,50%); z-index:0; line-height:0; filter:drop-shadow(0 0 10px rgba(255,168,88,.55)); }
