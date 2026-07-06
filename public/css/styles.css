@@ -1286,7 +1286,7 @@
     .ten-wrap .pkscene { position:absolute; inset:0; }
     /* 픽업 배너 기본 무지개 제거(10연차 전용은 .ten-skyrb) + 세로 화면 공백 축소: 초록 필드를 위로 넓힘 */
     .ten-wrap .pk-rainbow, .ten-reveal .pk-rainbow { display:none !important; }
-    .ten-wrap .pk-sky { height:34%; } .ten-wrap .pk-field { height:66%; } .ten-wrap .pk-horizon { bottom:66%; }
+    .ten-wrap .pk-sky { height:22%; } .ten-wrap .pk-field { height:78%; } .ten-wrap .pk-horizon { bottom:78%; }   /* 초록 배치공간을 위로 확장(하늘 축소) */
     /* 🌿 하단 초원 채우기 */
     .ten-meadow { position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
     .ten-md { position:absolute; image-rendering:pixelated; line-height:0; transform:translateX(-50%); z-index:1; }
@@ -1297,7 +1297,7 @@
     .ten-skyrb { position:absolute; left:50%; top:11%; transform:translateX(-50%); z-index:1; line-height:0; pointer-events:none; clip-path:inset(0 100% 0 0); animation:ten-rbdraw 1.6s ease-out .05s forwards; }
     .ten-skyrb .px { display:block; image-rendering:pixelated; width:min(88vw,430px); height:auto; opacity:.9; }
     /* 🪺 둥지(세로형) — 중앙 배치. 뒤판이 높이를 잡고, 그리드/앞테두리가 겹쳐 알이 담긴 느낌 */
-    .ten-nest { position:absolute; left:50%; top:45%; transform:translate(-50%,-50%); z-index:3; width:min(86vw,344px); }
+    .ten-nest { position:absolute; left:50%; top:58%; transform:translate(-50%,-50%); z-index:3; width:min(86vw,344px); }   /* 둥지를 더 내려 하늘에 안 닿게 */
     .ten-nest.finale { aspect-ratio:64/74; }   /* 둥지 없이도 알과 동일한 셀 좌표 유지(뒤판 없이 높이 확보) */
     .ten-nest.drop { animation:ten-drop .9s cubic-bezier(.2,.8,.3,1) both; }
     .ten-nest.shake { animation:ten-shake .46s ease; }
@@ -1305,7 +1305,7 @@
     .ten-nestback .px { display:block; width:100%; height:auto; image-rendering:pixelated; filter:drop-shadow(0 10px 16px rgba(0,0,0,.45)); }
     .ten-nestfront { position:absolute; left:0; top:0; width:100%; z-index:2; line-height:0; pointer-events:none; }
     .ten-nestfront .px { display:block; width:100%; height:auto; image-rendering:pixelated; }
-    .ten-grid { position:absolute; left:21%; right:21%; top:14%; bottom:15%; z-index:1; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(5,1fr); gap:2px 10%; }   /* top-down 구멍 안에 알 담김 */
+    .ten-grid { position:absolute; left:21%; right:21%; top:13%; bottom:13%; z-index:1; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(5,1fr); gap:2px 10%; }   /* top-down 구멍 안에 알 담김(맨아래 덜 가리게 bottom↑) */
     .ten-egg { position:relative; display:flex; align-items:center; justify-content:center; overflow:visible; cursor:pointer; }
     .ten-egg > .px { display:block; height:96%; width:auto; max-width:100%; image-rendering:pixelated; filter:drop-shadow(0 3px 4px rgba(0,0,0,.32)); }
     .ten-egg.shake { animation:fxshake .44s ease; transform-origin:50% 90%; }
@@ -1328,15 +1328,15 @@
     .ten-bob { position:relative; z-index:1; display:inline-block; animation:ten-bob 1.8s ease-in-out infinite; }
     .ten-bob .px, .ten-bob .catpx { display:block; image-rendering:pixelated; }
     .ten-nest.hatched .ten-grid { opacity:0; transition:opacity .55s ease; }
-    .pkstage.ten-roam { z-index:5; bottom:22%; height:46%; }   /* 배회 공간을 위로 올려 화면 가운데 배치 */
+    .pkstage.ten-roam { z-index:5; bottom:14%; height:60%; }   /* 배회 공간을 위로 확장·중앙 배치(초록 공백 채움) */
     /* 카메오(알별) — .fx-cat 변형: left=알 중심(JS 주입), from/to·poke를 펫 크기 비례로 */
     .ten-cat.fxc-l { --from:calc(-54vw - var(--cat)); --to:calc(var(--cat) * -0.60); --poke:calc(var(--cat) * 0.16); }
     .ten-cat.fxc-r { --from:calc(54vw + var(--cat));  --to:calc(var(--cat) *  0.60); --poke:calc(var(--cat) * -0.16); }
-    .ten-hint { position:absolute; left:0; right:0; bottom:3%; z-index:6; text-align:center; color:#fff; font-size:14px; font-weight:800; opacity:.92; animation:fxblink 1s ease-in-out infinite; pointer-events:none; text-shadow:0 1px 3px rgba(0,0,0,.5); }
+    .ten-hint { position:absolute; left:0; right:0; top:24%; bottom:auto; z-index:6; text-align:center; color:#fff; font-size:14px; font-weight:800; opacity:.92; animation:fxblink 1s ease-in-out infinite; pointer-events:none; text-shadow:0 1px 3px rgba(0,0,0,.5); }   /* 둥지 위쪽으로 크게 올림 */
     .ten-count { position:relative; z-index:4; color:#fff; font-size:13px; font-weight:800; opacity:.82; margin-bottom:2px; letter-spacing:.06em; }
     .ten-nexthint { position:relative; z-index:2; color:#fff; font-size:13px; font-weight:700; opacity:.78; margin-top:4px; animation:fxblink 1.2s ease-in-out infinite; }
     .ten-card { cursor:pointer; }
-    .ten-fintitle { position:absolute; left:0; right:0; top:8%; z-index:6; text-align:center; }
+    .ten-fintitle { position:absolute; left:0; right:0; top:16%; z-index:6; text-align:center; }   /* 완료 텍스트 더 내림 */
     .ten-takebtn { position:absolute; left:50%; bottom:4%; transform:translateX(-50%); z-index:7; }
     @keyframes ten-drop { 0%{ transform:translate(-50%,-165%); opacity:0; } 55%{ opacity:1; } 82%{ transform:translate(-50%,-47%); } 100%{ transform:translate(-50%,-50%); opacity:1; } }
     @keyframes ten-shake { 0%,100%{ transform:translate(-50%,-50%) rotate(0); } 20%{ transform:translate(-51.2%,-50%) rotate(-1.4deg); } 55%{ transform:translate(-48.8%,-50%) rotate(1.4deg); } 80%{ transform:translate(-50.5%,-50%) rotate(-.6deg); } }
