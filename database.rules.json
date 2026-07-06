@@ -36,12 +36,12 @@
 
     "codes": {
       ".read": "auth != null",
-      "$code": { ".write": "auth != null" }
+      "$code": { ".write": "auth != null && (!data.exists() || !newData.exists())" }
     },
 
     "friendCodes": {
       ".read": "auth != null",
-      "$code": { ".write": "auth != null" }
+      "$code": { ".write": "auth != null && (!data.exists() || !newData.exists())" }
     },
 
     "migrationV3": {
@@ -81,24 +81,6 @@
         ".read":  "auth != null && root.child('workspaces').child($wsId).child('members').child(auth.uid).exists()",
         ".write": "auth != null && root.child('workspaces').child($wsId).child('members').child(auth.uid).exists()"
       }
-    },
-
-    "accounts":         { ".read": "auth != null", ".write": "auth != null" },
-    "creditCards":      { ".read": "auth != null", ".write": "auth != null" },
-    "categories":       { ".read": "auth != null", ".write": "auth != null" },
-    "budgets":          { ".read": "auth != null", ".write": "auth != null" },
-    "subscriptions":    { ".read": "auth != null", ".write": "auth != null" },
-    "purposeBooks":     { ".read": "auth != null", ".write": "auth != null" },
-    "people":           { ".read": "auth != null", ".write": "auth != null" },
-    "giftEvents":       { ".read": "auth != null", ".write": "auth != null" },
-    "plannedGiftEvents":{ ".read": "auth != null", ".write": "auth != null" },
-    "transactions":     { ".read": "auth != null", "$uid": { ".write": "auth != null && auth.uid === $uid" } },
-    "savings":          { ".read": "auth != null", "$uid": { ".write": "auth != null && auth.uid === $uid" } },
-    "recurring":        { ".read": "auth != null", "$uid": { ".write": "auth != null && auth.uid === $uid" } },
-    "recurringLogs":    { ".read": "auth != null", "$uid": { ".write": "auth != null && auth.uid === $uid" } },
-    "fixedExpenses":    { ".read": "auth != null", "$uid": { ".write": "auth != null && auth.uid === $uid" } },
-    "settlementPayments": { ".read": "auth != null", "$uid": { ".write": "auth != null && auth.uid === $uid" } },
-    "loans":            { ".read": "auth != null", ".write": "auth != null" },
-    "loanPayments":     { ".read": "auth != null", ".write": "auth != null" }
+    }
   }
 }
