@@ -1852,6 +1852,7 @@
     .pkscene.pk-night .pk-grass::before { background:repeating-linear-gradient(90deg,#315540 0 2px, transparent 2px 5px); }
     :root[data-theme="dark"] .pkscene.pk-night .pk-grass { background:#1c3325; }
     .pkscene.pk-night .pk-soil { background:#3a3048; box-shadow:0 -2px 0 #4c405e inset; }
+    .ten-mnight .pk-soil { background:#3a3048; box-shadow:0 -2px 0 #4c405e inset; }   /* 밤 채움 메도 흙(어둡게) */
     .pk-moon { position:absolute; left:70%; top:5%; z-index:0; line-height:0; filter:drop-shadow(0 0 5px rgba(210,220,255,.4)); }   /* 🌕 은은한 달무리(작은 앰비언트 글로우) */
     .pk-moon .px { display:block; image-rendering:pixelated; }
     .pk-star { position:absolute; z-index:0; line-height:0; animation:pkstar 3s ease-in-out infinite; }
@@ -1979,6 +1980,12 @@
     .cnote b { color:var(--text); }
     .cpn { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 13px; border:1px solid var(--bd); border-radius:11px; background:var(--bg); margin-top:10px; }
     .cpn code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-weight:700; font-size:12px; color:var(--text); background:var(--soft); padding:3px 8px; border-radius:7px; }
+    .cpn code.cpncode { cursor:pointer; user-select:none; -webkit-user-select:none; transition:transform .08s ease, background .15s ease, color .15s ease; position:relative; }
+    .cpn code.cpncode::after { content:"📋"; margin-left:5px; font-size:11px; opacity:.55; }
+    .cpn code.cpncode:hover { background:color-mix(in srgb, var(--primary) 16%, var(--soft)); }
+    .cpn code.cpncode:active { transform:scale(.93); }
+    .cpn code.cpncode.copied { animation:cpncopied .5s ease; }
+    @keyframes cpncopied { 0%{ background:var(--primary); color:var(--card); transform:scale(1.06); } 60%{ background:var(--primary); color:var(--card); } 100%{ transform:scale(1); } }
     .cpn .rw { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--sub); white-space:nowrap; }
     .cpn .rw .ci { display:inline-flex; } .cpn .rw .px { display:block; }
     .cpn.used { opacity:.5; }

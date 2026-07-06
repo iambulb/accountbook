@@ -6031,6 +6031,13 @@
     function refreshMoreBadges(){ if(state.view==='mode' && state.tab==='more' && typeof renderMore==='function') renderMore(); }
     // 쿠폰 보상 픽셀 아이콘(PROMO_CODES 타입별) — 이모지 대신 도트 아이콘 재사용.
     function couponIcon(d){ if(d.type==='coins') return coinSvg({h:15}); if(d.key==='ddeul') return ddeulEggSvg({h:16}); if(d.key==='rainbow_egg') return rainbowEggSvg({h:16}); if(d.key==='rainbow_box') return rainbowBoxSvg({h:16}); if(d.key==='egg') return eggSvg(0,{h:16}); if(d.key==='box') return boxSvg({h:16}); return coinSvg({h:15}); }
+    // 🎟️ 쿠폰번호 탭 → 클립보드 복사 + 눌림 연출 + 토스트. (인라인 onclick=copyCouponCode(this))
+    function copyCouponCode(el){ if(!el) return; const code=(el.textContent||'').trim(); if(!code) return;
+      const flash=function(){ el.classList.remove('copied'); void el.offsetWidth; el.classList.add('copied'); toast('쿠폰번호가 복사되었어요 📋'); };
+      try{ if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(code).then(flash, function(){ copyTextFallback(code); flash(); }); return; } }catch(e){}
+      copyTextFallback(code); flash();
+    }
+    function copyTextFallback(text){ try{ const ta=document.createElement('textarea'); ta.value=text; ta.setAttribute('readonly',''); ta.style.cssText='position:fixed;top:0;left:0;opacity:0;'; document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }catch(e){} }
     // 공지 왼쪽 픽셀 아이콘 — 제목 키워드로 선택(선물=giftSvg·시즌 할인=seasonSvg·그 외=확성기). 제목 앞 이모지는 표시에서 제거.
     function noticeIcon(n){ const t=(n&&n.t)||''; if(/선물/.test(t)) return giftSvg({h:17}); if(/할인|시즌|이달의\s*펫/.test(t)) return seasonSvg({h:17}); return megaSvg({h:16}); }   // 항목 아이콘 작게(24/20→17/16)
     function noticeTitle(n){ return ((n&&n.t)||'').replace(/^\s*(?:\p{Extended_Pictographic}[️‍]*)+\s*/u, ''); }
@@ -6058,7 +6065,8 @@
       h+='<div class="cnote"><b><span style="display:inline-flex;vertical-align:-2px">'+ticketSvg({h:14})+'</span> 쿠폰</b> — 더보기 → 코드 입력에서 사용하세요</div>';
       const _codes=(state.game&&state.game.codes)||{};
       // 코드는 대문자로 안내(입력은 redeemCode가 소문자로 정규화해 대소문자 무관). used 판정은 저장 키(소문자 code) 그대로.
-      h+=Object.keys(PROMO_CODES).map(function(code){ const d=PROMO_CODES[code]; const used=!!_codes[code]; return '<div class="cpn'+(used?' used':'')+'"><code>'+escapeHtml(code.toUpperCase())+'</code><span class="rw"><span class="ci">'+couponIcon(d)+'</span>'+d.label+(used?'<span class="cused">사용완료</span>':'')+'</span></div>'; }).join('');
+      h+=Object.keys(PROMO_CODES).map(function(code){ const d=PROMO_CODES[code]; const used=!!_codes[code]; const cu=escapeHtml(code.toUpperCase());
+        return '<div class="cpn'+(used?' used':'')+'"><code class="cpncode" role="button" tabindex="0" aria-label="쿠폰번호 '+cu+' 복사" title="탭하면 쿠폰번호 복사" onclick="copyCouponCode(this)">'+cu+'</code><span class="rw"><span class="ci">'+couponIcon(d)+'</span>'+d.label+(used?'<span class="cused">사용완료</span>':'')+'</span></div>'; }).join('');
       return h;
     }
     function catMissionHtml(){
@@ -6455,7 +6463,41 @@
     // 진입점 — items=[{id,tier,kind,rainbow,dup,refund,isNew}]×10
     // 10뽑 배경 씬(테마별) — sunset(펫알)=노을·night(무지개)=밤 리빌 씬, 그 외=픽업 리빌 씬. sunset/night은 자체 데코라 초록 meadow 생략.
     function tenSceneBg(){ const th=_fx10&&_fx10.theme; return th==='sunset'?sunsetSceneHtml('reveal'):th==='night'?nightSceneHtml('reveal'):pickupSceneHtml('reveal'); }
-    function tenMeadowBg(){ const th=_fx10&&_fx10.theme; return (th==='sunset'||th==='night')?'':tenMeadowHtml(); }
+    // 🌇🌙 테마별 채움 메도(노을/밤) — 리빌 배경 씬 위·펫 뒤에 꽃·풀·나무·돌·날아다니는 요소를 촘촘히 얹어 '펫 배회구역~벽지' 빈 공간을 컨셉에 맞게 메운다.
+    function tenMeadowThemed(theme){
+      const lite=liteMode(), night=(theme==='night'); let h='';
+      const NF=['a','b','c'], SF=['su','sg','sw'];
+      const flower=function(i,sp){ return night?nightFlowerSvg(NF[i%3],{h:sp}):flowerSvg(SF[i%3],{h:sp}); };
+      const tuftf=function(sp){ return night?nightTuftSvg({h:sp}):tuftSvg({h:sp}); };
+      const stonef=function(sp){ return night?nightStoneSvg({h:sp}):stoneSvg({h:sp}); };
+      // 🌸 꽃 — 필드 전반(전경~벽지 밑까지)
+      for(let i=0;i<(lite?12:28);i++){ const l=(3+pkRand(i,11)*94).toFixed(1), b=(1+pkRand(i,12)*56).toFixed(1), sp=Math.round(9+pkRand(i,13)*8);
+        h+='<span class="ten-md" style="left:'+l+'%;bottom:'+b+'%">'+flower(i,sp)+'</span>'; }
+      // 🌱 풀 — 촘촘히
+      for(let i=0;i<(lite?12:26);i++){ const l=(2+pkRand(i,21)*95).toFixed(1), b=(0+pkRand(i,22)*57).toFixed(1), sp=Math.round(11+pkRand(i,23)*10);
+        h+='<span class="ten-md" style="left:'+l+'%;bottom:'+b+'%">'+tuftf(sp)+'</span>'; }
+      // 🌿 전경 프레이밍(하단 좌우)
+      if(!lite){ h+='<span class="ten-md" style="left:4%;bottom:1%">'+tuftf(30)+'</span><span class="ten-md" style="left:96%;bottom:1%">'+flower(1,26)+'</span>'; }
+      // 🪨 돌·🟫 흙(낮게)
+      for(let i=0;i<(lite?4:8);i++){ const l=(5+pkRand(i,51)*90).toFixed(1), b=(1+pkRand(i,52)*30).toFixed(1), sp=Math.round(9+pkRand(i,53)*6);
+        h+='<span class="ten-md" style="left:'+l+'%;bottom:'+b+'%;z-index:0;">'+stonef(sp)+'</span>'; }
+      for(let i=0;i<(lite?4:9);i++){ const l=(4+pkRand(i,61)*90).toFixed(1), b=(1+pkRand(i,62)*42).toFixed(1), w=Math.round(12+pkRand(i,63)*16);
+        h+='<span class="pk-soil" style="left:'+l+'%;bottom:'+b+'%;width:'+w+'px;transform:translateX(-50%);"></span>'; }
+      // 🌳 나무 — 중경(펫 뒤·벽지 앞)에 배치해 빈 중간을 채움
+      for(let i=0;i<5;i++){ const l=(6+i*22+pkRand(i,31)*8).toFixed(1), b=(34+pkRand(i,32)*18).toFixed(1), sp=Math.round(28+pkRand(i,33)*16);
+        const tr=night?(i%2?nightPineSvg({h:sp}):nightTreeSvg({h:sp})):mapleSvg({h:sp});
+        h+='<span class="ten-md ten-md-tr" style="left:'+l+'%;bottom:'+b+'%">'+tr+'</span>'; }
+      // ✨ 날아다니는 요소 — 밤=반딧불·가을=고추잠자리 (중경 공중 채움, 드리프트)
+      if(!lite) for(let i=0;i<7;i++){ const l=(8+pkRand(i,41)*84).toFixed(1), b=(24+pkRand(i,42)*34).toFixed(1), sp=Math.round(10+pkRand(i,43)*4),
+        dur=(6+pkRand(i,44)*5).toFixed(1), del=(-pkRand(i,46)*7).toFixed(2); let _s=70; const rnd=function(){ return pkRand(i,_s++); };
+        if(night) h+='<span class="pk-fire" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;--bd:'+(1+pkRand(i,45)*1.4).toFixed(2)+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="ff-core">'+fireflySvg({h:sp})+'</span></span>';
+        else h+='<span class="pk-dfly" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="df-body">'+dragonflySvg({h:sp})+'</span></span>'; }
+      // 🍁 가을: 살랑 내려오는 단풍잎 몇 장 더
+      if(!lite && !night) for(let i=0;i<5;i++){ const l=(8+pkRand(i,81)*84).toFixed(1), dur=(7+pkRand(i,82)*5).toFixed(1), del=(-pkRand(i,83)*9).toFixed(2), sw=(2.4+pkRand(i,84)*1.5).toFixed(1), sp=Math.round(9+pkRand(i,85)*4), dir=(pkRand(i,86)<0.5?-1:1);
+        h+='<span class="pk-fallleaf" style="left:'+l+'%;--d:'+dur+'s;--sw:'+sw+'s;--dir:'+dir+';animation-delay:'+del+'s;"><span class="fl-in">'+mapleLeafSvg({h:sp})+'</span></span>'; }
+      return '<div class="ten-meadow'+(night?' ten-mnight':'')+'" aria-hidden="true">'+h+'</div>';
+    }
+    function tenMeadowBg(){ const th=_fx10&&_fx10.theme; return (th==='sunset'||th==='night')?tenMeadowThemed(th):tenMeadowHtml(); }
     function runTenGachaFx(list, opts){ opts=opts||{}; _fxClear(); _fx=null;
       // side = 알의 '실제 화면 위치'(TEN_POS 흩뿌림 x) 기준 좌/우 → 카메오가 가까운 쪽에서 걸어와 알을 지나치지 않게(격자 i%2는 흩뿌림과 안 맞아 반대편서 걸어와 다른 알을 지나쳐 치던 버그).
       const items=(list||[]).slice(0,TEN_N).map(function(it,i){ return Object.assign({ kind:'egg' }, it, { i:i, col:i%TEN_COLS, row:(i/TEN_COLS|0), side:((TEN_POS[i]&&TEN_POS[i][0]<50)?'l':'r') }); });
