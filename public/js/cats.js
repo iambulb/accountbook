@@ -4403,6 +4403,7 @@
       else { res=rollBoxReward(); if(!res) return;
         if(res.type==='floor') dup=ownsFloor(res.id)&&res.id!=='default';
         else if(res.type==='wall') dup=ownsWall(res.id)&&res.id!=='default';
+        else dup=(typeof itemQty==='function'?itemQty(res.id):0)>0;   // 가구 중복(qty>0)도 grantBoxReward가 환급하므로 리빌에 '+N 은화(중복)'이 뜨게 dup/refund 세팅(C5)
         refund=dup?Math.round((TIER_PRICE[res.tier]||0)*0.2):0; }
       const isNew=gachaNew(kind,res);   // 지급 전 판정(NEW 배지)
       gameRef().transaction(g=>{
@@ -4414,7 +4415,7 @@
           else { g.coins+=refund; }
         } else { const rf=grantBoxReward(g,res); if(rf) g.coins+=rf; }
         return g;
-      }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund, false, isNew); });
+      }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund, false, isNew); else toast('처리 중이에요 — 잠시 후 다시 시도해 주세요', true); });   // C4: 트랜잭션 중단(동시 소비 등) 시 무반응 대신 안내
     }
     // 🌱 뜰알(한정 픽업) — 은화로 여는 펫알. DDEUL_TIERS(한정 0.5% 포함, 활성 한정 펫만)로 롤, 오픈 연출은 뜰+무지개.
     const DDEUL_PRICE=100, DDEUL_GOLD=1;   // 프리미엄 픽업: 은화 100 + 금화 1(실제 소모, 금화 보상 없음).
@@ -4429,7 +4430,7 @@
         if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
         else { g.coins+=refund; }
         return g;
-      }).then(r=>{ if(r&&r.committed) runGachaFx('ddeul', res, dup, refund, false, isNew); });
+      }).then(r=>{ if(r&&r.committed) runGachaFx('ddeul', res, dup, refund, false, isNew); else toast('처리 중이에요 — 잠시 후 다시 시도해 주세요', true); });   // C4
     }
     // ===== ✨ 무지개알/무지개박스: 금화로 구매하는 소비템 → 사용 시 특별90·전설8·한정2% 가챠 =====
     const RAINBOW_TIERS=[{id:'epic',p:90},{id:'legend',p:8},{id:'limited',p:2}];   // limited=신화. 한정(exclusive)은 무지개알엔 없음 — 오직 뜰알에서만. 콘텐츠 없으면 rollFromPool이 한 단계 아래로 폴백
@@ -4456,6 +4457,7 @@
       else { res=rollBoxReward(RAINBOW_TIERS); if(!res) return;
         if(res.type==='floor') dup=ownsFloor(res.id)&&res.id!=='default';
         else if(res.type==='wall') dup=ownsWall(res.id)&&res.id!=='default';
+        else dup=(typeof itemQty==='function'?itemQty(res.id):0)>0;   // 가구 중복(qty>0)도 환급 표시(C5)
         refund=dup?Math.round((TIER_PRICE[res.tier]||0)*0.2):0; }
       const isNew=gachaNew(kind,res);   // 지급 전 판정(NEW 배지)
       gameRef().transaction(g=>{ g=normalizeGame(g);
@@ -4466,7 +4468,7 @@
           else { g.coins+=refund; }
         } else { const rf=grantBoxReward(g,res); if(rf) g.coins+=rf; }
         return g;
-      }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund, true, isNew); });
+      }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund, true, isNew); else toast('처리 중이에요 — 잠시 후 다시 시도해 주세요', true); });   // C4
     }
     let _selItem=null;
     function selItem(id){ if(itemRemaining(id)<=0){ toast(catFurnName(id)+' 전부 배치됨 — 회수하거나 더 얻어야 놓을 수 있어요', true); return; } _selItem=(_selItem===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }   // 남은 0(전부 배치)은 선택 불가·안내. _sheetRefresh=팔레트·펫칩 위치 보존(선택 시 처음으로 안 튐)
