@@ -1177,16 +1177,10 @@
     @keyframes fxddraw { from{ clip-path:inset(0 100% 0 0);} to{ clip-path:inset(0 0 0 0);} }
     /* 🦋 뜰알: 나비 7마리(크기 1.5배)가 알 주변을 팔랑팔랑 날아다닌다(배너 나비 재사용) */
     .fx-ddbflies { position:absolute; inset:0; z-index:3; pointer-events:none; }
-    .fx-ddbfly { position:absolute; left:50%; top:50%; image-rendering:pixelated; animation:fxddfly var(--d,7s) ease-in-out infinite; }
+    .fx-ddbfly { position:absolute; left:50%; top:50%; image-rendering:pixelated; will-change:transform; animation:fxflit var(--d,7s) ease-in-out infinite; }   /* 위치(margin)·경로(--x1..--y3)는 인라인(JS 랜덤) */
     .fx-ddbfly .bf-wing { display:block; transform-origin:center; animation:pkflap var(--fd,.4s) ease-in-out infinite; }
-    .fx-ddbfly-0 { margin:-168px 0 0 -18px; }
-    .fx-ddbfly-1 { margin:-96px 0 0 118px; }
-    .fx-ddbfly-2 { margin:44px 0 0 -150px; }
-    .fx-ddbfly-3 { margin:96px 0 0 128px; }
-    .fx-ddbfly-4 { margin:-40px 0 0 -128px; }
-    .fx-ddbfly-5 { margin:-24px 0 0 152px; }
-    .fx-ddbfly-6 { margin:150px 0 0 -30px; }
-    @keyframes fxddfly { 0%,100%{transform:translate(0,0)} 25%{transform:translate(16px,-13px)} 50%{transform:translate(28px,7px)} 75%{transform:translate(9px,17px)} }
+    /* 나비 제각각 이동 — 각 나비의 --x1..--y3(인라인)로 서로 다른 방향·거리로 흩날림(같은 방향 세트 이동 금지) */
+    @keyframes fxflit { 0%,100%{transform:translate(0,0)} 25%{transform:translate(var(--x1,10px),var(--y1,-10px))} 50%{transform:translate(var(--x2,22px),var(--y2,5px))} 75%{transform:translate(var(--x3,8px),var(--y3,14px))} }
     @media (prefers-reduced-motion: reduce){ .fx-ddbfly, .fx-ddbfly .bf-wing, .fx-ddrainbow, .fx-ddcloud { animation:none; } .fx-ddrainbow { opacity:1; clip-path:none; } }
     .shopcard.ddeul-card .thumb .px { height:84px; width:auto; }   /* 샵 카드에서 알이 작아 보이지 않게 썸네일 꽉 채움 */
     .fx-egg.pop { animation:fxpop .4s cubic-bezier(.2,1.4,.4,1), fxfloat 2.2s ease-in-out .4s infinite; }
@@ -1612,9 +1606,8 @@
     .pk-horizon { position:absolute; left:0; right:0; bottom:60%; height:0; z-index:1; overflow:visible; pointer-events:none; }
     /* 🦋 나비 레이어(씬 전체) — 각 나비가 살랑살랑 주변을 날아다니고 날개를 팔랑임 */
     .pk-air { position:absolute; inset:0; z-index:4; overflow:hidden; pointer-events:none; }
-    .pk-bfly { position:absolute; z-index:4; will-change:transform; animation:pkbfly var(--d,9s) ease-in-out infinite; animation-delay:calc(var(--i) * -1.3s); }
+    .pk-bfly { position:absolute; z-index:4; will-change:transform; animation:fxflit var(--d,9s) ease-in-out infinite; }   /* 경로(--x1..--y3)·딜레이는 인라인(pkRand) — 나비마다 제각각 */
     .pk-bfly .bf-wing { display:block; transform-origin:center; image-rendering:pixelated; animation:pkflap var(--fd,.42s) ease-in-out infinite; }
-    @keyframes pkbfly { 0%,100%{ transform:translate(0,0);} 20%{ transform:translate(10px,-9px);} 45%{ transform:translate(22px,3px);} 70%{ transform:translate(7px,12px);} }
     @keyframes pkflap { 0%,100%{ transform:scaleX(1);} 50%{ transform:scaleX(.5);} }
     /* 🪨 원근 큐 — 징검다리·울타리(필드=펫 뒤), 바위(무대 안=겹침), 전경 프레임(무대 앞). 전부 도트(pixelated). */
     .pk-stone, .pk-fence, .pk-rock, .pk-frame { position:absolute; display:block; transform:translateX(-50%); image-rendering:pixelated; }

@@ -1947,6 +1947,8 @@
     const M_BFLY=[".WWW.WWW.","WWWWBWWWW","WWWHBHWWW",".WWHBHWW.","..WHBHW..","..WWBWW..","...W.W..."];
     const BFLY_PALS={o:{W:'#ff9d3c',H:'#ffd27a',B:'#3a2a18'},b:{W:'#5aa9ff',H:'#a9d4ff',B:'#22314a'},p:{W:'#ff7fbf',H:'#ffc3e0',B:'#4a2238'},y:{W:'#ffd84a',H:'#fff0a8',B:'#4a3a12'}};
     function butterflySvg(tint,opt){ return pxSvg(M_BFLY, BFLY_PALS[tint||'o'], opt); }
+    // 🦋 나비별 '제각각' 이동 경로 CSS 변수(fxflit 키프레임이 읽음) — 나비마다 다른 방향/거리로 흩날리게. rnd()=0~1 난수 함수(FX=Math.random 랜덤, 배너=pkRand 결정적).
+    function bflyDriftVars(rnd){ const p=function(){ return Math.round((rnd()*2-1)*22); }; return '--x1:'+p()+'px;--y1:'+p()+'px;--x2:'+p()+'px;--y2:'+p()+'px;--x3:'+p()+'px;--y3:'+p()+'px'; }
     // 🪨 원근 큐 에셋(한정 픽업 배너) — 깊이에 따라 크기·바닥선을 펫과 같은 척도로 배치해 펫이 앞뒤로 움직일 때 원근을 읽히게 함. 전부 도트(crispEdges).
     // 징검다리(디딤돌): 앞→뒤 한 줄, 뒤로 갈수록 작게 → 선 원근. 펫 발밑에 깔려 거의 안 가림.
     const M_STONE=["..XXXXX..",".XLLLLLX.","XLILLMMDX","XMMMMMDDX",".XDDDDDX."];
@@ -4261,11 +4263,12 @@
         stones+='<span class="pk-stone" style="left:'+l+'%;bottom:'+(d*53).toFixed(1)+'%;z-index:1;">'+stoneSvg({h:S(Math.max(6,Math.round(14*depthScale(d))))})+'</span>'; }
       let fence=''; [0.1,0.42,0.74].forEach(function(d){ const l=(10+d*9).toFixed(1);
         fence+='<span class="pk-fence" style="left:'+l+'%;bottom:'+(d*53).toFixed(1)+'%;z-index:1;">'+fenceSvg({h:S(Math.max(8,Math.round(20*depthScale(d))))})+'</span>'; });
-      // 🦋 나비 5마리 — 고른 분포·각자 살랑살랑 날며 날개 팔랑(결정적 pkRand로 재렌더 안정)
+      // 🦋 나비 5마리 — 섹터로 고르게(쏠림 없이 간격)·각자 제각각 팔랑(방향·경로 다름). 결정적 pkRand(재렌더 안정, 캐시)
       let bflies=''; const BFT=['o','b','p','y','o'];
-      for(let i=0;i<5;i++){ const l=(12+((i+pkRand(i,61)*0.7)/5)*74).toFixed(1), b=(24+pkRand(i,62)*52).toFixed(1),
-        hh=S(Math.round(9+pkRand(i,63)*4)), dur=(7.5+pkRand(i,64)*5).toFixed(1), del=(-pkRand(i,65)*8).toFixed(2), fdur=(0.34+pkRand(i,66)*0.22).toFixed(2);
-        bflies+='<span class="pk-bfly" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;--fd:'+fdur+'s;animation-delay:'+del+'s;--i:'+i+'"><span class="bf-wing">'+butterflySvg(BFT[i],{h:hh})+'</span></span>'; }
+      for(let i=0;i<5;i++){ const l=(9+((i+0.5)/5)*82 + (pkRand(i,61)-0.5)*7).toFixed(1), b=(24+pkRand(i,62)*50).toFixed(1),
+        hh=S(Math.round(9+pkRand(i,63)*4)), dur=(6.5+pkRand(i,64)*5).toFixed(1), del=(-pkRand(i,65)*8).toFixed(2), fdur=(0.32+pkRand(i,66)*0.24).toFixed(2);
+        let _s=80; const rnd=function(){ return pkRand(i,_s++); };
+        bflies+='<span class="pk-bfly" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;--fd:'+fdur+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="bf-wing">'+butterflySvg(BFT[i],{h:hh})+'</span></span>'; }
       // 🌑 깊이 그림자(펫 발밑, 액터 scale 그대로라 앞=크게·뒤=작게) — .cd-shadow는 배너(pkstage)에서만 보임(CSS). --pad(발밑 여백)로 발끝에 정렬.
       const actor=(id,lx)=> pickupExists(id) ? '<div class="cd-actor" data-cat="'+id+'" data-hh="'+H+'" style="left:'+lx+'px;"><span class="cd-shadow">'+shadowSvg({h:9})+'</span>'+catActorHTML(id,H)+'</div>' : '';
       // 🪨 중간 바위(겹침 큐, z=펫과 같은 12-depth*11 → 그보다 뒤 펫은 바위 뒤로 가려짐) + 🌿 전경 프레이밍(맨 앞 큰 풀·꽃, z 최상). 무대(pkstage) 안에 둠.
@@ -5284,9 +5287,13 @@
       st.insertAdjacentHTML('afterbegin','<div class="fx-ddclouds" aria-hidden="true">'+c+'</div>');
       // 🌈 무지개 — 화면 안에서 양옆까지 감싸는 둥근(반원) 아치가 왼→오로 펼쳐진다
       st.insertAdjacentHTML('afterbegin','<div class="fx-ddrainbow" aria-hidden="true">'+authRainbowSvg()+'</div>');
-      // 🦋 나비 7마리(크기 1.5배)
-      const T=['o','b','p','y','o','p','b']; let b='';
-      for(let i=0;i<7;i++){ b+='<span class="fx-ddbfly fx-ddbfly-'+i+'" style="--d:'+(6.4+i*0.7).toFixed(1)+'s;--fd:'+(0.36+i*0.03).toFixed(2)+'s;animation-delay:'+(-i*0.8).toFixed(1)+'s"><span class="bf-wing">'+butterflySvg(T[i],{h:Math.round((13+(i%2)*3)*1.5)})+'</span></span>'; }
+      // 🦋 나비 7마리 — 알 주변에 '섹터'로 고르게(쏠림 없이 간격) + 전체 살짝 왼쪽으로 + 매 연출 랜덤 위치, 각자 제각각 팔랑(방향·속도·경로 다름)
+      const T=['o','b','p','y','o','p','b']; let b=''; const N=7, SH=-28;   // SH=전체 왼쪽 시프트
+      for(let i=0;i<N;i++){
+        const ang=((i+Math.random()*0.7)/N)*Math.PI*2, rx=118+Math.random()*72, ry=142+Math.random()*72;
+        const mx=Math.round(Math.cos(ang)*rx)+SH, my=Math.round(Math.sin(ang)*ry);
+        const hh=Math.round((13+Math.round(Math.random()*4))*1.5), dur=(6+Math.random()*5).toFixed(1), fd=(0.32+Math.random()*0.28).toFixed(2), del=(-Math.random()*8).toFixed(2);
+        b+='<span class="fx-ddbfly" style="margin:'+my+'px 0 0 '+mx+'px;--d:'+dur+'s;--fd:'+fd+'s;animation-delay:'+del+'s;'+bflyDriftVars(Math.random)+'"><span class="bf-wing">'+butterflySvg(T[i%T.length],{h:hh})+'</span></span>'; }
       st.insertAdjacentHTML('beforeend','<div class="fx-ddbflies" aria-hidden="true">'+b+'</div>');
       const hint=$('fxHint'); if(hint) hint.textContent='🌈 무지개가 펼쳐져요! 한 번 더 탭!'; }
     // ✨ 반짝이는 도트 스파클(무지개알/박스 대기 연출) — 흰 픽셀 점이 제각기 깜빡이며 흩뿌려짐
