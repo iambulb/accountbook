@@ -4234,10 +4234,29 @@
     let _furnCfg={}, _wallCfg={}, _floorCfg={};
     const FLOOR_TIER = { wood:'epic', checker:'epic', grass:'legend', ondol:'epic', starry:'epic', sand:'legend', tatami:'epic', brickpath:'epic' };   // 바닥 스킨 등급(랜덤박스 전용). 모래사장·잔디정원=전설, 나머지=특별.
     const WALL_TIER = { brick:'epic' };   // 벽지 등급 — 특별↑만 지정(랜덤박스 전용). 미지정 벽지는 normal(알뜰샵 구매). 새 특별↑ 벽지는 여기에 등급만 추가하면 자동 가챠 전용+박스풀 편입.
-    // 벽지 등급: WALL_TIER 기본값에 전역 config/wallpaper 병합. 가격: config 오버라이드 ← WALLPAPER_CATALOG.price.
-    function effWallTier(){ const base=Object.assign({}, WALL_TIER); if(_wallCfg){ Object.keys(_wallCfg).forEach(function(id){ const t=_wallCfg[id]&&_wallCfg[id].tier; if(t) base[id]=t; }); } return base; }
-    function wallTierOf(id){ return effWallTier()[id]||'normal'; }
-    function wallBuyPrice(id){ const o=_wallCfg&&_wallCfg[id]; if(o&&o.price!=null&&o.price!==''&&!isNaN(o.price)) return Math.max(0,Number(o.price)); if(id==='default') return 0; return TIER_PRICE[wallTierOf(id)]||0; }   // 등급가(펫·가구와 동일)
+    // 🏭 비(非)펫 자산(가구/벽지/바닥) 등급·가격·가챠전용 통합 팩토리 — 3자산이 거의 같은 로직이라 테이블 1개로 묶음. 기존 함수명(effItemTier/wallBuyPrice/isGachaOnlyFloor…)은 얇은 별칭으로 유지(호출부 변경 0).
+    //   cfg=전역 오버라이드(런타임 재대입되므로 게터), tierMap=기본 등급, hasDefault=무료 'default' 스킨(벽지/바닥만), devKey=devOn 로컬 오버레이 키(가구만).
+    const ASSET_TYPES = {
+      furniture: { cfg:function(){ return _furnCfg; }, tierMap:ITEM_TIER, hasDefault:false, devKey:'itemTier' },
+      wallpaper: { cfg:function(){ return _wallCfg; }, tierMap:WALL_TIER, hasDefault:true,  devKey:null },
+      floor:     { cfg:function(){ return _floorCfg; }, tierMap:FLOOR_TIER, hasDefault:true, devKey:null },
+    };
+    function effAssetTier(type){ const A=ASSET_TYPES[type], cfg=A.cfg(), base=Object.assign({}, A.tierMap);
+      if(cfg){ Object.keys(cfg).forEach(function(id){ const t=cfg[id]&&cfg[id].tier; if(t) base[id]=t; }); }
+      if(A.devKey && devOn() && devCfg()[A.devKey]) Object.assign(base, devCfg()[A.devKey]);   // 개발자 로컬 오버레이(가구만)
+      return base; }
+    function assetTierOf(type,id){ return effAssetTier(type)[id]||'normal'; }
+    function assetBuyPrice(type,id){ const A=ASSET_TYPES[type], cfg=A.cfg(), o=cfg&&cfg[id];
+      if(o&&o.price!=null&&o.price!==''&&!isNaN(o.price)) return Math.max(0,Number(o.price));   // config 가격 오버라이드가 default→0보다 우선(원 동작 유지)
+      if(A.hasDefault && id==='default') return 0;
+      return TIER_PRICE[assetTierOf(type,id)]||0; }
+    function isGachaOnlyAsset(type,id){ const A=ASSET_TYPES[type];
+      if(A.hasDefault && id==='default') return false;
+      const ov=gachaOverride(A.cfg(),id); return ov!=null?ov:(tierRank(assetTierOf(type,id)) >= tierRank('epic')); }
+    // 벽지 등급/가격/가챠전용 — 팩토리 별칭(WALLPAPER_CATALOG.price 기본, config/wallpaper 오버라이드)
+    function effWallTier(){ return effAssetTier('wallpaper'); }
+    function wallTierOf(id){ return assetTierOf('wallpaper',id); }
+    function wallBuyPrice(id){ return assetBuyPrice('wallpaper',id); }
     // 🎁 랜덤박스 통합 풀: 가구(it:)는 전 등급이 풀에 들어가 낮은 등급 롤도 채운다. 바닥(fl:)·벽지(wl:)는 목록 자체가 특별↑(가챠 전용). 타입 프리픽스로 지급 대상 구분.
     //  · 판매 제외(가챠 전용) 판정은 등급 기반(isGachaOnlyItem/Floor/Wall = tier≥epic) — 등급만 지정하면 "특별↑=박스에서만"이 자동 적용된다.
     function boxPool(){ const m={}; const it=effItemTier(), fl=effFloorTier(), wl=effWallTier();
@@ -4254,12 +4273,12 @@
     // 가챠전용 판정: 전역 오버라이드(config/*.gacha, 개발자 토글)가 있으면 그 값, 없으면 등급 기반 기본값(특별↑=가챠전용).
     //   가챠전용=true → 알뜰샵 판매목록에서 숨김. false → 등급 무관 은화 판매. 어느 쪽이든 가챠(펫알/랜덤박스) 풀에는 항상 포함.
     function gachaOverride(cfg, id){ const o=cfg&&cfg[id]; return (o&&o.gacha!=null)?!!o.gacha:null; }
-    function isGachaOnlyFloor(id){ if(id==='default') return false; const ov=gachaOverride(_floorCfg,id); return ov!=null?ov:(tierRank(floorTierOf(id)) >= tierRank('epic')); }   // 특별↑ 바닥=랜덤박스 전용(오버라이드 우선)
-    function isGachaOnlyWall(id){ if(id==='default') return false; const ov=gachaOverride(_wallCfg,id); return ov!=null?ov:(tierRank(wallTierOf(id)) >= tierRank('epic')); }         // 특별↑ 벽지=랜덤박스 전용(오버라이드 우선)
+    function isGachaOnlyFloor(id){ return isGachaOnlyAsset('floor',id); }
+    function isGachaOnlyWall(id){ return isGachaOnlyAsset('wallpaper',id); }
     // 바닥 스킨 등급: FLOOR_TIER 기본값에 전역 config/floor 병합. 가격: config 오버라이드 ← FLOOR_CATALOG.price.
-    function effFloorTier(){ const base=Object.assign({}, FLOOR_TIER); if(_floorCfg){ Object.keys(_floorCfg).forEach(function(id){ const t=_floorCfg[id]&&_floorCfg[id].tier; if(t) base[id]=t; }); } return base; }
-    function floorTierOf(id){ return effFloorTier()[id]||'normal'; }
-    function floorBuyPrice(id){ const o=_floorCfg&&_floorCfg[id]; if(o&&o.price!=null&&o.price!==''&&!isNaN(o.price)) return Math.max(0,Number(o.price)); if(id==='default') return 0; return TIER_PRICE[floorTierOf(id)]||0; }   // 등급가(펫·가구와 동일)
+    function effFloorTier(){ return effAssetTier('floor'); }
+    function floorTierOf(id){ return assetTierOf('floor',id); }
+    function floorBuyPrice(id){ return assetBuyPrice('floor',id); }
     // 랜덤박스 보상(바닥/벽지/가구) 등장 아트·이름
     function rewardBoxArt(res){ if(res.type==='floor') return '<div class="fx-tile" style="width:104px;height:104px;border-radius:16px;box-shadow:0 6px 16px rgba(0,0,0,.25);background:'+floorCss(res.id)+'"></div>';
       if(res.type==='wall') return '<div class="fx-tile" style="width:104px;height:104px;border-radius:16px;box-shadow:0 6px 16px rgba(0,0,0,.25);background:'+wallCss(res.id)+'"></div>';
@@ -4283,18 +4302,15 @@
     function effTiers(){ const c=devOn()&&devCfg().tiers; if(!c) return TIERS; return TIERS.map(t=>({ id:t.id, name:t.name, color:t.color, p:(c[t.id]!=null?Number(c[t.id]):t.p) })); }
     function effCatTier(){ if(!devOn()) return CAT_TIER; const ov=devCfg().catTier||{}, r={}; Object.keys(CAT_TIER).forEach(k=>{ r[k]=(ov[k]!=null?ov[k]:CAT_TIER[k]); }); return r; }   // 알려진 id만(구 dev 설정의 잔여 키 무시)
     // 기구물 등급: ITEM_TIER 기본값 ← 전역 config/furniture(모든 사용자) ← devOn 로컬 오버레이(이 기기 테스트)
-    function effItemTier(){ const base=Object.assign({}, ITEM_TIER);
-      if(_furnCfg){ Object.keys(_furnCfg).forEach(function(id){ const t=_furnCfg[id]&&_furnCfg[id].tier; if(t) base[id]=t; }); }
-      if(devOn()&&devCfg().itemTier) Object.assign(base, devCfg().itemTier);
-      return base; }
+    function effItemTier(){ return effAssetTier('furniture'); }
     // 기구물 은화 구매가: 전역 config/furniture.price 오버라이드 ← ITEM_CATALOG.price 기본값
-    function itemBuyPrice(id){ const o=_furnCfg&&_furnCfg[id]; if(o&&o.price!=null&&o.price!==''&&!isNaN(o.price)) return Math.max(0,Number(o.price)); return TIER_PRICE[itemTierOf(id)]||0; }
+    function itemBuyPrice(id){ return assetBuyPrice('furniture',id); }
     // 등급 랭크(낮을수록 흔함). 특별(epic) 이상은 알뜰샵 직접 구매 불가 — 펫알(가챠) 전용.
     function tierRank(tier){ return Math.max(0, TIER_ORDER.indexOf(tier||'normal')); }
     function petTierOf(id){ return effCatTier()[id]||'normal'; }
     function isGachaOnlyCat(id){ if(_petGachaOnly[id]!=null) return _petGachaOnly[id]; return tierRank(petTierOf(id)) >= tierRank('epic'); }   // 오버라이드(catalogPets.gachaOnly) 우선, 없으면 특별↑
-    function itemTierOf(id){ return effItemTier()[id]||'normal'; }
-    function isGachaOnlyItem(id){ const ov=gachaOverride(_furnCfg,id); return ov!=null?ov:(tierRank(itemTierOf(id)) >= tierRank('epic')); }   // 오버라이드(config/furniture.gacha) 우선, 없으면 특별↑
+    function itemTierOf(id){ return assetTierOf('furniture',id); }
+    function isGachaOnlyItem(id){ return isGachaOnlyAsset('furniture',id); }
     // 🌟 시즌: 이달의 펫 — 매월(KST) 은화로 살 수 있는 등급(특별 미만) 중 하나. 모든 사용자 동일, 20% 할인.
     //  · 우선순위: ① 개발자 수동 선정(전역 config/featuredPet/{monthKey}=id, 관리자만 쓰기) ② 없으면 월키 해시 자동 선정.
     //  · 해시 자동은 후보 목록 길이에 의존해 펫을 추가/삭제하면 그 달 자동 선정이 바뀜 → 수동 선정을 두면 그런 변동 없이 고정된다.
