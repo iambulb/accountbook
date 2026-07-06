@@ -1307,10 +1307,13 @@
     .ten-nestfront { position:absolute; left:0; top:0; width:100%; z-index:2; line-height:0; pointer-events:none; }
     .ten-nestfront .px { display:block; width:100%; height:auto; image-rendering:pixelated; }
     .ten-scatter { position:absolute; inset:0; z-index:1; }   /* 구멍 안 흩뿌림(각 알 left/top% 인라인) */
-    .ten-egg { position:absolute; width:15.5%; display:flex; align-items:center; justify-content:center; transform:translate(-50%,-50%); overflow:visible; cursor:pointer; }   /* left/top%·z-index 인라인. 중심 정렬(알 조금 크게) */
-    .ten-egg > .px { display:block; width:100%; height:auto; image-rendering:pixelated; filter:drop-shadow(0 3px 4px rgba(0,0,0,.32)); }
+    .ten-egg { position:absolute; display:flex; align-items:center; justify-content:center; transform:translate(-50%,-50%); overflow:visible; cursor:pointer; }   /* left/top%·z-index 인라인. 중심 정렬(크기는 알 .px height로) */
+    .ten-egg > .px { display:block; height:min(13vw,52px); width:auto; image-rendering:pixelated; filter:drop-shadow(0 3px 4px rgba(0,0,0,.32)); }   /* height 고정 → 둥지 알이 오픈 알과 같은 큰 크기(비겹침 최대). width:100%/height:auto 는 viewBox-only SVG가 WebView서 작게 뭉개져 금지 */
     .ten-egg.shake { animation:ten-eggshake .44s ease; transform-origin:50% 90%; }   /* 중심(-50%,-50%) 유지하는 전용 흔들림 */
     .ten-egg.hit { animation:ten-egghit .5s ease; }
+    .ten-egg.tremble { animation:ten-eggtrem .1s linear infinite; }   /* 뜰알 climax: 빛나기 전 알이 톡톡 떨림(중심 -50% 유지) */
+    .ten-egg.tremble .fx-ddflower { animation:fxflwswing .2s ease infinite; }   /* + 꽃이 엄청 흔들림(단일 뜰알 fx-tremble과 동일) */
+    @keyframes ten-eggtrem { 0%,100%{transform:translate(-50%,-50%)} 25%{transform:translate(-52%,-49%)} 50%{transform:translate(-48%,-51%)} 75%{transform:translate(-49%,-49%)} }
     .ten-egg.open > .px { filter:drop-shadow(0 0 7px currentColor) drop-shadow(0 3px 4px rgba(0,0,0,.32)); }
     /* 뜰알(그리드) — 알뽑기처럼 꽃+몸통 분리 */
     .ten-ddeulegg { display:flex; flex-direction:column; align-items:center; justify-content:flex-end; }
@@ -1329,11 +1332,11 @@
     .ten-bob { position:relative; z-index:1; display:inline-block; animation:ten-bob 1.8s ease-in-out infinite; }
     .ten-bob .px, .ten-bob .catpx { display:block; image-rendering:pixelated; }
     .ten-nest.hatched .ten-scatter { opacity:0; transition:opacity .55s ease; }
-    .pkstage.ten-roam { z-index:5; bottom:8%; height:52%; }   /* 배회 공간 윗변이 새 sky seam(60%)에 닿게(하늘 확장에 맞춰 초록 안으로) */
+    .pkstage.ten-roam { z-index:5; bottom:24%; height:36%; }   /* 배회 바닥을 위로(펫이 화면 하단에 안 가라앉게) — 윗변은 sky seam(60%) 유지, 아래(0~24%)는 전경 꽃·풀·돌·흙으로 채움 */
     /* 카메오(알별) — .fx-cat 변형: left=알 중심(JS 주입), from/to·poke를 펫 크기 비례로 */
     .ten-cat.fxc-l { --from:calc(-54vw - var(--cat)); --to:calc(var(--cat) * -0.60); --poke:calc(var(--cat) * 0.16); }
     .ten-cat.fxc-r { --from:calc(54vw + var(--cat));  --to:calc(var(--cat) *  0.60); --poke:calc(var(--cat) * -0.16); }
-    .ten-hint { position:absolute; left:0; right:0; top:24%; bottom:auto; z-index:6; text-align:center; color:#fff; font-size:14px; font-weight:800; opacity:.92; animation:fxblink 1s ease-in-out infinite; pointer-events:none; text-shadow:0 1px 3px rgba(0,0,0,.5); }   /* 둥지 위쪽으로 크게 올림 */
+    .ten-hint { position:absolute; left:0; right:0; top:80%; bottom:auto; z-index:6; text-align:center; color:#fff; font-size:14px; font-weight:800; opacity:.92; animation:fxblink 1s ease-in-out infinite; pointer-events:none; text-shadow:0 1px 3px rgba(0,0,0,.5); }   /* 둥지 '하단'에 간격 두고 배치 */
     .ten-count { position:relative; z-index:4; color:#fff; font-size:13px; font-weight:800; opacity:.82; margin-bottom:2px; letter-spacing:.06em; }
     .ten-nexthint { position:relative; z-index:2; color:#fff; font-size:13px; font-weight:700; opacity:.78; margin-top:4px; animation:fxblink 1.2s ease-in-out infinite; }
     .ten-card { cursor:pointer; }
