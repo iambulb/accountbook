@@ -3007,7 +3007,7 @@
       const badge=gacha?'<span class="fm-badge tier-rainbow">'+boxSvg({h:13})+' 랜덤박스 전용</span>':'';
       return '<div class="petmg-row petcfg'+(on?' sel':'')+(p.deleted?' del':'')+(gacha?' gacha':'')+'" data-pid="'+p.id+'">'+
         '<button class="pm-main" onclick="devSelectPet(\''+p.id+'\')" aria-label="'+escapeHtml(p.name||p.id)+' 선택">'+
-          '<span class="pm-thumb">'+art+'</span>'+
+          '<span class="pm-thumb tbring tb-'+(p.tier||'normal')+'">'+art+'</span>'+
           '<span class="pm-txt"><span class="pm-nm">'+catNameSpan(p.id, p.name||p.id)+'</span>'+
           '<span class="pm-meta">'+escapeHtml(tag)+(p.runtime?' · 런타임':'')+(p.deleted?' · 삭제됨':'')+'</span></span>'+
         '</button>'+
@@ -3760,15 +3760,21 @@
     function petTileSig(id){ const ro=petRoomIndex(id); const here=ro===roomIdx(); const rooms=homeH().rooms||[];
       const rnm=(ro>=0&&!here)?((rooms[ro]&&rooms[ro].name)||('방 '+(ro+1))):'';   // elsewhere일 때만 방이름 뱃지 표시 → 시그니처에 포함(방 전환/이름변경 시 필요한 타일만 갱신)
       const lv=affectionLevel((ownedCatsMap()[id]||{}).affection).level; return (here?'H':ro)+'|'+rnm+'|'+lv+'|'+catName(id)+'|'+(CAT_TIER[id]||'normal'); }   // tier 포함(이름색·등급 연출은 등급에 의존 → applyCatalog로 등급만 바뀌어도 갱신)
+    // 등급 배지(색약 접근성): 색이 아니라 '글자'로 등급 식별. 한정=무지개, 일반은 생략(기본), 그 외 등급색.
+    function tierBadgeHtml(tier){ if(!tier || tier==='normal') return '';
+      const ti=tierInfo(tier); const nm=escapeHtml(ti.name);
+      if(tier==='exclusive') return '<span class="ptier tier-rainbow">'+nm+'</span>';
+      return '<span class="ptier" style="color:'+ti.color+'">'+nm+'</span>'; }
     function petTileHtml(id){
       const rooms=homeH().rooms||[]; const roomOf=petRoomIndex(id), here=roomOf===roomIdx();
       const roomNm=roomOf>=0?((rooms[roomOf]&&rooms[roomOf].name)||('방 '+(roomOf+1))):'';
-      const lv=affectionLevel((ownedCatsMap()[id]||{}).affection).level;
+      const lv=affectionLevel((ownedCatsMap()[id]||{}).affection).level; const tier=CAT_TIER[id]||'normal';
       const stt=here?'이 방':(roomOf>=0?roomNm:'대기');
-      return '<div class="catchip'+(here?' on':(roomOf>=0?' elsewhere':''))+'" data-id="'+id+'" data-tsig="'+escapeHtml(petTileSig(id))+'" data-name="'+escapeHtml(catName(id))+'" role="button" tabindex="0" aria-pressed="'+here+'" onclick="toggleActiveCat(\''+id+'\')" title="'+escapeHtml(catName(id))+' · '+escapeHtml(stt)+' · Lv.'+lv+'">'+
-        '<div class="cpic tb-'+(CAT_TIER[id]||'normal')+'">'+catFace(id,{h:44})+'</div>'+   // 등급색 테두리(rect)
+      return '<div class="catchip'+(here?' on':(roomOf>=0?' elsewhere':''))+'" data-id="'+id+'" data-tsig="'+escapeHtml(petTileSig(id))+'" data-name="'+escapeHtml(catName(id))+'" role="button" tabindex="0" aria-pressed="'+here+'" onclick="toggleActiveCat(\''+id+'\')" title="'+escapeHtml(catName(id))+' · '+escapeHtml(tierInfo(tier).name)+' · '+escapeHtml(stt)+' · Lv.'+lv+'">'+
+        '<div class="cpic tbring tb-'+tier+'">'+catFace(id,{h:44})+tierBadgeHtml(tier)+'</div>'+   // 등급색 테두리(rect) + 등급명 배지(좌하단, 색약 대응)
         (roomOf>=0&&!here?'<span class="croom">'+escapeHtml(roomNm)+'</span>':'')+
         (here?'<span class="csel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>':'')+
+        '<button class="cn-info" aria-label="펫 정보" onclick="event.stopPropagation();openPetInfo(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>'+
         '<button class="cn-edit" aria-label="이름 짓기" onclick="event.stopPropagation();openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
         '<div class="cn">'+catNameSpan(id,catName(id))+'</div>'+
         '<div class="clv" aria-label="애정 레벨 '+lv+'"><span class="clv-h">'+heartSvg({h:9})+'</span>Lv.'+lv+'</div>'+
@@ -3793,8 +3799,11 @@
     }
     // 펫 그리드를 정확히 4행 높이로 제한(초과 시 내부 스크롤). 카드 높이는 aspect-ratio라 이미지 로딩과 무관하게 즉시 확정.
     function fitPetGridRows(el){
-      const first=el.querySelector('.catchip'); const cols=5, gap=7, rows4=4;
-      if(!first || Math.ceil(el.childElementCount/cols)<=rows4){ el.style.maxHeight=''; el.classList.remove('scroll4'); return; }
+      const first=el.querySelector('.catchip'); const rows4=4; if(!first){ el.style.maxHeight=''; el.classList.remove('scroll4'); return; }
+      const cs=getComputedStyle(el);   // 열수·간격을 CSS에서 읽어 하드코딩 결합 제거(그리드 바꿔도 자동)
+      const cols=(cs.gridTemplateColumns||'').split(' ').filter(Boolean).length||5;
+      const gap=parseFloat(cs.rowGap||cs.gap)||7;
+      if(Math.ceil(el.childElementCount/cols)<=rows4){ el.style.maxHeight=''; el.classList.remove('scroll4'); return; }
       const ch=first.offsetHeight; if(ch>0){ el.style.maxHeight=(ch*rows4+gap*(rows4-1)+2)+'px'; el.classList.add('scroll4'); }
     }
     function catHomeHtml(){
@@ -3867,8 +3876,8 @@
     function setShopSub(s){ _shopSub=s; _shopSelCat=null; renderCatHouse(); }
     let _shopFurnCat='all';   // 알뜰샵 가구 탭의 기능분류 필터(전체/케어/휴식/놀이/장식) — 배치 인벤토리와 같은 ITEM_CATALOG.cat 기준
     function setShopFurnCat(c){ _shopFurnCat=c; renderCatHouse(); }
-    let _shopPetSpecies='all';   // 알뜰샵 펫 탭의 종(species) 필터(전체/고양이/강아지/…) — 카탈로그에 존재하는 종만 노출
-    function setShopPetSpecies(s){ _shopPetSpecies=s; _shopSelCat=null; renderCatHouse(); }
+    let _shopPetSpecies=lsGet('shopPetSpecies','all');   // 알뜰샵 펫 탭의 종(species) 필터(전체/고양이/강아지/…) — 카탈로그에 존재하는 종만 노출
+    function setShopPetSpecies(s){ _shopPetSpecies=s||'all'; lsSet('shopPetSpecies',_shopPetSpecies); _shopSelCat=null; renderCatHouse(); }
     // 펫 탭 종 필터 탭 목록 — SPECIES_LABEL 순서로, 카탈로그에 실제 있는 종만(전체 먼저)
     function shopPetSpeciesTabs(){ const order=Object.keys(SPECIES_LABEL); const present=[];
       PET_CATALOG.forEach(function(c){ if(present.indexOf(c.species)<0) present.push(c.species); });
@@ -3985,7 +3994,7 @@
           }
           // 선택하면 우리집 펫 카드처럼 옆으로 걷는 스프라이트로, 아니면 정면 정지 썸네일. 선택 시 체크 배지.
           const art=sel?catActorHTML(c.id,72):catFace(c.id,{h:72});
-          return '<div class="shopcard petpick'+(sel?' sel':'')+(feat?' feat':'')+'" role="button" tabindex="0" aria-pressed="'+sel+'" onclick="selectShopCat(\''+c.id+'\')"><div class="thumb"><div class="fl"></div>'+art+
+          return '<div class="shopcard petpick'+(sel?' sel':'')+(feat?' feat':'')+'" role="button" tabindex="0" aria-pressed="'+sel+'" onclick="selectShopCat(\''+c.id+'\')"><div class="thumb tbring tb-'+petTierOf(c.id)+'"><div class="fl"></div>'+art+
             (feat?'<span class="featrib">'+sparkSvg({h:12})+' 이달의 펫</span>':'')+
             (sel?'<span class="psel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>':'')+'</div>'+
             '<div class="meta"><b>'+catNameSpan(c.id,c.name)+' <span class="tagmini">'+speciesLabel(c.id)+'</span></b><div class="desc">'+c.desc+'</div>'+
@@ -5019,8 +5028,8 @@
     }
     // 🐾 컬렉션 도감: 전체 펫 그리드(보유=컬러/미보유=실루엣), 진행도 N/총. 애정 레벨 하트 표시.
     function ownedCatsMap(){ return (state.game&&state.game.owned&&state.game.owned.cats)||{}; }
-    let _dexTab='all';   // 도감 종별 탭('all'=전체 / species 코드)
-    function setDexTab(t){ _dexTab=t; if(state._sheetRefresh) state._sheetRefresh(); }
+    let _dexTab=lsGet('dexTab','all');   // 도감 종별 탭('all'=전체 / species 코드)
+    function setDexTab(t){ _dexTab=t||'all'; lsSet('dexTab',_dexTab); if(state._sheetRefresh) state._sheetRefresh(); }
     function dexSpeciesList(){ const seen={}, list=[]; PET_CATALOG.forEach(c=>{ const s=c.species||'cat'; if(!seen[s]){ seen[s]=1; list.push(s); } }); return list; }   // 도감 등장 종(순서 유지·중복 제거)
     function openPetDex(){
       const build=()=>{
@@ -5035,7 +5044,7 @@
           return '<button class="'+(_dexTab===id?'on':'')+'" onclick="setDexTab(\''+id+'\')">'+escapeHtml(nm)+' <b>'+n+'</b></button>'; }).join('')+'</div>';
         const cell=function(c){ const has=!!owned[c.id], lv=has?affectionLevel(owned[c.id].affection).level:0;
           return '<div class="dexcell'+(has?'':' locked')+'" title="'+escapeHtml(has?catName(c.id):'미보유')+'">'+
-            '<div class="dexpic">'+catFace(c.id,{h:54})+'</div>'+
+            '<div class="dexpic'+(has?' tbring tb-'+(CAT_TIER[c.id]||'normal'):'')+'">'+catFace(c.id,{h:54})+'</div>'+   // 소유 셀만 등급 링(미소유는 스포일러 방지로 중립)
             '<div class="dexnm">'+(has?catNameSpan(c.id,catName(c.id)):'<span class="q">???</span>')+'</div>'+
             (lv>0?'<div class="dexlv" style="display:inline-flex;gap:1px" aria-label="애정 레벨 '+lv+'">'+heartSvg({h:9}).repeat(lv)+'</div>':'')+
           '</div>'; };
@@ -5269,6 +5278,7 @@
       if(isEggKind(_fx.kind)){
         if(_fx.stage===2 && !_fx.rainbow && _fx.kind!=='ddeul') maybeRainbowUpgrade();   // 2번째 탭 직후: 특별↑이면 확률로 무지개알 승급(뜰알은 제외 — 뜰알은 무지개+나비 전용 연출)
         if(_fx.stage===2 && _fx.kind==='ddeul' && (_fx.res.tier==='exclusive' || Math.random()<rbUpgradeChance(_fx.res.tier))) ddeulPickupFx(it.closest('.fx-stage'));   // 뜰알 무지개+나비 = 펫알 무지개알 승급과 '같은 조건'(특별50%·전설/신화100%) + 한정(exclusive)이면 항상. 무조건 아님.
+        if(_fx.stage===2 && _fx.kind!=='ddeul' && _fx.rainbow) ddeulPickupFx(it.closest('.fx-stage'));   // 펫알(무지개알로 승급) · 무지개알(원래부터)도 뜰알과 동일한 무지개+나비 연출 — 승급 조건과 같은 타이밍/조건
         it.innerHTML = _fx.kind==='ddeul' ? ddeulFxHtml() : (_fx.rainbow?rainbowEggStage(_fx.stage,{h:150}):eggSvg(_fx.stage,{h:150}));
         it.classList.remove('shake'); void it.offsetWidth; it.classList.add('shake');   // 탭마다 알이 좌우로 크게 흔들림
         if(_fx.kind==='ddeul'){ const fl=it.querySelector('.fx-ddflower'); if(fl) fl.classList.add('flswing'); }   // 뜰알: 탭 흔들림에 맞춰 꽃도 줄기에서 팔랑(갓 렌더된 요소라 클래스 추가만으로 재생)
