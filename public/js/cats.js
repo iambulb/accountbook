@@ -6116,7 +6116,7 @@
       const rm=reducedMotion();
       fx.innerHTML='<div class="fx-scrim"></div><div class="ten-wrap" id="tenWrap" role="button" tabindex="0" onclick="tenTap()">'+
         pickupSceneHtml('reveal')+tenMeadowHtml()+tenNestHtml(items, 'eggs')+
-        '<div class="ten-hint" id="tenHint">'+(rm?'탭하여 결과 보기':'둥지를 탭하세요')+'</div></div>';
+        '<div class="ten-hint" id="tenHint">'+pixelTextHtml(rm?'탭하여 결과 보기':'둥지를 탭하세요', '#ffffff', {h:16})+'</div></div>';
       fx.className='fx on ten';
       if(rm){ _fx10.busy=false; return; }
       const nest=fx.querySelector('.ten-nest'); if(nest) nest.classList.add('drop');
@@ -6137,15 +6137,15 @@
         if(it.kind==='ddeul'){ const fl=el.querySelector('.fx-ddflower'); if(fl){ fl.classList.remove('flswing'); void fl.offsetWidth; fl.classList.add('flswing'); } }   // 뜰알: 알뽑기처럼 꽃이 팔랑(재렌더 대신 스윙만)
         else { el.innerHTML=tenEggSvg(it, stage); }
         el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); });
-      const hint=$('tenHint'); if(hint && stage<2) hint.textContent='한 번 더!'; }
+      if(stage<2) setTenHint('한 번 더!'); }
     function tenTap2(){ _fx10.items.forEach(function(it){ if(it.kind==='egg' && it.rainbow) it._rbShown=true; });
       tenTapShake(2);
       if(_fx10.skyRainbow) tenSkyRainbow($('tenWrap'));
       _fx10.items.forEach(function(it){ const el=$('tenEgg'+it.i); if(!el) return;
         if(it.kind==='egg' && it.rainbow && !liteMode()){ const s=document.createElement('span'); s.className='ten-eggfx'; s.innerHTML=fxSparkles(6); el.appendChild(s); }
         if(it.kind==='ddeul' && (it.tier==='exclusive' || Math.random()<rbUpgradeChance(it.tier))) tenEggButterflies(el, it); });
-      const hint=$('tenHint'); if(hint) hint.textContent='마지막 탭!'; }
-    function tenClimax(){ const wrap=$('tenWrap'); if(!wrap) return; const hint=$('tenHint'); if(hint) hint.textContent='';
+      setTenHint('마지막 탭!'); }
+    function tenClimax(){ const wrap=$('tenWrap'); if(!wrap) return; setTenHint('');
       const legend=tierRank('legend'), lanes={ l:[], r:[] };
       _fx10.items.forEach(function(it){ if(tierRank(it.tier)>=legend) lanes[it.side].push(it); });
       let maxEnd=0;
@@ -6160,11 +6160,19 @@
       _fxT(function(){ _fx10.items.forEach(function(it){ if(tierRank(it.tier)<legend) tenOpenEgg(it); }); }, openAt);
       const doneAt=Math.max(maxEnd, openAt)+300;
       _fxT(function(){ _fx10.phase='opened'; }, doneAt);   // 알 빛나는 상태 유지
-      _fxT(function(){ _fx10.busy=false; const h=$('tenHint'); if(h) h.textContent='탭하여 결과 보기'; }, doneAt+1000);   // 1초 후 탭 활성 → 한 번 더 탭해야 결과로
+      _fxT(function(){ _fx10.busy=false; setTenHint('탭하여 결과 보기'); }, doneAt+1000);   // 1초 후 탭 활성 → 한 번 더 탭해야 결과로
     }
     function tenBeginReveal(){ _fx10.phase='reveal'; _fx10.ridx=0; _fx10.busy=false; tenShowCard(0); }
     function tenRevealNext(){ if(_fx10.busy) return; _fx10.ridx++;
       if(_fx10.ridx>=_fx10.items.length){ tenFinale(); return; } tenShowCard(_fx10.ridx); }
+    // ⏭️ SKIP — 신화(limited)·한정(exclusive) 이외 등급 카드는 한 번에 건너뛰고 다음 신화/한정에서 멈춤(없으면 피날레로).
+    function tenSkip(){ if(!_fx10 || _fx10.phase!=='reveal') return; const order=_fx10.order, items=_fx10.items;
+      let next=_fx10.ridx+1;
+      while(next<items.length){ const it=items[order[next]]; if(it && (it.tier==='limited'||it.tier==='exclusive')) break; next++; }
+      if(next>=items.length){ tenFinale(); return; }
+      _fx10.ridx=next; _fx10.busy=false; tenShowCard(next); }
+    // 10연차 힌트(둥지 위) — 결과 텍스트와 동일한 픽셀(선명) 렌더로 표시. 빈 문자열이면 지움.
+    function setTenHint(txt){ const h=$('tenHint'); if(!h) return; h.innerHTML = txt ? pixelTextHtml(txt, '#ffffff', {h:16}) : ''; }
     function tenShowCard(n){ const it=_fx10.items[_fx10.order[n]]; const fx=$('catFx'); if(!fx) return;
       const sceneBg=tenCardSceneBg(it);
       fx.innerHTML='<div class="fx-scrim"></div>'+(sceneBg?pickupSceneHtml('reveal'):'')+tenRevealCardHtml(it, n+1, _fx10.items.length);
@@ -6172,20 +6180,21 @@
     function tenRevealCardHtml(it, n, total){ const t=tierInfo(it.tier), rank=tierRank(it.tier), ex=it.tier==='exclusive', rb=!!it.rainbow;
       const conf=rb?28:(rank<=0?0:rank<=2?12:20+(rank-2)*8), tw=5+rank*3, sceneBg=tenCardSceneBg(it);
       return '<div class="fx-reveal ten-card tier-'+t.id+' rank-'+rank+((rb||ex)?' rev-rb':'')+(sceneBg?' rev-scene':'')+'" onclick="tenRevealNext()">'+
-        '<div class="ten-count">'+n+' / '+total+'</div>'+
+        '<button class="ten-skip" onclick="event.stopPropagation();tenSkip()" aria-label="건너뛰기(신화·한정 제외 한 번에)">'+pixelTextHtml('SKIP', '#ffffff', {h:16})+'</button>'+
+        '<div class="ten-count">'+pixelTextHtml(n+' / '+total, '#ffffff', {h:15})+'</div>'+
         '<div class="fx-art pop"><span class="fx-aurawrap">'+lightLayers({aura:210, rays:250, rainbow:ex})+'</span>'+
           '<span class="fx-ring"></span><span class="fx-twinkles">'+fxAuraTwinkles(tw, ex)+'</span><span class="fx-frame"></span>'+
           '<span class="fx-artimg">'+catFace(it.id,{h:118,eager:true})+'</span>'+(it.isNew?newBadgeSvg({h:28}):'')+'</div>'+
         '<div class="fx-tier">'+pixelTextHtml(t.name, (ex?'RAINBOW':(t.color||'#ffffff')), {h:38, base:11})+'</div>'+
         '<div class="fx-name">'+pixelTextHtml(catName(it.id), (ex?'RAINBOW':(t.color||'#ffffff')), {h:28, base:12})+'</div>'+
-        '<div class="fx-reward">'+(it.dup?'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>+'+it.refund+' 은화 (중복)</span>':'')+'</div>'+
-        '<div class="ten-nexthint">'+(n<total?'탭하여 다음 ('+n+'/'+total+')':'탭하여 마무리')+'</div>'+
+        '<div class="fx-reward">'+(it.dup?'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>'+pixelTextHtml('+'+it.refund+' 은화 (중복)', '#ffffff', {h:16})+'</span>':'')+'</div>'+
+        '<div class="ten-nexthint">'+pixelTextHtml(n<total?'탭하여 다음 ('+n+'/'+total+')':'탭하여 마무리', '#ffffff', {h:15})+'</div>'+
         '<div class="fx-confetti">'+(conf?fxConfetti(conf):'')+'</div></div>'; }
     function tenFinale(){ _fx10.phase='finale'; _fx10.busy=true; const fx=$('catFx'); if(!fx) return;
       fx.innerHTML='<div class="fx-scrim"></div><div class="ten-wrap ten-final" id="tenWrap">'+
         pickupSceneHtml('reveal')+tenMeadowHtml()+tenNestHtml(_fx10.items, 'finale')+
         '<div class="ten-fintitle">'+pixelTextHtml('10연차 완료!', '#ffffff', {h:28, base:12})+'</div>'+
-        '<button class="btn ten-takebtn" onclick="closeTenFx()">펫 데려가기</button></div>';
+        '<button class="btn ten-takebtn" onclick="closeTenFx()" aria-label="입양하기">'+pixelTextHtml('입양하기', '#ffffff', {h:22})+'</button></div>';
       fx.className='fx on reveal ten-finale';
       if(_fx10.skyRainbow) tenSkyRainbow($('tenWrap'));
       if(reducedMotion()){ _fx10.busy=false; return; }
