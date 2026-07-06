@@ -868,18 +868,42 @@
     .catchip { position:relative; box-sizing:border-box; background:var(--card); border:1.5px solid var(--bd); border-radius:12px; padding:5px 4px 7px; text-align:center; transition:transform .08s, border-color .12s, background .12s; cursor:pointer; }
     .catchip .cpic { width:100%; aspect-ratio:1; box-sizing:border-box; background:var(--soft); border-radius:9px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
     /* 등급색 테두리(펫이 담긴 rect) — 안쪽 .cpic에 두께감 있는 등급색(흰색 금지=중립 회색). 바깥 .catchip 테두리는 선택상태(on/elsewhere) 유지. */
-    .catchip .cpic { border:2.5px solid #c9ccd2; }
-    [data-theme="dark"] .catchip .cpic { border-color:#565c66; }
-    .catchip .cpic.tb-uncommon { border-color:#2FAE7A; }
-    .catchip .cpic.tb-rare { border-color:#3182F6; }
-    .catchip .cpic.tb-epic { border-color:#9B6FC8; }
-    .catchip .cpic.tb-legend { border-color:#E0A43C; }
-    .catchip .cpic.tb-limited { border-color:#ff5fa2; }   /* 신화=핑크 */
-    .catchip .cpic.tb-exclusive { border:2.5px solid transparent; border-image:linear-gradient(90deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8,#F04452) 1; }   /* 한정=무지개 */
+    .catchip .cpic { position:relative; }   /* 등급 배지(.ptier) 앵커 */
+    /* 등급색 링(공통) — 홈 .cpic·도감 .dexpic·상점 .thumb·개발자 .pm-thumb 공유. 등급을 rect 테두리로. */
+    .tbring { box-sizing:border-box; border:2.5px solid #c9ccd2; }
+    [data-theme="dark"] .tbring { border-color:#565c66; }
+    .tbring.tb-uncommon { border-color:#2FAE7A; }
+    .tbring.tb-rare { border-color:#3182F6; }
+    .tbring.tb-epic { border-color:#9B6FC8; }
+    .tbring.tb-legend { border-color:#E0A43C; }
+    .tbring.tb-limited { border-color:#ff5fa2; }   /* 신화=핑크 */
+    /* 한정=무지개 — border-image(테두리 영역은 overflow:hidden에 안 잘리고 요소 배경 shorthand와도 무관). 모서리만 약간 각짐(최상위 등급이라 감수). */
+    .tbring.tb-exclusive { border:2.5px solid transparent; border-image:linear-gradient(90deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8,#F04452) 1; }
     .catchip .cpic .cspr, .catchip .cpic .catpx, .catchip .cpic .px, .catchip .cpic svg, .catchip .cpic img { display:block; max-width:100%; height:auto; }
     .catchip .cpic .px, .catchip .cpic svg { width:44px; }   /* 폴백 SVG(스프라이트 없는 펫·로딩 플레이스홀더)도 스프라이트 img처럼 44 폭 고정 — 없으면 height:auto가 .cpic를 가득 채워 스프라이트보다 크게 보임 */
     .catchip .cn-edit { position:absolute; top:3px; right:3px; z-index:2; transform:translateZ(0); width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; color:var(--sub); background:color-mix(in srgb,var(--card) 78%,transparent); }
     .catchip .cn-edit svg { width:10px; height:10px; }
+    /* ⓘ 펫 정보 버튼 — 초상 우하단(csel/croom=좌상단, 펜슬=우상단, 배지=좌하단과 안 겹침) */
+    .catchip .cpic .cn-info { position:absolute; right:2px; bottom:2px; z-index:2; width:17px; height:17px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; color:var(--sub); background:color-mix(in srgb,var(--card) 80%,transparent); }
+    .catchip .cpic .cn-info svg { width:12px; height:12px; }
+    /* 등급명 배지(색약 접근성) — 초상 좌하단 소형 pill(글자로 등급 식별) */
+    .catchip .cpic .ptier { position:absolute; left:2px; bottom:2px; z-index:2; padding:0 4px; border-radius:5px; font-size:8.5px; font-weight:900; line-height:1.5; background:color-mix(in srgb,var(--card) 84%,transparent); box-shadow:0 0 0 1px rgba(0,0,0,.12); }
+    /* 펫 상세 시트 */
+    .gimenu.petinfo { width:min(320px,88vw); gap:9px; }
+    .petinfo .pi-h b { flex:1; min-width:0; }
+    .petinfo .pi-rename { position:static; width:26px; height:26px; margin-left:auto; background:var(--soft); border-radius:8px; flex:none; }
+    .petinfo .pi-rename svg { width:15px; height:15px; }
+    .petinfo .pi-meta { display:flex; flex-direction:column; gap:2px; font-size:12px; }
+    .petinfo .pi-meta .pi-tier { font-weight:900; font-size:13.5px; }
+    .petinfo .pi-meta .s { color:var(--sub); }
+    .petinfo .pi-aff { background:var(--soft); border-radius:12px; padding:9px 11px; }
+    .petinfo .pi-afftop { display:flex; align-items:center; gap:5px; font-size:12.5px; font-weight:800; }
+    .petinfo .pi-afftop .s { margin-left:auto; color:var(--sub); font-weight:700; }
+    .petinfo .pi-afftop .clv-h { display:inline-flex; width:11px; height:11px; }
+    .petinfo .pi-aff .bar { margin-top:7px; }
+    .petinfo .pi-cd { text-align:center; font-size:12px; color:var(--sub); padding:9px; background:var(--soft); border-radius:10px; }
+    .petinfo .gib { flex-direction:row; align-items:center; justify-content:center; gap:6px; font-weight:800; }
+    .petinfo .gib svg { flex:none; }
     .catchip .cn-edit::before { content:''; position:absolute; inset:-7px; }   /* 히트영역 확장(시각 18px 유지, 터치 타깃 ≈32px) — 오탭 방지 */
     .catchip .cn-edit:active { transform:scale(.88); }
     .catchip:active { transform:scale(.94); }
