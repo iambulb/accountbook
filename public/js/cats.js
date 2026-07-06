@@ -2122,6 +2122,7 @@
     function writeMyRanking(){ if(!state.uid) return;
       try{ db.ref('rankings/'+state.uid).set({ name:(state.userName||''), likes:(state.myLikeCount||0), private:(state.profilePublic===false), at:new Date().toISOString() }); }catch(e){}
     }
+    let _cfgListenersInit=false;   // 전역 config/* 리스너 1회 부착 가드 — 계정 전환(로그아웃→로그인) 반복 시 리스너 N중 누적 방지
     function initCatGame(){
       if(!state.uid) return;
       if(state._gameRef){ try{ state._gameRef.off(); }catch(e){} }
@@ -2129,14 +2130,17 @@
       state._gameRef.on('value', s=>{ const raw=s.val(); state.game=normalizeGame(raw); migrateHomeRoomsIfNeeded(raw); onGameChange(); reconcilePets(); });
       watchCatalogPets();   // 런타임 펫(전역 catalogPets) 병합 리스너
       watchMyLikes();       // 내가 받은 집 좋아요 총합
-      loadNotices();        // 📢 업데이트 내역(config/notices) 구독 — 배포 없이 갱신
-      loadAnnounce();       // 📢 운영자 공지(config/announce, 제목+내용) 구독 — 공지사항에 표시
-      loadFeaturedPet();    // 🌟 이달의 펫 수동 선정(config/featuredPet) 구독 — 개발자가 고르면 전역 반영
-      loadGachaFx();        // 🎬 가챠 오픈 연출 펫(config/gachaFx: a=1번/왼쪽·b=2번/오른쪽) 구독 — 미지정이면 기본 검은고양이
-      loadFurnCfg();        // 🪑 기구물 전역 등급/가격(config/furniture) 구독 — 개발자 '기구물 관리'에서 설정, 모든 사용자 반영
-      loadWallCfg(); loadFloorCfg();   // 🧱 벽지(config/wallpaper)·바닥 스킨(config/floor) 전역 등급/가격 구독
-      loadBroadcasts();     // 📣 전체 선물(config/broadcast) 구독 — 개발자가 넣으면 각 사용자 선물함으로 1회 수령
-      loadMyAdminGifts();   // 🎁 내게 온 특정-유저 선물(users/{uid}/adminGifts) 수령 → 선물함으로 옮기고 삭제
+      // 전역 config/* 구독(모든 사용자 공통·per-user 부작용 없음)은 세션당 1회만 — 반복 로그인 시 리스너 누적 방지.
+      if(!_cfgListenersInit){ _cfgListenersInit=true;
+        loadNotices();        // 📢 업데이트 내역(config/notices) 구독 — 배포 없이 갱신
+        loadAnnounce();       // 📢 운영자 공지(config/announce, 제목+내용) 구독 — 공지사항에 표시
+        loadFeaturedPet();    // 🌟 이달의 펫 수동 선정(config/featuredPet) 구독 — 개발자가 고르면 전역 반영
+        loadGachaFx();        // 🎬 가챠 오픈 연출 펫(config/gachaFx: a=1번/왼쪽·b=2번/오른쪽) 구독 — 미지정이면 기본 검은고양이
+        loadFurnCfg();        // 🪑 기구물 전역 등급/가격(config/furniture) 구독 — 개발자 '기구물 관리'에서 설정, 모든 사용자 반영
+        loadWallCfg(); loadFloorCfg();   // 🧱 벽지(config/wallpaper)·바닥 스킨(config/floor) 전역 등급/가격 구독
+      }
+      loadBroadcasts();     // 📣 전체 선물(config/broadcast) 구독 — 유저별 수령이라 로그인마다 재구독(off 후 on)
+      loadMyAdminGifts();   // 🎁 내게 온 특정-유저 선물(users/{uid}/adminGifts) — uid별이라 이전 ref off 후 재구독
       startCatLoop();   // 통합 걷기 엔진(단일 rAF, 보이는 무대만 애니메이션)
       // 앱을 켜둔 동안에도 그릇 3시간 만료→똥 정산이 돌도록 주기 점검(다마고치)
       if(state._petTimer) clearInterval(state._petTimer);
@@ -2453,7 +2457,7 @@
     // ===== 📣 전체 선물(broadcast) — 개발자가 config/broadcast에 넣으면 모든 사용자가 자기 선물함으로 1회 수령 =====
     // 규칙: config 쓰기=관리자만, 읽기=로그인 전체. 각 사용자는 자기 game.gifts에만 쓰므로 서버 없이 안전하게 전파. bcSeen 마커로 멱등.
     let _broadcasts={};
-    function loadBroadcasts(){ try{ db.ref('config/broadcast').on('value', function(s){ _broadcasts=s.val()||{}; claimBroadcasts(); }); }catch(e){} }
+    function loadBroadcasts(){ try{ const r=db.ref('config/broadcast'); r.off(); r.on('value', function(s){ _broadcasts=s.val()||{}; claimBroadcasts(); }); }catch(e){} }   // 로그인마다 재구독 → off 후 on(누적 방지, 재부착 시 현재 유저로 claim 재발화)
     function claimBroadcasts(){ if(!state.uid || !gameRef) return; const bc=_broadcasts||{}; const ids=Object.keys(bc); if(!ids.length) return;
       let added=0;
       gameRef().transaction(g=>{ g=normalizeGame(g); added=0;
@@ -2468,7 +2472,10 @@
     }
     // ===== 🎁 특정 유저 선물(users/{uid}/adminGifts) — 개발자가 넣으면 그 유저만 자기 선물함으로 수령(비공개, 규칙: 관리자·본인 쓰기) =====
     let _admClaim={};
-    function loadMyAdminGifts(){ if(!state.uid) return; try{ db.ref('users/'+state.uid+'/adminGifts').on('value', function(s){ const v=s.val(); if(v) claimAdminGifts(v); }); }catch(e){} }
+    let _admGiftRef=null;
+    function loadMyAdminGifts(){ if(_admGiftRef){ try{ _admGiftRef.off(); }catch(e){} _admGiftRef=null; }   // 이전 uid의 adminGifts 리스너 해제(계정 전환 시 옛 uid 노드에 permission-denied·중복 콜백 방지)
+      if(!state.uid) return;
+      try{ _admGiftRef=db.ref('users/'+state.uid+'/adminGifts'); _admGiftRef.on('value', function(s){ const v=s.val(); if(v) claimAdminGifts(v); }); }catch(e){} }
     function claimAdminGifts(map){ if(!state.uid) return; const ids=Object.keys(map||{}).filter(function(id){ return !_admClaim[id] && map[id] && map[id].type; }); if(!ids.length) return;
       ids.forEach(function(id){ _admClaim[id]=1; });
       const gifts=ids.map(function(id){ const b=map[id]; if(!(b.type==='coins'||b.type==='gold'||b.type==='consum')) return null; const gift={ type:b.type, qty:Math.max(1, Number(b.qty)||1), at:b.at||new Date().toISOString(), bc:true }; if(b.type==='consum'){ if(!b.key) return null; gift.key=b.key; } if(b.msg) gift.msg=String(b.msg).slice(0,200); return gift; }).filter(Boolean);

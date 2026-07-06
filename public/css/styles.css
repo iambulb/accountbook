@@ -1109,9 +1109,10 @@
     .fx-ddeulegg.fx-tremble .fx-ddflower { animation:fxflwswing .2s ease infinite; }
     @keyframes fxflwswing { 0%,100%{transform:rotate(0)} 14%{transform:rotate(-27deg)} 40%{transform:rotate(24deg)} 64%{transform:rotate(-15deg)} 85%{transform:rotate(8deg)} }
     /* 🌈 뜰알: 알 위쪽에 무지개가 스르르 뜬다 */
-    .fx-ddrainbow { position:absolute; left:50%; top:13%; transform:translateX(-50%); z-index:1; line-height:0; opacity:0; pointer-events:none; animation:fxddrb 1.7s ease .25s forwards; }
-    .fx-ddrainbow .px { display:block; image-rendering:pixelated; height:auto; width:min(72vw,340px); opacity:.92; }
-    @keyframes fxddrb { 0%{opacity:0; transform:translateX(-50%) translateY(16px) scale(.85);} 100%{opacity:1; transform:translateX(-50%) translateY(0) scale(1);} }
+    /* 무지개: 이전보다 ~3배 크게 + 밑동에서 '스르르'(천천히) 피어오르듯 서서히 등장(펫알 무지개알 승급과 같은 2번째 탭에 트리거) */
+    .fx-ddrainbow { position:absolute; left:50%; top:4%; transform:translateX(-50%); transform-origin:50% 100%; z-index:1; line-height:0; opacity:0; pointer-events:none; animation:fxddrb 2.6s cubic-bezier(.2,.7,.25,1) forwards; }
+    .fx-ddrainbow .px { display:block; image-rendering:pixelated; height:auto; width:min(220vw,900px); opacity:.9; }
+    @keyframes fxddrb { 0%{opacity:0; transform:translateX(-50%) scale(.5);} 55%{opacity:.85;} 100%{opacity:1; transform:translateX(-50%) scale(1);} }
     /* 🦋 뜰알: 나비 5마리가 알 주변을 팔랑팔랑 날아다닌다(배너 나비 재사용) */
     .fx-ddbflies { position:absolute; inset:0; z-index:3; pointer-events:none; }
     .fx-ddbfly { position:absolute; left:50%; top:50%; image-rendering:pixelated; animation:fxddfly var(--d,7s) ease-in-out infinite; }
