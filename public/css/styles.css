@@ -1303,13 +1303,13 @@
     .ten-skyrb { position:absolute; left:50%; top:11%; transform:translateX(-50%); z-index:1; line-height:0; pointer-events:none; clip-path:inset(0 100% 0 0); animation:ten-rbdraw 1.6s ease-out .05s forwards; }
     .ten-skyrb .px { display:block; image-rendering:pixelated; width:min(88vw,430px); height:auto; opacity:.9; }
     /* 🌅 노을(펫알) 10뽑 하늘 — 해가 아래에서 위로 스르르 떠오름 */
-    .ten-skysun { position:absolute; left:50%; top:64%; transform:translate(-50%,-50%); z-index:1; line-height:0; pointer-events:none; opacity:0; filter:drop-shadow(0 0 16px rgba(255,178,92,.7)); animation:ten-sunrise 1.9s ease-out .05s forwards; }
+    .ten-skysun { position:absolute; left:50%; top:43%; transform:translate(-50%,-50%); z-index:1; line-height:0; pointer-events:none; opacity:0; filter:drop-shadow(0 0 16px rgba(255,178,92,.7)); animation:ten-sunrise 1.9s ease-out .05s forwards; }
     .ten-skysun .px { display:block; image-rendering:pixelated; }
-    @keyframes ten-sunrise { 0%{ top:80%; opacity:0;} 30%{ opacity:1;} 100%{ top:24%; opacity:1;} }
+    @keyframes ten-sunrise { 0%{ top:43%; opacity:0;} 25%{ opacity:1;} 100%{ top:20%; opacity:1;} }
     /* 🌠 밤(무지개) 10뽑 하늘 — 큰 무지개 별똥별이 좌측상단→우측하단으로 떨어짐(끝에서 사라짐) */
     .ten-skyshoot { position:absolute; left:6%; top:4%; z-index:2; line-height:0; pointer-events:none; opacity:0; transform:translate(-50%,-50%); animation:ten-shoot 1.5s cubic-bezier(.5,0,.85,.6) .05s forwards; }
     .ten-skyshoot .px { display:block; image-rendering:pixelated; filter:drop-shadow(0 0 6px rgba(255,255,255,.55)); }
-    @keyframes ten-shoot { 0%{ left:6%; top:4%; opacity:0;} 12%{ opacity:1;} 82%{ opacity:1;} 100%{ left:84%; top:76%; opacity:0;} }
+    @keyframes ten-shoot { 0%{ left:6%; top:4%; opacity:0;} 12%{ opacity:1;} 78%{ opacity:1;} 100%{ left:80%; top:41%; opacity:0;} }
     /* 알 주변 반딧불 글로우 / 단풍잎 살랑(10뽑 테마별) */
     .ten-ffcore { display:block; image-rendering:pixelated; filter:drop-shadow(0 0 5px rgba(210,255,140,.9)); animation:ten-ffglow 1.6s ease-in-out infinite; }
     .ten-leafwig { display:block; image-rendering:pixelated; transform-origin:center; animation:ten-leafwig 1.5s ease-in-out infinite; }
@@ -1383,7 +1383,7 @@
     @keyframes ten-eggshake { 0%,100%{transform:translate(-50%,-50%) rotate(0)} 12%{transform:translate(calc(-50% - 12px),-50%) rotate(-16deg)} 34%{transform:translate(calc(-50% + 12px),-50%) rotate(15deg)} 56%{transform:translate(calc(-50% - 9px),-50%) rotate(-11deg)} 78%{transform:translate(calc(-50% + 6px),-50%) rotate(7deg)} }
     @keyframes ten-egghit { 0%{transform:translate(-50%,-50%) rotate(0)} 20%{transform:translate(calc(-50% + 9px),-50%) rotate(6deg)} 45%{transform:translate(calc(-50% - 7px),-50%) rotate(-5deg)} 70%{transform:translate(calc(-50% + 4px),-50%) rotate(3deg)} 100%{transform:translate(-50%,-50%) rotate(0)} }
     @keyframes ten-auraglow { 0%,100%{ opacity:.3; transform:translate(-50%,-50%) scale(.9); } 50%{ opacity:.52; transform:translate(-50%,-50%) scale(1.06); } }
-    @media (prefers-reduced-motion: reduce){ .ten-nest.drop, .ten-nest.shake, .ten-bob, .ten-bfly, .ten-bfly .bf-wing, .ten-petaura, .ten-skyrb, .ten-md-bf .bf-wing, .ten-skysun, .ten-skyshoot, .ten-ddflower.ddflw-big { animation:none; } .ten-skyrb { clip-path:none; opacity:.9; } .ten-skysun { top:24%; opacity:1; } .ten-skyshoot { left:50%; top:40%; opacity:1; } .ten-ddeulegg .fx-ddflower.ddflw-big { transform:scale(1.55); } }
+    @media (prefers-reduced-motion: reduce){ .ten-nest.drop, .ten-nest.shake, .ten-bob, .ten-bfly, .ten-bfly .bf-wing, .ten-petaura, .ten-skyrb, .ten-md-bf .bf-wing, .ten-skysun, .ten-skyshoot, .ten-ddflower.ddflw-big { animation:none; } .ten-skyrb { clip-path:none; opacity:.9; } .ten-skysun { top:20%; opacity:1; } .ten-skyshoot { left:74%; top:39%; opacity:1; } .ten-ddeulegg .fx-ddflower.ddflw-big { transform:scale(1.55); } }
     body.lite .ten-bob, body.lite .ten-bfly, body.lite .ten-bfly .bf-wing, body.lite .ten-petaura, body.lite .ten-md-bf .bf-wing { animation:none !important; }
     body.lite .ten-eggfx, body.lite .ten-crlight .ll-rays { display:none !important; }
     /* 🔤 픽셀(도트) 텍스트 이미지 — 리빌 등급명/이름. 확대해도 안 뭉개지게 pixelated + 살짝 위아래 흔들림(가독성 유지). */

@@ -5059,9 +5059,9 @@
       let leaves=''; const LN=7; for(let i=0;i<LN;i++){ const l=(6+pkRand(i,201)*88).toFixed(1), dur=(7+pkRand(i,202)*6).toFixed(1),
         del=(-pkRand(i,203)*10).toFixed(2), sw=(2.4+pkRand(i,204)*1.6).toFixed(1), hh=Math.round(9+pkRand(i,205)*5), dir=(pkRand(i,206)<0.5?-1:1);
         leaves+='<span class="pk-fallleaf" style="left:'+l+'%;--d:'+dur+'s;--sw:'+sw+'s;--dir:'+dir+';animation-delay:'+del+'s;"><span class="fl-in">'+mapleLeafSvg({h:S(hh)}, LEAF_COLS[Math.floor(pkRand(i,207)*LEAF_COLS.length)])+'</span></span>'; }
-      const sun='<span class="pk-sun">'+sunSvg({h:S(60)})+'</span>';   // ☀️ 수평선(하늘 하단)에 절반만 걸린 지는 해 — .pk-sky overflow:hidden가 아래 절반을 클립
+      // ☀️ 지는 해(해 디스크)는 삭제 — 배경 radial-gradient 글로우(50% 40%, 가운데 산)만 남기고, 10연차 때만 산에서 떠오르는 ten-skysun 해를 보임
       _sunsetCache[mode]='<div class="pkscene pk-sunset'+(reveal?' pk-reveal':'')+'" aria-hidden="true">'+
-        '<div class="pk-sky">'+sun+clouds+'</div>'+
+        '<div class="pk-sky">'+clouds+'</div>'+
         '<div class="pk-horizon">'+hills+farline+'</div>'+
         '<div class="pk-field"><div class="pk-grass"></div>'+soil+tufts+flowers+trees+pond+'</div>'+
         '<div class="pk-air">'+dflies+leaves+'</div>'+
