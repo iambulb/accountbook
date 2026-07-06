@@ -3785,6 +3785,22 @@
       const tabs=[['event','가챠'],['cats','펫'],['furn','가구'],['consum','소비'],['wall','벽지'],['floor','바닥']];
       return '<div class="subseg">'+tabs.map(function(t){ return '<button class="'+(_shopSub===t[0]?'on':'')+'" onclick="setShopSub(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
     }
+    // 🧱 벽지·바닥 알뜰샵 스킨 그리드(공통) — ASSET_TYPES 기반, 카탈로그·현재적용·css·구매fn·라벨만 다름. wall/floor 분기의 거의 동일하던 마크업을 1곳으로.
+    function surfaceShopGrid(type){
+      const A=ASSET_TYPES[type], isFloor=(type==='floor');
+      const cur=isFloor?currentFloor():currentWall(), cssOf=isFloor?floorCss:wallCss, buyFn=isFloor?'buyFloor':'buyWall', owns=isFloor?ownsFloor:ownsWall, lbl=A.label.trim();
+      return '<div class="wallgrid">'+A.catalog.filter(function(x){ return !isGachaOnlyAsset(type,x.id); }).map(function(x){
+        const owned=owns(x.id), applied=cur===x.id, gacha=isGachaOnlyAsset(type,x.id), p=assetBuyPrice(type,x.id), t=assetTierOf(type,x.id);
+        let act;
+        if(owned) act='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>보유중</span>';
+        else if(gacha) act='<span class="owntag" style="color:var(--sub);"><span class="ci" style="vertical-align:-2px">'+boxSvg({h:14})+'</span>랜덤박스</span>';
+        else if(coins()>=p) act='<button class="buy" aria-label="'+x.name+' '+lbl+' 구매('+p+' 은화)" onclick="'+buyFn+'(\''+x.id+'\')">구매</button>';
+        else act='<button class="buy dis" disabled>'+(p-coins())+' 부족</button>';
+        const price=gacha?('<span class="tagmini tier-'+t+'">'+((TIERS.find(function(tt){ return tt.id===t; })||{}).name||t)+'</span>'):(p?('<span class="price"><span class="ci">'+coinSvg({h:15})+'</span>'+p+'</span>'):'<span class="price" style="color:var(--sub)">무료</span>');
+        return '<div class="wallcard'+(applied?' on':'')+'"><div class="wallsw" style="background:'+cssOf(x.id)+'"></div>'+
+          '<div class="wallmeta"><b>'+x.name+'</b>'+price+'</div>'+act+'</div>';
+      }).join('')+'</div>';
+    }
     function catShopHtml(){
       let h='';
       if(_shopSub==='consum'){
@@ -3835,36 +3851,13 @@
         return h;
       }
       if(_shopSub==='floor'){
-        const cur=currentFloor();
-        h+='<div class="wallgrid">'+FLOOR_CATALOG.filter(f=>!isGachaOnlyFloor(f.id)).map(f=>{   // 가챠전용 바닥은 판매목록에서 숨김(랜덤박스 풀엔 그대로)
-          const owned=ownsFloor(f.id), applied=cur===f.id, gacha=isGachaOnlyFloor(f.id), fp=floorBuyPrice(f.id);
-          let act;
-          if(owned) act='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>보유중</span>';
-          else if(gacha) act='<span class="owntag" style="color:var(--sub);"><span class="ci" style="vertical-align:-2px">'+boxSvg({h:14})+'</span>랜덤박스</span>';
-          else if(coins()>=fp) act='<button class="buy" aria-label="'+f.name+' 바닥 구매('+fp+' 은화)" onclick="buyFloor(\''+f.id+'\')">구매</button>';
-          else act='<button class="buy dis" disabled>'+(fp-coins())+' 부족</button>';
-          const price=gacha?('<span class="tagmini tier-'+floorTierOf(f.id)+'">'+((TIERS.find(t=>t.id===floorTierOf(f.id))||{}).name||floorTierOf(f.id))+'</span>'):(fp?('<span class="price"><span class="ci">'+coinSvg({h:15})+'</span>'+fp+'</span>'):'<span class="price" style="color:var(--sub)">무료</span>');
-          return '<div class="wallcard'+(applied?' on':'')+'"><div class="wallsw" style="background:'+floorCss(f.id)+'"></div>'+
-            '<div class="wallmeta"><b>'+f.name+'</b>'+price+'</div>'+act+'</div>';
-        }).join('')+'</div>';
+        h+=surfaceShopGrid('floor');
         h+='<div class="note"><b>바닥 스킨</b>은 <b>알뜰홈 방꾸미기</b>에서 방마다 골라 깔아요. <b>특별↑ 등급</b> 바닥은 <b>랜덤박스</b>로만 나와요.</div>';
         return h;
       }
 
       if(_shopSub==='wall'){
-        const cur=currentWall();
-        h+='<div class="wallgrid">'+WALLPAPER_CATALOG.filter(w=>!isGachaOnlyWall(w.id)).map(w=>{   // 가챠전용 벽지는 판매목록에서 숨김(랜덤박스 풀엔 그대로)
-          const owned=ownsWall(w.id), applied=cur===w.id;
-          let act;
-          if(owned) act='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>보유중</span>';
-          else if(isGachaOnlyWall(w.id)) act='<span class="owntag" style="color:var(--sub);"><span class="ci" style="vertical-align:-2px">'+boxSvg({h:14})+'</span>랜덤박스</span>';
-          else if(coins()>=wallBuyPrice(w.id)) act='<button class="buy" aria-label="'+w.name+' 벽지 구매('+wallBuyPrice(w.id)+' 은화)" onclick="buyWall(\''+w.id+'\')">구매</button>';
-          else act='<button class="buy dis" disabled>'+(wallBuyPrice(w.id)-coins())+' 부족</button>';
-          const wp=wallBuyPrice(w.id);
-          const price=isGachaOnlyWall(w.id)?('<span class="tagmini tier-'+wallTierOf(w.id)+'">'+((TIERS.find(t=>t.id===wallTierOf(w.id))||{}).name||wallTierOf(w.id))+'</span>'):(wp?('<span class="price"><span class="ci">'+coinSvg({h:15})+'</span>'+wp+'</span>'):'<span class="price" style="color:var(--sub)">무료</span>');
-          return '<div class="wallcard'+(applied?' on':'')+'"><div class="wallsw" style="background:'+wallCss(w.id)+'"></div>'+
-            '<div class="wallmeta"><b>'+w.name+'</b>'+price+'</div>'+act+'</div>';
-        }).join('')+'</div>';
+        h+=surfaceShopGrid('wallpaper');
         h+='<div class="note"><b>벽지</b>는 <b>알뜰홈 벽꾸미기</b>에서 방마다 골라 적용해요(<b>벽돌</b>은 랜덤박스 전용).</div>';
         return h;
       }
