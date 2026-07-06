@@ -659,7 +659,7 @@
     body.lite .pk-bfly, body.lite .pk-bfly .bf-wing,
     body.lite .pk-canopy, body.lite .pk-flower, body.lite .pk-tuft, body.lite .pk-rainbow,
     body.lite .pk-star, body.lite .pk-fire, body.lite .pk-fire .ff-core,
-    body.lite .pk-pkoi, body.lite .pk-pkoi .koi-b, body.lite .pk-lily, body.lite .pk-lotus, body.lite .pk-dfly, body.lite .pk-fish,
+    body.lite .pk-pkoi .koi-sw, body.lite .pk-pkoi .koi-b, body.lite .pk-lily, body.lite .pk-lotus, body.lite .pk-dfly, body.lite .pk-fish,
     body.lite .pk-bird .bird-a, body.lite .pk-bird .bird-b { animation: none !important; }
     /* 가챠 오픈: 알/박스를 보여주고 3번 탭·균열·결과 과정은 그대로, 흔들림·파티클·오오라·컨페티 같은 '무거운 애니 요소만' 제거 */
     body.lite #fxItem, body.lite .fx-item, body.lite .fx-art.pop { animation: none !important; }
@@ -1800,12 +1800,17 @@
     .pkscene.pk-sunset .pk-pwater { background:linear-gradient(150deg,#5f7ba4 0%,#98a0c0 42%,#e6ab7c 100%); }   /* 노을이 물에 반영 */
     .pk-pstone { position:absolute; transform:translate(-50%,-50%); image-rendering:pixelated; line-height:0; z-index:3; }
     .pk-pstone .px { display:block; image-rendering:pixelated; }
-    /* 잉어: 연못 안을 제각각 배회(pkpwander, 드리프트 변수) + 몸통 좌우 흔들(koi-b) */
-    .pk-pkoi { position:absolute; z-index:2; line-height:0; transform:translate(-50%,-50%); animation:pkpwander var(--d,7s) ease-in-out infinite; }
+    /* 🎏 가로 잉어: 오른쪽 갔다 돌아서 왼쪽으로 헤엄(koi-sw, 방향전환 시 scaleX 뒤집혀 진행방향을 바라봄) + 몸통(꼬리) 흔들(koi-b) */
+    .pk-pkoi { position:absolute; z-index:2; line-height:0; transform:translate(-50%,-50%); }
+    .pk-pkoi .koi-sw { display:block; animation:pkkoiswim var(--d,9s) ease-in-out infinite; }
     .pk-pkoi .koi-b { display:block; image-rendering:pixelated; transform-origin:center; animation:pkkoiwig var(--sw,1.1s) ease-in-out infinite; }
     .pk-pkoi .px { display:block; image-rendering:pixelated; }
-    @keyframes pkpwander { 0%,100%{ transform:translate(-50%,-50%); } 25%{ transform:translate(calc(-50% + var(--x1,0px)),calc(-50% + var(--y1,0px))); } 50%{ transform:translate(calc(-50% + var(--x2,0px)),calc(-50% + var(--y2,0px))); } 75%{ transform:translate(calc(-50% + var(--x3,0px)),calc(-50% + var(--y3,0px))); } }
-    @keyframes pkkoiwig { 0%,100%{ transform:rotate(-7deg);} 50%{ transform:rotate(7deg);} }
+    @keyframes pkkoiswim {   /* 0~50%=오른쪽 바라보며 우로, 50~100%=왼쪽 바라보며 좌로. 끝에서 scaleX가 0을 지나며 뒤집힘=몸 돌리는 연출 */
+      0%{ transform:translateX(calc(-1 * var(--r,12px))) scaleX(1); } 8%{ transform:translateX(calc(-1 * var(--r,12px))) scaleX(1); }
+      42%{ transform:translateX(var(--r,12px)) scaleX(1); } 50%{ transform:translateX(var(--r,12px)) scaleX(-1); }
+      58%{ transform:translateX(var(--r,12px)) scaleX(-1); } 92%{ transform:translateX(calc(-1 * var(--r,12px))) scaleX(-1); }
+      100%{ transform:translateX(calc(-1 * var(--r,12px))) scaleX(1); } }
+    @keyframes pkkoiwig { 0%,100%{ transform:rotate(-6deg);} 50%{ transform:rotate(6deg);} }
     /* 🪷 연꽃·🌿 연잎: 물 위에 떠서 잔잔히 상하 부유 */
     .pk-lily, .pk-lotus { position:absolute; image-rendering:pixelated; line-height:0; transform:translate(-50%,-50%); animation:pkfloat var(--d,5s) ease-in-out infinite; }
     .pk-lily { z-index:3; } .pk-lotus { z-index:4; }
@@ -1876,7 +1881,7 @@
     .gb-item-cost { font-size:12.5px; font-weight:800; margin-top:5px; display:inline-flex; align-items:center; gap:3px; }
     .gb-item-cost .ci { display:inline-flex; align-items:center; }
     .gb-pity { text-align:center; padding:0 12px 14px; }
-    @media (prefers-reduced-motion: reduce){ .pk-cloud, .pk-tree .pk-canopy, .pk-flower, .pk-tuft, .pk-frame, .pk-bfly, .pk-bfly .bf-wing, .pk-star, .pk-fire, .pk-fire .ff-core, .pk-pkoi, .pk-pkoi .koi-b, .pk-lily, .pk-lotus, .pk-dfly { animation:none; } .pk-rainbow { opacity:1; animation:none; } }
+    @media (prefers-reduced-motion: reduce){ .pk-cloud, .pk-tree .pk-canopy, .pk-flower, .pk-tuft, .pk-frame, .pk-bfly, .pk-bfly .bf-wing, .pk-star, .pk-fire, .pk-fire .ff-core, .pk-pkoi .koi-sw, .pk-pkoi .koi-b, .pk-lily, .pk-lotus, .pk-dfly { animation:none; } .pk-rainbow { opacity:1; animation:none; } }
     .shopcard .featrib { position:absolute; left:6px; top:6px; display:inline-flex; align-items:center; gap:3px;
       font-size:10px; font-weight:800; color:#7a5200; background:var(--gold, #f2b134); padding:2px 6px; border-radius:999px; z-index:2; }
     .shopcard .featrib svg { color:#7a5200; }

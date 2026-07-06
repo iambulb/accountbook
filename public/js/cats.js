@@ -1813,7 +1813,20 @@
     // 🌸 뜰알 FX 분리 렌더 — 오픈 연출에서 '꽃'과 '알 몸통'을 따로 그려, 알이 흔들릴 때 꽃이 줄기에서 더 크게 흔들리게(CSS .fx-ddflower). 몸통=꽃 뺀 알(M_DDEUL 5행부터).
     const M_DDEUL_FLW=[".fCf.",".CYC.",".fCf.","..t..","..T.."];
     const M_DDEUL_BODY=M_DDEUL.slice(5);
-    function ddeulFxHtml(){ return '<span class="fx-ddflower">'+pxSvg(M_DDEUL_FLW, DDEUL_PAL)+'</span><span class="fx-ddbody">'+pxSvg(M_DDEUL_BODY, DDEUL_PAL)+'</span>'; }
+    // 🌸 뜰알 꽃 색 랜덤 팔레트 — 꽃잎만 바꿈([C 메인·F 밝은·f 어두운], 중심 Y=노랑·줄기 t/T=초록은 유지). 10연차에서 알마다 다양하게.
+    const DDEUL_FLW_COLS=[
+      {C:'#ff9ec2',F:'#f9b9d0',f:'#ef8fb4'},   // 핑크(기본)
+      {C:'#c49ae8',F:'#dcc4f2',f:'#a878d8'},   // 보라
+      {C:'#8fb8f0',F:'#b9d2f7',f:'#6f9be8'},   // 파랑
+      {C:'#f27a7a',F:'#f7a9a9',f:'#e85f5f'},   // 빨강
+      {C:'#f5b06a',F:'#f7c894',f:'#e89a4a'},   // 주황
+      {C:'#7ed6b0',F:'#a8e6cf',f:'#5cc298'},   // 민트
+      {C:'#f5f0f8',F:'#ffffff',f:'#dcd6e6'}    // 흰색
+    ];
+    function randDdeulFlower(){ return DDEUL_FLW_COLS[Math.floor(Math.random()*DDEUL_FLW_COLS.length)]; }
+    // flw={C,F,f} 주면 꽃잎 색만 교체(몸통·중심·줄기 유지). 안 주면 기본 핑크.
+    function ddeulFxHtml(flw){ const pal=flw?Object.assign({},DDEUL_PAL,flw):DDEUL_PAL;
+      return '<span class="fx-ddflower">'+pxSvg(M_DDEUL_FLW, pal)+'</span><span class="fx-ddbody">'+pxSvg(M_DDEUL_BODY, pal)+'</span>'; }
     const SHELL_PAL={X:'#8d8368',I:'#fffef8',W:'#f7f3ea',S:'#e6dfce'};   // 껍질 조각도 알과 같은 크림 4톤(I 하이라이트·W·S + X 테두리)
     const SHELL_PAL_RB={X:'#8d8368',I:'RAINBOW',W:'RAINBOW',S:'RAINBOW'};
     function shellSvg(which, rainbow, opt){ const M=[M_SHELL_A,M_SHELL_B,M_SHELL_C][which]||M_SHELL_A; return pxSvg(M, rainbow?SHELL_PAL_RB:SHELL_PAL, opt); }
@@ -2238,10 +2251,13 @@
     // 단풍나무: M_TREETOP 모양 재사용 + 가을 팔레트(주황→빨강 명암).
     const MAPLE_PAL={H:'#f5aa46',L:'#e86e36',l:'#d2482c',D:'#962828',X:'#601c1c'};
     function mapleSvg(opt){ return pxSvg(M_TREETOP, MAPLE_PAL, opt); }
-    // 🍁 고추잠자리(top-down, 긴 빨강 몸통 + 4날개). R=빨강 r=진빨강 X=외곽 E=눈 W/w/v=날개(밝·그림자·맥).
+    // 🔁 픽셀 매트릭스 90° 시계방향 회전(무손실 전치) — 세로 스프라이트를 가로로. 상단 행→우측 열(=머리가 오른쪽).
+    function rot90cw(M){ const oR=M.length, oC=M[0].length, out=[]; for(let i=0;i<oC;i++){ let s=''; for(let j=0;j<oR;j++){ s+=M[oR-1-j][i]; } out.push(s); } return out; }
+    // 🍁 고추잠자리(원본=세로) → 가로로 눕힘(M_DFLY_H). R=빨강 r=진빨강 X=외곽 E=눈 W/w/v=날개(밝·그림자·맥).
     const M_DFLY=["......X......",".....XEX.....",".....XRX.....","vWWWwXRXwWWWv",".vWWwXRXwWWv.","...wwXRXww...",".vWWwXRXwWWv.","vWWWwXRXwWWWv",".....XRX.....",".....XRX.....",".....XrX.....",".....XrX.....","......r......"];
+    const M_DFLY_H=rot90cw(M_DFLY);
     const DFLY_PAL={R:'#e83636',r:'#b41e1e',X:'#601414',E:'#fce060',W:'#e0ecf8',w:'#b2c6de',v:'#92a8c6'};
-    function dragonflySvg(opt){ return pxSvg(M_DFLY, DFLY_PAL, opt); }
+    function dragonflySvg(opt){ return pxSvg(M_DFLY_H, DFLY_PAL, opt); }   // 가로 잠자리
     // 🐟 물고기(koi, 옆모습·헤엄): 머리=왼쪽(눈 E), 꼬리=오른쪽. O/o=주황 W=흰배.
     const M_FISH=["....ooo.....","..oOOOOOo..o",".oOWWOOOOooo","oEOWWOOOOooo",".oOOOOOOOoo.","..ooOOOo...o"];
     const FISH_PAL={O:'#f2923a',o:'#ce6822',W:'#fff2de',E:'#261a12'};
@@ -2326,10 +2342,11 @@
     const EGG_SUNSET=Object.assign({},EGG_DEFAULT,{X:'#9a8468',D:'#e8cfa8',W:'#fff3dc',F:'#ffb0c2',Y:'#ffdf7a',G:'#9a9c4a',g:'#7a7838',R:'#c07a3a',r:'#8a5426'});   // 노을: 알 따뜻·뜰 올리브/황토
     const EGG_NIGHT=Object.assign({},EGG_DEFAULT,{X:'#6a7a70',D:'#cfeecb',W:'#eaffe0',B:'#3a3f47',E:'#cdd6ee',P:'#a0b0d0',F:'#b0a0e0',Y:'#e0f0a0',G:'#375f52',g:'#294a42',R:'#3a3048',r:'#241b2a'});   // 야광: 알 형광크림·뜰 밤청록
     function eggGardenSvg(pal, opt){ return pxSvg(M_EGGGARDEN, pal||EGG_DEFAULT, opt); }
-    // 🎏 세로형 잉어(top-down, 머리 위·꼬리 아래) — X외곽 B몸통 S반점 f지느러미. 색 변주 KOI_PALS.
+    // 🎏 잉어 — 원본=세로(머리 위·꼬리 아래), 가로 버전 M_KOI_H(rot90cw → 머리 오른쪽·꼬리 왼쪽). X외곽 B몸통 S반점 f지느러미. 색 변주 KOI_PALS.
     const M_KOI=["....X....","...XBX...","..XBBBX..",".XBBBBBX.",".XBSSBBX.","XBBBBBBBX","fXBBBBBXf","fXBBSSBXf",".XBBBBBX.",".XSSBBBX.",".XBBBBBX.","..XBBBX..","..XBBBX..","...XBX...","..fXBXf..",".ffX.Xff."];
+    const M_KOI_H=rot90cw(M_KOI);   // 가로 잉어(머리→오른쪽). 왼쪽 보게 하려면 CSS scaleX(-1).
     const KOI_PALS={o:{X:'#8c461a',B:'#f2923a',S:'#ce6822',f:'#ffce96'},w:{X:'#963c3c',B:'#fafafa',S:'#e24040',f:'#ffd2d2'},g:{X:'#96781e',B:'#f6ce50',S:'#463c28',f:'#ffeeaa'}};
-    function koiSvg(tint, opt){ return pxSvg(M_KOI, KOI_PALS[tint]||KOI_PALS.o, opt); }
+    function koiSvg(tint, opt){ return pxSvg(M_KOI_H, KOI_PALS[tint]||KOI_PALS.o, opt); }   // 가로 잉어(연못 헤엄)
     // ☀️ 지는 해 — 전용 도트 원반(크레이터 없이 방사형 따뜻한 명암, 달 느낌 제거). I밝은중심→M금빛→S주황→d가장자리→X외곽. PIL 라이트/다크 검수.
     const M_SUN=[
       ".......XXXXXXXX.......",".....XXddddddddXX.....","....XddddSSSSddddX....","...XdddSSSSSSSSdddX...",
@@ -4436,23 +4453,27 @@
         '<div class="gb-item"><div class="gb-item-ic">'+ddeulEggSvg({h:52})+'</div>'+
           '<div class="gb-item-meta"><b class="tier-rainbow">뜰알 <span class="tagmini tier-rainbow">한정 픽업</span></b>'+
           '<div class="gb-item-desc">'+(pk?'<b class="tier-rainbow">'+pk+'</b> · ':'')+'한정 펫은 오직 뜰알에서만!</div>'+
-          '<div class="gb-item-cost">1뽑당 소모 '+ddeulCostHtml(1)+'</div></div></div>'+
+          '<div class="gb-item-cost">1뽑당 소모 '+gachaCostHtml(DDEUL_PRICE,DDEUL_GOLD,1)+'</div></div></div>'+
         gbPullActions('ddeul', DDEUL_PRICE, DDEUL_GOLD)+gbPityHtml('ddeul')+'</div>';
     }
-    // 소모재화 표시(은화·금화). m=뽑기 수.
-    function ddeulCostHtml(m){ return '<span class="ci">'+coinSvg({h:14})+'</span>'+(DDEUL_PRICE*m)+' <span class="ci">'+goldSvg({h:14})+'</span>'+(DDEUL_GOLD*m); }
-    // 소모재화 표기가 있는 1뽑/10뽑 버튼(개발자 미리보기 = devBannerPull). silver/gold=1뽑당 소모.
+    // 소모재화 표시(은화·금화). gold 0/falsy면 은화만. h=아이콘 높이, m=뽑기 수.
+    function gachaCostHtml(silver, gold, m, h){ h=h||14; return '<span class="ci">'+coinSvg({h:h})+'</span>'+(silver*m)+(gold?' <span class="ci">'+goldSvg({h:h})+'</span>'+(gold*m):''); }
+    // 소모재화 표기가 있는 1뽑/10뽑 버튼(개발자 미리보기 = devBannerPull). silver/gold=1뽑당 소모(gold 없으면 은화만).
     function gbPullActions(kind, silver, gold){
-      const cost=(m)=>'<span class="ci">'+coinSvg({h:13})+'</span>'+(silver*m)+' <span class="ci">'+goldSvg({h:13})+'</span>'+(gold*m);
       return '<div class="gb-actions">'+
-        '<button class="gb-btn" onclick="devBannerPull(\''+kind+'\',false)"><span>1뽑</span><span class="gb-cost">'+cost(1)+'</span></button>'+
-        '<button class="gb-btn gb-btn10" onclick="devBannerPull(\''+kind+'\',true)"><span>10뽑</span><span class="gb-cost">'+cost(10)+'</span></button></div>';
+        '<button class="gb-btn" onclick="devBannerPull(\''+kind+'\',false)"><span>1뽑</span><span class="gb-cost">'+gachaCostHtml(silver,gold,1,13)+'</span></button>'+
+        '<button class="gb-btn gb-btn10" onclick="devBannerPull(\''+kind+'\',true)"><span>10뽑</span><span class="gb-cost">'+gachaCostHtml(silver,gold,10,13)+'</span></button></div>';
     }
-    // 🥚 펫알 배너 = 노을 씬(해·개울·잉어) + 알뜰 아이콘(노을색) 중앙 + 노을빛 반짝임.
+    // 🥚 펫알 배너 = 노을 씬 + 배너 이미지 아래 펫알 이미지·설명·소모재화 + 1뽑/10뽑(소모재화).
     function eggBannerHtml(){
       return '<div class="gbanner gb-eggbn"><div class="gb-head"><b class="gb-t gb-sunset-t">🌇 펫알 · 노을 픽업</b><span class="pk-tag">매일 만나는 새 친구</span></div>'+
         '<div class="gb-scene">'+sunsetSceneHtml()+gbCenterHtml(eggGardenSvg(EGG_SUNSET,{h:54}), fxAuraTwinkles(8,false), 'gb-sun')+'</div>'+
-        gbActionsHtml('egg')+gbPityHtml('egg')+'</div>';
+        // 🥚 배너 이미지 아래 — 펫알 이미지·설명·소모재화
+        '<div class="gb-item"><div class="gb-item-ic">'+eggSvg(0,{h:52})+'</div>'+
+          '<div class="gb-item-meta"><b>펫알</b>'+
+          '<div class="gb-item-desc">열면 펫이 랜덤으로! 등급이 높을수록 귀해요.<br>열 때마다 금화 1개 지급.</div>'+
+          '<div class="gb-item-cost">1뽑당 소모 '+gachaCostHtml(GACHA_PRICE,0,1)+'</div></div></div>'+
+        gbPullActions('egg', GACHA_PRICE, 0)+gbPityHtml('egg')+'</div>';
     }
     // 🎁 랜덤박스 배너 = 낮 씬 + 상자 중앙(둥지 없음) + 반짝임.
     function boxBannerHtml(){
@@ -4919,62 +4940,63 @@
       return '<div class="pickbanner"><div class="pk-head"><span class="pk-title tier-rainbow">✨ 지금 이 펫만! 한정 픽업</span>'+tag(p1)+sep+tag(p2)+'</div>'+pickupSceneHtml('banner')+'</div>'; }
     // 🌇 노을 씬(펫알 배너 전용) — 픽업 씬 틀을 복사하되 무지개→노을: 노을 하늘·구름, 단풍나무, 노을 꽃,
     //    울타리·큰돌 대신 옆에 흐르는 계곡(물고기 헤엄)+줄지은 작은 돌들, 노을빛 뜰, 나비→고추잠자리. 결정적(pkRand)·캐시.
-    let _sunsetCache=null;
-    function sunsetSceneHtml(){
-      if(_sunsetCache) return _sunsetCache;
+    let _sunsetCache={};   // mode별 캐시(banner/reveal)
+    function sunsetSceneHtml(mode){
+      mode=mode||'banner'; if(_sunsetCache[mode]) return _sunsetCache[mode];
+      const reveal=mode==='reveal', sz=reveal?1.8:1, S=function(h){ return Math.max(1,Math.round(h*sz)); };   // reveal(10뽑 전체화면)은 스프라이트를 크게
       // ☁️ 노을에 물든 구름
       let clouds=''; const SC=['so','sp','sv'];
       for(let i=0;i<12;i++){ const y=(2+pkRand(i,1)*30).toFixed(1), hh=Math.round(11+pkRand(i,2)*16), w=Math.floor(pkRand(i,3)*3), tn=SC[Math.floor(pkRand(i,4)*3)], dur=(30+pkRand(i,5)*42).toFixed(1);
-        clouds+='<span class="pk-cloud" style="top:'+y+'%;--d:'+dur+'s;--i:'+i+'">'+cloudSvg(w,tn,{h:hh})+'</span>'; }
+        clouds+='<span class="pk-cloud" style="top:'+y+'%;--d:'+dur+'s;--i:'+i+'">'+cloudSvg(w,tn,{h:S(hh)})+'</span>'; }
       // 🍁 지평선 단풍/풀/꽃(먼 원경, 밑동 seam에 살짝 묻힘)
       const FF=['su','sg','sw']; let farline='';
       for(let i=0;i<20;i++){ const l=((i+0.4)/20*100).toFixed(1), bot=(-1-pkRand(i,53)*3).toFixed(1), k=pkRand(i,54), r=pkRand(i,55);
-        if(k<0.44) farline+='<span class="pk-tree pk-far" style="left:'+l+'%;bottom:'+bot+'px;z-index:1;--i:'+i+'"><span class="pk-canopy">'+mapleSvg({h:Math.round(11+r*8)})+'</span></span>';
-        else if(k<0.68) farline+='<span class="pk-tuft pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+tuftSvg({h:Math.round(6+r*3)})+'</span>';
-        else farline+='<span class="pk-flower pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+flowerSvg(FF[Math.floor(pkRand(i,56)*3)],{h:Math.round(7+r*3)})+'</span>'; }
+        if(k<0.44) farline+='<span class="pk-tree pk-far" style="left:'+l+'%;bottom:'+bot+'px;z-index:1;--i:'+i+'"><span class="pk-canopy">'+mapleSvg({h:S(Math.round(11+r*8))})+'</span></span>';
+        else if(k<0.68) farline+='<span class="pk-tuft pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+tuftSvg({h:S(Math.round(6+r*3))})+'</span>';
+        else farline+='<span class="pk-flower pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+flowerSvg(FF[Math.floor(pkRand(i,56)*3)],{h:S(Math.round(7+r*3))})+'</span>'; }
       // 🍁 가까운 단풍나무 5그루 — 중앙(아이콘)·우측(연못) 회피: 좌측 4 + 우측 먼 1(작게)
       const TL=[7,17,28,37,90], TD=[0.5,0.64,0.44,0.72,0.72];
       let trees=''; for(let i=0;i<5;i++){ const d=TD[i], l=(TL[i]+(pkRand(i,12)-0.5)*5).toFixed(1),
         sc=1-d*0.5, bot=(d*70).toFixed(1), z=Math.round(2+(1-d)*2);
-        trees+='<span class="pk-tree" style="left:'+l+'%;bottom:'+bot+'%;z-index:'+z+';--i:'+i+'"><span class="pk-canopy">'+mapleSvg({h:Math.max(18,Math.round(52*sc))})+'</span><span class="pk-trunk">'+trunkSvg({h:Math.max(8,Math.round(24*sc))})+'</span></span>'; }
+        trees+='<span class="pk-tree" style="left:'+l+'%;bottom:'+bot+'%;z-index:'+z+';--i:'+i+'"><span class="pk-canopy">'+mapleSvg({h:S(Math.max(18,Math.round(52*sc)))})+'</span><span class="pk-trunk">'+trunkSvg({h:S(Math.max(8,Math.round(24*sc)))})+'</span></span>'; }
       // 🌸 노을 꽃 14 — 연못(우측) 위엔 꽃 없게 왼쪽 절반(≈5~57%)에만 · 🌱 풀 16
       let flowers=''; for(let i=0;i<14;i++){ const d=pkRand(i,21)*0.6, l=(5+(i+0.5)/14*52+(pkRand(i,22)-0.5)*3.5).toFixed(1), sc=1-d*0.5, bot=(d*76).toFixed(1);
-        flowers+='<span class="pk-flower" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+flowerSvg(FF[Math.floor(pkRand(i,23)*3)],{h:Math.max(9,Math.round(16*sc))})+'</span>'; }
+        flowers+='<span class="pk-flower" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+flowerSvg(FF[Math.floor(pkRand(i,23)*3)],{h:S(Math.max(9,Math.round(16*sc)))})+'</span>'; }
       let tufts=''; for(let i=0;i<16;i++){ const d=pkRand(i,31)*0.8, l=(2+pkRand(i,32)*94).toFixed(1), sc=1-d*0.5, bot=(d*80).toFixed(1);
-        tufts+='<span class="pk-tuft" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+tuftSvg({h:Math.max(7,Math.round(12*sc))})+'</span>'; }
+        tufts+='<span class="pk-tuft" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+tuftSvg({h:S(Math.max(7,Math.round(12*sc)))})+'</span>'; }
       // 🟫 흙 패치
-      let soil=''; for(let i=0;i<7;i++){ const d=pkRand(i,41)*0.7, l=(6+pkRand(i,42)*74).toFixed(1), sc=1-d*0.45, bot=(d*72).toFixed(1), w=Math.round((10+pkRand(i,43)*14)*sc);
+      let soil=''; for(let i=0;i<7;i++){ const d=pkRand(i,41)*0.7, l=(6+pkRand(i,42)*74).toFixed(1), sc=1-d*0.45, bot=(d*72).toFixed(1), w=Math.round((10+pkRand(i,43)*14)*sc*sz);
         soil+='<span class="pk-soil" style="left:'+l+'%;bottom:'+bot+'%;width:'+w+'px"></span>'; }
       // 🪷 연못(메인 아이콘 오른쪽에 떨어뜨림) — 타원 물 + 둘레 돌 링 + 잉어 배회 + 연꽃/연잎 부유. 계곡 대체.
-      const KC=['o','w','g']; let pkoi=''; for(let i=0;i<3;i++){ const l=(30+pkRand(i,72)*40).toFixed(1), t=(34+pkRand(i,73)*32).toFixed(1),
-        dur=(6+pkRand(i,74)*4).toFixed(1), del=(-pkRand(i,75)*7).toFixed(2), sw=(0.9+pkRand(i,76)*0.5).toFixed(2);
-        let _s=200; const pd=function(){ return Math.round((pkRand(i,_s++)*2-1)*9); };   // 연못 안 좁은 배회(±9px)
-        const dv='--x1:'+pd()+'px;--y1:'+pd()+'px;--x2:'+pd()+'px;--y2:'+pd()+'px;--x3:'+pd()+'px;--y3:'+pd()+'px';
-        pkoi+='<span class="pk-pkoi" style="left:'+l+'%;top:'+t+'%;--d:'+dur+'s;--sw:'+sw+'s;animation-delay:'+del+'s;'+dv+'"><span class="koi-b">'+koiSvg(KC[i%3],{h:15})+'</span></span>'; }
+      // 🎏 잉어 3마리(가로): 좌·우 2마리는 오른쪽, 중앙 1마리는 왼쪽을 보며 → 오른쪽 갔다 돌아서 왼쪽(가로 핑퐁, 방향전환 시 몸 뒤집힘). ph=시작 위상(0.5≈왼쪽 바라봄)
+      const KC=['o','w','g'], KSPOT=[{l:34,t:42,ph:0.05},{l:50,t:56,ph:0.5},{l:64,t:44,ph:0.20}];
+      let pkoi=''; for(let i=0;i<3;i++){ const sp=KSPOT[i], dur=(8+pkRand(i,74)*3), del=(-sp.ph*dur).toFixed(2),
+        sw=(0.9+pkRand(i,76)*0.4).toFixed(2), r=((11+pkRand(i,72)*3)*sz).toFixed(1);
+        pkoi+='<span class="pk-pkoi" style="left:'+sp.l+'%;top:'+sp.t+'%;"><span class="koi-sw" style="--r:'+r+'px;--d:'+dur.toFixed(1)+'s;animation-delay:'+del+'s;"><span class="koi-b" style="--sw:'+sw+'s;">'+koiSvg(KC[i],{h:S(11)})+'</span></span></span>'; }
       let pstones=''; const PSN=11; for(let i=0;i<PSN;i++){ const a=(i/PSN)*Math.PI*2, rr=53+pkRand(i,81)*3,
         cl=(50+Math.cos(a)*rr).toFixed(1), ct=(50+Math.sin(a)*(rr-3)).toFixed(1), s=Math.round(8+pkRand(i,82)*5);
-        pstones+='<span class="pk-pstone" style="left:'+cl+'%;top:'+ct+'%;">'+stoneSvg({h:s})+'</span>'; }
+        pstones+='<span class="pk-pstone" style="left:'+cl+'%;top:'+ct+'%;">'+stoneSvg({h:S(s)})+'</span>'; }
       const LPOS=[[32,58],[66,42]]; let lilies=''; for(let i=0;i<2;i++){ const dur=(4+pkRand(i,91)*2).toFixed(1), del=(-pkRand(i,92)*4).toFixed(2);
-        lilies+='<span class="pk-lily" style="left:'+LPOS[i][0]+'%;top:'+LPOS[i][1]+'%;--d:'+dur+'s;animation-delay:'+del+'s;">'+lilyPadSvg({h:14})+'</span>'; }
+        lilies+='<span class="pk-lily" style="left:'+LPOS[i][0]+'%;top:'+LPOS[i][1]+'%;--d:'+dur+'s;animation-delay:'+del+'s;">'+lilyPadSvg({h:S(14)})+'</span>'; }
       const LOPOS=[[58,64],[38,34]]; let lotuses=''; for(let i=0;i<2;i++){ const dur=(4.6+pkRand(i,93)*2).toFixed(1), del=(-pkRand(i,94)*4).toFixed(2);
-        lotuses+='<span class="pk-lotus" style="left:'+LOPOS[i][0]+'%;top:'+LOPOS[i][1]+'%;--d:'+dur+'s;animation-delay:'+del+'s;">'+lotusSvg({h:13})+'</span>'; }
+        lotuses+='<span class="pk-lotus" style="left:'+LOPOS[i][0]+'%;top:'+LOPOS[i][1]+'%;--d:'+dur+'s;animation-delay:'+del+'s;">'+lotusSvg({h:S(13)})+'</span>'; }
       const pond='<div class="pk-pond"><div class="pk-pwater"></div>'+pkoi+lilies+lotuses+pstones+'</div>';
       // ⛰️ 아이콘 뒤 빈 하늘 채우기 — 지평선 먼 언덕(노을 보랏빛). 중앙은 낮게 두어 지는 해가 위로 보이게.
       let hills=''; const HX=[16,50,84], HH=[26,20,24]; for(let i=0;i<3;i++){
-        hills+='<span class="pk-hill" style="left:'+HX[i]+'%;bottom:-2px;z-index:0;">'+hillSvg(HILL_SUNSET,{h:HH[i]})+'</span>'; }
+        hills+='<span class="pk-hill" style="left:'+HX[i]+'%;bottom:-2px;z-index:0;">'+hillSvg(HILL_SUNSET,{h:S(HH[i])})+'</span>'; }
       // 🍁 고추잠자리(나비 대신) — 제각각 팔랑팔랑
       let dflies=''; for(let i=0;i<6;i++){ const l=(10+((i+0.5)/6)*80+(pkRand(i,61)-0.5)*7).toFixed(1), b=(26+pkRand(i,62)*48).toFixed(1),
         hh=Math.round(11+pkRand(i,63)*5), dur=(6.5+pkRand(i,64)*5).toFixed(1), del=(-pkRand(i,65)*8).toFixed(2);
         let _s=90; const rnd=function(){ return pkRand(i,_s++); };
-        dflies+='<span class="pk-dfly" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="df-body">'+dragonflySvg({h:hh})+'</span></span>'; }
-      const sun='<span class="pk-sun">'+sunSvg({h:60})+'</span>';   // ☀️ 수평선(하늘 하단)에 절반만 걸린 지는 해 — .pk-sky overflow:hidden가 아래 절반을 클립
-      _sunsetCache='<div class="pkscene pk-sunset" aria-hidden="true">'+
+        dflies+='<span class="pk-dfly" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="df-body">'+dragonflySvg({h:S(hh)})+'</span></span>'; }
+      const sun='<span class="pk-sun">'+sunSvg({h:S(60)})+'</span>';   // ☀️ 수평선(하늘 하단)에 절반만 걸린 지는 해 — .pk-sky overflow:hidden가 아래 절반을 클립
+      _sunsetCache[mode]='<div class="pkscene pk-sunset'+(reveal?' pk-reveal':'')+'" aria-hidden="true">'+
         '<div class="pk-sky">'+sun+clouds+'</div>'+
         '<div class="pk-horizon">'+hills+farline+'</div>'+
         '<div class="pk-field"><div class="pk-grass"></div>'+soil+tufts+flowers+trees+pond+'</div>'+
         '<div class="pk-air">'+dflies+'</div>'+
       '</div>';
-      return _sunsetCache;
+      return _sunsetCache[mode];
     }
     // 🌙 무지개 밤 씬 — 픽업 씬 틀 그대로, 밤·달빛으로 재색·재배치(보름달·달빛구름·잔별·밤 뜰·반딧불 가득). 무지개알 센터피스는 배너 빌더에서.
     let _nightCache=null;
@@ -6389,10 +6411,14 @@
       if(!liteMode()){ const s=document.createElement('span'); s.className='ten-eggfx'; s.innerHTML=fxSparkles(5); el.appendChild(s); }
     }
     // 진입점 — items=[{id,tier,kind,rainbow,dup,refund,isNew}]×10
+    // 10뽑 배경 씬(테마별) — sunset(펫알)=노을 리빌 씬, 그 외=픽업 리빌 씬. 노을은 초록 meadow 겹침 방지(자체 데코).
+    function tenSceneBg(){ return (_fx10 && _fx10.theme==='sunset') ? sunsetSceneHtml('reveal') : pickupSceneHtml('reveal'); }
+    function tenMeadowBg(){ return (_fx10 && _fx10.theme==='sunset') ? '' : tenMeadowHtml(); }
     function runTenGachaFx(list, opts){ opts=opts||{}; _fxClear(); _fx=null;
       // side = 알의 '실제 화면 위치'(TEN_POS 흩뿌림 x) 기준 좌/우 → 카메오가 가까운 쪽에서 걸어와 알을 지나치지 않게(격자 i%2는 흩뿌림과 안 맞아 반대편서 걸어와 다른 알을 지나쳐 치던 버그).
       const items=(list||[]).slice(0,TEN_N).map(function(it,i){ return Object.assign({ kind:'egg' }, it, { i:i, col:i%TEN_COLS, row:(i/TEN_COLS|0), side:((TEN_POS[i]&&TEN_POS[i][0]<50)?'l':'r') }); });
       _fx10={ items:items, order:tenShuffle(items.length), stage:0, busy:true, phase:'nest', ridx:0, preview:!!opts.preview,
+        theme: opts.theme||'rainbow',   // 🌇 sunset=노을(펫알): 배경 노을 씬 + 무지개 하늘 연출 생략
         skyRainbow: items.some(function(x){ return x.tier==='limited'||x.tier==='exclusive'; }) };
       items.forEach(function(x){ if(hasSprite(x.id)) ensurePetArt(x.id); });
       if(typeof prewarmGachaFxPads==='function') prewarmGachaFxPads();
@@ -6400,7 +6426,7 @@
       if(!fx._tenTapBound){ fx._tenTapBound=true; fx.addEventListener('pointerup', tenTapDelegate); }   // 🍏 iOS: div 인라인 onclick(자식→부모 위임)이 안 먹는 문제 → 포인터업으로 위임(한 번만 바인딩)
       const rm=reducedMotion();
       fx.innerHTML='<div class="fx-scrim"></div><div class="ten-wrap" id="tenWrap" role="button" tabindex="0">'+
-        pickupSceneHtml('reveal')+tenMeadowHtml()+tenNestHtml(items, 'eggs')+
+        tenSceneBg()+tenMeadowBg()+tenNestHtml(items, 'eggs')+
         '<div class="ten-hint" id="tenHint">'+pixelTextHtml(rm?'탭하여 결과 보기':'둥지를 탭하세요', '#ffffff', {h:16})+'</div></div>';
       fx.className='fx on ten';
       if(rm){ _fx10.busy=false; return; }
@@ -6430,7 +6456,7 @@
       if(stage<2) setTenHint('한 번 더!'); }
     function tenTap2(){ _fx10.items.forEach(function(it){ if(it.kind==='egg' && it.rainbow) it._rbShown=true; });
       tenTapShake(2);
-      if(_fx10.skyRainbow) tenSkyRainbow($('tenWrap'));
+      if(_fx10.theme!=='sunset' && _fx10.skyRainbow) tenSkyRainbow($('tenWrap'));
       _fx10.items.forEach(function(it){ const el=$('tenEgg'+it.i); if(!el) return;
         if(it.kind==='egg' && it.rainbow && !liteMode()){ const s=document.createElement('span'); s.className='ten-eggfx'; s.innerHTML=fxSparkles(6); el.appendChild(s); }
         if(it.kind==='ddeul' && (it.tier==='exclusive' || Math.random()<rbUpgradeChance(it.tier))) tenEggButterflies(el, it); });
@@ -6470,7 +6496,7 @@
       // (매 카드마다 fx.innerHTML을 통째로 다시 만들면 씬이 안 칠해진 한 프레임 동안 반투명 스크림 뒤로 메인화면이 비쳐 '깜빡임'이 생겼다.)
       let holder=fx.querySelector('.ten-cardholder');
       if(!holder){
-        fx.innerHTML='<div class="fx-scrim"></div>'+pickupSceneHtml('reveal')+'<div class="ten-cardholder"></div>';
+        fx.innerHTML='<div class="fx-scrim"></div>'+tenSceneBg()+'<div class="ten-cardholder"></div>';
         fx.className='fx on reveal ten-reveal';
         holder=fx.querySelector('.ten-cardholder');
       }
@@ -6491,12 +6517,12 @@
     function tenFinale(){ _fx10.phase='finale'; _fx10.busy=false; _fx10._roaming=false; const fx=$('catFx'); if(!fx) return;
       const rm=reducedMotion();
       fx.innerHTML='<div class="fx-scrim"></div><div class="ten-wrap ten-final" id="tenWrap">'+
-        pickupSceneHtml('reveal')+tenMeadowHtml()+tenNestHtml(_fx10.items, 'finale')+
+        tenSceneBg()+tenMeadowBg()+tenNestHtml(_fx10.items, 'finale')+
         '<div class="ten-fintitle">'+pixelTextHtml('10연차 완료!', '#ffffff', {h:28, base:12})+'</div>'+
         '<div class="ten-hint" id="tenHint">'+(rm?'':pixelTextHtml('탭해주세요', '#ffffff', {h:16}))+'</div>'+   // 탭 전까지 펫 정지 유지, 탭하면 배회 시작(자동 1초 배회 제거)
         '<button class="btn ten-takebtn'+(rm?'':' pending')+'" onclick="event.stopPropagation();closeTenFx()" aria-label="입양하기">'+pixelTextHtml('입양하기', '#ffffff', {h:22})+'</button></div>';   // 버튼은 탭해 펫이 배회 시작할 때 나타남(pending→해제)
       fx.className='fx on reveal ten-finale';
-      if(_fx10.skyRainbow) tenSkyRainbow($('tenWrap'));
+      if(_fx10.theme!=='sunset' && _fx10.skyRainbow) tenSkyRainbow($('tenWrap'));
     }
     // 피날레에서 화면을 탭하면 그때 펫들이 배회 시작(그 전까지는 정지 유지). 1회만.
     function tenFinaleTap(){ if(!_fx10 || _fx10.phase!=='finale' || _fx10._roaming) return; _fx10._roaming=true; setTenHint(''); const rm=reducedMotion(); if(!rm) tenStartRoam();
@@ -6514,7 +6540,7 @@
         else if(scenario==='oneExclusive') raw[Math.floor(Math.random()*10)]={ id:memberOf('exclusive'), tier:'exclusive' }; }
       const list=raw.map(function(r){ const dup=ownsCat(r.id);
         return { id:r.id, tier:r.tier, kind:kind, rainbow:(kind==='egg' && Math.random()<rbUpgradeChance(r.tier)), dup:dup, refund:dup?petDupRefund(r.id):0, isNew:!dup }; });
-      closeSheet(); _fx=null; runTenGachaFx(list, { preview:true });
+      closeSheet(); _fx=null; runTenGachaFx(list, { preview:true, theme:(kind==='egg'?'sunset':'rainbow') });   // 🌇 펫알=노을 배경·연출
     }
 
     // ================= 개발자 패널: 재화관리(연출/다마고치 테스트 · 재화 지급) =================
