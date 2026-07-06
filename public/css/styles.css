@@ -1246,6 +1246,15 @@
                        50%{ opacity:.92; transform:translate(calc(-50% + var(--tx,0px)),calc(-50% + var(--ty,0px))) scale(1); } }
     .fx-tier { position:relative; z-index:2; font-size:22px; font-weight:900; letter-spacing:.02em; }
     .fx-name { position:relative; z-index:2; color:#fff; font-size:17px; font-weight:800; margin-top:-6px; }
+    /* 🔤 픽셀(도트) 텍스트 이미지 — 리빌 등급명/이름. 확대해도 안 뭉개지게 pixelated + 살짝 위아래 흔들림(가독성 유지). */
+    .pxtext { display:block; margin:0 auto; image-rendering:pixelated; }
+    .fx-tier .pxtext { filter:drop-shadow(0 2px 3px rgba(0,0,0,.45)); }
+    .fx-name .pxtext { filter:drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
+    .fx-pxtier { animation:pxbob 1.9s ease-in-out infinite; }
+    .fx-pxname { animation:pxbob 2.4s ease-in-out infinite; animation-delay:-.5s; }
+    @keyframes pxbob { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-2px); } }
+    @media (prefers-reduced-motion: reduce){ .fx-pxtier, .fx-pxname { animation:none; } }
+    body.lite .fx-pxtier, body.lite .fx-pxname { animation:none; }
     .fx-reward { position:relative; z-index:2; display:flex; gap:12px; }
     .fx-reward .rw { display:inline-flex; align-items:center; gap:5px; color:#fff; font-size:13.5px; font-weight:800; background:rgba(255,255,255,.12); border-radius:20px; padding:6px 12px; }
     .fx-reward .ci { display:inline-flex; }

@@ -4020,7 +4020,8 @@
             priceHtml='<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+price+'</span>';
             act=enough?'<button class="buy" aria-label="'+it.name+' 구매('+price+' 은화)" onclick="buyItem(\''+it.id+'\')">구매</button>':'<button class="buy dis" disabled>'+(price-coins())+' 부족</button>';
           }
-          return '<div class="shopcard"><div class="thumb"><span class="furnfit">'+furnSvg(it.id,{fit:true})+'</span></div>'+
+          const ft=itemTierOf(it.id);
+          return '<div class="shopcard"><div class="thumb tbring tb-'+ft+'"><span class="furnfit">'+furnSvg(it.id,{fit:true})+'</span>'+tierBadgeHtml(ft)+'</div>'+
             '<div class="meta"><b>'+it.name+(isWallItem(it.id)?' <span class="tagmini wall">벽</span>':(it.floor?' <span class="tagmini">바닥</span>':''))+'</b><div class="desc">'+it.desc+'</div>'+
             priceHtml+'</div>'+
             '<div class="act">'+act+'<span class="qty">보유 '+itemQty(it.id)+'</span></div></div>';
@@ -5014,7 +5015,7 @@
         const witems=Object.keys(wp).map(key=>{ const pr=key.split('_'), r=+pr[0], c=+pr[1], id=wp[key].itemId, w=wallFoot(id).w;
           const left=(gridLeftFrac(c)*100).toFixed(3), top=(((r-1)/WALL_ROWS)*100).toFixed(3), ww=(gridSpanFrac(w)*100).toFixed(3), hh=(100/WALL_ROWS).toFixed(3);
           return '<div class="gitem" style="left:'+left+'%;top:'+top+'%;width:'+ww+'%;height:'+hh+'%" onpointerdown="wallGiDown(event,\''+key+'\')" onclick="event.stopPropagation()"><span class="gsc">'+furnSvg(id,{fit:true})+'</span></div>'; }).join('');
-        const wgrid='<div class="gridwall" id="wallGrid" onclick="wallPlaceClick(event)">'+witems+'<div class="gdrop" id="wgdrop" hidden></div>$1<div class="wsnaph" id="wsnaph" hidden></div></div>';
+        const wgrid='<div class="gridwall" id="wallGrid" onclick="wallPlaceClick(event)">'+witems+'<div class="gdrop" id="wgdrop" hidden></div><div class="wsnap" id="wsnap" hidden></div><div class="wsnaph" id="wsnaph" hidden></div></div>';
         const wpal=ITEM_CATALOG.filter(it=>isWallItem(it.id) && itemQty(it.id)>0).map(it=>{ const rem=itemRemaining(it.id), sold=rem<=0;
           return '<button class="pitem'+(_selWall===it.id?' on':'')+(sold?' soldout':'')+'"'+(sold?' aria-disabled="true"':'')+' onpointerdown="wallPalDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selWallItem(\''+it.id+'\')"><span class="pic">'+furnSvg(it.id,{h:palPicH(it.id)})+'</span><span>'+it.name+'</span><span class="pq">'+(sold?'전부 배치됨':'남은 '+rem)+'</span></button>'; }).join('');
         const wallHint='<div class="hintline" style="margin:8px 0 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16"/></svg>벽 가구를 <b>탭해 선택</b>하거나 <b>꾹 눌러 격자로 끌어</b> 걸어요(위=천장·아래=바닥선). 걸린 항목은 <b>꾹 눌러 드래그로 이동</b>, 짧게 탭하면 회수/판매. <b>특별↑ 벽 가구는 랜덤박스로만</b> 얻어요.</div>';
@@ -5026,13 +5027,13 @@
           const left=(gridLeftFrac(c)*100).toFixed(3), top=(gridLeftFrac(r)*100).toFixed(3), w=(gridSpanFrac(foot.w)*100).toFixed(3), h=(gridSpanFrac(foot.h)*100).toFixed(3);
           return '<div class="gitem" style="left:'+left+'%;top:'+top+'%;width:'+w+'%;height:'+h+'%" onpointerdown="giDown(event,\''+key+'\')" onclick="event.stopPropagation()">'+
             '<span class="gsc">'+furnSvg(id,{fit:true})+'</span></div>'; }).join('');
-        const grid='<div class="grid12" id="placeGrid" onclick="placeClick(event)">'+items+'<div class="gdrop" id="gdrop" hidden></div></div>';
+        const grid='<div class="grid12" id="placeGrid" onclick="placeClick(event)">'+items+(items?'':emptyGridHint())+'<div class="gdrop" id="gdrop" hidden></div></div>';
         const owned=ITEM_CATALOG.filter(it=>!isWallItem(it.id) && itemQty(it.id)>0);
         if(!_placeCat || !PLACE_CATS.some(c=>c[0]===_placeCat)) _placeCat=(PLACE_CATS.find(c=>owned.some(it=>placeCatOf(it.id)===c[0]))||PLACE_CATS[0])[0];
         const catTabs='<div class="subseg placecat">'+PLACE_CATS.map(c=>{ const inCat=owned.filter(it=>placeCatOf(it.id)===c[0]), nOwn=inCat.length, nAvail=inCat.filter(it=>itemRemaining(it.id)>0).length;
           return '<button class="'+(_placeCat===c[0]?'on':'')+(nOwn?'':' dim')+'"'+(nOwn?'':' aria-disabled="true"')+' onclick="setPlaceCat(\''+c[0]+'\')">'+c[1]+(nAvail?' <b>'+nAvail+'</b>':'')+'</button>'; }).join('')+'</div>';
-        const pal=owned.filter(it=>placeCatOf(it.id)===_placeCat).map(it=>{ const foot=itemFoot(it.id), rem=itemRemaining(it.id), sold=rem<=0;
-          return '<button class="pitem'+(_selItem===it.id?' on':'')+(sold?' soldout':'')+'"'+(sold?' aria-disabled="true"':'')+' onpointerdown="palDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selItem(\''+it.id+'\')"><span class="pic">'+furnSvg(it.id,{h:palPicH(it.id)})+'</span><span>'+it.name+'</span><span class="pq">'+(sold?'전부 배치됨':foot.w+'×'+foot.h+' · 남은 '+rem)+'</span></button>'; }).join('');
+        const pal=owned.filter(it=>placeCatOf(it.id)===_placeCat).map(it=>{ const foot=itemFoot(it.id), rem=itemRemaining(it.id), sold=rem<=0, ft=itemTierOf(it.id);
+          return '<button class="pitem'+(_selItem===it.id?' on':'')+(sold?' soldout':'')+'"'+(sold?' aria-disabled="true"':'')+' onpointerdown="palDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selItem(\''+it.id+'\')"><span class="pic tbring tb-'+ft+'">'+furnSvg(it.id,{h:palPicH(it.id)})+tierBadgeHtml(ft)+'</span><span>'+it.name+'</span><span class="pq">'+(sold?'전부 배치됨':foot.w+'×'+foot.h+' · 남은 '+rem)+'</span></button>'; }).join('');
         const dragHint='<div class="hintline" style="margin:8px 0 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5V5.5a1.5 1.5 0 0 1 3 0v5"/><path d="M12 10V4.5a1.5 1.5 0 0 1 3 0V10"/><path d="M15 9.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-1a6 6 0 0 1-5.2-3l-2-3.5a1.5 1.5 0 0 1 2.6-1.5L9 14"/></svg><b>꾹 눌러서</b> 끌면 배치·이동돼요(짧게 탭하면 선택·메뉴). 화면 스크롤과 겹치지 않아요.</div>';
         const palBody=pal||'<div class="palempty">이 분류에 보유한 가구가 없어요<br><span>알뜰샵·랜덤박스에서 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>';
         body=grid+dragHint+catTabs+'<div class="palette catinv">'+palBody+'</div>'+skinPickerHtml('floor');
@@ -5439,6 +5440,26 @@
       st.insertAdjacentHTML('beforeend','<div class="fx-pixflash">'+raysSvg(bc,{h:150})+'</div>'+rays+sparks+(isEgg?fxShells():'')+fxParticles(parts));
       const h=$('fxHint'); if(h) h.remove();
     }
+    // 🔤 픽셀(도트) 텍스트 — 저해상도 캔버스에 굵게 그린 뒤 알파를 1비트로 하드엣지 처리하고, 표시 시 확대(image-rendering:pixelated)해 '도트 폰트'처럼 블록지게. fill=색 문자열 또는 'RAINBOW'(가로 무지개). 한글 임의 텍스트(펫 이름 포함)도 커버. 캔버스 미지원/에러 시 일반 텍스트로 안전 폴백.
+    function pixelTextHtml(text, fill, opt){
+      opt=opt||{}; text=String(text==null?'':text);
+      try{
+        if(typeof document==='undefined' || !document.createElement) throw 0;
+        const base=opt.base||15, font='900 '+base+'px system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif';
+        let cv=document.createElement('canvas'), g=cv.getContext('2d'); if(!g) throw 0;
+        g.font=font; const tw=Math.max(1, Math.ceil(g.measureText(text).width));
+        const w=tw+2, h=Math.max(2, Math.ceil(base*1.42));
+        cv.width=w; cv.height=h; g=cv.getContext('2d'); g.font=font; g.textBaseline='middle';
+        if(fill==='RAINBOW'){ const grd=g.createLinearGradient(0,0,w,0); const RB=['#F04452','#F0883C','#F2C84B','#2FAE7A','#3182F6','#9B6FC8']; RB.forEach(function(c,i){ grd.addColorStop(i/(RB.length-1), c); }); g.fillStyle=grd; }
+        else g.fillStyle=fill||'#ffffff';
+        g.fillText(text, 1, h/2+0.5);
+        const im=g.getImageData(0,0,w,h), d=im.data;
+        for(let i=0;i<d.length;i+=4){ d[i+3] = d[i+3]>=120 ? 255 : 0; }   // 알파 1비트 → 하드 픽셀 엣지(확대 시 깔끔한 도트)
+        g.putImageData(im,0,0);
+        const url=cv.toDataURL('image/png'), dh=opt.h||Math.round(h*2.2);
+        return '<img class="pxtext'+(opt.cls?' '+opt.cls:'')+'" src="'+url+'" alt="'+escapeHtml(text)+'" style="height:'+dh+'px;width:auto;image-rendering:pixelated;">';
+      }catch(e){ const rb=(fill==='RAINBOW'), cls=[opt.cls, rb?'tier-rainbow':''].filter(Boolean).join(' '); return '<span'+(cls?' class="'+cls+'"':'')+((!rb&&fill)?' style="color:'+fill+'"':'')+'>'+escapeHtml(text)+'</span>'; }   // 폴백: 무지개는 tier-rainbow로(부모 .fx-tier가 color:transparent라 안 보이는 것 방지)
+    }
     // 등장 연출 — 등급마다 화려함이 다르게 (CSS .fx-reveal.rank-N/.rev-rb로 계단식 확대):
     //  낮은 등급=작은 오오라+약간의 반짝임, 특별↑=발산 광선 등장, 전설↑=픽셀 링 충격파+컨페티 폭발, 무지개=무지개 프레임·컨페티.
     function fxReveal(){
@@ -5461,8 +5482,8 @@
           '<span class="fx-artimg">'+art+'</span>'+
           (_fx.isNew?newBadgeSvg({h:30}):'')+                                          // 🌈 처음 획득: 무지개 픽셀 "NEW" 배지(펫/아이템 위에서 물결)
         '</div>'+
-        '<div class="fx-tier">'+t.name+'</div>'+
-        '<div class="fx-name">'+(isEggKind(_fx.kind)?catNameSpan(_fx.res.id,catName(_fx.res.id)):(_fx.res.tier==='exclusive'?'<span class="tier-rainbow">'+escapeHtml(rewardName(_fx.res))+'</span>':escapeHtml(rewardName(_fx.res))))+'</div>'+
+        '<div class="fx-tier">'+pixelTextHtml(t.name, (t.id==='exclusive'?'RAINBOW':(t.color||'#ffffff')), {h:34, cls:'fx-pxtier'})+'</div>'+
+        '<div class="fx-name">'+pixelTextHtml((isEggKind(_fx.kind)?catName(_fx.res.id):rewardName(_fx.res)), (_fx.res.tier==='exclusive'?'RAINBOW':(t.color||'#ffffff')), {h:26, cls:'fx-pxname'})+'</div>'+
         '<div class="fx-reward">'+(_fx.gold?'<span class="rw"><span class="ci">'+goldSvg({h:18})+'</span>+1 금화</span>':'')+
           (_fx.dup?'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>+'+_fx.refund+' 은화 (중복)</span>':'')+'</div>'+
         '<button class="btn" onclick="closeFx()">확인</button>'+
