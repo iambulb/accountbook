@@ -653,13 +653,17 @@
       will-change:transform; animation:csprFilm var(--wdur,.72s) steps(6) infinite; }   /* steps(6)=기본값. 실제 걷기 장수(6·8 등)는 catActorHTML이 인라인 animation-timing-function:steps(N)로 덮어씀(--fw=칸크기×frames와 한 쌍) */
     @keyframes csprFilm { from { transform:translateX(0); } to { transform:translateX(calc(-1 * var(--fw))); } }
     @media (prefers-reduced-motion: reduce) { .csprf { animation:none; } }
-    /* 🔋 가벼운 모드(저사양·body.lite) — 상시 도는 캠/장식 애니메이션을 전부 정지(걷기 필름·가구 캠 연출·구름·나비·풀·꽃·무지개·새). 일회성 FX·시트/토스트 UI 피드백은 유지. reducedMotion()도 true라 걷기 엔진은 5fps로 내려감. */
-    body.lite .csprf,
+    /* 🔋 가벼운 모드(저사양·body.lite) — '장식/무거운' 상시 애니메이션만 정지: 가구 캠 연출·구름·나비·풀·꽃·무지개·새. 걷기(엔진·필름)와 시트/토스트 UI 피드백은 유지(기능성 모션). */
     body.lite .ffx .px,
     body.lite .pk-cloud,
     body.lite .pk-bfly, body.lite .pk-bfly .bf-wing,
     body.lite .pk-canopy, body.lite .pk-flower, body.lite .pk-tuft, body.lite .pk-rainbow,
     body.lite .pk-bird .bird-a, body.lite .pk-bird .bird-b { animation: none !important; }
+    /* 가챠 오픈: 알/박스를 보여주고 3번 탭·균열·결과 과정은 그대로, 흔들림·파티클·오오라·컨페티 같은 '무거운 애니 요소만' 제거 */
+    body.lite #fxItem, body.lite .fx-item, body.lite .fx-art.pop { animation: none !important; }
+    body.lite .fx-particle, body.lite .fx-conf, body.lite .fx-confetti, body.lite .fx-spark,
+    body.lite .fx-pixrays, body.lite .fx-pixflash, body.lite .fx-shell,
+    body.lite .ll-aura, body.lite .ll-rays, body.lite .fx-tw, body.lite .fx-ring, body.lite .fx-frame { display: none !important; }
     .cd-empty { position:absolute; left:2px; bottom:16px; font-size:11.5px; font-weight:600; color:var(--sub); }
     .catdock.hidden { display:none; }
     /* dock = 컴팩트 웹캠 방(벽지 배경 + 가구 + 걷는 고양이) */

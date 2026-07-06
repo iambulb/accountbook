@@ -3209,9 +3209,10 @@
     }
     // ---- 통합 걷기 엔진: 단일 rAF가 "지금 보이는 무대"(시트 방 또는 dock)만 애니메이션 ----
     // 고양이는 방/시트에 배치된 가구로 가끔 다가가 잠시 머문다(상호작용). 스트립엔 가구가 없어 자유 배회.
-    // 🔋 가벼운 모드(저사양) — 사용자가 켜면 걷기 엔진 5fps·상시 애니(가구 연출·구름·나비·씬·걷기필름) 정지(body.lite CSS)로 저사양 폰 배터리/발열/버벅임 완화. OS 'prefers-reduced-motion'과 동일 취급.
+    // 🔋 가벼운 모드(저사양) — 사용자가 켜면 '장식/무거운 애니만' 끈다: 가구 연출·구름·나비·씬 정지, 걷기 엔진은 낮은 fps로 '계속 걷고', 가챠도 알/박스 탭·균열·결과 과정을 그대로 보여주되 흔들림·파티클·오오라만 제거(body.lite CSS). 저사양 폰 배터리/발열/버벅임 완화.
+    //   ⚠️ OS 'prefers-reduced-motion'(접근성=전면 정적)과는 분리 — 라이트는 걷기·탭 같은 '기능성' 모션은 유지한다.
     function liteMode(){ try{ return localStorage.getItem('liteMode')==='1'; }catch(e){ return false; } }
-    function reducedMotion(){ if(liteMode()) return true; try{ return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } }
+    function reducedMotion(){ try{ return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } }
     function applyLiteMode(){ try{ if(document&&document.body) document.body.classList.toggle('lite', liteMode()); }catch(e){} }
     function setLiteMode(on){ try{ localStorage.setItem('liteMode', on?'1':'0'); }catch(e){} applyLiteMode();
       if(typeof markCatDirty==='function') markCatDirty(); if(typeof startCatLoop==='function') startCatLoop();   // 엔진 fps 예산 재평가·정지스틸 재빌드
@@ -3316,9 +3317,11 @@
       const pr=$('pkRevStage'); if(pr && out.indexOf(pr)<0) out.push(pr);                          // 🌲 전설/신화/한정 등장 연출 배경 씬의 픽업 펫 배회(연출 떠 있을 때만 DOM 존재)
       return out;
     }
+    let _stageW={};   // 무대별 마지막으로 '측정된' 폭 캐시 — 레이아웃 전(clientWidth=0) 재빌드에서 잘못된 좁은 폭을 쓰지 않게(우측 몰림 방지)
     function buildActors(stage){
       const acts=Array.from(stage.querySelectorAll('.cd-actor')); if(!acts.length) return [];
-      const W=stage.clientWidth||160, hh=+stage.dataset.hh||30;
+      if(stage.clientWidth) _stageW[stage.id]=stage.clientWidth;   // 실제 폭이 잡히면 캐시 갱신
+      const W=stage.clientWidth||_stageW[stage.id]||(stage.id==='cdStage'?160:244), hh=+stage.dataset.hh||30;   // clientWidth=0이면 마지막 측정폭→기본값 순으로 폴백(우측 클램프 방지)
       const isFriend = stage.id==='frStage';
       const hasRoom = stage.id==='crStage' || isFriend || !!stage.closest('.cd-room');
       const isDock = stage.id==='cdStage';   // dock(얇은 스트립)만 dock 취급 — 친구 무대(frStage)는 방 크기
@@ -3499,8 +3502,8 @@
     function catLoop(ts){
       if(document.hidden){ _eng.raf=0; return; }   // 탭 숨김 → 루프 정지(복귀 시 visibilitychange로 재개, 유휴 배터리 절약)
       _eng.raf=requestAnimationFrame(catLoop);      // 다음 프레임 먼저 예약(아래 작업이 예외로 죽어도 루프 유지 — 예전엔 예외 시 재예약이 건너뛰어져 펫이 앱 재시작까지 완전 정지)
-      // 🔋 프레임레이트 캡 — 걷기는 30fps면 충분히 부드럽다(저사양 폰 CPU/GPU·배터리 절반↓). 모션 최소화/가벼운 모드면 5fps로 더 낮춰 '무대 변화 감지'만.
-      const budget = reducedMotion() ? 200 : 33;
+      // 🔋 프레임레이트 캡 — 걷기는 30fps면 충분히 부드럽다(저사양 폰 CPU/GPU·배터리 절반↓). 가벼운 모드는 22fps로 더 낮추되 '계속 걷는다'. OS 모션 최소화(접근성)만 5fps로 사실상 정지.
+      const budget = reducedMotion() ? 200 : (liteMode() ? 45 : 33);
       const since = _eng.last ? ts-_eng.last : 999;
       if(since < budget) return;                    // 아직 프레임 예산이 안 참 → 이 rAF는 그냥 넘김(무거운 activeStages/stepActors 스킵)
       const dt=Math.min(50, since); _eng.last=ts;
@@ -4214,9 +4217,8 @@
       const rock  = mode==='reveal' ? '' : '<span class="pk-rock" style="left:25%;bottom:'+(0.4*53).toFixed(1)+'%;z-index:'+Math.round(12-0.4*11)+';">'+rockSvg({h:Math.round(26*depthScale(0.4))})+'</span>';
       const frame = mode==='reveal' ? '' : '<span class="pk-frame" style="left:3%;z-index:20;">'+tuftSvg({h:34})+'</span><span class="pk-frame" style="left:97%;z-index:20;">'+flowerSvg('p',{h:30})+'</span>';
       const egg   = mode==='reveal' ? '' : '<div class="pk-egg"><img src="'+assetUrl('icons/egg-garden.svg')+'" alt=""></div>';   // 리빌은 알 대신 등장 펫이 주인공
-      // 픽업 펫 2마리는 배너·리빌 둘 다 배회(리빌은 별도 무대 id로 배너 #pkStage와 안 겹치게). rock/frame은 배너 전용(reveal이면 빈 문자열).
-      const stageId = mode==='reveal' ? 'pkRevStage' : 'pkStage';
-      const stage = '<div class="cd-room pkstage" id="'+stageId+'" data-noprops="1" data-hh="'+H+'" aria-hidden="true">'+rock+actor(p1,14)+actor(p2,99999)+frame+'</div>';
+      // 픽업 펫 2마리는 '배너'에서만 배회. 알 오픈 리빌(전설↑ 배경)에선 등장 펫이 주인공이라 배회 픽업 펫을 숨긴다(무대 자체를 안 그림). rock/frame도 배너 전용.
+      const stage = mode==='reveal' ? '' : '<div class="cd-room pkstage" id="pkStage" data-noprops="1" data-hh="'+H+'" aria-hidden="true">'+rock+actor(p1,14)+actor(p2,99999)+frame+'</div>';
       const _pkHtml = '<div class="pkscene'+(mode==='reveal'?' pk-reveal':'')+'" aria-hidden="true">'+
           '<div class="pk-sky">'+clouds+'</div>'+
           '<div class="pk-rainbow">'+authRainbowSvg({h:S(64)})+'</div>'+
