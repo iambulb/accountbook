@@ -287,39 +287,54 @@
   }
 
   // ===== 🌾 알뜰홈 유휴 가구수익(순수) =====
-  // 방에서 펫이 가구와 자동 상호작용하며 시간에 따라 쌓이는 은화.
-  // affLevels=활성 펫들의 애정레벨 배열, furnCount=상호작용 가능 가구 수, elapsedMs=마지막 수확 후 경과.
-  // 펫당 시간당 = (2 + 애정레벨). 가구 많을수록 배율↑(상한 1.6). 누적 상한시간 = 6h + 평균애정레벨(애정↑ 주기 길어짐). 가구 0이거나 펫 없으면 0.
-  // 유휴 가구수익 누적 상한시간 = 48h(수확 안 해도 최대 48시간치까지만 쌓임). 시간당 비율(perHr)은 애정으로 그대로 반영.
-  function roomYieldCapH(affLevels) { return 48; }
-  // 펫당 시간당 은화 = YIELD_BASE + 애정레벨×YIELD_PER_LV. (현재 낮게 — 테스트 후 조정 예정)
-  var YIELD_BASE = 0.2, YIELD_PER_LV = 0.15;
-  function roomYield(affLevels, furnCount, elapsedMs) {
-    affLevels = affLevels || []; furnCount = Math.max(0, Math.floor(Number(furnCount) || 0));
-    if (!affLevels.length || furnCount <= 0) return 0;
-    var capH = roomYieldCapH(affLevels);
-    var hrs = Math.max(0, Math.min(capH, (Number(elapsedMs) || 0) / 3600000));
+  // 🌾 자동 은화 수확 — 행복도(mood)가 수익의 엔진. 잘 돌본 행복한 방일수록 많이·오래 벌고, 방치하면 적게 번다(다마고치).
+  //   affLevels=활성 펫 애정레벨 배열, mood=방 행복도(0~100), elapsedMs=마지막 수확 후 경과, mult=전역 수익배율(yieldMultiplier).
+  //   가구 '수' 배율은 제거(도배 방지) — 가구는 행복도의 enrichment(종류)로만 반영. 누적 상한 24h(하루 한 번 들르는 다마고치 리듬).
+  function roomYieldCapH() { return 24; }
+  // 펫당 시간당 은화 = YIELD_BASE + 애정레벨×YIELD_PER_LV. (가구배율 제거분 보정해 상향)
+  var YIELD_BASE = 0.3, YIELD_PER_LV = 0.25;
+  function roomYield(affLevels, mood, elapsedMs, mult) {
+    affLevels = affLevels || [];
+    if (!affLevels.length) return 0;   // 펫 없으면 0
+    var hrs = Math.max(0, Math.min(roomYieldCapH(), (Number(elapsedMs) || 0) / 3600000));
     var perHr = 0; for (var i = 0; i < affLevels.length; i++) perHr += YIELD_BASE + Math.max(0, Math.min(5, Math.floor(Number(affLevels[i]) || 0))) * YIELD_PER_LV;
-    var furnFactor = Math.min(1.6, 0.6 + furnCount * 0.2);
-    return Math.floor(perHr * furnFactor * hrs);
+    var happyFactor = 0.2 + 0.8 * Math.max(0, Math.min(100, Number(mood) || 0)) / 100;   // 행복도 0→0.2배 … 100→1.0배
+    var m = (mult == null) ? 1 : Math.max(0, Number(mult) || 0);
+    return Math.floor(perHr * happyFactor * m * hrs);
+  }
+  // 🌱 소유 펫 전체 애정레벨 합(0~5 각). 수익배율(총 애정 축)·성장 지표용. catsMap = owned.cats.
+  function totalAffectionLv(catsMap) {
+    catsMap = catsMap || {}; var s = 0;
+    for (var k in catsMap) { if (Object.prototype.hasOwnProperty.call(catsMap, k)) s += affectionLevel((catsMap[k] || {}).affection || 0).level; }
+    return s;
+  }
+  // 🔺 자동 은화 수익배율(1.0~2.0) — 애정 총량 + 도감 수집률 + 실제 앱 사용(가계부·할일 기록). 게임 성장과 실사용을 동시에 권장.
+  //   dexPct=도감 수집률(0~100), totalAffLv=소유 펫 애정레벨 합, recordDaysWk=이번 주 기록한 일수(0~7), recordedToday=오늘 기록 여부.
+  function yieldMultiplier(dexPct, totalAffLv, recordDaysWk, recordedToday) {
+    var affB = Math.min(0.40, Math.max(0, Number(totalAffLv) || 0) / 60 * 0.40);          // 총 애정레벨, 60에서 포화 → +0.40
+    var dexB = Math.max(0, Math.min(100, Number(dexPct) || 0)) / 100 * 0.35;              // 도감 수집률 → +0.35
+    var useB = (recordedToday ? 0.15 : 0)                                                 // 🍀 오늘 기록 → 즉시 +0.15(그날 부스트)
+             + Math.min(0.10, Math.max(0, Number(recordDaysWk) || 0) / 7 * 0.10);         // 주간 기록 습관 → +0.10
+    return 1 + affB + dexB + useB;                                                        // 1.0 … 2.0
   }
   // 방 행복도(0~100, 표시용·순수·별도 저장 없음). 입력 객체:
-  //   pets=활성 펫 수(0이면 0), furn=상호작용 가구 수, feedFrac=밥·물 신선도(0~1),
+  //   pets=활성 펫 수(0이면 0), furn=enrichment 가구 '종류' 수(도배 방지: 2종에서 포화), feedFrac=밥·물 신선도(0~1),
   //   avgAff=활성 펫 평균 애정레벨(0~5), caredFresh=수확 신선도(0~1, 수확 직후 1→24h 후 0), poops=똥 수.
-  // 설계: 가구만으론 45(80·100 불가) → 밥물+애정 관리로 85 → 수확 눌러야 100 근접. 방치하면 밥물(3h)·수확(24h) 신선도가 빠져 하강.
+  // 설계: 돌봄(밥물·수확신선)+사랑(애정)+가벼운 enrichment(가구 1~2종이면 충분)로 100. 가구 도배는 무의미. 방치하면 밥물(3h)·수확(24h) 신선도가 빠져 하강.
   function roomMood(inp) {
     inp = inp || {};
     var pets = Math.max(0, Math.floor(Number(inp.pets) || 0)); if (!pets) return 0;
-    var furn = Math.max(0, Math.floor(Number(inp.furn) || 0));
+    var enrich = Math.max(0, Math.floor(Number(inp.furn) || 0));   // enrichment 종류 수(furn 필드 재해석)
     var feedFrac = Math.max(0, Math.min(1, Number(inp.feedFrac) || 0));
     var avgAff = Math.max(0, Math.min(5, Number(inp.avgAff) || 0));
     var caredFresh = Math.max(0, Math.min(1, Number(inp.caredFresh) || 0));
     var poops = Math.max(0, Math.floor(Number(inp.poops) || 0));
-    var m = (furn > 0 ? 45 : 22)   // 가구 베이스(가구만으론 80·100 불가)
-          + 25 * feedFrac          // 밥·물 신선도(관리)
-          + 15 * (avgAff / 5)      // 애정(느린 상한)
-          + 15 * caredFresh;       // 수확 신선도(수확해야 100 근접)
-    m -= Math.min(30, poops * 6);  // 똥 감점
+    var m = 20                            // 방에 살아있는 펫(베이스)
+          + Math.min(2, enrich) * 12      // enrichment: 종류당 12, 2종에서 포화(0/12/24 — 도배 무의미)
+          + 28 * feedFrac                 // 밥·물 신선도(가장 큰 능동 레버)
+          + 16 * (avgAff / 5)             // 애정(사랑)
+          + 12 * caredFresh;              // 수확 신선도(들러 수확해야 유지)
+    m -= Math.min(30, poops * 6);         // 똥 감점
     return Math.max(0, Math.min(100, Math.round(m)));
   }
   // 애정 레벨업 소보상(은화). 레벨 1~5 = 20·30·50·80·100. (금화 만렙 보상은 별도 유지)
@@ -399,7 +414,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift };
+  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);
