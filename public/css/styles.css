@@ -1123,16 +1123,17 @@
     .fx-ddeulegg .fx-ddbody .px { display:block; height:190px; width:auto; }
     .fx-ddeulegg .fx-ddflower { display:block; line-height:0; transform-origin:50% 100%; }
     .fx-ddeulegg .fx-ddflower .px { display:block; height:38px; width:auto; }
-    .fx-ddeulegg.shake .fx-ddflower { animation:fxflwswing .44s ease; }
+    .fx-ddflower.flswing { animation:fxflwtap .5s ease; }   /* 탭 흔들림에 맞춰 꽃이 줄기에서 팔랑팔랑(여러 번 오가며) */
     .fx-ddeulegg.fx-tremble .fx-ddflower { animation:fxflwswing .2s ease infinite; }
     @keyframes fxflwswing { 0%,100%{transform:rotate(0)} 14%{transform:rotate(-27deg)} 40%{transform:rotate(24deg)} 64%{transform:rotate(-15deg)} 85%{transform:rotate(8deg)} }
+    @keyframes fxflwtap { 0%{transform:rotate(0)} 12%{transform:rotate(-32deg)} 30%{transform:rotate(27deg)} 48%{transform:rotate(-20deg)} 66%{transform:rotate(14deg)} 82%{transform:rotate(-8deg)} 100%{transform:rotate(0)} }
     /* ☁️ 뜰알: 위쪽 하늘에 구름 몇 개가 천천히 흐른다 */
     .fx-ddclouds { position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none; animation:fxfade .5s ease; }
     .fx-ddcloud { position:absolute; left:0; image-rendering:pixelated; opacity:.9; will-change:transform; animation:fxddclouddrift var(--d,34s) linear infinite; }
     .fx-ddcloud .px { display:block; }
     @keyframes fxddclouddrift { from{ transform:translateX(-24vw);} to{ transform:translateX(120vw);} }
     /* 🌈 뜰알: 화면 안에서 양옆까지 감싸는 둥근(반원) 아치가 '왼→오로 펼쳐지듯' 등장(펫알 무지개알 승급과 같은 2번째 탭에 트리거) */
-    .fx-ddrainbow { position:absolute; left:50%; bottom:42%; transform:translateX(-50%); z-index:1; line-height:0; pointer-events:none; clip-path:inset(0 100% 0 0); animation:fxddraw 1.7s ease-out .12s forwards; }
+    .fx-ddrainbow { position:absolute; left:50%; bottom:56%; transform:translateX(-50%); z-index:1; line-height:0; pointer-events:none; clip-path:inset(0 100% 0 0); animation:fxddraw 1.7s ease-out .12s forwards; }   /* 알 위쪽에서 무지개가 뜨는 느낌으로 좀 더 올림(42→56%) */
     .fx-ddrainbow .px { display:block; image-rendering:pixelated; height:auto; width:min(96vw,470px); opacity:.88; }
     @keyframes fxddraw { from{ clip-path:inset(0 100% 0 0);} to{ clip-path:inset(0 0 0 0);} }
     /* 🦋 뜰알: 나비 5마리가 알 주변을 팔랑팔랑 날아다닌다(배너 나비 재사용) */
