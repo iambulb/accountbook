@@ -964,13 +964,13 @@
       "..XmmmmmmmMMMmmmmmmmmX..",
       "..XMWWWWWWWnWWWWSSSSMX..",
       "..XmWWWWWWWWWWWSSSSSnX..",
-      "..XMWWWWWWWQQQQSSSSSnX..",
-      "..XmWWWWWWQQSSQQSSSSnX..",
-      "..XMWWWWWWWSSQQSSSSSnX..",
-      "..XmWWWWWWSSQQSSSSSSnX..",
-      "..XMWWWWWSSSQQSSSSSSnX..",
+      "..XMWWWWWWQQQQSSSSSSnX..",
+      "..XmWWWWWQQSSQQSSSSSnX..",
+      "..XMWWWWWWWSQQSSSSSSnX..",
+      "..XmWWWWWWSQQSSSSSSSnX..",
+      "..XMWWWWWSSQQSSSSSSSnX..",
       "..XmWWWWSSSSSSSSSSSDnX..",
-      "..XMWWWSSSSSQQSSSDDDnX..",
+      "..XMWWWSSSSQQSSSSDDDnX..",
       "..XMWWSSSSSSSSSSDDDDMX..",
       "..XXXXXXXXXXXXXXXXXXXX..",
       "........................"
@@ -989,13 +989,13 @@
       "..XZZZZZZZZZZZZZZZZZZX..",
       "..XMWWWWWWWnWWWWSSSSMX..",
       "..XmWWWWWWWWWWWSSSSSnX..",
-      "..XMWWWWWWWQQQQSSSSSnX..",
-      "..XmWWWWWWQQSSQQSSSSnX..",
-      "..XMWWWWWWWSSQQSSSSSnX..",
-      "..XmWWWWWWSSQQSSSSSSnX..",
-      "..XMWWWWWSSSQQSSSSSSnX..",
+      "..XMWWWWWWQQQQSSSSSSnX..",
+      "..XmWWWWWQQSSQQSSSSSnX..",
+      "..XMWWWWWWWSQQSSSSSSnX..",
+      "..XmWWWWWWSQQSSSSSSSnX..",
+      "..XMWWWWWSSQQSSSSSSSnX..",
       "..XmWWWWSSSSSSSSSSSDnX..",
-      "..XMWWWSSSSSQQSSSDDDnX..",
+      "..XMWWWSSSSQQSSSSDDDnX..",
       "..XMWWSSSSSSSSSSDDDDMX..",
       "..XXXXXXXXXXXXXXXXXXXX..",
       "........................"
@@ -2519,6 +2519,7 @@
       const dw=$('catdock'); const wall=dw&&dw.querySelector('.cr-wall'); if(wall) wall.style.background=wallCss(currentWall());
       const fl=dw&&dw.querySelector('.cr-floor'); if(fl) fl.style.background=floorCss(currentFloor());   // 바닥 적용도 dock 캠에 라이브 반영(벽지처럼) — 없으면 메인 캠에서 바닥이 안 바뀌던 버그
       const rn=$('cdCamTxt'); if(rn){ rn.textContent=(room().emoji?room().emoji+' ':'')+(room().name||'우리집'); }   // dock LIVE 배지의 현재 방 이름(항상 표시)
+      const tr=dw&&dw.querySelector('.cr-topright'); if(tr) tr.outerHTML=batchBtnHtml();   // dock 하트(행복도)·수확칩도 라이브 반영 — renderDock에서만 만들어져 0%로 굳던 버그(지갑은 _walletDisp/syncWalletText라 재렌더 안전)
       renderDockProps();
       renderDockCats();
       if(state.view==='home' && typeof renderHome==='function') renderHome();   // 홈의 미션·은화 즉시 반영
