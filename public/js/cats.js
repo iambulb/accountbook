@@ -2330,9 +2330,28 @@
     const M_KOI=["....X....","...XBX...","..XBBBX..",".XBBBBBX.",".XBSSBBX.","XBBBBBBBX","fXBBBBBXf","fXBBSSBXf",".XBBBBBX.",".XSSBBBX.",".XBBBBBX.","..XBBBX..","..XBBBX..","...XBX...","..fXBXf..",".ffX.Xff."];
     const KOI_PALS={o:{X:'#8c461a',B:'#f2923a',S:'#ce6822',f:'#ffce96'},w:{X:'#963c3c',B:'#fafafa',S:'#e24040',f:'#ffd2d2'},g:{X:'#96781e',B:'#f6ce50',S:'#463c28',f:'#ffeeaa'}};
     function koiSvg(tint, opt){ return pxSvg(M_KOI, KOI_PALS[tint]||KOI_PALS.o, opt); }
-    // ☀️ 노을 해 — M_MOON(둥근 원반) 재사용 + 따뜻한 해 팔레트.
-    const SUN_PAL={M:'#ffd678',H:'#fff4c4',m:'#f0aa5a',d:'#e08c46',o:'#ff965a'};
-    function sunSvg(opt){ return pxSvg(M_MOON, SUN_PAL, opt); }
+    // ☀️ 지는 해 — 전용 도트 원반(크레이터 없이 방사형 따뜻한 명암, 달 느낌 제거). I밝은중심→M금빛→S주황→d가장자리→X외곽. PIL 라이트/다크 검수.
+    const M_SUN=[
+      ".......XXXXXXXX.......",".....XXddddddddXX.....","....XddddSSSSddddX....","...XdddSSSSSSSSdddX...",
+      "..XddSSSSSSSSSSSSddX..",".XddSSSSMMMMMMSSSSddX.",".XddSSSMMMMMMMMSSSddX.","XddSSSMMMMMMMMMMSSSddX",
+      "XddSSMMMMIIIIMMMMSSddX","XdSSSMMMIIIIIIMMMSSSdX","XdSSSMMMIIIIIIMMMSSSdX","XdSSSMMMIIIIIIMMMSSSdX",
+      "XdSSSMMMIIIIIIMMMSSSdX","XddSSMMMMIIIIMMMMSSddX","XddSSSMMMMMMMMMMSSSddX",".XddSSSMMMMMMMMSSSddX.",
+      ".XddSSSSMMMMMMSSSSddX.","..XddSSSSSSSSSSSSddX..","...XdddSSSSSSSSdddX...","....XddddSSSSddddX....",
+      ".....XXddddddddXX.....",".......XXXXXXXX......."];
+    const SUN_PAL={I:'#fff4cc',M:'#ffd678',S:'#ffa84a',d:'#f0803a',X:'#d6682c'};
+    function sunSvg(opt){ return pxSvg(M_SUN, SUN_PAL, opt); }
+    // 🪷 연꽃(top-down) — 바깥 분홍꽃잎(F)·안쪽 연분홍(C)·노란중심(Y). 연못 위에 떠서 흔들(pkfloat).
+    const M_LOTUS=["...FFF...","..FFFFF..",".FFCCCFF.",".FCCYCCF.","FFCYYYCFF",".FCCYCCF.",".FFCCCFF.","..FFFFF..","...FFF..."];
+    const LOTUS_PAL={F:'#ff8fb4',C:'#ffc8de',Y:'#ffde60'};
+    function lotusSvg(opt){ return pxSvg(M_LOTUS, LOTUS_PAL, opt); }
+    // 🌿 연잎 — 둥근 잎 + 오른쪽 쐐기 홈(V컷). G밝 d진.
+    const M_LILYPAD=["..GGGGG..",".GGGGGGd.","GGGGGGdd.","GGGGGG..d","GGGGGGdd.",".GGGGGdd.","..Gdddd.."];
+    const LILY_PAL={G:'#5ab24a',d:'#3a7e32'};
+    function lilyPadSvg(opt){ return pxSvg(M_LILYPAD, LILY_PAL, opt); }
+    // ⛰️ 먼 언덕(실루엣) — 아이콘 뒤 빈 하늘/지평선 채우기용. 배너별 팔레트로 재색(낮=초록·노을=보랏빛·밤=짙은청록). H본체 h윗선.
+    const M_HILL=[".........hhhhhh.........","......hhHHHHHHHHhh......","...hhHHHHHHHHHHHHHHhh...",".hHHHHHHHHHHHHHHHHHHHHh.","HHHHHHHHHHHHHHHHHHHHHHHH","HHHHHHHHHHHHHHHHHHHHHHHH","HHHHHHHHHHHHHHHHHHHHHHHH"];
+    const HILL_DAY={H:'#5ea650',h:'#7ac468'}, HILL_SUNSET={H:'#7a5678',h:'#a06e8c'}, HILL_NIGHT={H:'#1e3430',h:'#304a42'};
+    function hillSvg(pal,opt){ return pxSvg(M_HILL, pal||HILL_DAY, opt); }
     // 깊이 그림자(납작 타원): 펫 발밑에 깔려 depth(액터 scale 그대로)에 따라 커지고 작아짐 → 접지감+깊이. 색은 CSS opacity로 은은하게. 가림 0.
     const M_SHADOW=[".SSSSSSS.","SSSSSSSSS",".SSSSSSS."];
     const SHADOW_PAL={S:'#12240c'};
@@ -4410,9 +4429,24 @@
       const p1=LIMITED_PICKUP[0], p2=LIMITED_PICKUP[1];
       const tag=(id)=> pickupExists(id) ? '<span class="pk-tag">'+catNameSpan(id,catName(id))+'</span>' : '';
       const sep=(pickupExists(p1)&&pickupExists(p2))?'<span class="pk-tag" style="opacity:.5;">·</span>':'';
+      const pk=LIMITED_PICKUP.filter(pickupExists).map(id=>catNameSpan(id,catName(id))).join('·');
       return '<div class="gbanner gb-ddeul"><div class="gb-head"><span class="pk-title tier-rainbow">✨ 지금 이 펫만! 한정 픽업</span>'+tag(p1)+sep+tag(p2)+'</div>'+
         '<div class="gb-scene">'+pickupSceneHtml('banner')+gbCenterHtml(eggGardenSvg(EGG_DEFAULT,{h:54}), fxAuraTwinkles(8,true), 'gb-rb')+'</div>'+
-        gbActionsHtml('ddeul')+gbPityHtml('ddeul')+'</div>';
+        // 🌱 배너 이미지 아래 — 뜰알 이미지·설명·소모재화
+        '<div class="gb-item"><div class="gb-item-ic">'+ddeulEggSvg({h:52})+'</div>'+
+          '<div class="gb-item-meta"><b class="tier-rainbow">뜰알 <span class="tagmini tier-rainbow">한정 픽업</span></b>'+
+          '<div class="gb-item-desc">'+(pk?'<b class="tier-rainbow">'+pk+'</b> · ':'')+'한정 펫은 오직 뜰알에서만!</div>'+
+          '<div class="gb-item-cost">1뽑당 소모 '+ddeulCostHtml(1)+'</div></div></div>'+
+        gbPullActions('ddeul', DDEUL_PRICE, DDEUL_GOLD)+gbPityHtml('ddeul')+'</div>';
+    }
+    // 소모재화 표시(은화·금화). m=뽑기 수.
+    function ddeulCostHtml(m){ return '<span class="ci">'+coinSvg({h:14})+'</span>'+(DDEUL_PRICE*m)+' <span class="ci">'+goldSvg({h:14})+'</span>'+(DDEUL_GOLD*m); }
+    // 소모재화 표기가 있는 1뽑/10뽑 버튼(개발자 미리보기 = devBannerPull). silver/gold=1뽑당 소모.
+    function gbPullActions(kind, silver, gold){
+      const cost=(m)=>'<span class="ci">'+coinSvg({h:13})+'</span>'+(silver*m)+' <span class="ci">'+goldSvg({h:13})+'</span>'+(gold*m);
+      return '<div class="gb-actions">'+
+        '<button class="gb-btn" onclick="devBannerPull(\''+kind+'\',false)"><span>1뽑</span><span class="gb-cost">'+cost(1)+'</span></button>'+
+        '<button class="gb-btn gb-btn10" onclick="devBannerPull(\''+kind+'\',true)"><span>10뽑</span><span class="gb-cost">'+cost(10)+'</span></button></div>';
     }
     // 🥚 펫알 배너 = 노을 씬(해·개울·잉어) + 알뜰 아이콘(노을색) 중앙 + 노을빛 반짝임.
     function eggBannerHtml(){
@@ -4826,8 +4860,9 @@
         else if(k<0.68) el='<span class="pk-tuft pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+tuftSvg({h:S(6+r*3)})+'</span>';
         else el='<span class="pk-flower pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+flowerSvg(['r','y','p'][Math.floor(pkRand(i,56)*3)],{h:S(7+r*3)})+'</span>';
         farline+=el; }
-      // 🌳 가까운 나무 5그루 — 가로 '레인'으로 고르게(겹침 방지) · 크기 1.5배 · 뒤쪽만 · z<펫. 가운데(i=2)는 오른쪽으로 살짝(+9%). 오른쪽서 두번째(i=3)는 거의 맨앞(d=0.18=크게·낮게·앞, 아주 앞에서 살짝만 뒤) + 오른쪽으로(+5%)
-      let trees=''; for(let i=0;i<5;i++){ const d=(i===3?0.18:0.5+pkRand(i,11)*0.28), l=((i+0.5)/5*88+6+(pkRand(i,12)-0.5)*6+(i===2?9:0)+(i===3?5:0)).toFixed(1),
+      // 🌳 가까운 나무 5그루 — 중앙(아이콘 40~60%) 회피: 좌 2·우 2 + 우측 앞 1(프레이밍). 크기 1.5배·뒤쪽만·z<펫.
+      const TL=[8,22,34,72,90], TD=[0.5,0.64,0.44,0.3,0.58];
+      let trees=''; for(let i=0;i<5;i++){ const d=TD[i], l=(TL[i]+(pkRand(i,12)-0.5)*5).toFixed(1),
         sc=1-d*0.5, bot=(d*70).toFixed(1), z=Math.round(2+(1-d)*2), pine=pkRand(i,13)<0.45;
         const inner = pine ? '<span class="pk-canopy">'+pineSvg({h:S(Math.max(16,Math.round(69*sc)))})+'</span>'
           : '<span class="pk-canopy">'+treeTopSvg({h:S(Math.max(16,Math.round(51*sc)))})+'</span><span class="pk-trunk">'+trunkSvg({h:S(Math.max(8,Math.round(24*sc)))})+'</span>';
@@ -4864,10 +4899,13 @@
       const egg   = mode==='reveal' ? '' : '<div class="pk-egg"><img src="'+assetUrl('icons/egg-garden.svg')+'" alt=""></div>';   // 리빌은 알 대신 등장 펫이 주인공
       // 픽업 펫 2마리는 '배너'에서만 배회. 알 오픈 리빌(전설↑ 배경)에선 등장 펫이 주인공이라 배회 픽업 펫을 숨긴다(무대 자체를 안 그림). rock/frame도 배너 전용.
       const stage = mode==='reveal' ? '' : '<div class="cd-room pkstage" id="pkStage" data-noprops="1" data-hh="'+H+'" aria-hidden="true">'+rock+actor(p1,14)+actor(p2,99999)+frame+'</div>';
+      // ⛰️ 아이콘 뒤 빈 하늘 채우기 — 지평선 먼 언덕(낮 초록)
+      let hills=''; const HX=[18,50,82], HH=[26,24,28]; for(let i=0;i<3;i++){
+        hills+='<span class="pk-hill" style="left:'+HX[i]+'%;bottom:-2px;z-index:0;">'+hillSvg(HILL_DAY,{h:S(HH[i])})+'</span>'; }
       const _pkHtml = '<div class="pkscene'+(mode==='reveal'?' pk-reveal':'')+'" aria-hidden="true">'+
           '<div class="pk-sky">'+clouds+'</div>'+
           '<div class="pk-rainbow">'+authRainbowSvg({h:S(64)})+'</div>'+
-          '<div class="pk-horizon">'+farline+'</div>'+
+          '<div class="pk-horizon">'+hills+farline+'</div>'+
           '<div class="pk-field"><div class="pk-grass"></div>'+soil+stones+fence+tufts+flowers+trees+egg+'</div>'+
           '<div class="pk-air">'+bflies+'</div>'+stage+
         '</div>';
@@ -4894,36 +4932,46 @@
         if(k<0.44) farline+='<span class="pk-tree pk-far" style="left:'+l+'%;bottom:'+bot+'px;z-index:1;--i:'+i+'"><span class="pk-canopy">'+mapleSvg({h:Math.round(11+r*8)})+'</span></span>';
         else if(k<0.68) farline+='<span class="pk-tuft pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+tuftSvg({h:Math.round(6+r*3)})+'</span>';
         else farline+='<span class="pk-flower pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+flowerSvg(FF[Math.floor(pkRand(i,56)*3)],{h:Math.round(7+r*3)})+'</span>'; }
-      // 🍁 가까운 단풍나무 5그루(레인 분포)
-      let trees=''; for(let i=0;i<5;i++){ const d=(i===3?0.2:0.5+pkRand(i,11)*0.26), l=((i+0.5)/5*84+5+(pkRand(i,12)-0.5)*6+(i===2?7:0)).toFixed(1),
+      // 🍁 가까운 단풍나무 5그루 — 중앙(아이콘)·우측(연못) 회피: 좌측 4 + 우측 먼 1(작게)
+      const TL=[7,17,28,37,90], TD=[0.5,0.64,0.44,0.72,0.72];
+      let trees=''; for(let i=0;i<5;i++){ const d=TD[i], l=(TL[i]+(pkRand(i,12)-0.5)*5).toFixed(1),
         sc=1-d*0.5, bot=(d*70).toFixed(1), z=Math.round(2+(1-d)*2);
         trees+='<span class="pk-tree" style="left:'+l+'%;bottom:'+bot+'%;z-index:'+z+';--i:'+i+'"><span class="pk-canopy">'+mapleSvg({h:Math.max(18,Math.round(52*sc))})+'</span><span class="pk-trunk">'+trunkSvg({h:Math.max(8,Math.round(24*sc))})+'</span></span>'; }
-      // 🌸 노을 꽃 16 · 🌱 풀 16
-      let flowers=''; for(let i=0;i<16;i++){ const d=pkRand(i,21)*0.6, l=(5+(i+0.5)/16*88+(pkRand(i,22)-0.5)*3.5).toFixed(1), sc=1-d*0.5, bot=(d*76).toFixed(1);
+      // 🌸 노을 꽃 14 — 연못(우측) 위엔 꽃 없게 왼쪽 절반(≈5~57%)에만 · 🌱 풀 16
+      let flowers=''; for(let i=0;i<14;i++){ const d=pkRand(i,21)*0.6, l=(5+(i+0.5)/14*52+(pkRand(i,22)-0.5)*3.5).toFixed(1), sc=1-d*0.5, bot=(d*76).toFixed(1);
         flowers+='<span class="pk-flower" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+flowerSvg(FF[Math.floor(pkRand(i,23)*3)],{h:Math.max(9,Math.round(16*sc))})+'</span>'; }
       let tufts=''; for(let i=0;i<16;i++){ const d=pkRand(i,31)*0.8, l=(2+pkRand(i,32)*94).toFixed(1), sc=1-d*0.5, bot=(d*80).toFixed(1);
         tufts+='<span class="pk-tuft" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+tuftSvg({h:Math.max(7,Math.round(12*sc))})+'</span>'; }
       // 🟫 흙 패치
       let soil=''; for(let i=0;i<7;i++){ const d=pkRand(i,41)*0.7, l=(6+pkRand(i,42)*74).toFixed(1), sc=1-d*0.45, bot=(d*72).toFixed(1), w=Math.round((10+pkRand(i,43)*14)*sc);
         soil+='<span class="pk-soil" style="left:'+l+'%;bottom:'+bot+'%;width:'+w+'px"></span>'; }
-      // 🏞️ 계곡(세로 스트림) + 🎏 세로 잉어(색 다양) — 위아래로 몸통 흔들며 헤엄(머리 방향 전환)
-      const KC=['o','w','g']; let fish=''; for(let i=0;i<3;i++){ const dur=(8+pkRand(i,72)*5).toFixed(1), del=(-pkRand(i,73)*8).toFixed(2), lx=(pkRand(i,74)*44+16).toFixed(0), sw=(0.9+pkRand(i,75)*0.5).toFixed(2);
-        fish+='<span class="pk-koi" style="left:'+lx+'%;--d:'+dur+'s;--sw:'+sw+'s;animation-delay:'+del+'s;"><span class="koi-b">'+koiSvg(KC[i%3],{h:16})+'</span></span>'; }
-      const stream='<div class="pk-stream"><div class="pk-water"></div><div class="pk-wripple"></div>'+fish+'</div>';
-      // 🪨 계곡 옆 줄지은 작은 돌(제각각 크기) — 스트림 안쪽 가장자리에 세로로
-      let stones=''; for(let i=0;i<9;i++){ const b=(2+i*11+(pkRand(i,81)-0.5)*3).toFixed(1), s=Math.round(7+pkRand(i,82)*8), lx=((pkRand(i,83)-0.5)*8).toFixed(1);
-        stones+='<span class="pk-sstone" style="bottom:'+b+'%;margin-left:'+lx+'px;">'+stoneSvg({h:s})+'</span>'; }
-      const stonecol='<div class="pk-stonecol">'+stones+'</div>';
+      // 🪷 연못(메인 아이콘 오른쪽에 떨어뜨림) — 타원 물 + 둘레 돌 링 + 잉어 배회 + 연꽃/연잎 부유. 계곡 대체.
+      const KC=['o','w','g']; let pkoi=''; for(let i=0;i<3;i++){ const l=(30+pkRand(i,72)*40).toFixed(1), t=(34+pkRand(i,73)*32).toFixed(1),
+        dur=(6+pkRand(i,74)*4).toFixed(1), del=(-pkRand(i,75)*7).toFixed(2), sw=(0.9+pkRand(i,76)*0.5).toFixed(2);
+        let _s=200; const pd=function(){ return Math.round((pkRand(i,_s++)*2-1)*9); };   // 연못 안 좁은 배회(±9px)
+        const dv='--x1:'+pd()+'px;--y1:'+pd()+'px;--x2:'+pd()+'px;--y2:'+pd()+'px;--x3:'+pd()+'px;--y3:'+pd()+'px';
+        pkoi+='<span class="pk-pkoi" style="left:'+l+'%;top:'+t+'%;--d:'+dur+'s;--sw:'+sw+'s;animation-delay:'+del+'s;'+dv+'"><span class="koi-b">'+koiSvg(KC[i%3],{h:15})+'</span></span>'; }
+      let pstones=''; const PSN=11; for(let i=0;i<PSN;i++){ const a=(i/PSN)*Math.PI*2, rr=53+pkRand(i,81)*3,
+        cl=(50+Math.cos(a)*rr).toFixed(1), ct=(50+Math.sin(a)*(rr-3)).toFixed(1), s=Math.round(8+pkRand(i,82)*5);
+        pstones+='<span class="pk-pstone" style="left:'+cl+'%;top:'+ct+'%;">'+stoneSvg({h:s})+'</span>'; }
+      const LPOS=[[32,58],[66,42]]; let lilies=''; for(let i=0;i<2;i++){ const dur=(4+pkRand(i,91)*2).toFixed(1), del=(-pkRand(i,92)*4).toFixed(2);
+        lilies+='<span class="pk-lily" style="left:'+LPOS[i][0]+'%;top:'+LPOS[i][1]+'%;--d:'+dur+'s;animation-delay:'+del+'s;">'+lilyPadSvg({h:14})+'</span>'; }
+      const LOPOS=[[58,64],[38,34]]; let lotuses=''; for(let i=0;i<2;i++){ const dur=(4.6+pkRand(i,93)*2).toFixed(1), del=(-pkRand(i,94)*4).toFixed(2);
+        lotuses+='<span class="pk-lotus" style="left:'+LOPOS[i][0]+'%;top:'+LOPOS[i][1]+'%;--d:'+dur+'s;animation-delay:'+del+'s;">'+lotusSvg({h:13})+'</span>'; }
+      const pond='<div class="pk-pond"><div class="pk-pwater"></div>'+pkoi+lilies+lotuses+pstones+'</div>';
+      // ⛰️ 아이콘 뒤 빈 하늘 채우기 — 지평선 먼 언덕(노을 보랏빛). 중앙은 낮게 두어 지는 해가 위로 보이게.
+      let hills=''; const HX=[16,50,84], HH=[26,20,24]; for(let i=0;i<3;i++){
+        hills+='<span class="pk-hill" style="left:'+HX[i]+'%;bottom:-2px;z-index:0;">'+hillSvg(HILL_SUNSET,{h:HH[i]})+'</span>'; }
       // 🍁 고추잠자리(나비 대신) — 제각각 팔랑팔랑
       let dflies=''; for(let i=0;i<6;i++){ const l=(10+((i+0.5)/6)*80+(pkRand(i,61)-0.5)*7).toFixed(1), b=(26+pkRand(i,62)*48).toFixed(1),
         hh=Math.round(11+pkRand(i,63)*5), dur=(6.5+pkRand(i,64)*5).toFixed(1), del=(-pkRand(i,65)*8).toFixed(2);
         let _s=90; const rnd=function(){ return pkRand(i,_s++); };
         dflies+='<span class="pk-dfly" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="df-body">'+dragonflySvg({h:hh})+'</span></span>'; }
-      const sun='<span class="pk-sun">'+sunSvg({h:46})+'</span>';   // ☀️ 가운데 둥근 노을 해
+      const sun='<span class="pk-sun">'+sunSvg({h:60})+'</span>';   // ☀️ 수평선(하늘 하단)에 절반만 걸린 지는 해 — .pk-sky overflow:hidden가 아래 절반을 클립
       _sunsetCache='<div class="pkscene pk-sunset" aria-hidden="true">'+
         '<div class="pk-sky">'+sun+clouds+'</div>'+
-        '<div class="pk-horizon">'+farline+'</div>'+
-        '<div class="pk-field"><div class="pk-grass"></div>'+soil+stonecol+tufts+flowers+trees+stream+'</div>'+
+        '<div class="pk-horizon">'+hills+farline+'</div>'+
+        '<div class="pk-field"><div class="pk-grass"></div>'+soil+tufts+flowers+trees+pond+'</div>'+
         '<div class="pk-air">'+dflies+'</div>'+
       '</div>';
       return _sunsetCache;
@@ -4942,7 +4990,9 @@
         if(k<0.40) farline+='<span class="pk-tree pk-far" style="left:'+l+'%;bottom:'+bot+'px;z-index:1;--i:'+i+'"><span class="pk-canopy">'+nightPineSvg({h:Math.round(11+r*8)})+'</span></span>';
         else if(k<0.66) farline+='<span class="pk-tuft pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+nightTuftSvg({h:Math.round(6+r*3)})+'</span>';
         else farline+='<span class="pk-flower pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+nightFlowerSvg(NF[Math.floor(pkRand(i,124)*3)],{h:Math.round(7+r*3)})+'</span>'; }
-      let trees=''; for(let i=0;i<5;i++){ const d=(i===1?0.18:0.48+pkRand(i,131)*0.28), l=((i+0.5)/5*82+6+(pkRand(i,132)-0.5)*7-(i===3?6:0)).toFixed(1),
+      // 🌲 가까운 나무 5그루 — 중앙(아이콘) 회피: 좌 2·우 2 + 우측 앞 1
+      const TL=[8,22,34,68,90], TD=[0.5,0.64,0.44,0.3,0.58];
+      let trees=''; for(let i=0;i<5;i++){ const d=TD[i], l=(TL[i]+(pkRand(i,132)-0.5)*5).toFixed(1),
         sc=1-d*0.5, bot=(d*70).toFixed(1), z=Math.round(2+(1-d)*2);
         const canopy=(i%2?nightPineSvg({h:Math.max(18,Math.round(50*sc))}):nightTreeSvg({h:Math.max(18,Math.round(50*sc))}));
         trees+='<span class="pk-tree" style="left:'+l+'%;bottom:'+bot+'%;z-index:'+z+';--i:'+i+'"><span class="pk-canopy">'+canopy+'</span><span class="pk-trunk">'+pxSvg(M_TRUNK, TREE_NIGHT, {h:Math.max(8,Math.round(22*sc))})+'</span></span>'; }
@@ -4958,9 +5008,12 @@
         hh=Math.round(8+pkRand(i,183)*6), dur=(6+pkRand(i,184)*6).toFixed(1), del=(-pkRand(i,185)*8).toFixed(2), bd=(0.9+pkRand(i,186)*1.6).toFixed(2);
         let _s=190; const rnd=function(){ return pkRand(i,_s++); };
         fires+='<span class="pk-fire" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;--bd:'+bd+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="ff-core">'+fireflySvg({h:hh})+'</span></span>'; }
+      // ⛰️ 아이콘 뒤 빈 하늘 채우기 — 지평선 먼 언덕(짙은 청록)
+      let hills=''; const HX=[18,50,82], HH=[26,24,28]; for(let i=0;i<3;i++){
+        hills+='<span class="pk-hill" style="left:'+HX[i]+'%;bottom:-2px;z-index:0;">'+hillSvg(HILL_NIGHT,{h:HH[i]})+'</span>'; }
       _nightCache='<div class="pkscene pk-night" aria-hidden="true">'+
         '<div class="pk-sky">'+moon+stars+clouds+'</div>'+
-        '<div class="pk-horizon">'+farline+'</div>'+
+        '<div class="pk-horizon">'+hills+farline+'</div>'+
         '<div class="pk-field"><div class="pk-grass"></div>'+soil+stones+tufts+flowers+trees+'</div>'+
         '<div class="pk-air">'+fires+'</div>'+
       '</div>';
