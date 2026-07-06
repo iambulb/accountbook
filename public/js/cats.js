@@ -2131,7 +2131,7 @@
     function normalizeGame(g){ g=g||{}; return migratePetIds({
       coins: clampCoins(g.coins), gold: clampGold(g.gold),
       owned:{ cats:(g.owned&&g.owned.cats)||{}, items:(g.owned&&g.owned.items)||{}, wallpapers:(g.owned&&g.owned.wallpapers)||{}, floors:(g.owned&&g.owned.floors)||{} },
-      consum:{ food:clampConsum(g.consum&&g.consum.food), water:clampConsum(g.consum&&g.consum.water), egg:clampConsum(g.consum&&g.consum.egg), box:clampConsum(g.consum&&g.consum.box), rainbow_egg:clampConsum(g.consum&&g.consum.rainbow_egg), rainbow_box:clampConsum(g.consum&&g.consum.rainbow_box) },
+      consum:{ food:clampConsum(g.consum&&g.consum.food), water:clampConsum(g.consum&&g.consum.water), egg:clampConsum(g.consum&&g.consum.egg), box:clampConsum(g.consum&&g.consum.box), rainbow_egg:clampConsum(g.consum&&g.consum.rainbow_egg), rainbow_box:clampConsum(g.consum&&g.consum.rainbow_box), ddeul:clampConsum(g.consum&&g.consum.ddeul) },
       home: normalizeHome(g.home, HOME_OPTS),   // 여러 방(프리셋): rooms[]·current·roomSlots·slots·changedAt (레거시 flat 자동 이관)
       missions: g.missions||{}, progress: g.progress||{}, codes: g.codes||{},
       customMissions: g.customMissions||{},   // 내 미션(커스텀 습관): {id:{title,coinReward,active,createdAt,order}}
@@ -2445,7 +2445,8 @@
       egg:       { name:'펫알',       icon:o=>eggSvg(0,o),        use:'egg'  },   // 일반 확률 오픈
       box:       { name:'랜덤박스',   icon:o=>boxSvg(o),          use:'box'  },
       rainbow_egg:{ name:'무지개알',  icon:o=>rainbowEggSvg(o),   use:'rb_egg' },  // 특별↑ 확률 오픈
-      rainbow_box:{ name:'무지개박스',icon:o=>rainbowBoxSvg(o),   use:'rb_box' }
+      rainbow_box:{ name:'무지개박스',icon:o=>rainbowBoxSvg(o),   use:'rb_box' },
+      ddeul:     { name:'뜰알',       icon:o=>ddeulEggSvg(o),     use:'ddeul' }   // 🌱 한정 픽업(뜰알) — 보유 1개 소모해 열면 DDEUL_TIERS 확률(개발자 선물/지급 전용, 상점 비매)
     };
     // 선물 1건의 출처/사유 텍스트(어떤 행위·보상으로 받았는지). 메시지(운영·축하)가 있으면 우선, 없으면 코드/유형에서 파생.
     function giftSource(gf){ if(gf.msg) return gf.msg; if(gf.bc) return '운영자 선물'; if(gf.code) return '코드 '+String(gf.code).toUpperCase(); if(gf.welcome) return '회원가입 축하'; return ''; }
@@ -2540,7 +2541,7 @@
       const type=val('bc_type'), qty=Math.floor(Number(val('bc_qty'))||0), msg=(val('bc_msg')||'').trim(), to=(val('bc_to')||'').trim().toUpperCase();
       if(!type){ toast('종류를 선택하세요', true); return; }
       if(qty<=0){ toast('수량을 1 이상 입력하세요', true); return; }
-      const consumKeys=['egg','box','rainbow_egg','rainbow_box'];
+      const consumKeys=['egg','box','rainbow_egg','rainbow_box','ddeul'];
       const gift = (consumKeys.indexOf(type)>=0) ? { type:'consum', key:type, qty:qty } : { type:type, qty:qty };   // coins/gold는 그대로
       if(msg) gift.msg=msg.slice(0,200);
       gift.at=new Date().toISOString();
@@ -2556,7 +2557,7 @@
       db.ref('config/broadcast').push(gift).then(function(){ toast('📣 전체 선물을 보냈어요 — 각 사용자가 접속 시 받습니다'); if(typeof openDevBroadcast==='function') openDevBroadcast(); }).catch(_cfgWriteErr);
     }
     function openDevBroadcast(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용', true); return; }
-      const opts=[['coins','은화'],['gold','금화'],['egg','펫알'],['box','랜덤박스'],['rainbow_egg','무지개알'],['rainbow_box','무지개박스']];
+      const opts=[['coins','은화'],['gold','금화'],['egg','펫알'],['box','랜덤박스'],['rainbow_egg','무지개알'],['rainbow_box','무지개박스'],['ddeul','뜰알']];
       let h='<div class="note">선물함에 아이템+<b>메시지</b>를 넣어 보내요(예: 오류로 인한 사과의 선물). <b>받는 사람</b>을 <b>비우면 전체</b>(공개 config/broadcast), <b>친구코드</b>를 넣으면 <b>그 사용자에게만 비공개</b>로 갑니다. 각 사용자는 접속 시 1회 수령.</div>';
       h+='<div class="field"><label for="bc_to">받는 사람(친구코드)</label><input class="input" id="bc_to" maxlength="6" autocapitalize="characters" spellcheck="false" placeholder="비우면 전체 · 예: ABC123" style="text-transform:uppercase;"></div>';
       h+='<div class="field"><label for="bc_type">종류</label><select class="input" id="bc_type">'+opts.map(function(o){ return '<option value="'+o[0]+'">'+o[1]+'</option>'; }).join('')+'</select></div>';
@@ -2637,7 +2638,7 @@
     // 🎒 가방 — 보유한 소비 아이템(사료·물·펫알·랜덤박스·무지개알·무지개박스)을 보고 사용.
     function openBag(){
       const build=()=>{
-        const order=['egg','box','rainbow_egg','rainbow_box','food','water'];
+        const order=['egg','box','ddeul','rainbow_egg','rainbow_box','food','water'];
         const rows=order.filter(k=>consumQty(k)>0);
         let h='<div class="bag">';
         if(!rows.length){ h+='<div class="empty" style="padding:30px 12px;">가방이 비었어요. 알뜰샵·선물함에서 아이템을 얻어보세요 🎒</div>'; }
@@ -2654,7 +2655,8 @@
     function useBagItem(k){ const use=(CONSUM_META[k]||{}).use;
       if(use==='egg'||use==='box') useHeldGacha(use);
       else if(use==='rb_egg') useRainbow('egg');
-      else if(use==='rb_box') useRainbow('box'); }
+      else if(use==='rb_box') useRainbow('box');
+      else if(use==='ddeul') useHeldDdeul(); }
     // 보유한 펫알/랜덤박스(소비 인벤토리)를 일반 확률로 오픈 — 은화 대신 인벤토리 1개 소모, 금화+1 지급.
     function useHeldGacha(kind){
       const key=kind;   // consum.egg / consum.box
@@ -2675,6 +2677,20 @@
         }
         return g;
       }).then(r=>{ if(r&&r.committed){ runGachaFx(kind, res, dup, refund, false, isNew); if(state._sheetRefresh) setTimeout(()=>{ if(state._sheetRefresh) state._sheetRefresh(); }, 50); } });
+    }
+    // 🌱 보유한 뜰알(소비 인벤토리) 열기 — 개발자 선물/지급으로 받은 뜰알 1개 소모(은화·금화 안 듦), DDEUL_TIERS(한정 픽업) 확률로 오픈. 뜰알 오픈 연출(무지개+나비) 공용.
+    function useHeldDdeul(){
+      if(consumQty('ddeul')<1){ toast('보유한 뜰알이 없어요', true); return; }
+      const res=rollFromPool(gachaCatTierMap(), DDEUL_TIERS); if(!res) return;
+      const dup=ownsCat(res.id), refund=dup?petDupRefund(res.id):0;
+      const isNew=gachaNew('ddeul',res);
+      gameRef().transaction(g=>{ g=normalizeGame(g);
+        if((Number(g.consum.ddeul)||0)<1) return;
+        g.consum.ddeul-=1;
+        if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
+        else { g.coins+=refund; }
+        return g;
+      }).then(r=>{ if(r&&r.committed){ runGachaFx('ddeul', res, dup, refund, false, isNew); if(state._sheetRefresh) setTimeout(()=>{ if(state._sheetRefresh) state._sheetRefresh(); }, 50); } else toast('처리 중이에요 — 잠시 후 다시 시도해 주세요', true); });
     }
     // 미션 수동 수령(완료 판정 후)
     function claimMission(id){
@@ -5394,7 +5410,7 @@
       // 재화 추가(지급) — 은화·금화·펫알·랜덤박스·무지개알·무지개박스를 입력 수량만큼 내 계정에 지급
       h+='<div class="sec-title" style="margin-top:18px;">재화 추가(지급)</div>';
       h+='<div class="note" style="margin-bottom:8px;">입력한 수량만큼 <b>내 계정</b>에 지급해요(비우면 건너뜀, 음수면 차감·0 미만은 안 됨).</div>';
-      { const cur6=[['coins','은화',coinSvg({h:18})],['gold','금화',goldSvg({h:18})],['egg','펫알',eggSvg(0,{h:18})],['box','랜덤박스',boxSvg({h:18})],['rainbow_egg','무지개알',rainbowEggSvg({h:18})],['rainbow_box','무지개박스',rainbowBoxSvg({h:18})]];
+      { const cur6=[['coins','은화',coinSvg({h:18})],['gold','금화',goldSvg({h:18})],['egg','펫알',eggSvg(0,{h:18})],['box','랜덤박스',boxSvg({h:18})],['rainbow_egg','무지개알',rainbowEggSvg({h:18})],['rainbow_box','무지개박스',rainbowBoxSvg({h:18})],['ddeul','뜰알',ddeulEggSvg({h:18})]];
         h+=cur6.map(function(c){ return '<div class="row" style="padding:5px 2px;align-items:center;"><span style="display:flex;align-items:center;gap:8px;min-width:0;"><span style="display:inline-flex;flex:none;">'+c[2]+'</span>'+c[1]+'</span><input class="input" style="width:120px;text-align:right;" inputmode="numeric" id="dv_'+c[0]+'" placeholder="0"></div>'; }).join(''); }
       h+='<button class="btn" style="margin-top:12px;" onclick="devGrantCurrency()">지급</button>';
       openSheet('개발자 · 재화관리', h);
@@ -5424,8 +5440,8 @@
     // 재화 지급(개발자): dv_* 입력값을 읽어 은화·금화·소비템(펫알/박스/무지개알/무지개박스)을 한 트랜잭션에 지급.
     function devGrantCurrency(){ if(!isDev())return;
       const rd=id=>{ const v=parseInt(val('dv_'+id),10); return isNaN(v)?0:v; };
-      const c=rd('coins'), gd=rd('gold'), eg=rd('egg'), bx=rd('box'), re=rd('rainbow_egg'), rb=rd('rainbow_box');
-      if(!(c||gd||eg||bx||re||rb)){ toast('수량을 입력하세요', true); return; }
+      const c=rd('coins'), gd=rd('gold'), eg=rd('egg'), bx=rd('box'), re=rd('rainbow_egg'), rb=rd('rainbow_box'), dd=rd('ddeul');
+      if(!(c||gd||eg||bx||re||rb||dd)){ toast('수량을 입력하세요', true); return; }
       gameRef().transaction(g=>{ g=normalizeGame(g);
         if(c)  g.coins=clampCoins((g.coins||0)+c);
         if(gd) g.gold=clampGold((g.gold||0)+gd);
@@ -5433,5 +5449,6 @@
         if(bx) g.consum.box=clampConsum((g.consum.box||0)+bx);
         if(re) g.consum.rainbow_egg=clampConsum((g.consum.rainbow_egg||0)+re);
         if(rb) g.consum.rainbow_box=clampConsum((g.consum.rainbow_box||0)+rb);
+        if(dd) g.consum.ddeul=clampConsum((g.consum.ddeul||0)+dd);
         return g; }).then(r=>{ if(r&&r.committed){ toast('재화 지급 완료 🎁'); if(state._sheetRefresh) state._sheetRefresh(); } });
     }

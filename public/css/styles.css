@@ -813,7 +813,7 @@
     @keyframes heartrise { 0%{ opacity:0; transform:translate(-50%,-50%) scale(.6);} 25%{ opacity:1;} 100%{ opacity:0; transform:translate(-50%,-160%) scale(1.1);} }
     /* 💗 애정 레벨업 "UP!" — 하트 옆에서 두둥(팝 오버슈트→상승→페이드). 분홍 픽셀 + 크리스프 진분홍 외곽선(0 blur). */
     .lvlup { position:fixed; z-index:62; transform:translate(-50%,-50%); pointer-events:none; will-change:transform,opacity; image-rendering:pixelated;
-      filter:drop-shadow(1px 0 #a8235c) drop-shadow(-1px 0 #a8235c) drop-shadow(0 1px #a8235c) drop-shadow(0 -1px #a8235c);
+      filter:drop-shadow(1px 0 #f78ec0) drop-shadow(-1px 0 #f78ec0) drop-shadow(0 1px #f78ec0) drop-shadow(0 -1px #f78ec0);   /* 연한 로즈 실루엣(둥글둥글 글리프 + 부드러운 외곽선) */
       animation:lvlupPop 1.15s cubic-bezier(.34,1.56,.64,1) forwards; }
     .lvlup .px { display:block; image-rendering:pixelated; }
     @keyframes lvlupPop { 0%{ opacity:0; transform:translate(-50%,-50%) scale(.2) rotate(-8deg);} 32%{ opacity:1; transform:translate(-50%,-64%) scale(1.28) rotate(3deg);} 48%{ transform:translate(-50%,-70%) scale(1.0) rotate(0);} 78%{ opacity:1; transform:translate(-50%,-84%) scale(1.0);} 100%{ opacity:0; transform:translate(-50%,-104%) scale(.92);} }
