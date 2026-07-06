@@ -1347,7 +1347,7 @@
     body.lite .ten-bob, body.lite .ten-bfly, body.lite .ten-bfly .bf-wing, body.lite .ten-petaura, body.lite .ten-md-bf .bf-wing { animation:none !important; }
     body.lite .ten-eggfx, body.lite .ten-crlight .ll-rays { display:none !important; }
     /* 🔤 픽셀(도트) 텍스트 이미지 — 리빌 등급명/이름. 확대해도 안 뭉개지게 pixelated + 살짝 위아래 흔들림(가독성 유지). */
-    .pxtext { display:block; margin:0 auto; image-rendering:pixelated; }
+    .pxtext { display:block; margin:0 auto; image-rendering:auto; }   /* 결과 텍스트는 레티나로 그려 선명하게(도트화 안 함) */
     .fx-tier .pxtext { filter:drop-shadow(0 2px 3px rgba(0,0,0,.45)); }
     .fx-name .pxtext { filter:drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
     .fx-pxtier { animation:pxbob 1.9s ease-in-out infinite; }

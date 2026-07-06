@@ -786,18 +786,18 @@
       "....XIIIIIIIIIIIWWWX....",
       "...XIIIIIIIIIIIWWWWWX...",
       "...XIIIIIIIIIIWWWWWWX...",
-      "..XIIIIIIIIIIWWWWWWSSX..",
-      "..XIIIIIIIIIWWWWWWSSSX..",
-      "..XIIIIIIIQQQQWWWSSSSX..",
-      "..XIIIIIIQQWWQQWSSSSSX..",
-      ".XIIIIIIIWWWWQQSSSSSSSX.",
-      ".XIIIIIIWWWWQQSSSSSSSDX.",
-      ".XIIIIIIWWWQQSSSkSSSDDX.",
+      "..XIIIIIIIQQQQQWWWWSSX..",
+      "..XIIIIIIQQQQQQQWWSSSX..",
+      "..XIIIIIQQQWWQQQWSSSSX..",
+      "..XIIIIIQQWWWQQQSSSSSX..",
+      ".XIIIIIIIWWWWQQQSSSSSSX.",
+      ".XIIIIIIWWWWQQQSSSSSSDX.",
+      ".XIIIIIIWWWQQQSSkSSSDDX.",
       ".XIIIIIWWWWQQSSSSSSDDDX.",
-      ".XIIIIWWWWWWSSSSSSDDDDX.",
-      ".XIIIWkWWWWQQSSSSDDDDDX.",
+      ".XIIIIWWWWWQQSSSSSDDDDX.",
+      ".XIIIWkWWWWSSSSSSDDDDDX.",
       "..XIWWWWWWSQQSSSDDDDDX..",
-      "..XWWWWWWSSSSSSSDDDDDX..",
+      "..XWWWWWWSSQQSSSDDDDDX..",
       "...XWWWWSSSSSSSDDDDDX...",
       "....XWWSkSSSSSDDDDDX....",
       ".....XXSSSSSSDDDDXX.....",
@@ -813,18 +813,18 @@
       "....XIIIIIIIIXSXWWWX....",
       "...XIIIIIIIIIXSWWWWWX...",
       "...XIIIIIIIIXSWWWWWWX...",
-      "..XIIIIIIIIIIWXSWWWSSX..",
-      "..XIIIIIIIIXWXSWWWSSSX..",
-      "..XIIIIIIIQXQQWWWSSSSX..",
-      "..XIIIIIIQQWXQQWSSSSSX..",
-      ".XIIIIIIIWWWWXQSSSSSSSX.",
+      "..XIIIIIIIQQQQXSWWWSSX..",
+      "..XIIIIIIQQXQXQQWWSSSX..",
+      "..XIIIIIQQQXSQQQWSSSSX..",
+      "..XIIIIIQQWWXQQQSSSSSX..",
+      ".XIIIIIIIWWWWXQQSSSSSSX.",
       ".XIIIIIIWWWWQQXSXSSSSDX.",
-      ".XIIIIIIWWWQQSSSkSSSDDX.",
+      ".XIIIIIIWWWQQQSSkSSSDDX.",
       ".XIIIIIWWWWQQSSSSSSDDDX.",
-      ".XIIIIWWWWWWSSSSSSDDDDX.",
-      ".XIIIWkWWWWQQSSSSDDDDDX.",
+      ".XIIIIWWWWWQQSSSSSDDDDX.",
+      ".XIIIWkWWWWSSSSSSDDDDDX.",
       "..XIWWWWWWSQQSSSDDDDDX..",
-      "..XWWWWWWSSSSSSSDDDDDX..",
+      "..XWWWWWWSSQQSSSDDDDDX..",
       "...XWWWWSSSSSSSDDDDDX...",
       "....XWWSkSSSSSDDDDDX....",
       ".....XXSSSSSSDDDDXX.....",
@@ -840,18 +840,18 @@
       "....XIIIIIIIL.SIWWWX....",
       "...XIIIIIIIIL.SWWWWWX...",
       "...XIIIIIIIL.SWWWWWWX...",
-      "..XIIIIIIIIIIL.SWWWSSX..",
-      "..XIIIIIIIIIL.SWWWSSSX..",
-      "..XIIIIIIIL.QQWWWSSSSX..",
-      "..XIIIIIIQQWXQQWSSSSSX..",
-      ".XIIIIIIIWWWWXQSSSSSSSX.",
+      "..XIIIIIIIQQQL.SWWWSSX..",
+      "..XIIIIIIQQQL.QQWWSSSX..",
+      "..XIIIIIQQL.SQQQWSSSSX..",
+      "..XIIIIIQQWWXQQQSSSSSX..",
+      ".XIIIIIIIWWWWXQQSSSSSSX.",
       ".XIIIIIIWWWWQQXSSSSSSDX.",
       ".XIIIIIIWWWQQXSSkSSSDDX.",
       ".XIIIIIWWWWQXSSSSSSDDDX.",
-      ".XIIIIWWWWWXSSSSSSDDDDX.",
-      ".XIIIWkWWWWXQSSSSDDDDDX.",
+      ".XIIIIWWWWWXQSSSSSDDDDX.",
+      ".XIIIWkWWWWXSSSSSDDDDDX.",
       "..XIWWWWWWSQXSSSDDDDDX..",
-      "..XWWWWWWSSSSXSSDDDDDX..",
+      "..XWWWWWWSSQQXSSDDDDDX..",
       "...XWWWWSSSSSXSDDDDDX...",
       "....XWWSkSSSXSDDDDDX....",
       ".....XXSSSSSSDDDDXX.....",
@@ -964,13 +964,13 @@
       "..XmmmmmmmMMMmmmmmmmmX..",
       "..XMWWWWWWWnWWWWSSSSMX..",
       "..XmWWWWWWWWWWWSSSSSnX..",
-      "..XMWWWWWQQQQSSSSSSSnX..",
-      "..XmWWWWQQWWQQSSSSSSnX..",
-      "..XMWWWWWWWQQSSSSSSSnX..",
-      "..XmWWWWWWQQSSSSSSSSnX..",
-      "..XMWWWWWSQQSSSSSSSSnX..",
+      "..XMWWWWWWWQQQQSSSSSnX..",
+      "..XmWWWWWWQQSSQQSSSSnX..",
+      "..XMWWWWWWWSSQQSSSSSnX..",
+      "..XmWWWWWWSSQQSSSSSSnX..",
+      "..XMWWWWWSSSQQSSSSSSnX..",
       "..XmWWWWSSSSSSSSSSSDnX..",
-      "..XMWWWSSSQQSSSSSDDDnX..",
+      "..XMWWWSSSSSQQSSSDDDnX..",
       "..XMWWSSSSSSSSSSDDDDMX..",
       "..XXXXXXXXXXXXXXXXXXXX..",
       "........................"
@@ -989,13 +989,13 @@
       "..XZZZZZZZZZZZZZZZZZZX..",
       "..XMWWWWWWWnWWWWSSSSMX..",
       "..XmWWWWWWWWWWWSSSSSnX..",
-      "..XMWWWWWQQQQSSSSSSSnX..",
-      "..XmWWWWQQWWQQSSSSSSnX..",
-      "..XMWWWWWWWQQSSSSSSSnX..",
-      "..XmWWWWWWQQSSSSSSSSnX..",
-      "..XMWWWWWSQQSSSSSSSSnX..",
+      "..XMWWWWWWWQQQQSSSSSnX..",
+      "..XmWWWWWWQQSSQQSSSSnX..",
+      "..XMWWWWWWWSSQQSSSSSnX..",
+      "..XmWWWWWWSSQQSSSSSSnX..",
+      "..XMWWWWWSSSQQSSSSSSnX..",
       "..XmWWWWSSSSSSSSSSSDnX..",
-      "..XMWWWSSSQQSSSSSDDDnX..",
+      "..XMWWWSSSSSQQSSSDDDnX..",
       "..XMWWSSSSSSSSSSDDDDMX..",
       "..XXXXXXXXXXXXXXXXXXXX..",
       "........................"
@@ -5871,23 +5871,26 @@
       const h=$('fxHint'); if(h) h.remove();
     }
     // 🔤 픽셀(도트) 텍스트 — 저해상도 캔버스에 굵게 그린 뒤 알파를 1비트로 하드엣지 처리하고, 표시 시 확대(image-rendering:pixelated)해 '도트 폰트'처럼 블록지게. fill=색 문자열 또는 'RAINBOW'(가로 무지개). 한글 임의 텍스트(펫 이름 포함)도 커버. 캔버스 미지원/에러 시 일반 텍스트로 안전 폴백.
+    // 🔤 결과 텍스트(등급·아이템 이름) 렌더 — 예전엔 저해상도+1비트 알파로 '도트 폰트'를 흉내냈지만 한글이 뭉개져(획 손실) 가독성이 나빴다.
+    //  → 이제 표시 크기의 레티나(devicePixelRatio) 해상도로 안티에일리어싱해 그려 '선명하게'(fill=색/RAINBOW 유지, 무대 그림자·굵기는 CSS). 캔버스 미지원 시 일반 텍스트 폴백.
     function pixelTextHtml(text, fill, opt){
       opt=opt||{}; text=String(text==null?'':text);
       try{
         if(typeof document==='undefined' || !document.createElement) throw 0;
-        const base=opt.base||12, font='900 '+base+'px system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif';   // base 작을수록 소스 픽셀 적음 → 확대 시 블록 큼(더 도트답게)
+        const dh=opt.h||Math.round((opt.base||14)*2);   // 표시 높이(px)
+        const dpr=Math.max(2, Math.min(3, (typeof window!=='undefined' && window.devicePixelRatio) || 2));   // 최소 2배 슈퍼샘플 → 확대해도 선명
+        const H=Math.max(8, Math.round(dh*dpr));         // 캔버스(고해상) 높이
+        const fpx=Math.max(6, Math.round(H*0.70));       // 폰트 크기(높이의 ~70%, 한글 여백 확보)
+        const font='900 '+fpx+'px system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif';
         let cv=document.createElement('canvas'), g=cv.getContext('2d'); if(!g) throw 0;
         g.font=font; const tw=Math.max(1, Math.ceil(g.measureText(text).width));
-        const w=tw+2, h=Math.max(2, Math.ceil(base*1.42));
-        cv.width=w; cv.height=h; g=cv.getContext('2d'); g.font=font; g.textBaseline='middle';
-        if(fill==='RAINBOW'){ const grd=g.createLinearGradient(0,0,w,0); const RB=['#F04452','#F0883C','#F2C84B','#2FAE7A','#3182F6','#9B6FC8']; RB.forEach(function(c,i){ grd.addColorStop(i/(RB.length-1), c); }); g.fillStyle=grd; }
+        const pad=Math.round(H*0.09)+2, W=tw+pad*2;
+        cv.width=W; cv.height=H; g=cv.getContext('2d'); g.font=font; g.textBaseline='middle';
+        if(fill==='RAINBOW'){ const grd=g.createLinearGradient(0,0,W,0); const RB=['#F04452','#F0883C','#F2C84B','#2FAE7A','#3182F6','#9B6FC8']; RB.forEach(function(c,i){ grd.addColorStop(i/(RB.length-1), c); }); g.fillStyle=grd; }
         else g.fillStyle=fill||'#ffffff';
-        g.fillText(text, 1, h/2+0.5);
-        const im=g.getImageData(0,0,w,h), d=im.data;
-        for(let i=0;i<d.length;i+=4){ d[i+3] = d[i+3]>=105 ? 255 : 0; }   // 알파 1비트 → 하드 픽셀 엣지(확대 시 깔끔한 도트). 임계 낮춤=낮은 base에서 얇은 획 보존
-        g.putImageData(im,0,0);
-        const url=cv.toDataURL('image/png'), dh=opt.h||Math.round(h*2.2);
-        return '<img class="pxtext'+(opt.cls?' '+opt.cls:'')+'" src="'+url+'" alt="'+escapeHtml(text)+'" style="height:'+dh+'px;width:auto;image-rendering:pixelated;">';
+        g.fillText(text, pad, H/2+Math.round(H*0.02));
+        const url=cv.toDataURL('image/png');
+        return '<img class="pxtext'+(opt.cls?' '+opt.cls:'')+'" src="'+url+'" alt="'+escapeHtml(text)+'" style="height:'+dh+'px;width:auto;image-rendering:auto;">';
       }catch(e){ const rb=(fill==='RAINBOW'), cls=[opt.cls, rb?'tier-rainbow':''].filter(Boolean).join(' '); return '<span'+(cls?' class="'+cls+'"':'')+((!rb&&fill)?' style="color:'+fill+'"':'')+'>'+escapeHtml(text)+'</span>'; }   // 폴백: 무지개는 tier-rainbow로(부모 .fx-tier가 color:transparent라 안 보이는 것 방지)
     }
     // 등장 연출 — 등급마다 화려함이 다르게 (CSS .fx-reveal.rank-N/.rev-rb로 계단식 확대):
