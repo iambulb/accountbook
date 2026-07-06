@@ -1092,11 +1092,34 @@
     .fx-stage, .fx-reveal { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:24px; }
     .fx-item { position:relative; z-index:2; cursor:pointer; filter:drop-shadow(0 12px 24px rgba(0,0,0,.4)); }
     .fx-item .px { width:auto; height:150px; }
-    .fx-item.fx-ddeulegg .px { height:226px; }   /* 뜰알은 꽃·흙까지 포함(24행)이라 더 크게 — 알 실루엣(16행)이 펫알(150px)과 같아지게 */
+    /* 🌱 뜰알 FX = 꽃(위)+알 몸통(아래) 분리 세로 스택 → 알이 흔들릴 때 꽃이 줄기에서 더 크게 흔들림 */
+    .fx-item.fx-ddeulegg { display:flex; flex-direction:column; align-items:center; }
+    .fx-ddeulegg .fx-ddbody .px { display:block; height:190px; width:auto; }
+    .fx-ddeulegg .fx-ddflower { display:block; line-height:0; transform-origin:50% 100%; }
+    .fx-ddeulegg .fx-ddflower .px { display:block; height:38px; width:auto; }
+    .fx-ddeulegg.shake .fx-ddflower { animation:fxflwswing .44s ease; }
+    .fx-ddeulegg.fx-tremble .fx-ddflower { animation:fxflwswing .2s ease infinite; }
+    @keyframes fxflwswing { 0%,100%{transform:rotate(0)} 14%{transform:rotate(-27deg)} 40%{transform:rotate(24deg)} 64%{transform:rotate(-15deg)} 85%{transform:rotate(8deg)} }
+    /* 🌈 뜰알: 알 위쪽에 무지개가 스르르 뜬다 */
+    .fx-ddrainbow { position:absolute; left:50%; top:13%; transform:translateX(-50%); z-index:1; line-height:0; opacity:0; pointer-events:none; animation:fxddrb 1.7s ease .25s forwards; }
+    .fx-ddrainbow .px { display:block; image-rendering:pixelated; height:auto; width:min(72vw,340px); opacity:.92; }
+    @keyframes fxddrb { 0%{opacity:0; transform:translateX(-50%) translateY(16px) scale(.85);} 100%{opacity:1; transform:translateX(-50%) translateY(0) scale(1);} }
+    /* 🦋 뜰알: 나비 5마리가 알 주변을 팔랑팔랑 날아다닌다(배너 나비 재사용) */
+    .fx-ddbflies { position:absolute; inset:0; z-index:3; pointer-events:none; }
+    .fx-ddbfly { position:absolute; left:50%; top:50%; image-rendering:pixelated; animation:fxddfly var(--d,7s) ease-in-out infinite; }
+    .fx-ddbfly .bf-wing { display:block; transform-origin:center; animation:pkflap var(--fd,.4s) ease-in-out infinite; }
+    .fx-ddbfly-0 { margin:-168px 0 0 -18px; }
+    .fx-ddbfly-1 { margin:-96px 0 0 118px; }
+    .fx-ddbfly-2 { margin:44px 0 0 -150px; }
+    .fx-ddbfly-3 { margin:96px 0 0 128px; }
+    .fx-ddbfly-4 { margin:-40px 0 0 -128px; }
+    @keyframes fxddfly { 0%,100%{transform:translate(0,0)} 25%{transform:translate(16px,-13px)} 50%{transform:translate(28px,7px)} 75%{transform:translate(9px,17px)} }
+    @media (prefers-reduced-motion: reduce){ .fx-ddbfly, .fx-ddbfly .bf-wing, .fx-ddrainbow { animation:none; } .fx-ddrainbow { opacity:1; } }
     .shopcard.ddeul-card .thumb .px { height:84px; width:auto; }   /* 샵 카드에서 알이 작아 보이지 않게 썸네일 꽉 채움 */
     .fx-egg.pop { animation:fxpop .4s cubic-bezier(.2,1.4,.4,1), fxfloat 2.2s ease-in-out .4s infinite; }
     .fx-box.pop { animation:fxpop .4s cubic-bezier(.2,1.4,.4,1); }
-    .fx-item.shake { animation:fxshake .3s ease; }
+    .fx-item.shake { animation:fxshake .44s ease; transform-origin:50% 90%; }   /* 알: 밑동을 축으로 좌우로 크게 흔들림(위=꽃쪽이 더 크게 스윙) */
+    .fx-item.boxshake { animation:fxboxshake .42s ease; transform-origin:50% 55%; }   /* 박스: 양옆으로 들고 흔드는 느낌(가로 이동 큼) */
     .fx-item.fx-open { animation:fxopen .45s ease forwards; }
     /* 🌱 뜰알 오픈: 밑에 흙·이끼가 붙은 고양이얼굴 알(자체 완결) — 흔들림·나머지 연출은 기본 알과 동일 */
     /* 🌈 한정(무지개) 리빌: 로그인 화면 같은 하늘 + 왼→오로 그려지는 무지개(샤라라) */
@@ -1247,7 +1270,8 @@
     @keyframes fxfade { from{opacity:0} to{opacity:1} }
     @keyframes fxpop { from{transform:scale(.2);opacity:0} to{transform:scale(1);opacity:1} }
     @keyframes fxfloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-    @keyframes fxshake { 0%,100%{transform:translateX(0) rotate(0)} 25%{transform:translateX(-6px) rotate(-4deg)} 75%{transform:translateX(6px) rotate(4deg)} }
+    @keyframes fxshake { 0%,100%{transform:translateX(0) rotate(0)} 14%{transform:translateX(-8px) rotate(-11deg)} 38%{transform:translateX(8px) rotate(10deg)} 62%{transform:translateX(-6px) rotate(-8deg)} 84%{transform:translateX(4px) rotate(4deg)} }
+    @keyframes fxboxshake { 0%,100%{transform:translateX(0) rotate(0)} 12%{transform:translateX(-14px) rotate(-4deg)} 30%{transform:translateX(14px) rotate(4deg)} 50%{transform:translateX(-12px) rotate(-3deg)} 70%{transform:translateX(9px) rotate(2deg)} 88%{transform:translateX(-4px) rotate(-1deg)} }
     @keyframes fxblink { 0%,100%{opacity:.55} 50%{opacity:1} }
     @keyframes fxflash { from{opacity:.75;transform:translate(-50%,-50%) scale(.3)} to{opacity:0;transform:translate(-50%,-50%) scale(2.4)} }
     @keyframes fxspin { to{transform:translate(-50%,-50%) rotate(360deg)} }

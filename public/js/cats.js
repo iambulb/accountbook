@@ -1520,6 +1520,10 @@
       "..CCCC..",".CCCCCC.","CCCCCCCC",".cccccc."];
     const DDEUL_CLOUD_PAL={C:'#f4fbff',c:'#cfe8f7'};
     function ddeulEggSvg(opt){ return pxSvg(M_DDEUL, DDEUL_PAL, opt); }
+    // 🌸 뜰알 FX 분리 렌더 — 오픈 연출에서 '꽃'과 '알 몸통'을 따로 그려, 알이 흔들릴 때 꽃이 줄기에서 더 크게 흔들리게(CSS .fx-ddflower). 몸통=꽃 뺀 알(M_DDEUL 5행부터).
+    const M_DDEUL_FLW=[".fCf.",".CYC.",".fCf.","..t..","..T.."];
+    const M_DDEUL_BODY=M_DDEUL.slice(5);
+    function ddeulFxHtml(){ return '<span class="fx-ddflower">'+pxSvg(M_DDEUL_FLW, DDEUL_PAL)+'</span><span class="fx-ddbody">'+pxSvg(M_DDEUL_BODY, DDEUL_PAL)+'</span>'; }
     function ddeulFloorSvg(opt){ return pxSvg(M_DDEUL_FLOOR, DDEUL_FLOOR_PAL, opt); }
     function ddeulCloudSvg(opt){ return pxSvg(M_DDEUL_CLOUD, DDEUL_CLOUD_PAL, opt); }
     const SHELL_PAL={X:'#968c76',W:'#FBFBFD',S:'#d2ccbe'};   // 껍질 조각도 진한 테두리(알과 통일)
@@ -3459,7 +3463,8 @@
     function camTap(){ if(_petJustDragged) return; openCatHouse(); }   // 드래그 직후의 탭은 알뜰샵 열기 무시
     // 🐾 펫 애정도: 방/캠에서 펫을 탭해 쓰다듬기(펫별 3시간 쿨다운) → +1, 임계에서 레벨업. 실제 쓰다듬을 때만 하트 연출.
     let _affLevelUp=null, _petCdToast=0;
-    const PET_COOLDOWN_MS=3*60*60*1000;   // 쓰다듬기 쿨다운 3시간(펫별, RTDB pettedAt로 지속)
+    const PET_COOLDOWN_MS=24*60*60*1000;   // 쓰다듬기 쿨다운 하루(펫별, RTDB pettedAt로 지속)
+    const PET_PET_REWARD=5;               // 쓰다듬기 보상 은화(하루 1회/펫)
     // 펫 쓰다듬기 연출: 좋아요와 동일한 픽셀 하트(heartSvg)가 위로 떠오르고 + 작은 하트들이 뿅 팝(likeBurst).
     function heartFx(x,y){ const cx=(x||innerWidth/2), cy=(y||innerHeight/2);
       const el=document.createElement('div'); el.className='heartfx'; el.innerHTML=(typeof heartSvg==='function')?heartSvg({h:22}):'❤';
@@ -3495,18 +3500,19 @@
         document.body.appendChild(el); setTimeout(()=>el.remove(), 820+i*16);
       }
     }
-    // 쓰다듬기: 펫별 3시간에 1번만(RTDB owned.cats[id].pettedAt로 지속). 쿨다운 중엔 하트 연출 없음 — 실제 쓰다듬었을 때만 액션.
+    // 쓰다듬기: 펫별 하루 1번만(RTDB owned.cats[id].pettedAt로 지속). 성공 시 하트 연출 + 은화 5 보상(지갑으로 날아가는 연출·카운트업). 쿨다운 중엔 하트 없음.
     function bumpAffection(id, x, y){
       if(!id || !ownsCat(id)) return;
       const now=Date.now(), last=Number((ownedCatsMap()[id]||{}).pettedAt)||0;
       if(now-last < PET_COOLDOWN_MS){   // 쿨다운: 하트 없음. 남은 시간만 가끔 토스트로 안내(스팸 방지).
-        if(now-_petCdToast>2500){ _petCdToast=now; const rem=PET_COOLDOWN_MS-(now-last), hh=Math.floor(rem/3600000), mm=Math.ceil((rem%3600000)/60000);
-          toast(catName(id)+' 쓰다듬기는 3시간에 한 번 · '+(hh>0?hh+'시간 ':'')+mm+'분 후 가능'); }
+        if(now-_petCdToast>2500){ _petCdToast=now; const rem=PET_COOLDOWN_MS-(now-last), hh=Math.ceil(rem/3600000);
+          toast(catName(id)+' 쓰다듬기는 하루 한 번 · 약 '+hh+'시간 후 가능'); }
         return; }
-      _affLevelUp=null; let did=false;
+      _affLevelUp=null; let did=false; const beforeCoins=coins(), beforeGold=gold();
       gameRef().transaction(g=>{ g=normalizeGame(g); const c=g.owned.cats[id]; if(!c){ did=false; return g; }
         if(now-(Number(c.pettedAt)||0) < PET_COOLDOWN_MS){ did=false; return g; }   // 트랜잭션 내 재확인(다기기 동시성)
         did=true; c.pettedAt=now;
+        g.coins=clampCoins((g.coins||0)+PET_PET_REWARD);   // 쓰다듬기 보상 은화 5
         const before=affectionLevel(c.affection).level; c.affection=(Number(c.affection)||0)+1;
         const after=affectionLevel(c.affection).level;
         if(after>before){ _affLevelUp={ id, level:after, gold:0 };
@@ -3514,8 +3520,10 @@
         }
         return g;
       }).then(res=>{ if(res&&res.committed&&did){ heartFx(x,y);   // 실제 쓰다듬었을 때만 하트 액션
-        if(_affLevelUp){ const g=_affLevelUp.gold; toast('❤ '+catName(_affLevelUp.id)+' 애정 레벨 '+_affLevelUp.level+(g?' · 만렙! 금화 +'+g:'')+'!'); _affLevelUp=null; }
-        else toast('❤ '+catName(id)+' 쓰다듬기 · 애정 +1'); } });
+        const dGold=(_affLevelUp&&_affLevelUp.gold)||0;
+        rewardFly(x, y, PET_PET_REWARD, dGold, beforeCoins, beforeGold);   // 은화(+만렙 금화)가 지갑으로 스르르 날아가며 카운트업
+        if(_affLevelUp){ const g=_affLevelUp.gold; toast('❤ '+catName(_affLevelUp.id)+' 애정 레벨 '+_affLevelUp.level+(g?' · 만렙! 금화 +'+g:'')+' · 은화 +'+PET_PET_REWARD); _affLevelUp=null; }
+        else toast('❤ '+catName(id)+' 쓰다듬기 · 애정 +1 · 은화 +'+PET_PET_REWARD); } });
     }
     function petGrabDown(e){
       const el=(e.target&&e.target.closest)?e.target.closest('.cd-actor'):null; if(!el) return;
@@ -4263,9 +4271,10 @@
       closeSheet(); _fxClear(); prewarmGachaFxPads();   // 발끝 여백 미리 측정(등장 전 값 준비)
       _fx={ kind:'ddeul', preview:true, busy:true, rainbow:false, gold:0, res:{ id:(_gachaFx&&(_gachaFx.a||_gachaFx.b))||(PET_CATALOG[0]&&PET_CATALOG[0].id), tier:'exclusive' } };   // 한정 시나리오 = 뜰알 기준(지정 펫이 연출에 반영되는 등급)
       fx.innerHTML='<div class="fx-scrim"></div><div class="fx-stage fx-ddeul">'+
-        '<div class="fx-item pop fx-egg fx-ddeulegg" id="fxItem">'+ddeulEggSvg({h:132})+'</div>'+
+        '<div class="fx-item pop fx-egg fx-ddeulegg" id="fxItem">'+ddeulFxHtml()+'</div>'+
         '<div class="fx-hint" id="fxHint">연출 미리보기</div></div>';
       fx.className='fx on';
+      ddeulPickupFx(fx.querySelector('.fx-stage'));   // 미리보기에도 무지개+나비
       const st=fx.querySelector('.fx-stage'), it=$('fxItem'); if(!st||!it) return;
       st.style.color='#ffffff'; it.classList.add('fx-preshake');
       const tLast=fxCatSeqSchedule(st, it);
@@ -5057,14 +5066,21 @@
       if(reducedMotion()){ fxReveal(); return; }   // 모션 최소화: 바로 결과
       const isDdeul = kind==='ddeul';
       const art = rainbow ? (isEggKind(kind)? rainbowEggSvg({h:150}) : rainbowBoxSvg({h:150}))
-                          : (isDdeul? ddeulEggSvg({h:132}) : (isEggKind(kind)? eggSvg(0,{h:150}) : boxSvg({h:150})));
-      const hint = isDdeul? '뜰알을 탭해서 깨보세요! (3번)' : (isEggKind(kind)? '알을 탭해서 깨보세요! (3번)' : '상자를 탭해서 열어보세요!');
+                          : (isDdeul? ddeulFxHtml() : (isEggKind(kind)? eggSvg(0,{h:150}) : boxSvg({h:150})));
+      const hint = isDdeul? '뜰알을 탭해서 깨보세요! (3번)' : (isEggKind(kind)? '알을 탭해서 깨보세요! (3번)' : '상자를 탭해서 흔들어 열어요! (3번)');
       fx.innerHTML='<div class="fx-scrim"></div><div class="fx-stage'+(rainbow?' fx-rb':'')+(isDdeul?' fx-ddeul':'')+'">'+
         (rainbow?fxSparkles(16):'')+
         '<div class="fx-item pop '+(isEggKind(kind)?'fx-egg':'fx-box')+(isDdeul?' fx-ddeulegg':'')+(rainbow?' fx-rainbow':'')+'" id="fxItem" role="button" aria-label="'+hint+'" onclick="fxTap()">'+art+'</div>'+
         '<div class="fx-hint" id="fxHint">'+hint+'</div></div>';
       fx.className='fx on';
+      if(isDdeul) ddeulPickupFx(fx.querySelector('.fx-stage'));   // 🌈🦋 뜰알: 무지개 스르르 + 나비 5마리(펫알 무지개 승급 대응)
     }
+    // 🌈🦋 뜰알 전용 연출 — 알 위쪽에 픽업 배너의 무지개가 스르르 뜨고, 배너의 나비 5마리가 알 주변을 팔랑팔랑 날아다닌다.
+    function ddeulPickupFx(st){ if(!st) return;
+      st.insertAdjacentHTML('afterbegin','<div class="fx-ddrainbow" aria-hidden="true">'+rainbowArcSvg({cols:63,rows:11})+'</div>');
+      const T=['o','b','p','y','o']; let b='';
+      for(let i=0;i<5;i++){ b+='<span class="fx-ddbfly fx-ddbfly-'+i+'" style="--d:'+(6.4+i*0.7).toFixed(1)+'s;--fd:'+(0.36+i*0.03).toFixed(2)+'s;animation-delay:'+(-i*0.8).toFixed(1)+'s"><span class="bf-wing">'+butterflySvg(T[i],{h:13+(i%2)*3})+'</span></span>'; }
+      st.insertAdjacentHTML('beforeend','<div class="fx-ddbflies" aria-hidden="true">'+b+'</div>'); }
     // ✨ 반짝이는 도트 스파클(무지개알/박스 대기 연출) — 흰 픽셀 점이 제각기 깜빡이며 흩뿌려짐
     function fxSparkles(n){ let s=''; for(let i=0;i<(n||12);i++){ const x=Math.round(Math.random()*100), y=Math.round(Math.random()*100), del=(Math.random()*1.4).toFixed(2), sc=(0.7+Math.random()*1.2).toFixed(2), du=(0.9+Math.random()*0.9).toFixed(2); s+='<span class="fx-spark" style="left:'+x+'%;top:'+y+'%;--sc:'+sc+';animation-delay:'+del+'s;animation-duration:'+du+'s"></span>'; } return s; }
     // 탭할 때마다 껍질 조각이 사방으로 튀는 연출(단계가 오를수록 더 많이) — 알이 점점 더 깨지는 느낌.
@@ -5079,14 +5095,16 @@
     }
     function fxTap(){
       if(!_fx||_fx.busy) return; const it=$('fxItem'); if(!it) return;
+      _fx.stage++;
+      if(_fx.stage>=3){ _fx.busy=true; fxClimax(); return; }   // 알·박스 모두 3번 탭에 오픈
       if(isEggKind(_fx.kind)){
-        _fx.stage++;
-        if(_fx.stage>=3){ _fx.busy=true; fxClimax(); return; }
-        if(_fx.stage===2 && !_fx.rainbow && _fx.kind!=='ddeul') maybeRainbowUpgrade();   // 2번째 탭 직후: 특별↑이면 확률로 무지개알 승급(뜰알은 제외 — 한정은 뜰+무지개 전용 연출)
-        it.innerHTML = _fx.kind==='ddeul' ? ddeulEggSvg({h:132}) : (_fx.rainbow?rainbowEggStage(_fx.stage,{h:150}):eggSvg(_fx.stage,{h:150}));
-        it.classList.remove('shake'); void it.offsetWidth; it.classList.add('shake');
+        if(_fx.stage===2 && !_fx.rainbow && _fx.kind!=='ddeul') maybeRainbowUpgrade();   // 2번째 탭 직후: 특별↑이면 확률로 무지개알 승급(뜰알은 제외 — 뜰알은 무지개+나비 전용 연출)
+        it.innerHTML = _fx.kind==='ddeul' ? ddeulFxHtml() : (_fx.rainbow?rainbowEggStage(_fx.stage,{h:150}):eggSvg(_fx.stage,{h:150}));
+        it.classList.remove('shake'); void it.offsetWidth; it.classList.add('shake');   // 탭마다 알이 좌우로 크게 흔들림(뜰알은 꽃도 크게 흔들림)
         fxCrackChips(_fx.stage);   // 탭마다 껍질 조각이 튀어 깨짐을 강조
-      } else { _fx.busy=true; fxClimax(); }
+      } else {
+        it.classList.remove('boxshake'); void it.offsetWidth; it.classList.add('boxshake');   // 박스: 양옆으로 들고 흔드는 느낌
+      }
     }
     // ✨ 무지개 승급: 결과 등급이 특별↑이면 확률로 알을 무지개알로 변신(특별 50% · 전설/한정 100%).
     //    시각·연출만 무지개로 바뀌고 결과 펫·보상(_fx.gold)은 그대로. 3번째 탭에서 무지개 오픈 연출로 열린다.
@@ -5179,8 +5197,8 @@
       if(catShow) t0=fxCatSeqSchedule(st, it);   // 마지막 고양이가 톡 친 직후 알 오픈
       _fxT(()=>{
         st.style.color=t.color;   // 열리는 순간부터 등급색 — 빛·픽셀 파티클·버스트·등장이 currentColor로 등급색을 따른다(그 전엔 흰빛이라 등급 스포일러 방지)
-        it.classList.remove('fx-preshake','fx-hit'); void it.offsetWidth; it.classList.add('fx-tremble');
-        if(_fx.kind==='ddeul'){ it.innerHTML=ddeulEggSvg({h:132}); fxCrackChips(4); }   // 뜰알: 고양이 얼굴 알이 크게 들썩(껍질 조각 튐) 후 버스트
+        it.classList.remove('fx-preshake','fx-hit','shake','boxshake'); void it.offsetWidth; it.classList.add('fx-tremble');
+        if(_fx.kind==='ddeul'){ it.innerHTML=ddeulFxHtml(); fxCrackChips(4); }   // 뜰알: 고양이 얼굴 알이 크게 들썩(꽃도 크게 흔들림)+껍질 조각 튐 후 버스트
         else if(isEgg){ it.innerHTML=eggCrackSvg(t.color, _fx.rainbow, {h:150}); fxCrackChips(4); }   // 알이 크게 갈라지고 틈새로 등급색 빛
         else { it.innerHTML=boxOpenSvg(t.color, _fx.rainbow, {h:150}); it.classList.add('fx-ajar'); }   // 박스: 뚜껑 열리고 틈새로 등급색 빛
         // 갈라진 틈으로 새어나오는 등급색 픽셀 빛 — 은은한 오오라 + 역회전 광선 2겹(둥근 글로우 금지, 도트). 등급↑ 크고 밝게(--lk)
