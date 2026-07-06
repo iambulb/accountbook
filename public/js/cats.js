@@ -1615,15 +1615,18 @@
     ];
     const HEART_PAL={H:'#F0546A',L:'#FF9DAF'}, HEART_PAL_OFF={H:'#c4cad3',L:'#dde1e7'};
     function heartSvg(opt){ opt=opt||{}; return pxSvg(M_HEART, opt.off?HEART_PAL_OFF:HEART_PAL, opt); }
-    // 애정 레벨업 "UP!" 픽셀 텍스트(분홍). W=본체·L=하이라이트. 캠에서 하트 옆에 두둥 팝.
+    // 애정 레벨업 "UP!" 픽셀 텍스트 — 코너를 깎은 둥글둥글 버블 글리프(연한 분홍). W=본체·L=광택 하이라이트. 캠에서 하트 옆에 두둥 팝.
     const M_UP = [
-      "W.W.WWW.W",
-      "W.W.W.W.W",
-      "L.L.WWW.W",
-      "W.W.W....",
-      "WWW.W...W"
+      ".W..W....WWWW...WW",
+      "LW..LW..LW..WW..LW",
+      "WW..WW..WW..WW..WW",
+      "WW..WW..WWWWW...WW",
+      "WW..WW..WW......WW",
+      "WW..WW..WW........",
+      "WWWWWW..WW......WW",
+      ".WWWW...WW......WW"
     ];
-    const UP_PAL={W:'#ff5fa2',L:'#ffa7cd'};
+    const UP_PAL={W:'#ff9ec9',L:'#ffd6ec'};   // 연한 분홍 + 밝은 광택
     function upSvg(opt){ return pxSvg(M_UP, UP_PAL, opt); }
     // ⭐ 별(대표 방 즐겨찾기) 픽셀 아트 — S=몸체(골드)·H=하이라이트. opt.off=회색(미지정 방). 좋아요 하트와 같은 톤·연출 패턴.
     const M_STAR = [
