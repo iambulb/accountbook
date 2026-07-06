@@ -4399,8 +4399,8 @@
         if(!GACHA_TABS.some(t=>t[0]===_gachaTab)) _gachaTab='ddeul';
         h+='<div class="subseg gachatabs">'+GACHA_TABS.map(t=>'<button class="'+(_gachaTab===t[0]?'on':'')+'" onclick="setGachaTab(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div>';
         h+=gachaTabHtml(_gachaTab);   // 뜰알/펫알/랜덤박스/무지개 — 선택 탭만
-        h+='<div class="note">열 때마다 <b>금화 1개</b> 지급(무지개 제외·중복 펫은 <b>그 펫 가격의 20% 은화</b> 환급). <b>특별 등급 이상</b>은 펫알/랜덤박스로만 나오며, <b class="tier-rainbow">무지개</b>는 <b>금화로 구매·사용</b>해 특별↑을 확정으로 뽑아요.</div>';
-        h+=gachaInfoHtml();
+        h+='<div class="note">'+gachaNoteFor(_gachaTab)+'</div>';   // 구분별 짧은 설명
+        h+=gachaInfoHtml(_gachaTab);   // 구분별 확률만
         return h;
       }
       if(_shopSub==='floor'){
@@ -4976,22 +4976,34 @@
     function isFeaturedCat(id){ return !!id && id===featuredCatId(); }
     function catBuyPrice(id){ const c=PET_CATALOG.find(x=>x.id===id); if(!c) return 0; return isFeaturedCat(id)?Math.max(1,Math.round((c.price||0)*(1-FEATURED_DISCOUNT))):(c.price||0); }
     function monthLabelKo(){ const n=parseInt(kstMonthKey().slice(6),10)||0; return n+'월'; }
-    // 가챠 탭 하단: 펫알·랜덤박스 구성(등급별 목록)과 확률을 접이식으로 표시.
-    function gachaInfoHtml(){
-      const tiers=effTiers().filter(function(t){ return t.id!=='exclusive'; }), catBy=effCatTier(), itemBy=effItemTier();   // 한정은 기본 펫알/박스엔 없음(뜰알 섹션에서만)
-      // 등급명 + 확률만 표기(펫·아이템 이름 목록은 생략). 해당 등급에 내용이 있는 등급만.
+    // 가챠 구분별 짧은 설명(뜰알/펫알/랜덤박스/무지개) — 해당 탭에 맞는 한 줄.
+    function gachaNoteFor(tab){
+      if(tab==='ddeul')   return '🌱 <b class="tier-rainbow">한정 펫</b>은 오직 뜰알에서만! 열면 <b>금화 1개</b> 지급(중복 펫은 20% 은화 환급).';
+      if(tab==='box')     return '🎁 열면 <b>가구·바닥·벽지</b>가 랜덤으로 — <b>특별↑ 장식</b>도 여기서. 열 때마다 <b>금화 1개</b>.';
+      if(tab==='rainbow') return '✨ <b class="tier-rainbow">무지개</b>는 <b>금화</b>로 사서 <b>특별↑을 확정</b>으로 뽑아요(금화 보상 없음).';
+      return '🥚 열면 <b>고양이</b>가 랜덤으로 — <b>특별↑</b>도 여기서. 열 때마다 <b>금화 1개</b>(중복 펫은 20% 은화 환급).';   // egg
+    }
+    // 가챠 탭 하단: 선택한 구분의 등급별 확률만 접이식으로 표시.
+    function gachaInfoHtml(tab){
+      const tiers=effTiers().filter(function(t){ return t.id!=='exclusive'; }), catBy=effCatTier(), itemBy=effItemTier();   // 한정은 기본 펫알/박스엔 없음(뜰알에서만)
       const row=(t)=> '<div class="gi-row"><b class="tier-'+t.id+'">'+t.name+'</b><span class="gi-p">'+t.p+'%</span></div>';
-      const petRows=tiers.filter(t=>PET_CATALOG.some(x=>catBy[x.id]===t.id)).map(row).join('');
-      const boxHas=tid=> ITEM_CATALOG.some(x=>itemBy[x.id]===tid) || FLOOR_CATALOG.some(f=>FLOOR_TIER[f.id]===tid) || WALLPAPER_CATALOG.some(w=>WALL_TIER[w.id]===tid);
-      const boxRows=tiers.filter(t=>boxHas(t.id)).map(row).join('');
-      // 🌱 뜰알(한정 픽업) 확률표 — DDEUL_TIERS. 한정(exclusive)은 활성 픽업 펫이 있을 때만 표기.
-      const ddeulRows=DDEUL_TIERS.map(dt=>{ if(dt.id==='exclusive' && !LIMITED_PICKUP.some(pickupExists)) return ''; const ti=tierInfo(dt.id);
-        return '<div class="gi-row"><b class="tier-'+dt.id+'">'+ti.name+'</b><span class="gi-p">'+dt.p+'%</span></div>'; }).join('');
-      return '<details class="gacha-info"><summary>📋 등급별 확률 보기</summary><div class="gi-body">'+
-        '<div class="gi-sec"><div class="gi-h">🥚 펫알 · 고양이</div>'+petRows+'</div>'+
-        '<div class="gi-sec"><div class="gi-h">🎁 랜덤박스 · 가구·바닥·벽지</div>'+boxRows+'</div>'+
-        '<div class="gi-sec"><div class="gi-h">🌱 뜰알 · 한정 픽업</div>'+ddeulRows+'</div>'+
-        '</div></details>';
+      let head='', rows='';
+      if(tab==='box'){
+        const boxHas=tid=> ITEM_CATALOG.some(x=>itemBy[x.id]===tid) || FLOOR_CATALOG.some(f=>FLOOR_TIER[f.id]===tid) || WALLPAPER_CATALOG.some(w=>WALL_TIER[w.id]===tid);
+        head='🎁 랜덤박스 · 가구·바닥·벽지'; rows=tiers.filter(t=>boxHas(t.id)).map(row).join('');
+      } else if(tab==='ddeul'){   // 🌱 뜰알(한정 픽업) — DDEUL_TIERS. 한정(exclusive)은 활성 픽업 펫이 있을 때만.
+        head='🌱 뜰알 · 한정 픽업';
+        rows=DDEUL_TIERS.map(dt=>{ if(dt.id==='exclusive' && !LIMITED_PICKUP.some(pickupExists)) return ''; const ti=tierInfo(dt.id);
+          return '<div class="gi-row"><b class="tier-'+dt.id+'">'+ti.name+'</b><span class="gi-p">'+dt.p+'%</span></div>'; }).join('');
+      } else if(tab==='rainbow'){   // ✨ 무지개 — RAINBOW_TIERS(특별90·전설8·신화2)
+        head='✨ 무지개 · 특별↑ 확정';
+        rows=RAINBOW_TIERS.map(rt=>{ const ti=tierInfo(rt.id);
+          return '<div class="gi-row"><b class="tier-'+rt.id+'">'+ti.name+'</b><span class="gi-p">'+rt.p+'%</span></div>'; }).join('');
+      } else {   // egg
+        head='🥚 펫알 · 고양이'; rows=tiers.filter(t=>PET_CATALOG.some(x=>catBy[x.id]===t.id)).map(row).join('');
+      }
+      return '<details class="gacha-info"><summary>📋 이 뽑기 등급별 확률</summary><div class="gi-body">'+
+        '<div class="gi-sec"><div class="gi-h">'+head+'</div>'+rows+'</div></div></details>';
     }
 
     // 확률은 합이 100이 아니어도 총합 기준 비율로 적용(개발 편의)
@@ -6001,8 +6013,8 @@
           '<span class="fx-artimg">'+art+'</span>'+
           (_fx.isNew?newBadgeSvg({h:30}):'')+                                          // 🌈 처음 획득: 무지개 픽셀 "NEW" 배지(펫/아이템 위에서 물결)
         '</div>'+
-        '<div class="fx-tier">'+pixelTextHtml(t.name, (t.id==='exclusive'?'RAINBOW':(t.color||'#ffffff')), {h:40, base:15, cls:'fx-pxtier'})+'</div>'+
-        '<div class="fx-name">'+pixelTextHtml((isEggKind(_fx.kind)?catName(_fx.res.id):rewardName(_fx.res)), (_fx.res.tier==='exclusive'?'RAINBOW':(t.color||'#ffffff')), {h:30, base:16, cls:'fx-pxname'})+'</div>'+
+        '<div class="fx-tier">'+pixelTextHtml(t.name, (t.id==='exclusive'?'RAINBOW':(t.color||'#ffffff')), {h:40, base:13, cls:'fx-pxtier'})+'</div>'+
+        '<div class="fx-name">'+pixelTextHtml((isEggKind(_fx.kind)?catName(_fx.res.id):rewardName(_fx.res)), (_fx.res.tier==='exclusive'?'RAINBOW':(t.color||'#ffffff')), {h:30, base:14, cls:'fx-pxname'})+'</div>'+
         '<div class="fx-reward">'+(_fx.gold?'<span class="rw"><span class="ci">'+goldSvg({h:18})+'</span>+1 금화</span>':'')+
           (_fx.dup?'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>+'+_fx.refund+' 은화 (중복)</span>':'')+'</div>'+
         '<button class="btn" onclick="closeFx()">확인</button>'+
@@ -6044,14 +6056,14 @@
       const el=document.createElement('span'); el.className='ten-skyrb'; el.innerHTML=authRainbowSvg({h:74}); wrap.appendChild(el); }
     // 🌿 하단 초원 채우기 — 세로 긴 화면의 빈 초록을 꽃·풀·나무·나비로. pkRand로 결정적 배치.
     function tenMeadowHtml(){
-      const lite=liteMode(); const FT=['r','y','p'], BT=['o','b','p','y']; let h='';   // 초록 공백 채우기 — 필드(bottom 0~76%, 하늘 밑까지) 전반에 흩뿌림
-      for(let i=0;i<(lite?9:22);i++){ const l=(3+pkRand(i,11)*94).toFixed(1), b=(2+pkRand(i,12)*74).toFixed(1), s=Math.round(10+pkRand(i,13)*8);   // 하늘 밑(76%)까지 채움
+      const lite=liteMode(); const FT=['r','y','p'], BT=['o','b','p','y']; let h='';   // 초록 공백 채우기 — 필드(bottom 0~56%, 새 sky seam 60% 밑) 전반에 흩뿌림
+      for(let i=0;i<(lite?9:22);i++){ const l=(3+pkRand(i,11)*94).toFixed(1), b=(2+pkRand(i,12)*54).toFixed(1), s=Math.round(10+pkRand(i,13)*8);   // 새 seam(60%) 밑까지만
         h+='<span class="ten-md" style="left:'+l+'%;bottom:'+b+'%">'+flowerSvg(FT[i%3],{h:s})+'</span>'; }
-      for(let i=0;i<(lite?9:18);i++){ const l=(2+pkRand(i,21)*95).toFixed(1), b=(1+pkRand(i,22)*75).toFixed(1), s=Math.round(12+pkRand(i,23)*10);
+      for(let i=0;i<(lite?9:18);i++){ const l=(2+pkRand(i,21)*95).toFixed(1), b=(1+pkRand(i,22)*55).toFixed(1), s=Math.round(12+pkRand(i,23)*10);
         h+='<span class="ten-md" style="left:'+l+'%;bottom:'+b+'%">'+tuftSvg({h:s})+'</span>'; }
-      for(let i=0;i<4;i++){ const l=(8+i*28+pkRand(i,31)*8).toFixed(1), b=(56+pkRand(i,32)*20).toFixed(1), s=Math.round(30+pkRand(i,33)*14);   // 나무를 하늘 밑쪽으로 올림
+      for(let i=0;i<4;i++){ const l=(8+i*28+pkRand(i,31)*8).toFixed(1), b=(36+pkRand(i,32)*14).toFixed(1), s=Math.round(30+pkRand(i,33)*14);   // 나무(키 큼)는 윗머리가 하늘 안 넘게 낮춤
         h+='<span class="ten-md ten-md-tr" style="left:'+l+'%;bottom:'+b+'%">'+treeTopSvg({h:s})+'</span>'; }
-      if(!lite) for(let i=0;i<6;i++){ const l=(10+pkRand(i,41)*80).toFixed(1), b=(42+pkRand(i,42)*34).toFixed(1), s=Math.round(11+pkRand(i,43)*4);   // 나비를 하늘 밑쪽으로 올림
+      if(!lite) for(let i=0;i<6;i++){ const l=(10+pkRand(i,41)*80).toFixed(1), b=(24+pkRand(i,42)*31).toFixed(1), s=Math.round(11+pkRand(i,43)*4);   // 나비도 새 seam 밑까지
         h+='<span class="ten-md ten-md-bf" style="left:'+l+'%;bottom:'+b+'%"><span class="bf-wing">'+butterflySvg(BT[i%4],{h:s})+'</span></span>'; }
       return '<div class="ten-meadow" aria-hidden="true">'+h+'</div>';
     }

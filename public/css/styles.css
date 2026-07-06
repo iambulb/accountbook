@@ -1286,7 +1286,7 @@
     .ten-wrap .pkscene { position:absolute; inset:0; }
     /* 픽업 배너 기본 무지개 제거(10연차 전용은 .ten-skyrb) + 세로 화면 공백 축소: 초록 필드를 위로 넓힘 */
     .ten-wrap .pk-rainbow, .ten-reveal .pk-rainbow { display:none !important; }
-    .ten-wrap .pk-sky { height:22%; } .ten-wrap .pk-field { height:78%; } .ten-wrap .pk-horizon { bottom:78%; }   /* 초록 배치공간을 위로 확장(하늘 축소) */
+    .ten-wrap .pk-sky { height:40%; } .ten-wrap .pk-field { height:60%; } .ten-wrap .pk-horizon { bottom:60%; }   /* 하늘을 무지개 밑까지 확장(40%)·초록은 그만큼 내림(60%) */
     /* 🌿 하단 초원 채우기 */
     .ten-meadow { position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
     .ten-md { position:absolute; image-rendering:pixelated; line-height:0; transform:translateX(-50%); z-index:1; }
@@ -1306,7 +1306,7 @@
     .ten-nestfront { position:absolute; left:0; top:0; width:100%; z-index:2; line-height:0; pointer-events:none; }
     .ten-nestfront .px { display:block; width:100%; height:auto; image-rendering:pixelated; }
     .ten-scatter { position:absolute; inset:0; z-index:1; }   /* 구멍 안 흩뿌림(각 알 left/top% 인라인) */
-    .ten-egg { position:absolute; width:13%; display:flex; align-items:center; justify-content:center; transform:translate(-50%,-50%); overflow:visible; cursor:pointer; }   /* left/top%·z-index 인라인. 중심 정렬 */
+    .ten-egg { position:absolute; width:15.5%; display:flex; align-items:center; justify-content:center; transform:translate(-50%,-50%); overflow:visible; cursor:pointer; }   /* left/top%·z-index 인라인. 중심 정렬(알 조금 크게) */
     .ten-egg > .px { display:block; width:100%; height:auto; image-rendering:pixelated; filter:drop-shadow(0 3px 4px rgba(0,0,0,.32)); }
     .ten-egg.shake { animation:ten-eggshake .44s ease; transform-origin:50% 90%; }   /* 중심(-50%,-50%) 유지하는 전용 흔들림 */
     .ten-egg.hit { animation:ten-egghit .5s ease; }
@@ -1328,7 +1328,7 @@
     .ten-bob { position:relative; z-index:1; display:inline-block; animation:ten-bob 1.8s ease-in-out infinite; }
     .ten-bob .px, .ten-bob .catpx { display:block; image-rendering:pixelated; }
     .ten-nest.hatched .ten-scatter { opacity:0; transition:opacity .55s ease; }
-    .pkstage.ten-roam { z-index:5; bottom:22%; height:56%; }   /* 배회 공간을 하늘 바로 밑까지 위로 올림(윗변이 sky seam 78%에 닿음) */
+    .pkstage.ten-roam { z-index:5; bottom:8%; height:52%; }   /* 배회 공간 윗변이 새 sky seam(60%)에 닿게(하늘 확장에 맞춰 초록 안으로) */
     /* 카메오(알별) — .fx-cat 변형: left=알 중심(JS 주입), from/to·poke를 펫 크기 비례로 */
     .ten-cat.fxc-l { --from:calc(-54vw - var(--cat)); --to:calc(var(--cat) * -0.60); --poke:calc(var(--cat) * 0.16); }
     .ten-cat.fxc-r { --from:calc(54vw + var(--cat));  --to:calc(var(--cat) *  0.60); --poke:calc(var(--cat) * -0.16); }
