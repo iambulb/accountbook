@@ -1513,19 +1513,11 @@
       "...XSSSSBBBBBBBBggggg...","....XSSSSSBBBBRRgggg....","....XnRRRRRRRRggRggg....",".....nnRRrrrrrggrgg.....","......nnrrrrrgrrgg......",
       "........ngnnngnn........"];
     const DDEUL_PAL={X:'#8d8368',D:'#d8d0bd',S:'#eae3d2',W:'#f7f3ea',I:'#fffef8',B:'#2b2b31',H:'#45454f',E:'#9a9aa4',P:'#f2a0b4',Q:'#7a3a48',q:'#b56576',R:'#9c6a3c',r:'#6f4a25',o:'#b3844e',n:'#523118',G:'#5aa63c',g:'#3f7a2c',m:'#8ed46f',F:'#f9b9d0',f:'#ef8fb4',C:'#ff9ec2',Y:'#ffe06a',t:'#4e9636',T:'#3f7a2c'};
-    const M_DDEUL_FLOOR=[   // 뜰 바닥 = 풀밭(G/g) + 흙(R/r)
-      "...GGGGGGGGGGGGGGGGGG...",".GGGGGGGGGGGGGGGGGGGGGG.","gggggggggggggggggggggggg","RRRRRRRRRRRRRRRRRRRRRRRR",".rrrrrrrrrrrrrrrrrrrrrr."];
-    const DDEUL_FLOOR_PAL={G:'#7cc652',g:'#5aa63c',R:'#a6703f',r:'#7c5028'};
-    const M_DDEUL_CLOUD=[   // 하늘 픽셀 구름
-      "..CCCC..",".CCCCCC.","CCCCCCCC",".cccccc."];
-    const DDEUL_CLOUD_PAL={C:'#f4fbff',c:'#cfe8f7'};
     function ddeulEggSvg(opt){ return pxSvg(M_DDEUL, DDEUL_PAL, opt); }
     // 🌸 뜰알 FX 분리 렌더 — 오픈 연출에서 '꽃'과 '알 몸통'을 따로 그려, 알이 흔들릴 때 꽃이 줄기에서 더 크게 흔들리게(CSS .fx-ddflower). 몸통=꽃 뺀 알(M_DDEUL 5행부터).
     const M_DDEUL_FLW=[".fCf.",".CYC.",".fCf.","..t..","..T.."];
     const M_DDEUL_BODY=M_DDEUL.slice(5);
     function ddeulFxHtml(){ return '<span class="fx-ddflower">'+pxSvg(M_DDEUL_FLW, DDEUL_PAL)+'</span><span class="fx-ddbody">'+pxSvg(M_DDEUL_BODY, DDEUL_PAL)+'</span>'; }
-    function ddeulFloorSvg(opt){ return pxSvg(M_DDEUL_FLOOR, DDEUL_FLOOR_PAL, opt); }
-    function ddeulCloudSvg(opt){ return pxSvg(M_DDEUL_CLOUD, DDEUL_CLOUD_PAL, opt); }
     const SHELL_PAL={X:'#968c76',W:'#FBFBFD',S:'#d2ccbe'};   // 껍질 조각도 진한 테두리(알과 통일)
     const SHELL_PAL_RB={X:'#968c76',W:'RAINBOW',S:'RAINBOW'};
     function shellSvg(which, rainbow, opt){ const M=[M_SHELL_A,M_SHELL_B,M_SHELL_C][which]||M_SHELL_A; return pxSvg(M, rainbow?SHELL_PAL_RB:SHELL_PAL, opt); }
@@ -4104,7 +4096,10 @@
     function pkRand(i,s){ const x=Math.sin((i+1)*12.9898+s*4.1414)*43758.5453; return x-Math.floor(x); }
     // 가챠 탭 상단 한정 픽업 배너 — 하늘(흐르는 구름 다수)+넓고 연한 무지개(1초 뒤 사르르)+뜰(흙·풀·꽃·원근 나무를 필드 전체에 원근 분포, 바람에 살랑) 가운데 로그인 알, 픽업 펫 둘은 캠 엔진(#pkStage)으로 걸어와 자유 배회.
     //  · 깊이 d(0=앞·크게·아래 ~ 1=뒤·작게·위): bottom%=d*범위, 크기=1-d*0.5. 나무는 뒤쪽(d 큼)만 → 펫 안 가림+하늘 안 침범.
+    let _pkSceneCache={};   // 픽업 씬 메모 — 씬은 pkRand(결정적 시드)+상수 LIMITED_PICKUP에만 의존해 완전 결정적. (mode,픽업펫)로 1회만 생성하고, RTDB 틱마다 _sheetRefresh가 255KB/~4천 rect를 재생성하던 것을 제거. 픽업펫이 바뀌면 키가 달라져 자동 무효화.
     function pickupSceneHtml(mode){
+      const _pkKey = mode + '|' + LIMITED_PICKUP.map(function(id){ return pickupExists(id)?id:'-'; }).join(',');
+      if(_pkSceneCache[_pkKey]) return _pkSceneCache[_pkKey];
       const reveal = mode==='reveal', sz = reveal?1.85:1, S = h=>Math.max(1,Math.round(h*sz));   // 리빌은 전체화면 배경 → 데코 크게
       const p1=LIMITED_PICKUP[0], p2=LIMITED_PICKUP[1], H=92;   // 펫 렌더 기준 높이(원근 앞배율 1.5=~138 → 기본(≈48)의 약 3배)
       // ☁️ 하늘: 흐르는 구름 15개(제각각 높이·모양·색·속도·위상)
@@ -4157,13 +4152,14 @@
       // 픽업 펫 2마리는 배너·리빌 둘 다 배회(리빌은 별도 무대 id로 배너 #pkStage와 안 겹치게). rock/frame은 배너 전용(reveal이면 빈 문자열).
       const stageId = mode==='reveal' ? 'pkRevStage' : 'pkStage';
       const stage = '<div class="cd-room pkstage" id="'+stageId+'" data-noprops="1" data-hh="'+H+'" aria-hidden="true">'+rock+actor(p1,14)+actor(p2,99999)+frame+'</div>';
-      return '<div class="pkscene'+(mode==='reveal'?' pk-reveal':'')+'" aria-hidden="true">'+
+      const _pkHtml = '<div class="pkscene'+(mode==='reveal'?' pk-reveal':'')+'" aria-hidden="true">'+
           '<div class="pk-sky">'+clouds+'</div>'+
           '<div class="pk-rainbow">'+rainbowArcSvg({cols:95,rows:11,h:S(44)})+'</div>'+
           '<div class="pk-horizon">'+farline+'</div>'+
           '<div class="pk-field"><div class="pk-grass"></div>'+soil+stones+fence+tufts+flowers+trees+egg+'</div>'+
           '<div class="pk-air">'+bflies+'</div>'+stage+
-        '</div>'; }
+        '</div>';
+      _pkSceneCache[_pkKey]=_pkHtml; return _pkHtml; }
     // 가챠 탭 상단 한정 픽업 배너 = 헤더 + 픽업 씬(배너 모드).
     function limitedPickupBanner(){
       const p1=LIMITED_PICKUP[0], p2=LIMITED_PICKUP[1];
@@ -5108,14 +5104,15 @@
         '<div class="fx-item pop '+(isEggKind(kind)?'fx-egg':'fx-box')+(isDdeul?' fx-ddeulegg':'')+(rainbow?' fx-rainbow':'')+'" id="fxItem" role="button" aria-label="'+hint+'" onclick="fxTap()">'+art+'</div>'+
         '<div class="fx-hint" id="fxHint">'+hint+'</div></div>';
       fx.className='fx on';
-      if(isDdeul) ddeulPickupFx(fx.querySelector('.fx-stage'));   // 🌈🦋 뜰알: 무지개 스르르 + 나비 5마리(펫알 무지개 승급 대응)
     }
-    // 🌈🦋 뜰알 전용 연출 — 알 위쪽에 픽업 배너의 무지개가 스르르 뜨고, 배너의 나비 5마리가 알 주변을 팔랑팔랑 날아다닌다.
-    function ddeulPickupFx(st){ if(!st) return;
+    // 🌈🦋 뜰알 전용 연출 — 알 위쪽에 픽업 배너의 무지개가 '스르르'(천천히) 크게 뜨고, 배너의 나비 5마리가 알 주변을 팔랑팔랑 날아다닌다.
+    //   펫알의 무지개알 승급(maybeRainbowUpgrade)과 '같은 타이밍'(2번째 탭)에 등장 — 처음부터 보이지 않게. 중복 생성 방지.
+    function ddeulPickupFx(st){ if(!st || st.querySelector('.fx-ddrainbow')) return;
       st.insertAdjacentHTML('afterbegin','<div class="fx-ddrainbow" aria-hidden="true">'+rainbowArcSvg({cols:63,rows:11})+'</div>');
       const T=['o','b','p','y','o']; let b='';
       for(let i=0;i<5;i++){ b+='<span class="fx-ddbfly fx-ddbfly-'+i+'" style="--d:'+(6.4+i*0.7).toFixed(1)+'s;--fd:'+(0.36+i*0.03).toFixed(2)+'s;animation-delay:'+(-i*0.8).toFixed(1)+'s"><span class="bf-wing">'+butterflySvg(T[i],{h:13+(i%2)*3})+'</span></span>'; }
-      st.insertAdjacentHTML('beforeend','<div class="fx-ddbflies" aria-hidden="true">'+b+'</div>'); }
+      st.insertAdjacentHTML('beforeend','<div class="fx-ddbflies" aria-hidden="true">'+b+'</div>');
+      const hint=$('fxHint'); if(hint) hint.textContent='🌈 무지개가 피어나요! 한 번 더 탭!'; }
     // ✨ 반짝이는 도트 스파클(무지개알/박스 대기 연출) — 흰 픽셀 점이 제각기 깜빡이며 흩뿌려짐
     function fxSparkles(n){ let s=''; for(let i=0;i<(n||12);i++){ const x=Math.round(Math.random()*100), y=Math.round(Math.random()*100), del=(Math.random()*1.4).toFixed(2), sc=(0.7+Math.random()*1.2).toFixed(2), du=(0.9+Math.random()*0.9).toFixed(2); s+='<span class="fx-spark" style="left:'+x+'%;top:'+y+'%;--sc:'+sc+';animation-delay:'+del+'s;animation-duration:'+du+'s"></span>'; } return s; }
     // 탭할 때마다 껍질 조각이 사방으로 튀는 연출(단계가 오를수록 더 많이) — 알이 점점 더 깨지는 느낌.
@@ -5134,6 +5131,7 @@
       if(_fx.stage>=3){ _fx.busy=true; fxClimax(); return; }   // 알·박스 모두 3번 탭에 오픈
       if(isEggKind(_fx.kind)){
         if(_fx.stage===2 && !_fx.rainbow && _fx.kind!=='ddeul') maybeRainbowUpgrade();   // 2번째 탭 직후: 특별↑이면 확률로 무지개알 승급(뜰알은 제외 — 뜰알은 무지개+나비 전용 연출)
+        if(_fx.stage===2 && _fx.kind==='ddeul') ddeulPickupFx(it.closest('.fx-stage'));   // 뜰알: 펫알 무지개알 승급과 같은 타이밍(2번째 탭)에 무지개 스르르+나비
         it.innerHTML = _fx.kind==='ddeul' ? ddeulFxHtml() : (_fx.rainbow?rainbowEggStage(_fx.stage,{h:150}):eggSvg(_fx.stage,{h:150}));
         it.classList.remove('shake'); void it.offsetWidth; it.classList.add('shake');   // 탭마다 알이 좌우로 크게 흔들림(뜰알은 꽃도 크게 흔들림)
         fxCrackChips(_fx.stage);   // 탭마다 껍질 조각이 튀어 깨짐을 강조
