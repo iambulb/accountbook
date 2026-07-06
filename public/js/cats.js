@@ -4229,8 +4229,8 @@
       let clouds=''; for(let i=0;i<15;i++){ const y=(2+pkRand(i,1)*30).toFixed(1), h=Math.round(11+pkRand(i,2)*17),
         w=Math.floor(pkRand(i,3)*3), tn=['w','p','b'][Math.floor(pkRand(i,4)*3)], dur=(26+pkRand(i,5)*44).toFixed(1);
         clouds+='<span class="pk-cloud" style="top:'+y+'%;--d:'+dur+'s;--i:'+i+'">'+cloudSvg(w,tn,{h:S(h)})+'</span>'; }
-      // 🏔️ 지평선 원근 레이어 — 먼 나무/풀/꽃을 아주 작게, 벽지·하늘 경계(seam)에 얹어 위로 자라게(.pk-horizon는 overflow:visible라 안 잘림). 꽃 비중↑.
-      let farline=''; for(let i=0;i<22;i++){ const l=((i+0.4)/22*100).toFixed(1), bot=(pkRand(i,53)*7).toFixed(1), k=pkRand(i,54), r=pkRand(i,55);
+      // 🏔️ 지평선 원근 레이어 — 먼 나무/풀/꽃을 아주 작게. 밑동을 초록 필드(seam)에 -1~-4px 살짝 묻어(음수 bottom) 붕 떠 보이지 않게 — pk-field(초록)가 위에 그려져 밑동을 덮어 '심어진' 느낌. 꽃 비중↑.
+      let farline=''; for(let i=0;i<22;i++){ const l=((i+0.4)/22*100).toFixed(1), bot=(-1-pkRand(i,53)*3).toFixed(1), k=pkRand(i,54), r=pkRand(i,55);
         let el;
         if(k<0.34) el='<span class="pk-tree pk-far pk-pine" style="left:'+l+'%;bottom:'+bot+'px;z-index:1;--i:'+i+'"><span class="pk-canopy">'+pineSvg({h:S(13+r*9)})+'</span></span>';
         else if(k<0.52) el='<span class="pk-tree pk-far" style="left:'+l+'%;bottom:'+bot+'px;z-index:1;--i:'+i+'"><span class="pk-canopy">'+treeTopSvg({h:S(11+r*7)})+'</span></span>';
@@ -4310,9 +4310,39 @@
     function saveRenameCat(id){
       const v=((val('renameInput')||'').trim()).slice(0,12);
       gameRef().transaction(g=>{ g=normalizeGame(g); if(!g.owned.cats[id]) return g; if(v) g.owned.cats[id].name=v; else delete g.owned.cats[id].name; return g; })
-        .then(r=>{ if(r&&r.committed) toast(v?('이름: '+v):'기본 이름으로'); });
+        .then(r=>{ if(r&&r.committed){ toast(v?('이름: '+v):'기본 이름으로'); if($('petInfo')) setTimeout(function(){ if($('petInfo')) openPetInfo(id); }, 250); } });   // 상세 열려 있으면 이름 갱신
       closeRename();
     }
+    // 🐾 펫 상세 시트 — 등급·애정 진행·획득일·종·방 상태를 한곳에. 탭=배치는 유지하고 카드 ⓘ로 진입. 여기서 쓰다듬기도 가능.
+    function fmtDate(iso){ try{ const d=new Date(iso); if(isNaN(d)) return ''; return d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate(); }catch(e){ return ''; } }
+    function openPetInfo(id){ if(!ownsCat(id)) return;
+      let wrap=$('petInfo');
+      if(!wrap){ wrap=document.createElement('div'); wrap.id='petInfo'; wrap.className='gimenu-scrim';
+        wrap.onclick=function(e){ if(e.target===wrap) closePetInfo(); }; document.body.appendChild(wrap); }
+      wrap.innerHTML='<div class="gimenu petinfo">'+petInfoBody(id)+'</div>'; }
+    function closePetInfo(){ const m=$('petInfo'); if(m) m.remove(); }
+    function petInfoBody(id){
+      const c=ownedCatsMap()[id]||{}, tier=CAT_TIER[id]||'normal';
+      const aff=Number(c.affection)||0, al=affectionLevel(aff);
+      const roomOf=petRoomIndex(id), here=roomOf===roomIdx(), rooms=homeH().rooms||[];
+      const roomNm=roomOf>=0?((rooms[roomOf]&&rooms[roomOf].name)||('방 '+(roomOf+1))):'';
+      const roomTxt=here?'이 방':(roomOf>=0?roomNm:'대기 중');
+      const now=Date.now(), last=Number(c.pettedAt)||0, rem=PET_COOLDOWN_MS-(now-last), canPet=rem<=0, hh=Math.ceil(Math.max(0,rem)/3600000);
+      const got=c.boughtAt?fmtDate(c.boughtAt):'';
+      return '<div class="gih pi-h">'+catFace(id,{h:40})+'<b>'+catNameSpan(id,catName(id))+'</b>'+
+          '<button class="cn-edit pi-rename" aria-label="이름 짓기" onclick="openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></div>'+
+        '<div class="pi-meta"><span class="pi-tier">'+tierLabelHtml(tier)+'</span><span class="s">'+escapeHtml(speciesLabel(id))+(got?' · 획득 '+got:'')+' · '+escapeHtml(roomTxt)+'</span></div>'+
+        '<div class="pi-aff"><div class="pi-afftop"><span class="clv-h">'+heartSvg({h:11})+'</span>애정 Lv.'+al.level+'<span class="s">'+(al.next!=null?aff+' / '+al.next:'만렙 ★')+'</span></div><div class="bar"><i style="width:'+al.pct+'%"></i></div></div>'+
+        (canPet?'<button class="gib sell" onclick="petFromInfo(\''+id+'\',event)">'+heartSvg({h:13})+' 쓰다듬기 · 애정+1 · 은화+'+PET_PET_REWARD+'</button>'
+               :'<div class="pi-cd">오늘 쓰다듬기 완료 · 약 '+hh+'시간 후 가능</div>')+
+        '<button class="gib" onclick="roomFromInfo(\''+id+'\')">'+(here?'이 방에서 대기시키기':'이 방으로 데려오기')+'</button>'+
+        '<button class="gib ghost" onclick="closePetInfo()">닫기</button>';
+    }
+    function petFromInfo(id, ev){ const t=ev&&ev.currentTarget, b=t&&t.getBoundingClientRect?t.getBoundingClientRect():null;
+      const x=b?b.left+b.width/2:innerWidth/2, y=b?b.top:innerHeight/2;
+      bumpAffection(id, x, y);   // 하트·"UP!"·은화 지갑 연출 그대로
+      setTimeout(function(){ if($('petInfo')) openPetInfo(id); }, 650); }   // 커밋·리스너 반영 후 상세 갱신(애정·쿨다운)
+    function roomFromInfo(id){ toggleActiveCat(id); setTimeout(function(){ if($('petInfo')) openPetInfo(id); }, 400); }
     // 테스트 배정(등급당 1) — 펫알=고양이 / 랜덤박스=가구
     // @gen:pet-tier — 자동생성(tools/build_pets.py). tools/pets.json 의 tier 편집 후 재실행.
     const CAT_TIER = { cat_mackerel:'normal', cat_cheese:'normal', cat_calico:'normal', cat_black:'normal', cat_white:'normal', cat_fluffy:'normal', cat_tuxedo:'normal', cat_chaos:'normal', cat_siamese:'uncommon', cat_bengal:'normal', cat_fold:'normal', cat_bora:'epic', cat_choco:'normal', cat_kitten:'normal', cat_pink:'epic', tiger_orange:'limited', lion_mane:'limited', cat_persian:'legend', tiger_white:'limited', cat_russianblue:'normal', cat_bengal2:'uncommon', dog_mutt:'rare', cat_panther:'limited', dog_baekgu:'normal', dog_shiba:'epic', dog_corgi:'legend', dog_dalmatian:'uncommon', dog_dachshund:'epic', dog_bulldog:'normal', dog_injeolmi:'legend', dog_poodle:'rare', dog_beagle:'rare', dog_sukhee:'legend', dog_doberman:'legend', dog_pug:'legend', dog_shepherd:'legend', dog_bordercollie:'epic', dog_spitz:'normal', dog_jackrussell:'legend', dog_labrador:'epic', dog_chowchow:'epic', dog_cardigancorgi:'epic', dog_greyhound:'legend', dog_shihtzu:'uncommon', dog_stbernard:'epic', dog_bostonterrier:'rare', dog_bassethound:'legend', dog_happy:'normal', dog_welshterrier:'legend', dog_papillon:'uncommon', dog_newfoundland:'legend', dog_beardedcollie:'legend', dog_afghanhound:'legend', dog_rottweiler:'epic', dog_pointer:'epic', dog_pharaohhound:'legend', dog_westie:'normal', dog_weimaraner:'epic', dog_collie:'epic', dog_englishbulldog:'epic', dog_keeshond:'legend', dog_frenchbulldog:'epic', dog_yorkshire:'uncommon', dog_toypoodle:'uncommon', dog_sheltie:'rare', dog_minpin:'epic', dog_schnauzer:'epic', dog_goldendoodle:'uncommon', dog_bernese:'legend', dog_cavalier:'rare', dog_akita:'legend', dog_whippet:'legend', dog_oldenglishsheepdog:'epic', dog_vizsla:'epic', dog_englishsetter:'legend', dog_jindo:'limited', dog_chinesecrested:'epic', dog_scottie:'epic', dog_pomeranian:'normal', dog_sharpei:'epic', dog_greatdane:'legend', dog_bullterrier:'legend', dog_boxer:'epic', dog_ridgeback:'epic', dog_irishsetter:'epic', dog_airedale:'legend', dog_samoyed:'legend', dog_husky:'legend', cat_mackerel2:'epic', cat_calico2:'epic', cat_white2:'epic', cat_cheese2:'epic', cat_tuxedo2:'epic', cat_siamese2:'legend', cat_bengal3:'legend', cat_russianblue2:'epic', cat_scottishfold:'epic', cat_black2:'epic', cat_seolleong:'uncommon', cat_persiangray:'epic', cat_mainecoon:'legend', cat_americanshorthair:'epic', cat_ragdoll:'legend', cat_turkishangora:'epic', cat_munchkin:'epic', cat_norwegian:'epic', cat_bombay:'epic', cat_abyssinian:'epic', cat_sphynx:'legend', cat_british:'epic', cat_bengalsnow:'legend', cat_longhaircalico:'uncommon', cat_tortie:'epic', cat_siamesechoco:'epic', cat_cornishrex:'epic', cat_ocicat:'legend', cat_selkirkrex:'epic', cat_korat:'epic', cat_manx:'epic', cat_americancurl:'rare', cat_devonrex:'epic', cat_turkishvan:'epic', cat_bobtail:'epic', cat_burmese:'epic', cat_himalayan:'epic', cat_creamtabby:'rare', cat_lilac:'epic', cat_somali:'legend', cat_leopardcat:'exclusive', cat_lynx:'exclusive', cat_cheetah:'exclusive', cat_jaguar:'exclusive', cat_puma:'exclusive', cat_snowleopard:'exclusive', cat_caracal:'exclusive', cat_leopard:'exclusive', cat_blackpanther:'exclusive', cat_ocelot:'exclusive', cat_sandcat:'epic', cat_mainecoonsmoke:'legend', cat_mainecoonred:'epic', cat_bengalsilver:'epic', cat_peterbald:'legend', cat_toyger:'limited', cat_singapura:'epic', cat_havanabrown:'epic', cat_ragamuffin:'legend' };
