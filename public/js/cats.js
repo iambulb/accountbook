@@ -776,85 +776,135 @@
     const WATER_PAL={A:'#5aa9e6',D:'#3f86c4',H:'#c7e6ff',L:'#eaf6ff'};
     // ---- 펫알/랜덤박스 도트 ----
     // 알: 위는 둥근 돔(꼭대기 좁게), 아래가 넓고 둥글게. 테두리는 바깥이 진한 X(#968c76), 그 안쪽에 연한 S 링 → 외곽선이 또렷·진하게(전체 통일). 중앙에 크고 두꺼운 무지개(R→P) 물음표. S=안쪽 연한 링·우측 그림자.
+    // 🥚 펫알(24×28) — 뜰알과 같은 해상도·톤의 크림색 계란: 4톤 구면 명암(I 하이라이트·W 기본·S 음영·D 깊은음영)+X외곽,
+    //   가운데 무지개 물음표(Q=RAINBOW/무지개알은 흰색), 잔점(k) 몇 개. 균열1~3(C1·C2·C3)은 같은 실루엣에 금이 번지고 마지막에 쩍 갈라진다.
     const M_EGG = [
-      ".....XSSX.....",
-      "....XSWWSX....",
-      "...XSWWWWSX...",
-      "...XWWWWWWX...",
-      "..XWWRRRRWWX..",
-      ".XWWRRRRRRWWX.",
-      ".XWWRRWWOOWWX.",
-      "XWWWWWWOOOWWSX",
-      "XWWWWWYYYWWWSX",
-      "XWWWWGGGWWWWSX",
-      "XWWWWWGGWWWWSX",
-      ".XWWWWBBWWWSX.",
-      ".XWWWWWWWWWSX.",
-      "..XWWWPPWWWX..",
-      "...XWWWWWWX...",
-      "....XXXXXX...."
+      ".........XXXXXX.........",
+      "........XIIIIIIX........",
+      ".......XIIIIIIIIX.......",
+      "......XIIIIIIIIIWX......",
+      ".....XIIIIIIIIIWWWX.....",
+      ".....XIIIIIIIIIWWWX.....",
+      "....XIIIIIIIIIWWWWWX....",
+      "....XIIIIIIIIWWWWWSX....",
+      "....XIIIIIIIIWWWWWSX....",
+      "...XIIIIIIIIWWWWWSSSX...",
+      "...XIIIIIIIWWWWWSSSSX...",
+      "...XIIIIIIQQQQWWSSSSX...",
+      "...XIIIIIQQWWQQSSSSSX...",
+      "...XIIIIIWWWWQQSSSSSX...",
+      "..XIIIIIIWWWQQSSSSSSDX..",
+      "..XIIIIIWWWQQSSSkSSDDX..",
+      "..XIIIIWWWWQQSSSSSDDDX..",
+      "..XIIIIWWWWWSSSSSSDDDX..",
+      "...XIIkWWWWQQSSSSDDDX...",
+      "...XIWWWWWSQQSSSDDDDX...",
+      "...XIWWWWWSSSSSSDDDDX...",
+      "...XWWWWWSSSSSSDDDDDX...",
+      "....XWWWkSSSSSDDDDDX....",
+      ".....XWWSSSSSSDDDDX.....",
+      ".....XWSSSSSSDDDDDX.....",
+      "......XXSSSSDDDDXX......",
+      "........XXXXXXXX........",
+      "........................"
     ];
-    // 균열1: 위쪽부터 지그재그(번개) 잔금이 생김(쩌저적 갈라짐 시작)
+    // 균열1: 위쪽부터 지그재그 잔금(X)이 생기고 옆에 그림자(S)가 져 쩌저적 갈라짐 시작
     const M_EGG_C1 = [
-      ".....XSSX.....",
-      "....XSWWSX....",
-      "...XSWSWWSX...",
-      "...XWXXWWWX...",
-      "..XWXRRRRWWX..",
-      ".XWXWRRRRRWWX.",
-      ".XWXRWWWOOWWX.",
-      "XWWWWXWWOOWWSX",
-      "XWWWWWXWWWWWSX",
-      "XWWWWGGGWWWWSX",
-      "XWWWWWGGWWWWSX",
-      ".XWWWWBBWWWSX.",
-      ".XWWWWWWWWWSX.",
-      "..XWWWPPWWWX..",
-      "...XWWWWWWX...",
-      "....XXXXXX...."
+      ".........XXXXXX.........",
+      "........XIIIIIIX........",
+      ".......XIIIXSIIIX.......",
+      "......XIIIIXSIIIWX......",
+      ".....XIIIIIIIXSXWWX.....",
+      ".....XIIIIIIIXSWWWX.....",
+      "....XIIIIIIIXSWWWWWX....",
+      "....XIIIIIIIIWXSWWSX....",
+      "....XIIIIIIXIXSWWWSX....",
+      "...XIIIIIIIXSWWWWSSSX...",
+      "...XIIIIIIIWXSWWSSSSX...",
+      "...XIIIIIIQQQXSWSSSSX...",
+      "...XIIIIIQQWWQXSXSSSX...",
+      "...XIIIIIWWWWXQSSSSSX...",
+      "..XIIIIIIWWWXQSSSSSSDX..",
+      "..XIIIIIWWWQQSSSkSSDDX..",
+      "..XIIIIWWWWQQSSSSSDDDX..",
+      "..XIIIIWWWWWSSSSSSDDDX..",
+      "...XIIkWWWWQQSSSSDDDX...",
+      "...XIWWWWWSQQSSSDDDDX...",
+      "...XIWWWWWSSSSSSDDDDX...",
+      "...XWWWWWSSSSSSDDDDDX...",
+      "....XWWWkSSSSSDDDDDX....",
+      ".....XWWSSSSSSDDDDX.....",
+      ".....XWSSSSSSDDDDDX.....",
+      "......XXSSSSDDDDXX......",
+      "........XXXXXXXX........",
+      "........................"
     ];
-    // 균열2: 지그재그 금이 전체로 번지고 살짝 벌어짐(틈+빛 조금)
+    // 균열2: 금이 전체로 번지고 위쪽이 살짝 벌어져(틈'.'+따뜻한 빛 L) 틈이 보인다. 물음표도 갈라지기 시작.
     const M_EGG_C2 = [
-      ".....XSSX.....",
-      "....XS.SSX....",
-      "...XSW.WWSX...",
-      "...XWWX.XWX...",
-      "..XWWL.RRWWX..",
-      ".XWWX.RRRRWWX.",
-      ".XWWR.WWOOWWX.",
-      "XWWWWX.XOOWWSX",
-      "XWWWWWL.WWWWSX",
-      "XWWWWWXGXWWWSX",
-      "XWWWWL.GWWWWSX",
-      ".XWWX.XBWWWSX.",
-      ".XWWWW.WWWWSX.",
-      "..XWWXPPWWWX..",
-      "...XWWWWWWX...",
-      "....XXXXXX...."
+      ".........XXXXXX.........",
+      "........XIIIIIIX........",
+      ".......XIIL.SIIIX.......",
+      "......XIIIL.SIIIWX......",
+      ".....XIIIIIIL.SWWWX.....",
+      ".....XIIIIIIL.SWWWX.....",
+      "....XIIIIIIL.SWWWWWX....",
+      "....XIIIIIIIIL.SWWSX....",
+      "....XIIIIIIIL.SWWWSX....",
+      "...XIIIIIIL.SWWWWSSSX...",
+      "...XIIIIIIIL.SWWSSSSX...",
+      "...XIIIIIIQQQXSWSSSSX...",
+      "...XIIIIIQQWWQXSSSSSX...",
+      "...XIIIIIWWWWXQSSSSSX...",
+      "..XIIIIIIWWWXQSSSSSSDX..",
+      "..XIIIIIWWWXQSSSkSSDDX..",
+      "..XIIIIWWWWXQSSSSSDDDX..",
+      "..XIIIIWWWWWXSSSSSDDDX..",
+      "...XIIkWWWWQQXSSSDDDX...",
+      "...XIWWWWWSQQXSSDDDDX...",
+      "...XIWWWWWSSXSSSDDDDX...",
+      "...XWWWWWSSSXSSDDDDDX...",
+      "....XWWWkSSSXSDDDDDX....",
+      ".....XWWSSSSXSDDDDX.....",
+      ".....XWSSSSSSDDDDDX.....",
+      "......XXSSSSDDDDXX......",
+      "........XXXXXXXX........",
+      "........................"
     ];
-    // 균열3(3번째 탭): 알이 지그재그로 쩍! 크게 갈라지고, 벌어진 틈(L)으로 등급색 빛이 쏟아진다. L=빛(렌더 시 등급색).
+    // 균열3(3번째 탭): 알이 정중앙에서 쩍! 크게 갈라져 좌우 껍질로 나뉘고, 벌어진 틈(L)으로 등급색 빛이 쏟아진다. L=빛(렌더 시 등급색).
     const M_EGG_C3 = [
-      ".....XSSX.....",
-      "....XS.LSX....",
-      "...XSL.LWSX...",
-      "...XWWL.LWX...",
-      "..XWL..RRWWX..",
-      ".XWL..LRRRWWX.",
-      ".XWL..LWOOWWX.",
-      "XWWWL..LWOWWSX",
-      "XWWWWL..LWWWSX",
-      "XWWWWL..LWWWSX",
-      "XWWWL..GWWWWSX",
-      ".XWL..LWWWWSX.",
-      ".XWWL..LWWWSX.",
-      "..XWWL.LWWWX..",
-      "...XWL.LWWX...",
-      "....XXXXXX...."
+      ".........XXLLXX.........",
+      "........XXLLLLXX........",
+      ".......XIXLLLXIIX.......",
+      "......XIXLLLLXIIWX......",
+      ".....XIIIXLLLLLXWWX.....",
+      ".....XIIIXLLLLLXWWX.....",
+      "....XIIIXLLLLLLXWWWX....",
+      "....XIIIIXLLLLLLXWSX....",
+      "....XIIIXLLLLLLLXWSX....",
+      "...XIIIXLLLLLLLXWSSSX...",
+      "...XIIIXLLLLLLLLXSSSX...",
+      "...XIIIIXLLLLLLLXSSSX...",
+      "...XIIIIXLLLLLLLLXSSX...",
+      "...XIIIXLLLLLLLLLXSSX...",
+      "..XIIIIXLLLLLLLLXSSSDX..",
+      "..XIIIXLLLLLLLLLXSSDDX..",
+      "..XIIIXLLLLLLLLLXSDDDX..",
+      "..XIIIIXLLLLLLLLXSDDDX..",
+      "...XIIkXLLLLLLLLLXDDX...",
+      "...XIWWXLLLLLLLLLXDDX...",
+      "...XIWWXLLLLLLLLXDDDX...",
+      "...XWWWXLLLLLLLLXDDDX...",
+      "....XWWXLLLLLLLLXDDX....",
+      ".....XWXLLLLLLLLXDX.....",
+      ".....XWXLLLLLLLXDDX.....",
+      "......XXLLLLLLLXXX......",
+      "........XXLLLLLX........",
+      "........................"
     ];
-    // 🥚 깨진 껍질 조각(픽셀아트) — 흰 껍질(W)+회색 테두리(X)+안쪽 그림자(S). 오픈 순간 사방으로 튕겨나감.
-    const M_SHELL_A = [ ".XXXX.","XWWWWX","XWWWWS","XWWWSS",".XWSX.","..XX.." ];
-    const M_SHELL_B = [ "XXX..","WWWX.","WWWWX","SWWSX",".XXX." ];
-    const M_SHELL_C = [ ".XX.","XWWX","XWSX",".XX." ];
+    // 🥚 깨진 껍질 조각(픽셀아트) — 크림 껍질(I 하이라이트·W 기본·S 음영)+X 테두리. 오픈 순간 사방으로 튕겨나감(알과 같은 톤).
+    const M_SHELL_A = [ ".IIXX.","IIWWXX","XIWWSX","XWWSSX",".XWSX.","..XX.." ];
+    const M_SHELL_B = [ "IIXX.","IWWXX","XWWSX","XWSSX",".XXX." ];
+    const M_SHELL_C = [ "IXX.","IWSX","XWSX",".XX." ];
     // ✦ 픽셀 방사 버스트(빛) — 카디널(수직·수평) 광선을 빼고 12갈래를 15°씩 어긋나게 배치(→ 십자 느낌 제거),
     //    길고 짧은 광선을 교대로 변주 + 바깥 크리스탈 스파클 도트로 화려하게. X=광선색(currentColor), H=작은 흰 코어.
     //    회전이 아니라 CSS로 살짝씩 바깥으로 퍼져나가는(발산) 연출을 준다.
@@ -915,50 +965,64 @@
       "...X...",
       "...X..."
     ];
-    // 박스: 위에 뚜껑(C=윗면, L=앞면), 아래에 몸체(W). 앞면 중앙에 알과 같은 무지개 물음표.
+    // 📦 랜덤박스(24×22) — 뜰알·펫알과 같은 해상도의 파스텔 보물상자: 돔형 뚜껑(C 하이라이트·c 음영)+금색 띠·장식(m/M 밝은금·n 어두운금),
+    //   4톤 몸체 명암(W 기본·S 음영·D 깊은음영)+X외곽, 앞면 중앙 무지개 물음표(Q=RAINBOW/무지개박스는 흰색), 자물쇠.
     const M_BOX = [
-      "................",
-      "....XXXXXXXX....",
-      "..XXCCCCCCCCXX..",
-      ".XCCCCCCCCCCCCX.",
-      "XXXXXXXXXXXXXXXX",
-      "XLLLLLLLLLLLLLLX",
-      "XXXXXXXXXXXXXXXX",
-      ".XWWWWRRRRWWWWX.",
-      ".XWWWRRWWOOWWWX.",
-      ".XWWWWWWWOOWWWX.",
-      ".XWWWWWWYYWWWWX.",
-      ".XWWWWWGGWWWWWX.",
-      ".XWWWWWBBWWWWWX.",
-      ".XWWWWWWWWWWWWX.",
-      ".XWWWWWPPWWWWWX.",
-      ".XXXXXXXXXXXXXX."
+      "........................",
+      "........................",
+      "........................",
+      "......XCCCCCCccccX......",
+      "....XCCCCCCCCCcccccX....",
+      "...CCCCCCCCCCCCcccccc...",
+      "..XCCCCCCCCCCCCCcccccX..",
+      "..CCCCCCCCCCnCCCCccccc..",
+      ".XmmmmmmmmmmmmmmmmmmmmX.",
+      "..XmmmmmmmMMMmmmmmmmmX..",
+      "..XMWWWWWWWnWWWWSSSSMX..",
+      "..XmWWWWWWWWWWWSSSSSnX..",
+      "..XMWWWWWQQQQSSSSSSSnX..",
+      "..XmWWWWQQWWQQSSSSSSnX..",
+      "..XMWWWWWWWQQSSSSSSSnX..",
+      "..XmWWWWWWQQSSSSSSSSnX..",
+      "..XMWWWWWSQQSSSSSSSSnX..",
+      "..XmWWWWSSSSSSSSSSSDnX..",
+      "..XMWWWSSSQQSSSSSDDDnX..",
+      "..XMWWSSSSSSSSSSDDDDMX..",
+      "..XXXXXXXXXXXXXXXXXXXX..",
+      "........................"
     ];
-    // 열린 랜덤박스(오픈 연출): 뚜껑이 튀어오르고 열린 틈으로 등급색 픽셀 빛(Z)이 쏟아진다. Z=빛(렌더 시 등급색).
+    // 열린 랜덤박스(오픈 연출): 뚜껑이 위로 튕겨오르고 열린 틈으로 등급색 픽셀 빛(Z)이 쏟아진다. Z=빛(렌더 시 등급색).
     const M_BOX_OPEN = [
-      "...X........X...",
-      "....XXCCCCXX....",
-      ".....XCCCCX.....",
-      "....ZZZZZZZZ....",
-      "...ZZZZZZZZZZ...",
-      "..XZZZZZZZZZZX..",
-      ".XXZZZZZZZZZZXX.",
-      ".XWWWWWWWWWWWWX.",
-      ".XWWWWRRRRWWWWX.",
-      ".XWWWRRWWOOWWWX.",
-      ".XWWWWWWWOOWWWX.",
-      ".XWWWWWGGWWWWWX.",
-      ".XWWWWWBBWWWWWX.",
-      ".XWWWWWWWWWWWWX.",
-      ".XWWWWWPPWWWWWX.",
-      ".XXXXXXXXXXXXXX."
+      "........................",
+      ".....CCCCCCCccccccccc...",
+      "....CCCCCCCCcccccccccc..",
+      "......ZZZZZZZZZZZZ......",
+      ".....ZZZZZZZZZZZZZZ.....",
+      ".....ZZZZZZZZZZZZZZ.....",
+      "....ZZZZZZZZZZZZZZZZ....",
+      "....ZZZZZZZZZZZZZZZZ....",
+      "...ZZZZZZZZZZZZZZZZZZ...",
+      "..XZZZZZZZZZZZZZZZZZZX..",
+      "..XMWWWWWWWnWWWWSSSSMX..",
+      "..XmWWWWWWWWWWWSSSSSnX..",
+      "..XMWWWWWQQQQSSSSSSSnX..",
+      "..XmWWWWQQWWQQSSSSSSnX..",
+      "..XMWWWWWWWQQSSSSSSSnX..",
+      "..XmWWWWWWQQSSSSSSSSnX..",
+      "..XMWWWWWSQQSSSSSSSSnX..",
+      "..XmWWWWSSSSSSSSSSSDnX..",
+      "..XMWWWSSSQQSSSSSDDDnX..",
+      "..XMWWSSSSSSSSSSDDDDMX..",
+      "..XXXXXXXXXXXXXXXXXXXX..",
+      "........................"
     ];
-    const EGG_PAL={X:'#968c76',W:'#FBFBFD',S:'#d2ccbe',R:'RAINBOW',O:'RAINBOW',Y:'RAINBOW',G:'RAINBOW',B:'RAINBOW',P:'RAINBOW'};   // X=바깥 진한 테두리, S=안쪽 연한 링(스왑)
-    const BOX_PAL={X:'#b9c0cb',W:'#FBFBFD',C:'#cdd5e4',L:'#b7c0d4',R:'RAINBOW',O:'RAINBOW',Y:'RAINBOW',G:'RAINBOW',B:'RAINBOW',P:'RAINBOW'};
-    // 무지개알/무지개박스: 껍질(W)·윗면(C·L)·완화픽셀(S)을 통째로 RAINBOW(pxSvg의 움직이는 세로 무지개 그라디언트),
-    // 물음표(R/O/Y/G/B/P)는 흰색으로 대비, 외곽(X)은 은은한 중립색 → "온몸이 움직이는 무지개빛"인 알/상자.
-    const EGG_PAL_RB={X:'#968c76',W:'RAINBOW',S:'RAINBOW',R:'#FBFBFD',O:'#FBFBFD',Y:'#FBFBFD',G:'#FBFBFD',B:'#FBFBFD',P:'#FBFBFD'};   // 무지개알도 바깥 진한 테두리
-    const BOX_PAL_RB={X:'#9aa2b0',W:'RAINBOW',C:'RAINBOW',L:'RAINBOW',R:'#FBFBFD',O:'#FBFBFD',Y:'#FBFBFD',G:'#FBFBFD',B:'#FBFBFD',P:'#FBFBFD'};
+    // 펫알(크림): 4톤 명암 I·W·S·D + k 잔점, X 외곽. Q=무지개 물음표. L=균열 틈새 빛(C2=따뜻한 흰빛 기본, 오픈 때 eggCrackSvg가 등급색으로 덮음).
+    const EGG_PAL={X:'#8d8368',I:'#fffef8',W:'#f7f3ea',S:'#e6dfce',D:'#d3cbb6',k:'#ddd6c4',Q:'RAINBOW',L:'#fff3c8'};
+    // 랜덤박스(파스텔+금장): 돔뚜껑 C/c, 몸체 W·S·D, 금장 m/M/n, X 외곽. Q=무지개 물음표. Z=오픈 빛(등급색으로 덮임).
+    const BOX_PAL={X:'#6f7688',C:'#eef1f7',c:'#d0d7e4',W:'#dbe1ec',S:'#bcc4d4',D:'#9aa5b9',m:'#f4dd8f',M:'#f8ecc0',n:'#b48a2f',Q:'RAINBOW',Z:'#fff3c8'};
+    // 무지개알/무지개박스: 껍질·몸체·뚜껑을 통째로 RAINBOW(움직이는 세로 무지개), 물음표(Q)는 흰색 대비, 금장(m/M/n)은 유지, 외곽(X)은 중립.
+    const EGG_PAL_RB={X:'#8d8368',I:'RAINBOW',W:'RAINBOW',S:'RAINBOW',D:'RAINBOW',k:'RAINBOW',Q:'#FBFBFD',L:'#FBFBFD'};
+    const BOX_PAL_RB={X:'#6f7688',C:'RAINBOW',c:'RAINBOW',W:'RAINBOW',S:'RAINBOW',D:'RAINBOW',m:'#f4dd8f',M:'#f8ecc0',n:'#b48a2f',Q:'#FBFBFD',Z:'#FBFBFD'};
 
     // 카탈로그(코드 상수) — 저장은 보유 id만. id는 종·색 구분(예: cat_calico, dog_corgi), species는 분류/필터용.
     // 새 동물(네발 짐승) 처리 규칙은 docs/pet-asset-pipeline.md 참고.
@@ -1608,8 +1672,8 @@
     const M_DDEUL_FLW=[".fCf.",".CYC.",".fCf.","..t..","..T.."];
     const M_DDEUL_BODY=M_DDEUL.slice(5);
     function ddeulFxHtml(){ return '<span class="fx-ddflower">'+pxSvg(M_DDEUL_FLW, DDEUL_PAL)+'</span><span class="fx-ddbody">'+pxSvg(M_DDEUL_BODY, DDEUL_PAL)+'</span>'; }
-    const SHELL_PAL={X:'#968c76',W:'#FBFBFD',S:'#d2ccbe'};   // 껍질 조각도 진한 테두리(알과 통일)
-    const SHELL_PAL_RB={X:'#968c76',W:'RAINBOW',S:'RAINBOW'};
+    const SHELL_PAL={X:'#8d8368',I:'#fffef8',W:'#f7f3ea',S:'#e6dfce'};   // 껍질 조각도 알과 같은 크림 4톤(I 하이라이트·W·S + X 테두리)
+    const SHELL_PAL_RB={X:'#8d8368',I:'RAINBOW',W:'RAINBOW',S:'RAINBOW'};
     function shellSvg(which, rainbow, opt){ const M=[M_SHELL_A,M_SHELL_B,M_SHELL_C][which]||M_SHELL_A; return pxSvg(M, rainbow?SHELL_PAL_RB:SHELL_PAL, opt); }
     // ✦ 픽셀 빛 폭발(별) — 등급색으로. color 미지정 시 currentColor(무대 등급색 상속).
     function raysSvg(color, opt){ return pxSvg(M_RAYS, {X:color||'currentColor',H:'#ffffff'}, opt); }
@@ -5729,7 +5793,7 @@
     const TEN_N=10, TEN_COLS=2;
     const TEN_DROP=900, TEN_WALK=1800, TEN_TAP=160, TEN_HIT=180, TEN_STEP=1600;   // 길이감 튜닝 손잡이
     function tenShuffle(n){ const a=Array.from({length:n},(_,i)=>i); for(let i=n-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
-    function tenScaleFor(id){ const base=50, s=petScale(id), sc=(s>=2?s*0.5:s); return Math.round(base*Math.max(0.85, Math.min(sc,1.5))); }   // 큰 펫(호랑이·곰)은 배율 반감(뒤 가림 완화), 최대 1.5×
+    function tenScaleFor(id){ return petActorPx(id, 44, 110); }   // 실제 설정 크기(petScale 비례, 룸/dock·배회와 동일 표기) — 반감 없음
     function tenCardSceneBg(it){ return it.kind!=='box' && (it.tier==='limited' || it.tier==='exclusive'); }   // 개별카드 픽업 씬 배경 = 신화/한정만
     function tenEggSvg(it, stage){
       if(it.kind==='ddeul') return '<span class="ten-ddeulegg">'+ddeulFxHtml()+'</span>';   // 뜰알: 알뽑기와 동일하게 꽃+몸통 분리(탭 시 꽃 팔랑)
@@ -5738,9 +5802,9 @@
     // 둥지(뒤판+앞테두리) + 2×5 알(또는 피날레 펫) 그리드. 알/펫 위치 동일(같은 셀).
     function tenNestHtml(items, mode){
       const cells=items.map(function(it){ let inner;
-        if(mode==='finale'){ const t=tierInfo(it.tier), ex=it.tier==='exclusive';
-          inner='<span class="ten-petaura">'+auraSvg(ex?'RAINBOW':(t.color||'#ffffff'),{h:64})+'</span>'+   // 뒤에 등급색 은은한 오오라(한정=무지개)
-            '<span class="ten-bob" style="animation-delay:'+((it.i%5)*0.13+(it.col*0.06)).toFixed(2)+'s">'+catFace(it.id,{h:tenScaleFor(it.id),eager:true})+'</span>'; }
+        if(mode==='finale'){ const t=tierInfo(it.tier), ex=it.tier==='exclusive', ph=tenScaleFor(it.id);
+          inner='<span class="ten-petaura">'+auraSvg(ex?'RAINBOW':(t.color||'#ffffff'),{h:Math.round(ph*0.95)})+'</span>'+   // 뒤에 등급색 은은한 오오라(펫 크기 비례, 한정=무지개)
+            '<span class="ten-bob" style="animation-delay:'+((it.i%5)*0.13+(it.col*0.06)).toFixed(2)+'s">'+catFace(it.id,{h:ph,eager:true})+'</span>'; }
         else { inner=tenEggSvg(it, 0); }
         return '<div class="ten-egg" id="tenEgg'+it.i+'" data-i="'+it.i+'">'+inner+'</div>'; }).join('');
       return '<div class="ten-nest'+(mode==='finale'?' finale':'')+'">'+
