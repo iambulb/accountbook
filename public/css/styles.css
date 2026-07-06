@@ -1340,8 +1340,9 @@
     .ten-count { position:relative; z-index:4; color:#fff; font-size:13px; font-weight:800; opacity:.82; margin-bottom:2px; letter-spacing:.06em; }
     .ten-nexthint { position:relative; z-index:2; color:#fff; font-size:13px; font-weight:700; opacity:.78; margin-top:4px; animation:fxblink 1.2s ease-in-out infinite; }
     .ten-card { cursor:pointer; }
-    .ten-fintitle { position:absolute; left:0; right:0; top:16%; z-index:6; text-align:center; }   /* 완료 텍스트 더 내림 */
-    .ten-takebtn { position:absolute; left:50%; bottom:5%; transform:translateX(-50%); z-index:7; width:auto; min-width:0; padding:11px 26px; display:inline-flex; align-items:center; justify-content:center; }   /* 텍스트 길이에 맞춰 줄임(full-width 해제) */
+    .ten-fintitle { position:absolute; left:0; right:0; top:33%; z-index:6; text-align:center; }   /* 무지개 밑부분(하늘 하단, 초록 seam 40% 위)에 보이게 */
+    .ten-takebtn { position:absolute; left:50%; bottom:15%; transform:translateX(-50%); z-index:7; width:auto; min-width:0; padding:11px 26px; display:inline-flex; align-items:center; justify-content:center; opacity:1; transition:opacity .45s ease; }   /* 텍스트 길이에 맞춰 줄임 · 위로 올림(bottom 15%) */
+    .ten-takebtn.pending { opacity:0; pointer-events:none; }   /* 탭 전(펫 정지)엔 숨김 → 탭해 배회 시작 시 페이드인 */
     .ten-takebtn .pxtext { filter:drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
     /* ⏭️ SKIP(우측 상단) — 신화·한정 이외 등급 한 번에 건너뛰기. 결과 텍스트와 같은 픽셀(선명) 렌더 */
     .ten-skip { position:absolute; top:calc(12px + env(safe-area-inset-top)); right:14px; z-index:9;

@@ -3752,7 +3752,9 @@
         //   좁은 화면·다수 펫이면 그 간격이 폭을 넘어 아래 클램프(W-sw)에 전부 걸려 우측 끝에 우르르 몰렸다(사용자 신고 버그).
         //   → 폭 기준 (ai/(N-1))로 좌→우 고르게 펼친다. 이미 배회 중이던 펫(_petX 존재)은 위치 유지(순간이동 방지).
         const inset = Math.max(4, Math.min(W*0.07, 22));   // 양끝 여백 — 펫이 화면 끝에 딱 붙어 시작하지 않게(가운데 쪽으로 살짝)
-        const spreadX = N>1 ? (inset + (ai/(N-1))*Math.max(0, W-sw0-inset*2)) : Math.max(2,(W-sw0)/2);
+        const _sf=el.dataset.spawnf;   // 흩뿌림 시작(10연차 배회): 지정 프래션이면 그 위치(랜덤·간격), 없으면 좌→우 균등
+        const spreadX = _sf!=null ? (inset + parseFloat(_sf)*Math.max(0, W-sw0-inset*2))
+                       : (N>1 ? (inset + (ai/(N-1))*Math.max(0, W-sw0-inset*2)) : Math.max(2,(W-sw0)/2));
         const a={ el, id, pkey, spr, frontWalk:fw, x:(pkey&&_petX[pkey]!=null?_petX[pkey]:spreadX), dir:Math.random()<0.5?-1:1, _pdir:0,
         v:v, t:Math.random()*6, frame:0, fc:Math.random()*170, W, hh:ah,
         sw:sw0, props, lift:0,
@@ -6085,7 +6087,11 @@
       const nest=wrap.querySelector('.ten-nest'); if(nest) nest.classList.add('hatched');   // 둥지 속 정지 펫 페이드아웃(둥지만 남김)
       if(wrap.querySelector('#pkRevStage')) return;
       const st=document.createElement('div'); st.className='cd-room pkstage ten-roam'; st.id='pkRevStage'; st.setAttribute('data-noprops','1'); st.setAttribute('aria-hidden','true');
-      st.innerHTML=_fx10.items.map(function(it){ const hh=petActorPx(it.id,44,110); return '<div class="cd-actor" data-cat="'+it.id+'" data-hh="'+hh+'"><span class="cd-shadow"></span>'+catActorHTML(it.id,hh)+'</div>'; }).join('');
+      Object.keys(_petX).forEach(function(k){ if(k.indexOf('pkRevStage:')===0){ delete _petX[k]; delete _petDepth[k]; delete _petVz[k]; } });   // 이전 배회 잔여 위치 제거 → 매 10연차 새 랜덤 흩뿌림
+      const N=_fx10.items.length, order=tenShuffle(N);   // 슬롯 무작위 배정(간격 보장) + 지터 → 서로 간격 둔 랜덤 시작 위치
+      st.innerHTML=_fx10.items.map(function(it,i){ const hh=petActorPx(it.id,44,110);
+        let f=(order[i]+0.5)/N + (Math.random()-0.5)*(0.7/N); f=Math.max(0.02, Math.min(0.98, f));   // data-spawnf: 폭 대비 시작 프래션(buildActors가 사용)
+        return '<div class="cd-actor" data-cat="'+it.id+'" data-hh="'+hh+'" data-spawnf="'+f.toFixed(3)+'"><span class="cd-shadow"></span>'+catActorHTML(it.id,hh)+'</div>'; }).join('');
       wrap.appendChild(st);
       if(typeof markCatDirty==='function') markCatDirty();
     }
@@ -6196,7 +6202,7 @@
     // ⏭️ SKIP — 신화(limited)·한정(exclusive) 이외 등급 카드는 한 번에 건너뛰고 다음 신화/한정에서 멈춤(없으면 피날레로).
     function tenSkip(){ if(!_fx10 || _fx10.phase!=='reveal') return; const order=_fx10.order, items=_fx10.items;
       let next=_fx10.ridx+1;
-      while(next<items.length){ const it=items[order[next]]; if(it && (it.tier==='limited'||it.tier==='exclusive')) break; next++; }
+      while(next<items.length){ const it=items[order[next]]; if(it && (it.tier==='limited'||it.tier==='exclusive'||it.isNew)) break; next++; }   // 신화·한정 + 🆕 처음 얻는 펫/아이템은 스킵 안 함(멈춰서 보여줌)
       if(next>=items.length){ tenFinale(); return; }
       _fx10.ridx=next; _fx10.busy=false; tenShowCard(next); }
     // 10연차 힌트(둥지 위) — 결과 텍스트와 동일한 픽셀(선명) 렌더로 표시. 빈 문자열이면 지움.
@@ -6214,7 +6220,7 @@
     function tenRevealCardHtml(it, n, total){ const t=tierInfo(it.tier), rank=tierRank(it.tier), ex=it.tier==='exclusive', rb=!!it.rainbow;
       const conf=rb?28:(rank<=0?0:rank<=2?12:20+(rank-2)*8), tw=5+rank*3;
       return '<div class="fx-reveal ten-card rev-scene tier-'+t.id+' rank-'+rank+((rb||ex)?' rev-rb':'')+'" onclick="tenRevealNext()">'+
-        '<button class="ten-skip" onclick="event.stopPropagation();tenSkip()" aria-label="건너뛰기(신화·한정 제외 한 번에)">'+pixelTextHtml('SKIP', '#ffffff', {h:16})+'</button>'+
+        '<button class="ten-skip" onclick="event.stopPropagation();tenSkip()" aria-label="건너뛰기(신화·한정·처음 얻는 펫 제외 한 번에)">'+pixelTextHtml('SKIP', '#ffffff', {h:16})+'</button>'+
         '<div class="ten-count">'+pixelTextHtml(n+' / '+total, '#ffffff', {h:15})+'</div>'+
         '<div class="fx-art pop"><span class="fx-aurawrap">'+lightLayers({aura:210, rays:250, rainbow:ex})+'</span>'+
           '<span class="fx-ring"></span><span class="fx-twinkles">'+fxAuraTwinkles(tw, ex)+'</span><span class="fx-frame"></span>'+
@@ -6230,12 +6236,13 @@
         pickupSceneHtml('reveal')+tenMeadowHtml()+tenNestHtml(_fx10.items, 'finale')+
         '<div class="ten-fintitle">'+pixelTextHtml('10연차 완료!', '#ffffff', {h:28, base:12})+'</div>'+
         '<div class="ten-hint" id="tenHint">'+(rm?'':pixelTextHtml('탭해주세요', '#ffffff', {h:16}))+'</div>'+   // 탭 전까지 펫 정지 유지, 탭하면 배회 시작(자동 1초 배회 제거)
-        '<button class="btn ten-takebtn" onclick="event.stopPropagation();closeTenFx()" aria-label="입양하기">'+pixelTextHtml('입양하기', '#ffffff', {h:22})+'</button></div>';
+        '<button class="btn ten-takebtn'+(rm?'':' pending')+'" onclick="event.stopPropagation();closeTenFx()" aria-label="입양하기">'+pixelTextHtml('입양하기', '#ffffff', {h:22})+'</button></div>';   // 버튼은 탭해 펫이 배회 시작할 때 나타남(pending→해제)
       fx.className='fx on reveal ten-finale';
       if(_fx10.skyRainbow) tenSkyRainbow($('tenWrap'));
     }
     // 피날레에서 화면을 탭하면 그때 펫들이 배회 시작(그 전까지는 정지 유지). 1회만.
-    function tenFinaleTap(){ if(!_fx10 || _fx10.phase!=='finale' || _fx10._roaming) return; _fx10._roaming=true; setTenHint(''); if(!reducedMotion()) tenStartRoam(); }
+    function tenFinaleTap(){ if(!_fx10 || _fx10.phase!=='finale' || _fx10._roaming) return; _fx10._roaming=true; setTenHint(''); const rm=reducedMotion(); if(!rm) tenStartRoam();
+      const b=document.querySelector('.ten-takebtn'); if(b) _fxT(function(){ b.classList.remove('pending'); }, rm?0:520); }   // 펫이 배회 시작한 뒤(≈0.5s) 입양하기 버튼 페이드인
     function closeTenFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx10=null; if(typeof markCatDirty==='function') markCatDirty(); }   // 로밍 무대(#pkRevStage) 제거 → 엔진 그룹 정리
     // 개발자 미리보기: 시나리오별 강제 결과 10개 → 연출만 재생(인벤토리 무소모)
     function devPreview10(scenario, kind){ if(!isDev()) return; kind=kind||'egg';
