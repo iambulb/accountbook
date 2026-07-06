@@ -1301,6 +1301,15 @@
     /* 🌈 하늘 무지개(탭2 조건 충족) */
     .ten-skyrb { position:absolute; left:50%; top:11%; transform:translateX(-50%); z-index:1; line-height:0; pointer-events:none; clip-path:inset(0 100% 0 0); animation:ten-rbdraw 1.6s ease-out .05s forwards; }
     .ten-skyrb .px { display:block; image-rendering:pixelated; width:min(88vw,430px); height:auto; opacity:.9; }
+    /* 🌕 밤(무지개) 10뽑 하늘 달 연출 — 무지개 대신 떠오르는 보름달 */
+    .ten-skymoon { position:absolute; left:50%; top:7%; transform:translateX(-50%); z-index:1; line-height:0; pointer-events:none; opacity:0; filter:drop-shadow(0 0 16px rgba(255,244,190,.75)); animation:ten-moonin 1.5s ease .05s forwards; }
+    .ten-skymoon .px { display:block; image-rendering:pixelated; }
+    @keyframes ten-moonin { from{ opacity:0; transform:translateX(-50%) translateY(14px) scale(.82);} to{ opacity:1; transform:translateX(-50%) translateY(0) scale(1);} }
+    /* 알 주변 반딧불 글로우 / 단풍잎 살랑(10뽑 테마별) */
+    .ten-ffcore { display:block; image-rendering:pixelated; filter:drop-shadow(0 0 5px rgba(210,255,140,.9)); animation:ten-ffglow 1.6s ease-in-out infinite; }
+    .ten-leafwig { display:block; image-rendering:pixelated; transform-origin:center; animation:ten-leafwig 1.5s ease-in-out infinite; }
+    @keyframes ten-ffglow { 0%,100%{ opacity:.55;} 50%{ opacity:1;} }
+    @keyframes ten-leafwig { 0%,100%{ transform:rotate(-22deg);} 50%{ transform:rotate(22deg);} }
     /* 🪺 둥지(세로형) — 중앙 배치. 뒤판이 높이를 잡고, 그리드/앞테두리가 겹쳐 알이 담긴 느낌 */
     .ten-nest { position:absolute; left:50%; top:58%; transform:translate(-50%,-50%); z-index:3; width:min(86vw,344px); }   /* 둥지를 더 내려 하늘에 안 닿게 */
     .ten-nest.finale { aspect-ratio:120/104; }   /* 둥지 없이도 알과 동일한 흩뿌림 좌표 유지(뒤판 없이 높이 확보) */
@@ -1325,6 +1334,12 @@
     .ten-ddeulegg .fx-ddflower .px { display:block; height:13px; width:auto; }
     .ten-ddeulegg .fx-ddbody { line-height:0; }
     .ten-ddeulegg .fx-ddbody .px { display:block; height:42px; width:auto; filter:drop-shadow(0 3px 4px rgba(0,0,0,.3)); }
+    /* 🎁 랜덤박스 10연차 — 둥지 안 상자(알 대신) + 피날레/리빌 가구 썸네일 */
+    .ten-boxegg { display:block; line-height:0; }
+    .ten-boxegg .px { display:block; height:min(14vw,54px); width:auto; image-rendering:pixelated; filter:drop-shadow(0 3px 4px rgba(0,0,0,.32)); }
+    .ten-egg.open .ten-boxegg .px { filter:drop-shadow(0 0 7px currentColor) drop-shadow(0 3px 4px rgba(0,0,0,.32)); }
+    .ten-boxitem { line-height:0; } .ten-boxitem .px { display:block; image-rendering:pixelated; }
+    .ten-boxart .px { image-rendering:pixelated; }
     .ten-crlight { position:absolute; left:50%; top:40%; width:0; height:0; z-index:2; pointer-events:none; }
     .ten-eggfx { position:absolute; inset:0; z-index:3; pointer-events:none; }
     .ten-bflies { position:absolute; left:50%; top:40%; width:0; height:0; z-index:4; pointer-events:none; }
@@ -1792,6 +1807,13 @@
     .pkscene.pk-sunset .pk-grass::before { background:repeating-linear-gradient(90deg,#8bb85f 0 2px, transparent 2px 5px); }
     :root[data-theme="dark"] .pkscene.pk-sunset .pk-grass { background:#4a6b3c; }
     .pkscene.pk-sunset .pk-field::after { content:''; position:absolute; inset:0; z-index:6; pointer-events:none; background:linear-gradient(180deg, rgba(255,150,80,.20) 0%, rgba(255,140,90,.05) 34%, transparent 60%); }   /* 뜰 위쪽에 노을빛 물듦 */
+    /* 🍁 살랑살랑 내려오는 단풍잎(펫알 씬) — 씬을 가로질러 낙하 + 좌우 흔들림 */
+    .pk-fallleaf { position:absolute; z-index:5; line-height:0; pointer-events:none; transform:translateX(-50%); animation:pkleaffall var(--d,9s) linear infinite; }
+    .pk-fallleaf .fl-in { display:block; image-rendering:pixelated; transform-origin:center; animation:pkleafsway var(--sw,3s) ease-in-out infinite; }
+    .pk-fallleaf .px { display:block; image-rendering:pixelated; }
+    @keyframes pkleaffall { 0%{ top:-9%; } 100%{ top:106%; } }
+    @keyframes pkleafsway { 0%,100%{ transform:translateX(calc(var(--dir,1) * -8px)) rotate(calc(var(--dir,1) * -42deg)); } 50%{ transform:translateX(calc(var(--dir,1) * 8px)) rotate(calc(var(--dir,1) * 42deg)); } }
+    body.lite .pk-fallleaf, body.lite .pk-fallleaf .fl-in { animation:none; }
     /* 🪷 연못(펫알) — 메인 아이콘 오른쪽에 떨어뜨린 타원 못 + 둘레 돌 링 + 잉어 배회 + 연꽃/연잎 부유 */
     .pk-pond { position:absolute; right:5%; bottom:5%; width:34%; height:23%; z-index:2; }
     .pk-pwater { position:absolute; inset:0; border-radius:50%; background:linear-gradient(150deg,#4f9db0 0%,#6dc0d2 46%,#9adbe8 100%);
