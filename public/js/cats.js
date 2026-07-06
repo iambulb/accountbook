@@ -6186,9 +6186,15 @@
     // 10연차 힌트(둥지 위) — 결과 텍스트와 동일한 픽셀(선명) 렌더로 표시. 빈 문자열이면 지움.
     function setTenHint(txt){ const h=$('tenHint'); if(!h) return; h.innerHTML = txt ? pixelTextHtml(txt, '#ffffff', {h:16}) : ''; }
     function tenShowCard(n){ const it=_fx10.items[_fx10.order[n]]; const fx=$('catFx'); if(!fx) return;
-      // 결과 카드도 '뽑기할 때 배경(픽업 씬)'을 그대로 유지 — 메인화면이 비치지 않게 모든 등급 공통으로 씬 배경.
-      fx.innerHTML='<div class="fx-scrim"></div>'+pickupSceneHtml('reveal')+tenRevealCardHtml(it, n+1, _fx10.items.length);
-      fx.className='fx on reveal ten-reveal'; }
+      // 배경(픽업 씬)은 '최초 진입에서 한 번만' 만들고, 이후 카드 전환은 카드 홀더만 교체한다.
+      // (매 카드마다 fx.innerHTML을 통째로 다시 만들면 씬이 안 칠해진 한 프레임 동안 반투명 스크림 뒤로 메인화면이 비쳐 '깜빡임'이 생겼다.)
+      let holder=fx.querySelector('.ten-cardholder');
+      if(!holder){
+        fx.innerHTML='<div class="fx-scrim"></div>'+pickupSceneHtml('reveal')+'<div class="ten-cardholder"></div>';
+        fx.className='fx on reveal ten-reveal';
+        holder=fx.querySelector('.ten-cardholder');
+      }
+      holder.innerHTML=tenRevealCardHtml(it, n+1, _fx10.items.length); }
     function tenRevealCardHtml(it, n, total){ const t=tierInfo(it.tier), rank=tierRank(it.tier), ex=it.tier==='exclusive', rb=!!it.rainbow;
       const conf=rb?28:(rank<=0?0:rank<=2?12:20+(rank-2)*8), tw=5+rank*3;
       return '<div class="fx-reveal ten-card rev-scene tier-'+t.id+' rank-'+rank+((rb||ex)?' rev-rb':'')+'" onclick="tenRevealNext()">'+

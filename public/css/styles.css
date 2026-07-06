@@ -1286,6 +1286,7 @@
     .ten-wrap .pkscene { position:absolute; inset:0; }
     /* 픽업 배너 기본 무지개 제거(10연차 전용은 .ten-skyrb) + 세로 화면 공백 축소: 초록 필드를 위로 넓힘 */
     .ten-wrap .pk-rainbow, .ten-reveal .pk-rainbow { display:none !important; }
+    .ten-cardholder { position:absolute; inset:0; z-index:2; }   /* 결과 카드 홀더 — 씬(배경)은 그대로 두고 이 안 카드만 교체(깜빡임 방지) */
     .ten-wrap .pk-sky { height:40%; } .ten-wrap .pk-field { height:60%; } .ten-wrap .pk-horizon { bottom:60%; }   /* 하늘을 무지개 밑까지 확장(40%)·초록은 그만큼 내림(60%) */
     /* 🌿 하단 초원 채우기 */
     .ten-meadow { position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
