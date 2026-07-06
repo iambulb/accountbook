@@ -497,27 +497,45 @@ test('pityRemain: 확정까지 남은 뽑기 수', () => {
   assert.strictEqual(U.pityRemain(3, 5), 2);
 });
 
-test('roomYield: 가구·펫·애정·시간 기반 유휴 은화(가구0=0, 상한·낮은 수치)', () => {
-  assert.strictEqual(U.roomYield([0], 0, 3600000), 0);   // 가구 없으면 0
-  assert.strictEqual(U.roomYield([], 3, 3600000), 0);    // 펫 없으면 0
-  // 상한 48h 고정(애정 무관). 펫1(Lv0)=0.2/hr, 가구2 → furnFactor=1.0 → 0.2×48=9.6 → 9
-  assert.strictEqual(U.roomYieldCapH([5]), 48);
-  assert.strictEqual(U.roomYieldCapH([0]), 48);
-  assert.strictEqual(U.roomYield([0], 2, 100 * 3600000), 9);
-  // Lv5 → perHr=0.95, 48h → 45.6 → 45
-  assert.strictEqual(U.roomYield([5], 2, 100 * 3600000), 45);
-  // 경과 6h는 상한 미만 그대로: perHr 0.2 × 1.0 × 6 = 1.2 → 1
-  assert.strictEqual(U.roomYield([0], 2, 6 * 3600000), 1);
+test('roomYield: 행복도 기반 유휴 은화(펫0=0, mood·배율·24h 상한)', () => {
+  assert.strictEqual(U.roomYield([], 100, 3600000, 1), 0);       // 펫 없으면 0
+  assert.strictEqual(U.roomYieldCapH(), 24);                     // 누적 상한 24h(인자 무시)
+  // 펫1 Lv0=0.3/hr, mood100 → happy 1.0, 24h 상한 → 0.3×24=7.2 → 7
+  assert.strictEqual(U.roomYield([0], 100, 100 * 3600000, 1), 7);
+  // 펫1 Lv5 → perHr=1.55, mood100, 24h → 1.55×24=37.2 → 37
+  assert.strictEqual(U.roomYield([5], 100, 100 * 3600000, 1), 37);
+  // 경과 6h(상한 미만): 0.3 × happy1.0 × 6 = 1.8 → 1
+  assert.strictEqual(U.roomYield([0], 100, 6 * 3600000, 1), 1);
+  // mood0 → happy 0.2: 0.3×0.2×1h=0.06 → 0 (방치 시 사실상 0)
+  assert.strictEqual(U.roomYield([0], 0, 3600000, 1), 0);
+  // 배율 2배·펫3 Lv5·mood100·24h: 4.65 × 1.0 × 2 × 24 = 223.2 → 223
+  assert.strictEqual(U.roomYield([5, 5, 5], 100, 24 * 3600000, 2), 223);
 });
 
-test('roomMood: 가구 베이스만으론 저·수확/관리로 상승(옵션 객체)', () => {
-  assert.strictEqual(U.roomMood({ pets: 0 }), 0);                                   // 펫 없음
-  assert.strictEqual(U.roomMood({ pets: 2, furn: 3 }), 45);                          // 가구만 → 45(80·100 불가)
-  assert.strictEqual(U.roomMood({ pets: 2, furn: 0 }), 22);                          // 가구 없음
-  assert.strictEqual(U.roomMood({ pets: 2, furn: 3, feedFrac: 1, avgAff: 5 }), 85);  // 밥물+만렙애정 = 관리로 85
-  assert.strictEqual(U.roomMood({ pets: 2, furn: 3, feedFrac: 1, avgAff: 5, caredFresh: 1 }), 100); // +수확 → 100
-  assert.strictEqual(U.roomMood({ pets: 2, furn: 3, feedFrac: 1, avgAff: 5, caredFresh: 0 }), 85);  // 수확 안 하면 100 불가
-  assert.strictEqual(U.roomMood({ pets: 2, furn: 3, poops: 3 }), 27);               // 똥3 → -18
+test('roomMood: 돌봄·애정·enrichment 종류로 상승(도배 무의미)', () => {
+  assert.strictEqual(U.roomMood({ pets: 0 }), 0);                                    // 펫 없음
+  assert.strictEqual(U.roomMood({ pets: 2, furn: 0 }), 20);                          // 베이스만
+  assert.strictEqual(U.roomMood({ pets: 2, furn: 3 }), 44);                          // enrichment 3종 → 2종에서 포화(20+24)
+  assert.strictEqual(U.roomMood({ pets: 2, furn: 9 }), U.roomMood({ pets: 2, furn: 2 })); // 도배해도 불변
+  assert.strictEqual(U.roomMood({ pets: 2, furn: 2, feedFrac: 1, avgAff: 5 }), 88);  // +밥물+만렙애정
+  assert.strictEqual(U.roomMood({ pets: 2, furn: 2, feedFrac: 1, avgAff: 5, caredFresh: 1 }), 100); // +수확 → 100
+  assert.strictEqual(U.roomMood({ pets: 2, furn: 2, feedFrac: 1, avgAff: 5, caredFresh: 0 }), 88);  // 수확 안 하면 100 불가
+  assert.strictEqual(U.roomMood({ pets: 2, furn: 2, poops: 3 }), 26);               // 44 − 18
+});
+
+test('yieldMultiplier: 애정+도감+앱사용 3축(1.0~2.0)', () => {
+  assert.strictEqual(U.yieldMultiplier(0, 0, 0, false), 1);                          // 성장 0
+  assert.strictEqual(U.yieldMultiplier(100, 60, 7, true), 2);                        // 전 축 만렙 → 2.0
+  assert.strictEqual(U.yieldMultiplier(999, 999, 999, true), 2);                     // 상한 클램프
+  assert.ok(Math.abs(U.yieldMultiplier(0, 0, 0, true) - 1.15) < 1e-9);               // 오늘 기록만 → +0.15
+  assert.ok(Math.abs(U.yieldMultiplier(50, 0, 0, false) - 1.175) < 1e-9);            // 도감 50% → +0.175
+});
+
+test('totalAffectionLv: 소유 펫 애정레벨 합', () => {
+  assert.strictEqual(U.totalAffectionLv({}), 0);
+  assert.strictEqual(U.totalAffectionLv(null), 0);
+  // affection 21→Lv5, 7→Lv3, 0→Lv0 (thresholds [1,3,7,14,21])
+  assert.strictEqual(U.totalAffectionLv({ a: { affection: 21 }, b: { affection: 7 }, c: { affection: 0 } }), 8);
 });
 
 test('affLevelReward: 레벨별 소보상 은화(×10)', () => {

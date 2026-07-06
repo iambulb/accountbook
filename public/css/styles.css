@@ -735,6 +735,7 @@
     /* 🌾 수확 대기(유휴 은화 있음) 강조 + 금액 칩 */
     .cr-batch.has-yield { background:var(--income,#2FAE7A); }
     .cr-batch .yield-chip { margin-left:3px; padding:1px 5px; border-radius:9px; background:rgba(255,255,255,.28); font-size:10.5px; font-weight:900; font-variant-numeric:tabular-nums; }
+    .cr-batch.boosted { box-shadow:0 0 0 2px rgba(255,214,102,.9), 0 2px 8px rgba(0,0,0,.18); }   /* 🍀 오늘 가계부·할일 기록 시 수확 부스트 표시 */
     /* ❤ 방 행복도 */
     .cr-mood { flex:none; display:inline-flex; align-items:center; gap:3px; padding:4px 8px; border-radius:20px; background:var(--card); color:var(--sub); font-size:11px; font-weight:800; box-shadow:0 2px 8px rgba(0,0,0,.14); }
     .cr-mood svg { width:13px; height:13px; }

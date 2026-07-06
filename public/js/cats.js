@@ -3733,9 +3733,11 @@
         caredFresh: ca?Math.max(0,1-(now-ca)/MOOD_CARE_MS):0 }; }
     function batchBtnHtml(){ const g=state.game, R=g?room():null;
       const pend=g?allRoomsIdleYield(g):0, mood=g?roomMood(roomMoodInputs(g,R)):0;   // 대기 수익 = 모든 방 합
+      const mult=g?_yieldMult(g):1, boost=g&&recordedToday();   // 🔺 수익배율(애정·도감·앱사용)·🍀 오늘 기록 부스트
+      const mtxt='수익 x'+mult.toFixed(2)+' (애정·도감·기록)'+(boost?' · 🍀오늘 기록 부스트':' · 오늘 기록하면 +부스트');
       return '<div class="cr-topright">'+
-        '<span class="cr-mood" title="행복도 '+mood+'% — 밥·물 챙기고 🌾수확하면 올라가요(똥은 감점)">'+heartSvg({h:13,off:mood<45})+'<b>'+mood+'%</b></span>'+
-        '<button class="cr-batch'+(pend>0?' has-yield':'')+'" onclick="event.stopPropagation();batchCare(this)" aria-label="전체 수확: 모든 방의 유휴 가구수익 받고 밥·물 채우고 똥 정리">수확'+(pend>0?'<span class="yield-chip">+'+pend+'</span>':'')+'</button>'+walletHtml()+'</div>'; }
+        '<span class="cr-mood" title="행복도 '+mood+'% — 밥·물 챙기고 🌾수확하면 올라가요(똥은 감점) · 행복할수록 자동 은화↑">'+heartSvg({h:13,off:mood<45})+'<b>'+mood+'%</b></span>'+
+        '<button class="cr-batch'+(pend>0?' has-yield':'')+(boost?' boosted':'')+'" onclick="event.stopPropagation();batchCare(this)" title="'+mtxt+'" aria-label="전체 수확: 행복도 기반 자동 은화 받고 밥·물 채우고 똥 정리 ('+mtxt+')">수확'+(pend>0?'<span class="yield-chip">+'+pend+'</span>':'')+'</button>'+walletHtml()+'</div>'; }
     // 배치 가구를 무대 바닥에 배경으로(가로=열, 앞뒤 깊이=행)
     function renderDockProps(){
       const box=$('cdProps'); if(!box) return;
@@ -4525,7 +4527,7 @@
       const fx='<span class="gb-rbaura">'+lightLayers({aura:98,rays:118,rainbow:true})+'</span>'+fxAuraTwinkles(9,true);
       const gp=(typeof rbPriceGold==='function')?rbPriceGold('egg'):5;
       return '<div class="gbanner gb-rainbow"><div class="gb-head"><b class="gb-t tier-rainbow">🌈 무지개 · 밤</b></div>'+
-        '<div class="gb-scene">'+nightSceneHtml()+gbCenterHtml(eggGardenSvg(EGG_NIGHT,{h:54}), fx, 'gb-rb gb-glow')+'</div>'+
+        '<div class="gb-scene">'+nightSceneHtml()+devPickupStageHtml(DEV_NIGHT_PICKUP)+gbCenterHtml(eggGardenSvg(EGG_NIGHT,{h:54}), fx, 'gb-rb gb-glow')+'</div>'+
         // 🌈 배너 이미지 아래 — 무지개알 이미지·설명·소모재화(금화 전용)
         '<div class="gb-item"><div class="gb-item-ic">'+rainbowEggSvg({h:52})+'</div>'+
           '<div class="gb-item-meta"><b class="tier-rainbow">무지개알 <span class="tagmini tier-rainbow">밤</span></b>'+
@@ -4536,6 +4538,8 @@
     // 배너 버튼 → 미리보기(소모 없음). 1회=강제 전설 단발 연출, 10회=10연차 연출(박스 10연차는 준비 전). 실전 연결은 추후.
     function devBannerPull(kind, ten, theme){
       if(!(typeof isDev==='function'&&isDev())) return;
+      if(theme==='night'){ _devPickupOverride=DEV_NIGHT_PICKUP;   // 🌙 밤 = 흑표범·카라칼 미리보기(라이브 픽업 안 건드림, FX 닫힐 때 해제)
+        if(ten) devPreview10('oneExclusive', kind, theme); else devPreview(kind, 'exclusive', pickupMember()); return; }
       if(ten){ devPreview10('random', kind, theme); }
       else devPreview(kind, 'legend');
     }
@@ -4838,8 +4842,9 @@
       gameRef().transaction(g=>{ g=normalizeGame(g); const now=Date.now(); const rooms=g.home.rooms||[], cur=g.home.current|0;
         filledN=0; shortFood=false; shortWater=false;   // 재실행(Firebase 재시도)마다 리셋 → 커밋된 마지막 실행값이 남음
         const order=[]; if(rooms[cur]) order.push(cur); rooms.forEach((_,i)=>{ if(i!==cur) order.push(i); });   // 현재 방 우선(소모품 부족 시)
+        const mult=_yieldMult(g);   // 전역 수익배율 1회 스냅샷(방마다 재계산 방지·재시도 시 동일 g에서 동일값)
         order.forEach(i=>{ const R=rooms[i]; if(!R) return; const pl=R.placed||{};
-          const y=roomIdleYield(g, R); if(y>0) g.coins=clampCoins(g.coins+y); R.harvestAt=now; R.caredAt=now;   // 유휴 가구수익 + 시계 리셋 + 행복도 수확신선도 갱신(눌러야 오름)
+          const y=roomIdleYield(g, R, mult); if(y>0) g.coins=clampCoins(g.coins+y); R.harvestAt=now; R.caredAt=now;   // 유휴 은화(행복도 기반) + 시계 리셋 + 행복도 수확신선도 갱신(눌러야 오름)
           Object.keys(pl).forEach(k=>{ const e=pl[k]; if(!e) return; const filled=e.filledAt&&(now-e.filledAt)<FILL_MS;
             if(!filled){ if(e.itemId==='bowl'){ if(g.consum.food>0){ g.consum.food-=1; e.filledAt=now; filledN++; } else shortFood=true; }
               else if(e.itemId==='waterbowl'){ if(g.consum.water>0){ g.consum.water-=1; e.filledAt=now; filledN++; } else shortWater=true; } } });
@@ -5586,8 +5591,7 @@
         const qty=Number((g.owned.items[sel]||{}).qty)||0, placedAll=(typeof sumPlacedItem==='function')?sumPlacedItem(g.home.rooms, sel):0;
         if(qty-placedAll<=0) return;                                   // 남은 수량 없음(복제 차단)
         if(!areaFree(r,c,foot.w,foot.h,R.placed,null,isFloorItem(sel))) return;         // 겹침(바닥 아이템은 겹침 허용)
-        if(CARE_ITEMS.indexOf(sel)>=0){ const slots=Math.min(MAX_SLOTS,Math.max(BASE_SLOTS,Number(g.home.slots)||BASE_SLOTS));
-          const cnt=Object.keys(R.placed).filter(k=>R.placed[k]&&R.placed[k].itemId===sel).length; if(cnt>=slots) return; }   // 케어 아이템 방당 상한
+        if(CARE_ITEMS.indexOf(sel)>=0){ const cnt=Object.keys(R.placed).filter(k=>R.placed[k]&&R.placed[k].itemId===sel).length; if(cnt>=1) return; }   // 케어 아이템(밥·물·화장실)은 방당 종류별 1개만
         R.placed[r+'_'+c]={itemId:sel}; g.home.changedAt=new Date().toISOString(); return g;
       }).then(()=>{ touchHome(); });
     }
@@ -5597,7 +5601,7 @@
       if(!_selItem){ toast('놓을 가구를 먼저 선택하세요'); return; }
       if(itemRemaining(_selItem)<=0){ toast('배치할 수량이 없어요(알뜰샵에서 구매)', true); return; }
       // 밥·물그릇·화장실은 고양이 최대 마릿수(슬롯 수)만큼만 배치 가능
-      if(CARE_ITEMS.indexOf(_selItem)>=0 && itemPlaced(_selItem)>=slotCount()){ toast('그 종류는 최대 '+slotCount()+'개까지 놓을 수 있어요(고양이 수 기준)', true); return; }
+      if(CARE_ITEMS.indexOf(_selItem)>=0 && itemPlaced(_selItem)>=1){ toast('그 종류는 방마다 1개만 놓을 수 있어요', true); return; }
       const foot=itemFoot(_selItem), cell=dropCell(grid, e.clientX, e.clientY, foot), r=cell.r, c=cell.c;   // 포인터=발자국 가운데
       const placed=room().placed||{};
       if(!areaFree(r,c,foot.w,foot.h,placed,null,isFloorItem(_selItem))){ toast('그 자리엔 놓을 수 없어요(겹침)', true); return; }
@@ -5714,7 +5718,7 @@
       const grid=$('placeGrid'); if(!grid) return; const r=grid.getBoundingClientRect();
       if(!(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)) return;   // 그리드 밖에 놓으면 취소
       if(itemRemaining(d.id)<=0){ toast('남은 수량이 없어요', true); return; }
-      if(CARE_ITEMS.indexOf(d.id)>=0 && itemPlaced(d.id)>=slotCount()){ toast('그 종류는 최대 '+slotCount()+'개까지 놓을 수 있어요', true); return; }
+      if(CARE_ITEMS.indexOf(d.id)>=0 && itemPlaced(d.id)>=1){ toast('그 종류는 방마다 1개만 놓을 수 있어요', true); return; }
       const cell=dropCell(grid,e.clientX,e.clientY,d.foot), rr=cell.r, cc=cell.c;
       const placed=room().placed||{};
       if(!areaFree(rr,cc,d.foot.w,d.foot.h,placed,null,isFloorItem(d.id))){ toast('그 자리엔 놓을 수 없어요(겹침)', true); return; }
@@ -6401,7 +6405,7 @@
         '<div class="fx-confetti">'+(conf?fxConfetti(conf):'')+'</div></div>';
       fx.className='fx on reveal';
     }
-    function closeFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx=null; pullEnd(); }
+    function closeFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx=null; _devPickupOverride=null; pullEnd(); }
 
     // ================= 🥚×10 10연차 뽑기 연출 (개발자 미리보기 전용 · 인벤토리 무소모) =================
     // 단일 뽑기(_fx)와 완전 분리된 _fx10 상태로 구동. 타이머는 전부 _fxT/_fxClear 경유. 배경은 pickupSceneHtml('reveal')(캐시) 재사용.
@@ -6683,7 +6687,7 @@
     // 피날레에서 화면을 탭하면 그때 펫들이 배회 시작(그 전까지는 정지 유지). 1회만. 박스는 배회 없음.
     function tenFinaleTap(){ if(!_fx10 || _fx10.phase!=='finale' || _fx10._roaming) return; _fx10._roaming=true; setTenHint(''); const rm=reducedMotion(); if(!rm && !_fx10.isBox) tenStartRoam();
       const b=document.querySelector('.ten-takebtn'); if(b) _fxT(function(){ b.classList.remove('pending'); }, (rm||_fx10.isBox)?0:520); }   // 펫이 배회 시작한 뒤(≈0.5s) 입양하기 버튼 페이드인
-    function closeTenFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx10=null; if(typeof markCatDirty==='function') markCatDirty(); }   // 로밍 무대(#pkRevStage) 제거 → 엔진 그룹 정리
+    function closeTenFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx10=null; _devPickupOverride=null; if(typeof markCatDirty==='function') markCatDirty(); }   // 로밍 무대(#pkRevStage) 제거 → 엔진 그룹 정리
     // 개발자 미리보기: 시나리오별 강제 결과 10개 → 연출만 재생(인벤토리 무소모)
     function devPreview10(scenario, kind, theme){ if(!isDev()) return; kind=kind||'egg';
       if(kind==='box'){ devPreview10Box(scenario, theme); return; }   // 🎁 랜덤박스 10연차(가구/바닥/벽지)
@@ -6757,9 +6761,9 @@
     }
     function resetDevGacha(){ localStorage.removeItem('catDevCfg'); toast('기본값으로 초기화'); openDevGacha(); }
     // 연출만 미리보기(은화 소모·지급 없음)
-    function devPreview(kind, tierId){
+    function devPreview(kind, tierId, forceId){
       const map = isEggKind(kind)? effCatTier() : effItemTier();   // 뜰알(ddeul)도 펫알과 동일하게 펫 등급 맵 사용
-      let id = Object.keys(map).find(k=>map[k]===tierId);
+      let id = forceId || Object.keys(map).find(k=>map[k]===tierId);
       if(kind==='ddeul' && tierId==='exclusive'){ const pk=(typeof LIMITED_PICKUP!=='undefined') && pickupMember(); if(pk) id=pk; }   // 한정 = 픽업 펫(삵·표범)으로 연출
       if(!id) id = isEggKind(kind) ? (Object.keys(map)[0]||'cat_mackerel') : (Object.keys(map)[0]||'cushion');
       closeSheet(); _fx=null; runGachaFx(kind, { id, tier:tierId }, false, 0, false, true);   // 미리보기는 NEW 배지도 함께 표시
