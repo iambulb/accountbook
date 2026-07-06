@@ -3024,40 +3024,32 @@
     function floorRowHtml(f){ return fmRowHtml('floor', f.id, f.name, '<span class="fm-swatch" style="background:'+floorCss(f.id)+'"></span>', floorTierOf(f.id), floorBuyPrice(f.id), isGachaOnlyFloor(f.id), fmOver(_floorCfg,f.id)); }
     // 전역 저장(관리자만) — onchange 즉시 반영. price 빈값/음수면 오버라이드 제거(기본값 복귀).
     // 등급 선택 시 가격 오버라이드를 지워 가격이 등급가(TIER_PRICE)를 따르게 한다(관리 화면이 즉시 재렌더돼 금액 반영).
-    function setFurnTier(id, tier){ if(!(typeof isDev==='function'&&isDev())) return;
-      db.ref('config/furniture/'+id).update({tier:tier, price:null}).then(function(){ const it=ITEM_CATALOG.find(x=>x.id===id); toast((it?it.name:id)+' 등급 = '+tierInfo(tier).name+' · 가격 '+(TIER_PRICE[tier]||0)+' 은화'); }).catch(_cfgWriteErr); }
-    function setFurnPrice(id, val){ if(!(typeof isDev==='function'&&isDev())) return;
-      const n=parseInt(val,10); const ref=db.ref('config/furniture/'+id+'/price');
-      const it=ITEM_CATALOG.find(x=>x.id===id);
-      if(isNaN(n)||n<0){ ref.set(null).then(function(){ toast((it?it.name:id)+' 가격 기본값'); }).catch(_cfgWriteErr); }
-      else { ref.set(n).then(function(){ toast((it?it.name:id)+' 가격 = '+n+' 은화'); }).catch(_cfgWriteErr); } }
-    function resetFurn(id){ if(!(typeof isDev==='function'&&isDev())) return;
-      db.ref('config/furniture/'+id).remove().then(function(){ const it=ITEM_CATALOG.find(x=>x.id===id); toast((it?it.name:id)+' 기본값으로 되돌렸어요'); }).catch(_cfgWriteErr); }
+    // 🏭 개발자 기구물/벽지/바닥 전역 오버라이드 저장 — ASSET_TYPES 테이블 기반 제네릭(경로·카탈로그·라벨만 다름). 기존 함수명(setFurnTier 등)은 얇은 별칭(HTML onchange 호출부 변경 0).
+    function _assetName(type,id){ const c=ASSET_TYPES[type].catalog.find(function(x){ return x.id===id; }); return c?c.name:id; }
+    function setAssetTier(type,id,tier){ if(!(typeof isDev==='function'&&isDev())) return; const A=ASSET_TYPES[type];
+      db.ref(A.path+'/'+id).update({tier:tier, price:null}).then(function(){ toast(_assetName(type,id)+A.label+' 등급 = '+tierInfo(tier).name+' · 가격 '+(TIER_PRICE[tier]||0)+' 은화'); }).catch(_cfgWriteErr); }
+    function setAssetPrice(type,id,val){ if(!(typeof isDev==='function'&&isDev())) return; const A=ASSET_TYPES[type];
+      const n=parseInt(val,10); const ref=db.ref(A.path+'/'+id+'/price'); const nm=_assetName(type,id);
+      if(isNaN(n)||n<0){ ref.set(null).then(function(){ toast(nm+A.label+' 가격 기본값'); }).catch(_cfgWriteErr); }
+      else { ref.set(n).then(function(){ toast(nm+A.label+' 가격 = '+n+' 은화'); }).catch(_cfgWriteErr); } }
+    function resetAsset(type,id){ if(!(typeof isDev==='function'&&isDev())) return; const A=ASSET_TYPES[type];
+      db.ref(A.path+'/'+id).remove().then(function(){ toast(_assetName(type,id)+A.label+' 기본값으로 되돌렸어요'); }).catch(_cfgWriteErr); }
     // 가챠전용 토글(현재 유효값을 뒤집어 저장) — 켜면 알뜰샵 판매목록 숨김, 꺼면 은화 판매. 어느 쪽이든 랜덤박스 풀엔 그대로.
-    function setFurnGacha(id){ if(!(typeof isDev==='function'&&isDev())) return; const on=!isGachaOnlyItem(id); const it=ITEM_CATALOG.find(x=>x.id===id);
-      db.ref('config/furniture/'+id+'/gacha').set(on).then(function(){ toast((it?it.name:id)+(on?' 가챠전용 ON(판매 숨김)':' 가챠전용 OFF(은화 판매)')); }).catch(_cfgWriteErr); }
-    // 벽지(config/wallpaper) 전역 저장
-    function setWallTier(id, tier){ if(!(typeof isDev==='function'&&isDev())) return;
-      db.ref('config/wallpaper/'+id).update({tier:tier, price:null}).then(function(){ const w=WALLPAPER_CATALOG.find(x=>x.id===id); toast((w?w.name:id)+' 벽지 등급 = '+tierInfo(tier).name+' · 가격 '+(TIER_PRICE[tier]||0)+' 은화'); }).catch(_cfgWriteErr); }
-    function setWallPrice(id, val){ if(!(typeof isDev==='function'&&isDev())) return;
-      const n=parseInt(val,10); const ref=db.ref('config/wallpaper/'+id+'/price'); const w=WALLPAPER_CATALOG.find(x=>x.id===id);
-      if(isNaN(n)||n<0){ ref.set(null).then(function(){ toast((w?w.name:id)+' 벽지 가격 기본값'); }).catch(_cfgWriteErr); }
-      else { ref.set(n).then(function(){ toast((w?w.name:id)+' 벽지 가격 = '+n+' 은화'); }).catch(_cfgWriteErr); } }
-    function resetWall(id){ if(!(typeof isDev==='function'&&isDev())) return;
-      db.ref('config/wallpaper/'+id).remove().then(function(){ const w=WALLPAPER_CATALOG.find(x=>x.id===id); toast((w?w.name:id)+' 벽지 기본값으로 되돌렸어요'); }).catch(_cfgWriteErr); }
-    function setWallGacha(id){ if(!(typeof isDev==='function'&&isDev())) return; const on=!isGachaOnlyWall(id); const w=WALLPAPER_CATALOG.find(x=>x.id===id);
-      db.ref('config/wallpaper/'+id+'/gacha').set(on).then(function(){ toast((w?w.name:id)+' 벽지'+(on?' 가챠전용 ON(판매 숨김)':' 가챠전용 OFF(은화 판매)')); }).catch(_cfgWriteErr); }
-    // 바닥 스킨(config/floor) 전역 저장
-    function setFloorTier(id, tier){ if(!(typeof isDev==='function'&&isDev())) return;
-      db.ref('config/floor/'+id).update({tier:tier, price:null}).then(function(){ const f=FLOOR_CATALOG.find(x=>x.id===id); toast((f?f.name:id)+' 바닥 등급 = '+tierInfo(tier).name+' · 가격 '+(TIER_PRICE[tier]||0)+' 은화'); }).catch(_cfgWriteErr); }
-    function setFloorPrice(id, val){ if(!(typeof isDev==='function'&&isDev())) return;
-      const n=parseInt(val,10); const ref=db.ref('config/floor/'+id+'/price'); const f=FLOOR_CATALOG.find(x=>x.id===id);
-      if(isNaN(n)||n<0){ ref.set(null).then(function(){ toast((f?f.name:id)+' 바닥 가격 기본값'); }).catch(_cfgWriteErr); }
-      else { ref.set(n).then(function(){ toast((f?f.name:id)+' 바닥 가격 = '+n+' 은화'); }).catch(_cfgWriteErr); } }
-    function resetFloor(id){ if(!(typeof isDev==='function'&&isDev())) return;
-      db.ref('config/floor/'+id).remove().then(function(){ const f=FLOOR_CATALOG.find(x=>x.id===id); toast((f?f.name:id)+' 바닥 기본값으로 되돌렸어요'); }).catch(_cfgWriteErr); }
-    function setFloorGacha(id){ if(!(typeof isDev==='function'&&isDev())) return; const on=!isGachaOnlyFloor(id); const f=FLOOR_CATALOG.find(x=>x.id===id);
-      db.ref('config/floor/'+id+'/gacha').set(on).then(function(){ toast((f?f.name:id)+' 바닥'+(on?' 가챠전용 ON(판매 숨김)':' 가챠전용 OFF(은화 판매)')); }).catch(_cfgWriteErr); }
+    function setAssetGacha(type,id){ if(!(typeof isDev==='function'&&isDev())) return; const A=ASSET_TYPES[type]; const on=!isGachaOnlyAsset(type,id);
+      db.ref(A.path+'/'+id+'/gacha').set(on).then(function(){ toast(_assetName(type,id)+A.label+(on?' 가챠전용 ON(판매 숨김)':' 가챠전용 OFF(은화 판매)')); }).catch(_cfgWriteErr); }
+    // 별칭(HTML onchange 호출부 유지) — 가구/벽지/바닥
+    function setFurnTier(id, tier){ return setAssetTier('furniture',id,tier); }
+    function setFurnPrice(id, val){ return setAssetPrice('furniture',id,val); }
+    function resetFurn(id){ return resetAsset('furniture',id); }
+    function setFurnGacha(id){ return setAssetGacha('furniture',id); }
+    function setWallTier(id, tier){ return setAssetTier('wallpaper',id,tier); }
+    function setWallPrice(id, val){ return setAssetPrice('wallpaper',id,val); }
+    function resetWall(id){ return resetAsset('wallpaper',id); }
+    function setWallGacha(id){ return setAssetGacha('wallpaper',id); }
+    function setFloorTier(id, tier){ return setAssetTier('floor',id,tier); }
+    function setFloorPrice(id, val){ return setAssetPrice('floor',id,val); }
+    function resetFloor(id){ return resetAsset('floor',id); }
+    function setFloorGacha(id){ return setAssetGacha('floor',id); }
     // 🐾 펫 등급/가챠전용 전역 오버라이드(config/furniture 와 달리 펫은 catalogPets/{id} 레코드에 저장 — applyCatalog가 CAT_TIER·_petGachaOnly에 반영). 정적 펫이면 부분 오버라이드 레코드가 생기고, 런타임 펫이면 기존 레코드의 해당 필드만 갱신(다른 필드·이미지 보존).
     function setPetTier(id, tier){ if(!(typeof isDev==='function'&&isDev())) return;
       db.ref('catalogPets/'+id+'/tier').set(tier).then(function(){ toast((catName(id)||id)+' 등급 = '+tierInfo(tier).name); }).catch(_cfgWriteErr); }
@@ -4237,9 +4229,9 @@
     // 🏭 비(非)펫 자산(가구/벽지/바닥) 등급·가격·가챠전용 통합 팩토리 — 3자산이 거의 같은 로직이라 테이블 1개로 묶음. 기존 함수명(effItemTier/wallBuyPrice/isGachaOnlyFloor…)은 얇은 별칭으로 유지(호출부 변경 0).
     //   cfg=전역 오버라이드(런타임 재대입되므로 게터), tierMap=기본 등급, hasDefault=무료 'default' 스킨(벽지/바닥만), devKey=devOn 로컬 오버레이 키(가구만).
     const ASSET_TYPES = {
-      furniture: { cfg:function(){ return _furnCfg; }, tierMap:ITEM_TIER, hasDefault:false, devKey:'itemTier' },
-      wallpaper: { cfg:function(){ return _wallCfg; }, tierMap:WALL_TIER, hasDefault:true,  devKey:null },
-      floor:     { cfg:function(){ return _floorCfg; }, tierMap:FLOOR_TIER, hasDefault:true, devKey:null },
+      furniture: { cfg:function(){ return _furnCfg; }, tierMap:ITEM_TIER, hasDefault:false, devKey:'itemTier', path:'config/furniture', catalog:ITEM_CATALOG, label:'' },
+      wallpaper: { cfg:function(){ return _wallCfg; }, tierMap:WALL_TIER, hasDefault:true,  devKey:null, path:'config/wallpaper', catalog:WALLPAPER_CATALOG, label:' 벽지' },
+      floor:     { cfg:function(){ return _floorCfg; }, tierMap:FLOOR_TIER, hasDefault:true, devKey:null, path:'config/floor', catalog:FLOOR_CATALOG, label:' 바닥' },
     };
     function effAssetTier(type){ const A=ASSET_TYPES[type], cfg=A.cfg(), base=Object.assign({}, A.tierMap);
       if(cfg){ Object.keys(cfg).forEach(function(id){ const t=cfg[id]&&cfg[id].tier; if(t) base[id]=t; }); }
