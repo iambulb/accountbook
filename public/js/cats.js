@@ -3015,14 +3015,15 @@
           if(typeof openDevPetManager==='function') openDevPetManager(); else closeSheet(); })
         .catch(e=>{ toast((editing?'저장':'추가')+' 실패: '+((e&&e.message)||e), true); const b=$('dpBtn'); if(b){ b.disabled=false; b.textContent=editing?'저장':'추가'; } });
     }
-    function devSelectPet(id){ const wrap=document.querySelector('.petmg-list');
+    function devSelectPet(id){ const stage=document.getElementById('pmStage');
       const prevSel=state._devPetSel; state._devPetSel=(prevSel===id?null:id); const newSel=state._devPetSel;
-      if(!wrap){ openDevPetManager(); return; }   // 시트가 없으면 전체 렌더
-      // 이전·현재 선택 행만 갱신(.sel 토글 + 썸네일 걷기/정면 스왑) → 목록 재빌드·스크롤 튐 없음
-      [prevSel, newSel].forEach(function(pid){ if(!pid) return; const row=wrap.querySelector('.petmg-row[data-pid="'+pid+'"]'); if(!row) return;
-        const on=pid===newSel; row.classList.toggle('sel', on);
-        const th=row.querySelector('.pm-thumb'); if(th) th.innerHTML = on?catActorHTML(pid,52):catFace(pid,{h:52}); });
-      const act=document.getElementById('pmActions'); if(act) act.innerHTML=devPetActionsHtml(); }
+      if(!stage){ openDevPetManager(); return; }   // 시트가 없으면 전체 렌더
+      // 이전·현재 선택 셀만 .on 토글(그리드 재빌드·스크롤 튐 없음) + 상단 스테이지만 다시 그림
+      [prevSel, newSel].forEach(function(pid){ if(!pid) return; const cell=document.querySelector('.pmcell[data-pid="'+pid+'"]'); if(!cell) return;
+        const on=pid===newSel; cell.classList.toggle('on', on); cell.setAttribute('aria-pressed', on?'true':'false'); });
+      stage.innerHTML=devPetStageHtml();
+      // sticky 스테이지가 화면 밖(위로 스크롤됨)이면 살짝 끌어올려 선택 펫이 보이게(아래로는 안 내림)
+      if(newSel){ try{ const r=stage.getBoundingClientRect(); if(r.top<0) stage.scrollIntoView({block:'start'}); }catch(e){} } }
     // 기존 인라인 아트(catalogPets/{id}.walk…) → 분리 노드 catalogPetArt/{id}로 1회 이전(멱등). canel94로 1회 실행. RTDB 일괄 쓰기라 확인 후 실행.
     function migrateCatalogArtOnce(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
       confirmSheet('예전 인라인 펫 아트를 catalogPetArt로 분리 이전할까요?\nRTDB에 일괄 쓰기가 발생합니다(이미 이전된 항목은 건너뜀).', _migrateCatalogArtOnce, {title:'이미지 분리 이전(1회)', okLabel:'이전 실행', danger:false}); }
@@ -3055,45 +3056,58 @@
       if(sp.urls) doExport(sp.urls);
       else if(_petArt[id] && _petArt[id].urls) doExport(_petArt[id].urls);
       else db.ref('catalogPetArt/'+id).once('value').then(s=>doExport(s.val())).catch(e=>toast('불러오기 실패: '+((e&&e.message)||e), true)); }
-    // 개발자 펫 관리: 전체 목록(삭제된 펫=회색·"삭제됨") + 선택 후 [추가][수정][삭제/복구] + 가챠 연출 펫 지정.
-    // 선택 토글은 시트 전체가 아니라 목록 행(2개)+액션영역(#pmActions)만 부분 갱신(devSelectPet) → 스크롤 유지·재빌드 비용 절감.
-    function devPetRowHtml(p, sel){ const on=p.id===sel; const tag=(SPECIES_LABEL[p.species]||p.species);
-      const art=on?catActorHTML(p.id,52):catFace(p.id,{h:52});   // 선택 시 옆으로 걷는 스프라이트, 아니면 정면 썸네일
-      const gacha=isGachaOnlyCat(p.id);
-      // 🐾 기구물 관리처럼 목록 행에서 바로 등급·가챠전용 변경(전역 catalogPets/{id} 오버라이드 — 모든 사용자 반영)
+    // 개발자 펫 관리(알뜰홈 인벤토리 방식): 상단 스테이지(선택 펫 미리보기+관리 기능) + 아래 종류 탭·펫 그리드(.palette.catinv).
+    // 그리드 셀을 탭하면 상단 스테이지(#pmStage)만 다시 그리고 셀 .on 만 토글(devSelectPet) → 그리드 스크롤 유지·재빌드 비용 절감. 스테이지는 sticky라 스크롤해도 선택 펫이 계속 보임.
+    function devPetCellHtml(p, sel){ const on=p.id===sel; const tag=(SPECIES_LABEL[p.species]||p.species);
+      const gacha=isGachaOnlyCat(p.id), ft=p.tier||'normal';
+      return '<button class="pitem pmcell'+(on?' on':'')+(p.deleted?' del':'')+(gacha?' gacha':'')+'" data-pid="'+p.id+'" onclick="devSelectPet(\''+p.id+'\')" aria-label="'+escapeHtml(p.name||p.id)+' 선택" aria-pressed="'+(on?'true':'false')+'">'+
+        '<span class="pic tbring tb-'+ft+'">'+catFace(p.id,{h:38})+tierBadgeHtml(ft)+(gacha?'<span class="pm-gc">'+boxSvg({h:12})+'</span>':'')+'</span>'+
+        '<span class="pmnm">'+catNameSpan(p.id, p.name||p.id)+'</span>'+
+        '<span class="pq">'+escapeHtml(tag)+(p.runtime?' · 런타임':'')+(p.deleted?' · 삭제됨':'')+'</span>'+
+      '</button>'; }
+    // 상단 스테이지(선택 상태에 따라 바뀌는 부분) — 부분 갱신 대상(#pmStage). 미선택이면 안내 플레이스홀더 + [새 펫 추가].
+    function devPetStageHtml(){ const list=allPetsForDev(), sel=state._devPetSel, p=sel?list.find(x=>x.id===sel):null;
+      if(!p){ return '<div class="pm-stage empty">'+
+          '<div class="pm-pv-art ph">'+catFace('cat_mackerel',{h:60})+'</div>'+
+          '<div class="pm-ph-tx">아래에서 펫을 선택하면 여기에서<br><b>등급·가챠전용·수정·삭제·연출</b>을 관리해요.</div>'+
+          '<div class="petmg-btns"><button class="btn ghost" onclick="openDevPetAdd()">+ 새 펫 추가</button></div>'+
+        '</div>'; }
+      const ft=p.tier||'normal', tag=(SPECIES_LABEL[p.species]||p.species), gacha=isGachaOnlyCat(p.id);
+      // 🐾 기구물 관리처럼 스테이지에서 바로 등급·가챠전용 변경(전역 catalogPets/{id} 오버라이드 — 모든 사용자 반영)
       const tierSel='<select class="input fm-tier" onchange="setPetTier(\''+p.id+'\',this.value)" aria-label="'+escapeHtml(p.name||p.id)+' 등급">'+
-        TIERS.map(function(t){ return '<option value="'+t.id+'"'+(t.id===p.tier?' selected':'')+'>'+t.name+'</option>'; }).join('')+'</select>';
+        TIERS.map(function(t){ return '<option value="'+t.id+'"'+(t.id===ft?' selected':'')+'>'+t.name+'</option>'; }).join('')+'</select>';
       const gachaTog='<label class="fm-gacha"><span>가챠전용</span><span class="switch'+(gacha?' on':'')+'" role="switch" aria-checked="'+gacha+'" tabindex="0" onclick="setPetGacha(\''+p.id+'\')" aria-label="'+escapeHtml(p.name||p.id)+' 가챠전용"><i></i></span></label>';
       // 한정(exclusive) 등급 펫만: '가챠 등장' 토글(ON=가챠 한정 리스트·확률에 포함). 다른 등급엔 표시 안 함.
       const exOn=isExGachaActive(p.id);
-      const exTog=(p.tier==='exclusive')?'<label class="fm-gacha"><span>가챠 등장</span><span class="switch'+(exOn?' on':'')+'" role="switch" aria-checked="'+exOn+'" tabindex="0" onclick="setPetExActive(\''+p.id+'\')" aria-label="'+escapeHtml(p.name||p.id)+' 가챠 등장"><i></i></span></label>':'';
-      const badge=gacha?'<span class="fm-badge tier-rainbow">'+boxSvg({h:13})+' 랜덤박스 전용</span>':'';
-      return '<div class="petmg-row petcfg'+(on?' sel':'')+(p.deleted?' del':'')+(gacha?' gacha':'')+'" data-pid="'+p.id+'">'+
-        '<button class="pm-main" onclick="devSelectPet(\''+p.id+'\')" aria-label="'+escapeHtml(p.name||p.id)+' 선택">'+
-          '<span class="pm-thumb tbring tb-'+(p.tier||'normal')+'">'+art+'</span>'+
-          '<span class="pm-txt"><span class="pm-nm">'+catNameSpan(p.id, p.name||p.id)+'</span>'+
-          '<span class="pm-meta">'+escapeHtml(tag)+(p.runtime?' · 런타임':'')+(p.deleted?' · 삭제됨':'')+'</span></span>'+
-        '</button>'+
-        '<div class="pm-cfg">'+badge+'<div class="pm-cfgctl">'+tierSel+gachaTog+exTog+'</div></div>'+
-      '</div>'; }
-    // 목록 아래 액션영역(선택 상태에 따라 바뀌는 부분) — 부분 갱신 대상.
-    function devPetActionsHtml(){ const list=allPetsForDev(), sel=state._devPetSel, selPet=sel?list.find(p=>p.id===sel):null;
-      const dr = (selPet&&selPet.deleted) ? '<button class="btn" onclick="restorePet(\''+sel+'\')">복구</button>'
-        : '<button class="btn danger"'+(sel?'':' disabled')+(sel?' onclick="deletePetSoft(\''+sel+'\')"':'')+'>삭제</button>';
-      let h='<div class="petmg-btns"><button class="btn ghost" onclick="openDevPetAdd()">추가</button>'+
-         '<button class="btn"'+(sel?'':' disabled')+(sel?' onclick="openDevPetEdit(\''+sel+'\')"':'')+'>수정</button>'+dr+'</div>';
+      const exTog=(ft==='exclusive')?'<label class="fm-gacha"><span>가챠 등장</span><span class="switch'+(exOn?' on':'')+'" role="switch" aria-checked="'+exOn+'" tabindex="0" onclick="setPetExActive(\''+p.id+'\')" aria-label="'+escapeHtml(p.name||p.id)+' 가챠 등장"><i></i></span></label>':'';
+      const badge=gacha?'<div class="pm-pv-badge"><span class="fm-badge tier-rainbow">'+boxSvg({h:13})+' 랜덤박스 전용</span></div>':'';
+      const dr = p.deleted ? '<button class="btn" onclick="restorePet(\''+p.id+'\')">복구</button>'
+        : '<button class="btn danger" onclick="deletePetSoft(\''+p.id+'\')">삭제</button>';
+      let h='<div class="pm-stage sel">'+
+        '<div class="pm-preview">'+
+          '<div class="pm-pv-art tbring tb-'+ft+(p.deleted?' del':'')+'">'+catActorHTML(p.id,84)+'</div>'+
+          '<div class="pm-pv-info">'+
+            '<div class="pm-pv-nm">'+catNameSpan(p.id, p.name||p.id)+'</div>'+
+            '<div class="pm-pv-meta">'+escapeHtml(tag)+(p.runtime?' · 런타임':'')+(p.deleted?' · 삭제됨':'')+'</div>'+
+            badge+
+            '<div class="pm-cfgctl">'+tierSel+gachaTog+exTog+'</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="petmg-btns"><button class="btn ghost" onclick="openDevPetAdd()">추가</button>'+
+          '<button class="btn" onclick="openDevPetEdit(\''+p.id+'\')">수정</button>'+dr+'</div>';
       // 🎬 가챠 오픈 연출 펫 지정(전역 config/gachaFx — 모든 사용자에게 즉시 적용). 선택 펫을 연출 1번(왼쪽)/2번(오른쪽)에 배정(다시 누르면 해제).
       h+='<div class="sec-title" style="margin-top:14px;">가챠 오픈 연출 펫 <span class="pill">한정 뽑기 전용</span></div>';
-      if(sel && selPet && !selPet.deleted){
-        const sa=gachaFxSlotOf(sel);   // 'a'|'b'|null (현재 이 펫이 배정된 슬롯)
+      if(!p.deleted){
+        const sa=gachaFxSlotOf(p.id);   // 'a'|'b'|null (현재 이 펫이 배정된 슬롯)
         h+='<div class="petmg-btns">'+
-           '<button class="btn'+(sa==='a'?'':' ghost')+'" aria-pressed="'+(sa==='a'?'true':'false')+'" onclick="setGachaFxSlot(\'a\',\''+sel+'\')">연출 1번(왼쪽)'+(sa==='a'?' ✓':'')+'</button>'+
-           '<button class="btn'+(sa==='b'?'':' ghost')+'" aria-pressed="'+(sa==='b'?'true':'false')+'" onclick="setGachaFxSlot(\'b\',\''+sel+'\')">연출 2번(오른쪽)'+(sa==='b'?' ✓':'')+'</button></div>';
+           '<button class="btn'+(sa==='a'?'':' ghost')+'" aria-pressed="'+(sa==='a'?'true':'false')+'" onclick="setGachaFxSlot(\'a\',\''+p.id+'\')">연출 1번(왼쪽)'+(sa==='a'?' ✓':'')+'</button>'+
+           '<button class="btn'+(sa==='b'?'':' ghost')+'" aria-pressed="'+(sa==='b'?'true':'false')+'" onclick="setGachaFxSlot(\'b\',\''+p.id+'\')">연출 2번(오른쪽)'+(sa==='b'?' ✓':'')+'</button></div>';
       } else {
-        h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:6px 2px 0;">펫을 선택하면 연출 <b>1번(왼쪽)</b>·<b>2번(오른쪽)</b>으로 지정할 수 있어요.</p>';
+        h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:6px 2px 0;">삭제(숨김)된 펫은 연출에 지정할 수 없어요. <b>복구</b> 후 지정하세요.</p>';
       }
       h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:8px 2px 0;">여기 지정한 펫은 <b>한정(무지개) 등급을 뽑을 때만</b> 연출에 등장해요. <b>그 외 등급</b>(특별·전설·신화)은 <b>전설·신화 펫 중 랜덤 2마리</b>가 걸어나와 톡 칩니다. <b>1번</b>=왼쪽, <b>2번</b>=오른쪽(둘 다면 <b>1번 끝난 뒤 2번</b> 순차, 크기는 펫 배율만큼). 현재 1번=<b>'+escapeHtml(gachaFxSlotDesc('a'))+'</b> · 2번=<b>'+escapeHtml(gachaFxSlotDesc('b'))+'</b>.</p>';
       h+='<div class="petmg-btns" style="margin-top:8px;"><button class="btn ghost" onclick="devPreviewGachaFx()">▶︎ 연출 미리보기</button></div>';
+      h+='</div>';
       return h; }
     let _devPetSpecies=lsGet('devPetSpecies','all');   // 개발자 펫 관리 종류 탭
     function setDevPetSpecies(s){ _devPetSpecies=s||'all'; lsSet('devPetSpecies',_devPetSpecies); if(state._sheetRefresh) state._sheetRefresh(); }
@@ -3105,17 +3119,18 @@
         const tabs=[['all','전체',all.length]].concat(present.map(s=>[s,(SPECIES_LABEL[s]||s),cnt[s]]));
         if(!tabs.some(t=>t[0]===_devPetSpecies)) _devPetSpecies='all';
         const list=all.filter(p=> _devPetSpecies==='all' || (p.species||'cat')===_devPetSpecies);
-        let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 10px;line-height:1.5;">펫을 선택해 <b>수정/삭제</b>하거나 <b>추가</b>로 새 펫(zip)을 올려요. 삭제=앱에서 숨김(이미지 보존)이라 <b>복구</b> 가능. 각 행에서 <b>등급·가챠전용</b>을 바로 바꿀 수 있어요(<span class="pill">전역 · 모든 사용자</span>, 기구물 관리와 동일).</p>';
+        // 상단 스테이지(선택 펫 미리보기+관리) — sticky. 아래는 종류 탭 + 등급별 펫 그리드(알뜰홈 인벤토리 방식).
+        let h='<div id="pmStage" class="pm-stage-wrap">'+devPetStageHtml()+'</div>';
+        h+='<p class="muted" style="font-size:12.5px;margin:2px 2px 10px;line-height:1.5;">아래에서 펫을 골라 위 스테이지에서 <b>등급·가챠전용·수정/삭제·연출</b>을 관리해요. 삭제=앱에서 숨김(이미지 보존)이라 <b>복구</b> 가능. 변경은 <span class="pill">전역 · 모든 사용자</span> 반영(기구물 관리와 동일).</p>';
         h+='<div class="subseg pettabs">'+tabs.map(t=>'<button class="'+(_devPetSpecies===t[0]?'on':'')+'" onclick="setDevPetSpecies(\''+t[0]+'\')">'+escapeHtml(t[1])+' <b>'+t[2]+'</b></button>').join('')+'</div>';
-        // 등급별 섹션(도감식) — 활성 펫은 등급 그룹, 삭제됨은 맨 끝 섹션
+        // 등급별 섹션(도감식) — 활성 펫은 등급 그룹 그리드, 삭제됨은 맨 끝 섹션
         const active=list.filter(p=>!p.deleted), del=list.filter(p=>p.deleted); let body='';
         TIER_ORDER.forEach(function(tid){ const grp=active.filter(p=>p.tier===tid); if(!grp.length) return;
           body+='<div class="dexgh pmgh"><span class="dexgt">'+tierLabelHtml(tid)+'</span><span class="dexgn">'+grp.length+'</span></div>';
-          body+='<div class="petmg-list">'+grp.map(p=>devPetRowHtml(p, sel)).join('')+'</div>'; });
+          body+='<div class="palette catinv pmgrid">'+grp.map(p=>devPetCellHtml(p, sel)).join('')+'</div>'; });
         if(del.length){ body+='<div class="dexgh pmgh"><span class="dexgt" style="color:var(--sub)">삭제됨</span><span class="dexgn">'+del.length+'</span></div>';
-          body+='<div class="petmg-list">'+del.map(p=>devPetRowHtml(p, sel)).join('')+'</div>'; }
+          body+='<div class="palette catinv pmgrid">'+del.map(p=>devPetCellHtml(p, sel)).join('')+'</div>'; }
         h+=body || '<div class="empty" style="padding:16px;">이 종류의 펫이 없어요</div>';
-        h+='<div id="pmActions">'+devPetActionsHtml()+'</div>';
         return h; };
       openSheet('펫 관리', build());
       // 등급·가챠전용 변경(catalogPets 리스너) 시 목록 갱신 — 스크롤·선택 유지
