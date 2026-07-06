@@ -269,7 +269,7 @@ test('normalizeHome: 빈 입력 → 기본 방 1개', () => {
   assert.strictEqual(h.rooms.length, 1);
   assert.strictEqual(h.roomSlots, 1);
   assert.strictEqual(h.slots, 3);
-  assert.deepStrictEqual(h.rooms[0], { name: '방 1', emoji: '', wallpaper: 'default', placed: {}, wallPlaced: {}, active: [], poops: 0, floor: 'default' });
+  assert.deepStrictEqual(h.rooms[0], { id: '', name: '방 1', emoji: '', wallpaper: 'default', placed: {}, wallPlaced: {}, active: [], poops: 0, floor: 'default' });
 });
 
 // 🚨 RTDB rooms 형태 견고화(멀티룸 배치 소실 회귀 방지) — Firebase가 배열을 객체/null구멍으로 바꿔 내려도 방을 잃지 않아야 함
@@ -298,6 +298,12 @@ test('normalizeHome: null 구멍 배열([null, 방2])이면 유령 빈 방 없�
   assert.deepStrictEqual(h.rooms[0].placed, { '2_2': { itemId: 'b' } });  // 방2가 인덱스0으로 당겨져 보존(빈 방 재생성 안 함)
   assert.strictEqual(h.rooms.length, 2);                                  // roomSlots=2까지 뒤에만 빈 방 패딩
   assert.deepStrictEqual(h.rooms[1].placed, {});
+});
+
+test('normalizeHome: 방 id 보존(있으면 유지, 없으면 빈값)', () => {
+  const h = U.normalizeHome({ rooms: [{ id: 'r_abc', placed: { '1_1': { itemId: 'a' } } }, {}], roomSlots: 2 });
+  assert.strictEqual(h.rooms[0].id, 'r_abc');   // 기존 id 보존(방별 쓰기 식별자)
+  assert.strictEqual(h.rooms[1].id, '');        // 없으면 빈값 → ensureRoomIds가 채움
 });
 
 test('normalizeHome: 이미 rooms면 통과 + roomSlots만큼 방 보장', () => {

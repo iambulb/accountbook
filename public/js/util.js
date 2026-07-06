@@ -180,6 +180,7 @@
     function normRoom(r, i) {
       r = r || {};
       return {
+        id: (typeof r.id === 'string' && r.id) ? r.id : '',   // 안정적 방 식별자(빈값=미부여 → cats.js ensureRoomIds가 채움). 방별 쓰기를 인덱스가 아닌 id로 하여 재정렬 경합 방지
         name: (typeof r.name === 'string' && r.name) ? r.name : ('방 ' + (i + 1)),
         emoji: (typeof r.emoji === 'string') ? r.emoji : '',
         wallpaper: r.wallpaper || 'default',
