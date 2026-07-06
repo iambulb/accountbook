@@ -1,5 +1,5 @@
 /* 알뜰(Eggarden) 서비스워커 — 오프라인 앱 셸 캐시 */
-const CACHE_VERSION = 'eggarden-v3.338.0';
+const CACHE_VERSION = 'eggarden-v3.339.0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -761,12 +761,20 @@ const APP_SHELL = [
   // @gen:end
 ];
 
+// install 견고화: 앱 구동 '필수' 셸(코드·HTML·CSS·아이콘·매니페스트)은 반드시 캐시(하나라도 실패하면 install 실패=원자적),
+// /assets/ 이미지(펫 스프라이트·FX)는 best-effort — 일부 404여도 install을 막지 않는다(옛날엔 자산 1개 404가 전체 갱신을 무기한 막았음).
+const CORE_SHELL  = APP_SHELL.filter(u => !u.includes('/assets/'));
+const EXTRA_SHELL = APP_SHELL.filter(u =>  u.includes('/assets/'));
+
 // CDN(라이브러리)은 cache-first 로 따로 보관
 const CDN_HOSTS = ['www.gstatic.com', 'cdn.jsdelivr.net'];
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_VERSION).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())
+    caches.open(CACHE_VERSION).then(async cache => {
+      await cache.addAll(CORE_SHELL);   // 필수 셸 — 실패 시 install 실패(원자성)
+      await Promise.allSettled(EXTRA_SHELL.map(u => cache.add(u)));   // 부가 자산 — 실패해도 진행
+    }).then(() => self.skipWaiting())
   );
 });
 
@@ -808,22 +816,22 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 같은 출처(앱 셸): stale-while-revalidate, 네비게이션은 index.html 폴백
+  // 같은 출처(앱 셸): 버전 내 cache-first(불변) — 캐시에 있으면 그대로 반환, 현재 버전 캐시를 네트워크로 덮어쓰지 않는다.
+  // → 한 CACHE_VERSION 안에서는 index.html·cats.js·styles.css 등 셸 파일이 항상 '같은 스냅샷' 세트라 버전 스큐(새 index+옛 cats.js가 섞여 알뜰샵이 안 열리던 증상) 불가.
+  // 갱신은 오직 CACHE_VERSION 올린 배포의 install(addAll)→activate→controllerchange 자동 새로고침으로만 원자적으로 반영된다.
   if (url.origin === self.location.origin) {
     event.respondWith(
       caches.open(CACHE_VERSION).then(async cache => {
         const cached = await cache.match(req);
-        const network = fetch(req).then(res => {
+        if (cached) return cached;
+        try {
+          const res = await fetch(req);   // 캐시에 없을 때만 네트워크(예: install에서 best-effort로 빠진 자산) + 채워넣기
           if (res && res.status === 200) cache.put(req, res.clone());
           return res;
-        }).catch(() => null);
-        if (cached) { network; return cached; }
-        const res = await network;
-        if (res) return res;
-        if (req.mode === 'navigate') {
-          return (await cache.match('./index.html')) || Response.error();
+        } catch (e) {
+          if (req.mode === 'navigate') return (await cache.match('./index.html')) || Response.error();
+          return Response.error();
         }
-        return Response.error();
       })
     );
   }

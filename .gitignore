@@ -6,3 +6,13 @@ node_modules/
 
 # 런타임 펫 정리 작업용 RTDB 덤프(tools/sync_runtime_pets.mjs 입력) — 커밋하지 않음
 _sync/
+
+# 개발용 스크래치(프리뷰·아이콘 갤러리·디자인 샘플) — 배포/저장소에 넣지 않음
+cat-preview.html
+cat-preview-gacha.html
+icon-gallery.html
+regen-icons.html
+design_sample/
+
+# 파이썬 캐시
+__pycache__/
