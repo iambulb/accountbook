@@ -3136,7 +3136,15 @@
     // 러그가 벽 가구·일반 가구·펫 무엇보다도 아래로 보이게 한다(사용자 지침).
     function splitProps(list, mapFn){ let floor='', other=''; list.forEach(function(p){ if(isFloorItem(p.itemId)) floor+=mapFn(p); else other+=mapFn(p); }); return { floor:floor, other:other }; }
     // 우측 상단 "일괄 돌보기" 버튼(밥·물 채우고 똥 치우기) — dock·홈 공용
-    function batchBtnHtml(){ return '<button class="cr-batch" onclick="event.stopPropagation();batchCare(this)" aria-label="일괄 돌보기: 밥·물 채우고 똥 치우기">돌보기</button>'; }
+    // 캠 우상단: [돌보기] + [지갑(은화·금화 갯수)]. 돌보기는 왼쪽으로, 오른쪽에 실시간 재화 카운터(쓰다듬기·돌보기 보상이 여기로 날아와 카운트업).
+    // 표시값은 _walletDisp(카운트업 진행값) 우선 → 재렌더가 끼어들어도 롤업이 끊기지 않음.
+    let _walletDisp={coins:null,gold:null}, _walletGen={coins:0,gold:0};
+    function walletCoinDisp(){ return _walletDisp.coins!=null?_walletDisp.coins:coins(); }
+    function walletGoldDisp(){ return _walletDisp.gold!=null?_walletDisp.gold:gold(); }
+    function walletHtml(){ return '<div class="cd-wallet" aria-label="보유 은화·금화">'+
+      '<span class="cw-coin"><span class="cw-ic">'+coinSvg({h:14})+'</span><span class="cw-n">'+walletCoinDisp().toLocaleString()+'</span></span>'+
+      '<span class="cw-gold"><span class="cw-ic">'+goldSvg({h:14})+'</span><span class="cw-n">'+walletGoldDisp().toLocaleString()+'</span></span></div>'; }
+    function batchBtnHtml(){ return '<div class="cr-topright"><button class="cr-batch" onclick="event.stopPropagation();batchCare(this)" aria-label="일괄 돌보기: 밥·물 채우고 똥 치우기">돌보기</button>'+walletHtml()+'</div>'; }
     // 배치 가구를 무대 바닥에 배경으로(가로=열, 앞뒤 깊이=행)
     function renderDockProps(){
       const box=$('cdProps'); if(!box) return;
@@ -3974,25 +3982,52 @@
       el.innerHTML='<span class="pi">'+coinSvg({h:14})+'</span>+'+POOP_REWARD;
       el.style.left=x+'px'; el.style.top=y+'px'; document.body.appendChild(el);
       setTimeout(()=>{ el.remove(); }, 950); }
-    // 은화 카운터(연출 도착점): 시트 열려 있으면 시트 은화칩, 아니면 dock 은화칩
-    function coinTarget(){
+    // 연출 도착점 지갑: 시트(알뜰홈 방)가 열려 있으면 방 캠 지갑, 아니면 dock 캠 지갑
+    function walletEl(){
       const open=$('sheet')&&$('sheet').classList.contains('on');
-      if(open){ const c=document.querySelector('#sheetBody .coinbar .coin:last-child'); if(c) return c; }
-      return document.querySelector('#catdock .cd-coin') || document.querySelector('#catdock .cd-cam');   // 은화 배지 대신 LIVE 배지로(은화 배지 제거됨)
+      if(open){ const w=document.querySelector('#catRoom .cd-wallet'); if(w) return w; }
+      return document.querySelector('#catdock .cd-wallet');
     }
-    // 은화가 (x,y)에서 카운터로 날아 들어가는 연출 + 카운터 톡 튀기
-    function coinFlyFx(x,y,n){
-      const target=coinTarget(); if(!target) return;
+    function coinTarget(){ const w=walletEl(); return (w&&w.querySelector('.cw-coin')) || document.querySelector('#catdock .cd-cam'); }
+    // 재화 픽셀이 (x,y)에서 지갑 카운터로 날아 들어가는 연출(kind: coin=은화·gold=금화)
+    function flyCurrency(x,y,n,kind,w){
+      const target=w&&w.querySelector(kind==='gold'?'.cw-gold':'.cw-coin'); if(!target) return;
       const tr=target.getBoundingClientRect(), tx=tr.left+tr.width/2, ty=tr.top+tr.height/2;
-      const k=Math.max(1,Math.min(8,n));
-      for(let i=0;i<k;i++){ const el=document.createElement('div'); el.className='coinfly'; el.innerHTML=coinSvg({h:15});
+      const k=Math.max(1,Math.min(8,n)), svg=(kind==='gold'?goldSvg:coinSvg)({h:15});
+      for(let i=0;i<k;i++){ const el=document.createElement('div'); el.className='coinfly'; el.innerHTML=svg;
         const ox=x+(Math.random()*26-13), oy=y+(Math.random()*14-7);
         el.style.left=ox+'px'; el.style.top=oy+'px';
         el.style.setProperty('--tx',(tx-ox).toFixed(0)+'px'); el.style.setProperty('--ty',(ty-oy).toFixed(0)+'px');
         el.style.animationDelay=(i*0.05).toFixed(2)+'s'; document.body.appendChild(el);
         setTimeout(()=>{ el.remove(); }, 760+i*50); }
-      setTimeout(()=>{ target.classList.add('bump'); setTimeout(()=>target.classList.remove('bump'),320); }, 400);
     }
+    // 화면의 모든 지갑 카운터 숫자를 현재 표시값(_walletDisp 우선)으로 동기화
+    function syncWalletText(){ document.querySelectorAll('.cd-wallet').forEach(function(w){
+      const cN=w.querySelector('.cw-coin .cw-n'), gN=w.querySelector('.cw-gold .cw-n');
+      if(cN) cN.textContent=walletCoinDisp().toLocaleString(); if(gN) gN.textContent=walletGoldDisp().toLocaleString(); }); }
+    function walletHold(key,val){ _walletGen[key]++; _walletDisp[key]=(val==null?null:Math.round(val)); syncWalletText(); }   // 표시값 고정(진행중 애니 취소)
+    // 표시값을 from→to로 스르르 올림. _walletDisp에 진행값을 담아 재렌더/rehtml이 끼어들어도 롤업이 끊기지 않음.
+    function walletRoll(key, from, to){
+      from=Number(from)||0; to=Number(to)||0; const g=++_walletGen[key];
+      if(from===to){ _walletDisp[key]=null; syncWalletText(); return; }
+      _walletDisp[key]=from; const t0=Date.now(), dur=620;
+      (function step(){ if(g!==_walletGen[key]) return; const p=Math.min(1,(Date.now()-t0)/dur), v=Math.round(from+(to-from)*p);
+        _walletDisp[key]=(p<1?v:null); syncWalletText(); if(p<1) requestAnimationFrame(step); })();
+    }
+    // 쓰다듬기·돌보기 보상: 은화(dCoins)·금화(dGold)가 지갑으로 날아가고, 날아오는 동안 옛값을 유지하다 도착 즈음 현재값으로 실시간 카운트업
+    function rewardFly(x,y,dCoins,dGold,prevCoins,prevGold){
+      const w=walletEl(); if(!w) return;
+      if(dCoins>0){ walletHold('coins',prevCoins); flyCurrency(x,y,dCoins,'coin',w); }   // 도착 전엔 옛값 고정(새값 깜빡임 방지)
+      if(dGold>0){  walletHold('gold', prevGold);  flyCurrency(x,y,dGold,'gold',w); }
+      setTimeout(function(){   // 코인이 도착할 즈음 카운트업 시작
+        if(dCoins>0) walletRoll('coins', prevCoins, coins());
+        if(dGold>0)  walletRoll('gold',  prevGold,  gold());
+        const w2=walletEl(); if(w2){ w2.classList.add('bump'); setTimeout(()=>w2.classList.remove('bump'),320); }
+      }, 430);
+    }
+    // 은화 전용 날아오기(prev 미상 호출자용) — 카운트업 없이 날아가기+톡
+    function coinFlyFx(x,y,n){ const w=walletEl(); if(!w) return; flyCurrency(x,y,n,'coin',w);
+      setTimeout(()=>{ const w2=walletEl(); if(w2){ w2.classList.add('bump'); setTimeout(()=>w2.classList.remove('bump'),320); } }, 430); }
     // 일괄 돌보기: 빈 그릇을 사료/물로 채우고, 쌓인 똥을 모두 치워 은화 획득(카운터로 날아가는 연출)
     function batchCare(btnEl){
       if(!state.game){ return; }
@@ -4005,8 +4040,8 @@
         return g;
       }).then(r=>{ if(!r||!r.committed) return;
         const nowCoins=(r.snapshot&&r.snapshot.val()&&r.snapshot.val().coins)||before, gained=nowCoins-before;
-        let x=innerWidth/2, y=160; if(btnEl&&btnEl.getBoundingClientRect){ const b=btnEl.getBoundingClientRect(); x=b.left+b.width/2; y=b.top+b.height/2; }
-        if(gained>0){ coinFlyFx(x,y, Math.min(8, poopsNow||1)); toast('돌봄 완료 · +'+gained+' 은화 🪙'); }
+        let x=innerWidth/2, y=200; if(btnEl&&btnEl.getBoundingClientRect){ const b=btnEl.getBoundingClientRect(); x=b.left; y=b.bottom+100; }   // 캠 안쪽(버튼 아래)에서 지갑으로 올라오게
+        if(gained>0){ rewardFly(x,y, gained, 0, before, gold()); toast('돌봄 완료 · +'+gained+' 은화 🪙'); }
         else toast('돌봄 완료 🐾 (채울 밥/물이 없거나 이미 가득)');
       });
     }

@@ -666,11 +666,11 @@
     .cd-room .cr-stage { position:absolute; left:0; right:0; bottom:0; height:58%; pointer-events:none; }   /* z-index 제거(auto): 펫이 무대 단위로 항상 앞이 아니라, 깊이 z로 가구와 섞임 */
     .cd-room .cd-coin { position:absolute; top:5px; left:12px; z-index:45; cursor:pointer; }   /* 원근 z(≤12)보다 높게 → 펫/가구가 배지를 가리지 않음 */
     /* dock 캠 LIVE 배지(은화 대신) — 탭하면 알뜰홈. 방 이름이 길면 말줄임. */
-    .cd-room .cr-cam.cd-cam { top:5px; left:12px; cursor:pointer; max-width:72%; }
+    .cd-room .cr-cam.cd-cam { top:5px; left:12px; cursor:pointer; max-width:44%; }   /* 우상단 돌보기+지갑 그룹과 겹치지 않게 */
     .cd-room .cr-cam.cd-cam .cd-camtxt { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .cd-cam.tap { animation:coinpress .18s ease; }
     .cd-cam.bump { animation:coinbump .3s ease; }
-    .cd-room .cr-batch { top:4px; }   /* 캠(dock)에서 은화·돌보기 버튼을 살짝 더 위로(홈 방은 기본 top 유지) */
+    .cd-room .cr-topright { top:4px; }   /* 캠(dock)에서 돌보기·지갑 그룹을 살짝 더 위로(홈 방은 기본 top 유지) */
     .cd-coin.tap { animation:coinpress .18s ease; }
     @keyframes coinpress { 40%{ transform:scale(.84); } 100%{ transform:scale(1); } }
     .cd-room .cd-actor { bottom:0; }   /* 맨 앞(depth0) 펫 발이 캠 최하단에 닿게 */
@@ -714,14 +714,22 @@
     .cr-cam { position:absolute; top:8px; left:12px; display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:800; color:var(--sub); background:var(--card); border:1px solid var(--bd); border-radius:20px; padding:4px 10px 4px 8px; z-index:45; }   /* 원근 z(≤12)보다 높게 */
     .cr-cam i { width:6px; height:6px; border-radius:50%; background:var(--expense); flex:none; }
     .cr-stage { position:absolute; left:0; right:0; bottom:0; height:58%; pointer-events:none; }   /* z-index 제거(auto): 펫이 무대 단위로 항상 앞이 아니라 깊이 z로 가구와 섞임. 고양이 무대가 그릇/똥 클릭을 가로막지 않도록 통과 */
-    /* 일괄 돌보기 버튼(방·dock 우측 상단) */
-    .cr-batch { position:absolute; top:8px; right:10px; z-index:46; display:inline-flex; align-items:center; gap:4px; padding:5px 10px 5px 8px; border-radius:20px; background:var(--primary); color:var(--card); font-size:11.5px; font-weight:800; box-shadow:0 2px 8px rgba(0,0,0,.18); }   /* 원근 z(≤12)보다 높게(방이 isolate라 sticky 헤더 위로는 안 샘) */
+    /* 우상단 그룹: [돌보기] + [지갑 카운터] (돌보기는 왼쪽, 지갑은 오른쪽) */
+    .cr-topright { position:absolute; top:8px; right:10px; z-index:46; display:inline-flex; align-items:center; gap:7px; }   /* 원근 z(≤12)보다 높게(방이 isolate라 sticky 헤더 위로는 안 샘) */
+    .cr-batch { flex:none; display:inline-flex; align-items:center; gap:4px; padding:5px 10px 5px 8px; border-radius:20px; background:var(--primary); color:var(--card); font-size:11.5px; font-weight:800; box-shadow:0 2px 8px rgba(0,0,0,.18); }
     .cr-batch svg { width:15px; height:15px; }
     .cr-batch:active { transform:scale(.94); }
+    /* 지갑 카운터(은화·금화 실시간 갯수) — 쓰다듬기·돌보기 보상이 여기로 날아와 카운트업 */
+    .cd-wallet { flex:none; display:inline-flex; align-items:center; gap:8px; padding:4px 10px; border-radius:20px; background:var(--card); border:1px solid var(--bd); font-size:11.5px; font-weight:800; color:var(--text); box-shadow:0 2px 8px rgba(0,0,0,.12); }
+    .cd-wallet .cw-coin, .cd-wallet .cw-gold { display:inline-flex; align-items:center; gap:3px; }
+    .cd-wallet .cw-ic { width:14px; height:14px; flex:none; display:inline-flex; }
+    .cd-wallet .cw-n { min-width:8px; font-variant-numeric:tabular-nums; }
+    .cd-wallet.bump { animation:coinbump .3s ease; }
+    .miniroom .cr-topright { display:none; }   /* 미리보기(정적)엔 우상단 그룹 숨김 */
     /* 은화가 카운터로 날아드는 연출 + 카운터 톡 튀기 */
     .coinfly { position:fixed; z-index:97; width:15px; height:15px; pointer-events:none; will-change:transform; animation:coinfly .62s cubic-bezier(.5,.1,.9,.5) forwards; }
     @keyframes coinfly { 0%{opacity:0;transform:scale(.4)} 16%{opacity:1;transform:scale(1.12)} 100%{opacity:.25;transform:translate(var(--tx),var(--ty)) scale(.45)} }
-    .cd-coin.bump, .coin.bump { animation:coinbump .3s ease; }
+    .cd-coin.bump, .coin.bump, .cd-wallet.bump { animation:coinbump .3s ease; }
     @keyframes coinbump { 0%,100%{transform:scale(1)} 42%{transform:scale(1.22)} }
     /* 배치 탭 미니 웹캠 프리뷰(현재 배치를 방 뷰로 보여줘 앞=아래/뒤=위 방향 안내, 표시 전용) */
     .miniroom { position:relative; height:120px; border-radius:12px; overflow:hidden; isolation:isolate; border:1px solid var(--bd); margin:2px 0 12px; }   /* isolation=미니룸을 독립 스택 컨텍스트로 → 내부 '미리보기' 배지(z45)가 스크롤 시 sticky 헤더 위로 새어보이던 버그 방지 */
