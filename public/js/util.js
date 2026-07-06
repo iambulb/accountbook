@@ -153,6 +153,21 @@
     var total = missions + todosPending;
     return { missions: missions, todos: todosPending, total: total, allDone: total === 0, any: missionsTotal > 0 || due.length > 0 };
   }
+  // 🚨 RTDB rooms 형태 견고화: Firebase는 JS 배열을 보존하지 않는다 — 키가 연속이면 배열, sparse면 객체({"1":{…}}),
+  //  앞/중간이 비면 null 구멍 배열([null,{…}])로 내려준다. 이를 어떤 형태든 '존재하는 방'을 잃지 않고 dense 배열로 복원한다.
+  //  (예전 버그: normalizeHome이 Array.isArray만 보고 객체형이면 레거시 flat으로 붕괴 → 멀티룸 배치 전멸. null 구멍이면 유령 빈 방 생성.)
+  //  반환: 방 객체 배열(존재하는 방만) 또는 null(진짜 방 데이터 없음 → 레거시 flat/신규 처리로 위임).
+  function toRoomsArray(hr) {
+    var arr;
+    if (Array.isArray(hr)) arr = hr;
+    else if (hr && typeof hr === 'object') {
+      var keys = Object.keys(hr).filter(function (k) { return /^\d+$/.test(k); }).sort(function (a, b) { return a - b; });
+      if (!keys.length) return null;
+      arr = keys.map(function (k) { return hr[k]; });
+    } else return null;
+    var dense = arr.filter(function (r) { return r && typeof r === 'object'; });   // null 구멍·비객체만 제거(정규화된 방은 name/wallpaper 문자열이라 RTDB에서 null이 안 됨 → 제거되는 건 이미 사라진 데이터뿐)
+    return dense.length ? dense : null;
+  }
   // ===== 알뜰홈 여러 방(프리셋) — home 상태 정규화(순수). 레거시 flat(단일 방)과 신규 rooms[] 둘 다 받아 rooms 형태로. =====
   //  방별: {name,wallpaper,placed,active,poops}. 전역: current(선택 방), roomSlots(열린 방수), slots(방당 펫상한), changedAt.
   //  opts={baseRooms,maxRooms,baseSlots,maxSlots}(기본 1/5/3/20). 데이터 손실 방지: 방 데이터가 roomSlots보다 많으면 roomSlots를 올린다.
@@ -175,8 +190,9 @@
         floor: r.floor || 'default'
       };
     }
-    var rooms = (Array.isArray(h.rooms) && h.rooms.length)
-      ? h.rooms.map(normRoom)
+    var roomsArr = toRoomsArray(h.rooms);   // 배열/객체/null구멍 어떤 RTDB 형태든 안전 복원(붕괴·유령방 방지)
+    var rooms = (roomsArr && roomsArr.length)
+      ? roomsArr.map(normRoom)
       : [normRoom({ wallpaper: h.wallpaper, placed: h.placed, active: h.active, poops: h.poops }, 0)];  // 레거시 flat → 방1
     var roomSlots = clamp(h.roomSlots || rooms.length || BASE, BASE, MAX);
     while (rooms.length < roomSlots) rooms.push(normRoom({}, rooms.length));
@@ -321,7 +337,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift };
+  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);

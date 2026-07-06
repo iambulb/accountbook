@@ -1191,12 +1191,13 @@
     function migrateHomeRoomsIfNeeded(raw){
       if(!state.uid) return;
       const h=raw&&raw.home;
-      if(!h || Array.isArray(h.rooms)) return;   // 신규 구조거나 home 없음(신규 유저는 이관 불필요)
+      if(!h || toRoomsArray(h.rooms)) return;   // 이미 rooms 구조(배열/객체형 모두)거나 home 없음 → 이관 불필요. ⚠️ Array.isArray만 보면 RTDB 객체형 멀티룸을 flat으로 오인해 붕괴본으로 덮어씀(과거 소실 버그)
       if(!(h.placed || (h.active&&h.active.length) || h.wallpaper || h.poops)) return;   // 옮길 flat 데이터 없음
       if(state._homeMigrating) return; state._homeMigrating=true;   // 로컬 중복 방지
       // 트랜잭션으로 race-safe: 그새 다른 기기가 이미 rooms화했으면 건너뜀. flat 키는 제거하고 rooms로 이관.
       gameRef().child('home').transaction(cur=>{
-        if(cur && Array.isArray(cur.rooms)) return;   // 이미 이관됨 → 변경 없음(abort)
+        if(!cur) return;   // null 첫 패스(재접속 콜드캐시)에 기본 홈을 제안하지 않음 → 서버 재실행에서 진짜 값으로 판정
+        if(toRoomsArray(cur.rooms)) return;   // 이미 이관됨(배열/객체형) → 변경 없음(abort)
         const nh=normalizeHome(cur, HOME_OPTS);
         return { rooms:nh.rooms, current:nh.current, showRoom:nh.showRoom, roomSlots:nh.roomSlots, slots:nh.slots, changedAt:nh.changedAt||new Date().toISOString() };
       }).catch(()=>{}).then(()=>{ state._homeMigrating=false; });
@@ -2151,6 +2152,7 @@
       }
       loadBroadcasts();     // 📣 전체 선물(config/broadcast) 구독 — 유저별 수령이라 로그인마다 재구독(off 후 on)
       loadMyAdminGifts();   // 🎁 내게 온 특정-유저 선물(users/{uid}/adminGifts) — uid별이라 이전 ref off 후 재구독
+      applyLiteMode();  // 🔋 저장된 가벼운 모드(body.lite) 반영
       startCatLoop();   // 통합 걷기 엔진(단일 rAF, 보이는 무대만 애니메이션)
       // 앱을 켜둔 동안에도 그릇 3시간 만료→똥 정산이 돌도록 주기 점검(다마고치)
       if(state._petTimer) clearInterval(state._petTimer);
@@ -3171,7 +3173,14 @@
     }
     // ---- 통합 걷기 엔진: 단일 rAF가 "지금 보이는 무대"(시트 방 또는 dock)만 애니메이션 ----
     // 고양이는 방/시트에 배치된 가구로 가끔 다가가 잠시 머문다(상호작용). 스트립엔 가구가 없어 자유 배회.
-    function reducedMotion(){ try{ return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } }
+    // 🔋 가벼운 모드(저사양) — 사용자가 켜면 걷기 엔진 5fps·상시 애니(가구 연출·구름·나비·씬·걷기필름) 정지(body.lite CSS)로 저사양 폰 배터리/발열/버벅임 완화. OS 'prefers-reduced-motion'과 동일 취급.
+    function liteMode(){ try{ return localStorage.getItem('liteMode')==='1'; }catch(e){ return false; } }
+    function reducedMotion(){ if(liteMode()) return true; try{ return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } }
+    function applyLiteMode(){ try{ if(document&&document.body) document.body.classList.toggle('lite', liteMode()); }catch(e){} }
+    function setLiteMode(on){ try{ localStorage.setItem('liteMode', on?'1':'0'); }catch(e){} applyLiteMode();
+      if(typeof markCatDirty==='function') markCatDirty(); if(typeof startCatLoop==='function') startCatLoop();   // 엔진 fps 예산 재평가·정지스틸 재빌드
+      if(typeof rerender==='function') rerender();
+      toast(on?'🔋 가벼운 모드 ON — 애니메이션을 줄여 배터리·발열을 아껴요':'가벼운 모드 OFF'); }
     // 걷기 스프라이트 애니메이션 주기(초): 발 놀림이 실제 이동속도에 맞도록 속도에 반비례 → 미끄러짐(무빙워크) 방지, 자연스러운 걸음.
     function walkDur(v, hh){ const stride=0.42*(hh||40), px=Math.max(0.001, v*58); return Math.max(0.45, Math.min(1.5, stride/px)).toFixed(2); }
     function setWalkDur(a){ if(a.spr){ const sc=a.el.querySelector('.cspr'); if(sc) sc.style.setProperty('--wdur', walkDur(a.v, a.hh)+'s'); } }
@@ -3453,8 +3462,12 @@
     }
     function catLoop(ts){
       if(document.hidden){ _eng.raf=0; return; }   // 탭 숨김 → 루프 정지(복귀 시 visibilitychange로 재개, 유휴 배터리 절약)
-      const dt=_eng.last?Math.min(50,ts-_eng.last):16; _eng.last=ts;
-      // ⚠️ 한 프레임에서 예외가 나도 루프를 '영구' 종료시키지 않게 try/catch — 아래 requestAnimationFrame은 무조건 다시 예약(예전엔 예외 시 재예약이 건너뛰어져 앱 재시작 전까지 펫이 완전 정지했다).
+      _eng.raf=requestAnimationFrame(catLoop);      // 다음 프레임 먼저 예약(아래 작업이 예외로 죽어도 루프 유지 — 예전엔 예외 시 재예약이 건너뛰어져 펫이 앱 재시작까지 완전 정지)
+      // 🔋 프레임레이트 캡 — 걷기는 30fps면 충분히 부드럽다(저사양 폰 CPU/GPU·배터리 절반↓). 모션 최소화/가벼운 모드면 5fps로 더 낮춰 '무대 변화 감지'만.
+      const budget = reducedMotion() ? 200 : 33;
+      const since = _eng.last ? ts-_eng.last : 999;
+      if(since < budget) return;                    // 아직 프레임 예산이 안 참 → 이 rAF는 그냥 넘김(무거운 activeStages/stepActors 스킵)
+      const dt=Math.min(50, since); _eng.last=ts;
       try{
         const want=activeStages();
         // 무대 집합이 바뀌었거나 dirty면 그룹 재구성 — 유지되는 무대의 액터는 재사용해 애니메이션 상태 보존, 새 무대만 buildActors.
@@ -3462,7 +3475,6 @@
         if(changed){ _eng.groups=want.map(st=>{ const ex=_eng.dirty?null:_eng.groups.find(g=>g.stage===st); return ex||{ stage:st, actors:buildActors(st) }; }); _eng.dirty=false; }
         if(!reducedMotion()) _eng.groups.forEach(g=>{ if(g.actors.length) stepActors(dt, g.actors); });   // 모든 무대(dock + 열린 방)를 함께 굴림
       }catch(e){ /* 이 프레임만 건너뛰고 다음 프레임 계속 */ }
-      _eng.raf=requestAnimationFrame(catLoop);
     }
     function startCatLoop(){ if(!_eng.raf && !(typeof document!=='undefined'&&document.hidden)) _eng.raf=requestAnimationFrame(catLoop); }
     if(typeof document!=='undefined') document.addEventListener('visibilitychange', function(){ if(!document.hidden){ _eng.last=0; startCatLoop(); } });   // 탭 복귀 시 루프 재개
@@ -3970,7 +3982,8 @@
       if(now-_lastRecon<3000) return; _lastRecon=now;   // 렌더 경로에서 매 렌더 호출돼도 3초 스로틀(3시간 만료 기준이라 지장 없음, 중복 트랜잭션 방지)
       let expired=0; (g.home.rooms||[]).forEach(r=>{ const pl=(r&&r.placed)||{}; Object.keys(pl).forEach(k=>{ const e=pl[k]; if(e&&e.filledAt&&(now-e.filledAt)>=FILL_MS) expired++; }); });
       if(!expired) return;
-      gameRef().transaction(gg=>{ gg=normalizeGame(gg); const n=Date.now();
+      gameRef().transaction(gg=>{ if(gg==null) return;   // 자동 발동(사용자 조작 없음) → null 첫 패스에 기본 홈을 제안하지 않음(재접속 clobber 방지)
+        gg=normalizeGame(gg); const n=Date.now();
         (gg.home.rooms||[]).forEach(R=>{ const pl=R.placed||{}; let poop=0;
           const hasLitter=Object.keys(pl).some(k=>pl[k]&&pl[k].itemId==='litterbox');   // 화장실 있는 방에서만 똥 누적(없으면 그릇만 비움) — '안 보이는 똥'을 batchCare가 보상하던 문제 차단
           Object.keys(pl).forEach(k=>{ const e=pl[k]; if(e&&e.filledAt&&(n-e.filledAt)>=FILL_MS){ e.filledAt=null; poop++; } });

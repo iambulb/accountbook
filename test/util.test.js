@@ -272,6 +272,34 @@ test('normalizeHome: 빈 입력 → 기본 방 1개', () => {
   assert.deepStrictEqual(h.rooms[0], { name: '방 1', emoji: '', wallpaper: 'default', placed: {}, wallPlaced: {}, active: [], poops: 0, floor: 'default' });
 });
 
+// 🚨 RTDB rooms 형태 견고화(멀티룸 배치 소실 회귀 방지) — Firebase가 배열을 객체/null구멍으로 바꿔 내려도 방을 잃지 않아야 함
+test('toRoomsArray: 배열/객체/null구멍/빈값 처리', () => {
+  const r0 = { placed: { '1_1': { itemId: 'a' } } }, r1 = { placed: { '2_2': { itemId: 'b' } } };
+  assert.deepStrictEqual(U.toRoomsArray([r0, r1]), [r0, r1]);            // 정상 배열
+  assert.deepStrictEqual(U.toRoomsArray({ 0: r0, 1: r1 }), [r0, r1]);    // 객체형(sparse coercion) → 키순 배열
+  assert.deepStrictEqual(U.toRoomsArray({ 1: r1 }), [r1]);              // 앞 인덱스 빠진 객체 → 존재하는 방만
+  assert.deepStrictEqual(U.toRoomsArray([null, r1]), [r1]);            // null 구멍 배열 → 구멍 제거(유령 빈 방 방지)
+  assert.strictEqual(U.toRoomsArray(null), null);                       // 방 데이터 없음
+  assert.strictEqual(U.toRoomsArray({}), null);                        // 빈 객체
+  assert.strictEqual(U.toRoomsArray('x'), null);                       // 이상 타입
+});
+
+test('normalizeHome: rooms가 객체형({0,1})이어도 붕괴 없이 두 방 보존 (재접속 소실 회귀)', () => {
+  const objRooms = { 0: { placed: { '1_1': { itemId: 'a' } } }, 1: { placed: { '2_2': { itemId: 'b' } } } };
+  const h = U.normalizeHome({ rooms: objRooms, roomSlots: 2, current: 1 });
+  assert.strictEqual(h.rooms.length, 2);                                // 1방으로 붕괴되지 않음
+  assert.deepStrictEqual(h.rooms[0].placed, { '1_1': { itemId: 'a' } });
+  assert.deepStrictEqual(h.rooms[1].placed, { '2_2': { itemId: 'b' } });
+  assert.strictEqual(h.current, 1);
+});
+
+test('normalizeHome: null 구멍 배열([null, 방2])이면 유령 빈 방 없이 방2만 보존', () => {
+  const h = U.normalizeHome({ rooms: [null, { placed: { '2_2': { itemId: 'b' } } }], roomSlots: 2 });
+  assert.deepStrictEqual(h.rooms[0].placed, { '2_2': { itemId: 'b' } });  // 방2가 인덱스0으로 당겨져 보존(빈 방 재생성 안 함)
+  assert.strictEqual(h.rooms.length, 2);                                  // roomSlots=2까지 뒤에만 빈 방 패딩
+  assert.deepStrictEqual(h.rooms[1].placed, {});
+});
+
 test('normalizeHome: 이미 rooms면 통과 + roomSlots만큼 방 보장', () => {
   const h = U.normalizeHome({ rooms: [{ name: '고양이방', wallpaper: 'sakura', active: ['a'] }], roomSlots: 3, current: 2, slots: 5 });
   assert.strictEqual(h.rooms.length, 3);        // roomSlots(3)만큼 패딩(방 2·방 3 기본)
