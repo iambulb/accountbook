@@ -4667,6 +4667,7 @@
     function selWallItem(id){ if(itemRemaining(id)<=0){ toast(catFurnName(id)+' 전부 배치됨 — 회수하거나 더 얻어야 걸 수 있어요', true); return; } _selWall=(_selWall===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     // 벽 배치 트랜잭션(전역 인벤토리 재검증·겹침 재검증). placed와 별개 wallPlaced에 기록.
     function wallPlaceItemTx(sel, r, c){ const w=wallFoot(sel).w;
+      captureUndo();
       gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoom(g); R.wallPlaced=R.wallPlaced||{};
         const qty=Number((g.owned.items[sel]||{}).qty)||0, placedAll=(typeof sumPlacedItem==='function')?sumPlacedItem(g.home.rooms, sel):0;
         if(qty-placedAll<=0) return;                                   // 남은 수량 없음(복제 차단, 바닥+벽 합산)
@@ -4720,6 +4721,7 @@
     // 배치 트랜잭션: 남은 수량·겹침·케어 상한을 트랜잭션 안에서 재검증(비트랜잭션 .set의 복제/겹침 레이스 차단).
     function placeItemTx(sel, r, c, foot){
       if(isWallItem(sel)) return;                                       // 벽 가구는 바닥격자 배치 불가(벽꾸미기 전용)
+      captureUndo();
       gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoom(g); R.placed=R.placed||{};
         const qty=Number((g.owned.items[sel]||{}).qty)||0, placedAll=(typeof sumPlacedItem==='function')?sumPlacedItem(g.home.rooms, sel):0;
         if(qty-placedAll<=0) return;                                   // 남은 수량 없음(복제 차단)
@@ -4815,6 +4817,7 @@
       if(!areaFree(r,c,d.foot.w,d.foot.h,placed,d.key,isFloorItem(placedItemId(d.key)))){ toast('그 자리엔 놓을 수 없어요(겹침)', true); resetEl(); return; }
       const id=placed[d.key]&&placed[d.key].itemId; if(!id){ resetEl(); return; }
       // 이동도 트랜잭션(자기 제외 겹침 재검증) — 리스너가 재렌더
+      captureUndo();
       gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoom(g); const pl=R.placed||{};
         const it=pl[d.key]; if(!it) return;                               // 원본 없음(레이스)
         if(!areaFree(r,c,d.foot.w,d.foot.h,pl,d.key,isFloorItem(it.itemId))) return;             // 겹침(자기 제외, 바닥 아이템은 허용)
@@ -4921,6 +4924,7 @@
       if(newKey===d.key){ resetEl(); return; }
       const wp=room().wallPlaced||{};
       if(!wallAreaFree(r,c,d.w,wp,d.key)){ toast('그 자리엔 걸 수 없어요(겹침)', true); resetEl(); return; }
+      captureUndo();
       gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoom(g); const pl=R.wallPlaced||{};
         const it=pl[d.key]; if(!it) return;                               // 원본 없음(레이스)
         if(!wallAreaFree(r,c,d.w,pl,d.key)) return;                        // 겹침(자기 제외)
@@ -4999,6 +5003,20 @@
     function setPlaceCat(c){ _placeCat=c; if(_selItem && placeCatOf(_selItem)!==c) _selItem=null; if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }   // 탭을 벗어난 선택은 해제 — "보이는 것만 선택됨" 유지(안 보이는 가구가 그리드 탭에 놓이는 혼동 방지)
     // 팔레트 아이콘 높이 = 방 렌더 크기(ROOM_H)에 sqrt로 완만 비례(작은 그릇은 작게·큰 캣타워는 크게, 극단비 압축). 16~30px 클램프.
     function palPicH(id){ const rh=(ROOM_H[id]||1); return Math.max(16,Math.min(30,Math.round(11+Math.sqrt(rh)*7.5))); }
+    // 빈 격자 첫 사용 안내(격자 안 오버레이)
+    function emptyGridHint(){ return '<div class="pe-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg><span>아래 가구를 <b>꾹 눌러</b> 격자로 끌어다 놓아보세요</span></div>'; }
+    // 되돌리기(1스텝) — 배치 변경 직전 현재 방 스냅샷 저장, 버튼으로 복원. 방이 바뀌면 무효.
+    let _undoSnap=null;
+    function captureUndo(){ try{ const r=room(); _undoSnap={ roomId:curRoomId(), placed:Object.assign({},r.placed||{}), wallPlaced:Object.assign({},r.wallPlaced||{}) }; }catch(e){ _undoSnap=null; } }
+    function undoPlace(){ if(!_undoSnap || _undoSnap.roomId!==curRoomId()){ _undoSnap=null; return; } const s=_undoSnap; _undoSnap=null;
+      roomTx(s.roomId, roomIdx(), R=>{ R.placed=s.placed; R.wallPlaced=s.wallPlaced; }, ()=>{ if(state._sheetRefresh) state._sheetRefresh(); toast('되돌렸어요'); }); }
+    function placeActionsBar(){ const r=room(); const hasAny=Object.keys(r.placed||{}).length||Object.keys(r.wallPlaced||{}).length;
+      const canUndo=!!(_undoSnap && _undoSnap.roomId===curRoomId());
+      if(!hasAny && !canUndo) return '';
+      return '<div class="placeacts">'+
+        (canUndo?'<button class="pa-btn" onclick="undoPlace()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>되돌리기</button>':'')+
+        (hasAny?'<button class="pa-btn danger" onclick="captureUndo();clearRoom(curRoomId(),roomIdx())"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>이 방 비우기</button>':'')+
+      '</div>'; }
     function catPlaceHtml(){
       const wallMode=_placeMode==='wall';
       const toggle='<div class="subseg placemode">'+
@@ -5015,9 +5033,9 @@
         const witems=Object.keys(wp).map(key=>{ const pr=key.split('_'), r=+pr[0], c=+pr[1], id=wp[key].itemId, w=wallFoot(id).w;
           const left=(gridLeftFrac(c)*100).toFixed(3), top=(((r-1)/WALL_ROWS)*100).toFixed(3), ww=(gridSpanFrac(w)*100).toFixed(3), hh=(100/WALL_ROWS).toFixed(3);
           return '<div class="gitem" style="left:'+left+'%;top:'+top+'%;width:'+ww+'%;height:'+hh+'%" onpointerdown="wallGiDown(event,\''+key+'\')" onclick="event.stopPropagation()"><span class="gsc">'+furnSvg(id,{fit:true})+'</span></div>'; }).join('');
-        const wgrid='<div class="gridwall" id="wallGrid" onclick="wallPlaceClick(event)">'+witems+'<div class="gdrop" id="wgdrop" hidden></div><div class="wsnap" id="wsnap" hidden></div><div class="wsnaph" id="wsnaph" hidden></div></div>';
-        const wpal=ITEM_CATALOG.filter(it=>isWallItem(it.id) && itemQty(it.id)>0).map(it=>{ const rem=itemRemaining(it.id), sold=rem<=0;
-          return '<button class="pitem'+(_selWall===it.id?' on':'')+(sold?' soldout':'')+'"'+(sold?' aria-disabled="true"':'')+' onpointerdown="wallPalDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selWallItem(\''+it.id+'\')"><span class="pic">'+furnSvg(it.id,{h:palPicH(it.id)})+'</span><span>'+it.name+'</span><span class="pq">'+(sold?'전부 배치됨':'남은 '+rem)+'</span></button>'; }).join('');
+        const wgrid='<div class="gridwall" id="wallGrid" onclick="wallPlaceClick(event)">'+witems+(witems?'':emptyGridHint())+'<div class="gdrop" id="wgdrop" hidden></div><div class="wsnap" id="wsnap" hidden></div><div class="wsnaph" id="wsnaph" hidden></div></div>';
+        const wpal=ITEM_CATALOG.filter(it=>isWallItem(it.id) && itemQty(it.id)>0).map(it=>{ const rem=itemRemaining(it.id), sold=rem<=0, ft=itemTierOf(it.id);
+          return '<button class="pitem'+(_selWall===it.id?' on':'')+(sold?' soldout':'')+'"'+(sold?' aria-disabled="true"':'')+' onpointerdown="wallPalDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selWallItem(\''+it.id+'\')"><span class="pic tbring tb-'+ft+'">'+furnSvg(it.id,{h:palPicH(it.id)})+tierBadgeHtml(ft)+'</span><span>'+it.name+'</span><span class="pq">'+(sold?'전부 배치됨':'남은 '+rem)+'</span></button>'; }).join('');
         const wallHint='<div class="hintline" style="margin:8px 0 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16"/></svg>벽 가구를 <b>탭해 선택</b>하거나 <b>꾹 눌러 격자로 끌어</b> 걸어요(위=천장·아래=바닥선). 걸린 항목은 <b>꾹 눌러 드래그로 이동</b>, 짧게 탭하면 회수/판매. <b>특별↑ 벽 가구는 랜덤박스로만</b> 얻어요.</div>';
         body=wgrid+wallHint+'<div class="palette catinv">'+(wpal||'<div class="palempty">보유한 벽 가구가 없어요<br><span>랜덤박스에서 벽 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>')+'</div>'+skinPickerHtml('wall');
       } else {
@@ -5038,7 +5056,7 @@
         const palBody=pal||'<div class="palempty">이 분류에 보유한 가구가 없어요<br><span>알뜰샵·랜덤박스에서 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>';
         body=grid+dragHint+catTabs+'<div class="palette catinv">'+palBody+'</div>'+skinPickerHtml('floor');
       }
-      return roomStripHtml()+'<div class="editwrap">'+preview+toggle+body+'</div>';
+      return roomStripHtml()+'<div class="editwrap">'+preview+toggle+placeActionsBar()+body+'</div>';
     }
     function missionRow(m){
       const claimed=missionClaimed(m), ok=m.check();
@@ -5445,7 +5463,7 @@
       opt=opt||{}; text=String(text==null?'':text);
       try{
         if(typeof document==='undefined' || !document.createElement) throw 0;
-        const base=opt.base||15, font='900 '+base+'px system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif';
+        const base=opt.base||12, font='900 '+base+'px system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif';   // base 작을수록 소스 픽셀 적음 → 확대 시 블록 큼(더 도트답게)
         let cv=document.createElement('canvas'), g=cv.getContext('2d'); if(!g) throw 0;
         g.font=font; const tw=Math.max(1, Math.ceil(g.measureText(text).width));
         const w=tw+2, h=Math.max(2, Math.ceil(base*1.42));
@@ -5454,7 +5472,7 @@
         else g.fillStyle=fill||'#ffffff';
         g.fillText(text, 1, h/2+0.5);
         const im=g.getImageData(0,0,w,h), d=im.data;
-        for(let i=0;i<d.length;i+=4){ d[i+3] = d[i+3]>=120 ? 255 : 0; }   // 알파 1비트 → 하드 픽셀 엣지(확대 시 깔끔한 도트)
+        for(let i=0;i<d.length;i+=4){ d[i+3] = d[i+3]>=105 ? 255 : 0; }   // 알파 1비트 → 하드 픽셀 엣지(확대 시 깔끔한 도트). 임계 낮춤=낮은 base에서 얇은 획 보존
         g.putImageData(im,0,0);
         const url=cv.toDataURL('image/png'), dh=opt.h||Math.round(h*2.2);
         return '<img class="pxtext'+(opt.cls?' '+opt.cls:'')+'" src="'+url+'" alt="'+escapeHtml(text)+'" style="height:'+dh+'px;width:auto;image-rendering:pixelated;">';
@@ -5482,8 +5500,8 @@
           '<span class="fx-artimg">'+art+'</span>'+
           (_fx.isNew?newBadgeSvg({h:30}):'')+                                          // 🌈 처음 획득: 무지개 픽셀 "NEW" 배지(펫/아이템 위에서 물결)
         '</div>'+
-        '<div class="fx-tier">'+pixelTextHtml(t.name, (t.id==='exclusive'?'RAINBOW':(t.color||'#ffffff')), {h:34, cls:'fx-pxtier'})+'</div>'+
-        '<div class="fx-name">'+pixelTextHtml((isEggKind(_fx.kind)?catName(_fx.res.id):rewardName(_fx.res)), (_fx.res.tier==='exclusive'?'RAINBOW':(t.color||'#ffffff')), {h:26, cls:'fx-pxname'})+'</div>'+
+        '<div class="fx-tier">'+pixelTextHtml(t.name, (t.id==='exclusive'?'RAINBOW':(t.color||'#ffffff')), {h:40, base:11, cls:'fx-pxtier'})+'</div>'+
+        '<div class="fx-name">'+pixelTextHtml((isEggKind(_fx.kind)?catName(_fx.res.id):rewardName(_fx.res)), (_fx.res.tier==='exclusive'?'RAINBOW':(t.color||'#ffffff')), {h:30, base:12, cls:'fx-pxname'})+'</div>'+
         '<div class="fx-reward">'+(_fx.gold?'<span class="rw"><span class="ci">'+goldSvg({h:18})+'</span>+1 금화</span>':'')+
           (_fx.dup?'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>+'+_fx.refund+' 은화 (중복)</span>':'')+'</div>'+
         '<button class="btn" onclick="closeFx()">확인</button>'+
