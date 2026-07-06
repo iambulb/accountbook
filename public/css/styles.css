@@ -1780,6 +1780,29 @@
     .gbanner .gb-head .pk-title, .gbanner .gb-head .gb-t { font-size:14px; font-weight:900; letter-spacing:.02em; }
     .gb-scene { position:relative; height:256px; overflow:hidden; }   /* 캠 화면처럼 세로로 크게 */
     .gb-scene .pkscene { height:100%; }
+    /* ===== 🌇 노을 씬(펫알 배너) — 픽업 씬 틀 + 노을 하늘·계곡·고추잠자리 ===== */
+    .pkscene.pk-sunset { background:radial-gradient(80px 46px at 74% 100%, rgba(255,240,180,.95), rgba(255,186,110,.55) 46%, transparent 72%), linear-gradient(180deg,#3d2f66 0%,#7a4880 26%,#c65f6a 52%,#ef9457 76%,#ffc184 100%); }
+    :root[data-theme="dark"] .pkscene.pk-sunset { background:radial-gradient(80px 46px at 74% 100%, rgba(255,226,150,.8), rgba(230,150,90,.45) 46%, transparent 72%), linear-gradient(180deg,#241d44 0%,#5a3560 28%,#9a4a58 54%,#c56a44 78%,#d9975e 100%); }
+    .pkscene.pk-sunset .pk-grass { background:#6f9c50; }   /* 뜰을 살짝 노을(올리브·황록) */
+    .pkscene.pk-sunset .pk-grass::before { background:repeating-linear-gradient(90deg,#8bb85f 0 2px, transparent 2px 5px); }
+    :root[data-theme="dark"] .pkscene.pk-sunset .pk-grass { background:#4a6b3c; }
+    .pkscene.pk-sunset .pk-field::after { content:''; position:absolute; inset:0; z-index:6; pointer-events:none; background:linear-gradient(180deg, rgba(255,150,80,.20) 0%, rgba(255,140,90,.05) 34%, transparent 60%); }   /* 뜰 위쪽에 노을빛 물듦 */
+    /* 🏞️ 계곡(오른쪽 세로 스트림) — 흐르는 물결 + 노을 반영 */
+    .pk-stream { position:absolute; right:-3%; bottom:0; width:15%; height:100%; z-index:1; overflow:hidden; }
+    .pk-water { position:absolute; inset:0; background:linear-gradient(90deg,#3f8fa8 0%,#5cb3c8 45%,#7fd0e0 100%); }
+    .pk-water::before { content:''; position:absolute; left:0; right:0; top:-40%; height:180%; background:repeating-linear-gradient(180deg, rgba(255,255,255,.28) 0 3px, transparent 3px 9px), repeating-linear-gradient(180deg, rgba(255,180,110,.30) 5px, transparent 5px 14px); animation:pkflow 2.6s linear infinite; }
+    @keyframes pkflow { from{ transform:translateY(0);} to{ transform:translateY(9px);} }
+    .pk-fish { position:absolute; display:block; image-rendering:pixelated; z-index:2; transform:translateX(-50%); animation:pkfish var(--d,8s) ease-in-out infinite; }
+    .pk-fish .px { display:block; image-rendering:pixelated; }
+    @keyframes pkfish { 0%{ bottom:-8%; transform:translateX(-50%) scaleX(1);} 48%{ transform:translateX(-50%) scaleX(1);} 50%{ bottom:104%; transform:translateX(-50%) scaleX(-1);} 98%{ transform:translateX(-50%) scaleX(-1);} 100%{ bottom:-8%; transform:translateX(-50%) scaleX(1);} }
+    /* 🪨 계곡 옆 줄지은 작은 돌(제각각 크기) — 스트림 안쪽 가장자리 세로줄 */
+    .pk-stonecol { position:absolute; right:13%; bottom:0; width:0; height:100%; z-index:2; }
+    .pk-sstone { position:absolute; left:0; display:block; transform:translateX(-50%); image-rendering:pixelated; }
+    .pk-sstone .px { display:block; image-rendering:pixelated; }
+    /* 🍁 고추잠자리 — 나비 자리(pk-air)에서 제각각 팔랑, 몸은 살짝 좌우 기울임 */
+    .pk-dfly { position:absolute; z-index:4; will-change:transform; animation:fxflit var(--d,8s) ease-in-out infinite; }
+    .pk-dfly .df-body { display:block; image-rendering:pixelated; transform-origin:center; animation:pkdtilt 1.1s ease-in-out infinite; }
+    @keyframes pkdtilt { 0%,100%{ transform:rotate(-8deg);} 50%{ transform:rotate(8deg);} }
     .gb-scene .pkscene .pk-egg, .gb-scene .pkscene .pkstage { display:none; }   /* 기본 아이콘·배회펫 숨김 → 둥지+알이 중심 */
     .gb-nest { position:absolute; left:50%; bottom:11%; transform:translateX(-50%); width:min(54%,170px); z-index:4; }
     .gb-nestback { position:relative; z-index:0; line-height:0; }

@@ -2195,7 +2195,8 @@
     const M_CLOUD1=[".....HHHHHH.....","...HHWWWWWWHH...","..HWWWWWWWWWWH..",".HWWWWWWWWWWWWH.","HWWWWWWWWWWWWWWH","WWWWWWWWWWWWWWWW",".SSSSSSSSSSSSSS."];
     const M_CLOUD2=["...HHHH...",".HHWWWWHH.","HWWWWWWWWH","WWWWWWWWWW",".SSSSSSSS."];
     const M_CLOUD3=["..HHH..",".HWWWH.","WWWWWWW",".SSSSS."];
-    const CLOUD_PALS={w:{W:'#ffffff',H:'#eef6ff',S:'#d3e4f3'},p:{W:'#fff2f8',H:'#ffe9f2',S:'#f2cfe0'},b:{W:'#f0f8ff',H:'#e4f1ff',S:'#cfe2f5'}};
+    const CLOUD_PALS={w:{W:'#ffffff',H:'#eef6ff',S:'#d3e4f3'},p:{W:'#fff2f8',H:'#ffe9f2',S:'#f2cfe0'},b:{W:'#f0f8ff',H:'#e4f1ff',S:'#cfe2f5'},
+      so:{W:'#ffd9a8',H:'#ffc286',S:'#f0a25e'},sp:{W:'#ffc6cf',H:'#ff9fb0',S:'#e77e97'},sv:{W:'#dcc2ea',H:'#c6a4dc',S:'#a888c6'}};   // 🌇 노을에 비친 구름(주황·분홍·보라)
     function cloudSvg(which,tint,opt){ const M=[M_CLOUD1,M_CLOUD2,M_CLOUD3][which]||M_CLOUD1; return pxSvg(M, CLOUD_PALS[tint||'w'], opt); }
     // 활엽수: 둥근 캐노피(H하이라이트/L기본/l중간/D그림자/X외곽, 클럼프 음영) + 트렁크(T/w/t 나뭇결) 분리(캐노피만 바람에 살랑)
     const M_TREETOP=["....HHH......","..HHLLLHH....",".HLLLLLLLH...","HLLLLLLlLLH..","HLLHLLLllLDH.","HLLLLLllllLDH",".HLLLlllllDDH",".HLLLllllDDD.","..HLLllDDDD..","...XLllDDX...","....XXDX....."];
@@ -2208,7 +2209,8 @@
     function trunkSvg(opt){ return pxSvg(M_TRUNK, TREE_PAL, opt); }
     function pineSvg(opt){ return pxSvg(M_PINE, PINE_PAL, opt); }
     const M_FLOWER=[".P.P.","PCPCP",".PCP.","..S..",".S.S."];
-    const FLOWER_PALS={r:{S:'#3f9a45',P:'#ff5d6c',C:'#ffd84a'},y:{S:'#3f9a45',P:'#ffd84a',C:'#ff8a3c'},p:{S:'#3f9a45',P:'#c77dff',C:'#ffe98f'}};
+    const FLOWER_PALS={r:{S:'#3f9a45',P:'#ff5d6c',C:'#ffd84a'},y:{S:'#3f9a45',P:'#ffd84a',C:'#ff8a3c'},p:{S:'#3f9a45',P:'#c77dff',C:'#ffe98f'},
+      su:{S:'#4c8a4e',P:'#d15fa6',C:'#ffcf7a'},sg:{S:'#4c8a4e',P:'#ff9b3c',C:'#ffe6a0'},sw:{S:'#4c8a4e',P:'#ffe3c4',C:'#ff7a5c'}};   // 🌇 노을 꽃(자홍·금빛·크림) — 줄기는 살짝 어두운 초록
     function flowerSvg(tint,opt){ return pxSvg(M_FLOWER, FLOWER_PALS[tint||'r'], opt); }
     const M_TUFT=["G.g.G","GgGgG","GGGGG",".ggg."];
     const TUFT_PAL={G:'#5bb85b',g:'#3f9a45',H:'#8fd47f'};
@@ -2232,6 +2234,18 @@
     const M_FENCE=[".T....T....T.","TWwT.TWwT.TWw","TWwT.TWwT.TWw","RRRRRRRRRRRRR","TWwT.TWwT.TWw","TWwT.TWwT.TWw","RRRRRRRRRRRRR","TWwT.TWwT.TWw","TWwT.TWwT.TWw"];
     const FENCE_PAL={T:'#5f3e22',W:'#c39a63',w:'#96703f',R:'#8a6038'};
     function fenceSvg(opt){ return pxSvg(M_FENCE, FENCE_PAL, opt); }
+    // ===== 🍁 노을 배너 전용 에셋(단풍·고추잠자리·물고기) — 픽셀 아트 =====
+    // 단풍나무: M_TREETOP 모양 재사용 + 가을 팔레트(주황→빨강 명암).
+    const MAPLE_PAL={H:'#f5aa46',L:'#e86e36',l:'#d2482c',D:'#962828',X:'#601c1c'};
+    function mapleSvg(opt){ return pxSvg(M_TREETOP, MAPLE_PAL, opt); }
+    // 🍁 고추잠자리(top-down, 긴 빨강 몸통 + 4날개). R=빨강 r=진빨강 X=외곽 E=눈 W/w/v=날개(밝·그림자·맥).
+    const M_DFLY=["......X......",".....XEX.....",".....XRX.....","vWWWwXRXwWWWv",".vWWwXRXwWWv.","...wwXRXww...",".vWWwXRXwWWv.","vWWWwXRXwWWWv",".....XRX.....",".....XRX.....",".....XrX.....",".....XrX.....","......r......"];
+    const DFLY_PAL={R:'#e83636',r:'#b41e1e',X:'#601414',E:'#fce060',W:'#e0ecf8',w:'#b2c6de',v:'#92a8c6'};
+    function dragonflySvg(opt){ return pxSvg(M_DFLY, DFLY_PAL, opt); }
+    // 🐟 물고기(koi, 옆모습·헤엄): 머리=왼쪽(눈 E), 꼬리=오른쪽. O/o=주황 W=흰배.
+    const M_FISH=["....ooo.....","..oOOOOOo..o",".oOWWOOOOooo","oEOWWOOOOooo",".oOOOOOOOoo.","..ooOOOo...o"];
+    const FISH_PAL={O:'#f2923a',o:'#ce6822',W:'#fff2de',E:'#261a12'};
+    function fishSvg(opt){ return pxSvg(M_FISH, FISH_PAL, opt); }
     // 깊이 그림자(납작 타원): 펫 발밑에 깔려 depth(액터 scale 그대로)에 따라 커지고 작아짐 → 접지감+깊이. 색은 CSS opacity로 은은하게. 가림 0.
     const M_SHADOW=[".SSSSSSS.","SSSSSSSSS",".SSSSSSS."];
     const SHADOW_PAL={S:'#12240c'};
@@ -4302,16 +4316,16 @@
     function gbNestHtml(eggHtml){ return '<div class="gb-nest"><div class="gb-nestback">'+nestSvg({})+'</div><div class="gb-egg">'+eggHtml+'</div><div class="gb-nestfront">'+nestFrontSvg({})+'</div></div>'; }
     function gbActionsHtml(kind){ return '<div class="gb-actions"><button class="gb-btn" onclick="devBannerPull(\''+kind+'\',false)">1회 뽑기</button><button class="gb-btn gb-btn10" onclick="devBannerPull(\''+kind+'\',true)">10회 연속</button></div>'; }
     function gbPityHtml(kind){ const left=pityRemain(pityGet(kind), (typeof PITY_N!=='undefined'?PITY_N:100)); return '<div class="gb-pity"><span class="pity-chip">'+sparkSvg({h:11})+(typeof PITY_N!=='undefined'?PITY_N:100)+'번 안에 <b>신화 이상 확정</b> · 남은 <b>'+left+'뽑</b></span></div>'; }
-    // 🌱 뜰알 전용 배너(세로 크게·둥지에 뜰알)
+    // 🌱 뜰알 배너 = 실제 가챠샵 한정 픽업 배너(limitedPickupBanner) 그대로 + 미리보기 버튼.
     function ddeulBannerHtml(){
-      return '<div class="gbanner gb-ddeul"><div class="gb-head"><span class="pk-title tier-rainbow">✨ 뜰알 · 한정 픽업</span></div>'+
-        '<div class="gb-scene">'+pickupSceneHtml('banner')+gbNestHtml(ddeulEggSvg({h:60}))+'</div>'+
+      const pb=limitedPickupBanner();
+      return '<div class="gbanner gb-ddeul">'+(pb||'<div class="note" style="margin:10px 12px;">활성 한정 픽업 펫이 없어 배너가 비어 있어요(개발자 모드에서 픽업 펫을 활성화하면 표시).</div>')+
         gbActionsHtml('ddeul')+gbPityHtml('ddeul')+'</div>';
     }
-    // 🥚 펫알 전용 배너(추후 독립 수정 — 지금은 동일 배경, 별개 인스턴스)
+    // 🥚 펫알 배너 = 픽업 배너 틀 복사 + 노을 디자인(sunsetSceneHtml). 둥지+펫알은 유지.
     function eggBannerHtml(){
-      return '<div class="gbanner gb-egg"><div class="gb-head"><b class="gb-t">🥚 펫알</b></div>'+
-        '<div class="gb-scene">'+pickupSceneHtml('banner')+gbNestHtml(eggSvg(0,{h:62}))+'</div>'+
+      return '<div class="gbanner gb-egg"><div class="gb-head"><b class="gb-t">🥚 펫알 · 노을</b></div>'+
+        '<div class="gb-scene">'+sunsetSceneHtml()+gbNestHtml(eggSvg(0,{h:62}))+'</div>'+
         gbActionsHtml('egg')+gbPityHtml('egg')+'</div>';
     }
     // 🎁 랜덤박스 전용 배너(추후 독립 수정 — 지금은 동일 배경, 별개 인스턴스)
@@ -4766,6 +4780,54 @@
       const tag=(id)=> pickupExists(id) ? '<span class="pk-tag">'+catNameSpan(id,catName(id))+'</span>' : '';
       const sep=(pickupExists(p1)&&pickupExists(p2))?'<span class="pk-tag" style="opacity:.5;">·</span>':'';
       return '<div class="pickbanner"><div class="pk-head"><span class="pk-title tier-rainbow">✨ 지금 이 펫만! 한정 픽업</span>'+tag(p1)+sep+tag(p2)+'</div>'+pickupSceneHtml('banner')+'</div>'; }
+    // 🌇 노을 씬(펫알 배너 전용) — 픽업 씬 틀을 복사하되 무지개→노을: 노을 하늘·구름, 단풍나무, 노을 꽃,
+    //    울타리·큰돌 대신 옆에 흐르는 계곡(물고기 헤엄)+줄지은 작은 돌들, 노을빛 뜰, 나비→고추잠자리. 결정적(pkRand)·캐시.
+    let _sunsetCache=null;
+    function sunsetSceneHtml(){
+      if(_sunsetCache) return _sunsetCache;
+      // ☁️ 노을에 물든 구름
+      let clouds=''; const SC=['so','sp','sv'];
+      for(let i=0;i<12;i++){ const y=(2+pkRand(i,1)*30).toFixed(1), hh=Math.round(11+pkRand(i,2)*16), w=Math.floor(pkRand(i,3)*3), tn=SC[Math.floor(pkRand(i,4)*3)], dur=(30+pkRand(i,5)*42).toFixed(1);
+        clouds+='<span class="pk-cloud" style="top:'+y+'%;--d:'+dur+'s;--i:'+i+'">'+cloudSvg(w,tn,{h:hh})+'</span>'; }
+      // 🍁 지평선 단풍/풀/꽃(먼 원경, 밑동 seam에 살짝 묻힘)
+      const FF=['su','sg','sw']; let farline='';
+      for(let i=0;i<20;i++){ const l=((i+0.4)/20*100).toFixed(1), bot=(-1-pkRand(i,53)*3).toFixed(1), k=pkRand(i,54), r=pkRand(i,55);
+        if(k<0.44) farline+='<span class="pk-tree pk-far" style="left:'+l+'%;bottom:'+bot+'px;z-index:1;--i:'+i+'"><span class="pk-canopy">'+mapleSvg({h:Math.round(11+r*8)})+'</span></span>';
+        else if(k<0.68) farline+='<span class="pk-tuft pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+tuftSvg({h:Math.round(6+r*3)})+'</span>';
+        else farline+='<span class="pk-flower pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+flowerSvg(FF[Math.floor(pkRand(i,56)*3)],{h:Math.round(7+r*3)})+'</span>'; }
+      // 🍁 가까운 단풍나무 5그루(레인 분포)
+      let trees=''; for(let i=0;i<5;i++){ const d=(i===3?0.2:0.5+pkRand(i,11)*0.26), l=((i+0.5)/5*84+5+(pkRand(i,12)-0.5)*6+(i===2?7:0)).toFixed(1),
+        sc=1-d*0.5, bot=(d*70).toFixed(1), z=Math.round(2+(1-d)*2);
+        trees+='<span class="pk-tree" style="left:'+l+'%;bottom:'+bot+'%;z-index:'+z+';--i:'+i+'"><span class="pk-canopy">'+mapleSvg({h:Math.max(18,Math.round(52*sc))})+'</span><span class="pk-trunk">'+trunkSvg({h:Math.max(8,Math.round(24*sc))})+'</span></span>'; }
+      // 🌸 노을 꽃 16 · 🌱 풀 16
+      let flowers=''; for(let i=0;i<16;i++){ const d=pkRand(i,21)*0.6, l=(5+(i+0.5)/16*88+(pkRand(i,22)-0.5)*3.5).toFixed(1), sc=1-d*0.5, bot=(d*76).toFixed(1);
+        flowers+='<span class="pk-flower" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+flowerSvg(FF[Math.floor(pkRand(i,23)*3)],{h:Math.max(9,Math.round(16*sc))})+'</span>'; }
+      let tufts=''; for(let i=0;i<16;i++){ const d=pkRand(i,31)*0.8, l=(2+pkRand(i,32)*94).toFixed(1), sc=1-d*0.5, bot=(d*80).toFixed(1);
+        tufts+='<span class="pk-tuft" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+tuftSvg({h:Math.max(7,Math.round(12*sc))})+'</span>'; }
+      // 🟫 흙 패치
+      let soil=''; for(let i=0;i<7;i++){ const d=pkRand(i,41)*0.7, l=(6+pkRand(i,42)*74).toFixed(1), sc=1-d*0.45, bot=(d*72).toFixed(1), w=Math.round((10+pkRand(i,43)*14)*sc);
+        soil+='<span class="pk-soil" style="left:'+l+'%;bottom:'+bot+'%;width:'+w+'px"></span>'; }
+      // 🏞️ 계곡(오른쪽 세로 스트림) + 헤엄치는 물고기(위아래로 오가며 좌우 반전)
+      let fish=''; for(let i=0;i<4;i++){ const dur=(7+pkRand(i,72)*5).toFixed(1), del=(-pkRand(i,73)*7).toFixed(2), lx=(pkRand(i,74)*40+20).toFixed(0);
+        fish+='<span class="pk-fish" style="left:'+lx+'%;--d:'+dur+'s;animation-delay:'+del+'s;">'+fishSvg({h:12})+'</span>'; }
+      const stream='<div class="pk-stream"><div class="pk-water"></div>'+fish+'</div>';
+      // 🪨 계곡 옆 줄지은 작은 돌(제각각 크기) — 스트림 안쪽 가장자리에 세로로
+      let stones=''; for(let i=0;i<9;i++){ const b=(2+i*11+(pkRand(i,81)-0.5)*3).toFixed(1), s=Math.round(7+pkRand(i,82)*8), lx=((pkRand(i,83)-0.5)*8).toFixed(1);
+        stones+='<span class="pk-sstone" style="bottom:'+b+'%;margin-left:'+lx+'px;">'+stoneSvg({h:s})+'</span>'; }
+      const stonecol='<div class="pk-stonecol">'+stones+'</div>';
+      // 🍁 고추잠자리(나비 대신) — 제각각 팔랑팔랑
+      let dflies=''; for(let i=0;i<6;i++){ const l=(10+((i+0.5)/6)*80+(pkRand(i,61)-0.5)*7).toFixed(1), b=(26+pkRand(i,62)*48).toFixed(1),
+        hh=Math.round(11+pkRand(i,63)*5), dur=(6.5+pkRand(i,64)*5).toFixed(1), del=(-pkRand(i,65)*8).toFixed(2);
+        let _s=90; const rnd=function(){ return pkRand(i,_s++); };
+        dflies+='<span class="pk-dfly" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="df-body">'+dragonflySvg({h:hh})+'</span></span>'; }
+      _sunsetCache='<div class="pkscene pk-sunset" aria-hidden="true">'+
+        '<div class="pk-sky">'+clouds+'</div>'+
+        '<div class="pk-horizon">'+farline+'</div>'+
+        '<div class="pk-field"><div class="pk-grass"></div>'+soil+stonecol+tufts+flowers+trees+stream+'</div>'+
+        '<div class="pk-air">'+dflies+'</div>'+
+      '</div>';
+      return _sunsetCache;
+    }
     // (구 roomBackdropHtml 제거 — 신화·한정 등장만 픽업 배너 씬 배경(전설 제외). 배경은 pickupSceneHtml('reveal').)
     // 등급 '이름' 라벨을 등급 색으로(펫 이름이 아니라 등급명). 한정(exclusive)=무지개(.tier-rainbow), 그 외=인라인 색(신화=#ff5fa2 등). 도감 등급 헤더 등 공용.
     function tierLabelHtml(tierId){ const ti=tierInfo(tierId); const nm=escapeHtml(ti.name);
@@ -5949,12 +6011,11 @@
       _fxT(()=>{
         st.style.color=t.color;   // 열리는 순간부터 등급색 — 빛·픽셀 파티클·버스트·등장이 currentColor로 등급색을 따른다(그 전엔 흰빛이라 등급 스포일러 방지)
         it.classList.remove('fx-preshake','fx-hit','shake','boxshake'); void it.offsetWidth; it.classList.add('fx-tremble');
-        const softC = isEgg && _fx.kind!=='ddeul';   // 🥚 펫알·무지개알: '조금만 덜 열리고' 등급색 빛을 은은·연하게
         if(_fx.kind==='ddeul'){ it.innerHTML=ddeulFxHtml(); fxCrackChips(4); }   // 뜰알: 고양이 얼굴 알이 크게 들썩(꽃도 크게 흔들림)+껍질 조각 튐 후 버스트
-        else if(isEgg){ it.innerHTML=pxSvg(M_EGG_C2, Object.assign({}, _fx.rainbow?EGG_PAL_RB:EGG_PAL, {L:softTier(t.color)}), {h:150}); fxCrackChips(2); }   // 덜 열린(C2) + 연한 등급색 빛(살짝만 새어나옴)
+        else if(isEgg){ it.innerHTML=eggCrackSvg(t.color, _fx.rainbow, {h:150}); fxCrackChips(4); }   // 알이 크게 갈라지고 틈새로 등급색 빛
         else { it.innerHTML=boxOpenSvg(t.color, _fx.rainbow, {h:150}); it.classList.add('fx-ajar'); }   // 박스: 뚜껑 열리고 틈새로 등급색 빛
-        // 갈라진 틈으로 새어나오는 등급색 픽셀 빛 — 도트 오오라(+광선). softC면 작고·연하게(광선 파문 제거).
-        st.insertAdjacentHTML('afterbegin','<div class="fx-cracklight'+(softC?' soft':'')+'" style="color:'+(exL?t.color:(softC?softTier(t.color):t.color))+';--lk:'+(1+rank*(softC?0.07:0.15)).toFixed(2)+'">'+lightLayers({aura:(softC?110:170), rays:(softC?120:220), rainbow:exL})+'</div>');   // 한정=틈새로 새는 빛도 무지개
+        // 갈라진 틈으로 새어나오는 등급색 픽셀 빛 — 은은한 오오라 + 역회전 광선 2겹(둥근 글로우 금지, 도트). 등급↑ 크고 밝게(--lk)
+        st.insertAdjacentHTML('afterbegin','<div class="fx-cracklight" style="color:'+t.color+';--lk:'+lk+'">'+lightLayers({aura:170, rays:220, rainbow:exL})+'</div>');   // 한정=틈새로 새는 빛도 무지개
       }, t0);
       _fxT(()=>{ fxBurst(epic, isEgg, rank); }, t0+700);
       _fxT(fxReveal, t0+700+(isEgg?560:320));   // 알은 껍질 조각이 옆으로 흩어져 앉을 시간을 조금 더 준다
