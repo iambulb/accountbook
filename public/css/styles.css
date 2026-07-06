@@ -942,7 +942,8 @@
     .shopcard .meta .desc b { display:inline; font-size:inherit; font-weight:800; }   /* 설명 속 강조는 인라인(제목 b의 flex 블록화 방지 → 한 줄 유지) */
     .shopcard .meta .price { display:inline-flex; align-items:center; gap:5px; font-size:13px; font-weight:800; margin-top:8px; }
     .shopcard .meta .price .ci { width:17px; height:17px; display:inline-flex; }
-    .shopcard .act { flex:none; }
+    .shopcard .act { flex:none; display:flex; flex-direction:column; align-items:flex-end; gap:6px; }   /* 세로 정렬(구매 위, 수량·천장칩은 그 아래) */
+    .shopcard .act .qty { margin-top:0; }   /* flex gap이 간격을 줘 중복 마진 제거 */
     /* 알뜰샵 펫 카드 선택(미리보기) — 탭하면 강조되고 썸네일이 옆으로 걷는 스프라이트로 바뀐다. */
     .shopcard.petpick { cursor:pointer; transition:border-color .12s, background .12s, transform .08s; }
     .shopcard.petpick:active { transform:scale(.99); }
@@ -1283,41 +1284,66 @@
     /* ===== 🥚×10 10연차 연출 (.ten-*) — 기존 .fx-*·.pkscene·.fx-cat·.fx-ddbfly 재사용, 오케스트레이션 레이어만 추가 ===== */
     .ten-wrap { position:absolute; inset:0; z-index:2; overflow:hidden; }
     .ten-wrap .pkscene { position:absolute; inset:0; }
-    .ten-wrap .pk-rainbow { opacity:0; }                                   /* 하늘 무지개 기본 숨김 */
-    .ten-wrap.rainbow-on .pk-rainbow { opacity:1; animation:ten-rbdraw 1.6s ease-out both; }   /* 탭2: 신화/한정 있으면 스르르 */
-    .ten-nest { position:absolute; left:50%; bottom:8%; transform:translateX(-50%); z-index:3; width:min(88vw,360px); display:flex; align-items:flex-end; justify-content:center; }
+    /* 픽업 배너 기본 무지개 제거(10연차 전용은 .ten-skyrb) + 세로 화면 공백 축소: 초록 필드를 위로 넓힘 */
+    .ten-wrap .pk-rainbow, .ten-reveal .pk-rainbow { display:none !important; }
+    .ten-wrap .pk-sky { height:34%; } .ten-wrap .pk-field { height:66%; } .ten-wrap .pk-horizon { bottom:66%; }
+    /* 🌿 하단 초원 채우기 */
+    .ten-meadow { position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
+    .ten-md { position:absolute; image-rendering:pixelated; line-height:0; transform:translateX(-50%); z-index:1; }
+    .ten-md .px { display:block; image-rendering:pixelated; }
+    .ten-md-tr { z-index:0; } .ten-md-bf { z-index:2; }
+    .ten-md-bf .bf-wing { display:block; transform-origin:center; animation:pkflap .42s ease-in-out infinite; }
+    /* 🌈 하늘 무지개(탭2 조건 충족) */
+    .ten-skyrb { position:absolute; left:50%; top:11%; transform:translateX(-50%); z-index:1; line-height:0; pointer-events:none; clip-path:inset(0 100% 0 0); animation:ten-rbdraw 1.6s ease-out .05s forwards; }
+    .ten-skyrb .px { display:block; image-rendering:pixelated; width:min(88vw,430px); height:auto; opacity:.9; }
+    /* 🪺 둥지(세로형) — 중앙 배치. 뒤판이 높이를 잡고, 그리드/앞테두리가 겹쳐 알이 담긴 느낌 */
+    .ten-nest { position:absolute; left:50%; top:47%; transform:translate(-50%,-50%); z-index:3; width:min(72vw,286px); }
     .ten-nest.drop { animation:ten-drop .9s cubic-bezier(.2,.8,.3,1) both; }
     .ten-nest.shake { animation:ten-shake .46s ease; }
-    .ten-nestart { position:absolute; left:50%; bottom:-3%; transform:translateX(-50%); width:114%; z-index:0; line-height:0; pointer-events:none; }
-    .ten-nestart .px { display:block; width:100%; height:auto; image-rendering:pixelated; filter:drop-shadow(0 8px 14px rgba(0,0,0,.42)); }
-    .ten-grid { position:relative; z-index:1; display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:5px 24px; padding:0 9% 10%; }
-    .ten-egg { position:relative; display:flex; align-items:flex-end; justify-content:center; min-height:54px; cursor:pointer; }
-    .ten-egg .px { display:block; image-rendering:pixelated; filter:drop-shadow(0 4px 6px rgba(0,0,0,.3)); }
+    .ten-nestback { position:relative; z-index:0; line-height:0; }
+    .ten-nestback .px { display:block; width:100%; height:auto; image-rendering:pixelated; filter:drop-shadow(0 10px 16px rgba(0,0,0,.45)); }
+    .ten-nestfront { position:absolute; left:0; top:0; width:100%; z-index:2; line-height:0; pointer-events:none; }
+    .ten-nestfront .px { display:block; width:100%; height:auto; image-rendering:pixelated; }
+    .ten-grid { position:absolute; left:12%; right:12%; top:9%; bottom:20%; z-index:1; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(5,1fr); gap:2px 12%; }
+    .ten-egg { position:relative; display:flex; align-items:center; justify-content:center; overflow:visible; cursor:pointer; }
+    .ten-egg > .px { display:block; height:96%; width:auto; max-width:100%; image-rendering:pixelated; filter:drop-shadow(0 3px 4px rgba(0,0,0,.32)); }
     .ten-egg.shake { animation:fxshake .44s ease; transform-origin:50% 90%; }
     .ten-egg.hit { animation:fxhit .5s ease; }
-    .ten-egg.open .px { filter:drop-shadow(0 0 7px currentColor) drop-shadow(0 4px 6px rgba(0,0,0,.3)); }
-    .ten-crlight { position:absolute; left:50%; top:38%; width:0; height:0; z-index:2; pointer-events:none; }
+    .ten-egg.open > .px { filter:drop-shadow(0 0 7px currentColor) drop-shadow(0 3px 4px rgba(0,0,0,.32)); }
+    /* 뜰알(그리드) — 알뽑기처럼 꽃+몸통 분리 */
+    .ten-ddeulegg { display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; }
+    .ten-ddeulegg .fx-ddflower { line-height:0; transform-origin:50% 100%; }
+    .ten-ddeulegg .fx-ddflower .px { display:block; height:12px; width:auto; }
+    .ten-ddeulegg .fx-ddbody { line-height:0; }
+    .ten-ddeulegg .fx-ddbody .px { display:block; height:34px; width:auto; filter:drop-shadow(0 3px 4px rgba(0,0,0,.3)); }
+    .ten-crlight { position:absolute; left:50%; top:40%; width:0; height:0; z-index:2; pointer-events:none; }
     .ten-eggfx { position:absolute; inset:0; z-index:3; pointer-events:none; }
-    .ten-bflies { position:absolute; left:50%; top:42%; width:0; height:0; z-index:4; pointer-events:none; }
+    .ten-bflies { position:absolute; left:50%; top:40%; width:0; height:0; z-index:4; pointer-events:none; }
     .ten-bfly { top:0; left:0; }
+    /* 피날레 — 펫 정면(둥지 같은 셀) + 뒤 등급색 오오라 + 통통 */
+    .ten-nest.finale .ten-egg { align-items:flex-end; }
+    .ten-petaura { position:absolute; left:50%; top:44%; transform:translate(-50%,-50%); z-index:0; pointer-events:none; line-height:0; animation:ten-auraglow 2.4s ease-in-out infinite; }
+    .ten-petaura .px { display:block; image-rendering:pixelated; }
+    .ten-bob { position:relative; z-index:1; display:inline-block; animation:ten-bob 1.8s ease-in-out infinite; }
+    .ten-bob .px, .ten-bob .catpx { display:block; image-rendering:pixelated; }
+    .ten-nest.hatched .ten-grid { opacity:0; transition:opacity .55s ease; }
+    .ten-roam { z-index:5; }
     /* 카메오(알별) — .fx-cat 변형: left=알 중심(JS 주입), from/to·poke를 펫 크기 비례로 */
     .ten-cat.fxc-l { --from:calc(-54vw - var(--cat)); --to:calc(var(--cat) * -0.60); --poke:calc(var(--cat) * 0.16); }
     .ten-cat.fxc-r { --from:calc(54vw + var(--cat));  --to:calc(var(--cat) *  0.60); --poke:calc(var(--cat) * -0.16); }
-    .ten-hint { position:absolute; left:0; right:0; bottom:2%; z-index:5; text-align:center; color:#fff; font-size:14px; font-weight:800; opacity:.92; animation:fxblink 1s ease-in-out infinite; pointer-events:none; }
+    .ten-hint { position:absolute; left:0; right:0; bottom:3%; z-index:6; text-align:center; color:#fff; font-size:14px; font-weight:800; opacity:.92; animation:fxblink 1s ease-in-out infinite; pointer-events:none; text-shadow:0 1px 3px rgba(0,0,0,.5); }
     .ten-count { position:relative; z-index:4; color:#fff; font-size:13px; font-weight:800; opacity:.82; margin-bottom:2px; letter-spacing:.06em; }
     .ten-nexthint { position:relative; z-index:2; color:#fff; font-size:13px; font-weight:700; opacity:.78; margin-top:4px; animation:fxblink 1.2s ease-in-out infinite; }
     .ten-card { cursor:pointer; }
-    .ten-final .ten-nest { bottom:13%; }
-    .ten-fintitle { position:absolute; left:0; right:0; top:11%; z-index:4; text-align:center; }
-    .ten-takebtn { position:absolute; left:50%; bottom:4%; transform:translateX(-50%); z-index:6; }
-    .ten-bob { display:inline-block; animation:ten-bob 1.8s ease-in-out infinite; }
-    .ten-bob .px, .ten-bob .catpx { display:block; image-rendering:pixelated; }
-    @keyframes ten-drop { 0%{ transform:translate(-50%,-135%); opacity:0; } 55%{ opacity:1; } 80%{ transform:translate(-50%,3%); } 100%{ transform:translate(-50%,0); opacity:1; } }
-    @keyframes ten-shake { 0%,100%{ transform:translate(-50%,0) rotate(0); } 20%{ transform:translate(-51.2%,0) rotate(-1.4deg); } 55%{ transform:translate(-48.8%,0) rotate(1.4deg); } 80%{ transform:translate(-50.5%,0) rotate(-.6deg); } }
-    @keyframes ten-rbdraw { 0%{ opacity:0; clip-path:inset(0 100% 0 0); } 100%{ opacity:1; clip-path:inset(0 0 0 0); } }
+    .ten-fintitle { position:absolute; left:0; right:0; top:8%; z-index:6; text-align:center; }
+    .ten-takebtn { position:absolute; left:50%; bottom:4%; transform:translateX(-50%); z-index:7; }
+    @keyframes ten-drop { 0%{ transform:translate(-50%,-165%); opacity:0; } 55%{ opacity:1; } 82%{ transform:translate(-50%,-47%); } 100%{ transform:translate(-50%,-50%); opacity:1; } }
+    @keyframes ten-shake { 0%,100%{ transform:translate(-50%,-50%) rotate(0); } 20%{ transform:translate(-51.2%,-50%) rotate(-1.4deg); } 55%{ transform:translate(-48.8%,-50%) rotate(1.4deg); } 80%{ transform:translate(-50.5%,-50%) rotate(-.6deg); } }
+    @keyframes ten-rbdraw { 0%{ opacity:0; clip-path:inset(0 100% 0 0); } 100%{ opacity:.9; clip-path:inset(0 0 0 0); } }
     @keyframes ten-bob { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-2px); } }
-    @media (prefers-reduced-motion: reduce){ .ten-nest.drop, .ten-nest.shake, .ten-bob, .ten-bfly, .ten-bfly .bf-wing { animation:none; } .ten-wrap.rainbow-on .pk-rainbow { animation:none; opacity:1; } }
-    body.lite .ten-bob, body.lite .ten-bfly, body.lite .ten-bfly .bf-wing { animation:none !important; }
+    @keyframes ten-auraglow { 0%,100%{ opacity:.3; transform:translate(-50%,-50%) scale(.9); } 50%{ opacity:.52; transform:translate(-50%,-50%) scale(1.06); } }
+    @media (prefers-reduced-motion: reduce){ .ten-nest.drop, .ten-nest.shake, .ten-bob, .ten-bfly, .ten-bfly .bf-wing, .ten-petaura, .ten-skyrb, .ten-md-bf .bf-wing { animation:none; } .ten-skyrb { clip-path:none; opacity:.9; } }
+    body.lite .ten-bob, body.lite .ten-bfly, body.lite .ten-bfly .bf-wing, body.lite .ten-petaura, body.lite .ten-md-bf .bf-wing { animation:none !important; }
     body.lite .ten-eggfx, body.lite .ten-crlight .ll-rays { display:none !important; }
     /* 🔤 픽셀(도트) 텍스트 이미지 — 리빌 등급명/이름. 확대해도 안 뭉개지게 pixelated + 살짝 위아래 흔들림(가독성 유지). */
     .pxtext { display:block; margin:0 auto; image-rendering:pixelated; }
@@ -1399,7 +1425,7 @@
     @keyframes fxframe { 0%,100%{opacity:.5} 50%{opacity:.85} }
     /* ✨ 무지개 알뜰샵 카드(이벤트 탭) */
     /* 🔮 가챠 천장 칩 — 카드마다 그 종류의 신화↑ 확정까지 남은 뽑기 */
-    .pity-chip { display:inline-flex; align-items:center; gap:3px; margin-right:auto; padding:2px 7px; border-radius:9px; background:color-mix(in srgb,#9B6FC8 14%,var(--card)); color:#9B6FC8; font-size:10.5px; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .pity-chip { display:inline-flex; align-items:center; gap:3px; padding:2px 7px; border-radius:9px; background:color-mix(in srgb,#9B6FC8 14%,var(--card)); color:#9B6FC8; font-size:10.5px; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
     .pity-chip .px { color:#9B6FC8; }
     .rb-hh { margin:14px 2px 8px; font-size:12.5px; font-weight:800; color:var(--sub); }
     .rb-card { position:relative; overflow:hidden; }
