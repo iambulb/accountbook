@@ -2246,6 +2246,57 @@
     const M_FISH=["....ooo.....","..oOOOOOo..o",".oOWWOOOOooo","oEOWWOOOOooo",".oOOOOOOOoo.","..ooOOOo...o"];
     const FISH_PAL={O:'#f2923a',o:'#ce6822',W:'#fff2de',E:'#261a12'};
     function fishSvg(opt){ return pxSvg(M_FISH, FISH_PAL, opt); }
+    // ===== 🌙 무지개 밤 배너 전용 에셋(보름달·반딧불·밤 달빛 팔레트) — 픽셀 아트, PIL 라이트/다크 검수 =====
+    // 🌕 보름달: 크림 본체(M)+하이라이트(H)+크레이터(m)+구면 그림자(d)+바깥 달무리 디더(o).
+    const M_MOON=[
+      "..........................",
+      ".........o.o..o...........",
+      "......o.ooooHHoo..........",
+      "........HHHHHHHHMM........",
+      "....o.oHHHHHHHHMMMM.......",
+      "..o..oHHHHHHHHMMMMMM..o...",
+      "...ooHHHHmHHHMMMMmMMMo....",
+      "...oHHHHmmmHMMMMmmmMMMo...",
+      "...HHHHmmmmmMMMMMmMMMMMo..",
+      "..oHHHHHmmmMMMMMMMMMMMM...",
+      "..oHHHHHHmMMMMMMMMMMMMM.o.",
+      "..oHHHHHMMMMMMmmmMMMMMd.o.",
+      "..HHHHHMmMMMMMmmmMMMMdddoo",
+      "o.HHHHMmmmMMMMmmmMMMddddo.",
+      "...HHMMMmMmmmMMMMMMddddo..",
+      ".o.HMMMMMMmmmMMMMMddddd.o.",
+      "..oMMMMMMMmmmMMMMdddddd...",
+      "..oMMMMMMMMMMMMMdddddddo..",
+      "...oMMMMMMMMMMMddddddd....",
+      "....oMMMMMMMMMdddddddo....",
+      ".....oMMMMMMMdddddddoo....",
+      "......oMMMMMdddddddo......",
+      "......ooMMMdddddddo.......",
+      ".........o.odd............",
+      "..........................",
+      ".........................."
+    ];
+    const MOON_PAL={M:'#fdf6d0',H:'#fffdf0',m:'#e4d69a',d:'#d2c48e',o:'#4a5578'};
+    function moonSvg(opt){ return pxSvg(M_MOON, MOON_PAL, opt); }
+    // ✨ 반딧불: 발광 코어(Y·H)+헤일로(h)+몸통(g/b). 깜빡임·글로우는 CSS(.pk-fire).
+    const M_FIRE=["..hHh..",".hYYYh.","hYYHYYh",".hYYYh.","..hYh..","...g...","...b..."];
+    const FIRE_PAL={Y:'#f2ff9e',H:'#ffffe0',h:'#c8e86a',g:'#78963c',b:'#2a3a1a'};
+    function fireflySvg(opt){ return pxSvg(M_FIRE, FIRE_PAL, opt); }
+    // 밤·달빛 팔레트(기존 매트릭스 재사용, MAPLE_PAL 선례): 어두운 청록 그림자 + 차가운 달빛 하이라이트.
+    const TREE_NIGHT={H:'#6f9b86',L:'#375f52',l:'#294a42',D:'#1c3330',X:'#0f1c1a',T:'#241b2a',w:'#352842',t:'#160f1c'};
+    function nightTreeSvg(opt){ return pxSvg(M_TREETOP, TREE_NIGHT, opt); }
+    const PINE_NIGHT={H:'#6f9b86',L:'#375f52',l:'#294a42',D:'#1c3330',T:'#241b2a',t:'#160f1c'};
+    function nightPineSvg(opt){ return pxSvg(M_PINE, PINE_NIGHT, opt); }
+    const TUFT_NIGHT={G:'#375f52',g:'#294a42',H:'#6f9b86'};
+    function nightTuftSvg(opt){ return pxSvg(M_TUFT, TUFT_NIGHT, opt); }
+    const STONE_NIGHT={X:'#2a3040',L:'#6b7490',I:'#8b94b0',M:'#4a5470',D:'#353d54'};
+    function nightStoneSvg(opt){ return pxSvg(M_STONE, STONE_NIGHT, opt); }
+    const FLOWER_NIGHT={a:{S:'#2c4a42',P:'#8a5a7a',C:'#efe0f6'},b:{S:'#2c4a42',P:'#5a7ab0',C:'#dcecf8'},c:{S:'#2c4a42',P:'#7a6ab0',C:'#e6def8'}};
+    function nightFlowerSvg(tn,opt){ return pxSvg(M_FLOWER, FLOWER_NIGHT[tn]||FLOWER_NIGHT.a, opt); }
+    const CLOUD_NIGHT={mw:{W:'#c9d4e8',H:'#aebbd8',S:'#8a9bc0'},mb:{W:'#b6c4de',H:'#98a9cc',S:'#7486ae'},md:{W:'#9fadc8',H:'#8496ba',S:'#647698'}};
+    function moonCloudSvg(which,tn,opt){ return pxSvg([M_CLOUD1,M_CLOUD2,M_CLOUD3][which]||M_CLOUD1, CLOUD_NIGHT[tn]||CLOUD_NIGHT.mw, opt); }
+    const STAR_NIGHT={S:'#cdd6ee',H:'#ffffff'};
+    function nightStarSvg(opt){ return pxSvg(M_STAR, STAR_NIGHT, opt); }
     // 깊이 그림자(납작 타원): 펫 발밑에 깔려 depth(액터 scale 그대로)에 따라 커지고 작아짐 → 접지감+깊이. 색은 CSS opacity로 은은하게. 가림 0.
     const M_SHADOW=[".SSSSSSS.","SSSSSSSSS",".SSSSSSS."];
     const SHADOW_PAL={S:'#12240c'};
@@ -4322,10 +4373,10 @@
       return '<div class="gbanner gb-ddeul">'+(pb||'<div class="note" style="margin:10px 12px;">활성 한정 픽업 펫이 없어 배너가 비어 있어요(개발자 모드에서 픽업 펫을 활성화하면 표시).</div>')+
         gbActionsHtml('ddeul')+gbPityHtml('ddeul')+'</div>';
     }
-    // 🥚 펫알 배너 = 픽업 배너 틀 복사 + 노을 디자인(sunsetSceneHtml). 둥지+펫알은 유지.
+    // 🥚 펫알 배너 = 뜰알(한정 픽업) 틀 기반(가로 pickbanner) + 노을 씬. 둥지·알 없음, 상단 문구·1회/10회·천장 문구 포함.
     function eggBannerHtml(){
-      return '<div class="gbanner gb-egg"><div class="gb-head"><b class="gb-t">🥚 펫알 · 노을</b></div>'+
-        '<div class="gb-scene">'+sunsetSceneHtml()+gbNestHtml(eggSvg(0,{h:62}))+'</div>'+
+      return '<div class="gbanner gb-egg">'+
+        '<div class="pickbanner"><div class="pk-head"><span class="pk-title gb-sunset-t">🌇 펫알 · 노을 픽업</span><span class="pk-tag">매일 만나는 새 친구</span></div>'+sunsetSceneHtml()+'</div>'+
         gbActionsHtml('egg')+gbPityHtml('egg')+'</div>';
     }
     // 🎁 랜덤박스 전용 배너(추후 독립 수정 — 지금은 동일 배경, 별개 인스턴스)
@@ -4827,6 +4878,44 @@
         '<div class="pk-air">'+dflies+'</div>'+
       '</div>';
       return _sunsetCache;
+    }
+    // 🌙 무지개 밤 씬 — 픽업 씬 틀 그대로, 밤·달빛으로 재색·재배치(보름달·달빛구름·잔별·밤 뜰·반딧불 가득). 무지개알 센터피스는 배너 빌더에서.
+    let _nightCache=null;
+    function nightSceneHtml(){
+      if(_nightCache) return _nightCache;
+      const moon='<span class="pk-moon">'+moonSvg({h:62})+'</span>';   // 🌕 상단 보름달
+      let stars=''; for(let i=0;i<12;i++){ const l=(4+pkRand(i,101)*92).toFixed(1), t=(3+pkRand(i,102)*30).toFixed(1), s=Math.round(4+pkRand(i,103)*5), del=(pkRand(i,104)*3).toFixed(2);
+        stars+='<span class="pk-star" style="left:'+l+'%;top:'+t+'%;animation-delay:'+del+'s">'+nightStarSvg({h:s})+'</span>'; }
+      let clouds=''; const NC=['mw','mb','md']; for(let i=0;i<11;i++){ const y=(3+pkRand(i,111)*30).toFixed(1), hh=Math.round(11+pkRand(i,112)*15), w=Math.floor(pkRand(i,113)*3), tn=NC[Math.floor(pkRand(i,114)*3)], dur=(34+pkRand(i,115)*44).toFixed(1);
+        clouds+='<span class="pk-cloud" style="top:'+y+'%;--d:'+dur+'s;--i:'+i+'">'+moonCloudSvg(w,tn,{h:hh})+'</span>'; }
+      const NF=['a','b','c']; let farline='';
+      for(let i=0;i<20;i++){ const l=((i+0.5)/20*100).toFixed(1), bot=(-1-pkRand(i,121)*3).toFixed(1), k=pkRand(i,122), r=pkRand(i,123);
+        if(k<0.40) farline+='<span class="pk-tree pk-far" style="left:'+l+'%;bottom:'+bot+'px;z-index:1;--i:'+i+'"><span class="pk-canopy">'+nightPineSvg({h:Math.round(11+r*8)})+'</span></span>';
+        else if(k<0.66) farline+='<span class="pk-tuft pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+nightTuftSvg({h:Math.round(6+r*3)})+'</span>';
+        else farline+='<span class="pk-flower pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+nightFlowerSvg(NF[Math.floor(pkRand(i,124)*3)],{h:Math.round(7+r*3)})+'</span>'; }
+      let trees=''; for(let i=0;i<5;i++){ const d=(i===1?0.18:0.48+pkRand(i,131)*0.28), l=((i+0.5)/5*82+6+(pkRand(i,132)-0.5)*7-(i===3?6:0)).toFixed(1),
+        sc=1-d*0.5, bot=(d*70).toFixed(1), z=Math.round(2+(1-d)*2);
+        const canopy=(i%2?nightPineSvg({h:Math.max(18,Math.round(50*sc))}):nightTreeSvg({h:Math.max(18,Math.round(50*sc))}));
+        trees+='<span class="pk-tree" style="left:'+l+'%;bottom:'+bot+'%;z-index:'+z+';--i:'+i+'"><span class="pk-canopy">'+canopy+'</span><span class="pk-trunk">'+pxSvg(M_TRUNK, TREE_NIGHT, {h:Math.max(8,Math.round(22*sc))})+'</span></span>'; }
+      let flowers=''; for(let i=0;i<16;i++){ const d=pkRand(i,141)*0.6, l=(5+(i+0.5)/16*88+(pkRand(i,142)-0.5)*3.5).toFixed(1), sc=1-d*0.5, bot=(d*76).toFixed(1);
+        flowers+='<span class="pk-flower pk-nflower" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+nightFlowerSvg(NF[Math.floor(pkRand(i,143)*3)],{h:Math.max(9,Math.round(16*sc))})+'</span>'; }
+      let tufts=''; for(let i=0;i<16;i++){ const d=pkRand(i,151)*0.8, l=(2+pkRand(i,152)*94).toFixed(1), sc=1-d*0.5, bot=(d*80).toFixed(1);
+        tufts+='<span class="pk-tuft" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+nightTuftSvg({h:Math.max(7,Math.round(12*sc))})+'</span>'; }
+      let soil=''; for(let i=0;i<7;i++){ const d=pkRand(i,161)*0.7, l=(6+pkRand(i,162)*74).toFixed(1), sc=1-d*0.45, bot=(d*72).toFixed(1), w=Math.round((10+pkRand(i,163)*14)*sc);
+        soil+='<span class="pk-soil" style="left:'+l+'%;bottom:'+bot+'%;width:'+w+'px"></span>'; }
+      let stones=''; for(let i=0;i<6;i++){ const d=pkRand(i,171)*0.6, l=(10+pkRand(i,172)*80).toFixed(1), sc=1-d*0.4, bot=(d*66).toFixed(1);
+        stones+='<span class="pk-stone" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+nightStoneSvg({h:Math.max(6,Math.round(11*sc))})+'</span>'; }
+      let fires=''; for(let i=0;i<18;i++){ const l=(6+pkRand(i,181)*88).toFixed(1), b=(14+pkRand(i,182)*62).toFixed(1),
+        hh=Math.round(8+pkRand(i,183)*6), dur=(6+pkRand(i,184)*6).toFixed(1), del=(-pkRand(i,185)*8).toFixed(2), bd=(0.9+pkRand(i,186)*1.6).toFixed(2);
+        let _s=190; const rnd=function(){ return pkRand(i,_s++); };
+        fires+='<span class="pk-fire" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;--bd:'+bd+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="ff-core">'+fireflySvg({h:hh})+'</span></span>'; }
+      _nightCache='<div class="pkscene pk-night" aria-hidden="true">'+
+        '<div class="pk-sky">'+moon+stars+clouds+'</div>'+
+        '<div class="pk-horizon">'+farline+'</div>'+
+        '<div class="pk-field"><div class="pk-grass"></div>'+soil+stones+tufts+flowers+trees+'</div>'+
+        '<div class="pk-air">'+fires+'</div>'+
+      '</div>';
+      return _nightCache;
     }
     // (구 roomBackdropHtml 제거 — 신화·한정 등장만 픽업 배너 씬 배경(전설 제외). 배경은 pickupSceneHtml('reveal').)
     // 등급 '이름' 라벨을 등급 색으로(펫 이름이 아니라 등급명). 한정(exclusive)=무지개(.tier-rainbow), 그 외=인라인 색(신화=#ff5fa2 등). 도감 등급 헤더 등 공용.

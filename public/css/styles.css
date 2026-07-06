@@ -1781,6 +1781,7 @@
     .gb-scene { position:relative; height:256px; overflow:hidden; }   /* 캠 화면처럼 세로로 크게 */
     .gb-scene .pkscene { height:100%; }
     /* ===== 🌇 노을 씬(펫알 배너) — 픽업 씬 틀 + 노을 하늘·계곡·고추잠자리 ===== */
+    .gb-sunset-t { background:linear-gradient(90deg,#f0b03c,#ee7a4a,#d15fa6); -webkit-background-clip:text; background-clip:text; color:transparent; }   /* 노을 그라디언트 제목 */
     .pkscene.pk-sunset { background:radial-gradient(80px 46px at 74% 100%, rgba(255,240,180,.95), rgba(255,186,110,.55) 46%, transparent 72%), linear-gradient(180deg,#3d2f66 0%,#7a4880 26%,#c65f6a 52%,#ef9457 76%,#ffc184 100%); }
     :root[data-theme="dark"] .pkscene.pk-sunset { background:radial-gradient(80px 46px at 74% 100%, rgba(255,226,150,.8), rgba(230,150,90,.45) 46%, transparent 72%), linear-gradient(180deg,#241d44 0%,#5a3560 28%,#9a4a58 54%,#c56a44 78%,#d9975e 100%); }
     .pkscene.pk-sunset .pk-grass { background:#6f9c50; }   /* 뜰을 살짝 노을(올리브·황록) */
