@@ -3584,6 +3584,14 @@
     // 알뜰 아이콘 = 소식 전용 화면(탭 없음). 미션은 더보기 '미션'으로 분리.
     function openNews(){ markNewsSeen(); openSheet('소식', catNewsHtml()); }
     function openMissions(){ openSheet('오늘의 미션', catMissionHtml()); }
+    // A4: 화면 밖 픽업 씬의 CSS 애니(구름·나무·꽃·나비 ~90개)를 정지 — 안 보일 때 GPU/배터리 부담을 덜어준다. IntersectionObserver로 .pk-idle 토글. observe는 멱등이라 여러 번 호출해도 안전.
+    let _pkIO=null;
+    function pkObserveScenes(){ try{
+      if(typeof reducedMotion==='function' && reducedMotion()) return;   // 모션 최소화면 이미 정지(관찰 불필요)
+      if(typeof IntersectionObserver==='undefined') return;
+      if(!_pkIO) _pkIO=new IntersectionObserver(function(ents){ ents.forEach(function(e){ e.target.classList.toggle('pk-idle', !e.isIntersecting); }); });
+      document.querySelectorAll('.pkscene:not(.pk-reveal)').forEach(function(el){ _pkIO.observe(el); });   // 리빌(전체화면)은 항상 보이니 제외
+    }catch(e){} }
     function renderCatHouse(){
       if(!state.game) state.game=normalizeGame(null);   // 스냅샷 도착 전 안전 가드
       const build=()=>{
@@ -3610,7 +3618,7 @@
         b.scrollTop=st;
         if(_sf){ const _ns=b.querySelector('.petsearch'); if(_ns){ try{ _ns.focus(); _ns.setSelectionRange(_ss,_se); }catch(_){} } }   // 검색 포커스·커서 복원
         const npal=b.querySelector('.palette'); if(npal) npal.scrollLeft=palL;
-        if(_catTab==='home') mountRoomWalk(); };
+        if(_catTab==='home') mountRoomWalk(); pkObserveScenes(); };   // A4: 재빌드된 씬 재관찰
       if(_catTab==='home'){ setTimeout(mountRoomWalk, 30); renderPetGrid(); }
     }
     // 방 미니 미리보기 썸네일(프리셋): 벽지 bg + 가구 위치 축소 + 이름 + 펫수. 탭=전환, ✎=이름변경.

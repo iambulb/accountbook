@@ -1523,9 +1523,11 @@
     .pkscene.pk-reveal { position:absolute; inset:0; height:100%; z-index:1; border-radius:0; animation:fxfade .4s ease; }
     .pkscene.pk-reveal::after { content:''; position:absolute; inset:0; z-index:8; pointer-events:none;
       background:linear-gradient(180deg, rgba(0,0,0,.10) 0%, transparent 26%, transparent 66%, rgba(0,0,0,.16) 100%); }   /* 상·하 살짝 어둡게 → 가운데 등장 펫이 배경에 안 묻힘 */
+    /* A4: 화면 밖(스크롤 아웃·다른 화면에 가림) 픽업 씬은 상시 CSS 애니(구름·나무·꽃·나비 ~90개)를 정지 — JS IntersectionObserver가 .pk-idle 토글. GPU/배터리 절약(리빌 .pk-reveal은 제외). */
+    .pkscene.pk-idle *, .pkscene.pk-idle { animation-play-state:paused !important; }
     /* 하늘·흐르는 구름(제각각 높이·모양·색·속도·위상) — 벽지 밴드는 하늘/무지개/구름만(풀·나무 없음) */
     .pk-sky { position:absolute; left:0; right:0; top:0; height:40%; z-index:0; overflow:hidden; pointer-events:none; }
-    .pk-cloud { position:absolute; left:0; display:block; opacity:.96; will-change:transform;
+    .pk-cloud { position:absolute; left:0; display:block; opacity:.96;
       animation:pkcloud var(--d,44s) linear infinite; animation-delay:calc(var(--i) * -9s); }
     @keyframes pkcloud { from{ transform:translateX(-64px);} to{ transform:translateX(600px);} }
     /* 무지개 — 넓고 길게·연하게, 지평선(뜰 뒤)에서 솟아 배너 진입 1초 뒤 사르르 */

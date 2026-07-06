@@ -195,6 +195,7 @@
       $('sheetBody').innerHTML=html;
       $('overlay').classList.add('on');
       sh.classList.add('on');
+      if(typeof pkObserveScenes==='function') pkObserveScenes();   // A4: 시트에 픽업 씬(알뜰샵 가챠탭·소식)이 있으면 오프스크린 애니 정지 옵저버 부착
       // 다이얼로그로 포커스 이동(모바일 키보드 안 뜨도록 입력칸이 아닌 시트 컨테이너로)
       setTimeout(()=>{ try{ sh.focus(); }catch(e){} }, 30);
     }
