@@ -5241,18 +5241,21 @@
       if(_fx.stage>=3){ _fx.busy=true; fxClimax(); return; }   // 알·박스 모두 3번 탭에 오픈
       if(isEggKind(_fx.kind)){
         if(_fx.stage===2 && !_fx.rainbow && _fx.kind!=='ddeul') maybeRainbowUpgrade();   // 2번째 탭 직후: 특별↑이면 확률로 무지개알 승급(뜰알은 제외 — 뜰알은 무지개+나비 전용 연출)
-        if(_fx.stage===2 && _fx.kind==='ddeul') ddeulPickupFx(it.closest('.fx-stage'));   // 뜰알: 펫알 무지개알 승급과 같은 타이밍(2번째 탭)에 무지개 스르르+나비
+        if(_fx.stage===2 && _fx.kind==='ddeul' && (_fx.res.tier==='exclusive' || Math.random()<rbUpgradeChance(_fx.res.tier))) ddeulPickupFx(it.closest('.fx-stage'));   // 뜰알 무지개+나비 = 펫알 무지개알 승급과 '같은 조건'(특별50%·전설/신화100%) + 한정(exclusive)이면 항상. 무조건 아님.
         it.innerHTML = _fx.kind==='ddeul' ? ddeulFxHtml() : (_fx.rainbow?rainbowEggStage(_fx.stage,{h:150}):eggSvg(_fx.stage,{h:150}));
-        it.classList.remove('shake'); void it.offsetWidth; it.classList.add('shake');   // 탭마다 알이 좌우로 크게 흔들림(뜰알은 꽃도 크게 흔들림)
+        it.classList.remove('shake'); void it.offsetWidth; it.classList.add('shake');   // 탭마다 알이 좌우로 크게 흔들림
+        if(_fx.kind==='ddeul'){ const fl=it.querySelector('.fx-ddflower'); if(fl) fl.classList.add('flswing'); }   // 뜰알: 탭 흔들림에 맞춰 꽃도 줄기에서 팔랑(갓 렌더된 요소라 클래스 추가만으로 재생)
         fxCrackChips(_fx.stage);   // 탭마다 껍질 조각이 튀어 깨짐을 강조
       } else {
         it.classList.remove('boxshake'); void it.offsetWidth; it.classList.add('boxshake');   // 박스: 양옆으로 들고 흔드는 느낌
       }
     }
+    // 🌈 무지개 발동 확률(단일 소스) — 특별50%·전설/신화100%·그 외 0%. 펫알 무지개알 승급과 뜰알 무지개+나비 연출이 '같은 조건'을 공유한다.
+    function rbUpgradeChance(tier){ return (tier==='epic')?0.5:((tier==='legend'||tier==='limited')?1:0); }
     // ✨ 무지개 승급: 결과 등급이 특별↑이면 확률로 알을 무지개알로 변신(특별 50% · 전설/한정 100%).
     //    시각·연출만 무지개로 바뀌고 결과 펫·보상(_fx.gold)은 그대로. 3번째 탭에서 무지개 오픈 연출로 열린다.
     function maybeRainbowUpgrade(){
-      const tier=_fx.res.tier; const chance=(tier==='epic')?0.5:((tier==='legend'||tier==='limited')?1:0);   // 특별50%·전설/신화100% 무지개알 승급(승급 연출은 그대로). 신화 텍스트색은 핑크지만 알 열 때 무지개알 승급 유지
+      const tier=_fx.res.tier; const chance=rbUpgradeChance(tier);   // 신화 텍스트색은 핑크지만 알 열 때 무지개알 승급 유지
       if(chance<=0 || Math.random()>=chance) return;
       _fx.rainbow=true; _fx.rbUpgrade=true;
       const it=$('fxItem'), st=$('catFx')&&$('catFx').querySelector('.fx-stage');
