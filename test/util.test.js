@@ -269,7 +269,7 @@ test('normalizeHome: 빈 입력 → 기본 방 1개', () => {
   assert.strictEqual(h.rooms.length, 1);
   assert.strictEqual(h.roomSlots, 1);
   assert.strictEqual(h.slots, 3);
-  assert.deepStrictEqual(h.rooms[0], { id: '', name: '방 1', emoji: '', wallpaper: 'default', placed: {}, wallPlaced: {}, active: [], poops: 0, floor: 'default' });
+  assert.deepStrictEqual(h.rooms[0], { id: '', name: '방 1', emoji: '', wallpaper: 'default', placed: {}, wallPlaced: {}, active: [], poops: 0, floor: 'default', harvestAt: 0 });
 });
 
 // 🚨 RTDB rooms 형태 견고화(멀티룸 배치 소실 회귀 방지) — Firebase가 배열을 객체/null구멍으로 바꿔 내려도 방을 잃지 않아야 함
@@ -471,4 +471,53 @@ test('normalizeHome: 상한/클램프 + 방 데이터 손실 방지', () => {
   const b = U.normalizeHome({ rooms: [{}, {}, {}], roomSlots: 1 });
   assert.strictEqual(b.roomSlots, 3);
   assert.strictEqual(b.rooms.length, 3);
+});
+
+test('pityForced: 100회째 뽑기에 확정(true) — 종류마다 독립 카운터', () => {
+  assert.strictEqual(U.pityForced(0), false);
+  assert.strictEqual(U.pityForced(98), false);   // 99번째 → 아직
+  assert.strictEqual(U.pityForced(99), true);     // 100번째 → 확정
+  assert.strictEqual(U.pityForced(150), true);    // 초과여도 확정
+  assert.strictEqual(U.pityForced(3, 5), false);  // N 커스텀
+  assert.strictEqual(U.pityForced(4, 5), true);
+});
+
+test('pityNext: 신화↑면 0 리셋, 아니면 +1', () => {
+  assert.strictEqual(U.pityNext(41, false), 42);
+  assert.strictEqual(U.pityNext(41, true), 0);
+  assert.strictEqual(U.pityNext(0, false), 1);
+  assert.strictEqual(U.pityNext(99, true), 0);
+});
+
+test('pityRemain: 확정까지 남은 뽑기 수', () => {
+  assert.strictEqual(U.pityRemain(0), 100);
+  assert.strictEqual(U.pityRemain(42), 58);
+  assert.strictEqual(U.pityRemain(99), 1);
+  assert.strictEqual(U.pityRemain(100), 0);
+  assert.strictEqual(U.pityRemain(3, 5), 2);
+});
+
+test('roomYield: 가구·펫·애정·시간 기반 유휴 은화(가구0=0, 상한·낮은 수치)', () => {
+  assert.strictEqual(U.roomYield([0], 0, 3600000), 0);   // 가구 없으면 0
+  assert.strictEqual(U.roomYield([], 3, 3600000), 0);    // 펫 없으면 0
+  // 펫1(Lv0)=0.2/hr, 가구2 → furnFactor=1.0, capH=6h → 0.2×6=1.2 → 1
+  assert.strictEqual(U.roomYield([0], 2, 100 * 3600000), 1);
+  // 애정 높으면 capH 늘어남(주기 길어짐): Lv5 → capH=11h, perHr=0.95 → 10.45 → 10
+  assert.strictEqual(U.roomYieldCapH([5]), 11);
+  assert.strictEqual(U.roomYieldCapH([0]), 6);
+  assert.strictEqual(U.roomYield([5], 2, 100 * 3600000), 10);
+});
+
+test('roomMood: 가구 있으면 행복, 없으면 심심, 똥 감점', () => {
+  assert.strictEqual(U.roomMood(0, 0, 0), 0);    // 펫 없음
+  assert.strictEqual(U.roomMood(3, 2, 0), 100);  // 가구+펫
+  assert.strictEqual(U.roomMood(0, 2, 0), 40);   // 가구 없음
+  assert.strictEqual(U.roomMood(3, 2, 3), 82);   // 똥3 → -18
+});
+
+test('affLevelReward: 레벨별 소보상 은화(×10)', () => {
+  assert.strictEqual(U.affLevelReward(1), 20);
+  assert.strictEqual(U.affLevelReward(5), 100);
+  assert.strictEqual(U.affLevelReward(0), 0);
+  assert.strictEqual(U.affLevelReward(6), 0);
 });

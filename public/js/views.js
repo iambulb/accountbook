@@ -759,9 +759,9 @@
       }).catch(function(){ const b=$('sheetBody'); if(b) b.innerHTML='<div class="empty" style="padding:40px 12px;">집을 불러오지 못했어요</div>'; });
     }
     function likeFriendHome(uid){
-      likeHome(uid, function(ok, cnt){
+      likeHome(uid, function(ok, cnt, rew){
         if(!ok){ toast('오늘은 이미 좋아요를 눌렀어요'); return; }
-        toast('좋아요', false, (typeof heartSvg==='function'?heartSvg({h:16}):''));   // 픽셀 하트 토스트
+        toast('좋아요'+(rew>0?' · +'+rew+' 은화':''), false, (typeof heartSvg==='function'?heartSvg({h:16}):''));   // 픽셀 하트 토스트(+방문 보상)
         if(cnt!=null){ state.friendLikes=state.friendLikes||{}; state.friendLikes[uid]=cnt; }   // 친구목록 하트 수 즉시 반영
         const n=$('fhLikeN'); if(n && cnt!=null) n.textContent=cnt;
         const btn=document.querySelector('.likebtn');

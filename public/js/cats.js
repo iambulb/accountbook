@@ -2141,7 +2141,11 @@
       streak: (g.streak && typeof g.streak==='object') ? g.streak : { last:'', count:0, best:0 },   // 로그인(출석) 연속: {last,count,best,lastReward?}
       gifts: normalizeGifts(g.gifts),   // 선물함(코드 보상 대기 목록)
       mail: (g.mail && typeof g.mail==='object') ? g.mail : {},   // 친구 선물 발신 하루 카운트 {free:{day:n},egg:{day:n}}
-      bcSeen: (g.bcSeen && typeof g.bcSeen==='object') ? g.bcSeen : {}   // 전체 선물(config/broadcast) 이미 받은 id 마커(멱등)
+      bcSeen: (g.bcSeen && typeof g.bcSeen==='object') ? g.bcSeen : {},   // 전체 선물(config/broadcast) 이미 받은 id 마커(멱등)
+      pity: normPity(g.pity),   // 🔮 가챠 천장: 종류별 {egg,box,ddeul,rainbow_egg,rainbow_box} 누적 뽑기 수(그 종류 신화↑ 나오면 0). 종류마다 100뽑째 확정.
+      likeGiven: (g.likeGiven && typeof g.likeGiven==='object') ? g.likeGiven : {},   // 🫶 방문 좋아요 하루 보상 카운트 {day,n}
+      likeMilestone: Math.max(0, Math.floor(Number(g.likeMilestone)||0)),   // ❤ 받은 좋아요 마일스톤 최고 수령치
+      dexClaims: (g.dexClaims && typeof g.dexClaims==='object') ? g.dexClaims : {}   // 📖 도감 마일스톤 수령 마커(멱등)
     }); }
     // 선물함 목록을 항상 배열로 정규화(RTDB가 객체로 돌려줄 수 있어 방어)
     function normalizeGifts(x){ if(Array.isArray(x)) return x.filter(Boolean); if(x&&typeof x==='object') return Object.keys(x).map(k=>x[k]).filter(Boolean); return []; }
@@ -2160,14 +2164,44 @@
         return { n:((cur&&Number(cur.n))||0)+1, last:today };
       }).then(r=>{ if(!r) { if(cb) cb(false); return; }
         if(!r.committed){ if(cb) cb(false); return; }
-        // 최신 총합을 다시 읽어 카운트 반영
-        db.ref('users/'+ownerUid+'/homeLikes').once('value').then(s=>{ if(cb) cb(true, homeLikeCount(s.val())); }).catch(()=>{ if(cb) cb(true); });
+        grantVisitReward(function(rew){   // 방문자(나) 소보상(하루 상한)
+          db.ref('users/'+ownerUid+'/homeLikes').once('value').then(s=>{ if(cb) cb(true, homeLikeCount(s.val()), rew); }).catch(()=>{ if(cb) cb(true, null, rew); });
+        });
       }).catch(()=>{ if(cb) cb(false); });
     }
+    // 🫶 친구 집 방문(좋아요) 보상: 방문자 +3 은화(하루 3회까지). cb(지급은화).
+    const VISIT_REWARD=10, VISIT_DAILY=3;
+    function grantVisitReward(cb){ if(!state.uid){ if(cb) cb(0); return; } const today=ymd(new Date()); let rew=0;
+      gameRef().transaction(g=>{ if(g==null) return; g=normalizeGame(g);
+        const lg=g.likeGiven||{}, n=(lg.day===today?(Number(lg.n)||0):0);
+        if(n>=VISIT_DAILY){ rew=0; g.likeGiven={day:today,n:n}; return g; }
+        rew=VISIT_REWARD; g.coins=clampCoins((g.coins||0)+VISIT_REWARD); g.likeGiven={day:today,n:n+1}; return g;
+      }).then(r=>{ if(cb) cb(r&&r.committed?rew:0); }).catch(()=>{ if(cb) cb(0); }); }
+    // ❤ 받은 좋아요 마일스톤 보상(집주인) — 누적 좋아요가 임계 넘으면 금화. game.likeMilestone에 최고 수령치(멱등).
+    const LIKE_MILESTONES=[{n:10,g:10},{n:25,g:25},{n:50,g:50},{n:100,g:100},{n:200,g:200},{n:500,g:500}];   // 마일스톤 단위만큼 금화
+    function maybeClaimLikeMilestone(total){ if(!state.uid || !(total>0)) return; let add=0, hit=0;
+      gameRef().transaction(g=>{ if(g==null) return; g=normalizeGame(g); const claimed=Number(g.likeMilestone)||0; add=0; hit=claimed;
+        LIKE_MILESTONES.forEach(m=>{ if(total>=m.n && m.n>claimed){ add+=m.g; hit=Math.max(hit,m.n); } });
+        if(add>0){ g.gold=clampGold((g.gold||0)+add); g.likeMilestone=hit; } return g;
+      }).then(r=>{ if(r&&r.committed&&add>0) toast('❤ 받은 좋아요 '+hit+'개 달성! 금화 +'+add); }).catch(()=>{}); }
+    // 📖 도감 마일스톤 — 전체 25/50/75%(은화+금화) + 종별 완성(금화, 종 규모 비례). 100%는 업적(ach_dexall)이 담당. game.dexClaims에 멱등 마커.
+    const DEX_MILESTONES=[{pct:25,c:50,g:2},{pct:50,c:120,g:5},{pct:75,c:250,g:10}];
+    function _dexSpecies(owned){ const bs={}; PET_CATALOG.forEach(c=>{ const b=bs[c.species]=bs[c.species]||{t:0,o:0}; b.t++; if(owned[c.id]) b.o++; }); return bs; }
+    function _dexUnclaimed(g){ const own=(g.owned&&g.owned.cats)||{}, cl=g.dexClaims||{}, ids=PET_CATALOG.map(c=>c.id);
+      const pr=dexProgress(own, ids); let c=0, gg=0, marks=[];
+      DEX_MILESTONES.forEach(m=>{ if(pr.pct>=m.pct && !cl['pct'+m.pct]){ c+=m.c; gg+=m.g; marks.push('pct'+m.pct); } });
+      const bs=_dexSpecies(own); Object.keys(bs).forEach(sp=>{ const s=bs[sp]; if(s.t>0 && s.o>=s.t && !cl['sp:'+sp]){ gg+=Math.min(15,Math.max(2,Math.round(s.t/6))); marks.push('sp:'+sp); } });
+      return { c:c, g:gg, marks:marks }; }
+    let _dexReward=null;
+    function checkDexMilestones(){ if(!state.uid||!state.game) return; if(!_dexUnclaimed(state.game).marks.length) return;   // 값싼 사전체크(미달이면 트랜잭션 없음)
+      gameRef().transaction(g=>{ if(g==null) return; g=normalizeGame(g); const u=_dexUnclaimed(g); if(!u.marks.length){ _dexReward=null; return g; }
+        const cl=g.dexClaims||{}; u.marks.forEach(k=>{ cl[k]=1; }); g.dexClaims=cl;
+        g.coins=clampCoins((g.coins||0)+u.c); g.gold=clampGold((g.gold||0)+u.g); _dexReward={c:u.c,g:u.g}; return g;
+      }).then(r=>{ if(r&&r.committed&&_dexReward){ const rw=_dexReward; _dexReward=null; if(rw.c||rw.g) toast('📖 도감 달성 보상 · '+[rw.c?'은화 +'+rw.c:'',rw.g?'금화 +'+rw.g:''].filter(Boolean).join(' · ')); } }).catch(()=>{}); }
     // 내가 받은 좋아요 총합 실시간
     function watchMyLikes(){ if(!state.uid) return; if(state._myLikesRef){ try{ state._myLikesRef.off(); }catch(e){} }
       state._myLikesRef=db.ref('users/'+state.uid+'/homeLikes');
-      state._myLikesRef.on('value', s=>{ state.myLikeCount=homeLikeCount(s.val()); writeMyRanking(); if(typeof rerender==='function') rerender(); }, ()=>{}); }
+      state._myLikesRef.on('value', s=>{ state.myLikeCount=homeLikeCount(s.val()); maybeClaimLikeMilestone(state.myLikeCount); writeMyRanking(); if(typeof rerender==='function') rerender(); }, ()=>{}); }
     // 공개 랭킹용 경량 엔트리(소유자 유지) — 이름·좋아요수·공개여부. 좋아요 변동·프로필 저장·진입 시 갱신.
     function writeMyRanking(){ if(!state.uid) return;
       try{ db.ref('rankings/'+state.uid).set({ name:(state.userName||''), likes:(state.myLikeCount||0), private:(state.profilePublic===false), at:new Date().toISOString() }); }catch(e){}
@@ -2177,7 +2211,7 @@
       if(!state.uid) return;
       if(state._gameRef){ try{ state._gameRef.off(); }catch(e){} }
       state._gameRef=gameRef();
-      state._gameRef.on('value', s=>{ const raw=s.val(); state.game=normalizeGame(raw); migrateHomeRoomsIfNeeded(raw); ensureRoomIds(); onGameChange(); reconcilePets(); });
+      state._gameRef.on('value', s=>{ const raw=s.val(); state.game=normalizeGame(raw); migrateHomeRoomsIfNeeded(raw); ensureRoomIds(); ensureHarvestClocks(); onGameChange(); reconcilePets(); checkDexMilestones(); });
       watchCatalogPets();   // 런타임 펫(전역 catalogPets) 병합 리스너
       watchMyLikes();       // 내가 받은 집 좋아요 총합
       // 전역 config/* 구독(모든 사용자 공통·per-user 부작용 없음)은 세션당 1회만 — 반복 로그인 시 리스너 누적 방지.
@@ -2645,10 +2679,11 @@
         let h='<div class="bag">';
         if(!rows.length){ h+='<div class="empty" style="padding:30px 12px;">가방이 비었어요. 알뜰샵·선물함에서 아이템을 얻어보세요 🎒</div>'; }
         else h+=rows.map(k=>{ const m=CONSUM_META[k], q=consumQty(k);
-          const useBtn = m.use ? '<button class="buy'+((k==='rainbow_egg'||k==='rainbow_box'||k==='ddeul')?' rb-use':'')+'" onclick="useBagItem(\''+k+'\')">사용</button>'
+          // 알·박스류는 가방에서 바로 안 열고, 가챠샵으로 이동해서 연다(사료·물만 홈 그릇 탭).
+          const useBtn = m.use ? '<button class="buy ghost sm" onclick="goGachaShop()" aria-label="'+m.name+' 가챠샵에서 열기">가챠샵에서 열기</button>'
                                : '<span class="qty" style="font-size:11px;color:var(--sub)">홈에서 그릇 탭</span>';
           return '<div class="bagrow"><span class="bgic">'+m.icon({h:34})+'</span><b class="bgnm'+((k==='rainbow_egg'||k==='rainbow_box'||k==='ddeul')?' tier-rainbow':'')+'">'+m.name+'</b><span class="qty">보유 '+q.toLocaleString()+(q>=MAX_CONSUM?maxChip():'')+'</span>'+useBtn+'</div>'; }).join('');
-        h+='<div class="note" style="margin-top:12px;">사료·물은 홈 화면에서 <b>밥·물 그릇을 탭</b>해 사용해요. 펫알·랜덤박스·무지개 아이템은 여기서 <b>사용</b>하면 열려요.</div></div>';
+        h+='<div class="note" style="margin-top:12px;">사료·물은 홈 화면에서 <b>밥·물 그릇을 탭</b>해 사용해요. 펫알·랜덤박스·무지개 아이템은 <b>가챠샵</b>에서 열어요.</div></div>';
         return h;
       };
       openSheet('가방', build());
@@ -2663,13 +2698,16 @@
     function useHeldGacha(kind){
       const key=kind;   // consum.egg / consum.box
       if(consumQty(key)<1){ toast('보유한 '+(kind==='egg'?'펫알':'랜덤박스')+'이 없어요', true); return; }
-      const res=rollFromPool(kind==='egg'?gachaCatTierMap():effItemTier()); if(!res) return;   // 일반 확률표(effTiers). 펫알=활성 한정만 포함(gachaCatTierMap)
+      const map = kind==='egg'?gachaCatTierMap():effItemTier();
+      const forced=pityForcedTierFor(kind);   // 🔮 종류별 천장(보유 펫알/랜덤박스도 같은 종류 카운터 공유)
+      const res = forced ? pickTierMember(map, forced) : rollFromPool(map); if(!res) return;   // 일반 확률표(effTiers). 펫알=활성 한정만 포함(gachaCatTierMap)
       const dup=kind==='egg' && ownsCat(res.id);
       const refund=dup?petDupRefund(res.id):0;
       const isNew=gachaNew(kind,res);   // 지급 전 판정(NEW 배지)
+      const hit=isTopTier(res.tier);
       gameRef().transaction(g=>{ g=normalizeGame(g);
         if((Number(g.consum[key])||0)<1) return;
-        g.consum[key]-=1; g.gold=clampGold((g.gold||0)+1);
+        g.consum[key]-=1; g.gold=clampGold((g.gold||0)+1); g.pity[kind]=pityNext(g.pity[kind]||0, hit);
         if(kind==='egg'){
           if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
           else { g.coins+=refund; }
@@ -2683,12 +2721,14 @@
     // 🌱 보유한 뜰알(소비 인벤토리) 열기 — 개발자 선물/지급으로 받은 뜰알 1개 소모(은화·금화 안 듦), DDEUL_TIERS(한정 픽업) 확률로 오픈. 뜰알 오픈 연출(무지개+나비) 공용.
     function useHeldDdeul(){
       if(consumQty('ddeul')<1){ toast('보유한 뜰알이 없어요', true); return; }
-      const res=rollFromPool(gachaCatTierMap(), DDEUL_TIERS); if(!res) return;
+      const forced=pityForcedTierFor('ddeul');   // 🔮 천장: 뜰알 확정 = 신화 50% · 한정 50%
+      const res = forced ? pickTierMember(gachaCatTierMap(), forced) : rollFromPool(gachaCatTierMap(), DDEUL_TIERS); if(!res) return;
       const dup=ownsCat(res.id), refund=dup?petDupRefund(res.id):0;
       const isNew=gachaNew('ddeul',res);
+      const hit=isTopTier(res.tier);
       gameRef().transaction(g=>{ g=normalizeGame(g);
         if((Number(g.consum.ddeul)||0)<1) return;
-        g.consum.ddeul-=1;
+        g.consum.ddeul-=1; g.pity.ddeul=pityNext(g.pity.ddeul||0, hit);
         if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
         else { g.coins+=refund; }
         return g;
@@ -3225,7 +3265,11 @@
     function walletHtml(){ return '<div class="cd-wallet" aria-label="보유 은화·금화">'+
       '<span class="cw-coin"><span class="cw-ic">'+coinSvg({h:14})+'</span><span class="cw-n">'+walletCoinDisp().toLocaleString()+'</span></span>'+
       '<span class="cw-gold"><span class="cw-ic">'+goldSvg({h:14})+'</span><span class="cw-n">'+walletGoldDisp().toLocaleString()+'</span></span></div>'; }
-    function batchBtnHtml(){ return '<div class="cr-topright"><button class="cr-batch" onclick="event.stopPropagation();batchCare(this)" aria-label="일괄 돌보기: 밥·물 채우고 똥 치우기">돌보기</button>'+walletHtml()+'</div>'; }
+    function batchBtnHtml(){ const g=state.game, R=g?room():null;
+      const pend=g?roomIdleYield(g,R):0, mood=g?roomMood(interactiveFurnCount(R),(R&&R.active||[]).length,R&&R.poops):0;
+      return '<div class="cr-topright">'+
+        '<span class="cr-mood" title="행복도 '+mood+'% — 상호작용 가구를 놓으면 펫이 행복해요">'+heartSvg({h:13,off:mood<50})+'<b>'+mood+'%</b></span>'+
+        '<button class="cr-batch'+(pend>0?' has-yield':'')+'" onclick="event.stopPropagation();batchCare(this)" aria-label="수확: 유휴 가구수익 받고 밥·물·똥 정리">수확'+(pend>0?'<span class="yield-chip">+'+pend+'</span>':'')+'</button>'+walletHtml()+'</div>'; }
     // 배치 가구를 무대 바닥에 배경으로(가로=열, 앞뒤 깊이=행)
     function renderDockProps(){
       const box=$('cdProps'); if(!box) return;
@@ -3646,14 +3690,15 @@
         g.coins=clampCoins((g.coins||0)+PET_PET_REWARD);   // 쓰다듬기 보상 은화 5
         const before=affectionLevel(c.affection).level; c.affection=(Number(c.affection)||0)+1;
         const after=affectionLevel(c.affection).level;
-        if(after>before){ _affLevelUp={ id, level:after, gold:0 };
+        if(after>before){ _affLevelUp={ id, level:after, gold:0, silver:0 };
+          const lvR=affLevelReward(after); if(lvR>0){ g.coins=clampCoins((g.coins||0)+lvR); _affLevelUp.silver=lvR; }   // 레벨업 소보상 은화(레벨1~5=2·3·5·8·10)
           if(after>=5){ g.gold=clampGold((g.gold||0)+5); _affLevelUp.gold=5; }   // 애정 만렙(레벨5) 1회 도달 보상 — 레벨은 한 번만 오르므로 자동 멱등
         }
         return g;
       }).then(res=>{ if(res&&res.committed&&did){ heartFx(x,y);   // 실제 쓰다듬었을 때만 하트 액션
-        const dGold=(_affLevelUp&&_affLevelUp.gold)||0;
-        rewardFly(x, y, PET_PET_REWARD, dGold, beforeCoins, beforeGold);   // 은화(+만렙 금화)가 지갑으로 스르르 날아가며 카운트업
-        if(_affLevelUp){ affLevelFx(x,y); const g=_affLevelUp.gold; toast('❤ '+catName(_affLevelUp.id)+' 애정 레벨 '+_affLevelUp.level+(g?' · 만렙! 금화 +'+g:'')+' · 은화 +'+PET_PET_REWARD); _affLevelUp=null; }
+        const lvUp=_affLevelUp, dSilver=PET_PET_REWARD+((lvUp&&lvUp.silver)||0), dGold=(lvUp&&lvUp.gold)||0;
+        rewardFly(x, y, dSilver, dGold, beforeCoins, beforeGold);   // 은화(+레벨업 보너스·만렙 금화)가 지갑으로 스르르 날아가며 카운트업
+        if(lvUp){ affLevelFx(x,y); toast('❤ '+catName(lvUp.id)+' 애정 레벨 '+lvUp.level+(lvUp.gold?' · 만렙! 금화 +'+lvUp.gold:'')+' · 은화 +'+dSilver); _affLevelUp=null; }
         else toast('❤ '+catName(id)+' 쓰다듬기 · 애정 +1 · 은화 +'+PET_PET_REWARD); } });
     }
     function petGrabDown(e){
@@ -3689,6 +3734,7 @@
     function openCatHouse(tab){ _catTab=tab||'home'; renderCatHouse(); }
     function setCatTab(t){ _catTab=t; renderCatHouse(); }
     function openShop(){ _catTab='shop'; renderCatHouse(); }
+    function goGachaShop(){ _shopSub='event'; openShop(); }   // 가방 등에서 가챠 탭으로 이동(보유 알/박스는 거기서 열기)
     // 알뜰 아이콘 = 소식 전용 화면(탭 없음). 미션은 더보기 '미션'으로 분리.
     function openNews(){ markNewsSeen(); openSheet('소식', catNewsHtml()); }
     function openMissions(){ openSheet('오늘의 미션', catMissionHtml()); }
@@ -3968,7 +4014,7 @@
           h+='<div class="shopcard ddeul-card"><div class="thumb">'+ddeulEggSvg({h:64})+'</div>'+
             '<div class="meta"><b class="tier-rainbow ddeul-title">뜰알 <span class="tagmini tier-rainbow">한정 픽업</span></b><div class="desc ddeul-desc">'+(pk?'<b class="ddeul-pk tier-rainbow">'+pk+'</b> · ':'')+'한정 펫은 오직 뜰알에서만!</div>'+
             '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+DDEUL_PRICE+' <span class="ci">'+goldSvg({h:16})+'</span>'+DDEUL_GOLD+'</span></div>'+
-            '<div class="act">'+dact+'</div></div>'; }
+            '<div class="act">'+pityChip('ddeul')+dact+'</div></div>'; }
         const enough=coins()>=GACHA_PRICE;
         const gacha=[['egg','펫알','알을 열면 고양이가 랜덤으로! 등급이 높을수록 귀해요.', eggSvg(0,{h:66})],
                      ['box','랜덤박스','상자를 열면 가구·구조물이 랜덤으로 나와요.', boxSvg({h:56})]];
@@ -3977,8 +4023,16 @@
           return '<div class="shopcard"><div class="thumb">'+art+'</div>'+
             '<div class="meta"><b>'+nm+'</b><div class="desc">'+desc+'</div>'+
             '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+GACHA_PRICE+'</span></div>'+
-            '<div class="act">'+act+'</div></div>';
+            '<div class="act">'+pityChip(k)+act+'</div></div>';
         }).join('');
+        // 🎒 보유한 알·박스 열기(선물·쿠폰·개발자 지급분) — 가방 대신 여기서 오픈.
+        { const held=[['egg','펫알','일반 확률로 열어요.',"useHeldGacha('egg')",eggSvg(0,{h:52})],
+                      ['box','랜덤박스','일반 확률로 열어요.',"useHeldGacha('box')",boxSvg({h:46})],
+                      ['ddeul','뜰알','한정 픽업 확률로 열어요.','useHeldDdeul()',ddeulEggSvg({h:52})]].filter(a=>consumQty(a[0])>0);
+          if(held.length){ h+='<div class="rb-hh">🎒 보유한 알·박스 열기</div>';
+            h+=held.map(a=>{ const k=a[0]; return '<div class="shopcard"><div class="thumb">'+a[4]+'</div>'+
+              '<div class="meta"><b'+(k==='ddeul'?' class="tier-rainbow"':'')+'>'+a[1]+'</b><div class="desc">'+a[2]+'</div></div>'+
+              '<div class="act"><button class="buy" aria-label="'+a[1]+' 열기" onclick="'+a[3]+'">열기</button><span class="qty">보유 '+consumQty(k).toLocaleString()+'</span></div></div>'; }).join(''); } }
         // ✨ 무지개알/무지개박스 — 금화로 구매하는 소비템(특별↑ 확정). 보유하면 "사용"으로 오픈.
         const rb=[['egg','무지개알','열면 특별90 · 전설8 · 신화2%. 특별↑ 고양이만!', rainbowEggSvg({h:66,cls:'rb-thumb'})],
                   ['box','무지개박스','열면 특별90 · 전설8 · 신화2%. 특별↑ 가구만!', rainbowBoxSvg({h:56,cls:'rb-thumb'})]];
@@ -3989,7 +4043,7 @@
           return '<div class="shopcard rb-card"><div class="thumb rb-thumb-wrap">'+art+'</div>'+
             '<div class="meta"><b class="tier-rainbow">'+nm+'</b><div class="desc">'+desc+'</div>'+
             '<span class="price"><span class="ci">'+goldSvg({h:16})+'</span>'+price+'</span></div>'+
-            '<div class="act">'+buy+use+'<span class="qty">보유 '+qty.toLocaleString()+(qty>=MAX_CONSUM?maxChip():'')+'</span></div></div>'; }).join('');
+            '<div class="act">'+pityChip(key)+buy+use+'<span class="qty">보유 '+qty.toLocaleString()+(qty>=MAX_CONSUM?maxChip():'')+'</span></div></div>'; }).join('');
         h+='<div class="note">열 때마다 <b>금화 1개</b> 지급(무지개 제외·중복 펫은 <b>그 펫 가격의 20% 은화</b> 환급). <b>특별 등급 이상</b>은 펫알/랜덤박스로만 나오며, <b class="tier-rainbow">무지개</b>는 <b>금화로 구매·사용</b>해 특별↑을 확정으로 뽑아요.</div>';
         h+=gachaInfoHtml();
         return h;
@@ -4183,21 +4237,36 @@
     // 은화 전용 날아오기(prev 미상 호출자용) — 카운트업 없이 날아가기+톡
     function coinFlyFx(x,y,n){ const w=walletEl(); if(!w) return; flyCurrency(x,y,n,'coin',w);
       setTimeout(()=>{ const w2=walletEl(); if(w2){ w2.classList.add('bump'); setTimeout(()=>w2.classList.remove('bump'),320); } }, 430); }
-    // 일괄 돌보기: 빈 그릇을 사료/물로 채우고, 쌓인 똥을 모두 치워 은화 획득(카운터로 날아가는 연출)
+    // 🌾 유휴 가구수익 — 펫이 자동으로 상호작용하는 가구(아래 목록)가 방에 있으면 시간에 따라 은화가 쌓인다.
+    const INTERACTIVE_FURN = { tower:1, pethouse:1, cushion:1, bowl:1, scratcher:1, catwheel:1, fishtank:1, window:1, fireplace:1, fan:1, hammock:1, teaser:1, jingleball:1 };
+    function interactiveFurnCount(R){ let n=0; const scan=o=>{ o=o||{}; Object.keys(o).forEach(k=>{ const id=o[k]&&o[k].itemId; if(id&&INTERACTIVE_FURN[id]) n++; }); }; scan(R&&R.placed); scan(R&&R.wallPlaced); return n; }
+    // 방의 현재까지 쌓인 유휴 은화(harvestAt 이후 경과). g=game, R=room. util.roomYield(순수)로 계산.
+    function roomIdleYield(g, R){ if(!g||!R) return 0; const ha=Number(R.harvestAt)||0; if(!ha) return 0;
+      const affLevels=(R.active||[]).map(id=>affectionLevel(((g.owned&&g.owned.cats[id])||{}).affection||0).level);
+      return roomYield(affLevels, interactiveFurnCount(R), Date.now()-ha); }
+    // 접속 시 방별 harvestAt(수확시계)을 1회 초기화(0인 방만 now로) — 첫 로드 때 거대한 미수확분이 잡히는 것 방지. 멱등.
+    let _harvestInit=false;
+    function ensureHarvestClocks(){ if(_harvestInit) return; const g=state.game; if(!g||!g.home||!g.home.rooms) return;
+      if(!g.home.rooms.some(r=>!(Number(r&&r.harvestAt)||0))) { _harvestInit=true; return; }   // 이미 다 세팅
+      _harvestInit=true;
+      gameRef().transaction(gg=>{ if(gg==null) return; gg=normalizeGame(gg); const now=Date.now();
+        (gg.home.rooms||[]).forEach(R=>{ if(!(Number(R.harvestAt)||0)) R.harvestAt=now; }); return gg; }); }
+    // 🌾 수확(구 돌보기): 유휴 가구수익을 받고 + 편의로 빈 그릇 채우기·똥 치우기까지 한 번에. harvestAt=now로 리셋.
     function batchCare(btnEl){
       if(!state.game){ return; }
-      const before=coins(), poopsNow=room().poops||0;
+      const before=coins();
       gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoom(g); const pl=R.placed||{}, now=Date.now();
+        const y=roomIdleYield(g, R); if(y>0) g.coins=clampCoins(g.coins+y); R.harvestAt=now;   // 유휴 가구수익 수확 + 시계 리셋
         Object.keys(pl).forEach(k=>{ const e=pl[k]; if(!e) return; const filled=e.filledAt&&(now-e.filledAt)<FILL_MS;
           if(!filled){ if(e.itemId==='bowl'&&g.consum.food>0){ g.consum.food-=1; e.filledAt=now; }
             else if(e.itemId==='waterbowl'&&g.consum.water>0){ g.consum.water-=1; e.filledAt=now; } } });
-        const poops=Number(R.poops)||0; if(poops>0){ g.coins+=poops*POOP_REWARD; R.poops=0; }
+        const poops=Number(R.poops)||0; if(poops>0){ g.coins=clampCoins(g.coins+poops*POOP_REWARD); R.poops=0; }
         return g;
       }).then(r=>{ if(!r||!r.committed) return;
         const nowCoins=(r.snapshot&&r.snapshot.val()&&r.snapshot.val().coins)||before, gained=nowCoins-before;
         let x=innerWidth/2, y=200; if(btnEl&&btnEl.getBoundingClientRect){ const b=btnEl.getBoundingClientRect(); x=b.left; y=b.bottom+100; }   // 캠 안쪽(버튼 아래)에서 지갑으로 올라오게
-        if(gained>0){ rewardFly(x,y, gained, 0, before, gold()); toast('돌봄 완료 · +'+gained+' 은화 🪙'); }
-        else toast('돌봄 완료 🐾 (채울 밥/물이 없거나 이미 가득)');
+        if(gained>0){ rewardFly(x,y, gained, 0, before, gold()); toast('🌾 수확 완료 · +'+gained+' 은화 🪙'); }
+        else toast('🌾 아직 모인 게 없어요 (상호작용 가구를 놓아보세요)');
       });
     }
     // 벽지 구매(구매 시 자동 적용) / 적용
@@ -4425,7 +4494,7 @@
       Object.keys(it).forEach(k=>{ if(it[k]!=='exclusive') m['it:'+k]=it[k]; });   // 한정 아이템은 랜덤박스에서 제외(현재 한정 가구·바닥·벽지 없음, 안전 가드)
       Object.keys(fl).forEach(k=>{ if(fl[k]!=='exclusive') m['fl:'+k]=fl[k]; });
       Object.keys(wl).forEach(k=>{ if(wl[k]!=='exclusive') m['wl:'+k]=wl[k]; }); return m; }
-    function rollBoxReward(tiers){ const raw=rollFromPool(boxPool(), tiers); if(!raw) return null; const p=raw.id.split(':');
+    function rollBoxReward(tiers, forced){ const raw = forced ? pickTierMember(boxPool(), forced) : rollFromPool(boxPool(), tiers); if(!raw) return null; const p=raw.id.split(':');
       return { id:p.slice(1).join(':'), tier:raw.tier, type:(p[0]==='fl'?'floor':(p[0]==='wl'?'wall':'item')) }; }
     function grantBoxReward(g, res){   // 지급 + (바닥/벽지 중복이면) 환급 은화 반환
       if(res.type==='floor'){ g.owned.floors=g.owned.floors||{}; if(g.owned.floors[res.id]) return Math.round((TIER_PRICE[res.tier]||0)*0.2); g.owned.floors[res.id]={boughtAt:new Date().toISOString()}; return 0; }
@@ -4571,6 +4640,23 @@
       for(ti=0; ti<TIER_ORDER.length; ti++){ const tier=TIER_ORDER[ti]; const pool=Object.keys(tierMap).filter(k=>tierMap[k]===tier); if(pool.length) return { id:pool[Math.floor(Math.random()*pool.length)], tier }; }
       return null;
     }
+    // 🔮 천장 확정: 특정 등급 풀에서 랜덤 1개(비면 한 단계 아래로 폴백). rollFromPool과 같은 풀 선택 로직.
+    function pickTierMember(tierMap, tier){
+      let ti=TIER_ORDER.indexOf(tier);
+      for(; ti>=0; ti--){ const t=TIER_ORDER[ti]; const pool=Object.keys(tierMap).filter(k=>tierMap[k]===t); if(pool.length) return { id:pool[Math.floor(Math.random()*pool.length)], tier:t }; }
+      for(ti=0; ti<TIER_ORDER.length; ti++){ const t=TIER_ORDER[ti]; const pool=Object.keys(tierMap).filter(k=>tierMap[k]===t); if(pool.length) return { id:pool[Math.floor(Math.random()*pool.length)], tier:t }; }
+      return null;
+    }
+    // 🔮 신화↑(신화·한정) 여부 = 천장 리셋 조건
+    function isTopTier(t){ return t==='limited' || t==='exclusive'; }
+    // 🔮 가챠 종류별 독립 천장. game.pity = {egg,box,ddeul,rainbow_egg,rainbow_box}. 각 100뽑째 확정, 신화↑ 뽑으면 그 종류만 리셋.
+    const PITY_KEYS=['egg','box','ddeul','rainbow_egg','rainbow_box'];
+    function normPity(p){ p=(p&&typeof p==='object')?p:{}; const o={}; PITY_KEYS.forEach(k=>{ o[k]=Math.max(0,Math.floor(Number(p[k])||0)); }); return o; }
+    function pityGet(key){ return (state.game&&state.game.pity&&Number(state.game.pity[key]))||0; }
+    // 강제 등급 결정: 확정이면 뜰알=신화50%·한정50%, 그 외=신화(limited). 아니면 null(정상 롤).
+    function pityForcedTierFor(key){ if(!pityForced(pityGet(key))) return null; return key==='ddeul' ? (Math.random()<0.5?'limited':'exclusive') : 'limited'; }
+    // 가챠 카드에 붙는 종류별 천장 칩(신화↑ 확정까지 남은 뽑기).
+    function pityChip(key){ const N=(typeof PITY_N!=='undefined'?PITY_N:100); return '<span class="pity-chip" title="이 종류를 '+N+'번 안에 신화 이상 확정">'+sparkSvg({h:10})+'신화확정 '+pityRemain(pityGet(key),N)+'뽑</span>'; }
     const GACHA_PRICE=100;
     // 중복 펫 환급 = 해당 펫 가격의 20%(등급가 기준). 가구(박스)는 중복 개념 없이 수량 누적(환급 없음).
     function petDupRefund(id){ const c=PET_CATALOG.find(x=>x.id===id); return c?Math.round((c.price||0)*0.2):0; }
@@ -4584,18 +4670,20 @@
     // 구매+롤(원자적): 은화-100, 금화+1, 지급(신규 고양이/가구 or 중복 펫 환급). 성공 시 연출.
     function openGacha(kind){
       if(coins()<GACHA_PRICE){ toast((GACHA_PRICE-coins())+' 은화 부족', true); return; }
+      const forced=pityForcedTierFor(kind);   // 🔮 종류별 천장: 100뽑째면 신화(뜰알 외) 강제
       let res, dup=false, refund=0;
-      if(kind==='egg'){ res=rollFromPool(gachaCatTierMap()); if(!res) return; dup=ownsCat(res.id); refund=dup?petDupRefund(res.id):0; }
-      else { res=rollBoxReward(); if(!res) return;
+      if(kind==='egg'){ res = forced ? pickTierMember(gachaCatTierMap(), forced) : rollFromPool(gachaCatTierMap()); if(!res) return; dup=ownsCat(res.id); refund=dup?petDupRefund(res.id):0; }
+      else { res=rollBoxReward(null, forced); if(!res) return;
         if(res.type==='floor') dup=ownsFloor(res.id)&&res.id!=='default';
         else if(res.type==='wall') dup=ownsWall(res.id)&&res.id!=='default';
         else dup=(typeof itemQty==='function'?itemQty(res.id):0)>0;   // 가구 중복(qty>0)도 grantBoxReward가 환급하므로 리빌에 '+N 은화(중복)'이 뜨게 dup/refund 세팅(C5)
         refund=dup?Math.round((TIER_PRICE[res.tier]||0)*0.2):0; }
       const isNew=gachaNew(kind,res);   // 지급 전 판정(NEW 배지)
+      const hit=isTopTier(res.tier);    // 🔮 신화↑면 천장 리셋
       gameRef().transaction(g=>{
         g=normalizeGame(g);
         if(g.coins<GACHA_PRICE) return;
-        g.coins-=GACHA_PRICE; g.gold=(g.gold||0)+1;
+        g.coins-=GACHA_PRICE; g.gold=(g.gold||0)+1; g.pity[kind]=pityNext(g.pity[kind]||0, hit);
         if(kind==='egg'){
           if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
           else { g.coins+=refund; }
@@ -4608,11 +4696,13 @@
     function openDdeul(){
       if(coins()<DDEUL_PRICE){ toast((DDEUL_PRICE-coins())+' 은화 부족', true); return; }
       if(gold()<DDEUL_GOLD){ toast('금화 '+(DDEUL_GOLD-gold())+' 부족', true); return; }
-      const res=rollFromPool(gachaCatTierMap(), DDEUL_TIERS); if(!res) return;
+      const forced=pityForcedTierFor('ddeul');   // 🔮 천장: 뜰알 확정 = 신화 50% · 한정 50%
+      const res = forced ? pickTierMember(gachaCatTierMap(), forced) : rollFromPool(gachaCatTierMap(), DDEUL_TIERS); if(!res) return;
       const dup=ownsCat(res.id), refund=dup?petDupRefund(res.id):0;
       const isNew=gachaNew('ddeul',res);
+      const hit=isTopTier(res.tier);
       gameRef().transaction(g=>{ g=normalizeGame(g); if(g.coins<DDEUL_PRICE || (g.gold||0)<DDEUL_GOLD) return;
-        g.coins-=DDEUL_PRICE; g.gold=(g.gold||0)-DDEUL_GOLD;   // 은화 100 + 금화 1 소모(금화 보상 없음)
+        g.coins-=DDEUL_PRICE; g.gold=(g.gold||0)-DDEUL_GOLD; g.pity.ddeul=pityNext(g.pity.ddeul||0, hit);   // 은화 100 + 금화 1 소모(금화 보상 없음)
         if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
         else { g.coins+=refund; }
         return g;
@@ -4638,17 +4728,19 @@
     function useRainbow(kind){
       const key=rainbowKey(kind);
       if(consumQty(key)<1){ toast(rainbowName(kind)+'이 없어요', true); return; }
+      const rk=kind==='egg'?'rainbow_egg':'rainbow_box'; const forced=pityForcedTierFor(rk);   // 🔮 무지개 종류별 천장
       let res, dup=false, refund=0;
-      if(kind==='egg'){ res=rollFromPool(gachaCatTierMap(), RAINBOW_TIERS); if(!res) return; dup=ownsCat(res.id); refund=dup?petDupRefund(res.id):0; }
-      else { res=rollBoxReward(RAINBOW_TIERS); if(!res) return;
+      if(kind==='egg'){ res = forced ? pickTierMember(gachaCatTierMap(), forced) : rollFromPool(gachaCatTierMap(), RAINBOW_TIERS); if(!res) return; dup=ownsCat(res.id); refund=dup?petDupRefund(res.id):0; }
+      else { res=rollBoxReward(RAINBOW_TIERS, forced); if(!res) return;
         if(res.type==='floor') dup=ownsFloor(res.id)&&res.id!=='default';
         else if(res.type==='wall') dup=ownsWall(res.id)&&res.id!=='default';
         else dup=(typeof itemQty==='function'?itemQty(res.id):0)>0;   // 가구 중복(qty>0)도 환급 표시(C5)
         refund=dup?Math.round((TIER_PRICE[res.tier]||0)*0.2):0; }
       const isNew=gachaNew(kind,res);   // 지급 전 판정(NEW 배지)
+      const hit=isTopTier(res.tier);
       gameRef().transaction(g=>{ g=normalizeGame(g);
         if((Number(g.consum[key])||0)<1) return;
-        g.consum[key]-=1;
+        g.consum[key]-=1; g.pity[rk]=pityNext(g.pity[rk]||0, hit);
         if(kind==='egg'){
           if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
           else { g.coins+=refund; }

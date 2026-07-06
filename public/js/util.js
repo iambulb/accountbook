@@ -188,7 +188,8 @@
         wallPlaced: (r.wallPlaced && typeof r.wallPlaced === 'object') ? r.wallPlaced : {},   // 벽꾸미기(벽 격자) 배치 — placed(바닥)와 별개
         active: Array.isArray(r.active) ? r.active.slice() : [],
         poops: Number(r.poops) || 0,
-        floor: r.floor || 'default'
+        floor: r.floor || 'default',
+        harvestAt: Number(r.harvestAt) || 0   // 🌾 방별 마지막 수확 시각(ms). 유휴 가구수익 누적 기준(0=미시작 → cats.js가 now로 초기화)
       };
     }
     var roomsArr = toRoomsArray(h.rooms);   // 배열/객체/null구멍 어떤 RTDB 형태든 안전 복원(붕괴·유령방 방지)
@@ -266,6 +267,56 @@
     var prev = level > 0 ? TH[level - 1] : 0, next = level < TH.length ? TH[level] : null;
     return { level: level, next: next, pct: next != null ? Math.round((aff - prev) / (next - prev) * 100) : 100 };
   }
+  // ===== 가챠 천장(pity·순수) — '가챠 종류마다' 독립 카운터 =====
+  // pity = 그 종류의 마지막 신화↑(limited/exclusive) 이후 누적 뽑기 수. N회째(기본 100) 뽑기까지 신화↑가 안 나오면 그 뽑기를 강제 확정.
+  // 강제 여부만 판정(true) — 강제 등급은 호출측(cats.js)이 결정: 뜰알=신화50%·한정50%, 그 외=신화(limited).
+  var PITY_N = 100;
+  function pityForced(pity, n) {
+    n = Math.floor(Number(n) || 0) || PITY_N;
+    return (Math.floor(Number(pity) || 0) + 1) >= n;
+  }
+  // 뽑기 후 pity 갱신: 신화↑(신화·한정) 나왔으면 0으로 리셋, 아니면 +1.
+  function pityNext(pity, hitTopTier) {
+    return hitTopTier ? 0 : (Math.floor(Number(pity) || 0) + 1);
+  }
+  // 신화↑ 확정까지 남은 뽑기 수(표기용).
+  function pityRemain(pity, n) {
+    n = Math.floor(Number(n) || 0) || PITY_N;
+    return Math.max(0, n - Math.floor(Number(pity) || 0));
+  }
+
+  // ===== 🌾 알뜰홈 유휴 가구수익(순수) =====
+  // 방에서 펫이 가구와 자동 상호작용하며 시간에 따라 쌓이는 은화.
+  // affLevels=활성 펫들의 애정레벨 배열, furnCount=상호작용 가능 가구 수, elapsedMs=마지막 수확 후 경과.
+  // 펫당 시간당 = (2 + 애정레벨). 가구 많을수록 배율↑(상한 1.6). 누적 상한시간 = 6h + 평균애정레벨(애정↑ 주기 길어짐). 가구 0이거나 펫 없으면 0.
+  function roomYieldCapH(affLevels) {
+    affLevels = affLevels || []; if (!affLevels.length) return 6;
+    var s = 0; for (var i = 0; i < affLevels.length; i++) s += Math.max(0, Math.min(5, Math.floor(Number(affLevels[i]) || 0)));
+    return 6 + (s / affLevels.length);
+  }
+  // 펫당 시간당 은화 = YIELD_BASE + 애정레벨×YIELD_PER_LV. (현재 낮게 — 테스트 후 조정 예정)
+  var YIELD_BASE = 0.2, YIELD_PER_LV = 0.15;
+  function roomYield(affLevels, furnCount, elapsedMs) {
+    affLevels = affLevels || []; furnCount = Math.max(0, Math.floor(Number(furnCount) || 0));
+    if (!affLevels.length || furnCount <= 0) return 0;
+    var capH = roomYieldCapH(affLevels);
+    var hrs = Math.max(0, Math.min(capH, (Number(elapsedMs) || 0) / 3600000));
+    var perHr = 0; for (var i = 0; i < affLevels.length; i++) perHr += YIELD_BASE + Math.max(0, Math.min(5, Math.floor(Number(affLevels[i]) || 0))) * YIELD_PER_LV;
+    var furnFactor = Math.min(1.6, 0.6 + furnCount * 0.2);
+    return Math.floor(perHr * furnFactor * hrs);
+  }
+  // 방 행복도(0~100, 표시용·순수). 상호작용 가구 유무·펫 유무·똥 상태로 파생(별도 저장 없음). 가구 있으면 높게 유지.
+  function roomMood(furnCount, petCount, poops) {
+    if (!(Number(petCount) || 0)) return 0;
+    var m = (Number(furnCount) || 0) > 0 ? 100 : 40;   // 상호작용 가구 있으면 행복, 없으면 심심
+    m -= Math.min(30, (Number(poops) || 0) * 6);        // 똥 쌓이면 하락
+    return Math.max(0, Math.min(100, m));
+  }
+  // 애정 레벨업 소보상(은화). 레벨 1~5 = 20·30·50·80·100. (금화 만렙 보상은 별도 유지)
+  function affLevelReward(level) {
+    var t = { 1: 20, 2: 30, 3: 50, 4: 80, 5: 100 };
+    return t[Math.floor(Number(level) || 0)] || 0;
+  }
   // 자주 쓰는 거래 → 빠른입력 후보. txs에서 (desc|category|amount|type) 빈도 상위 N. 지출류만(빈 desc 제외).
   function frequentTxTemplates(txs, limit) {
     var map = {}, EXP = { expense: 1, prepaid_spend: 1, point_spend: 1 };
@@ -338,7 +389,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift };
+  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);
