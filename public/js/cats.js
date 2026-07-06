@@ -3032,10 +3032,26 @@
       h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:8px 2px 0;">여기 지정한 펫은 <b>한정(무지개) 등급을 뽑을 때만</b> 연출에 등장해요. <b>그 외 등급</b>(특별·전설·신화)은 <b>전설·신화 펫 중 랜덤 2마리</b>가 걸어나와 톡 칩니다. <b>1번</b>=왼쪽, <b>2번</b>=오른쪽(둘 다면 <b>1번 끝난 뒤 2번</b> 순차, 크기는 펫 배율만큼). 현재 1번=<b>'+escapeHtml(gachaFxSlotDesc('a'))+'</b> · 2번=<b>'+escapeHtml(gachaFxSlotDesc('b'))+'</b>.</p>';
       h+='<div class="petmg-btns" style="margin-top:8px;"><button class="btn ghost" onclick="devPreviewGachaFx()">▶︎ 연출 미리보기</button></div>';
       return h; }
+    let _devPetSpecies='all';   // 개발자 펫 관리 종류 탭
+    function setDevPetSpecies(s){ _devPetSpecies=s||'all'; if(state._sheetRefresh) state._sheetRefresh(); }
     function openDevPetManager(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
-      const build=()=>{ const list=allPetsForDev(), sel=state._devPetSel;
+      const build=()=>{ const all=allPetsForDev(), sel=state._devPetSel;
+        // 종류 탭(삭제·런타임 포함 존재하는 종, SPECIES_LABEL 순 + 개수 배지)
+        const cnt={}; all.forEach(p=>{ const s=p.species||'cat'; cnt[s]=(cnt[s]||0)+1; });
+        const order=Object.keys(SPECIES_LABEL), present=Object.keys(cnt).sort((a,b)=>{ const ia=order.indexOf(a),ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); });
+        const tabs=[['all','전체',all.length]].concat(present.map(s=>[s,(SPECIES_LABEL[s]||s),cnt[s]]));
+        if(!tabs.some(t=>t[0]===_devPetSpecies)) _devPetSpecies='all';
+        const list=all.filter(p=> _devPetSpecies==='all' || (p.species||'cat')===_devPetSpecies);
         let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 10px;line-height:1.5;">펫을 선택해 <b>수정/삭제</b>하거나 <b>추가</b>로 새 펫(zip)을 올려요. 삭제=앱에서 숨김(이미지 보존)이라 <b>복구</b> 가능. 각 행에서 <b>등급·가챠전용</b>을 바로 바꿀 수 있어요(<span class="pill">전역 · 모든 사용자</span>, 기구물 관리와 동일).</p>';
-        h+='<div class="petmg-list">'+list.map(p=>devPetRowHtml(p, sel)).join('')+'</div>';
+        h+='<div class="subseg pettabs">'+tabs.map(t=>'<button class="'+(_devPetSpecies===t[0]?'on':'')+'" onclick="setDevPetSpecies(\''+t[0]+'\')">'+escapeHtml(t[1])+' <b>'+t[2]+'</b></button>').join('')+'</div>';
+        // 등급별 섹션(도감식) — 활성 펫은 등급 그룹, 삭제됨은 맨 끝 섹션
+        const active=list.filter(p=>!p.deleted), del=list.filter(p=>p.deleted); let body='';
+        TIER_ORDER.forEach(function(tid){ const grp=active.filter(p=>p.tier===tid); if(!grp.length) return;
+          body+='<div class="dexgh pmgh"><span class="dexgt">'+tierLabelHtml(tid)+'</span><span class="dexgn">'+grp.length+'</span></div>';
+          body+='<div class="petmg-list">'+grp.map(p=>devPetRowHtml(p, sel)).join('')+'</div>'; });
+        if(del.length){ body+='<div class="dexgh pmgh"><span class="dexgt" style="color:var(--sub)">삭제됨</span><span class="dexgn">'+del.length+'</span></div>';
+          body+='<div class="petmg-list">'+del.map(p=>devPetRowHtml(p, sel)).join('')+'</div>'; }
+        h+=body || '<div class="empty" style="padding:16px;">이 종류의 펫이 없어요</div>';
         h+='<div id="pmActions">'+devPetActionsHtml()+'</div>';
         return h; };
       openSheet('펫 관리', build());
@@ -3672,13 +3688,11 @@
       openSheet(_catTab==='shop'?'알뜰샵':'알뜰홈', build());
       state._sheetRefresh=()=>{ if(_drag||_pal||_rmDrag||_wdrag||_wpal) return;   // 드래그(배치) 중엔 재렌더 스킵 — 드래그 요소가 뜯겨 스크롤 잠금이 남는 것 방지(드래그 끝나면 배치 커밋이 다시 리프레시)
         const b=$('sheetBody'); if(!b) return; const st=b.scrollTop;
-        const _ae=document.activeElement, _sf=!!(_ae&&_ae.classList&&_ae.classList.contains('petsearch')), _ss=_sf?_ae.selectionStart:0, _se=_sf?_ae.selectionEnd:0;   // 검색 입력 포커스/커서 보존(백그라운드 갱신이 입력 중 포커스를 뺏지 않게)
         const pal=b.querySelector('.palette'); const palL=pal?pal.scrollLeft:0;   // 배치 팔레트(가로 스크롤) 위치 보존 — 스크롤해 아이템 선택 시 처음으로 안 튀게(우리집 펫은 세로 그리드라 세로 scrollTop만 보존)
         const keepGrid=(_catTab==='home')?b.querySelector('#petGrid'):null;   // 기존 펫 그리드 노드 보존(빈 placeholder로 되붙여 수백 타일 재파싱·이미지 리로드 회피)
         b.innerHTML=build();
         if(_catTab==='home'){ const ph=b.querySelector('#petGrid'); if(keepGrid && ph) ph.replaceWith(keepGrid); renderPetGrid(); }   // 되살린 그리드에 바뀐 타일만 갱신(없으면 채움)
         b.scrollTop=st;
-        if(_sf){ const _ns=b.querySelector('.petsearch'); if(_ns){ try{ _ns.focus(); _ns.setSelectionRange(_ss,_se); }catch(_){} } }   // 검색 포커스·커서 복원
         const npal=b.querySelector('.palette'); if(npal) npal.scrollLeft=palL;
         if(_catTab==='home') mountRoomWalk(); pkObserveScenes(); };   // A4: 재빌드된 씬 재관찰
       if(_catTab==='home'){ setTimeout(mountRoomWalk, 30); renderPetGrid(); }
@@ -3717,24 +3731,27 @@
       return h;
     }
     // ===== 우리집 펫 리스트 정렬·검색(수백 마리 관리) =====
-    let _petSort='recent', _petQuery='';
-    const PET_SORTS=[['recent','최근 획득'],['tier','등급↑'],['aff','애정↑'],['species','종류'],['name','이름']];
+    let _petSort='recent', _homeSpecies='all';   // 홈 펫: 정렬 + 종류(species) 탭 (검색 제거, 도감식 종류 구분)
+    const PET_SORTS=[['recent','최신순'],['aff','애정도순'],['tier','등급순']];
     function setPetSort(v){ _petSort=v||'recent'; if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
-    function setPetQuery(v){ _petQuery=v||''; applyPetFilter(); }   // 재렌더 없이 DOM만 숨김/표시(입력 포커스·커서 유지)
-    function applyPetFilter(){ const q=(_petQuery||'').trim().toLowerCase(); const box=$('petGrid'); if(!box) return; let shown=0;
-      box.querySelectorAll('.catchip').forEach(el=>{ const nm=(el.getAttribute('data-name')||'').toLowerCase(); const ok=!q||nm.indexOf(q)>=0; el.style.display=ok?'':'none'; if(ok) shown++; });
-      const em=document.getElementById('petSearchEmpty'); if(em) em.style.display=(q&&!shown)?'':'none'; }
-    // 소유 펫 정렬 — recent(최근 획득)·tier(등급↑, 한정 먼저)·aff(애정↑)·species(종류)·name(이름). 필터(검색)는 표시 단계에서.
+    function setHomeSpecies(s){ _homeSpecies=s||'all'; if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
+    // 보유 펫 정렬 — recent(최신 획득=boughtAt)·aff(애정도)·tier(등급, 상위 먼저).
     function sortOwnedPets(ids){ const l=ids.slice();
-      const rank=id=>tierRank(CAT_TIER[id]||'normal'), aff=id=>Number((ownedCatsMap()[id]||{}).affection)||0, bat=id=>((ownedCatsMap()[id]||{}).boughtAt)||'', nm=id=>catName(id)||'', spc=id=>{ const c=PET_CATALOG.find(x=>x.id===id); return (c&&c.species)||''; };
+      const rank=id=>tierRank(CAT_TIER[id]||'normal'), aff=id=>Number((ownedCatsMap()[id]||{}).affection)||0, bat=id=>((ownedCatsMap()[id]||{}).boughtAt)||'', nm=id=>catName(id)||'';
       if(_petSort==='tier') l.sort((a,b)=> rank(b)-rank(a) || bat(b).localeCompare(bat(a)));
       else if(_petSort==='aff') l.sort((a,b)=> aff(b)-aff(a) || nm(a).localeCompare(nm(b)));
-      else if(_petSort==='species') l.sort((a,b)=> spc(a).localeCompare(spc(b)) || nm(a).localeCompare(nm(b)));
-      else if(_petSort==='name') l.sort((a,b)=> nm(a).localeCompare(nm(b)));
       else l.sort((a,b)=> bat(b).localeCompare(bat(a)));   // recent
       return l; }
-    function petCtlBar(){ return '<div class="petctl"><select class="petsort" aria-label="펫 정렬" onchange="setPetSort(this.value)">'+PET_SORTS.map(o=>'<option value="'+o[0]+'"'+(_petSort===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+
-      '<input class="petsearch" type="search" inputmode="search" placeholder="이름 검색" value="'+escapeHtml(_petQuery)+'" oninput="setPetQuery(this.value)" aria-label="펫 이름 검색"></div>'; }
+    function petSpeciesOf(id){ const c=PET_CATALOG.find(x=>x.id===id); return (c&&c.species)||'cat'; }
+    function homeFilteredPets(){ const o=ownedCatList(); return _homeSpecies==='all'?o:o.filter(id=>petSpeciesOf(id)===_homeSpecies); }
+    // 종류 탭(보유 종만 + 개수 배지) — 도감/알뜰샵 종 탭과 같은 방식(SPECIES_LABEL 순).
+    function homeSpeciesTabs(){ const owned=ownedCatList(); const cnt={}; owned.forEach(id=>{ const s=petSpeciesOf(id); cnt[s]=(cnt[s]||0)+1; });
+      const order=Object.keys(SPECIES_LABEL); const present=Object.keys(cnt).sort((a,b)=>{ const ia=order.indexOf(a),ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); });
+      return [['all','전체',owned.length]].concat(present.map(s=>[s,(SPECIES_LABEL[s]||s),cnt[s]])); }
+    function petCtlBar(){ const tabs=homeSpeciesTabs(); if(!tabs.some(t=>t[0]===_homeSpecies)) _homeSpecies='all';
+      let h=(tabs.length>2)?('<div class="subseg pettabs">'+tabs.map(t=>'<button class="'+(_homeSpecies===t[0]?'on':'')+'" onclick="setHomeSpecies(\''+t[0]+'\')">'+escapeHtml(t[1])+' <b>'+t[2]+'</b></button>').join('')+'</div>'):'';
+      h+='<div class="petctl"><select class="petsort" aria-label="펫 정렬" onchange="setPetSort(this.value)">'+PET_SORTS.map(o=>'<option value="'+o[0]+'"'+(_petSort===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></div>';
+      return h; }
     // ===== 우리집 펫 그리드: 타일 단위 메모이즈(수백 마리 재파싱·이미지 리로드 회피) =====
     // 타일 콘텐츠 시그니처 — 상태(방)·현재방·애정레벨·이름이 바뀐 타일만 다시 그린다.
     function petTileSig(id){ const ro=petRoomIndex(id); const here=ro===roomIdx(); const rooms=homeH().rooms||[];
@@ -3746,7 +3763,7 @@
       const lv=affectionLevel((ownedCatsMap()[id]||{}).affection).level;
       const stt=here?'이 방':(roomOf>=0?roomNm:'대기');
       return '<div class="catchip'+(here?' on':(roomOf>=0?' elsewhere':''))+'" data-id="'+id+'" data-tsig="'+escapeHtml(petTileSig(id))+'" data-name="'+escapeHtml(catName(id))+'" role="button" tabindex="0" aria-pressed="'+here+'" onclick="toggleActiveCat(\''+id+'\')" title="'+escapeHtml(catName(id))+' · '+escapeHtml(stt)+' · Lv.'+lv+'">'+
-        '<div class="cpic">'+catFace(id,{h:44})+'</div>'+
+        '<div class="cpic tb-'+(CAT_TIER[id]||'normal')+'">'+catFace(id,{h:44})+'</div>'+   // 등급색 테두리(rect)
         (roomOf>=0&&!here?'<span class="croom">'+escapeHtml(roomNm)+'</span>':'')+
         (here?'<span class="csel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>':'')+
         '<button class="cn-edit" aria-label="이름 짓기" onclick="event.stopPropagation();openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
@@ -3757,8 +3774,10 @@
     // #petGrid 갱신: 정렬 순서가 같으면 시그니처 바뀐 타일만 교체(in-place, 펫 탭=1개만), 순서 바뀌면(정렬 변경) 통째로.
     function renderPetGrid(){
       const el=$('petGrid'); if(!el) return;
-      const ids=sortOwnedPets(ownedCatList());
-      const orderSig=_petSort+'|'+ids.join(',');
+      const ids=sortOwnedPets(homeFilteredPets());   // 종류 탭으로 걸러 정렬
+      if(!ids.length){ el.removeAttribute('data-order'); el.style.maxHeight=''; el.classList.remove('scroll4');
+        el.innerHTML='<div class="empty pgempty">이 종류의 펫이 없어요 🐾 <button class="btn ghost" onclick="setCatTab(\'shop\')">알뜰샵</button></div>'; return; }
+      const orderSig=_petSort+'|'+_homeSpecies+'|'+ids.join(',');
       if(el.getAttribute('data-order')===orderSig && el.childElementCount===ids.length){
         const kids=el.children;
         for(let i=0;i<ids.length;i++){ const id=ids[i], c=kids[i]; if(c.getAttribute('data-tsig')!==petTileSig(id)){
@@ -3767,7 +3786,13 @@
         el.setAttribute('data-order', orderSig);
         el.innerHTML=ids.map(petTileHtml).join('');
       }
-      if((_petQuery||'').trim()) applyPetFilter();   // 검색 중이면 새 타일 표시 반영(검색어 없으면 전부 표시라 생략)
+      fitPetGridRows(el);   // 4행까지 보이고 그 아래는 내부 스크롤
+    }
+    // 펫 그리드를 정확히 4행 높이로 제한(초과 시 내부 스크롤). 카드 높이는 aspect-ratio라 이미지 로딩과 무관하게 즉시 확정.
+    function fitPetGridRows(el){
+      const first=el.querySelector('.catchip'); const cols=5, gap=7, rows4=4;
+      if(!first || Math.ceil(el.childElementCount/cols)<=rows4){ el.style.maxHeight=''; el.classList.remove('scroll4'); return; }
+      const ch=first.offsetHeight; if(ch>0){ el.style.maxHeight=(ch*rows4+gap*(rows4-1)+2)+'px'; el.classList.add('scroll4'); }
     }
     function catHomeHtml(){
       reconcilePets();   // 3시간 지난 그릇 비우고 똥 정산(멱등)
@@ -3794,10 +3819,9 @@
       slotRow+='</div>';
       h+=slotRow;
       if(!owned.length) h+='<div class="empty" style="padding:20px;">아직 펫이 없어요. 알뜰샵에서 입양해 보세요 🐾</div>';
-      else { if(owned.length>=5) h+=petCtlBar();
-        // 수집형 인벤토리 그리드(5열·세로). 타일은 renderPetGrid가 채우고 타일 단위로 메모이즈(수백 마리 재파싱 회피). 걷는 모습은 위 방 무대에.
+      else { if(owned.length>=2) h+=petCtlBar();   // 종류 탭 + 정렬(2마리↑부터)
+        // 수집형 인벤토리 그리드(5열·세로, 4행까지 보이고 초과 시 내부 스크롤). 타일은 renderPetGrid가 채우고 타일 단위로 메모이즈(수백 마리 재파싱 회피).
         h+='<div class="catchips" id="petGrid"></div>';
-        h+='<div id="petSearchEmpty" class="empty" style="display:none;padding:14px;">검색 결과가 없어요</div>';
         h+='<div class="hintline" style="margin-top:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>펫을 탭하면 <b>이 방</b>으로 옮겨져요(한 펫은 한 방에만, 방당 최대 '+sc+'마리). 다시 탭하면 대기.'+(sc<MAX_SLOTS?' 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장.':'')+'</div>'; }
       return h;
     }
@@ -4411,7 +4435,7 @@
       const st=fx.querySelector('.fx-stage'), it=$('fxItem'); if(!st||!it) return;
       st.style.color='#ffffff'; it.classList.add('fx-preshake');
       const tLast=fxCatSeqSchedule(st, it);
-      _fxT(()=>{ it.classList.remove('fx-preshake'); void it.offsetWidth; it.classList.add('fx-hit'); const h=$('fxHint'); if(h) h.textContent='미리보기 완료'; }, tLast);   // 마지막 톡 순간 알 톡
+      _fxT(()=>{ it.classList.remove('fx-preshake'); void it.offsetWidth; it.classList.add('fx-hit'); const fl=it.querySelector('.fx-ddflower'); if(fl){ fl.classList.remove('flswing'); void fl.offsetWidth; fl.classList.add('flswing'); } const h=$('fxHint'); if(h) h.textContent='미리보기 완료'; }, tLast);   // 마지막 톡 순간 알 톡(+꽃 팔랑)
       _fxT(()=>{ closeFx(); }, tLast+1000); }   // 잠시 뒤 자동 종료
     function featuredEligibleIds(){ return PET_CATALOG.filter(c=>!isGachaOnlyCat(c.id)).map(c=>c.id); }
     function featuredCatId(){ const mk=kstMonthKey();
@@ -5218,9 +5242,9 @@
       st.insertAdjacentHTML('afterbegin','<div class="fx-ddclouds" aria-hidden="true">'+c+'</div>');
       // 🌈 무지개 — 화면 안에서 양옆까지 감싸는 둥근(반원) 아치가 왼→오로 펼쳐진다
       st.insertAdjacentHTML('afterbegin','<div class="fx-ddrainbow" aria-hidden="true">'+authRainbowSvg()+'</div>');
-      // 🦋 나비 5마리
-      const T=['o','b','p','y','o']; let b='';
-      for(let i=0;i<5;i++){ b+='<span class="fx-ddbfly fx-ddbfly-'+i+'" style="--d:'+(6.4+i*0.7).toFixed(1)+'s;--fd:'+(0.36+i*0.03).toFixed(2)+'s;animation-delay:'+(-i*0.8).toFixed(1)+'s"><span class="bf-wing">'+butterflySvg(T[i],{h:13+(i%2)*3})+'</span></span>'; }
+      // 🦋 나비 7마리(크기 1.5배)
+      const T=['o','b','p','y','o','p','b']; let b='';
+      for(let i=0;i<7;i++){ b+='<span class="fx-ddbfly fx-ddbfly-'+i+'" style="--d:'+(6.4+i*0.7).toFixed(1)+'s;--fd:'+(0.36+i*0.03).toFixed(2)+'s;animation-delay:'+(-i*0.8).toFixed(1)+'s"><span class="bf-wing">'+butterflySvg(T[i],{h:Math.round((13+(i%2)*3)*1.5)})+'</span></span>'; }
       st.insertAdjacentHTML('beforeend','<div class="fx-ddbflies" aria-hidden="true">'+b+'</div>');
       const hint=$('fxHint'); if(hint) hint.textContent='🌈 무지개가 펼쳐져요! 한 번 더 탭!'; }
     // ✨ 반짝이는 도트 스파클(무지개알/박스 대기 연출) — 흰 픽셀 점이 제각기 깜빡이며 흩뿌려짐
@@ -5321,7 +5345,8 @@
       seq.forEach((c, i)=>{ const base=i*STEP, isLast=i===seq.length-1;
         _fxT(()=>{ fxSpawnCat(st, c.side, c.id); }, base);   // 등장(walkin)
         _fxT(()=>{ const el=catAt(c.side); if(el){ el.classList.remove('walkin'); el.classList.add('arr','tap'); } }, base+WALK);   // 도착 → 앞발 톡(펫 .cspr은 계속 걷고, 기본 고양이는 CSS로 정지 스틸)
-        _fxT(()=>{ it.classList.remove('fx-preshake'); void it.offsetWidth; it.classList.add('fx-hit'); }, base+WALK+TAP);   // 앞발이 닿는 순간 알/상자가 톡 튕김
+        _fxT(()=>{ it.classList.remove('fx-preshake'); void it.offsetWidth; it.classList.add('fx-hit');   // 앞발이 닿는 순간 알/상자가 톡 튕김
+          const fl=it.querySelector('.fx-ddflower'); if(fl){ fl.classList.remove('flswing'); void fl.offsetWidth; fl.classList.add('flswing'); } }, base+WALK+TAP);   // 뜰알: 펫이 톡 칠 때도 탭처럼 꽃이 팔랑
         _fxT(()=>{ const el=catAt(c.side); if(el){ el.classList.remove('tap'); el.classList.add('leave'); } it.classList.remove('fx-hit'); if(!isLast){ void it.offsetWidth; it.classList.add('fx-preshake'); } }, base+WALK+TAP+HIT);   // 톡 후 물러나며 흐려짐, 다음 고양이 있으면 알은 다시 들썩이며 대기
         _fxT(()=>{ const el=catAt(c.side); if(el) el.remove(); }, base+STEP);
       });

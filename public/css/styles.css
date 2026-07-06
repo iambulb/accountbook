@@ -851,16 +851,31 @@
     .petctl { display:flex; gap:8px; margin:2px 0 8px; }
     /* font-size는 반드시 16px 이상 — iOS Safari는 16px 미만 입력에 포커스 시 화면을 확대(줌)해 스크롤이 생김. 16px면 줌이 발생하지 않음(핀치줌은 유지). */
     .petctl .petsort { flex:none; border:1.5px solid var(--bd); background:var(--card); color:var(--text); border-radius:10px; padding:7px 10px; font-size:16px; font-weight:700; }
-    .petctl .petsearch { flex:1; min-width:0; border:1.5px solid var(--bd); background:var(--card); color:var(--text); border-radius:10px; padding:7px 12px; font-size:16px; }
-    .petctl .petsearch:focus, .petctl .petsort:focus { outline:none; border-color:var(--primary); }
+    .petctl .petsort:focus { outline:none; border-color:var(--primary); }
+    /* 종류 탭(도감식) 개수 배지 */
+    .subseg.pettabs { margin:2px 0 8px; }
+    .subseg.pettabs b { font-weight:900; opacity:.7; margin-left:2px; font-size:11px; }
+    .pgempty { grid-column:1/-1; padding:16px; }   /* 빈 종류 탭 안내(그리드 전체 폭) */
+    .pmgh { margin-top:14px; }   /* 개발자 펫 관리: 등급 섹션 헤더 간격 */
+    .pmgh:first-of-type { margin-top:4px; }
     /* 우리집 펫 카드 — 애정 레벨 배지(항상 표시, Lv.0~5) */
     .catchip .clv { display:inline-flex; align-items:center; justify-content:center; gap:2px; margin-top:1px; font-size:9.5px; font-weight:800; color:#e0567a; }
     .catchip .clv .clv-h { display:inline-flex; width:9px; height:9px; }
     .catchip .clv .clv-h .px { display:block; }
     /* 수집형 인벤토리 — 5열 그리드(세로로 길게 나열, 시트가 세로 스크롤). 축소 타일: 초상 + 이름 + 애정레벨, 상태는 테두리+뱃지. */
     .catchips { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:7px; padding-bottom:2px; align-items:start; }
+    .catchips.scroll4 { overflow-y:auto; -webkit-overflow-scrolling:touch; }   /* 4행 초과 시 내부 스크롤(높이는 JS가 정확히 4행으로 설정) */
     .catchip { position:relative; box-sizing:border-box; background:var(--card); border:1.5px solid var(--bd); border-radius:12px; padding:5px 4px 7px; text-align:center; transition:transform .08s, border-color .12s, background .12s; cursor:pointer; }
-    .catchip .cpic { width:100%; aspect-ratio:1; background:var(--soft); border-radius:9px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .catchip .cpic { width:100%; aspect-ratio:1; box-sizing:border-box; background:var(--soft); border-radius:9px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    /* 등급색 테두리(펫이 담긴 rect) — 안쪽 .cpic에 두께감 있는 등급색(흰색 금지=중립 회색). 바깥 .catchip 테두리는 선택상태(on/elsewhere) 유지. */
+    .catchip .cpic { border:2.5px solid #c9ccd2; }
+    [data-theme="dark"] .catchip .cpic { border-color:#565c66; }
+    .catchip .cpic.tb-uncommon { border-color:#2FAE7A; }
+    .catchip .cpic.tb-rare { border-color:#3182F6; }
+    .catchip .cpic.tb-epic { border-color:#9B6FC8; }
+    .catchip .cpic.tb-legend { border-color:#E0A43C; }
+    .catchip .cpic.tb-limited { border-color:#ff5fa2; }   /* 신화=핑크 */
+    .catchip .cpic.tb-exclusive { border:2.5px solid transparent; border-image:linear-gradient(90deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8,#F04452) 1; }   /* 한정=무지개 */
     .catchip .cpic .cspr, .catchip .cpic .catpx, .catchip .cpic .px, .catchip .cpic svg, .catchip .cpic img { display:block; max-width:100%; height:auto; }
     .catchip .cpic .px, .catchip .cpic svg { width:44px; }   /* 폴백 SVG(스프라이트 없는 펫·로딩 플레이스홀더)도 스프라이트 img처럼 44 폭 고정 — 없으면 height:auto가 .cpic를 가득 채워 스프라이트보다 크게 보임 */
     .catchip .cn-edit { position:absolute; top:3px; right:3px; z-index:2; transform:translateZ(0); width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; color:var(--sub); background:color-mix(in srgb,var(--card) 78%,transparent); }
@@ -1136,7 +1151,7 @@
     .fx-ddrainbow { position:absolute; left:50%; bottom:56%; transform:translateX(-50%); z-index:1; line-height:0; pointer-events:none; clip-path:inset(0 100% 0 0); animation:fxddraw 1.7s ease-out .12s forwards; }   /* 알 위쪽에서 무지개가 뜨는 느낌으로 좀 더 올림(42→56%) */
     .fx-ddrainbow .px { display:block; image-rendering:pixelated; height:auto; width:min(96vw,470px); opacity:.88; }
     @keyframes fxddraw { from{ clip-path:inset(0 100% 0 0);} to{ clip-path:inset(0 0 0 0);} }
-    /* 🦋 뜰알: 나비 5마리가 알 주변을 팔랑팔랑 날아다닌다(배너 나비 재사용) */
+    /* 🦋 뜰알: 나비 7마리(크기 1.5배)가 알 주변을 팔랑팔랑 날아다닌다(배너 나비 재사용) */
     .fx-ddbflies { position:absolute; inset:0; z-index:3; pointer-events:none; }
     .fx-ddbfly { position:absolute; left:50%; top:50%; image-rendering:pixelated; animation:fxddfly var(--d,7s) ease-in-out infinite; }
     .fx-ddbfly .bf-wing { display:block; transform-origin:center; animation:pkflap var(--fd,.4s) ease-in-out infinite; }
@@ -1145,6 +1160,8 @@
     .fx-ddbfly-2 { margin:44px 0 0 -150px; }
     .fx-ddbfly-3 { margin:96px 0 0 128px; }
     .fx-ddbfly-4 { margin:-40px 0 0 -128px; }
+    .fx-ddbfly-5 { margin:-24px 0 0 152px; }
+    .fx-ddbfly-6 { margin:150px 0 0 -30px; }
     @keyframes fxddfly { 0%,100%{transform:translate(0,0)} 25%{transform:translate(16px,-13px)} 50%{transform:translate(28px,7px)} 75%{transform:translate(9px,17px)} }
     @media (prefers-reduced-motion: reduce){ .fx-ddbfly, .fx-ddbfly .bf-wing, .fx-ddrainbow, .fx-ddcloud { animation:none; } .fx-ddrainbow { opacity:1; clip-path:none; } }
     .shopcard.ddeul-card .thumb .px { height:84px; width:auto; }   /* 샵 카드에서 알이 작아 보이지 않게 썸네일 꽉 채움 */
@@ -1302,7 +1319,7 @@
     @keyframes fxfade { from{opacity:0} to{opacity:1} }
     @keyframes fxpop { from{transform:scale(.2);opacity:0} to{transform:scale(1);opacity:1} }
     @keyframes fxfloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-    @keyframes fxshake { 0%,100%{transform:translateX(0) rotate(0)} 14%{transform:translateX(-8px) rotate(-11deg)} 38%{transform:translateX(8px) rotate(10deg)} 62%{transform:translateX(-6px) rotate(-8deg)} 84%{transform:translateX(4px) rotate(4deg)} }
+    @keyframes fxshake { 0%,100%{transform:translateX(0) rotate(0)} 12%{transform:translateX(-14px) rotate(-18deg)} 34%{transform:translateX(14px) rotate(17deg)} 56%{transform:translateX(-11px) rotate(-13deg)} 78%{transform:translateX(7px) rotate(8deg)} }
     @keyframes fxboxshake { 0%,100%{transform:translateX(0) rotate(0)} 12%{transform:translateX(-14px) rotate(-4deg)} 30%{transform:translateX(14px) rotate(4deg)} 50%{transform:translateX(-12px) rotate(-3deg)} 70%{transform:translateX(9px) rotate(2deg)} 88%{transform:translateX(-4px) rotate(-1deg)} }
     @keyframes fxblink { 0%,100%{opacity:.55} 50%{opacity:1} }
     @keyframes fxflash { from{opacity:.75;transform:translate(-50%,-50%) scale(.3)} to{opacity:0;transform:translate(-50%,-50%) scale(2.4)} }
