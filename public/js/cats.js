@@ -2643,9 +2643,9 @@
         let h='<div class="bag">';
         if(!rows.length){ h+='<div class="empty" style="padding:30px 12px;">가방이 비었어요. 알뜰샵·선물함에서 아이템을 얻어보세요 🎒</div>'; }
         else h+=rows.map(k=>{ const m=CONSUM_META[k], q=consumQty(k);
-          const useBtn = m.use ? '<button class="buy'+((k==='rainbow_egg'||k==='rainbow_box')?' rb-use':'')+'" onclick="useBagItem(\''+k+'\')">사용</button>'
+          const useBtn = m.use ? '<button class="buy'+((k==='rainbow_egg'||k==='rainbow_box'||k==='ddeul')?' rb-use':'')+'" onclick="useBagItem(\''+k+'\')">사용</button>'
                                : '<span class="qty" style="font-size:11px;color:var(--sub)">홈에서 그릇 탭</span>';
-          return '<div class="bagrow"><span class="bgic">'+m.icon({h:34})+'</span><b class="bgnm'+((k==='rainbow_egg'||k==='rainbow_box')?' tier-rainbow':'')+'">'+m.name+'</b><span class="qty">보유 '+q.toLocaleString()+(q>=MAX_CONSUM?maxChip():'')+'</span>'+useBtn+'</div>'; }).join('');
+          return '<div class="bagrow"><span class="bgic">'+m.icon({h:34})+'</span><b class="bgnm'+((k==='rainbow_egg'||k==='rainbow_box'||k==='ddeul')?' tier-rainbow':'')+'">'+m.name+'</b><span class="qty">보유 '+q.toLocaleString()+(q>=MAX_CONSUM?maxChip():'')+'</span>'+useBtn+'</div>'; }).join('');
         h+='<div class="note" style="margin-top:12px;">사료·물은 홈 화면에서 <b>밥·물 그릇을 탭</b>해 사용해요. 펫알·랜덤박스·무지개 아이템은 여기서 <b>사용</b>하면 열려요.</div></div>';
         return h;
       };
