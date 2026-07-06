@@ -269,7 +269,7 @@ test('normalizeHome: 빈 입력 → 기본 방 1개', () => {
   assert.strictEqual(h.rooms.length, 1);
   assert.strictEqual(h.roomSlots, 1);
   assert.strictEqual(h.slots, 3);
-  assert.deepStrictEqual(h.rooms[0], { id: '', name: '방 1', emoji: '', wallpaper: 'default', placed: {}, wallPlaced: {}, active: [], poops: 0, floor: 'default', harvestAt: 0 });
+  assert.deepStrictEqual(h.rooms[0], { id: '', name: '방 1', emoji: '', wallpaper: 'default', placed: {}, wallPlaced: {}, active: [], poops: 0, floor: 'default', harvestAt: 0, caredAt: 0 });
 });
 
 // 🚨 RTDB rooms 형태 견고화(멀티룸 배치 소실 회귀 방지) — Firebase가 배열을 객체/null구멍으로 바꿔 내려도 방을 잃지 않아야 함
@@ -500,19 +500,24 @@ test('pityRemain: 확정까지 남은 뽑기 수', () => {
 test('roomYield: 가구·펫·애정·시간 기반 유휴 은화(가구0=0, 상한·낮은 수치)', () => {
   assert.strictEqual(U.roomYield([0], 0, 3600000), 0);   // 가구 없으면 0
   assert.strictEqual(U.roomYield([], 3, 3600000), 0);    // 펫 없으면 0
-  // 펫1(Lv0)=0.2/hr, 가구2 → furnFactor=1.0, capH=6h → 0.2×6=1.2 → 1
-  assert.strictEqual(U.roomYield([0], 2, 100 * 3600000), 1);
-  // 애정 높으면 capH 늘어남(주기 길어짐): Lv5 → capH=11h, perHr=0.95 → 10.45 → 10
-  assert.strictEqual(U.roomYieldCapH([5]), 11);
-  assert.strictEqual(U.roomYieldCapH([0]), 6);
-  assert.strictEqual(U.roomYield([5], 2, 100 * 3600000), 10);
+  // 상한 48h 고정(애정 무관). 펫1(Lv0)=0.2/hr, 가구2 → furnFactor=1.0 → 0.2×48=9.6 → 9
+  assert.strictEqual(U.roomYieldCapH([5]), 48);
+  assert.strictEqual(U.roomYieldCapH([0]), 48);
+  assert.strictEqual(U.roomYield([0], 2, 100 * 3600000), 9);
+  // Lv5 → perHr=0.95, 48h → 45.6 → 45
+  assert.strictEqual(U.roomYield([5], 2, 100 * 3600000), 45);
+  // 경과 6h는 상한 미만 그대로: perHr 0.2 × 1.0 × 6 = 1.2 → 1
+  assert.strictEqual(U.roomYield([0], 2, 6 * 3600000), 1);
 });
 
-test('roomMood: 가구 있으면 행복, 없으면 심심, 똥 감점', () => {
-  assert.strictEqual(U.roomMood(0, 0, 0), 0);    // 펫 없음
-  assert.strictEqual(U.roomMood(3, 2, 0), 100);  // 가구+펫
-  assert.strictEqual(U.roomMood(0, 2, 0), 40);   // 가구 없음
-  assert.strictEqual(U.roomMood(3, 2, 3), 82);   // 똥3 → -18
+test('roomMood: 가구 베이스만으론 저·수확/관리로 상승(옵션 객체)', () => {
+  assert.strictEqual(U.roomMood({ pets: 0 }), 0);                                   // 펫 없음
+  assert.strictEqual(U.roomMood({ pets: 2, furn: 3 }), 45);                          // 가구만 → 45(80·100 불가)
+  assert.strictEqual(U.roomMood({ pets: 2, furn: 0 }), 22);                          // 가구 없음
+  assert.strictEqual(U.roomMood({ pets: 2, furn: 3, feedFrac: 1, avgAff: 5 }), 85);  // 밥물+만렙애정 = 관리로 85
+  assert.strictEqual(U.roomMood({ pets: 2, furn: 3, feedFrac: 1, avgAff: 5, caredFresh: 1 }), 100); // +수확 → 100
+  assert.strictEqual(U.roomMood({ pets: 2, furn: 3, feedFrac: 1, avgAff: 5, caredFresh: 0 }), 85);  // 수확 안 하면 100 불가
+  assert.strictEqual(U.roomMood({ pets: 2, furn: 3, poops: 3 }), 27);               // 똥3 → -18
 });
 
 test('affLevelReward: 레벨별 소보상 은화(×10)', () => {

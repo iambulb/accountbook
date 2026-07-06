@@ -189,7 +189,8 @@
         active: Array.isArray(r.active) ? r.active.slice() : [],
         poops: Number(r.poops) || 0,
         floor: r.floor || 'default',
-        harvestAt: Number(r.harvestAt) || 0   // 🌾 방별 마지막 수확 시각(ms). 유휴 가구수익 누적 기준(0=미시작 → cats.js가 now로 초기화)
+        harvestAt: Number(r.harvestAt) || 0,   // 🌾 방별 마지막 수확 시각(ms). 유휴 가구수익 누적 기준(0=미시작 → cats.js가 now로 초기화)
+        caredAt: Number(r.caredAt) || 0   // ❤️ 마지막 '실제 수확(버튼)' 시각(ms). 행복도 수확신선도 기준(0=아직 안 함 → 수확 보너스 없음)
       };
     }
     var roomsArr = toRoomsArray(h.rooms);   // 배열/객체/null구멍 어떤 RTDB 형태든 안전 복원(붕괴·유령방 방지)
@@ -289,11 +290,8 @@
   // 방에서 펫이 가구와 자동 상호작용하며 시간에 따라 쌓이는 은화.
   // affLevels=활성 펫들의 애정레벨 배열, furnCount=상호작용 가능 가구 수, elapsedMs=마지막 수확 후 경과.
   // 펫당 시간당 = (2 + 애정레벨). 가구 많을수록 배율↑(상한 1.6). 누적 상한시간 = 6h + 평균애정레벨(애정↑ 주기 길어짐). 가구 0이거나 펫 없으면 0.
-  function roomYieldCapH(affLevels) {
-    affLevels = affLevels || []; if (!affLevels.length) return 6;
-    var s = 0; for (var i = 0; i < affLevels.length; i++) s += Math.max(0, Math.min(5, Math.floor(Number(affLevels[i]) || 0)));
-    return 6 + (s / affLevels.length);
-  }
+  // 유휴 가구수익 누적 상한시간 = 48h(수확 안 해도 최대 48시간치까지만 쌓임). 시간당 비율(perHr)은 애정으로 그대로 반영.
+  function roomYieldCapH(affLevels) { return 48; }
   // 펫당 시간당 은화 = YIELD_BASE + 애정레벨×YIELD_PER_LV. (현재 낮게 — 테스트 후 조정 예정)
   var YIELD_BASE = 0.2, YIELD_PER_LV = 0.15;
   function roomYield(affLevels, furnCount, elapsedMs) {
@@ -305,12 +303,24 @@
     var furnFactor = Math.min(1.6, 0.6 + furnCount * 0.2);
     return Math.floor(perHr * furnFactor * hrs);
   }
-  // 방 행복도(0~100, 표시용·순수). 상호작용 가구 유무·펫 유무·똥 상태로 파생(별도 저장 없음). 가구 있으면 높게 유지.
-  function roomMood(furnCount, petCount, poops) {
-    if (!(Number(petCount) || 0)) return 0;
-    var m = (Number(furnCount) || 0) > 0 ? 100 : 40;   // 상호작용 가구 있으면 행복, 없으면 심심
-    m -= Math.min(30, (Number(poops) || 0) * 6);        // 똥 쌓이면 하락
-    return Math.max(0, Math.min(100, m));
+  // 방 행복도(0~100, 표시용·순수·별도 저장 없음). 입력 객체:
+  //   pets=활성 펫 수(0이면 0), furn=상호작용 가구 수, feedFrac=밥·물 신선도(0~1),
+  //   avgAff=활성 펫 평균 애정레벨(0~5), caredFresh=수확 신선도(0~1, 수확 직후 1→24h 후 0), poops=똥 수.
+  // 설계: 가구만으론 45(80·100 불가) → 밥물+애정 관리로 85 → 수확 눌러야 100 근접. 방치하면 밥물(3h)·수확(24h) 신선도가 빠져 하강.
+  function roomMood(inp) {
+    inp = inp || {};
+    var pets = Math.max(0, Math.floor(Number(inp.pets) || 0)); if (!pets) return 0;
+    var furn = Math.max(0, Math.floor(Number(inp.furn) || 0));
+    var feedFrac = Math.max(0, Math.min(1, Number(inp.feedFrac) || 0));
+    var avgAff = Math.max(0, Math.min(5, Number(inp.avgAff) || 0));
+    var caredFresh = Math.max(0, Math.min(1, Number(inp.caredFresh) || 0));
+    var poops = Math.max(0, Math.floor(Number(inp.poops) || 0));
+    var m = (furn > 0 ? 45 : 22)   // 가구 베이스(가구만으론 80·100 불가)
+          + 25 * feedFrac          // 밥·물 신선도(관리)
+          + 15 * (avgAff / 5)      // 애정(느린 상한)
+          + 15 * caredFresh;       // 수확 신선도(수확해야 100 근접)
+    m -= Math.min(30, poops * 6);  // 똥 감점
+    return Math.max(0, Math.min(100, Math.round(m)));
   }
   // 애정 레벨업 소보상(은화). 레벨 1~5 = 20·30·50·80·100. (금화 만렙 보상은 별도 유지)
   function affLevelReward(level) {

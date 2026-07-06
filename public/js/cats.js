@@ -1210,6 +1210,7 @@
       { id:'water', name:'물',   price:1, M:'M_WATER', desc:'물그릇을 탭해 채울 때 1개 소모.' }
     ];
     const FILL_MS = 3*60*60*1000;   // 그릇이 채워진 뒤 비워지기까지(3시간)
+    const MOOD_CARE_MS = 24*60*60*1000;   // ❤️ 수확(caredAt) 후 행복도 보너스가 0으로 빠지는 시간(24h)
     const POOP_REWARD = 2;          // 똥 하나 치우면 얻는 은화
     const CARE_ITEMS = ['bowl','waterbowl','litterbox'];   // 고양이 수(slotCount)만큼만 배치 허용
     // 벽지(방 배경) — 구매 후 적용. default는 기본 제공.
@@ -3550,10 +3551,19 @@
     function walletHtml(){ return '<div class="cd-wallet" aria-label="보유 은화·금화">'+
       '<span class="cw-coin"><span class="cw-ic">'+coinSvg({h:14})+'</span><span class="cw-n">'+walletCoinDisp().toLocaleString()+'</span></span>'+
       '<span class="cw-gold"><span class="cw-ic">'+goldSvg({h:14})+'</span><span class="cw-n">'+walletGoldDisp().toLocaleString()+'</span></span></div>'; }
+    // ❤️ 행복도 입력 산출(순수 roomMood에 넘길 값): 밥·물 신선도·평균 애정·수확 신선도 등
+    function roomMoodInputs(g, R){ const now=Date.now();
+      let bowls=0, fr=0; const pl=(R&&R.placed)||{};
+      Object.keys(pl).forEach(k=>{ const e=pl[k]; if(e&&(e.itemId==='bowl'||e.itemId==='waterbowl')){ bowls++; fr+=e.filledAt?Math.max(0,Math.min(1,(FILL_MS-(now-e.filledAt))/FILL_MS)):0; } });
+      const affs=(R&&R.active||[]).map(id=>affectionLevel(((g&&g.owned&&g.owned.cats[id])||{}).affection||0).level);
+      const ca=Number(R&&R.caredAt)||0;
+      return { pets:(R&&R.active||[]).length, furn:interactiveFurnCount(R), poops:Number(R&&R.poops)||0,
+        feedFrac: bowls?fr/bowls:0, avgAff: affs.length?affs.reduce((a,b)=>a+b,0)/affs.length:0,
+        caredFresh: ca?Math.max(0,1-(now-ca)/MOOD_CARE_MS):0 }; }
     function batchBtnHtml(){ const g=state.game, R=g?room():null;
-      const pend=g?allRoomsIdleYield(g):0, mood=g?roomMood(interactiveFurnCount(R),(R&&R.active||[]).length,R&&R.poops):0;   // 대기 수익 = 모든 방 합
+      const pend=g?allRoomsIdleYield(g):0, mood=g?roomMood(roomMoodInputs(g,R)):0;   // 대기 수익 = 모든 방 합
       return '<div class="cr-topright">'+
-        '<span class="cr-mood" title="행복도 '+mood+'% — 상호작용 가구를 놓으면 펫이 행복해요">'+heartSvg({h:13,off:mood<50})+'<b>'+mood+'%</b></span>'+
+        '<span class="cr-mood" title="행복도 '+mood+'% — 밥·물 챙기고 🌾수확하면 올라가요(똥은 감점)">'+heartSvg({h:13,off:mood<45})+'<b>'+mood+'%</b></span>'+
         '<button class="cr-batch'+(pend>0?' has-yield':'')+'" onclick="event.stopPropagation();batchCare(this)" aria-label="전체 수확: 모든 방의 유휴 가구수익 받고 밥·물 채우고 똥 정리">수확'+(pend>0?'<span class="yield-chip">+'+pend+'</span>':'')+'</button>'+walletHtml()+'</div>'; }
     // 배치 가구를 무대 바닥에 배경으로(가로=열, 앞뒤 깊이=행)
     function renderDockProps(){
@@ -4606,7 +4616,7 @@
         filledN=0; shortFood=false; shortWater=false;   // 재실행(Firebase 재시도)마다 리셋 → 커밋된 마지막 실행값이 남음
         const order=[]; if(rooms[cur]) order.push(cur); rooms.forEach((_,i)=>{ if(i!==cur) order.push(i); });   // 현재 방 우선(소모품 부족 시)
         order.forEach(i=>{ const R=rooms[i]; if(!R) return; const pl=R.placed||{};
-          const y=roomIdleYield(g, R); if(y>0) g.coins=clampCoins(g.coins+y); R.harvestAt=now;   // 유휴 가구수익 + 시계 리셋
+          const y=roomIdleYield(g, R); if(y>0) g.coins=clampCoins(g.coins+y); R.harvestAt=now; R.caredAt=now;   // 유휴 가구수익 + 시계 리셋 + 행복도 수확신선도 갱신(눌러야 오름)
           Object.keys(pl).forEach(k=>{ const e=pl[k]; if(!e) return; const filled=e.filledAt&&(now-e.filledAt)<FILL_MS;
             if(!filled){ if(e.itemId==='bowl'){ if(g.consum.food>0){ g.consum.food-=1; e.filledAt=now; filledN++; } else shortFood=true; }
               else if(e.itemId==='waterbowl'){ if(g.consum.water>0){ g.consum.water-=1; e.filledAt=now; filledN++; } else shortWater=true; } } });
