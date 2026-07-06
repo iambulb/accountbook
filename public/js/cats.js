@@ -2378,6 +2378,10 @@
     const M_HILL=[".........hhhhhh.........","......hhHHHHHHHHhh......","...hhHHHHHHHHHHHHHHhh...",".hHHHHHHHHHHHHHHHHHHHHh.","HHHHHHHHHHHHHHHHHHHHHHHH","HHHHHHHHHHHHHHHHHHHHHHHH","HHHHHHHHHHHHHHHHHHHHHHHH"];
     const HILL_DAY={H:'#5ea650',h:'#7ac468'}, HILL_SUNSET={H:'#7a5678',h:'#a06e8c'}, HILL_NIGHT={H:'#1e3430',h:'#304a42'};
     function hillSvg(pal,opt){ return pxSvg(M_HILL, pal||HILL_DAY, opt); }
+    // 🌠 무지개 별똥별(comet) — 대각선 ↘(머리 우하단 4방 별·꼬리 좌상단). 무지개는 RAINBOW 팔레트(움직이는 그라디언트), 코어=흰빛. 10연차 밤(무지개) 하늘 연출.
+    const M_SHOOT=["....................","....................","....................","...R................","....R...............",".....R..............","......R.............",".......RR...........",".......RRR..........","........RRR.........",".........RRRR.R.....","..........RRRRR.....","..........RRRRRR....","...........RRRWRR...","..........RRRWWWRRR.","............RRWRR...",".............RRR....","..............R.....","..............R.....","...................."];
+    const SHOOT_PAL={R:'RAINBOW',W:'#ffffff'};
+    function shootStarSvg(opt){ return pxSvg(M_SHOOT, SHOOT_PAL, opt); }
     // 깊이 그림자(납작 타원): 펫 발밑에 깔려 depth(액터 scale 그대로)에 따라 커지고 작아짐 → 접지감+깊이. 색은 CSS opacity로 은은하게. 가림 0.
     const M_SHADOW=[".SSSSSSS.","SSSSSSSSS",".SSSSSSS."];
     const SHADOW_PAL={S:'#12240c'};
@@ -6372,12 +6376,15 @@
     // 하늘 무지개(탭2 조건 충족 시 스르르) — 픽업 배너 기본 무지개(.pk-rainbow)는 숨기고 전용 요소로 낸다
     function tenSkyRainbow(wrap){ if(!wrap || wrap.querySelector('.ten-skyrb')) return;
       const el=document.createElement('span'); el.className='ten-skyrb'; el.innerHTML=authRainbowSvg({h:74}); wrap.appendChild(el); }
-    // 🌕 밤(무지개) 테마 하늘 연출 — 무지개 대신 크게 떠오르는 보름달(글로우).
-    function tenSkyMoon(wrap){ if(!wrap || wrap.querySelector('.ten-skymoon')) return;
-      const el=document.createElement('span'); el.className='ten-skymoon'; el.innerHTML=moonSvg({h:92}); wrap.appendChild(el); }
-    // 하늘 연출 라우터(테마별): rainbow=무지개 · night=달 · sunset=생략.
+    // 🌅 노을(펫알) 하늘 연출 — 해가 아래에서 위로 스르르 떠오름(도트 해 M_SUN 재사용).
+    function tenSkyRiseSun(wrap){ if(!wrap || wrap.querySelector('.ten-skysun')) return;
+      const el=document.createElement('span'); el.className='ten-skysun'; el.innerHTML=sunSvg({h:96}); wrap.appendChild(el); }
+    // 🌠 밤(무지개) 하늘 연출 — 큰 무지개 별똥별이 좌측상단→우측하단으로 무지개빛 내며 떨어짐.
+    function tenSkyShoot(wrap){ if(!wrap || wrap.querySelector('.ten-skyshoot')) return;
+      const el=document.createElement('span'); el.className='ten-skyshoot'; el.innerHTML=shootStarSvg({h:82}); wrap.appendChild(el); }
+    // 하늘 연출 라우터(테마별): sunset=해 떠오름 · night=무지개 별똥별 · 그 외(뜰알 meadow)=무지개.
     function tenSkyFx(wrap){ if(!_fx10) return; const th=_fx10.theme;
-      if(th==='sunset') return; if(th==='night') tenSkyMoon(wrap); else tenSkyRainbow(wrap); }
+      if(th==='sunset') tenSkyRiseSun(wrap); else if(th==='night') tenSkyShoot(wrap); else tenSkyRainbow(wrap); }
     // 🌿 하단 초원 채우기 — 세로 긴 화면의 빈 초록을 꽃·풀·나무·나비로. pkRand로 결정적 배치.
     function tenMeadowHtml(){
       const lite=liteMode(); const FT=['r','y','p'], BT=['o','b','p','y']; let h='';   // 초록 공백 채우기 — 필드(bottom 0~56%, sky seam 60% 밑) 전반에 촘촘히(꽃·풀·돌·흙)
@@ -6426,7 +6433,7 @@
         let inner; if(th==='night') inner='<span class="ff-core ten-ffcore">'+fireflySvg({h:hh})+'</span>'; else if(th==='sunset') inner='<span class="ten-leafwig">'+mapleLeafSvg({h:hh+2})+'</span>'; else inner='<span class="bf-wing">'+butterflySvg(T[i%T.length],{h:hh})+'</span>';
         b+='<span class="fx-ddbfly ten-bfly" style="margin:'+my+'px 0 0 '+mx+'px;--d:'+dur+'s;animation-delay:'+del+'s;'+bflyDriftVars(Math.random)+'">'+inner+'</span>'; }
       const wrap=document.createElement('span'); wrap.className='ten-bflies'; wrap.innerHTML=b; eggEl.appendChild(wrap);
-      if(it && it.kind==='ddeul'){ it._flw=DDEUL_FLW_RB; ddeulFlowerRb(eggEl); }   // 🌈 나비 연출 시 이 알 꽃을 무지개색으로(오픈까지 it._flw로 유지)
+      if(it && it.kind==='ddeul'){ it._flw=DDEUL_FLW_RB; ddeulFlowerRb(eggEl); const fl=eggEl.querySelector('.fx-ddflower'); if(fl) fl.classList.add('ddflw-big'); }   // 🌈 뜰알: 이 알 꽃을 무지개색으로(오픈까지 it._flw로 유지) + 좀 더 크게(ddflw-big)
     }
     // 카메오 펫 선정: 한정=픽업 펫(삵·표범), 그 외 전설↑=전설/신화 스프라이트 랜덤
     function tenCameoPet(it){ if(it.tier==='exclusive'){ const pk=LIMITED_PICKUP.find(pickupExists); if(pk) return pk; }
@@ -6542,11 +6549,10 @@
     function tenTap2(){ _fx10.items.forEach(function(it){ if(it.kind==='egg' && it.rainbow) it._rbShown=true; });
       tenTapShake(2);
       if(_fx10.skyRainbow) tenSkyFx($('tenWrap'));
-      const th=_fx10.theme;
+      // 펫알(egg)=무지개알 승급이 곧 연출(tenTapShake가 rainbowEggStage로 재렌더) — 알 주변 반딧불/단풍잎은 쓰지 않음. 뜰알만 알 주변 연출(배경별 나비/단풍잎/반딧불)+무지개 꽃.
       _fx10.items.forEach(function(it){ const el=$('tenEgg'+it.i); if(!el) return;
-        if(it.kind==='egg' && it.rainbow && !liteMode()){ const s=document.createElement('span'); s.className='ten-eggfx'; s.innerHTML=fxSparkles(6); el.appendChild(s); }
-        if(it.kind==='ddeul' && (it.tier==='exclusive' || Math.random()<rbUpgradeChance(it.tier))) tenEggButterflies(el, it);
-        else if(it.kind==='egg' && (th==='sunset'||th==='night')) tenEggButterflies(el, it, liteMode()?1:2); });   // 🍁 노을=단풍잎 · 🌕 밤=반딧불(테마별, 알마다 소수)
+        if(it.kind==='egg' && it.rainbow && !liteMode()){ const s=document.createElement('span'); s.className='ten-eggfx'; s.innerHTML=fxSparkles(6); el.appendChild(s); }   // 무지개알 승급 반짝임
+        if(it.kind==='ddeul' && (it.tier==='exclusive' || Math.random()<rbUpgradeChance(it.tier))) tenEggButterflies(el, it); });
       setTenHint('마지막 탭!'); }
     function tenClimax(){ const wrap=$('tenWrap'); if(!wrap) return; setTenHint('');
       // 🌸 뜰알: 알이 빛나기 전에 꽃이 엄청 흔들리는 연출(단일 뜰알 climax와 동일 — 알 톡톡 떨림 + 꽃 큰 스윙). 각 알이 열릴 때 tenOpenEgg가 해제.
