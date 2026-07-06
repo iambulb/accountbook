@@ -3072,11 +3072,16 @@
     function furnMgrHtml(){
       let h='<div class="note"><span class="pill">전역 · 모든 사용자</span> 변경은 <b>즉시 저장·전 사용자 반영</b>돼요(관리자 계정만 쓰기 가능). <b>특별 등급 이상</b>은 기본적으로 <b>랜덤박스 전용</b>이며, <b>가챠전용</b> 토글로 개별 지정할 수 있어요(켜면 알뜰샵 판매목록에서 숨김 · 어느 쪽이든 랜덤박스 풀엔 포함).</div>';
       h+='<div class="subseg">'+FURN_TYPES.map(function(c){ return '<button class="'+(_furnSub===c[0]?'on':'')+'" onclick="setFurnSub(\''+c[0]+'\')">'+c[1]+'</button>'; }).join('')+'</div>';
-      let rows;
-      if(_furnSub==='wall') rows=WALLPAPER_CATALOG.filter(w=>w.id!=='default').map(wallRowHtml);
-      else if(_furnSub==='floor') rows=FLOOR_CATALOG.filter(f=>f.id!=='default').map(floorRowHtml);
-      else rows=ITEM_CATALOG.map(itemRowHtml);
-      h+='<div class="fmlist">'+rows.join('')+'</div>';
+      let entries, rowFn, tierOf;
+      if(_furnSub==='wall'){ entries=WALLPAPER_CATALOG.filter(w=>w.id!=='default'); rowFn=wallRowHtml; tierOf=wallTierOf; }
+      else if(_furnSub==='floor'){ entries=FLOOR_CATALOG.filter(f=>f.id!=='default'); rowFn=floorRowHtml; tierOf=floorTierOf; }
+      else { entries=ITEM_CATALOG.slice(); rowFn=itemRowHtml; tierOf=itemTierOf; }
+      // 등급별 섹션(펫 관리와 동일 pmgh 패턴)
+      let body='';
+      TIER_ORDER.forEach(function(tid){ const grp=entries.filter(function(e){ return tierOf(e.id)===tid; }); if(!grp.length) return;
+        body+='<div class="dexgh pmgh"><span class="dexgt">'+tierLabelHtml(tid)+'</span><span class="dexgn">'+grp.length+'</span></div>'+
+          '<div class="fmlist">'+grp.map(rowFn).join('')+'</div>'; });
+      h+=body||'<div class="empty" style="padding:16px;">항목이 없어요</div>';
       return h;
     }
     function fmOver(cfg, id){ return !!(cfg && cfg[id] && (cfg[id].tier!=null || cfg[id].price!=null || cfg[id].gacha!=null)); }
@@ -3355,10 +3360,26 @@
       return out;
     }
     let _stageW={};   // 무대별 마지막으로 '측정된' 폭 캐시 — 레이아웃 전(clientWidth=0) 재빌드에서 잘못된 좁은 폭을 쓰지 않게(우측 몰림 방지)
+    let _stageRemeasure={};   // 무대별 재측정 예약 중 플래그(중복 rAF 방지)
+    // 무대가 아직 레이아웃되지 않아(clientWidth=0) 폴백폭으로 임시 배치한 경우: 실측폭이 잡히면 그 무대의 지속 x(_petX)를 비우고 재빌드 → 실제 폭에 다시 균등 분산(폴백폭에 몰려 굳는 것 방지).
+    function scheduleStageRemeasure(stage){
+      if(_stageRemeasure[stage.id]) return; _stageRemeasure[stage.id]=1;
+      let tries=0;
+      const tick=()=>{
+        if(!stage.isConnected){ _stageRemeasure[stage.id]=0; return; }
+        if(stage.clientWidth){ _stageRemeasure[stage.id]=0;
+          Object.keys(_petX).forEach(k=>{ if(k.indexOf(stage.id+':')===0) delete _petX[k]; });   // 이 무대 펫만 초기화(다른 무대 위치 보존)
+          markCatDirty(); return; }
+        if(++tries<40){ requestAnimationFrame(tick); } else { _stageRemeasure[stage.id]=0; }   // ~0.6s 내 미레이아웃이면 포기(숨은 무대 — 어차피 안 보임)
+      };
+      requestAnimationFrame(tick);
+    }
     function buildActors(stage){
       const acts=Array.from(stage.querySelectorAll('.cd-actor')); if(!acts.length) return [];
-      if(stage.clientWidth) _stageW[stage.id]=stage.clientWidth;   // 실제 폭이 잡히면 캐시 갱신
-      const W=stage.clientWidth||_stageW[stage.id]||(stage.id==='cdStage'?160:244), hh=+stage.dataset.hh||30;   // clientWidth=0이면 마지막 측정폭→기본값 순으로 폴백(우측 클램프 방지)
+      const measuredW=stage.clientWidth;   // 실측폭(0=아직 레이아웃 안 됨)
+      if(measuredW) _stageW[stage.id]=measuredW;   // 실제 폭이 잡히면 캐시 갱신
+      const W=measuredW||_stageW[stage.id]||(stage.id==='cdStage'?160:244), hh=+stage.dataset.hh||30;   // clientWidth=0이면 마지막 측정폭→기본값 순으로 폴백(우측 클램프 방지)
+      if(!measuredW && !_stageW[stage.id]) scheduleStageRemeasure(stage);   // 신뢰폭이 전혀 없으면(무대 미레이아웃) 실측 시 재분산 예약
       const isFriend = stage.id==='frStage';
       const hasRoom = stage.id==='crStage' || isFriend || !!stage.closest('.cd-room');
       const isDock = stage.id==='cdStage';   // dock(얇은 스트립)만 dock 취급 — 친구 무대(frStage)는 방 크기
@@ -3382,13 +3403,20 @@
       // 고양이마다 성격(속도·유휴빈도·방향전환·가구선호)을 랜덤 부여 → 개별적으로 움직임
       // 스프라이트 고양이는 정사각(폭=높이), SVG 고양이는 가로세로비 ~26/14.
       const sid=stage.id||'s';   // 무대별 지속키 prefix — 같은 펫 id가 dock·내 방·친구 방에 동시에 있어도 x/depth가 안 섞이게
-      return acts.map(el=>{ const id=el.getAttribute('data-cat'), spr=hasSprite(id), fw=!!(spr&&PET_SPRITES[id]&&PET_SPRITES[id].frontWalk);
+      const N=acts.length;
+      return acts.map((el,ai)=>{ const id=el.getAttribute('data-cat'), spr=hasSprite(id), fw=!!(spr&&PET_SPRITES[id]&&PET_SPRITES[id].frontWalk);
         const pkey=(id!=null?sid+':'+id:null);
         const v=0.14+Math.random()*0.18;   // 속도 폭을 조금 좁혀 걸음이 차분하게(주기는 walkDur로 이동속도에 맞춤)
         const ah=+el.dataset.hh||hh;   // 펫별 렌더 높이(크기 배율 반영). 없으면 무대 기본값.
-        const a={ el, id, pkey, spr, frontWalk:fw, x:(pkey&&_petX[pkey]!=null?_petX[pkey]:(parseFloat(el.style.left)||0)), dir:Math.random()<0.5?-1:1, _pdir:0,
+        const sw0=(spr?ah:Math.round(ah*26/14));   // 액터 폭(스프라이트=정사각, SVG≈26/14)
+        // 🐾 신규 펫 초기 x = 무대 폭에 '균등 분산'. 예전엔 렌더의 고정 간격(dock left=12+i*54 등)을 그대로 초기 x로 썼는데,
+        //   좁은 화면·다수 펫이면 그 간격이 폭을 넘어 아래 클램프(W-sw)에 전부 걸려 우측 끝에 우르르 몰렸다(사용자 신고 버그).
+        //   → 폭 기준 (ai/(N-1))로 좌→우 고르게 펼친다. 이미 배회 중이던 펫(_petX 존재)은 위치 유지(순간이동 방지).
+        const inset = Math.max(4, Math.min(W*0.07, 22));   // 양끝 여백 — 펫이 화면 끝에 딱 붙어 시작하지 않게(가운데 쪽으로 살짝)
+        const spreadX = N>1 ? (inset + (ai/(N-1))*Math.max(0, W-sw0-inset*2)) : Math.max(2,(W-sw0)/2);
+        const a={ el, id, pkey, spr, frontWalk:fw, x:(pkey&&_petX[pkey]!=null?_petX[pkey]:spreadX), dir:Math.random()<0.5?-1:1, _pdir:0,
         v:v, t:Math.random()*6, frame:0, fc:Math.random()*170, W, hh:ah,
-        sw:(spr?ah:Math.round(ah*26/14)), props, lift:0,
+        sw:sw0, props, lift:0,
         depth:(pkey&&_petDepth[pkey]!=null?_petDepth[pkey]:Math.random()), vz:(pkey&&_petVz[pkey]!=null?_petVz[pkey]:0), riseMax:riseMax, _z:0,   // 앞뒤(깊이) 원근 — 재빌드 시 이전 depth/vz 이어받아 순간이동 방지(신규 펫만 랜덤 시작)
         mode:'roam', pause:0, goal:null, pose:null, resKey:null, resFloor:null,
         // 유휴(그 자리에 멈춰 정면 보기) — 자주·오래 서서 정면을 보도록(poseDur에서 시간 늘림)
@@ -3876,8 +3904,16 @@
     }
     let _shopSub='event';   // 알뜰샵 진입 시 기본=가챠 탭(맨 왼쪽)
     function setShopSub(s){ _shopSub=s; _shopSelCat=null; renderCatHouse(); }
-    let _shopFurnCat='all';   // 알뜰샵 가구 탭의 기능분류 필터(전체/케어/휴식/놀이/장식) — 배치 인벤토리와 같은 ITEM_CATALOG.cat 기준
-    function setShopFurnCat(c){ _shopFurnCat=c; renderCatHouse(); }
+    let _shopFurnCat=lsGet('shopFurnCat','all');   // 알뜰샵 가구 탭의 기능분류 필터(전체/케어/휴식/놀이/장식) — 배치 인벤토리와 같은 ITEM_CATALOG.cat 기준
+    function setShopFurnCat(c){ _shopFurnCat=c||'all'; lsSet('shopFurnCat',_shopFurnCat); renderCatHouse(); }
+    let _furnSort=lsGet('furnSort','tierdesc');   // 알뜰샵 가구 정렬
+    const FURN_SORTS=[['tierdesc','등급↓'],['tierasc','등급↑'],['name','이름']];
+    function setFurnSort(v){ _furnSort=v||'tierdesc'; lsSet('furnSort',_furnSort); renderCatHouse(); }
+    function sortFurnItems(list){ const l=list.slice(), rank=id=>tierRank(itemTierOf(id)), nm=id=>{ const it=ITEM_CATALOG.find(x=>x.id===id); return (it&&it.name)||id; };
+      if(_furnSort==='tierasc') l.sort((a,b)=>rank(a.id)-rank(b.id) || nm(a.id).localeCompare(nm(b.id)));
+      else if(_furnSort==='name') l.sort((a,b)=>nm(a.id).localeCompare(nm(b.id)));
+      else l.sort((a,b)=>rank(b.id)-rank(a.id) || nm(a.id).localeCompare(nm(b.id)));   // 등급↓(기본)
+      return l; }
     let _shopPetSpecies=lsGet('shopPetSpecies','all');   // 알뜰샵 펫 탭의 종(species) 필터(전체/고양이/강아지/…) — 카탈로그에 존재하는 종만 노출
     function setShopPetSpecies(s){ _shopPetSpecies=s||'all'; lsSet('shopPetSpecies',_shopPetSpecies); _shopSelCat=null; renderCatHouse(); }
     // 펫 탭 종 필터 탭 목록 — SPECIES_LABEL 순서로, 카탈로그에 실제 있는 종만(전체 먼저)
@@ -4008,8 +4044,9 @@
         // 등급 낮은 것부터. 특별(epic) 이상 가구는 알뜰샵 직접 구매 불가 → 랜덤박스(가챠) 전용 표기.
         const FSHOP_CATS=[['all','전체']].concat(PLACE_CATS);
         if(!FSHOP_CATS.some(c=>c[0]===_shopFurnCat)) _shopFurnCat='all';
-        h+='<div class="subseg shopfurncat">'+FSHOP_CATS.map(c=>'<button class="'+(_shopFurnCat===c[0]?'on':'')+'" onclick="setShopFurnCat(\''+c[0]+'\')">'+c[1]+'</button>').join('')+'</div>';
-        const items=ITEM_CATALOG.slice().sort((a,b)=>tierRank(itemTierOf(a.id))-tierRank(itemTierOf(b.id))).filter(it=>!isGachaOnlyItem(it.id) && (_shopFurnCat==='all'||placeCatOf(it.id)===_shopFurnCat));   // 가챠전용 가구는 판매목록에서 숨김(랜덤박스 풀엔 그대로)
+        h+='<div class="shoptabrow"><div class="subseg shopfurncat">'+FSHOP_CATS.map(c=>'<button class="'+(_shopFurnCat===c[0]?'on':'')+'" onclick="setShopFurnCat(\''+c[0]+'\')">'+c[1]+'</button>').join('')+'</div>'+
+          '<select class="petsort furnsort" aria-label="가구 정렬" onchange="setFurnSort(this.value)">'+FURN_SORTS.map(o=>'<option value="'+o[0]+'"'+(_furnSort===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></div>';
+        const items=sortFurnItems(ITEM_CATALOG.filter(it=>!isGachaOnlyItem(it.id) && (_shopFurnCat==='all'||placeCatOf(it.id)===_shopFurnCat)));   // 가챠전용 가구는 판매목록에서 숨김(랜덤박스 풀엔 그대로)
         h+=items.map(it=>{
           const price=itemBuyPrice(it.id), enough=coins()>=price, gachaOnly=isGachaOnlyItem(it.id);
           let act, priceHtml;
@@ -4968,17 +5005,20 @@
       closeItemMenu();
       const map=wall?(room().wallPlaced||{}):(room().placed||{}), p=map[key]; if(!p) return;
       const it=ITEM_CATALOG.find(x=>x.id===p.itemId)||{}, wf=wall?'true':'false';
+      const ft=itemTierOf(p.itemId), foot=itemFoot(p.itemId);
       const wrap=document.createElement('div'); wrap.id='giMenu'; wrap.className='gimenu-scrim';
       wrap.onclick=function(e){ if(e.target===wrap) closeItemMenu(); };
       wrap.innerHTML='<div class="gimenu"><div class="gih">'+furnSvg(p.itemId,{h:34})+'<b>'+escapeHtml(it.name||p.itemId)+'</b></div>'+
+        '<div class="pi-meta"><span class="pi-tier">'+tierLabelHtml(ft)+'</span><span class="s">'+(it.desc?escapeHtml(it.desc)+' · ':'')+'크기 '+foot.w+'×'+foot.h+'</span></div>'+   // 등급·설명·크기
         '<button class="gib" onclick="retrievePlaced(\''+key+'\','+wf+')"><b>회수</b><span>인벤토리로 되돌려요(보유 유지)</span></button>'+
         '<button class="gib sell" onclick="sellPlaced(\''+key+'\','+wf+')"><b>판매</b><span>+'+ITEM_SELL+' 은화 · 보유에서 제거</span></button>'+
         '<button class="gib ghost" onclick="closeItemMenu()">닫기</button></div>';
       document.body.appendChild(wrap);
     }
     function closeItemMenu(){ const m=$('giMenu'); if(m) m.remove(); }
-    function retrievePlaced(key, wall){ roomTx(curRoomId(), roomIdx(), R=>{ const M=wall?(R.wallPlaced=R.wallPlaced||{}):(R.placed=R.placed||{}); delete M[key]; }); closeItemMenu(); toast('회수했어요(인벤토리로)'); }   // roomTx가 changedAt까지 갱신
+    function retrievePlaced(key, wall){ captureUndo(); roomTx(curRoomId(), roomIdx(), R=>{ const M=wall?(R.wallPlaced=R.wallPlaced||{}):(R.placed=R.placed||{}); delete M[key]; }); closeItemMenu(); toast('회수했어요(인벤토리로)'); }   // roomTx가 changedAt까지 갱신
     function sellPlaced(key, wall){
+      captureUndo();
       const map=wall?(room().wallPlaced||{}):(room().placed||{}), p=map[key]; if(!p){ closeItemMenu(); return; }
       const id=p.itemId;
       gameRef().transaction(g=>{

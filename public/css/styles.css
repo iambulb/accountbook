@@ -887,7 +887,8 @@
     .catchip .cpic .cn-info { position:absolute; right:2px; bottom:2px; z-index:2; width:17px; height:17px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; color:var(--sub); background:color-mix(in srgb,var(--card) 80%,transparent); }
     .catchip .cpic .cn-info svg { width:12px; height:12px; }
     /* 등급명 배지(색약 접근성) — 초상 좌하단 소형 pill(글자로 등급 식별) */
-    .catchip .cpic .ptier { position:absolute; left:2px; bottom:2px; z-index:2; padding:0 4px; border-radius:5px; font-size:8.5px; font-weight:900; line-height:1.5; background:color-mix(in srgb,var(--card) 84%,transparent); box-shadow:0 0 0 1px rgba(0,0,0,.12); }
+    .ptier { position:absolute; left:2px; bottom:2px; z-index:2; padding:0 4px; border-radius:5px; font-size:8.5px; font-weight:900; line-height:1.5; background:color-mix(in srgb,var(--card) 84%,transparent); box-shadow:0 0 0 1px rgba(0,0,0,.12); pointer-events:none; }
+    .shopcard .thumb .ptier { font-size:10px; left:3px; bottom:3px; }
     /* 펫 상세 시트 */
     .gimenu.petinfo { width:min(320px,88vw); gap:9px; }
     .petinfo .pi-h b { flex:1; min-width:0; }
@@ -1085,8 +1086,10 @@
     .pitem { flex:0 0 auto; width:74px; scroll-snap-align:start; border-radius:14px; background:var(--soft); border:1.5px solid transparent; display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 4px 7px; color:var(--text2); touch-action:pan-x; cursor:grab; }
     .pitem:active { cursor:grabbing; }
     .pitem.on { border-color:var(--primary); background:var(--card); color:var(--text); }
-    .pitem .pic { display:flex; align-items:center; justify-content:center; height:32px; width:100%; }
+    .pitem .pic { position:relative; display:flex; align-items:center; justify-content:center; height:36px; width:100%; }   /* 등급 링·배지 앵커(높이 살짝↑로 링 여유) */
     .pitem .pic .px { max-width:100%; max-height:32px; }   /* 넓은 가구(화장실·방석 등)가 셀 밖으로 튀어나오지 않게 클램프 */
+    .pitem .pic.tbring { border-radius:9px; }   /* 팔레트 등급 링 모서리 라운드 */
+    .pitem .pic .ptier { font-size:8px; left:1px; bottom:1px; padding:0 3px; }
     .pitem span { font-size:10.5px; font-weight:700; }
     .pitem .pq { font-size:9px; font-weight:800; color:var(--sub); white-space:nowrap; }
     /* 배치 인벤토리(보유 가구 카테고리 탭) — 가로 스크롤 대신 그리드로 채운다(펫 인벤토리와 동일한 느낌). */
@@ -1094,6 +1097,22 @@
     .palette.catinv .pitem { width:auto; touch-action:pan-y; scroll-snap-align:none; }   /* 그리드 셀 채움 + 세로 스와이프는 시트 스크롤로 통과 */
     .subseg.placecat { margin:8px 0 2px; }
     .subseg.placecat b { font-weight:900; margin-left:3px; opacity:.72; font-size:10px; }
+    /* 배치 화면 상단 액션(되돌리기·이 방 비우기) */
+    .placeacts { display:flex; gap:8px; margin:4px 0 2px; justify-content:flex-end; }
+    .placeacts .pa-btn { display:inline-flex; align-items:center; gap:5px; padding:6px 12px; border-radius:11px; background:var(--soft); color:var(--text2); font-size:12px; font-weight:800; }
+    .placeacts .pa-btn svg { width:14px; height:14px; }
+    .placeacts .pa-btn.danger { color:var(--expense); }
+    .placeacts .pa-btn:active { transform:scale(.96); }
+    /* 빈 격자 첫 사용 안내(오버레이) */
+    .pe-empty { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; pointer-events:none; color:var(--sub); font-size:12px; font-weight:700; text-align:center; padding:12px; }
+    .pe-empty svg { width:26px; height:26px; opacity:.6; }
+    .pe-empty b { color:var(--text2); }
+    /* 상점 가구: 카테고리 탭 + 정렬 셀렉트 한 줄 */
+    .shoptabrow { display:flex; align-items:center; gap:8px; }
+    .shoptabrow .subseg { flex:1; min-width:0; margin-right:0; }
+    .shoptabrow .furnsort { flex:none; }
+    /* reduced-motion: 배치 롱프레스 홀드 트랜지션 제외 */
+    @media (prefers-reduced-motion: reduce){ .gitem, .gitem.lp-hold { transition:none; } }
     .palempty { grid-column:1/-1; text-align:center; padding:20px 8px; color:var(--sub); font-size:12.5px; font-weight:700; line-height:1.55; }
     .palempty span { display:inline-block; margin-top:2px; font-size:11px; opacity:.8; font-weight:600; }
     .palcta { display:inline-block; margin-top:12px; padding:8px 16px; border-radius:999px; background:var(--primary); color:#fff; font-size:12px; font-weight:800; }
