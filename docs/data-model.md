@@ -33,7 +33,8 @@ users/{uid}            : { name, email, photo(프로필 사진 base64 data URL),
                              codes:{ {code}:{at, n} },                // 사용한 프로모/치트 코드(일반 1회·개발자 무한). n=사용 횟수
                              newsSeenAt:"YYYY-MM-DD",                 // 📢 마지막으로 '본' 공지 날짜(소식 화면 진입 시 markNewsSeen). 기기(localStorage)와 함께 더 최신을 사용해 기기 간 동기화
                              mail:{ free:{ "YYYY-MM-DD":count }, freeTo:{ "YYYY-MM-DD":{ {uid}:1 } }, egg:{ "YYYY-MM-DD":count } },  // 🎁 친구 선물 발신 하루 횟수(kstDayKey). 무료 응원=**친구당 하루 1번**(freeTo) + **전체 하루 5번**(free), 펫알=전체 하루 5번(egg). 클라이언트 게이트
-                             bcSeen:{ {pushId}:true }  // 📣 이미 받은 전체 선물(config/broadcast) id 마커 — claimBroadcasts 멱등(재수령 방지). 선물함 gift에는 {msg, bc:true}로 사유 표시
+                             bcSeen:{ {pushId}:true },  // 📣 이미 받은 전체 선물(config/broadcast) id 마커 — claimBroadcasts 멱등(재수령 방지). 선물함 gift에는 {msg, bc:true}로 사유 표시
+                             freePull:{ ddeul|egg|box:"YYYY-MM-DD" }  // 🎁 가챠 배너 일일 무료 1뽑 사용 마커(kstDayKey) — 종류별 하루 1회, 밤 12시(KST 자정) 날짜키 전환으로 자연 초기화. 트랜잭션에서 재검증(멱등)해 다기기 이중 사용 방지
                            } }
 workspaces/{wsId}      : { name, photo(가계부 사진 base64 data URL, 선택), type:'personal'|'group', code(그룹), ownerUid, createdAt,
                            members:{ {uid}:{ name, role:'owner'|'member', joinedAt } } }

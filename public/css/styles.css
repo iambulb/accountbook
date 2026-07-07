@@ -1829,7 +1829,7 @@
     .pkstage .cd-actor .cspr { image-rendering:pixelated; }
     /* ===== 🎰 가챠 배너(세로 확장·둥지형) — 개발자 배너 관리 미리보기 ===== */
     .gbanner { border-radius:16px; overflow:hidden; border:1.5px solid color-mix(in srgb,#9B6FC8 40%,var(--line)); background:var(--card); margin:2px 0 12px; }
-    .gbanner .gb-head { padding:9px 12px 8px; }
+    .gbanner .gb-head { display:flex; align-items:center; gap:4px 10px; flex-wrap:wrap; padding:9px 12px 8px; }   /* 제목(노을 등)과 오른쪽 안내 문구 사이 간격 살짝 */
     .gbanner .gb-head .pk-title, .gbanner .gb-head .gb-t { font-size:14px; font-weight:900; letter-spacing:.02em; }
     .gb-scene { position:relative; height:256px; overflow:hidden; contain:layout paint; }   /* 캠 화면처럼 세로로 크게. contain: 씬 상시 애니(구름·나무·SMIL) 리페인트가 배너 아래(재화 아이콘 등)로 번지지 않게 격리 */
     .gb-scene .pkscene { height:100%; }
@@ -1989,6 +1989,13 @@
     .gb-plus { margin:0 2px; opacity:.6; font-weight:900; }
     .gb-heldnote { margin:0 12px; padding:6px 0 0; font-size:11.5px; font-weight:700; color:var(--sub); text-align:center; }
     .gb-heldnote b { color:var(--text); font-weight:900; }
+    /* 🎁 일일 무료 1뽑 — 안내줄 + 1뽑 버튼 강조(남았을 때만) */
+    .gb-freenote { margin:0 12px; padding:6px 0 0; font-size:11.5px; font-weight:700; color:var(--sub); text-align:center; }
+    .gb-freenote b { color:#1fa564; font-weight:900; }
+    :root[data-theme="dark"] .gb-freenote b { color:#4ecb8f; }
+    .gb-free { color:#1fa564; font-weight:900; }
+    :root[data-theme="dark"] .gb-free { color:#4ecb8f; }
+    .gb-btn.gb-freebtn { box-shadow:inset 0 0 0 1.5px color-mix(in srgb,#1fa564 55%,transparent); }
     /* 🌱 배너 이미지 아래 아이템 정보(이미지·설명·소모재화) */
     .gb-item { display:flex; align-items:center; gap:12px; padding:12px; margin:0 12px; border-top:1px solid var(--line); }
     .gb-item-ic { flex:0 0 auto; line-height:0; }
