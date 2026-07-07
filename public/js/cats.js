@@ -1300,26 +1300,47 @@
     function floorCss(id){ if(_tileBgCache['f:'+id]) return _tileBgCache['f:'+id]; const f=FLOOR_CATALOG.find(x=>x.id===id)||FLOOR_CATALOG[0]; const v=f.m? tileBg(f.m, f.pal, f.tw, f.th) : 'var(--soft2)'; return (_tileBgCache['f:'+id]=v); }
     function currentFloor(){ return room().floor||'default'; }
     function ownsFloor(id){ return id==='default' || !!(state.game&&state.game.owned&&state.game.owned.floors&&state.game.owned.floors[id]); }
-    // 미션 정의(일일). reward=은화. check(ctx)=완료 여부(현재 워크스페이스 활동 읽어 판정)
+    // 미션 정의(일일). reward=은화. check(ctx)=완료 여부(현재 워크스페이스 활동 읽어 판정). 경제 정책(economy-policy) 반영: 접속 보장 번들(출석·첫 기록) 크게, 나머지는 상한.
     const DAILY_MISSIONS = [
-      { id:'record', period:'day', name:'오늘 1건 추가', reward:5, icon:'<path d="M12 4v16M8 8l4-4 4 4"/><rect x="4" y="18" width="16" height="3" rx="1"/>',
+      { id:'record', period:'day', name:'오늘 1건 기록', reward:50, icon:'<path d="M12 4v16M8 8l4-4 4 4"/><rect x="4" y="18" width="16" height="3" rx="1"/>',
         // 가계부(거래) 또는 할일 중 아무거나 오늘 1건 등록하면 완료
         check:()=> (state.transactions||[]).some(t=>(t.date||'').slice(0,10)===kstDayKey())
           || ((state.todos||[]).concat(state.myTodos||[])).some(t=>(t.createdAt||'').slice(0,10)===kstDayKey()) },
-      { id:'attend', period:'day', name:'출석 체크', reward:2, icon:'<path d="M5 12l4 4L19 6"/>',
+      { id:'attend', period:'day', name:'출석 체크', reward:50, icon:'<path d="M5 12l4 4L19 6"/>',
         check:()=> true }   // 앱 진입 = 완료(멱등 수령)
     ];
+    // 🔁 데일리 로테이션 풀 — 날짜 시드로 매일 2종 노출(질림 방지). 각 은 40. 라이트 유저도 쉬운 것 위주로 달성.
+    //   체크는 모두 신뢰 가능한 데이터(오늘 거래·petDay/todoDay 마커)만 사용.
+    const DAILY_POOL = [
+      { id:'q_memo', period:'day', name:'거래에 카테고리·메모 채우기', reward:40, icon:'<path d="M4 7h16M4 12h9M4 17h6"/><path d="M14 16l5-5 2 2-5 5-2 0z"/>',
+        check:()=> (state.transactions||[]).some(t=>(t.date||'').slice(0,10)===kstDayKey() && t.category && String(t.memo||t.desc||'').trim()) },
+      { id:'q_tx3', period:'day', name:'오늘 거래 3건 기록', reward:40, icon:'<path d="M4 7h16M4 12h16M4 17h10"/>',
+        prog:()=> Math.min((state.transactions||[]).filter(t=>(t.date||'').slice(0,10)===kstDayKey()).length,3)+' / 3건',
+        check:()=> (state.transactions||[]).filter(t=>(t.date||'').slice(0,10)===kstDayKey()).length>=3 },
+      { id:'q_todo', period:'day', name:'할일 1개 완료', reward:40, icon:'<circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.7 2.7L16.5 9"/>',
+        check:()=> (state.game&&state.game.todoDay&&state.game.todoDay.day===kstDayKey() && Number(state.game.todoDay.n)>0) },
+      { id:'q_pet', period:'day', name:'펫 쓰다듬기', reward:40, icon:'<path d="M12 20s-6-4.5-6-9a3.5 3.5 0 0 1 6-2.4A3.5 3.5 0 0 1 18 11c0 4.5-6 9-6 9z"/>',
+        check:()=> (state.game&&state.game.petDay&&state.game.petDay.day===kstDayKey() && Number(state.game.petDay.n)>0) }
+    ];
+    function _kstDayNum(){ return Math.floor((Date.now()+9*3600000)/86400000); }   // KST 일 번호(로테이션 시드)
+    function dailyRotation(){ const n=DAILY_POOL.length; if(n<=2) return DAILY_POOL.slice(); const d=_kstDayNum(); return [DAILY_POOL[d%n], DAILY_POOL[(d+1)%n]]; }   // 매일 슬라이딩 창 2종(결정적)
+    function dailyMissionsToday(){ return DAILY_MISSIONS.concat(dailyRotation()); }   // 고정 2종 + 오늘의 로테이션 2종
     const WEEKLY_MISSIONS = [
-      { id:'week5', gold:2, period:'week', name:'이번 주 5일 이상 기록', reward:20, icon:'<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/>',
-        prog:()=> recordDaysThisWeek()+' / 5일', check:()=> recordDaysThisWeek()>=5 },
-      { id:'report', gold:1, period:'week', name:'리포트 확인', reward:10, icon:'<path d="M5 20V11M12 20V5M19 20v-6"/>',
+      // 기록일 계단(3/5/7일) — 꾸준함 보상. 각각 독립 수령.
+      { id:'week3', period:'week', name:'이번 주 3일 기록', reward:60, icon:'<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/>',
+        prog:()=> Math.min(recordDaysThisWeek(),3)+' / 3일', check:()=> recordDaysThisWeek()>=3 },
+      { id:'week5', period:'week', name:'이번 주 5일 기록', reward:80, icon:'<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/>',
+        prog:()=> Math.min(recordDaysThisWeek(),5)+' / 5일', check:()=> recordDaysThisWeek()>=5 },
+      { id:'week7', gold:1, period:'week', name:'이번 주 7일 기록', reward:120, icon:'<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4M8 14h2M14 14h2"/>',
+        prog:()=> Math.min(recordDaysThisWeek(),7)+' / 7일', check:()=> recordDaysThisWeek()>=7 },
+      { id:'report', gold:1, period:'week', name:'리포트 확인', reward:40, icon:'<path d="M5 20V11M12 20V5M19 20v-6"/>',
         check:()=> reportSeenThisWeek() }
     ];
     // 월간 챌린지(period:'month'). 매월 1일(KST) 초기화. 큰 금화 공급원 — 꾸준함 보상.
     const MONTHLY_MISSIONS = [
-      { id:'mon_days', gold:8, period:'month', name:'이번 달 15일 기록', reward:80, icon:'<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4M8 14h2M14 14h2"/>',
+      { id:'mon_days', gold:5, period:'month', name:'이번 달 15일 기록', reward:300, icon:'<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4M8 14h2M14 14h2"/>',
         prog:()=> recordDaysThisMonth()+' / 15일', check:()=> recordDaysThisMonth()>=15 },
-      { id:'mon_tx', gold:5, period:'month', name:'이번 달 거래 25건', reward:50, icon:'<path d="M4 7h16M4 12h16M4 17h10"/>',
+      { id:'mon_tx', gold:3, period:'month', name:'이번 달 거래 25건', reward:150, icon:'<path d="M4 7h16M4 12h16M4 17h10"/>',
         prog:()=> Math.min(txThisMonth().length,25)+' / 25건', check:()=> txThisMonth().length>=25 }
     ];
     // 업적(1회성). period:'once' → 영구 저장(초기화 없음). 앱 기능을 써보게 유도하고 은화 보상.
@@ -1337,7 +1358,7 @@
       { id:'ach_custom1', period:'once', name:'첫 내 미션 만들기',   reward:10, icon:'<path d="M12 5v14M5 12h14"/>', check:()=> Object.keys((state.game&&state.game.customMissions)||{}).length>0 },
       { id:'ach_custom7', gold:3, period:'once', name:'내 미션 7일 연속',    reward:30, icon:'<path d="M12 3s5 4 5 9a5 5 0 1 1-10 0c0-2 1-3.5 2-4 0 2 1 3 2 3 0-3 -1-6 -1-8z"/>', check:()=> (typeof customMissionList==='function') && customMissionList().some(m=> missionStreak(missionLogDoneDates(m.id), kstDayKey()).best>=7 ) }
     ];
-    const ALL_MISSIONS = DAILY_MISSIONS.concat(WEEKLY_MISSIONS).concat(MONTHLY_MISSIONS).concat(ACHIEVEMENTS);
+    const ALL_MISSIONS = DAILY_MISSIONS.concat(DAILY_POOL).concat(WEEKLY_MISSIONS).concat(MONTHLY_MISSIONS).concat(ACHIEVEMENTS);   // 로테이션 풀 포함 → claimMission이 id로 항상 찾음
 
     // 🌈🔋 무지개 SMIL 그라디언트 애니 정적화 플래그(저사양·OS 모션축소) — pxSvg가 읽어 <animateTransform>(무한 재생) 생략 → 정적 무지개. refreshRbStatic()가 갱신, setLiteMode/부팅서 호출.
     let _rbStatic=false;
@@ -2519,6 +2540,13 @@
       if((g.todoDay&&g.todoDay.day)!==d) g.todoDay={day:d,n:0};
       if((Number(g.todoDay.n)||0)>=TODO_DAILY_CAP) return g;
       g.todoDay.n=(Number(g.todoDay.n)||0)+1; g.coins=clampCoins((g.coins||0)+TODO_REWARD); return g; }); }
+    // ✍️ 성실 기록 보너스 — 카테고리+메모를 채운 '새 거래' 저장 시 은화. 하루 QUALITY_DAILY_CAP건까지(도배 억제, 경제 정책 §3-A). 지급됐을 때만 토스트.
+    const QUALITY_BONUS=15, QUALITY_DAILY_CAP=3;
+    function grantQualityBonus(){ if(!state.uid) return; let paid=false; gameRef().transaction(function(g){ g=normalizeGame(g); paid=false; const d=kstDayKey();
+      if((g.qualityDay&&g.qualityDay.day)!==d) g.qualityDay={day:d,n:0};
+      if((Number(g.qualityDay.n)||0)>=QUALITY_DAILY_CAP) return g;
+      g.qualityDay.n=(Number(g.qualityDay.n)||0)+1; g.coins=clampCoins((g.coins||0)+QUALITY_BONUS); paid=true; return g;
+    }).then(function(r){ if(r&&r.committed&&paid) toast('✍️ 성실 기록 보너스 +'+QUALITY_BONUS+' 은화'); }); }
 
     // ===== 내 미션(커스텀 습관) — 개인 전역 game 트리. 일일 미션 경제(멱등 체크인)에 흡수 =====
     const CUSTOM_MISSION_REWARD=2;   // (레거시) 예전 일일 보상 — 현재 미사용
@@ -3166,6 +3194,14 @@
       else if(use==='rb_box') useRainbow('box');
       else if(use==='ddeul') useHeldDdeul(); }
     // 보유한 펫알/랜덤박스(소비 인벤토리)를 일반 확률로 오픈 — 은화 대신 인벤토리 1개 소모, 금화+1 지급.
+    // 🥇 가챠 부산물 금화 — 하루 GACHA_GOLD_CAP뽑까지만 지급(경제 정책 §5: 은화→금화 세탁 차단). want=이번에 주려는 금화(뽑 수).
+    //   g 트랜잭션 안에서 호출. gachaGold={day,n} 카운터로 하루 상한. 실제 지급액 반환.
+    const GACHA_GOLD_CAP=2;
+    function grantGachaGold(g, want){ want=Math.max(0, Math.floor(Number(want)||0)); if(!want) return 0;
+      const d=kstDayKey(); if((g.gachaGold&&g.gachaGold.day)!==d) g.gachaGold={day:d,n:0};
+      const room=Math.max(0, GACHA_GOLD_CAP-(Number(g.gachaGold.n)||0)), give=Math.min(want, room);
+      if(give>0){ g.gachaGold.n=(Number(g.gachaGold.n)||0)+give; g.gold=clampGold((g.gold||0)+give); }
+      return give; }
     function useHeldGacha(kind){
       if(_pullBusy) return;   // 🔒 진행 중 재탭 무시
       const key=kind;   // consum.egg / consum.box
@@ -3180,7 +3216,7 @@
       pullBegin(kind, false);   // 🔒 잠금 + 즉시 '준비' 오버레이
       gameRef().transaction(g=>{ g=normalizeGame(g);
         if((Number(g.consum[key])||0)<1) return;
-        g.consum[key]-=1; g.gold=clampGold((g.gold||0)+1); g.pity[kind]=pityNext(g.pity[kind]||0, hit);
+        g.consum[key]-=1; grantGachaGold(g,1); g.pity[kind]=pityNext(g.pity[kind]||0, hit);   // 부산물 금화 하루 2뽑 캡
         if(kind==='egg'){
           if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
           else { g.coins+=refund; }
@@ -3220,7 +3256,7 @@
     }
     // 오늘 홈에서 일일 미션 행 탭: 이미 수령=무시 / 완료됨=수령 / 미완료=해당 행동으로 딥링크.
     function homeMissionTap(id){
-      const m=DAILY_MISSIONS.find(x=>x.id===id); if(!m) return;
+      const m=dailyMissionsToday().find(x=>x.id===id); if(!m) return;
       if(missionClaimed(m)) return;
       if(m.check()){ claimMission(id); return; }
       if(id==='record'){   // 미완료 → 현재 모드에 맞는 추가 화면으로(할일 모드=할일 추가, 그 외=거래 추가)
@@ -4790,7 +4826,7 @@
         if(buyN>0){ if((g.coins||0)<buyN*silverEach) return; if(goldEach && (g.gold||0)<buyN*goldEach) return; }
         g.consum[heldKey]=(Number(g.consum[heldKey])||0)-held;                 // 보유분 소모
         if(buyN>0){ g.coins-=buyN*silverEach; if(goldEach) g.gold=clampGold((g.gold||0)-buyN*goldEach); }   // 구매분 재화 소모
-        if(kind!=='ddeul') g.gold=clampGold((g.gold||0)+N);                    // 펫알/박스=10뽑 모두 금화+1(뜰알 제외)
+        if(kind!=='ddeul') grantGachaGold(g,N);                                // 펫알/박스=10뽑 부산물 금화(뜰알 제외) · 하루 2뽑 캡 적용
         g.pity[kind]=finalPity;                                                // pity 10회 누적 반영
         list.forEach(function(it){
           if(kind==='box'){ const rf=grantBoxReward(g, { id:it.id, tier:it.tier, type:it.type }); if(rf) g.coins+=rf; }
@@ -5094,15 +5130,35 @@
       gameRef().transaction(gg=>{ if(gg==null) return; gg=normalizeGame(gg); const now=Date.now();
         (gg.home.rooms||[]).forEach(R=>{ if(!(Number(R.harvestAt)||0)) R.harvestAt=now; }); return gg; }); }
     // 🌾 수확(구 돌보기): 유휴 가구수익을 받고 + 편의로 빈 그릇 채우기·똥 치우기까지 한 번에. harvestAt=now로 리셋.
+    // 🎁 수확 드롭 원샷 연출 — 주운 펫알/랜덤박스/뜰알 픽셀 아이콘이 살짝 떠오르며 트윙클(도트·원샷). 뜰알은 별 버스트 추가(가장 화려). 모션축소면 생략.
+    function harvestDropFx(x, y, d){ if(!d) return;
+      try{ if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return; }catch(e){}
+      const items=[]; for(let i=0;i<(Number(d.egg)||0);i++) items.push('egg'); for(let i=0;i<(Number(d.box)||0);i++) items.push('box'); for(let i=0;i<(Number(d.ddeul)||0);i++) items.push('ddeul');
+      if(!items.length) return;
+      const cx=(x||innerWidth/2), cy=(y||innerHeight/2), show=items.slice(0,6);   // 최대 6개만 표시(도배 방지)
+      show.forEach((k,i)=>{
+        const el=document.createElement('div'); el.className='dropfx'+(k==='ddeul'?' dropfx-ddeul':'');
+        const art = k==='egg'?eggSvg(0,{h:26}) : (k==='box'?boxSvg({h:26}) : ddeulEggSvg({h:28}));
+        const spark = (typeof sparkSvg==='function')?('<span class="dropfx-tw">'+sparkSvg({h:14})+'</span>'):'';
+        el.innerHTML=art+spark;
+        const off=(i-(show.length-1)/2)*28;
+        el.style.left=(cx+off)+'px'; el.style.top=cy+'px'; el.style.animationDelay=(i*70)+'ms';
+        document.body.appendChild(el); setTimeout(()=>el.remove(), 1350+i*70);
+        if(k==='ddeul' && typeof starBurst==='function') starBurst(cx+off, cy);   // 뜰알(한정 픽업)은 별 버스트 추가
+      });
+    }
     function allRoomsIdleYield(g){ if(!g||!g.home||!Array.isArray(g.home.rooms)) return 0; const mult=_yieldMult(g); let s=0; g.home.rooms.forEach(R=>{ s+=roomIdleYield(g,R,mult); }); return s; }   // 배율 1회 계산 후 공유
     // 🌾 수확: 모든 방을 한 번에 — 유휴 가구수익 + 빈 밥/물그릇 채움 + 똥 치움(현재 방 먼저 채워 소모품 부족 시 보이는 방 우선).
     function batchCare(btnEl){
       if(!state.game){ return; }
-      const before=coins(), beforeGold=gold(); let filledN=0, shortFood=false, shortWater=false, goldBonus=0;
+      const before=coins(), beforeGold=gold(); let filledN=0, shortFood=false, shortWater=false, goldBonus=0, dropEgg=0, dropBox=0, dropDdeul=0;
       gameRef().transaction(g=>{ g=normalizeGame(g); const now=Date.now(); const rooms=g.home.rooms||[], cur=g.home.current|0;
-        filledN=0; shortFood=false; shortWater=false; goldBonus=0;   // 재실행(Firebase 재시도)마다 리셋 → 커밋된 마지막 실행값이 남음
+        filledN=0; shortFood=false; shortWater=false; goldBonus=0; dropEgg=0; dropBox=0; dropDdeul=0;   // 재실행(Firebase 재시도)마다 리셋 → 커밋된 마지막 실행값이 남음
         const order=[]; if(rooms[cur]) order.push(cur); rooms.forEach((_,i)=>{ if(i!==cur) order.push(i); });   // 현재 방 우선(소모품 부족 시)
         const mult=_yieldMult(g);   // 전역 수익배율 1회 스냅샷(방마다 재계산 방지·재시도 시 동일 g에서 동일값)
+        // ⏱️ 수확 드롭 롤 횟수 = 활성 펫이 있는 방의 최장 경과시간(시간, 24h캡). harvestAt 리셋 전에 계산.
+        let maxElapsed=0; rooms.forEach(R=>{ if(R && ((R.active||[]).length>0)){ const ha=Number(R.harvestAt)||0; if(ha) maxElapsed=Math.max(maxElapsed, now-ha); } });
+        const rollH=Math.max(0, Math.min(24, Math.floor(maxElapsed/3600000)));
         order.forEach(i=>{ const R=rooms[i]; if(!R) return; const pl=R.placed||{};
           const y=roomIdleYield(g, R, mult); if(y>0) g.coins=clampCoins(g.coins+y); R.harvestAt=now; R.caredAt=now;   // 유휴 은화(행복도 기반) + 시계 리셋 + 행복도 수확신선도 갱신(눌러야 오름)
           Object.keys(pl).forEach(k=>{ const e=pl[k]; if(!e) return; const filled=e.filledAt&&(now-e.filledAt)<FILL_MS;
@@ -5110,18 +5166,26 @@
               else if(e.itemId==='waterbowl'){ if(g.consum.water>0){ g.consum.water-=1; e.filledAt=now; filledN++; } else shortWater=true; } } });
           const poops=Number(R.poops)||0; if(poops>0){ g.coins=clampCoins(g.coins+poops*POOP_REWARD); R.poops=0; }
         });
-        // 🪙 금화 가끔 수확 — 하루 1회, 활성 펫이 있을 때만 확률로 2~5개(멱등: harvestGold.day 마커)
-        const today=kstDayKey();
-        if((g.harvestGold&&g.harvestGold.day)!==today){ g.harvestGold={day:today};
-          const hasPets=(g.home.rooms||[]).some(R=>((R&&R.active)||[]).length>0);
-          if(hasPets && Math.random()<HARVEST_GOLD_CHANCE){ const g0=g.gold||0, gg=HARVEST_GOLD_MIN+Math.floor(Math.random()*(HARVEST_GOLD_MAX-HARVEST_GOLD_MIN+1)); g.gold=clampGold(g0+gg); goldBonus=g.gold-g0; } }
+        // 🪙 수확 드롭 — 경과 시간(rollH·24h캡)만큼 시간당 확률 롤: 금화 10% + 가챠 아이템(펫알/랜덤박스/뜰알) 각 1%. (구 '하루 1회 금화 1~5' 삭제)
+        //   금화는 잔액 즉시 적립, 알/박스/뜰알은 소비 인벤토리(MAX_CONSUM 캡)에 적립. 재시도마다 위에서 리셋 → 커밋된 값만 남음.
+        { const g0=g.gold||0; let ge=0,gb=0,gd=0;
+          for(let h=0; h<rollH; h++){ if(Math.random()<HARVEST_ROLL.gold) g.gold=clampGold((g.gold||0)+1);
+            if(Math.random()<HARVEST_ROLL.egg) ge++; if(Math.random()<HARVEST_ROLL.box) gb++; if(Math.random()<HARVEST_ROLL.ddeul) gd++; }
+          goldBonus=(g.gold||0)-g0;
+          if(ge>0){ const q=clampConsum((Number(g.consum.egg)||0)+ge); dropEgg=q-(Number(g.consum.egg)||0); g.consum.egg=q; }
+          if(gb>0){ const q=clampConsum((Number(g.consum.box)||0)+gb); dropBox=q-(Number(g.consum.box)||0); g.consum.box=q; }
+          if(gd>0){ const q=clampConsum((Number(g.consum.ddeul)||0)+gd); dropDdeul=q-(Number(g.consum.ddeul)||0); g.consum.ddeul=q; }
+        }
         return g;
       }).then(r=>{ if(!r||!r.committed) return;
         const nowCoins=(r.snapshot&&r.snapshot.val()&&r.snapshot.val().coins)||before, gained=nowCoins-before;
         let x=innerWidth/2, y=200; if(btnEl&&btnEl.getBoundingClientRect){ const b=btnEl.getBoundingClientRect(); x=b.left; y=b.bottom+100; }   // 캠 안쪽(버튼 아래)에서 지갑으로 올라오게
         const short=(shortFood&&shortWater)?'사료·물':(shortFood?'사료':(shortWater?'물':''));
-        if(gained>0 || filledN>0 || goldBonus>0){ if(gained>0||goldBonus>0) rewardFly(x,y, gained, goldBonus, before, beforeGold);
-          let msg='🌾 전체 수확 완료'+(gained>0?' · +'+gained+' 은화 🪙':'')+(goldBonus>0?' · +'+goldBonus+' 금화 🥇':'')+(filledN>0?' · 밥/물 '+filledN+'칸':'')+(short?' · '+short+' 부족(일부 미충전)':'');
+        const dropped=(dropEgg>0||dropBox>0||dropDdeul>0);
+        if(gained>0 || filledN>0 || goldBonus>0 || dropped){ if(gained>0||goldBonus>0) rewardFly(x,y, gained, goldBonus, before, beforeGold);
+          if(dropped && typeof harvestDropFx==='function') harvestDropFx(x, y, { egg:dropEgg, box:dropBox, ddeul:dropDdeul });   // 🎁 드롭 원샷 픽셀 연출(뜰알=선버스트)
+          const dropMsg=(dropEgg>0?' · 🥚펫알 +'+dropEgg:'')+(dropBox>0?' · 📦랜덤박스 +'+dropBox:'')+(dropDdeul>0?' · 🌱뜰알 +'+dropDdeul:'');
+          let msg='🌾 전체 수확 완료'+(gained>0?' · +'+gained+' 은화 🪙':'')+(goldBonus>0?' · +'+goldBonus+' 금화 🥇':'')+dropMsg+(filledN>0?' · 밥/물 '+filledN+'칸':'')+(short?' · '+short+' 부족(일부 미충전)':'');
           toast(msg); }
         else if(short) toast('🌾 '+short+'이 없어요 · 알뜰샵 소비 탭에서 구매', true);
         else toast('🌾 아직 모인 게 없어요 (상호작용 가구를 놓아보세요)');
@@ -5702,7 +5766,7 @@
         g=normalizeGame(g);
         if(free){ if(g.freePull[kind]===day) return; g.freePull[kind]=day; g.pity[kind]=pityNext(g.pity[kind]||0, hit); }   // 🎁 무료: 재화 무소모, 오늘 마커만(재검증)
         else { if(g.coins<GACHA_PRICE) return;
-        g.coins-=GACHA_PRICE; g.gold=(g.gold||0)+1; g.pity[kind]=pityNext(g.pity[kind]||0, hit); }
+        g.coins-=GACHA_PRICE; grantGachaGold(g,1); g.pity[kind]=pityNext(g.pity[kind]||0, hit); }   // 부산물 금화 하루 2뽑 캡
         if(kind==='egg'){
           if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
           else { g.coins+=refund; }
@@ -6442,10 +6506,10 @@
       let h='<div class="coinhero"><span class="ch-big">'+coinSvg({h:44})+'</span><div><div class="k">보유 은화</div><div class="v">'+coins().toLocaleString()+(atMaxCoins()?maxChip():'')+'</div></div></div>';
       // 로그인 스트릭 배지: 연속 출석일 + 다음 마일스톤까지(3·7·14·30, 이후 매30). 마일스톤에 은화·금화 보상.
       { const c=(state.game&&state.game.streak&&Number(state.game.streak.count))||0;
-        const nx=[3,7,14,30].find(n=>n>c)||(Math.floor(c/30+1)*30);
+        const nx=[3,7,14,30,60,100].find(n=>n>c)||((Math.floor(c/100)+1)*100);
         h+='<div class="streakbar"><span class="fire" style="display:inline-flex;align-items:center">'+flameSvg({h:18})+'</span><b>'+c+'일 연속 출석</b><span class="s">다음 보상까지 '+(nx-c)+'일 (+금화)</span></div>'; }
       h+='<div class="sech"><span class="l">일일 미션</span><span class="s">자정 초기화</span></div>';
-      h+=DAILY_MISSIONS.map(missionRow).join('');
+      h+=dailyMissionsToday().map(missionRow).join('');
       const _cmN=customMissionList().length; h+='<div class="sech"><span class="l">내 미션</span>'+(_cmN>=5?'<span class="s">최대 5개</span>':'<button class="link" onclick="openCustomMissionEdit()">+ 추가</button>')+'</div>';
       const mine=customMissionList();
       h+= mine.length ? mine.map(customMissionRow).join('') : '<div class="note" style="margin:2px 0 4px;">매일 체크할 나만의 습관을 추가해요(최대 5개). 7일 연속마다 은화 보상.</div>';

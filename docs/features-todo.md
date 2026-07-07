@@ -44,7 +44,7 @@
 
 ## 마감일 · 캘린더 · 완료
 
-- **마감일 배지**: 오늘/내일/D-N/N일 지남을 색으로(`todoDueBadge`). 미완료는 마감 임박순 정렬.
+- **마감일 배지**: 오늘/내일/D-N/N일 지남을 색으로(`todoDueBadge`). 미완료는 마감 임박순 정렬. **완료된 항목은 마감 경과 대신 완료일을 중립색 "M/D 완료"로 표시**(`doneAt` 기준, 없으면 배지 생략) — 완료 섹션이 "N일 지남"으로 빨갛게 물들지 않게.
 - **날짜 옮기기(리스케줄)**: **미완료 할일의 마감일 배지를 탭**하면 '날짜 옮기기' 미니 시트(`openTodoReschedule`) — 빠른 칩(오늘·내일·모레·다음 주, `addDays` 기반) + 날짜 직접 선택(`<input type=date>`). 이동은 `rescheduleTodo`가 **`dueDate`만 갱신**(`todoDbRef(t).update`, 노드 경로·키 불변, 반복 `repeat` 유지). 마감일 없는 미완료 할일은 배지 자리에 **`날짜`** 칩이 떠 같은 시트로 지정. 완료·친구 열람(읽기전용) 행은 배지 비활성.
 - **지난 미완료 일괄 오늘로**: 리스트 상단 **'🕘 지난 미완료 N개 → 오늘로'** 배너(`carryOverdueToToday`) — 현재 스코프의 지난 미완료(`overdueTodoIds`, 순수헬퍼)를 확인 후 **다중경로 fan-out `update()`** 로 한 번에 오늘로. 친구 열람 뷰에선 숨김.
 - **캘린더 탭**(`renderTodoCalendar`): 가계부 달력 그리드를 재사용해 **현재 스코프의 마감일**을 점/개수로 표시, 날짜 탭 시 그날 할일. 월 이동 `todoMoveMonth`.
@@ -67,7 +67,7 @@
 
 ## 게임화 연동 (은화)
 
-- 할일 **완료 시 은화 +2**(할일당 1회·멱등, `rewardClaimed` 플래그 · `grantTodoCoins`). 완료 취소해도 재지급 없음. 반복 할일도 첫 완료 1회만 지급.
+- 할일 **완료 시 은화 +10**(할일당 1회·멱등, `rewardClaimed` 플래그 · `grantTodoCoins`) — **은화는 하루 5개까지만**(`TODO_DAILY_CAP`·`game.todoDay`, 도배 억제). 완료 취소해도 재지급 없음. 반복 할일도 첫 완료 1회만 지급.
 - **업적**: 첫 할일 완료(+10) / 할일 10개 완료(+30) — `ACHIEVEMENTS`(period `once`, `state.todos` 기준). 펫·도크·가챠 로직은 무변경(은화만 증가). 알뜰홈 상세는 [features.md](features.md#-알뜰홈-은화-경제--게임화)·[cat-feature-plan.md](cat-feature-plan.md).
 
 ## 데이터 · 순수 헬퍼
