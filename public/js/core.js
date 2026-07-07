@@ -1187,13 +1187,20 @@
       const base=Number(b.amount)||0; const prevUsed=budgetTxs(b, pr).reduce(function(s,t){ return s+(Number(t.amount)||0); },0);
       return Math.max(0, base-prevUsed);
     }
+    // 개인예산 소유자 ↔ 거래 소비대상 매칭(단일 소스) — 집계(budgetTxs)·사전경고(budgetPreWarn)가 같은 기준을 쓰게.
+    //  uid 우선(개명·동명이인 견고), 없으면 이름. 공동 지출(userUid 없음)은 개인예산에 안 잡혀 허위 경보/집계 혼선 방지. 공동/카테고리 예산·소유자 미지정은 항상 매칭.
+    function budgetOwnerMatch(b, tx){
+      if(!b || b.scope!=='personal' || !b.owner || b.owner==='공동') return true;
+      if(b.ownerUid && tx && tx.userUid) return b.ownerUid===tx.userUid;
+      return ownerName(tx&&tx.user)===ownerName(b.owner);
+    }
     function budgetTxs(b, ref){
       const p=budgetPeriod(b, ref);   // ref=기준일(리포트에서 보는 달) — 없으면 오늘
       return state.transactions.filter(t=>{
         if(!isActual(t)) return false;                              // 실제소비만 (충전·이체·조정·환불·대출상환 제외)
         if((t.date||'').slice(0,10) > todayStr()) return false;     // 예정(미래일) 거래는 아직 안 쓴 돈 — 잔액과 동일하게 예산 사용/경고에서 제외
         if(b.categoryName && t.category!==b.categoryName) return false;
-        if(b.scope==='personal' && b.owner && b.owner!=='공동' && ownerName(t.user)!==ownerName(b.owner)) return false;   // uid·이름 혼재 대응 — 이름으로 정규화해 같은 사람이면 포함
+        if(!budgetOwnerMatch(b, t)) return false;   // 개인예산=소유자 소비만(uid 우선·공동 제외) — 사전경고와 동일 기준
         const d=parseDate(t.date); return !(d<p.start||d>p.end);
       });
     }

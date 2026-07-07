@@ -2,8 +2,9 @@
     function renderCalendar(){
       const m=state.month, allList=monthTx(m);
       const list = state.memberFilter ? allList.filter(t=>t.ownerUid===state.memberFilter) : allList;   // 멤버 칩 = '기록자(ownerUid)'별 필터(문서 features-ledger.md 기준) — 공동/수입 거래도 기록한 멤버 칩에 잡힘(예전 소비대상 t.user 기준이라 공동·수입이 어떤 칩에도 안 잡히던 버그 수정)
-      const inc=sumBy(list,'income');
+      const inc=sumBy(list.filter(t=>t.isActualExpense!==false),'income');   // 원금회수 등 비실수입 제외(리포트와 동일)
       const actual=actualSpend(list);
+      const refundTot=list.filter(t=>t.type==='refund').reduce((s,t)=>s+(Number(t.amount)||0),0);   // 💸 환불 — 합계에 반영(리포트 잔액과 동일 기준)
       const charge=sumBy(list,'prepaid_charge');
       const pspend=sumBy(list,'prepaid_spend')+sumBy(list,'point_spend');
       const [y,mo]=m.split('-').map(Number);
@@ -16,7 +17,7 @@
         '<div class="sep"></div>'+
         '<div><div class="k">실제소비</div><div class="v red">'+won(actual)+'</div></div>'+
         '<div class="sep"></div>'+
-        '<div><div class="k">합계</div><div class="v">'+won(inc-actual)+'</div></div></div>';
+        '<div><div class="k">합계</div><div class="v">'+won(inc-actual+refundTot)+'</div></div></div>';
       // 충전/선불 분리 보조행 + 예산 미니바 (우리 고유 정보 — 소비 착각 방지)
       html+='<div class="submeta"><span class="muted">충전 <b class="blue">'+won(charge)+'</b></span><span class="muted">선불·포인트 <b>'+won(pspend)+'</b></span><span class="muted">미사용잔액 <b class="blue">'+won(prepaidTotal())+'</b></span></div>';
       const tb=totalMonthlyBudget();
@@ -487,7 +488,7 @@
         const split=computeSettleAmounts(type, parts, amt, sh._stCustom);
         h+='<div id="sStAmts">'+parts.map(n=>'<div class="field" style="margin-top:6px;"><label>'+escapeHtml(n)+' 부담</label>'+
           '<input class="input stamt" data-n="'+escapeHtml(n)+'" inputmode="numeric" value="'+(split[n]?Number(split[n]).toLocaleString():'0')+'"'+(type==='equal'?' readonly':' oninput="this.value=fmtComma(this.value)"')+'></div>').join('')+'</div>';
-        h+='<div class="tx-sub" style="margin-top:4px;">'+(type==='equal'?'균등 분할(자동 계산)':'직접 입력 — 합계가 거래 금액과 같아야 정확합니다')+'</div>';
+        h+='<div class="tx-sub" style="margin-top:4px;">'+(type==='equal'?'균등 분할(자동 계산)':'직접 입력 — 합계가 거래 금액과 다르면 남는 금액은 결제자가 부담해요')+'</div>';
       } else {
         h+='<div class="tx-sub" style="margin-top:6px;">결제자가 전액 부담합니다(정산 송금 없음).</div>';
       }
@@ -510,7 +511,10 @@
       const payer = $('sStPayer')?val('sStPayer'):(sh._stPayer||state.userName);
       let parts, amounts={};
       if(type==='payer_only'){ parts=[payer]; amounts[payer]=amt; }
-      else { parts=(sh._stParts||[]).slice(); amounts=computeSettleAmounts(type, parts, amt, sh._stCustom); }
+      else { parts=(sh._stParts||[]).slice(); amounts=computeSettleAmounts(type, parts, amt, sh._stCustom);
+        // 직접 입력 합계가 거래 금액과 다르면 잔액을 결제자(참여 시)·아니면 마지막 참여자에 흡수 → 합계 불일치로 영원히 미정산되던 문제 방지(항상 정산 가능).
+        if(type==='custom' && parts.length){ const sum=parts.reduce((s,n)=>s+(Number(amounts[n])||0),0), diff=amt-sum;
+          if(diff){ const anchor=(parts.indexOf(payer)>=0?payer:parts[parts.length-1]); amounts[anchor]=(Number(amounts[anchor])||0)+diff; } } }
       return { inc:true, payer, splitType:type, participants:parts, amounts, memo: $('sStMemo')?val('sStMemo'):(sh._stMemo||'') };
     }
     function saveTx(){
@@ -585,10 +589,7 @@
       const amt=Math.abs(Number(tx.amount)||0); if(!amt || typeof budgetUsage!=='function') return;
       (typeof visibleBudgets==='function'?visibleBudgets():(state.budgets||[])).forEach(b=>{   // 비공개·타인 개인예산은 경고 대상에서 제외
         if(b.categoryName && b.categoryName!==tx.category) return;                 // 카테고리 예산=같은 카테고리만
-        if(b.scope==='personal'){                                                  // 개인 예산=소유자 소비만 경고 (uid 우선, 레거시는 이름 비교)
-          if(b.ownerUid){ if(b.ownerUid!==(tx.userUid||state.uid)) return; }
-          else if(b.owner && ownerName(b.owner)!==ownerName(tx.user||state.userName)) return;
-        }
+        if(!budgetOwnerMatch(b, tx)) return;   // 개인예산=소유자 소비만(집계 budgetTxs와 동일 기준). 공동 지출은 개인예산 경고 안 뜸(허위 경보 제거)
         const u=budgetUsage(b); if(!u || !u.amount) return;
         const projPct=Math.round((u.used+amt)/u.amount*100), th=(b.alertEnabled!==false)?(b.alertThreshold||80):101;
         if(projPct>=100 && u.pct<100) setTimeout(()=>toast('⚠️ '+budgetTitle(b)+' 예산 초과 ('+projPct+'%)', true), 400);
@@ -1215,7 +1216,7 @@
     function renderStats(){
       if(typeof markReportSeen==='function') markReportSeen();   // 🐱 주간 미션: 리포트 확인
       const m=state.month, list=monthTx(m);
-      const actual=actualSpend(list), inc=sumBy(list,'income');
+      const actual=actualSpend(list), inc=sumBy(list.filter(t=>t.isActualExpense!==false),'income');   // 원금회수 등 isActualExpense:false 수입은 '실수입' 아님(부채·자산 이동) → 리포트 수입에서 제외(수입 부풀림 방지)
       const refundTot=list.filter(t=>t.type==='refund').reduce((s,t)=>s+(Number(t.amount)||0),0);   // 💸 환불 합계 — 잔액에 반영(이전엔 수입·지출 어디에도 안 잡혀 잔액이 실제와 어긋났음)
       const bal=inc-actual+refundTot;
       const [yy,mo]=m.split('-');
@@ -2852,6 +2853,8 @@
         '<div class="field"><label>만기일(선택)</label><input type="date" class="input" id="lDue" value="'+(l&&l.dueDate?l.dueDate:'')+'"></div></div>';
       h+='<details class="adv"><summary>상세 설정</summary>';
       h+='<div class="field"><label>기본 상환 계좌</label><select class="input" id="lAcct">'+acctOptsHtml((l&&l.account)||(state.accounts[0]?state.accounts[0].id:''))+'</select></div>';
+      // 원금을 계좌 잔액에 반영(신규 대출만) — 빌림=입금·빌려줌=출금 거래를 만들어 잔액이 실제와 맞게. 실소비 통계엔 제외(isActualExpense:false).
+      if(!l) h+='<div class="menu-item" style="padding:6px 0;"><span>원금을 계좌 잔액에 반영 <span class="muted" style="font-size:11px">('+(dir==='lent'?'출금':'입금')+' 거래 생성)</span></span><div class="switch" id="lPrincipalTx" onclick="this.classList.toggle(\'on\')"><i></i></div></div>';
       h+='<div class="field"><label>메모</label><input class="input" id="lMemo" value="'+escapeHtml(l?(l.memo||''):'')+'" placeholder="메모"></div>';
       h+='<div class="field"><label>공개 범위</label><select class="input" id="lVis">'+VISIBILITY.map(v=>'<option value="'+v[0]+'"'+(((l&&l.visibility===v[0])||(!l&&v[0]===defaultVisibility()))?' selected':'')+'>'+v[1]+'</option>').join('')+'</select></div>';
       h+='</details>';
@@ -2869,10 +2872,20 @@
         account: $('lAcct')?val('lAcct'):'', memo:val('lMemo').trim(), status:l?(l.status||'active'):'active',
         visibility:vis, owner:l?(l.owner||state.userName):state.userName, createdAt:l?(l.createdAt||now):now, updatedAt:now };
       const key=id||('loan_'+Date.now());
+      // 💰 원금 계좌 반영(신규 대출 + 토글 ON + 계좌 지정) — 빌림=입금(income to), 빌려줌=출금(expense from). 부채/자산 이동이라 실소비 통계 제외(isActualExpense:false), loanId로 연결.
+      if(!l && $('lPrincipalTx') && $('lPrincipalTx').classList.contains('on') && data.account){
+        const borrowed=data.direction!=='lent', txId='lprin_'+key;
+        const o={ type:borrowed?'income':'expense', date:isoAtNoon(data.startDate), user:state.userName, amount:principal,
+          category:'대출', desc:name+' 원금 '+(borrowed?'수령':'대여'), isActualExpense:false, loanId:key, memo:data.memo };
+        if(borrowed) o.to=data.account; else o.from=data.account;
+        db.ref(wp('transactions/'+state.uid+'/'+txId)).set(o).catch(_saveErr); data.principalTxId=txId;
+      }
       db.ref(wp('loans/'+key)).set(data).catch(_saveErr); toast(l?'수정되었습니다':'추가되었습니다'); openLoanBook();
     }
     function deleteLoan(id){
       confirmSheet('이 대출을 삭제할까요? (상환 기록도 함께 삭제됩니다)', ()=>{
+        const lo=state.loans.find(x=>x.id===id);
+        if(lo&&lo.principalTxId) db.ref(wp('transactions/'+state.uid+'/'+lo.principalTxId)).remove();   // 원금 반영 거래도 함께 정리
         loanPaymentsOf({id}).forEach(p=>{ if(p.linkedTransactionId) db.ref(wp('transactions/'+state.uid+'/'+p.linkedTransactionId)).remove(); if(p.linkedPrincipalTxId) db.ref(wp('transactions/'+state.uid+'/'+p.linkedPrincipalTxId)).remove(); db.ref(wp('loanPayments/'+p.id)).remove(); });
         db.ref(wp('loans/'+id)).remove(); toast('삭제되었습니다'); openLoanBook();
       });
