@@ -4514,7 +4514,7 @@
     // 배너 공용 중앙 센터피스 — 뜰알 .pk-egg 위치(중앙 하단)에 아이콘/상자 + 반짝임 FX(도트). 둥지 대체.
     function gbCenterHtml(inner, fx, cls){ return '<div class="gb-center '+(cls||'')+'">'+(fx?'<span class="gb-cfx">'+fx+'</span>':'')+'<span class="gb-cicon">'+inner+'</span></div>'; }
     // 🏛️ 한정 픽업 초상 받침대(2단 포디움 + 금 트림) — 뜰알 스포트라이트 초상 발밑. 3톤(H/M/D)+외곽선(X)+금(G), 맨 윗줄 비움. PIL 검수.
-    const M_PEDESTAL=["..................",".XXXXXXXXXXXXXXXX.",".XHHHHHHHHHHHHHHX.",".XMGGGGGGGGGGGGMX.",".XDDDDDDDDDDDDDDX.","......XHMMDX......","......XMMMDX......","......XMMMDX......","XHHHHHHHHHHHHHHHHX","XMGGGGGGGGGGGGGGMX","XDDDDDDDDDDDDDDDDX",".................."];
+    const M_PEDESTAL=["..............................","..XXXXXXXXXXXXXXXXXXXXXXXXXX..","..XHHHHHHHHHHHHHHHHHHHHHHHHX..","..XMGGGGGGGGGGGGGGGGGGGGGGMX..","..XDDDDDDDDDDDDDDDDDDDDDDDDX..","...........XMMMMDDX...........","...........XMMMMDDX...........","XHHHHHHHHHHHHHHHHHHHHHHHHHHHHX","XMGGGGGGGGGGGGGGGGGGGGGGGGGGMX","XDDDDDDDDDDDDDDDDDDDDDDDDDDDDX","XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"];   // v2: 넓고 낮은 전시 받침(30×11) — 초상 폭에 맞게 상판 확장(금트림)+목+전폭 베이스. PIL 검수.
     const PEDESTAL_PAL={H:'#f0e6c8',M:'#d6c496',D:'#a89264',X:'#6e5c36',G:'#f4d06b'};
     function pedestalSvg(opt){ return pxSvg(M_PEDESTAL, PEDESTAL_PAL, opt); }
     // 🌈 배너 알 공용 무지개 연출 — 무지개 오오라+광선(lightLayers rainbow) + 무지개 트윙클. 뜰알·펫알·랜덤박스 센터 공용.
@@ -4528,7 +4528,7 @@
           '<span class="gb-spot-beam"></span>'+                                                       // 🔦 무대 조명 빔(위→아래)
           '<span class="gb-spot-fx">'+lightLayers({aura:82, rays:56, rainbow:true})+fxAuraTwinkles(4,true)+'</span>'+   // 도트 무지개 후광+트윙클
           '<span class="gb-spot-badge">'+starSvg({h:14})+'</span>'+
-          '<div class="gb-spot-card"><span class="gb-spot-face">'+catFace(id,{h:60,eager:true})+'</span><span class="gb-spot-ped">'+pedestalSvg({h:16})+'</span></div>'+   // 무지개 카드 안 초상+받침대
+          '<div class="gb-spot-card"><span class="gb-spot-face">'+catFace(id,{h:60,eager:true})+'</span><span class="gb-spot-ped">'+pedestalSvg({h:24})+'</span></div>'+   // 무지개 카드 안 초상+받침대(h24→폭≈65px, 초상 60px에 맞춤·중앙 정렬)
           '<span class="gb-spot-name">'+catNameSpan(id,catName(id))+'</span>'+
           '<span class="gb-spot-tier">'+tierLabelHtml(CAT_TIER[id]||'exclusive')+'</span>'+            // 등급 라벨(한정=무지개)
         '</div>' : '<div class="gb-spot gb-spot-empty"></div>';
@@ -5185,7 +5185,7 @@
       let shootFront='', shootBehind=''; for(let i=0;i<6;i++){
         const behind=pkRand(i,197)<0.5, top=(0+pkRand(i,190)*(behind?10:12)).toFixed(1), left=(-8+pkRand(i,191)*(behind?12:8)).toFixed(1),
           dur=(6.5+pkRand(i,192)*3.5).toFixed(1), del=(i*1.3+pkRand(i,193)*1.1).toFixed(2);
-        if(behind){ const hh=S(Math.round(15+pkRand(i,194)*8)), tx=Math.round((80+pkRand(i,195)*90)*sz), ty=Math.round((45+pkRand(i,196)*55)*sz);   // 멀리·작게·짧게(산 뒤 좌상단) — tx/ty는 씬 배율 sz로 확대
+        if(behind){ const hh=S(Math.round(15+pkRand(i,194)*8)), tx=Math.round((300+pkRand(i,195)*90)*sz), ty=Math.round((38+pkRand(i,196)*38)*sz);   // 좌상단→오른쪽 끝 산 위쪽까지(멀리·작게·높게 유지, 산 뒤로 사라짐) — tx/ty는 씬 배율 sz로 확대
           shootBehind+='<span class="pk-shoot pk-shoot-far" style="top:'+top+'%;left:'+left+'%;--d:'+dur+'s;--tx:'+tx+'px;--ty:'+ty+'px;animation-delay:'+del+'s;">'+shootStarSvg({h:hh})+'</span>';
         } else { const hh=S(Math.round(26+pkRand(i,194)*16)), tx=Math.round((340+pkRand(i,195)*150)*sz), ty=Math.round((220+pkRand(i,196)*110)*sz);   // 전체화면 대각선 코너까지
           shootFront+='<span class="pk-shoot" style="top:'+top+'%;left:'+left+'%;--d:'+dur+'s;--tx:'+tx+'px;--ty:'+ty+'px;animation-delay:'+del+'s;">'+shootStarSvg({h:hh})+'</span>'; } }
