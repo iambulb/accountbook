@@ -581,7 +581,8 @@
         // 🔗 편집이 재구성하지 않는 백링크(경조사·대출·연결 거래) 보존 — 안 지키면 편집 시 선물/대출 연결이 끊겨 pill·정산이 깨짐
         if(old) ['giftEventId','loanId','linkedTransactionId'].forEach(k=>{ if(old[k]!=null && old[k]!=='') tx[k]=old[k]; });
         db.ref(wp('transactions/'+sheetTx.ownerUid+'/'+sheetTx.id)).set(tx).catch(_saveErr); toast('수정되었습니다');
-      } else { db.ref(wp('transactions/'+state.uid+'/'+Date.now())).set(tx).catch(_saveErr); toast('저장되었습니다'); budgetPreWarn(tx); }
+      } else { db.ref(wp('transactions/'+state.uid+'/'+Date.now())).set(tx).catch(_saveErr); toast('저장되었습니다'); budgetPreWarn(tx);
+        if(tx.category && tx.memo && typeof grantQualityBonus==='function') grantQualityBonus(); }   // ✍️ 카테고리+메모 채운 새 거래 → 성실 기록 보너스(하루 3건 캡)
       closeSheet();
     }
     // 예산 사전 경고: 이 지출로 관련 예산이 임계(alertThreshold) 또는 100%를 처음 넘으면 비차단 토스트(저장은 그대로).
@@ -923,6 +924,8 @@
     }
     // nextDue/dueDiffDays는 js/util.js(순수함수·단위테스트)로 이관됨 — 전역으로 사용.
     function todoDueBadge(t, ro){ const editable=!ro && !t.done;   // 미완료·편집가능 행은 배지를 탭해 '날짜 옮기기'
+      if(t.done){ const d=t.doneAt?ymd(new Date(t.doneAt)):'';   // 완료 항목=마감 경과("N일 지남") 대신 완료일(중립색) — doneAt(ISO)을 로컬 날짜로 변환
+        return d?'<span class="tdue">'+(+d.slice(5,7))+'/'+(+d.slice(8,10))+' 완료</span>':''; }
       if(!t.dueDate){ return editable ? '<button class="tdue tap none" onclick="event.stopPropagation();openTodoReschedule(\''+t.id+'\')" aria-label="날짜 지정">날짜</button>' : ''; }
       const today=ymd(new Date());
       const diff=dueDiffDays(t.dueDate, today);
@@ -938,6 +941,8 @@
         :(_anm?('<span class="tdwho"><span class="tdname">'+escapeHtml(_anm)+'</span></span>'):'');
       const _rep=t.repeat&&t.repeat!=='none'; const _dc=Number(t.doneCount)||0;
       const repPill=_rep?(' <span class="pill">🔁'+(_dc>0?' '+_dc+'회':'')+'</span>'):'';   // 반복 완료 횟수(있으면) — 반복 완료 이력 가시화
+      const prioDot=(t.priority==='high')?'<span class="tdprio high" title="높음" aria-label="우선순위 높음">●</span>':((t.priority==='low')?'<span class="tdprio low" title="낮음" aria-label="우선순위 낮음">●</span>':'');
+      const tagHtml=(t.tags&&t.tags.length)?' '+t.tags.slice(0,3).map(function(g){ return '<span class="tdtag">'+escapeHtml(g)+'</span>'; }).join(''):'';
       const chkSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>';
       const chk=ro
         ? '<span class="tdchk'+(t.done?' on':'')+'" aria-hidden="true">'+chkSvg+'</span>'
@@ -945,9 +950,36 @@
       const titleTag=ro
         ? '<span class="tdtitle'+(t.done?' done':'')+'">'
         : '<span class="tdtitle'+(t.done?' done':'')+'" onclick="openTodoEdit(\''+t.id+'\')">';
-      return '<div class="tdrow">'+chk+
-        titleTag+escapeHtml(t.title||'')+repPill+(t.purposeBookId?' <span class="pill">📍</span>':'')+'</span>'+
+      return '<div class="tdrow">'+chk+prioDot+
+        titleTag+escapeHtml(t.title||'')+repPill+tagHtml+(t.purposeBookId?' <span class="pill">📍</span>':'')+'</span>'+
         todoDueBadge(t, ro)+who+'</div>';
+    }
+    // 🔍 할일 검색 — 키워드(제목·메모·태그) + 우선순위 + 완료포함. scopedTodos에서 필터, 폼은 정적·결과만 갱신(입력 포커스 유지).
+    let _todoSearchT=0;
+    function _todoSearchRender(){ const r=$('tdsResults'); if(r) r.innerHTML=todoSearchResults(); }
+    function todoSearchResults(){
+      const q=state._todoSearch||{}; const kw=(q.keyword||'').trim().toLowerCase(); const prio=q.priority||'';
+      let res=scopedTodos().filter(function(t){
+        if(prio && (t.priority||'normal')!==prio) return false;
+        if(!q.includeDone && t.done) return false;
+        if(!kw) return true;
+        return (((t.title||'')+' '+(t.note||'')+' '+((t.tags||[]).join(' '))).toLowerCase()).indexOf(kw)>=0;
+      });
+      res.sort(function(a,b){ const ad=a.dueDate||'9999-99', bd=b.dueDate||'9999-99'; return ad<bd?-1:ad>bd?1:0; });
+      const ro=todoReadOnly(); const rows=res.slice(0,100).map(function(t){ return todoRow(t, ro); }).join('');
+      return '<div class="sech"><span class="l">결과</span><span class="s">'+res.length+'건'+(res.length>100?' · 100 표시':'')+'</span></div>'+
+        '<div class="card" style="padding:4px 12px;">'+(rows||'<div class="empty" style="padding:22px 6px;">검색 결과가 없어요</div>')+'</div>';
+    }
+    function todoSearchSet(k,v){ (state._todoSearch||(state._todoSearch={}))[k]=v;
+      if(k==='keyword'){ clearTimeout(_todoSearchT); _todoSearchT=setTimeout(_todoSearchRender, 180); }   // 타이핑 디바운스
+      else { if(k==='priority'){ const seg=$('tdsSeg'); if(seg) Array.prototype.forEach.call(seg.querySelectorAll('.chip'),function(b){ b.classList.toggle('on',(b.getAttribute('data-p')||'')===(v||'')); }); } _todoSearchRender(); } }
+    function openTodoSearch(){
+      const st=state._todoSearch||(state._todoSearch={});
+      let h='<div class="field"><label for="tdsKw">키워드(제목·메모·태그)</label><input class="input" id="tdsKw" value="'+escapeHtml(st.keyword||'')+'" oninput="todoSearchSet(\'keyword\',this.value)" placeholder="예: 장보기, 급함"></div>'+
+        '<div class="chip-row" id="tdsSeg">'+[['','전체'],['high','🔴 높음'],['normal','보통'],['low','🔵 낮음']].map(function(p){ return '<button class="chip '+((st.priority||'')===p[0]?'on':'')+'" data-p="'+p[0]+'" onclick="todoSearchSet(\'priority\',\''+p[0]+'\')">'+p[1]+'</button>'; }).join('')+'</div>'+
+        '<label style="display:flex;align-items:center;gap:8px;margin:6px 2px 10px;font-size:13px;color:var(--sub);"><input type="checkbox" '+(st.includeDone?'checked':'')+' onchange="todoSearchSet(\'includeDone\',this.checked)"> 완료 포함</label>'+
+        '<div id="tdsResults">'+todoSearchResults()+'</div>';
+      openSheet('할일 검색', h);
     }
     function renderTodoList(){
       // 개인 프로필의 '친구들' = 친구 피드(아바타 정렬·오늘 무지개·친구 할일 목록). 단, 특정 친구를 열람 중이면 그 친구 목록을 보여줌(아래로 진행).
@@ -961,11 +993,12 @@
       if(_todoFilter==='mine') open=open.filter(t=>t.assignedUid===meUid);
       else if(_todoFilter==='today') open=open.filter(t=>t.dueDate&&t.dueDate<=today);
       else if(_todoFilter==='week') open=open.filter(t=>t.dueDate&&t.dueDate<=weekEnd);
-      open.sort((a,b)=>{ const ad=a.dueDate||'9999-99', bd=b.dueDate||'9999-99'; if(ad!==bd) return ad<bd?-1:1; return (a.sortOrder||0)-(b.sortOrder||0); });
+      const _pv=p=>(p==='high'?0:p==='low'?2:1);   // 우선순위 정렬키(높음 먼저)
+      open.sort((a,b)=>{ const ad=a.dueDate||'9999-99', bd=b.dueDate||'9999-99'; if(ad!==bd) return ad<bd?-1:1; const pa=_pv(a.priority),pb=_pv(b.priority); if(pa!==pb) return pa-pb; return (a.sortOrder||0)-(b.sortOrder||0); });
       const done=base.filter(t=>t.done).sort((a,b)=>(b.doneAt||'').localeCompare(a.doneAt||''));
       const chips=isGroup?[['all','전체'],['mine','내 담당'],['today','오늘'],['week','이번주']]:[['all','전체'],['today','오늘'],['week','이번주']];
       let h=todoScopeSeg();   // 개인 탭 = 내 할일만(친구는 '친구들' 탭 피드로 일원화)
-      h+='<div class="chip-row" style="margin:6px 0 12px;">'+chips.map(c=>'<button class="chip'+(_todoFilter===c[0]?' on':'')+'" onclick="setTodoFilter(\''+c[0]+'\')">'+c[1]+'</button>').join('')+'</div>';
+      h+='<div class="chip-row" style="margin:6px 0 12px;">'+chips.map(c=>'<button class="chip'+(_todoFilter===c[0]?' on':'')+'" onclick="setTodoFilter(\''+c[0]+'\')">'+c[1]+'</button>').join('')+'<button class="chip srch" onclick="openTodoSearch()" aria-label="할일 검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>검색</button></div>';
       const roList=!!(state._todoFriend && state._todoFriend!==state.uid);   // 친구 열람=읽기전용(배지 탭·일괄 이동 숨김)
       if(!roList){ const odIds=overdueTodoIds(base, today); if(odIds.length) h+='<button class="td-carry" onclick="carryOverdueToToday()">🕘 지난 미완료 '+odIds.length+'개 → 오늘로</button>'; }
       const emptyMsg=isGroup?'그룹 할일이 없어요 — 아래 ＋ 로 담당을 나눠보세요':'개인 할일이 없어요 — 아래 ＋ 로 추가하세요';
@@ -1054,6 +1087,8 @@
       const asel=t?(t.assignedUid||'공동'):(state.uid||'공동');
       const rep=t?(t.repeat||'none'):'none';
       const pbSel=t?(t.purposeBookId||''):(presetPb||'');
+      const prio=t?(t.priority||'normal'):'normal';   // 우선순위: high/normal/low
+      const tdtags=t?((t.tags||[]).join(', ')):'';     // 태그(쉼표 구분 표시)
       const pbs=(state.purposeBooks||[]).filter(p=>(p.status||'active')!=='archived');
       let h='<input type="hidden" id="tdScope" value="'+scope+'">';
       h+='<div class="field"><label>할 일</label><input class="input" id="tdTitle" value="'+escapeHtml(t?(t.title||''):'')+'" placeholder="예: 장보기, 항공권 예약"></div>';
@@ -1064,6 +1099,8 @@
       h+='<div class="form-2"><div class="field"><label>반복</label><select class="input" id="tdRepeat">'+repOpts.map(function(o){ return '<option value="'+o[0]+'"'+(rep===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
         '<div class="field"><label>가계부 연결</label><select class="input" id="tdPb"><option value="">연결 안 함</option>'+pbs.map(function(p){ return '<option value="'+p.id+'"'+(pbSel===p.id?' selected':'')+'>'+(p.icon||'📒')+' '+escapeHtml(p.name)+'</option>'; }).join('')+'</select></div></div>';
       h+='<p class="muted" style="font-size:11.5px;margin:-4px 2px 10px;">매일 하는 습관은 <b>미션 탭 · 내 미션</b>에서 스트릭으로 관리해요.</p>';
+      h+='<div class="form-2"><div class="field"><label>우선순위</label><select class="input" id="tdPrio">'+[['high','🔴 높음'],['normal','보통'],['low','🔵 낮음']].map(function(o){ return '<option value="'+o[0]+'"'+(prio===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
+        '<div class="field"><label>태그 (선택)</label><input class="input" id="tdTags" value="'+escapeHtml(tdtags)+'" placeholder="쉼표로 구분: 집안일, 급함"></div></div>';
       h+='<div class="field"><label>메모 (선택)</label><input class="input" id="tdNote" value="'+escapeHtml(t?(t.note||''):'')+'" placeholder="메모"></div>';
       h+='<button class="btn" onclick="saveTodo('+(id?'\''+id+'\'':'null')+')">'+(t?'수정':'추가')+'</button>';
       if(t) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteTodo(\''+id+'\')">삭제</button>';
@@ -1081,10 +1118,13 @@
       // 개인 할일 소유자: 기존 값 유지, 신규는 나. 그룹은 소유자 개념 없음(담당자로 표현).
       const ownerUid=scope==='personal'?(t?(t.ownerUid||t.createdByUid||state.uid||''):(state.uid||'')):'';
       const key=id||('todo_'+Date.now());
+      const _prio=(function(){ const p=$('tdPrio')?val('tdPrio'):'normal'; return (p==='high'||p==='low')?p:'normal'; })();
+      const _tags=(function(){ const raw=$('tdTags')?val('tdTags'):''; return raw.split(',').map(function(s){ return s.trim(); }).filter(Boolean).slice(0,8); })();   // 쉼표 구분·최대 8개
       const data={ title:title, note:val('tdNote').trim(), dueDate:val('tdDue')||'',
         scope:scope, ownerUid:ownerUid,
         assignedUid:assignedUid, assignedName:assignedName,
         repeat:($('tdRepeat')?val('tdRepeat'):'none')||'none', purposeBookId:($('tdPb')?val('tdPb'):'')||'',
+        priority:_prio, tags:_tags,
         createdByUid:t?(t.createdByUid||state.uid||''):(state.uid||''), createdAt:t?(t.createdAt||now):now, updatedAt:now,
         sortOrder:t?(t.sortOrder!=null?t.sortOrder:Date.now()):Date.now() };
       const ref=scope==='personal'?db.ref('users/'+state.uid+'/todos/'+key):db.ref(wp('todos/'+key));
@@ -1394,7 +1434,7 @@
     }
     // 오늘 남은 일(로고 배지·홈 완료카드 공용 단일 소스) — util.todayPending에 현재 브라우저 상태를 모아 넘김(새 조회 없음).
     function todayPendingNow(){
-      var daily=(typeof DAILY_MISSIONS!=='undefined')?DAILY_MISSIONS:[];
+      var daily=(typeof dailyMissionsToday==='function')?dailyMissionsToday():((typeof DAILY_MISSIONS!=='undefined')?DAILY_MISSIONS:[]);
       var customs=(typeof customMissionList==='function')?customMissionList():[];
       var flags=daily.map(function(m){return missionClaimed(m);}).concat(customs.map(function(m){return customCheckedToday(m.id);}));
       var todos=(typeof scopedTodos==='function')?scopedTodos():[];
@@ -1407,7 +1447,7 @@
     }
     function renderHome(){
       const c=$('content'); if(!c) return;
-      const daily=(typeof DAILY_MISSIONS!=='undefined')?DAILY_MISSIONS:[];
+      const daily=(typeof dailyMissionsToday==='function')?dailyMissionsToday():((typeof DAILY_MISSIONS!=='undefined')?DAILY_MISSIONS:[]);
       const customs=(typeof customMissionList==='function')?customMissionList():[];
       const mrows=daily.map(function(m){ return { name:m.name, reward:m.reward, done:missionClaimed(m), onclick:"homeMissionTap('"+m.id+"')" }; })
         .concat(customs.map(function(m){ return { name:m.title, reward:0, done:customCheckedToday(m.id), onclick:"toggleCustomMissionToday('"+m.id+"')" }; }));

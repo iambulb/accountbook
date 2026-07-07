@@ -547,6 +547,10 @@
     .tdtitle.done { text-decoration:line-through; color:var(--sub); font-weight:500; }
     .tdwho { flex:none; display:inline-flex; }
     .tdname { font-size:11px; color:var(--sub); font-weight:700; }
+    .tdprio { flex:none; font-size:9px; line-height:1; margin-right:5px; vertical-align:middle; }
+    .tdprio.high { color:var(--expense); }
+    .tdprio.low { color:var(--sub); opacity:.65; }
+    .tdtag { font-size:10px; background:var(--soft2); color:var(--sub); padding:1px 6px; border-radius:6px; margin-left:4px; font-weight:600; white-space:nowrap; }
     .tdue { flex:none; font-size:11px; font-weight:800; color:var(--sub); }
     .tdue.today { color:var(--primary); } .tdue.soon { color:#E0883C; } .tdue.over { color:var(--expense); }
     button.tdue { -webkit-appearance:none; appearance:none; border:none; background:transparent; padding:0; cursor:pointer; font-family:inherit; }   /* 마감일 배지 = 탭하면 날짜 옮기기 */
@@ -846,6 +850,14 @@
     .heartfx { position:fixed; z-index:60; transform:translate(-50%,-50%); font-size:20px; color:#ff5d7a; pointer-events:none; animation:heartrise .8s ease-out forwards; }
     .heartfx .px { display:block; }   /* 픽셀 하트(heartSvg) 렌더 */
     @keyframes heartrise { 0%{ opacity:0; transform:translate(-50%,-50%) scale(.6);} 25%{ opacity:1;} 100%{ opacity:0; transform:translate(-50%,-160%) scale(1.1);} }
+    /* 🎁 수확 드롭 연출 — 주운 펫알/랜덤박스/뜰알 픽셀 아이콘이 떠오르며 트윙클(도트·원샷, blur/글로우 없음) */
+    .dropfx { position:fixed; z-index:61; transform:translate(-50%,-50%); pointer-events:none; image-rendering:pixelated; animation:dropfxrise 1.3s ease-out forwards; }
+    .dropfx .px { display:block; image-rendering:pixelated; }
+    .dropfx-tw { position:absolute; top:-7px; right:-7px; color:var(--gold,#e0a43c); animation:dropfxtw .9s steps(3) infinite; }
+    .dropfx-ddeul { filter:drop-shadow(1px 0 #ffd34d) drop-shadow(-1px 0 #ffd34d) drop-shadow(0 1px #ffd34d) drop-shadow(0 -1px #ffd34d); }   /* 뜰알 골드 실루엣(0 blur) */
+    @keyframes dropfxrise { 0%{ opacity:0; transform:translate(-50%,-30%) scale(.6);} 22%{ opacity:1; transform:translate(-50%,-70%) scale(1.08);} 70%{ opacity:1; transform:translate(-50%,-125%) scale(1);} 100%{ opacity:0; transform:translate(-50%,-165%) scale(1);} }
+    @keyframes dropfxtw { 0%,100%{ opacity:.35; transform:scale(.8);} 50%{ opacity:1; transform:scale(1.15);} }
+    @media (prefers-reduced-motion: reduce){ .dropfx{ animation:none; } .dropfx-tw{ animation:none; } }
     /* 💗 애정 레벨업 "UP!" — 하트 옆에서 두둥(팝 오버슈트→상승→페이드). 분홍 픽셀 + 크리스프 진분홍 외곽선(0 blur). */
     .lvlup { position:fixed; z-index:62; transform:translate(-50%,-50%); pointer-events:none; will-change:transform,opacity; image-rendering:pixelated;
       filter:drop-shadow(1px 0 #f78ec0) drop-shadow(-1px 0 #f78ec0) drop-shadow(0 1px #f78ec0) drop-shadow(0 -1px #f78ec0);   /* 연한 로즈 실루엣(둥글둥글 글리프 + 부드러운 외곽선) */
