@@ -249,8 +249,6 @@
         '<button data-tp="income" onclick="setSheetType(\'income\')">수입</button>'+
         '<button data-tp="transfer" onclick="setSheetType(\'transfer\')">이체</button>'+
         '<button data-tp="__ext__" onclick="setSheetType(\'__ext__\')">선불·포인트</button></div>';
-      if(!t){ const tpls=frequentTxTemplates(state.transactions,6); state._txTpls=tpls;   // 빠른 입력: 자주 쓴 지출 원탭 프리필
-        if(tpls.length) h+='<div class="chip-row qadd">'+tpls.map((tp,i)=>'<button class="chip" onclick="applyTxTemplate('+i+')" title="'+escapeHtml(tp.desc)+' '+Number(tp.amount).toLocaleString()+'원">'+escapeHtml(tp.desc)+' <b>'+Number(tp.amount).toLocaleString()+'</b></button>').join('')+'</div>'; }
       // 시안: 큰 금액 + 키패드 입력
       // 금액: 모바일은 화면 키패드(OS 키보드 안 뜨게 readonly+inputmode none), 데스크톱은 물리 키보드로 직접 입력(keydown 라우팅).
       h+='<div class="amtbig"><select id="sCur" class="amt-cur" onchange="onCurChange()">'+curOptions(t&&t.currency?t.currency:'KRW')+'</select><input id="sAmount" class="amtbig-in" readonly inputmode="none" aria-label="금액" placeholder="0" onkeydown="kpKey(event)" onpaste="kpPaste(event)" value="'+((t&&t.currency&&t.currency!=='KRW')?fmtAmt(String(t.foreignAmount||'')):(amount?Number(amount).toLocaleString():''))+'"></div>';
@@ -300,12 +298,6 @@
       highlightTypeSeg(); renderTxDyn();
     }
     function setExtType(tp){ sheetType=tp; highlightTypeSeg(); renderTxDyn(); }
-    // 빠른 입력 칩 탭 → 유형·카테고리·금액·내용 프리필(자주 쓴 지출 재사용)
-    function applyTxTemplate(i){ const tp=(state._txTpls||[])[i]; if(!tp) return;
-      sheetType=tp.type||'expense'; sheetCat=tp.category||'';
-      highlightTypeSeg(); renderTxDyn();
-      const d=$('sDesc'); if(d) d.value=tp.desc||'';
-      setAmt(String(tp.amount||'')); }
     function highlightTypeSeg(){
       const seg=$('sTypeSeg'); if(!seg) return;
       const ext=EXT_TYPES.includes(sheetType);
@@ -943,6 +935,9 @@
       const repPill=_rep?(' <span class="pill">🔁'+(_dc>0?' '+_dc+'회':'')+'</span>'):'';   // 반복 완료 횟수(있으면) — 반복 완료 이력 가시화
       const prioDot=(t.priority==='high')?'<span class="tdprio high" title="높음" aria-label="우선순위 높음">●</span>':((t.priority==='low')?'<span class="tdprio low" title="낮음" aria-label="우선순위 낮음">●</span>':'');
       const tagHtml=(t.tags&&t.tags.length)?' '+t.tags.slice(0,3).map(function(g){ return '<span class="tdtag">'+escapeHtml(g)+'</span>'; }).join(''):'';
+      const _sub=Array.isArray(t.subtasks)?t.subtasks:[], _sdone=_sub.filter(function(s){ return s.done; }).length;
+      const subBadge=_sub.length?(ro?(' <span class="pill tdsub'+(_sdone>=_sub.length?' all':'')+'">☑ '+_sdone+'/'+_sub.length+'</span>')
+        :(' <span class="pill tdsub'+(_sdone>=_sub.length?' all':'')+'" role="button" tabindex="0" onclick="event.stopPropagation();openTodoSubtasks(\''+t.id+'\')" aria-label="하위 작업">☑ '+_sdone+'/'+_sub.length+'</span>')):'';
       const chkSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>';
       const chk=ro
         ? '<span class="tdchk'+(t.done?' on':'')+'" aria-hidden="true">'+chkSvg+'</span>'
@@ -951,8 +946,35 @@
         ? '<span class="tdtitle'+(t.done?' done':'')+'">'
         : '<span class="tdtitle'+(t.done?' done':'')+'" onclick="openTodoEdit(\''+t.id+'\')">';
       return '<div class="tdrow">'+chk+prioDot+
-        titleTag+escapeHtml(t.title||'')+repPill+tagHtml+(t.purposeBookId?' <span class="pill">📍</span>':'')+'</span>'+
+        titleTag+escapeHtml(t.title||'')+repPill+subBadge+tagHtml+(t.purposeBookId?' <span class="pill">📍</span>':'')+'</span>'+
         todoDueBadge(t, ro)+who+'</div>';
+    }
+    // ☑ 하위 작업 시트 — 항목별 완료 토글(추가·삭제·수정은 할일 편집에서). 토글 시 시트만 갱신(_sheetRefresh).
+    function openTodoSubtasks(id){
+      const chkSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>';
+      const build=function(){
+        const t=allTodos().find(function(x){ return x.id===id; }); if(!t) return '<div class="empty" style="padding:20px;">할일을 찾을 수 없어요</div>';
+        const subs=Array.isArray(t.subtasks)?t.subtasks:[], ro=todoReadOnly(), done=subs.filter(function(s){ return s.done; }).length;
+        let h='<div class="sech"><span class="l">하위 작업</span><span class="s">'+done+' / '+subs.length+'</span></div>';
+        h+='<div class="card" style="padding:4px 12px;">'+(subs.length?subs.map(function(s,i){
+          const chk=ro?('<span class="tdchk'+(s.done?' on':'')+'" aria-hidden="true">'+chkSvg+'</span>')
+            :('<button class="tdchk'+(s.done?' on':'')+'" onclick="toggleSubtask(\''+id+'\','+i+')" aria-label="'+(s.done?'완료 취소':'완료')+'">'+chkSvg+'</button>');
+          return '<div class="tdrow">'+chk+'<span class="tdtitle'+(s.done?' done':'')+'">'+escapeHtml(s.text||'')+'</span></div>';
+        }).join(''):'<div class="empty" style="padding:20px 6px;">하위 작업이 없어요 — 할일 수정에서 추가해요</div>')+'</div>';
+        if(subs.length) h+='<p class="muted" style="font-size:11.5px;margin:8px 2px;">항목 추가·삭제·수정은 <b>할일 수정</b>에서 해요.</p>';
+        return h;
+      };
+      const t0=allTodos().find(function(x){ return x.id===id; });
+      openSheet(t0?(t0.title||'하위 작업'):'하위 작업', build());
+      state._sheetRefresh=function(){ const b=$('sheetBody'); if(b) b.innerHTML=build(); };
+    }
+    function toggleSubtask(id, idx){
+      const t=allTodos().find(function(x){ return x.id===id; }); if(!t) return;
+      const subs=(Array.isArray(t.subtasks)?t.subtasks:[]).map(function(s){ return { text:s.text||'', done:!!s.done }; });
+      if(!subs[idx]) return;
+      subs[idx].done=!subs[idx].done;
+      todoDbRef(t).update({ subtasks:subs, updatedAt:new Date().toISOString() }).catch(_saveErr);
+      if(state._sheetRefresh) setTimeout(function(){ if(state._sheetRefresh) state._sheetRefresh(); }, 60);   // RTDB 로컬 반영 후 시트만 갱신
     }
     // 🔍 할일 검색 — 키워드(제목·메모·태그) + 우선순위 + 완료포함. scopedTodos에서 필터, 폼은 정적·결과만 갱신(입력 포커스 유지).
     let _todoSearchT=0;
@@ -1089,6 +1111,7 @@
       const pbSel=t?(t.purposeBookId||''):(presetPb||'');
       const prio=t?(t.priority||'normal'):'normal';   // 우선순위: high/normal/low
       const tdtags=t?((t.tags||[]).join(', ')):'';     // 태그(쉼표 구분 표시)
+      const subText=(t&&Array.isArray(t.subtasks))?t.subtasks.map(function(s){ return s.text||''; }).join('\n'):'';   // 하위작업(한 줄에 하나)
       const pbs=(state.purposeBooks||[]).filter(p=>(p.status||'active')!=='archived');
       let h='<input type="hidden" id="tdScope" value="'+scope+'">';
       h+='<div class="field"><label>할 일</label><input class="input" id="tdTitle" value="'+escapeHtml(t?(t.title||''):'')+'" placeholder="예: 장보기, 항공권 예약"></div>';
@@ -1102,6 +1125,7 @@
       h+='<div class="form-2"><div class="field"><label>우선순위</label><select class="input" id="tdPrio">'+[['high','🔴 높음'],['normal','보통'],['low','🔵 낮음']].map(function(o){ return '<option value="'+o[0]+'"'+(prio===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
         '<div class="field"><label>태그 (선택)</label><input class="input" id="tdTags" value="'+escapeHtml(tdtags)+'" placeholder="쉼표로 구분: 집안일, 급함"></div></div>';
       h+='<div class="field"><label>메모 (선택)</label><input class="input" id="tdNote" value="'+escapeHtml(t?(t.note||''):'')+'" placeholder="메모"></div>';
+      h+='<div class="field"><label>하위 작업 (선택, 한 줄에 하나)</label><textarea class="input" id="tdSub" rows="3" placeholder="예: 우유 사기">'+escapeHtml(subText)+'</textarea></div>';
       h+='<button class="btn" onclick="saveTodo('+(id?'\''+id+'\'':'null')+')">'+(t?'수정':'추가')+'</button>';
       if(t) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteTodo(\''+id+'\')">삭제</button>';
       openSheet(t?'할일 수정':'할일 추가', h);
@@ -1120,11 +1144,13 @@
       const key=id||('todo_'+Date.now());
       const _prio=(function(){ const p=$('tdPrio')?val('tdPrio'):'normal'; return (p==='high'||p==='low')?p:'normal'; })();
       const _tags=(function(){ const raw=$('tdTags')?val('tdTags'):''; return raw.split(',').map(function(s){ return s.trim(); }).filter(Boolean).slice(0,8); })();   // 쉼표 구분·최대 8개
+      const _subs=(function(){ const raw=$('tdSub')?val('tdSub'):''; const prev=(t&&Array.isArray(t.subtasks))?t.subtasks:[];   // 줄 단위 파싱, 기존 done 상태는 텍스트 일치로 보존
+        return raw.split('\n').map(function(s){ return s.trim(); }).filter(Boolean).slice(0,20).map(function(txt){ const p=prev.find(function(x){ return x.text===txt; }); return { text:txt, done:p?!!p.done:false }; }); })();
       const data={ title:title, note:val('tdNote').trim(), dueDate:val('tdDue')||'',
         scope:scope, ownerUid:ownerUid,
         assignedUid:assignedUid, assignedName:assignedName,
         repeat:($('tdRepeat')?val('tdRepeat'):'none')||'none', purposeBookId:($('tdPb')?val('tdPb'):'')||'',
-        priority:_prio, tags:_tags,
+        priority:_prio, tags:_tags, subtasks:_subs,
         createdByUid:t?(t.createdByUid||state.uid||''):(state.uid||''), createdAt:t?(t.createdAt||now):now, updatedAt:now,
         sortOrder:t?(t.sortOrder!=null?t.sortOrder:Date.now()):Date.now() };
       const ref=scope==='personal'?db.ref('users/'+state.uid+'/todos/'+key):db.ref(wp('todos/'+key));

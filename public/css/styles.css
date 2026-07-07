@@ -551,6 +551,8 @@
     .tdprio.high { color:var(--expense); }
     .tdprio.low { color:var(--sub); opacity:.65; }
     .tdtag { font-size:10px; background:var(--soft2); color:var(--sub); padding:1px 6px; border-radius:6px; margin-left:4px; font-weight:600; white-space:nowrap; }
+    .pill.tdsub { cursor:pointer; }
+    .pill.tdsub.all { color:var(--income); }
     .tdue { flex:none; font-size:11px; font-weight:800; color:var(--sub); }
     .tdue.today { color:var(--primary); } .tdue.soon { color:#E0883C; } .tdue.over { color:var(--expense); }
     button.tdue { -webkit-appearance:none; appearance:none; border:none; background:transparent; padding:0; cursor:pointer; font-family:inherit; }   /* 마감일 배지 = 탭하면 날짜 옮기기 */
