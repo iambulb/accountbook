@@ -648,7 +648,7 @@
     .px { image-rendering:pixelated; display:block; }
     .catpx { image-rendering:pixelated; display:block; } /* 스프라이트 고양이 정면 썸네일(south.png) — 알뜰샵·보유칩·뽑기 공통 */
     /* 전역 dock 스트립 (topbar와 content 사이 상시 노출) */
-    .catdock { flex-shrink:0; padding:6px 10px 4px; }   /* dock를 알뜰홈처럼 '라운드 카드'로 띄우기 — 풀블리드 배경/구분선 제거, 양옆 소량 여백 */
+    .catdock { flex-shrink:0; padding:6px 20px 4px; }   /* dock를 알뜰홈처럼 '라운드 카드'로 — 양옆 여백을 본문(.content 20px)·상단바와 동일하게 맞춰 아래 레이아웃 폭과 정렬 */
     .cd-strip { height:52px; display:flex; align-items:center; gap:10px; padding:0 14px; position:relative; overflow:hidden; }
     .cd-floor { position:absolute; left:0; right:0; bottom:11px; height:1px; background:var(--bd); }
     .cd-coin { display:inline-flex; align-items:center; gap:5px; background:var(--card); border:1px solid var(--bd); border-radius:20px; padding:4px 11px 4px 5px; font-size:12px; font-weight:800; color:var(--text); z-index:2; }
@@ -1049,7 +1049,7 @@
     .cr-prop .ffx-sway .px  { animation:ffsway 4.6s ease-in-out infinite; }
     .cr-prop .ffx-drift .px { animation:ffdrift 10s ease-in-out infinite; }   /* 좌우로 천천히 이동(구름·금붕어) */
     .cr-prop .ffx-flicker .px { animation:ffflicker 0.85s ease-in-out infinite; transform-origin:50% 62%; }   /* 불꽃 일렁임(밑동 기준) */
-    .cr-prop .ffx-blink .px { animation:ffblink 2.4s steps(1,end) infinite; }   /* 네온 깜빡(밝기 스텝) */
+    .cr-prop .ffx-blink .px { animation:ffdecoblink 2.4s steps(1,end) infinite; }   /* 가랜드/네온 깜빡(밝기 스텝) — 반딧불 ffblink와 별개 키프레임 */
     /* 회전/흔들림 중심(부품 위치) — 가구별 */
     .cr-prop .ffx-catwheel .px  { transform-origin:47.9% 43.75%; }   /* 휠 축(정중심) → 링 전체가 제자리 회전(옆으로 흔들림 방지) */
     .cr-prop .ffx-tower .px     { transform-origin:84% 20%; }   /* 끈 매단 지점 */
@@ -1085,7 +1085,7 @@
     /* 연못 물결/반짝임: 하이라이트가 잔잔히 좌우로 일렁 */
     @keyframes ffripple { 0%,100%{ transform:translateX(-1%); } 50%{ transform:translateX(1.2%); } }
     @keyframes ffflicker { 0%,100%{ transform:scaleY(1) translateX(0); } 30%{ transform:scaleY(1.08) translateX(-4%); } 55%{ transform:scaleY(0.94) translateX(3%); } 80%{ transform:scaleY(1.05) translateX(-2%); } }
-    @keyframes ffblink { 0%,72%,100%{ opacity:1; } 76%,80%{ opacity:.32; } 84%{ opacity:.9; } 88%,92%{ opacity:.4; } }   /* 대부분 켜짐 + 가끔 짧게 깜빡 */
+    @keyframes ffdecoblink { 0%,72%,100%{ opacity:1; } 76%,80%{ opacity:.32; } 84%{ opacity:.9; } 88%,92%{ opacity:.4; } }   /* 가랜드/네온: 대부분 켜짐 + 가끔 짧게 깜빡 (반딧불 ffblink와 이름 충돌 방지) */
     /* 네온: 더 잦고 불규칙하게 파르르(steps 기반 base와 함께 sharp on/off) */
     @keyframes ffneon { 0%,56%,100%{ opacity:1; } 59%,62%{ opacity:.3; } 65%{ opacity:1; } 78%,81%{ opacity:.5; } 84%{ opacity:1; } 92%{ opacity:.28; } 95%{ opacity:1; } }
     /* 벽등 촛불: 크고 빠르게 일렁(세로 스케일+좌우) */

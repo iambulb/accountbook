@@ -1218,17 +1218,18 @@
     const HARVEST_ROLL = { gold:0.10, egg:0.01, box:0.01, ddeul:0.01 };
     // 벽지(방 배경) — 구매 후 적용. default는 기본 제공.
     const WALLPAPER_CATALOG = [
-      { id:'default', name:'기본',  price:0,  css:'linear-gradient(180deg,color-mix(in srgb,var(--soft) 55%,var(--card)) 0%,var(--soft) 100%)' },
-      { id:'sky',     name:'하늘',  price:25, css:'linear-gradient(180deg,#bfe3ff 0%,#e9f5ff 100%)' },
-      { id:'sakura',  name:'벚꽃',  price:30, css:'linear-gradient(180deg,#ffdcea 0%,#fff1f6 100%)' },
-      { id:'mint',    name:'민트',  price:25, css:'linear-gradient(180deg,#c9ede0 0%,#eefaf4 100%)' },
-      { id:'night',   name:'별밤',  price:40, css:'linear-gradient(180deg,#2a2e57 0%,#525891 100%)' },
-      { id:'peach',   name:'살구',  price:20, css:'linear-gradient(180deg,#ffe4cf 0%,#fff4ea 100%)' },
-      { id:'sunset',  name:'노을',  price:30, css:'linear-gradient(180deg,#ffd0a6 0%,#ffb3c9 100%)' },
-      { id:'forest',  name:'숲',    price:25, css:'linear-gradient(180deg,#bfe6c0 0%,#eaf6e2 100%)' },
-      { id:'ocean',   name:'바다',  price:25, css:'linear-gradient(180deg,#a6d8ef 0%,#d9f0f5 100%)' },
-      { id:'lavender',name:'라벤더',price:30, css:'linear-gradient(180deg,#e0d0f5 0%,#f3ecfb 100%)' },
-      { id:'brick',   name:'벽돌',  price:35, tile:{ m:M_WALL_BRICK, pal:FLOOR_PALS.brickwall, tw:22, th:22 } }
+      // price는 두지 않는다 — 구매가는 wallBuyPrice(등급가 TIER_PRICE[tier], default=0)가 산정. brick만 WALL_TIER=epic(랜덤박스 전용), 나머지는 normal(알뜰샵).
+      { id:'default', name:'기본',  css:'linear-gradient(180deg,color-mix(in srgb,var(--soft) 55%,var(--card)) 0%,var(--soft) 100%)' },
+      { id:'sky',     name:'하늘',  css:'linear-gradient(180deg,#bfe3ff 0%,#e9f5ff 100%)' },
+      { id:'sakura',  name:'벚꽃',  css:'linear-gradient(180deg,#ffdcea 0%,#fff1f6 100%)' },
+      { id:'mint',    name:'민트',  css:'linear-gradient(180deg,#c9ede0 0%,#eefaf4 100%)' },
+      { id:'night',   name:'별밤',  css:'linear-gradient(180deg,#2a2e57 0%,#525891 100%)' },
+      { id:'peach',   name:'살구',  css:'linear-gradient(180deg,#ffe4cf 0%,#fff4ea 100%)' },
+      { id:'sunset',  name:'노을',  css:'linear-gradient(180deg,#ffd0a6 0%,#ffb3c9 100%)' },
+      { id:'forest',  name:'숲',    css:'linear-gradient(180deg,#bfe6c0 0%,#eaf6e2 100%)' },
+      { id:'ocean',   name:'바다',  css:'linear-gradient(180deg,#a6d8ef 0%,#d9f0f5 100%)' },
+      { id:'lavender',name:'라벤더',css:'linear-gradient(180deg,#e0d0f5 0%,#f3ecfb 100%)' },
+      { id:'brick',   name:'벽돌',  tile:{ m:M_WALL_BRICK, pal:FLOOR_PALS.brickwall, tw:22, th:22 } }
     ];
     function wallCss(id){ const w=WALLPAPER_CATALOG.find(x=>x.id===id)||WALLPAPER_CATALOG[0]; if(!w.tile) return w.css; if(_tileBgCache['w:'+id]) return _tileBgCache['w:'+id]; return (_tileBgCache['w:'+id]=tileBg(w.tile.m, w.tile.pal, w.tile.tw, w.tile.th)); }
     function ownsWall(id){ return id==='default' || !!(state.game&&state.game.owned.wallpapers[id]); }
@@ -1289,15 +1290,16 @@
         for(let y=0;y<rows;y++){ const rw=M[y]; for(let x=0;x<cols;x++){ const ch=rw[x]; if(ch==='.'||ch===' ')continue; const c=pal[ch]; if(!c)continue; cx.fillStyle=c; cx.fillRect(x,y,1,1); } }
         return "url('"+cv.toDataURL()+"') 0 0 / "+tw+"px "+th+"px repeat"; }catch(e){ return 'var(--soft2)'; } }
     const FLOOR_CATALOG = [
-      { id:'default',   name:'기본',     price:0 },
-      { id:'wood',      name:'원목마루', price:30, m:M_FLOOR_WOOD,      pal:FLOOR_PALS.wood,      tw:26, th:26 },
-      { id:'checker',   name:'체크타일', price:28, m:M_FLOOR_CHECKER,   pal:FLOOR_PALS.checker,   tw:26, th:26 },
-      { id:'grass',     name:'잔디정원', price:32, m:M_FLOOR_GRASS,     pal:FLOOR_PALS.grass,     tw:24, th:24 },
-      { id:'ondol',     name:'한옥장판', price:28, m:M_FLOOR_ONDOL,     pal:FLOOR_PALS.ondol,     tw:24, th:24 },
-      { id:'starry',    name:'별밤바닥', price:35, m:M_FLOOR_STARRY,    pal:FLOOR_PALS.starry,    tw:26, th:26 },
-      { id:'sand',      name:'모래사장', price:28, m:M_FLOOR_SAND,      pal:FLOOR_PALS.sand,      tw:26, th:26 },
-      { id:'tatami',    name:'다다미',   price:30, m:M_FLOOR_TATAMI,    pal:FLOOR_PALS.tatami,    tw:26, th:26 },
-      { id:'brickpath', name:'벽돌길',   price:30, m:M_FLOOR_BRICKPATH, pal:FLOOR_PALS.brickpath, tw:26, th:26 }
+      // price는 두지 않는다 — 구매가는 floorBuyPrice(등급가 TIER_PRICE[tier], default=0)가 산정. default 외 8종은 FLOOR_TIER=epic/legend(랜덤박스 전용).
+      { id:'default',   name:'기본' },
+      { id:'wood',      name:'원목마루', m:M_FLOOR_WOOD,      pal:FLOOR_PALS.wood,      tw:26, th:26 },
+      { id:'checker',   name:'체크타일', m:M_FLOOR_CHECKER,   pal:FLOOR_PALS.checker,   tw:26, th:26 },
+      { id:'grass',     name:'잔디정원', m:M_FLOOR_GRASS,     pal:FLOOR_PALS.grass,     tw:24, th:24 },
+      { id:'ondol',     name:'한옥장판', m:M_FLOOR_ONDOL,     pal:FLOOR_PALS.ondol,     tw:24, th:24 },
+      { id:'starry',    name:'별밤바닥', m:M_FLOOR_STARRY,    pal:FLOOR_PALS.starry,    tw:26, th:26 },
+      { id:'sand',      name:'모래사장', m:M_FLOOR_SAND,      pal:FLOOR_PALS.sand,      tw:26, th:26 },
+      { id:'tatami',    name:'다다미',   m:M_FLOOR_TATAMI,    pal:FLOOR_PALS.tatami,    tw:26, th:26 },
+      { id:'brickpath', name:'벽돌길',   m:M_FLOOR_BRICKPATH, pal:FLOOR_PALS.brickpath, tw:26, th:26 }
     ];
     function floorCss(id){ if(_tileBgCache['f:'+id]) return _tileBgCache['f:'+id]; const f=FLOOR_CATALOG.find(x=>x.id===id)||FLOOR_CATALOG[0]; const v=f.m? tileBg(f.m, f.pal, f.tw, f.th) : 'var(--soft2)'; return (_tileBgCache['f:'+id]=v); }
     function currentFloor(){ return room().floor||'default'; }
@@ -4049,7 +4051,8 @@
         setWalkDur(a); el.style.left='0px'; applyDepth(a); setXform(a); a._pdir=a.dir;   // 위치·올림·깊이·방향 전부 transform(합성). left는 0 고정 → 걷는 동안 메인스레드 페인트 0
         // 액터는 항상 'roam'(이동)으로 시작. DOM 재사용(markCatDirty·무대 재부착)으로 남아있던 정지스틸(.idle)을
         // 반드시 이동 표시로 초기화 → "정면 이미지로 이동" 버그 원천 차단.
-        actorShowMoving(a);
+        // ♿ reduced-motion에선 걷기 필름이 프레임0(옆)에 얼어붙으므로(catLoop가 stepActors 스킵) 정면(south) 정지스틸로 고정한다.
+        if(reducedMotion()) actorShowStill(a, 'south'); else actorShowMoving(a);
         // 🛋️ 상호작용/포즈 지속 복원 — 재빌드 직전 앉아 있던 자리·포즈·잔여시간을 이어받아 튀어나오지 않게(불변식 준수: actorShowStill 경유).
         const pp=pkey&&_petPose[pkey];
         if(pp){ const left=pp.until-Date.now();
@@ -5553,7 +5556,7 @@
     // @gen:pet-tier — 자동생성(tools/build_pets.py). tools/pets.json 의 tier 편집 후 재실행.
     const CAT_TIER = { cat_mackerel:'normal', cat_cheese:'normal', cat_calico:'normal', cat_black:'normal', cat_white:'normal', cat_fluffy:'normal', cat_tuxedo:'normal', cat_chaos:'normal', cat_siamese:'uncommon', cat_bengal:'normal', cat_fold:'normal', cat_bora:'epic', cat_choco:'normal', cat_kitten:'normal', cat_pink:'epic', tiger_orange:'limited', lion_mane:'limited', cat_persian:'legend', tiger_white:'limited', cat_russianblue:'normal', cat_bengal2:'uncommon', dog_mutt:'rare', cat_panther:'limited', dog_baekgu:'normal', dog_shiba:'epic', dog_corgi:'legend', dog_dalmatian:'uncommon', dog_dachshund:'epic', dog_bulldog:'normal', dog_injeolmi:'legend', dog_poodle:'rare', dog_beagle:'rare', dog_sukhee:'legend', dog_doberman:'legend', dog_pug:'legend', dog_shepherd:'legend', dog_bordercollie:'epic', dog_spitz:'normal', dog_jackrussell:'legend', dog_labrador:'epic', dog_chowchow:'epic', dog_cardigancorgi:'epic', dog_greyhound:'legend', dog_shihtzu:'uncommon', dog_stbernard:'epic', dog_bostonterrier:'rare', dog_bassethound:'legend', dog_happy:'normal', dog_welshterrier:'legend', dog_papillon:'uncommon', dog_newfoundland:'legend', dog_beardedcollie:'legend', dog_afghanhound:'legend', dog_rottweiler:'epic', dog_pointer:'epic', dog_pharaohhound:'legend', dog_westie:'normal', dog_weimaraner:'epic', dog_collie:'epic', dog_englishbulldog:'epic', dog_keeshond:'legend', dog_frenchbulldog:'epic', dog_yorkshire:'uncommon', dog_toypoodle:'uncommon', dog_sheltie:'rare', dog_minpin:'epic', dog_schnauzer:'epic', dog_goldendoodle:'uncommon', dog_bernese:'legend', dog_cavalier:'rare', dog_akita:'legend', dog_whippet:'legend', dog_oldenglishsheepdog:'epic', dog_vizsla:'epic', dog_englishsetter:'legend', dog_jindo:'limited', dog_chinesecrested:'epic', dog_scottie:'epic', dog_pomeranian:'normal', dog_sharpei:'epic', dog_greatdane:'legend', dog_bullterrier:'legend', dog_boxer:'epic', dog_ridgeback:'epic', dog_irishsetter:'epic', dog_airedale:'legend', dog_samoyed:'legend', dog_husky:'legend', cat_mackerel2:'epic', cat_calico2:'epic', cat_white2:'epic', cat_cheese2:'epic', cat_tuxedo2:'epic', cat_siamese2:'legend', cat_bengal3:'legend', cat_russianblue2:'epic', cat_scottishfold:'epic', cat_black2:'epic', cat_seolleong:'uncommon', cat_persiangray:'epic', cat_mainecoon:'legend', cat_americanshorthair:'epic', cat_ragdoll:'legend', cat_turkishangora:'epic', cat_munchkin:'epic', cat_norwegian:'epic', cat_bombay:'epic', cat_abyssinian:'epic', cat_sphynx:'legend', cat_british:'epic', cat_bengalsnow:'legend', cat_longhaircalico:'uncommon', cat_tortie:'epic', cat_siamesechoco:'epic', cat_cornishrex:'epic', cat_ocicat:'legend', cat_selkirkrex:'epic', cat_korat:'epic', cat_manx:'epic', cat_americancurl:'rare', cat_devonrex:'epic', cat_turkishvan:'epic', cat_bobtail:'epic', cat_burmese:'epic', cat_himalayan:'epic', cat_creamtabby:'rare', cat_lilac:'epic', cat_somali:'legend', cat_leopardcat:'exclusive', cat_lynx:'exclusive', cat_cheetah:'exclusive', cat_jaguar:'exclusive', cat_puma:'exclusive', cat_snowleopard:'exclusive', cat_caracal:'exclusive', cat_leopard:'exclusive', cat_blackpanther:'exclusive', cat_ocelot:'exclusive', cat_sandcat:'epic', cat_mainecoonsmoke:'legend', cat_mainecoonred:'epic', cat_bengalsilver:'epic', cat_peterbald:'legend', cat_toyger:'limited', cat_singapura:'epic', cat_havanabrown:'epic', cat_ragamuffin:'legend' };
     // @gen:end
-    const ITEM_TIER = { pond:'limited', cushion:'normal', bowl:'uncommon', scratcher:'rare', pethouse:'epic', tower:'legend', catwheel:'limited',
+    const ITEM_TIER = { pond:'limited', cushion:'normal', waterbowl:'normal', litterbox:'normal', plant:'normal', bowl:'uncommon', scratcher:'rare', pethouse:'epic', tower:'legend', catwheel:'limited',
       rug:'rare', fishtank:'epic', window:'legend', fireplace:'legend', fan:'legend', hammock:'legend', teaser:'legend', wallclock:'legend', hangplant:'legend', mobile:'legend', chandelier:'limited', jingleball:'legend',
       frame:'legend', shelf:'legend', mirror:'legend', neon:'legend', sconce:'legend', garland:'legend', poster:'legend', tapestry:'legend' };   // 러그=희귀·어항=특별·창문 등 장식/벽 가구=전설. 특별↑은 아래 isGachaOnlyItem로 자동 랜덤박스 전용
     // 🪑 비(非)펫 아이템 전역 등급/가격 오버라이드 — 관리자 쓰기·전체 읽기. 미설정은 기본값(_TIER 상수/카탈로그 price).
@@ -5580,7 +5583,7 @@
     function isGachaOnlyAsset(type,id){ const A=ASSET_TYPES[type];
       if(A.hasDefault && id==='default') return false;
       const ov=gachaOverride(A.cfg(),id); return ov!=null?ov:(tierRank(assetTierOf(type,id)) >= tierRank('epic')); }
-    // 벽지 등급/가격/가챠전용 — 팩토리 별칭(WALLPAPER_CATALOG.price 기본, config/wallpaper 오버라이드)
+    // 벽지 등급/가격/가챠전용 — 팩토리 별칭. 가격=등급가 TIER_PRICE[tier](config/wallpaper.price 오버라이드 우선, default=0). ⚠️ WALLPAPER_CATALOG.price는 읽지 않음(미사용).
     function effWallTier(){ return effAssetTier('wallpaper'); }
     function wallTierOf(id){ return assetTierOf('wallpaper',id); }
     function wallBuyPrice(id){ return assetBuyPrice('wallpaper',id); }
@@ -5602,7 +5605,7 @@
     function gachaOverride(cfg, id){ const o=cfg&&cfg[id]; return (o&&o.gacha!=null)?!!o.gacha:null; }
     function isGachaOnlyFloor(id){ return isGachaOnlyAsset('floor',id); }
     function isGachaOnlyWall(id){ return isGachaOnlyAsset('wallpaper',id); }
-    // 바닥 스킨 등급: FLOOR_TIER 기본값에 전역 config/floor 병합. 가격: config 오버라이드 ← FLOOR_CATALOG.price.
+    // 바닥 스킨 등급: FLOOR_TIER 기본값에 전역 config/floor 병합. 가격=등급가 TIER_PRICE[tier](config/floor.price 오버라이드 우선, default=0). ⚠️ FLOOR_CATALOG.price는 읽지 않음(미사용).
     function effFloorTier(){ return effAssetTier('floor'); }
     function floorTierOf(id){ return assetTierOf('floor',id); }
     function floorBuyPrice(id){ return assetBuyPrice('floor',id); }
@@ -5632,7 +5635,7 @@
     function effCatTier(){ if(!devOn()) return CAT_TIER; const ov=devCfg().catTier||{}, r={}; Object.keys(CAT_TIER).forEach(k=>{ r[k]=(ov[k]!=null?ov[k]:CAT_TIER[k]); }); return r; }   // 알려진 id만(구 dev 설정의 잔여 키 무시)
     // 기구물 등급: ITEM_TIER 기본값 ← 전역 config/furniture(모든 사용자) ← devOn 로컬 오버레이(이 기기 테스트)
     function effItemTier(){ return effAssetTier('furniture'); }
-    // 기구물 은화 구매가: 전역 config/furniture.price 오버라이드 ← ITEM_CATALOG.price 기본값
+    // 기구물 은화 구매가: config/furniture.price 오버라이드 우선, 없으면 등급가 TIER_PRICE[ITEM_TIER[id]]. (ITEM_CATALOG.price는 로드 시 TIER_PRICE로 덮어써지는 표시용 placeholder — 구매가 소스 아님.)
     function itemBuyPrice(id){ return assetBuyPrice('furniture',id); }
     // 등급 랭크(낮을수록 흔함). 특별(epic) 이상은 알뜰샵 직접 구매 불가 — 펫알(가챠) 전용.
     function tierRank(tier){ return Math.max(0, TIER_ORDER.indexOf(tier||'normal')); }
@@ -5925,8 +5928,8 @@
       const leftPct = mode==='left'?0 : mode==='right'?100 : (gridLeftFrac(p.c)+gridSpanFrac(foot.w)/2)*100;
       const txPct = mode==='left'?0 : mode==='right'?-100 : -50, x=leftPct.toFixed(2);
       let vpos, fh;
-      if(anchor==='floor'){        // 바닥형: 맨 뒤 바닥 가구와 동일한 '바닥선'(3+1*46=49% bottom)에 서서 바닥에 붙음(붕 뜸 해결). 크기는 다른 벽 가구와 동일(furnWallH).
-        fh=furnWallH(p.itemId, isDock); vpos='bottom:'+camFurnBottom(1).toFixed(1)+'%';
+      if(anchor==='floor'){        // 바닥형: 맨 뒤 바닥 가구와 동일한 '바닥선'(3+1*46=49% bottom)에 서므로 크기도 depth1(뒤) 원근으로 — 같은 바닥선의 바닥 가구와 크기 일치(벽난로가 홀로 크게 보이던 문제 해결).
+        fh=furnRoomH(p.itemId, isDock, 1); vpos='bottom:'+camFurnBottom(1).toFixed(1)+'%';
       } else if(anchor==='hang'){  // 매다는형: 천장쪽 top 앵커로 아래로 늘어짐(행이 낮을수록 위)
         fh=furnWallH(p.itemId, isDock); vpos='top:'+(((p.r-1)/WALL_ROWS)*46).toFixed(1)+'%';
       } else {                     // 거는형(mount): 벽 밴드 안 bottom%(행=높이)
