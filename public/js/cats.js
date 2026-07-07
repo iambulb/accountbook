@@ -1213,6 +1213,7 @@
     const MOOD_CARE_MS = 24*60*60*1000;   // ❤️ 수확(caredAt) 후 행복도 보너스가 0으로 빠지는 시간(24h)
     const POOP_REWARD = 2;          // 똥 하나 치우면 얻는 은화
     const CARE_ITEMS = ['bowl','waterbowl','litterbox'];   // 고양이 수(slotCount)만큼만 배치 허용
+    const HARVEST_GOLD_CHANCE = 0.55, HARVEST_GOLD_MIN = 2, HARVEST_GOLD_MAX = 5;   // 🪙 수확 시 하루 1회 확률로 금화 2~5개(활성 펫 있을 때만)
     // 벽지(방 배경) — 구매 후 적용. default는 기본 제공.
     const WALLPAPER_CATALOG = [
       { id:'default', name:'기본',  price:0,  css:'linear-gradient(180deg,color-mix(in srgb,var(--soft) 55%,var(--card)) 0%,var(--soft) 100%)' },
@@ -1336,6 +1337,8 @@
     ];
     const ALL_MISSIONS = DAILY_MISSIONS.concat(WEEKLY_MISSIONS).concat(MONTHLY_MISSIONS).concat(ACHIEVEMENTS);
 
+    // 🌈🔋 무지개 SMIL 그라디언트 애니 정적화 플래그(저사양·OS 모션축소) — pxSvg가 읽어 <animateTransform>(무한 재생) 생략 → 정적 무지개. refreshRbStatic()가 갱신, setLiteMode/부팅서 호출.
+    let _rbStatic=false;
     // ---- 픽셀 렌더 ----
     function pxSvg(map, pal, opt){
       opt=opt||{}; pal=pal||{}; if(!map||!map.length||map[0]==null) return '';   // 방어: 팔레트/매트릭스가 없어도 절대 throw 안 함(삭제된 펫 등 미정의 팔레트로 렌더가 캠·알뜰홈 전체를 깨뜨리던 크래시 방지)
@@ -1345,7 +1348,8 @@
           const f=c==='RAINBOW'?(rbw=true,'url(#'+rid+')'):c; r+='<rect x="'+x+'" y="'+y+'" width="1.05" height="1.05" fill="'+f+'"/>'; } }
       const sz = opt.h ? ('height="'+opt.h+'"') : (opt.w? ('width="'+opt.w+'"') : '');
       const wh = opt.fit ? 'width="100%" height="100%"' : sz;
-      return '<svg class="px '+(opt.cls||'')+'" viewBox="0 0 '+cols+' '+rows+'" '+wh+' shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet">'+(rbw?'<defs><linearGradient id="'+rid+'" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="9" spreadMethod="repeat"><stop offset="0" stop-color="#F04452"/><stop offset=".17" stop-color="#F0883C"/><stop offset=".34" stop-color="#F2C84B"/><stop offset=".5" stop-color="#2FAE7A"/><stop offset=".67" stop-color="#3182F6"/><stop offset=".84" stop-color="#9B6FC8"/><stop offset="1" stop-color="#F04452"/><animateTransform attributeName="gradientTransform" type="translate" from="0 0" to="0 9" dur="1.6s" repeatCount="indefinite"/></linearGradient></defs>':'')+r+'</svg>';
+      const rbAnim = _rbStatic ? '' : '<animateTransform attributeName="gradientTransform" type="translate" from="0 0" to="0 9" dur="1.6s" repeatCount="indefinite"/>';   // 저사양·모션축소면 정적(SMIL 생략)
+      return '<svg class="px '+(opt.cls||'')+'" viewBox="0 0 '+cols+' '+rows+'" '+wh+' shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet">'+(rbw?'<defs><linearGradient id="'+rid+'" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="9" spreadMethod="repeat"><stop offset="0" stop-color="#F04452"/><stop offset=".17" stop-color="#F0883C"/><stop offset=".34" stop-color="#F2C84B"/><stop offset=".5" stop-color="#2FAE7A"/><stop offset=".67" stop-color="#3182F6"/><stop offset=".84" stop-color="#9B6FC8"/><stop offset="1" stop-color="#F04452"/>'+rbAnim+'</linearGradient></defs>':'')+r+'</svg>';
     }
     function catPal(id){ return CAT_PALS[id]||CAT_PALS.cat_mackerel; }   // 미정의(삭제/미지원) 펫은 기본 고등어 팔레트로 폴백(블랭크·크래시 방지)
     function catFront(id, opt){ return pxSvg(id==='cat_calico'?M_CALICO_FRONT:M_CAT_FRONT, catPal(id), opt); }
@@ -2580,7 +2584,8 @@
       pity: normPity(g.pity),   // 🔮 가챠 천장: 종류별 {egg,box,ddeul,rainbow_egg,rainbow_box} 누적 뽑기 수(그 종류 신화↑ 나오면 0). 종류마다 100뽑째 확정.
       likeGiven: (g.likeGiven && typeof g.likeGiven==='object') ? g.likeGiven : {},   // 🫶 방문 좋아요 하루 보상 카운트 {day,n}
       likeMilestone: Math.max(0, Math.floor(Number(g.likeMilestone)||0)),   // ❤ 받은 좋아요 마일스톤 최고 수령치
-      dexClaims: (g.dexClaims && typeof g.dexClaims==='object') ? g.dexClaims : {}   // 📖 도감 마일스톤 수령 마커(멱등)
+      dexClaims: (g.dexClaims && typeof g.dexClaims==='object') ? g.dexClaims : {},   // 📖 도감 마일스톤 수령 마커(멱등)
+      harvestGold: (g.harvestGold && typeof g.harvestGold==='object') ? g.harvestGold : {}   // 🪙 수확 금화 하루 1회 확률 수령 마커 {day}
     }); }
     // 선물함 목록을 항상 배열로 정규화(RTDB가 객체로 돌려줄 수 있어 방어)
     function normalizeGifts(x){ if(Array.isArray(x)) return x.filter(Boolean); if(x&&typeof x==='object') return Object.keys(x).map(k=>x[k]).filter(Boolean); return []; }
@@ -2661,6 +2666,8 @@
       loadBroadcasts();     // 📣 전체 선물(config/broadcast) 구독 — 유저별 수령이라 로그인마다 재구독(off 후 on)
       loadMyAdminGifts();   // 🎁 내게 온 특정-유저 선물(users/{uid}/adminGifts) — uid별이라 이전 ref off 후 재구독
       applyLiteMode();  // 🔋 저장된 가벼운 모드(body.lite) 반영
+      refreshRbStatic();   // 🌈🔋 무지개 SMIL 정적화 여부 초기 평가(저사양·모션축소)
+      try{ const _rm=window.matchMedia('(prefers-reduced-motion: reduce)'); (_rm.addEventListener?_rm.addEventListener.bind(_rm,'change'):_rm.addListener.bind(_rm))(function(){ refreshRbStatic(); invalidateSceneCaches(); if(typeof rerender==='function') rerender(); }); }catch(e){}   // OS 모션축소 토글 시 무지개 정적화 즉시 반영
       startCatLoop();   // 통합 걷기 엔진(단일 rAF, 보이는 무대만 애니메이션)
       // 앱을 켜둔 동안에도 그릇 3시간 만료→똥 정산이 돌도록 주기 점검(다마고치)
       if(state._petTimer) clearInterval(state._petTimer);
@@ -3768,7 +3775,11 @@
     function liteMode(){ try{ return localStorage.getItem('liteMode')==='1'; }catch(e){ return false; } }
     function reducedMotion(){ try{ return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } }
     function applyLiteMode(){ try{ if(document&&document.body) document.body.classList.toggle('lite', liteMode()); }catch(e){} }
+    function refreshRbStatic(){ _rbStatic = liteMode() || reducedMotion(); }   // 무지개 SMIL 정적화 여부 재평가
+    function pkCount(n){ return liteMode()?Math.max(1,Math.round(n*0.55)):n; }   // 🔋 저사양 씬 데코 개수 감축(약 55%) — 씬 캐시는 setLiteMode에서 무효화
+    function invalidateSceneCaches(){ _pkSceneCache={}; _sunsetCache={}; _nightCache={}; }   // 씬 HTML에 무지개 애니 여부가 구워지므로 토글 시 무효화
     function setLiteMode(on){ try{ localStorage.setItem('liteMode', on?'1':'0'); }catch(e){} applyLiteMode();
+      refreshRbStatic(); invalidateSceneCaches();   // 🔋 무지개 정적화·씬 개수 변화 즉시 반영
       if(typeof markCatDirty==='function') markCatDirty(); if(typeof startCatLoop==='function') startCatLoop();   // 엔진 fps 예산 재평가·정지스틸 재빌드
       if(typeof rerender==='function') rerender();
       toast(on?'🔋 가벼운 모드 ON — 애니메이션을 줄여 배터리·발열을 아껴요':'가벼운 모드 OFF'); }
@@ -4213,7 +4224,9 @@
     function pkObserveScenes(){ try{
       if(typeof reducedMotion==='function' && reducedMotion()) return;   // 모션 최소화면 이미 정지(관찰 불필요)
       if(typeof IntersectionObserver==='undefined') return;
-      if(!_pkIO) _pkIO=new IntersectionObserver(function(ents){ ents.forEach(function(e){ e.target.classList.toggle('pk-idle', !e.isIntersecting); }); });
+      if(!_pkIO) _pkIO=new IntersectionObserver(function(ents){ ents.forEach(function(e){ const idle=!e.isIntersecting; e.target.classList.toggle('pk-idle', idle);
+        try{ e.target.querySelectorAll('svg').forEach(function(s){ if(idle){ if(s.pauseAnimations) s.pauseAnimations(); } else if(s.unpauseAnimations) s.unpauseAnimations(); }); }catch(_e){}   // 🌈 CSS play-state로 안 멈추는 무지개 SMIL을 화면 밖에서 정지/재개
+      }); });
       document.querySelectorAll('.pkscene:not(.pk-reveal)').forEach(function(el){ _pkIO.observe(el); });   // 리빌(전체화면)은 항상 보이니 제외
     }catch(e){} }
     function renderCatHouse(){
@@ -4838,9 +4851,9 @@
     // 🌾 수확: 모든 방을 한 번에 — 유휴 가구수익 + 빈 밥/물그릇 채움 + 똥 치움(현재 방 먼저 채워 소모품 부족 시 보이는 방 우선).
     function batchCare(btnEl){
       if(!state.game){ return; }
-      const before=coins(); let filledN=0, shortFood=false, shortWater=false;
+      const before=coins(), beforeGold=gold(); let filledN=0, shortFood=false, shortWater=false, goldBonus=0;
       gameRef().transaction(g=>{ g=normalizeGame(g); const now=Date.now(); const rooms=g.home.rooms||[], cur=g.home.current|0;
-        filledN=0; shortFood=false; shortWater=false;   // 재실행(Firebase 재시도)마다 리셋 → 커밋된 마지막 실행값이 남음
+        filledN=0; shortFood=false; shortWater=false; goldBonus=0;   // 재실행(Firebase 재시도)마다 리셋 → 커밋된 마지막 실행값이 남음
         const order=[]; if(rooms[cur]) order.push(cur); rooms.forEach((_,i)=>{ if(i!==cur) order.push(i); });   // 현재 방 우선(소모품 부족 시)
         const mult=_yieldMult(g);   // 전역 수익배율 1회 스냅샷(방마다 재계산 방지·재시도 시 동일 g에서 동일값)
         order.forEach(i=>{ const R=rooms[i]; if(!R) return; const pl=R.placed||{};
@@ -4850,13 +4863,18 @@
               else if(e.itemId==='waterbowl'){ if(g.consum.water>0){ g.consum.water-=1; e.filledAt=now; filledN++; } else shortWater=true; } } });
           const poops=Number(R.poops)||0; if(poops>0){ g.coins=clampCoins(g.coins+poops*POOP_REWARD); R.poops=0; }
         });
+        // 🪙 금화 가끔 수확 — 하루 1회, 활성 펫이 있을 때만 확률로 2~5개(멱등: harvestGold.day 마커)
+        const today=kstDayKey();
+        if((g.harvestGold&&g.harvestGold.day)!==today){ g.harvestGold={day:today};
+          const hasPets=(g.home.rooms||[]).some(R=>((R&&R.active)||[]).length>0);
+          if(hasPets && Math.random()<HARVEST_GOLD_CHANCE){ const g0=g.gold||0, gg=HARVEST_GOLD_MIN+Math.floor(Math.random()*(HARVEST_GOLD_MAX-HARVEST_GOLD_MIN+1)); g.gold=clampGold(g0+gg); goldBonus=g.gold-g0; } }
         return g;
       }).then(r=>{ if(!r||!r.committed) return;
         const nowCoins=(r.snapshot&&r.snapshot.val()&&r.snapshot.val().coins)||before, gained=nowCoins-before;
         let x=innerWidth/2, y=200; if(btnEl&&btnEl.getBoundingClientRect){ const b=btnEl.getBoundingClientRect(); x=b.left; y=b.bottom+100; }   // 캠 안쪽(버튼 아래)에서 지갑으로 올라오게
         const short=(shortFood&&shortWater)?'사료·물':(shortFood?'사료':(shortWater?'물':''));
-        if(gained>0 || filledN>0){ if(gained>0) rewardFly(x,y, gained, 0, before, gold());
-          let msg='🌾 전체 수확 완료'+(gained>0?' · +'+gained+' 은화 🪙':'')+(filledN>0?' · 밥/물 '+filledN+'칸':'')+(short?' · '+short+' 부족(일부 미충전)':'');
+        if(gained>0 || filledN>0 || goldBonus>0){ if(gained>0||goldBonus>0) rewardFly(x,y, gained, goldBonus, before, beforeGold);
+          let msg='🌾 전체 수확 완료'+(gained>0?' · +'+gained+' 은화 🪙':'')+(goldBonus>0?' · +'+goldBonus+' 금화 🥇':'')+(filledN>0?' · 밥/물 '+filledN+'칸':'')+(short?' · '+short+' 부족(일부 미충전)':'');
           toast(msg); }
         else if(short) toast('🌾 '+short+'이 없어요 · 알뜰샵 소비 탭에서 구매', true);
         else toast('🌾 아직 모인 게 없어요 (상호작용 가구를 놓아보세요)');
@@ -4936,7 +4954,7 @@
       const reveal = mode==='reveal', sz = reveal?1.85:1, S = h=>Math.max(1,Math.round(h*sz));   // 리빌은 전체화면 배경 → 데코 크게
       const p1=LIMITED_PICKUP[0], p2=LIMITED_PICKUP[1], H=92;   // 펫 렌더 기준 높이(원근 앞배율 1.5=~138 → 기본(≈48)의 약 3배)
       // ☁️ 하늘: 흐르는 구름 15개(제각각 높이·모양·색·속도·위상)
-      let clouds=''; for(let i=0;i<15;i++){ const y=(2+pkRand(i,1)*30).toFixed(1), h=Math.round(11+pkRand(i,2)*17),
+      let clouds=''; for(let i=0;i<pkCount(15);i++){ const y=(2+pkRand(i,1)*30).toFixed(1), h=Math.round(11+pkRand(i,2)*17),
         w=Math.floor(pkRand(i,3)*3), tn=['w','p','b'][Math.floor(pkRand(i,4)*3)], dur=(26+pkRand(i,5)*44).toFixed(1);
         clouds+='<span class="pk-cloud" style="top:'+y+'%;--d:'+dur+'s;--i:'+i+'">'+cloudSvg(w,tn,{h:S(h)})+'</span>'; }
       // 🏔️ 지평선 원근 레이어 — 먼 나무/풀/꽃을 아주 작게. 밑동을 초록 필드(seam)에 -1~-4px 살짝 묻어(음수 bottom) 붕 떠 보이지 않게 — pk-field(초록)가 위에 그려져 밑동을 덮어 '심어진' 느낌. 꽃 비중↑.
@@ -4959,7 +4977,7 @@
       let flowers=''; for(let i=0;i<16;i++){ const d=pkRand(i,21)*0.6, l=(5+(i+0.5)/16*90+(pkRand(i,22)-0.5)*3.5).toFixed(1),
         sc=1-d*0.5, bot=(d*76).toFixed(1), tn=['r','y','p'][Math.floor(pkRand(i,23)*3)];
         flowers+='<span class="pk-flower" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+flowerSvg(tn,{h:S(Math.max(9,Math.round(16*sc)))})+'</span>'; }
-      let tufts=''; for(let i=0;i<18;i++){ const d=pkRand(i,31)*0.85, l=(2+pkRand(i,32)*96).toFixed(1),
+      let tufts=''; for(let i=0;i<pkCount(18);i++){ const d=pkRand(i,31)*0.85, l=(2+pkRand(i,32)*96).toFixed(1),
         sc=1-d*0.5, bot=(d*80).toFixed(1);
         tufts+='<span class="pk-tuft" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+tuftSvg({h:S(Math.max(7,Math.round(12*sc)))})+'</span>'; }
       // 🟫 흙: 9군데 군데군데(원근)
@@ -5012,7 +5030,7 @@
       const reveal=mode==='reveal', sz=reveal?1.8:1, S=function(h){ return Math.max(1,Math.round(h*sz)); };   // reveal(10뽑 전체화면)은 스프라이트를 크게
       // ☁️ 노을에 물든 구름
       let clouds=''; const SC=['so','sp','sv'];
-      for(let i=0;i<12;i++){ const y=(2+pkRand(i,1)*30).toFixed(1), hh=Math.round(11+pkRand(i,2)*16), w=Math.floor(pkRand(i,3)*3), tn=SC[Math.floor(pkRand(i,4)*3)], dur=(30+pkRand(i,5)*42).toFixed(1);
+      for(let i=0;i<pkCount(12);i++){ const y=(2+pkRand(i,1)*30).toFixed(1), hh=Math.round(11+pkRand(i,2)*16), w=Math.floor(pkRand(i,3)*3), tn=SC[Math.floor(pkRand(i,4)*3)], dur=(30+pkRand(i,5)*42).toFixed(1);
         clouds+='<span class="pk-cloud" style="top:'+y+'%;--d:'+dur+'s;--i:'+i+'">'+cloudSvg(w,tn,{h:S(hh)})+'</span>'; }
       // 🍁 지평선 단풍/풀/꽃(먼 원경, 밑동 seam에 살짝 묻힘)
       const FF=['su','sg','sw']; let farline='';
@@ -5028,7 +5046,7 @@
       // 🌸 노을 꽃 14 — 연못(우측) 위엔 꽃 없게 왼쪽 절반(≈5~57%)에만 · 🌱 풀 16
       let flowers=''; for(let i=0;i<14;i++){ const d=pkRand(i,21)*0.6, l=(5+(i+0.5)/14*52+(pkRand(i,22)-0.5)*3.5).toFixed(1), sc=1-d*0.5, bot=(d*76).toFixed(1);
         flowers+='<span class="pk-flower" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+flowerSvg(FF[Math.floor(pkRand(i,23)*3)],{h:S(Math.max(9,Math.round(16*sc)))})+'</span>'; }
-      let tufts=''; for(let i=0;i<16;i++){ const d=pkRand(i,31)*0.8, l=(2+pkRand(i,32)*94).toFixed(1), sc=1-d*0.5, bot=(d*80).toFixed(1);
+      let tufts=''; for(let i=0;i<pkCount(16);i++){ const d=pkRand(i,31)*0.8, l=(2+pkRand(i,32)*94).toFixed(1), sc=1-d*0.5, bot=(d*80).toFixed(1);
         tufts+='<span class="pk-tuft" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+tuftSvg({h:S(Math.max(7,Math.round(12*sc)))})+'</span>'; }
       // 🟫 흙 패치
       let soil=''; for(let i=0;i<7;i++){ const d=pkRand(i,41)*0.7, l=(6+pkRand(i,42)*74).toFixed(1), sc=1-d*0.45, bot=(d*72).toFixed(1), w=Math.round((10+pkRand(i,43)*14)*sc*sz);
@@ -5097,7 +5115,7 @@
         soil+='<span class="pk-soil" style="left:'+l+'%;bottom:'+bot+'%;width:'+w+'px"></span>'; }
       let stones=''; for(let i=0;i<6;i++){ const d=pkRand(i,171)*0.6, l=(10+pkRand(i,172)*80).toFixed(1), sc=1-d*0.4, bot=(d*66).toFixed(1);
         stones+='<span class="pk-stone" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+nightStoneSvg({h:S(Math.max(6,Math.round(11*sc)))})+'</span>'; }
-      let fires=''; for(let i=0;i<18;i++){ const l=(6+pkRand(i,181)*88).toFixed(1), b=(14+pkRand(i,182)*62).toFixed(1),
+      let fires=''; for(let i=0;i<pkCount(18);i++){ const l=(6+pkRand(i,181)*88).toFixed(1), b=(14+pkRand(i,182)*62).toFixed(1),
         hh=Math.round(8+pkRand(i,183)*6), dur=(6+pkRand(i,184)*6).toFixed(1), del=(-pkRand(i,185)*8).toFixed(2), bd=(0.9+pkRand(i,186)*1.6).toFixed(2);
         let _s=190; const rnd=function(){ return pkRand(i,_s++); };
         fires+='<span class="pk-fire" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;--bd:'+bd+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="ff-core">'+fireflySvg({h:S(hh)})+'</span></span>'; }

@@ -666,6 +666,12 @@
     body.lite .fx-particle, body.lite .fx-conf, body.lite .fx-confetti, body.lite .fx-spark,
     body.lite .fx-pixrays, body.lite .fx-pixflash, body.lite .fx-shell,
     body.lite .ll-aura, body.lite .ll-rays, body.lite .fx-tw, body.lite .fx-ring, body.lite .fx-frame { display: none !important; }
+    /* 🔋 저사양: 움직이는 글로우 블러 filter 제거(매 프레임 재래스터화가 가장 큰 발열원) — 반딧불·글로우 아이콘·지는 해. 스프라이트 자체 픽셀 하이라이트는 유지. */
+    body.lite .pk-fire .ff-core, body.lite .ten-ffcore, body.lite .ten-skysun, body.lite .ten-skyshoot .px,
+    body.lite .gb-sun .gb-cicon .px, body.lite .gb-glow .gb-cicon .px, body.lite .gb-eglow .gb-cicon .px, body.lite .gb-rbegg .px { filter: none !important; }
+    /* 🔋 멈춘 데코의 GPU 레이어(will-change) 회수 — 저사양(animation:none)·화면 밖(pk-idle). 걷기 필름(.csprf)은 기능 모션이라 유지. */
+    body.lite .pk-bfly, body.lite .pk-dfly, body.lite .pk-fire, body.lite .fx-ddcloud, body.lite .fx-ddbfly,
+    .pkscene.pk-idle .pk-bfly, .pkscene.pk-idle .pk-dfly, .pkscene.pk-idle .pk-fire { will-change: auto !important; }
     .cd-empty { position:absolute; left:2px; bottom:16px; font-size:11.5px; font-weight:600; color:var(--sub); }
     .catdock.hidden { display:none; }
     /* dock = 컴팩트 웹캠 방(벽지 배경 + 가구 + 걷는 고양이) */
