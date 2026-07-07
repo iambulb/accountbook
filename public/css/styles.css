@@ -2,8 +2,8 @@
     :root {
       /* 📐 캠 원근 한 묶음(단일 소스) — util.js의 CAM{FLOOR:54,WALL:46,STAGE:58}와 값이 같아야 함(util.test.js가 정합 잠금). dock·방·친구방 공유. */
       --cam-floor: 54%; --cam-wall: 46%; --cam-stage: 58%;
-      /* 🎥 방 캔onical 높이 — 알뜰홈·친구방은 이 높이 그대로, dock는 이 높이의 방(.cr-inner)을 짧은 창(.cd-room)으로 아래 크롭.
-         → dock·홈이 같은 바닥 평면(같은 %·같은 px)을 공유해 "꾸민 그대로" 메인 캠에도 보인다. */
+      /* 🎥 방 높이 — 알뜰홈·친구방(.catroom) 244px. dock(.cd-room)은 224px 라운드 카드로 방 전체를 비율대로 담는다(크롭 아님).
+         내용이 %기반(바닥54/벽46)이라 두 높이 모두 방 전체가 같은 원근으로 보임(트위스트 없음). */
       --room-h: 244px;
       --canvas: #EBEDF0;     /* 폰 바깥(데스크탑 여백) */
       --bg: #ffffff;         /* 앱(폰 안) 배경 — 실제 화면은 흰색 */
@@ -648,7 +648,7 @@
     .px { image-rendering:pixelated; display:block; }
     .catpx { image-rendering:pixelated; display:block; } /* 스프라이트 고양이 정면 썸네일(south.png) — 알뜰샵·보유칩·뽑기 공통 */
     /* 전역 dock 스트립 (topbar와 content 사이 상시 노출) */
-    .catdock { flex-shrink:0; background:var(--soft); border-bottom:1px solid var(--bd); }
+    .catdock { flex-shrink:0; padding:6px 10px 4px; }   /* dock를 알뜰홈처럼 '라운드 카드'로 띄우기 — 풀블리드 배경/구분선 제거, 양옆 소량 여백 */
     .cd-strip { height:52px; display:flex; align-items:center; gap:10px; padding:0 14px; position:relative; overflow:hidden; }
     .cd-floor { position:absolute; left:0; right:0; bottom:11px; height:1px; background:var(--bd); }
     .cd-coin { display:inline-flex; align-items:center; gap:5px; background:var(--card); border:1px solid var(--bd); border-radius:20px; padding:4px 11px 4px 5px; font-size:12px; font-weight:800; color:var(--text); z-index:2; }
@@ -711,9 +711,9 @@
     .cd-empty { position:absolute; left:2px; bottom:16px; font-size:11.5px; font-weight:600; color:var(--sub); }
     .catdock.hidden { display:none; }
     /* dock = 컴팩트 웹캠 방(벽지 배경 + 가구 + 걷는 고양이) */
-    .cd-room { position:relative; height:180px; overflow:hidden; isolation:isolate; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }   /* 캠 세로 = 짧은 "창". 내부 방(.cr-inner)은 항상 --room-h(244)로 그려지고 하단만 이 높이만큼 보인다 → 알뜰홈과 동일한 바닥 평면·가구 크기(원근 %도 244 기준으로 동일). 위 벽 상단(천장쪽 걸이 가구)만 크롭됨(수용). isolation=독립 스택 컨텍스트. */
-    /* 🎥 dock 내부 방: 244px 전체 방을 아래(바닥) 기준으로 담는다. .cd-room(180)보다 커서 상단이 넘치지만 overflow:hidden으로 크롭 → 바닥·앞뒤 원근이 알뜰홈과 픽셀 단위로 동일. */
-    .cd-room .cr-inner { position:absolute; left:0; right:0; bottom:0; height:var(--room-h); }
+    .cd-room { position:relative; height:224px; overflow:hidden; isolation:isolate; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }   /* 캠 = 방 전체를 담는 무대(크롭 아님). 방 내용은 %기반(바닥54/벽46/무대58)이라 이 높이에 방 전체가 비율대로 그려짐. overflow:hidden=라운드 클리핑. isolation=독립 스택 컨텍스트. */
+    /* 🎥 dock = 알뜰홈처럼 '라운드 카드' — 방 전체(바닥+벽 다) 보임(크롭 없음), 알뜰홈(244)과 거의 같은 크기·원근. 카드 스타일은 .catdock 안에만 적용해 .pkstage(픽업 배너)엔 안 샘. */
+    .catdock .cd-room { border-radius:16px; border:1px solid var(--bd); }
     .cd-room svg, .cd-room img { -webkit-user-drag:none; user-drag:none; }
     .cd-room .cr-wall { position:absolute; inset:0; z-index:0; }
     /* 알뜰홈(.catroom) 캠과 동일 비율: 바닥 54%·벽지 46%·무대 58%. 펫이 알뜰홈처럼 맨 뒤 벽지까지 걸어가 닿는다(예전 dock 66%는 바닥이 너무 커 펫이 벽에 못 닿고 가구와 깊이도 안 맞았음). */

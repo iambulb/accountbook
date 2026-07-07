@@ -2510,7 +2510,7 @@
       const mult = ROOM_H[id] || 1;
       // 근거리(depth 0)는 크게. 원거리 축소폭은 크기에 비례 — 작은 가구(방석·그릇)는 멀어도 덜 작게(완만),
       // 캣타워처럼 큰 가구는 멀수록 더 작게(원근 강하게).
-      // dock·홈 동일 크기: dock가 이제 244px 방(.cr-inner)을 크롭한 창이라 별도 축소가 불필요(예전 base 11/16 분기 제거).
+      // dock·홈 동일 크기: dock가 이제 알뜰홈과 거의 같은 크기의 라운드 카드(224 vs 244)라 별도 축소가 불필요(예전 base 11/16 분기 제거).
       const base = 16;
       const shrink = 3 + Math.max(0, mult-1);
       const unit = base - depth*shrink;
@@ -3748,16 +3748,12 @@
       const d=$('catdock'); if(!d) return;
       if(dockMode()==='hidden'){ d.className='catdock hidden'; d.innerHTML=''; stopWalk(); return; }
       d.className='catdock';
-      // 웹캠 정면 방: 벽지(배경) + 바닥 + 배치 가구(배경) + 걷는 고양이
-      // 🎥 방 씬(벽·바닥·가구·펫)은 .cr-inner(244px, 하단 앵커)에 넣어 알뜰홈과 동일한 원근으로 렌더하고,
-      //    상단 크롬(LIVE 배지·수확·지갑)은 .cr-inner 밖(=짧은 .cd-room 기준)에 둬서 크롭돼도 항상 보이게 한다.
+      // 웹캠 정면 방: 벽지(배경) + 바닥 + 배치 가구(배경) + 걷는 고양이. 방 전체가 카드 안에 비율대로 담김(크롭 아님) — 셸·배지·무대 모두 .cd-room 직속.
       d.innerHTML='<div class="cd-room">'+
-        '<div class="cr-inner">'+
-          roomShellBase(currentWall(), currentFloor())+
-          '<div class="cr-props" id="cdProps"></div><div class="cr-stage" id="cdStage"></div>'+
-        '</div>'+
+        roomShellBase(currentWall(), currentFloor())+
         '<span class="cr-cam cd-cam" role="button" tabindex="0" aria-label="알뜰홈 열기" onclick="event.stopPropagation();coinTap(this)"><i></i>LIVE · <span class="cd-camtxt" id="cdCamTxt">'+(room().emoji?room().emoji+' ':'')+escapeHtml(room().name||'우리집')+'</span></span>'+
         batchBtnHtml()+
+        '<div class="cr-props" id="cdProps"></div><div class="cr-stage" id="cdStage"></div>'+
         '</div>';
       renderDockProps(); renderDockCats();
     }
@@ -4009,8 +4005,8 @@
       const hasRoom = stage.id==='crStage' || isFriend || !!stage.closest('.cd-room');
       const isDock = stage.id==='cdStage';   // dock(얇은 스트립)만 dock 취급 — 친구 무대(frStage)는 방 크기
       // 방 높이 → depth 1(맨 뒤)에서 발이 올라가는 최대 px(rise). 가구 바닥 매핑(bottom%=3+depth*46/38)과 같은 척도라 같은 행에 서면 발높이가 맞는다.
-      const roomEl = stage.closest('.cr-inner') || stage.closest('.catroom') || stage.closest('.cd-room');   // dock는 .cr-inner(244)를 잡아 알뜰홈과 동일 높이 기준
-      const roomH = (roomEl && roomEl.clientHeight) || 244;   // dock·홈 모두 244(.cr-inner/.catroom) — 같은 바닥 평면·같은 riseMax
+      const roomEl = stage.closest('.catroom') || stage.closest('.cd-room');   // dock=.cd-room(224 카드)·홈/친구=.catroom(244) — 각자 실제 높이 기준(방 전체가 담김)
+      const roomH = (roomEl && roomEl.clientHeight) || 244;   // 실측 높이 → riseMax=height*0.53. dock≈224·홈244(비율 동일이라 원근 일치)
       // 위에서 내려다보는(탑다운) 느낌: 맨 앞(depth0)=바닥 앞끝, 맨 뒤(depth1)=바닥 뒤끝(벽지 경계)에 닿게.
       // dock·홈(.catroom) 둘 다 바닥 54%로 통일 → 같은 riseMax 비율(0.53)로 뒤 펫이 벽지 경계에 닿는다(예전 dock 0.61은 바닥 66% 기준이라 벽에 못 닿았음).
       // (발밑 여백 상쇄 pad는 깊이와 무관하게 적용되어 맨 앞은 여전히 바닥에 붙음 — 뜨는 문제 재발 없음.)
