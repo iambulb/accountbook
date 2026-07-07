@@ -1363,6 +1363,9 @@
     /* 🌈🌸 뜰알 승급 — 무지개 꽃이 좀 더 커지며 팝(줄기 밑동 기준 확대) */
     .ten-ddeulegg .fx-ddflower.ddflw-big { animation:ten-flgrow .5s cubic-bezier(.34,1.56,.64,1) forwards; }
     @keyframes ten-flgrow { 0%{ transform:scale(1);} 100%{ transform:scale(1.55);} }
+    /* climax에선 커진 무지개 꽃도 '엄청 흔들림' — ddflw-big의 grow(forwards)보다 특이도 높게 이겨야 함(커진 배율 1.55 유지한 채 회전) */
+    .ten-egg.tremble .fx-ddflower.ddflw-big { animation:fxflwswingbig .2s ease infinite; }
+    @keyframes fxflwswingbig { 0%,100%{transform:scale(1.55) rotate(0)} 14%{transform:scale(1.55) rotate(-27deg)} 40%{transform:scale(1.55) rotate(24deg)} 64%{transform:scale(1.55) rotate(-15deg)} 85%{transform:scale(1.55) rotate(8deg)} }
     .ten-ddeulegg .fx-ddbody .px { display:block; height:42px; width:auto; filter:drop-shadow(0 3px 4px rgba(0,0,0,.3)); }
     /* 🎁 랜덤박스 10연차 — 둥지 안 상자(알 대신) + 피날레/리빌 가구 썸네일 */
     .ten-boxegg { display:block; line-height:0; }
@@ -1913,7 +1916,7 @@
     .gbanner.gb-ddeul { position:relative; border:2px solid transparent; background:linear-gradient(var(--card),var(--card)) padding-box, linear-gradient(100deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8) border-box; }
     /* 🏆 상단 쇼케이스 스트립: [초상] — [한정 픽업 텍스트] — [초상] */
     .gb-ddeul-top { position:relative; display:flex; align-items:flex-end; justify-content:space-between; gap:6px; padding:16px 10px 10px; background:linear-gradient(180deg, color-mix(in srgb,#9B6FC8 16%,var(--card)) 0%, var(--card) 100%); }
-    .gb-ddeul-title { flex:1; min-width:0; text-align:center; display:flex; flex-direction:column; align-items:center; gap:3px; padding-bottom:6px; }
+    .gb-ddeul-title { flex:1; min-width:0; text-align:center; display:flex; flex-direction:column; align-items:center; gap:3px; align-self:center; padding-bottom:12px; }   /* 행 하단(flex-end)에 처지지 않게 초상 카드 중앙 높이에 정렬(이름 라벨 몫만큼 살짝 위로) */
     .gb-ddeul-title .pk-title { font-size:15px; font-weight:900; line-height:1.25; }
     .gb-ddeul-sub { font-size:10.5px; }
     /* 초상 카드 스포트라이트(무지개 카드 안 초상+받침대 + 조명빔 + 후광 + 별·이름·등급 + 팝인/bob) */
@@ -1921,12 +1924,12 @@
     .gb-spot-empty { visibility:hidden; }
     @keyframes gbspotpop { 0%{ opacity:0; transform:translateY(9px) scale(.86); } 100%{ opacity:1; transform:none; } }
     .gb-spot-beam { position:absolute; left:50%; top:-8px; transform:translateX(-50%); width:46px; height:88px; z-index:0; pointer-events:none; clip-path:polygon(36% 0,64% 0,100% 100%,0 100%); background:linear-gradient(180deg, rgba(255,255,255,.32), rgba(255,255,255,.05) 66%, transparent); }
-    .gb-spot-fx { position:absolute; left:50%; top:40%; width:0; height:0; z-index:0; }
+    .gb-spot-fx { position:absolute; left:50%; top:42%; width:0; height:0; z-index:0; }   /* 카드 중심에 앵커 — FX는 카드(불투명)보다 커야 보임(JS aura104·rays88) */
     .gb-spot-card { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; padding:4px 5px 0; border:1.5px solid transparent; border-radius:12px; background:linear-gradient(color-mix(in srgb,var(--card) 82%,#9B6FC8 18%),color-mix(in srgb,var(--card) 82%,#9B6FC8 18%)) padding-box, linear-gradient(120deg,#F04452,#F2C84B,#2FAE7A,#3182F6,#9B6FC8) border-box; }
     .gb-spot-face { position:relative; z-index:2; line-height:0; animation:gbspotbob 2.8s ease-in-out infinite; }
     .gb-spot-face .catpx, .gb-spot-face .px { display:block; height:60px; width:auto; image-rendering:pixelated; filter:drop-shadow(0 2px 2px rgba(0,0,0,.32)); }
     @keyframes gbspotbob { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-3px); } }
-    .gb-spot-ped { position:relative; z-index:1; margin-top:-7px; line-height:0; }   /* 초상 발밑에 살짝 겹치게 */
+    .gb-spot-ped { position:relative; z-index:1; margin-top:-9px; line-height:0; }   /* 초상 발밑 겹침 — 스프라이트 하단 투명 여백(~6px) 감안해 발이 상판 위에 서게 */
     .gb-spot-ped .px { display:block; height:24px; width:auto; image-rendering:pixelated; }   /* v2: 넓은 받침(폭≈65px, 초상 60px 중앙에 맞물림) */
     .gb-spot-badge { position:absolute; left:50%; top:-6px; transform:translateX(-50%); z-index:4; line-height:0; animation:gbspotspin 2.6s linear infinite; }   /* ⭐ 펫 위 별이 제자리에서 빙빙(카탈로그 스핀 선례 — 캣휠 트레드와 동일 부드러운 회전) */
     .gb-spot-badge .px { display:block; height:14px; width:auto; image-rendering:pixelated; }

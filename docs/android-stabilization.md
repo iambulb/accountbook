@@ -119,3 +119,13 @@
 - ⛔ **반영 안 함(의도)** — 다크 first‑paint `theme-color` 미디어 메타: 앱이 **수동 테마 토글**이라 `prefers-color-scheme` 메타와 충돌 → 현재 JS 갱신 방식 유지가 정답.
 
 > 정리: **코드로 지금 바로 안전한 것은 이미 반영 완료**. 남은 건 (a) 추후 출시 대비 assetlinks, (b) 실기 확인이 필요한 몇 가지뿐. 실기 테스트 후 발견되는 것만 추가로 다듬으면 됨.
+
+---
+
+### 🔋 일반모드 배터리·발열 최적화 (저사양모드 아님 — 안 보이는 애니만 정지, 시각 변화 0)
+기존 일반모드 최적화(단일 rAF 엔진·`document.hidden` 정지·30/12fps 캡·오프스크린 씬 IntersectionObserver 정지·씬 HTML 캐시)에 더해, **사용자가 지각할 수 없는 상시 애니만** 추가로 정지한다(보이는 연출은 그대로).
+
+- **시트에 가려진 dock 정지** (`body.sheet-open`): `openSheet`/`closeSheet`(`core.js`)가 body 클래스 토글 → ① `activeStages()`(`cats.js`)가 시트 열리면 `cdStage`(하단 dock)를 엔진 스텝에서 제외(위치계산·O(n²) `separatePets` 정지), ② CSS가 `.catdock .csprf`/`.ffx .px` 애니 정지 + `will-change` 회수. 시트 속 방(`crStage`/`frStage`)은 보이므로 계속 애니. 닫으면 즉시 재개.
+- **백그라운드/화면잠금 전면 정지** (`body.apphidden`): `visibilitychange`·`pagehide`(`cats.js` `_applyAppHidden`)가 배너 CSS 애니(`.pkscene *`)와 무지개 **SMIL**(`svg.pauseAnimations()`), 60초 `reconcilePets` 타이머까지 정지. `pageshow`/복귀 시 재개·`startCatLoop`. 브라우저 hidden 스로틀에 비의존(iOS PWA/TWA 유효).
+- **측정 도구**: 개발자 모드 → **성능 HUD**(`togglePerfHud`) — 엔진 fps·활성 무대 수·액터 수·재생 애니 수·상태(SHEET/HIDDEN/LITE)를 상단에 표시. OFF 시 DOM·계산 비용 0. Chrome DevTools(FPS/Paint flashing/Layers)와 함께 실기(아이폰) 전후 비교에 사용.
+- 관련 상수/함수: `catLoop` 프레임버짓(`cats.js`), `.catdock`/`.csprf`/`.ffx` CSS 게이트(`styles.css`의 `body.sheet-open`·`body.apphidden` 블록).

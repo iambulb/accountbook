@@ -4563,7 +4563,7 @@
       const pets=LIMITED_PICKUP.filter(pickupExists);
       const spot=(id)=> id ? '<div class="gb-spot" role="button" tabindex="0" aria-label="'+escapeHtml(catName(id))+' 미리보기" onclick="openPickupPeek(\''+id+'\')">'+
           '<span class="gb-spot-beam"></span>'+                                                       // 🔦 무대 조명 빔(위→아래)
-          '<span class="gb-spot-fx">'+lightLayers({aura:82, rays:56, rainbow:true})+fxAuraTwinkles(4,true)+'</span>'+   // 도트 무지개 후광+트윙클
+          '<span class="gb-spot-fx">'+lightLayers({aura:104, rays:88, rainbow:true})+fxAuraTwinkles(4,true)+'</span>'+   // 도트 무지개 후광+트윙클 — 카드(불투명 폭≈70px)보다 크게(가려져 안 보이던 버그: rays 56<카드), 우측 가장자리(중심~52px)에도 안 잘리는 최대치
           '<span class="gb-spot-badge">'+starSvg({h:14})+'</span>'+
           '<div class="gb-spot-card"><span class="gb-spot-face">'+catFace(id,{h:60,eager:true})+'</span><span class="gb-spot-ped">'+pedestalSvg({h:24})+'</span></div>'+   // 무지개 카드 안 초상+받침대(h24→폭≈65px, 초상 60px에 맞춤·중앙 정렬)
           '<span class="gb-spot-name">'+catNameSpan(id,catName(id))+'</span>'+
