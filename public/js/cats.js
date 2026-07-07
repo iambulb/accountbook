@@ -6614,6 +6614,7 @@
         fxCrackChips(_fx.stage);   // 탭마다 껍질 조각이 튀어 깨짐을 강조
       } else {
         if(_fx.stage===2 && !_fx.rainbow) maybeRainbowUpgrade();   // 🎁 박스도 특별↑이면 무지개박스로 승급(펫알 무지개알과 동일 조건)
+        if(_fx.stage===2 && _fx.rainbow) ddeulPickupFx(it.closest('.fx-stage'));   // 🌈🦋 무지개박스도 무지개알과 '같은 조건·타이밍'(2번째 탭·rainbow)으로 무지개+나비 연출
         if(_fx.rainbow) it.innerHTML=rainbowBoxSvg({h:150});   // 승급 시 무지개박스로 교체(다음 탭 climax에서 무지개 오픈)
         it.classList.remove('boxshake'); void it.offsetWidth; it.classList.add('boxshake');   // 박스: 양옆으로 들고 흔드는 느낌
       }
