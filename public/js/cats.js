@@ -5388,8 +5388,8 @@
       let leaves=''; const LN=7; for(let i=0;i<LN;i++){ const l=(6+pkRand(i,201)*88).toFixed(1), dur=(7+pkRand(i,202)*6).toFixed(1),
         del=(-pkRand(i,203)*10).toFixed(2), sw=(2.4+pkRand(i,204)*1.6).toFixed(1), hh=Math.round(9+pkRand(i,205)*5), dir=(pkRand(i,206)<0.5?-1:1);
         leaves+='<span class="pk-fallleaf" style="left:'+l+'%;--d:'+dur+'s;--sw:'+sw+'s;--dir:'+dir+';animation-delay:'+del+'s;"><span class="fl-in">'+mapleLeafSvg({h:S(hh)}, LEAF_COLS[Math.floor(pkRand(i,207)*LEAF_COLS.length)])+'</span></span>'; }
-      // ☀️ 배너에서만: 지는 해가 산 뒤에서 위로 스르르 떠올라 유지(빛나는 후광). reveal(10연차)은 ten-skysun이 별도 담당이라 씬엔 안 넣음(중복 방지).
-      const risesun = '<span class="pk-risesun">'+sunSvg({h:S(64)})+'</span>';   // 배너·10연차 reveal 공용(산 뒤에서 떠오름)
+      // ☀️ 배너에서만 지는 해가 기본으로 떠오름. reveal(10연차)은 '기본 미표시'(사용자 지침) — 무지개 조건일 때만 tenSkyRiseSun으로 띄운다.
+      const risesun = reveal ? '' : ('<span class="pk-risesun">'+sunSvg({h:S(64)})+'</span>');
       _sunsetCache[mode]='<div class="pkscene pk-sunset'+(reveal?' pk-reveal':'')+'" aria-hidden="true">'+
         '<div class="pk-sky">'+risesun+clouds+'</div>'+
         '<div class="pk-horizon">'+hills+farline+'</div>'+
@@ -6577,14 +6577,18 @@
       st.insertAdjacentHTML('afterbegin','<div class="fx-ddclouds" aria-hidden="true">'+c+'</div>');
       // 🌈 무지개 — 화면 안에서 양옆까지 감싸는 둥근(반원) 아치가 왼→오로 펼쳐진다
       st.insertAdjacentHTML('afterbegin','<div class="fx-ddrainbow" aria-hidden="true">'+authRainbowSvg()+'</div>');
-      // 🦋 나비 7마리 — 알 주변에 '섹터'로 고르게(쏠림 없이 간격) + 전체 살짝 왼쪽으로 + 매 연출 랜덤 위치, 각자 제각각 팔랑(방향·속도·경로 다름)
+      // 🦋/🍁 알 주변 7 — 뜰알=나비, 펫알·랜덤박스=낙엽(단풍잎). 조건 동일(무지개 승급 시). '섹터'로 고르게 + 매 연출 랜덤 위치·경로.
+      const useLeaf = !!(_fx && _fx.kind!=='ddeul');   // 펫알·랜덤박스=낙엽, 뜰알=나비
       const T=['o','b','p','y','o','p','b']; let b=''; const N=7, SH=-28;   // SH=전체 왼쪽 시프트
       for(let i=0;i<N;i++){
         const ang=((i+Math.random()*0.7)/N)*Math.PI*2, rx=118+Math.random()*72, ry=142+Math.random()*72;
         const mx=Math.round(Math.cos(ang)*rx)+SH, my=Math.round(Math.sin(ang)*ry);
         const hh=Math.round((13+Math.round(Math.random()*4))*1.5), dur=(6+Math.random()*5).toFixed(1), fd=(0.32+Math.random()*0.28).toFixed(2), del=(-Math.random()*8).toFixed(2);
-        b+='<span class="fx-ddbfly" style="margin:'+my+'px 0 0 '+mx+'px;--d:'+dur+'s;--fd:'+fd+'s;animation-delay:'+del+'s;'+bflyDriftVars(Math.random)+'"><span class="bf-wing">'+butterflySvg(T[i%T.length],{h:hh})+'</span></span>'; }
+        const inner = useLeaf ? ('<span class="ten-leafwig">'+mapleLeafSvg({h:hh}, randLeafCol())+'</span>') : ('<span class="bf-wing">'+butterflySvg(T[i%T.length],{h:hh})+'</span>');
+        b+='<span class="fx-ddbfly" style="margin:'+my+'px 0 0 '+mx+'px;--d:'+dur+'s;--fd:'+fd+'s;animation-delay:'+del+'s;'+bflyDriftVars(Math.random)+'">'+inner+'</span>'; }
       st.insertAdjacentHTML('beforeend','<div class="fx-ddbflies" aria-hidden="true">'+b+'</div>');
+      // 🌅 펫알·랜덤박스: 무지개 조건일 때 노을해가 위로 스르르 떠올라 유지(ten-skysun 재사용). 뜰알은 무지개 하늘이라 해 없음.
+      if(useLeaf && !st.querySelector('.ten-skysun')) st.insertAdjacentHTML('afterbegin','<span class="ten-skysun" aria-hidden="true">'+sunSvg({h:72})+'</span>');
       // 🌈 뜰알이면 꽃을 무지개색으로(오픈까지 유지 플래그). 펫알이면 꽃이 없어 no-op.
       if(ddeulFlowerRb(st) && _fx) _fx._flwRb=true;
       const hint=$('fxHint'); if(hint) hint.textContent='🌈 무지개가 펼쳐져요! 한 번 더 탭!'; }
@@ -7002,9 +7006,11 @@
     function tenTap2(){ _fx10.items.forEach(function(it){ if((it.kind==='egg'||it.kind==='box') && it.rainbow) it._rbShown=true; });
       tenTapShake(2);
       if(_fx10.skyRainbow) tenSkyFx($('tenWrap'));
-      // 펫알(egg)=무지개알 승급이 곧 연출(tenTapShake가 rainbowEggStage로 재렌더) — 알 주변 반딧불/단풍잎은 쓰지 않음. 뜰알만 알 주변 연출(배경별 나비/단풍잎/반딧불)+무지개 꽃.
+      // 🌅 노을(펫알·박스) 하늘 해는 '기본 미표시'(사용자 지침) — 무지개 조건(rbUpgradeChance→it.rainbow) 펫이 하나라도 있으면 그때만 위로 스르르 떠올라 유지.
+      if(_fx10.theme==='sunset' && _fx10.items.some(function(it){ return (it.kind==='egg'||it.kind==='box') && it.rainbow; })) tenSkyRiseSun($('tenWrap'));
+      // 알 주변: 뜰알=나비, 펫알·박스=낙엽(단풍잎). 조건 동일(무지개 승급 시). tenEggButterflies가 sunset 테마면 단풍잎을 그린다.
       _fx10.items.forEach(function(it){ const el=$('tenEgg'+it.i); if(!el) return;
-        if((it.kind==='egg'||it.kind==='box') && it.rainbow && !liteMode()){ const s=document.createElement('span'); s.className='ten-eggfx'; s.innerHTML=fxSparkles(6); el.appendChild(s); }   // 무지개알/무지개박스 승급 반짝임
+        if((it.kind==='egg'||it.kind==='box') && it.rainbow && !liteMode()){ const s=document.createElement('span'); s.className='ten-eggfx'; s.innerHTML=fxSparkles(6); el.appendChild(s); tenEggButterflies(el, it); }   // 무지개 승급 반짝임 + 낙엽(sunset 테마)
         if(it.kind==='ddeul' && (it.tier==='exclusive' || Math.random()<rbUpgradeChance(it.tier))) tenEggButterflies(el, it); });
       setTenHint('마지막 탭!'); }
     function tenClimax(){ const wrap=$('tenWrap'); if(!wrap) return; setTenHint('');
