@@ -61,7 +61,8 @@
       const gi=sumBy(rows,'income'), ge=sumBy(rows,'expense'), isToday=ds===todayStr();
       let h='<div class="sech"><span class="l">'+(isToday?'오늘 · ':'')+(dt.getMonth()+1)+'월 '+dt.getDate()+'일 ('+WEEK[dt.getDay()]+')</span>'+
         '<span class="s">'+(ge?'<span class="red">-'+ge.toLocaleString()+'</span>':'')+(gi?' <span class="green">+'+gi.toLocaleString()+'</span>':'')+'</span></div>';
-      h+= rows.length ? '<div>'+rows.map(txRowHtml).join('')+'</div>' : '<div class="empty">이 날 거래가 없습니다</div>';
+      const _fp=txMetaFP();
+      h+= rows.length ? '<div>'+rows.map(t=>txRowMemo(t,_fp)).join('')+'</div>' : '<div class="empty">이 날 거래가 없습니다</div>';
       return h;
     }
 
@@ -128,12 +129,12 @@
       }).sort((a,b)=>new Date(b.date)-new Date(a.date));
       if(!rows.length) return h+'<div class="empty">거래가 없습니다</div>';
       // 일자별 그룹
-      const groups={};
+      const groups={}, _fp=txMetaFP();
       rows.forEach(t=>{ const d=(t.date||'').substring(0,10); (groups[d]=groups[d]||[]).push(t); });
       Object.keys(groups).sort().reverse().forEach(d=>{
         const dt=parseDate(d), gi=sumBy(groups[d],'income'), ge=sumBy(groups[d],'expense');
         h+='<div class="day-group"><div class="day-head"><span>'+pad2(dt.getMonth()+1)+'월 '+pad2(dt.getDate())+'일 ('+WEEK[dt.getDay()]+')</span><span>'+(ge?'<span class="red">-'+ge.toLocaleString()+'</span> ':'')+(gi?'<span class="green">+'+gi.toLocaleString()+'</span>':'')+'</span></div><div class="card" style="padding:6px 10px;">';
-        h+=groups[d].map(txRowHtml).join('');
+        h+=groups[d].map(t=>txRowMemo(t,_fp)).join('');
         h+='</div></div>';
       });
       return h;
@@ -143,7 +144,8 @@
     function txSearchResults(){
       const q=state._txSearch||{};
       const res=(state.transactions||[]).filter(t=>txMatches(t,q)).sort((a,b)=>new Date(b.date)-new Date(a.date));
-      const rows=res.slice(0,200).map(txRowHtml).join('');
+      const _fp=txMetaFP();
+      const rows=res.slice(0,200).map(t=>txRowMemo(t,_fp)).join('');
       return '<div class="sech"><span class="l">결과</span><span class="s">'+res.length+'건'+(res.length>200?' · 200 표시':'')+'</span></div>'+
         '<div class="card" style="padding:6px 10px;">'+(rows||'<div class="empty">검색 결과가 없어요</div>')+'</div>';
     }
@@ -192,6 +194,17 @@
         '<div class="tx-amt '+cls+'">'+sign+'₩'+amtNum+((t.currency&&t.currency!=='KRW')?'<span class="tx-fx">'+escapeHtml(fmtForeign(t.foreignAmount,t.currency))+'</span>':'')+'</div></div>';
     }
 
+    // ⚡ 거래 행 HTML 메모이제이션 — 렌더마다 수백 행 SVG/escape/포맷을 재생성하던 비용 제거.
+    //  키 설계(안전 최우선): 외부 의존(계좌·카드·카테고리·워크스페이스 멤버 이름)을 렌더당 1회 '메타 지문'으로 만들어, 그게 바뀌면 캐시 전체를 버린다 → 카테고리/계좌/멤버 이름 변경 시 stale 방지.
+    //  그 외엔 tx 객체 값 전체(JSON)를 서명으로 → tx의 어떤 필드가 바뀌어도 자동 무효화(누락 필드 걱정 없음). 안 바뀐 행은 캐시 HTML 재사용.
+    let _txRowCache={}, _txCacheFP=null;
+    function txMetaFP(){ return JSON.stringify(state.accounts||[])+'|'+JSON.stringify(state.creditCards||[])+'|'+JSON.stringify(state.categories||[])+'|'+JSON.stringify((state.wsMeta&&state.wsMeta.members)||{}); }
+    function txRowMemo(t, fp){
+      if(fp!==_txCacheFP){ _txRowCache={}; _txCacheFP=fp; }   // 외부 의존 변경 → 전체 무효화(계좌·카테고리·카드·멤버 편집은 드묾)
+      const id=t.id, c=_txRowCache[id], sig=JSON.stringify(t);
+      if(c && c.sig===sig) return c.html;
+      const html=txRowHtml(t); _txRowCache[id]={sig, html}; return html;
+    }
     function upcomingRecurring(){
       const out=[];
       state.recurring.filter(r=>ruleStatus(r)==='active' && canSee(r)).forEach(r=>{ const n=nextOccurrence(r); if(n){ const diff=(n-parseDate(todayStr()))/86400000; if(diff>=0&&diff<=7) out.push({rule:r,date:n}); } });

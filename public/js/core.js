@@ -405,20 +405,20 @@
       _userRefs.forEach(r=>{ try{ r.off(); }catch(e){} }); _userRefs=[];
       Object.keys(_friendTodoRefs).forEach(u=>{ try{ _friendTodoRefs[u].off(); }catch(e){} }); _friendTodoRefs={}; state.friendTodosByUid={};   // 친구 할일 리스너 초기화
       const add=(path,cb)=>{ const r=db.ref('users/'+state.uid+'/'+path); r.on('value',cb); _userRefs.push(r); };
-      add('todos', s=>{ const o=s.val()||{}; state.myTodos=Object.keys(o).map(k=>Object.assign({id:k,scope:'personal',ownerUid:state.uid},o[k])); rerender(); });
-      add('friends', s=>{ state.friends=s.val()||{}; loadFriendPublics(); rerender(); });
-      add('friendReqs', s=>{ state.friendReqs=s.val()||{}; rerender(); });
-      add('todoPublic', s=>{ state.todoPublic=!!s.val(); rerender(); });
-      add('mailbox', s=>{ state.mailbox=s.val()||{}; if(typeof updateNewsBadge==='function') updateNewsBadge(); rerender(); });   // 🎁 친구가 보낸 선물함 — 소식(브랜드) 알림 뱃지도 갱신
+      add('todos', s=>{ const o=s.val()||{}; state.myTodos=Object.keys(o).map(k=>Object.assign({id:k,scope:'personal',ownerUid:state.uid},o[k])); rerender('todo'); });
+      add('friends', s=>{ state.friends=s.val()||{}; loadFriendPublics(); rerender('social'); });
+      add('friendReqs', s=>{ state.friendReqs=s.val()||{}; rerender('social'); });
+      add('todoPublic', s=>{ state.todoPublic=!!s.val(); rerender('todo'); });
+      add('mailbox', s=>{ state.mailbox=s.val()||{}; if(typeof updateNewsBadge==='function') updateNewsBadge(); rerender('social'); });   // 🎁 친구가 보낸 선물함 — 소식(브랜드) 알림 뱃지도 갱신
     }
     // 친구별 '할일 공개' 여부를 읽어 캐시(친구 목록 변경 시 갱신). 공개 친구만 피드에 노출.
     function loadFriendPublics(){
       const fr=Object.keys(state.friends||{}); state.friendPub=state.friendPub||{};
       Object.keys(state.friendPub).forEach(uid=>{ if(fr.indexOf(uid)<0){ delete state.friendPub[uid]; delete state.friendLikes[uid]; delete state.friendHomeChangedByUid[uid]; } });   // 삭제된 친구 정리
-      fr.forEach(uid=>{ db.ref('users/'+uid+'/todoPublic').once('value').then(s=>{ state.friendPub[uid]=!!s.val(); syncFriendTodoWatch(); rerender(); }).catch(()=>{});
+      fr.forEach(uid=>{ db.ref('users/'+uid+'/todoPublic').once('value').then(s=>{ state.friendPub[uid]=!!s.val(); syncFriendTodoWatch(); rerender('social'); }).catch(()=>{});
         // 친구 목록/스토리용: 집 좋아요수 + 집 변경시각(무지개 링)
-        db.ref('users/'+uid+'/homeLikes').once('value').then(s=>{ state.friendLikes[uid]=(typeof homeLikeCount==='function'?homeLikeCount(s.val()):0); rerender(); }).catch(()=>{});
-        db.ref('homeCam/'+uid+'/changedAt').once('value').then(s=>{ state.friendHomeChangedByUid[uid]=s.val()||''; rerender(); }).catch(()=>{});   // 대표 방 공개 스냅샷의 변경시각(users/game은 비공개)
+        db.ref('users/'+uid+'/homeLikes').once('value').then(s=>{ state.friendLikes[uid]=(typeof homeLikeCount==='function'?homeLikeCount(s.val()):0); rerender('social'); }).catch(()=>{});
+        db.ref('homeCam/'+uid+'/changedAt').once('value').then(s=>{ state.friendHomeChangedByUid[uid]=s.val()||''; rerender('social'); }).catch(()=>{});   // 대표 방 공개 스냅샷의 변경시각(users/game은 비공개)
       });
       syncFriendTodoWatch();
     }
@@ -431,7 +431,7 @@
       // 새 공개 친구 리스너 부착
       want.forEach(uid=>{ if(_friendTodoRefs[uid]) return;
         const r=db.ref('users/'+uid+'/todos'); _friendTodoRefs[uid]=r;
-        r.on('value', s=>{ const o=s.val()||{}; state.friendTodosByUid[uid]=Object.keys(o).map(k=>Object.assign({id:k,scope:'personal',ownerUid:uid},o[k])); rerender(); }, ()=>{});
+        r.on('value', s=>{ const o=s.val()||{}; state.friendTodosByUid[uid]=Object.keys(o).map(k=>Object.assign({id:k,scope:'personal',ownerUid:uid},o[k])); rerender('todo'); }, ()=>{});
       });
     }
     // 내 친구 코드 보장(없으면 생성) + 인덱스 friendCodes/{code}=uid.
@@ -797,9 +797,9 @@
         const o=s.val()||{}; state.purposeBooks=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender();
       });
       attach('todos', s=>{
-        const o=s.val()||{}; state.todos=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender();
+        const o=s.val()||{}; state.todos=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender('todo');
       });
-      attach('todoShare', s=>{ state.todoShare=s.val()||{}; rerender(); });   // 멤버별 개인 할일 공유 on/off
+      attach('todoShare', s=>{ state.todoShare=s.val()||{}; rerender('todo'); });   // 멤버별 개인 할일 공유 on/off
       attach('people', s=>{
         const o=s.val()||{}; state.people=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender();
       });
@@ -1225,13 +1225,29 @@
       if(typeof applyHomeBadge==='function') applyHomeBadge(document, state.view, pend.total);   // 로고 점(util, jsdom 테스트됨)
       if(typeof applyTodoTabDot==='function') applyTodoTabDot(document, pend.todos);              // 할일 탭 점(util, jsdom 테스트됨)
     }
-    let _rerenderRAF=0;
-    function rerender(){   // 코얼레싱: 여러 RTDB 리스너가 연달아 호출해도 한 프레임에 실제 렌더 1회(부팅·데이터 변경 시 재계산/재데코 폭주 방지). 렌더 직후 동기로 새 DOM을 읽는 호출자는 없음(검토 확인).
-      if(_rerenderRAF) return; _rerenderRAF=requestAnimationFrame(()=>{ _rerenderRAF=0; _rerenderNow(); });
+    let _rerenderRAF=0, _rrReasons=null;
+    // 코얼레싱 + ⚡스코핑: reason 태그('ledger'|'todo'|'social'|'game')로 '현재 탭과 무관한 원격 변경'이면 무거운 콘텐츠 재빌드를 건너뛴다(뱃지·열린 시트는 항상 갱신).
+    //  reason 없이 부르면(기존 39개 호출 대부분·일회성 액션) '*'로 취급해 항상 렌더 → 하위호환(태그 단 리스너만 스킵 대상). 한 프레임에 여러 이유가 모이면 OR 판정(관련 이유 하나라도 있으면 렌더).
+    function rerender(reason){
+      if(!_rrReasons) _rrReasons={}; _rrReasons[reason||'*']=true;
+      if(_rerenderRAF) return; _rerenderRAF=requestAnimationFrame(()=>{ _rerenderRAF=0; const rs=_rrReasons; _rrReasons=null; _rerenderNow(rs); });
     }
-    function _rerenderNow(){
+    function _rrNeedsContent(rs){
+      if(!rs || rs['*']) return true;                       // 태그 없는 호출 → 항상 렌더(하위호환)
+      if(state.view==='home') return true;                  // 홈은 게임·소셜·집계 다 반영(콘텐츠 가벼움)
+      const t=state.tab;
+      if(t==='more') return true;                           // 더보기=선물함·소식 등 뱃지/집계 → 항상
+      if(t==='calendar'||t==='stats'||t==='assets') return !!rs['ledger'];             // 가계부 콘텐츠는 ledger 변경만 영향
+      if(t==='todo'||t==='todocal'||t==='tododone') return !!(rs['todo']||rs['social']); // 할일=내 할일(todo)+공유 친구 할일(social)
+      return true;                                          // 미분류 탭 → 안전하게 렌더
+    }
+    function _rerenderNow(rs){
       document.body.classList.toggle('home-view', state.view==='home');   // 홈에선 바텀 탭바 숨김(CSS)
       updateHomeBadge();
+      if(!_rrNeedsContent(rs)){   // 🔋 현재 탭과 무관한 변경 → 콘텐츠 재빌드 스킵(뱃지는 위에서, 시트는 아래에서 갱신)
+        const shx=$('sheet'); if(shx && shx.classList.contains('on') && typeof state._sheetRefresh==='function') state._sheetRefresh();
+        return;
+      }
       if(state.view==='home'){
         if(typeof renderHome==='function') renderHome();
         const sh0=$('sheet'); if(sh0 && sh0.classList.contains('on') && typeof state._sheetRefresh==='function') state._sheetRefresh();
