@@ -3784,6 +3784,19 @@
       if(typeof markCatDirty==='function') markCatDirty(); if(typeof startCatLoop==='function') startCatLoop();   // 엔진 fps 예산 재평가·정지스틸 재빌드
       if(typeof rerender==='function') rerender();
       toast(on?'🔋 가벼운 모드 ON — 애니메이션을 줄여 배터리·발열을 아껴요':'가벼운 모드 OFF'); }
+    // 🔋 저사양 기기 1회 안내 — 코어4↓ 또는 메모리4GB↓면 최초 1회만 가벼운 모드 권유(기본 동작은 안 바꿈, 사용자가 선택). liteSuggested로 다시 안 뜸.
+    function maybeSuggestLite(){ try{
+      if(liteMode()) return;                                       // 이미 켜짐
+      if(localStorage.getItem('liteSuggested')==='1') return;      // 이미 안내함(선택 무관 1회)
+      if($('sheet') && $('sheet').classList.contains('on')) return;   // 다른 시트 열려 있으면 다음 기회에
+      const hc=navigator.hardwareConcurrency, dm=navigator.deviceMemory;
+      const lowEnd = (typeof hc==='number' && hc>0 && hc<=4) || (typeof dm==='number' && dm>0 && dm<=4);
+      if(!lowEnd) return;
+      localStorage.setItem('liteSuggested','1');
+      if(typeof confirmSheet!=='function') return;
+      confirmSheet('이 기기에서 배터리·발열을 아끼려면 가벼운 모드를 켤 수 있어요. 애니메이션을 줄이지만 걷기·뽑기 같은 기능은 그대로예요. 지금 켤까요?',
+        function(){ setLiteMode(true); }, { title:'🔋 가벼운 모드', okLabel:'켜기', danger:false });
+    }catch(e){} }
     // 걷기 스프라이트 애니메이션 주기(초): 발 놀림이 실제 이동속도에 맞도록 속도에 반비례 → 미끄러짐(무빙워크) 방지, 자연스러운 걸음.
     function walkDur(v, hh){ const stride=0.42*(hh||40), px=Math.max(0.001, v*58); return Math.max(0.45, Math.min(1.5, stride/px)).toFixed(2); }
     function setWalkDur(a){ if(a.spr){ const sc=a.el.querySelector('.cspr'); if(sc) sc.style.setProperty('--wdur', walkDur(a.v, a.hh)+'s'); } }
@@ -4506,18 +4519,29 @@
           '<div class="gb-item-meta"><b class="tier-rainbow">뜰알 <span class="tagmini tier-rainbow">한정 픽업</span></b>'+
           '<div class="gb-item-desc">'+(pk?'<b class="tier-rainbow">'+pk+'</b> · ':'')+'한정 펫은 오직 뜰알에서만!</div>'+
           '<div class="gb-item-cost">1뽑당 소모 '+gachaCostHtml(DDEUL_PRICE,DDEUL_GOLD,1)+'</div></div></div>'+
-        gbPullActions('ddeul', DDEUL_PRICE, DDEUL_GOLD)+gbPityHtml('ddeul')+'</div>';
+        gbPullActions('ddeul', DDEUL_PRICE, DDEUL_GOLD, null, 'ddeul')+gbPityHtml('ddeul')+'</div>';
     }
     // 소모재화 표시(은화·금화). 0/falsy인 재화는 생략(둘 다 없으면 '무료'). h=아이콘 높이, m=뽑기 수.
     function gachaCostHtml(silver, gold, m, h){ h=h||14; let s='';
       if(silver) s+='<span class="ci">'+coinSvg({h:h})+'</span>'+(silver*m);
       if(gold) s+=(s?' ':'')+'<span class="ci">'+goldSvg({h:h})+'</span>'+(gold*m);
       return s||'무료'; }
-    // 소모재화 표기가 있는 1뽑/10뽑 버튼(개발자 미리보기 = devBannerPull). silver/gold=1뽑당 소모, theme=10뽑 연출 테마.
-    function gbPullActions(kind, silver, gold, theme){ const t=theme?",'"+theme+"'":'';
-      return '<div class="gb-actions">'+
-        '<button class="gb-btn" onclick="devBannerPull(\''+kind+'\',false'+t+')"><span>1뽑</span><span class="gb-cost">'+gachaCostHtml(silver,gold,1,13)+'</span></button>'+
-        '<button class="gb-btn gb-btn10" onclick="devBannerPull(\''+kind+'\',true'+t+')"><span>10뽑</span><span class="gb-cost">'+gachaCostHtml(silver,gold,10,13)+'</span></button></div>';
+    // 보유 알/박스류 픽셀 아이콘(소비 인벤토리 키별).
+    function heldItemIcon(key, h){ h=h||13; if(key==='ddeul') return ddeulEggSvg({h:h}); if(key==='rainbow_egg') return rainbowEggSvg({h:h}); if(key==='rainbow_box') return rainbowBoxSvg({h:h}); if(key==='box') return boxSvg({h:h}); return eggSvg(0,{h:h}); }
+    // 🧾 뽑기 소모 표기 — 보유 알/박스를 먼저 쓰고(개수), 부족분만 재화로 구매. "🥚×3 + 🪙700" 식(수집형 게임 관례).
+    function gbPullCostHtml(heldKey, silver, gold, n){
+      const held=heldKey?consumQty(heldKey):0, useHeld=Math.min(n, held), buyN=n-useHeld; const parts=[];
+      if(useHeld>0) parts.push('<span class="gb-held"><span class="ci">'+heldItemIcon(heldKey,13)+'</span>×'+useHeld+'</span>');   // 보유 소모
+      if(buyN>0)   parts.push('<span class="gb-buy">'+gachaCostHtml(silver,gold,buyN,13)+'</span>');                                // 부족분 구매
+      if(!parts.length) parts.push('무료');
+      return parts.join('<span class="gb-plus">+</span>');
+    }
+    // 소모 표기가 있는 1뽑/10뽑 버튼(개발자 미리보기 = devBannerPull). silver/gold=1뽑당 소모, theme=10뽑 연출 테마, heldKey=보유 소비 인벤토리 키.
+    function gbPullActions(kind, silver, gold, theme, heldKey){ const t=theme?",'"+theme+"'":'';
+      const held=heldKey?consumQty(heldKey):0, htxt=heldKey?'<div class="gb-heldnote">보유 <b>'+held+'</b>개 — 뽑기 시 먼저 소모(부족분만 재화 구매)</div>':'';
+      return htxt+'<div class="gb-actions">'+
+        '<button class="gb-btn" onclick="devBannerPull(\''+kind+'\',false'+t+')"><span>1뽑</span><span class="gb-cost">'+gbPullCostHtml(heldKey,silver,gold,1)+'</span></button>'+
+        '<button class="gb-btn gb-btn10" onclick="devBannerPull(\''+kind+'\',true'+t+')"><span>10뽑</span><span class="gb-cost">'+gbPullCostHtml(heldKey,silver,gold,10)+'</span></button></div>';
     }
     // 🥚 펫알 배너 = 노을 씬 + 배너 이미지 아래 펫알 이미지·설명·소모재화 + 1뽑/10뽑(소모재화).
     function eggBannerHtml(){
@@ -4528,13 +4552,13 @@
           '<div class="gb-item-meta"><b>펫알</b>'+
           '<div class="gb-item-desc">열면 펫이 랜덤으로! 등급이 높을수록 귀해요.<br>열 때마다 금화 1개 지급.</div>'+
           '<div class="gb-item-cost">1뽑당 소모 '+gachaCostHtml(GACHA_PRICE,0,1)+'</div></div></div>'+
-        gbPullActions('egg', GACHA_PRICE, 0, 'sunset')+gbPityHtml('egg')+'</div>';
+        gbPullActions('egg', GACHA_PRICE, 0, 'sunset', 'egg')+gbPityHtml('egg')+'</div>';
     }
     // 🎁 랜덤박스 배너 = 낮 씬 + 상자 중앙(둥지 없음) + 반짝임.
     function boxBannerHtml(){
       return '<div class="gbanner gb-box"><div class="gb-head"><b class="gb-t">🎁 랜덤박스</b></div>'+
         '<div class="gb-scene">'+sunsetSceneHtml()+gbCenterHtml(boxSvg({h:54}), gbRainbowFx(), 'gb-rb gb-eglow')+'</div>'+
-        gbActionsHtml('box')+gbPityHtml('box')+'</div>';
+        gbPullActions('box', GACHA_PRICE, 0, null, 'box')+gbPityHtml('box')+'</div>';
     }
     // 🌈 무지개 배너 = 밤 씬 + 알뜰 아이콘(야광색) 중앙(둥지 없음) + 찬란한 무지개 오오라·트윙클. 배너 이미지 아래 무지개알·설명·소모재화(금화) + 1뽑/10뽑(밤 연출).
     function rainbowBannerHtml(){
@@ -4547,7 +4571,7 @@
           '<div class="gb-item-meta"><b class="tier-rainbow">무지개알 <span class="tagmini tier-rainbow">밤</span></b>'+
           '<div class="gb-item-desc">열면 <b>특별↑</b> 펫만! 금화로 확정 뽑기.<br>달빛 밤하늘 아래 반딧불이 반짝여요.</div>'+
           '<div class="gb-item-cost">1뽑당 소모 '+gachaCostHtml(0,gp,1)+'</div></div></div>'+
-        gbPullActions('egg', 0, gp, 'night')+gbPityHtml('egg')+'</div>';
+        gbPullActions('egg', 0, gp, 'night', 'rainbow_egg')+gbPityHtml('egg')+'</div>';
     }
     // 배너 버튼 → 미리보기(소모 없음). 1회=강제 전설 단발 연출, 10회=10연차 연출(박스 10연차는 준비 전). 실전 연결은 추후.
     function devBannerPull(kind, ten, theme){
