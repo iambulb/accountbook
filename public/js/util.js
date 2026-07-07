@@ -247,6 +247,7 @@
         active: Array.isArray(r.active) ? r.active.slice() : [],
         poops: Number(r.poops) || 0,
         floor: r.floor || 'default',
+        bgfx: (typeof r.bgfx === 'string') ? r.bgfx : '',   // 배경효과(앰비언트 오버레이) id — 없으면 ''
         harvestAt: Number(r.harvestAt) || 0,   // 🌾 방별 마지막 수확 시각(ms). 유휴 가구수익 누적 기준(0=미시작 → cats.js가 now로 초기화)
         caredAt: Number(r.caredAt) || 0   // ❤️ 마지막 '실제 수확(버튼)' 시각(ms). 행복도 수확신선도 기준(0=아직 안 함 → 수확 보너스 없음)
       };

@@ -339,7 +339,7 @@ test('normalizeHome: 빈 입력 → 기본 방 1개', () => {
   assert.strictEqual(h.rooms.length, 1);
   assert.strictEqual(h.roomSlots, 1);
   assert.strictEqual(h.slots, 3);
-  assert.deepStrictEqual(h.rooms[0], { id: '', name: '방 1', emoji: '', wallpaper: 'default', placed: {}, wallPlaced: {}, active: [], poops: 0, floor: 'default', harvestAt: 0, caredAt: 0 });
+  assert.deepStrictEqual(h.rooms[0], { id: '', name: '방 1', emoji: '', wallpaper: 'default', placed: {}, wallPlaced: {}, active: [], poops: 0, floor: 'default', bgfx: '', harvestAt: 0, caredAt: 0 });
 });
 
 // 🚨 RTDB rooms 형태 견고화(멀티룸 배치 소실 회귀 방지) — Firebase가 배열을 객체/null구멍으로 바꿔 내려도 방을 잃지 않아야 함

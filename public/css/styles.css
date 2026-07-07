@@ -706,11 +706,13 @@
     body.sheet-open .catdock .csprf,
     body.sheet-open .catdock .cspr.idle,
     body.lite .cspr.idle,
-    body.sheet-open .catdock .ffx .px { animation: none !important; }
+    body.sheet-open .catdock .ffx .px,
+    body.sheet-open .catdock .cr-overlay * { animation: none !important; }   /* 배경효과 오버레이도 dock가 시트에 가리면 정지 */
     body.sheet-open .catdock .cd-actor, body.sheet-open .catdock .csprf { will-change: auto !important; }
     /* 🔋 백그라운드/화면잠금(document.hidden·pagehide) — 앱 전면 CSS/SMIL 데코 정지. 걷기 엔진은 catLoop이 자체 정지. */
     body.apphidden .csprf,
     body.apphidden .ffx .px,
+    body.apphidden .cr-overlay *,
     body.apphidden .pkscene * { animation: none !important; }
     body.apphidden .cd-actor, body.apphidden .csprf, body.apphidden .pk-bfly, body.apphidden .pk-dfly, body.apphidden .pk-fire { will-change: auto !important; }
     #perfHud { position:fixed; top:0; left:6px; z-index:99999; background:rgba(0,0,0,.72); color:#3f6; font:600 11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; padding:2px 7px; border-radius:0 0 8px 8px; pointer-events:none; white-space:nowrap; letter-spacing:.02em; }
@@ -773,6 +775,10 @@
     .catroom { position:relative; height:var(--room-h); border-radius:16px; overflow:hidden; isolation:isolate; border:1px solid var(--bd); margin:4px 0 6px; }   /* 세로 확대: 큰 캣타워가 잘리지 않게. isolation=방을 독립 스택 컨텍스트로 → 펫·가구가 각자 z로 상호 가림하되 방 밖(sticky 헤더 등)엔 안 샘 */
     .cr-wall { position:absolute; inset:0; z-index:0; background:linear-gradient(180deg,color-mix(in srgb,var(--soft) 60%,var(--card)) 0%,var(--soft) var(--cam-wall),var(--soft2) var(--cam-wall),var(--soft2) 100%); }   /* 벽지 세로 소폭 연장(42→46%) */
     .cr-base { position:absolute; left:0; right:0; bottom:var(--cam-floor); height:1px; background:transparent; z-index:1; }   /* 바닥 뒤끝(벽 경계) = 배치 맨 뒤 행. 흰 경계선 제거(바닥이 1px 위까지 채움) */
+    /* 🌌 배경효과(ambient) 오버레이 — 방 전체에 나비·낙엽·잠자리 등이 떠다니는 투명 레이어. 펫·가구(깊이 z ~1~12) 위, LIVE/지갑 배지(45/46) 아래. pk-* 스프라이트 재사용(reducedMotion·lite에서 전역 정지). */
+    .cr-overlay { position:absolute; inset:0; z-index:40; pointer-events:none; overflow:hidden; }
+    .skinsw .sw-bgfx { display:flex; align-items:center; justify-content:center; background:var(--soft); }
+    .skinsw .sw-none { display:flex; align-items:center; justify-content:center; background:var(--soft); color:var(--sub); font-size:14px; }
     /* 웹캠 방: LIVE 배지를 좌측 상단으로 */
     .cr-cam { position:absolute; top:8px; left:12px; display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:800; color:var(--sub); background:var(--card); border:1px solid var(--bd); border-radius:20px; padding:4px 10px 4px 8px; z-index:45; }   /* 원근 z(≤12)보다 높게 */
     .cr-cam i { width:6px; height:6px; border-radius:50%; background:var(--expense); flex:none; }
