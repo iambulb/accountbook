@@ -1785,6 +1785,7 @@
         h+=lrow((typeof giftSvg==='function'?giftSvg({h:21}):MORE_ICON.gift),'전체 선물 보내기','closeSheet();openDevBroadcast()');
         h+=lrow((typeof megaSvg==='function'?megaSvg({h:20}):MORE_ICON.gear),'공지사항 관리','closeSheet();openDevAnnounce()');
         h+=lrow((typeof gearSvg==='function'?gearSvg({h:20}):MORE_ICON.gear),'데이터 정리','closeSheet();openDevDataTools()');
+        h+=lrow((typeof gearSvg==='function'?gearSvg({h:20}):MORE_ICON.gear),'성능 HUD','togglePerfHud();openDevModeSheet()', (typeof perfHudOn==='function'&&perfHudOn())?'켜짐':'꺼짐');
       }
       h+='</div>';
       openSheet('개발자 모드', h);

@@ -678,6 +678,16 @@
     /* 🔋 멈춘 데코의 GPU 레이어(will-change) 회수 — 저사양(animation:none)·화면 밖(pk-idle). 걷기 필름(.csprf)은 기능 모션이라 유지. */
     body.lite .pk-bfly, body.lite .pk-dfly, body.lite .pk-fire, body.lite .fx-ddcloud, body.lite .fx-ddbfly,
     .pkscene.pk-idle .pk-bfly, .pkscene.pk-idle .pk-dfly, .pkscene.pk-idle .pk-fire { will-change: auto !important; }
+    /* 🔋 시트/오버레이가 하단 dock 펫캠을 가릴 때 — dock 걷기필름·가구 연출 정지 + GPU 레이어 회수(안 보여 지각 변화 0). 시트 속 방(crStage/frStage)은 계속 애니. */
+    body.sheet-open .catdock .csprf,
+    body.sheet-open .catdock .ffx .px { animation: none !important; }
+    body.sheet-open .catdock .cd-actor, body.sheet-open .catdock .csprf { will-change: auto !important; }
+    /* 🔋 백그라운드/화면잠금(document.hidden·pagehide) — 앱 전면 CSS/SMIL 데코 정지. 걷기 엔진은 catLoop이 자체 정지. */
+    body.apphidden .csprf,
+    body.apphidden .ffx .px,
+    body.apphidden .pkscene * { animation: none !important; }
+    body.apphidden .cd-actor, body.apphidden .csprf, body.apphidden .pk-bfly, body.apphidden .pk-dfly, body.apphidden .pk-fire { will-change: auto !important; }
+    #perfHud { position:fixed; top:0; left:6px; z-index:99999; background:rgba(0,0,0,.72); color:#3f6; font:600 11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; padding:2px 7px; border-radius:0 0 8px 8px; pointer-events:none; white-space:nowrap; letter-spacing:.02em; }
     .cd-empty { position:absolute; left:2px; bottom:16px; font-size:11.5px; font-weight:600; color:var(--sub); }
     .catdock.hidden { display:none; }
     /* dock = 컴팩트 웹캠 방(벽지 배경 + 가구 + 걷는 고양이) */
@@ -1922,6 +1932,24 @@
     .gb-spot-badge .px { display:block; height:14px; width:auto; image-rendering:pixelated; }
     @keyframes gbspotspin { from{ transform:translateX(-50%) rotate(0deg); } to{ transform:translateX(-50%) rotate(360deg); } }
     .gb-spot-name { position:relative; z-index:3; margin-top:3px; font-size:11px; font-weight:800; white-space:nowrap; text-shadow:0 1px 2px rgba(0,0,0,.4); }
+    .gb-ddeul-top .gb-spot { cursor:pointer; }   /* 초상 탭 → 픽업 펫 미리보기 */
+    .gb-ddeul-one { justify-content:center; gap:14px; }   /* 픽업 1마리: [타이틀|초상] 2열 중앙 */
+    /* 🌇 펫알 배너 전용 — 노을 그라디언트 테두리(뜰알 무지개 테두리 패턴, 제목과 같은 팔레트) + 헤더 태그 노을 틴트 */
+    .gbanner.gb-eggbn { border:2px solid transparent; background:linear-gradient(var(--card),var(--card)) padding-box, linear-gradient(100deg,#f0b03c,#ee7a4a,#d15fa6) border-box; }
+    .gb-eggbn .gb-head .pk-tag { border-color:color-mix(in srgb,#ee7a4a 45%,var(--bd)); color:#c9663f; }
+    /* 📊 배너 확률 보기(접기/펼치기) — gachaInfoHtml(.gi-*) 재사용 */
+    .gb-prob { margin:0 12px 12px; }
+    .gb-prob summary { cursor:pointer; list-style:none; text-align:center; font-size:12px; font-weight:800; color:var(--sub); padding:4px 0; }
+    .gb-prob summary::-webkit-details-marker { display:none; }
+    .gb-prob[open] summary { color:var(--text); }
+    /* 🔍 픽업 펫 미리보기 모달(gimenu 위에 초상 크게 + 도트 후광) */
+    .pkpeek { position:relative; text-align:center; overflow:hidden; }
+    .pkpeek-fx { position:absolute; left:50%; top:76px; width:0; height:0; z-index:0; pointer-events:none; }
+    .pkpeek-face { position:relative; z-index:1; display:flex; justify-content:center; padding-top:12px; }
+    .pkpeek-face .catpx, .pkpeek-face .px { image-rendering:pixelated; filter:drop-shadow(0 3px 3px rgba(0,0,0,.3)); }
+    .pkpeek-name { position:relative; z-index:1; font-size:16px; font-weight:900; margin-top:8px; }
+    .pkpeek-tier { position:relative; z-index:1; font-size:12px; font-weight:800; margin:2px 0 4px; }
+    .pkpeek-desc { position:relative; z-index:1; font-size:12px; color:var(--sub); margin-bottom:10px; }
     /* ☀️ 노을 해(가운데) */
     /* ☀️ 지는 해 — .pk-sky 하단(수평선)에 중심을 두고 아래 절반은 sky overflow:hidden가 클립 → 절반만 노출 */
     .pk-sun { position:absolute; left:50%; bottom:0; transform:translate(-50%,50%); z-index:0; line-height:0; filter:drop-shadow(0 0 10px rgba(255,168,88,.55)); }

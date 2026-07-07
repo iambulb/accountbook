@@ -195,6 +195,7 @@
       $('sheetBody').innerHTML=html;
       $('overlay').classList.add('on');
       sh.classList.add('on');
+      document.body.classList.add('sheet-open');   // 🔋 시트가 하단 dock 펫캠을 가림 → dock 애니 정지(styles.css body.sheet-open)
       if(typeof pkObserveScenes==='function') pkObserveScenes();   // A4: 시트에 픽업 씬(알뜰샵 가챠탭·소식)이 있으면 오프스크린 애니 정지 옵저버 부착
       // 다이얼로그로 포커스 이동(모바일 키보드 안 뜨도록 입력칸이 아닌 시트 컨테이너로)
       setTimeout(()=>{ try{ sh.focus(); }catch(e){} }, 30);
@@ -227,6 +228,7 @@
       document.body.classList.remove('dragging');
       $('overlay').classList.remove('on');
       sh.classList.remove('on');
+      document.body.classList.remove('sheet-open');   // 🔋 dock 다시 보임 → 애니 재개
       const rf=sh._returnFocus; sh._returnFocus=null;
       if(rf && rf.focus){ try{ rf.focus(); }catch(e){} }
     }
