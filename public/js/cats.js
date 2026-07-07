@@ -6665,8 +6665,7 @@
         const inner = useLeaf ? ('<span class="ten-leafwig">'+mapleLeafSvg({h:hh}, randLeafCol())+'</span>') : ('<span class="bf-wing">'+butterflySvg(T[i%T.length],{h:hh})+'</span>');
         b+='<span class="fx-ddbfly" style="margin:'+my+'px 0 0 '+mx+'px;--d:'+dur+'s;--fd:'+fd+'s;animation-delay:'+del+'s;'+bflyDriftVars(Math.random)+'">'+inner+'</span>'; }
       st.insertAdjacentHTML('beforeend','<div class="fx-ddbflies" aria-hidden="true">'+b+'</div>');
-      // 🌅 펫알·랜덤박스: 무지개 조건일 때 노을해가 위로 스르르 떠올라 유지(ten-skysun 재사용). 뜰알은 무지개 하늘이라 해 없음.
-      if(useLeaf && !st.querySelector('.ten-skysun')) st.insertAdjacentHTML('afterbegin','<span class="ten-skysun" aria-hidden="true">'+sunSvg({h:72})+'</span>');
+      // 🌅 (제외) 무지개알·무지개박스 오픈의 '해 떠오름'(ten-skysun)은 넣지 않는다(사용자 지침) — 무지개 아치·낙엽만 유지. (이 경로는 rainbow=true인 단일 오픈=무지개알/무지개박스 전용. 펫알·랜덤박스는 10연차 노을에서만 해가 뜨며 그건 유지.)
       // 🌈 뜰알이면 꽃을 무지개색으로(오픈까지 유지 플래그). 펫알이면 꽃이 없어 no-op.
       if(ddeulFlowerRb(st) && _fx) _fx._flwRb=true;
       const hint=$('fxHint'); if(hint) hint.textContent='🌈 무지개가 펼쳐져요! 한 번 더 탭!'; }
