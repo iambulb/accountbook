@@ -1213,7 +1213,7 @@
     const MOOD_CARE_MS = 24*60*60*1000;   // ❤️ 수확(caredAt) 후 행복도 보너스가 0으로 빠지는 시간(24h)
     const POOP_REWARD = 2;          // 똥 하나 치우면 얻는 은화
     const CARE_ITEMS = ['bowl','waterbowl','litterbox'];   // 고양이 수(slotCount)만큼만 배치 허용
-    const HARVEST_GOLD_CHANCE = 0.55, HARVEST_GOLD_MIN = 2, HARVEST_GOLD_MAX = 5;   // 🪙 수확 시 하루 1회 확률로 금화 2~5개(활성 펫 있을 때만)
+    const HARVEST_GOLD_CHANCE = 0.8, HARVEST_GOLD_MIN = 1, HARVEST_GOLD_MAX = 5;   // 🪙 수확 시 하루 1회 확률로 금화 1~5개(활성 펫 있을 때만)
     // 벽지(방 배경) — 구매 후 적용. default는 기본 제공.
     const WALLPAPER_CATALOG = [
       { id:'default', name:'기본',  price:0,  css:'linear-gradient(180deg,color-mix(in srgb,var(--soft) 55%,var(--card)) 0%,var(--soft) 100%)' },
@@ -2662,12 +2662,13 @@
         loadGachaFx();        // 🎬 가챠 오픈 연출 펫(config/gachaFx: a=1번/왼쪽·b=2번/오른쪽) 구독 — 미지정이면 기본 검은고양이
         loadFurnCfg();        // 🪑 기구물 전역 등급/가격(config/furniture) 구독 — 개발자 '기구물 관리'에서 설정, 모든 사용자 반영
         loadWallCfg(); loadFloorCfg();   // 🧱 벽지(config/wallpaper)·바닥 스킨(config/floor) 전역 등급/가격 구독
+        try{ const _rm=window.matchMedia('(prefers-reduced-motion: reduce)'); (_rm.addEventListener?_rm.addEventListener.bind(_rm,'change'):_rm.addListener.bind(_rm))(function(){ refreshRbStatic(); invalidateSceneCaches(); if(typeof rerender==='function') rerender(); }); }catch(e){}   // OS 모션축소 토글 시 무지개 정적화 즉시 반영(1회 부착)
+        try{ setTimeout(maybeSuggestLite, 4000); }catch(e){}   // 🔋 저사양 기기면 1회만 가벼운 모드 안내(사용자 선택)
       }
       loadBroadcasts();     // 📣 전체 선물(config/broadcast) 구독 — 유저별 수령이라 로그인마다 재구독(off 후 on)
       loadMyAdminGifts();   // 🎁 내게 온 특정-유저 선물(users/{uid}/adminGifts) — uid별이라 이전 ref off 후 재구독
       applyLiteMode();  // 🔋 저장된 가벼운 모드(body.lite) 반영
       refreshRbStatic();   // 🌈🔋 무지개 SMIL 정적화 여부 초기 평가(저사양·모션축소)
-      try{ const _rm=window.matchMedia('(prefers-reduced-motion: reduce)'); (_rm.addEventListener?_rm.addEventListener.bind(_rm,'change'):_rm.addListener.bind(_rm))(function(){ refreshRbStatic(); invalidateSceneCaches(); if(typeof rerender==='function') rerender(); }); }catch(e){}   // OS 모션축소 토글 시 무지개 정적화 즉시 반영
       startCatLoop();   // 통합 걷기 엔진(단일 rAF, 보이는 무대만 애니메이션)
       // 앱을 켜둔 동안에도 그릇 3시간 만료→똥 정산이 돌도록 주기 점검(다마고치)
       if(state._petTimer) clearInterval(state._petTimer);
@@ -4966,7 +4967,7 @@
         else el='<span class="pk-flower pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+flowerSvg(['r','y','p'][Math.floor(pkRand(i,56)*3)],{h:S(7+r*3)})+'</span>';
         farline+=el; }
       // 🌳 가까운 나무 5그루 — 중앙(아이콘 40~60%) 회피: 좌 2·우 2 + 우측 앞 1(프레이밍). 크기 1.5배·뒤쪽만·z<펫.
-      const TL=[8,22,34,72,90], TD=[0.5,0.64,0.44,0.3,0.58];
+      const TL=[10,30,50,70,90], TD=[0.46,0.7,0.8,0.7,0.46];
       let trees=''; for(let i=0;i<5;i++){ const d=TD[i], l=(TL[i]+(pkRand(i,12)-0.5)*5).toFixed(1),
         sc=1-d*0.5, bot=(d*70).toFixed(1), z=Math.round(2+(1-d)*2), pine=pkRand(i,13)<0.45;
         const inner = pine ? '<span class="pk-canopy">'+pineSvg({h:S(Math.max(16,Math.round(69*sc)))})+'</span>'
@@ -4977,11 +4978,11 @@
       let flowers=''; for(let i=0;i<16;i++){ const d=pkRand(i,21)*0.6, l=(5+(i+0.5)/16*90+(pkRand(i,22)-0.5)*3.5).toFixed(1),
         sc=1-d*0.5, bot=(d*76).toFixed(1), tn=['r','y','p'][Math.floor(pkRand(i,23)*3)];
         flowers+='<span class="pk-flower" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+flowerSvg(tn,{h:S(Math.max(9,Math.round(16*sc)))})+'</span>'; }
-      let tufts=''; for(let i=0;i<pkCount(18);i++){ const d=pkRand(i,31)*0.85, l=(2+pkRand(i,32)*96).toFixed(1),
+      const NTf=pkCount(18); let tufts=''; for(let i=0;i<NTf;i++){ const d=pkRand(i,31)*0.85, l=(2+(i+0.5)/NTf*94+(pkRand(i,32)-0.5)*3.5).toFixed(1),
         sc=1-d*0.5, bot=(d*80).toFixed(1);
         tufts+='<span class="pk-tuft" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+tuftSvg({h:S(Math.max(7,Math.round(12*sc)))})+'</span>'; }
       // 🟫 흙: 9군데 군데군데(원근)
-      let soil=''; for(let i=0;i<9;i++){ const d=pkRand(i,41)*0.7, l=(3+pkRand(i,42)*90).toFixed(1),
+      let soil=''; for(let i=0;i<9;i++){ const d=pkRand(i,41)*0.7, l=(3+(i+0.5)/9*90+(pkRand(i,42)-0.5)*4).toFixed(1),
         sc=1-d*0.45, bot=(d*72).toFixed(1), w=S(Math.round((10+pkRand(i,43)*16)*sc));
         soil+='<span class="pk-soil" style="left:'+l+'%;bottom:'+bot+'%;width:'+w+'px"></span>'; }
       // 🪨 원근 큐 — 징검다리 길 + 낮은 울타리(둘 다 필드=펫 뒤라 안 가림). 발밑 깊이선(bottom%=depth*53)에 맞춰 크기=펫과 같은 depthScale → 펫이 뒤로 가면 작은 돌·울타리 옆에 서서 깊이가 읽힘.
@@ -5039,17 +5040,17 @@
         else if(k<0.68) farline+='<span class="pk-tuft pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+tuftSvg({h:S(Math.round(6+r*3))})+'</span>';
         else farline+='<span class="pk-flower pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+flowerSvg(FF[Math.floor(pkRand(i,56)*3)],{h:S(Math.round(7+r*3))})+'</span>'; }
       // 🍁 가까운 단풍나무 5그루 — 중앙(아이콘)·우측(연못) 회피: 좌측 4 + 우측 먼 1(작게)
-      const TL=[7,17,28,37,90], TD=[0.5,0.64,0.44,0.72,0.72];
+      const TL=[10,30,50,72,90], TD=[0.46,0.7,0.8,0.74,0.62];
       let trees=''; for(let i=0;i<5;i++){ const d=TD[i], l=(TL[i]+(pkRand(i,12)-0.5)*5).toFixed(1),
         sc=1-d*0.5, bot=(d*70).toFixed(1), z=Math.round(2+(1-d)*2);
         trees+='<span class="pk-tree" style="left:'+l+'%;bottom:'+bot+'%;z-index:'+z+';--i:'+i+'"><span class="pk-canopy">'+mapleSvg({h:S(Math.max(18,Math.round(52*sc)))})+'</span><span class="pk-trunk">'+trunkSvg({h:S(Math.max(8,Math.round(24*sc)))})+'</span></span>'; }
       // 🌸 노을 꽃 14 — 연못(우측) 위엔 꽃 없게 왼쪽 절반(≈5~57%)에만 · 🌱 풀 16
-      let flowers=''; for(let i=0;i<14;i++){ const d=pkRand(i,21)*0.6, l=(5+(i+0.5)/14*52+(pkRand(i,22)-0.5)*3.5).toFixed(1), sc=1-d*0.5, bot=(d*76).toFixed(1);
+      let flowers=''; for(let i=0;i<16;i++){ const lf=5+(i+0.5)/16*90+(pkRand(i,22)-0.5)*3.5, d=(lf>60?0.44+pkRand(i,21)*0.26:pkRand(i,21)*0.55), l=lf.toFixed(1), sc=1-d*0.5, bot=(d*76).toFixed(1);
         flowers+='<span class="pk-flower" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+flowerSvg(FF[Math.floor(pkRand(i,23)*3)],{h:S(Math.max(9,Math.round(16*sc)))})+'</span>'; }
-      let tufts=''; for(let i=0;i<pkCount(16);i++){ const d=pkRand(i,31)*0.8, l=(2+pkRand(i,32)*94).toFixed(1), sc=1-d*0.5, bot=(d*80).toFixed(1);
+      const NTf=pkCount(16); let tufts=''; for(let i=0;i<NTf;i++){ const lt=2+(i+0.5)/NTf*94+(pkRand(i,32)-0.5)*3.5, d=(lt>60?0.42+pkRand(i,31)*0.38:pkRand(i,31)*0.8), l=lt.toFixed(1), sc=1-d*0.5, bot=(d*80).toFixed(1);
         tufts+='<span class="pk-tuft" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+tuftSvg({h:S(Math.max(7,Math.round(12*sc)))})+'</span>'; }
       // 🟫 흙 패치
-      let soil=''; for(let i=0;i<7;i++){ const d=pkRand(i,41)*0.7, l=(6+pkRand(i,42)*74).toFixed(1), sc=1-d*0.45, bot=(d*72).toFixed(1), w=Math.round((10+pkRand(i,43)*14)*sc*sz);
+      let soil=''; for(let i=0;i<7;i++){ const d=pkRand(i,41)*0.7, l=(6+(i+0.5)/7*50+(pkRand(i,42)-0.5)*4).toFixed(1), sc=1-d*0.45, bot=(d*72).toFixed(1), w=Math.round((10+pkRand(i,43)*14)*sc*sz);
         soil+='<span class="pk-soil" style="left:'+l+'%;bottom:'+bot+'%;width:'+w+'px"></span>'; }
       // 🪷 연못(메인 아이콘 오른쪽에 떨어뜨림) — 타원 물 + 둘레 돌 링 + 잉어 배회 + 연꽃/연잎 부유. 계곡 대체.
       // 🎏 잉어 3마리(가로): 좌·우 2마리는 오른쪽, 중앙 1마리는 왼쪽을 보며 → 오른쪽 갔다 돌아서 왼쪽(가로 핑퐁, 방향전환 시 몸 뒤집힘). ph=시작 위상(0.5≈왼쪽 바라봄)
@@ -5092,9 +5093,9 @@
       mode=mode||'banner'; if(_nightCache[mode]) return _nightCache[mode];
       const reveal=mode==='reveal', sz=reveal?1.8:1, S=function(h){ return Math.max(1,Math.round(h*sz)); };   // reveal(10뽑 전체화면)은 스프라이트 크게
       const moon='<span class="pk-moon">'+moonSvg({h:S(62)})+'</span>';   // 🌕 상단 보름달
-      let stars=''; for(let i=0;i<12;i++){ const l=(4+pkRand(i,101)*92).toFixed(1), t=(3+pkRand(i,102)*30).toFixed(1), s=Math.round(4+pkRand(i,103)*5), del=(pkRand(i,104)*3).toFixed(2);
+      let stars=''; for(let i=0;i<pkCount(12);i++){ const l=(4+pkRand(i,101)*92).toFixed(1), t=(3+pkRand(i,102)*30).toFixed(1), s=Math.round(4+pkRand(i,103)*5), del=(pkRand(i,104)*3).toFixed(2);
         stars+='<span class="pk-star" style="left:'+l+'%;top:'+t+'%;animation-delay:'+del+'s">'+nightStarSvg({h:S(s)})+'</span>'; }
-      let clouds=''; const NC=['mw','mb','md']; for(let i=0;i<11;i++){ const y=(3+pkRand(i,111)*30).toFixed(1), hh=Math.round(11+pkRand(i,112)*15), w=Math.floor(pkRand(i,113)*3), tn=NC[Math.floor(pkRand(i,114)*3)], dur=(34+pkRand(i,115)*44).toFixed(1);
+      let clouds=''; const NC=['mw','mb','md']; for(let i=0;i<pkCount(11);i++){ const y=(3+pkRand(i,111)*30).toFixed(1), hh=Math.round(11+pkRand(i,112)*15), w=Math.floor(pkRand(i,113)*3), tn=NC[Math.floor(pkRand(i,114)*3)], dur=(34+pkRand(i,115)*44).toFixed(1);
         clouds+='<span class="pk-cloud" style="top:'+y+'%;--d:'+dur+'s;--i:'+i+'">'+moonCloudSvg(w,tn,{h:S(hh)})+'</span>'; }
       const NF=['a','b','c']; let farline='';
       for(let i=0;i<20;i++){ const l=((i+0.5)/20*100).toFixed(1), bot=(-1-pkRand(i,121)*3).toFixed(1), k=pkRand(i,122), r=pkRand(i,123);
@@ -5102,16 +5103,16 @@
         else if(k<0.66) farline+='<span class="pk-tuft pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+nightTuftSvg({h:S(Math.round(6+r*3))})+'</span>';
         else farline+='<span class="pk-flower pk-far" style="left:'+l+'%;bottom:'+bot+'px;--i:'+i+'">'+nightFlowerSvg(NF[Math.floor(pkRand(i,124)*3)],{h:S(Math.round(7+r*3))})+'</span>'; }
       // 🌲 가까운 나무 5그루 — 중앙(아이콘) 회피: 좌 2·우 2 + 우측 앞 1
-      const TL=[8,22,34,68,90], TD=[0.5,0.64,0.44,0.3,0.58];
+      const TL=[10,30,50,70,90], TD=[0.46,0.7,0.8,0.7,0.46];
       let trees=''; for(let i=0;i<5;i++){ const d=TD[i], l=(TL[i]+(pkRand(i,132)-0.5)*5).toFixed(1),
         sc=1-d*0.5, bot=(d*70).toFixed(1), z=Math.round(2+(1-d)*2);
         const canopy=(i%2?nightPineSvg({h:S(Math.max(18,Math.round(50*sc)))}):nightTreeSvg({h:S(Math.max(18,Math.round(50*sc)))}));
         trees+='<span class="pk-tree" style="left:'+l+'%;bottom:'+bot+'%;z-index:'+z+';--i:'+i+'"><span class="pk-canopy">'+canopy+'</span><span class="pk-trunk">'+pxSvg(M_TRUNK, TREE_NIGHT, {h:S(Math.max(8,Math.round(22*sc)))})+'</span></span>'; }
       let flowers=''; for(let i=0;i<16;i++){ const d=pkRand(i,141)*0.6, l=(5+(i+0.5)/16*88+(pkRand(i,142)-0.5)*3.5).toFixed(1), sc=1-d*0.5, bot=(d*76).toFixed(1);
         flowers+='<span class="pk-flower pk-nflower" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+nightFlowerSvg(NF[Math.floor(pkRand(i,143)*3)],{h:S(Math.max(9,Math.round(16*sc)))})+'</span>'; }
-      let tufts=''; for(let i=0;i<16;i++){ const d=pkRand(i,151)*0.8, l=(2+pkRand(i,152)*94).toFixed(1), sc=1-d*0.5, bot=(d*80).toFixed(1);
+      const NTf=pkCount(16); let tufts=''; for(let i=0;i<NTf;i++){ const d=pkRand(i,151)*0.8, l=(2+(i+0.5)/NTf*94+(pkRand(i,152)-0.5)*3.5).toFixed(1), sc=1-d*0.5, bot=(d*80).toFixed(1);
         tufts+='<span class="pk-tuft" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+nightTuftSvg({h:S(Math.max(7,Math.round(12*sc)))})+'</span>'; }
-      let soil=''; for(let i=0;i<7;i++){ const d=pkRand(i,161)*0.7, l=(6+pkRand(i,162)*74).toFixed(1), sc=1-d*0.45, bot=(d*72).toFixed(1), w=Math.round((10+pkRand(i,163)*14)*sc*sz);
+      let soil=''; for(let i=0;i<7;i++){ const d=pkRand(i,161)*0.7, l=(6+(i+0.5)/7*80+(pkRand(i,162)-0.5)*4).toFixed(1), sc=1-d*0.45, bot=(d*72).toFixed(1), w=Math.round((10+pkRand(i,163)*14)*sc*sz);
         soil+='<span class="pk-soil" style="left:'+l+'%;bottom:'+bot+'%;width:'+w+'px"></span>'; }
       let stones=''; for(let i=0;i<6;i++){ const d=pkRand(i,171)*0.6, l=(10+pkRand(i,172)*80).toFixed(1), sc=1-d*0.4, bot=(d*66).toFixed(1);
         stones+='<span class="pk-stone" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+nightStoneSvg({h:S(Math.max(6,Math.round(11*sc)))})+'</span>'; }
