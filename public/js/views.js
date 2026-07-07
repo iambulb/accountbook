@@ -931,7 +931,13 @@
         ? '<button class="tdue tap '+cls+'" onclick="event.stopPropagation();openTodoReschedule(\''+t.id+'\')" aria-label="날짜 옮기기">'+txt+'</button>'
         : '<span class="tdue '+cls+'">'+txt+'</span>'; }
     function todoRow(t, ro){
-      const who=(t.assignedUid||t.assignedName)?'<span class="tdwho">'+(t.assignedUid?avatarHtml(t.assignedUid,t.assignedName||'',20):'<span class="tdname">'+escapeHtml(t.assignedName)+'</span>')+'</span>':'';
+      // 담당자 표시: 현재 멤버면 최신 이름(개명 반영)+아바타, 탈퇴 등 미상이면 저장된 이름 텍스트(uid 노출 방지)
+      const _tmem=(state.wsMeta&&state.wsMeta.members)||{}, _isMem=t.assignedUid&&_tmem[t.assignedUid];
+      const _anm=_isMem?(_tmem[t.assignedUid].name||''):(t.assignedName||'');
+      const who=_isMem?('<span class="tdwho">'+avatarHtml(t.assignedUid,_anm,20)+'</span>')
+        :(_anm?('<span class="tdwho"><span class="tdname">'+escapeHtml(_anm)+'</span></span>'):'');
+      const _rep=t.repeat&&t.repeat!=='none'; const _dc=Number(t.doneCount)||0;
+      const repPill=_rep?(' <span class="pill">🔁'+(_dc>0?' '+_dc+'회':'')+'</span>'):'';   // 반복 완료 횟수(있으면) — 반복 완료 이력 가시화
       const chkSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>';
       const chk=ro
         ? '<span class="tdchk'+(t.done?' on':'')+'" aria-hidden="true">'+chkSvg+'</span>'
@@ -940,7 +946,7 @@
         ? '<span class="tdtitle'+(t.done?' done':'')+'">'
         : '<span class="tdtitle'+(t.done?' done':'')+'" onclick="openTodoEdit(\''+t.id+'\')">';
       return '<div class="tdrow">'+chk+
-        titleTag+escapeHtml(t.title||'')+(t.repeat&&t.repeat!=='none'?' <span class="pill">🔁</span>':'')+(t.purposeBookId?' <span class="pill">📍</span>':'')+'</span>'+
+        titleTag+escapeHtml(t.title||'')+repPill+(t.purposeBookId?' <span class="pill">📍</span>':'')+'</span>'+
         todoDueBadge(t, ro)+who+'</div>';
     }
     function renderTodoList(){
@@ -999,7 +1005,7 @@
       const ref=todoDbRef(t);
       const firstReward=!t.rewardClaimed;   // 할일당 은화 1회(멱등)
       if(!t.done && t.repeat && t.repeat!=='none' && t.dueDate){
-        const upd={ dueDate:nextDue(t.dueDate,t.repeat), doneByUid:(state.uid||''), lastDoneAt:now, updatedAt:now };
+        const upd={ dueDate:nextDue(t.dueDate,t.repeat), doneByUid:(state.uid||''), lastDoneAt:now, doneCount:(Number(t.doneCount)||0)+1, updatedAt:now };   // 반복 완료 횟수 누적(완료 이력·리포트 반영)
         if(firstReward) upd.rewardClaimed=true;
         ref.update(upd);
         const nxt='다음 '+(t.repeat==='weekly'?'주':'일')+'로 넘겼어요';
@@ -1051,7 +1057,7 @@
       const pbs=(state.purposeBooks||[]).filter(p=>(p.status||'active')!=='archived');
       let h='<input type="hidden" id="tdScope" value="'+scope+'">';
       h+='<div class="field"><label>할 일</label><input class="input" id="tdTitle" value="'+escapeHtml(t?(t.title||''):'')+'" placeholder="예: 장보기, 항공권 예약"></div>';
-      if(scope==='group') h+='<div class="form-2"><div class="field"><label>담당자</label><select class="input" id="tdAssign">'+ownerOptions(asel)+'</select></div>'+
+      if(scope==='group') h+='<div class="form-2"><div class="field"><label>담당자</label><select class="input" id="tdAssign">'+ownerOptions(asel, t?(t.assignedName||''):'')+'</select></div>'+
         '<div class="field"><label>마감일</label><input type="date" class="input" id="tdDue" value="'+defDue+'"></div></div>';
       else h+='<div class="field"><label>마감일</label><input type="date" class="input" id="tdDue" value="'+defDue+'"></div>';
       var repOpts=[['none','반복 없음'],['weekly','매주'],['monthly','매월']]; if(rep==='daily') repOpts.splice(1,0,['daily','매일(기존)']);   // 매일은 신규 제외(습관=내 미션), 레거시 값은 보존
@@ -1065,6 +1071,8 @@
     }
     function saveTodo(id){
       const title=val('tdTitle').trim(); if(!title){ toast('할 일을 입력하세요', true); return; }
+      const _rep=($('tdRepeat')?val('tdRepeat'):'none')||'none';
+      if(_rep!=='none' && !(val('tdDue')||'')){ toast('반복 할일은 마감일이 필요해요', true); return; }   // 마감일 없으면 반복이 안 돌던 버그 방지 — 반복 시 마감일 강제
       const t=id?allTodos().find(x=>x.id===id):null; const now=new Date().toISOString();
       const scope=($('tdScope')?val('tdScope'):(t?todoScope(t):'group'))==='personal'?'personal':'group';
       const asel=$('tdAssign')?val('tdAssign'):'공동'; const mem=(state.wsMeta&&state.wsMeta.members)||{};
@@ -1105,7 +1113,8 @@
       h+='<div class="sech"><span class="l">구성</span></div><div class="card" style="padding:4px 12px;">'+
         '<div class="tdrow"><span class="tdtitle">개인</span>'+todoDoneChip(p)+'</div>'+
         (isPersonalWs()?'':'<div class="tdrow"><span class="tdtitle">그룹</span>'+todoDoneChip(g)+'</div>')+'</div>';   // 개인 프로필엔 그룹 행(0/0) 숨김
-      const byMem={}; all.forEach(t=>{ if(t.done && t.doneByUid) byMem[t.doneByUid]=(byMem[t.doneByUid]||0)+1; });
+      const byMem={}; all.forEach(t=>{ if(t.done && t.doneByUid) byMem[t.doneByUid]=(byMem[t.doneByUid]||0)+1;
+        else if((Number(t.doneCount)||0)>0 && t.doneByUid) byMem[t.doneByUid]=(byMem[t.doneByUid]||0)+(Number(t.doneCount)||0); });   // 반복 할일 완료도 집계(이전엔 done만 세어 반복은 리포트에 안 잡힘)
       const uids=Object.keys(byMem).sort((a,b)=>byMem[b]-byMem[a]);
       if(uids.length){ h+='<div class="sech"><span class="l">완료 기여</span></div><div class="card" style="padding:4px 12px;">'+
         uids.map(function(u){ const nm=(u===state.uid)?(state.userName||'나'):((mem[u]&&mem[u].name)||'멤버'); return '<div class="tdrow"><span class="tdwho">'+avatarHtml(u,nm,22)+'</span><span class="tdtitle">'+escapeHtml(nm)+'</span><span class="tdue">'+byMem[u]+'개</span></div>'; }).join('')+'</div>'; }

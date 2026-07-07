@@ -685,11 +685,12 @@
       return sel; }                                          // 레거시 이름/미상은 그대로
     function defaultOwnerUid(){ const s=state.wsSettings&&state.wsSettings.defaultOwner; if(s==='me') return state.uid; if(s==='common') return '공동'; return isGroupWs()?'공동':state.uid; }
     // 소비 대상 옵션: 값=멤버 uid(표시=이름) + 공동. selected는 uid|'공동'|레거시 이름(옵션으로 보존).
-    function ownerOptions(selected){
+    function ownerOptions(selected, fallbackLabel){
       const m=(state.wsMeta&&state.wsMeta.members)||{}, uids=Object.keys(m);
       let h=uids.map(u=>'<option value="'+u+'"'+(u===selected?' selected':'')+'>'+escapeHtml(m[u].name||'멤버')+'</option>').join('');
       h+='<option value="공동"'+(selected==='공동'?' selected':'')+'>공동</option>';
-      if(selected && selected!=='공동' && !uids.includes(selected)) h+='<option value="'+escapeHtml(selected)+'" selected>'+escapeHtml(selected)+'</option>';
+      // 미상 선택값(탈퇴 멤버 uid·레거시 이름): 이름 라벨(fallbackLabel)이 있으면 값·표시를 이름으로 — uid 노출·재저장 방지
+      if(selected && selected!=='공동' && !uids.includes(selected)){ const fl=fallbackLabel||selected; h+='<option value="'+escapeHtml(fl)+'" selected>'+escapeHtml(fl)+'</option>'; }
       return h;
     }
     // ===== 공동 설정(권한/기본값) =====
