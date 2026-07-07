@@ -4519,24 +4519,31 @@
     function pedestalSvg(opt){ return pxSvg(M_PEDESTAL, PEDESTAL_PAL, opt); }
     // 🌈 배너 알 공용 무지개 연출 — 무지개 오오라+광선(lightLayers rainbow) + 무지개 트윙클. 뜰알·펫알·랜덤박스 센터 공용.
     function gbRainbowFx(){ return '<span class="gb-rbaura">'+lightLayers({aura:98,rays:118,rainbow:true})+'</span>'+fxAuraTwinkles(9,true); }
-    // 🏆 한정 픽업 펫 스포트라이트 — 픽업 펫(삵·표범)을 큰 정면 초상 + 받침대 + 도트 무지개 후광 + 이름·별 배지로 전시(전용 .gb-ddeul 배너에서만).
-    // 🏆 상단 한정 픽업 쇼케이스 — 큰 픽업 펫 초상(받침대·후광·이름·별) 양쪽 + 가운데 "한정 픽업" 텍스트. 배너 씬 위(헤더 자리)에 얹는다.
+    // ⏳ 이번 주(월~일) 일요일까지 남은 일수(KST, 일=0) — 픽업 기간 표기용(표시만). kstDayKey와 동일하게 +9h 후 UTC 요일 사용.
+    function ddeulPickupUntilText(){ const d=new Date(Date.now()+9*3600000); const left=(7-d.getUTCDay())%7; return left===0?'오늘(일) 마감':('일요일까지 · '+left+'일 남음'); }
+    // 🏆 상단 한정 픽업 쇼케이스 — 큰 픽업 펫 초상(무지개 카드+받침대+조명빔+후광+별+등급) 양쪽 + 가운데 "한정 픽업"·확률UP·기간.
     function ddeulPickupShowcase(){
       const pets=LIMITED_PICKUP.filter(pickupExists);
       const spot=(id)=> id ? '<div class="gb-spot">'+
-          '<span class="gb-spot-fx">'+lightLayers({aura:104, rays:82, rainbow:true})+fxAuraTwinkles(4,true)+'</span>'+
+          '<span class="gb-spot-beam"></span>'+                                                       // 🔦 무대 조명 빔(위→아래)
+          '<span class="gb-spot-fx">'+lightLayers({aura:82, rays:56, rainbow:true})+fxAuraTwinkles(4,true)+'</span>'+   // 도트 무지개 후광+트윙클
           '<span class="gb-spot-badge">'+starSvg({h:14})+'</span>'+
-          '<span class="gb-spot-face">'+catFace(id,{h:66,eager:true})+'</span>'+
-          '<span class="gb-spot-ped">'+pedestalSvg({h:19})+'</span>'+
+          '<div class="gb-spot-card"><span class="gb-spot-face">'+catFace(id,{h:60,eager:true})+'</span><span class="gb-spot-ped">'+pedestalSvg({h:16})+'</span></div>'+   // 무지개 카드 안 초상+받침대
           '<span class="gb-spot-name">'+catNameSpan(id,catName(id))+'</span>'+
+          '<span class="gb-spot-tier">'+tierLabelHtml(CAT_TIER[id]||'exclusive')+'</span>'+            // 등급 라벨(한정=무지개)
         '</div>' : '<div class="gb-spot gb-spot-empty"></div>';
       return '<div class="gb-ddeul-top">'+spot(pets[0])+
-        '<div class="gb-ddeul-title"><span class="pk-title tier-rainbow">✨ 이 펫만!<br>한정 픽업</span><span class="gb-ddeul-sub tagmini tier-rainbow">한정 0.5% 픽업</span></div>'+
+        '<div class="gb-ddeul-title">'+
+          '<span class="pk-title tier-rainbow">✨ 이 펫만!<br>한정 픽업</span>'+
+          '<span class="gb-ddeul-up">확률 <b>UP</b> <span class="gb-uparr">▲</span></span>'+
+          '<span class="gb-ddeul-sub tagmini tier-rainbow">한정 0.5% 픽업</span>'+
+          '<span class="gb-ddeul-until">⏳ '+ddeulPickupUntilText()+'</span>'+
+        '</div>'+
         spot(pets[1])+'</div>';
     }
-    // 🌱 뜰알 배너 = 상단 한정 픽업 쇼케이스(양쪽 큰 초상 + 가운데 텍스트) + 배회 픽업 펫이 도는 씬 + 알뜰 아이콘 센터.
+    // 🌱 뜰알 배너 = 코너 리본 + 상단 한정 픽업 쇼케이스(양쪽 큰 초상 + 가운데 텍스트) + 배회 픽업 펫이 도는 씬 + 알뜰 아이콘 센터.
     function ddeulBannerHtml(){
-      return '<div class="gbanner gb-ddeul">'+
+      return '<div class="gbanner gb-ddeul"><span class="gb-ddeul-ribbon">LIMITED</span>'+
         ddeulPickupShowcase()+
         '<div class="gb-scene">'+pickupSceneHtml('banner')+gbCenterHtml(eggGardenSvg(EGG_DEFAULT,{h:52}), gbRainbowFx(), 'gb-rb gb-eglow')+'</div>'+
         // 🌱 배너 이미지 아래 — 뜰알 이미지·설명·소모재화(한정 강조)
@@ -5128,7 +5135,7 @@
         del=(-pkRand(i,203)*10).toFixed(2), sw=(2.4+pkRand(i,204)*1.6).toFixed(1), hh=Math.round(9+pkRand(i,205)*5), dir=(pkRand(i,206)<0.5?-1:1);
         leaves+='<span class="pk-fallleaf" style="left:'+l+'%;--d:'+dur+'s;--sw:'+sw+'s;--dir:'+dir+';animation-delay:'+del+'s;"><span class="fl-in">'+mapleLeafSvg({h:S(hh)}, LEAF_COLS[Math.floor(pkRand(i,207)*LEAF_COLS.length)])+'</span></span>'; }
       // ☀️ 배너에서만: 지는 해가 산 뒤에서 위로 스르르 떠올라 유지(빛나는 후광). reveal(10연차)은 ten-skysun이 별도 담당이라 씬엔 안 넣음(중복 방지).
-      const risesun = reveal ? '' : '<span class="pk-risesun">'+sunSvg({h:64})+'</span>';
+      const risesun = '<span class="pk-risesun">'+sunSvg({h:S(64)})+'</span>';   // 배너·10연차 reveal 공용(산 뒤에서 떠오름)
       _sunsetCache[mode]='<div class="pkscene pk-sunset'+(reveal?' pk-reveal':'')+'" aria-hidden="true">'+
         '<div class="pk-sky">'+risesun+clouds+'</div>'+
         '<div class="pk-horizon">'+hills+farline+'</div>'+
@@ -5174,13 +5181,14 @@
       let hills=''; const HX=[18,50,82], HH=[26,24,28]; for(let i=0;i<3;i++){
         hills+='<span class="pk-hill" style="left:'+HX[i]+'%;bottom:-2px;z-index:0;">'+hillSvg(HILL_NIGHT,{h:S(HH[i])})+'</span>'; }
       // 🌠 별똥별(무지개 코멧) — 배너에서만 계속. 랜덤으로 절반은 앞(전체화면 좌상단끝→우하단끝), 절반은 뒤(멀리 산 뒤쪽 좌상단만 짧게, 하늘밴드 안·산에 가림). reveal은 tenSkyShoot(단발) 담당.
-      let shootFront='', shootBehind=''; if(!reveal){ for(let i=0;i<6;i++){
+      // 배너·10연차 reveal 공용. reveal은 전체화면이라 sz배율로 크게·멀리(전체 대각선 커버).
+      let shootFront='', shootBehind=''; for(let i=0;i<6;i++){
         const behind=pkRand(i,197)<0.5, top=(0+pkRand(i,190)*(behind?10:12)).toFixed(1), left=(-8+pkRand(i,191)*(behind?12:8)).toFixed(1),
           dur=(6.5+pkRand(i,192)*3.5).toFixed(1), del=(i*1.3+pkRand(i,193)*1.1).toFixed(2);
-        if(behind){ const sz=Math.round(15+pkRand(i,194)*8), tx=Math.round(80+pkRand(i,195)*90), ty=Math.round(45+pkRand(i,196)*55);   // 멀리·작게·짧게(산 뒤 좌상단)
-          shootBehind+='<span class="pk-shoot pk-shoot-far" style="top:'+top+'%;left:'+left+'%;--d:'+dur+'s;--tx:'+tx+'px;--ty:'+ty+'px;animation-delay:'+del+'s;">'+shootStarSvg({h:sz})+'</span>';
-        } else { const sz=Math.round(26+pkRand(i,194)*16), tx=Math.round(340+pkRand(i,195)*150), ty=Math.round(220+pkRand(i,196)*110);   // 전체화면 대각선 코너까지
-          shootFront+='<span class="pk-shoot" style="top:'+top+'%;left:'+left+'%;--d:'+dur+'s;--tx:'+tx+'px;--ty:'+ty+'px;animation-delay:'+del+'s;">'+shootStarSvg({h:sz})+'</span>'; } } }
+        if(behind){ const hh=S(Math.round(15+pkRand(i,194)*8)), tx=Math.round((80+pkRand(i,195)*90)*sz), ty=Math.round((45+pkRand(i,196)*55)*sz);   // 멀리·작게·짧게(산 뒤 좌상단) — tx/ty는 씬 배율 sz로 확대
+          shootBehind+='<span class="pk-shoot pk-shoot-far" style="top:'+top+'%;left:'+left+'%;--d:'+dur+'s;--tx:'+tx+'px;--ty:'+ty+'px;animation-delay:'+del+'s;">'+shootStarSvg({h:hh})+'</span>';
+        } else { const hh=S(Math.round(26+pkRand(i,194)*16)), tx=Math.round((340+pkRand(i,195)*150)*sz), ty=Math.round((220+pkRand(i,196)*110)*sz);   // 전체화면 대각선 코너까지
+          shootFront+='<span class="pk-shoot" style="top:'+top+'%;left:'+left+'%;--d:'+dur+'s;--tx:'+tx+'px;--ty:'+ty+'px;animation-delay:'+del+'s;">'+shootStarSvg({h:hh})+'</span>'; } }
       _nightCache[mode]='<div class="pkscene pk-night'+(reveal?' pk-reveal':'')+'" aria-hidden="true">'+
         '<div class="pk-sky">'+moon+stars+clouds+shootBehind+'</div>'+
         '<div class="pk-horizon">'+hills+farline+'</div>'+
@@ -6528,7 +6536,8 @@
       const el=document.createElement('span'); el.className='ten-skyshoot'; el.innerHTML=shootStarSvg({h:82}); wrap.appendChild(el); }
     // 하늘 연출 라우터(테마별): sunset=해 떠오름 · night=무지개 별똥별 · 그 외(뜰알 meadow)=무지개.
     function tenSkyFx(wrap){ if(!_fx10) return; const th=_fx10.theme;
-      if(th==='sunset') tenSkyRiseSun(wrap); else if(th==='night') tenSkyShoot(wrap); else tenSkyRainbow(wrap); }
+      // 🌇 sunset·🌙 night 은 이제 씬(sunsetSceneHtml/nightSceneHtml reveal)에 pk-risesun·pk-shoot이 상시 들어가므로 탭 연출은 무지개(뜰알)만.
+      if(th!=='sunset' && th!=='night') tenSkyRainbow(wrap); }
     // 🌿 하단 초원 채우기 — 세로 긴 화면의 빈 초록을 꽃·풀·나무·나비로. pkRand로 결정적 배치.
     function tenMeadowHtml(){
       const lite=liteMode(); const FT=['r','y','p'], BT=['o','b','p','y']; let h='';   // 초록 공백 채우기 — 필드(bottom 0~56%, sky seam 60% 밑) 전반에 촘촘히(꽃·풀·돌·흙)
