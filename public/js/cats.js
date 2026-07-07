@@ -4520,32 +4520,29 @@
     // 🌈 배너 알 공용 무지개 연출 — 무지개 오오라+광선(lightLayers rainbow) + 무지개 트윙클. 뜰알·펫알·랜덤박스 센터 공용.
     function gbRainbowFx(){ return '<span class="gb-rbaura">'+lightLayers({aura:98,rays:118,rainbow:true})+'</span>'+fxAuraTwinkles(9,true); }
     // 🏆 한정 픽업 펫 스포트라이트 — 픽업 펫(삵·표범)을 큰 정면 초상 + 받침대 + 도트 무지개 후광 + 이름·별 배지로 전시(전용 .gb-ddeul 배너에서만).
+    // 🏆 상단 한정 픽업 쇼케이스 — 큰 픽업 펫 초상(받침대·후광·이름·별) 양쪽 + 가운데 "한정 픽업" 텍스트. 배너 씬 위(헤더 자리)에 얹는다.
     function ddeulPickupShowcase(){
-      const pets=LIMITED_PICKUP.filter(pickupExists).slice(0,2);
-      if(!pets.length) return '';
-      const pos=['left:5%','right:5%'];
-      return '<div class="gb-showcase" aria-hidden="true">'+pets.map(function(id,i){
-        return '<div class="gb-spot" style="'+(pos[i]||'left:50%;margin-left:-34px')+'">'+
-          '<span class="gb-spot-fx">'+lightLayers({aura:92, rays:72, rainbow:true})+fxAuraTwinkles(4,true)+'</span>'+
-          '<span class="gb-spot-badge">'+starSvg({h:13})+'</span>'+
-          '<span class="gb-spot-face">'+catFace(id,{h:54,eager:true})+'</span>'+
-          '<span class="gb-spot-ped">'+pedestalSvg({h:15})+'</span>'+
+      const pets=LIMITED_PICKUP.filter(pickupExists);
+      const spot=(id)=> id ? '<div class="gb-spot">'+
+          '<span class="gb-spot-fx">'+lightLayers({aura:104, rays:82, rainbow:true})+fxAuraTwinkles(4,true)+'</span>'+
+          '<span class="gb-spot-badge">'+starSvg({h:14})+'</span>'+
+          '<span class="gb-spot-face">'+catFace(id,{h:66,eager:true})+'</span>'+
+          '<span class="gb-spot-ped">'+pedestalSvg({h:19})+'</span>'+
           '<span class="gb-spot-name">'+catNameSpan(id,catName(id))+'</span>'+
-        '</div>';
-      }).join('')+'</div>';
+        '</div>' : '<div class="gb-spot gb-spot-empty"></div>';
+      return '<div class="gb-ddeul-top">'+spot(pets[0])+
+        '<div class="gb-ddeul-title"><span class="pk-title tier-rainbow">✨ 이 펫만!<br>한정 픽업</span><span class="gb-ddeul-sub tagmini tier-rainbow">한정 0.5% 픽업</span></div>'+
+        spot(pets[1])+'</div>';
     }
-    // 🌱 뜰알 배너 = 한정 픽업 전용 프리미엄 쇼케이스(전용 프레임·헤더 + 픽업 펫 초상 스포트라이트 + 알뜰 아이콘 센터). 배회 픽업 펫은 .gb-ddeul에서 숨겨 스포트라이트로 대체.
+    // 🌱 뜰알 배너 = 상단 한정 픽업 쇼케이스(양쪽 큰 초상 + 가운데 텍스트) + 배회 픽업 펫이 도는 씬 + 알뜰 아이콘 센터.
     function ddeulBannerHtml(){
-      const p1=LIMITED_PICKUP[0], p2=LIMITED_PICKUP[1];
-      const tag=(id)=> pickupExists(id) ? '<span class="pk-tag">'+catNameSpan(id,catName(id))+'</span>' : '';
-      const sep=(pickupExists(p1)&&pickupExists(p2))?'<span class="pk-tag" style="opacity:.5;">·</span>':'';
-      const pk=LIMITED_PICKUP.filter(pickupExists).map(id=>catNameSpan(id,catName(id))).join('·');
-      return '<div class="gbanner gb-ddeul"><div class="gb-head gb-ddeul-head"><span class="gb-hcrown">'+crownSvg({h:14})+'</span><span class="pk-title tier-rainbow">✨ 이 펫만! 한정 픽업</span>'+tag(p1)+sep+tag(p2)+'</div>'+
-        '<div class="gb-scene">'+pickupSceneHtml('banner')+ddeulPickupShowcase()+gbCenterHtml('<span class="gb-ecrown">'+crownSvg({h:14})+'</span>'+eggGardenSvg(EGG_DEFAULT,{h:46}), gbRainbowFx(), 'gb-rb gb-eglow gb-ddeul-c')+'</div>'+
+      return '<div class="gbanner gb-ddeul">'+
+        ddeulPickupShowcase()+
+        '<div class="gb-scene">'+pickupSceneHtml('banner')+gbCenterHtml(eggGardenSvg(EGG_DEFAULT,{h:52}), gbRainbowFx(), 'gb-rb gb-eglow')+'</div>'+
         // 🌱 배너 이미지 아래 — 뜰알 이미지·설명·소모재화(한정 강조)
         '<div class="gb-item gb-ddeul-item"><div class="gb-item-ic">'+ddeulEggSvg({h:52})+'</div>'+
           '<div class="gb-item-meta"><b class="tier-rainbow">뜰알 <span class="tagmini tier-rainbow">한정 픽업</span></b>'+
-          '<div class="gb-item-desc">'+(pk?'<b class="tier-rainbow">'+pk+'</b> · ':'')+'한정 펫은 <b class="tier-rainbow">오직 뜰알에서만</b> · 한정 0.5% 픽업!</div>'+
+          '<div class="gb-item-desc">한정 펫은 <b class="tier-rainbow">오직 뜰알에서만</b> · 한정 0.5% 픽업!</div>'+
           '<div class="gb-item-cost">1뽑당 소모 '+gachaCostHtml(DDEUL_PRICE,DDEUL_GOLD,1)+'</div></div></div>'+
         gbPullActions('ddeul', DDEUL_PRICE, DDEUL_GOLD, null, 'ddeul')+gbPityHtml('ddeul')+'</div>';
     }
@@ -5130,9 +5127,10 @@
       let leaves=''; const LN=7; for(let i=0;i<LN;i++){ const l=(6+pkRand(i,201)*88).toFixed(1), dur=(7+pkRand(i,202)*6).toFixed(1),
         del=(-pkRand(i,203)*10).toFixed(2), sw=(2.4+pkRand(i,204)*1.6).toFixed(1), hh=Math.round(9+pkRand(i,205)*5), dir=(pkRand(i,206)<0.5?-1:1);
         leaves+='<span class="pk-fallleaf" style="left:'+l+'%;--d:'+dur+'s;--sw:'+sw+'s;--dir:'+dir+';animation-delay:'+del+'s;"><span class="fl-in">'+mapleLeafSvg({h:S(hh)}, LEAF_COLS[Math.floor(pkRand(i,207)*LEAF_COLS.length)])+'</span></span>'; }
-      // ☀️ 지는 해(해 디스크)는 삭제 — 배경 radial-gradient 글로우(50% 40%, 가운데 산)만 남기고, 10연차 때만 산에서 떠오르는 ten-skysun 해를 보임
+      // ☀️ 배너에서만: 지는 해가 산 뒤에서 위로 스르르 떠올라 유지(빛나는 후광). reveal(10연차)은 ten-skysun이 별도 담당이라 씬엔 안 넣음(중복 방지).
+      const risesun = reveal ? '' : '<span class="pk-risesun">'+sunSvg({h:64})+'</span>';
       _sunsetCache[mode]='<div class="pkscene pk-sunset'+(reveal?' pk-reveal':'')+'" aria-hidden="true">'+
-        '<div class="pk-sky">'+clouds+'</div>'+
+        '<div class="pk-sky">'+risesun+clouds+'</div>'+
         '<div class="pk-horizon">'+hills+farline+'</div>'+
         '<div class="pk-field"><div class="pk-grass"></div>'+soil+tufts+flowers+trees+pond+'</div>'+
         '<div class="pk-air">'+dflies+leaves+'</div>'+
@@ -5175,16 +5173,19 @@
       // ⛰️ 아이콘 뒤 빈 하늘 채우기 — 지평선 먼 언덕(짙은 청록)
       let hills=''; const HX=[18,50,82], HH=[26,24,28]; for(let i=0;i<3;i++){
         hills+='<span class="pk-hill" style="left:'+HX[i]+'%;bottom:-2px;z-index:0;">'+hillSvg(HILL_NIGHT,{h:S(HH[i])})+'</span>'; }
-      // 🌠 별똥별(무지개 코멧) — 배너에서만 시간간격으로 계속. 왼쪽 끝→오른쪽 끝으로 길게 가로지름(제각각 높이·거리·주기·딜레이). 씬 루트 레이어라 하늘밴드에 안 잘림. reveal은 tenSkyShoot(단발)이 담당.
-      let shoots=''; if(!reveal){ for(let i=0;i<5;i++){ const top=(0+pkRand(i,190)*12).toFixed(1), left=(-8+pkRand(i,191)*8).toFixed(1),
-        dur=(6.5+pkRand(i,192)*3.5).toFixed(1), del=(i*1.6+pkRand(i,193)*1.2).toFixed(2), sz=Math.round(26+pkRand(i,194)*16),
-        tx=Math.round(340+pkRand(i,195)*150), ty=Math.round(220+pkRand(i,196)*110);   // 좌측상단 끝 → 우측하단 끝(씬 대각선 전체 커버, 우/하로 넘겨 코너서 사라짐)
-        shoots+='<span class="pk-shoot" style="top:'+top+'%;left:'+left+'%;--d:'+dur+'s;--tx:'+tx+'px;--ty:'+ty+'px;animation-delay:'+del+'s;">'+shootStarSvg({h:sz})+'</span>'; } }
+      // 🌠 별똥별(무지개 코멧) — 배너에서만 계속. 랜덤으로 절반은 앞(전체화면 좌상단끝→우하단끝), 절반은 뒤(멀리 산 뒤쪽 좌상단만 짧게, 하늘밴드 안·산에 가림). reveal은 tenSkyShoot(단발) 담당.
+      let shootFront='', shootBehind=''; if(!reveal){ for(let i=0;i<6;i++){
+        const behind=pkRand(i,197)<0.5, top=(0+pkRand(i,190)*(behind?10:12)).toFixed(1), left=(-8+pkRand(i,191)*(behind?12:8)).toFixed(1),
+          dur=(6.5+pkRand(i,192)*3.5).toFixed(1), del=(i*1.3+pkRand(i,193)*1.1).toFixed(2);
+        if(behind){ const sz=Math.round(15+pkRand(i,194)*8), tx=Math.round(80+pkRand(i,195)*90), ty=Math.round(45+pkRand(i,196)*55);   // 멀리·작게·짧게(산 뒤 좌상단)
+          shootBehind+='<span class="pk-shoot pk-shoot-far" style="top:'+top+'%;left:'+left+'%;--d:'+dur+'s;--tx:'+tx+'px;--ty:'+ty+'px;animation-delay:'+del+'s;">'+shootStarSvg({h:sz})+'</span>';
+        } else { const sz=Math.round(26+pkRand(i,194)*16), tx=Math.round(340+pkRand(i,195)*150), ty=Math.round(220+pkRand(i,196)*110);   // 전체화면 대각선 코너까지
+          shootFront+='<span class="pk-shoot" style="top:'+top+'%;left:'+left+'%;--d:'+dur+'s;--tx:'+tx+'px;--ty:'+ty+'px;animation-delay:'+del+'s;">'+shootStarSvg({h:sz})+'</span>'; } } }
       _nightCache[mode]='<div class="pkscene pk-night'+(reveal?' pk-reveal':'')+'" aria-hidden="true">'+
-        '<div class="pk-sky">'+moon+stars+clouds+'</div>'+
+        '<div class="pk-sky">'+moon+stars+clouds+shootBehind+'</div>'+
         '<div class="pk-horizon">'+hills+farline+'</div>'+
         '<div class="pk-field"><div class="pk-grass"></div>'+soil+stones+tufts+flowers+trees+'</div>'+
-        '<div class="pk-air">'+fires+'</div>'+shoots+
+        '<div class="pk-air">'+fires+'</div>'+shootFront+
       '</div>';
       return _nightCache[mode];
     }
