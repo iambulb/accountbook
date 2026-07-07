@@ -2,7 +2,7 @@
     :root {
       /* 📐 캠 원근 한 묶음(단일 소스) — util.js의 CAM{FLOOR:54,WALL:46,STAGE:58}와 값이 같아야 함(util.test.js가 정합 잠금). dock·방·친구방 공유. */
       --cam-floor: 54%; --cam-wall: 46%; --cam-stage: 58%;
-      /* 🎥 방 높이 — 알뜰홈·친구방(.catroom) 244px. dock(.cd-room)은 224px 라운드 카드로 방 전체를 비율대로 담는다(크롭 아님).
+      /* 🎥 방 높이 — 알뜰홈·친구방(.catroom) 244px. dock(.cd-room)은 200px 라운드 카드로 방 전체를 비율대로 담는다(크롭 아님).
          내용이 %기반(바닥54/벽46)이라 두 높이 모두 방 전체가 같은 원근으로 보임(트위스트 없음). */
       --room-h: 244px;
       --canvas: #EBEDF0;     /* 폰 바깥(데스크탑 여백) */
@@ -711,7 +711,7 @@
     .cd-empty { position:absolute; left:2px; bottom:16px; font-size:11.5px; font-weight:600; color:var(--sub); }
     .catdock.hidden { display:none; }
     /* dock = 컴팩트 웹캠 방(벽지 배경 + 가구 + 걷는 고양이) */
-    .cd-room { position:relative; height:224px; overflow:hidden; isolation:isolate; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }   /* 캠 = 방 전체를 담는 무대(크롭 아님). 방 내용은 %기반(바닥54/벽46/무대58)이라 이 높이에 방 전체가 비율대로 그려짐. overflow:hidden=라운드 클리핑. isolation=독립 스택 컨텍스트. */
+    .cd-room { position:relative; height:200px; overflow:hidden; isolation:isolate; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }   /* 캠 = 방 전체를 담는 무대(크롭 아님). 방 내용은 %기반(바닥54/벽46/무대58)이라 이 높이에 방 전체가 비율대로 그려짐. 200px=알뜰홈(244)보다 살짝 낮은 컴팩트 카드(폭 고정이라 바닥이 아주 약간 납작). overflow:hidden=라운드 클리핑. isolation=독립 스택 컨텍스트. */
     /* 🎥 dock = 알뜰홈처럼 '라운드 카드' — 방 전체(바닥+벽 다) 보임(크롭 없음), 알뜰홈(244)과 거의 같은 크기·원근. 카드 스타일은 .catdock 안에만 적용해 .pkstage(픽업 배너)엔 안 샘. */
     .catdock .cd-room { border-radius:16px; border:1px solid var(--bd); }
     .cd-room svg, .cd-room img { -webkit-user-drag:none; user-drag:none; }
