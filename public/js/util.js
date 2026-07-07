@@ -264,9 +264,10 @@
   // 로그인(출석) 연속일 → 마일스톤 보상 {coins,gold}. 마일스톤(3·7·14·30)에서만 지급, 30 이후는 매 30일 반복.
   function loginStreakReward(day) {
     day = Math.floor(Number(day) || 0);
-    var table = { 3: { coins: 5, gold: 0 }, 7: { coins: 20, gold: 2 }, 14: { coins: 50, gold: 3 }, 30: { coins: 100, gold: 5 } };
+    // 경제 정책(economy-policy §3-E): 넉넉한 출석 보상. 마일스톤 3·7·14·30·60·100일, 100일 이후는 매 100일 반복.
+    var table = { 3: { coins: 50, gold: 0 }, 7: { coins: 100, gold: 2 }, 14: { coins: 200, gold: 3 }, 30: { coins: 400, gold: 6 }, 60: { coins: 600, gold: 10 }, 100: { coins: 1000, gold: 15 } };
     if (table[day]) return table[day];
-    if (day > 30 && day % 30 === 0) return table[30];
+    if (day > 100 && day % 100 === 0) return table[100];
     return { coins: 0, gold: 0 };
   }
   // 컬렉션 도감 진행도. owned=보유 맵(catId→...), catalogIds=전체 펫 id 배열.
@@ -307,7 +308,8 @@
   //   가구 '수' 배율은 제거(도배 방지) — 가구는 행복도의 enrichment(종류)로만 반영. 누적 상한 24h(하루 한 번 들르는 다마고치 리듬).
   function roomYieldCapH() { return 24; }
   // 펫당 시간당 은화 = YIELD_BASE + 애정레벨×YIELD_PER_LV. (가구배율 제거분 보정해 상향)
-  var YIELD_BASE = 0.3, YIELD_PER_LV = 0.25;
+  // 경제 정책(economy-policy §3-C): 수확 은화 기본량 상향 — 3펫·고애정 기준 하루 ~130~155 목표(24h캡). 0.3→0.5.
+  var YIELD_BASE = 0.5, YIELD_PER_LV = 0.25;
   function roomYield(affLevels, mood, elapsedMs, mult) {
     affLevels = affLevels || [];
     if (!affLevels.length) return 0;   // 펫 없으면 0

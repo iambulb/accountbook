@@ -11,7 +11,8 @@
 | [features-todo.md](features-todo.md) | ✅ **할일 모드** — 개인/그룹 세그먼트·공유 친구 스트립·읽기전용·마감 캘린더·반복·목적별 연동·게임화 |
 | [pet-list.md](pet-list.md) | **펫 목록** — 구현된 펫 표(id·종·등급·가격·이미지 폴더 경로·설명) + 폴더 구조 |
 | [pet-asset-pipeline.md](pet-asset-pipeline.md) | **펫 에셋 파이프라인** — PixelLab zip→걷기/정지 에셋 변환·코드 반영 절차 |
-| [cat-feature-plan.md](cat-feature-plan.md) | **알뜰샵(고양이) 기획** — 은화 경제·미션·가챠·가구 게임화 설계 |
+| [economy-policy.md](economy-policy.md) | 💠 **재화·경제·미션 정책** — 은화/금화 가치·획득(도배 억제)·미션 체계 재설계·가격·밸런스 (경제 정책의 단일 기준) |
+| [cat-feature-plan.md](cat-feature-plan.md) | **알뜰샵(고양이) 기획** — 게임화 UI/연출·가챠·가구 설계 (경제 수치·정책은 economy-policy.md) |
 | [animal-pixel-style-guide.md](animal-pixel-style-guide.md) | **동물 픽셀 스타일 가이드** — 도트/스프라이트 아트 규칙 |
 | [architecture.md](architecture.md) | **시스템 구성도** — 컴포넌트/배포 다이어그램, 로그인·부트 시퀀스, 서비스워커 캐시 전략 (Mermaid) |
 | [data-model.md](data-model.md) | **데이터 모델** — Firebase RTDB 트리, ERD, 엔티티 필드표, 보안규칙, 거래 잔액효과표 (Mermaid) |

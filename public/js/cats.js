@@ -1211,9 +1211,11 @@
     ];
     const FILL_MS = 3*60*60*1000;   // 그릇이 채워진 뒤 비워지기까지(3시간)
     const MOOD_CARE_MS = 24*60*60*1000;   // ❤️ 수확(caredAt) 후 행복도 보너스가 0으로 빠지는 시간(24h)
-    const POOP_REWARD = 2;          // 똥 하나 치우면 얻는 은화
-    const CARE_ITEMS = ['bowl','waterbowl','litterbox'];   // 고양이 수(slotCount)만큼만 배치 허용
-    const HARVEST_GOLD_CHANCE = 0.8, HARVEST_GOLD_MIN = 1, HARVEST_GOLD_MAX = 5;   // 🪙 수확 시 하루 1회 확률로 금화 1~5개(활성 펫 있을 때만)
+    const POOP_REWARD = 4;          // 똥 하나 치우면 얻는 은화
+    const CARE_ITEMS = ['bowl','waterbowl','litterbox'];   // 케어 아이템 — 방당 종류별 1개만 배치 허용(placeItemTx에서 강제)
+    // 🪙 수확 드롭(경제 정책 §3-C 보강): 하루 1회 금화 뭉텅이 대신, 경과 시간(시간 단위·24h캡)마다 시간당 확률 롤.
+    //   금화 10% + 가챠 아이템(펫알·랜덤박스·뜰알) 각 1%. 활성 펫 있을 때만. (구 HARVEST_GOLD_* 삭제)
+    const HARVEST_ROLL = { gold:0.10, egg:0.01, box:0.01, ddeul:0.01 };
     // 벽지(방 배경) — 구매 후 적용. default는 기본 제공.
     const WALLPAPER_CATALOG = [
       { id:'default', name:'기본',  price:0,  css:'linear-gradient(180deg,color-mix(in srgb,var(--soft) 55%,var(--card)) 0%,var(--soft) 100%)' },
@@ -2511,12 +2513,16 @@
 
     // ---- 게임 상태/경제 ----
     function gameRef(){ return db.ref('users/'+state.uid+'/game'); }
-    const TODO_REWARD=2;   // 할일 완료 시 은화(할일당 1회, todos.rewardClaimed로 멱등)
-    function grantTodoCoins(){ if(!state.uid) return; gameRef().transaction(function(g){ g=normalizeGame(g); g.coins=(g.coins||0)+TODO_REWARD; return g; }); }
+    const TODO_REWARD=10, TODO_DAILY_CAP=5;   // 할일 완료 시 은화(할일당 1회, todos.rewardClaimed로 멱등) · 은화는 하루 TODO_DAILY_CAP개까지만(도배 억제, 경제 정책 §3-B)
+    // 할일 완료 은화(할일당 1회 멱등은 호출측 rewardClaimed). 여기선 '하루 TODO_DAILY_CAP개까지만' 은화 상한(todoDay 카운터). 상한 넘으면 완료는 되지만 은화 0(도배 억제).
+    function grantTodoCoins(){ if(!state.uid) return; gameRef().transaction(function(g){ g=normalizeGame(g); const d=kstDayKey();
+      if((g.todoDay&&g.todoDay.day)!==d) g.todoDay={day:d,n:0};
+      if((Number(g.todoDay.n)||0)>=TODO_DAILY_CAP) return g;
+      g.todoDay.n=(Number(g.todoDay.n)||0)+1; g.coins=clampCoins((g.coins||0)+TODO_REWARD); return g; }); }
 
     // ===== 내 미션(커스텀 습관) — 개인 전역 game 트리. 일일 미션 경제(멱등 체크인)에 흡수 =====
     const CUSTOM_MISSION_REWARD=2;   // (레거시) 예전 일일 보상 — 현재 미사용
-    const CUSTOM_STREAK_N=7, CUSTOM_STREAK_BONUS=15;   // 내 미션: 매일 체크는 무보상, N일 연속 마일스톤마다 +BONUS 은화
+    const CUSTOM_STREAK_N=7, CUSTOM_STREAK_BONUS=40;   // 내 미션: 매일 체크는 무보상, N일 연속 마일스톤마다 +BONUS 은화(경제 정책 §3-F)
     function customMissionList(){ const cm=(state.game&&state.game.customMissions)||{};
       return Object.keys(cm).map(id=>Object.assign({id},cm[id])).filter(m=>m.active!==false)
         .sort((a,b)=>(a.order||0)-(b.order||0)||String(a.createdAt||'').localeCompare(String(b.createdAt||''))); }
@@ -2592,7 +2598,13 @@
       likeGiven: (g.likeGiven && typeof g.likeGiven==='object') ? g.likeGiven : {},   // 🫶 방문 좋아요 하루 보상 카운트 {day,n}
       likeMilestone: Math.max(0, Math.floor(Number(g.likeMilestone)||0)),   // ❤ 받은 좋아요 마일스톤 최고 수령치
       dexClaims: (g.dexClaims && typeof g.dexClaims==='object') ? g.dexClaims : {},   // 📖 도감 마일스톤 수령 마커(멱등)
-      harvestGold: (g.harvestGold && typeof g.harvestGold==='object') ? g.harvestGold : {}   // 🪙 수확 금화 하루 1회 확률 수령 마커 {day}
+      harvestGold: (g.harvestGold && typeof g.harvestGold==='object') ? g.harvestGold : {},   // (레거시) 구 수확 금화 하루 1회 마커 {day} — 현재 미사용(수확 드롭이 시간당 롤로 대체)
+      freePull: (g.freePull && typeof g.freePull==='object') ? g.freePull : {},   // 🎁 일일 무료 1뽑 사용 마커 {ddeul|egg|box:'YYYY-MM-DD'} — kstDayKey 기준, 밤 12시(자정) 자연 초기화
+      // ⏱️ 일일 상한 카운터(경제 정책, 도배 억제) — kstDayKey 기준 {day,n}. normalizeGame이 객체를 재생성하므로 반드시 여기 유지해야 안 지워짐.
+      todoDay: (g.todoDay && typeof g.todoDay==='object') ? g.todoDay : {},        // 할일 완료 은화 하루 카운트(≤TODO_DAILY_CAP)
+      petDay: (g.petDay && typeof g.petDay==='object') ? g.petDay : {},            // 쓰다듬기 은화 하루 카운트(≤PET_DAILY_CAP; 애정은 무제한)
+      qualityDay: (g.qualityDay && typeof g.qualityDay==='object') ? g.qualityDay : {},   // 성실 기록 보너스 하루 카운트(≤QUALITY_DAILY_CAP)
+      gachaGold: (g.gachaGold && typeof g.gachaGold==='object') ? g.gachaGold : {}  // 가챠 부산물 금화 하루 카운트(≤GACHA_GOLD_CAP 뽑)
     }); }
     // 선물함 목록을 항상 배열로 정규화(RTDB가 객체로 돌려줄 수 있어 방어)
     function normalizeGifts(x){ if(Array.isArray(x)) return x.filter(Boolean); if(x&&typeof x==='object') return Object.keys(x).map(k=>x[k]).filter(Boolean); return []; }
@@ -3694,12 +3706,14 @@
       d.className='catdock';
       // 웹캠 정면 방: 벽지(배경) + 바닥 + 배치 가구(배경) + 걷는 고양이
       d.innerHTML='<div class="cd-room">'+
-        '<div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor" style="background:'+floorCss(currentFloor())+'"></div><div class="cr-base"></div>'+
+        roomShellBase(currentWall(), currentFloor())+
         '<span class="cr-cam cd-cam" role="button" tabindex="0" aria-label="알뜰홈 열기" onclick="event.stopPropagation();coinTap(this)"><i></i>LIVE · <span class="cd-camtxt" id="cdCamTxt">'+(room().emoji?room().emoji+' ':'')+escapeHtml(room().name||'우리집')+'</span></span>'+
         batchBtnHtml()+
         '<div class="cr-props" id="cdProps"></div><div class="cr-stage" id="cdStage"></div></div>';
       renderDockProps(); renderDockCats();
     }
+    // 🧱 방 셸 공통 앞부분(벽·바닥·경계선) — dock·알뜰홈·친구방·미리보기 4무대가 공유(수기 복붙으로 구조가 갈라지던 것 방지). 벽/바닥은 인라인 배경(onGameChange가 라이브 패치).
+    function roomShellBase(wallId, floorId){ return '<div class="cr-wall" style="background:'+wallCss(wallId)+'"></div><div class="cr-floor" style="background:'+floorCss(floorId)+'"></div><div class="cr-base"></div>'; }
     // 은화 배지 탭 → 눌리는 액션(press) 후 알뜰홈 열기. 캠 빈 곳 탭은 아무 동작 안 함(펫만 조작). (소식은 좌상단 브랜드 아이콘)
     function coinTap(el){ const c=el||($('cdCoins')&&$('cdCoins').closest('.cd-coin')); if(c){ c.classList.remove('tap'); void c.offsetWidth; c.classList.add('tap'); } setTimeout(openCatHouse, 170); }
     // 방/dock 공용: 똥을 화장실들에 라운드로빈 분배(각 화장실 객체에 _poops 슬롯 배열 부여, 최대 5개)
@@ -3721,7 +3735,7 @@
       const x=leftPct.toFixed(2);
       const frontRow=p.r + foot.h - 1;   // 발자국에서 가장 앞(가까운) 줄에 바닥을 둠 → 가구가 위로 뜨지 않음
       // 반전: 격자 윗줄(작은 r)=방 뒤(멀리, 위·작게), 아랫줄(큰 r)=방 앞(가까이, 아래·크게)
-      const depth=(12-frontRow)/11; const bottom=(3+depth*46).toFixed(1); const fh=furnRoomH(p.itemId,isDock,depth);   // dock·홈 동일 깊이 매핑(바닥 54%) → 뒤 가구가 펫과 같은 바닥선에 정렬
+      const depth=camDepth(frontRow); const bottom=camFurnBottom(depth).toFixed(1); const fh=furnRoomH(p.itemId,isDock,depth);   // dock·홈 동일 깊이 매핑(CAM 단일 소스, util.js) → 뒤 가구가 펫과 같은 바닥선에 정렬
       // 원근 가림: 앞(frontRow 큰 값)일수록 z-index를 높여 앞 가구가 뒤 가구를 덮게 한다.
       // (밥·물그릇/화장실의 고정 z-index:2가 이 깊이 순서를 깨뜨리던 문제 → 인라인 z-index로 덮어씀)
       const z=isFloorItem(p.itemId) ? 0 : Math.max(1, Math.round(frontRow));   // 바닥 아이템(러그)=맨 뒤(z:0) → 그 위 가구가 앞에 그려짐
@@ -3765,6 +3779,10 @@
     function renderDockProps(){
       const box=$('cdProps'); if(!box) return;
       reconcilePets();   // 캠 화면에서도 3시간 만료→똥 정산
+      // ⚡ 배치 서명 가드(renderDockCats 패턴) — game 틱(코인·애정 등)마다 가구 SVG DOM 전체 재생성으로 가구 CSS 연출(창문 구름·어항 금붕어 등)이 리셋되던 것 방지. 배치·그릇 채움·똥 수가 그대로면 스킵.
+      const r=room(); const sig='p:'+curRoomId()+'|'+JSON.stringify(r.placed||{})+'|'+JSON.stringify(r.wallPlaced||{})+'|'+(Number(r.poops)||0);
+      if(box.dataset.sig===sig) return;
+      box.dataset.sig=sig;
       // 원근: 뒤(행 큰 값)일수록 위로·작게, 앞(행 작은 값)일수록 아래로·크게. 앞 가구가 뒤 가구를 덮도록 뒤부터.
       const list=placedList().sort((a,b)=>a.r-b.r); distributePoops(list);
       const wallProps=wallPlacedList().map(p=>wallPropMarkup(p,true,true)).join('');   // 벽 가구(뒤 벽면, z:0)
@@ -3830,10 +3848,11 @@
     // 재실행되는데, 그때 depth를 Math.random()으로 다시 굴리면 **보고 있는 도중 앞뒤로 순간이동**하는 것처럼 보인다.
     // 마지막 depth/vz를 여기 저장해 두고 재빌드 때 그대로 이어받아, 맨앞↔맨뒤로 한 번에 튀는 일을 원천 차단한다.
     let _petDepth={}, _petVz={}, _petX={};   // depth·vz에 더해 가로위치 x도 지속 → 무대 재빌드(시트 닫힘·아트 로드) 때 좌측(0)으로 몰리는 것 방지
+    let _petPose={};   // 🛋️ 상호작용/포즈 상태 지속(pkey → {until,pose,lift,face,resKey,resFloor}) — 재빌드(markCatDirty: 아트 로드·리사이즈·방 재렌더) 때 캣타워에 앉은 펫이 튀어나오던 것 방지. 만료·드래그 시 해제.
     // depth로부터 배율·바닥올림(rise)·z-index를 액터에 반영. z는 가구 frontRow(=12-depth*11)와 같은 척도라 상호 가림이 맞물린다.
     function applyDepth(a){ const d=a.depth=Math.max(0,Math.min(1,a.depth||0));
       a.scale=depthScale(d); a.rise=d*(a.riseMax||0);
-      const z=Math.max(1, Math.round(12 - d*11)); if(a._z!==z){ a._z=z; a.el.style.zIndex=z; }
+      const z=camZ(d); if(a._z!==z){ a._z=z; a.el.style.zIndex=z; }   // CAM 단일 소스(util.js) — 가구 frontRow와 같은 척도
       if(a.pkey){ _petDepth[a.pkey]=d; _petVz[a.pkey]=a.vz||0; } }   // 재빌드 때 이어받도록 지속(무대별 키 — dock/내 방/친구 방의 같은 id가 안 섞이게)
     // 액터의 위치(x)·올림(lift)·깊이(scale/rise)·방향(scaleX)을 transform 하나로 — 전부 합성(페인트 0).
     // transform-origin:center bottom 이라 배율은 발밑 기준(발이 바닥선에 유지)·좌우반전은 중심축. 시각 중심 x=a.x+sw/2는 배율과 무관하게 유지.
@@ -3942,11 +3961,11 @@
       // 위에서 내려다보는(탑다운) 느낌: 맨 앞(depth0)=바닥 앞끝, 맨 뒤(depth1)=바닥 뒤끝(벽지 경계)에 닿게.
       // dock·홈(.catroom) 둘 다 바닥 54%로 통일 → 같은 riseMax 비율(0.53)로 뒤 펫이 벽지 경계에 닿는다(예전 dock 0.61은 바닥 66% 기준이라 벽에 못 닿았음).
       // (발밑 여백 상쇄 pad는 깊이와 무관하게 적용되어 맨 앞은 여전히 바닥에 붙음 — 뜨는 문제 재발 없음.)
-      const riseMax = roomH*0.53;
+      const riseMax = roomH*CAM.RISE;   // CAM 단일 소스(util.js)
       // 가구 위치(발자국 중앙 x)·렌더 높이(fh)·깊이(depth) — 상호작용 시 올라갈 높이·앞뒤 정렬(가림)에 사용
       const noProps = !!stage.dataset.noprops;   // 🌈 픽업 배너(#pkStage): 방 원근은 쓰되 사용자 가구 상호작용은 끔(장식만 있는 씬 → 자유 배회)
       const plist = (isFriend && state._friendCam) ? state._friendCam.placedList : placedList();   // 친구 방이면 친구 가구로 상호작용
-      const props = (hasRoom && !noProps) ? plist.map(p=>{ const foot=itemFoot(p.itemId), depth=(12-(p.r+foot.h-1))/11;   // propMarkup과 동일(앞줄 기준)
+      const props = (hasRoom && !noProps) ? plist.map(p=>{ const foot=itemFoot(p.itemId), depth=camDepth(p.r+foot.h-1);   // propMarkup과 동일(앞줄 기준, CAM 단일 소스)
         const fh=furnRoomH(p.itemId, isDock, depth);   // 렌더 높이와 동일 → 캣타워 층 lift가 실제 높이에 맞음
         // 그래픽 중앙 x — propMarkup의 camAnchorMode(가운데/양끝 스냅)와 동일하게 계산해 펫이 가구 중앙에 정렬(캣타워 중앙 앉기).
         // 그래픽 폭 w=fh*aspect. left=w/2, right=W-w/2, center=발자국 중앙*W.
@@ -3982,11 +4001,19 @@
         // 액터는 항상 'roam'(이동)으로 시작. DOM 재사용(markCatDirty·무대 재부착)으로 남아있던 정지스틸(.idle)을
         // 반드시 이동 표시로 초기화 → "정면 이미지로 이동" 버그 원천 차단.
         actorShowMoving(a);
+        // 🛋️ 상호작용/포즈 지속 복원 — 재빌드 직전 앉아 있던 자리·포즈·잔여시간을 이어받아 튀어나오지 않게(불변식 준수: actorShowStill 경유).
+        const pp=pkey&&_petPose[pkey];
+        if(pp){ const left=pp.until-Date.now();
+          if(left>400){ a.mode='pause'; a.pose=pp.pose; a.pause=left; a.cool=1400; a.lift=pp.lift||0; a.resKey=pp.resKey||null; a.resFloor=(pp.resFloor!=null?pp.resFloor:null);
+            applyDepth(a);
+            if(a.spr){ actorShowStill(a, pp.face||'south'); setXform(a, 1); a._pdir=1; }
+            else { a.el.innerHTML=catPose(id, pp.pose, {h:a.hh}); setXform(a, a.dir); a._pdir=a.dir; } }
+          else delete _petPose[pkey]; }
         return a; });
     }
-    // 가구 종류별 포즈: 밥그릇=앉아 먹기, 방석=식빵, 캣타워=낮잠, 스크래처=앉기, 그 외=식빵
-    function poseForItem(itemId){ return itemId==='bowl'?'sit':itemId==='cushion'?'loaf':itemId==='tower'?'sleep':itemId==='scratcher'?'sit':'loaf'; }
     function poseDur(pose){ return pose==='sleep'?(4000+Math.random()*3500):(2800+Math.random()*3200); }   // 정면으로 가만히 있는 시간을 더 길게
+    // 🚫 상호작용 제외 가구 — furnSpot 케이스가 없어도 default(식빵)로 앉아버리는 것을 막는 명시 목록(화장실 위에 앉던 버그). 배경 가구는 여기 추가.
+    const NO_INTERACT = ['litterbox','plant'];
     // 가구별 상호작용 자리: 올라갈 높이(lift px)·바라보는 방향(face)·옆 오프셋(dx)·포즈·머무는 시간(ms)
     // 캣타워=3층 중 한 층에 올라가 정면 보며 쉼 / 방석=위에 잠시 / 밥그릇=뒤에서 앉기 / 스크래처=옆에서 잠시
     function furnSpot(a, goal){
@@ -3999,15 +4026,14 @@
       if(it==='pethouse') return { lift:Math.round(fh*0.06), face:'south', dx:0, pose:'sit', dur:50000+Math.random()*70000 };
       if(it==='cushion') return { lift:Math.round(fh*0.4), face:'south', dx:0, pose:'loaf', dur:20000+Math.random()*30000 };
       if(it==='bowl')    return { lift:Math.round(fh*0.15), face:'south', dx:0, pose:'sit', dur:20000+Math.random()*26000 };
+      // 물그릇: 밥그릇과 동일하게 뒤에서 앉아 물 마시기(비대칭이던 default 식빵 → 전용 케이스).
+      if(it==='waterbowl') return { lift:Math.round(fh*0.15), face:'south', dx:0, pose:'sit', dur:14000+Math.random()*18000 };
       if(it==='scratcher') return { lift:0, face:(Math.random()<0.5?'east':'west'), dx:Math.round(a.sw*0.6)*(Math.random()<0.5?1:-1), pose:'sit', dur:18000+Math.random()*28000 };
       // 캣휠: 링 안쪽 바닥(정중앙)에 들어가 옆(east/west)을 보며 달리는 자세로 오래 머무름.
       if(it==='catwheel') return { lift:Math.round(fh*0.12), face:(Math.random()<0.5?'east':'west'), dx:0, pose:'sit', dur:30000+Math.random()*45000 };
       // 어항: 앞에서 정면(south)을 보며 앉아 금붕어를 구경(약 16~40초).
       if(it==='fishtank') return { lift:0, face:'south', dx:Math.round(a.sw*0.25), pose:'sit', dur:16000+Math.random()*24000 };
-      // 창문: 곁에 앉아 볕을 쬐며 쉼(정면, 약 18~44초).
-      if(it==='window') return { lift:0, face:'south', dx:Math.round(a.sw*0.35)*(Math.random()<0.5?1:-1), pose:'loaf', dur:18000+Math.random()*26000 };
-      // 벽난로: 앞에서 정면으로 몸 말고 아늑하게 오래 쉼(약 24~54초).
-      if(it==='fireplace') return { lift:0, face:'south', dx:Math.round(a.sw*0.3)*(Math.random()<0.5?1:-1), pose:'loaf', dur:24000+Math.random()*30000 };
+      // (구 window·fireplace 케이스 제거 — 둘은 wall:true 벽 가구라 seek 대상(placed 바닥 목록)에 절대 안 옴 → 도달 불가 죽은 코드였음. 벽 가구 상호작용을 지원하려면 seek에 wallPlaced를 포함하는 별도 작업 필요.)
       // 선풍기: 곁에서 바람 쐬며 쉼.
       if(it==='fan') return { lift:0, face:'south', dx:0, pose:'loaf', dur:16000+Math.random()*20000 };
       // 해먹: 그물 안으로 올라가(lift) 정면 보며 오래 누움(약 30~70초).
@@ -4029,29 +4055,56 @@
       if(a.spr) actorShowStill(a, s.face);
       else a.el.innerHTML=catPose(id, s.pose, {h:a.hh});
       setXform(a, dir); a._pdir=dir;   // 위치+lift(위에서 설정)+flip을 정적 transform 하나로
+      if(a.pkey) _petPose[a.pkey]={ until:Date.now()+s.dur, pose:s.pose, lift:a.lift, face:s.face, resKey:a.resKey, resFloor:a.resFloor };   // 재빌드에도 자리 유지
     }
     function enterPose(a, id, pose){ a.mode='pause'; a.pose=pose; a.pause=poseDur(pose); a.cool=1400;
       a.lift=0; applyDepth(a);   // 현재 깊이의 배율/올림/z 반영(그 자리에서 쉼 — 깊이는 유지)
-      if(a.spr){ // 멈춰서 쉴 땐 항상 정면(south)을 본다. 이미지가 정방향이라 플립 없음(scaleX(1)).
-        actorShowStill(a, 'south'); setXform(a, 1); a._pdir=1; }
+      const face = pose==='sleep' ? 'north' : 'south';   // 💤 잠은 뒤돌아서(north 스틸 — 전 펫 4방향 스틸 보유), 앉기/식빵은 정면
+      if(a.spr){ // 멈춰서 쉴 땐 정지 스틸(잠=뒤돈 모습, 그 외=정면). 이미지가 정방향이라 플립 없음(scaleX(1)).
+        actorShowStill(a, face); setXform(a, 1); a._pdir=1; }
       else { a.el.innerHTML=catPose(id, pose, {h:a.hh});
-        setXform(a, a.dir); a._pdir=a.dir; } }
+        setXform(a, a.dir); a._pdir=a.dir; }
+      if(a.pkey) _petPose[a.pkey]={ until:Date.now()+a.pause, pose:pose, lift:0, face:face, resKey:null, resFloor:null };   // 유휴 포즈도 재빌드에 유지(방향 포함)
+    }
+    // 💬 유휴 감정 이모트(픽셀) — 펫 머리 위에 1회성(2.2s) 표시 후 제거. zz=수면 'zZ' 도트 텍스트, greet=하트 확정, idle=하트/트윙클 랜덤(30% 확률만). 저사양·모션축소 생략.
+    function actorEmote(a, kind){
+      try{
+        if(liteMode()||reducedMotion()||!a.el) return;
+        if(kind==='idle' && Math.random()>0.3) return;   // 유휴 하트는 가끔만(과다 방지)
+        const inner = kind==='zz' ? pixelTextHtml('zZ', '#9fb4d8', {h:12})
+                    : kind==='greet' ? heartSvg({h:11})
+                    : (Math.random()<0.5 ? heartSvg({h:11}) : spark4Svg('#f2c84b',{h:11}));
+        const s=document.createElement('span'); s.className='cd-emote'; s.innerHTML=inner;
+        a.el.appendChild(s); setTimeout(function(){ try{ s.remove(); }catch(_e){} }, 2200);
+      }catch(e){}
+    }
+    // 🐾 인사(마주보기) — 근접한 두 로밍 펫이 서로를 바라보며 잠깐 앉음. 불변식 준수: actorShowStill 경유(정지 비주얼), 지속(_petPose)에도 등록.
+    function enterGreet(a, face){
+      a.mode='pause'; a.pose='sit'; a.pause=2200+Math.random()*1600; a.cool=1400; a.lift=0; a.goal=null; releaseRes(a); applyDepth(a);
+      if(a.spr){ actorShowStill(a, face); setXform(a, 1); a._pdir=1; }
+      else { a.el.innerHTML=catPose(a.id, 'sit', {h:a.hh}); const d=(face==='east'?1:-1); setXform(a, d); a._pdir=d; }
+      if(a.pkey) _petPose[a.pkey]={ until:Date.now()+a.pause, pose:'sit', lift:0, face:face, resKey:null, resFloor:null };
+    }
     // 가구 점유: 한 가구엔 1마리(캣타워만 3층=최대 3마리, 층당 1마리). resKey=예약한 가구, resFloor=캣타워 층(0~2). acts=같은 무대의 액터들(무대별로 따로 점유 판정).
     function occupantsOf(key, self, acts){ let n=0; const floors={}; (acts||[]).forEach(o=>{ if(o!==self && o.resKey===key){ n++; if(o.resFloor!=null) floors[o.resFloor]=true; } }); return {n, floors}; }
     function releaseRes(a){ a.resKey=null; a.resFloor=null; }
     function stepActors(dt, actors){
       actors.forEach(a=>{
         if(a.mode==='drag') return;   // 손으로 집어 든 펫은 엔진이 건드리지 않음(드래그가 위치 제어)
-        a.t+=dt*0.004; if(a.cool>0)a.cool-=dt; if(a.dcool>0)a.dcool-=dt; const id=a.id;
-        if(a.mode==='pause'){ a.pause-=dt; if(a.pause<=0){ a.mode='roam'; a.fc=999; a.dir=Math.random()<0.5?-1:1; a.lift=0; releaseRes(a);   // 내려와 재출발(자리 반납)
+        a.t+=dt*0.004; if(a.cool>0)a.cool-=dt; if(a.dcool>0)a.dcool-=dt; if(a._greetCool>0)a._greetCool-=dt; const id=a.id;
+        if(a.mode==='pause'){ a.pause-=dt; if(a.pause<=0){ a.mode='roam'; a.fc=999; a.dir=Math.random()<0.5?-1:1; a.lift=0; releaseRes(a); if(a.pkey) delete _petPose[a.pkey];   // 내려와 재출발(자리 반납·지속 해제)
           // 이동 재개: 정면 이미지로 이동 금지 — actorShowMoving으로 일원화(일반=CSS 필름, frontWalk=east 정지스틸)
           actorShowMoving(a); setXform(a); a._pdir=a.dir; } return; }   // 재출발: lift 해제·방향 반영, 걷기는 필름(csprFilm)
-        // 유휴 제스처(그 자리 앉기/식빵/낮잠) — 쿨다운 후에만
-        if(a.mode==='roam' && a.cool<=0 && Math.random()<a.idle){ enterPose(a, id, ['loaf','sit','sleep'][Math.floor(Math.random()*3)]); return; }
+        const pr=dt/33;   // ⏱️ 확률 dt 정규화(33ms=30fps 기준) — dock 12fps에서 유휴/전환/가구찾기 빈도가 방 캠의 ~2.5배 낮던 것 보정(무대 무관 동일 리듬)
+        // 유휴 제스처(그 자리 앉기/식빵/낮잠) — 쿨다운 후에만. 🌙 밤(KST 21~06시)엔 낮잠 가중(수면 연출)
+        if(a.mode==='roam' && a.cool<=0 && Math.random()<a.idle*pr){
+          const kh=(new Date(Date.now()+9*3600000)).getUTCHours(), night=(kh>=21||kh<6);
+          const pose=(night&&Math.random()<0.6)?'sleep':['loaf','sit','sleep'][Math.floor(Math.random()*3)];
+          enterPose(a, id, pose); actorEmote(a, pose==='sleep'?'zz':'idle'); return; }
         // 가끔 방향 전환(개별) — 쿨다운 지나야(연속 뒤집힘=춤 방지)
-        if(a.mode==='roam' && (a.dcool||0)<=0 && Math.random()<a.turn){ a.dir*=-1; a.dcool=FLIP_COOL; }
+        if(a.mode==='roam' && (a.dcool||0)<=0 && Math.random()<a.turn*pr){ a.dir*=-1; a.dcool=FLIP_COOL; }
         // 가끔 속도 변화(개별) — 바뀐 속도에 맞춰 걷기 주기도 갱신(미끄러짐 방지)
-        if(a.mode==='roam' && Math.random()<0.003){ a.v=0.14+Math.random()*0.18; setWalkDur(a); }
+        if(a.mode==='roam' && Math.random()<0.003*pr){ a.v=0.14+Math.random()*0.18; setWalkDur(a); }
         // ───── 캠 펫 움직임 속도 튜닝 가이드(아래 수치를 바꾸면 이렇게 바뀜) ─────
         //  · 좌우 걷기 속도 = a.v(0.14~0.32 px/ms 랜덤, 위 2090행) × dt×0.06(아래 이동식). a.v↑ = 좌우로 더 빨리 걸음.
         //  · 앞뒤(원근) '자유 배회' 속도 = 아래 vz 크기 0.000008 depth/ms. ↑ = 앞뒤로 더 자주/빨리 오감(현재 전체 0→1 이동 ≈120초). 0으로 두면 배회 시 앞뒤 정지.
@@ -4060,12 +4113,12 @@
         //  · 이동 리듬: 방향전환 확률 a.turn·재전환 쿨다운 FLIP_COOL(450ms)·자리앉기 a.idle·가구찾기 a.seek·속도변화 확률(2090행 0.003).
         // 앞뒤(깊이) 배회 — 가끔 앞/뒤 속도를 새로 정하고 천천히 이동해 가까워졌다 멀어졌다(원근·가림 변화).
         if(a.mode==='roam'){
-          if(a.cool<=0 && Math.random()<0.006) a.vz=(Math.random()*2-1)*0.000008;   // depth/ms — 정면캠이라 앞뒤(원근) 이동은 좌우보다 훨씬 더 느리게(전체 범위 이동에 약 120초+, 살짝만 움직여도 크게 보이는 원근 왜곡 완화)
+          if(a.cool<=0 && Math.random()<0.006*pr) a.vz=(Math.random()*2-1)*0.000008;   // depth/ms — 정면캠이라 앞뒤(원근) 이동은 좌우보다 훨씬 더 느리게(전체 범위 이동에 약 120초+, 살짝만 움직여도 크게 보이는 원근 왜곡 완화)
           if(a.vz){ a.depth+=a.vz*dt; if(a.depth<=0){a.depth=0;a.vz=Math.abs(a.vz);} else if(a.depth>=1){a.depth=1;a.vz=-Math.abs(a.vz);} }
         }
         // 가구로 이동 결정(가구 있을 때, 쿨다운 후)
-        if(a.mode==='roam' && a.props.length && a.cool<=0 && Math.random()<a.seek){
-          const avail=a.props.filter(p=>!isFloorItem(p.itemId) && occupantsOf(p.key,a,actors).n < (p.itemId==='tower'?3:1));   // 빈 가구만(캣타워는 남은 층 있으면). 바닥 아이템(러그)은 상호작용 대상 아님(위로 걸어다님)
+        if(a.mode==='roam' && a.props.length && a.cool<=0 && Math.random()<a.seek*pr){
+          const avail=a.props.filter(p=>!isFloorItem(p.itemId) && NO_INTERACT.indexOf(p.itemId)<0 && occupantsOf(p.key,a,actors).n < (p.itemId==='tower'?3:1));   // 빈 가구만(캣타워는 남은 층 있으면). 바닥 아이템(러그)·배경 가구(화장실·화분)는 상호작용 대상 아님
           if(avail.length){ const g=avail[Math.floor(Math.random()*avail.length)]; a.resKey=g.key;
             if(g.itemId==='tower'){ const used=occupantsOf(g.key,a,actors).floors; a.resFloor=[0,1,2].find(f=>!used[f]); if(a.resFloor==null) a.resFloor=0; } else a.resFloor=null;
             a.goal=g; a.mode='goal'; } }
@@ -4105,6 +4158,12 @@
         const dcx=(a.x+a.sw/2)-(b.x+b.sw/2), ddp=(a.depth||0)-(b.depth||0);
         if(Math.abs(dcx)>=colW || Math.abs(ddp)>=rowD) continue;   // 다른 칸 → 통과(다른 행이면 앞뒤 겹침 허용)
         const aMov=mov(a), bMov=mov(b); if(!aMov || !bMov) continue;   // 둘 다 로밍일 때만 분리(한쪽이 가구로 가거나 앉았으면 통과)
+        // 🐾 가끔 인사 — 둘 다 로밍으로 마주친 순간, 낮은 확률로 서로 마주보고 잠깐 앉음(+하트). 쿨다운으로 반복 방지, 아니면 평소처럼 분리.
+        if((a._greetCool||0)<=0 && (b._greetCool||0)<=0 && Math.random()<0.04){
+          const aRight=dcx>=0;   // a가 b의 오른쪽에 있으면 a는 왼쪽(west)을, b는 오른쪽(east)을 본다
+          enterGreet(a, aRight?'west':'east'); enterGreet(b, aRight?'east':'west');
+          actorEmote(a,'greet'); actorEmote(b,'greet');
+          a._greetCool=25000; b._greetCool=25000; continue; }
         // 더 적게 움직여 칸을 벗어나는 축(열/행)으로 분리
         const needX=colW-Math.abs(dcx), needD=rowD-Math.abs(ddp);
         if(needX/colW <= needD/rowD){   // 열(x)로 분리
@@ -4173,7 +4232,7 @@
     // 🐾 펫 애정도: 방/캠에서 펫을 탭해 쓰다듬기(펫별 3시간 쿨다운) → +1, 임계에서 레벨업. 실제 쓰다듬을 때만 하트 연출.
     let _affLevelUp=null, _petCdToast=0;
     const PET_COOLDOWN_MS=24*60*60*1000;   // 쓰다듬기 쿨다운 하루(펫별, RTDB pettedAt로 지속)
-    const PET_PET_REWARD=5;               // 쓰다듬기 보상 은화(하루 1회/펫)
+    const PET_PET_REWARD=10, PET_DAILY_CAP=3;   // 쓰다듬기 보상 은화(펫별 하루 1회) · 은화는 하루 PET_DAILY_CAP마리까지만(애정은 무제한, 경제 정책 §3-C)
     // 펫 쓰다듬기 연출: 좋아요와 동일한 픽셀 하트(heartSvg)가 위로 떠오르고 + 작은 하트들이 뿅 팝(likeBurst).
     function heartFx(x,y){ const cx=(x||innerWidth/2), cy=(y||innerHeight/2);
       const el=document.createElement('div'); el.className='heartfx'; el.innerHTML=(typeof heartSvg==='function')?heartSvg({h:22}):'❤';
@@ -4223,23 +4282,25 @@
         if(now-_petCdToast>2500){ _petCdToast=now; const rem=PET_COOLDOWN_MS-(now-last), hh=Math.ceil(rem/3600000);
           toast(catName(id)+' 쓰다듬기는 하루 한 번 · 약 '+hh+'시간 후 가능'); }
         return; }
-      _affLevelUp=null; let did=false; const beforeCoins=coins(), beforeGold=gold();
-      gameRef().transaction(g=>{ g=normalizeGame(g); const c=g.owned.cats[id]; if(!c){ did=false; return g; }
+      _affLevelUp=null; let did=false, paid=false; const beforeCoins=coins(), beforeGold=gold();
+      gameRef().transaction(g=>{ g=normalizeGame(g); const c=g.owned.cats[id]; paid=false; if(!c){ did=false; return g; }
         if(now-(Number(c.pettedAt)||0) < PET_COOLDOWN_MS){ did=false; return g; }   // 트랜잭션 내 재확인(다기기 동시성)
         did=true; c.pettedAt=now;
-        g.coins=clampCoins((g.coins||0)+PET_PET_REWARD);   // 쓰다듬기 보상 은화 5
+        // 🐾 쓰다듬기 은화는 하루 PET_DAILY_CAP마리까지만(애정은 항상 +1). 상한 넘으면 은화 없이 애정만.
+        const dkey=kstDayKey(); if((g.petDay&&g.petDay.day)!==dkey) g.petDay={day:dkey,n:0};
+        if((Number(g.petDay.n)||0)<PET_DAILY_CAP){ g.petDay.n=(Number(g.petDay.n)||0)+1; g.coins=clampCoins((g.coins||0)+PET_PET_REWARD); paid=true; }
         const before=affectionLevel(c.affection).level; c.affection=(Number(c.affection)||0)+1;
         const after=affectionLevel(c.affection).level;
         if(after>before){ _affLevelUp={ id, level:after, gold:0, silver:0 };
-          const lvR=affLevelReward(after); if(lvR>0){ g.coins=clampCoins((g.coins||0)+lvR); _affLevelUp.silver=lvR; }   // 레벨업 소보상 은화(레벨1~5=2·3·5·8·10)
+          const lvR=affLevelReward(after); if(lvR>0){ g.coins=clampCoins((g.coins||0)+lvR); _affLevelUp.silver=lvR; }   // 레벨업 소보상 은화(레벨1~5=20·30·50·80·100) — 마일스톤이라 상한 무관
           if(after>=5){ g.gold=clampGold((g.gold||0)+5); _affLevelUp.gold=5; }   // 애정 만렙(레벨5) 1회 도달 보상 — 레벨은 한 번만 오르므로 자동 멱등
         }
         return g;
       }).then(res=>{ if(res&&res.committed&&did){ heartFx(x,y);   // 실제 쓰다듬었을 때만 하트 액션
-        const lvUp=_affLevelUp, dSilver=PET_PET_REWARD+((lvUp&&lvUp.silver)||0), dGold=(lvUp&&lvUp.gold)||0;
-        rewardFly(x, y, dSilver, dGold, beforeCoins, beforeGold);   // 은화(+레벨업 보너스·만렙 금화)가 지갑으로 스르르 날아가며 카운트업
-        if(lvUp){ affLevelFx(x,y); toast('❤ '+catName(lvUp.id)+' 애정 레벨 '+lvUp.level+(lvUp.gold?' · 만렙! 금화 +'+lvUp.gold:'')+' · 은화 +'+dSilver); _affLevelUp=null; }
-        else toast('❤ '+catName(id)+' 쓰다듬기 · 애정 +1 · 은화 +'+PET_PET_REWARD); } });
+        const lvUp=_affLevelUp, base=paid?PET_PET_REWARD:0, dSilver=base+((lvUp&&lvUp.silver)||0), dGold=(lvUp&&lvUp.gold)||0;
+        if(dSilver>0||dGold>0) rewardFly(x, y, dSilver, dGold, beforeCoins, beforeGold);   // 은화(+레벨업 보너스·만렙 금화)가 지갑으로 스르르 날아가며 카운트업
+        if(lvUp){ affLevelFx(x,y); toast('❤ '+catName(lvUp.id)+' 애정 레벨 '+lvUp.level+(lvUp.gold?' · 만렙! 금화 +'+lvUp.gold:'')+(dSilver>0?' · 은화 +'+dSilver:'')); _affLevelUp=null; }
+        else toast('❤ '+catName(id)+' 쓰다듬기 · 애정 +1'+(paid?' · 은화 +'+PET_PET_REWARD:' · 오늘 은화 보상 상한')); } });
     }
     function petGrabDown(e){
       const el=(e.target&&e.target.closest)?e.target.closest('.cd-actor'):null; if(!el) return;
@@ -4247,7 +4308,7 @@
       if(!a) return;
       e.preventDefault();   // 캠 이미지가 선택/네이티브 드래그되는 것 방지
       const stage=el.parentElement, sx=e.clientX, pid=e.pointerId; let started=false, lastX=e.clientX;   // pid: 멀티터치 시 이 포인터 이벤트만 처리(다른 손가락이 다른 펫을 같이 끌던 버그 방지)
-      const begin=()=>{ started=true; _petDrag=a; a.mode='drag'; a.goal=null; if(typeof releaseRes==='function') releaseRes(a);
+      const begin=()=>{ started=true; _petDrag=a; a.mode='drag'; a.goal=null; if(typeof releaseRes==='function') releaseRes(a); if(a.pkey) delete _petPose[a.pkey];   // 집어 들면 앉기 지속 해제
         a.lift=0; a.el.classList.add('cdgrab');   // 드래그 중에도 발이 바닥/커서에 붙게 — 들어올림 제거(집기 피드백은 그림자 cdgrab). setXform이 발밑 여백도 상쇄
         if(a.spr) actorShowStill(a,'south'); setXform(a, a.spr?1:a.dir);
       };
@@ -4434,7 +4495,7 @@
       const spH=splitProps(list, p=>propMarkup(p,false,false,true));   // 바닥 아이템(러그·연못) 먼저 → 맨 아래
       const props=spH.floor+wallPlacedList().map(p=>wallPropMarkup(p,false,true)).join('')+spH.other;   // 바닥 아이템 → 벽 가구(뒤) + 일반 가구. live=true → 홈 LIVE 캠 연출
       const roomName=(room().name)||'우리집';
-      let h=roomStripHtml()+'<div class="catroom" id="catRoom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor" style="background:'+floorCss(currentFloor())+'"></div><div class="cr-base"></div><span class="cr-cam"><i></i>LIVE · '+escapeHtml(roomName)+'</span>'+batchBtnHtml()+'<div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div></div>';
+      let h=roomStripHtml()+'<div class="catroom" id="catRoom">'+roomShellBase(currentWall(), currentFloor())+'<span class="cr-cam"><i></i>LIVE · '+escapeHtml(roomName)+'</span>'+batchBtnHtml()+'<div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div></div>';
       // 빈 방(가구·펫 없음) 안내 — 방 확장 직후 '사라진 것처럼' 보이는 혼동 방지
       if(!list.length && !cats.length) h+='<div class="hintline" style="margin:8px 0 0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>새 방이에요! 아래에서 <b>펫을 이 방으로 데려오고</b>, <b>배치</b> 탭에서 가구를 놓아보세요. (다른 방과 따로 저장돼요)</div>';
       // 안내: 그릇 채우기 / 똥 수거
@@ -4478,7 +4539,7 @@
       const wall=friendRoom(fg).wallpaper||'default';
       const spF=splitProps(friendPlacedList(fg).sort((a,b)=>a.r-b.r), p=>propMarkup(p,false,true,true));   // 바닥 아이템(러그·연못) 먼저 → 맨 아래
       const props=spF.floor+friendWallPlacedList(fg).map(p=>wallPropMarkup(p,false,true)).join('')+spF.other;   // 바닥 아이템 → 벽 가구(뒤) + 일반 가구. plain=true(읽기전용) + live=true(연출)
-      return '<div class="catroom" id="friendRoom"><div class="cr-wall" style="background:'+wallCss(wall)+'"></div><div class="cr-floor" style="background:'+floorCss(friendRoom(fg).floor||'default')+'"></div><div class="cr-base"></div>'+
+      return '<div class="catroom" id="friendRoom">'+roomShellBase(wall, friendRoom(fg).floor||'default')+
         '<span class="cr-cam"><i></i>LIVE · '+escapeHtml(name||'친구')+'의 집</span>'+
         '<div class="cr-props">'+props+'</div><div class="cr-stage" id="frStage"></div></div>';
     }
@@ -4618,10 +4679,14 @@
     // 소모 표기가 있는 1뽑/10뽑 버튼(개발자 미리보기 = devBannerPull). silver/gold=1뽑당 소모, theme=10뽑 연출 테마, heldKey=보유 소비 인벤토리 키.
     function gbPullActions(kind, silver, gold, theme, heldKey, live){ const t=theme?",'"+theme+"'":'';
       const held=heldKey?consumQty(heldKey):0, htxt=heldKey?'<div class="gb-heldnote">보유 <b>'+held+'</b>개 — 뽑기 시 먼저 소모(부족분만 재화 구매)</div>':'';
+      // 🎁 일일 무료 1뽑(실전 배너만) — 남았으면 1뽑 버튼이 '오늘 무료!'로, 안내줄에 사용 여부·밤 12시 초기화 표기
+      const free1 = !!live && (typeof freePullAvail==='function') && freePullAvail(kind);
+      const fnote = (!!live && typeof FREE_PULL_KINDS!=='undefined' && FREE_PULL_KINDS.indexOf(kind)>=0)
+        ? '<div class="gb-freenote">'+(free1?'🎁 오늘의 <b>무료 1뽑</b>이 남아 있어요':'오늘의 무료 1뽑은 사용했어요')+' · 밤 12시 초기화</div>' : '';
       const on1 = live ? 'bannerPull(\''+kind+'\',false)' : 'devBannerPull(\''+kind+'\',false'+t+')';    // live=실전(재화 소모·지급) · 그 외=개발자 미리보기(무소모)
       const on10 = live ? 'bannerPull(\''+kind+'\',true)' : 'devBannerPull(\''+kind+'\',true'+t+')';
-      return htxt+'<div class="gb-actions">'+
-        '<button class="gb-btn" onclick="'+on1+'"><span>1뽑</span><span class="gb-cost">'+gbPullCostHtml(heldKey,silver,gold,1)+'</span></button>'+
+      return htxt+fnote+'<div class="gb-actions">'+
+        '<button class="gb-btn'+(free1?' gb-freebtn':'')+'" onclick="'+on1+'"><span>1뽑</span><span class="gb-cost">'+(free1?'<b class="gb-free">오늘 무료!</b>':gbPullCostHtml(heldKey,silver,gold,1))+'</span></button>'+
         '<button class="gb-btn gb-btn10" onclick="'+on10+'"><span>10뽑</span><span class="gb-cost">'+gbPullCostHtml(heldKey,silver,gold,10)+'</span></button></div>';
     }
     // 🌇 노을색 센터 연출 — 무지개 대신 노을 주황 오오라·광선·트윙클(currentColor 상속)로 펫알 테마 정합.
@@ -4670,12 +4735,18 @@
       else devPreview(kind, 'legend');
     }
     // ===== 🎰 실전 배너 뽑기(재화 소모·보상 지급) — 미리보기(devBannerPull)와 달리 실제로 재화를 쓰고 지급한다. =====
-    // 1뽑: 보유 소비분(펫알/랜덤박스/뜰알)을 먼저 쓰고, 없으면 재화로 구매(기존 단발 함수 재사용). 10뽑=openGachaTen.
+    // 🎁 일일 무료 1뽑 — 뜰알·펫알·랜덤박스 3배너에서 종류별 하루 1회 무료 단발. 사용 마커 game.freePull[kind]='YYYY-MM-DD'(kstDayKey)
+    //    → 밤 12시(자정)에 날짜 키가 바뀌며 자연 초기화(별도 스케줄러 없음, 미션 리셋과 동일 관례). 무료 뽑기도 pity(천장)는 누적,
+    //    금화 부산물(+1)·금화 소모(뜰알)는 없음 — 재화 완전 무소모(경제 정책: 금화 희소성 방어).
+    const FREE_PULL_KINDS=['ddeul','egg','box'];
+    function freePullAvail(kind){ if(FREE_PULL_KINDS.indexOf(kind)<0) return false; const f=(state.game&&state.game.freePull)||{}; return f[kind]!==kstDayKey(); }
+    // 1뽑: 오늘 무료 1뽑이 남았으면 최우선(무소모) → 보유 소비분(펫알/랜덤박스/뜰알) → 재화로 구매(기존 단발 함수 재사용). 10뽑=openGachaTen.
     function bannerPull(kind, ten){
       if(_pullBusy) return;
       if(ten){ openGachaTen(kind); return; }
-      if(kind==='ddeul'){ if(consumQty('ddeul')>0) useHeldDdeul(); else openDdeul(); }
-      else { if(consumQty(kind)>0) useHeldGacha(kind); else openGacha(kind); }
+      const free=freePullAvail(kind);   // 🎁 오늘 무료 1뽑 남음 — 보유분·재화 안 쓰고 무료로
+      if(kind==='ddeul'){ if(free) openDdeul(true); else if(consumQty('ddeul')>0) useHeldDdeul(); else openDdeul(); }
+      else { if(free) openGacha(kind, true); else if(consumQty(kind)>0) useHeldGacha(kind); else openGacha(kind); }
     }
     // 🎰 실전 10연차 — 보유분 우선 소모 + 부족분 재화 구매, 10개 롤·지급(원자적 트랜잭션) 후 10연차 연출.
     //   펫알/랜덤박스=뽑을 때마다 금화+1 · 뜰알=금화 소모(보상 없음). 중복은 은화 환급(배치 내 중복도 반영). pity(신화확정)는 10회 누적.
@@ -5067,7 +5138,7 @@
         g.coins-=wp; g.owned.wallpapers[id]={boughtAt:new Date().toISOString()}; gRoom(g).wallpaper=id; return g;
       }).then(res=>{ if(res.committed) toast(w.name+' 벽지 적용! 🎨'); });
     }
-    function applyWall(id){ if(!ownsWall(id)){ toast('먼저 구매하세요', true); return; } roomTx(curRoomId(), roomIdx(), R=>{ R.wallpaper=id; }); toast('벽지를 적용했어요'); }
+    function applyWall(id){ if(!ownsWall(id)){ toast('먼저 구매하세요', true); return; } if(typeof captureUndo==='function') captureUndo(); roomTx(curRoomId(), roomIdx(), R=>{ R.wallpaper=id; }); toast('벽지를 적용했어요'); }   // 되돌리기 지원(가구 5경로와 동일)
     function buyFloor(id){ const f=FLOOR_CATALOG.find(x=>x.id===id); if(!f) return; if(ownsFloor(id)){ applyFloor(id); return; }
       if(isGachaOnlyFloor(id)){ toast('특별↑ 바닥은 랜덤박스로만 나와요'); if(typeof setShopSub==='function') setShopSub('event'); return; }
       const fp=floorBuyPrice(id);
@@ -5076,7 +5147,7 @@
         g.coins-=fp; g.owned.floors[id]={boughtAt:new Date().toISOString()}; gRoom(g).floor=id; return g;
       }).then(res=>{ if(res.committed) toast(f.name+' 바닥 적용!'); });
     }
-    function applyFloor(id){ if(!ownsFloor(id)){ toast('먼저 구매하세요', true); return; } roomTx(curRoomId(), roomIdx(), R=>{ R.floor=id; }); toast('바닥을 적용했어요'); }
+    function applyFloor(id){ if(!ownsFloor(id)){ toast('먼저 구매하세요', true); return; } if(typeof captureUndo==='function') captureUndo(); roomTx(curRoomId(), roomIdx(), R=>{ R.floor=id; }); toast('바닥을 적용했어요'); }   // 되돌리기 지원
     // 배치 에디터용 스킨 선택기 — 방꾸미기=바닥·벽꾸미기=벽지. 보유한 것만 스와치로 보여주고 탭하면 현재 방에 바로 적용.
     function skinPickerHtml(kind){
       const isFloor=kind==='floor';
@@ -5175,7 +5246,7 @@
       // 🌑 깊이 그림자(펫 발밑, 액터 scale 그대로라 앞=크게·뒤=작게) — .cd-shadow는 배너(pkstage)에서만 보임(CSS). --pad(발밑 여백)로 발끝에 정렬.
       const actor=(id,lx)=> pickupExists(id) ? '<div class="cd-actor" data-cat="'+id+'" data-hh="'+H+'" style="left:'+lx+'px;"><span class="cd-shadow">'+shadowSvg({h:9})+'</span>'+catActorHTML(id,H)+'</div>' : '';
       // 🪨 중간 바위(겹침 큐, z=펫과 같은 12-depth*11 → 그보다 뒤 펫은 바위 뒤로 가려짐) + 🌿 전경 프레이밍(맨 앞 큰 풀·꽃, z 최상). 무대(pkstage) 안에 둠.
-      const rock  = mode==='reveal' ? '' : '<span class="pk-rock" style="left:25%;bottom:'+(0.4*53).toFixed(1)+'%;z-index:'+Math.round(12-0.4*11)+';">'+rockSvg({h:Math.round(26*depthScale(0.4))})+'</span>';
+      const rock  = mode==='reveal' ? '' : '<span class="pk-rock" style="left:25%;bottom:'+(0.4*53).toFixed(1)+'%;z-index:'+camZ(0.4)+';">'+rockSvg({h:Math.round(26*depthScale(0.4))})+'</span>';   // bottom 53=액터 rise(CAM.RISE 0.53)를 pk-field% 로 환산한 파생값(다른 컨테이너 좌표계)
       const frame = mode==='reveal' ? '' : '<span class="pk-frame" style="left:3%;z-index:20;">'+tuftSvg({h:34})+'</span><span class="pk-frame" style="left:97%;z-index:20;">'+flowerSvg('p',{h:30})+'</span>';
       const egg   = mode==='reveal' ? '' : '<div class="pk-egg"><img src="'+assetUrl('icons/egg-garden.svg')+'" alt=""></div>';   // 리빌은 알 대신 등장 펫이 주인공
       // 픽업 펫 2마리는 '배너'에서만 배회. 알 오픈 리빌(전설↑ 배경)에선 등장 펫이 주인공이라 배회 픽업 펫을 숨긴다(무대 자체를 안 그림). rock/frame도 배너 전용.
@@ -5610,9 +5681,11 @@
       if(res.type==='wall') return !ownsWall(res.id);
       return ((typeof itemQty==='function'?itemQty(res.id):0)===0); }   // 가구: 처음 보유(수량 0)면 NEW
     // 구매+롤(원자적): 은화-100, 금화+1, 지급(신규 고양이/가구 or 중복 펫 환급). 성공 시 연출.
-    function openGacha(kind){
+    // free=true → 🎁 일일 무료 1뽑: 재화 무소모·금화 부산물 없음, game.freePull[kind]=오늘(kstDayKey) 마커로 멱등(다른 기기 이중 사용 방지). pity는 동일 누적.
+    function openGacha(kind, free){
       if(_pullBusy) return;   // 🔒 진행 중 재탭 무시(중복 구매·연출 1개 버그 방지)
-      if(coins()<GACHA_PRICE){ toast((GACHA_PRICE-coins())+' 은화 부족', true); return; }
+      free=!!free&&freePullAvail(kind);
+      if(!free && coins()<GACHA_PRICE){ toast((GACHA_PRICE-coins())+' 은화 부족', true); return; }
       const forced=pityForcedTierFor(kind);   // 🔮 종류별 천장: 100뽑째면 신화(뜰알 외) 강제
       let res, dup=false, refund=0;
       if(kind==='egg'){ res = forced ? pickTierMember(gachaCatTierMap(), forced) : rollFromPool(gachaCatTierMap()); if(!res) return; dup=ownsCat(res.id); refund=dup?petDupRefund(res.id):0; }
@@ -5623,11 +5696,13 @@
         refund=dup?Math.round((TIER_PRICE[res.tier]||0)*0.2):0; }
       const isNew=gachaNew(kind,res);   // 지급 전 판정(NEW 배지)
       const hit=isTopTier(res.tier);    // 🔮 신화↑면 천장 리셋
+      const day=kstDayKey();
       pullBegin(kind, false);   // 🔒 잠금 + 즉시 '준비' 오버레이
       gameRef().transaction(g=>{
         g=normalizeGame(g);
-        if(g.coins<GACHA_PRICE) return;
-        g.coins-=GACHA_PRICE; g.gold=(g.gold||0)+1; g.pity[kind]=pityNext(g.pity[kind]||0, hit);
+        if(free){ if(g.freePull[kind]===day) return; g.freePull[kind]=day; g.pity[kind]=pityNext(g.pity[kind]||0, hit); }   // 🎁 무료: 재화 무소모, 오늘 마커만(재검증)
+        else { if(g.coins<GACHA_PRICE) return;
+        g.coins-=GACHA_PRICE; g.gold=(g.gold||0)+1; g.pity[kind]=pityNext(g.pity[kind]||0, hit); }
         if(kind==='egg'){
           if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
           else { g.coins+=refund; }
@@ -5638,18 +5713,25 @@
     }
     // 🌱 뜰알(한정 픽업) — 은화로 여는 펫알. DDEUL_TIERS(한정 0.5% 포함, 활성 한정 펫만)로 롤, 오픈 연출은 뜰+무지개.
     const DDEUL_PRICE=100, DDEUL_GOLD=1;   // 프리미엄 픽업: 은화 100 + 금화 1(실제 소모, 금화 보상 없음).
-    function openDdeul(){
+    // free=true → 🎁 일일 무료 1뽑: 은화·금화 무소모, game.freePull.ddeul=오늘(kstDayKey) 마커로 멱등. pity는 동일 누적.
+    function openDdeul(free){
       if(_pullBusy) return;   // 🔒 진행 중 재탭 무시
-      if(coins()<DDEUL_PRICE){ toast((DDEUL_PRICE-coins())+' 은화 부족', true); return; }
-      if(gold()<DDEUL_GOLD){ toast('금화 '+(DDEUL_GOLD-gold())+' 부족', true); return; }
+      free=!!free&&freePullAvail('ddeul');
+      if(!free){
+        if(coins()<DDEUL_PRICE){ toast((DDEUL_PRICE-coins())+' 은화 부족', true); return; }
+        if(gold()<DDEUL_GOLD){ toast('금화 '+(DDEUL_GOLD-gold())+' 부족', true); return; }
+      }
       const forced=pityForcedTierFor('ddeul');   // 🔮 천장: 뜰알 확정 = 신화 50% · 한정 50%
       const res = forced ? pickTierMember(gachaCatTierMap(), forced) : rollFromPool(gachaCatTierMap(), DDEUL_TIERS); if(!res) return;
       const dup=ownsCat(res.id), refund=dup?petDupRefund(res.id):0;
       const isNew=gachaNew('ddeul',res);
       const hit=isTopTier(res.tier);
+      const day=kstDayKey();
       pullBegin('ddeul', false);   // 🔒 잠금 + 즉시 '준비' 오버레이
-      gameRef().transaction(g=>{ g=normalizeGame(g); if(g.coins<DDEUL_PRICE || (g.gold||0)<DDEUL_GOLD) return;
-        g.coins-=DDEUL_PRICE; g.gold=(g.gold||0)-DDEUL_GOLD; g.pity.ddeul=pityNext(g.pity.ddeul||0, hit);   // 은화 100 + 금화 1 소모(금화 보상 없음)
+      gameRef().transaction(g=>{ g=normalizeGame(g);
+        if(free){ if(g.freePull.ddeul===day) return; g.freePull.ddeul=day; g.pity.ddeul=pityNext(g.pity.ddeul||0, hit); }   // 🎁 무료: 재화 무소모, 오늘 마커만(재검증)
+        else { if(g.coins<DDEUL_PRICE || (g.gold||0)<DDEUL_GOLD) return;
+        g.coins-=DDEUL_PRICE; g.gold=(g.gold||0)-DDEUL_GOLD; g.pity.ddeul=pityNext(g.pity.ddeul||0, hit); }   // 은화 100 + 금화 1 소모(금화 보상 없음)
         if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
         else { g.coins+=refund; }
         return g;
@@ -5734,7 +5816,7 @@
       const txPct = mode==='left'?0 : mode==='right'?-100 : -50, x=leftPct.toFixed(2);
       let vpos, fh;
       if(anchor==='floor'){        // 바닥형: 맨 뒤 바닥 가구와 동일한 '바닥선'(3+1*46=49% bottom)에 서서 바닥에 붙음(붕 뜸 해결). 크기는 다른 벽 가구와 동일(furnWallH).
-        fh=furnWallH(p.itemId, isDock); vpos='bottom:'+(3+1*46).toFixed(1)+'%';
+        fh=furnWallH(p.itemId, isDock); vpos='bottom:'+camFurnBottom(1).toFixed(1)+'%';
       } else if(anchor==='hang'){  // 매다는형: 천장쪽 top 앵커로 아래로 늘어짐(행이 낮을수록 위)
         fh=furnWallH(p.itemId, isDock); vpos='top:'+(((p.r-1)/WALL_ROWS)*46).toFixed(1)+'%';
       } else {                     // 거는형(mount): 벽 밴드 안 bottom%(행=높이)
@@ -5895,13 +5977,15 @@
       if(newKey===d.key){ resetEl(); return; }
       if(!areaFree(r,c,d.foot.w,d.foot.h,placed,d.key,isFloorItem(placedItemId(d.key)))){ toast('그 자리엔 놓을 수 없어요(겹침)', true); resetEl(); return; }
       const id=placed[d.key]&&placed[d.key].itemId; if(!id){ resetEl(); return; }
+      // ⚡ 낙관적 드롭 — 커밋을 기다리지 않고 즉시 새 칸에 스냅(느린 커밋 시 '원위치 튕김→점프' 깜빡임 제거). 실패하면 리스너/재렌더가 원위치 복원.
+      d.el.style.transform=''; d.el.style.left=(gridLeftFrac(c)*100)+'%'; d.el.style.top=(gridLeftFrac(r)*100)+'%';
       // 이동도 트랜잭션(자기 제외 겹침 재검증) — 리스너가 재렌더
       captureUndo();
       gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoom(g); const pl=R.placed||{};
         const it=pl[d.key]; if(!it) return;                               // 원본 없음(레이스)
         if(!areaFree(r,c,d.foot.w,d.foot.h,pl,d.key,isFloorItem(it.itemId))) return;             // 겹침(자기 제외, 바닥 아이템은 허용)
         delete pl[d.key]; pl[newKey]={itemId:it.itemId}; g.home.changedAt=new Date().toISOString(); return g;
-      }).then(()=>{ touchHome(); });
+      }).then(res=>{ if(res&&res.committed) touchHome(); else if(state._sheetRefresh) state._sheetRefresh(); });   // 실패(레이스) 시 재렌더로 원위치
     }
     // ---- 팔레트 항목을 그리드로 드래그해 새로 배치(꾹 눌러 드래그, 짧게 탭하면 선택 토글) ----
     let _pal=null;
@@ -5947,8 +6031,16 @@
       g.hidden=false; g.className='gdrop'+(ok?'':' bad');
       g.style.left=(gridLeftFrac(cc)*100)+'%'; g.style.top=(gridLeftFrac(rr)*100)+'%';
       g.style.width=(gridSpanFrac(foot.w)*100)+'%'; g.style.height=(gridSpanFrac(foot.h)*100)+'%';
+      // 🧲 정렬 스냅 가이드(벽꾸미기 wsnap 로직 이식) — 드래그 항목 중심이 격자 중앙/다른 가구 중심과 맞으면 점선 가이드.
+      const gv=$('fsnap'); if(gv){ const cen=(cc-1)+foot.w/2; let align=null;
+        if(Math.abs(cen-GRID_N/2)<0.001) align=GRID_N/2;   // 격자 가로 중앙
+        else Object.keys(placed).forEach(k=>{ if(k===key||!placed[k]) return; const pr=k.split('_'), oc=+pr[1], of=itemFoot(placed[k].itemId), ocen=(oc-1)+of.w/2; if(Math.abs(cen-ocen)<0.001) align=ocen; });
+        if(align!=null){ gv.hidden=false; gv.style.left=(align/GRID_N*100)+'%'; } else gv.hidden=true; }
+      const gh=$('fsnaph'); if(gh){ const rcen=(rr-1)+foot.h/2; let ralign=null;   // 세로 중심 정렬(같은 앞뒤 깊이의 가구와)
+        Object.keys(placed).forEach(k=>{ if(k===key||!placed[k]) return; const pr=k.split('_'), or_=+pr[0], of=itemFoot(placed[k].itemId), ocen=(or_-1)+of.h/2; if(Math.abs(rcen-ocen)<0.001) ralign=ocen; });
+        if(ralign!=null){ gh.hidden=false; gh.style.top=(ralign/GRID_N*100)+'%'; } else gh.hidden=true; }
     }
-    function hideDropPreview(){ const g=$('gdrop'); if(g) g.hidden=true; }
+    function hideDropPreview(){ const g=$('gdrop'); if(g) g.hidden=true; const gv=$('fsnap'); if(gv) gv.hidden=true; const gh=$('fsnaph'); if(gh) gh.hidden=true; }
     // ---- 벽꾸미기 격자 드래그(방꾸미기 로직 이식) — 세로 4칸(WALL_ROWS)·깊이 없음, 겹침만 검증 ----
     function wallDropCell(grid, x, y, w){   // 포인터=발자국 가운데, 벽 격자로 클램프
       const p=wallCellFromPoint(grid, x, y);
@@ -6003,12 +6095,14 @@
       if(newKey===d.key){ resetEl(); return; }
       const wp=room().wallPlaced||{};
       if(!wallAreaFree(r,c,d.w,wp,d.key)){ toast('그 자리엔 걸 수 없어요(겹침)', true); resetEl(); return; }
+      // ⚡ 낙관적 드롭(바닥 giUp과 동일) — 즉시 새 칸 스냅, 실패 시 재렌더 복원
+      d.el.style.transform=''; d.el.style.left=(gridLeftFrac(c)*100)+'%'; d.el.style.top=(((r-1)/WALL_ROWS)*100)+'%';
       captureUndo();
       gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoom(g); const pl=R.wallPlaced||{};
         const it=pl[d.key]; if(!it) return;                               // 원본 없음(레이스)
         if(!wallAreaFree(r,c,d.w,pl,d.key)) return;                        // 겹침(자기 제외)
         delete pl[d.key]; pl[newKey]={itemId:it.itemId}; g.home.changedAt=new Date().toISOString(); return g;
-      }).then(()=>{ touchHome(); });
+      }).then(res=>{ if(res&&res.committed) touchHome(); else if(state._sheetRefresh) state._sheetRefresh(); });
     }
     // 팔레트 벽 가구를 벽 격자로 드래그해 새로 배치(꾹 눌러 드래그, 짧게 탭=선택 토글)
     let _wpal=null;
@@ -6089,9 +6183,9 @@
     function emptyGridHint(){ return '<div class="pe-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg><span>아래 가구를 <b>꾹 눌러</b> 격자로 끌어다 놓아보세요</span></div>'; }
     // 되돌리기(1스텝) — 배치 변경 직전 현재 방 스냅샷 저장, 버튼으로 복원. 방이 바뀌면 무효.
     let _undoSnap=null;
-    function captureUndo(){ try{ const r=room(); _undoSnap={ roomId:curRoomId(), placed:Object.assign({},r.placed||{}), wallPlaced:Object.assign({},r.wallPlaced||{}) }; }catch(e){ _undoSnap=null; } }
+    function captureUndo(){ try{ const r=room(); _undoSnap={ roomId:curRoomId(), placed:Object.assign({},r.placed||{}), wallPlaced:Object.assign({},r.wallPlaced||{}), wallpaper:r.wallpaper||'default', floor:r.floor||'default' }; }catch(e){ _undoSnap=null; } }   // 벽지·바닥도 스냅샷(변경 undo 지원)
     function undoPlace(){ if(!_undoSnap || _undoSnap.roomId!==curRoomId()){ _undoSnap=null; return; } const s=_undoSnap; _undoSnap=null;
-      roomTx(s.roomId, roomIdx(), R=>{ R.placed=s.placed; R.wallPlaced=s.wallPlaced; }, ()=>{ if(state._sheetRefresh) state._sheetRefresh(); toast('되돌렸어요'); }); }
+      roomTx(s.roomId, roomIdx(), R=>{ R.placed=s.placed; R.wallPlaced=s.wallPlaced; if(s.wallpaper!=null) R.wallpaper=s.wallpaper; if(s.floor!=null) R.floor=s.floor; }, ()=>{ if(state._sheetRefresh) state._sheetRefresh(); toast('되돌렸어요'); }); }
     function placeActionsBar(){ const r=room(); const hasAny=Object.keys(r.placed||{}).length||Object.keys(r.wallPlaced||{}).length;
       const canUndo=!!(_undoSnap && _undoSnap.roomId===curRoomId());
       if(!hasAny && !canUndo) return '';
@@ -6101,13 +6195,15 @@
       '</div>'; }
     function catPlaceHtml(){
       const wallMode=_placeMode==='wall';
+      const _fc=Object.keys(room().placed||{}).length, _wc=Object.keys(room().wallPlaced||{}).length;   // 📦 이 방 배치 요약
       const toggle='<div class="subseg placemode">'+
         '<button class="'+(!wallMode?'on':'')+'" onclick="setPlaceMode(\'floor\')">방꾸미기</button>'+
-        '<button class="'+(wallMode?'on':'')+'" onclick="setPlaceMode(\'wall\')">벽꾸미기</button></div>';
+        '<button class="'+(wallMode?'on':'')+'" onclick="setPlaceMode(\'wall\')">벽꾸미기</button></div>'+
+        '<div class="place-meter">이 방 배치 <b>'+(_fc+_wc)+'</b>개 — 바닥 '+_fc+' · 벽 '+_wc+'</div>';
       // ---- 미니 웹캠 프리뷰: 바닥+벽 배치를 함께 보여줌(표시 전용) ----
       const plist=placedList().sort((a,b)=>a.r-b.r); distributePoops(plist);
       const previewProps=wallPlacedList().map(p=>wallPropMarkup(p,true,false)).join('')+plist.map(p=>propMarkup(p,true)).join('');
-      const preview='<div class="miniroom"><div class="cr-wall" style="background:'+wallCss(currentWall())+'"></div><div class="cr-floor" style="background:'+floorCss(currentFloor())+'"></div><div class="cr-base"></div><span class="cr-cam"><i></i>미리보기</span><div class="cr-props">'+previewProps+'</div></div>';
+      const preview='<div class="miniroom">'+roomShellBase(currentWall(), currentFloor())+'<span class="cr-cam"><i></i>미리보기</span><div class="cr-props">'+previewProps+'</div></div>';
       let body;
       if(wallMode){
         // 벽 격자(12×4): 위=천장, 아래=바닥선. 탭으로 배치, 배치된 항목 탭=회수/판매.
@@ -6127,7 +6223,7 @@
           const left=(gridLeftFrac(c)*100).toFixed(3), top=(gridLeftFrac(r)*100).toFixed(3), w=(gridSpanFrac(foot.w)*100).toFixed(3), h=(gridSpanFrac(foot.h)*100).toFixed(3);
           return '<div class="gitem" style="left:'+left+'%;top:'+top+'%;width:'+w+'%;height:'+h+'%" onpointerdown="giDown(event,\''+key+'\')" onclick="event.stopPropagation()">'+
             '<span class="gsc">'+furnSvg(id,{fit:true})+'</span></div>'; }).join('');
-        const grid='<div class="grid12" id="placeGrid" onclick="placeClick(event)">'+items+(items?'':emptyGridHint())+'<div class="gdrop" id="gdrop" hidden></div></div>';
+        const grid='<div class="grid12" id="placeGrid" onclick="placeClick(event)">'+items+(items?'':emptyGridHint())+'<div class="gdrop" id="gdrop" hidden></div><div class="wsnap" id="fsnap" hidden></div><div class="wsnaph" id="fsnaph" hidden></div></div>';
         const owned=ITEM_CATALOG.filter(it=>!isWallItem(it.id) && itemQty(it.id)>0);
         if(!_placeCat || !PLACE_CATS.some(c=>c[0]===_placeCat)) _placeCat=(PLACE_CATS.find(c=>owned.some(it=>placeCatOf(it.id)===c[0]))||PLACE_CATS[0])[0];
         const catTabs='<div class="subseg placecat">'+PLACE_CATS.map(c=>{ const inCat=owned.filter(it=>placeCatOf(it.id)===c[0]), nOwn=inCat.length, nAvail=inCat.filter(it=>itemRemaining(it.id)>0).length;
@@ -6705,7 +6801,7 @@
       const nest=wrap.querySelector('.ten-nest'); if(nest) nest.classList.add('hatched');   // 둥지 속 정지 펫 페이드아웃(둥지만 남김)
       if(wrap.querySelector('#pkRevStage')) return;
       const st=document.createElement('div'); st.className='cd-room pkstage ten-roam'; st.id='pkRevStage'; st.setAttribute('data-noprops','1'); st.setAttribute('aria-hidden','true');
-      Object.keys(_petX).forEach(function(k){ if(k.indexOf('pkRevStage:')===0){ delete _petX[k]; delete _petDepth[k]; delete _petVz[k]; } });   // 이전 배회 잔여 위치 제거 → 매 10연차 새 랜덤 흩뿌림
+      Object.keys(_petX).forEach(function(k){ if(k.indexOf('pkRevStage:')===0){ delete _petX[k]; delete _petDepth[k]; delete _petVz[k]; delete _petPose[k]; } });   // 이전 배회 잔여 위치·포즈 제거 → 매 10연차 새 랜덤 흩뿌림
       const N=_fx10.items.length, order=tenShuffle(N);   // 슬롯 무작위 배정(간격 보장) + 지터 → 서로 간격 둔 랜덤 시작 위치
       st.innerHTML=_fx10.items.map(function(it,i){ const hh=petActorPx(it.id,44,110);
         let f=(order[i]+0.5)/N + (Math.random()-0.5)*(0.7/N); f=Math.max(0.02, Math.min(0.98, f));   // data-spawnf: 폭 대비 시작 프래션(buildActors가 사용)

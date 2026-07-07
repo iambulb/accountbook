@@ -331,14 +331,16 @@ test('normalizeHome: 이미 rooms면 통과 + roomSlots만큼 방 보장', () =>
   assert.strictEqual(h.roomSlots, 3);
 });
 
-test('loginStreakReward: 마일스톤(3·7·14·30)만 지급, 30 이후 매30일 반복', () => {
+test('loginStreakReward: 마일스톤(3·7·14·30·60·100)만 지급, 100 이후 매100일 반복 (경제 정책 §3-E)', () => {
   assert.deepStrictEqual(U.loginStreakReward(1), { coins: 0, gold: 0 });
-  assert.deepStrictEqual(U.loginStreakReward(3), { coins: 5, gold: 0 });
-  assert.deepStrictEqual(U.loginStreakReward(7), { coins: 20, gold: 2 });
-  assert.deepStrictEqual(U.loginStreakReward(14), { coins: 50, gold: 3 });
-  assert.deepStrictEqual(U.loginStreakReward(30), { coins: 100, gold: 5 });
+  assert.deepStrictEqual(U.loginStreakReward(3), { coins: 50, gold: 0 });
+  assert.deepStrictEqual(U.loginStreakReward(7), { coins: 100, gold: 2 });
+  assert.deepStrictEqual(U.loginStreakReward(14), { coins: 200, gold: 3 });
+  assert.deepStrictEqual(U.loginStreakReward(30), { coins: 400, gold: 6 });
   assert.deepStrictEqual(U.loginStreakReward(31), { coins: 0, gold: 0 });
-  assert.deepStrictEqual(U.loginStreakReward(60), { coins: 100, gold: 5 });   // 매 30일 반복
+  assert.deepStrictEqual(U.loginStreakReward(60), { coins: 600, gold: 10 });
+  assert.deepStrictEqual(U.loginStreakReward(100), { coins: 1000, gold: 15 });
+  assert.deepStrictEqual(U.loginStreakReward(200), { coins: 1000, gold: 15 });   // 매 100일 반복
 });
 
 test('dexProgress: 보유/전체/퍼센트', () => {
@@ -513,19 +515,19 @@ test('pityRemain: 확정까지 남은 뽑기 수', () => {
   assert.strictEqual(U.pityRemain(3, 5), 2);
 });
 
-test('roomYield: 행복도 기반 유휴 은화(펫0=0, mood·배율·24h 상한)', () => {
+test('roomYield: 행복도 기반 유휴 은화(펫0=0, mood·배율·24h 상한) — 경제 정책 §3-C(BASE 0.5·LV 0.25)', () => {
   assert.strictEqual(U.roomYield([], 100, 3600000, 1), 0);       // 펫 없으면 0
   assert.strictEqual(U.roomYieldCapH(), 24);                     // 누적 상한 24h(인자 무시)
-  // 펫1 Lv0=0.3/hr, mood100 → happy 1.0, 24h 상한 → 0.3×24=7.2 → 7
-  assert.strictEqual(U.roomYield([0], 100, 100 * 3600000, 1), 7);
-  // 펫1 Lv5 → perHr=1.55, mood100, 24h → 1.55×24=37.2 → 37
-  assert.strictEqual(U.roomYield([5], 100, 100 * 3600000, 1), 37);
-  // 경과 6h(상한 미만): 0.3 × happy1.0 × 6 = 1.8 → 1
-  assert.strictEqual(U.roomYield([0], 100, 6 * 3600000, 1), 1);
-  // mood0 → happy 0.2: 0.3×0.2×1h=0.06 → 0 (방치 시 사실상 0)
+  // 펫1 Lv0=0.5/hr, mood100 → happy 1.0, 24h 상한 → 0.5×24=12
+  assert.strictEqual(U.roomYield([0], 100, 100 * 3600000, 1), 12);
+  // 펫1 Lv5 → perHr=0.5+5×0.25=1.75, mood100, 24h → 1.75×24=42
+  assert.strictEqual(U.roomYield([5], 100, 100 * 3600000, 1), 42);
+  // 경과 6h(상한 미만): 0.5 × happy1.0 × 6 = 3
+  assert.strictEqual(U.roomYield([0], 100, 6 * 3600000, 1), 3);
+  // mood0 → happy 0.2: 0.5×0.2×1h=0.1 → 0 (방치 시 사실상 0)
   assert.strictEqual(U.roomYield([0], 0, 3600000, 1), 0);
-  // 배율 2배·펫3 Lv5·mood100·24h: 4.65 × 1.0 × 2 × 24 = 223.2 → 223
-  assert.strictEqual(U.roomYield([5, 5, 5], 100, 24 * 3600000, 2), 223);
+  // 배율 2배·펫3 Lv5·mood100·24h: 5.25 × 1.0 × 2 × 24 = 252
+  assert.strictEqual(U.roomYield([5, 5, 5], 100, 24 * 3600000, 2), 252);
 });
 
 test('roomMood: 돌봄·애정·enrichment 종류로 상승(도배 무의미)', () => {
@@ -559,4 +561,22 @@ test('affLevelReward: 레벨별 소보상 은화(×10)', () => {
   assert.strictEqual(U.affLevelReward(5), 100);
   assert.strictEqual(U.affLevelReward(0), 0);
   assert.strictEqual(U.affLevelReward(6), 0);
+});
+
+test('CAM: 캠 원근 한 묶음 불변식(단일 소스 잠금)', () => {
+  // 값 자체를 잠금 — 바꾸려면 dock·방·친구방 CSS(--cam-*)와 함께 의도적으로(과거 dock 66%·rise 0.61 회귀 재발 방지)
+  assert.deepStrictEqual(U.CAM, { FLOOR: 54, WALL: 46, STAGE: 58, RISE: 0.53, FURN_BASE: 3, FURN_SPAN: 46, ROWS: 12, DIV: 11 });
+  assert.strictEqual(U.CAM.FLOOR + U.CAM.WALL, 100);                    // 바닥+벽지=100%
+  assert.strictEqual(U.camDepth(12), 0);                                // 맨 앞행 → depth 0
+  assert.strictEqual(U.camDepth(1), 1);                                 // 맨 뒷행 → depth 1
+  assert.strictEqual(U.camFurnBottom(0), 3);                            // 맨 앞 가구 bottom 3%
+  assert.strictEqual(U.camFurnBottom(1), 49);                           // 맨 뒤 가구 bottom 49%(벽 바닥선)
+  assert.strictEqual(U.camZ(0), 12);                                    // 맨 앞 z 최대
+  assert.strictEqual(U.camZ(1), 1);                                     // 맨 뒤 z 최소(≥1)
+  // CSS(--cam-*)와 JS(CAM)의 값 정합 — styles.css 원문 검사
+  const fs = require('node:fs'), path = require('node:path');
+  const css = fs.readFileSync(path.join(__dirname, '..', 'public', 'css', 'styles.css'), 'utf8');
+  assert.ok(css.includes('--cam-floor: ' + U.CAM.FLOOR + '%'), 'CSS --cam-floor가 CAM.FLOOR와 다름');
+  assert.ok(css.includes('--cam-wall: ' + U.CAM.WALL + '%'), 'CSS --cam-wall가 CAM.WALL와 다름');
+  assert.ok(css.includes('--cam-stage: ' + U.CAM.STAGE + '%'), 'CSS --cam-stage가 CAM.STAGE와 다름');
 });
