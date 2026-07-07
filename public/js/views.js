@@ -903,10 +903,14 @@
       if(!reduce) _storyTimer=setTimeout(storyNext, 4200);   // 자동 넘김(4.2s)
     }
     // nextDue/dueDiffDays는 js/util.js(순수함수·단위테스트)로 이관됨 — 전역으로 사용.
-    function todoDueBadge(t){ if(!t.dueDate) return ''; const today=ymd(new Date());
+    function todoDueBadge(t, ro){ const editable=!ro && !t.done;   // 미완료·편집가능 행은 배지를 탭해 '날짜 옮기기'
+      if(!t.dueDate){ return editable ? '<button class="tdue tap none" onclick="event.stopPropagation();openTodoReschedule(\''+t.id+'\')" aria-label="날짜 지정">날짜</button>' : ''; }
+      const today=ymd(new Date());
       const diff=dueDiffDays(t.dueDate, today);
       let txt,cls; if(diff<0){ txt=(-diff)+'일 지남'; cls='over'; } else if(diff===0){ txt='오늘'; cls='today'; } else if(diff===1){ txt='내일'; cls='soon'; } else { txt='D-'+diff; cls=diff<=3?'soon':''; }
-      return '<span class="tdue '+cls+'">'+txt+'</span>'; }
+      return editable
+        ? '<button class="tdue tap '+cls+'" onclick="event.stopPropagation();openTodoReschedule(\''+t.id+'\')" aria-label="날짜 옮기기">'+txt+'</button>'
+        : '<span class="tdue '+cls+'">'+txt+'</span>'; }
     function todoRow(t, ro){
       const who=(t.assignedUid||t.assignedName)?'<span class="tdwho">'+(t.assignedUid?avatarHtml(t.assignedUid,t.assignedName||'',20):'<span class="tdname">'+escapeHtml(t.assignedName)+'</span>')+'</span>':'';
       const chkSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>';
@@ -918,7 +922,7 @@
         : '<span class="tdtitle'+(t.done?' done':'')+'" onclick="openTodoEdit(\''+t.id+'\')">';
       return '<div class="tdrow">'+chk+
         titleTag+escapeHtml(t.title||'')+(t.repeat&&t.repeat!=='none'?' <span class="pill">🔁</span>':'')+(t.purposeBookId?' <span class="pill">📍</span>':'')+'</span>'+
-        todoDueBadge(t)+who+'</div>';
+        todoDueBadge(t, ro)+who+'</div>';
     }
     function renderTodoList(){
       // 개인 프로필의 '친구들' = 친구 피드(아바타 정렬·오늘 무지개·친구 할일 목록). 단, 특정 친구를 열람 중이면 그 친구 목록을 보여줌(아래로 진행).
@@ -937,9 +941,11 @@
       const chips=isGroup?[['all','전체'],['mine','내 담당'],['today','오늘'],['week','이번주']]:[['all','전체'],['today','오늘'],['week','이번주']];
       let h=todoScopeSeg();   // 개인 탭 = 내 할일만(친구는 '친구들' 탭 피드로 일원화)
       h+='<div class="chip-row" style="margin:6px 0 12px;">'+chips.map(c=>'<button class="chip'+(_todoFilter===c[0]?' on':'')+'" onclick="setTodoFilter(\''+c[0]+'\')">'+c[1]+'</button>').join('')+'</div>';
+      const roList=!!(state._todoFriend && state._todoFriend!==state.uid);   // 친구 열람=읽기전용(배지 탭·일괄 이동 숨김)
+      if(!roList){ const odIds=overdueTodoIds(base, today); if(odIds.length) h+='<button class="td-carry" onclick="carryOverdueToToday()">🕘 지난 미완료 '+odIds.length+'개 → 오늘로</button>'; }
       const emptyMsg=isGroup?'그룹 할일이 없어요 — 아래 ＋ 로 담당을 나눠보세요':'개인 할일이 없어요 — 아래 ＋ 로 추가하세요';
-      h+='<div class="card" style="padding:4px 12px;">'+(open.length?open.map(t=>todoRow(t)).join(''):'<div class="empty" style="padding:26px 6px;">'+emptyMsg+'</div>')+'</div>';
-      if(done.length){ h+='<div class="sech"><span class="l">완료</span><span class="s">'+done.length+'개</span></div><div class="card" style="padding:4px 12px;">'+done.slice(0,20).map(t=>todoRow(t)).join('')+'</div>'; }
+      h+='<div class="card" style="padding:4px 12px;">'+(open.length?open.map(t=>todoRow(t, roList)).join(''):'<div class="empty" style="padding:26px 6px;">'+emptyMsg+'</div>')+'</div>';
+      if(done.length){ h+='<div class="sech"><span class="l">완료</span><span class="s">'+done.length+'개</span></div><div class="card" style="padding:4px 12px;">'+done.slice(0,20).map(t=>todoRow(t, roList)).join('')+'</div>'; }
       $('content').innerHTML=h;
     }
     function todoMoveMonth(d){ state.month=shiftMonth(state.month,d); renderTodoCalendar(); }
@@ -984,6 +990,35 @@
         if(done && firstReward){ upd.rewardClaimed=true; ref.update(upd); if(typeof grantTodoCoins==='function'){ grantTodoCoins(); toast('완료! +2 은화 🐾'); } }
         else ref.update(upd);
       }
+    }
+    // 📅 미완료 할일을 다른 날짜로 옮기기(리스케줄) — 마감일 배지 탭으로 진입. dueDate만 갱신(노드 경로·키 불변).
+    function openTodoReschedule(id){ const t=allTodos().find(x=>x.id===id); if(!t) return;
+      const today=todayStr();
+      const quick=[['오늘',0],['내일',1],['모레',2],['다음 주',7]];
+      let h='';
+      if(t.dueDate) h+='<p class="muted" style="font-size:12.5px;margin:2px 2px 12px;">현재 마감일 <b>'+t.dueDate+'</b></p>';
+      else h+='<p class="muted" style="font-size:12.5px;margin:2px 2px 12px;">마감일이 없어요 — 날짜를 지정해 보세요.</p>';
+      h+='<div class="chip-row" style="margin-bottom:14px;">'+quick.map(function(q){ const ds=addDays(today,q[1]); return '<button class="chip" onclick="rescheduleTodo(\''+id+'\',\''+ds+'\')">'+q[0]+'</button>'; }).join('')+'</div>';
+      h+='<div class="field"><label>날짜 직접 선택</label><input type="date" class="input" id="tdMoveDate" value="'+(t.dueDate||today)+'"></div>';
+      h+='<button class="btn" onclick="rescheduleTodo(\''+id+'\', val(\'tdMoveDate\'))">이 날짜로 옮기기</button>';
+      openSheet('날짜 옮기기', h);
+    }
+    function rescheduleTodo(id, ds){ if(!ds) return; const t=allTodos().find(x=>x.id===id); if(!t) return;
+      const now=new Date().toISOString();
+      todoDbRef(t).update({ dueDate:ds, updatedAt:now });   // 반복(repeat)은 유지 — 수동 이동은 회차 넘김과 별개
+      const diff=dueDiffDays(ds, todayStr());
+      const label=diff===0?'오늘':diff===1?'내일':diff===2?'모레':ds;
+      closeSheet(); toast('📅 '+label+'로 옮겼어요');
+    }
+    // 🕘 지난(마감 지남) 미완료 할일을 전부 오늘로 — 현재 스코프의 한 base에 다중경로 fan-out update(원자).
+    function carryOverdueToToday(){ const today=todayStr(); const ids=overdueTodoIds(scopedTodos(), today); if(!ids.length) return;
+      if(state._todoFriend && state._todoFriend!==state.uid) return;   // 친구 열람(읽기전용)은 일괄 이동 불가
+      confirmSheet('지난 미완료 '+ids.length+'개를 오늘로 옮길까요?', function(){
+        const base=isPersonalWs()?db.ref('users/'+state.uid+'/todos'):db.ref(wp('todos'));
+        const now=new Date().toISOString(); const upd={};
+        ids.forEach(function(x){ upd[x+'/dueDate']=today; upd[x+'/updatedAt']=now; });
+        base.update(upd); closeSheet(); toast('지난 할일 '+ids.length+'개를 오늘로 옮겼어요');
+      }, { okLabel:'오늘로 옮기기', danger:false });
     }
     function openTodoEdit(id, presetPb){
       if(!id) state._todoFriend=null;   // 새 할일은 항상 내 목록으로(친구 읽기전용 뷰였어도)

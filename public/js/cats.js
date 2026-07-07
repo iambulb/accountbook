@@ -4109,13 +4109,14 @@
     function catLoop(ts){
       if(document.hidden){ _eng.raf=0; return; }   // 탭 숨김 → 루프 정지(복귀 시 visibilitychange로 재개, 유휴 배터리 절약)
       _eng.raf=requestAnimationFrame(catLoop);      // 다음 프레임 먼저 예약(아래 작업이 예외로 죽어도 루프 유지 — 예전엔 예외 시 재예약이 건너뛰어져 펫이 앱 재시작까지 완전 정지)
-      // 🔋 프레임레이트 캡 — 걷기는 30fps면 충분히 부드럽다(저사양 폰 CPU/GPU·배터리 절반↓). 가벼운 모드는 22fps로 더 낮추되 '계속 걷는다'. OS 모션 최소화(접근성)만 5fps로 사실상 정지.
-      const budget = reducedMotion() ? 200 : (liteMode() ? 45 : 33);
+      const want=activeStages();                    // 값싼 조회(몇 개 getElementById) — 예산 결정에 필요해 게이트 앞에서 1회 계산 후 아래서 재사용
+      // 🔋 프레임레이트 캡 — 걷기는 30fps면 충분(저사양 CPU/GPU·배터리 절반↓). 가벼운 모드 22fps. OS 모션최소화 5fps(사실상 정지). dock 스트립만 활성(홈캠·방·친구방·리빌 없음)이면 사용자가 포커스 안 하므로 12fps로.
+      const dockOnly = want.length===1 && want[0] && want[0].id==='cdStage';
+      const budget = reducedMotion() ? 200 : (liteMode() ? (dockOnly?90:45) : (dockOnly ? 83 : 33));
       const since = _eng.last ? ts-_eng.last : 999;
-      if(since < budget) return;                    // 아직 프레임 예산이 안 참 → 이 rAF는 그냥 넘김(무거운 activeStages/stepActors 스킵)
-      const dt=Math.min(50, since); _eng.last=ts;
+      if(since < budget) return;                    // 아직 프레임 예산이 안 참 → 이 rAF는 그냥 넘김(무거운 stepActors 스킵)
+      const dt=Math.min(90, since); _eng.last=ts;    // dt 상한 90ms(12fps ~83ms 간격 반영해 이동거리 튐 방지)
       try{
-        const want=activeStages();
         // 무대 집합이 바뀌었거나 dirty면 그룹 재구성 — 유지되는 무대의 액터는 재사용해 애니메이션 상태 보존, 새 무대만 buildActors.
         const changed=_eng.dirty || _eng.groups.length!==want.length || _eng.groups.some(g=>want.indexOf(g.stage)<0);
         if(changed){ _eng.groups=want.map(st=>{ const ex=_eng.dirty?null:_eng.groups.find(g=>g.stage===st); return ex||{ stage:st, actors:buildActors(st) }; }); _eng.dirty=false; }

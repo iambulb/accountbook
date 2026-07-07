@@ -547,6 +547,11 @@
     .tdname { font-size:11px; color:var(--sub); font-weight:700; }
     .tdue { flex:none; font-size:11px; font-weight:800; color:var(--sub); }
     .tdue.today { color:var(--primary); } .tdue.soon { color:#E0883C; } .tdue.over { color:var(--expense); }
+    button.tdue { -webkit-appearance:none; appearance:none; border:none; background:transparent; padding:0; cursor:pointer; font-family:inherit; }   /* 마감일 배지 = 탭하면 날짜 옮기기 */
+    .tdue.tap { padding:3px 8px; border-radius:9px; background:var(--soft); line-height:1.15; transition:transform .08s; }
+    .tdue.tap:active { transform:scale(.94); }
+    .td-carry { display:block; width:100%; text-align:left; margin:0 0 12px; padding:11px 14px; -webkit-appearance:none; appearance:none; border:none; border-radius:13px; background:color-mix(in srgb,var(--expense) 12%,var(--card)); color:var(--expense); font-size:13px; font-weight:800; font-family:inherit; cursor:pointer; transition:transform .08s; }   /* 지난 미완료 → 오늘로 일괄 이동 배너 */
+    .td-carry:active { transform:scale(.99); }
     /* 할일 공유 친구 스트립 + 내 공유 토글 + 읽기전용 바 */
     .tdfriends { display:flex; align-items:flex-start; gap:8px; margin:2px 0 10px; }
     .tdfr-scroll { display:flex; gap:12px; overflow-x:auto; flex:1; padding:2px 2px 4px; }

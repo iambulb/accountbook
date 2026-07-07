@@ -45,6 +45,8 @@
 ## 마감일 · 캘린더 · 완료
 
 - **마감일 배지**: 오늘/내일/D-N/N일 지남을 색으로(`todoDueBadge`). 미완료는 마감 임박순 정렬.
+- **날짜 옮기기(리스케줄)**: **미완료 할일의 마감일 배지를 탭**하면 '날짜 옮기기' 미니 시트(`openTodoReschedule`) — 빠른 칩(오늘·내일·모레·다음 주, `addDays` 기반) + 날짜 직접 선택(`<input type=date>`). 이동은 `rescheduleTodo`가 **`dueDate`만 갱신**(`todoDbRef(t).update`, 노드 경로·키 불변, 반복 `repeat` 유지). 마감일 없는 미완료 할일은 배지 자리에 **`날짜`** 칩이 떠 같은 시트로 지정. 완료·친구 열람(읽기전용) 행은 배지 비활성.
+- **지난 미완료 일괄 오늘로**: 리스트 상단 **'🕘 지난 미완료 N개 → 오늘로'** 배너(`carryOverdueToToday`) — 현재 스코프의 지난 미완료(`overdueTodoIds`, 순수헬퍼)를 확인 후 **다중경로 fan-out `update()`** 로 한 번에 오늘로. 친구 열람 뷰에선 숨김.
 - **캘린더 탭**(`renderTodoCalendar`): 가계부 달력 그리드를 재사용해 **현재 스코프의 마감일**을 점/개수로 표시, 날짜 탭 시 그날 할일. 월 이동 `todoMoveMonth`.
 - **완료 탭**(`renderTodoDone`): 현재 스코프의 완료 할일을 완료 시각 최신순으로. 각 행 체크를 눌러 되돌리기.
 
@@ -71,4 +73,4 @@
 ## 데이터 · 순수 헬퍼
 
 - 컬렉션: `ws/{wsId}/todos/{id}`(스코프/소유자/담당/마감/반복/PB/보상 필드), `ws/{wsId}/todoShare/{uid}`. 필드 상세는 [data-model.md](data-model.md#todosid--할일--flat-wswsidtodosid). **RTDB 규칙 변경 없음**(`ws` 멤버 규칙이 하위 경로 전부 커버).
-- 순수 헬퍼는 `public/js/util.js` 에 두고 단위 테스트: `todoScope`(스코프 하위호환)·`friendTodoOrder`(친구 정렬)·`addDays`/`nextDue`/`dueDiffDays`(마감·반복 날짜). `npm test` 로 검증.
+- 순수 헬퍼는 `public/js/util.js` 에 두고 단위 테스트: `todoScope`(스코프 하위호환)·`overdueTodoIds`(지난 미완료 id, 일괄 이동 대상)·`friendTodoOrder`(친구 정렬)·`addDays`/`nextDue`/`dueDiffDays`(마감·반복 날짜). `npm test` 로 검증.

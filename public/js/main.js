@@ -33,21 +33,24 @@
         if(!el.hasAttribute('role')){ el.setAttribute('role','switch'); el.setAttribute('tabindex','0'); }
         el.setAttribute('aria-checked', el.classList.contains('on')?'true':'false');
       });
-      // 2) onclick 이 달린 비(非)버튼 요소(div/span 등): role=button + 포커스 가능
-      root.querySelectorAll('[onclick]').forEach(el=>{
+      // 2) onclick 이 달린 비(非)버튼 요소(div/span 등): role=button + 포커스 가능. 🔋 이미 처리한 노드는 data-ab로 스킵 — 작은 DOM 삽입(FX·뱃지)마다 옵저버가 컨테이너 전체를 재스캔하던 비용 제거(1회성 데코라 재처리 불필요).
+      root.querySelectorAll('[onclick]:not([data-ab])').forEach(el=>{
+        el.setAttribute('data-ab','');
         if(el.id==='overlay' || el.classList.contains('switch')) return;
         const tag=el.tagName;
         if(tag==='BUTTON'||tag==='A'||tag==='INPUT'||tag==='SELECT'||tag==='TEXTAREA'||tag==='LABEL') return;
         if(!el.hasAttribute('role')) el.setAttribute('role','button');
         if(!el.hasAttribute('tabindex')) el.setAttribute('tabindex','0');
       });
-      // 3) 라벨↔입력 연결(.field 안의 label 과 첫 입력)
-      root.querySelectorAll('.field').forEach(f=>{
+      // 3) 라벨↔입력 연결(.field 안의 label 과 첫 입력) — data-af로 1회만
+      root.querySelectorAll('.field:not([data-af])').forEach(f=>{
+        f.setAttribute('data-af','');
         const lab=f.querySelector('label'), inp=f.querySelector('input,select,textarea');
         if(lab && inp && !lab.htmlFor && inp.id) lab.htmlFor=inp.id;
       });
-      // 3b) .txfield(거래/정기 입력)은 <label> 대신 span.k 유사라벨 → 입력에 aria-label 복사(스크린리더 대응)
-      root.querySelectorAll('.txfield').forEach(f=>{
+      // 3b) .txfield(거래/정기 입력)은 <label> 대신 span.k 유사라벨 → 입력에 aria-label 복사(스크린리더 대응) — data-at로 1회만
+      root.querySelectorAll('.txfield:not([data-at])').forEach(f=>{
+        f.setAttribute('data-at','');
         const k=f.querySelector('.k'), inp=f.querySelector('input,select,textarea');
         if(k && inp && !inp.getAttribute('aria-label')){ const t=(k.textContent||'').trim(); if(t) inp.setAttribute('aria-label', t); }
       });

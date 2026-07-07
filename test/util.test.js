@@ -96,6 +96,22 @@ test('dueDiffDays: 마감 D-day 계산', () => {
   assert.strictEqual(U.dueDiffDays('2026-06-29', '2026-07-01'), -2);  // 2일 지남
 });
 
+test('overdueTodoIds: 미완료·마감 지남만(오늘·미래·완료·마감없음 제외)', () => {
+  const today = '2026-07-07';
+  const todos = [
+    { id: 'a', done: false, dueDate: '2026-07-05' },   // 지남 → 포함
+    { id: 'b', done: false, dueDate: '2026-07-06' },   // 지남 → 포함
+    { id: 'c', done: false, dueDate: '2026-07-07' },   // 오늘 → 제외(경계)
+    { id: 'd', done: false, dueDate: '2026-07-08' },   // 미래 → 제외
+    { id: 'e', done: true,  dueDate: '2026-07-01' },   // 완료 → 제외
+    { id: 'f', done: false, dueDate: '' },              // 마감없음 → 제외
+    { id: 'g', done: false },                           // 마감없음 → 제외
+  ];
+  assert.deepStrictEqual(U.overdueTodoIds(todos, today), ['a', 'b']);
+  assert.deepStrictEqual(U.overdueTodoIds([], today), []);
+  assert.deepStrictEqual(U.overdueTodoIds(null, today), []);
+});
+
 test('todoScope: personal만 개인, 나머지(누락 포함)는 group', () => {
   assert.strictEqual(U.todoScope({ scope: 'personal' }), 'personal');
   assert.strictEqual(U.todoScope({ scope: 'group' }), 'group');
