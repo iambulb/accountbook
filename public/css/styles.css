@@ -419,8 +419,12 @@
     .sheet-handle { width:38px; height:4px; border-radius:3px; background:var(--line); margin:10px auto 4px; flex-shrink:0; cursor:grab; touch-action:none; }
     .sheet-handle:active { cursor:grabbing; }
     .sheet-head { display:flex; align-items:center; justify-content:space-between; padding:8px 22px 12px; touch-action:none; }
-    .sheet-head h3 { font-size:18px; font-weight:800; letter-spacing:-.02em; }
+    .sheet-head h3 { font-size:18px; font-weight:800; letter-spacing:-.02em; flex:none; }
     .sheet-head .x { font-size:22px; color:var(--sub); padding:4px; }
+    /* 💰 알뜰샵 제목 오른쪽 잔액(금화·은화) — margin으로 제목 옆에 붙고 ✕는 맨 오른쪽으로 밀림 */
+    .shophw { display:flex; align-items:center; gap:10px; margin:0 auto 0 12px; min-width:0; }
+    .shophw-c { display:inline-flex; align-items:center; gap:4px; font-size:13.5px; font-weight:800; letter-spacing:-.01em; color:var(--text); }
+    .shophw-c svg { display:block; flex:none; }
     .sheet-body { flex:1 1 auto; min-height:0; padding:0 22px 24px; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
     .sheet-body { padding-bottom:calc(24px + env(safe-area-inset-bottom)); }
 
@@ -679,6 +683,8 @@
       will-change:transform; animation:csprFilm var(--wdur,.72s) steps(6) infinite; }   /* steps(6)=기본값. 실제 걷기 장수(6·8 등)는 catActorHTML이 인라인 animation-timing-function:steps(N)로 덮어씀(--fw=칸크기×frames와 한 쌍) */
     @keyframes csprFilm { from { transform:translateX(0); } to { transform:translateX(calc(-1 * var(--fw))); } }
     @media (prefers-reduced-motion: reduce) { .csprf { animation:none; } }
+    /* 🎞️ 원샷 클립(앉기 전환·하품·그루밍·점프 — cats.js _csprClip) — 1회 재생 후 마지막 프레임 유지(hold). 복귀는 JS(actorOnce/pause 만료)가 처리 */
+    .cspr.once .csprf { animation-iteration-count:1; animation-fill-mode:forwards; }
     /* 🔋 가벼운 모드(저사양·body.lite) — '장식/무거운' 상시 애니메이션만 정지: 가구 캠 연출·구름·나비·풀·꽃·무지개·새. 걷기(엔진·필름)와 시트/토스트 UI 피드백은 유지(기능성 모션). */
     body.lite .ffx .px,
     body.lite .pk-cloud,

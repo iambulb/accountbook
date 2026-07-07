@@ -4718,8 +4718,9 @@
       s.classList.remove('idle'); }   // .idle 제거 → CSS 걷기 필름(csprFilm) 재생
     function actorShowStill(a, face, clip){ if(!a.spr) return; const s=a.el.querySelector('.cspr'); if(!s) return;
       // 🎞️ 클립 승급 — 지정 클립(가구 eat/drink/sit/belly 등) 또는 정면 휴식이면 idle 클립.
-      // 클립 시트는 south 전용 정책이라 정면이 아닌 경우(잠=north·인사/스크래처=east/west)는 기존 방향 스틸 유지. 모션축소는 항상 스틸.
-      if(!reducedMotion()){ const want = clip || (face==='south' ? 'idle' : null);
+      // 클립 시트는 south 전용 정책이라 정면이 아닌 경우(잠=north·인사/스크래처=east/west)는 기존 방향 스틸 유지.
+      // 모션축소·가벼운 모드(body.lite)는 항상 스틸 — 쉬는 펫이 늘 필름을 돌리면 lite의 절전 취지가 깨짐(걷기 필름은 기능 모션이라 유지).
+      if(!reducedMotion() && !liteMode()){ const want = clip || (face==='south' ? 'idle' : null);
         const r = want ? resolveClip(a.id, want) : null;
         if(r && r.key!=='walk'){ _csprClip(s, a, r); return; } }
       _csprStill(s, a, face); }
@@ -6426,7 +6427,8 @@
     function grantBoxReward(g, res){   // 지급 + (바닥/벽지 중복이면) 환급 은화 반환
       if(res.type==='floor'){ g.owned.floors=g.owned.floors||{}; if(g.owned.floors[res.id]) return Math.round((TIER_PRICE[res.tier]||0)*0.2); g.owned.floors[res.id]={boughtAt:new Date().toISOString()}; return 0; }
       if(res.type==='wall'){ if(g.owned.wallpapers[res.id]) return Math.round((TIER_PRICE[res.tier]||0)*0.2); g.owned.wallpapers[res.id]={boughtAt:new Date().toISOString()}; return 0; }
-      if(g.owned.items[res.id]&&(Number(g.owned.items[res.id].qty)||0)>0) return Math.round((TIER_PRICE[res.tier]||0)*0.2);   // 이미 보유(qty>0) → 펫처럼 환급
+      // 가구(item)는 상점 구매처럼 수량 누적 — 이미 보유해도 qty+1(여러 방에 같은 가구 배치 가능). 바닥/벽지 같은 스킨(own-once)만 중복 환급.
+      const it=g.owned.items[res.id]; if(it&&(Number(it.qty)||0)>0){ it.qty=(Number(it.qty)||0)+1; return 0; }
       g.owned.items[res.id]={qty:1,boughtAt:new Date().toISOString()}; return 0; }
     // 가챠전용 판정: 전역 오버라이드(config/*.gacha, 개발자 토글)가 있으면 그 값, 없으면 등급 기반 기본값(특별↑=가챠전용).
     //   가챠전용=true → 알뜰샵 판매목록에서 숨김. false → 등급 무관 은화 판매. 어느 쪽이든 가챠(펫알/랜덤박스) 풀에는 항상 포함.
