@@ -1827,7 +1827,7 @@
     .gbanner { border-radius:16px; overflow:hidden; border:1.5px solid color-mix(in srgb,#9B6FC8 40%,var(--line)); background:var(--card); margin:2px 0 12px; }
     .gbanner .gb-head { padding:9px 12px 8px; }
     .gbanner .gb-head .pk-title, .gbanner .gb-head .gb-t { font-size:14px; font-weight:900; letter-spacing:.02em; }
-    .gb-scene { position:relative; height:256px; overflow:hidden; }   /* 캠 화면처럼 세로로 크게 */
+    .gb-scene { position:relative; height:256px; overflow:hidden; contain:layout paint; }   /* 캠 화면처럼 세로로 크게. contain: 씬 상시 애니(구름·나무·SMIL) 리페인트가 배너 아래(재화 아이콘 등)로 번지지 않게 격리 */
     .gb-scene .pkscene { height:100%; }
     /* ===== 🌇 노을 씬(펫알 배너) — 픽업 씬 틀 + 노을 하늘·계곡·고추잠자리 ===== */
     .gb-sunset-t { background:linear-gradient(90deg,#f0b03c,#ee7a4a,#d15fa6); -webkit-background-clip:text; background-clip:text; color:transparent; }   /* 노을 그라디언트 제목 */
@@ -1912,26 +1912,26 @@
     /* ✨ 뜰알 한정 픽업 전용 프리미엄 배너 — 무지개 테두리 + 코너 리본 + 상단 쇼케이스(양쪽 초상 카드 + 가운데 텍스트·확률UP·기간). 씬은 배회 픽업 펫 유지. */
     .gbanner.gb-ddeul { position:relative; border:2px solid transparent; background:linear-gradient(var(--card),var(--card)) padding-box, linear-gradient(100deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8) border-box; }
     /* 🏆 상단 쇼케이스 스트립: [초상] — [한정 픽업 텍스트] — [초상] */
-    .gb-ddeul-top { position:relative; display:flex; align-items:flex-end; justify-content:space-between; gap:6px; padding:16px 10px 10px; background:linear-gradient(180deg, color-mix(in srgb,#9B6FC8 16%,var(--card)) 0%, var(--card) 100%); }
+    .gb-ddeul-top { position:relative; display:flex; align-items:flex-end; justify-content:space-between; gap:6px; padding:16px 10px 10px; background:linear-gradient(180deg, color-mix(in srgb,#9B6FC8 16%,var(--card)) 0%, var(--card) 100%); contain:layout paint; }   /* contain: 스트립 안 상시 애니(무지개 SMIL·별 회전·bob) 리페인트가 아래 씬/버튼을 재래스터화(미세 흔들림·깜빡임)하지 않게 격리 */
     .gb-ddeul-title { flex:1; min-width:0; text-align:center; display:flex; flex-direction:column; align-items:center; gap:3px; align-self:center; padding-bottom:12px; }   /* 행 하단(flex-end)에 처지지 않게 초상 카드 중앙 높이에 정렬(이름 라벨 몫만큼 살짝 위로) */
-    .gb-ddeul-title .pk-title { font-size:15px; font-weight:900; line-height:1.25; }
-    .gb-ddeul-sub { font-size:10.5px; }
+    .gb-ddeul-title .pk-title { font-size:15px; font-weight:900; line-height:19px; }   /* 정수 line-height — 1.25(18.75px)면 스트립 높이가 소수점이 돼 아래 픽셀아트가 반픽셀 어긋나 흔들려 보임 */
+    .gb-ddeul-sub { font-size:10.5px; line-height:14px; }
     /* 초상 카드 스포트라이트(무지개 카드 안 초상+받침대 + 조명빔 + 후광 + 별·이름·등급 + 팝인/bob) */
     .gb-ddeul-top .gb-spot { position:relative; flex:0 0 auto; width:84px; display:flex; flex-direction:column; align-items:center; animation:gbspotpop .5s cubic-bezier(.34,1.56,.64,1) both; }
     .gb-spot-empty { visibility:hidden; }
     @keyframes gbspotpop { 0%{ opacity:0; transform:translateY(9px) scale(.86); } 100%{ opacity:1; transform:none; } }
     .gb-spot-beam { position:absolute; left:50%; top:-8px; transform:translateX(-50%); width:46px; height:88px; z-index:0; pointer-events:none; clip-path:polygon(36% 0,64% 0,100% 100%,0 100%); background:linear-gradient(180deg, rgba(255,255,255,.32), rgba(255,255,255,.05) 66%, transparent); }
     .gb-spot-fx { position:absolute; left:50%; top:44%; width:0; height:0; z-index:0; }   /* 카드 "안" 앵커(카드 배경 위·펫 뒤 z0) — 카드가 불투명이라 밖(뒤)에 두면 스프라이트 폭에 따라 통째로 가려짐(우측 오오라 안 보이던 버그) */
-    .gb-spot-card { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; padding:4px 5px 0; border:1.5px solid transparent; border-radius:12px; background:linear-gradient(color-mix(in srgb,var(--card) 82%,#9B6FC8 18%),color-mix(in srgb,var(--card) 82%,#9B6FC8 18%)) padding-box, linear-gradient(120deg,#F04452,#F2C84B,#2FAE7A,#3182F6,#9B6FC8) border-box; }
+    .gb-spot-card { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; padding:4px 5px 0; border:2px solid transparent; border-radius:12px; background:linear-gradient(color-mix(in srgb,var(--card) 82%,#9B6FC8 18%),color-mix(in srgb,var(--card) 82%,#9B6FC8 18%)) padding-box, linear-gradient(120deg,#F04452,#F2C84B,#2FAE7A,#3182F6,#9B6FC8) border-box; }   /* 보더 2px 정수(1.5px는 카드/스트립 높이를 소수점으로 만듦) */
     .gb-spot-face { position:relative; z-index:2; line-height:0; animation:gbspotbob 2.8s ease-in-out infinite; }
     .gb-spot-face .catpx, .gb-spot-face .px { display:block; height:60px; width:auto; image-rendering:pixelated; filter:drop-shadow(0 2px 2px rgba(0,0,0,.32)); }
     @keyframes gbspotbob { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-3px); } }
     .gb-spot-ped { position:relative; z-index:1; margin-top:-9px; line-height:0; }   /* 초상 발밑 겹침 — 스프라이트 하단 투명 여백(~6px) 감안해 발이 상판 위에 서게 */
     .gb-spot-ped .px { display:block; height:24px; width:auto; image-rendering:pixelated; }   /* v2: 넓은 받침(폭≈65px, 초상 60px 중앙에 맞물림) */
-    .gb-spot-badge { position:absolute; left:50%; top:-7px; transform:translateX(-50%); z-index:4; line-height:0; animation:gbspotspin 2.2s linear infinite; }   /* ⭐ 펫 위 별이 정면 기준 앞뒤로 뱅글뱅글(코인 스핀 rotateY) — 픽셀이 가로로만 눌려 도트 유지 */
+    .gb-spot-badge { position:absolute; left:50%; top:-7px; transform:translateX(-50%); z-index:4; line-height:0; animation:gbspotspin 2.2s linear infinite; will-change:transform; backface-visibility:hidden; }   /* ⭐ 코인 스핀(rotateY) — will-change로 자체 레이어 고정(3D 변환이 이웃 픽셀아트를 매 프레임 재래스터화하며 흔들리게 하지 않게) */
     .gb-spot-badge .px { display:block; height:15px; width:auto; image-rendering:pixelated; }
     @keyframes gbspotspin { from{ transform:translateX(-50%) rotateY(0deg); } to{ transform:translateX(-50%) rotateY(360deg); } }
-    .gb-spot-name { position:relative; z-index:3; margin-top:3px; font-size:11px; font-weight:800; white-space:nowrap; text-shadow:0 1px 2px rgba(0,0,0,.4); }
+    .gb-spot-name { position:relative; z-index:3; margin-top:3px; font-size:11px; font-weight:800; line-height:14px; white-space:nowrap; text-shadow:0 1px 2px rgba(0,0,0,.4); }   /* 정수 line-height(스트립 높이 소수점 방지) */
     .gb-ddeul-top .gb-spot { cursor:pointer; }   /* 초상 탭 → 픽업 펫 미리보기 */
     .gb-ddeul-one { justify-content:center; gap:14px; }   /* 픽업 1마리: [타이틀|초상] 2열 중앙 */
     /* 🌇 펫알 배너 전용 — 노을 그라디언트 테두리(뜰알 무지개 테두리 패턴, 제목과 같은 팔레트) + 헤더 태그 노을 틴트 */
