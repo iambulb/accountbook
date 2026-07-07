@@ -1854,7 +1854,7 @@
              '<span class="ll-rays a">'+raysSvg(c,{h:r})+'</span>'+
              '<span class="ll-rays b">'+raysSvg(c,{h:Math.round(r*0.72)})+'</span>'; }
     // 펫 주변을 도는 트윙클 도트 — 등장 후 펫 둘레에 은은히 깜빡이며 흩뿌려짐(등급색).
-    function fxAuraTwinkles(n, rainbow){ n=n||6; let s=''; const cc=rainbow?'RAINBOW':'currentColor';
+    function fxAuraTwinkles(n, rainbow){ n=fxCount(n||6); let s=''; const cc=rainbow?'RAINBOW':'currentColor';
       for(let i=0;i<n;i++){ const a=(i/n)*360+Math.random()*24, d=52+Math.random()*30;
         const x=Math.round(Math.cos(a*Math.PI/180)*d), y=Math.round(Math.sin(a*Math.PI/180)*d);
         const h=12+Math.round(Math.random()*8), del=(Math.random()*1.1).toFixed(2), du=(1.1+Math.random()*0.7).toFixed(2);
@@ -1925,21 +1925,23 @@
     ];
     const UP_PAL={W:'#ff9ec9',L:'#ffd6ec'};   // 연한 분홍 + 밝은 광택
     function upSvg(opt){ return pxSvg(M_UP, UP_PAL, opt); }
-    // ⭐ 별(대표 방 즐겨찾기) 픽셀 아트 — S=몸체(골드)·H=하이라이트. opt.off=회색(미지정 방). 좋아요 하트와 같은 톤·연출 패턴.
+    // ⭐ 별 v2 — 둥글고 통통한(둥근 팁) 5각 입체 별: X외곽선·B몸체(무지개)·H하이라이트·D아랫녘 음영. 모든 별 사용처(대표 방·쓰다듬기 파티클·배너 배지·밤 씬) 공용. PIL 라이트/다크/OFF/밤 검수.
     const M_STAR = [
-      '.....S.....',
-      '....SSS....',
-      '...SSHSS...',
-      '.SSSSSSSSS.',
-      '..SSSSSSS..',
-      '...SSSSS...',
-      '...SSSSS...',
-      '..SSS.SSS..',
-      '..SS...SS..',
-      '.SS.....SS.',
-      '.S.......S.'
+      '......XXX......',
+      '.....XBBBX.....',
+      '.....XBBBX.....',
+      '.XXXXBBBBBXXXX.',
+      'XBBBBHHBBBBBBBX',
+      '.XBBBHBBBBBBBX.',
+      '..XBBBBBBBBBX..',
+      '..XBBBBBBBBBX..',
+      '..XBBDDDDDBBX..',
+      '..XBBBX.XBBBX..',
+      '.XBBBX...XBBBX.',
+      '.XDDX.....XDDX.',
+      '..XX.......XX..'
     ];
-    const STAR_PAL={S:'#f7c045',H:'#ffe9ad'}, STAR_PAL_OFF={S:'#c4cad3',H:'#dde1e7'};
+    const STAR_PAL={X:'#4a3a5e',B:'RAINBOW',H:'#ffffff',D:'#9b6fc8'}, STAR_PAL_OFF={X:'#969ca6',B:'#c4cad3',H:'#e8ecf1',D:'#a8afba'};   // 기본=무지개 몸체(움직이는 그라디언트), off=회색(대표 방 미지정)
     function starSvg(opt){ opt=opt||{}; return pxSvg(M_STAR, opt.off?STAR_PAL_OFF:STAR_PAL, opt); }
     // 👥 친구(사람 둘) 픽셀 아트 — 더보기 친구 타일용. A=앞사람(하이라이트 L), B=뒷사람. 은화/좋아요와 같은 톤(몸체+하이라이트).
     const M_PEOPLE = [
@@ -2341,7 +2343,7 @@
     function nightFlowerSvg(tn,opt){ return pxSvg(M_FLOWER, FLOWER_NIGHT[tn]||FLOWER_NIGHT.a, opt); }
     const CLOUD_NIGHT={mw:{W:'#c9d4e8',H:'#aebbd8',S:'#8a9bc0'},mb:{W:'#b6c4de',H:'#98a9cc',S:'#7486ae'},md:{W:'#9fadc8',H:'#8496ba',S:'#647698'}};
     function moonCloudSvg(which,tn,opt){ return pxSvg([M_CLOUD1,M_CLOUD2,M_CLOUD3][which]||M_CLOUD1, CLOUD_NIGHT[tn]||CLOUD_NIGHT.mw, opt); }
-    const STAR_NIGHT={S:'#cdd6ee',H:'#ffffff'};
+    const STAR_NIGHT={X:'#8b94b0',B:'#cdd6ee',H:'#ffffff',D:'#aab4d2'};   // 별 v2 글자(X/B/H/D)에 맞춘 밤하늘 페일블루
     function nightStarSvg(opt){ return pxSvg(M_STAR, STAR_NIGHT, opt); }
     // ===== 🥚🌿 알뜰 메인 아이콘(egg-garden) 매트릭스(icons/egg-garden.svg 파싱) — 배너별 재색용. 그룹: 알(X D W)·고양이(B E P)·꽃(F Y)·잔디(G g)·흙(R r) =====
     const M_EGGGARDEN=[
@@ -3791,12 +3793,13 @@
     function applyLiteMode(){ try{ if(document&&document.body) document.body.classList.toggle('lite', liteMode()); }catch(e){} }
     function refreshRbStatic(){ _rbStatic = liteMode() || reducedMotion(); }   // 무지개 SMIL 정적화 여부 재평가
     function pkCount(n){ return liteMode()?Math.max(1,Math.round(n*0.55)):n; }   // 🔋 저사양 씬 데코 개수 감축(약 55%) — 씬 캐시는 setLiteMode에서 무효화
+    function fxCount(n){ return liteMode()?Math.max(1,Math.round(n*0.55)):n; }   // 🔋 저사양 가챠 원샷 파티클 개수 감축(연출은 유지, 노드만 ~55%)
     function invalidateSceneCaches(){ _pkSceneCache={}; _sunsetCache={}; _nightCache={}; }   // 씬 HTML에 무지개 애니 여부가 구워지므로 토글 시 무효화
     function setLiteMode(on){ try{ localStorage.setItem('liteMode', on?'1':'0'); }catch(e){} applyLiteMode();
       refreshRbStatic(); invalidateSceneCaches();   // 🔋 무지개 정적화·씬 개수 변화 즉시 반영
       if(typeof markCatDirty==='function') markCatDirty(); if(typeof startCatLoop==='function') startCatLoop();   // 엔진 fps 예산 재평가·정지스틸 재빌드
       if(typeof rerender==='function') rerender();
-      toast(on?'🔋 가벼운 모드 ON — 애니메이션을 줄여 배터리·발열을 아껴요':'가벼운 모드 OFF'); }
+      toast(on?'🔋 가벼운 모드 ON — 상시 애니는 줄이고 뽑기 연출은 가볍게 유지해요':'가벼운 모드 OFF'); }
     // 🔋 저사양 기기 1회 안내 — 코어4↓ 또는 메모리4GB↓면 최초 1회만 가벼운 모드 권유(기본 동작은 안 바꿈, 사용자가 선택). liteSuggested로 다시 안 뜸.
     function maybeSuggestLite(){ try{
       if(liteMode()) return;                                       // 이미 켜짐
@@ -4563,9 +4566,9 @@
       const pets=LIMITED_PICKUP.filter(pickupExists);
       const spot=(id)=> id ? '<div class="gb-spot" role="button" tabindex="0" aria-label="'+escapeHtml(catName(id))+' 미리보기" onclick="openPickupPeek(\''+id+'\')">'+
           '<span class="gb-spot-beam"></span>'+                                                       // 🔦 무대 조명 빔(위→아래)
-          '<span class="gb-spot-fx">'+lightLayers({aura:104, rays:88, rainbow:true})+fxAuraTwinkles(4,true)+'</span>'+   // 도트 무지개 후광+트윙클 — 카드(불투명 폭≈70px)보다 크게(가려져 안 보이던 버그: rays 56<카드), 우측 가장자리(중심~52px)에도 안 잘리는 최대치
           '<span class="gb-spot-badge">'+starSvg({h:14})+'</span>'+
-          '<div class="gb-spot-card"><span class="gb-spot-face">'+catFace(id,{h:60,eager:true})+'</span><span class="gb-spot-ped">'+pedestalSvg({h:24})+'</span></div>'+   // 무지개 카드 안 초상+받침대(h24→폭≈65px, 초상 60px에 맞춤·중앙 정렬)
+          // 🌈 후광 FX는 카드 "안"(배경 위·펫 뒤 z0)에 둔다 — 카드가 불투명이라 밖(뒤)에 두면 스프라이트 폭에 따라 통째로 가려짐(우측 표범 오오라 안 보이던 버그)
+          '<div class="gb-spot-card"><span class="gb-spot-fx">'+lightLayers({aura:96, rays:80, rainbow:true})+fxAuraTwinkles(4,true)+'</span><span class="gb-spot-face">'+catFace(id,{h:60,eager:true})+'</span><span class="gb-spot-ped">'+pedestalSvg({h:24})+'</span></div>'+   // 무지개 카드 안 초상+받침대(h24→폭≈65px)
           '<span class="gb-spot-name">'+catNameSpan(id,catName(id))+'</span>'+
         '</div>' : '<div class="gb-spot gb-spot-empty"></div>';
       const title='<div class="gb-ddeul-title">'+
@@ -5240,7 +5243,8 @@
         const behind=pkRand(i,197)<0.5, top=(0+pkRand(i,190)*(behind?10:12)).toFixed(1), left=(-8+pkRand(i,191)*(behind?12:8)).toFixed(1),
           dur=(6.5+pkRand(i,192)*3.5).toFixed(1), del=(i*1.3+pkRand(i,193)*1.1).toFixed(2);
         if(behind){ const hh=S(Math.round(15+pkRand(i,194)*8)), tx=Math.round((300+pkRand(i,195)*90)*sz), ty=Math.round((38+pkRand(i,196)*38)*sz);   // 좌상단→오른쪽 끝 산 위쪽까지(멀리·작게·높게 유지, 산 뒤로 사라짐) — tx/ty는 씬 배율 sz로 확대
-          shootBehind+='<span class="pk-shoot pk-shoot-far" style="top:'+top+'%;left:'+left+'%;--d:'+dur+'s;--tx:'+tx+'px;--ty:'+ty+'px;animation-delay:'+del+'s;">'+shootStarSvg({h:hh})+'</span>';
+          const rot=Math.round(Math.atan2(ty,tx)*180/Math.PI-45);   // 🌠 코멧 디자인은 45° ↘ 고정 → 실제 이동각(거의 수평)에 맞게 스프라이트를 회전(머리·꼬리 방향 정합)
+          shootBehind+='<span class="pk-shoot pk-shoot-far" style="top:'+top+'%;left:'+left+'%;--d:'+dur+'s;--tx:'+tx+'px;--ty:'+ty+'px;--rot:'+rot+'deg;animation-delay:'+del+'s;">'+shootStarSvg({h:hh})+'</span>';
         } else { const hh=S(Math.round(26+pkRand(i,194)*16)), tx=Math.round((340+pkRand(i,195)*150)*sz), ty=Math.round((220+pkRand(i,196)*110)*sz);   // 전체화면 대각선 코너까지
           shootFront+='<span class="pk-shoot" style="top:'+top+'%;left:'+left+'%;--d:'+dur+'s;--tx:'+tx+'px;--ty:'+ty+'px;animation-delay:'+del+'s;">'+shootStarSvg({h:hh})+'</span>'; } }
       _nightCache[mode]='<div class="pkscene pk-night'+(reveal?' pk-reveal':'')+'" aria-hidden="true">'+
@@ -6092,6 +6096,9 @@
     let _dexTab=lsGet('dexTab','all');   // 도감 종별 탭('all'=전체 / species 코드)
     function setDexTab(t){ _dexTab=t||'all'; lsSet('dexTab',_dexTab); if(state._sheetRefresh) state._sheetRefresh(); }
     function dexSpeciesList(){ const seen={}, list=[]; PET_CATALOG.forEach(c=>{ const s=c.species||'cat'; if(!seen[s]){ seen[s]=1; list.push(s); } }); return list; }   // 도감 등장 종(순서 유지·중복 제거)
+    // 🔋 도감 재빌드 서명 — 보유 펫 id+애정레벨+현재 탭. 코인·똥·수확 틱엔 불변이라 190셀 통째 재빌드를 스킵.
+    let _dexLastSig='';
+    function _dexRefreshSig(){ const o=ownedCatsMap(); return _dexTab+'|'+Object.keys(o).sort().map(function(id){ return id+':'+((o[id]&&o[id].affection)||0); }).join(','); }
     function openPetDex(){
       const build=()=>{
         const owned=ownedCatsMap(), species=dexSpeciesList();
@@ -6118,7 +6125,8 @@
         return h;
       };
       openSheet('펫 도감', build());
-      state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const st=b.scrollTop; b.innerHTML=build(); b.scrollTop=st; };
+      _dexLastSig=_dexRefreshSig();
+      state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const sig=_dexRefreshSig(); if(sig===_dexLastSig) return; _dexLastSig=sig; const st=b.scrollTop; b.innerHTML=build(); b.scrollTop=st; };   // 🔋 서명 불변 시(코인 틱 등) 재빌드 스킵
     }
     // ===== 📢 소식(알림·이벤트·공지) — 알뜰 아이콘 '소식' 화면 =====
     // 업데이트 공지 — 기본값(폴백). 운영은 RTDB config/notices(관리자만 쓰기)에서 덮어씀(loadNotices). 최신순.
@@ -6308,9 +6316,9 @@
         '<div class="fx-hint fx-hint-wait">뽑는 중…</div></div>';
       fx.className='fx on'; }
     function itemName(kind,id){ return kind==='egg'?catName(id):((ITEM_CATALOG.find(x=>x.id===id)||{}).name||id); }
-    function fxParticles(n,cls){ let s=''; for(let i=0;i<(n||14);i++){ const a=(i/(n||14))*360+Math.random()*30, d=60+Math.random()*90; const dx=Math.round(Math.cos(a*Math.PI/180)*d), dy=Math.round(Math.sin(a*Math.PI/180)*d); const del=(Math.random()*0.12).toFixed(2); s+='<span class="'+(cls||'fx-particle')+'" style="--dx:'+dx+'px;--dy:'+dy+'px;animation-delay:'+del+'s"></span>'; } return s; }
+    function fxParticles(n,cls){ n=fxCount(n||14); let s=''; for(let i=0;i<n;i++){ const a=(i/n)*360+Math.random()*30, d=60+Math.random()*90; const dx=Math.round(Math.cos(a*Math.PI/180)*d), dy=Math.round(Math.sin(a*Math.PI/180)*d); const del=(Math.random()*0.12).toFixed(2); s+='<span class="'+(cls||'fx-particle')+'" style="--dx:'+dx+'px;--dy:'+dy+'px;animation-delay:'+del+'s"></span>'; } return s; }
     // 픽셀 컨페티(도트) — 둥근 조각 대신 각진 픽셀 블록이 흔들리며 떨어짐. n=개수(등급↑ 많이), 3가지 픽셀 모양(s0~s2).
-    function fxConfetti(n){ const cols=['#F04452','#F0883C','#F2C84B','#2FAE7A','#3182F6','#9B6FC8']; n=n||24; let s='';
+    function fxConfetti(n){ const cols=['#F04452','#F0883C','#F2C84B','#2FAE7A','#3182F6','#9B6FC8']; n=fxCount(n||24); let s='';
       for(let i=0;i<n;i++){ const x=Math.round(Math.random()*100), r=(Math.round(Math.random()*4)*90), del=(Math.random()*0.7).toFixed(2), dur=(1.1+Math.random()*0.9).toFixed(2), sw=(Math.random()*50-25).toFixed(0), sh=i%3;
         s+='<span class="fx-conf s'+sh+'" style="left:'+x+'%;color:'+cols[i%6]+';--r:'+r+'deg;--sw:'+sw+'px;animation-delay:'+del+'s;animation-duration:'+dur+'s"></span>'; }
       return s; }
@@ -6352,10 +6360,10 @@
       if(ddeulFlowerRb(st) && _fx) _fx._flwRb=true;
       const hint=$('fxHint'); if(hint) hint.textContent='🌈 무지개가 펼쳐져요! 한 번 더 탭!'; }
     // ✨ 반짝이는 도트 스파클(무지개알/박스 대기 연출) — 흰 픽셀 점이 제각기 깜빡이며 흩뿌려짐
-    function fxSparkles(n){ let s=''; for(let i=0;i<(n||12);i++){ const x=Math.round(Math.random()*100), y=Math.round(Math.random()*100), del=(Math.random()*1.4).toFixed(2), sc=(0.7+Math.random()*1.2).toFixed(2), du=(0.9+Math.random()*0.9).toFixed(2); s+='<span class="fx-spark" style="left:'+x+'%;top:'+y+'%;--sc:'+sc+';animation-delay:'+del+'s;animation-duration:'+du+'s"></span>'; } return s; }
+    function fxSparkles(n){ n=fxCount(n||12); let s=''; for(let i=0;i<n;i++){ const x=Math.round(Math.random()*100), y=Math.round(Math.random()*100), del=(Math.random()*1.4).toFixed(2), sc=(0.7+Math.random()*1.2).toFixed(2), du=(0.9+Math.random()*0.9).toFixed(2); s+='<span class="fx-spark" style="left:'+x+'%;top:'+y+'%;--sc:'+sc+';animation-delay:'+del+'s;animation-duration:'+du+'s"></span>'; } return s; }
     // 탭할 때마다 껍질 조각이 사방으로 튀는 연출(단계가 오를수록 더 많이) — 알이 점점 더 깨지는 느낌.
     function fxCrackChips(stage){ const fx=$('catFx'), st=fx&&fx.querySelector('.fx-stage'); if(!st) return;
-      const n=5+stage*5; const rb=_fx&&_fx.rainbow; let s='';   // 단계↑ 더 많은 조각이 튐
+      const n=fxCount(5+stage*5); const rb=_fx&&_fx.rainbow; let s='';   // 단계↑ 더 많은 조각이 튐
       for(let i=0;i<n;i++){ const a=-90+(i/n)*300+(Math.random()*24-12), d=48+Math.random()*84;
         const dx=Math.round(Math.cos(a*Math.PI/180)*d), dy=Math.round(Math.sin(a*Math.PI/180)*d)+8;
         const rot=Math.round(Math.random()*360-180), sc=(0.5+Math.random()*0.7).toFixed(2), del=(Math.random()*0.05).toFixed(2), h=7+Math.round(Math.random()*4);
@@ -6397,7 +6405,7 @@
     }
     // 깨진 껍질 조각(알 전용): 좌우로 튀어나가 아래·옆에 흩어져 놓인다. 큰 조각 2개 + 잔조각.
     function fxShells(){
-      let s=''; const n=11; const rb=_fx&&_fx.rainbow;   // 조각을 더 많이 + 더 멀리 튕겨나가게(껍질이 확 깨져 날아가는 게 보이게)
+      let s=''; const n=fxCount(11); const rb=_fx&&_fx.rainbow;   // 조각을 더 많이 + 더 멀리 튕겨나가게(껍질이 확 깨져 날아가는 게 보이게)
       for(let i=0;i<n;i++){
         const side=(i%2)?1:-1;
         const sx=(side*(62+Math.random()*132)).toFixed(0);   // 좌우로 더 멀리 흩어짐

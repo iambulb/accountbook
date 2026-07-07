@@ -214,7 +214,7 @@
     .mbar .fill { height:100%; border-radius:6px; }
 
     /* 거래 리스트 */
-    .day-group { margin-bottom:8px; }
+    .day-group { margin-bottom:8px; content-visibility:auto; contain-intrinsic-size:auto 110px; }   /* 🔋 화면 밖 날짜 그룹은 레이아웃·페인트 스킵(긴 달 스크롤 경량화) */
     .day-head { display:flex; justify-content:space-between; font-size:12px; color:var(--sub); padding:10px 4px 6px; font-weight:700; }
     .tx { display:flex; align-items:center; gap:14px; padding:13px 2px; border-radius:12px; }
     .tx:active { background:var(--soft); }
@@ -666,14 +666,11 @@
     body.lite .pk-star, body.lite .pk-fire, body.lite .pk-fire .ff-core,
     body.lite .pk-pkoi .koi-sw, body.lite .pk-pkoi .koi-b, body.lite .pk-lily, body.lite .pk-lotus, body.lite .pk-dfly, body.lite .pk-fish,
     body.lite .pk-bird .bird-a, body.lite .pk-bird .bird-b { animation: none !important; }
-    /* 가챠 오픈: 알/박스를 보여주고 3번 탭·균열·결과 과정은 그대로, 흔들림·파티클·오오라·컨페티 같은 '무거운 애니 요소만' 제거 */
-    body.lite #fxItem, body.lite .fx-item, body.lite .fx-art.pop { animation: none !important; }
-    body.lite .fx-particle, body.lite .fx-conf, body.lite .fx-confetti, body.lite .fx-spark,
-    body.lite .fx-pixrays, body.lite .fx-pixflash, body.lite .fx-shell,
-    body.lite .ll-aura, body.lite .ll-rays, body.lite .fx-tw, body.lite .fx-ring, body.lite .fx-frame { display: none !important; }
+    /* 🔋 가챠 오픈(원샷 축하) — 저사양에서도 '보이게' 유지. 1초 미만 원샷(팝·흔들림·균열칩·파티클·컨페티·등급색 빛·트윙클)은 살리고 개수만 fxCount로 감축, '계속 도는' 무한 요소만 컷. */
+    body.lite .fx-pixrays, body.lite .fx-ring, body.lite .fx-frame { display: none !important; }   /* 무한 회전/테두리(페이오프 아님)만 정지 */
     body.lite .gb-spot-badge, body.lite .gb-spot-face, body.lite .gb-spot { animation: none !important; }   /* 뜰알 스포트라이트 별·bob·팝인 정지(초상·받침대·프레임은 정적 유지) */
     /* 🔋 저사양: 움직이는 글로우 블러 filter 제거(매 프레임 재래스터화가 가장 큰 발열원) — 반딧불·글로우 아이콘·지는 해. 스프라이트 자체 픽셀 하이라이트는 유지. */
-    body.lite .pk-fire .ff-core, body.lite .ten-ffcore, body.lite .ten-skysun, body.lite .ten-skyshoot .px,
+    body.lite .fx-cat, body.lite .pk-fire .ff-core, body.lite .ten-ffcore, body.lite .ten-skysun, body.lite .ten-skyshoot .px,
     body.lite .gb-sun .gb-cicon .px, body.lite .gb-glow .gb-cicon .px, body.lite .gb-eglow .gb-cicon .px, body.lite .gb-rbegg .px { filter: none !important; }
     /* 🔋 멈춘 데코의 GPU 레이어(will-change) 회수 — 저사양(animation:none)·화면 밖(pk-idle). 걷기 필름(.csprf)은 기능 모션이라 유지. */
     body.lite .pk-bfly, body.lite .pk-dfly, body.lite .pk-fire, body.lite .fx-ddcloud, body.lite .fx-ddbfly,
@@ -1208,6 +1205,7 @@
     .tier-rainbow, .tier-exclusive { background:linear-gradient(90deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8,#F04452); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:rainbow 2.4s linear infinite; }
     /* 리스트(그리드·도감)의 한정펫 이름은 무한 레인보우 애니를 끄고 정적 그라데이션(수십 개 동시 애니 배터리 소모 방지). 애니는 가챠 연출 등 단발에서만. */
     .catchip .cn .tier-rainbow, .dexnm .tier-rainbow, .catchip .cn .tier-exclusive, .dexnm .tier-exclusive { animation:none; }
+    body.lite .tier-rainbow, body.lite .tier-exclusive { animation:none !important; }   /* 🔋 저사양: 상시 도는 이름 무지개 정지(정적 그라디언트 유지) */
     @keyframes rainbow { to { background-position:200% 0; } }
     @keyframes mythicpulse { 0%,100%{ text-shadow:0 0 8px rgba(255,95,162,.45); } 50%{ text-shadow:0 0 16px rgba(255,95,162,.85); } }
 
@@ -1410,8 +1408,7 @@
     @keyframes ten-egghit { 0%{transform:translate(-50%,-50%) rotate(0)} 20%{transform:translate(calc(-50% + 9px),-50%) rotate(6deg)} 45%{transform:translate(calc(-50% - 7px),-50%) rotate(-5deg)} 70%{transform:translate(calc(-50% + 4px),-50%) rotate(3deg)} 100%{transform:translate(-50%,-50%) rotate(0)} }
     @keyframes ten-auraglow { 0%,100%{ opacity:.3; transform:translate(-50%,-50%) scale(.9); } 50%{ opacity:.52; transform:translate(-50%,-50%) scale(1.06); } }
     @media (prefers-reduced-motion: reduce){ .ten-nest.drop, .ten-nest.shake, .ten-bob, .ten-bfly, .ten-bfly .bf-wing, .ten-petaura, .ten-skyrb, .ten-md-bf .bf-wing, .ten-skysun, .ten-skyshoot, .ten-ddflower.ddflw-big { animation:none; } .ten-skyrb { clip-path:none; opacity:.9; } .ten-skysun { top:20%; opacity:1; } .ten-skyshoot { left:74%; top:39%; opacity:1; } .ten-ddeulegg .fx-ddflower.ddflw-big { transform:scale(1.55); } }
-    body.lite .ten-bob, body.lite .ten-bfly, body.lite .ten-bfly .bf-wing, body.lite .ten-petaura, body.lite .ten-md-bf .bf-wing { animation:none !important; }
-    body.lite .ten-eggfx, body.lite .ten-crlight .ll-rays { display:none !important; }
+    body.lite .ten-bfly, body.lite .ten-bfly .bf-wing, body.lite .ten-md-bf .bf-wing { animation:none !important; }   /* 결승 bob·오오라·균열빛은 살림(원샷 페이오프), 배경 나비 등 주변 루프만 컷 */
     /* 🔤 픽셀(도트) 텍스트 이미지 — 리빌 등급명/이름. 확대해도 안 뭉개지게 pixelated + 살짝 위아래 흔들림(가독성 유지). */
     .pxtext { display:block; margin:0 auto; image-rendering:auto; }   /* 결과 텍스트는 레티나로 그려 선명하게(도트화 안 함) */
     .fx-tier .pxtext { filter:drop-shadow(0 2px 3px rgba(0,0,0,.45)); }
@@ -1924,16 +1921,16 @@
     .gb-spot-empty { visibility:hidden; }
     @keyframes gbspotpop { 0%{ opacity:0; transform:translateY(9px) scale(.86); } 100%{ opacity:1; transform:none; } }
     .gb-spot-beam { position:absolute; left:50%; top:-8px; transform:translateX(-50%); width:46px; height:88px; z-index:0; pointer-events:none; clip-path:polygon(36% 0,64% 0,100% 100%,0 100%); background:linear-gradient(180deg, rgba(255,255,255,.32), rgba(255,255,255,.05) 66%, transparent); }
-    .gb-spot-fx { position:absolute; left:50%; top:42%; width:0; height:0; z-index:0; }   /* 카드 중심에 앵커 — FX는 카드(불투명)보다 커야 보임(JS aura104·rays88) */
+    .gb-spot-fx { position:absolute; left:50%; top:44%; width:0; height:0; z-index:0; }   /* 카드 "안" 앵커(카드 배경 위·펫 뒤 z0) — 카드가 불투명이라 밖(뒤)에 두면 스프라이트 폭에 따라 통째로 가려짐(우측 오오라 안 보이던 버그) */
     .gb-spot-card { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; padding:4px 5px 0; border:1.5px solid transparent; border-radius:12px; background:linear-gradient(color-mix(in srgb,var(--card) 82%,#9B6FC8 18%),color-mix(in srgb,var(--card) 82%,#9B6FC8 18%)) padding-box, linear-gradient(120deg,#F04452,#F2C84B,#2FAE7A,#3182F6,#9B6FC8) border-box; }
     .gb-spot-face { position:relative; z-index:2; line-height:0; animation:gbspotbob 2.8s ease-in-out infinite; }
     .gb-spot-face .catpx, .gb-spot-face .px { display:block; height:60px; width:auto; image-rendering:pixelated; filter:drop-shadow(0 2px 2px rgba(0,0,0,.32)); }
     @keyframes gbspotbob { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-3px); } }
     .gb-spot-ped { position:relative; z-index:1; margin-top:-9px; line-height:0; }   /* 초상 발밑 겹침 — 스프라이트 하단 투명 여백(~6px) 감안해 발이 상판 위에 서게 */
     .gb-spot-ped .px { display:block; height:24px; width:auto; image-rendering:pixelated; }   /* v2: 넓은 받침(폭≈65px, 초상 60px 중앙에 맞물림) */
-    .gb-spot-badge { position:absolute; left:50%; top:-6px; transform:translateX(-50%); z-index:4; line-height:0; animation:gbspotspin 2.6s linear infinite; }   /* ⭐ 펫 위 별이 제자리에서 빙빙(카탈로그 스핀 선례 — 캣휠 트레드와 동일 부드러운 회전) */
-    .gb-spot-badge .px { display:block; height:14px; width:auto; image-rendering:pixelated; }
-    @keyframes gbspotspin { from{ transform:translateX(-50%) rotate(0deg); } to{ transform:translateX(-50%) rotate(360deg); } }
+    .gb-spot-badge { position:absolute; left:50%; top:-7px; transform:translateX(-50%); z-index:4; line-height:0; animation:gbspotspin 2.2s linear infinite; }   /* ⭐ 펫 위 별이 정면 기준 앞뒤로 뱅글뱅글(코인 스핀 rotateY) — 픽셀이 가로로만 눌려 도트 유지 */
+    .gb-spot-badge .px { display:block; height:15px; width:auto; image-rendering:pixelated; }
+    @keyframes gbspotspin { from{ transform:translateX(-50%) rotateY(0deg); } to{ transform:translateX(-50%) rotateY(360deg); } }
     .gb-spot-name { position:relative; z-index:3; margin-top:3px; font-size:11px; font-weight:800; white-space:nowrap; text-shadow:0 1px 2px rgba(0,0,0,.4); }
     .gb-ddeul-top .gb-spot { cursor:pointer; }   /* 초상 탭 → 픽업 펫 미리보기 */
     .gb-ddeul-one { justify-content:center; gap:14px; }   /* 픽업 1마리: [타이틀|초상] 2열 중앙 */
@@ -1970,7 +1967,8 @@
     .pk-shoot .px { display:block; image-rendering:pixelated; filter:drop-shadow(0 0 6px rgba(255,255,255,.6)); }
     .pk-shoot-far { z-index:0; }
     .pk-shoot-far .px { opacity:.68; filter:drop-shadow(0 0 3px rgba(210,224,255,.45)); }
-    @keyframes pkshoot { 0%{ opacity:0; transform:translate(0,0); } 3%{ opacity:1; } 16%{ opacity:1; transform:translate(var(--tx,340px),var(--ty,120px)); } 19%{ opacity:0; transform:translate(var(--tx,340px),var(--ty,120px)); } 100%{ opacity:0; transform:translate(0,0); } }
+    /* --rot: 코멧 스프라이트를 이동각에 맞춰 회전(기본 0deg=앞 별똥별은 디자인 그대로). 회전은 전 구간 고정이라 방향만 틀어짐(머리·꼬리 정합). */
+    @keyframes pkshoot { 0%{ opacity:0; transform:translate(0,0) rotate(var(--rot,0deg)); } 3%{ opacity:1; } 16%{ opacity:1; transform:translate(var(--tx,340px),var(--ty,120px)) rotate(var(--rot,0deg)); } 19%{ opacity:0; transform:translate(var(--tx,340px),var(--ty,120px)) rotate(var(--rot,0deg)); } 100%{ opacity:0; transform:translate(0,0) rotate(var(--rot,0deg)); } }
     body.lite .pk-shoot { display:none; }
     .gb-nest { position:absolute; left:50%; bottom:11%; transform:translateX(-50%); width:min(54%,170px); z-index:4; }
     .gb-nestback { position:relative; z-index:0; line-height:0; }

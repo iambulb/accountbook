@@ -141,6 +141,8 @@
     }
 
     // 🔍 거래 검색(키워드=내용·메모·카테고리 + 기간 + 금액 + 타입). 순수 txMatches로 필터, 폼은 정적·결과만 갱신(입력 포커스 유지).
+    let _txSearchT=0;   // 🔋 검색 결과 렌더 디바운스 타이머
+    function _txSearchRender(){ const r=$('txsResults'); if(r) r.innerHTML=txSearchResults(); }
     function txSearchResults(){
       const q=state._txSearch||{};
       const res=(state.transactions||[]).filter(t=>txMatches(t,q)).sort((a,b)=>new Date(b.date)-new Date(a.date));
@@ -151,7 +153,8 @@
     }
     function txSearchSet(k,v){ (state._txSearch||(state._txSearch={}))[k]=v;
       if(k==='type'){ const seg=$('txsSeg'); if(seg) Array.prototype.forEach.call(seg.querySelectorAll('.chip'),b=>b.classList.toggle('on',(b.getAttribute('data-t')||'')===(v||''))); }
-      const r=$('txsResults'); if(r) r.innerHTML=txSearchResults(); }
+      if(k==='type'){ clearTimeout(_txSearchT); _txSearchRender(); }   // 칩 토글은 즉시
+      else { clearTimeout(_txSearchT); _txSearchT=setTimeout(_txSearchRender, 180); } }   // 🔋 타이핑 디바운스 — 매 키 입력마다 전체 거래 필터·200행 재빌드 방지
     function openTxSearch(){
       const st=state._txSearch||(state._txSearch={});
       let h='<div class="field"><label for="txsKw">키워드(내용·메모·카테고리)</label><input class="input" id="txsKw" value="'+escapeHtml(st.keyword||'')+'" oninput="txSearchSet(\'keyword\',this.value)" placeholder="예: 커피, 회식"></div>'+
