@@ -671,6 +671,7 @@
     body.lite .fx-particle, body.lite .fx-conf, body.lite .fx-confetti, body.lite .fx-spark,
     body.lite .fx-pixrays, body.lite .fx-pixflash, body.lite .fx-shell,
     body.lite .ll-aura, body.lite .ll-rays, body.lite .fx-tw, body.lite .fx-ring, body.lite .fx-frame { display: none !important; }
+    body.lite .gb-spot-badge { animation: none !important; }   /* 뜰알 스포트라이트 별 배지 펄스 정지(초상·받침대는 정적 유지) */
     /* 🔋 저사양: 움직이는 글로우 블러 filter 제거(매 프레임 재래스터화가 가장 큰 발열원) — 반딧불·글로우 아이콘·지는 해. 스프라이트 자체 픽셀 하이라이트는 유지. */
     body.lite .pk-fire .ff-core, body.lite .ten-ffcore, body.lite .ten-skysun, body.lite .ten-skyshoot .px,
     body.lite .gb-sun .gb-cicon .px, body.lite .gb-glow .gb-cicon .px, body.lite .gb-eglow .gb-cicon .px, body.lite .gb-rbegg .px { filter: none !important; }
@@ -1458,7 +1459,7 @@
     @keyframes fxpixflash { 0%{opacity:1;transform:translate(-50%,-50%) scale(.4) rotate(0)} 100%{opacity:0;transform:translate(-50%,-50%) scale(2.6) rotate(45deg)} }
     @keyframes fxpixspin { to{ transform:translate(-50%,-50%) rotate(360deg); } }
     /* 모션 최소화: 오오라·광선·트윙클 정지(정적으로만 표시) */
-    @media (prefers-reduced-motion: reduce){ .ll-aura,.ll-rays,.fx-tw,.tier-rainbow,.tier-exclusive{ animation:none; } .fx-conf,.fx-confetti{ animation:none; opacity:0; } }
+    @media (prefers-reduced-motion: reduce){ .ll-aura,.ll-rays,.fx-tw,.tier-rainbow,.tier-exclusive,.gb-spot-badge{ animation:none; } .fx-conf,.fx-confetti{ animation:none; opacity:0; } }
     /* 등장 픽셀 프레임 — 등급색 각진 테두리(등급↑=두껍고 진하게, 한정=무지개 글로우) */
     .fx-frame { position:absolute; inset:-8px; z-index:1; border:3px solid currentColor; image-rendering:pixelated; opacity:.55; animation:fxframe 1.4s steps(2) infinite; }
     .fx-reveal.rank-3 .fx-frame, .fx-reveal.rank-4 .fx-frame, .fx-reveal.rank-5 .fx-frame { inset:-11px; border-width:4px; opacity:.75; }
@@ -1898,6 +1899,28 @@
     .gb-sun .gb-cicon .px { filter:drop-shadow(0 0 5px rgba(255,170,90,.6)) drop-shadow(0 3px 0 rgba(0,0,0,.16)); }   /* 노을 아이콘 글로우 */
     .gb-glow .gb-cicon .px { filter:drop-shadow(0 0 6px rgba(176,255,160,.75)) drop-shadow(0 2px 0 rgba(0,0,0,.22)); }   /* 무지개=야광 아이콘 글로우 */
     .gb-eglow .gb-cicon .px { filter:drop-shadow(0 0 7px rgba(255,255,255,.8)) drop-shadow(0 2px 0 rgba(0,0,0,.2)); }   /* 뜰알·펫알·랜덤박스 배너: 알이 무지개빛에 은은히 빛나는 흰 글로우(무지개 오오라는 뒤 .gb-rbaura) */
+    /* ✨ 뜰알 한정 픽업 전용 프리미엄 배너 — 무지개 그라디언트 테두리 + 헤더 왕관 + 씬 프리미엄 틴트 + 배회펫 숨김(스포트라이트 대체) */
+    .gbanner.gb-ddeul { border:0; background:linear-gradient(var(--card),var(--card)) padding-box, linear-gradient(100deg,#F04452,#F0883C,#F2C84B,#2FAE7A,#3182F6,#9B6FC8) border-box; border:2px solid transparent; }
+    .gb-ddeul-head { display:flex; align-items:center; gap:6px; }
+    .gb-ddeul-head .gb-hcrown { display:inline-flex; line-height:0; }
+    .gb-ddeul-head .gb-hcrown .px { display:block; height:14px; width:auto; image-rendering:pixelated; }
+    .gb-ddeul .gb-scene::after { content:''; position:absolute; inset:0; z-index:5; pointer-events:none; background:linear-gradient(180deg, rgba(155,111,200,.18) 0%, rgba(49,130,246,.06) 32%, transparent 56%); }   /* 하늘 프리미엄 틴트(픽셀 데코 위 은은히 — radial/blur 아님) */
+    .gb-ddeul .pkstage { display:none; }   /* 배회 픽업 펫 숨김 → 스포트라이트 초상으로 대체 */
+    .gb-ddeul-c { bottom:25%; }   /* 알뜰 아이콘 센터를 살짝 위로(하단 스포트라이트와 겹침 방지) */
+    .gb-ddeul-c .gb-ecrown { position:absolute; left:50%; top:-13px; transform:translateX(-50%); z-index:3; line-height:0; }
+    .gb-ddeul-c .gb-ecrown .px { display:block; height:14px; width:auto; image-rendering:pixelated; filter:drop-shadow(0 1px 0 rgba(0,0,0,.25)); }
+    /* 🏆 픽업 펫 스포트라이트 초상(삵·표범) — 받침대 위 큰 정면 초상 + 도트 무지개 후광 + 이름·별 배지 */
+    .gb-showcase { position:absolute; inset:0; z-index:7; pointer-events:none; }
+    .gb-spot { position:absolute; bottom:7%; width:76px; display:flex; flex-direction:column; align-items:center; }
+    .gb-spot-fx { position:absolute; left:50%; top:36%; width:0; height:0; z-index:0; }
+    .gb-spot-face { position:relative; z-index:2; line-height:0; }
+    .gb-spot-face .catpx, .gb-spot-face .px { display:block; height:54px; width:auto; image-rendering:pixelated; filter:drop-shadow(0 2px 2px rgba(0,0,0,.32)); }
+    .gb-spot-ped { position:relative; z-index:1; margin-top:-7px; line-height:0; }   /* 초상 발밑에 살짝 겹치게 */
+    .gb-spot-ped .px { display:block; height:15px; width:auto; image-rendering:pixelated; }
+    .gb-spot-badge { position:absolute; left:50%; top:calc(36% - 22px); transform:translateX(-50%); z-index:3; line-height:0; animation:gbspotstar 2.4s ease-in-out infinite; }
+    .gb-spot-badge .px { display:block; height:13px; width:auto; image-rendering:pixelated; }
+    @keyframes gbspotstar { 0%,100%{ transform:translateX(-50%) scale(1); opacity:.85; } 50%{ transform:translateX(-50%) scale(1.18); opacity:1; } }
+    .gb-spot-name { position:relative; z-index:3; margin-top:3px; font-size:11px; font-weight:800; white-space:nowrap; text-shadow:0 1px 2px rgba(0,0,0,.4); }
     /* ☀️ 노을 해(가운데) */
     /* ☀️ 지는 해 — .pk-sky 하단(수평선)에 중심을 두고 아래 절반은 sky overflow:hidden가 클립 → 절반만 노출 */
     .pk-sun { position:absolute; left:50%; bottom:0; transform:translate(-50%,50%); z-index:0; line-height:0; filter:drop-shadow(0 0 10px rgba(255,168,88,.55)); }

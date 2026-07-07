@@ -4513,20 +4513,39 @@
     function gbPityHtml(kind){ const left=pityRemain(pityGet(kind), (typeof PITY_N!=='undefined'?PITY_N:100)); return '<div class="gb-pity"><span class="pity-chip">'+sparkSvg({h:11})+(typeof PITY_N!=='undefined'?PITY_N:100)+'번 안에 <b>신화 이상 확정</b> · 남은 <b>'+left+'뽑</b></span></div>'; }
     // 배너 공용 중앙 센터피스 — 뜰알 .pk-egg 위치(중앙 하단)에 아이콘/상자 + 반짝임 FX(도트). 둥지 대체.
     function gbCenterHtml(inner, fx, cls){ return '<div class="gb-center '+(cls||'')+'">'+(fx?'<span class="gb-cfx">'+fx+'</span>':'')+'<span class="gb-cicon">'+inner+'</span></div>'; }
+    // 🏛️ 한정 픽업 초상 받침대(2단 포디움 + 금 트림) — 뜰알 스포트라이트 초상 발밑. 3톤(H/M/D)+외곽선(X)+금(G), 맨 윗줄 비움. PIL 검수.
+    const M_PEDESTAL=["..................",".XXXXXXXXXXXXXXXX.",".XHHHHHHHHHHHHHHX.",".XMGGGGGGGGGGGGMX.",".XDDDDDDDDDDDDDDX.","......XHMMDX......","......XMMMDX......","......XMMMDX......","XHHHHHHHHHHHHHHHHX","XMGGGGGGGGGGGGGGMX","XDDDDDDDDDDDDDDDDX",".................."];
+    const PEDESTAL_PAL={H:'#f0e6c8',M:'#d6c496',D:'#a89264',X:'#6e5c36',G:'#f4d06b'};
+    function pedestalSvg(opt){ return pxSvg(M_PEDESTAL, PEDESTAL_PAL, opt); }
     // 🌈 배너 알 공용 무지개 연출 — 무지개 오오라+광선(lightLayers rainbow) + 무지개 트윙클. 뜰알·펫알·랜덤박스 센터 공용.
     function gbRainbowFx(){ return '<span class="gb-rbaura">'+lightLayers({aura:98,rays:118,rainbow:true})+'</span>'+fxAuraTwinkles(9,true); }
-    // 🌱 뜰알 배너 = 한정 픽업 씬 + 알뜰 아이콘(기본색) 중앙 + 무지개빛 반짝임.
+    // 🏆 한정 픽업 펫 스포트라이트 — 픽업 펫(삵·표범)을 큰 정면 초상 + 받침대 + 도트 무지개 후광 + 이름·별 배지로 전시(전용 .gb-ddeul 배너에서만).
+    function ddeulPickupShowcase(){
+      const pets=LIMITED_PICKUP.filter(pickupExists).slice(0,2);
+      if(!pets.length) return '';
+      const pos=['left:5%','right:5%'];
+      return '<div class="gb-showcase" aria-hidden="true">'+pets.map(function(id,i){
+        return '<div class="gb-spot" style="'+(pos[i]||'left:50%;margin-left:-34px')+'">'+
+          '<span class="gb-spot-fx">'+lightLayers({aura:92, rays:72, rainbow:true})+fxAuraTwinkles(4,true)+'</span>'+
+          '<span class="gb-spot-badge">'+starSvg({h:13})+'</span>'+
+          '<span class="gb-spot-face">'+catFace(id,{h:54,eager:true})+'</span>'+
+          '<span class="gb-spot-ped">'+pedestalSvg({h:15})+'</span>'+
+          '<span class="gb-spot-name">'+catNameSpan(id,catName(id))+'</span>'+
+        '</div>';
+      }).join('')+'</div>';
+    }
+    // 🌱 뜰알 배너 = 한정 픽업 전용 프리미엄 쇼케이스(전용 프레임·헤더 + 픽업 펫 초상 스포트라이트 + 알뜰 아이콘 센터). 배회 픽업 펫은 .gb-ddeul에서 숨겨 스포트라이트로 대체.
     function ddeulBannerHtml(){
       const p1=LIMITED_PICKUP[0], p2=LIMITED_PICKUP[1];
       const tag=(id)=> pickupExists(id) ? '<span class="pk-tag">'+catNameSpan(id,catName(id))+'</span>' : '';
       const sep=(pickupExists(p1)&&pickupExists(p2))?'<span class="pk-tag" style="opacity:.5;">·</span>':'';
       const pk=LIMITED_PICKUP.filter(pickupExists).map(id=>catNameSpan(id,catName(id))).join('·');
-      return '<div class="gbanner gb-ddeul"><div class="gb-head"><span class="pk-title tier-rainbow">✨ 지금 이 펫만! 한정 픽업</span>'+tag(p1)+sep+tag(p2)+'</div>'+
-        '<div class="gb-scene">'+pickupSceneHtml('banner')+gbCenterHtml(eggGardenSvg(EGG_DEFAULT,{h:54}), gbRainbowFx(), 'gb-rb gb-eglow')+'</div>'+
-        // 🌱 배너 이미지 아래 — 뜰알 이미지·설명·소모재화
-        '<div class="gb-item"><div class="gb-item-ic">'+ddeulEggSvg({h:52})+'</div>'+
+      return '<div class="gbanner gb-ddeul"><div class="gb-head gb-ddeul-head"><span class="gb-hcrown">'+crownSvg({h:14})+'</span><span class="pk-title tier-rainbow">✨ 이 펫만! 한정 픽업</span>'+tag(p1)+sep+tag(p2)+'</div>'+
+        '<div class="gb-scene">'+pickupSceneHtml('banner')+ddeulPickupShowcase()+gbCenterHtml('<span class="gb-ecrown">'+crownSvg({h:14})+'</span>'+eggGardenSvg(EGG_DEFAULT,{h:46}), gbRainbowFx(), 'gb-rb gb-eglow gb-ddeul-c')+'</div>'+
+        // 🌱 배너 이미지 아래 — 뜰알 이미지·설명·소모재화(한정 강조)
+        '<div class="gb-item gb-ddeul-item"><div class="gb-item-ic">'+ddeulEggSvg({h:52})+'</div>'+
           '<div class="gb-item-meta"><b class="tier-rainbow">뜰알 <span class="tagmini tier-rainbow">한정 픽업</span></b>'+
-          '<div class="gb-item-desc">'+(pk?'<b class="tier-rainbow">'+pk+'</b> · ':'')+'한정 펫은 오직 뜰알에서만!</div>'+
+          '<div class="gb-item-desc">'+(pk?'<b class="tier-rainbow">'+pk+'</b> · ':'')+'한정 펫은 <b class="tier-rainbow">오직 뜰알에서만</b> · 한정 0.5% 픽업!</div>'+
           '<div class="gb-item-cost">1뽑당 소모 '+gachaCostHtml(DDEUL_PRICE,DDEUL_GOLD,1)+'</div></div></div>'+
         gbPullActions('ddeul', DDEUL_PRICE, DDEUL_GOLD, null, 'ddeul')+gbPityHtml('ddeul')+'</div>';
     }
