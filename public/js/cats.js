@@ -2644,7 +2644,10 @@
       state._myLikesRef.on('value', s=>{ state.myLikeCount=homeLikeCount(s.val()); maybeClaimLikeMilestone(state.myLikeCount); writeMyRanking(); if(typeof rerender==='function') rerender(); }, ()=>{}); }
     // 공개 랭킹용 경량 엔트리(소유자 유지) — 이름·좋아요수·공개여부. 좋아요 변동·프로필 저장·진입 시 갱신.
     function writeMyRanking(){ if(!state.uid) return;
-      try{ db.ref('rankings/'+state.uid).set({ name:(state.userName||''), likes:(state.myLikeCount||0), private:(state.profilePublic===false), at:new Date().toISOString() }); }catch(e){}
+      const sig=(state.userName||'')+'|'+(state.myLikeCount||0)+'|'+(state.profilePublic===false?'1':'0');
+      if(sig===state._rankSig) return;   // 🔋 값(이름·좋아요수·공개여부)이 실제로 바뀔 때만 set — 좋아요 틱마다 무조건 쓰던 원격 쓰기 증폭 제거(writeHomeCam 선례)
+      state._rankSig=sig;
+      try{ db.ref('rankings/'+state.uid).set({ name:(state.userName||''), likes:(state.myLikeCount||0), private:(state.profilePublic===false), at:new Date().toISOString() }); }catch(e){ state._rankSig=null; }
     }
     let _cfgListenersInit=false;   // 전역 config/* 리스너 1회 부착 가드 — 계정 전환(로그아웃→로그인) 반복 시 리스너 N중 누적 방지
     function initCatGame(){
@@ -4513,7 +4516,7 @@
       const sep=(pickupExists(p1)&&pickupExists(p2))?'<span class="pk-tag" style="opacity:.5;">·</span>':'';
       const pk=LIMITED_PICKUP.filter(pickupExists).map(id=>catNameSpan(id,catName(id))).join('·');
       return '<div class="gbanner gb-ddeul"><div class="gb-head"><span class="pk-title tier-rainbow">✨ 지금 이 펫만! 한정 픽업</span>'+tag(p1)+sep+tag(p2)+'</div>'+
-        '<div class="gb-scene">'+pickupSceneHtml('banner')+gbCenterHtml(ddeulEggSvg({h:56}), gbRainbowFx(), 'gb-rb gb-eglow')+'</div>'+
+        '<div class="gb-scene">'+pickupSceneHtml('banner')+gbCenterHtml(eggGardenSvg(EGG_DEFAULT,{h:54}), gbRainbowFx(), 'gb-rb gb-eglow')+'</div>'+
         // 🌱 배너 이미지 아래 — 뜰알 이미지·설명·소모재화
         '<div class="gb-item"><div class="gb-item-ic">'+ddeulEggSvg({h:52})+'</div>'+
           '<div class="gb-item-meta"><b class="tier-rainbow">뜰알 <span class="tagmini tier-rainbow">한정 픽업</span></b>'+

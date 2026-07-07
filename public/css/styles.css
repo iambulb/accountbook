@@ -92,7 +92,7 @@
     .input:focus { outline:none; border-color:var(--primary); }
     textarea.input { resize:none; min-height:60px; }
     .who-select { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; margin-bottom:14px; }
-    .who-btn { padding:16px; border:1.5px solid var(--bd); border-radius:14px; background:var(--card); font-weight:700; font-size:15px; transition:all .15s; }
+    .who-btn { padding:16px; border:1.5px solid var(--bd); border-radius:14px; background:var(--card); font-weight:700; font-size:15px; transition:border-color .15s, background .15s, color .15s; }
     .who-btn.on { border-color:var(--primary); background:var(--soft2); color:var(--text); }
     .btn {
       width:100%; padding:16px; border-radius:15px; background:var(--primary); color:var(--card);
@@ -485,7 +485,7 @@
     .toast {
       position:fixed; bottom:84px; left:50%; transform:translateX(-50%) translateY(20px);
       background:var(--text); color:var(--bg); padding:13px 20px; border-radius:14px; font-size:14px; font-weight:600;
-      z-index:60; opacity:0; transition:all .25s; max-width:90%; text-align:center; box-shadow:0 8px 28px rgba(0,0,0,.22);
+      z-index:60; opacity:0; transition:opacity .25s, transform .25s; max-width:90%; text-align:center; box-shadow:0 8px 28px rgba(0,0,0,.22);
       pointer-events:none;   /* 상태 알림(role=status)은 입력을 가로채면 안 됨 — opacity:0이어도 남아 FAB(+) 탭을 먹던 버그 방지 */
     }
     .toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
@@ -766,7 +766,7 @@
     .miniroom .cr-cam { font-size:9px; padding:3px 8px 3px 6px; top:6px; left:8px; }
     /* 방(프리셋) 미니 미리보기 스트립 — 벽지+가구 축소 썸네일, 탭 전환·✎ 이름변경·잠금 방 확장(금화) */
     .rmstrip { display:flex; gap:10px; margin:0 0 10px; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch; }
-    .rmthumb { position:relative; flex:0 0 92px; width:92px; border:1.5px solid var(--bd); border-radius:14px; overflow:hidden; background:var(--card); cursor:pointer; padding:0; transition:transform .08s, border-color .12s, box-shadow .12s; }
+    .rmthumb { position:relative; flex:0 0 92px; width:92px; border:1.5px solid var(--bd); border-radius:14px; overflow:hidden; background:var(--card); cursor:pointer; padding:0; transition:transform .08s, border-color .12s; }
     .rmthumb:active { transform:scale(.96); }
     .rmthumb.on { border-color:var(--accent,#4a90d9); box-shadow:0 0 0 2px color-mix(in srgb,var(--accent,#4a90d9) 40%,transparent); }
     .rmthumb .rmscene { display:block; position:relative; width:100%; aspect-ratio:12/9; overflow:hidden; }
@@ -809,7 +809,7 @@
     /* 도감 시트 */
     .dexhead { margin:2px 2px 12px; } .dexhead .bar { margin-top:6px; }
     .dexgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:10px; }
-    .dexcell { border:1.5px solid var(--bd); border-radius:14px; padding:8px 4px 6px; text-align:center; background:var(--card); }
+    .dexcell { border:1.5px solid var(--bd); border-radius:14px; padding:8px 4px 6px; text-align:center; background:var(--card); content-visibility:auto; contain-intrinsic-size:auto 92px; }   /* 🔋 화면 밖 셀 레이아웃/페인트 스킵(실루엣 filter 포함) — 도감 열기·스크롤 가속 */
     .dexcell .dexpic { height:56px; display:flex; align-items:flex-end; justify-content:center; overflow:hidden; }
     .dexcell .dexnm { font-size:11px; font-weight:700; margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .dexcell .dexnm .q { color:var(--sub); }
@@ -1083,7 +1083,8 @@
     body.dragging .sheet-body { overflow:hidden; }
     body.dragging { touch-action:none; }
     /* touch-action:pan-y — 세로 스와이프는 시트 스크롤로 통과(드래그는 '꾹 눌러서'만 시작). 화면 스크롤과 겹침 방지. */
-    .gitem { position:absolute; box-sizing:border-box; display:flex; align-items:center; justify-content:center; padding:1px; cursor:grab; touch-action:pan-y; z-index:2; will-change:transform; }
+    .gitem { position:absolute; box-sizing:border-box; display:flex; align-items:center; justify-content:center; padding:1px; cursor:grab; touch-action:pan-y; z-index:2; }
+    .gitem.drag, .gitem.lp-hold { will-change:transform; }   /* 🔋 드래그/롱프레스 중에만 GPU 레이어 승격(배치된 데코 전부 영구 승격 → 레이어 폭증 방지) */
     .gitem.drag { cursor:grabbing; opacity:.92; z-index:50; }
     /* 꾹 누르는 중(롱프레스 대기) 피드백 — 집어들기 직전 살짝 눌린 느낌 */
     .gitem.lp-hold { transition:transform .16s ease; transform:scale(.95); filter:brightness(.94); }
@@ -1883,6 +1884,7 @@
     .gb-box .pkscene .pkstage { display:none; }    /* 랜덤박스는 배회펫 숨김(뜰알은 픽업펫 유지) */
     /* 🎯 배너 공용 중앙 센터피스(둥지 대체) — 뜰알 .pk-egg 위치에 아이콘/상자 + 반짝임 */
     .gb-center { position:absolute; left:50%; bottom:19%; transform:translateX(-50%); z-index:6; line-height:0; }
+    .gb-scene .pkstage { z-index:7; }   /* 배너 배회 펫을 알뜰 아이콘 센터피스(.gb-center z:6)보다 항상 앞으로 */
     .gb-cicon { position:relative; z-index:1; display:block; }
     .gb-cicon .px { display:block; image-rendering:pixelated; filter:drop-shadow(0 3px 0 rgba(0,0,0,.16)); }
     .gb-cfx { position:absolute; left:50%; top:42%; width:0; height:0; z-index:0; pointer-events:none; }
