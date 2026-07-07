@@ -2,6 +2,9 @@
     :root {
       /* 📐 캠 원근 한 묶음(단일 소스) — util.js의 CAM{FLOOR:54,WALL:46,STAGE:58}와 값이 같아야 함(util.test.js가 정합 잠금). dock·방·친구방 공유. */
       --cam-floor: 54%; --cam-wall: 46%; --cam-stage: 58%;
+      /* 🎥 방 캔onical 높이 — 알뜰홈·친구방은 이 높이 그대로, dock는 이 높이의 방(.cr-inner)을 짧은 창(.cd-room)으로 아래 크롭.
+         → dock·홈이 같은 바닥 평면(같은 %·같은 px)을 공유해 "꾸민 그대로" 메인 캠에도 보인다. */
+      --room-h: 244px;
       --canvas: #EBEDF0;     /* 폰 바깥(데스크탑 여백) */
       --bg: #ffffff;         /* 앱(폰 안) 배경 — 실제 화면은 흰색 */
       --card: #ffffff;       /* 카드/시트/탭바 표면 */
@@ -473,7 +476,8 @@
     .chip .catdot { margin-right:5px; }
     .txfield { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 2px; border-top:1px solid var(--line); }
     .txfield .k { font-size:13.5px; color:var(--sub); font-weight:600; flex:none; }
-    .txfield .txsel, .txfield .txin { border:none; background:transparent; font-size:14px; font-weight:700; color:var(--text); text-align:right; flex:1; min-width:0; font-family:inherit; padding:0; }
+    /* font-size는 16px 유지 — iOS Safari는 16px 미만 입력에 포커스하면 화면을 자동 확대(zoom)한다(지출결의 '내용' 입력 확대 방지) */
+    .txfield .txsel, .txfield .txin { border:none; background:transparent; font-size:16px; font-weight:700; color:var(--text); text-align:right; flex:1; min-width:0; font-family:inherit; padding:0; }
     .txfield select.txsel { -webkit-appearance:none; appearance:none; }
     .txfield .txin:focus, .txfield .txsel:focus { outline:none; }
     .kp { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:2px; margin:8px 0 4px; }
@@ -701,7 +705,9 @@
     .cd-empty { position:absolute; left:2px; bottom:16px; font-size:11.5px; font-weight:600; color:var(--sub); }
     .catdock.hidden { display:none; }
     /* dock = 컴팩트 웹캠 방(벽지 배경 + 가구 + 걷는 고양이) */
-    .cd-room { position:relative; height:160px; overflow:hidden; isolation:isolate; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }   /* 캠 세로(110→160px): 벽 밴드+걸이 가구(mount r1 bottom 87%)가 안 잘리게 확장 — 벽 아이템 픽셀높이(base11×ROOM_H≈15px)가 방높이에 안 비례하므로, 15/160≈9%로 알뜰홈(22/244)과 같은 비율. 원근 %(54/46/58)는 그대로 두면 자동 정합. isolation=방 하나를 독립 스택 컨텍스트로 → 펫·가구가 각자 z-index로 상호 가림하되 방 밖(헤더 등)엔 안 샘. 드래그 시 이미지/텍스트 선택 방지 */
+    .cd-room { position:relative; height:180px; overflow:hidden; isolation:isolate; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }   /* 캠 세로 = 짧은 "창". 내부 방(.cr-inner)은 항상 --room-h(244)로 그려지고 하단만 이 높이만큼 보인다 → 알뜰홈과 동일한 바닥 평면·가구 크기(원근 %도 244 기준으로 동일). 위 벽 상단(천장쪽 걸이 가구)만 크롭됨(수용). isolation=독립 스택 컨텍스트. */
+    /* 🎥 dock 내부 방: 244px 전체 방을 아래(바닥) 기준으로 담는다. .cd-room(180)보다 커서 상단이 넘치지만 overflow:hidden으로 크롭 → 바닥·앞뒤 원근이 알뜰홈과 픽셀 단위로 동일. */
+    .cd-room .cr-inner { position:absolute; left:0; right:0; bottom:0; height:var(--room-h); }
     .cd-room svg, .cd-room img { -webkit-user-drag:none; user-drag:none; }
     .cd-room .cr-wall { position:absolute; inset:0; z-index:0; }
     /* 알뜰홈(.catroom) 캠과 동일 비율: 바닥 54%·벽지 46%·무대 58%. 펫이 알뜰홈처럼 맨 뒤 벽지까지 걸어가 닿는다(예전 dock 66%는 바닥이 너무 커 펫이 벽에 못 닿고 가구와 깊이도 안 맞았음). */
@@ -752,7 +758,7 @@
     .subseg button { flex:none; padding:8px 16px; border-radius:11px; background:var(--soft); font-size:13px; font-weight:700; color:var(--text2); }
     .subseg button.on { background:var(--primary); color:var(--card); }
     /* 방(웹캠 — 위에서 아래로 내려다보는 뷰: 바닥을 넓게, 벽지는 좁게) */
-    .catroom { position:relative; height:244px; border-radius:16px; overflow:hidden; isolation:isolate; border:1px solid var(--bd); margin:4px 0 6px; }   /* 세로 확대: 큰 캣타워가 잘리지 않게. isolation=방을 독립 스택 컨텍스트로 → 펫·가구가 각자 z로 상호 가림하되 방 밖(sticky 헤더 등)엔 안 샘 */
+    .catroom { position:relative; height:var(--room-h); border-radius:16px; overflow:hidden; isolation:isolate; border:1px solid var(--bd); margin:4px 0 6px; }   /* 세로 확대: 큰 캣타워가 잘리지 않게. isolation=방을 독립 스택 컨텍스트로 → 펫·가구가 각자 z로 상호 가림하되 방 밖(sticky 헤더 등)엔 안 샘 */
     .cr-wall { position:absolute; inset:0; z-index:0; background:linear-gradient(180deg,color-mix(in srgb,var(--soft) 60%,var(--card)) 0%,var(--soft) var(--cam-wall),var(--soft2) var(--cam-wall),var(--soft2) 100%); }   /* 벽지 세로 소폭 연장(42→46%) */
     .cr-base { position:absolute; left:0; right:0; bottom:var(--cam-floor); height:1px; background:transparent; z-index:1; }   /* 바닥 뒤끝(벽 경계) = 배치 맨 뒤 행. 흰 경계선 제거(바닥이 1px 위까지 채움) */
     /* 웹캠 방: LIVE 배지를 좌측 상단으로 */
