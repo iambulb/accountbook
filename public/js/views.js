@@ -191,10 +191,11 @@
       const pbPill=t.purposeBookId?'<span class="pill">'+escapeHtml(t.purposeBookName||'목적')+'</span>':'';
       const giftPill=t.giftEventId?'<span class="pill">🎁 경조사</span>':'';
       const loanPill=t.loanId?'<span class="pill">🏦 대출</span>':'';
+      const schedPill=((t.date||'').slice(0,10) > todayStr())?'<span class="pill" style="color:var(--primary);border-color:var(--primary);">📅 예정</span>':'';   // 미래 날짜 = 예정(현재 잔액 미반영)
       const amtNum=Math.abs(Number(t.amount)||0).toLocaleString();
-      return '<div class="tx" onclick="openTxSheet(\''+t.ownerUid+'\',\''+t.id+'\')">'+
+      return '<div class="tx'+(schedPill?' tx-sched':'')+'" onclick="openTxSheet(\''+t.ownerUid+'\',\''+t.id+'\')">'+
         '<div class="tx-ic" style="'+tileStyle+'">'+tileInner+'</div>'+
-        '<div class="tx-main"><div class="tx-title">'+escapeHtml(t.desc||'')+rec+cardPill+pbPill+giftPill+loanPill+'</div><div class="tx-sub">'+sub+'</div></div>'+
+        '<div class="tx-main"><div class="tx-title">'+escapeHtml(t.desc||'')+schedPill+rec+cardPill+pbPill+giftPill+loanPill+'</div><div class="tx-sub">'+sub+'</div></div>'+
         '<div class="tx-amt '+cls+'">'+sign+'₩'+amtNum+((t.currency&&t.currency!=='KRW')?'<span class="tx-fx">'+escapeHtml(fmtForeign(t.foreignAmount,t.currency))+'</span>':'')+'</div></div>';
     }
 
@@ -1304,6 +1305,8 @@
         '<div class="sp"><div><div class="kk">총자산</div><div class="vv">'+won(gross)+'</div></div>'+
         '<div><div class="kk">카드대금</div><div class="vv'+(cardDebt<0?' red':'')+'">'+won(cardDebt)+'</div></div>'+
         '<div style="margin-left:auto;display:flex;align-items:flex-end"><span class="pill" style="margin-left:0;">계좌 '+accs.length+'개</span></div></div></div>';
+      // 📅 예정(미래) 거래 안내 — 현재 잔액에 미반영
+      { const _sc=(typeof scheduledTxs==='function')?scheduledTxs():[]; if(_sc.length) h+='<div class="tx-sub" style="margin:-4px 2px 10px;">📅 <b>예정 거래 '+_sc.length+'건</b> — 현재 잔액엔 아직 반영 안 됐어요(날짜가 되면 자동 반영).</div>'; }
 
       // 입출금 · 현금
       h+=sechHtml('입출금 · 현금','openAcctSheet()');
@@ -1936,7 +1939,7 @@
       list.forEach(b=>{ const u=budgetUsage(b), c=budgetColor(u.pct);
         h+='<div class="card"><div class="row" onclick="openBudgetEdit(\''+b.id+'\')"><div style="display:flex;align-items:center;gap:11px;flex:1;min-width:0;">'+budgetTile(b)+'<b style="min-width:0;">'+budgetTitle(b)+' <span class="pill">'+(PERIOD_LABEL[b.periodType]||b.periodType)+'</span>'+(b.scope==='personal'?'<span class="pill">개인</span>':'')+'</b></div><span style="color:'+c+';font-weight:800;flex:none;">'+u.pct+'%'+(u.pct>=100?' 초과':'')+'</span></div>'+
           '<div class="bar"><i style="width:'+Math.min(u.pct,100)+'%;background:'+c+'"></i></div>'+
-          '<div class="row" style="margin-top:8px;"><span class="tx-sub">'+won(u.used)+' / '+won(u.amount)+'</span><span class="tx-sub">남음 '+won(u.remain)+'</span></div>'+
+          '<div class="row" style="margin-top:8px;"><span class="tx-sub">'+won(u.used)+' / '+won(u.amount)+(u.carry>0?' <span style="color:var(--income)">(이월 +'+won(u.carry)+')</span>':'')+'</span><span class="tx-sub">남음 '+won(u.remain)+'</span></div>'+
           '<div class="link" style="margin-top:8px;font-size:13px;" onclick="openBudgetDetail(\''+b.id+'\')">포함된 거래 보기 ›</div></div>';
       });
       h+='</div>';
@@ -1968,6 +1971,7 @@
       h+='<div class="form-2"><div class="field"><label>경고 기준</label><select class="input" id="bgAlert">'+
         [80,90,100].map(n=>'<option value="'+n+'"'+(((b&&b.alertThreshold===n)||(!b&&n===80))?' selected':'')+'>'+n+'%</option>').join('')+'</select></div>'+
         '<div class="field"><label>공개 범위</label><select class="input" id="bgVis">'+VISIBILITY.map(p=>'<option value="'+p[0]+'"'+(((b&&b.visibility===p[0])||(!b&&p[0]===defaultVisibility()))?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div></div>';
+      h+='<label style="display:flex;align-items:center;gap:8px;margin:2px 2px 12px;font-size:13px;color:var(--sub);"><input type="checkbox" id="bgRollover" '+(b&&b.rollover?'checked':'')+'> 남은 예산 <b>이월</b> — 지난 기간에 안 쓴 만큼 이번 예산에 더해요</label>';
       h+='<button class="btn" onclick="saveBudget('+(id?'\''+id+'\'':'null')+')">'+(b?'수정':'추가')+'</button>';
       if(b) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteBudget(\''+id+'\')">삭제</button>';
       openSheet(b?'예산 수정':'예산 추가', h);
@@ -1982,6 +1986,7 @@
         startDate: val('bgPeriod')==='custom'?(val('bgStart')||todayStr()):null,
         endDate: val('bgPeriod')==='custom'?(val('bgEnd')||todayStr()):null,
         scope, alertEnabled:true, alertThreshold:Number(val('bgAlert'))||80, visibility:vis,
+        rollover: $('bgRollover')?!!$('bgRollover').checked:false,
         owner: b?(b.owner||(scope==='personal'||vis==='private'?state.userName:defaultOwnerName())):(scope==='personal'||vis==='private'?state.userName:defaultOwnerName()),
         purposeBookId: b?(b.purposeBookId||null):null,
         createdAt: b?(b.createdAt||now):now, updatedAt:now };

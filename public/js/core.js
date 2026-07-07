@@ -1015,7 +1015,9 @@
     // ===== 파생 계산 =====
     function accountBalance(id){
       const a=getAcct(id); let bal=a?Number(a.initialBalance||0):0;
+      const today=todayStr();   // 📅 오늘까지만 현재 잔액에 반영 — 미래 날짜 거래는 '예정'이라 아직 잔액에 안 잡힘(은행 대기거래처럼)
       state.transactions.forEach(t=>{
+        if((t.date||'').slice(0,10) > today) return;   // 예정(미래) 거래 제외
         const e=TX_EFFECT[t.type]; if(!e) return;
         const amt=Number(t.amount)||0;
         if(e.debit && t[e.debit]===id) bal-=amt;
@@ -1023,6 +1025,8 @@
       });
       return bal;
     }
+    // 📅 예정(미래 날짜) 거래 목록 — 오늘 이후 날짜, 최근(가까운) 순.
+    function scheduledTxs(){ const today=todayStr(); return state.transactions.filter(function(t){ return (t.date||'').slice(0,10) > today; }).sort(function(a,b){ return (a.date||'')<(b.date||'')?-1:1; }); }
     function totalAssets(){ return visibleAccounts().reduce((s,a)=>s+accountBalance(a.id),0); }
     function monthTx(m){ return state.transactions.filter(t=>(t.date||'').startsWith(m)); }
     function sumBy(list,type){ return list.filter(t=>t.type===type).reduce((s,t)=>s+(Number(t.amount)||0),0); }
@@ -1168,6 +1172,18 @@
       if(b.periodType==='yearly'){ return { start:new Date(ref.getFullYear(),0,1), end:new Date(ref.getFullYear(),11,31) }; }
       return { start:new Date(ref.getFullYear(),ref.getMonth(),1), end:new Date(ref.getFullYear(),ref.getMonth()+1,0) };
     }
+    // 직전 기간 기준일(이월 계산용). custom은 이월 없음.
+    function budgetPrevRef(b, ref){ ref=ref||new Date(); const d=new Date(ref);
+      if(b.periodType==='custom') return null;
+      if(b.periodType==='weekly'){ d.setDate(d.getDate()-7); return d; }
+      if(b.periodType==='yearly'){ return new Date(d.getFullYear()-1, 6, 1); }
+      return new Date(d.getFullYear(), d.getMonth()-1, 15);   // 월간: 전 달 중순
+    }
+    // 예산 이월(rollover): 직전 기간의 남은 양(base-used, 양수만)을 이번 기간 예산에 가산(1기간 캐리 — 무한 누적 아님).
+    function budgetCarry(b, ref){ if(!b || !b.rollover) return 0; const pr=budgetPrevRef(b, ref); if(!pr) return 0;
+      const base=Number(b.amount)||0; const prevUsed=budgetTxs(b, pr).reduce(function(s,t){ return s+(Number(t.amount)||0); },0);
+      return Math.max(0, base-prevUsed);
+    }
     function budgetTxs(b, ref){
       const p=budgetPeriod(b, ref);   // ref=기준일(리포트에서 보는 달) — 없으면 오늘
       return state.transactions.filter(t=>{
@@ -1180,8 +1196,8 @@
     function budgetUsage(b, ref){
       const p=budgetPeriod(b, ref);
       const used=budgetTxs(b, ref).reduce((s,t)=>s+(Number(t.amount)||0),0);
-      const amt=Number(b.amount)||0;
-      return { used, amount:amt, pct: amt?Math.round(used/amt*100):0, remain:amt-used, start:p.start, end:p.end };
+      const base=Number(b.amount)||0, carry=budgetCarry(b, ref), amt=base+carry;   // 이월(rollover) 반영: 유효예산=기본+전기간 남은분
+      return { used, amount:amt, base:base, carry:carry, pct: amt?Math.round(used/amt*100):0, remain:amt-used, start:p.start, end:p.end };
     }
     function totalMonthlyBudget(){ return visibleBudgets().find(b=>!b.categoryName && b.periodType==='monthly') || null; }
 
