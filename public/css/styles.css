@@ -1937,11 +1937,6 @@
     /* 🌇 펫알 배너 전용 — 노을 그라디언트 테두리(뜰알 무지개 테두리 패턴, 제목과 같은 팔레트) + 헤더 태그 노을 틴트 */
     .gbanner.gb-eggbn { border:2px solid transparent; background:linear-gradient(var(--card),var(--card)) padding-box, linear-gradient(100deg,#f0b03c,#ee7a4a,#d15fa6) border-box; }
     .gb-eggbn .gb-head .pk-tag { border-color:color-mix(in srgb,#ee7a4a 45%,var(--bd)); color:#c9663f; }
-    /* 📊 배너 확률 보기(접기/펼치기) — gachaInfoHtml(.gi-*) 재사용 */
-    .gb-prob { margin:0 12px 12px; }
-    .gb-prob summary { cursor:pointer; list-style:none; text-align:center; font-size:12px; font-weight:800; color:var(--sub); padding:4px 0; }
-    .gb-prob summary::-webkit-details-marker { display:none; }
-    .gb-prob[open] summary { color:var(--text); }
     /* 🔍 픽업 펫 미리보기 모달(gimenu 위에 초상 크게 + 도트 후광) */
     .pkpeek { position:relative; text-align:center; overflow:hidden; }
     .pkpeek-fx { position:absolute; left:50%; top:76px; width:0; height:0; z-index:0; pointer-events:none; }
