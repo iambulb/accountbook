@@ -6759,10 +6759,13 @@
       else if(_fx10.stage===2) tenTap2();
     }
     function tenTapShake(stage){ const nest=document.querySelector('.ten-nest'); if(nest){ nest.classList.remove('drop','shake'); void nest.offsetWidth; nest.classList.add('shake'); }
+      const shakers=[];   // 🔋 알마다 void offsetWidth(강제 리플로우 N회) 하던 것을 배치: remove 전부 → 리플로우 1회 → add 전부
       _fx10.items.forEach(function(it){ const el=$('tenEgg'+it.i); if(!el) return;
-        if(it.kind==='ddeul'){ const fl=el.querySelector('.fx-ddflower'); if(fl){ fl.classList.remove('flswing'); void fl.offsetWidth; fl.classList.add('flswing'); } }   // 뜰알: 알뽑기처럼 꽃이 팔랑(재렌더 대신 스윙만)
+        if(it.kind==='ddeul'){ const fl=el.querySelector('.fx-ddflower'); if(fl){ fl.classList.remove('flswing'); shakers.push([fl,'flswing']); } }   // 뜰알: 꽃이 팔랑(스윙만)
         else { el.innerHTML=tenEggSvg(it, stage); }
-        el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); });
+        el.classList.remove('shake'); shakers.push([el,'shake']); });
+      void document.body.offsetWidth;   // 강제 리플로우 1회(애니 재시작용)
+      shakers.forEach(function(pr){ pr[0].classList.add(pr[1]); });
       if(stage<2) setTenHint('한 번 더!'); }
     function tenTap2(){ _fx10.items.forEach(function(it){ if(it.kind==='egg' && it.rainbow) it._rbShown=true; });
       tenTapShake(2);
