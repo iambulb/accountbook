@@ -179,10 +179,11 @@
       if(t.category && (getCat(t.category)||CAT_META[t.category])){ tileStyle=catTileStyle(t.category); tileInner=catSvgIcon(t.category); }
       else { tileInner=svgWrap(CAT_SVG[TX_SVG_KEY[t.type]||'tag']); }
       let sub;
-      if(e.debit&&e.credit) sub=(t.category&&t.category!=='기타'?t.category+' · ':'')+acctName(t.from)+' → '+acctName(t.to);
-      else if(t.type==='expense'||t.type==='income') sub=(t.category||TYPE_LABEL[t.type]);   // 시안: 카테고리 · 기록자 (계좌는 상세에서)
-      else if(e.credit&&!e.debit) sub=acctName(t.to);
-      else sub=(t.category?t.category+' · ':'')+acctName(t.from);
+      const _cat=escapeHtml(t.category||''), _afrom=escapeHtml(acctName(t.from)), _ato=escapeHtml(acctName(t.to));   // 🔒 사용자 문자열(카테고리·계좌명)은 innerHTML 삽입 전 escape — 저장형 XSS 방지
+      if(e.debit&&e.credit) sub=(t.category&&t.category!=='기타'?_cat+' · ':'')+_afrom+' → '+_ato;
+      else if(t.type==='expense'||t.type==='income') sub=(t.category?_cat:TYPE_LABEL[t.type]);   // 시안: 카테고리 · 기록자 (계좌는 상세에서)
+      else if(e.credit&&!e.debit) sub=_ato;
+      else sub=(t.category?_cat+' · ':'')+_afrom;
       if(!['expense','income','transfer'].includes(t.type)) sub=TYPE_LABEL[t.type]+' · '+sub;
       sub+=' · '+escapeHtml(ownerName(t.user||''));   // t.user(소비 대상)도 멤버 uid로 저장될 수 있어 ownerName으로 이름 해석
       const rec=t.recurringId?'<span class="pill">🔁</span>':'';
@@ -323,7 +324,7 @@
       let cats=pickableCats(catTypeFor(sheetType));
       if(sheetCat && !cats.some(c=>c.name===sheetCat)){ const cur=getCat(sheetCat)||{name:sheetCat,color:'#8b95a1'}; cats=[cur,...cats]; }
       else if(!sheetCat && cats[0]) sheetCat=cats[0].name;
-      return '<div class="chips">'+cats.map(c=>'<button class="chip'+(c.name===sheetCat?' on':'')+'" onclick="pickCat(\''+escapeHtml(c.name)+'\')"><span class="catdot" style="background:'+(c.color||'#8b95a1')+'"></span>'+escapeHtml(c.name)+'</button>').join('')+'</div>';
+      return '<div class="chips">'+cats.map(c=>'<button class="chip'+(c.name===sheetCat?' on':'')+'" onclick="pickCat(\''+jsAttr(c.name)+'\')"><span class="catdot" style="background:'+(c.color||'#8b95a1')+'"></span>'+escapeHtml(c.name)+'</button>').join('')+'</div>';
     }
     // ===== 금액 입력(통화 인식) — 외화 선택 시 소수점 허용·원화 환산 =====
     function curOptions(sel){ return CURRENCIES.map(c=>'<option value="'+c.code+'"'+(c.code===sel?' selected':'')+'>'+c.sym+' '+c.code+'</option>').join(''); }
@@ -527,7 +528,7 @@
       const date=val('sDate')||todayStr();
       const desc=val('sDesc').trim();
       const memo=val('sMemo').trim();
-      const iso=new Date(date+'T'+new Date().toTimeString().slice(0,8)).toISOString();
+      const iso=isoAtNoon(date);
       const e=TX_EFFECT[sheetType]||{};
       const hasCat=catTypeFor(sheetType)!==null;
       // 소비 대상(누구의 소비) — 지출/선불결제/포인트사용에서만 선택, 그 외엔 본인
@@ -577,6 +578,8 @@
       if(sheetTx){
         const old=state.transactions.find(x=>x.ownerUid===sheetTx.ownerUid&&x.id===sheetTx.id);
         if(old&&old.recurringId) tx.recurringId=old.recurringId;
+        // 🔗 편집이 재구성하지 않는 백링크(경조사·대출·연결 거래) 보존 — 안 지키면 편집 시 선물/대출 연결이 끊겨 pill·정산이 깨짐
+        if(old) ['giftEventId','loanId','linkedTransactionId'].forEach(k=>{ if(old[k]!=null && old[k]!=='') tx[k]=old[k]; });
         db.ref(wp('transactions/'+sheetTx.ownerUid+'/'+sheetTx.id)).set(tx).catch(_saveErr); toast('수정되었습니다');
       } else { db.ref(wp('transactions/'+state.uid+'/'+Date.now())).set(tx).catch(_saveErr); toast('저장되었습니다'); budgetPreWarn(tx); }
       closeSheet();
@@ -597,7 +600,7 @@
     function deleteTx(){
       if(!sheetTx) return;
       const ref=sheetTx;
-      confirmSheet('이 거래를 삭제할까요?', ()=>{ db.ref(wp('transactions/'+ref.ownerUid+'/'+ref.id)).remove(); toast('삭제되었습니다'); });
+      confirmSheet('이 거래를 삭제할까요?', ()=>{ db.ref(wp('transactions/'+ref.ownerUid+'/'+ref.id)).remove(); if(typeof removeRecurringLog==='function') removeRecurringLog(ref.ownerUid, ref.id); toast('삭제되었습니다'); });
     }
 
     // ===== 🧭 온보딩(첫 사용자 1회) =====
@@ -1074,11 +1077,12 @@
         scope:scope, ownerUid:ownerUid,
         assignedUid:assignedUid, assignedName:assignedName,
         repeat:($('tdRepeat')?val('tdRepeat'):'none')||'none', purposeBookId:($('tdPb')?val('tdPb'):'')||'',
-        done:t?!!t.done:false, doneAt:t?(t.doneAt||''):'', doneByUid:t?(t.doneByUid||''):'', rewardClaimed:t?!!t.rewardClaimed:false,
         createdByUid:t?(t.createdByUid||state.uid||''):(state.uid||''), createdAt:t?(t.createdAt||now):now, updatedAt:now,
         sortOrder:t?(t.sortOrder!=null?t.sortOrder:Date.now()):Date.now() };
       const ref=scope==='personal'?db.ref('users/'+state.uid+'/todos/'+key):db.ref(wp('todos/'+key));
-      ref.set(data).catch(_saveErr); toast(t?'수정되었습니다':'추가되었습니다'); closeSheet();
+      if(t){ ref.update(data).catch(_saveErr); }   // ✏️ 편집=병합(.update): 완료상태(done/doneAt/doneByUid/rewardClaimed·lastDoneAt)를 건드리지 않아 다른 멤버의 동시 완료가 유실되지 않음
+      else { data.done=false; data.doneAt=''; data.doneByUid=''; data.rewardClaimed=false; ref.set(data).catch(_saveErr); }   // 신규=완료필드 초기화 포함 set
+      toast(t?'수정되었습니다':'추가되었습니다'); closeSheet();
     }
     function deleteTodo(id){ const t=allTodos().find(x=>x.id===id); if(!t) return; confirmSheet('이 할일을 삭제할까요?', ()=>{ todoDbRef(t).remove(); toast('삭제되었습니다'); closeSheet(); }); }
     // 목적별 가계부(여행 등) 상세에 붙이는 연결된 할일 요약 카드
@@ -1124,8 +1128,12 @@
     function renderStats(){
       if(typeof markReportSeen==='function') markReportSeen();   // 🐱 주간 미션: 리포트 확인
       const m=state.month, list=monthTx(m);
-      const actual=actualSpend(list), inc=sumBy(list,'income'), bal=inc-actual;
+      const actual=actualSpend(list), inc=sumBy(list,'income');
+      const refundTot=list.filter(t=>t.type==='refund').reduce((s,t)=>s+(Number(t.amount)||0),0);   // 💸 환불 합계 — 잔액에 반영(이전엔 수입·지출 어디에도 안 잡혀 잔액이 실제와 어긋났음)
+      const bal=inc-actual+refundTot;
       const [yy,mo]=m.split('-');
+      const _curM=(typeof todayStr==='function'?todayStr():'').slice(0,7);
+      const budgetRef=(m===_curM)?new Date():new Date(+yy,+mo-1,15);   // 📅 예산 기준일=보는 달(이번 달이면 오늘 → 주간예산=이번주 유지, 과거/미래 달이면 그 달)
       // 월 네비
       let h='<div class="monthlbl" style="padding-top:6px"><button onclick="statsMonth(-1)" aria-label="이전 달">‹</button><b>'+yy+'년 '+(+mo)+'월</b><button onclick="statsMonth(1)" aria-label="다음 달">›</button></div>';
       // 총지출 카드 + 수입/잔액/전월 대비
@@ -1137,6 +1145,7 @@
         '<div class="bigexp">₩ '+fmtComma(actual)+'</div>'+
         '<div class="statrow">'+
           '<div><div class="k">수입</div><div class="v" style="color:var(--income)">'+signComma(inc)+'</div></div>'+
+          (refundTot>0?'<div><div class="k">환불</div><div class="v" style="color:var(--income)">+'+fmtComma(refundTot)+'</div></div>':'')+
           '<div><div class="k">잔액</div><div class="v">'+signComma(bal)+'</div></div>'+
           '<div style="margin-left:auto"><div class="k">전월 대비</div><div class="v">'+momHtml+'</div></div>'+
         '</div></div>';
@@ -1187,7 +1196,7 @@
       const bgs=visibleBudgets();
       if(bgs.length){
         h+='<div class="card"><div class="row" style="margin-bottom:4px;"><div class="sec-title" style="margin:0;">예산</div><button class="link" onclick="openBudgetSheet()">관리</button></div>'+
-          bgs.map(b=>{ const u=budgetUsage(b), c=budgetColor(u.pct); return '<div style="margin:10px 0;"><div class="row" style="font-size:13px;"><span>'+(b.categoryName?'<span class="catdot" style="background:'+catColor(b.categoryName)+'"></span>':'')+budgetTitle(b)+'</span><span style="color:'+c+';font-weight:700;">'+u.pct+'%'+(u.pct>=100?' 초과':(b.alertEnabled!==false&&u.pct>=(b.alertThreshold||80)?' ⚠️':''))+'</span></div><div class="bar"><i style="width:'+Math.min(u.pct,100)+'%;background:'+c+'"></i></div><div class="tx-sub" style="margin-top:4px;">'+won(u.used)+' / '+won(u.amount)+'</div></div>'; }).join('')+'</div>';
+          bgs.map(b=>{ const u=budgetUsage(b, budgetRef), c=budgetColor(u.pct); return '<div style="margin:10px 0;"><div class="row" style="font-size:13px;"><span>'+(b.categoryName?'<span class="catdot" style="background:'+catColor(b.categoryName)+'"></span>':'')+budgetTitle(b)+'</span><span style="color:'+c+';font-weight:700;">'+u.pct+'%'+(u.pct>=100?' 초과':(b.alertEnabled!==false&&u.pct>=(b.alertThreshold||80)?' ⚠️':''))+'</span></div><div class="bar"><i style="width:'+Math.min(u.pct,100)+'%;background:'+c+'"></i></div><div class="tx-sub" style="margin-top:4px;">'+won(u.used)+' / '+won(u.amount)+'</div></div>'; }).join('')+'</div>';
       }
       const pbsR=visiblePBs().filter(p=>(p.status||'active')==='active');
       if(pbsR.length){
@@ -1928,11 +1937,11 @@
       const inactive=c.isActive===false;
       return '<div class="acct" style="opacity:'+(inactive?'.5':'1')+';">'+
         '<div class="acct-dot" style="'+catTileStyle(c.name)+'">'+catSvgIcon(c.name)+'</div>'+
-        '<div style="flex:1;min-width:0;" onclick="openCatEdit(\''+escapeHtml(c.name)+'\')"><div class="acct-name">'+escapeHtml(c.name)+'<span class="pill">'+(CAT_TYPE_LABEL[c.type]||c.type||'')+'</span>'+(c.isDefault?'<span class="pill">기본</span>':'')+(c.visibility==='private'?'<span class="pill">개인</span>':'')+'</div></div>'+
+        '<div style="flex:1;min-width:0;" onclick="openCatEdit(\''+jsAttr(c.name)+'\')"><div class="acct-name">'+escapeHtml(c.name)+'<span class="pill">'+(CAT_TYPE_LABEL[c.type]||c.type||'')+'</span>'+(c.isDefault?'<span class="pill">기본</span>':'')+(c.visibility==='private'?'<span class="pill">개인</span>':'')+'</div></div>'+
         '<div style="display:flex;align-items:center;gap:2px;">'+
-          '<button class="icon-btn" style="width:30px;height:30px;font-size:13px;box-shadow:none;background:var(--line-soft);" onclick="moveCat(\''+escapeHtml(c.name)+'\',-1)">▲</button>'+
-          '<button class="icon-btn" style="width:30px;height:30px;font-size:13px;box-shadow:none;background:var(--line-soft);" onclick="moveCat(\''+escapeHtml(c.name)+'\',1)">▼</button>'+
-          '<div class="switch '+(inactive?'':'on')+'" onclick="toggleCatActive(\''+escapeHtml(c.name)+'\')"><i></i></div>'+
+          '<button class="icon-btn" style="width:30px;height:30px;font-size:13px;box-shadow:none;background:var(--line-soft);" onclick="moveCat(\''+jsAttr(c.name)+'\',-1)">▲</button>'+
+          '<button class="icon-btn" style="width:30px;height:30px;font-size:13px;box-shadow:none;background:var(--line-soft);" onclick="moveCat(\''+jsAttr(c.name)+'\',1)">▼</button>'+
+          '<div class="switch '+(inactive?'':'on')+'" onclick="toggleCatActive(\''+jsAttr(c.name)+'\')"><i></i></div>'+
         '</div></div>';
     }
     function moveCat(name,dir){
@@ -1963,7 +1972,7 @@
         '<div class="field"><label>활성</label><select class="input" id="catActive"><option value="1"'+((!c||c.isActive!==false)?' selected':'')+'>활성</option><option value="0"'+((c&&c.isActive===false)?' selected':'')+'>비활성</option></select></div></div>';
       h+='<div class="field"><label>메모 (선택)</label><input class="input" id="catMemo" value="'+escapeHtml(c?(c.memo||''):'')+'" placeholder="메모"></div>';
       h+='<button class="btn" onclick="saveCat('+(name?'\''+escapeHtml(name)+'\'':'null')+','+canRename+')">'+(c?'수정':'추가')+'</button>';
-      if(c) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteCat(\''+escapeHtml(name)+'\')">삭제</button>';
+      if(c) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteCat(\''+jsAttr(name)+'\')">삭제</button>';
       openSheet(c?'카테고리 수정':'카테고리 추가', h);
     }
     function saveCat(origName, canRename){
@@ -2605,7 +2614,7 @@
       let linkedAccount = $('gAcct')?val('gAcct'):(g?g.linkedAccount:'');
       if(txOn){
         const acct=linkedAccount||(state.accounts[0]&&state.accounts[0].id)||'';
-        const given=dir!=='received', iso=new Date(date+'T'+new Date().toTimeString().slice(0,8)).toISOString();
+        const given=dir!=='received', iso=isoAtNoon(date);
         const txObj={ type:given?'expense':'income', date:iso, user:state.userName, amount, category:given?'경조사':'경조사비 수령',
           desc:personName+' '+(GIFT_EVENT_LABEL[eventType]||eventType)+' '+(GIFT_DIR_LABEL[dir]||''), isActualExpense:given, giftEventId:key, memo };
         if(given) txObj.from=acct; else txObj.to=acct;
@@ -2799,7 +2808,7 @@
       const key=id||('lpay_'+Date.now());
       const txOn=$('lpTx')&&$('lpTx').classList.contains('on');
       const acct=$('lpAcct')?val('lpAcct'):(p?p.account:'');
-      const borrowed=l.direction!=='lent', iso=new Date(date+'T'+new Date().toTimeString().slice(0,8)).toISOString();
+      const borrowed=l.direction!=='lent', iso=isoAtNoon(date);
       // 원금·이자 각각 실제 거래로 연결(borrowed=지출/차감, lent=수입/입금). 계좌 잔액에 반영돼 따로 입력할 필요 없음.
       // 이자는 실지출(대출 비용)로 통계 포함, 원금 상환은 부채 상환이라 실지출 통계엔 제외(isActualExpense:false).
       function upsertLoanTx(existingId, amt, cat, descSuffix, actual, fallbackId){

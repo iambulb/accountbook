@@ -985,6 +985,13 @@
       recurringLogKeys.add(logKey);
       return true;
     }
+    // 정기 생성분(rec_{id}_{sd}) 삭제 시 대응 멱등 로그도 지운다 — 안 지우면 로그만 남아 다음 실행에서 영영 재생성 안 됨(조용한 영구삭제 방지). 지우면 다음 launch의 runRecurring에서 자연 재생성.
+    function removeRecurringLog(ownerUid, txId){
+      if(!txId || String(txId).indexOf('rec_')!==0) return;
+      const logKey=String(txId).slice(4);   // rec_{ruleId}_{sd} → {ruleId}_{sd}
+      recurringLogKeys.delete(logKey);
+      db.ref(wp('recurringLogs/'+ownerUid+'/'+logKey)).remove().catch(function(){});
+    }
     function runRecurring(){
       const today=parseDate(todayStr());
       state.recurring.filter(r=>r.ownerUid===state.uid).forEach(rule=>{
@@ -1160,8 +1167,8 @@
       if(b.periodType==='yearly'){ return { start:new Date(ref.getFullYear(),0,1), end:new Date(ref.getFullYear(),11,31) }; }
       return { start:new Date(ref.getFullYear(),ref.getMonth(),1), end:new Date(ref.getFullYear(),ref.getMonth()+1,0) };
     }
-    function budgetTxs(b){
-      const p=budgetPeriod(b);
+    function budgetTxs(b, ref){
+      const p=budgetPeriod(b, ref);   // ref=기준일(리포트에서 보는 달) — 없으면 오늘
       return state.transactions.filter(t=>{
         if(!isActual(t)) return false;                              // 실제소비만 (충전·이체·조정·환불·대출상환 제외)
         if(b.categoryName && t.category!==b.categoryName) return false;
@@ -1169,9 +1176,9 @@
         const d=parseDate(t.date); return !(d<p.start||d>p.end);
       });
     }
-    function budgetUsage(b){
-      const p=budgetPeriod(b);
-      const used=budgetTxs(b).reduce((s,t)=>s+(Number(t.amount)||0),0);
+    function budgetUsage(b, ref){
+      const p=budgetPeriod(b, ref);
+      const used=budgetTxs(b, ref).reduce((s,t)=>s+(Number(t.amount)||0),0);
       const amt=Number(b.amount)||0;
       return { used, amount:amt, pct: amt?Math.round(used/amt*100):0, remain:amt-used, start:p.start, end:p.end };
     }

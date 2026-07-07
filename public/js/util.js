@@ -4,6 +4,15 @@
 (function (root) {
   'use strict';
 
+  // 📐 캠(방·dock) 원근 "한 묶음" 단일 소스 — dock·알뜰홈·친구방이 공유(CLAUDE.md 캠 원근 규칙).
+  //   FLOOR/WALL/STAGE = CSS %(styles.css의 --cam-* 변수와 값이 같아야 함 — util.test.js가 정합을 잠금),
+  //   RISE = 펫 발 올림 비율(riseMax=roomH*RISE), FURN_BASE/SPAN = 가구 bottom%=BASE+depth*SPAN,
+  //   ROWS/DIV = 격자 12행·depth 분모 11. ⚠️ 하나를 바꾸면 전부 함께(뒤에서 수렴) — 과거 dock 66%·0.61 회귀의 재발 방지.
+  var CAM = { FLOOR: 54, WALL: 46, STAGE: 58, RISE: 0.53, FURN_BASE: 3, FURN_SPAN: 46, ROWS: 12, DIV: 11 };
+  function camDepth(frontRow) { return (CAM.ROWS - frontRow) / CAM.DIV; }              // 격자 앞행 → depth(0=맨앞, 1=맨뒤)
+  function camFurnBottom(depth) { return CAM.FURN_BASE + depth * CAM.FURN_SPAN; }      // 가구 bottom%
+  function camZ(depth) { return Math.max(1, Math.round(CAM.ROWS - depth * CAM.DIV)); } // 가림 z(가구 frontRow와 같은 척도)
+
   // 해외통화(여행용). dec=금액 소수 자릿수. 환율은 항상 "원화 per 1단위", 거래 amount는 원화 환산액.
   var CURRENCIES = [
     { code: 'KRW', name: '대한민국 원', sym: '₩', dec: 0 },
@@ -23,6 +32,10 @@
   function won(n) { const v = Number(n || 0); return (v < 0 ? '-' : '') + '₩' + Math.abs(v).toLocaleString(); }
   function fmtComma(n) { const d = String(n == null ? '' : n).replace(/[^0-9]/g, ''); return d ? Number(d).toLocaleString() : ''; }
   function parseAmount(s) { return Number(String(s == null ? '' : s).replace(/[^0-9]/g, '')) || 0; }
+  // 📅 날짜(YYYY-MM-DD) → "정오 고정" ISO. 저장 시각을 로컬 정오로 박아 UTC 변환에도 날짜(일)가 안 밀리게 한다(정기거래 buildRecurringTx와 동일 규칙). KST 오전(00~08시) 저장분이 전날로 밀리던 버그 방지.
+  function isoAtNoon(date) { const d = String(date || '').slice(0, 10); const dt = new Date(d + 'T12:00:00'); return isNaN(dt.getTime()) ? new Date().toISOString() : dt.toISOString(); }
+  // 🔤 inline onclick 등 "HTML 속성 안, 작은따옴표 JS 문자열"에 사용자 문자열을 넣을 때 쓰는 이스케이프: 먼저 JS 문자열(\, ')용, 이어 HTML 속성(&, ", <, >)용. 아포스트로피 든 이름(예: O'Brien)이 핸들러를 깨뜨리던 문제 방지.
+  function jsAttr(s) { return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function curInfo(code) { return CURRENCIES.find(function (c) { return c.code === code; }) || { code: 'KRW', name: '원', sym: '₩', dec: 0 }; }
   function fmtForeign(amt, code) { const c = curInfo(code); const n = Number(amt || 0); return c.sym + n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: c.dec }); }
   // 외화 원금 × 환율 → 원화(정수 반올림). 거래 저장 시 amount 산정에 사용.
@@ -416,7 +429,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, overdueTodoIds: overdueTodoIds, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift };
+  var api = { CAM: CAM, camDepth: camDepth, camFurnBottom: camFurnBottom, camZ: camZ, CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, isoAtNoon: isoAtNoon, jsAttr: jsAttr, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, overdueTodoIds: overdueTodoIds, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);
