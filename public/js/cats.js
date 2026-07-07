@@ -4459,7 +4459,7 @@
     function setShopSub(s){ _shopSub=s; _shopSelCat=null; renderCatHouse(); }
     // 가챠 탭 내부 서브탭(뜰알/펫알/랜덤박스/무지개) — 종류별로 나눠 뽑기. 추후 탭별 전용 배너를 여기서 확장.
     let _gachaTab=lsGet('gachaTab','ddeul');
-    const GACHA_TABS=[['ddeul','뜰알'],['egg','펫알'],['box','랜덤박스'],['rainbow','무지개']];
+    const GACHA_TABS=[['ddeul','이벤트'],['normal','일반'],['rainbow','무지개']];   // 뜰알=이벤트, 펫알+랜덤박스=일반(합침), 무지개=그대로
     function setGachaTab(t){ _gachaTab=t||'ddeul'; lsSet('gachaTab',_gachaTab); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     // 보유한 알/박스/뜰알 1종 열기 카드(선물·쿠폰·개발자 지급분, qty>0일 때만) — 각 가챠 서브탭 하단.
     function heldOpenCard(kind){
@@ -4470,6 +4470,15 @@
       return '<div class="rb-hh">🎒 보유한 '+a[0]+' 열기</div><div class="shopcard"><div class="thumb">'+a[3]+'</div>'+
         '<div class="meta"><b'+(kind==='ddeul'?' class="tier-rainbow"':'')+'>'+a[0]+'</b><div class="desc">'+a[1]+'</div></div>'+
         '<div class="act"><button class="buy" aria-label="'+a[0]+' 열기" onclick="'+a[2]+'">열기</button><span class="qty">보유 '+q.toLocaleString()+'</span></div></div>';
+    }
+    // 🥚/📦 펫알·랜덤박스 구매 카드 1장(은화 100) — '일반' 탭에서 둘 다 씀.
+    function gachaBuyCard(k){
+      const nm=k==='egg'?'펫알':'랜덤박스', desc=k==='egg'?'알을 열면 펫이 랜덤으로!<br>등급이 높을수록 귀해요.':'상자를 열면 가구·구조물이 랜덤으로 나와요.', art=k==='egg'?eggSvg(0,{h:66}):boxSvg({h:56});
+      const act=(coins()>=GACHA_PRICE)?'<button class="buy" aria-label="'+nm+' 구매('+GACHA_PRICE+' 은화)" onclick="openGacha(\''+k+'\')">구매</button>':'<button class="buy dis" disabled>'+(GACHA_PRICE-coins())+' 부족</button>';
+      return '<div class="shopcard"><div class="thumb">'+art+'</div>'+
+        '<div class="meta"><b>'+nm+'</b><div class="desc">'+desc+'</div>'+
+        '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+GACHA_PRICE+'</span></div>'+
+        '<div class="act">'+act+pityChip(k)+'</div></div>';
     }
     // 가챠 서브탭별 콘텐츠. (배너 고도화는 탭별로 이 함수 안에서 확장)
     function gachaTabHtml(tab){
@@ -4484,14 +4493,9 @@
           '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+DDEUL_PRICE+' <span class="ci">'+goldSvg({h:16})+'</span>'+DDEUL_GOLD+'</span></div>'+
           '<div class="act">'+dact+pityChip('ddeul')+'</div></div>';
         h+=heldOpenCard('ddeul');
-      } else if(tab==='egg' || tab==='box'){
-        const k=tab, nm=k==='egg'?'펫알':'랜덤박스', desc=k==='egg'?'알을 열면 펫이 랜덤으로!<br>등급이 높을수록 귀해요.':'상자를 열면 가구·구조물이 랜덤으로 나와요.', art=k==='egg'?eggSvg(0,{h:66}):boxSvg({h:56});
-        const act=(coins()>=GACHA_PRICE)?'<button class="buy" aria-label="'+nm+' 구매('+GACHA_PRICE+' 은화)" onclick="openGacha(\''+k+'\')">구매</button>':'<button class="buy dis" disabled>'+(GACHA_PRICE-coins())+' 부족</button>';
-        h+='<div class="shopcard"><div class="thumb">'+art+'</div>'+
-          '<div class="meta"><b>'+nm+'</b><div class="desc">'+desc+'</div>'+
-          '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+GACHA_PRICE+'</span></div>'+
-          '<div class="act">'+act+pityChip(k)+'</div></div>';
-        h+=heldOpenCard(k);
+      } else if(tab==='normal'){   // 🥚📦 일반 = 펫알 + 랜덤박스(합침)
+        h+=gachaBuyCard('egg')+heldOpenCard('egg');
+        h+=gachaBuyCard('box')+heldOpenCard('box');
       } else if(tab==='rainbow'){
         const rb=[['egg','무지개알','열면 특별90 · 전설8 · 신화2%. 특별↑ 고양이만!', rainbowEggSvg({h:66,cls:'rb-thumb'})],
                   ['box','무지개박스','열면 특별90 · 전설8 · 신화2%. 특별↑ 가구만!', rainbowBoxSvg({h:56,cls:'rb-thumb'})]];
@@ -4519,9 +4523,7 @@
     function pedestalSvg(opt){ return pxSvg(M_PEDESTAL, PEDESTAL_PAL, opt); }
     // 🌈 배너 알 공용 무지개 연출 — 무지개 오오라+광선(lightLayers rainbow) + 무지개 트윙클. 뜰알·펫알·랜덤박스 센터 공용.
     function gbRainbowFx(){ return '<span class="gb-rbaura">'+lightLayers({aura:98,rays:118,rainbow:true})+'</span>'+fxAuraTwinkles(9,true); }
-    // ⏳ 이번 주(월~일) 일요일까지 남은 일수(KST, 일=0) — 픽업 기간 표기용(표시만). kstDayKey와 동일하게 +9h 후 UTC 요일 사용.
-    function ddeulPickupUntilText(){ const d=new Date(Date.now()+9*3600000); const left=(7-d.getUTCDay())%7; return left===0?'오늘(일) 마감':('일요일까지 · '+left+'일 남음'); }
-    // 🏆 상단 한정 픽업 쇼케이스 — 큰 픽업 펫 초상(무지개 카드+받침대+조명빔+후광+별+등급) 양쪽 + 가운데 "한정 픽업"·확률UP·기간.
+    // 🏆 상단 한정 픽업 쇼케이스 — 큰 픽업 펫 초상(무지개 카드+받침대+조명빔+후광+별+이름) 양쪽 + 가운데 "이 펫만! 한정 픽업"(한 줄)·0.5% 태그.
     function ddeulPickupShowcase(){
       const pets=LIMITED_PICKUP.filter(pickupExists);
       const spot=(id)=> id ? '<div class="gb-spot">'+
@@ -4530,20 +4532,17 @@
           '<span class="gb-spot-badge">'+starSvg({h:14})+'</span>'+
           '<div class="gb-spot-card"><span class="gb-spot-face">'+catFace(id,{h:60,eager:true})+'</span><span class="gb-spot-ped">'+pedestalSvg({h:24})+'</span></div>'+   // 무지개 카드 안 초상+받침대(h24→폭≈65px, 초상 60px에 맞춤·중앙 정렬)
           '<span class="gb-spot-name">'+catNameSpan(id,catName(id))+'</span>'+
-          '<span class="gb-spot-tier">'+tierLabelHtml(CAT_TIER[id]||'exclusive')+'</span>'+            // 등급 라벨(한정=무지개)
         '</div>' : '<div class="gb-spot gb-spot-empty"></div>';
       return '<div class="gb-ddeul-top">'+spot(pets[0])+
         '<div class="gb-ddeul-title">'+
-          '<span class="pk-title tier-rainbow">✨ 이 펫만!<br>한정 픽업</span>'+
-          '<span class="gb-ddeul-up">확률 <b>UP</b> <span class="gb-uparr">▲</span></span>'+
+          '<span class="pk-title tier-rainbow">✨ 이 펫만 한정 픽업!</span>'+
           '<span class="gb-ddeul-sub tagmini tier-rainbow">한정 0.5% 픽업</span>'+
-          '<span class="gb-ddeul-until">⏳ '+ddeulPickupUntilText()+'</span>'+
         '</div>'+
         spot(pets[1])+'</div>';
     }
-    // 🌱 뜰알 배너 = 코너 리본 + 상단 한정 픽업 쇼케이스(양쪽 큰 초상 + 가운데 텍스트) + 배회 픽업 펫이 도는 씬 + 알뜰 아이콘 센터.
+    // 🌱 뜰알 배너 = 상단 한정 픽업 쇼케이스(양쪽 큰 초상 + 가운데 텍스트) + 배회 픽업 펫이 도는 씬 + 알뜰 아이콘 센터.
     function ddeulBannerHtml(){
-      return '<div class="gbanner gb-ddeul"><span class="gb-ddeul-ribbon">LIMITED</span>'+
+      return '<div class="gbanner gb-ddeul">'+
         ddeulPickupShowcase()+
         '<div class="gb-scene">'+pickupSceneHtml('banner')+gbCenterHtml(eggGardenSvg(EGG_DEFAULT,{h:52}), gbRainbowFx(), 'gb-rb gb-eglow')+'</div>'+
         // 🌱 배너 이미지 아래 — 뜰알 이미지·설명·소모재화(한정 강조)
@@ -4685,6 +4684,7 @@
         return h;
       }
       if(_shopSub==='event'){
+        if(_gachaTab==='egg'||_gachaTab==='box') _gachaTab='normal';   // 예전 펫알/랜덤박스 탭 → 합쳐진 '일반'
         if(!GACHA_TABS.some(t=>t[0]===_gachaTab)) _gachaTab='ddeul';
         h+='<div class="subseg gachatabs">'+GACHA_TABS.map(t=>'<button class="'+(_gachaTab===t[0]?'on':'')+'" onclick="setGachaTab(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div>';
         h+=gachaTabHtml(_gachaTab);   // 뜰알/펫알/랜덤박스/무지개 — 선택 탭만
