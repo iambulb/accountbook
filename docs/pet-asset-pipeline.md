@@ -41,6 +41,7 @@ metadata.json                                       # size/frames/directions 정
 `public/assets/pets/<species>/<id>/` (종별 하위폴더 — 고양이는 `cat/`, 호랑이는 `tiger/`, 강아지는 `dog/` …) 에:
 - `walk.png` = Walk/east 프레임을 가로로 이은 시트(east 기준, 투명 보존). **프레임 수 가변**(기본 6, 고등급 8 등 **최대 12**) — 실제 east 장수를 그대로 이어 `W×(장수)` 폭으로 만들고, 장수를 `pets.json`의 **`frames`**(코드젠이 `PET_SPRITES`·런타임 `catalogPets/{id}.frames`에 반영)로 기록. 렌더는 `--fw=칸×frames`+인라인 `steps(frames)`로 프레임당 한 칸 재생.
 - `south.png / north.png / east.png / west.png` = `rotations/` 그대로 복사(정지 4방향)
+- `<클립키>.png` = 🎞️ **다중 모션 클립 시트**(선택, 아래 "다중 모션 클립" 절) — 같은 폴더에 `idle.png`·`eat.png`처럼 두면 정적 펫도 클립 재생.
 
 생성은 ImageMagick이 없을 수 있으므로 **Python PIL** 사용:
 ```python
@@ -50,6 +51,29 @@ for i in range(6):
     sheet.paste(Image.open("Walk/east/frame_%03d.png"%i).convert("RGBA"),(i*48,0))
 sheet.save("walk.png")   # rotations 4장은 그대로 복사
 ```
+
+## 🎞️ 다중 모션 클립 (PixelLab 프리셋 애니 — 선택)
+
+걷기 외 모션(먹기·마시기·앉기·달리기 등)을 **클립** 단위로 추가할 수 있다. 단일 소스는 `cats.js`의 **`PET_CLIPS`**(클립키·시트 방향·fps·원샷 여부·폴백 체인). **클립이 없는 펫은 폴백 체인으로 기존 동작과 100% 동일**하므로 일부 펫만 먼저 취득해도 안전하다.
+
+| PixelLab 프리셋(zip 폴더명) | 클립키 | 취득 방향 | 쓰임(자동 연결) |
+|---|---|---|---|
+| Idle | `idle` | south | 모든 정지/유휴(스틸+숨쉬기 → 살아있는 유휴) |
+| Sitting | `sit` | south | 앉는 가구(캣타워·펫하우스 등, 1회 재생 후 마지막 프레임 유지) + 유휴 앉기 |
+| Eating | `eat` | south | **채워진** 밥그릇(빈 그릇=앉기) |
+| Drinking | `drink` | south | **채워진** 물그릇·자동급수기 |
+| Running | `run` | east | 캣휠(없으면 걷기 필름 고속재생) |
+| Seated on Belly Idle | `belly` | south | 눕는 가구(방석·해먹·빈백 등) + 유휴 식빵 |
+| Jump | `jump` | east | 인사 때 가끔(원샷) |
+| Yawning | `yawn` | south | 유휴 액센트·잠들기 전(원샷) |
+| Licking | `lick` | south | 유휴 그루밍(원샷) |
+| Angry | `angry` | south | (예약 — 트리거 UX 확정 전 미사용) |
+
+- **취득 우선순위**(순차 취득 계획): 1차 `idle`·`sit`·`eat`·`drink` → 2차 `run`·`belly`·`jump` → 3차 `yawn`·`lick`(+전이 모션·`angry`는 보류).
+- **방향은 표의 1개만** 취득한다(west는 `scaleX(-1)` 플립, 옆을 보는 자리(스크래처 등)는 클립 없이 기존 스틸). Walking은 기존 `walk.png`가 담당하므로 재취득 불필요.
+- **dev zip 업로드**: zip 안에 프리셋 애니 폴더(`Eating/south/frame_*.png` 등)가 있으면 `_processPetZip`이 자동 인식·합성해 **`catalogPets/{id}.clips`**(클립키→프레임 수) + **`catalogPetArt/{id}.clips`**(시트 data URL)로 저장한다. 폴더명은 대소문자·공백·하이픈 무관(`Seated on Belly Idle`≒`seated-on-belly-idle`), 프레임 2장 이상만 인식, 클립당 최대 12프레임. zip 재업로드 시 클립도 통째로 교체(없으면 소거).
+- **정적 펫**: 걷기와 같은 폴더에 `<클립키>.png`(가로 스트립) + `pets.json` 항목에 `clips:{"idle":6,...}`(클립키→프레임 수)를 기록하면 `PET_SPRITES[id].clips`로 반영된다. "정적 승격" 다운로드가 클립 시트와 `pets.json` 한 줄(clips 포함)을 함께 내어준다. (`build_pets.py`의 clips 자동 처리(zip→클립 시트 생성·코드젠)는 이미지 취득 후 별도 작업 — 그 전까지는 위 수동 규칙으로 충분.)
+- **엔진 규칙(불변식 유지)**: 재생은 반드시 `actorShowStill(a, face, clip)`/`actorShowMoving`/`showWheelRun`/`actorOnce` 경유(내부 `_csprClip`/`_csprStill`을 직접 부르지 말 것). 원샷은 `.cspr.once`(1회 재생+마지막 프레임 유지). 모션축소·가벼운 모드(lite)에선 클립 대신 기존 정지 스틸.
 
 ## id·이름 매핑 (종·색 구분)
 zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다. id는 **`<species>_<색·품종>`** 형태로 종이 구분되게 짓는다(예: `cat_calico`, `dog_corgi`, `rabbit_lop`). 이 표를 유지한다.

@@ -3362,9 +3362,9 @@
         });
       }).catch(()=>{ if(cb) cb(false); });
     }
-    // 🫶 친구 집 방문(좋아요) 보상: 방문자 +3 은화(하루 3회까지). cb(지급은화).
+    // 🫶 친구 집 방문(좋아요) 보상: 방문자 +VISIT_REWARD(10) 은화(하루 VISIT_DAILY=3회까지). cb(지급은화).
     const VISIT_REWARD=10, VISIT_DAILY=3;
-    function grantVisitReward(cb){ if(!state.uid){ if(cb) cb(0); return; } const today=ymd(new Date()); let rew=0;
+    function grantVisitReward(cb){ if(!state.uid){ if(cb) cb(0); return; } const today=todayKst(); let rew=0;   // 일일 캡 경계 KST 통일(다른 데일리 캡과 동일)
       gameRef().transaction(g=>{ if(g==null) return; g=normalizeGame(g);
         const lg=g.likeGiven||{}, n=(lg.day===today?(Number(lg.n)||0):0);
         if(n>=VISIT_DAILY){ rew=0; g.likeGiven={day:today,n:n}; return g; }
@@ -3649,7 +3649,7 @@
         g.missions[key]=g.missions[key]||{};
         if(g.missions[key][m.id] && g.missions[key][m.id].claimed) return g;   // 이미 수령 → 무변화
         g.missions[key][m.id]={ claimed:true, reward:m.reward, at:new Date().toISOString() };
-        g.coins += m.reward;
+        g.coins = clampCoins((g.coins||0) + m.reward);   // 상한 클램프 통일(다른 적립과 동일)
         if(m.gold) g.gold=clampGold((g.gold||0)+m.gold);   // 조직적 금화 획득(가챠 외 공급원)
         return g;
       });
@@ -3985,7 +3985,7 @@
         const key=missionKey(m); g.missions[key]=g.missions[key]||{};
         if(g.missions[key][m.id] && g.missions[key][m.id].claimed) return g;   // 이미 오늘 처리 → 스트릭 재갱신 안 함
         g.missions[key][m.id]={ claimed:true, reward:m.reward, at:new Date().toISOString() };
-        g.coins += m.reward;
+        g.coins = clampCoins((g.coins||0) + m.reward);   // 상한 클램프 통일
         // 연속 출석: 어제 출석했으면 +1, 아니면 1로 리셋
         g.streak = g.streak || { last:'', count:0, best:0 };
         g.streak.count = (g.streak.last===addDays(today,-1)) ? (Number(g.streak.count)||0)+1 : 1;
@@ -5153,7 +5153,7 @@
         document.body.appendChild(el); setTimeout(()=>el.remove(), 820+i*16);
       }
     }
-    // 쓰다듬기: 펫별 하루 1번만(RTDB owned.cats[id].pettedAt로 지속). 성공 시 하트 연출 + 은화 5 보상(지갑으로 날아가는 연출·카운트업). 쿨다운 중엔 하트 없음.
+    // 쓰다듬기: 펫별 하루 1번만(RTDB owned.cats[id].pettedAt로 지속). 성공 시 하트 연출 + 은화 PET_PET_REWARD(10) 보상(지갑으로 날아가는 연출·카운트업). 쿨다운 중엔 하트 없음.
     function bumpAffection(id, x, y){
       if(!id || !ownsCat(id)) return;
       const now=Date.now(), last=Number((ownedCatsMap()[id]||{}).pettedAt)||0;
@@ -5661,7 +5661,8 @@
           else if(res.type==='wall') owned=(ownsWall(res.id)&&res.id!=='default')||!!seenWall[res.id];
           else owned=((typeof itemQty==='function'?itemQty(res.id):0)>0)||!!seenItem[res.id];
           if(res.type==='floor') seenFloor[res.id]=true; else if(res.type==='wall') seenWall[res.id]=true; else seenItem[res.id]=true;
-          list.push({ id:res.id, tier:res.tier, type:res.type, kind:'box', rainbow:(Math.random()<rbUpgradeChance(res.tier)), dup:owned, refund:owned?Math.round((TIER_PRICE[res.tier]||0)*0.2):0, isNew:!owned });
+          const isSkin=(res.type==='floor'||res.type==='wall');   // 스킨(바닥/벽지)만 own-once 중복 환급 — 가구는 수량 누적이라 중복/환급 없음
+          list.push({ id:res.id, tier:res.tier, type:res.type, kind:'box', rainbow:(Math.random()<rbUpgradeChance(res.tier)), dup:isSkin&&owned, refund:(isSkin&&owned)?Math.round((TIER_PRICE[res.tier]||0)*0.2):0, isNew:!owned });
           pity=pityNext(pity, isTopTier(res.tier));
         } else {
           let res = forced ? pickTierMember(map, forced) : (ddeulTiers?rollFromPool(map, ddeulTiers):rollFromPool(map));
@@ -5681,9 +5682,9 @@
         if(kind!=='ddeul') grantGachaGold(g,N);                                // 펫알/박스=10뽑 부산물 금화(뜰알 제외) · 하루 2뽑 캡 적용
         g.pity[kind]=finalPity;                                                // pity 10회 누적 반영
         list.forEach(function(it){
-          if(kind==='box'){ const rf=grantBoxReward(g, { id:it.id, tier:it.tier, type:it.type }); if(rf) g.coins+=rf; }
+          if(kind==='box'){ const rf=grantBoxReward(g, { id:it.id, tier:it.tier, type:it.type }); if(rf) g.coins=clampCoins((g.coins||0)+rf); }
           else if(!g.owned.cats[it.id]){ g.owned.cats[it.id]={boughtAt:new Date().toISOString()}; const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(it.id)<0) R.active.push(it.id); }
-          else { g.coins+=it.refund; }
+          else { g.coins=clampCoins((g.coins||0)+it.refund); }
         });
         return g;
       }).then(function(r){ _pullBusy=false;
@@ -5918,7 +5919,7 @@
       if(e){ e.stopPropagation(); }
       const x=e?e.clientX:innerWidth/2, y=e?e.clientY:innerHeight/2, rid=curRoomId();
       gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoomById(g, rid); if((Number(R.poops)||0)<=0) return;
-        R.poops=(Number(R.poops)||0)-1; g.coins+=POOP_REWARD; return g;
+        R.poops=(Number(R.poops)||0)-1; g.coins=clampCoins((g.coins||0)+POOP_REWARD); return g;
       }).then(r=>{ if(r&&r.committed) poopFx(x,y); });
     }
     function poopFx(x,y){ const el=document.createElement('div'); el.className='poopfx';
@@ -6633,10 +6634,10 @@
       let res, dup=false, refund=0;
       if(kind==='egg'){ res = forced ? pickTierMember(gachaCatTierMap(), forced) : rollFromPool(gachaCatTierMap()); if(!res) return; dup=ownsCat(res.id); refund=dup?petDupRefund(res.id):0; }
       else { res=rollBoxReward(null, forced); if(!res) return;
-        if(res.type==='floor') dup=ownsFloor(res.id)&&res.id!=='default';
-        else if(res.type==='wall') dup=ownsWall(res.id)&&res.id!=='default';
-        else dup=(typeof itemQty==='function'?itemQty(res.id):0)>0;   // 가구 중복(qty>0)도 grantBoxReward가 환급하므로 리빌에 '+N 은화(중복)'이 뜨게 dup/refund 세팅(C5)
-        refund=dup?Math.round((TIER_PRICE[res.tier]||0)*0.2):0; }
+        if(res.type==='floor'){ dup=ownsFloor(res.id)&&res.id!=='default'; refund=dup?Math.round((TIER_PRICE[res.tier]||0)*0.2):0; }
+        else if(res.type==='wall'){ dup=ownsWall(res.id)&&res.id!=='default'; refund=dup?Math.round((TIER_PRICE[res.tier]||0)*0.2):0; }
+        else { dup=false; refund=0; }   // 가구는 수량 누적(상점 구매와 동일) — 중복이어도 환급 아닌 qty+1이라 '새로 하나 더' 리빌(환급 표기 없음)
+      }
       const isNew=gachaNew(kind,res);   // 지급 전 판정(NEW 배지)
       const hit=isTopTier(res.tier);    // 🔮 신화↑면 천장 리셋
       const day=kstDayKey();
@@ -8010,7 +8011,7 @@
       let raw=[];
       if(scenario==='legendUp'){ const tiers=['legend','limited']; for(let i=0;i<10;i++) raw.push(rollB(tiers[Math.floor(Math.random()*tiers.length)])); }
       else { for(let i=0;i<10;i++) raw.push(rollB()); if(scenario==='oneLimited') raw[Math.floor(Math.random()*10)]=rollB('limited'); }
-      const list=raw.map(function(r){ const dup=boxOwned(r); return { id:r.id, tier:r.tier, type:r.type, kind:'box', rainbow:(Math.random()<rbUpgradeChance(r.tier)), dup:dup, refund:dup?Math.round((TIER_PRICE[r.tier]||0)*0.2):0, isNew:!dup }; });
+      const list=raw.map(function(r){ const isSkin=(r.type==='floor'||r.type==='wall'), dup=isSkin&&boxOwned(r); return { id:r.id, tier:r.tier, type:r.type, kind:'box', rainbow:(Math.random()<rbUpgradeChance(r.tier)), dup:dup, refund:dup?Math.round((TIER_PRICE[r.tier]||0)*0.2):0, isNew:!boxOwned(r) }; });   // 가구는 수량 누적(중복/환급 없음)
       closeSheet(); _fx=null; runTenGachaFx(list, { preview:true, kind:'box', theme:theme||'' });
     }
 
