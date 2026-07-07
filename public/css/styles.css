@@ -1902,6 +1902,15 @@
     /* ☀️ 지는 해 — .pk-sky 하단(수평선)에 중심을 두고 아래 절반은 sky overflow:hidden가 클립 → 절반만 노출 */
     .pk-sun { position:absolute; left:50%; bottom:0; transform:translate(-50%,50%); z-index:0; line-height:0; filter:drop-shadow(0 0 10px rgba(255,168,88,.55)); }
     .pk-sun .px { display:block; image-rendering:pixelated; }
+    /* ☀️ 노을 배너: 지는 해가 스르르 위로 떠올라 유지(reveal 10연차는 ten-skysun 별도) */
+    .gb-scene .pkscene.pk-sunset .pk-sun { animation:pksunrise 2s ease-out .25s both; }
+    @keyframes pksunrise { 0%{ transform:translate(-50%,90%); opacity:.15; } 30%{ opacity:1; } 100%{ transform:translate(-50%,-22%); opacity:1; } }
+    body.lite .gb-scene .pkscene.pk-sunset .pk-sun { animation:none; transform:translate(-50%,-22%); }
+    /* 🌠 밤 배너 별똥별 — 시간간격으로 계속(제각각 주기·딜레이). 짧게 번쩍 지나가고 긴 공백 후 반복. */
+    .pk-shoot { position:absolute; z-index:2; line-height:0; pointer-events:none; opacity:0; transform:translate(0,0); animation:pkshoot var(--d,7s) linear infinite; }
+    .pk-shoot .px { display:block; image-rendering:pixelated; filter:drop-shadow(0 0 6px rgba(255,255,255,.55)); }
+    @keyframes pkshoot { 0%{ opacity:0; transform:translate(0,0); } 2%{ opacity:1; } 13%{ opacity:1; transform:translate(150px,102px); } 16%{ opacity:0; transform:translate(150px,102px); } 100%{ opacity:0; transform:translate(0,0); } }
+    body.lite .pk-shoot { display:none; }
     .gb-nest { position:absolute; left:50%; bottom:11%; transform:translateX(-50%); width:min(54%,170px); z-index:4; }
     .gb-nestback { position:relative; z-index:0; line-height:0; }
     .gb-nestback .px { display:block; width:100%; height:auto; image-rendering:pixelated; }
