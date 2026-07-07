@@ -1903,13 +1903,16 @@
     .pk-sun { position:absolute; left:50%; bottom:0; transform:translate(-50%,50%); z-index:0; line-height:0; filter:drop-shadow(0 0 10px rgba(255,168,88,.55)); }
     .pk-sun .px { display:block; image-rendering:pixelated; }
     /* ☀️ 노을 배너: 지는 해가 스르르 위로 떠올라 유지(reveal 10연차는 ten-skysun 별도) */
-    .gb-scene .pkscene.pk-sunset .pk-sun { animation:pksunrise 2s ease-out .25s both; }
-    @keyframes pksunrise { 0%{ transform:translate(-50%,90%); opacity:.15; } 30%{ opacity:1; } 100%{ transform:translate(-50%,-22%); opacity:1; } }
+    .gb-scene .pkscene.pk-sunset .pk-sun { z-index:1; animation:pksunrise 2.2s ease-out .25s both, pksunglow 2.8s ease-in-out 2.5s infinite; }
+    .gb-scene .pkscene.pk-sunset .pk-sun::after { content:""; position:absolute; left:50%; top:46%; width:210%; height:210%; transform:translate(-50%,-50%); border-radius:50%; z-index:-1; pointer-events:none; background:radial-gradient(circle, rgba(255,232,160,.6) 0%, rgba(255,186,104,.28) 42%, transparent 70%); animation:pksunhalo 2.8s ease-in-out 2.5s infinite; }
+    @keyframes pksunrise { 0%{ transform:translate(-50%,70%); opacity:.1; } 35%{ opacity:1; } 100%{ transform:translate(-50%,-88%); opacity:1; } }
+    @keyframes pksunglow { 0%,100%{ filter:drop-shadow(0 0 12px rgba(255,190,110,.7)); } 50%{ filter:drop-shadow(0 0 24px rgba(255,205,125,.98)); } }
+    @keyframes pksunhalo { 0%,100%{ opacity:.55; transform:translate(-50%,-50%) scale(.92); } 50%{ opacity:.95; transform:translate(-50%,-50%) scale(1.12); } }
     body.lite .gb-scene .pkscene.pk-sunset .pk-sun { animation:none; transform:translate(-50%,-22%); }
     /* 🌠 밤 배너 별똥별 — 시간간격으로 계속(제각각 주기·딜레이). 짧게 번쩍 지나가고 긴 공백 후 반복. */
-    .pk-shoot { position:absolute; z-index:2; line-height:0; pointer-events:none; opacity:0; transform:translate(0,0); animation:pkshoot var(--d,7s) linear infinite; }
-    .pk-shoot .px { display:block; image-rendering:pixelated; filter:drop-shadow(0 0 6px rgba(255,255,255,.55)); }
-    @keyframes pkshoot { 0%{ opacity:0; transform:translate(0,0); } 2%{ opacity:1; } 13%{ opacity:1; transform:translate(150px,102px); } 16%{ opacity:0; transform:translate(150px,102px); } 100%{ opacity:0; transform:translate(0,0); } }
+    .pk-shoot { position:absolute; z-index:8; line-height:0; pointer-events:none; opacity:0; transform:translate(0,0); animation:pkshoot var(--d,7s) linear infinite; }
+    .pk-shoot .px { display:block; image-rendering:pixelated; filter:drop-shadow(0 0 6px rgba(255,255,255,.6)); }
+    @keyframes pkshoot { 0%{ opacity:0; transform:translate(0,0); } 3%{ opacity:1; } 16%{ opacity:1; transform:translate(var(--tx,340px),var(--ty,120px)); } 19%{ opacity:0; transform:translate(var(--tx,340px),var(--ty,120px)); } 100%{ opacity:0; transform:translate(0,0); } }
     body.lite .pk-shoot { display:none; }
     .gb-nest { position:absolute; left:50%; bottom:11%; transform:translateX(-50%); width:min(54%,170px); z-index:4; }
     .gb-nestback { position:relative; z-index:0; line-height:0; }

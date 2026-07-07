@@ -5156,15 +5156,16 @@
       // ⛰️ 아이콘 뒤 빈 하늘 채우기 — 지평선 먼 언덕(짙은 청록)
       let hills=''; const HX=[18,50,82], HH=[26,24,28]; for(let i=0;i<3;i++){
         hills+='<span class="pk-hill" style="left:'+HX[i]+'%;bottom:-2px;z-index:0;">'+hillSvg(HILL_NIGHT,{h:S(HH[i])})+'</span>'; }
-      // 🌠 별똥별(무지개 코멧) — 배너에서만 시간간격으로 계속 떨어짐(제각각 위치·주기·딜레이). reveal은 tenSkyShoot(단발)이 담당.
-      let shoots=''; if(!reveal){ for(let i=0;i<4;i++){ const top=(2+pkRand(i,190)*10).toFixed(1), left=(6+pkRand(i,191)*34).toFixed(1),
-        dur=(6+pkRand(i,192)*3).toFixed(1), del=(i*1.7+pkRand(i,193)*1.2).toFixed(2), sz=Math.round(28+pkRand(i,194)*18);
-        shoots+='<span class="pk-shoot" style="top:'+top+'%;left:'+left+'%;--d:'+dur+'s;animation-delay:'+del+'s;">'+shootStarSvg({h:sz})+'</span>'; } }
+      // 🌠 별똥별(무지개 코멧) — 배너에서만 시간간격으로 계속. 왼쪽 끝→오른쪽 끝으로 길게 가로지름(제각각 높이·거리·주기·딜레이). 씬 루트 레이어라 하늘밴드에 안 잘림. reveal은 tenSkyShoot(단발)이 담당.
+      let shoots=''; if(!reveal){ for(let i=0;i<5;i++){ const top=(0+pkRand(i,190)*12).toFixed(1), left=(-8+pkRand(i,191)*8).toFixed(1),
+        dur=(6.5+pkRand(i,192)*3.5).toFixed(1), del=(i*1.6+pkRand(i,193)*1.2).toFixed(2), sz=Math.round(26+pkRand(i,194)*16),
+        tx=Math.round(340+pkRand(i,195)*150), ty=Math.round(220+pkRand(i,196)*110);   // 좌측상단 끝 → 우측하단 끝(씬 대각선 전체 커버, 우/하로 넘겨 코너서 사라짐)
+        shoots+='<span class="pk-shoot" style="top:'+top+'%;left:'+left+'%;--d:'+dur+'s;--tx:'+tx+'px;--ty:'+ty+'px;animation-delay:'+del+'s;">'+shootStarSvg({h:sz})+'</span>'; } }
       _nightCache[mode]='<div class="pkscene pk-night'+(reveal?' pk-reveal':'')+'" aria-hidden="true">'+
-        '<div class="pk-sky">'+moon+stars+clouds+shoots+'</div>'+
+        '<div class="pk-sky">'+moon+stars+clouds+'</div>'+
         '<div class="pk-horizon">'+hills+farline+'</div>'+
         '<div class="pk-field"><div class="pk-grass"></div>'+soil+stones+tufts+flowers+trees+'</div>'+
-        '<div class="pk-air">'+fires+'</div>'+
+        '<div class="pk-air">'+fires+'</div>'+shoots+
       '</div>';
       return _nightCache[mode];
     }
