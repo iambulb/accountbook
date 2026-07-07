@@ -6623,9 +6623,23 @@
       if(typeof prewarmGachaFxPads==='function') prewarmGachaFxPads();   // 연출 고양이 발끝 여백 미리 측정(탭하는 동안 캐시 완료 → 첫 등장 세로 점프 방지)
       if(reducedMotion()){ fxReveal(); return; }   // 모션 최소화: 바로 결과
       const isDdeul = kind==='ddeul';
+      const hint = isDdeul? '뜰알을 탭해서 깨보세요! (3번)' : (isEggKind(kind)? '알을 탭해서 깨보세요! (3번)' : '상자를 탭해서 흔들어 열어요! (3번)');
+      // 🔧 '뽑는 중…' 대기 오버레이(gachaPending)가 이미 같은 알/상자를 띄워놨으면 DOM을 재생성하지 않고 "제자리 승격"만 한다
+      //    — innerHTML로 다시 그리면 .fx-item.pop 등장 애니(fxpop, scale .2→1)가 처음부터 또 재생돼 알/상자가 '두 번 튀어' 보이던 버그(스크림 페이드도 재점멸).
+      //    같은 종류(알/상자·뜰알·무지개)일 때만 승격, 아니면 아래 전체 재렌더 폴백.
+      const st0=fx.querySelector('.fx-stage'), it0=fx.querySelector('.fx-item'), h0=fx.querySelector('.fx-hint');
+      const pendingMatch = fx.classList.contains('on') && st0 && it0 && h0 && h0.classList.contains('fx-hint-wait')
+        && it0.classList.contains(isEggKind(kind)?'fx-egg':'fx-box')
+        && it0.classList.contains('fx-ddeulegg')===isDdeul
+        && it0.classList.contains('fx-rainbow')===!!rainbow;
+      if(pendingMatch){
+        it0.id='fxItem'; it0.setAttribute('role','button'); it0.setAttribute('aria-label',hint); it0.setAttribute('onclick','fxTap()');
+        h0.id='fxHint'; h0.classList.remove('fx-hint-wait'); h0.textContent=hint;
+        if(rainbow && !st0.querySelector('.fx-spark')) st0.insertAdjacentHTML('afterbegin', fxSparkles(16));
+        return;
+      }
       const art = rainbow ? (isEggKind(kind)? rainbowEggSvg({h:150}) : rainbowBoxSvg({h:150}))
                           : (isDdeul? ddeulFxHtml() : (isEggKind(kind)? eggSvg(0,{h:150}) : boxSvg({h:150})));
-      const hint = isDdeul? '뜰알을 탭해서 깨보세요! (3번)' : (isEggKind(kind)? '알을 탭해서 깨보세요! (3번)' : '상자를 탭해서 흔들어 열어요! (3번)');
       fx.innerHTML='<div class="fx-scrim"></div><div class="fx-stage'+(rainbow?' fx-rb':'')+(isDdeul?' fx-ddeul':'')+'">'+
         (rainbow?fxSparkles(16):'')+
         '<div class="fx-item pop '+(isEggKind(kind)?'fx-egg':'fx-box')+(isDdeul?' fx-ddeulegg':'')+(rainbow?' fx-rainbow':'')+'" id="fxItem" role="button" aria-label="'+hint+'" onclick="fxTap()">'+art+'</div>'+
