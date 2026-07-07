@@ -1056,6 +1056,20 @@
     .cr-prop .ffx-drift .px { animation:ffdrift 10s ease-in-out infinite; }   /* 좌우로 천천히 이동(구름·금붕어) */
     .cr-prop .ffx-flicker .px { animation:ffflicker 0.85s ease-in-out infinite; transform-origin:50% 62%; }   /* 불꽃 일렁임(밑동 기준) */
     .cr-prop .ffx-blink .px { animation:ffdecoblink 2.4s steps(1,end) infinite; }   /* 가랜드/네온 깜빡(밝기 스텝) — 반딧불 ffblink와 별개 키프레임 */
+    /* 🎞️ 재디자인 구조물 — 아이템별 애니 속도(더 활발하게) */
+    .cr-prop .ffx-yarnbasket .px { animation-duration:2.6s; }
+    .cr-prop .ffx-groomstation .px { animation-duration:2.2s; }
+    .cr-prop .ffx-springtoy .px { animation-duration:1.1s; }
+    .cr-prop .ffx-birdcage .px { animation-duration:1.3s; }
+    .cr-prop .ffx-lavalamp .px { animation-duration:2.4s; }
+    .cr-prop .ffx-laserpost .px { animation-duration:0.8s; }
+    .cr-prop .ffx-waterfountain .px { animation-duration:1.6s; }
+    .cr-prop .ffx-recordplayer .px { animation-duration:1.4s; }
+    .cr-prop .ffx-terrarium .px { animation-duration:2.0s; }
+    .cr-prop .ffx-ballpit .px { animation-duration:1.5s; }
+    .cr-prop .ffx-grandfaclock .px { animation-duration:1.0s; }
+    .cr-prop .ffx-crystalfountain .px { animation-duration:1.4s; }
+    .cr-prop .ffx-cuckooclock .px { animation-duration:0.9s; }
     /* 회전/흔들림 중심(부품 위치) — 가구별 */
     .cr-prop .ffx-catwheel .px  { transform-origin:47.9% 43.75%; }   /* 휠 축(정중심) → 링 전체가 제자리 회전(옆으로 흔들림 방지) */
     .cr-prop .ffx-tower .px     { transform-origin:84% 20%; }   /* 끈 매단 지점 */
