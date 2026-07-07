@@ -33,6 +33,11 @@
         if(!el.hasAttribute('role')){ el.setAttribute('role','switch'); el.setAttribute('tabindex','0'); }
         el.setAttribute('aria-checked', el.classList.contains('on')?'true':'false');
       });
+      // 1b) 선택형 칩·세그(단일선택 토글): aria-pressed로 선택상태 노출 — 'on' 클래스만으론 스크린리더가 선택을 못 읽는다. 재렌더마다 갱신(1회성 아님).
+      root.querySelectorAll('.chip, .mchip, .subseg > button, .type-seg > button, .modeseg > button, .seg > button, .placemode > button, .placecat > button, .dextabs > button').forEach(function(el){
+        if(el.getAttribute('role')==='tab') return;   // role=tab은 aria-selected 사용(중복 방지)
+        el.setAttribute('aria-pressed', el.classList.contains('on')?'true':'false');
+      });
       // 2) onclick 이 달린 비(非)버튼 요소(div/span 등): role=button + 포커스 가능. 🔋 이미 처리한 노드는 data-ab로 스킵 — 작은 DOM 삽입(FX·뱃지)마다 옵저버가 컨테이너 전체를 재스캔하던 비용 제거(1회성 데코라 재처리 불필요).
       root.querySelectorAll('[onclick]:not([data-ab])').forEach(el=>{
         el.setAttribute('data-ab','');

@@ -73,4 +73,4 @@
 ## 데이터 · 순수 헬퍼
 
 - 컬렉션: `ws/{wsId}/todos/{id}`(스코프/소유자/담당/마감/반복/PB/보상 필드), `ws/{wsId}/todoShare/{uid}`. 필드 상세는 [data-model.md](data-model.md#todosid--할일--flat-wswsidtodosid). **RTDB 규칙 변경 없음**(`ws` 멤버 규칙이 하위 경로 전부 커버).
-- 순수 헬퍼는 `public/js/util.js` 에 두고 단위 테스트: `todoScope`(스코프 하위호환)·`overdueTodoIds`(지난 미완료 id, 일괄 이동 대상)·`friendTodoOrder`(친구 정렬)·`addDays`/`nextDue`/`dueDiffDays`(마감·반복 날짜). `npm test` 로 검증.
+- 순수 헬퍼는 `public/js/util.js` 에 두고 단위 테스트: `todoScope`(스코프 하위호환)·`overdueTodoIds`(지난 미완료 id, 일괄 이동 대상)·`friendFeedOrder`(친구 스토리 정렬 — 실사용, 구 `friendTodoOrder`는 레거시)·`addDays`/`nextDue`/`dueDiffDays`(마감·반복 날짜). `npm test` 로 검증.

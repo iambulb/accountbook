@@ -59,8 +59,8 @@
       <div class="brand" role="button" tabindex="0" onclick="openNews()" aria-label="소식"><img src="icons/icon.svg" class="brand-ic" alt=""><span class="notif-badge" id="newsBadge" hidden aria-label="새 소식"></span></div>
       <div style="display:flex;align-items:center;gap:8px;">
         <div class="modeseg" id="modeSeg" role="tablist" aria-label="가계부/할일 전환">
-          <button type="button" data-mode="ledger" class="on" onclick="setMode('ledger')">가계부</button>
-          <button type="button" data-mode="todo" onclick="setMode('todo')">할일</button>
+          <button type="button" data-mode="ledger" class="on" role="tab" aria-selected="true" onclick="setMode('ledger')">가계부</button>
+          <button type="button" data-mode="todo" role="tab" aria-selected="false" onclick="setMode('todo')">할일</button>
         </div>
         <button class="ws-chip" id="wsChip" onclick="openWorkspaceSheet()" aria-label="그룹 전환"><span class="dotk"></span>그룹</button>
         <button type="button" class="icon-btn" id="petcamBtn" onclick="toggleDockHidden()" title="펫캠 켜기/끄기" aria-label="펫캠 켜기/끄기" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="12" height="10" rx="2"/><path d="M15 10.5l6-3.5v10l-6-3.5z"/></svg></button>

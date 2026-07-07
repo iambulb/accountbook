@@ -637,6 +637,8 @@
       // 개인 프로필: 내 것(myTodos·user-global) 또는 친구 열람(friendTodos·읽기전용)
       return (state._todoFriend && state._todoFriend!==state.uid) ? (state.friendTodos||[]) : (state.myTodos||[]);
     }
+    // 배지·오늘홈 등 '내 미처리' 판정용 — 친구 열람 중에도 항상 내 스코프(그룹=그룹할일, 개인=내 할일). 친구 피드를 보는 동안 배지가 친구 할일을 세던 버그 방지.
+    function myScopedTodos(){ return isPersonalWs() ? (state.myTodos||[]) : (state.todos||[]).filter(t=>todoScope(t)==='group'); }
     // 개인 프로필 할일에서 '내 할일 ↔ 친구들 피드' 토글(그룹 컨텍스트엔 세그먼트 없음)
     function setTodoFeed(on){ state._todoFeed=!!on; if(!on) clearFriendView(); _todoFilter='all'; rerender(); }
     function isPersonalWs(){ return ((state.wsMeta&&state.wsMeta.type)||'')==='personal'; }
@@ -846,7 +848,7 @@
     // 친구 할일 한 줄(읽기전용) — 우측에 누구 것인지 아바타
     function friendTodoRow(uid, t){ const nm=friendDisplayName(uid);
       const chk='<span class="tdchk'+(t.done?' on':'')+'" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>';
-      return '<div class="tdrow">'+chk+'<span class="tdtitle'+(t.done?' done':'')+'">'+escapeHtml(t.title||'')+(t.repeat&&t.repeat!=='none'?' <span class="pill">🔁</span>':'')+(t.purposeBookId?' <span class="pill">📍</span>':'')+'</span>'+todoDueBadge(t)+'<span class="tdwho">'+avatarHtml(uid,nm,20)+'</span></div>'; }
+      return '<div class="tdrow">'+chk+'<span class="tdtitle'+(t.done?' done':'')+'">'+escapeHtml(t.title||'')+(t.repeat&&t.repeat!=='none'?' <span class="pill">🔁</span>':'')+(t.purposeBookId?' <span class="pill">📍</span>':'')+'</span>'+todoDueBadge(t,true)+'<span class="tdwho">'+avatarHtml(uid,nm,20)+'</span></div>'; }   // 친구 행=읽기전용(ro) → 마감배지 탭 불가(오해 방지)
     // 스토리 열람 기록(localStorage) — {uid: 마지막 열람 시 그 사람 최신 createdAt}
     function storySeenMap(){ try{ return JSON.parse(localStorage.getItem('storySeen')||'{}')||{}; }catch(e){ return {}; } }
     function markStorySeen(uid, latestAt){ if(!uid||!latestAt) return; try{ const m=storySeenMap(); m[uid]=latestAt; localStorage.setItem('storySeen', JSON.stringify(m)); }catch(e){} }
@@ -912,7 +914,7 @@
       let h='<div class="sv-top"><div class="sv-bars">'+bars+'</div>'+
         '<div class="sv-head">'+avatarHtml(uid,nm,32)+'<b>'+(me?'내 스토리':escapeHtml(nm))+'</b><span class="sv-time">'+rt+'</span><button class="sv-x" onclick="closeStory()" aria-label="닫기">✕</button></div></div>';
       h+='<div class="sv-body"><div class="sv-card"><div class="sv-title'+(t.done?' done':'')+'">'+escapeHtml(t.title||'(제목 없음)')+'</div>'+
-        (t.dueDate?'<div class="sv-due">'+todoDueBadge(t)+'</div>':'')+(t.note?'<div class="sv-note">'+escapeHtml(t.note)+'</div>':'')+(t.done?'<div class="sv-doneflag">✓ 완료</div>':'')+'</div>'+
+        (t.dueDate?'<div class="sv-due">'+todoDueBadge(t,true)+'</div>':'')+(t.note?'<div class="sv-note">'+escapeHtml(t.note)+'</div>':'')+(t.done?'<div class="sv-doneflag">✓ 완료</div>':'')+'</div>'+
         (me?'<button class="btn" style="margin-top:14px;" onclick="closeStory();openTodoEdit()">＋ 할일 추가</button>':'')+'</div>';
       h+='<button class="sv-zone left" onclick="storyPrev()" aria-label="이전"></button><button class="sv-zone right" onclick="storyNext()" aria-label="다음"></button>';
       el.innerHTML=h; el.classList.add('on');
@@ -1066,7 +1068,8 @@
       const ref=todoDbRef(t);
       const firstReward=!t.rewardClaimed;   // 할일당 은화 1회(멱등)
       if(!t.done && t.repeat && t.repeat!=='none' && t.dueDate){
-        const upd={ dueDate:nextDue(t.dueDate,t.repeat), doneByUid:(state.uid||''), lastDoneAt:now, doneCount:(Number(t.doneCount)||0)+1, updatedAt:now };   // 반복 완료 횟수 누적(완료 이력·리포트 반영)
+        let _nd=nextDue(t.dueDate,t.repeat); const _t=todayKst(); let _g=0; while(_nd<=_t && _g++<400) _nd=nextDue(_nd,t.repeat);   // 밀린 회차 catch-up: 다음 예정을 오늘(KST) 이후로 — 오래 밀려도 한 번 완료로 미래 회차가 됨(즉시 재-지남 방지)
+        const upd={ dueDate:_nd, doneByUid:(state.uid||''), lastDoneAt:now, doneCount:(Number(t.doneCount)||0)+1, updatedAt:now };   // 반복 완료 횟수 누적(완료 이력·리포트 반영)
         if(firstReward) upd.rewardClaimed=true;
         ref.update(upd);
         const nxt='다음 '+(t.repeat==='weekly'?'주':'일')+'로 넘겼어요';
@@ -1074,7 +1077,7 @@
       } else {
         const done=!t.done; const upd={ done:done, doneAt:done?now:'', doneByUid:done?(state.uid||''):'', updatedAt:now };
         if(done && firstReward){ upd.rewardClaimed=true; ref.update(upd); if(typeof grantTodoCoins==='function'){ grantTodoCoins(function(paid){ toast(paid>0?('완료! +'+paid+' 은화 🐾'):'완료! 🐾'); }); } else toast('완료! 🐾'); }
-        else { ref.update(upd); if(done) toast('완료! 🐾'); }   // 재완료(이미 보상받음)도 완료 피드백은 표시
+        else { ref.update(upd); if(done) toast('다시 완료했어요'); }   // 이 분기의 done=재완료(이미 보상받음) → 첫 완료와 구분(허위 보상 문구 방지)
       }
     }
     // 📅 미완료 할일을 다른 날짜로 옮기기(리스케줄) — 마감일 배지 탭으로 진입. dueDate만 갱신(노드 경로·키 불변).
@@ -1153,12 +1156,13 @@
       const _subs=(function(){ const raw=$('tdSub')?val('tdSub'):''; const prev=(t&&Array.isArray(t.subtasks))?t.subtasks:[];   // 줄 단위 파싱, 기존 done 상태 보존
         const used=new Array(prev.length).fill(false);
         const lines=raw.split('\n').map(function(s){ return s.trim(); }).filter(Boolean).slice(0,20);
-        return lines.map(function(txt, i){
-          let idx=prev.findIndex(function(x,j){ return !used[j] && x && x.text===txt; });   // ① 텍스트 일치(중복은 앞에서부터 1:1 소비 — 같은 텍스트 오복제 방지)
-          if(idx<0 && prev[i] && !used[i]) idx=i;                                             // ② 없으면 같은 위치의 기존 항목(문구 수정 시 완료상태 유지)
-          if(idx>=0) used[idx]=true;
-          return { text:txt, done: idx>=0 ? !!prev[idx].done : false };
-        }); })();
+        const idxs=new Array(lines.length).fill(-1);
+        // ① 텍스트 일치를 '먼저 전부' 소비(중복은 앞에서부터 1:1) — 줄 삽입/재정렬돼도 done이 텍스트를 따라감.
+        lines.forEach(function(txt,i){ const j=prev.findIndex(function(x,k){ return !used[k] && x && x.text===txt; }); if(j>=0){ used[j]=true; idxs[i]=j; } });
+        // ② 남은 라인만 같은 '위치' 폴백(문구 수정 시 완료상태 유지) — ①에서 매칭된 항목은 뺏기지 않아 done 오귀속 방지.
+        lines.forEach(function(txt,i){ if(idxs[i]<0 && prev[i] && !used[i]){ used[i]=true; idxs[i]=i; } });
+        return lines.map(function(txt,i){ return { text:txt, done: idxs[i]>=0 ? !!prev[idxs[i]].done : false }; });
+      })();
       const data={ title:title, note:val('tdNote').trim(), dueDate:val('tdDue')||'',
         scope:scope, ownerUid:ownerUid,
         assignedUid:assignedUid, assignedName:assignedName,
@@ -1478,7 +1482,7 @@
       var daily=(typeof dailyMissionsToday==='function')?dailyMissionsToday():((typeof DAILY_MISSIONS!=='undefined')?DAILY_MISSIONS:[]);
       var customs=(typeof customMissionList==='function')?customMissionList():[];
       var flags=daily.map(function(m){return missionClaimed(m);}).concat(customs.map(function(m){return customCheckedToday(m.id);}));
-      var todos=(typeof scopedTodos==='function')?scopedTodos():[];
+      var todos=(typeof myScopedTodos==='function')?myScopedTodos():[];   // 배지는 항상 '내' 할일(친구 열람 중에도 친구 것 안 셈)
       return todayPending(flags, todos, todayKst());   // 오늘 판정은 KST(할일 마감·은화상한과 동일 경계) — 기기 타임존 달라도 하루 안 밀림
     }
     // 완료 축하 연출은 하루 1회만(renderHome이 재렌더마다 재실행되므로 플래그로 반복 재생 차단). reduced-motion이면 정적.
@@ -1494,7 +1498,7 @@
         .concat(customs.map(function(m){ return { name:m.title, reward:0, done:customCheckedToday(m.id), onclick:"toggleCustomMissionToday('"+m.id+"')" }; }));
       const st=(typeof todayMissionState==='function')?todayMissionState(mrows.map(function(r){return r.done;})):{done:0,total:mrows.length,pct:0,allDone:false};
       const today=todayKst();
-      const dueTop=((typeof scopedTodos==='function')?scopedTodos():[]).filter(function(t){ return !t.done && t.dueDate && t.dueDate<=today; })
+      const dueTop=((typeof myScopedTodos==='function')?myScopedTodos():[]).filter(function(t){ return !t.done && t.dueDate && t.dueDate<=today; })
         .sort(function(a,b){ return (a.dueDate||'').localeCompare(b.dueDate||''); }).slice(0,4);
       const p = todayPending(mrows.map(function(r){return r.done;}), (typeof scopedTodos==='function'?scopedTodos():[]), today);   // 배지·완료카드 공용 판정
       const kind = homeCardKind(p);   // 'sections' | 'done' | 'empty' (순수 결정, util)

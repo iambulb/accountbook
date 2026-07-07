@@ -190,7 +190,8 @@
     var mflags = (missionDoneFlags || []).map(Boolean);
     var missionsTotal = mflags.length;
     var missions = mflags.filter(function (f) { return !f; }).length;
-    var due = (todos || []).filter(function (t) { return t && t.dueDate && t.dueDate <= today; });
+    // 오늘 = 마감이 오늘 이하이거나 '마감 없는(언제든)' 할일 — 리스트 '오늘' 필터와 동일 기준(배지·완료카드가 리스트와 일치, 문서 features-todo.md).
+    var due = (todos || []).filter(function (t) { return t && (!t.dueDate || t.dueDate <= today); });
     var todosPending = due.filter(function (t) { return !t.done; }).length;
     var total = missions + todosPending;
     return { missions: missions, todos: todosPending, total: total, allDone: total === 0, any: missionsTotal > 0 || due.length > 0 };

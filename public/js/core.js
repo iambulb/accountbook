@@ -1321,7 +1321,7 @@
         : '<button class="tab'+(state.tab===it[0]?' on':'')+'" data-tab="'+it[0]+'" onclick="go(\''+it[0]+'\')"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+(_TABICON[it[0]]||'')+'</svg>'+it[1]+'</button>'; }).join('');
       updateHomeBadge();   // 탭바 재생성 시 할일 탭 점 다시 반영
     }
-    function updateModeToggle(){ const seg=$('modeSeg'); if(seg) Array.prototype.forEach.call(seg.children,function(b){ b.classList.toggle('on', b.dataset.mode===state.mode); }); }
+    function updateModeToggle(){ const seg=$('modeSeg'); if(seg) Array.prototype.forEach.call(seg.children,function(b){ const on=b.dataset.mode===state.mode; b.classList.toggle('on', on); b.setAttribute('aria-selected', on?'true':'false'); }); }   // role=tab 선택상태 ARIA 반영(스크린리더)
     function applyMode(){ renderTabBar(); updateModeToggle();
       if(state.view==='home') goHome();                          // 부팅/전환 시 홈 유지
       else { const set=_TABSETS[state.mode==='todo'?'todo':'ledger']; const ok=set.some(function(it){ return it!=='fab' && it[0]===state.tab; });

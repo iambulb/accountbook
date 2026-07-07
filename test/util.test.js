@@ -262,6 +262,10 @@ test('todayPending: 미션·할일 남은 수/완료/예정없음', () => {
   assert.deepStrictEqual(
     U.todayPending([], [{ dueDate: '2025-12-31', done: false }], T),
     { missions: 0, todos: 0, total: 0, allDone: true, any: false });
+  // 마감 없는(언제든) 할일도 '오늘'에 포함(리스트 '오늘' 필터와 일치) — 미래 마감은 여전히 제외
+  assert.deepStrictEqual(
+    U.todayPending([], [{ done: false }, { dueDate: '2025-12-31', done: false }], T),
+    { missions: 0, todos: 1, total: 1, allDone: false, any: true });
 });
 
 test('homeBadgeShow: 모드 화면 + 미처리 있을 때만 로고 점', () => {
