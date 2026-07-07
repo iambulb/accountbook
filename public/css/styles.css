@@ -1186,11 +1186,7 @@
     /* 펫알 전용(특별 이상) 가격 표기 + 이벤트 하단 구성·확률 접이식 */
     .price.gachaonly { font-weight:800; font-size:12.5px; }
     .price.gachaonly .px { height:15px; width:auto; }
-    .gacha-info { margin-top:12px; border:1px solid var(--bd); border-radius:12px; background:var(--card); overflow:hidden; }
-    .gacha-info summary { list-style:none; cursor:pointer; padding:9px 12px; font-size:12.5px; font-weight:700; color:var(--sub); display:flex; align-items:center; gap:6px; }
-    .gacha-info summary::-webkit-details-marker { display:none; }
-    .gacha-info[open] summary { border-bottom:1px solid var(--line); }
-    .gi-body { padding:8px 12px 10px; display:flex; flex-direction:column; gap:11px; }
+    .gi-body { padding:8px 12px 10px; display:flex; flex-direction:column; gap:11px; }   /* 확률표 본문(설정 → 확률 안내에서 사용. 구 .gacha-info details 래퍼는 제거) */
     .gi-sec { display:flex; flex-direction:column; gap:3px; }
     .gi-h { font-size:12px; font-weight:800; margin-bottom:2px; }
     .gi-row { display:flex; align-items:baseline; gap:8px; font-size:11.5px; line-height:1.4; }

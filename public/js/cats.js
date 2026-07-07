@@ -4808,7 +4808,7 @@
         if(!GACHA_TABS.some(t=>t[0]===_gachaTab)) _gachaTab='ddeul';
         h+='<div class="subseg gachatabs">'+GACHA_TABS.map(t=>'<button class="'+(_gachaTab===t[0]?'on':'')+'" onclick="setGachaTab(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div>';
         h+=gachaTabHtml(_gachaTab);   // 이벤트/일반/무지개 — 선택 탭만(이벤트·일반은 실제 배너, 설명·확률은 배너 내부에 포함)
-        if(_gachaTab==='rainbow'){ h+='<div class="note">'+gachaNoteFor(_gachaTab)+'</div>'+gachaInfoHtml(_gachaTab); }   // 무지개만 카드형 → 하단 설명·확률 유지
+        if(_gachaTab==='rainbow'){ h+='<div class="note">'+gachaNoteFor(_gachaTab)+'</div>'; }   // 무지개만 카드형 → 하단 설명(확률 고지는 설정 → 확률 안내로 이동)
         return h;
       }
       if(_shopSub==='floor'){
@@ -5561,7 +5561,14 @@
       } else {   // egg
         body=eggSec();
       }
-      return '<details class="gacha-info"><summary>📋 이 뽑기 등급별 확률</summary><div class="gi-body">'+body+'</div></details>';
+      return body;
+    }
+    // 📊 확률 안내(설정 → 확률 안내) — 모든 뽑기(펫알·랜덤박스·뜰알·무지개)의 등급별 확률을 한 화면에 고지.
+    function openProbInfoSheet(){
+      const h='<div class="note">모든 뽑기의 등급별 확률입니다. 등급·구성이 바뀌면 자동으로 갱신돼요.</div>'+
+        '<div class="card" style="padding:4px 0;"><div class="gi-body">'+gachaInfoHtml('normal')+gachaInfoHtml('ddeul')+gachaInfoHtml('rainbow')+'</div></div>'+
+        '<button class="btn" onclick="closeSheet()" style="margin-top:14px;">확인</button>';
+      openSheet('확률 안내', h);
     }
 
     // 확률은 합이 100이 아니어도 총합 기준 비율로 적용(개발 편의)
@@ -6843,7 +6850,7 @@
       // 🌸 뜰알: 알이 빛나기 전에 꽃이 엄청 흔들리는 연출(단일 뜰알 climax와 동일 — 알 톡톡 떨림 + 꽃 큰 스윙). 각 알이 열릴 때 tenOpenEgg가 해제.
       _fx10.items.forEach(function(it){ if(it.kind==='ddeul'){ const el=$('tenEgg'+it.i); if(el){ el.classList.remove('shake'); void el.offsetWidth; el.classList.add('tremble'); } } });
       const legend=tierRank('legend'), lanes={ l:[], r:[] };
-      if(!_fx10.isBox) _fx10.items.forEach(function(it){ if(tierRank(it.tier)>=legend) lanes[it.side].push(it); });   // 박스는 카메오 펫 없음 → 전부 동시 오픈
+      _fx10.items.forEach(function(it){ if(tierRank(it.tier)>=legend) lanes[it.side].push(it); });   // 🐾 전설↑ 아이템엔 펫 카메오가 걸어나와 톡(펫알·박스 동일 조건). 박스=가구지만 걸어오는 건 펫이라 무방.
       let maxEnd=0;
       ['l','r'].forEach(function(side){ lanes[side].forEach(function(it, k){ const base=k*TEN_STEP, id=tenCameoPet(it);
         _fxT(function(){ tenSpawnCameo(wrap, it, side, id); }, base);

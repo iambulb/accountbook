@@ -1764,6 +1764,8 @@
       if(typeof pushState==='function' && pushState()!=='unsupported'){   // 🔔 알림(FCM 설정된 지원 기기에서만 노출)
         const _ps=pushState();   // 차단/미지원 상태는 스위치 옆에 사유 텍스트로 안내
         h+=lrowToggle((typeof bellSvg==='function'?bellSvg({h:22}):'🔔'),'알림','togglePush()', _ps==='on', _ps==='denied'?'차단됨(브라우저 설정)':''); }
+      // 📊 확률 안내 — 모든 뽑기(펫알·랜덤박스·뜰알·무지개) 등급별 확률 고지(배너에선 미표기, 여기서 일괄 공시)
+      h+=lrow('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5L5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>','확률 안내','closeSheet();openProbInfoSheet()');
       h+='</div>';
       // 코드 입력(프로모/치트 코드)
       h+='<div class="sec-title" style="margin-top:22px;">코드 입력</div>';
