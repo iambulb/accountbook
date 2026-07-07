@@ -2001,7 +2001,7 @@
       { id:'ach_first',  period:'once', name:'첫 거래 기록',        reward:10, icon:'<path d="M12 4v16M8 8l4-4 4 4"/>', check:()=> (state.transactions||[]).length>0 },
       { id:'ach_cats3', gold:3,  period:'once', name:'고양이 3마리 모으기', reward:30, icon:'<circle cx="9" cy="11" r="2.5"/><circle cx="15" cy="11" r="2.5"/><path d="M4 20c0-3 2.5-5 8-5s8 2 8 5"/>', check:()=> Object.keys((state.game&&state.game.owned&&state.game.owned.cats)||{}).length>=3 },
       { id:'ach_cats10', gold:5, period:'once', name:'고양이 10마리 모으기', reward:50, icon:'<circle cx="9" cy="11" r="2.5"/><circle cx="15" cy="11" r="2.5"/><path d="M4 20c0-3 2.5-5 8-5s8 2 8 5"/>', check:()=> Object.keys(ownedCatsMap()).length>=10 },
-      { id:'ach_dexall', gold:30, period:'once', name:'도감 완성(전종 수집)', reward:200, icon:'<rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><path d="M13 16l2 2 4-4"/>', check:()=> dexProgress(ownedCatsMap(), PET_CATALOG.map(c=>c.id)).pct>=100 },
+      { id:'ach_dexall', gold:30, period:'once', name:'도감 완성(전종 수집)', reward:200, icon:'<rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><path d="M13 16l2 2 4-4"/>', check:()=> dexProgress(ownedCatsMap(), dexCatIds()).pct>=100 },
       { id:'ach_travel', period:'once', name:'여행 가계부 만들기',  reward:20, icon:'<path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/>', check:()=> (state.purposeBooks||[]).some(p=>p.type==='travel'||p.type==='gathering') },
       { id:'ach_fx',     period:'once', name:'해외통화로 첫 지출',  reward:20, icon:'<circle cx="12" cy="12" r="9"/><path d="M9 9h6M9 15h6M12 6v12"/>', check:()=> (state.transactions||[]).some(t=>t.currency&&t.currency!=='KRW') },
       { id:'ach_budget', period:'once', name:'첫 예산 설정',        reward:15, icon:'<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 12h8"/>', check:()=> (state.budgets||[]).length>0 },
@@ -2203,6 +2203,43 @@
     function petScale(id){ const sp=PET_SPRITES[id]; const s=sp&&Number(sp.scale); return (s&&s>0)?s:1; }
     // 걷는 무대(dock 방·홈 방)에서 실제 렌더 높이(px). base=고양이 기준, cap=무대에 맞춘 상한(큰 동물도 방 밖으로 안 나가게), floor=최소.
     function petActorPx(id, base, cap){ const raw=base*petScale(id); const lo=Math.round(base*0.55); return Math.max(lo, Math.min(Math.round(raw), cap)); }
+    // ── 🎞️ 다중 모션 클립(PixelLab 프리셋) — 클립 레지스트리(단일 소스) ─────────────────────
+    // 걷기 시트 1장 → 클립 N장으로 확장하되 재생기는 기존 필름(.csprf, --sheet/--fw/steps)을 그대로 재사용한다.
+    // 클립 시트 = 가로 스트립 1장(방향은 1개만 취득): 이동 계열(run·jump)=east(서쪽은 scaleX(-1) 플립),
+    // 정지/활동 계열(idle·sit·belly·eat·drink·yawn·lick·angry)=south(정면).
+    //  · 정적 펫: 걷기와 같은 폴더의 `<클립키>.png`(예: assets/pets/cat/cat_black/idle.png), 프레임 수는 PET_SPRITES[id].clips[키].
+    //  · 런타임 펫: catalogPets/{id}.clips(프레임 메타) + catalogPetArt/{id}.clips(data URL, ensurePetArt 지연 로드).
+    // fb=폴백 체인 — 클립이 없으면 순서대로 강등: 'walk'=기존 걷기 필름, 체인 소진(null)=기존 정지 스틸.
+    // 즉 클립이 하나도 없는 펫은 현행 동작과 100% 동일(하위호환). once=1회 재생(+hold=마지막 프레임 유지 —
+    // '앉기'처럼 전환 후 그 자세로 머무는 클립), fps=재생 속도(프레임/초).
+    const PET_CLIPS = {
+      run:   { dir:'east',  fps:12, fb:['walk'] },
+      jump:  { dir:'east',  fps:10, once:true },
+      idle:  { dir:'south', fps:6 },
+      sit:   { dir:'south', fps:8, once:true, hold:true, fb:['idle'] },
+      belly: { dir:'south', fps:6, fb:['sit','idle'] },
+      eat:   { dir:'south', fps:8, fb:['sit','idle'] },
+      drink: { dir:'south', fps:8, fb:['eat','sit','idle'] },
+      yawn:  { dir:'south', fps:7, once:true },
+      lick:  { dir:'south', fps:8, once:true },
+      angry: { dir:'south', fps:8, once:true }
+    };
+    // 펫이 이 클립 시트를 실제로 갖고 있나 — 정적=clips 메타(파일 존재는 파이프라인이 보장), 런타임=아트(clipUrls)까지 도착해야 true.
+    function hasClip(id, clip){ const sp=PET_SPRITES[id]; if(!sp||!sp.clips) return false;
+      const f=Number(sp.clips[clip]); if(!(f>=2)) return false;
+      return sp.runtime ? !!(sp.clipUrls&&sp.clipUrls[clip]) : true; }
+    function sprClipUrl(id, clip){ const sp=PET_SPRITES[id];
+      if(sp&&sp.clipUrls&&sp.clipUrls[clip]) return sp.clipUrls[clip];
+      return assetUrl(sprStills(id)+'/'+clip+'.png'); }
+    // 클립 해석(+폴백 강등): {key,url,frames,once,hold,dur(초)} | {key:'walk'}(기존 걷기 필름으로) | null(기존 정지 스틸로).
+    function resolveClip(id, clip){ const def=PET_CLIPS[clip]; if(!def) return null;
+      const cand=[clip].concat(def.fb||[]);
+      for(let i=0;i<cand.length;i++){ const k=cand[i];
+        if(k==='walk') return { key:'walk' };
+        const d=PET_CLIPS[k];
+        if(d && hasClip(id,k)){ const f=Number(PET_SPRITES[id].clips[k]);
+          return { key:k, url:sprClipUrl(id,k), frames:f, once:!!d.once, hold:!!d.hold, dur:f/d.fps }; } }
+      return null; }
     // 걷기 무대 액터 1개의 내부 마크업 — 시트 있으면 스프라이트 div, 없으면 SVG 프레임0.
     // reduced-motion이면 처음부터 정지 이미지(south=앞)로 고정.
     function catActorHTML(id, h){
@@ -3342,8 +3379,13 @@
       }).then(r=>{ if(r&&r.committed&&add>0) toast('❤ 받은 좋아요 '+hit+'개 달성! 금화 +'+add); }).catch(()=>{}); }
     // 📖 도감 마일스톤 — 전체 25/50/75%(은화+금화) + 종별 완성(금화, 종 규모 비례). 100%는 업적(ach_dexall)이 담당. game.dexClaims에 멱등 마커.
     const DEX_MILESTONES=[{pct:25,c:50,g:2},{pct:50,c:120,g:5},{pct:75,c:250,g:10}];
-    function _dexSpecies(owned){ const bs={}; PET_CATALOG.forEach(c=>{ const b=bs[c.species]=bs[c.species]||{t:0,o:0}; b.t++; if(owned[c.id]) b.o++; }); return bs; }
-    function _dexUnclaimed(g){ const own=(g.owned&&g.owned.cats)||{}, cl=g.dexClaims||{}, ids=PET_CATALOG.map(c=>c.id);
+    // 📖 도감 대상 = '획득 가능한' 펫만. 휴면 한정펫(exclusive & 가챠 비활성 = 미출시 예약 콘텐츠)은 분모·종완성·그리드 어디에도 넣지 않는다
+    //  → 100%/ach_dexall/종 완성이 영구 잠기던 문제 해소 + '노출 금지' 준수(활성화 아님, 단순 제외). 삭제펫은 이미 PET_CATALOG에 없음. 이미 보유한 예외 펫이 있으면 포함(보유는 카운트).
+    function dexCatalog(){ const tm=(typeof effCatTier==='function')?effCatTier():CAT_TIER, own=(state.game&&state.game.owned&&state.game.owned.cats)||{};
+      return PET_CATALOG.filter(function(c){ const t=tm[c.id]||CAT_TIER[c.id]||'normal'; return own[c.id] || !(t==='exclusive' && !isExGachaActive(c.id)); }); }
+    function dexCatIds(){ return dexCatalog().map(function(c){ return c.id; }); }
+    function _dexSpecies(owned){ const bs={}; dexCatalog().forEach(c=>{ const b=bs[c.species]=bs[c.species]||{t:0,o:0}; b.t++; if(owned[c.id]) b.o++; }); return bs; }
+    function _dexUnclaimed(g){ const own=(g.owned&&g.owned.cats)||{}, cl=g.dexClaims||{}, ids=dexCatIds();
       const pr=dexProgress(own, ids); let c=0, gg=0, marks=[];
       DEX_MILESTONES.forEach(m=>{ if(pr.pct>=m.pct && !cl['pct'+m.pct]){ c+=m.c; gg+=m.g; marks.push('pct'+m.pct); } });
       const bs=_dexSpecies(own); Object.keys(bs).forEach(sp=>{ const s=bs[sp]; if(s.t>0 && s.o>=s.t && !cl['sp:'+sp]){ gg+=Math.min(15,Math.max(2,Math.round(s.t/6))); marks.push('sp:'+sp); } });
@@ -4012,6 +4054,7 @@
         if(r.scale!=null) sp.scale=Number(r.scale)||1;
         if(r.frontWalk!=null) sp.frontWalk=!!r.frontWalk;
         if(r.frames!=null) sp.frames=Math.max(2, Number(r.frames)||6);   // 걷기 프레임 수(6·8 등) — 없으면 기본 6(구 레코드 하위호환)
+        if(r.clips) sp.clips=Object.assign({}, r.clips);   // 🎞️ 다중 모션 클립 메타(클립키→프레임 수) — 아트는 catalogPetArt/{id}.clips 지연 로드
         if(isNew){ sp.runtime=true; sp.walk=sp.walk||''; }
         PET_SPRITES[id]=sp;
         const tier = r.tier || CAT_TIER[id] || 'normal'; CAT_TIER[id]=tier;
@@ -4043,7 +4086,9 @@
     // 실제로 보이는 펫만 그때 .once로 아트를 받아 캐시(세션). .on이 아니라 편집 시 전체 재푸시 없음, 펫별 1회.
     const _petArt={};        // id -> { at, urls:{walk,south,north,east,west} } 세션 캐시
     const _petArtPending={};  // 진행 중 요청 가드
-    function _applyArt(id, urls){ const sp=PET_SPRITES[id]; if(sp&&urls){ sp.urls={ walk:urls.walk, south:urls.south, north:urls.north, east:urls.east, west:urls.west }; sp.needArt=false; } }
+    function _applyArt(id, urls){ const sp=PET_SPRITES[id]; if(sp&&urls){ sp.urls={ walk:urls.walk, south:urls.south, north:urls.north, east:urls.east, west:urls.west };
+      sp.clipUrls=urls.clips||null;   // 🎞️ 다중 모션 클립 시트(data URL) — 없는 구 레코드는 null(hasClip이 false → 기존 동작)
+      sp.needArt=false; } }
     // 아트가 준비됐으면 스프라이트에 반영하고 true, 아직이면 로드 시작 후 false. (정적/이미 로드된 펫은 즉시 true)
     function ensurePetArt(id){ const sp=PET_SPRITES[id];
       if(!sp || !sp.needArt) return true;
@@ -4079,7 +4124,26 @@
         s.src='https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'; s.onload=()=>res(window.JSZip); s.onerror=()=>rej(new Error('JSZip 로드 실패')); document.head.appendChild(s); }); }
     function _blobToImg(blob){ return new Promise((res,rej)=>{ const u=URL.createObjectURL(blob); const im=new Image();
       im.onload=()=>{ URL.revokeObjectURL(u); res(im); }; im.onerror=()=>{ URL.revokeObjectURL(u); rej(new Error('이미지 로드 실패')); }; im.src=u; }); }
-    // zip → {walk,south,north,east,west,frontWalk} data URL(브라우저 canvas 합성)
+    // 🎞️ PixelLab 프리셋 애니 폴더명 → 클립키(PET_CLIPS). 폴더 세그먼트를 정규화(소문자·영문만)해 비교 —
+    // "Seated on Belly Idle"·"Seated-on-Belly-Idle" 등 표기 차이를 흡수. 앞선 항목 우선(belly는 Seated…Idle > Sitting on Belly).
+    // Walking/Walk은 기존 걷기(walk 시트) 경로가 처리, Standing 계열(전이)은 v1 미사용이라 매핑에 없음.
+    const ZIP_CLIP_FOLDERS = [
+      ['running','run'], ['jump','jump'], ['idle','idle'],
+      ['seatedonbellyidle','belly'], ['sittingonbelly','belly'], ['sitting','sit'],
+      ['eating','eat'], ['drinking','drink'], ['licking','lick'], ['yawning','yawn'], ['angry','angry']
+    ];
+    // 프레임 이미지들 → 가로 스트립 1장(canvas 합성, 최대 12프레임). 걷기·클립 공용.
+    function _stripFromFrames(zip, frameNames){
+      const nf=Math.min(frameNames.length, 12);
+      return Promise.all(frameNames.slice(0,nf).map(n=>zip.files[n].async('blob').then(_blobToImg))).then(frames=>{
+        const w=frames[0].naturalWidth||48, hgt=frames[0].naturalHeight||48;
+        const cv=document.createElement('canvas'); cv.width=w*nf; cv.height=hgt; const ctx=cv.getContext('2d');
+        ctx.imageSmoothingEnabled=false; frames.forEach((im,i)=>ctx.drawImage(im,i*w,0,w,hgt));
+        return { url:cv.toDataURL('image/png'), frames:nf };
+      });
+    }
+    // zip → {walk,south,north,east,west,frontWalk,frames,clips} data URL(브라우저 canvas 합성).
+    // clips = 선택(zip에 프리셋 애니 폴더가 있으면): { 클립키:{url,frames} } — 이동 계열(run·jump)=east, 그 외=south 프레임만 사용(PET_CLIPS 방향 정책).
     function _processPetZip(file){
       return loadJSZip().then(JSZip=>JSZip.loadAsync(file)).then(zip=>{
         const names=Object.keys(zip.files);
@@ -4088,15 +4152,24 @@
         let frameNames=names.filter(n=>/\/Walk\/east\/frame_\d+\.png$/i.test(n)).sort(byFrame); let frontWalk=false;
         if(frameNames.length<2){ const s=names.filter(n=>/\/Walk\/south\/frame_\d+\.png$/i.test(n)).sort(byFrame); if(s.length>=2){ frameNames=s; frontWalk=true; } }
         if(frameNames.length<2) throw new Error('걷기 프레임(Walk/east frame_*.png)을 못 찾음');
-        const nf=Math.min(frameNames.length, 12);   // 걷기 장수를 zip 그대로(6·8 등, 최대 12) — 고등급 8프레임 등 부드러운 모션 지원
-        return Promise.all(frameNames.slice(0,nf).map(n=>zip.files[n].async('blob').then(_blobToImg))).then(frames=>{
-          const w=frames[0].naturalWidth||48, hgt=frames[0].naturalHeight||48;
-          const cv=document.createElement('canvas'); cv.width=w*nf; cv.height=hgt; const ctx=cv.getContext('2d');
-          ctx.imageSmoothingEnabled=false; frames.forEach((im,i)=>ctx.drawImage(im,i*w,0,w,hgt));
-          const walk=cv.toDataURL('image/png');
-          return Promise.all(['south','north','east','west'].map(f=>{ const k=names.find(n=>new RegExp('/rotations/'+f+'\\.png$','i').test(n));
-            return k ? zip.files[k].async('base64').then(b=>'data:image/png;base64,'+b) : Promise.resolve(walk); }))
-            .then(rots=>({ walk, south:rots[0], north:rots[1], east:rots[2], west:rots[3], frontWalk, frames:nf }));
+        return _stripFromFrames(zip, frameNames).then(wk=>{
+          const walk=wk.url, nf=wk.frames;   // 걷기 장수를 zip 그대로(6·8 등, 최대 12) — 고등급 8프레임 등 부드러운 모션 지원
+          // 🎞️ 프리셋 애니 폴더 수집: 경로 `<애니>/<방향>/frame_N.png`에서 애니 폴더명을 정규화해 클립키로 매핑, 정책 방향 프레임만 시트로 합성.
+          // ZIP_CLIP_FOLDERS 순서대로 훑어 같은 클립키는 앞선(우선) 폴더가 차지 — zip 내 파일 나열 순서와 무관하게 결정적.
+          const clipFrames={};   // 클립키 → 프레임 파일명 배열
+          const normSeg=s=>String(s).toLowerCase().replace(/[^a-z]/g,'');
+          ZIP_CLIP_FOLDERS.forEach(fd=>{ const seg=fd[0], key=fd[1]; if(clipFrames[key]) return;
+            const want=(PET_CLIPS[key]&&PET_CLIPS[key].dir)||'south';
+            const fr=names.filter(n=>{ const m=n.match(/(?:^|\/)([^\/]+)\/(east|south)\/frame_\d+\.png$/i);
+              return !!(m && normSeg(m[1])===seg && m[2].toLowerCase()===want); });
+            if(fr.length>=2) clipFrames[key]=fr; });
+          const clipKeys=Object.keys(clipFrames);
+          return Promise.all(clipKeys.map(k=>_stripFromFrames(zip, clipFrames[k].sort(byFrame)).then(r=>[k,r])))
+            .then(pairs=>{ const clips={}; pairs.forEach(p=>{ clips[p[0]]=p[1]; });
+              return Promise.all(['south','north','east','west'].map(f=>{ const k=names.find(n=>new RegExp('/rotations/'+f+'\\.png$','i').test(n));
+                return k ? zip.files[k].async('base64').then(b=>'data:image/png;base64,'+b) : Promise.resolve(walk); }))
+                .then(rots=>({ walk, south:rots[0], north:rots[1], east:rots[2], west:rots[3], frontWalk, frames:nf, clips:(clipKeys.length?clips:null) }));
+            });
         });
       });
     }
@@ -4135,7 +4208,7 @@
     function devPetInfo(id){ const c=PET_CATALOG.find(x=>x.id===id)||_deletedPets[id]; if(!c) return null; const sp=PET_SPRITES[id]||{};
       return { id, name:c.name, species:c.species, speciesLabel:(SPECIES_LABEL[c.species]||''), tier:CAT_TIER[id]||'normal', scale:sp.scale||1, gachaOnly:isGachaOnlyCat(id) }; }
     function openDevPetAdd(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; } _devPetTarget=null;
-      let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 12px;line-height:1.5;">PixelLab export <b>zip</b>을 올리고 이름·분류·등급·크기만 정하면 추가됩니다. 앱에서 바로 처리(옆걷기 시트+4방향 생성)해 <b>모든 사용자</b>에게 반영돼요.</p>';
+      let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 12px;line-height:1.5;">PixelLab export <b>zip</b>을 올리고 이름·분류·등급·크기만 정하면 추가됩니다. 앱에서 바로 처리(옆걷기 시트+4방향 생성)해 <b>모든 사용자</b>에게 반영돼요. zip에 프리셋 애니 폴더(Idle·Eating·Drinking·Running·Sitting 등)가 있으면 <b>모션 클립</b>으로 자동 인식돼 먹기·앉기·유휴 연출이 살아나요.</p>';
       h+=_petFormHtml({})+'<button class="btn" id="dpBtn" onclick="submitDevPet()">추가</button>';
       openSheet('펫 추가', h); }
     function openDevPetEdit(id){ if(!(typeof isDev==='function'&&isDev())) return; const p=devPetInfo(id); if(!p){ toast('펫을 찾을 수 없어요',true); return; } _devPetTarget=id;
@@ -4164,7 +4237,16 @@
           fields.frontWalk=art.frontWalk; fields.hasArt=true; fields.frames=art.frames||6;
           const upd={};
           ['name','species','speciesLabel','tier','scale','gachaOnly','by','at','frontWalk','hasArt','frames'].forEach(k=>{ if(fields[k]!==undefined) upd['catalogPets/'+id+'/'+k]=fields[k]; });
-          upd['catalogPetArt/'+id]={ walk:art.walk, south:art.south, north:art.north, east:art.east, west:art.west };
+          const artNode={ walk:art.walk, south:art.south, north:art.north, east:art.east, west:art.west };
+          // 🎞️ 다중 모션 클립: 메타(clips=클립키→프레임 수)는 catalogPets, 시트(data URL)는 catalogPetArt.clips.
+          //    zip에 클립이 없으면 null로 지워 이전 업로드의 낡은 메타가 남지 않게(아트 노드는 통째 교체라 자동 소거).
+          let cm=null;
+          if(art.clips){ cm={}; const cu={}; Object.keys(art.clips).forEach(k=>{ cm[k]=art.clips[k].frames; cu[k]=art.clips[k].url; }); artNode.clips=cu; }
+          upd['catalogPets/'+id+'/clips']=cm;
+          upd['catalogPetArt/'+id]=artNode;
+          // 용량 가드(경고만): RTDB 노드가 너무 크면 로딩·요금에 부담 — 클립 수를 줄이거나 프레임을 6장으로.
+          try{ let bytes=0; Object.keys(artNode).forEach(k=>{ const v=artNode[k]; bytes+=(typeof v==='string')?v.length:Object.keys(v).reduce((s,c)=>s+v[c].length,0); });
+            if(bytes>2500000) toast('이미지 용량이 커요('+(bytes/1048576).toFixed(1)+'MB) — 클립·프레임 수를 줄이는 걸 권장', true); }catch(e){}
           delete _petArt[id];   // 세션 캐시 무효화(새 아트)
           return db.ref().update(upd);
         }
@@ -4202,8 +4284,10 @@
       const info=devPetInfo(id); if(!info){ toast('펫을 찾을 수 없어요', true); return; } const sp=PET_SPRITES[id]||{};
       const doExport=(urls)=>{ if(!urls || !urls.walk){ toast('이미지를 불러오는 중이에요. 잠시 후 다시 시도하세요.'); ensurePetArt(id); return; }
         ['walk','south','north','east','west'].forEach(f=>{ if(!urls[f]) return; const a=document.createElement('a'); a.href=urls[f]; a.download=f+'.png'; document.body.appendChild(a); a.click(); a.remove(); });
+        // 🎞️ 다중 모션 클립 시트도 함께 다운로드(idle.png·eat.png 등) — 같은 펫 폴더에 넣으면 정적에서도 재생(프레임 수는 pets.json clips에 기록).
+        if(urls.clips) Object.keys(urls.clips).forEach(k=>{ const a=document.createElement('a'); a.href=urls.clips[k]; a.download=k+'.png'; document.body.appendChild(a); a.click(); a.remove(); });
         const slug=String(id).replace(/^rt_/,'')||'new'; const sid=(info.species||'cat')+'_'+slug;
-        const petLine=JSON.stringify({ id:sid, species:info.species||'cat', name:info.name||'', tier:info.tier||'normal', scale:sp.scale||1, desc:'', zip:'', frontWalk:!!sp.frontWalk });
+        const petLine=JSON.stringify(Object.assign({ id:sid, species:info.species||'cat', name:info.name||'', tier:info.tier||'normal', scale:sp.scale||1, desc:'', zip:'', frontWalk:!!sp.frontWalk }, sp.clips?{clips:sp.clips}:{}));   // clips=클립키→프레임 수(정적 승격 시 PET_SPRITES 코드젠에 반영)
         let h='<p class="muted" style="font-size:12.5px;line-height:1.6;margin:2px 2px 10px;">PNG 5장을 내려받았어요. 아래로 정적 편입하세요(<code>id</code>는 원하는 이름으로 바꿔도 됩니다).</p>';
         h+='<ol style="font-size:13px;line-height:1.8;padding-left:20px;margin:0 0 10px;">'+
            '<li><code>public/assets/pets/'+escapeHtml(info.species||'cat')+'/'+escapeHtml(sid)+'/</code> 폴더에 5장 넣기</li>'+
@@ -4610,15 +4694,62 @@
     // 재빌드(buildActors)가 이 두 함수를 거치게 해, DOM 재사용으로 남은 정지스틸(.idle)이 이동 중에 보이는 버그를 원천 차단.
     //  · actorShowMoving: 이동 표현. 일반=.idle 제거→CSS 걷기 필름(csprFilm) 재생, frontWalk(=east 걷기 없음)=east 정지스틸(정면 걷기 금지).
     //  · actorShowStill : 그 자리에 멈춰 face(south/east/west/north) 정지스틸(쉼·포즈·가구 상호작용). 이동 아님.
+    //    🎞️ 클립 승급: 펫이 클립(PET_CLIPS)을 보유하면 정지 스틸 대신 그 클립을 재생(먹기·앉기·유휴 등) — 없으면 기존 스틸(폴백).
+    // 물리 레이어(내부 전용 — 밖에선 부르지 말 것): _csprClip=클립 필름 장착, _csprStill=정지 스틸.
+    function _csprClip(s, a, r){
+      const cell=parseFloat(s.style.width)||Math.round(a.hh)||48;   // .cspr 창=1칸 정사각(catActorHTML이 width=렌더높이로 생성)
+      s.style.setProperty('--sheet','url('+r.url+')');
+      s.style.setProperty('--fw',(cell*r.frames)+'px');
+      s.style.setProperty('--wdur', r.dur.toFixed(2)+'s');
+      const f=s.querySelector('.csprf');
+      if(f){ f.style.animation='none'; void f.offsetWidth; f.style.animation='';   // 필름 재시작(원샷·프레임0부터) — 쇼트핸드가 타이밍펑션도 지우므로 아래서 재지정
+        f.style.animationTimingFunction='steps('+r.frames+')'; }
+      s.classList.toggle('once', !!r.once); s.classList.remove('idle');
+      a._clip=r.key;
+    }
+    function _csprStill(s, a, face){ s.style.setProperty('--idle','url('+sprStill(a.id,face)+')'); s.classList.remove('once'); s.classList.add('idle'); a._clip=null; }
     function actorShowMoving(a){ if(!a.spr) return; const s=a.el.querySelector('.cspr'); if(!s) return;
-      if(a.frontWalk){ s.style.setProperty('--idle','url('+sprStill(a.id,'east')+')'); s.classList.add('idle'); }   // east 걷기 없음 → 옆 정지스틸(정면 금지)
-      else s.classList.remove('idle'); }   // 일반: .idle 제거 → CSS 걷기 필름(csprFilm) 재생
-    function actorShowStill(a, face){ if(!a.spr) return; const s=a.el.querySelector('.cspr'); if(!s) return;
-      s.style.setProperty('--idle','url('+sprStill(a.id,face)+')'); s.classList.add('idle'); }
-    // 🏃 캣휠 달리기(무자산): 기존 걷기 필름을 제자리에서 빠르게 재생 → "달리는" 느낌. 이동은 mode='pause'라 x가 안 밀림(제자리 달리기).
-    //  이동 아님이지만 걷기 필름을 쓰므로 반드시 actorShowMoving 경유(정면 이미지 금지 불변식 준수). face=east/west는 setXform flip으로 처리(호출부).
+      a._clip=null; s.classList.remove('once');
+      if(a.frontWalk){ s.style.setProperty('--idle','url('+sprStill(a.id,'east')+')'); s.classList.add('idle'); return; }   // east 걷기 없음 → 옆 정지스틸(정면 금지)
+      // 클립 재생이 --sheet/--fw/steps를 바꿨을 수 있어 걷기 시트로 '무조건' 복원(재빌드 DOM 재사용 잔재 포함 — 안 하면 먹기 시트로 걷는 버그)
+      const sp=PET_SPRITES[a.id]||{}, cell=parseFloat(s.style.width)||Math.round(a.hh)||48, nf=sp.frames||6;
+      s.style.setProperty('--sheet','url('+sprWalkUrl(sp)+')'); s.style.setProperty('--fw',(cell*nf)+'px');
+      const f=s.querySelector('.csprf'); if(f) f.style.animationTimingFunction='steps('+nf+')';
+      s.classList.remove('idle'); }   // .idle 제거 → CSS 걷기 필름(csprFilm) 재생
+    function actorShowStill(a, face, clip){ if(!a.spr) return; const s=a.el.querySelector('.cspr'); if(!s) return;
+      // 🎞️ 클립 승급 — 지정 클립(가구 eat/drink/sit/belly 등) 또는 정면 휴식이면 idle 클립.
+      // 클립 시트는 south 전용 정책이라 정면이 아닌 경우(잠=north·인사/스크래처=east/west)는 기존 방향 스틸 유지. 모션축소는 항상 스틸.
+      if(!reducedMotion()){ const want = clip || (face==='south' ? 'idle' : null);
+        const r = want ? resolveClip(a.id, want) : null;
+        if(r && r.key!=='walk'){ _csprClip(s, a, r); return; } }
+      _csprStill(s, a, face); }
+    // 🏃 캣휠 달리기: run 클립이 있으면 진짜 달리기 시트(제자리), 없으면 기존대로 걷기 필름을 빠르게 재생.
+    //  이동 아님이지만 필름을 쓰므로 반드시 actorShowMoving/_csprClip 경유(정면 이미지 금지 불변식 준수). face=east/west는 setXform flip으로 처리(호출부).
     const WHEEL_RUN_WDUR = 0.30;   // 달리기 발놀림 주기(초) — 일반 걷기(walkDur)보다 빠르게
-    function showWheelRun(a){ if(!a.spr) return; actorShowMoving(a); const s=a.el.querySelector('.cspr'); if(s) s.style.setProperty('--wdur', WHEEL_RUN_WDUR+'s'); }
+    function showWheelRun(a){ if(!a.spr) return;
+      const r=reducedMotion()?null:resolveClip(a.id,'run');
+      if(r && r.key!=='walk'){ const s=a.el.querySelector('.cspr'); if(s){ _csprClip(s, a, r); return; } }
+      actorShowMoving(a); const s=a.el.querySelector('.cspr'); if(s) s.style.setProperty('--wdur', WHEEL_RUN_WDUR+'s'); }
+    // ✨ 원샷 클립(하품·그루밍·점프): 1회 재생 후 then()으로 이전 비주얼 복귀. 클립이 없거나 저사양/모션축소면 null(호출측은 기본 연출 유지).
+    function actorOnce(a, clip, dirMul, then){
+      if(!a.spr || reducedMotion() || liteMode()) return null;
+      const r=resolveClip(a.id, clip); if(!r || r.key==='walk' || !r.once) return null;
+      const s=a.el.querySelector('.cspr'); if(!s) return null;
+      _csprClip(s, a, r); if(dirMul!=null){ setXform(a, dirMul); a._pdir=dirMul; }
+      const tok=a._onceTok=(a._onceTok||0)+1, el=a.el;
+      if(then) setTimeout(function(){ if(a._onceTok!==tok || a._clip!==r.key) return;   // 그 사이 다른 상태로 전환됐으면 복귀 금지
+        if(!el.isConnected || el._eggActor!==a) return;   // 재빌드로 액터 객체가 교체됐으면 낡은 복귀 금지(새 상태 덮어쓰기 방지)
+        try{ then(); }catch(e){} }, Math.round(r.dur*1000)+80);
+      return r;
+    }
+    // 🥱 유휴 원샷 액센트(하품·그루밍) — 로밍 중 잠깐 멈춰 1회 재생 후 다시 걷기(재개는 pause 만료의 actorShowMoving이 처리, .once가 마지막 프레임 유지).
+    function actorAccent(a, clip){
+      const r=actorOnce(a, clip, 1, null); if(!r) return false;
+      a.mode='pause'; a.pose=null; a.goal=null; releaseRes(a);
+      a.pause=Math.round(r.dur*1000)+260; a.cool=1400; a.lift=0; applyDepth(a);
+      if(a.pkey) _petPose[a.pkey]={ until:Date.now()+a.pause, pose:'sit', lift:0, face:'south', resKey:null, resFloor:null };
+      return true;
+    }
     // 여러 무대를 '동시에' 애니메이션한다: groups=[{stage, actors}]. 예) 친구 집 방문 중에도 하단 dock 캠은 계속 로밍.
     const _eng={ raf:0, groups:[], last:0, dirty:false };
     function markCatDirty(){ _eng.dirty=true; if(typeof startCatLoop==='function') startCatLoop(); }
@@ -4681,7 +4812,7 @@
         // 그래픽 폭 w=fh*aspect. left=w/2, right=W-w/2, center=발자국 중앙*W.
         const mode=camAnchorMode(p.c, foot.w), w=fh*furnAspect(p.itemId);
         const cx = mode==='left'? w/2 : mode==='right'? W-w/2 : (gridLeftFrac(p.c)+gridSpanFrac(foot.w)/2)*W;
-        return { x: cx, itemId:p.itemId, fh, key:p.key, depth }; }) : [];
+        return { x: cx, itemId:p.itemId, fh, key:p.key, depth, fill:(p.filledAt||null) }; }) : [];   // fill=그릇 채운 시각(밥/물그릇) — 도착 시 먹기/마시기 클립 판정(furnClip)
       // 고양이마다 성격(속도·유휴빈도·방향전환·가구선호)을 랜덤 부여 → 개별적으로 움직임
       // 스프라이트 고양이는 정사각(폭=높이), SVG 고양이는 가로세로비 ~26/14.
       const sid=stage.id||'s';   // 무대별 지속키 prefix — 같은 펫 id가 dock·내 방·친구 방에 동시에 있어도 x/depth가 안 섞이게
@@ -4706,6 +4837,7 @@
         // 유휴(그 자리에 멈춰 정면 보기) — 자주·오래 서서 정면을 보도록(poseDur에서 시간 늘림)
         idle:0.0032+Math.random()*0.005, turn:0.004+Math.random()*0.010, seek:0.005+Math.random()*0.009, cool:0 };
         a.footPad=(typeof _footPad!=='undefined'&&_footPad[id+':south']!=null?_footPad[id+':south']:null); if(spr) measureFootPad(id,function(fp){ a.footPad=fp; setXform(a); });
+        el._eggActor=a;   // 원샷 클립(actorOnce)의 지연 복귀가 재빌드된 새 액터를 덮어쓰지 않도록 현재 소유 액터를 표시
         a.x=Math.max(2, Math.min(a.x, Math.max(2, W-a.sw)));   // 지속된 x를 현재 무대 폭에 클램프(리사이즈/회전·무대전환 시 화면 밖 방지)
         setWalkDur(a); el.style.left='0px'; applyDepth(a); setXform(a); a._pdir=a.dir;   // 위치·올림·깊이·방향 전부 transform(합성). left는 0 고정 → 걷는 동안 메인스레드 페인트 0
         // 액터는 항상 'roam'(이동)으로 시작. DOM 재사용(markCatDirty·무대 재부착)으로 남아있던 정지스틸(.idle)을
@@ -4718,7 +4850,7 @@
           if(left>400){ a.mode='pause'; a.pose=pp.pose; a.pause=left; a.cool=1400; a.lift=pp.lift||0; a.resKey=pp.resKey||null; a.resFloor=(pp.resFloor!=null?pp.resFloor:null);
             applyDepth(a);
             if(a.spr){ if(pp.run){ const rd=pp.face==='west'?-1:1; showWheelRun(a); setXform(a, rd); a._pdir=rd; }   // 캣휠 달리기 상태 복원
-              else { actorShowStill(a, pp.face||'south'); setXform(a, 1); a._pdir=1; } }
+              else { actorShowStill(a, pp.face||'south', pp.clip); setXform(a, 1); a._pdir=1; } }   // 클립(먹기·앉기 등)도 복원 — 없으면 기존 스틸
             else { a.el.innerHTML=catPose(id, pp.pose, {h:a.hh}); setXform(a, a.dir); a._pdir=a.dir; } }
           else delete _petPose[pkey]; }
         return a; });
@@ -4771,29 +4903,43 @@
       if(it==='bunkbed') return { lift:Math.round(fh*0.5), face:(Math.random()<0.5?'east':'west'), dx:0, pose:'loaf', dur:40000+Math.random()*50000 };
       return { lift:0, face:'south', dx:0, pose:'loaf', dur:22000+Math.random()*26000 };
     }
-    // 가구에 도착 → 자리 잡고 머무름(랜덤 시간). 스프라이트는 해당 방향 정지, SVG는 포즈. lift로 발판/방석 위로 올림.
+    // 🎞️ 가구 → 재생 클립(선택): 밥/물그릇은 '채워진 그릇'일 때만 먹기/마시기(빈 그릇=앉기), 자동급수기는 항상 물.
+    // 그 외엔 포즈 기본(sit→sit 클립, loaf→belly 클립). 클립 시트는 south 전용이라 옆을 보는 자리(face≠south)는 클립 없이 기존 스틸.
+    // 클립이 없는 펫은 resolveClip 폴백으로 기존 스틸 그대로 — 여기서 걸러줄 필요 없음.
+    function furnClip(goal, s){
+      if(s.face!=='south') return null;
+      const it=goal.itemId, filled=!!(goal.fill && (Date.now()-goal.fill)<FILL_MS);
+      if(it==='bowl') return filled?'eat':'sit';
+      if(it==='waterbowl') return filled?'drink':'sit';
+      if(it==='waterfountain') return 'drink';
+      return s.pose==='loaf'?'belly':(s.pose==='sit'?'sit':null);
+    }
+    // 가구에 도착 → 자리 잡고 머무름(랜덤 시간). 스프라이트는 해당 방향 정지(클립 보유 시 먹기/앉기 등 클립), SVG는 포즈. lift로 발판/방석 위로 올림.
     function enterInteract(a, id, goal){
       const s=furnSpot(a, goal);
       a.mode='pause'; a.pose=s.pose; a.pause=s.dur; a.cool=1700; a.lift=s.lift||0;
       // 고양이 중심을 가구 그래픽 중앙(goal.x)에 맞춤(+옆 오프셋 dx). 캣타워/방석은 dx=0이라 정중앙에 앉음.
       a.x=Math.max(2, Math.min(a.W-a.sw, goal.x - a.sw/2 + (s.dx||0)));
       if(goal.depth!=null) a.depth=goal.depth; applyDepth(a);   // 가구와 같은 깊이에 서서 크기·앞뒤 가림이 맞물리게
-      const runW = !!(s.run && a.spr);   // 🏃 캣휠 달리기(스프라이트만) — 걷기 필름 제자리 재생
+      const runW = !!(s.run && a.spr);   // 🏃 캣휠 달리기(스프라이트만) — run 클립 또는 걷기 필름 제자리 재생
+      const clip = runW ? null : furnClip(goal, s);   // 🎞️ 가구별 클립(먹기·마시기·앉기·배깔기) — 미보유 펫은 폴백으로 기존 스틸
       const dir = runW ? (s.face==='west'?-1:1) : (a.spr?1:a.dir);
-      if(runW) showWheelRun(a);            // 달리기(actorShowMoving 경유 필름) — face는 아래 setXform flip
-      else if(a.spr) actorShowStill(a, s.face);
+      if(runW) showWheelRun(a);            // 달리기(actorShowMoving/_csprClip 경유) — face는 아래 setXform flip
+      else if(a.spr) actorShowStill(a, s.face, clip);
       else a.el.innerHTML=catPose(id, s.pose, {h:a.hh});
       setXform(a, dir); a._pdir=dir;   // 위치+lift(위에서 설정)+flip을 정적 transform 하나로
-      if(a.pkey) _petPose[a.pkey]={ until:Date.now()+s.dur, pose:s.pose, lift:a.lift, face:s.face, run:runW, resKey:a.resKey, resFloor:a.resFloor };   // 재빌드에도 자리·달리기 유지
+      if(a.pkey) _petPose[a.pkey]={ until:Date.now()+s.dur, pose:s.pose, lift:a.lift, face:s.face, run:runW, clip:clip, resKey:a.resKey, resFloor:a.resFloor };   // 재빌드에도 자리·달리기·클립 유지
     }
     function enterPose(a, id, pose){ a.mode='pause'; a.pose=pose; a.pause=poseDur(pose); a.cool=1400;
       a.lift=0; applyDepth(a);   // 현재 깊이의 배율/올림/z 반영(그 자리에서 쉼 — 깊이는 유지)
       const face = pose==='sleep' ? 'north' : 'south';   // 💤 잠은 뒤돌아서(north 스틸 — 전 펫 4방향 스틸 보유), 앉기/식빵은 정면
-      if(a.spr){ // 멈춰서 쉴 땐 정지 스틸(잠=뒤돈 모습, 그 외=정면). 이미지가 정방향이라 플립 없음(scaleX(1)).
-        actorShowStill(a, face); setXform(a, 1); a._pdir=1; }
+      const clip = pose==='sleep' ? null : (pose==='loaf' ? 'belly' : 'sit');   // 🎞️ 유휴 클립 승급(앉기=전환 후 유지·식빵=배깔기) — 미보유 펫은 폴백으로 기존 스틸
+      if(a.spr){ // 멈춰서 쉴 땐 정지 스틸/클립(잠=뒤돈 모습, 그 외=정면). 이미지가 정방향이라 플립 없음(scaleX(1)).
+        actorShowStill(a, face, clip); setXform(a, 1); a._pdir=1;
+        if(pose==='sleep') actorOnce(a, 'yawn', 1, function(){ actorShowStill(a, face); setXform(a, 1); a._pdir=1; }); }   // 🥱 잠들기 전 하품(클립 보유 펫만) → 끝나면 north 수면 스틸
       else { a.el.innerHTML=catPose(id, pose, {h:a.hh});
         setXform(a, a.dir); a._pdir=a.dir; }
-      if(a.pkey) _petPose[a.pkey]={ until:Date.now()+a.pause, pose:pose, lift:0, face:face, resKey:null, resFloor:null };   // 유휴 포즈도 재빌드에 유지(방향 포함)
+      if(a.pkey) _petPose[a.pkey]={ until:Date.now()+a.pause, pose:pose, lift:0, face:face, clip:clip, resKey:null, resFloor:null };   // 유휴 포즈도 재빌드에 유지(방향·클립 포함)
     }
     // 💬 유휴 감정 이모트(픽셀) — 펫 머리 위에 1회성(2.2s) 표시 후 제거. zz=수면 'zZ' 도트 텍스트, greet=하트 확정, idle=하트/트윙클 랜덤(30% 확률만). 저사양·모션축소 생략.
     function actorEmote(a, kind){
@@ -4810,7 +4956,8 @@
     // 🐾 인사(마주보기) — 근접한 두 로밍 펫이 서로를 바라보며 잠깐 앉음. 불변식 준수: actorShowStill 경유(정지 비주얼), 지속(_petPose)에도 등록.
     function enterGreet(a, face){
       a.mode='pause'; a.pose='sit'; a.pause=2200+Math.random()*1600; a.cool=1400; a.lift=0; a.goal=null; releaseRes(a); applyDepth(a);
-      if(a.spr){ actorShowStill(a, face); setXform(a, 1); a._pdir=1; }
+      if(a.spr){ actorShowStill(a, face); setXform(a, 1); a._pdir=1;
+        if(Math.random()<0.35) actorOnce(a, 'jump', (face==='west'?-1:1), function(){ actorShowStill(a, face); setXform(a, 1); a._pdir=1; }); }   // 🦘 반가움 점프(클립 보유 펫만 가끔) → 끝나면 마주보기 스틸 복귀
       else { a.el.innerHTML=catPose(a.id, 'sit', {h:a.hh}); const d=(face==='east'?1:-1); setXform(a, d); a._pdir=d; }
       if(a.pkey) _petPose[a.pkey]={ until:Date.now()+a.pause, pose:'sit', lift:0, face:face, resKey:null, resFloor:null };
     }
@@ -4827,6 +4974,8 @@
         const pr=dt/33;   // ⏱️ 확률 dt 정규화(33ms=30fps 기준) — dock 12fps에서 유휴/전환/가구찾기 빈도가 방 캠의 ~2.5배 낮던 것 보정(무대 무관 동일 리듬)
         // 유휴 제스처(그 자리 앉기/식빵/낮잠) — 쿨다운 후에만. 🌙 밤(KST 21~06시)엔 낮잠 가중(수면 연출)
         if(a.mode==='roam' && a.cool<=0 && Math.random()<a.idle*pr){
+          // 🎞️ 원샷 액센트(하품/그루밍) — 클립 보유 펫만 가끔(22%) 잠깐 멈춰 1회 재생 후 다시 걷기. 미보유면 false → 아래 기존 포즈로
+          if(a.spr && Math.random()<0.22 && actorAccent(a, Math.random()<0.5?'yawn':'lick')) return;
           const kh=(new Date(Date.now()+9*3600000)).getUTCHours(), night=(kh>=21||kh<6);
           const pose=(night&&Math.random()<0.6)?'sleep':['loaf','sit','sleep'][Math.floor(Math.random()*3)];
           enterPose(a, id, pose); actorEmote(a, pose==='sleep'?'zz':'idle'); return; }
@@ -5078,14 +5227,22 @@
       }); });
       document.querySelectorAll('.pkscene:not(.pk-reveal)').forEach(function(el){ _pkIO.observe(el); });   // 리빌(전체화면)은 항상 보이니 제외
     }catch(e){} }
+    // 💰 알뜰샵 잔액 위젯 — 시트 제목(.sheet-head) 오른쪽에 금화·은화 표기(기존 상단 coinbar 대체).
+    function shopHeadWalletHtml(){ return '<span class="shophw-c" title="금화">'+goldSvg({h:15})+'<b>'+gold().toLocaleString()+'</b>'+(atMaxGold()?maxChip():'')+'</span>'+
+      '<span class="shophw-c" title="은화">'+coinSvg({h:15})+'<b>'+coins().toLocaleString()+'</b>'+(atMaxCoins()?maxChip():'')+'</span>'; }
+    function updateShopHeadWallet(){ if(typeof document==='undefined') return; const head=document.querySelector('#sheet .sheet-head'); if(!head) return;
+      let el=head.querySelector('.shophw');
+      if(_catTab!=='shop'){ if(el) el.remove(); return; }   // 알뜰샵 탭에서만 표기
+      if(!el){ el=document.createElement('div'); el.className='shophw'; head.insertBefore(el, head.querySelector('.x')); }
+      el.innerHTML=shopHeadWalletHtml(); }
     function renderCatHouse(){
       if(!state.game) state.game=normalizeGame(null);   // 스냅샷 도착 전 안전 가드
       const build=()=>{
         // 상단 고정(sticky): 알뜰샵=은화/금화 잔액+서브탭 / 알뜰홈=홈·배치 탭. 알뜰샵·잔액은 더보기의 별도 '알뜰샵' 화면(openShop)으로 분리.
         const isShop=_catTab==='shop';
         let h='<div class="cathead">';
-        if(isShop){ h+='<div class="coinbar"><span class="coin"><span class="ci">'+goldSvg({h:20})+'</span>'+gold().toLocaleString()+(atMaxGold()?maxChip():'')+'<small>금화</small></span><span class="coin"><span class="ci">'+coinSvg({h:20})+'</span>'+coins().toLocaleString()+(atMaxCoins()?maxChip():'')+'<small>은화</small></span></div>'; }
-        else { h+='<div class="catseg">'+[['home','홈'],['place','배치']].map(function(t){ return '<button class="'+(_catTab===t[0]?'on':'')+'" onclick="setCatTab(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>'; }
+        // 💰 알뜰샵 잔액(금화·은화)은 시트 제목 오른쪽(updateShopHeadWallet)으로 이동 — 여기선 홈/배치 탭 세그만.
+        if(!isShop){ h+='<div class="catseg">'+[['home','홈'],['place','배치']].map(function(t){ return '<button class="'+(_catTab===t[0]?'on':'')+'" onclick="setCatTab(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>'; }
         if(isShop) h+=shopSubsegHtml();   // 알뜰샵 서브탭(sticky 헤더 안)
         h+='</div>';   // .cathead 닫기(여기까지 sticky)
         if(isShop) h+='<div class="shopwrap">'+catShopHtml()+'</div>';   // min-height로 탭마다 시트 높이 동일(소비처럼 항목 적어도 안 줄어듦)
@@ -5094,6 +5251,7 @@
         return h;
       };
       openSheet(_catTab==='shop'?'알뜰샵':'알뜰홈', build());
+      updateShopHeadWallet();   // 알뜰샵: 잔액을 시트 제목 오른쪽에 표기
       state._sheetRefresh=()=>{ if(_drag||_pal||_rmDrag||_wdrag||_wpal) return;   // 드래그(배치) 중엔 재렌더 스킵 — 드래그 요소가 뜯겨 스크롤 잠금이 남는 것 방지(드래그 끝나면 배치 커밋이 다시 리프레시)
         const b=$('sheetBody'); if(!b) return; const st=b.scrollTop;
         const pal=b.querySelector('.palette'); const palL=pal?pal.scrollLeft:0;   // 배치 팔레트(가로 스크롤) 위치 보존 — 스크롤해 아이템 선택 시 처음으로 안 튀게(우리집 펫은 세로 그리드라 세로 scrollTop만 보존)
@@ -5102,7 +5260,7 @@
         if(_catTab==='home'){ const ph=b.querySelector('#petGrid'); if(keepGrid && ph) ph.replaceWith(keepGrid); renderPetGrid(); }   // 되살린 그리드에 바뀐 타일만 갱신(없으면 채움)
         b.scrollTop=st;
         const npal=b.querySelector('.palette'); if(npal) npal.scrollLeft=palL;
-        if(_catTab==='home') mountRoomWalk(); pkObserveScenes(); };   // A4: 재빌드된 씬 재관찰
+        if(_catTab==='home') mountRoomWalk(); pkObserveScenes(); updateShopHeadWallet(); };   // A4: 재빌드된 씬 재관찰 + 알뜰샵 잔액(구매 후) 갱신
       if(_catTab==='home'){ setTimeout(mountRoomWalk, 30); renderPetGrid(); }
     }
     // 방 미니 미리보기 썸네일(프리셋): 벽지 bg + 가구 위치 축소 + 이름 + 펫수. 탭=전환, ✎=이름변경.
@@ -5262,7 +5420,7 @@
     // 친구/랭킹 캠은 '대표 방(showRoom)'을 보여준다(사적인 방 노출 방지). showRoom 없으면 current, 레거시는 flat.
     function friendRoom(fg){ const h=(fg&&fg.home)||{}; if(Array.isArray(h.rooms)&&h.rooms.length){ const i=Math.min(h.rooms.length-1, Math.max(0, (h.showRoom!=null?h.showRoom:h.current)|0)); return h.rooms[i]||h.rooms[0]; } return h; }
     function friendActiveCats(fg){ const a=friendRoom(fg).active||[]; const owned=(fg.owned&&fg.owned.cats); return a.filter(id=>(!owned||owned[id]) && PET_CATALOG.some(c=>c.id===id)); }   // homeCam 스냅샷은 owned가 없어 active를 신뢰하되 카탈로그에 있는(렌더 가능한) 펫만 — 삭제된 펫이 친구 캠에 폴백 팔레트 유령으로 뜨지 않게(내 방 activeCats와 동일 기준)
-    function friendPlacedList(fg){ const p=friendRoom(fg).placed||{}; return Object.keys(p).map(k=>({ key:k, r:+k.split('_')[0], c:+k.split('_')[1], itemId:p[k].itemId })); }
+    function friendPlacedList(fg){ const p=friendRoom(fg).placed||{}; return Object.keys(p).map(k=>({ key:k, r:+k.split('_')[0], c:+k.split('_')[1], itemId:p[k].itemId, filledAt:p[k].filledAt||null })); }   // filledAt=먹기/마시기 클립 판정(furnClip)
     // 친구 방 HTML(.catroom + #frStage). name=친구 닉네임.
     function friendRoomHtml(fg, name){
       const wall=friendRoom(fg).wallpaper||'default';
@@ -5697,7 +5855,7 @@
     }
     // ---- 가구 인벤토리/배치 ----
     function itemQty(id){ const it=state.game&&state.game.owned.items[id]; return it?(Number(it.qty)||0):0; }
-    function placedList(){ const p=room().placed||{}; return Object.keys(p).map(k=>({key:k, r:+k.split('_')[0], c:+k.split('_')[1], itemId:p[k].itemId})); }
+    function placedList(){ const p=room().placed||{}; return Object.keys(p).map(k=>({key:k, r:+k.split('_')[0], c:+k.split('_')[1], itemId:p[k].itemId, filledAt:p[k].filledAt||null})); }   // filledAt=먹기/마시기 클립 판정(furnClip)
     function itemPlaced(id){ return placedList().filter(x=>x.itemId===id).length; }          // 현재 방 배치 수(케어 아이템 방당 상한용)
     function itemPlacedAll(id){ return sumPlacedItem(homeH().rooms, id); }                    // 전 방 배치 합(전역 인벤토리 소진 — 복제 방지)
     function itemRemaining(id){ return itemQty(id)-itemPlacedAll(id); }                       // 남은 수량 = 보유 - 모든 방 배치
@@ -5817,7 +5975,7 @@
     function enrichTypeCount(R){ const set={}; const scan=o=>{ o=o||{}; Object.keys(o).forEach(k=>{ const id=o[k]&&o[k].itemId; if(id&&INTERACTIVE_FURN[id]&&CARE_ITEMS.indexOf(id)<0) set[id]=1; }); }; scan(R&&R.placed); scan(R&&R.wallPlaced); return Object.keys(set).length; }
     // 🔺 전역 자동수익 배율(1.0~2.0) — 애정 총량 + 도감 수집률 + 앱 사용(가계부·할일 기록). 수확마다 1회 계산해 모든 방에 공유.
     function _yieldMult(g){ if(!g) return 1; const own=(g.owned&&g.owned.cats)||{};
-      const dexPct=(dexProgress(own, PET_CATALOG.map(c=>c.id))||{}).pct||0;
+      const dexPct=(dexProgress(own, dexCatIds())||{}).pct||0;
       const affLv=totalAffectionLv(own);
       return yieldMultiplier(dexPct, affLv, recordDaysThisWeek(), recordedToday()); }
     // 방의 현재까지 쌓인 유휴 은화(harvestAt 이후 경과). g=game, R=room, mult=전역 배율(미전달 시 계산). util.roomYield(순수·행복도 기반).
@@ -7057,7 +7215,7 @@
     function ownedCatsMap(){ return (state.game&&state.game.owned&&state.game.owned.cats)||{}; }
     let _dexTab=lsGet('dexTab','all');   // 도감 종별 탭('all'=전체 / species 코드)
     function setDexTab(t){ _dexTab=t||'all'; lsSet('dexTab',_dexTab); if(state._sheetRefresh) state._sheetRefresh(); }
-    function dexSpeciesList(){ const seen={}, list=[]; PET_CATALOG.forEach(c=>{ const s=c.species||'cat'; if(!seen[s]){ seen[s]=1; list.push(s); } }); return list; }   // 도감 등장 종(순서 유지·중복 제거)
+    function dexSpeciesList(){ const seen={}, list=[]; dexCatalog().forEach(c=>{ const s=c.species||'cat'; if(!seen[s]){ seen[s]=1; list.push(s); } }); return list; }   // 도감 등장 종(순서 유지·중복 제거) — 획득 가능한 펫만(휴면 한정 제외)
     // 🔋 도감 재빌드 서명 — 보유 펫 id+애정레벨+현재 탭. 코인·똥·수확 틱엔 불변이라 190셀 통째 재빌드를 스킵.
     let _dexLastSig='';
     function _dexRefreshSig(){ const o=ownedCatsMap(); return _dexTab+'|'+Object.keys(o).sort().map(function(id){ return id+':'+((o[id]&&o[id].affection)||0); }).join(','); }
@@ -7065,12 +7223,12 @@
       const build=()=>{
         const owned=ownedCatsMap(), species=dexSpeciesList();
         if(_dexTab!=='all' && species.indexOf(_dexTab)<0) _dexTab='all';   // 사라진 종 방어
-        const pool=PET_CATALOG.filter(c=> _dexTab==='all' || (c.species||'cat')===_dexTab);
+        const pool=dexCatalog().filter(c=> _dexTab==='all' || (c.species||'cat')===_dexTab);   // 획득 가능한 펫만(휴면 한정펫은 도감에서 숨김 = 미출시)
         const prog=dexProgress(owned, pool.map(c=>c.id));   // 현재 탭 기준 진행도
         let h='<div class="dexhead"><div class="row" style="justify-content:space-between;"><b>수집'+(_dexTab!=='all'?' · '+escapeHtml(SPECIES_LABEL[_dexTab]||_dexTab):'')+'</b><span class="s">'+prog.owned+' / '+prog.total+' ('+prog.pct+'%)</span></div><div class="bar"><i style="width:'+prog.pct+'%"></i></div></div>';
         // 종별 탭(전체 + 종). 옆으로 스크롤(.subseg).
         const tabs=[['all','전체']].concat(species.map(s=>[s,(SPECIES_LABEL[s]||s)]));
-        h+='<div class="subseg dextabs">'+tabs.map(function(t){ const id=t[0], nm=t[1], n=PET_CATALOG.filter(c=>id==='all'||(c.species||'cat')===id).length;
+        h+='<div class="subseg dextabs">'+tabs.map(function(t){ const id=t[0], nm=t[1], n=dexCatalog().filter(c=>id==='all'||(c.species||'cat')===id).length;
           return '<button class="'+(_dexTab===id?'on':'')+'" onclick="setDexTab(\''+id+'\')">'+escapeHtml(nm)+' <b>'+n+'</b></button>'; }).join('')+'</div>';
         const cell=function(c){ const has=!!owned[c.id], lv=has?affectionLevel(owned[c.id].affection).level:0;
           return '<div class="dexcell'+(has?' tbring tb-'+(CAT_TIER[c.id]||'normal'):' locked')+'" title="'+escapeHtml(has?catName(c.id):'미보유')+'">'+   // 소유 셀은 등급색을 바깥 라운드 카드 테두리에(미소유는 스포일러 방지로 중립)

@@ -88,6 +88,23 @@
     return addDays(ds, rep === 'weekly' ? 7 : 1);   // weekly=+7, 그 외(레거시 daily 포함)=+1
   }
   function dueDiffDays(dueYmd, todayYmd) { const a = new Date(dueYmd + 'T00:00:00'), b = new Date(todayYmd + 'T00:00:00'); return Math.round((a - b) / 86400000); }
+  // Y-M-D의 day를 해당 월 말일로 클램프(31일 항목이 짧은 달에서 안 넘치게). anchorDay를 유지하며 굴리면 31→28→31 복원.
+  function clampYmd(y, m, day) { var last = new Date(y, m, 0).getDate(), dd = Math.min(day, last), z = function (x) { return (x < 10 ? '0' : '') + x; }; return y + '-' + z(m) + '-' + z(dd); }
+  // 구독 '다음 결제일'을 오늘 이후로 굴린다(저장값이 과거면 billingCycle×interval만큼 전진 — 표시·알림용, RTDB 저장 안 함·순수).
+  //  구독의 nextBillingDate는 저장 폼에서만 설정돼 첫 주기 뒤 과거로 고정 → 결제 D-day·이번달예정·7일내 알림이 조용히 정지하던 버그 해소. cycle: monthly/yearly/weekly.
+  function effNextBilling(nextDate, cycle, interval, today) {
+    var d = String(nextDate || '').slice(0, 10); if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+    today = String(today || todayKst()).slice(0, 10);
+    interval = Math.max(1, Math.floor(Number(interval) || 1));
+    var anchorDay = +d.slice(8, 10), guard = 0;
+    while (d < today && guard++ < 600) {
+      if (cycle === 'weekly') { d = addDays(d, 7 * interval); }
+      else { var p = d.split('-'), y = +p[0], m = +p[1];
+        if (cycle === 'yearly') { d = clampYmd(y + interval, m, anchorDay); }
+        else { var nm = m + interval, ny = y + Math.floor((nm - 1) / 12); nm = ((nm - 1) % 12) + 1; d = clampYmd(ny, nm, anchorDay); } }
+    }
+    return d;
+  }
   // 할일 스코프: 누락(레거시)은 담당배정형 그룹 할일로 취급.
   function todoScope(t) { return (t && t.scope === 'personal') ? 'personal' : 'group'; }
   // 지난(마감이 오늘 이전) 미완료 할일의 id 목록 — '지난 미완료 → 오늘로' 일괄 이동 대상.
@@ -424,8 +441,11 @@
   function homeCardKind(pending) { var p = pending || {}; if ((p.total | 0) > 0) return 'sections'; return p.any ? 'done' : 'empty'; }
   // ---- 배지 DOM 반영(doc 주입식) — 전역 document를 참조하지 않고 인자로 받은 doc만 조작 → util은 앰비언트 의존 없이 jsdom으로 단위 테스트 가능. core가 document를 넘겨 호출. ----
   function applyHomeBadge(doc, view, total) {
-    if (!doc) return; var b = doc.querySelector('.brand .home-badge');
-    if (b) b.hidden = !homeBadgeShow(view, total);
+    if (!doc) return; var brand = doc.querySelector('.brand'); if (!brand) return;
+    var b = brand.querySelector('.home-badge'), show = homeBadgeShow(view, total);
+    // 배지 엘리먼트가 없으면 생성(applyTodoTabDot과 동일 패턴) — index.html에 정적 엘리먼트가 없어 '오늘 미처리' 점이 안 뜨던 죽은 기능 수정.
+    if (show) { if (!b) { b = doc.createElement('span'); b.className = 'home-badge'; b.setAttribute('aria-label', '오늘 미처리 있음'); brand.appendChild(b); } b.hidden = false; }
+    else if (b) b.hidden = true;
   }
   // 무료 응원 선물 풀(현 경제 기반): 대부분 저가 소비템, 가끔 은화. 금화는 제외(크로스유저 통화 민팅 방지). 가중치 합 100.
   var FREE_GIFT_TABLE = [
@@ -456,7 +476,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CAM: CAM, camDepth: camDepth, camFurnBottom: camFurnBottom, camZ: camZ, CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, fmtCommaSigned: fmtCommaSigned, parseAmount: parseAmount, parseAmountSigned: parseAmountSigned, todayKst: todayKst, isoAtNoon: isoAtNoon, jsAttr: jsAttr, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, overdueTodoIds: overdueTodoIds, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift };
+  var api = { CAM: CAM, camDepth: camDepth, camFurnBottom: camFurnBottom, camZ: camZ, CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, fmtCommaSigned: fmtCommaSigned, parseAmount: parseAmount, parseAmountSigned: parseAmountSigned, todayKst: todayKst, isoAtNoon: isoAtNoon, jsAttr: jsAttr, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, clampYmd: clampYmd, effNextBilling: effNextBilling, todoScope: todoScope, overdueTodoIds: overdueTodoIds, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);

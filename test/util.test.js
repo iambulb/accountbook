@@ -96,6 +96,35 @@ test('dueDiffDays: 마감 D-day 계산', () => {
   assert.strictEqual(U.dueDiffDays('2026-06-29', '2026-07-01'), -2);  // 2일 지남
 });
 
+test('effNextBilling: 구독 다음 결제일을 오늘 이후로 굴림(주기·간격·말일 앵커 보존)', () => {
+  // 미래면 그대로
+  assert.strictEqual(U.effNextBilling('2026-07-20', 'monthly', 1, '2026-07-07'), '2026-07-20');
+  // 과거 → 다음 달
+  assert.strictEqual(U.effNextBilling('2026-01-15', 'monthly', 1, '2026-07-07'), '2026-07-15');
+  // 말일 앵커 보존: 1/31 → 2/28 → 3/31
+  assert.strictEqual(U.effNextBilling('2026-01-31', 'monthly', 1, '2026-03-01'), '2026-03-31');
+  // 간격 3개월
+  assert.strictEqual(U.effNextBilling('2026-01-10', 'monthly', 3, '2026-07-07'), '2026-07-10');
+  // 주간
+  assert.strictEqual(U.effNextBilling('2026-07-01', 'weekly', 1, '2026-07-07'), '2026-07-08');
+  // 연간(윤일 앵커 → 평년 클램프)
+  assert.strictEqual(U.effNextBilling('2024-02-29', 'yearly', 1, '2026-07-07'), '2027-02-28');
+  // 빈/이상값 방어
+  assert.strictEqual(U.effNextBilling('', 'monthly', 1, '2026-07-07'), '');
+});
+
+test('applyHomeBadge: 정적 엘리먼트 없어도 필요 시 생성(index.html에 .home-badge 없음 대응)', () => {
+  const { JSDOM } = require('jsdom');
+  const dom = new JSDOM('<!DOCTYPE html><body><div class="brand"><span class="notif-badge" id="newsBadge" hidden></span></div></body>');
+  const d = dom.window.document;
+  assert.strictEqual(d.querySelector('.home-badge'), null, '초기엔 없음');
+  U.applyHomeBadge(d, 'mode', 3);
+  const b = d.querySelector('.home-badge');
+  assert.ok(b, '필요 시 생성'); assert.strictEqual(b.hidden, false, '표시');
+  assert.strictEqual(b.getAttribute('aria-label'), '오늘 미처리 있음');
+  U.applyHomeBadge(d, 'mode', 0); assert.strictEqual(b.hidden, true, '0 → 숨김');
+});
+
 test('overdueTodoIds: 미완료·마감 지남만(오늘·미래·완료·마감없음 제외)', () => {
   const today = '2026-07-07';
   const todos = [

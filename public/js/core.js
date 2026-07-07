@@ -12,7 +12,7 @@
       month: monthStr(new Date()),
       selectedDate: ymd(new Date()),
       homeView:'calendar',
-      memberFilter:'',   // 달력 멤버 칩 필터(기록자 이름) — 그룹 전용
+      memberFilter:'',   // 달력 멤버 칩 필터(기록자 uid) — 그룹 전용
       filter:{ type:'', category:'', account:'', keyword:'' },
       theme: localStorage.getItem('theme') || 'light',
       tab:'calendar',
@@ -192,6 +192,7 @@
       setupSheetDrag();
       if(!sh.classList.contains('on')) sh._returnFocus=document.activeElement;  // 닫을 때 돌아갈 포커스
       $('sheetTitle').textContent=title;
+      { const _shw=sh.querySelector('.sheet-head .shophw'); if(_shw) _shw.remove(); }   // 알뜰샵 제목 우측 잔액 위젯은 알뜰샵 시트 전용 — 다른 시트로 넘어가면 제거(알뜰샵은 renderCatHouse가 다시 붙임)
       $('sheetBody').innerHTML=html;
       $('overlay').classList.add('on');
       sh.classList.add('on');
@@ -1220,7 +1221,7 @@
       if(st==='cancelled'){ out.push(['취소','#8b95a1']); return out; }
       if(st==='expired'){ out.push(['만료','#8b95a1']); return out; }
       if(st==='paused'){ out.push(['일시정지','#f5a623']); return out; }
-      const nb=daysUntil(s.nextBillingDate); if(nb!=null&&nb>=0&&nb<=7) out.push(['결제 D-'+nb,'#3182f6']);
+      const nb=daysUntil(effNextBilling(s.nextBillingDate, s.billingCycle, s.billingInterval)); if(nb!=null&&nb>=0&&nb<=7) out.push(['결제 D-'+nb,'#3182f6']);   // 저장값이 과거면 주기만큼 굴려 다음 결제일 기준(첫 주기 뒤 알림 정지 버그 수정)
       const ex=daysUntil(s.expirationDate); if(ex!=null&&ex>=0&&ex<=7) out.push(['만료 D-'+ex,'#f04452']);
       if(s.isTrial){ const tr=daysUntil(s.trialEndDate); if(tr!=null&&tr>=0&&tr<=7) out.push(['체험종료 D-'+tr,'#f76707']); }
       if(s.expirationDate && s.autoRenew===false && daysUntil(s.expirationDate)<0) out.push(['만료 추정','#8b95a1']);

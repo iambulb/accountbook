@@ -1,7 +1,7 @@
 // ===== 홈(달력/목록) =====
     function renderCalendar(){
       const m=state.month, allList=monthTx(m);
-      const list = state.memberFilter ? allList.filter(t=>ownerName(t.user||'')===state.memberFilter) : allList;   // t.user가 레거시 uid여도 이름으로 정규화 비교(멤버 필터 견고)
+      const list = state.memberFilter ? allList.filter(t=>t.ownerUid===state.memberFilter) : allList;   // 멤버 칩 = '기록자(ownerUid)'별 필터(문서 features-ledger.md 기준) — 공동/수입 거래도 기록한 멤버 칩에 잡힘(예전 소비대상 t.user 기준이라 공동·수입이 어떤 칩에도 안 잡히던 버그 수정)
       const inc=sumBy(list,'income');
       const actual=actualSpend(list);
       const charge=sumBy(list,'prepaid_charge');
@@ -76,12 +76,12 @@
       let h='<div class="mrow">';
       h+='<button class="mchip'+(cur===''?' on':'')+'" onclick="clearMemberFilter()"><span class="avatar" style="width:24px;height:24px;background:'+avatarGrad('all')+';"></span>전체</button>';
       uids.forEach(uid=>{ const nm=members[uid].name||'멤버';
-        h+='<button class="mchip'+(cur===nm&&cur?' on':'')+'" onclick="setMemberFilterByUid(\''+uid+'\')">'+avatarHtml(uid, nm, 24)+escapeHtml(nm)+'</button>'; });
+        h+='<button class="mchip'+(cur===uid&&cur?' on':'')+'" onclick="setMemberFilterByUid(\''+uid+'\')">'+avatarHtml(uid, nm, 24)+escapeHtml(nm)+'</button>'; });
       h+='</div>';
       return h;
     }
     function clearMemberFilter(){ state.memberFilter=''; renderCalendar(); }
-    function setMemberFilterByUid(uid){ const mm=(state.wsMeta&&state.wsMeta.members)||{}; const name=(mm[uid]&&mm[uid].name)||''; state.memberFilter=(state.memberFilter===name&&name)?'':name; renderCalendar(); }
+    function setMemberFilterByUid(uid){ state.memberFilter=(state.memberFilter===uid&&uid)?'':uid; renderCalendar(); }   // 기록자 uid로 필터(토글) — uid 저장이라 개명·동명이인에 견고
 
     function calendarGridHtml(y,mo,list){
       // 일별 카테고리 색 점(시안풍) — 최대 3색
@@ -713,7 +713,7 @@
       openSheet('친구', build());
       state._sheetRefresh=function(){ const b=$('sheetBody'); if(b) b.innerHTML=build(); };
     }
-    function friendChangedToday(uid){ const c=state.friendHomeChangedByUid&&state.friendHomeChangedByUid[uid]; return !!(c && String(c).slice(0,10)===ymd(new Date())); }
+    function friendChangedToday(uid){ const c=state.friendHomeChangedByUid&&state.friendHomeChangedByUid[uid]; return !!(c && String(c).slice(0,10)===todayKst()); }
     // ===== 친구 집(펫캠) 방문 — 캠 + 좋아요 + 오늘의 할일(공개 시) =====
     // 🎁 친구 집 선물 보내기 바(친구에게만). 펫알 선물(은화100)·무료 응원 선물(하루 제한, 랜덤). 아이콘은 픽셀(eggSvg/giftSvg).
     function friendGiftBarInner(uid){
@@ -857,7 +857,7 @@
     function renderFriendsFeed(){
       let h=todoScopeSeg();
       const pubUids=Object.keys(state.friends||{}).filter(function(u){ return state.friendPub && state.friendPub[u]; });
-      const today=ymd(new Date()); const seen=storySeenMap();
+      const today=todayKst(); const seen=storySeenMap();
       const order=friendFeedOrder(state.friendTodosByUid, pubUids, today);
       // 스토리 줄: 내 스토리(맨 왼쪽) + 공개 친구(최근 등록순)
       // 스토리 활동시각 = 할일 최신 + 집 변경(펫/가구) 중 더 최신 → 집만 바꿔도 무지개 링
@@ -890,7 +890,7 @@
     function openMyStory(){ if(typeof openCatHouse==='function') openCatHouse('home'); }   // 내 스토리 = 내 알뜰홈 홈(라이브 캠)
     function openFriendStory(uid){
       const pub=Object.keys(state.friends||{}).filter(function(u){ return state.friendPub && state.friendPub[u]; });
-      const order=friendFeedOrder(state.friendTodosByUid, pub, ymd(new Date())).map(function(r){ return r.uid; }).filter(function(u){ return storyTodos(u).length; });
+      const order=friendFeedOrder(state.friendTodosByUid, pub, todayKst()).map(function(r){ return r.uid; }).filter(function(u){ return storyTodos(u).length; });
       const i=order.indexOf(uid); if(i<0){ toast('아직 등록한 할일이 없어요'); return; }
       _openStory(order, i); }
     function _openStory(uids, fi){ uids=(uids||[]).filter(function(u){ return storyTodos(u).length; }); if(!uids.length){ toast('아직 등록한 할일이 없어요'); return; }
@@ -1078,7 +1078,7 @@
     }
     // 📅 미완료 할일을 다른 날짜로 옮기기(리스케줄) — 마감일 배지 탭으로 진입. dueDate만 갱신(노드 경로·키 불변).
     function openTodoReschedule(id){ const t=allTodos().find(x=>x.id===id); if(!t) return;
-      const today=todayStr();
+      const today=todayKst();   // 오늘/내일 칩·기본값 KST 기준(리스트 마감 판정과 동일)
       const quick=[['오늘',0],['내일',1],['모레',2],['다음 주',7]];
       let h='';
       if(t.dueDate) h+='<p class="muted" style="font-size:12.5px;margin:2px 2px 12px;">현재 마감일 <b>'+t.dueDate+'</b></p>';
@@ -1091,7 +1091,7 @@
     function rescheduleTodo(id, ds){ if(!ds) return; const t=allTodos().find(x=>x.id===id); if(!t) return;
       const now=new Date().toISOString();
       todoDbRef(t).update({ dueDate:ds, updatedAt:now });   // 반복(repeat)은 유지 — 수동 이동은 회차 넘김과 별개
-      const diff=dueDiffDays(ds, todayStr());
+      const diff=dueDiffDays(ds, todayKst());
       const label=diff===0?'오늘':diff===1?'내일':diff===2?'모레':ds;
       closeSheet(); toast('📅 '+label+'로 옮겼어요');
     }
@@ -1108,7 +1108,7 @@
     function openTodoEdit(id, presetPb){
       if(!id) state._todoFriend=null;   // 새 할일은 항상 내 목록으로(친구 읽기전용 뷰였어도)
       const t=id?allTodos().find(x=>x.id===id):null;
-      const defDue=t?(t.dueDate||''):(_todoSel||todayStr());   // 신규 할일 마감일 기본값 = 달력에서 선택한 날(없으면 오늘). 가계부 거래폼과 동일 관례.
+      const defDue=t?(t.dueDate||''):(_todoSel||todayKst());   // 신규 할일 마감일 기본값 = 달력에서 선택한 날(없으면 오늘=KST). 마감 판정과 같은 경계.
       // 스코프: 편집=기존 할일 값, 신규=현재 세그먼트. 개인은 담당자 없음(소유자=나), 그룹은 담당배정.
       const scope=t?todoScope(t):(isPersonalWs()?'personal':'group');
       const asel=t?(t.assignedUid||'공동'):(state.uid||'공동');
@@ -1478,12 +1478,12 @@
       var customs=(typeof customMissionList==='function')?customMissionList():[];
       var flags=daily.map(function(m){return missionClaimed(m);}).concat(customs.map(function(m){return customCheckedToday(m.id);}));
       var todos=(typeof scopedTodos==='function')?scopedTodos():[];
-      return todayPending(flags, todos, ymd(new Date()));
+      return todayPending(flags, todos, todayKst());   // 오늘 판정은 KST(할일 마감·은화상한과 동일 경계) — 기기 타임존 달라도 하루 안 밀림
     }
     // 완료 축하 연출은 하루 1회만(renderHome이 재렌더마다 재실행되므로 플래그로 반복 재생 차단). reduced-motion이면 정적.
     function shouldCelebrateOnce(){
       if(typeof reducedMotion==='function' && reducedMotion()) return false;
-      var k=ymd(new Date()); if(state._homeDoneCelebrated===k) return false; state._homeDoneCelebrated=k; return true;
+      var k=todayKst(); if(state._homeDoneCelebrated===k) return false; state._homeDoneCelebrated=k; return true;
     }
     function renderHome(){
       const c=$('content'); if(!c) return;
@@ -1492,7 +1492,7 @@
       const mrows=daily.map(function(m){ return { name:m.name, reward:m.reward, done:missionClaimed(m), onclick:"homeMissionTap('"+m.id+"')" }; })
         .concat(customs.map(function(m){ return { name:m.title, reward:0, done:customCheckedToday(m.id), onclick:"toggleCustomMissionToday('"+m.id+"')" }; }));
       const st=(typeof todayMissionState==='function')?todayMissionState(mrows.map(function(r){return r.done;})):{done:0,total:mrows.length,pct:0,allDone:false};
-      const today=ymd(new Date());
+      const today=todayKst();
       const dueTop=((typeof scopedTodos==='function')?scopedTodos():[]).filter(function(t){ return !t.done && t.dueDate && t.dueDate<=today; })
         .sort(function(a,b){ return (a.dueDate||'').localeCompare(b.dueDate||''); }).slice(0,4);
       const p = todayPending(mrows.map(function(r){return r.done;}), (typeof scopedTodos==='function'?scopedTodos():[]), today);   // 배지·완료카드 공용 판정
@@ -2249,6 +2249,8 @@
     function deleteRecurring(ownerUid,id){ confirmSheet('이 정기거래를 삭제할까요? (기록된 거래는 유지)', ()=>{ db.ref(wp('recurring/'+ownerUid+'/'+id)).remove(); toast('삭제되었습니다'); openRecurringList(); }); }
 
     // ===== 구독 화면 =====
+    // 구독 다음 결제일 — 저장값이 과거면 주기만큼 굴려 다음 예정일로(표시·알림·필터·정렬 공통). 첫 주기 뒤 결제 알림이 정지하던 버그 방지.
+    function subNextBilling(s){ return effNextBilling(s.nextBillingDate, s.billingCycle, s.billingInterval); }
     let subTab='all';
     function openSubscriptions(){ subTab='all'; renderSubs(); }
     function setSubTab(t){ subTab=t; renderSubs(); }
@@ -2257,8 +2259,8 @@
       const totalM=act.reduce((s,x)=>s+(monthlyEquiv(x)||0),0);
       const totalY=act.reduce((s,x)=>s+(yearlyEquiv(x)||0),0);
       const cm=monthStr(new Date());
-      const thisMonthDue=act.filter(x=>x.nextBillingDate&&x.nextBillingDate.startsWith(cm)).reduce((s,x)=>s+(Number(x.amount)||0),0);
-      const soon=act.filter(x=>{ const d=daysUntil(x.nextBillingDate); return d!=null&&d>=0&&d<=7; }).length;
+      const thisMonthDue=act.filter(x=>{ const nb=subNextBilling(x); return nb&&nb.startsWith(cm); }).reduce((s,x)=>s+(Number(x.amount)||0),0);
+      const soon=act.filter(x=>{ const d=daysUntil(subNextBilling(x)); return d!=null&&d>=0&&d<=7; }).length;
       const expSoon=act.filter(x=>{ const d=daysUntil(x.expirationDate); return d!=null&&d>=0&&d<=7; }).length;
       let h='<div class="card"><div class="summary">'+
         '<div><div class="s-label">활성 구독</div><div class="s-val">'+act.length+'</div></div>'+
@@ -2272,11 +2274,11 @@
       h+='<div class="chip-row">'+tabs.map(t=>'<button class="chip '+(subTab===t[0]?'on':'')+'" onclick="setSubTab(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div>';
       h+='<button class="btn" onclick="openSubEdit()">+ 구독 추가</button>';
       let list=subs.slice();
-      if(subTab==='month') list=list.filter(x=>subActive(x)&&x.nextBillingDate&&x.nextBillingDate.startsWith(cm));
-      else if(subTab==='soon') list=list.filter(x=>{ const d=daysUntil(x.nextBillingDate); return subActive(x)&&d!=null&&d>=0&&d<=7; });
+      if(subTab==='month') list=list.filter(x=>{ const nb=subNextBilling(x); return subActive(x)&&nb&&nb.startsWith(cm); });
+      else if(subTab==='soon') list=list.filter(x=>{ const d=daysUntil(subNextBilling(x)); return subActive(x)&&d!=null&&d>=0&&d<=7; });
       else if(subTab==='trial') list=list.filter(x=>x.isTrial&&subActive(x));
       else if(subTab==='ended') list=list.filter(x=>['cancelled','expired'].includes(x.status));
-      list.sort((a,b)=>(a.nextBillingDate||'9999').localeCompare(b.nextBillingDate||'9999'));
+      list.sort((a,b)=>(subNextBilling(a)||'9999').localeCompare(subNextBilling(b)||'9999'));
       h+='<div style="margin-top:12px;">'+(list.length?list.map(subCard).join(''):'<div class="empty">구독이 없습니다</div>')+'</div>';
       openSheet('구독', h);
     }
@@ -2284,7 +2286,7 @@
       const badges=subBadges(s).map(b=>'<span class="pill" style="background:'+b[1]+'22;color:'+b[1]+'">'+b[0]+'</span>').join('');
       const linked=s.recurringId?'<span class="pill">정기연결</span>':'';
       return '<div class="card" onclick="openSubDetail(\''+s.id+'\')"><div class="row"><b>'+escapeHtml(s.name||'구독')+' '+linked+'</b><span style="font-weight:800;">'+won(s.amount)+'</span></div>'+
-        '<div class="tx-sub" style="margin-top:6px;">'+(BILLING_LABEL[s.billingCycle]||s.billingCycle)+(s.nextBillingDate?(' · 다음 '+s.nextBillingDate):'')+(s.paymentAccountId?(' · '+escapeHtml(acctName(s.paymentAccountId))):'')+'</div>'+
+        '<div class="tx-sub" style="margin-top:6px;">'+(BILLING_LABEL[s.billingCycle]||s.billingCycle)+(s.nextBillingDate?(' · 다음 '+subNextBilling(s)):'')+(s.paymentAccountId?(' · '+escapeHtml(acctName(s.paymentAccountId))):'')+'</div>'+
         (badges?('<div style="margin-top:8px;">'+badges+'</div>'):'')+'</div>';
     }
     function openSubDetail(id){
@@ -2295,7 +2297,7 @@
         '<div class="tx-sub" style="margin-top:6px;">'+(SUB_TYPE_LABEL[s.subscriptionType]||'')+' · '+(BILLING_LABEL[s.billingCycle]||'')+'</div>'+
         '<div style="margin-top:8px;">'+subBadges(s).map(b=>'<span class="pill" style="background:'+b[1]+'22;color:'+b[1]+'">'+b[0]+'</span>').join('')+'</div></div>';
       const row=(k,v)=>'<div class="row" style="padding:5px 0;"><span class="muted">'+k+'</span><b>'+v+'</b></div>';
-      h+='<div class="card">'+row('다음 결제일',s.nextBillingDate||'-')+row('만료일',s.expirationDate||'-')+
+      h+='<div class="card">'+row('다음 결제일',subNextBilling(s)||'-')+row('만료일',s.expirationDate||'-')+
         (s.isTrial?row('무료체험 종료',s.trialEndDate||'-'):'')+row('자동 갱신',s.autoRenew!==false?'예':'아니오')+
         row('결제수단',escapeHtml(acctName(s.paymentAccountId)))+row('카테고리',escapeHtml(s.categoryName||'-'))+
         row('월 환산',me!=null?won(Math.round(me)):'환산 불가')+(s.memo?('<div class="tx-sub" style="margin-top:6px;">'+escapeHtml(s.memo)+'</div>'):'')+'</div>';
