@@ -7,9 +7,10 @@
   // 📐 캠(방·dock) 원근 "한 묶음" 단일 소스 — dock·알뜰홈·친구방이 공유(CLAUDE.md 캠 원근 규칙).
   //   FLOOR/WALL/STAGE = CSS %(styles.css의 --cam-* 변수와 값이 같아야 함 — util.test.js가 정합을 잠금),
   //   RISE = 펫 발 올림 비율(riseMax=roomH*RISE), FURN_BASE/SPAN = 가구 bottom%=BASE+depth*SPAN,
-  //   ROWS/DIV = 격자 12행·depth 분모 11. ⚠️ 하나를 바꾸면 전부 함께(뒤에서 수렴) — 과거 dock 66%·0.61 회귀의 재발 방지.
-  var CAM = { FLOOR: 54, WALL: 46, STAGE: 58, RISE: 0.53, FURN_BASE: 3, FURN_SPAN: 46, ROWS: 12, DIV: 11 };
-  function camDepth(frontRow) { return (CAM.ROWS - frontRow) / CAM.DIV; }              // 격자 앞행 → depth(0=맨앞, 1=맨뒤)
+  //   ROWS/DIV = 격자 깊이 8행·depth 분모 7(=ROWS-1). ⚠️ 하나를 바꾸면 전부 함께(뒤에서 수렴) — 과거 dock 66%·0.61 회귀의 재발 방지.
+  //   (깊이 12→8행: 짧은 바닥 밴드에서 12행은 행당 ~11px로 뒤쪽이 안 구분돼 8행=~19px로 완화. 가로는 여전히 12칸=GRID_COLS.)
+  var CAM = { FLOOR: 54, WALL: 46, STAGE: 58, RISE: 0.53, FURN_BASE: 3, FURN_SPAN: 46, ROWS: 8, DIV: 7 };
+  function camDepth(frontRow) { return Math.max(0, Math.min(1, (CAM.ROWS - frontRow) / CAM.DIV)); }   // 격자 앞행 → depth(0=맨앞, 1=맨뒤). 레거시 frontRow>ROWS(2칸 가구·구데이터)도 [0,1]로 안전 클램프
   function camFurnBottom(depth) { return CAM.FURN_BASE + depth * CAM.FURN_SPAN; }      // 가구 bottom%
   function camZ(depth) { return Math.max(1, Math.round(CAM.ROWS - depth * CAM.DIV)); } // 가림 z(가구 frontRow와 같은 척도)
 
@@ -29,9 +30,16 @@
     { code: 'SGD', name: '싱가포르 달러', sym: 'S$', dec: 2 }
   ];
 
-  function won(n) { const v = Number(n || 0); return (v < 0 ? '-' : '') + '₩' + Math.abs(v).toLocaleString(); }
+  function won(n) { const v = Number(n); return (Number.isFinite(v) && v < 0 ? '-' : '') + '₩' + (Number.isFinite(v) ? Math.abs(v) : 0).toLocaleString(); }   // NaN 방어(₩NaN 방지)
   function fmtComma(n) { const d = String(n == null ? '' : n).replace(/[^0-9]/g, ''); return d ? Number(d).toLocaleString() : ''; }
-  function parseAmount(s) { return Number(String(s == null ? '' : s).replace(/[^0-9]/g, '')) || 0; }
+  // 부호 있는 입력칸 표시용(초기잔액 등 음수 허용). 선두 '-' 유지 + 천단위 콤마.
+  function fmtCommaSigned(n) { const raw = String(n == null ? '' : n); const neg = raw.trim().charAt(0) === '-'; const d = raw.replace(/[^0-9]/g, ''); return (neg ? '-' : '') + (d ? Number(d).toLocaleString() : ''); }
+  // 숫자 파싱: 콤마·통화기호 제거 후 소수점까지 반영해 정수 반올림. (예전 '.' 까지 제거해 붙여넣기 '1000.00'→100000 되던 100배 버그 방지.) 부호는 무시 — 음수 허용은 parseAmountSigned.
+  function parseAmount(s) { const n = parseFloat(String(s == null ? '' : s).replace(/[^0-9.]/g, '')); return Number.isFinite(n) ? Math.round(n) : 0; }
+  // 부호 있는 금액(부채 계좌 초기잔액 등): 음수 허용.
+  function parseAmountSigned(s) { const raw = String(s == null ? '' : s); const n = parseAmount(raw); return (raw.replace(/[^0-9-]/g, '').charAt(0) === '-') ? -n : n; }
+  // 🕘 KST(한국시간) 기준 오늘 YYYY-MM-DD. 할일 마감/오늘 판정을 은화 일일상한(kstDayKey)과 같은 날 경계로 맞춰 기기 타임존 차이로 어긋나지 않게 한다.
+  function todayKst() { return new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10); }
   // 📅 날짜(YYYY-MM-DD) → "정오 고정" ISO. 저장 시각을 로컬 정오로 박아 UTC 변환에도 날짜(일)가 안 밀리게 한다(정기거래 buildRecurringTx와 동일 규칙). KST 오전(00~08시) 저장분이 전날로 밀리던 버그 방지.
   function isoAtNoon(date) { const d = String(date || '').slice(0, 10); const dt = new Date(d + 'T12:00:00'); return isNaN(dt.getTime()) ? new Date().toISOString() : dt.toISOString(); }
   // 🔤 inline onclick 등 "HTML 속성 안, 작은따옴표 JS 문자열"에 사용자 문자열을 넣을 때 쓰는 이스케이프: 먼저 JS 문자열(\, ')용, 이어 HTML 속성(&, ", <, >)용. 아포스트로피 든 이름(예: O'Brien)이 핸들러를 깨뜨리던 문제 방지.
@@ -69,11 +77,13 @@
   // 날짜 헬퍼(할일 반복·마감 계산) — 자기완결(외부 의존 없음).
   function addDays(ds, n) { const p = String(ds).split('-'); const d = new Date(+p[0], (+p[1] || 1) - 1, (+p[2] || 1) + (Number(n) || 0)); const z = function (x) { return (x < 10 ? '0' : '') + x; }; return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()); }
   function nextDue(ds, rep) {
-    if (rep === 'monthly') {   // 같은 날 다음 달(말일 클램프: 1/31→2/28)
+    if (rep === 'monthly') {   // 같은 날 다음 달. '말일'이면 다음 달도 말일로(1/31→2/28→3/31) — 28일 고정 드리프트 방지.
       const p = String(ds).split('-'), y = +p[0], m = (+p[1] || 1), d = (+p[2] || 1);
+      const curLast = new Date(y, m, 0).getDate();   // 이번 달 말일
       let nm = m + 1, ny = y; if (nm > 12) { nm = 1; ny++; }
       const last = new Date(ny, nm, 0).getDate(), z = function (x) { return (x < 10 ? '0' : '') + x; };
-      return ny + '-' + z(nm) + '-' + z(Math.min(d, last));
+      const day = (d >= curLast) ? last : Math.min(d, last);   // 원래가 말일이었으면 다음 달 말일로 복원
+      return ny + '-' + z(nm) + '-' + z(day);
     }
     return addDays(ds, rep === 'weekly' ? 7 : 1);   // weekly=+7, 그 외(레거시 daily 포함)=+1
   }
@@ -186,6 +196,21 @@
   // ===== 알뜰홈 여러 방(프리셋) — home 상태 정규화(순수). 레거시 flat(단일 방)과 신규 rooms[] 둘 다 받아 rooms 형태로. =====
   //  방별: {name,wallpaper,placed,active,poops}. 전역: current(선택 방), roomSlots(열린 방수), slots(방당 펫상한), changedAt.
   //  opts={baseRooms,maxRooms,baseSlots,maxSlots}(기본 1/5/3/20). 데이터 손실 방지: 방 데이터가 roomSlots보다 많으면 roomSlots를 올린다.
+  // 바닥 배치(placed)의 행(r)을 [1,rows]로 클램프 — 깊이 격자 12→8행 축소 마이그레이션(순수).
+  //   기존 앞쪽 행(r>rows=8~12)은 맨앞행(rows)으로 모인다(큰 r=앞이라 "앞 가구는 앞에" 유지). 열(c)은 불변(가로 12칸).
+  //   r≤rows면 그대로라 재적용해도 안전(idempotent). 충돌(같은 r_c로 겹침)은 먼저 온 항목 유지.
+  function clampPlacedRows(placed, rows) {
+    if (!placed || typeof placed !== 'object') return {};
+    var out = {};
+    Object.keys(placed).forEach(function (k) {
+      var pr = String(k).split('_'), r = Math.floor(+pr[0]), c = Math.floor(+pr[1]);
+      if (!(r >= 1) || !(c >= 1)) return;                 // 손상 키 제거
+      var nr = Math.min(Math.max(1, r), rows);
+      var nk = nr + '_' + c;
+      if (!out[nk]) out[nk] = placed[k];                  // 충돌 시 먼저 온 것 유지
+    });
+    return out;
+  }
   function normalizeHome(home, opts) {
     opts = opts || {};
     var BASE = Number(opts.baseRooms) || 1, MAX = Number(opts.maxRooms) || 5;
@@ -199,7 +224,7 @@
         name: (typeof r.name === 'string' && r.name) ? r.name : ('방 ' + (i + 1)),
         emoji: (typeof r.emoji === 'string') ? r.emoji : '',
         wallpaper: r.wallpaper || 'default',
-        placed: (r.placed && typeof r.placed === 'object') ? r.placed : {},
+        placed: clampPlacedRows(r.placed, CAM.ROWS),   // 깊이 12→8행 마이그레이션: 레거시 행(r>8)을 맨앞행(8)으로 클램프. 비파괴(읽기 시)·idempotent(r≤8은 그대로). 첫 배치/이동 트랜잭션에서 정규화된 채 영속.
         wallPlaced: (r.wallPlaced && typeof r.wallPlaced === 'object') ? r.wallPlaced : {},   // 벽꾸미기(벽 격자) 배치 — placed(바닥)와 별개
         active: Array.isArray(r.active) ? r.active.slice() : [],
         poops: Number(r.poops) || 0,
@@ -431,7 +456,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CAM: CAM, camDepth: camDepth, camFurnBottom: camFurnBottom, camZ: camZ, CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, parseAmount: parseAmount, isoAtNoon: isoAtNoon, jsAttr: jsAttr, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, overdueTodoIds: overdueTodoIds, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift };
+  var api = { CAM: CAM, camDepth: camDepth, camFurnBottom: camFurnBottom, camZ: camZ, CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, fmtCommaSigned: fmtCommaSigned, parseAmount: parseAmount, parseAmountSigned: parseAmountSigned, todayKst: todayKst, isoAtNoon: isoAtNoon, jsAttr: jsAttr, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, todoScope: todoScope, overdueTodoIds: overdueTodoIds, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);

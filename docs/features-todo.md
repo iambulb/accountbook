@@ -23,13 +23,13 @@
 - 프로필별 **내 할일**. **`users/{uid}/todos/{id}`** 에 저장돼 **워크스페이스와 무관하게 항상 동일**(개인↔그룹 가계부를 오가도 그대로). 상시 리스너 `initUserGraph`→`state.myTodos`(워크스페이스 전환에도 유지).
 - 추가/수정 시트(`openTodoEdit`)는 개인 스코프에선 **담당자 없이** 제목·마감일·반복·목적별·메모만. 저장 경로는 `saveTodo`가 개인=`users/{uid}/todos`, 그룹=`ws/{wsId}/todos`로 분기(`todoDbRef`).
 - 목록은 `scopedTodos()`가 개인=`state.myTodos`(내 것) 또는 `state.friendTodos`(친구 열람)로. 미완료 마감 임박순·완료 하단.
-- 필터 칩: **전체 / 오늘 / 이번주**. 마감일은 **D-day/지남 배지**(`todoDueBadge`, `dueDiffDays`).
+- 필터 칩: **전체 / 오늘 / 이번주**. 마감일은 **D-day/지남 배지**(`todoDueBadge`, `dueDiffDays`). '오늘/이번주' 필터는 **마감일 없는(언제든) 할일도 포함**(빈 상태 오인 방지). 오늘/마감 판정 기준일은 **은화 일일상한과 같은 KST**(`todayKst`).
 - 기존 `ws`의 개인(scope=personal) 할일은 최초 진입 시 `migratePersonalTodos()`로 user로 1회 이전.
 
 ## 그룹 할일 (scope=group)
 
 - 각자 맡은 일을 **그룹 안에서 나눔**(여행: 렌터카·항공권·짐 담당, 집안일 분담 등). `ws/{wsId}/todos`, 워크스페이스 멤버 **공동 편집**.
-- 추가/수정 시트에 **담당자(멤버) 선택**(`ownerOptions`, uid 저장). `scope:'group'`, 담당은 `assignedUid`·`assignedName`. 목록 행에 **담당자 아바타**. 필터 칩: **전체 / 내 담당 / 오늘 / 이번주**.
+- 추가/수정 시트에 **담당자(멤버) 선택**(`ownerOptions`, uid 저장). `scope:'group'`, 담당은 `assignedUid`·`assignedName`. 목록 행에 **담당자 아바타**. 필터 칩: **전체 / 내 담당 / 오늘 / 이번주**. '내 담당'은 uid 배정 외 **이름으로만 배정된 내 할일**(`assignedName`=내 이름)도 포함.
 - **그룹 컨텍스트에선 상단 세그먼트가 없고 그룹 할일 전용**. 친구 피드(친구들)는 **개인 프로필 컨텍스트**에서만 [내 할일 | 친구들] 토글로 봅니다(`isPersonalWs`).
 
 ## 친구 (별도 추가) — 관리(더보기 공용) + '친구들' 피드
@@ -67,7 +67,7 @@
 
 ## 게임화 연동 (은화)
 
-- 할일 **완료 시 은화 +10**(할일당 1회·멱등, `rewardClaimed` 플래그 · `grantTodoCoins`) — **은화는 하루 5개까지만**(`TODO_DAILY_CAP`·`game.todoDay`, 도배 억제). 완료 취소해도 재지급 없음. 반복 할일도 첫 완료 1회만 지급.
+- 할일 **완료 시 은화 +10**(할일당 1회·멱등, `rewardClaimed` 플래그 · `grantTodoCoins`) — **은화는 하루 5개까지만**(`TODO_DAILY_CAP`·`game.todoDay`, 도배 억제). 완료 취소해도 재지급 없음. 반복 할일도 첫 완료 1회만 지급. **완료 토스트는 실제 지급액을 표시**하고(상한 초과로 0이면 "완료!"만 — `grantTodoCoins`가 지급액 콜백), 하드코딩 문구를 쓰지 않는다.
 - **업적**: 첫 할일 완료(+10) / 할일 10개 완료(+30) — `ACHIEVEMENTS`(period `once`, `state.todos` 기준). 펫·도크·가챠 로직은 무변경(은화만 증가). 알뜰홈 상세는 [features.md](features.md#-알뜰홈-은화-경제--게임화)·[cat-feature-plan.md](cat-feature-plan.md).
 
 ## 데이터 · 순수 헬퍼

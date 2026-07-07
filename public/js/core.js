@@ -1181,6 +1181,8 @@
     }
     // 예산 이월(rollover): 직전 기간의 남은 양(base-used, 양수만)을 이번 기간 예산에 가산(1기간 캐리 — 무한 누적 아님).
     function budgetCarry(b, ref){ if(!b || !b.rollover) return 0; const pr=budgetPrevRef(b, ref); if(!pr) return 0;
+      // 이월을 켠 시점(rolloverSince) 이전 기간은 이월하지 않음 — 갓 만든/갓 켠 예산이 지난 기간을 공짜로 최대 2×이월하던 버그 방지.
+      if(b.rolloverSince){ const pp=budgetPeriod(b, pr); if(pp.end < parseDate(b.rolloverSince)) return 0; }
       const base=Number(b.amount)||0; const prevUsed=budgetTxs(b, pr).reduce(function(s,t){ return s+(Number(t.amount)||0); },0);
       return Math.max(0, base-prevUsed);
     }
@@ -1188,6 +1190,7 @@
       const p=budgetPeriod(b, ref);   // ref=기준일(리포트에서 보는 달) — 없으면 오늘
       return state.transactions.filter(t=>{
         if(!isActual(t)) return false;                              // 실제소비만 (충전·이체·조정·환불·대출상환 제외)
+        if((t.date||'').slice(0,10) > todayStr()) return false;     // 예정(미래일) 거래는 아직 안 쓴 돈 — 잔액과 동일하게 예산 사용/경고에서 제외
         if(b.categoryName && t.category!==b.categoryName) return false;
         if(b.scope==='personal' && b.owner && b.owner!=='공동' && ownerName(t.user)!==ownerName(b.owner)) return false;   // uid·이름 혼재 대응 — 이름으로 정규화해 같은 사람이면 포함
         const d=parseDate(t.date); return !(d<p.start||d>p.end);

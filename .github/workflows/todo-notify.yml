@@ -1,0 +1,30 @@
+name: todo-reminders
+
+# 알뜰 할일 마감 리마인더 — 개인+담당 그룹 할일 중 '오늘 마감 또는 마감 지남 & 미완료'가 있는
+# 사용자에게 아침 1회 알림(중복은 pushMeta.lastTodoNotify로 방지).
+# 08:00 KST(=23:00 UTC 전날) 매일. 활성 조건: Secret FIREBASE_SERVICE_ACCOUNT(서비스계정 JSON). 없으면 스크립트가 no-op.
+
+on:
+  schedule:
+    - cron: '0 23 * * *'   # 매일 23:00 UTC = 08:00 KST(다음 날 아침)
+  workflow_dispatch:        # 수동 실행(테스트). dry 로 대상만 확인 가능
+    inputs:
+      dry:
+        description: 'dry run(발송 안 함, 대상만 출력)'
+        type: boolean
+        default: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: install firebase-admin
+        run: npm i --no-save firebase-admin@12
+      - name: send todo reminders
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node tools/send_reminders.mjs --type=todo ${{ (github.event_name == 'workflow_dispatch' && inputs.dry) && '--dry' || '' }}

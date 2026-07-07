@@ -174,6 +174,7 @@
       else if(t.type==='prepaid_spend'||t.type==='point_spend'){ sign='-'; cls='red'; }
       else if(t.type==='income'||t.type==='refund'||t.type==='point_earn'){ sign='+'; cls='green'; }
       else if(t.type==='prepaid_charge'){ sign=''; cls='blue'; }
+      else if(t.type==='balance_adjustment'){ const av=Number(t.amount)||0; sign=av<0?'-':'+'; cls=av<0?'red':'green'; }   // 잔액조정: 저장된 부호(감액=음수)를 표시 — 증액/감액 구분
       // 아이콘 타일: 카테고리 거래 → 옅은 tint 타일 + 카테고리 라인 아이콘 / 그 외 → 중립 회색 타일 + 유형 아이콘
       let tileStyle='', tileInner;
       if(t.category && (getCat(t.category)||CAT_META[t.category])){ tileStyle=catTileStyle(t.category); tileInner=catSvgIcon(t.category); }
@@ -582,9 +583,12 @@
     function budgetPreWarn(tx){
       if(!tx || !['expense','prepaid_spend','point_spend'].includes(tx.type) || tx.isActualExpense===false) return;
       const amt=Math.abs(Number(tx.amount)||0); if(!amt || typeof budgetUsage!=='function') return;
-      (state.budgets||[]).forEach(b=>{
+      (typeof visibleBudgets==='function'?visibleBudgets():(state.budgets||[])).forEach(b=>{   // 비공개·타인 개인예산은 경고 대상에서 제외
         if(b.categoryName && b.categoryName!==tx.category) return;                 // 카테고리 예산=같은 카테고리만
-        if(b.scope==='personal' && b.ownerUid && b.ownerUid!==(tx.userUid||state.uid)) return;   // 개인 예산=본인 소비만
+        if(b.scope==='personal'){                                                  // 개인 예산=소유자 소비만 경고 (uid 우선, 레거시는 이름 비교)
+          if(b.ownerUid){ if(b.ownerUid!==(tx.userUid||state.uid)) return; }
+          else if(b.owner && ownerName(b.owner)!==ownerName(tx.user||state.userName)) return;
+        }
         const u=budgetUsage(b); if(!u || !u.amount) return;
         const projPct=Math.round((u.used+amt)/u.amount*100), th=(b.alertEnabled!==false)?(b.alertThreshold||80):101;
         if(projPct>=100 && u.pct<100) setTimeout(()=>toast('⚠️ '+budgetTitle(b)+' 예산 초과 ('+projPct+'%)', true), 400);
@@ -920,7 +924,7 @@
       if(t.done){ const d=t.doneAt?ymd(new Date(t.doneAt)):'';   // 완료 항목=마감 경과("N일 지남") 대신 완료일(중립색) — doneAt(ISO)을 로컬 날짜로 변환
         return d?'<span class="tdue">'+(+d.slice(5,7))+'/'+(+d.slice(8,10))+' 완료</span>':''; }
       if(!t.dueDate){ return editable ? '<button class="tdue tap none" onclick="event.stopPropagation();openTodoReschedule(\''+t.id+'\')" aria-label="날짜 지정">날짜</button>' : ''; }
-      const today=ymd(new Date());
+      const today=todayKst();
       const diff=dueDiffDays(t.dueDate, today);
       let txt,cls; if(diff<0){ txt=(-diff)+'일 지남'; cls='over'; } else if(diff===0){ txt='오늘'; cls='today'; } else if(diff===1){ txt='내일'; cls='soon'; } else { txt='D-'+diff; cls=diff<=3?'soon':''; }
       return editable
@@ -1007,15 +1011,15 @@
     function renderTodoList(){
       // 개인 프로필의 '친구들' = 친구 피드(아바타 정렬·오늘 무지개·친구 할일 목록). 단, 특정 친구를 열람 중이면 그 친구 목록을 보여줌(아래로 진행).
       if(isPersonalWs() && state._todoFeed && !(state._todoFriend && state._todoFriend!==state.uid)) return renderFriendsFeed();
-      const meUid=state.uid; const today=ymd(new Date());
-      const we=new Date(); we.setDate(we.getDate()+7); const weekEnd=ymd(we);
+      const meUid=state.uid; const today=todayKst();   // 은화 일일상한(KST)과 같은 날 경계로 마감 판정
+      const weekEnd=addDays(today,7);
       const isGroup=!isPersonalWs();
       if(!isGroup && _todoFilter==='mine') _todoFilter='all';   // 개인 탭엔 '내 담당' 필터 없음
       const base=scopedTodos();
       let open=base.filter(t=>!t.done);
-      if(_todoFilter==='mine') open=open.filter(t=>t.assignedUid===meUid);
-      else if(_todoFilter==='today') open=open.filter(t=>t.dueDate&&t.dueDate<=today);
-      else if(_todoFilter==='week') open=open.filter(t=>t.dueDate&&t.dueDate<=weekEnd);
+      if(_todoFilter==='mine') open=open.filter(t=>t.assignedUid===meUid || (!t.assignedUid && t.assignedName && t.assignedName===state.userName));   // uid 없이 이름으로만 배정된 내 할일도 포함
+      else if(_todoFilter==='today') open=open.filter(t=>!t.dueDate||t.dueDate<=today);   // 마감 없는(언제든) 할일도 포함 — 빈 상태 오인 방지
+      else if(_todoFilter==='week') open=open.filter(t=>!t.dueDate||t.dueDate<=weekEnd);
       const _pv=p=>(p==='high'?0:p==='low'?2:1);   // 우선순위 정렬키(높음 먼저)
       open.sort((a,b)=>{ const ad=a.dueDate||'9999-99', bd=b.dueDate||'9999-99'; if(ad!==bd) return ad<bd?-1:1; const pa=_pv(a.priority),pb=_pv(b.priority); if(pa!==pb) return pa-pb; return (a.sortOrder||0)-(b.sortOrder||0); });
       const done=base.filter(t=>t.done).sort((a,b)=>(b.doneAt||'').localeCompare(a.doneAt||''));
@@ -1026,7 +1030,7 @@
       if(!roList){ const odIds=overdueTodoIds(base, today); if(odIds.length) h+='<button class="td-carry" onclick="carryOverdueToToday()">🕘 지난 미완료 '+odIds.length+'개 → 오늘로</button>'; }
       const emptyMsg=isGroup?'그룹 할일이 없어요 — 아래 ＋ 로 담당을 나눠보세요':'개인 할일이 없어요 — 아래 ＋ 로 추가하세요';
       h+='<div class="card" style="padding:4px 12px;">'+(open.length?open.map(t=>todoRow(t, roList)).join(''):'<div class="empty" style="padding:26px 6px;">'+emptyMsg+'</div>')+'</div>';
-      if(done.length){ h+='<div class="sech"><span class="l">완료</span><span class="s">'+done.length+'개</span></div><div class="card" style="padding:4px 12px;">'+done.slice(0,20).map(t=>todoRow(t, roList)).join('')+'</div>'; }
+      if(done.length){ const _dc=done.slice(0,20); const _dl=done.length>_dc.length?('최근 '+_dc.length+' · 총 '+done.length+'개'):(done.length+'개'); h+='<div class="sech"><span class="l">완료</span><span class="s">'+_dl+'</span></div><div class="card" style="padding:4px 12px;">'+_dc.map(t=>todoRow(t, roList)).join('')+'</div>'; }
       $('content').innerHTML=h;
     }
     function todoMoveMonth(d){ state.month=shiftMonth(state.month,d); renderTodoCalendar(); }
@@ -1035,7 +1039,7 @@
       const m=state.month, parts=m.split('-'), y=+parts[0], mo=+parts[1];
       const base=scopedTodos();
       const byDay={}; base.forEach(t=>{ if(!t.done && t.dueDate && t.dueDate.slice(0,7)===m) byDay[t.dueDate]=(byDay[t.dueDate]||0)+1; });
-      const HEAD=['월','화','수','목','금','토','일']; const first=(new Date(y,mo-1,1).getDay()+6)%7; const days=new Date(y,mo,0).getDate(); const todayS=todayStr(); const sel=_todoSel||todayS;
+      const HEAD=['월','화','수','목','금','토','일']; const first=(new Date(y,mo-1,1).getDay()+6)%7; const days=new Date(y,mo,0).getDate(); const todayS=todayKst(); const sel=_todoSel||todayS;
       let h=todoScopeSeg();
       h+='<div class="monthlbl"><button onclick="todoMoveMonth(-1)" aria-label="이전 달">‹</button><b>'+y+'년 '+mo+'월</b><button onclick="todoMoveMonth(1)" aria-label="다음 달">›</button></div>';
       h+='<div class="calwrap"><div class="cal-head">'+HEAD.map(function(w,i){ return '<div class="'+(i===5?'sat':i===6?'sun':'')+'">'+w+'</div>'; }).join('')+'</div><div class="cal-grid">';
@@ -1065,11 +1069,11 @@
         if(firstReward) upd.rewardClaimed=true;
         ref.update(upd);
         const nxt='다음 '+(t.repeat==='weekly'?'주':'일')+'로 넘겼어요';
-        if(firstReward && typeof grantTodoCoins==='function'){ grantTodoCoins(); toast('완료! +2 은화 · '+nxt); } else toast('완료! '+nxt);
+        if(firstReward && typeof grantTodoCoins==='function'){ grantTodoCoins(function(paid){ toast(paid>0?('완료! +'+paid+' 은화 · '+nxt):('완료! '+nxt)); }); } else toast('완료! '+nxt);
       } else {
         const done=!t.done; const upd={ done:done, doneAt:done?now:'', doneByUid:done?(state.uid||''):'', updatedAt:now };
-        if(done && firstReward){ upd.rewardClaimed=true; ref.update(upd); if(typeof grantTodoCoins==='function'){ grantTodoCoins(); toast('완료! +2 은화 🐾'); } }
-        else ref.update(upd);
+        if(done && firstReward){ upd.rewardClaimed=true; ref.update(upd); if(typeof grantTodoCoins==='function'){ grantTodoCoins(function(paid){ toast(paid>0?('완료! +'+paid+' 은화 🐾'):'완료! 🐾'); }); } else toast('완료! 🐾'); }
+        else { ref.update(upd); if(done) toast('완료! 🐾'); }   // 재완료(이미 보상받음)도 완료 피드백은 표시
       }
     }
     // 📅 미완료 할일을 다른 날짜로 옮기기(리스케줄) — 마감일 배지 탭으로 진입. dueDate만 갱신(노드 경로·키 불변).
@@ -1092,7 +1096,7 @@
       closeSheet(); toast('📅 '+label+'로 옮겼어요');
     }
     // 🕘 지난(마감 지남) 미완료 할일을 전부 오늘로 — 현재 스코프의 한 base에 다중경로 fan-out update(원자).
-    function carryOverdueToToday(){ const today=todayStr(); const ids=overdueTodoIds(scopedTodos(), today); if(!ids.length) return;
+    function carryOverdueToToday(){ const today=todayKst(); const ids=overdueTodoIds(scopedTodos(), today); if(!ids.length) return;
       if(state._todoFriend && state._todoFriend!==state.uid) return;   // 친구 열람(읽기전용)은 일괄 이동 불가
       confirmSheet('지난 미완료 '+ids.length+'개를 오늘로 옮길까요?', function(){
         const base=isPersonalWs()?db.ref('users/'+state.uid+'/todos'):db.ref(wp('todos'));
@@ -1145,8 +1149,15 @@
       const key=id||('todo_'+Date.now());
       const _prio=(function(){ const p=$('tdPrio')?val('tdPrio'):'normal'; return (p==='high'||p==='low')?p:'normal'; })();
       const _tags=(function(){ const raw=$('tdTags')?val('tdTags'):''; return raw.split(',').map(function(s){ return s.trim(); }).filter(Boolean).slice(0,8); })();   // 쉼표 구분·최대 8개
-      const _subs=(function(){ const raw=$('tdSub')?val('tdSub'):''; const prev=(t&&Array.isArray(t.subtasks))?t.subtasks:[];   // 줄 단위 파싱, 기존 done 상태는 텍스트 일치로 보존
-        return raw.split('\n').map(function(s){ return s.trim(); }).filter(Boolean).slice(0,20).map(function(txt){ const p=prev.find(function(x){ return x.text===txt; }); return { text:txt, done:p?!!p.done:false }; }); })();
+      const _subs=(function(){ const raw=$('tdSub')?val('tdSub'):''; const prev=(t&&Array.isArray(t.subtasks))?t.subtasks:[];   // 줄 단위 파싱, 기존 done 상태 보존
+        const used=new Array(prev.length).fill(false);
+        const lines=raw.split('\n').map(function(s){ return s.trim(); }).filter(Boolean).slice(0,20);
+        return lines.map(function(txt, i){
+          let idx=prev.findIndex(function(x,j){ return !used[j] && x && x.text===txt; });   // ① 텍스트 일치(중복은 앞에서부터 1:1 소비 — 같은 텍스트 오복제 방지)
+          if(idx<0 && prev[i] && !used[i]) idx=i;                                             // ② 없으면 같은 위치의 기존 항목(문구 수정 시 완료상태 유지)
+          if(idx>=0) used[idx]=true;
+          return { text:txt, done: idx>=0 ? !!prev[idx].done : false };
+        }); })();
       const data={ title:title, note:val('tdNote').trim(), dueDate:val('tdDue')||'',
         scope:scope, ownerUid:ownerUid,
         assignedUid:assignedUid, assignedName:assignedName,
@@ -1378,7 +1389,7 @@
         '<div class="field"><label>제공처</label><select class="input" id="aProvider">'+PROVIDERS.map(p=>'<option value="'+p[0]+'"'+(((a&&a.provider===p[0])||(!a&&p[0]==='manual'))?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div></div>';
       h+='<div class="form-2"><div class="field"><label>소유자</label><select class="input" id="aOwner">'+ownerOptions(a?a.owner:defaultOwnerName())+'</select></div>'+
         '<div class="field"><label>공개 범위</label><select class="input" id="aVis">'+VISIBILITY.map(p=>'<option value="'+p[0]+'"'+(((a&&a.visibility===p[0])||(!a&&p[0]===defaultVisibility()))?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div></div>';
-      h+='<div class="field"><label>현재(초기) 잔액</label><input class="input" id="aInit" inputmode="numeric" value="'+(a?Number(a.initialBalance||0).toLocaleString():'')+'" placeholder="0" oninput="this.value=fmtComma(this.value)"></div>';
+      h+='<div class="field"><label>현재(초기) 잔액</label><input class="input" id="aInit" inputmode="text" value="'+(a?Number(a.initialBalance||0).toLocaleString():'')+'" placeholder="0 (부채는 -100,000)" oninput="this.value=fmtCommaSigned(this.value)"></div>';
       h+='<div class="field"><label>메모 (선택)</label><input class="input" id="aMemo" value="'+escapeHtml(a?(a.memo||''):'')+'" placeholder="메모"></div>';
       h+='<div id="aCardCfg" style="'+(curType==='credit_card'?'':'display:none;')+'">'+(curType==='credit_card'?cardCfgHtml(card):'')+'</div>';
       h+='<button class="btn" onclick="saveAcct('+(id?'\''+id+'\'':'null')+')">'+(a?'수정':'추가')+'</button>';
@@ -1403,7 +1414,7 @@
       const key=id||('acc_'+Date.now());
       const _amem=(state.wsMeta&&state.wsMeta.members)||{};
       const data={ name, type, provider:val('aProvider'), owner, visibility:val('aVis'),
-        initialBalance:parseAmount(val('aInit')), memo:val('aMemo').trim(),
+        initialBalance:parseAmountSigned(val('aInit')), memo:val('aMemo').trim(),   // 음수(부채 계좌) 허용
         color:(getAcct(id)||{}).color||colorMap[owner]||'#3182f6', order:(getAcct(id)||{}).order||state.accounts.length+1 };
       if(_amem[_osel]||_osel===state.uid) data.ownerUid=_osel;   // 멤버 소유자는 uid 병행 저장(동명이인·개명 견고)
       const updates={}; updates['accounts/'+key]=data;
@@ -1982,12 +1993,17 @@
       if(!amount){ toast('예산 금액을 입력하세요', true); return; }
       const b=id?state.budgets.find(x=>x.id===id):null;
       const scope=val('bgScope'), vis=val('bgVis'), now=new Date().toISOString();
+      const isMine=(scope==='personal'||vis==='private');   // 개인/비공개 = 본인 소유 예산
+      const rollover = $('bgRollover')?!!$('bgRollover').checked:false;
+      // 이월 기준일: 이월을 켠 시점(신규=지금). 이 날짜 이전 기간의 미사용분은 이월하지 않음 → 갓 만든 예산이 지난 기간을 공짜로 최대 2×이월하던 버그 방지.
+      const rolloverSince = rollover ? ((b&&b.rolloverSince)||now) : null;
       const data={ categoryName: val('bgCat')||null, amount, periodType:val('bgPeriod'),
         startDate: val('bgPeriod')==='custom'?(val('bgStart')||todayStr()):null,
         endDate: val('bgPeriod')==='custom'?(val('bgEnd')||todayStr()):null,
         scope, alertEnabled:true, alertThreshold:Number(val('bgAlert'))||80, visibility:vis,
-        rollover: $('bgRollover')?!!$('bgRollover').checked:false,
-        owner: b?(b.owner||(scope==='personal'||vis==='private'?state.userName:defaultOwnerName())):(scope==='personal'||vis==='private'?state.userName:defaultOwnerName()),
+        rollover: rollover, rolloverSince: rolloverSince,
+        owner: b?(b.owner||(isMine?state.userName:defaultOwnerName())):(isMine?state.userName:defaultOwnerName()),
+        ownerUid: isMine?((b&&b.ownerUid)||state.uid||null):null,   // 개인/비공개 예산=본인 소비만 경고(budgetPreWarn 게이트) — uid 병행 저장
         purposeBookId: b?(b.purposeBookId||null):null,
         createdAt: b?(b.createdAt||now):now, updatedAt:now };
       const key=id||('bg_'+Date.now());
@@ -2205,7 +2221,7 @@
       const e=TX_EFFECT[type]||{};
       const data={ type, desc, amount, freq, interval:Math.max(1,Number(val('rInterval'))||1),
         startDate: val('rStart')||todayStr(), endDate: val('rEnd')||null,
-        day: (freq==='monthly')?Number(val('rDay')||1):((r&&r.day)||1),
+        day: (freq==='monthly')?Number(val('rDay')||1):(freq==='yearly'?(parseDate(val('rStart')||todayStr()).getDate()):((r&&r.day)||1)),   // 연간=시작일의 '일'에 매년(예전 day=1 고정으로 매년 1일에 발생하던 버그 방지)
         weekday: (freq==='weekly')?Number(val('rWeekday')||0):((r&&r.weekday)||0),
         user: resolveOwnerName($('rConsumer')?(val('rConsumer')||state.userName):(r?(r.user||state.userName):state.userName)),   // 정기결제 소비대상도 이름으로 정규화 저장
         autoCreate: $('rAuto')?$('rAuto').classList.contains('on'):true,
@@ -2529,7 +2545,7 @@
         const fa=val('sStpFrom'), ta=val('sStpTo');
         if(fa && ta && fa!==ta){
           const txId=Date.now();
-          db.ref(wp('transactions/'+state.uid+'/'+txId)).set({ type:'transfer', date:date+'T00:00:00.000Z', user:state.userName,
+          db.ref(wp('transactions/'+state.uid+'/'+txId)).set({ type:'transfer', date:isoAtNoon(date), user:state.userName,   // 다른 거래와 동일한 정오 고정(정렬·날짜 밀림 방지)
             amount:pp.amount, desc:'정산 '+pp.from+'→'+pp.to, from:fa, to:ta, isActualExpense:false,
             purposeBookId:pp.pbId, purposeBookName:pb?pb.name:'', settlementIncluded:false, splitType:'none', settlementStatus:'none' });
           rec.linkedTransactionId=String(txId);

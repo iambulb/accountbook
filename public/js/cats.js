@@ -1237,8 +1237,10 @@
     function roomCount(){ return Math.min(MAX_ROOMS, Math.max(BASE_ROOMS, (homeH().roomSlots)||BASE_ROOMS)); }   // 열린 방 수
     function roomIdx(){ const h=homeH(); const n=(h.rooms&&h.rooms.length)||1; return Math.min(n-1, Math.max(0, h.current|0)); }   // 현재 방 인덱스(클램프)
     function room(){ const h=homeH(); return (h.rooms&&h.rooms[roomIdx()])||{ active:[], placed:{}, wallPlaced:{}, wallpaper:'default', poops:0, name:'방 1' }; }   // 현재 방 객체
-    function roomChild(sub){ return 'home/rooms/'+roomIdx()+'/'+sub; }   // 현재 방 하위 쓰기 경로(레거시 인덱스 기반 — 방별 쓰기는 roomTx(id) 권장)
-    function gRoom(g){ return g.home.rooms[g.home.current|0]||g.home.rooms[0]; }   // 트랜잭션 내부(normalizeGame 후)에서 현재 방 객체
+    function gRoom(g){ return g.home.rooms[g.home.current|0]||g.home.rooms[0]; }   // 트랜잭션 내부(normalizeGame 후)에서 '서버 기준 현재' 방 — 새 펫 자동 배치 등 "현재 방이면 어디든" 용도만. 보고 있는 방을 겨냥한 쓰기는 gRoomById!
+    // 트랜잭션 내부에서 '사용자가 보고 있는 방'을 id로 정확히 겨냥 — 방 삭제/순서변경/다른 기기 방 전환 경합에도 엉뚱한 방에 쓰지 않는다. id 미발견(레거시 미부여)이면 현재 방 폴백.
+    //  사용법: 트랜잭션 밖에서 const rid=curRoomId(); → 안에서 const R=gRoomById(g, rid);
+    function gRoomById(g, id){ const rs=(g.home&&g.home.rooms)||[]; const i=roomIndexById(rs, id); return (i>=0?rs[i]:null)||gRoom(g); }
     // ---- 방 안정 id: 방별 쓰기를 인덱스가 아닌 id로 → 재정렬/삭제 경합에도 항상 그 방을 정확히 수정(엉뚱한 방 수정·삭제 방지) ----
     function genRoomId(){ return 'r_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }   // 비정수 id(RTDB 배열 강제변환과 무관)
     function roomIndexById(rooms, id){ if(!id||!Array.isArray(rooms)) return -1; for(let i=0;i<rooms.length;i++){ if(rooms[i]&&rooms[i].id===id) return i; } return -1; }
@@ -2489,9 +2491,12 @@
     // ---- 배치 격자(12칸) 가로 좌표 공유 헬퍼 ----
     // 에디터(평면 그리드)·드롭프리뷰·썸네일은 gridLeftFrac/gridSpanFrac(칸 좌측 edge·폭)을 그대로 쓴다.
     // 캠(원근)은 camAnchorMode로 발자국을 "가운데 정렬 + 양끝 벽 스냅" 배치해 좌우 벽까지 고르게 채운다.
-    const GRID_N = 12;
-    function gridLeftFrac(c){ return (c-1)/GRID_N; }       // 칸 좌측 edge 비율(0~1)
-    function gridSpanFrac(n){ return n/GRID_N; }           // n칸 폭/높이 비율
+    const GRID_N = 12;              // 가로 칸수(열) — GRID_COLS 별칭. 가로 좌표·camAnchorMode·areaFree 열 경계에 쓴다.
+    const GRID_ROWS = CAM.ROWS;     // 세로 칸수(깊이 행) = 8(단일 소스는 util.js CAM.ROWS). 깊이 12→8 축소로 뒤쪽 배치 구분↑.
+    function gridLeftFrac(c){ return (c-1)/GRID_N; }       // 열 좌측 edge 비율(0~1)
+    function gridSpanFrac(n){ return n/GRID_N; }           // n열 폭 비율
+    function gridTopFrac(r){ return (r-1)/GRID_ROWS; }     // 행 상단 edge 비율(0~1) — 에디터/썸네일 평면 세로(깊이) 좌표
+    function gridRowSpanFrac(n){ return n/GRID_ROWS; }     // n행 높이 비율(평면)
     // 캠 가로 앵커 모드: 왼쪽 벽에 닿는 열=left(좌측 밀착), 오른쪽 벽=right(우측 밀착), 그 외=center(발자국 중앙).
     // (footW 최대 2라 left·right 동시 스냅은 없음 — center 폴백.)
     function camAnchorMode(c, footW){ const right=c+footW-1;
@@ -2505,8 +2510,9 @@
       const mult = ROOM_H[id] || 1;
       // 근거리(depth 0)는 크게. 원거리 축소폭은 크기에 비례 — 작은 가구(방석·그릇)는 멀어도 덜 작게(완만),
       // 캣타워처럼 큰 가구는 멀수록 더 작게(원근 강하게).
-      const base = isDock ? 11 : 16;
-      const shrink = (isDock ? 2 : 3) + Math.max(0, mult-1) * (isDock ? 0.6 : 1.0);
+      // dock·홈 동일 크기: dock가 이제 244px 방(.cr-inner)을 크롭한 창이라 별도 축소가 불필요(예전 base 11/16 분기 제거).
+      const base = 16;
+      const shrink = 3 + Math.max(0, mult-1);
       const unit = base - depth*shrink;
       return Math.max(4, Math.round(unit*mult));
     }
@@ -2536,10 +2542,12 @@
     function gameRef(){ return db.ref('users/'+state.uid+'/game'); }
     const TODO_REWARD=10, TODO_DAILY_CAP=5;   // 할일 완료 시 은화(할일당 1회, todos.rewardClaimed로 멱등) · 은화는 하루 TODO_DAILY_CAP개까지만(도배 억제, 경제 정책 §3-B)
     // 할일 완료 은화(할일당 1회 멱등은 호출측 rewardClaimed). 여기선 '하루 TODO_DAILY_CAP개까지만' 은화 상한(todoDay 카운터). 상한 넘으면 완료는 되지만 은화 0(도배 억제).
-    function grantTodoCoins(){ if(!state.uid) return; gameRef().transaction(function(g){ g=normalizeGame(g); const d=kstDayKey();
+    // cb(paid): 실제 지급된 은화(상한 초과·미커밋이면 0). 호출측이 지급됐을 때만 정확한 금액을 토스트하도록(grantQualityBonus와 동일 패턴).
+    function grantTodoCoins(cb){ if(!state.uid){ if(cb) cb(0); return; } let paid=0; gameRef().transaction(function(g){ g=normalizeGame(g); paid=0; const d=kstDayKey();
       if((g.todoDay&&g.todoDay.day)!==d) g.todoDay={day:d,n:0};
       if((Number(g.todoDay.n)||0)>=TODO_DAILY_CAP) return g;
-      g.todoDay.n=(Number(g.todoDay.n)||0)+1; g.coins=clampCoins((g.coins||0)+TODO_REWARD); return g; }); }
+      g.todoDay.n=(Number(g.todoDay.n)||0)+1; g.coins=clampCoins((g.coins||0)+TODO_REWARD); paid=TODO_REWARD; return g;
+    }).then(function(r){ if(cb) cb((r&&r.committed)?paid:0); }).catch(function(){ if(cb) cb(0); }); }
     // ✍️ 성실 기록 보너스 — 카테고리+메모를 채운 '새 거래' 저장 시 은화. 하루 QUALITY_DAILY_CAP건까지(도배 억제, 경제 정책 §3-A). 지급됐을 때만 토스트.
     const QUALITY_BONUS=15, QUALITY_DAILY_CAP=3;
     function grantQualityBonus(){ if(!state.uid) return; let paid=false; gameRef().transaction(function(g){ g=normalizeGame(g); paid=false; const d=kstDayKey();
@@ -3741,11 +3749,16 @@
       if(dockMode()==='hidden'){ d.className='catdock hidden'; d.innerHTML=''; stopWalk(); return; }
       d.className='catdock';
       // 웹캠 정면 방: 벽지(배경) + 바닥 + 배치 가구(배경) + 걷는 고양이
+      // 🎥 방 씬(벽·바닥·가구·펫)은 .cr-inner(244px, 하단 앵커)에 넣어 알뜰홈과 동일한 원근으로 렌더하고,
+      //    상단 크롬(LIVE 배지·수확·지갑)은 .cr-inner 밖(=짧은 .cd-room 기준)에 둬서 크롭돼도 항상 보이게 한다.
       d.innerHTML='<div class="cd-room">'+
-        roomShellBase(currentWall(), currentFloor())+
+        '<div class="cr-inner">'+
+          roomShellBase(currentWall(), currentFloor())+
+          '<div class="cr-props" id="cdProps"></div><div class="cr-stage" id="cdStage"></div>'+
+        '</div>'+
         '<span class="cr-cam cd-cam" role="button" tabindex="0" aria-label="알뜰홈 열기" onclick="event.stopPropagation();coinTap(this)"><i></i>LIVE · <span class="cd-camtxt" id="cdCamTxt">'+(room().emoji?room().emoji+' ':'')+escapeHtml(room().name||'우리집')+'</span></span>'+
         batchBtnHtml()+
-        '<div class="cr-props" id="cdProps"></div><div class="cr-stage" id="cdStage"></div></div>';
+        '</div>';
       renderDockProps(); renderDockCats();
     }
     // 🧱 방 셸 공통 앞부분(벽·바닥·경계선) — dock·알뜰홈·친구방·미리보기 4무대가 공유(수기 복붙으로 구조가 갈라지던 것 방지). 벽/바닥은 인라인 배경(onGameChange가 라이브 패치).
@@ -3830,12 +3843,12 @@
       const stage=$('cdStage'); if(!stage) return;
       const cats=activeCats(); const list=cats.slice(0,slotCount());
       ensurePetArtMany(list);   // 독에 보이는 소유 펫 아트 선로드(지연)
-      stage.dataset.hh=48;
+      stage.dataset.hh=64;   // 알뜰홈(mountRoomWalk)과 동일 — dock가 이제 같은 244 방을 크롭한 창이라 같은 펫 크기로 통일
       const sig='c:'+list.join(',');   // 고양이 구성이 그대로면 DOM 재생성 금지(스프라이트 리로드·애니메이션 리셋 깜빡임 방지)
       if(stage.dataset.sig===sig && stage.querySelector('.cd-actor')) return;
       stage.dataset.sig=sig;
       if(!list.length){ stage.innerHTML='<span class="cd-empty">고양이를 입양해 보세요</span>'; markCatDirty(); return; }
-      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,24,120); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(12+i*54)+'px;">'+catActorHTML(id,s)+'</div>'; }).join('');
+      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+(hasSprite(id)?'<span class="cd-shadow">'+shadowSvg({h:Math.max(6,Math.round(s*0.16))})+'</span>':'')+catActorHTML(id,s)+'</div>'; }).join('');
       markCatDirty();
     }
     // ---- 통합 걷기 엔진: 단일 rAF가 "지금 보이는 무대"(시트 방 또는 dock)만 애니메이션 ----
@@ -3945,6 +3958,10 @@
       else s.classList.remove('idle'); }   // 일반: .idle 제거 → CSS 걷기 필름(csprFilm) 재생
     function actorShowStill(a, face){ if(!a.spr) return; const s=a.el.querySelector('.cspr'); if(!s) return;
       s.style.setProperty('--idle','url('+sprStill(a.id,face)+')'); s.classList.add('idle'); }
+    // 🏃 캣휠 달리기(무자산): 기존 걷기 필름을 제자리에서 빠르게 재생 → "달리는" 느낌. 이동은 mode='pause'라 x가 안 밀림(제자리 달리기).
+    //  이동 아님이지만 걷기 필름을 쓰므로 반드시 actorShowMoving 경유(정면 이미지 금지 불변식 준수). face=east/west는 setXform flip으로 처리(호출부).
+    const WHEEL_RUN_WDUR = 0.30;   // 달리기 발놀림 주기(초) — 일반 걷기(walkDur)보다 빠르게
+    function showWheelRun(a){ if(!a.spr) return; actorShowMoving(a); const s=a.el.querySelector('.cspr'); if(s) s.style.setProperty('--wdur', WHEEL_RUN_WDUR+'s'); }
     // 여러 무대를 '동시에' 애니메이션한다: groups=[{stage, actors}]. 예) 친구 집 방문 중에도 하단 dock 캠은 계속 로밍.
     const _eng={ raf:0, groups:[], last:0, dirty:false };
     function markCatDirty(){ _eng.dirty=true; if(typeof startCatLoop==='function') startCatLoop(); }
@@ -3992,8 +4009,8 @@
       const hasRoom = stage.id==='crStage' || isFriend || !!stage.closest('.cd-room');
       const isDock = stage.id==='cdStage';   // dock(얇은 스트립)만 dock 취급 — 친구 무대(frStage)는 방 크기
       // 방 높이 → depth 1(맨 뒤)에서 발이 올라가는 최대 px(rise). 가구 바닥 매핑(bottom%=3+depth*46/38)과 같은 척도라 같은 행에 서면 발높이가 맞는다.
-      const roomEl = stage.closest('.catroom') || stage.closest('.cd-room');
-      const roomH = (roomEl && roomEl.clientHeight) || (isDock?160:244);   // dock 캠 높이 110→160(.cd-room)과 동기화(벽 가구 안 잘리게)
+      const roomEl = stage.closest('.cr-inner') || stage.closest('.catroom') || stage.closest('.cd-room');   // dock는 .cr-inner(244)를 잡아 알뜰홈과 동일 높이 기준
+      const roomH = (roomEl && roomEl.clientHeight) || 244;   // dock·홈 모두 244(.cr-inner/.catroom) — 같은 바닥 평면·같은 riseMax
       // 위에서 내려다보는(탑다운) 느낌: 맨 앞(depth0)=바닥 앞끝, 맨 뒤(depth1)=바닥 뒤끝(벽지 경계)에 닿게.
       // dock·홈(.catroom) 둘 다 바닥 54%로 통일 → 같은 riseMax 비율(0.53)로 뒤 펫이 벽지 경계에 닿는다(예전 dock 0.61은 바닥 66% 기준이라 벽에 못 닿았음).
       // (발밑 여백 상쇄 pad는 깊이와 무관하게 적용되어 맨 앞은 여전히 바닥에 붙음 — 뜨는 문제 재발 없음.)
@@ -4042,14 +4059,19 @@
         if(pp){ const left=pp.until-Date.now();
           if(left>400){ a.mode='pause'; a.pose=pp.pose; a.pause=left; a.cool=1400; a.lift=pp.lift||0; a.resKey=pp.resKey||null; a.resFloor=(pp.resFloor!=null?pp.resFloor:null);
             applyDepth(a);
-            if(a.spr){ actorShowStill(a, pp.face||'south'); setXform(a, 1); a._pdir=1; }
+            if(a.spr){ if(pp.run){ const rd=pp.face==='west'?-1:1; showWheelRun(a); setXform(a, rd); a._pdir=rd; }   // 캣휠 달리기 상태 복원
+              else { actorShowStill(a, pp.face||'south'); setXform(a, 1); a._pdir=1; } }
             else { a.el.innerHTML=catPose(id, pp.pose, {h:a.hh}); setXform(a, a.dir); a._pdir=a.dir; } }
           else delete _petPose[pkey]; }
         return a; });
     }
     function poseDur(pose){ return pose==='sleep'?(4000+Math.random()*3500):(2800+Math.random()*3200); }   // 정면으로 가만히 있는 시간을 더 길게
-    // 🚫 상호작용 제외 가구 — furnSpot 케이스가 없어도 default(식빵)로 앉아버리는 것을 막는 명시 목록(화장실 위에 앉던 버그). 배경 가구는 여기 추가.
-    const NO_INTERACT = ['litterbox','plant'];
+    // 🐾 펫 상호작용 가구 화이트리스트(단일 소스) — furnSpot에 자리 케이스가 있는 바닥 가구만 등록.
+    //    seek 대상 선정(stepActors)과 행복도 enrichment(enrichTypeCount)가 모두 이 목록을 읽는다.
+    //    (구 NO_INTERACT 블랙리스트는 새 배경 가구를 누락하면 default 자리로 '위에 앉는' 버그가 재발해 화이트리스트로 전환.
+    //     벽 가구(window·fireplace 등)는 seek 대상(placed)에 안 와 도달 불가 — 여기 넣지 말 것. 러그·연못 같은 바닥 아이템, 배경 가구(화장실·화분)도 제외.)
+    //    ⚠️ 새 가구에 furnSpot 케이스를 추가하면 반드시 여기에도 id를 함께 등록한다.
+    const INTERACTIVE_FURN = { tower:1, pethouse:1, cushion:1, bowl:1, waterbowl:1, scratcher:1, catwheel:1, fishtank:1, fan:1, hammock:1, teaser:1, jingleball:1 };
     // 가구별 상호작용 자리: 올라갈 높이(lift px)·바라보는 방향(face)·옆 오프셋(dx)·포즈·머무는 시간(ms)
     // 캣타워=3층 중 한 층에 올라가 정면 보며 쉼 / 방석=위에 잠시 / 밥그릇=뒤에서 앉기 / 스크래처=옆에서 잠시
     function furnSpot(a, goal){
@@ -4065,8 +4087,8 @@
       // 물그릇: 밥그릇과 동일하게 뒤에서 앉아 물 마시기(비대칭이던 default 식빵 → 전용 케이스).
       if(it==='waterbowl') return { lift:Math.round(fh*0.15), face:'south', dx:0, pose:'sit', dur:14000+Math.random()*18000 };
       if(it==='scratcher') return { lift:0, face:(Math.random()<0.5?'east':'west'), dx:Math.round(a.sw*0.6)*(Math.random()<0.5?1:-1), pose:'sit', dur:18000+Math.random()*28000 };
-      // 캣휠: 링 안쪽 바닥(정중앙)에 들어가 옆(east/west)을 보며 달리는 자세로 오래 머무름.
-      if(it==='catwheel') return { lift:Math.round(fh*0.12), face:(Math.random()<0.5?'east':'west'), dx:0, pose:'sit', dur:30000+Math.random()*45000 };
+      // 캣휠: 링 안쪽 바닥(정중앙)에 들어가 옆(east/west)을 보며 '달리기'(걷기 필름 빠르게·제자리)로 오래 머무름. run=true → enterInteract가 달리기 비주얼.
+      if(it==='catwheel') return { lift:Math.round(fh*0.12), face:(Math.random()<0.5?'east':'west'), dx:0, pose:'sit', run:true, dur:30000+Math.random()*45000 };
       // 어항: 앞에서 정면(south)을 보며 앉아 금붕어를 구경(약 16~40초).
       if(it==='fishtank') return { lift:0, face:'south', dx:Math.round(a.sw*0.25), pose:'sit', dur:16000+Math.random()*24000 };
       // (구 window·fireplace 케이스 제거 — 둘은 wall:true 벽 가구라 seek 대상(placed 바닥 목록)에 절대 안 옴 → 도달 불가 죽은 코드였음. 벽 가구 상호작용을 지원하려면 seek에 wallPlaced를 포함하는 별도 작업 필요.)
@@ -4087,11 +4109,13 @@
       // 고양이 중심을 가구 그래픽 중앙(goal.x)에 맞춤(+옆 오프셋 dx). 캣타워/방석은 dx=0이라 정중앙에 앉음.
       a.x=Math.max(2, Math.min(a.W-a.sw, goal.x - a.sw/2 + (s.dx||0)));
       if(goal.depth!=null) a.depth=goal.depth; applyDepth(a);   // 가구와 같은 깊이에 서서 크기·앞뒤 가림이 맞물리게
-      const dir=a.spr?1:a.dir;
-      if(a.spr) actorShowStill(a, s.face);
+      const runW = !!(s.run && a.spr);   // 🏃 캣휠 달리기(스프라이트만) — 걷기 필름 제자리 재생
+      const dir = runW ? (s.face==='west'?-1:1) : (a.spr?1:a.dir);
+      if(runW) showWheelRun(a);            // 달리기(actorShowMoving 경유 필름) — face는 아래 setXform flip
+      else if(a.spr) actorShowStill(a, s.face);
       else a.el.innerHTML=catPose(id, s.pose, {h:a.hh});
       setXform(a, dir); a._pdir=dir;   // 위치+lift(위에서 설정)+flip을 정적 transform 하나로
-      if(a.pkey) _petPose[a.pkey]={ until:Date.now()+s.dur, pose:s.pose, lift:a.lift, face:s.face, resKey:a.resKey, resFloor:a.resFloor };   // 재빌드에도 자리 유지
+      if(a.pkey) _petPose[a.pkey]={ until:Date.now()+s.dur, pose:s.pose, lift:a.lift, face:s.face, run:runW, resKey:a.resKey, resFloor:a.resFloor };   // 재빌드에도 자리·달리기 유지
     }
     function enterPose(a, id, pose){ a.mode='pause'; a.pose=pose; a.pause=poseDur(pose); a.cool=1400;
       a.lift=0; applyDepth(a);   // 현재 깊이의 배율/올림/z 반영(그 자리에서 쉼 — 깊이는 유지)
@@ -4130,7 +4154,7 @@
         a.t+=dt*0.004; if(a.cool>0)a.cool-=dt; if(a.dcool>0)a.dcool-=dt; if(a._greetCool>0)a._greetCool-=dt; const id=a.id;
         if(a.mode==='pause'){ a.pause-=dt; if(a.pause<=0){ a.mode='roam'; a.fc=999; a.dir=Math.random()<0.5?-1:1; a.lift=0; releaseRes(a); if(a.pkey) delete _petPose[a.pkey];   // 내려와 재출발(자리 반납·지속 해제)
           // 이동 재개: 정면 이미지로 이동 금지 — actorShowMoving으로 일원화(일반=CSS 필름, frontWalk=east 정지스틸)
-          actorShowMoving(a); setXform(a); a._pdir=a.dir; } return; }   // 재출발: lift 해제·방향 반영, 걷기는 필름(csprFilm)
+          actorShowMoving(a); setWalkDur(a); setXform(a); a._pdir=a.dir; } return; }   // 재출발: lift 해제·방향 반영·걷기속도 복원(캣휠 달리기 빠른 --wdur 리셋), 걷기는 필름(csprFilm)
         const pr=dt/33;   // ⏱️ 확률 dt 정규화(33ms=30fps 기준) — dock 12fps에서 유휴/전환/가구찾기 빈도가 방 캠의 ~2.5배 낮던 것 보정(무대 무관 동일 리듬)
         // 유휴 제스처(그 자리 앉기/식빵/낮잠) — 쿨다운 후에만. 🌙 밤(KST 21~06시)엔 낮잠 가중(수면 연출)
         if(a.mode==='roam' && a.cool<=0 && Math.random()<a.idle*pr){
@@ -4154,7 +4178,7 @@
         }
         // 가구로 이동 결정(가구 있을 때, 쿨다운 후)
         if(a.mode==='roam' && a.props.length && a.cool<=0 && Math.random()<a.seek*pr){
-          const avail=a.props.filter(p=>!isFloorItem(p.itemId) && NO_INTERACT.indexOf(p.itemId)<0 && occupantsOf(p.key,a,actors).n < (p.itemId==='tower'?3:1));   // 빈 가구만(캣타워는 남은 층 있으면). 바닥 아이템(러그)·배경 가구(화장실·화분)는 상호작용 대상 아님
+          const avail=a.props.filter(p=>INTERACTIVE_FURN[p.itemId] && occupantsOf(p.key,a,actors).n < (p.itemId==='tower'?3:1));   // 상호작용 가구(화이트리스트) 중 빈 것만(캣타워는 남은 층 있으면). 바닥 아이템(러그·연못)·배경 가구(화장실·화분)는 목록에 없어 자동 제외
           if(avail.length){ const g=avail[Math.floor(Math.random()*avail.length)]; a.resKey=g.key;
             if(g.itemId==='tower'){ const used=occupantsOf(g.key,a,actors).floors; a.resFloor=[0,1,2].find(f=>!used[f]); if(a.resFloor==null) a.resFloor=0; } else a.resFloor=null;
             a.goal=g; a.mode='goal'; } }
@@ -4183,10 +4207,10 @@
       separatePets(actors);   // 같은 배치칸(열·행) 겹침 방지(무대 안에서만)
     }
     // 배치칸 기반 겹침 방지: 두 펫이 같은 칸(같은 열 && 같은 행/깊이)이면 이동 중인 펫을 밀어내고 멀어지는 방향으로 전환.
-    // 열=x(W/12 폭), 행=depth(1/11 단위). 열이 같아도 행(깊이)이 다르면 앞뒤로 겹쳐 보이는 것이라 허용(원근·가림 유지).
+    // 열=x(W/12 폭), 행=depth(1/CAM.DIV=1/7 단위). 열이 같아도 행(깊이)이 다르면 앞뒤로 겹쳐 보이는 것이라 허용(원근·가림 유지).
     function separatePets(acts){
       if(!acts || acts.length<2) return;
-      const colW=(acts[0].W||160)/12, rowD=1/11, moved=[];
+      const colW=(acts[0].W||160)/GRID_N, rowD=1/CAM.DIV, moved=[];
       const mov=a=>(a.mode==='roam');   // 자유 로밍 펫만 분리 대상 — goal(가구로 가는)·pause(앉은)·drag는 겹침분리에 관여 안 함(가구로 가는 펫이 다른 펫에 안 막히고 겹쳐 지나감)
       for(let i=0;i<acts.length;i++) for(let j=i+1;j<acts.length;j++){
         const a=acts[i], b=acts[j];
@@ -4417,7 +4441,7 @@
       const on=idx===roomIdx(); r=r||{};
       const placed=r.placed||{};
       const dots=Object.keys(placed).map(k=>{ const pr=k.split('_'), rr=+pr[0], cc=+pr[1], foot=itemFoot(placed[k].itemId);
-        return '<i class="rmf" style="left:'+(gridLeftFrac(cc)*100).toFixed(1)+'%;top:'+(gridLeftFrac(rr)*100).toFixed(1)+'%;width:'+(gridSpanFrac(foot.w)*100).toFixed(1)+'%;height:'+(gridSpanFrac(foot.h)*100).toFixed(1)+'%"></i>'; }).join('');
+        return '<i class="rmf" style="left:'+(gridLeftFrac(cc)*100).toFixed(1)+'%;top:'+(gridTopFrac(rr)*100).toFixed(1)+'%;width:'+(gridSpanFrac(foot.w)*100).toFixed(1)+'%;height:'+(gridRowSpanFrac(foot.h)*100).toFixed(1)+'%"></i>'; }).join('');
       // 벽 가구 점(평면 썸네일에선 '뒤 벽'=맨 위 얇은 띠에 열 위치로 표시, 색으로 구분)
       const wp=r.wallPlaced||{};
       const wdots=Object.keys(wp).map(k=>{ const pr=k.split('_'), cc=+pr[1], w=(itemFoot(wp[k].itemId).w);
@@ -4561,14 +4585,14 @@
       const sig='c:'+list.join(',');   // 같은 고양이면 재생성 안 함(애니메이션 유지)
       if(stage.dataset.sig===sig && stage.querySelector('.cd-actor')) return;
       stage.dataset.sig=sig;
-      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+catActorHTML(id,s)+'</div>'; }).join('');
+      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+(hasSprite(id)?'<span class="cd-shadow">'+shadowSvg({h:Math.max(6,Math.round(s*0.16))})+'</span>':'')+catActorHTML(id,s)+'</div>'; }).join('');
       markCatDirty();   // 통합 엔진이 시트 방 무대를 자동으로 잡아 애니메이션
     }
     // ===== 친구 집(펫캠) — 남의 game으로 읽기전용 방 렌더 + 로밍(엔진 재사용) =====
     // 친구 game에서 활성 펫/가구 목록 도출(내 state.game 비참조). 친구의 '현재 방'을 본다(레거시 flat 폴백).
     // 친구/랭킹 캠은 '대표 방(showRoom)'을 보여준다(사적인 방 노출 방지). showRoom 없으면 current, 레거시는 flat.
     function friendRoom(fg){ const h=(fg&&fg.home)||{}; if(Array.isArray(h.rooms)&&h.rooms.length){ const i=Math.min(h.rooms.length-1, Math.max(0, (h.showRoom!=null?h.showRoom:h.current)|0)); return h.rooms[i]||h.rooms[0]; } return h; }
-    function friendActiveCats(fg){ const a=friendRoom(fg).active||[]; const owned=(fg.owned&&fg.owned.cats); return owned?a.filter(id=>owned[id]):a.slice(); }   // homeCam 스냅샷은 owned 없이 active를 그대로 신뢰
+    function friendActiveCats(fg){ const a=friendRoom(fg).active||[]; const owned=(fg.owned&&fg.owned.cats); return a.filter(id=>(!owned||owned[id]) && PET_CATALOG.some(c=>c.id===id)); }   // homeCam 스냅샷은 owned가 없어 active를 신뢰하되 카탈로그에 있는(렌더 가능한) 펫만 — 삭제된 펫이 친구 캠에 폴백 팔레트 유령으로 뜨지 않게(내 방 activeCats와 동일 기준)
     function friendPlacedList(fg){ const p=friendRoom(fg).placed||{}; return Object.keys(p).map(k=>({ key:k, r:+k.split('_')[0], c:+k.split('_')[1], itemId:p[k].itemId })); }
     // 친구 방 HTML(.catroom + #frStage). name=친구 닉네임.
     function friendRoomHtml(fg, name){
@@ -4585,12 +4609,12 @@
       const list=friendActiveCats(fg).slice(0, Math.min(MAX_SLOTS, Math.max(BASE_SLOTS, (fg.home&&fg.home.slots)||BASE_SLOTS)));
       ensurePetArtMany(list);
       stage.dataset.hh=64;
-      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+catActorHTML(id,s)+'</div>'; }).join('');
+      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+(hasSprite(id)?'<span class="cd-shadow">'+shadowSvg({h:Math.max(6,Math.round(s*0.16))})+'</span>':'')+catActorHTML(id,s)+'</div>'; }).join('');
       markCatDirty();
     }
     let _shopSub='event';   // 알뜰샵 진입 시 기본=가챠 탭(맨 왼쪽)
     function setShopSub(s){ _shopSub=s; _shopSelCat=null; renderCatHouse(); }
-    // 가챠 탭 내부 서브탭(뜰알/펫알/랜덤박스/무지개) — 종류별로 나눠 뽑기. 추후 탭별 전용 배너를 여기서 확장.
+    // 가챠 탭 내부 서브탭(뜰알/펫알/랜덤박스/무지개) — 종류별로 나눠 뽑기. 탭별 전용 배너: 이벤트(뜰알)=픽업 낮 씬·펫알=노을(연못)·랜덤박스=노을(선물상자)·무지개=밤.
     let _gachaTab=lsGet('gachaTab','ddeul');
     const GACHA_TABS=[['ddeul','이벤트'],['normal','일반'],['rainbow','무지개']];   // 뜰알=이벤트, 펫알+랜덤박스=일반(합침), 무지개=그대로
     function setGachaTab(t){ _gachaTab=t||'ddeul'; lsSet('gachaTab',_gachaTab); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
@@ -4638,7 +4662,7 @@
       }
       return h;
     }
-    // ===== 🎰 가챠 배너(세로 확장·둥지형) — 개발자 '배너 관리'에서 탭별 미리보기. 지금은 개발자 전용, 추후 실전 탭에 얹고 탭별 전용 배너로 분화. =====
+    // ===== 🎰 가챠 배너(세로 확장·둥지형) — 실전은 가챠 탭(gachaTabHtml live=true → bannerPull/openGachaTen), 개발자 '배너 관리'는 무소모 미리보기. 탭별 전용 배너 분화 완료(뜰알=픽업·펫알=노을연못·랜덤박스=노을상자·무지개=밤). =====
     // 공통 조각(둥지+알·1/10 버튼·천장 안내). 각 배너 함수는 독립 인스턴스라 나중에 개별 수정 가능.
     function gbNestHtml(eggHtml){ return '<div class="gb-nest"><div class="gb-nestback">'+nestSvg({})+'</div><div class="gb-egg">'+eggHtml+'</div><div class="gb-nestfront">'+nestFrontSvg({})+'</div></div>'; }
     function gbActionsHtml(kind){ return '<div class="gb-actions"><button class="gb-btn" onclick="devBannerPull(\''+kind+'\',false)">1회 뽑기</button><button class="gb-btn gb-btn10" onclick="devBannerPull(\''+kind+'\',true)">10회 연속</button></div>'; }
@@ -4738,10 +4762,10 @@
           '<div class="gb-item-cost">1뽑당 소모 '+gachaCostHtml(GACHA_PRICE,0,1)+'</div></div></div>'+
         gbPullActions('egg', GACHA_PRICE, 0, 'sunset', 'egg', live)+gbPityHtml('egg')+'</div>';
     }
-    // 🎁 랜덤박스 배너 = 낮 씬 + 상자 중앙(둥지 없음) + 반짝임.
+    // 🎁 랜덤박스 배너 = 노을 씬 box 변형(연못 대신 선물상자 무더기+트윙클) + 상자 중앙 + 반짝임 — 펫알과 전용 배경 분화.
     function boxBannerHtml(live){
-      return '<div class="gbanner gb-box gb-eggbn"><div class="gb-head"><b class="gb-t gb-sunset-t">🌇 랜덤박스 · 노을</b><span class="pk-tag">방을 꾸미는 가구·바닥·벽지</span></div>'+
-        '<div class="gb-scene">'+sunsetSceneHtml()+gbCenterHtml(boxSvg({h:54}), gbSunsetFx(), 'gb-rb gb-sun')+'</div>'+
+      return '<div class="gbanner gb-box gb-eggbn"><div class="gb-head"><b class="gb-t gb-sunset-t">🎁 랜덤박스 · 노을</b><span class="pk-tag">방을 꾸미는 가구·바닥·벽지</span></div>'+
+        '<div class="gb-scene">'+sunsetSceneHtml('banner','box')+gbCenterHtml(boxSvg({h:54}), gbSunsetFx(), 'gb-rb gb-sun')+'</div>'+
         // 🎁 배너 이미지 아래 — 랜덤박스 이미지·설명·소모재화
         '<div class="gb-item"><div class="gb-item-ic">'+boxSvg({h:52})+'</div>'+
           '<div class="gb-item-meta"><b>랜덤박스</b>'+
@@ -4762,7 +4786,7 @@
           '<div class="gb-item-cost">1뽑당 소모 '+gachaCostHtml(0,gp,1)+'</div></div></div>'+
         gbPullActions('egg', 0, gp, 'night', 'rainbow_egg')+gbPityHtml('egg')+'</div>';
     }
-    // 배너 버튼 → 미리보기(소모 없음). 1회=강제 전설 단발 연출, 10회=10연차 연출(박스 10연차는 준비 전). 실전 연결은 추후.
+    // 배너 버튼 → 미리보기(소모 없음). 1회=강제 전설 단발 연출, 10회=10연차 연출(펫알·랜덤박스·뜰알 모두 지원 — 박스는 devPreview10Box). 실전은 bannerPull/openGachaTen.
     function devBannerPull(kind, ten, theme){
       if(!(typeof isDev==='function'&&isDev())) return;
       if(theme==='night'){ _devPickupOverride=DEV_NIGHT_PICKUP;   // 🌙 밤 = 흑표범·카라칼 미리보기(라이브 픽업 안 건드림, FX 닫힐 때 해제)
@@ -4846,7 +4870,7 @@
     function openDevBannerManager(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
       const build=()=>{
         if(!BANNER_TABS.some(t=>t[0]===_bannerTab)) _bannerTab='ddeul';
-        let h='<div class="note">가챠 배너 미리보기 — 탭별로 확인. <b>펫알·랜덤박스</b>는 지금 동일 배경(추후 전용 배너로 분화). 버튼은 <b>미리보기</b>(1회=강제 전설·10회=연출)로 실전 연결·소모 없음.</div>';
+        let h='<div class="note">가챠 배너 미리보기 — 탭별로 확인. <b>펫알</b>=노을 연못·<b>랜덤박스</b>=노을 선물상자(전용 배경 분화). 버튼은 <b>미리보기</b>(1회=강제 전설·10회=연출)로 소모 없음.</div>';
         h+='<div class="subseg">'+BANNER_TABS.map(t=>'<button class="'+(_bannerTab===t[0]?'on':'')+'" onclick="setBannerTab(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div>';
         h+=(_bannerTab==='ddeul'?ddeulBannerHtml():_bannerTab==='egg'?eggBannerHtml():_bannerTab==='box'?boxBannerHtml():rainbowBannerHtml());
         return h;
@@ -4872,6 +4896,15 @@
       PET_CATALOG.forEach(function(c){ if(present.indexOf(c.species)<0) present.push(c.species); });
       present.sort(function(a,b){ const ia=order.indexOf(a), ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); });
       return [['all','전체']].concat(present.map(function(sp){ return [sp, SPECIES_LABEL[sp]||sp]; })); }
+    let _petShopSort=lsGet('petShopSort','tierasc');   // 알뜰샵 펫 탭 정렬 — 가구 탭(FURN_SORTS)과 동일 패턴. 기본=등급↑(기존 고정 정렬 유지)
+    const PETSHOP_SORTS=[['tierasc','등급↑'],['tierdesc','등급↓'],['name','이름'],['unowned','미보유 먼저']];
+    function setPetShopSort(v){ _petShopSort=v||'tierasc'; lsSet('petShopSort',_petShopSort); renderCatHouse(); }
+    function sortShopCats(list){ const l=list.slice(), rank=c=>tierRank(petTierOf(c.id)), nm=c=>c.name||c.id;
+      if(_petShopSort==='tierdesc') l.sort((a,b)=>rank(b)-rank(a) || nm(a).localeCompare(nm(b)));
+      else if(_petShopSort==='name') l.sort((a,b)=>nm(a).localeCompare(nm(b)));
+      else if(_petShopSort==='unowned') l.sort((a,b)=>(ownsCat(a.id)?1:0)-(ownsCat(b.id)?1:0) || rank(a)-rank(b) || nm(a).localeCompare(nm(b)));   // 미보유 먼저, 그 안에선 등급↑
+      else l.sort((a,b)=>rank(a)-rank(b) || nm(a).localeCompare(nm(b)));   // 등급↑(기본)
+      return l; }
     // 알뜰샵에서 미리보기로 "선택"한 펫 — 선택하면 카드가 강조되고 썸네일이 옆으로 걷는 스프라이트(우리집 펫 카드와 동일)로 바뀐다.
     let _shopSelCat=null;
     function selectShopCat(id){ _shopSelCat=(_shopSelCat===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
@@ -4931,12 +4964,14 @@
       }
       if(_shopSub==='cats'){
         const owntag='<span class="owntag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>보유</span>';
-        // 종(species) 필터 탭 — 카탈로그에 있는 종이 2개↑일 때만 노출(가구 탭의 shopfurncat 미러)
+        // 종(species) 필터 탭(2개↑일 때만) + 정렬 셀렉트 — 가구 탭의 shoptabrow 미러
         const PSHOP_TABS=shopPetSpeciesTabs();
         if(!PSHOP_TABS.some(t=>t[0]===_shopPetSpecies)) _shopPetSpecies='all';
-        if(PSHOP_TABS.length>2) h+='<div class="subseg shopfurncat">'+PSHOP_TABS.map(t=>'<button class="'+(_shopPetSpecies===t[0]?'on':'')+'" onclick="setShopPetSpecies(\''+t[0]+'\')">'+escapeHtml(t[1])+'</button>').join('')+'</div>';
-        // 등급 낮은 것부터 높은 순으로 정렬. 특별(epic) 이상은 알뜰샵 직접 구매 불가 → 펫알(가챠) 전용 표기. 선택 종만 필터.
-        const cats=PET_CATALOG.slice().filter(c=>!isGachaOnlyCat(c.id) && (_shopPetSpecies==='all'||c.species===_shopPetSpecies)).sort((a,b)=>tierRank(petTierOf(a.id))-tierRank(petTierOf(b.id)));   // 가챠전용 펫은 판매목록에서 숨김(가챠 풀엔 그대로 있음)
+        h+='<div class="shoptabrow">'+
+          (PSHOP_TABS.length>2?'<div class="subseg shopfurncat">'+PSHOP_TABS.map(t=>'<button class="'+(_shopPetSpecies===t[0]?'on':'')+'" onclick="setShopPetSpecies(\''+t[0]+'\')">'+escapeHtml(t[1])+'</button>').join('')+'</div>':'<span style="flex:1"></span>')+
+          '<select class="petsort furnsort" aria-label="펫 정렬" onchange="setPetShopSort(this.value)">'+PETSHOP_SORTS.map(o=>'<option value="'+o[0]+'"'+(_petShopSort===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></div>';
+        // 정렬은 사용자 선택(sortShopCats, 기본 등급↑). 특별(epic) 이상은 알뜰샵 직접 구매 불가 → 펫알(가챠) 전용 표기. 선택 종만 필터.
+        const cats=sortShopCats(PET_CATALOG.filter(c=>!isGachaOnlyCat(c.id) && (_shopPetSpecies==='all'||c.species===_shopPetSpecies)));   // 가챠전용 펫은 판매목록에서 숨김(가챠 풀엔 그대로 있음)
         // 🌟 이달의 펫 배너(미보유·구매 가능한 등급일 때만 강조) — 선택한 종과 맞을 때만(전체 포함)
         { const fid=featuredCatId();
           if(fid){ const fc=PET_CATALOG.find(x=>x.id===fid); if(fc && (_shopPetSpecies==='all'||fc.species===_shopPetSpecies)){
@@ -5027,8 +5062,9 @@
       if(isFilled(key)){ toast('아직 남아 있어요'); return; }
       const need=id==='bowl'?'food':'water', nm=id==='bowl'?'사료':'물';
       if(consumQty(need)<=0){ toast(nm+'가 없어요 · 알뜰샵 소비 탭에서 구매', true); return; }
+      const rid=curRoomId();   // 보고 있는 방을 id로 겨냥(방 삭제/전환 경합에도 정확)
       gameRef().transaction(g=>{ g=normalizeGame(g);
-        const R=gRoom(g); if((Number(g.consum[need])||0)<=0 || !R.placed[key]) return;
+        const R=gRoomById(g, rid); if((Number(g.consum[need])||0)<=0 || !R.placed[key]) return;
         g.consum[need]-=1; R.placed[key].filledAt=Date.now(); return g;
       }).then(r=>{ if(r&&r.committed) toast(id==='bowl'?'밥을 채웠어요 🍚':'물을 채웠어요 💧'); });
     }
@@ -5052,8 +5088,8 @@
     // 똥 수거 → 은화 +2, 작은 획득 연출
     function collectPoop(e){
       if(e){ e.stopPropagation(); }
-      const x=e?e.clientX:innerWidth/2, y=e?e.clientY:innerHeight/2;
-      gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoom(g); if((Number(R.poops)||0)<=0) return;
+      const x=e?e.clientX:innerWidth/2, y=e?e.clientY:innerHeight/2, rid=curRoomId();
+      gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoomById(g, rid); if((Number(R.poops)||0)<=0) return;
         R.poops=(Number(R.poops)||0)-1; g.coins+=POOP_REWARD; return g;
       }).then(r=>{ if(r&&r.committed) poopFx(x,y); });
     }
@@ -5107,9 +5143,7 @@
     // 은화 전용 날아오기(prev 미상 호출자용) — 카운트업 없이 날아가기+톡
     function coinFlyFx(x,y,n){ const w=walletEl(); if(!w) return; flyCurrency(x,y,n,'coin',w);
       setTimeout(()=>{ const w2=walletEl(); if(w2){ w2.classList.add('bump'); setTimeout(()=>w2.classList.remove('bump'),320); } }, 430); }
-    // 🌾 유휴 은화 — 행복도 기반 자동수익. 펫이 자동 상호작용하는 가구(아래 목록)는 행복도의 enrichment(종류)로만 반영(도배 무의미).
-    const INTERACTIVE_FURN = { tower:1, pethouse:1, cushion:1, bowl:1, scratcher:1, catwheel:1, fishtank:1, window:1, fireplace:1, fan:1, hammock:1, teaser:1, jingleball:1 };
-    function interactiveFurnCount(R){ let n=0; const scan=o=>{ o=o||{}; Object.keys(o).forEach(k=>{ const id=o[k]&&o[k].itemId; if(id&&INTERACTIVE_FURN[id]) n++; }); }; scan(R&&R.placed); scan(R&&R.wallPlaced); return n; }
+    // 🌾 유휴 은화 — 행복도 기반 자동수익. 펫이 자동 상호작용하는 가구(INTERACTIVE_FURN — furnSpot 옆 단일 소스)는 행복도의 enrichment(종류)로만 반영(도배 무의미).
     // 🪴 enrichment '종류' 수 — 상호작용 가구 중 케어템(밥·물·화장실) 제외한 고유 itemId 개수. 행복도 enrichment(2종 포화)용. 같은 종류 여러 개 놔도 1.
     function enrichTypeCount(R){ const set={}; const scan=o=>{ o=o||{}; Object.keys(o).forEach(k=>{ const id=o[k]&&o[k].itemId; if(id&&INTERACTIVE_FURN[id]&&CARE_ITEMS.indexOf(id)<0) set[id]=1; }); }; scan(R&&R.placed); scan(R&&R.wallPlaced); return Object.keys(set).length; }
     // 🔺 전역 자동수익 배율(1.0~2.0) — 애정 총량 + 도감 수집률 + 앱 사용(가계부·할일 기록). 수확마다 1회 계산해 모든 방에 공유.
@@ -5198,8 +5232,9 @@
       if(ownsWall(id)){ applyWall(id); return; }
       const wp=wallBuyPrice(id);
       if(coins()<wp){ toast((wp-coins())+' 은화 부족', true); return; }
+      const rid=curRoomId();   // 자동 적용도 보고 있는 방을 id로 겨냥
       gameRef().transaction(g=>{ g=normalizeGame(g); if(g.coins<wp||g.owned.wallpapers[id]) return;
-        g.coins-=wp; g.owned.wallpapers[id]={boughtAt:new Date().toISOString()}; gRoom(g).wallpaper=id; return g;
+        g.coins-=wp; g.owned.wallpapers[id]={boughtAt:new Date().toISOString()}; gRoomById(g, rid).wallpaper=id; return g;
       }).then(res=>{ if(res.committed) toast(w.name+' 벽지 적용! 🎨'); });
     }
     function applyWall(id){ if(!ownsWall(id)){ toast('먼저 구매하세요', true); return; } if(typeof captureUndo==='function') captureUndo(); roomTx(curRoomId(), roomIdx(), R=>{ R.wallpaper=id; }); toast('벽지를 적용했어요'); }   // 되돌리기 지원(가구 5경로와 동일)
@@ -5207,8 +5242,9 @@
       if(isGachaOnlyFloor(id)){ toast('특별↑ 바닥은 랜덤박스로만 나와요'); if(typeof setShopSub==='function') setShopSub('event'); return; }
       const fp=floorBuyPrice(id);
       if(coins()<fp){ toast((fp-coins())+' 은화 부족', true); return; }
+      const rid=curRoomId();   // 자동 적용도 보고 있는 방을 id로 겨냥
       gameRef().transaction(g=>{ g=normalizeGame(g); g.owned.floors=g.owned.floors||{}; if(g.coins<fp||g.owned.floors[id]) return;
-        g.coins-=fp; g.owned.floors[id]={boughtAt:new Date().toISOString()}; gRoom(g).floor=id; return g;
+        g.coins-=fp; g.owned.floors[id]={boughtAt:new Date().toISOString()}; gRoomById(g, rid).floor=id; return g;
       }).then(res=>{ if(res.committed) toast(f.name+' 바닥 적용!'); });
     }
     function applyFloor(id){ if(!ownsFloor(id)){ toast('먼저 구매하세요', true); return; } if(typeof captureUndo==='function') captureUndo(); roomTx(curRoomId(), roomIdx(), R=>{ R.floor=id; }); toast('바닥을 적용했어요'); }   // 되돌리기 지원
@@ -5335,9 +5371,9 @@
       return '<div class="pickbanner"><div class="pk-head"><span class="pk-title tier-rainbow">✨ 지금 이 펫만! 한정 픽업</span>'+tag(p1)+sep+tag(p2)+'</div>'+pickupSceneHtml('banner')+'</div>'; }
     // 🌇 노을 씬(펫알 배너 전용) — 픽업 씬 틀을 복사하되 무지개→노을: 노을 하늘·구름, 단풍나무, 노을 꽃,
     //    울타리·큰돌 대신 옆에 흐르는 계곡(물고기 헤엄)+줄지은 작은 돌들, 노을빛 뜰, 나비→고추잠자리. 결정적(pkRand)·캐시.
-    let _sunsetCache={};   // mode별 캐시(banner/reveal)
-    function sunsetSceneHtml(mode){
-      mode=mode||'banner'; if(_sunsetCache[mode]) return _sunsetCache[mode];
+    let _sunsetCache={};   // 키별 캐시(mode|variant) — variant 'box'=랜덤박스 배너(연못 대신 선물상자 무더기)
+    function sunsetSceneHtml(mode, variant){
+      mode=mode||'banner'; const ck=mode+'|'+(variant||''); if(_sunsetCache[ck]) return _sunsetCache[ck];
       const reveal=mode==='reveal', sz=reveal?1.8:1, S=function(h){ return Math.max(1,Math.round(h*sz)); };   // reveal(10뽑 전체화면)은 스프라이트를 크게
       // ☁️ 노을에 물든 구름
       let clouds=''; const SC=['so','sp','sv'];
@@ -5362,6 +5398,16 @@
       // 🟫 흙 패치
       let soil=''; for(let i=0;i<7;i++){ const d=pkRand(i,41)*0.7, l=(6+(i+0.5)/7*50+(pkRand(i,42)-0.5)*4).toFixed(1), sc=1-d*0.45, bot=(d*72).toFixed(1), w=Math.round((10+pkRand(i,43)*14)*sc*sz);
         soil+='<span class="pk-soil" style="left:'+l+'%;bottom:'+bot+'%;width:'+w+'px"></span>'; }
+      // 우측 포인트 — 펫알(기본)=🪷 연못 / 랜덤박스(variant 'box')=🎁 선물상자 무더기(연못 자리에 원근 배치+트윙클). 배너 분화 지점.
+      let pond='';
+      if(variant==='box'){
+        // 🎁 상자 4개(랜덤박스 2·리본선물 2)를 우측 뜰에 원근 배치(뒤=작게·위쪽) + 반짝이 3점(pk-star 트윙클, 결정적 pkRand).
+        const GB=[[71,0.30,1,17],[81,0.14,0,22],[89,0.30,0,14],[76,0.04,1,19]];   // [left%, depth, 1=리본선물, 기준 h]
+        for(let i=0;i<GB.length;i++){ const d=GB[i][1], l=(GB[i][0]+(pkRand(i,211)-0.5)*3).toFixed(1), z=Math.round(2+(1-d)*2), hh=S(Math.max(10,Math.round(GB[i][3]*(1-d*0.45))));
+          pond+='<span class="pk-gift" style="left:'+l+'%;bottom:'+(d*70).toFixed(1)+'%;z-index:'+z+';">'+(GB[i][2]?giftSvg({h:hh}):boxSvg({h:hh}))+'</span>'; }
+        for(let i=0;i<3;i++){ const l=(70+pkRand(i,221)*20).toFixed(1), b=(10+pkRand(i,222)*26).toFixed(1), del=(pkRand(i,223)*3).toFixed(2);
+          pond+='<span class="pk-star" style="left:'+l+'%;bottom:'+b+'%;z-index:4;animation-delay:'+del+'s">'+sparkSvg({h:S(7)})+'</span>'; }
+      } else {
       // 🪷 연못(메인 아이콘 오른쪽에 떨어뜨림) — 타원 물 + 둘레 돌 링 + 잉어 배회 + 연꽃/연잎 부유. 계곡 대체.
       // 🎏 잉어 3마리(가로): 좌·우 2마리는 오른쪽, 중앙 1마리는 왼쪽을 보며 → 오른쪽 갔다 돌아서 왼쪽(가로 핑퐁, 방향전환 시 몸 뒤집힘). ph=시작 위상(0.5≈왼쪽 바라봄)
       const KC=['o','w','g'], KSPOT=[{l:34,t:42,ph:0.05},{l:50,t:56,ph:0.5},{l:64,t:44,ph:0.20}];
@@ -5375,7 +5421,8 @@
         lilies+='<span class="pk-lily" style="left:'+LPOS[i][0]+'%;top:'+LPOS[i][1]+'%;--d:'+dur+'s;animation-delay:'+del+'s;">'+lilyPadSvg({h:S(14)})+'</span>'; }
       const LOPOS=[[58,64],[38,34]]; let lotuses=''; for(let i=0;i<2;i++){ const dur=(4.6+pkRand(i,93)*2).toFixed(1), del=(-pkRand(i,94)*4).toFixed(2);
         lotuses+='<span class="pk-lotus" style="left:'+LOPOS[i][0]+'%;top:'+LOPOS[i][1]+'%;--d:'+dur+'s;animation-delay:'+del+'s;">'+lotusSvg({h:S(13)})+'</span>'; }
-      const pond='<div class="pk-pond"><div class="pk-pwater"></div>'+pkoi+lilies+lotuses+pstones+'</div>';
+      pond='<div class="pk-pond"><div class="pk-pwater"></div>'+pkoi+lilies+lotuses+pstones+'</div>';
+      }
       // ⛰️ 아이콘 뒤 빈 하늘 채우기 — 지평선 먼 언덕(노을 보랏빛). 중앙은 낮게 두어 지는 해가 위로 보이게.
       let hills=''; const HX=[16,50,84], HH=[26,20,24]; for(let i=0;i<3;i++){
         hills+='<span class="pk-hill" style="left:'+HX[i]+'%;bottom:-2px;z-index:0;">'+hillSvg(HILL_SUNSET,{h:S(HH[i])})+'</span>'; }
@@ -5390,13 +5437,13 @@
         leaves+='<span class="pk-fallleaf" style="left:'+l+'%;--d:'+dur+'s;--sw:'+sw+'s;--dir:'+dir+';animation-delay:'+del+'s;"><span class="fl-in">'+mapleLeafSvg({h:S(hh)}, LEAF_COLS[Math.floor(pkRand(i,207)*LEAF_COLS.length)])+'</span></span>'; }
       // ☀️ 배너에서만 지는 해가 기본으로 떠오름. reveal(10연차)은 '기본 미표시'(사용자 지침) — 무지개 조건일 때만 tenSkyRiseSun으로 띄운다.
       const risesun = reveal ? '' : ('<span class="pk-risesun">'+sunSvg({h:S(64)})+'</span>');
-      _sunsetCache[mode]='<div class="pkscene pk-sunset'+(reveal?' pk-reveal':'')+'" aria-hidden="true">'+
+      _sunsetCache[ck]='<div class="pkscene pk-sunset'+(reveal?' pk-reveal':'')+'" aria-hidden="true">'+
         '<div class="pk-sky">'+risesun+clouds+'</div>'+
         '<div class="pk-horizon">'+hills+farline+'</div>'+
         '<div class="pk-field"><div class="pk-grass"></div>'+soil+tufts+flowers+trees+pond+'</div>'+
         '<div class="pk-air">'+dflies+leaves+'</div>'+
       '</div>';
-      return _sunsetCache[mode];
+      return _sunsetCache[ck];
     }
     // 🌙 무지개 밤 씬 — 픽업 씬 틀 그대로, 밤·달빛으로 재색·재배치(보름달·달빛구름·잔별·밤 뜰·반딧불 가득). 무지개알 센터피스는 배너 빌더에서.
     let _nightCache={};   // mode별 캐시(banner/reveal)
@@ -5648,7 +5695,10 @@
     function featuredCatId(){ const mk=kstMonthKey();
       const ov=_featuredMap && _featuredMap[mk];   // 개발자 수동 선정 우선(존재·미삭제 펫이면)
       if(ov && PET_CATALOG.some(c=>c.id===ov && !c.deleted)) return ov;
-      return featuredPetOfMonth(mk, featuredEligibleIds()); }
+      // 🌟 자동 선정은 '미보유' 펫 우선 — 이미 보유한 펫이 걸리면 할인 훅이 죽어서, 사용자별로 미보유 풀에서 월키 해시로 뽑는다(다 보유했으면 전체 풀 폴백).
+      //    보유 상태가 바뀌면(이달의 펫 구매 등) 다음 렌더에서 새 미보유 펫이 자동 선정된다. 수동 선정(config/featuredPet)은 운영자 의도라 보유 여부 무시.
+      const elig=featuredEligibleIds(), un=elig.filter(id=>!ownsCat(id));
+      return featuredPetOfMonth(mk, un.length?un:elig); }
     // ---- dev: 이달의 펫 직접 선정(전역) ----
     // 쓰기 실패 안내 — 성공 콜백의 예외를 권한 실패로 오인하지 않게 UI 갱신은 try로 감싸고, 실패 시 실제 오류코드를 보여준다.
     //  PERMISSION_DENIED면 대개 config 쓰기 '규칙 미배포'(웹 배포와 별개 — `firebase deploy --only database` 필요)거나 관리자 계정 아님.
@@ -5892,9 +5942,9 @@
     let _selWall=null;
     function selWallItem(id){ if(itemRemaining(id)<=0){ toast(catFurnName(id)+' 전부 배치됨 — 회수하거나 더 얻어야 걸 수 있어요', true); return; } _selWall=(_selWall===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     // 벽 배치 트랜잭션(전역 인벤토리 재검증·겹침 재검증). placed와 별개 wallPlaced에 기록.
-    function wallPlaceItemTx(sel, r, c){ const w=wallFoot(sel).w;
+    function wallPlaceItemTx(sel, r, c){ const w=wallFoot(sel).w, rid=curRoomId();
       captureUndo();
-      gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoom(g); R.wallPlaced=R.wallPlaced||{};
+      gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoomById(g, rid); R.wallPlaced=R.wallPlaced||{};
         const qty=Number((g.owned.items[sel]||{}).qty)||0, placedAll=(typeof sumPlacedItem==='function')?sumPlacedItem(g.home.rooms, sel):0;
         if(qty-placedAll<=0) return;                                   // 남은 수량 없음(복제 차단, 바닥+벽 합산)
         if(!wallAreaFree(r,c,w,R.wallPlaced,null)) return;             // 겹침
@@ -5923,7 +5973,7 @@
     }
     // (r,c)에서 w×h 발자국이 격자 안에 들어가고 다른 가구와 안 겹치는지. floorItem=true(러그)면 겹침 무시(격자 안이면 어디든 OK — 다른 가구 밑에 깔림).
     function areaFree(r,c,w,h,placed,ignoreKey,floorItem){
-      if(r<1||c<1||r+h-1>GRID_N||c+w-1>GRID_N) return false;   // 방 넓이 확장 시 GRID_N 한 곳만 바꾸면 정합
+      if(r<1||c<1||r+h-1>GRID_ROWS||c+w-1>GRID_N) return false;   // 행(깊이)=GRID_ROWS(8)·열(가로)=GRID_N(12) 경계
       if(floorItem) return true;
       const occ=occupiedCells(placed, ignoreKey);
       for(let dr=0;dr<h;dr++)for(let dc=0;dc<w;dc++) if(occ[(r+dr)+'_'+(c+dc)]) return false;
@@ -5931,15 +5981,15 @@
     }
     // 화면 좌표 → 격자 칸(1~12)
     function cellFromPoint(grid, clientX, clientY){
-      const rc=grid.getBoundingClientRect(), cw=rc.width/12, ch=rc.height/12;
+      const rc=grid.getBoundingClientRect(), cw=rc.width/GRID_N, ch=rc.height/GRID_ROWS;   // 가로 12칸·세로 8칸
       const c=Math.floor((clientX-rc.left)/cw)+1, r=Math.floor((clientY-rc.top)/ch)+1;
-      return { r:Math.min(12,Math.max(1,r)), c:Math.min(12,Math.max(1,c)) };
+      return { r:Math.min(GRID_ROWS,Math.max(1,r)), c:Math.min(GRID_N,Math.max(1,c)) };
     }
     // 드롭 좌상단 칸 = 포인터가 발자국 "가운데"에 오도록 보정(3칸 가로면 2번째 칸 기준). 격자 안으로 클램프.
     function dropCell(grid, x, y, foot){
       const p=cellFromPoint(grid, x, y);
       let c=p.c-Math.round((foot.w-1)/2), r=p.r-Math.round((foot.h-1)/2);   // 짝수 폭(2×2)도 손가락 기준 가운데에 가깝게(floor는 한쪽으로 치우침)
-      c=Math.max(1, Math.min(13-foot.w, c)); r=Math.max(1, Math.min(13-foot.h, r));
+      c=Math.max(1, Math.min(GRID_N+1-foot.w, c)); r=Math.max(1, Math.min(GRID_ROWS+1-foot.h, r));
       return { r, c };
     }
     // 빈 칸(그리드 배경) 탭 → 선택한 가구 배치(2×2는 그만큼 점유·겹침 방지)
@@ -5947,8 +5997,9 @@
     // 배치 트랜잭션: 남은 수량·겹침·케어 상한을 트랜잭션 안에서 재검증(비트랜잭션 .set의 복제/겹침 레이스 차단).
     function placeItemTx(sel, r, c, foot){
       if(isWallItem(sel)) return;                                       // 벽 가구는 바닥격자 배치 불가(벽꾸미기 전용)
+      const rid=curRoomId();   // 보고 있는 방을 id로 겨냥
       captureUndo();
-      gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoom(g); R.placed=R.placed||{};
+      gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoomById(g, rid); R.placed=R.placed||{};
         const qty=Number((g.owned.items[sel]||{}).qty)||0, placedAll=(typeof sumPlacedItem==='function')?sumPlacedItem(g.home.rooms, sel):0;
         if(qty-placedAll<=0) return;                                   // 남은 수량 없음(복제 차단)
         if(!areaFree(r,c,foot.w,foot.h,R.placed,null,isFloorItem(sel))) return;         // 겹침(바닥 아이템은 겹침 허용)
@@ -6042,10 +6093,11 @@
       if(!areaFree(r,c,d.foot.w,d.foot.h,placed,d.key,isFloorItem(placedItemId(d.key)))){ toast('그 자리엔 놓을 수 없어요(겹침)', true); resetEl(); return; }
       const id=placed[d.key]&&placed[d.key].itemId; if(!id){ resetEl(); return; }
       // ⚡ 낙관적 드롭 — 커밋을 기다리지 않고 즉시 새 칸에 스냅(느린 커밋 시 '원위치 튕김→점프' 깜빡임 제거). 실패하면 리스너/재렌더가 원위치 복원.
-      d.el.style.transform=''; d.el.style.left=(gridLeftFrac(c)*100)+'%'; d.el.style.top=(gridLeftFrac(r)*100)+'%';
-      // 이동도 트랜잭션(자기 제외 겹침 재검증) — 리스너가 재렌더
+      d.el.style.transform=''; d.el.style.left=(gridLeftFrac(c)*100)+'%'; d.el.style.top=(gridTopFrac(r)*100)+'%';
+      // 이동도 트랜잭션(자기 제외 겹침 재검증) — 리스너가 재렌더. 보고 있는 방을 id로 겨냥.
       captureUndo();
-      gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoom(g); const pl=R.placed||{};
+      const rid=curRoomId();
+      gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoomById(g, rid); const pl=R.placed||{};
         const it=pl[d.key]; if(!it) return;                               // 원본 없음(레이스)
         if(!areaFree(r,c,d.foot.w,d.foot.h,pl,d.key,isFloorItem(it.itemId))) return;             // 겹침(자기 제외, 바닥 아이템은 허용)
         delete pl[d.key]; pl[newKey]={itemId:it.itemId}; g.home.changedAt=new Date().toISOString(); return g;
@@ -6090,11 +6142,11 @@
     function catFurnName(id){ const it=ITEM_CATALOG.find(x=>x.id===id); return it?it.name:id; }
     function showDropPreview(r,c,foot,key,floorItem){
       const g=$('gdrop'); if(!g) return; const placed=room().placed||{};
-      const rr=Math.min(13-foot.h,Math.max(1,r)), cc=Math.min(13-foot.w,Math.max(1,c));
+      const rr=Math.min(GRID_ROWS+1-foot.h,Math.max(1,r)), cc=Math.min(GRID_N+1-foot.w,Math.max(1,c));
       const ok=areaFree(rr,cc,foot.w,foot.h,placed,key,floorItem);
       g.hidden=false; g.className='gdrop'+(ok?'':' bad');
-      g.style.left=(gridLeftFrac(cc)*100)+'%'; g.style.top=(gridLeftFrac(rr)*100)+'%';
-      g.style.width=(gridSpanFrac(foot.w)*100)+'%'; g.style.height=(gridSpanFrac(foot.h)*100)+'%';
+      g.style.left=(gridLeftFrac(cc)*100)+'%'; g.style.top=(gridTopFrac(rr)*100)+'%';
+      g.style.width=(gridSpanFrac(foot.w)*100)+'%'; g.style.height=(gridRowSpanFrac(foot.h)*100)+'%';
       // 🧲 정렬 스냅 가이드(벽꾸미기 wsnap 로직 이식) — 드래그 항목 중심이 격자 중앙/다른 가구 중심과 맞으면 점선 가이드.
       const gv=$('fsnap'); if(gv){ const cen=(cc-1)+foot.w/2; let align=null;
         if(Math.abs(cen-GRID_N/2)<0.001) align=GRID_N/2;   // 격자 가로 중앙
@@ -6102,7 +6154,7 @@
         if(align!=null){ gv.hidden=false; gv.style.left=(align/GRID_N*100)+'%'; } else gv.hidden=true; }
       const gh=$('fsnaph'); if(gh){ const rcen=(rr-1)+foot.h/2; let ralign=null;   // 세로 중심 정렬(같은 앞뒤 깊이의 가구와)
         Object.keys(placed).forEach(k=>{ if(k===key||!placed[k]) return; const pr=k.split('_'), or_=+pr[0], of=itemFoot(placed[k].itemId), ocen=(or_-1)+of.h/2; if(Math.abs(rcen-ocen)<0.001) ralign=ocen; });
-        if(ralign!=null){ gh.hidden=false; gh.style.top=(ralign/GRID_N*100)+'%'; } else gh.hidden=true; }
+        if(ralign!=null){ gh.hidden=false; gh.style.top=(ralign/GRID_ROWS*100)+'%'; } else gh.hidden=true; }
     }
     function hideDropPreview(){ const g=$('gdrop'); if(g) g.hidden=true; const gv=$('fsnap'); if(gv) gv.hidden=true; const gh=$('fsnaph'); if(gh) gh.hidden=true; }
     // ---- 벽꾸미기 격자 드래그(방꾸미기 로직 이식) — 세로 4칸(WALL_ROWS)·깊이 없음, 겹침만 검증 ----
@@ -6162,7 +6214,8 @@
       // ⚡ 낙관적 드롭(바닥 giUp과 동일) — 즉시 새 칸 스냅, 실패 시 재렌더 복원
       d.el.style.transform=''; d.el.style.left=(gridLeftFrac(c)*100)+'%'; d.el.style.top=(((r-1)/WALL_ROWS)*100)+'%';
       captureUndo();
-      gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoom(g); const pl=R.wallPlaced||{};
+      const rid=curRoomId();
+      gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoomById(g, rid); const pl=R.wallPlaced||{};
         const it=pl[d.key]; if(!it) return;                               // 원본 없음(레이스)
         if(!wallAreaFree(r,c,d.w,pl,d.key)) return;                        // 겹침(자기 제외)
         delete pl[d.key]; pl[newKey]={itemId:it.itemId}; g.home.changedAt=new Date().toISOString(); return g;
@@ -6217,13 +6270,25 @@
     }
     function closeItemMenu(){ const m=$('giMenu'); if(m) m.remove(); }
     function retrievePlaced(key, wall){ captureUndo(); roomTx(curRoomId(), roomIdx(), R=>{ const M=wall?(R.wallPlaced=R.wallPlaced||{}):(R.placed=R.placed||{}); delete M[key]; }); closeItemMenu(); toast('회수했어요(인벤토리로)'); }   // roomTx가 changedAt까지 갱신
+    // 판매 진입 게이트 — 특별(epic)↑ 등급은 랜덤박스 전용이라 재획득이 어려운데 판매가는 정액(ITEM_SELL)이라, 실수 판매를 확인 시트로 한 번 막는다(회수/판매 버튼이 붙어 있어 오조작 위험).
     function sellPlaced(key, wall){
+      const map0=wall?(room().wallPlaced||{}):(room().placed||{}), p0=map0[key]; if(!p0){ closeItemMenu(); return; }
+      closeItemMenu();   // 모달을 먼저 닫아야 확인 시트가 보인다(clearRoom과 동일)
+      if(tierRank(itemTierOf(p0.itemId)) >= tierRank('epic')){
+        const it=ITEM_CATALOG.find(x=>x.id===p0.itemId)||{};
+        confirmSheet('\''+(it.name||p0.itemId)+'\'은(는) '+tierInfo(itemTierOf(p0.itemId)).name+' 등급 가구예요.\n판매하면 +'+ITEM_SELL+' 은화만 받고 보유에서 사라져요(재획득은 랜덤박스에서만). 판매할까요?',
+          ()=>_sellPlacedNow(key, wall), {title:'가구 판매', okLabel:'판매', danger:true});
+        return;
+      }
+      _sellPlacedNow(key, wall);
+    }
+    function _sellPlacedNow(key, wall){
       captureUndo();
-      const map=wall?(room().wallPlaced||{}):(room().placed||{}), p=map[key]; if(!p){ closeItemMenu(); return; }
-      const id=p.itemId;
+      const map=wall?(room().wallPlaced||{}):(room().placed||{}), p=map[key]; if(!p) return;
+      const id=p.itemId, rid=curRoomId();
       gameRef().transaction(g=>{
         g=normalizeGame(g);
-        const R=gRoom(g); const M=wall?(R.wallPlaced||{}):(R.placed||{}); if(!M[key]) return g;   // 이미 없음(중복 방지)
+        const R=gRoomById(g, rid); const M=wall?(R.wallPlaced||{}):(R.placed||{}); if(!M[key]) return g;   // 이미 없음(중복 방지)
         delete M[key];
         const inv=g.owned.items[id];
         if(inv){ inv.qty=Math.max(0,(Number(inv.qty)||0)-1); if(inv.qty<=0) delete g.owned.items[id]; }
@@ -6231,7 +6296,6 @@
         g.home.changedAt=new Date().toISOString();
         return g;
       }).then(r=>{ if(r&&r.committed) toast('+'+ITEM_SELL+' 은화에 판매했어요'); });
-      closeItemMenu();
     }
     let _placeMode='floor';   // 'floor'=방꾸미기(바닥 12×12) / 'wall'=벽꾸미기(벽 12×4)
     function setPlaceMode(m){ _placeMode=m; if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
@@ -6281,10 +6345,10 @@
         const wallHint='<div class="hintline" style="margin:8px 0 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16"/></svg>벽 가구를 <b>탭해 선택</b>하거나 <b>꾹 눌러 격자로 끌어</b> 걸어요(위=천장·아래=바닥선). 걸린 항목은 <b>꾹 눌러 드래그로 이동</b>, 짧게 탭하면 회수/판매. <b>특별↑ 벽 가구는 랜덤박스로만</b> 얻어요.</div>';
         body=wgrid+wallHint+'<div class="palette catinv">'+(wpal||'<div class="palempty">보유한 벽 가구가 없어요<br><span>랜덤박스에서 벽 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>')+'</div>'+skinPickerHtml('wall');
       } else {
-        // 바닥 격자(12×12) — 기존 방꾸미기(드래그 이동·롱프레스). 벽 가구는 팔레트에서 제외.
+        // 바닥 격자(12×8, 가로×깊이) — 기존 방꾸미기(드래그 이동·롱프레스). 벽 가구는 팔레트에서 제외.
         const placed=room().placed||{};
         const items=Object.keys(placed).map(key=>{ const pr=key.split('_'), r=+pr[0], c=+pr[1], id=placed[key].itemId, foot=itemFoot(id);
-          const left=(gridLeftFrac(c)*100).toFixed(3), top=(gridLeftFrac(r)*100).toFixed(3), w=(gridSpanFrac(foot.w)*100).toFixed(3), h=(gridSpanFrac(foot.h)*100).toFixed(3);
+          const left=(gridLeftFrac(c)*100).toFixed(3), top=(gridTopFrac(r)*100).toFixed(3), w=(gridSpanFrac(foot.w)*100).toFixed(3), h=(gridRowSpanFrac(foot.h)*100).toFixed(3);
           return '<div class="gitem" style="left:'+left+'%;top:'+top+'%;width:'+w+'%;height:'+h+'%" onpointerdown="giDown(event,\''+key+'\')" onclick="event.stopPropagation()">'+
             '<span class="gsc">'+furnSvg(id,{fit:true})+'</span></div>'; }).join('');
         const grid='<div class="grid12" id="placeGrid" onclick="placeClick(event)">'+items+(items?'':emptyGridHint())+'<div class="gdrop" id="gdrop" hidden></div><div class="wsnap" id="fsnap" hidden></div><div class="wsnaph" id="fsnaph" hidden></div></div>';
@@ -7162,9 +7226,9 @@
     }
     // ---- 다마고치 테스트(개발자 전용, 즉시) ----
     function devGiveConsum(){ if(!isDev())return; gameRef().transaction(g=>{ g=normalizeGame(g); g.consum.food+=10; g.consum.water+=10; return g; }).then(r=>{ if(r&&r.committed) toast('사료·물 +10'); }); }
-    function devFillAll(){ if(!isDev())return; gameRef().transaction(g=>{ g=normalizeGame(g); const now=Date.now(); const R=gRoom(g); Object.keys(R.placed||{}).forEach(k=>{ const e=R.placed[k]; if(e&&(e.itemId==='bowl'||e.itemId==='waterbowl')) e.filledAt=now; }); return g; }).then(r=>{ if(r&&r.committed) toast('모든 그릇 채움 🍚💧'); }); }
-    function devExpireBowls(){ if(!isDev())return; gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoom(g); const pl=R.placed||{}; let poop=0; Object.keys(pl).forEach(k=>{ const e=pl[k]; if(e&&e.filledAt&&(e.itemId==='bowl'||e.itemId==='waterbowl')){ e.filledAt=null; poop++; } }); if(poop) R.poops=(Number(R.poops)||0)+poop; return g; }).then(r=>{ if(r&&r.committed) toast('채워진 그릇 만료 → 똥 생성'); }); }
-    function devAddPoop(){ if(!isDev())return; gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoom(g); R.poops=(Number(R.poops)||0)+3; return g; }).then(r=>{ if(r&&r.committed) toast('똥 +3'); }); }
+    function devFillAll(){ if(!isDev())return; const rid=curRoomId(); gameRef().transaction(g=>{ g=normalizeGame(g); const now=Date.now(); const R=gRoomById(g, rid); Object.keys(R.placed||{}).forEach(k=>{ const e=R.placed[k]; if(e&&(e.itemId==='bowl'||e.itemId==='waterbowl')) e.filledAt=now; }); return g; }).then(r=>{ if(r&&r.committed) toast('모든 그릇 채움 🍚💧'); }); }
+    function devExpireBowls(){ if(!isDev())return; const rid=curRoomId(); gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoomById(g, rid); const pl=R.placed||{}; let poop=0; Object.keys(pl).forEach(k=>{ const e=pl[k]; if(e&&e.filledAt&&(e.itemId==='bowl'||e.itemId==='waterbowl')){ e.filledAt=null; poop++; } }); if(poop) R.poops=(Number(R.poops)||0)+poop; return g; }).then(r=>{ if(r&&r.committed) toast('채워진 그릇 만료 → 똥 생성'); }); }
+    function devAddPoop(){ if(!isDev())return; const rid=curRoomId(); gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoomById(g, rid); R.poops=(Number(R.poops)||0)+3; return g; }).then(r=>{ if(r&&r.committed) toast('똥 +3'); }); }
     function devAddCoins(){ if(!isDev())return; gameRef().transaction(g=>{ g=normalizeGame(g); g.coins+=100; return g; }).then(r=>{ if(r&&r.committed) toast('은화 +100'); }); }
     // 재화 지급(개발자): dv_* 입력값을 읽어 은화·금화·소비템(펫알/박스/무지개알/무지개박스)을 한 트랜잭션에 지급.
     function devGrantCurrency(){ if(!isDev())return;

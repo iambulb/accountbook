@@ -669,6 +669,10 @@
     .cspr { position:relative; overflow:hidden; image-rendering:pixelated; }
     .cspr.idle { background-image:var(--idle); background-size:100% 100%; background-repeat:no-repeat; }   /* 쉴 때: 정지 스틸을 창 배경으로 */
     .cspr.idle .csprf { display:none; }   /* 쉴 땐 걷기 필름 숨김·정지 */
+    /* 🫁 정지(쉼) 중 '숨쉬기' 유휴 애니 — 정지스틸을 발밑(bottom) 기준으로 아주 살짝 눌렀다 펴 살아있는 느낌(무자산·transform만, 새 프레임 불필요). 걷기 중(.idle 아님)엔 필름이 돌아 미적용. 펫마다 멈춘 시점이 달라 자연히 위상이 어긋남(class 부착 시 0부터 시작). */
+    .cspr.idle { transform-origin:center bottom; animation:csprBreath 3.4s ease-in-out infinite; }
+    @keyframes csprBreath { 0%,100%{ transform:scaleY(1) scaleX(1); } 50%{ transform:scaleY(.965) scaleX(1.012); } }
+    @media (prefers-reduced-motion: reduce) { .cspr.idle { animation:none; } }
     /* 필름 = 6프레임(288×48) 가로 스트립. translateX(합성)로 프레임 이동 — bg-position 페인트 대체 */
     .csprf { position:absolute; left:0; top:0; height:100%; width:var(--fw); image-rendering:pixelated;
       background-image:var(--sheet); background-size:100% 100%; background-repeat:no-repeat;
@@ -694,6 +698,8 @@
     .pkscene.pk-idle .pk-bfly, .pkscene.pk-idle .pk-dfly, .pkscene.pk-idle .pk-fire { will-change: auto !important; }
     /* 🔋 시트/오버레이가 하단 dock 펫캠을 가릴 때 — dock 걷기필름·가구 연출 정지 + GPU 레이어 회수(안 보여 지각 변화 0). 시트 속 방(crStage/frStage)은 계속 애니. */
     body.sheet-open .catdock .csprf,
+    body.sheet-open .catdock .cspr.idle,
+    body.lite .cspr.idle,
     body.sheet-open .catdock .ffx .px { animation: none !important; }
     body.sheet-open .catdock .cd-actor, body.sheet-open .catdock .csprf { will-change: auto !important; }
     /* 🔋 백그라운드/화면잠금(document.hidden·pagehide) — 앱 전면 CSS/SMIL 데코 정지. 걷기 엔진은 catLoop이 자체 정지. */
@@ -791,9 +797,9 @@
     .cd-coin.bump, .coin.bump, .cd-wallet.bump { animation:coinbump .3s ease; }
     @keyframes coinbump { 0%,100%{transform:scale(1)} 42%{transform:scale(1.22)} }
     /* 배치 탭 미니 웹캠 프리뷰(현재 배치를 방 뷰로 보여줘 앞=아래/뒤=위 방향 안내, 표시 전용) */
-    .miniroom { position:relative; height:120px; border-radius:12px; overflow:hidden; isolation:isolate; border:1px solid var(--bd); margin:2px 0 12px; }   /* isolation=미니룸을 독립 스택 컨텍스트로 → 내부 '미리보기' 배지(z45)가 스크롤 시 sticky 헤더 위로 새어보이던 버그 방지 */
-    .miniroom .cr-floor { height:calc(52% + 1px); }
-    .miniroom .cr-base { bottom:52%; }
+    .miniroom { position:relative; height:150px; border-radius:12px; overflow:hidden; isolation:isolate; border:1px solid var(--bd); margin:2px 0 12px; }   /* 원근 프리뷰(평면 격자 ≠ 실제를 즉시 체감) — 실제 캠(dock·알뜰홈)과 같은 바닥 54%로 맞춰 "미리보기=실제 캠 원근". isolation=독립 스택(배지 z45가 sticky 헤더 위로 새는 것 방지). */
+    .miniroom .cr-floor { height:calc(54% + 1px); }
+    .miniroom .cr-base { bottom:54%; }
     .miniroom .cr-props { pointer-events:none; }
     .miniroom .cr-cam { font-size:9px; padding:3px 8px 3px 6px; top:6px; left:8px; }
     /* 방(프리셋) 미니 미리보기 스트립 — 벽지+가구 축소 썸네일, 탭 전환·✎ 이름변경·잠금 방 확장(금화) */
@@ -1101,9 +1107,9 @@
     .editwrap { background:var(--card); border:1px solid var(--bd); border-radius:18px; padding:14px; margin-top:2px; }
     /* 배치 격자: 절대좌표 + 드래그 가능한 가구. 배경 라인으로 12×12 표시 */
     /* touch-action:pan-y — 빈 격자에서도 세로 스와이프는 시트 스크롤로 통과(드래그는 '꾹 눌러서'만, 드래그 중엔 body.dragging이 스크롤 잠금). none이면 격자가 터치를 먹어 스크롤이 막히던 버그 수정. */
-    .grid12 { position:relative; width:100%; aspect-ratio:1; margin-bottom:12px; border-radius:8px; overflow:hidden; background:var(--soft); touch-action:pan-y;
+    .grid12 { position:relative; width:100%; aspect-ratio:12/8; margin-bottom:12px; border-radius:8px; overflow:hidden; background:var(--soft); touch-action:pan-y;   /* 가로 12칸·세로(깊이) 8칸 — 짧은 바닥 밴드에서 뒤쪽 배치가 구분되게 깊이행 12→8 축소 */
       background-image:linear-gradient(var(--bd) 1px, transparent 1px), linear-gradient(90deg, var(--bd) 1px, transparent 1px);
-      background-size:calc(100%/12) calc(100%/12); }
+      background-size:calc(100%/12) calc(100%/8); }
     /* 벽꾸미기 격자: 가로 12칸 × 세로 4칸(위=천장·아래=바닥선). 벽면 느낌으로 살짝 다른 배경. */
     .gridwall { position:relative; width:100%; aspect-ratio:3; margin-bottom:12px; border-radius:8px; overflow:hidden; background:var(--soft2); touch-action:pan-y; cursor:pointer;
       background-image:linear-gradient(var(--bd) 1px, transparent 1px), linear-gradient(90deg, var(--bd) 1px, transparent 1px);
@@ -1831,14 +1837,15 @@
     .pk-bfly { position:absolute; z-index:4; will-change:transform; animation:fxflit var(--d,9s) ease-in-out infinite; }   /* 경로(--x1..--y3)·딜레이는 인라인(pkRand) — 나비마다 제각각 */
     .pk-bfly .bf-wing { display:block; transform-origin:center; image-rendering:pixelated; animation:pkflap var(--fd,.42s) ease-in-out infinite; }
     @keyframes pkflap { 0%,100%{ transform:scaleX(1);} 50%{ transform:scaleX(.5);} }
-    /* 🪨 원근 큐 — 징검다리·울타리(필드=펫 뒤), 바위(무대 안=겹침), 전경 프레임(무대 앞). 전부 도트(pixelated). */
-    .pk-stone, .pk-fence, .pk-rock, .pk-frame { position:absolute; display:block; transform:translateX(-50%); image-rendering:pixelated; }
-    .pk-stone .px, .pk-fence .px, .pk-rock .px, .pk-frame .px { image-rendering:pixelated; }
+    /* 🪨 원근 큐 — 징검다리·울타리(필드=펫 뒤), 바위(무대 안=겹침), 전경 프레임(무대 앞), 선물상자(랜덤박스 배너). 전부 도트(pixelated). */
+    .pk-stone, .pk-fence, .pk-rock, .pk-frame, .pk-gift { position:absolute; display:block; transform:translateX(-50%); image-rendering:pixelated; }
+    .pk-stone .px, .pk-fence .px, .pk-rock .px, .pk-frame .px, .pk-gift .px { image-rendering:pixelated; }
     .pk-fence, .pk-frame { transform-origin:center bottom; }
     .pk-frame { bottom:0; animation:pkbend 3.2s ease-in-out infinite; }   /* 맨 앞 큰 풀·꽃이 바람에 살랑 */
     /* 🌑 깊이 그림자 — 기본 캠엔 없음, 배너(pkstage)에서만. 액터 scale 안에서 렌더돼 앞=크게·뒤=작게. --pad(발밑 여백, 언스케일 px)로 발끝에 정렬. */
     .cd-shadow { display:none; }
-    .pkstage .cd-shadow { display:block; position:absolute; left:50%; bottom:var(--pad,0px); transform:translateX(-50%); z-index:0; opacity:.24; pointer-events:none; }
+    /* 🌑 발밑 접지 그림자 — 펫이 바닥에 붙어 보이게(부유감 제거). 액터(.cd-actor) 안에 있어 depthScale로 앞=크게·뒤=작게 자동, bottom:var(--pad)로 스프라이트 실제 발끝선에 정렬. */
+    .pkstage .cd-shadow, .cd-room .cd-shadow, .catroom .cd-shadow { display:block; position:absolute; left:50%; bottom:var(--pad,0px); transform:translateX(-50%); z-index:0; opacity:.2; pointer-events:none; }
     /* 로그인 알(egg-garden) — 뜰 가운데(앞쪽 말고 중앙으로) */
     .pk-egg { position:absolute; left:50%; bottom:30%; transform:translateX(-50%); z-index:3; }
     .pk-egg img { display:block; height:50px; width:auto; filter:drop-shadow(0 3px 0 rgba(0,0,0,.14)); }

@@ -267,6 +267,27 @@ test('normalizeHome: 레거시 flat(단일 방) → rooms[0]로 이관', () => {
   assert.strictEqual(h.rooms[0].name, '방 1');
 });
 
+test('normalizeHome: 깊이 12→8행 마이그레이션 — 레거시 행(r>8)은 맨앞행(8)로 클램프, 열 불변·idempotent', () => {
+  const h = U.normalizeHome({
+    rooms: [{ placed: {
+      '3_2': { itemId: 'a' },    // r≤8 → 그대로
+      '8_5': { itemId: 'b' },    // 경계 → 그대로
+      '10_7': { itemId: 'c' },   // r>8 → 8_7로 클램프(열 7 불변)
+      '12_1': { itemId: 'd' }     // r>8 → 8_1
+    } }],
+    roomSlots: 1
+  });
+  const p = h.rooms[0].placed;
+  assert.deepStrictEqual(p['3_2'], { itemId: 'a' });
+  assert.deepStrictEqual(p['8_5'], { itemId: 'b' });
+  assert.deepStrictEqual(p['8_7'], { itemId: 'c' });   // 10_7 → 8_7
+  assert.deepStrictEqual(p['8_1'], { itemId: 'd' });   // 12_1 → 8_1
+  assert.ok(!p['10_7'] && !p['12_1'], '레거시 키는 남지 않음');
+  // idempotent: 이미 정규화된(모두 r≤8) 데이터를 다시 넣어도 그대로
+  const again = U.normalizeHome({ rooms: [{ placed: p }], roomSlots: 1 });
+  assert.deepStrictEqual(again.rooms[0].placed, p);
+});
+
 test('normalizeHome: 한 펫당 한 방(중복 등장 제거, 먼저 나온 방 우선) + showRoom', () => {
   const h = U.normalizeHome({ rooms: [{ active: ['a', 'b'] }, { active: ['b', 'c'] }], roomSlots: 2, showRoom: 1 });
   assert.deepStrictEqual(h.rooms[0].active, ['a', 'b']);
@@ -565,13 +586,14 @@ test('affLevelReward: 레벨별 소보상 은화(×10)', () => {
 
 test('CAM: 캠 원근 한 묶음 불변식(단일 소스 잠금)', () => {
   // 값 자체를 잠금 — 바꾸려면 dock·방·친구방 CSS(--cam-*)와 함께 의도적으로(과거 dock 66%·rise 0.61 회귀 재발 방지)
-  assert.deepStrictEqual(U.CAM, { FLOOR: 54, WALL: 46, STAGE: 58, RISE: 0.53, FURN_BASE: 3, FURN_SPAN: 46, ROWS: 12, DIV: 11 });
+  assert.deepStrictEqual(U.CAM, { FLOOR: 54, WALL: 46, STAGE: 58, RISE: 0.53, FURN_BASE: 3, FURN_SPAN: 46, ROWS: 8, DIV: 7 });
   assert.strictEqual(U.CAM.FLOOR + U.CAM.WALL, 100);                    // 바닥+벽지=100%
-  assert.strictEqual(U.camDepth(12), 0);                                // 맨 앞행 → depth 0
+  assert.strictEqual(U.camDepth(8), 0);                                 // 맨 앞행(=ROWS) → depth 0
   assert.strictEqual(U.camDepth(1), 1);                                 // 맨 뒷행 → depth 1
+  assert.strictEqual(U.camDepth(12), 0);                               // 레거시 앞행(>ROWS)도 [0,1] 클램프 → depth 0
   assert.strictEqual(U.camFurnBottom(0), 3);                            // 맨 앞 가구 bottom 3%
   assert.strictEqual(U.camFurnBottom(1), 49);                           // 맨 뒤 가구 bottom 49%(벽 바닥선)
-  assert.strictEqual(U.camZ(0), 12);                                    // 맨 앞 z 최대
+  assert.strictEqual(U.camZ(0), 8);                                     // 맨 앞 z 최대(=ROWS)
   assert.strictEqual(U.camZ(1), 1);                                     // 맨 뒤 z 최소(≥1)
   // CSS(--cam-*)와 JS(CAM)의 값 정합 — styles.css 원문 검사
   const fs = require('node:fs'), path = require('node:path');
