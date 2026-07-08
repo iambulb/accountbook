@@ -159,7 +159,13 @@ def gen_sprites(reg):
         fw = ", frontWalk:true" if p.get("frontWalk") else ""
         sc = p.get("scale")
         scStr = f", scale:{sc}" if (sc and float(sc)!=1) else ""
-        lines.append(f"      {p['id']}:{{ walk:'assets/pets/{p['species']}/{p['id']}/walk.png', frames:{p.get('frames',6)}, stills:true{scStr}{fw} }}{comma}")
+        # 🎞️ 다중 모션 클립(선택) — pets.json 의 clips:{클립키:프레임수}. 정적 펫은 같은 폴더의 <클립키>.png 재생.
+        clips = p.get("clips")
+        clipsStr = ""
+        if clips:
+            inner = ", ".join(f"{k}:{int(v)}" for k,v in clips.items())
+            clipsStr = f", clips:{{ {inner} }}"
+        lines.append(f"      {p['id']}:{{ walk:'assets/pets/{p['species']}/{p['id']}/walk.png', frames:{p.get('frames',6)}, stills:true{scStr}{fw}{clipsStr} }}{comma}")
     return "    const PET_SPRITES = {\n" + "\n".join(lines) + "\n    };"
 
 def gen_tier(reg):
@@ -171,6 +177,8 @@ def gen_sw_shell(reg):
     for p in reg["pets"]:
         for f in ("walk","south","north","east","west"):
             out.append(f"  './assets/pets/{p['species']}/{p['id']}/{f}.png',")
+        for k in (p.get("clips") or {}):   # 🎞️ 다중 모션 클립 시트도 앱 셸에 프리캐시
+            out.append(f"  './assets/pets/{p['species']}/{p['id']}/{k}.png',")
     return "\n".join(out)
 
 def gen_names(reg): return "·".join(p["name"] for p in reg["pets"])

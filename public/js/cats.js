@@ -280,6 +280,90 @@
       "..dDAAAAAaDd....",
       "...dDDDDDDd.....",
     ];
+    // 🍖 고급사료(소비템): 사료봉투 + 금테 밴드(G/g) + 별 배지(S). 지속 6h. 16×18.
+    const M_FOODPLUS = [
+      "................",
+      "......gGGg......",
+      ".....GFHHFG.....",
+      "....GFHFFHFG....",
+      "...GFHFFFFHFG...",
+      "..GFHFFFFFFHFG..",
+      "..GFFFFFFFFFFG..",
+      "..GgGGGGGGGGgG..",
+      "..GFLLLLLLLLFG..",
+      "..GFLSGgGgGSLG..",
+      "..GFLGgGSGgGLG..",
+      "..GFLSGgGgGSLG..",
+      "..GFLLLLLLLLFG..",
+      "..GFFFFFFFFFFG..",
+      "..GFHFFFFFFfFG..",
+      "..GFfFFFFFfffG..",
+      "..GgfFFFFffgG...",
+      "...gGGGGGGg.....",
+    ];
+    // 💧 정수물(소비템): 생수병 + 물방울 스파클(S) + 정수 필터 라벨(G=연한파랑). 지속 6h. 16×18.
+    const M_WATERPLUS = [
+      "................",
+      ".....dDDd..S....",
+      ".....DAAD......S",
+      ".....dDDd..S....",
+      "....DdAAdD......",
+      "...DAAHAAaD.....",
+      "..DAGHAAAaaD....",
+      "..DAAAAAAAaD....",
+      "..DAHAAAAAaD....",
+      "..DLLLLLLLLD....",
+      "..DLGGdGGdGD....",
+      "..DLdGGdGGGD....",
+      "..DLLLLLLLLD....",
+      "..DAAHAAAAaD....",
+      "..DAGAAAAAaD....",
+      "..DAAHAAAaaD....",
+      "..dDAAAAAaDd....",
+      "...dDDDDDDd.....",
+    ];
+    // 🍡 츄르(간식·소비템): 짜먹는 튜브 스틱 — 상단 씰(K) + 몸체(C) + 노란 라벨(P). 애정+1. 16×18.
+    const M_TREAT = [
+      "................",
+      ".....KKKKK......",
+      "....KDcccDK.....",
+      "....KDCCCDK.....",
+      "....DCHCcCD.....",
+      "....DCCCCCD.....",
+      "....DCLLLCD.....",
+      "....DCLPLCD.....",
+      "....DCLPLCD.....",
+      "....DCLLLCD.....",
+      "....DCcHCCD.....",
+      "....DCCCCCD.....",
+      "....DCcCCcD.....",
+      "....DCCcCCD.....",
+      "....DCCCCCD.....",
+      "....DcCCCcD.....",
+      "....KDcccDK.....",
+      ".....KKKKK......",
+    ];
+    // 💊 영양제(보약·소비템): 약병 — 코르크 뚜껑(C/c) + 몸체(B) + 십자(+) 라벨(P=빨강). 수익부스터. 16×18.
+    const M_TONIC = [
+      "................",
+      "......cCCc......",
+      "......CCCC......",
+      "......cccc......",
+      ".....KDBBDK.....",
+      "....KDBHBBDK....",
+      "...DBBBBBBBBD...",
+      "..DBBHBBBBBBD...",
+      "..DBLLLLLLLBD...",
+      "..DBLLLPLLLBD...",
+      "..DBLPPPPPLBD...",
+      "..DBLLLPLLLBD...",
+      "..DBLLLLLLLBD...",
+      "..DBBBBBBBBbD...",
+      "..DBbHBBBBbBD...",
+      "..DBbBBBBbbBD...",
+      "..DDbBBBbbDDD...",
+      "...KDDDDDDDK....",
+    ];
     // 캣타워: 3층(발판 3개) 세로형 — 상단 둥지컵 + 중·하단 카펫 발판 + 시살(밧줄) 기둥 + 매달린 장난감 + 발 달린 목재 베이스.
     // 16×30, 가로세로비 ≈ 0.533. 발판 중심이 상호작용 층 높이(furnSpot frac 0.30/0.62/0.92)에 정렬(하단30%·중단62%·상단컵92%).
     // 팔레트: X=진한 목재·P/H=기둥 목재·W/C/L=카펫(기본/음영/하이라이트)·R/S=시살 밧줄·T/O=장난감 공·K=끈.
@@ -1960,10 +2044,295 @@
       ".kSkSkSkSkSk....",
       "..KkKkKkKk......",
     ];
-    const FURN_PALS={ pond:POND_PAL, cushion:{X:'#3f4753',C:'#7a8695',D:'#5b6470',L:'#c2cad4',H:'#e2e7ee',B:'#4a5361',t:'#e0b84a',s:'#c49a30'}, bowl:{X:'#3f4753',W:'#dfe4ea',w:'#c2c8d0',L:'#f2f5f8',D:'#a9b0ba',F:'#d68b4a',f:'#b06a2e',g:'#efb37a',K:'#8a5427'}, waterbowl:{X:'#3f4753',W:'#dfe4ea',w:'#c2c8d0',L:'#f2f5f8',D:'#a9b0ba',A:'#5aa9e6',a:'#3f86c4',h:'#bfe2fb',H:'#e6f3fc'}, tower:{X:'#5e3f22',x:'#3f2a16',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#5e3f22',x:'#3f2a16',W:'#c99a5f',C:'#a87c46',L:'#e6c085',S:'#d8b98a',R:'#b8935f',T:'#6b4a2a',O:'#d9694e',H:'#f2a98f',K:'#4a3218'}, litterbox:{B:'#5b9bd8',b:'#3f79b5',e:'#9ccaf0',k:'#2f6098',W:'#f5f8fc',w:'#d3e3f4',v:'#c2d8ee'}, pethouse:{X:'#4a3624',x:'#2f2216',R:'#d9694e',r:'#b8503a',H:'#f0967a',h:'#ffb59c',W:'#e8c98f',w:'#d4b06a',v:'#c49a54',D:'#241a12',d:'#3e2e1e',K:'#5a4632',o:'#e0b84a'}, plant:{x:'#5a3a1c',P:'#c8763e',p:'#a85e2c',H:'#e0a05a',e:'#6b4a2a',S:'#6f9440',G:'#3f7a2c',L:'#7cc652',l:'#9ad86a',I:'#b8e88f'}, catwheel:{X:'#2f6f68',x:'#1e4a44',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',t:'#3a7a70',R:'#c9a06a',r:'#a8824f',D:'#6b5842',d:'#4a3e2e'}, rug:{F:'#efe3cf',X:'#5e2028',x:'#3a1218',o:'#8a3a44',B:'#c0505e',C:'#a5424e',L:'#e6b3a0',l:'#f0c9bc',G:'#e6b24a',g:'#b9862f',N:'#3a2436',Y:'#ffd968'}, window:{X:'#5a3a1c',W:'#9a734a',w:'#b58d5e',H:'#c9a570',S:'#bfe3f5',s:'#9fd0ea',C:'#ffffff',c:'#eaf6ff',U:'#ffd968',u:'#f2b93c',Y:'#fff0b0'}, fishtank:{X:'#5b7b86',x:'#3a5560',G:'#cfeef6',g:'#a6d8e6',A:'#5aa9e6',a:'#3f86c4',P:'#3f7a2c',p:'#5bbf7a',F:'#f2933c',f:'#ffd27a',b:'#dff3ff',R:'#cdb98c',r:'#a8946a',D:'#3a5a63'}, fireplace:{X:'#4a3626',W:'#8a5230',w:'#9c6f3f',H:'#b0824f',K:'#b0563f',k:'#c8785a',m:'#8a4636',D:'#1a1108',d:'#2f2016',f:'#ffe14a',F:'#ff9e3d',r:'#ff5f2e',S:'#5a4a3a',L:'#7a6a52'}, fan:{X:'#3f5a63',x:'#2a3d44',G:'#cfe6ee',L:'#eef7fb',D:'#a7cdda',h:'#e0b84a',N:'#7a828c',n:'#5a616a',S:'#9298a2',s:'#6f747c'}, hammock:{X:'#5a4632',x:'#3a2e1e',W:'#7a5a3a',w:'#9c6f3f',K:'#b7a78f',C:'#3c7d6d',c:'#2f6357',L:'#5bb39d',l:'#7fd0be',P:'#e8c98f',p:'#cba765'}, teaser:{R:'#6b7280',r:'#4a505a',K:'#c0c6cd',F:'#e2607a',f:'#f2a7b8',H:'#ff9ec2',T:'#c94a66',S:'#7a5230',s:'#9c6f3f',x:'#5a3a22'}, wallclock:{X:'#3a2e22',W:'#8a5a34',w:'#a8763f',H:'#c49560',L:'#f2e6c8',l:'#e0d0a8',D:'#2a221a',K:'#6b5a3a',O:'#e0b84a',o:'#c49a30',M:'#4a3a26'}, hangplant:{X:'#5a4632',K:'#b7a78f',k:'#8a7a62',P:'#c8763e',p:'#a85e2c',H:'#e0a05a',G:'#3f7a2c',L:'#7cc652',l:'#9ad86a',g:'#5a9636',I:'#b8e88f'}, mobile:{X:'#5a4632',K:'#b7a78f',k:'#8a7a62',M:'#7a5a3a',A:'#ffd54a',a:'#e0b02c',B:'#8fb8e6',b:'#6f97c4',C:'#f2a7b8',c:'#d98098',W:'#fff6df'}, jingleball:{X:'#8a3a2c',x:'#5a231a',B:'#e0552f',b:'#b8452a',L:'#f2a06a',H:'#ffcfa8',D:'#7a2f22',S:'#ffd24a',s:'#e0a838',K:'#8a909a'}, frame:{X:'#4a3626',W:'#caa23a',w:'#e6c96b',H:'#fff0b8',S:'#bfe3f5',U:'#ffd968',c:'#ffffff',G:'#5aa860',g:'#3f7a48',t:'#7a5230',T:'#4e9636',m:'#8a6a4a'}, shelf:{W:'#9a734a',w:'#6b4a2a',H:'#b58a55',K:'#5a5f68',G:'#4e9636',L:'#7cc652',P:'#c8763e',p:'#a85e2c',B:'#d9694e',r:'#f0967a',o:'#b8503a',C:'#8fb8e6',c:'#bfe3f5',Y:'#ffd24a',X:'#3a2818'}, mirror:{X:'#8a6a1e',W:'#e6c96b',w:'#b98f2f',H:'#fff0b8',A:'#9fbccb',a:'#7fa2b4',b:'#cfe4ee',h:'#ffffff',o:'#f2d878',v:'#6f8ea0'}, neon:{g:'#c0387f',G:'#8a2358',N:'#ff2f8f',n:'#e01a76',H:'#ff9ecf',C:'#ffffff',S:'#ffe6f4',k:'#3a2030'}, sconce:{K:'#5a5f68',k:'#8a909a',D:'#3a3e45',H:'#b6bcc6',h:'#d8dde3',F:'#ff8a2e',Y:'#ffd23e',y:'#fff2a8',W:'#f2e6c8',w:'#d8c49e'}, chandelier:{K:'#6b5220',k:'#4a3814',F:'#c49b45',f:'#a8823a',H:'#f6dd94',Y:'#ffd35e',y:'#ff9e3d',W:'#fff6df',C:'#dff0fb',c:'#a9cfe4',o:'#ffffff',v:'#7fb2d4'}, garland:{K:'#6b5a3a',k:'#4a3e28',A:'#e0552f',B:'#ffd54a',C:'#4e9636',a:'#8fb8e6',b:'#f2a7b8',c:'#c0387f',H:'#ffffff'}, poster:{X:'#3a2e22',x:'#22190f',S:'#bfe3f5',s:'#8fc8e6',U:'#ffd968',M:'#5a7d8a',m:'#3f5a66',P:'#efe3cf',d:'#c94a66',G:'#5aa860',W:'#ffffff'}, tapestry:{K:'#7a5230',k:'#5a3a1c',w:'#9c6f3f',C:'#7a4a8a',c:'#5a2f6a',D:'#a86fc0',o:'#e0a43c',O:'#ffd968',f:'#c9a06a',R:'#c05070',W:'#efe3cf'}, cactus:{e:'#6b4a2a',x:'#7c5028',P:'#c8763e',p:'#a85e2c',H:'#e0a05a',D:'#2f7a3e',G:'#43a058',L:'#6fc47f',I:'#8fdc97',s:'#dff5cf',f:'#ff5f9e',F:'#ff9ec2',Y:'#ffe14a'}, yarnbasket:{X:'#6b4423',W:'#c49a5c',w:'#a37c42',D:'#8a6535',H:'#dbb578',Y:'#e2607a',y:'#f2a7b8',R:'#5aa9e6',r:'#bfe2fb',B:'#f2c84b',b:'#ffe6a8',G:'#5bbf7a',g:'#9be0af',k:'#3a2a18'}, floorlamp:{K:'#5a5f68',k:'#3a3e45',D:'#2a2d33',S:'#e8c98f',s:'#cfa864',T:'#b98f52',F:'#fff3c4',Y:'#ffde6a',H:'#fffbe6',o:'#ffb84a',M:'#7a8088'}, beanbag:{k:'#254a63',D:'#3f6f8a',B:'#5b9bd8',L:'#8fc2ec',H:'#bfe2fb',S:'#2f5570',p:'#e6b24a'}, groomstation:{X:'#5a3a1c',k:'#3a2513',W:'#d9694e',w:'#b8503a',H:'#f0967a',s:'#efe9db',S:'#c9c2b2',t:'#a89a82',B:'#8a6a3f',b:'#6b4f2a',D:'#5a4228'}, springtoy:{D:'#2f3238',k:'#4a4f57',K:'#8a909a',H:'#c3c9d1',B:'#e0552f',b:'#b8452a',L:'#ff9e6a',R:'#ff7a4a',S:'#ffd24a',W:'#fff0d0',x:'#7a2f1c'}, tunnel:{X:'#3f4a52',K:'#5a6570',W:'#5aa9e6',w:'#3f86c4',H:'#bfe2fb',R:'#f2c84b',r:'#e0a838',D:'#1a2530',d:'#26333f',G:'#5bbf7a'}, teepee:{W:'#efe3cf',w:'#d8cbb2',D:'#b8a888',d:'#9c8e70',K:'#2a1e14',k:'#4a3826',X:'#7a5230',x:'#5a3a1c',R:'#d9694e',r:'#b8503a',B:'#5aa9e6',Y:'#e6b24a',f:'#ff5f9e'}, bookshelf:{X:'#4a3220',x:'#3a2818',W:'#7a5a3a',w:'#9c7548',H:'#b58a55',k:'#2a1c10',R:'#d9694e',r:'#a84636',G:'#4e9636',g:'#3a7028',B:'#3f86c4',b:'#2f6698',Y:'#e6b24a',y:'#c4922f',P:'#a86fc0',p:'#7d4e94',o:'#e0a43c',T:'#5bbf7a',S:'#7c5028',A:'#efe3cf'}, birdcage:{K:'#8a909a',k:'#5a5f68',D:'#3a3e45',W:'#d8dde3',w:'#aab0b8',H:'#eef1f5',Y:'#ffd24a',y:'#e0a838',o:'#ff8a3d',B:'#e0552f',T:'#7a5230',t:'#5a3a1c',R:'#ff5f5f'}, lavalamp:{K:'#5a5f68',k:'#3a3e45',D:'#2a2d33',G:'#cfeaf3',g:'#a6d4e2',H:'#eef8fc',R:'#e0431f',o:'#ff7a2e',O:'#ff9e4a',Y:'#ffd24a',r:'#c23418',W:'#fff0b8'}, laserpost:{K:'#5a5f68',k:'#3a3e45',D:'#2a2d33',W:'#8a909a',w:'#aab0b8',H:'#d8dde3',R:'#ff2f4f',r:'#ff7a8a',L:'#ff9ea8',P:'#ffd0d6',Y:'#ffe14a'}, waterfountain:{X:'#3a4652',x:'#2a333d',B:'#8fb8e6',b:'#6f97c4',K:'#5a6f82',A:'#5aa9e6',a:'#3f86c4',H:'#bfe2fb',h:'#e6f3fc',W:'#d0d6dd',w:'#aab2bc',D:'#8a929c'}, sofa:{x:'#5a3a22',k:'#4a2e1a',D:'#8a5a3a',B:'#c98a5a',L:'#e0ad78',H:'#f0c894',c:'#e6b24a',C:'#c4922f',S:'#b07840',t:'#3a2410'}, recordplayer:{X:'#3a2818',W:'#9c7548',w:'#7a5a3a',H:'#c4a06a',k:'#2a1c10',D:'#1e1e22',d:'#3a3a42',g:'#55555e',R:'#d9694e',r:'#a84636',K:'#8a909a',S:'#c9c2b2',Y:'#ffd24a'}, terrarium:{K:'#6b5220',k:'#4a3814',H:'#8a6a2c',G:'#d8f0f5',g:'#b0dce6',h:'#eefaff',x:'#7c5028',X:'#5a3a1c',e:'#6b4a2a',L:'#7cc652',l:'#9be0af',D:'#4e9636',S:'#9298a2',s:'#c0c6ce',f:'#ff5f9e',F:'#ffe14a'}, ballpit:{X:'#2f6f9e',x:'#245a80',W:'#5aa9e6',w:'#3f86c4',H:'#bfe2fb',R:'#e0552f',r:'#ff8a5a',Y:'#ffd24a',y:'#fff0a8',G:'#4e9636',g:'#7cc652',P:'#f2a7b8',p:'#ffd0e0',B:'#8fb8e6',b:'#c3ddf5'}, grandfaclock:{X:'#4a3218',x:'#3a2610',W:'#7a5230',w:'#9c6f3f',H:'#b58a55',k:'#2a1a0c',L:'#f2e6c8',l:'#e0d0a8',D:'#2a221a',O:'#e0b84a',o:'#c49a30',K:'#8a6a3a',G:'#bfe3f5',g:'#8fc2ec',R:'#d9694e'}, bunkbed:{X:'#4a3218',x:'#3a2610',W:'#9c6f3f',w:'#c99a63',H:'#dbb578',k:'#2a1a0c',M:'#e8e2d4',m:'#cfc7b8',R:'#d9694e',r:'#f0967a',B:'#5aa9e6',b:'#8fc2ec',P:'#f2c84b',p:'#ffe6a8',G:'#5bbf7a'}, crystalfountain:{W:'#d0d6dd',w:'#aab2bc',X:'#7a828c',x:'#5a626c',A:'#5aa9e6',a:'#3f86c4',H:'#bfe2fb',h:'#e6f3fc',s:'#eaf6ff',C:'#a9cfe4',c:'#7fb2d4',B:'#dff3ff',K:'#ffffff'}, dartboard:{X:'#2a221a',x:'#1a140e',R:'#d9694e',r:'#a84636',G:'#4e9636',g:'#3a7028',W:'#efe3cf',w:'#cfc4b0',K:'#5a5f68',Y:'#e6b24a',H:'#ffffff',B:'#3f86c4',S:'#c9c2b2'}, cuckooclock:{X:'#3a2410',x:'#2a1808',W:'#7a5230',w:'#9c6f3f',H:'#b58a55',k:'#1a1006',R:'#c0392b',r:'#e05545',G:'#4e9636',g:'#3a7028',L:'#f2e6c8',l:'#e0d0a8',D:'#2a1c12',O:'#e0b84a',o:'#c49a30',Y:'#ffd24a',B:'#8fb8e6',K:'#8a909a'}, roundbed:{X:'#5a3a1c',W:'#c98a5a',w:'#a87040',L:'#e0ad78',H:'#f2cf9e',M:'#efe9dc',m:'#d6cdb8',S:'#b07840'}, donutbed:{X:'#7a2f2c',W:'#e0552f',w:'#b8452a',L:'#ff9e6a',H:'#ffcaa8',M:'#f2e4c6',m:'#d8c49e',S:'#c23418'}, cavebed:{X:'#4a3628',x:'#2f2218',W:'#8a6a4a',w:'#6b4f36',H:'#a5825a',G:'#7a9a5a',g:'#5a7a3e',D:'#1a120a',d:'#2e2016',M:'#e8dcc8',m:'#cfc0a8'}, canopybed:{X:'#4a3218',x:'#2f2010',W:'#9c6f3f',w:'#7a5230',H:'#c49560',P:'#c77dff',p:'#9a4fd0',M:'#efe9dc',m:'#d6cdb8',R:'#ff9ec2',o:'#e0b84a',k:'#2a1a0c'}, throne:{X:'#6b5220',x:'#4a3814',W:'#e0b84a',w:'#c49a30',H:'#ffe89a',R:'#c0392b',r:'#8a2820',o:'#ff5f8f',M:'#efe0b8',G:'#5aa860'}, mousetoy:{X:'#5a5560',G:'#9aa0aa',g:'#7a808a',H:'#c8ccd4',P:'#ff9ec2',e:'#2a2a30',T:'#d8b8c8',w:'#efe4c6',k:'#3a3a42'}, catnippillow:{X:'#3a6a3e',W:'#5aa860',w:'#468a4c',L:'#7cc472',H:'#a5e09a',G:'#3f7a2c',l:'#9ad86a',o:'#e0b84a'}, puzzlefeeder:{X:'#3a5a63',W:'#5aa9e6',w:'#3f86c4',H:'#bfe2fb',Y:'#ffd24a',o:'#ff8a3d',D:'#2a3d44',L:'#8fc2ec',K:'#f2933c'}, balltrack:{X:'#3a4652',W:'#6f97c4',w:'#4a6f9c',H:'#8fb8e6',R:'#e0552f',r:'#ff8a5a',Y:'#ffd24a',G:'#5bbf7a',D:'#2a333d',L:'#bfe2fb',y:'#fff0a8',g:'#3f8a4c'}, teetertoy:{X:'#5a3a1c',W:'#c99a5f',w:'#a87040',R:'#e0552f',r:'#b8452a',B:'#5aa9e6',b:'#3f86c4',Y:'#ffd24a',H:'#ff9e6a',D:'#3a2610'}, bubblemachine:{X:'#3a4652',W:'#8a909a',w:'#6b7078',H:'#c3c9d1',D:'#2a2d33',B:'#bfe2fb',b:'#8fc2ec',L:'#eef8fc',Y:'#ffd24a',P:'#f2a7b8'}, bonsai:{x:'#5a3a1c',P:'#8a5a34',p:'#6b4526',H:'#a5824f',e:'#6b4a2a',X:'#3a2612',S:'#6b4a2a',G:'#3f7a2c',L:'#5aa860',l:'#7cc472',I:'#a5e09a',f:'#ff9ec2'}, globe:{X:'#5a3a1c',x:'#3a2610',W:'#c49560',H:'#e0c088',A:'#5aa9e6',a:'#3f86c4',G:'#5bbf7a',g:'#3f8a4c',L:'#bfe2fb',K:'#8a6a3a',o:'#e0b84a'}, snowglobe:{X:'#5a3a1c',x:'#3a2610',W:'#c49560',G:'#cfeaf6',g:'#a6d4e2',H:'#eef8fc',S:'#ffffff',s:'#dbe6f2',T:'#5aa860',t:'#3f7a2c',R:'#d9694e',K:'#8a6a3a'}, campfire:{X:'#4a3626',W:'#8a5230',w:'#6b4326',D:'#2a1c12',K:'#5a5560',k:'#7a7580',f:'#ffe14a',F:'#ff9e3d',r:'#ff5f2e',o:'#e0662a',S:'#9298a2'} };
+    const M_GRAMOPHONE = [
+      "................",
+      "........KKKK....",
+      ".......KkkkkK...",
+      "......Kk....kK..",
+      ".....Kk..KKKkK..",
+      ".....k.KKkkk.K..",
+      "....Kk.KkK...K..",
+      "...KkkKkK.......",
+      "...KkkK.........",
+      "..XWWXk.........",
+      ".XWDDDDWX.......",
+      ".XWDdRdDWX......",
+      ".XWDdddDWX......",
+      ".XWDDDDDWX......",
+      ".XWwHHHwWX......",
+      ".xXWWWWWXx......",
+    ];
+    const M_ARCADEMACHINE = [
+      "................",
+      "..WWWWWWWWWW....",
+      ".WHRRRYRRRHW....",
+      ".WwwwwwwwwwW....",
+      ".WXDDDDDDXW.....",
+      ".WXDSLBRSDXW....",
+      ".WXDRSLBRDXW....",
+      ".WXDLBRSLDXW....",
+      ".WXDDDDDDXW.....",
+      ".WwYRBLGYwW.....",
+      ".WKKKKKKKKW.....",
+      ".WwXBRXBRxW.....",
+      ".WwXXXXXXxW.....",
+      ".WwwwwwwwwwW....",
+      ".xWWWWWWWWWx....",
+      "..xwww..wwwx....",
+    ];
+    const M_JUKEBOX = [
+      "................",
+      "...KKKKKKKK.....",
+      "..KRBYGRBYGK....",
+      ".KWHHHHHHHHWK...",
+      ".WXSSSSSSSSXW...",
+      ".WXSDDDDDDSXW...",
+      ".WXSDLLLLDSXW...",
+      ".WXSDLDDLDSXW...",
+      ".WXSDDDDDDSXW...",
+      ".WKRBYGRBYGKW...",
+      ".WHwwwwwwwwHW...",
+      ".WwXKSSSKXwW....",
+      ".WwXXXXXXXwW....",
+      ".xWWWWWWWWWx....",
+      "..xwwwwwwwx.....",
+    ];
+    const M_CRYSTALCLUSTER = [
+      "................",
+      ".......h........",
+      "......hHh.......",
+      "...W..HBH..h....",
+      "..hHh.BbB.hCh...",
+      "..HPH.HBH.HCH...",
+      "..PpP.BbB.CcC...",
+      ".hHPHhHBHhHCHh..",
+      ".HPpPHHBBHCcCH..",
+      ".PpPpPBbBBCcCc..",
+      ".xPpPxBbBxCcCx..",
+      "..xKKxxKKxxKKx..",
+      "...KKKKKKKKKx...",
+      "....xKKKKKx.....",
+    ];
+    const M_EASEL = [
+      "................",
+      "...WWWWWWWWW....",
+      "..WFFFFFFFFFW...",
+      "..WFSSSUSSSFW...",
+      "..WFSSUUUSSFW...",
+      "..WFSSSUSBSFW...",
+      "..WFSGGSSBBFW...",
+      "..WFGgGRgggFW...",
+      "..WFFFFFFFFFW...",
+      "..WWWWWWWWWW....",
+      "...X.HWH.X......",
+      "...X.HWH.X......",
+      "..X..HWH..X.....",
+      ".X...xWx...X....",
+      "xX...xXx...Xx...",
+    ];
+    const M_FLOORVASE = [
+      "................",
+      "....R..Y..P.....",
+      "...RRR.YYY.PPP..",
+      "...GLl.Gl.LlG...",
+      "....GLlGlLG.....",
+      ".....GLGLl......",
+      "......GLG.......",
+      ".....HWWWH......",
+      "....HWwwwWH.....",
+      "....WwwHwwW.....",
+      "....WwwwwwW.....",
+      "....HWwwwWH.....",
+      ".....HWWWH......",
+      "......XwwX......",
+      ".....XWWWWX.....",
+    ];
+    const M_SUITOFARMOR = [
+      "................",
+      ".......W........",
+      "......WhW.......",
+      "......WHW.......",
+      ".....WhWhW......",
+      ".....WHDHW......",
+      "....KWWWWWK.....",
+      "...WhWKWKWhW....",
+      "..WWWWHHWWWWW...",
+      "..WhWWWWWWWhW...",
+      "...WWWKKKWWW....",
+      "....WWHHHWW.....",
+      "....WwWWWwW.....",
+      "....WhW.WhW.....",
+      "...XWWX.XWWX....",
+      "..BWWWB.BWWWB...",
+    ];
+    const M_HOURGLASS = [
+      "................",
+      "...WWWWWWWW.....",
+      "...HwwwwwwH.....",
+      "...GYYYYYYG.....",
+      "....GYYYYG......",
+      ".....GYyG.......",
+      "......GyG.......",
+      "......GYG.......",
+      "......GyG.......",
+      ".....GySyG......",
+      "....GySSSyG.....",
+      "...GYSSSSSyG....",
+      "...HwwwwwwH.....",
+      "...WWWWWWWW.....",
+      "..xX....Xx......",
+    ];
+    const M_TELESCOPE = [
+      "................",
+      "..........KGk...",
+      ".........KWHKk..",
+      "........KWwwHK..",
+      ".......KWwwHK...",
+      "......KWwwHK....",
+      ".....KDwwHK.....",
+      "....KWwwHK......",
+      "...KDWwHK.......",
+      "...KwwHK........",
+      "....KKk.........",
+      "....XWX.........",
+      "...XWwwX........",
+      "..XW.X.WX.......",
+      ".XW..X..WX......",
+      "XWx..X..xWX.....",
+    ];
+    const M_GUMBALLMACHINE = [
+      "................",
+      ".....GGGGG......",
+      "...GGRYBPRGG....",
+      "..GGYBRLYPRGG...",
+      "..GRPLYBRYLBG...",
+      "..GYBRPLRBYPG...",
+      "..GGBLYRPBRGG...",
+      "...GGRPYBLGG....",
+      ".....GKKKG......",
+      "....WKXDXKW.....",
+      "...WWwwwwwWW....",
+      "...WwWWWWWwW....",
+      "...WwWKKKWwW....",
+      "...XWWWWWWWX....",
+      "..XWWWWWWWWWX...",
+    ];
+    const M_WALLVINES = [
+      "..GG....GG....GG.",
+      ".GLlG..GLlG..GLlG",
+      ".GILl.GfLIG.GLlfG",
+      "GLlLIGGLlLIGGILlG",
+      "gLILlGILlLgLILlIg",
+      ".GLlIgLILlGILlGLg",
+      "..GILGLlIGGLIlgG.",
+      "...GLgILlGILgLG..",
+      "....GgLIlGgLIg...",
+      ".....GLlIGLlG....",
+      "......GILGLg.....",
+      ".......GLGg......",
+      "........Gg.......",
+    ];
+    const M_PENNANT = [
+      "KKKKKKKKKKKKKK",
+      "RWr.BWb.YWy.GW",
+      "RRr.BBb.YYy.GG",
+      "RRr.BBb.YYy.GG",
+      ".Rr..Bb..Yy..G",
+      ".Rr..Bb..Yy..G",
+      "..r...b...y...",
+      "..............",
+    ];
+    const M_WALLMASK = [
+      ".....WW.....",
+      "...WWHHWW...",
+      "..WHWwwWHW..",
+      ".WHwXBBXwHW.",
+      ".WwXBGGBXwW.",
+      ".WHXBGGBXHW.",
+      ".WwXDDDDXwW.",
+      ".WHwRRRRwHW.",
+      "..WwRWWRwW..",
+      "..WHwRRwHW..",
+      "...WwHHwW...",
+      "....WKKW....",
+      ".....KK.....",
+    ];
+    const M_BAROMETER = [
+      "....KKKK....",
+      "...KWWWWK...",
+      "..KWHHHHWK..",
+      ".KWHLLLLHWK.",
+      ".WHLGLLGLHW.",
+      ".WHLLDLLLHW.",
+      ".WHLLDLLLHW.",
+      ".WHLRDLGLHW.",
+      ".WHLLLLLLHW.",
+      ".KWHLLLLHWK.",
+      "..KWHHHHWK..",
+      "...KWKKWK...",
+      "....KWWK....",
+      "....KWWK....",
+    ];
+    const M_STRINGLIGHTS = [
+      "KkKKkKKkKKkKKkKKkKKkKK",
+      "R.Y.G.B.P.R.Y.G.B.P.R.",
+      "RHYHGHBHPHRHYHGHBHPHRH",
+      "R.Y.G.B.P.R.Y.G.B.P.R.",
+      ".R.Y.G.B.P...R.Y.G.B.P",
+      "..R...G...P.....Y...B.",
+      ".................R....",
+    ];
+    const M_WALLBUTTERFLY = [
+      "WWWWWWWWWWWW",
+      "WHHHHHHHHHHW",
+      "WH.o...p..HW",
+      "WHooD.pDp.HW",
+      "WHoooDppppHW",
+      "WHbbDkkDyyHW",
+      "WHbbbDkyyyHW",
+      "WHbbDy.DyyHW",
+      "WH..D...D.HW",
+      "WHHHHHHHHHHW",
+      "WWWWWWWWWWWW",
+    ];
+    const M_CORNERSHELF = [
+      "................",
+      "...L.....RR.....",
+      "..LGL...RBRB..Y.",
+      "..GLG...PGGP..Y.",
+      ".HWWWWWWWWWWWWH.",
+      ".wWHwHwHwHwHwWw.",
+      ".XwwwwwwwwwwwwX.",
+      "....G.....BB....",
+      "...LGL...BYBY.K.",
+      "..HWWWWWWWWWWH..",
+      "..wWHwHwHwHwWw..",
+      "..XwwwwwwwwwwX..",
+    ];
+    const M_WALLSUN = [
+      "...y..Y..y...",
+      "y..yYoYy..Y.y",
+      ".y.YoOOoY.y..",
+      "..YoOHHOoY...",
+      "yYoOHYYHOoYy.",
+      ".YoHYyyYHoY..",
+      "YoOHYyRyYHOoY",
+      ".YoHYyyYHoY..",
+      "yYoOHYYHOoYy.",
+      "..YoOHHOoY...",
+      ".y.YoOOoY.y..",
+      "y..yYoYy..Y.y",
+      "...y..Y..y...",
+    ];
+    const FURN_PALS={ pond:POND_PAL, cushion:{X:'#3f4753',C:'#7a8695',D:'#5b6470',L:'#c2cad4',H:'#e2e7ee',B:'#4a5361',t:'#e0b84a',s:'#c49a30'}, bowl:{X:'#3f4753',W:'#dfe4ea',w:'#c2c8d0',L:'#f2f5f8',D:'#a9b0ba',F:'#d68b4a',f:'#b06a2e',g:'#efb37a',K:'#8a5427'}, waterbowl:{X:'#3f4753',W:'#dfe4ea',w:'#c2c8d0',L:'#f2f5f8',D:'#a9b0ba',A:'#5aa9e6',a:'#3f86c4',h:'#bfe2fb',H:'#e6f3fc'}, tower:{X:'#5e3f22',x:'#3f2a16',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#5e3f22',x:'#3f2a16',W:'#c99a5f',C:'#a87c46',L:'#e6c085',S:'#d8b98a',R:'#b8935f',T:'#6b4a2a',O:'#d9694e',H:'#f2a98f',K:'#4a3218'}, litterbox:{B:'#5b9bd8',b:'#3f79b5',e:'#9ccaf0',k:'#2f6098',W:'#f5f8fc',w:'#d3e3f4',v:'#c2d8ee'}, pethouse:{X:'#4a3624',x:'#2f2216',R:'#d9694e',r:'#b8503a',H:'#f0967a',h:'#ffb59c',W:'#e8c98f',w:'#d4b06a',v:'#c49a54',D:'#241a12',d:'#3e2e1e',K:'#5a4632',o:'#e0b84a'}, plant:{x:'#5a3a1c',P:'#c8763e',p:'#a85e2c',H:'#e0a05a',e:'#6b4a2a',S:'#6f9440',G:'#3f7a2c',L:'#7cc652',l:'#9ad86a',I:'#b8e88f'}, catwheel:{X:'#2f6f68',x:'#1e4a44',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',t:'#3a7a70',R:'#c9a06a',r:'#a8824f',D:'#6b5842',d:'#4a3e2e'}, rug:{F:'#efe3cf',X:'#5e2028',x:'#3a1218',o:'#8a3a44',B:'#c0505e',C:'#a5424e',L:'#e6b3a0',l:'#f0c9bc',G:'#e6b24a',g:'#b9862f',N:'#3a2436',Y:'#ffd968'}, window:{X:'#5a3a1c',W:'#9a734a',w:'#b58d5e',H:'#c9a570',S:'#bfe3f5',s:'#9fd0ea',C:'#ffffff',c:'#eaf6ff',U:'#ffd968',u:'#f2b93c',Y:'#fff0b0'}, fishtank:{X:'#5b7b86',x:'#3a5560',G:'#cfeef6',g:'#a6d8e6',A:'#5aa9e6',a:'#3f86c4',P:'#3f7a2c',p:'#5bbf7a',F:'#f2933c',f:'#ffd27a',b:'#dff3ff',R:'#cdb98c',r:'#a8946a',D:'#3a5a63'}, fireplace:{X:'#4a3626',W:'#8a5230',w:'#9c6f3f',H:'#b0824f',K:'#b0563f',k:'#c8785a',m:'#8a4636',D:'#1a1108',d:'#2f2016',f:'#ffe14a',F:'#ff9e3d',r:'#ff5f2e',S:'#5a4a3a',L:'#7a6a52'}, fan:{X:'#3f5a63',x:'#2a3d44',G:'#cfe6ee',L:'#eef7fb',D:'#a7cdda',h:'#e0b84a',N:'#7a828c',n:'#5a616a',S:'#9298a2',s:'#6f747c'}, hammock:{X:'#5a4632',x:'#3a2e1e',W:'#7a5a3a',w:'#9c6f3f',K:'#b7a78f',C:'#3c7d6d',c:'#2f6357',L:'#5bb39d',l:'#7fd0be',P:'#e8c98f',p:'#cba765'}, teaser:{R:'#6b7280',r:'#4a505a',K:'#c0c6cd',F:'#e2607a',f:'#f2a7b8',H:'#ff9ec2',T:'#c94a66',S:'#7a5230',s:'#9c6f3f',x:'#5a3a22'}, wallclock:{X:'#3a2e22',W:'#8a5a34',w:'#a8763f',H:'#c49560',L:'#f2e6c8',l:'#e0d0a8',D:'#2a221a',K:'#6b5a3a',O:'#e0b84a',o:'#c49a30',M:'#4a3a26'}, hangplant:{X:'#5a4632',K:'#b7a78f',k:'#8a7a62',P:'#c8763e',p:'#a85e2c',H:'#e0a05a',G:'#3f7a2c',L:'#7cc652',l:'#9ad86a',g:'#5a9636',I:'#b8e88f'}, mobile:{X:'#5a4632',K:'#b7a78f',k:'#8a7a62',M:'#7a5a3a',A:'#ffd54a',a:'#e0b02c',B:'#8fb8e6',b:'#6f97c4',C:'#f2a7b8',c:'#d98098',W:'#fff6df'}, jingleball:{X:'#8a3a2c',x:'#5a231a',B:'#e0552f',b:'#b8452a',L:'#f2a06a',H:'#ffcfa8',D:'#7a2f22',S:'#ffd24a',s:'#e0a838',K:'#8a909a'}, frame:{X:'#4a3626',W:'#caa23a',w:'#e6c96b',H:'#fff0b8',S:'#bfe3f5',U:'#ffd968',c:'#ffffff',G:'#5aa860',g:'#3f7a48',t:'#7a5230',T:'#4e9636',m:'#8a6a4a'}, shelf:{W:'#9a734a',w:'#6b4a2a',H:'#b58a55',K:'#5a5f68',G:'#4e9636',L:'#7cc652',P:'#c8763e',p:'#a85e2c',B:'#d9694e',r:'#f0967a',o:'#b8503a',C:'#8fb8e6',c:'#bfe3f5',Y:'#ffd24a',X:'#3a2818'}, mirror:{X:'#8a6a1e',W:'#e6c96b',w:'#b98f2f',H:'#fff0b8',A:'#9fbccb',a:'#7fa2b4',b:'#cfe4ee',h:'#ffffff',o:'#f2d878',v:'#6f8ea0'}, neon:{g:'#c0387f',G:'#8a2358',N:'#ff2f8f',n:'#e01a76',H:'#ff9ecf',C:'#ffffff',S:'#ffe6f4',k:'#3a2030'}, sconce:{K:'#5a5f68',k:'#8a909a',D:'#3a3e45',H:'#b6bcc6',h:'#d8dde3',F:'#ff8a2e',Y:'#ffd23e',y:'#fff2a8',W:'#f2e6c8',w:'#d8c49e'}, chandelier:{K:'#6b5220',k:'#4a3814',F:'#c49b45',f:'#a8823a',H:'#f6dd94',Y:'#ffd35e',y:'#ff9e3d',W:'#fff6df',C:'#dff0fb',c:'#a9cfe4',o:'#ffffff',v:'#7fb2d4'}, garland:{K:'#6b5a3a',k:'#4a3e28',A:'#e0552f',B:'#ffd54a',C:'#4e9636',a:'#8fb8e6',b:'#f2a7b8',c:'#c0387f',H:'#ffffff'}, poster:{X:'#3a2e22',x:'#22190f',S:'#bfe3f5',s:'#8fc8e6',U:'#ffd968',M:'#5a7d8a',m:'#3f5a66',P:'#efe3cf',d:'#c94a66',G:'#5aa860',W:'#ffffff'}, tapestry:{K:'#7a5230',k:'#5a3a1c',w:'#9c6f3f',C:'#7a4a8a',c:'#5a2f6a',D:'#a86fc0',o:'#e0a43c',O:'#ffd968',f:'#c9a06a',R:'#c05070',W:'#efe3cf'}, cactus:{e:'#6b4a2a',x:'#7c5028',P:'#c8763e',p:'#a85e2c',H:'#e0a05a',D:'#2f7a3e',G:'#43a058',L:'#6fc47f',I:'#8fdc97',s:'#dff5cf',f:'#ff5f9e',F:'#ff9ec2',Y:'#ffe14a'}, yarnbasket:{X:'#6b4423',W:'#c49a5c',w:'#a37c42',D:'#8a6535',H:'#dbb578',Y:'#e2607a',y:'#f2a7b8',R:'#5aa9e6',r:'#bfe2fb',B:'#f2c84b',b:'#ffe6a8',G:'#5bbf7a',g:'#9be0af',k:'#3a2a18'}, floorlamp:{K:'#5a5f68',k:'#3a3e45',D:'#2a2d33',S:'#e8c98f',s:'#cfa864',T:'#b98f52',F:'#fff3c4',Y:'#ffde6a',H:'#fffbe6',o:'#ffb84a',M:'#7a8088'}, beanbag:{k:'#254a63',D:'#3f6f8a',B:'#5b9bd8',L:'#8fc2ec',H:'#bfe2fb',S:'#2f5570',p:'#e6b24a'}, groomstation:{X:'#5a3a1c',k:'#3a2513',W:'#d9694e',w:'#b8503a',H:'#f0967a',s:'#efe9db',S:'#c9c2b2',t:'#a89a82',B:'#8a6a3f',b:'#6b4f2a',D:'#5a4228'}, springtoy:{D:'#2f3238',k:'#4a4f57',K:'#8a909a',H:'#c3c9d1',B:'#e0552f',b:'#b8452a',L:'#ff9e6a',R:'#ff7a4a',S:'#ffd24a',W:'#fff0d0',x:'#7a2f1c'}, tunnel:{X:'#3f4a52',K:'#5a6570',W:'#5aa9e6',w:'#3f86c4',H:'#bfe2fb',R:'#f2c84b',r:'#e0a838',D:'#1a2530',d:'#26333f',G:'#5bbf7a'}, teepee:{W:'#efe3cf',w:'#d8cbb2',D:'#b8a888',d:'#9c8e70',K:'#2a1e14',k:'#4a3826',X:'#7a5230',x:'#5a3a1c',R:'#d9694e',r:'#b8503a',B:'#5aa9e6',Y:'#e6b24a',f:'#ff5f9e'}, bookshelf:{X:'#4a3220',x:'#3a2818',W:'#7a5a3a',w:'#9c7548',H:'#b58a55',k:'#2a1c10',R:'#d9694e',r:'#a84636',G:'#4e9636',g:'#3a7028',B:'#3f86c4',b:'#2f6698',Y:'#e6b24a',y:'#c4922f',P:'#a86fc0',p:'#7d4e94',o:'#e0a43c',T:'#5bbf7a',S:'#7c5028',A:'#efe3cf'}, birdcage:{K:'#8a909a',k:'#5a5f68',D:'#3a3e45',W:'#d8dde3',w:'#aab0b8',H:'#eef1f5',Y:'#ffd24a',y:'#e0a838',o:'#ff8a3d',B:'#e0552f',T:'#7a5230',t:'#5a3a1c',R:'#ff5f5f'}, lavalamp:{K:'#5a5f68',k:'#3a3e45',D:'#2a2d33',G:'#cfeaf3',g:'#a6d4e2',H:'#eef8fc',R:'#e0431f',o:'#ff7a2e',O:'#ff9e4a',Y:'#ffd24a',r:'#c23418',W:'#fff0b8'}, laserpost:{K:'#5a5f68',k:'#3a3e45',D:'#2a2d33',W:'#8a909a',w:'#aab0b8',H:'#d8dde3',R:'#ff2f4f',r:'#ff7a8a',L:'#ff9ea8',P:'#ffd0d6',Y:'#ffe14a'}, waterfountain:{X:'#3a4652',x:'#2a333d',B:'#8fb8e6',b:'#6f97c4',K:'#5a6f82',A:'#5aa9e6',a:'#3f86c4',H:'#bfe2fb',h:'#e6f3fc',W:'#d0d6dd',w:'#aab2bc',D:'#8a929c'}, sofa:{x:'#5a3a22',k:'#4a2e1a',D:'#8a5a3a',B:'#c98a5a',L:'#e0ad78',H:'#f0c894',c:'#e6b24a',C:'#c4922f',S:'#b07840',t:'#3a2410'}, recordplayer:{X:'#3a2818',W:'#9c7548',w:'#7a5a3a',H:'#c4a06a',k:'#2a1c10',D:'#1e1e22',d:'#3a3a42',g:'#55555e',R:'#d9694e',r:'#a84636',K:'#8a909a',S:'#c9c2b2',Y:'#ffd24a'}, terrarium:{K:'#6b5220',k:'#4a3814',H:'#8a6a2c',G:'#d8f0f5',g:'#b0dce6',h:'#eefaff',x:'#7c5028',X:'#5a3a1c',e:'#6b4a2a',L:'#7cc652',l:'#9be0af',D:'#4e9636',S:'#9298a2',s:'#c0c6ce',f:'#ff5f9e',F:'#ffe14a'}, ballpit:{X:'#2f6f9e',x:'#245a80',W:'#5aa9e6',w:'#3f86c4',H:'#bfe2fb',R:'#e0552f',r:'#ff8a5a',Y:'#ffd24a',y:'#fff0a8',G:'#4e9636',g:'#7cc652',P:'#f2a7b8',p:'#ffd0e0',B:'#8fb8e6',b:'#c3ddf5'}, grandfaclock:{X:'#4a3218',x:'#3a2610',W:'#7a5230',w:'#9c6f3f',H:'#b58a55',k:'#2a1a0c',L:'#f2e6c8',l:'#e0d0a8',D:'#2a221a',O:'#e0b84a',o:'#c49a30',K:'#8a6a3a',G:'#bfe3f5',g:'#8fc2ec',R:'#d9694e'}, bunkbed:{X:'#4a3218',x:'#3a2610',W:'#9c6f3f',w:'#c99a63',H:'#dbb578',k:'#2a1a0c',M:'#e8e2d4',m:'#cfc7b8',R:'#d9694e',r:'#f0967a',B:'#5aa9e6',b:'#8fc2ec',P:'#f2c84b',p:'#ffe6a8',G:'#5bbf7a'}, crystalfountain:{W:'#d0d6dd',w:'#aab2bc',X:'#7a828c',x:'#5a626c',A:'#5aa9e6',a:'#3f86c4',H:'#bfe2fb',h:'#e6f3fc',s:'#eaf6ff',C:'#a9cfe4',c:'#7fb2d4',B:'#dff3ff',K:'#ffffff'}, dartboard:{X:'#2a221a',x:'#1a140e',R:'#d9694e',r:'#a84636',G:'#4e9636',g:'#3a7028',W:'#efe3cf',w:'#cfc4b0',K:'#5a5f68',Y:'#e6b24a',H:'#ffffff',B:'#3f86c4',S:'#c9c2b2'}, cuckooclock:{X:'#3a2410',x:'#2a1808',W:'#7a5230',w:'#9c6f3f',H:'#b58a55',k:'#1a1006',R:'#c0392b',r:'#e05545',G:'#4e9636',g:'#3a7028',L:'#f2e6c8',l:'#e0d0a8',D:'#2a1c12',O:'#e0b84a',o:'#c49a30',Y:'#ffd24a',B:'#8fb8e6',K:'#8a909a'}, roundbed:{X:'#5a3a1c',W:'#c98a5a',w:'#a87040',L:'#e0ad78',H:'#f2cf9e',M:'#efe9dc',m:'#d6cdb8',S:'#b07840'}, donutbed:{X:'#7a2f2c',W:'#e0552f',w:'#b8452a',L:'#ff9e6a',H:'#ffcaa8',M:'#f2e4c6',m:'#d8c49e',S:'#c23418'}, cavebed:{X:'#4a3628',x:'#2f2218',W:'#8a6a4a',w:'#6b4f36',H:'#a5825a',G:'#7a9a5a',g:'#5a7a3e',D:'#1a120a',d:'#2e2016',M:'#e8dcc8',m:'#cfc0a8'}, canopybed:{X:'#4a3218',x:'#2f2010',W:'#9c6f3f',w:'#7a5230',H:'#c49560',P:'#c77dff',p:'#9a4fd0',M:'#efe9dc',m:'#d6cdb8',R:'#ff9ec2',o:'#e0b84a',k:'#2a1a0c'}, throne:{X:'#6b5220',x:'#4a3814',W:'#e0b84a',w:'#c49a30',H:'#ffe89a',R:'#c0392b',r:'#8a2820',o:'#ff5f8f',M:'#efe0b8',G:'#5aa860'}, mousetoy:{X:'#5a5560',G:'#9aa0aa',g:'#7a808a',H:'#c8ccd4',P:'#ff9ec2',e:'#2a2a30',T:'#d8b8c8',w:'#efe4c6',k:'#3a3a42'}, catnippillow:{X:'#3a6a3e',W:'#5aa860',w:'#468a4c',L:'#7cc472',H:'#a5e09a',G:'#3f7a2c',l:'#9ad86a',o:'#e0b84a'}, puzzlefeeder:{X:'#3a5a63',W:'#5aa9e6',w:'#3f86c4',H:'#bfe2fb',Y:'#ffd24a',o:'#ff8a3d',D:'#2a3d44',L:'#8fc2ec',K:'#f2933c'}, balltrack:{X:'#3a4652',W:'#6f97c4',w:'#4a6f9c',H:'#8fb8e6',R:'#e0552f',r:'#ff8a5a',Y:'#ffd24a',G:'#5bbf7a',D:'#2a333d',L:'#bfe2fb',y:'#fff0a8',g:'#3f8a4c'}, teetertoy:{X:'#5a3a1c',W:'#c99a5f',w:'#a87040',R:'#e0552f',r:'#b8452a',B:'#5aa9e6',b:'#3f86c4',Y:'#ffd24a',H:'#ff9e6a',D:'#3a2610'}, bubblemachine:{X:'#3a4652',W:'#8a909a',w:'#6b7078',H:'#c3c9d1',D:'#2a2d33',B:'#bfe2fb',b:'#8fc2ec',L:'#eef8fc',Y:'#ffd24a',P:'#f2a7b8'}, bonsai:{x:'#5a3a1c',P:'#8a5a34',p:'#6b4526',H:'#a5824f',e:'#6b4a2a',X:'#3a2612',S:'#6b4a2a',G:'#3f7a2c',L:'#5aa860',l:'#7cc472',I:'#a5e09a',f:'#ff9ec2'}, globe:{X:'#5a3a1c',x:'#3a2610',W:'#c49560',H:'#e0c088',A:'#5aa9e6',a:'#3f86c4',G:'#5bbf7a',g:'#3f8a4c',L:'#bfe2fb',K:'#8a6a3a',o:'#e0b84a'}, snowglobe:{X:'#5a3a1c',x:'#3a2610',W:'#c49560',G:'#cfeaf6',g:'#a6d4e2',H:'#eef8fc',S:'#ffffff',s:'#dbe6f2',T:'#5aa860',t:'#3f7a2c',R:'#d9694e',K:'#8a6a3a'}, campfire:{X:'#4a3626',W:'#8a5230',w:'#6b4326',D:'#2a1c12',K:'#5a5560',k:'#7a7580',f:'#ffe14a',F:'#ff9e3d',r:'#ff5f2e',o:'#e0662a',S:'#9298a2'}, gramophone:{X:'#3a2818',x:'#241810',W:'#9c7548',w:'#7a5a3a',H:'#c4a06a',K:'#c9a552',k:'#a8823a',D:'#1e1e22',d:'#3a3a42',R:'#d9694e',H2:'#f6dd94'}, arcademachine:{X:'#2a2036',x:'#161020',W:'#6f4fa0',w:'#4f3878',H:'#9a6fd0',D:'#0e0e18',S:'#2fae7a',R:'#ff2f6c',Y:'#ffd23e',B:'#3f86f6',L:'#8fd0ff',K:'#c0c6ce',G:'#2fae7a'}, jukebox:{X:'#3a2818',W:'#9c5a34',w:'#7a4526',H:'#c47a44',K:'#e0b84a',R:'#ff2f6c',B:'#3f86f6',Y:'#ffd23e',G:'#2fae7a',D:'#2a1c12',L:'#ffcaa8',S:'#c9c2b2',x:'#241810'}, crystalcluster:{X:'#5a4a6a',x:'#3a2f4a',B:'#a06fd0',b:'#7d4e94',H:'#d0a8f0',h:'#efe0ff',P:'#f2a7d8',p:'#c77dc0',C:'#8fd0ff',c:'#5aa9e6',W:'#ffffff',K:'#4a3a2a'}, easel:{X:'#5a3a1c',x:'#3a2610',W:'#9c6f3f',H:'#c49560',F:'#e8dcc4',S:'#bfe3f5',G:'#5aa860',g:'#3f7a48',U:'#ffd968',R:'#d9694e',B:'#5aa9e6'}, floorvase:{X:'#3a5a63',W:'#5aa9e6',w:'#3f86c4',H:'#bfe2fb',G:'#3f7a2c',L:'#5aa860',l:'#7cc472',R:'#ff5d6c',Y:'#ffd84a',P:'#c77dff',o:'#e0b84a'}, suitofarmor:{X:'#3a3e45',W:'#9298a2',w:'#6f747c',H:'#c3c9d1',h:'#eef1f5',K:'#c9a552',R:'#c0392b',D:'#1e2126',B:'#8a6a2c'}, hourglass:{X:'#5a3a1c',x:'#3a2610',W:'#c49560',H:'#e0c088',G:'#dff0fc',g:'#a6d4e2',Y:'#ffd968',y:'#e0b84a',S:'#f2e6c8',w:'#b58a55'}, telescope:{X:'#3a3e45',W:'#8a909a',w:'#6f747c',H:'#c3c9d1',K:'#c9a552',k:'#a8823a',D:'#1e2126',B:'#3f5a9c',G:'#5aa9e6',x:'#2a2d33'}, gumballmachine:{X:'#8a3a2c',W:'#e0552f',w:'#b8452a',K:'#c9a552',G:'#cfeaf6',g:'#a6d4e2',R:'#ff5d6c',Y:'#ffd84a',B:'#3f86f6',P:'#c77dff',L:'#5bbf7a',D:'#3a3e45'}, wallvines:{G:'#3f7a2c',L:'#5aa860',l:'#7cc472',I:'#a5e09a',g:'#2f5f1e',f:'#ff9ec2',F:'#ffd84a'}, pennant:{K:'#6b5a3a',R:'#d9694e',r:'#a84636',B:'#3f86f6',b:'#2f66c4',Y:'#ffd23e',y:'#e0b02c',G:'#2fae7a',g:'#1f8a5e',W:'#efe3cf'}, wallmask:{X:'#5a3a1c',W:'#e0b84a',w:'#c49a30',H:'#ffe89a',R:'#c0392b',B:'#3f5a9c',G:'#2fae7a',D:'#2a1c12',K:'#8a6a2c'}, barometer:{X:'#3a2818',W:'#9c7548',w:'#7a5a3a',H:'#c4a06a',K:'#c9a552',L:'#f2e6c8',D:'#2a1c12',R:'#d9694e',G:'#5aa860',B:'#3f86f6'}, stringlights:{K:'#6b5a3a',k:'#4a3e28',R:'#ff5d6c',Y:'#ffd84a',G:'#5bbf7a',B:'#5aa9e6',P:'#c77dff',H:'#ffffff',o:'#ffe6a8'}, wallbutterfly:{X:'#5a3a1c',W:'#c49560',H:'#e0d0a8',o:'#ff8a3d',b:'#5aa9e6',p:'#ff5d9e',y:'#ffd84a',D:'#2a1c12',k:'#3a2a1a'}, cornershelf:{X:'#3a2818',W:'#9c7548',w:'#6b4a2a',H:'#b58a55',G:'#5aa860',L:'#7cc472',R:'#d9694e',B:'#5aa9e6',Y:'#ffd24a',K:'#8a6a3a',P:'#c8763e'}, wallsun:{Y:'#ffd23e',y:'#e0a828',o:'#ff8a3d',O:'#e0662a',H:'#fff0b0',X:'#c98a1a',R:'#c0392b'} };
     const POOP_PAL={X:'#4a3218',K:'#7a5230'};
     const FOOD_PAL={D:'#7a4a20',F:'#d68b4a',f:'#b06a2e',H:'#efb37a',L:'#f2e4c6',l:'#d8c49e',K:'#8a5427',k:'#6b3f1c',W:'#ffffff'};
     const WATER_PAL={D:'#3f86c4',d:'#2f6698',A:'#8fc2ec',a:'#5aa9e6',H:'#dff0fc',L:'#f2f7fc',l:'#cfe0ee',K:'#e2607a'};
+    // 신규 소비 아이콘 팔레트(고급사료=금테·정수물=스파클·츄르·영양제)
+    const FOODPLUS_PAL={D:'#7a4a20',F:'#d68b4a',f:'#b06a2e',H:'#efb37a',L:'#f2e4c6',l:'#d8c49e',K:'#8a5427',k:'#6b3f1c',W:'#ffffff',G:'#f5c542',g:'#c8912a',S:'#fff4c2'};
+    const WATERPLUS_PAL={D:'#3f86c4',d:'#2f6698',A:'#8fc2ec',a:'#5aa9e6',H:'#dff0fc',L:'#f2f7fc',l:'#cfe0ee',K:'#e2607a',S:'#ffffff',G:'#bfe3ff'};
+    const TREAT_PAL={D:'#b23a5b',C:'#f06e93',c:'#d64f76',H:'#ffb6cf',L:'#fff0f5',l:'#f3d5e0',K:'#7a2740',W:'#ffffff',P:'#ffd23f'};
+    const TONIC_PAL={D:'#2f7d4f',B:'#57c07e',b:'#3f9a63',H:'#a9ecc4',L:'#fff7d6',K:'#1f5637',C:'#c98b3a',c:'#a06a26',P:'#e5484d',W:'#ffffff'};
     // ---- 펫알/랜덤박스 도트 ----
     // 알: 위는 둥근 돔(꼭대기 좁게), 아래가 넓고 둥글게. 테두리는 바깥이 진한 X(#968c76), 그 안쪽에 연한 S 링 → 외곽선이 또렷·진하게(전체 통일). 중앙에 크고 두꺼운 무지개(R→P) 물음표. S=안쪽 연한 링·우측 그림자.
     // 🥚 펫알(24×28) — 뜰알과 같은 해상도·톤의 크림색 계란: 4톤 구면 명암(I 하이라이트·W 기본·S 음영·D 깊은음영)+X외곽,
@@ -2430,11 +2799,35 @@
       { id:'globe', cat:'decor', name:'지구본', size:1.2, footW:1, footH:1, desc:'빙글 도는 앤티크 지구본.' },
       { id:'snowglobe', cat:'decor', name:'스노우볼', size:1.2, footW:1, footH:1, desc:'눈이 내리는 스노우볼.' },
       { id:'campfire', cat:'decor', name:'모닥불', size:1.2, footW:1, footH:1, desc:'장작이 타닥타닥 타오르는 모닥불.' },
+      { id:'gramophone', cat:'decor', name:'축음기', size:1.2, footW:1, footH:1, desc:'빙글 도는 레코드의 빈티지 축음기.' },
+      { id:'arcademachine', cat:'decor', name:'아케이드기', size:1.8, footW:1, footH:2, desc:'화면이 번쩍이는 레트로 오락기.' },
+      { id:'jukebox', cat:'decor', name:'주크박스', size:1.3, footW:1, footH:1, desc:'알록달록 불빛이 깜빡이는 주크박스.' },
+      { id:'crystalcluster', cat:'decor', name:'크리스탈군집', size:1.4, footW:1, footH:1, desc:'영롱하게 반짝이는 보석 크리스탈.' },
+      { id:'easel', cat:'decor', name:'이젤그림', size:1.4, footW:1, footH:1, desc:'풍경화가 걸린 화가의 이젤.' },
+      { id:'floorvase', cat:'decor', name:'바닥화병', size:1.3, footW:1, footH:1, desc:'꽃을 꽂은 커다란 바닥 화병.' },
+      { id:'suitofarmor', cat:'decor', name:'미니갑옷', size:1.6, footW:1, footH:1, desc:'번쩍이는 미니 기사 갑옷 장식.' },
+      { id:'hourglass', cat:'decor', name:'모래시계', size:1.2, footW:1, footH:1, desc:'모래가 스르르 떨어지는 모래시계.' },
+      { id:'telescope', cat:'decor', name:'망원경', size:1.4, footW:1, footH:1, desc:'별을 보는 놋쇠 망원경.' },
+      { id:'gumballmachine', cat:'decor', name:'검볼머신', size:1.3, footW:1, footH:1, desc:'알록달록 껌볼이 가득한 자판기.' },
+      { id:'wallvines', cat:'decor', name:'벽넝쿨', size:1.3, footW:1, footH:1,wall:true, desc:'벽을 타고 내려오는 넝쿨.' },
+      { id:'pennant', cat:'decor', name:'페넌트', size:1.3, footW:2, footH:1,wall:true, desc:'벽에 거는 삼각 깃발 줄.' },
+      { id:'wallmask', cat:'decor', name:'가면장식', size:1.2, footW:1, footH:1,wall:true, desc:'벽에 거는 이국적인 가면.' },
+      { id:'barometer', cat:'decor', name:'기압계', size:1.2, footW:1, footH:1,wall:true, desc:'벽에 거는 앤티크 기압계.' },
+      { id:'stringlights', cat:'decor', name:'전구커튼', size:1.4, footW:3, footH:1,wall:true, desc:'천장에서 늘어뜨린 전구 커튼. 반짝여요.' },
+      { id:'wallbutterfly', cat:'decor', name:'나비표본', size:1.2, footW:1, footH:1,wall:true, desc:'벽에 거는 나비 표본 액자.' },
+      { id:'cornershelf', cat:'decor', name:'2단선반', size:1.4, footW:2, footH:1,wall:true, desc:'소품 올린 2단 벽 선반.' },
+      { id:'wallsun', cat:'decor', name:'해장식', size:1.2, footW:1, footH:1,wall:true, desc:'벽에 거는 금빛 태양 장식.' },
     ];
-    // 소비 아이템(배치 불가) — 홈에서 밥그릇/물그릇을 탭해 채울 때 소모. 알뜰샵 "소비" 탭에서 구매.
+    // 소비 아이템(배치 불가) — 알뜰샵 "소비" 탭에서 구매. effect로 효과를 데이터 주도로 분기.
+    //   effect.fill=그릇 채움(target food/water, ms=지속). effect.affection=애정 상승(펫 선택 사용). effect.boost=수확 수익배율(ms=지속).
+    //   cur='gold'면 금화 구매. dailyBuy=하루 구매 상한(간식). 채움계열 소비템은 pickFill 선호(수확 자동채움 선택)에 따라 소모.
     const CONSUM_CATALOG = [
-      { id:'food',  name:'사료', price:1, M:'M_FOOD',  desc:'밥그릇을 탭해 채울 때 1개 소모.' },
-      { id:'water', name:'물',   price:1, M:'M_WATER', desc:'물그릇을 탭해 채울 때 1개 소모.' }
+      { id:'food',       name:'사료',   price:1,  M:'M_FOOD',      effect:{fill:'food',  ms:3*60*60*1000}, desc:'밥그릇을 탭해 채울 때 1개 소모(3시간 유지).' },
+      { id:'water',      name:'물',     price:1,  M:'M_WATER',     effect:{fill:'water', ms:3*60*60*1000}, desc:'물그릇을 탭해 채울 때 1개 소모(3시간 유지).' },
+      { id:'food_plus',  name:'고급사료', price:3,  M:'M_FOODPLUS',  effect:{fill:'food',  ms:6*60*60*1000}, desc:'밥그릇을 6시간 유지하는 고급 사료. 자주 안 채워도 행복도가 오래 유지돼요.' },
+      { id:'water_plus', name:'정수물', price:3,  M:'M_WATERPLUS', effect:{fill:'water', ms:6*60*60*1000}, desc:'물그릇을 6시간 유지하는 정수된 물.' },
+      { id:'treat',      name:'츄르',   price:20, M:'M_TREAT',     effect:{affection:1}, dailyBuy:3, desc:'펫에게 주면 애정 +1 (쓰다듬기 쿨다운 무시). 하루 3개까지 구매.' },
+      { id:'tonic',      name:'영양제', price:4,  cur:'gold', M:'M_TONIC', effect:{boost:1.5, ms:3*60*60*1000}, desc:'사용하면 3시간 동안 수확 수익이 ×1.5.' }
     ];
     const FILL_MS = 3*60*60*1000;   // 그릇이 채워진 뒤 비워지기까지(3시간)
     const MOOD_CARE_MS = 24*60*60*1000;   // ❤️ 수확(caredAt) 후 행복도 보너스가 0으로 빠지는 시간(24h)
@@ -3801,7 +4194,7 @@
     const SHADOW_PAL={S:'#12240c'};
     function shadowSvg(opt){ return pxSvg(M_SHADOW, SHADOW_PAL, opt); }
     // 알뜰샵·팔레트·격자용 대표 아트(물그릇은 물 채운 파란 그릇으로 구분 표시)
-    function furnMatrix(id){ return {pond:M_POND,cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT,catwheel:M_CATWHEEL,rug:M_RUG,window:M_WINDOW,fishtank:M_FISHTANK,fireplace:M_FIREPLACE,fan:M_FAN,hammock:M_HAMMOCK,teaser:M_TEASER,wallclock:M_WALLCLOCK,hangplant:M_HANGPLANT,mobile:M_MOBILE,chandelier:M_CHANDELIER,jingleball:M_JINGLEBALL,frame:M_FRAME,shelf:M_SHELF,mirror:M_MIRROR,neon:M_NEON,sconce:M_SCONCE,garland:M_GARLAND,poster:M_POSTER,tapestry:M_TAPESTRY,cactus:M_CACTUS,yarnbasket:M_YARNBASKET,floorlamp:M_FLOORLAMP,beanbag:M_BEANBAG,groomstation:M_GROOMSTATION,springtoy:M_SPRINGTOY,tunnel:M_TUNNEL,teepee:M_TEEPEE,bookshelf:M_BOOKSHELF,birdcage:M_BIRDCAGE,lavalamp:M_LAVALAMP,laserpost:M_LASERPOST,waterfountain:M_WATERFOUNTAIN,sofa:M_SOFA,recordplayer:M_RECORDPLAYER,terrarium:M_TERRARIUM,ballpit:M_BALLPIT,grandfaclock:M_GRANDFACLOCK,bunkbed:M_BUNKBED,crystalfountain:M_CRYSTALFOUNTAIN,dartboard:M_DARTBOARD,cuckooclock:M_CUCKOOCLOCK,roundbed:M_ROUNDBED,donutbed:M_DONUTBED,cavebed:M_CAVEBED,canopybed:M_CANOPYBED,throne:M_THRONE,mousetoy:M_MOUSETOY,catnippillow:M_CATNIPPILLOW,puzzlefeeder:M_PUZZLEFEEDER,balltrack:M_BALLTRACK,teetertoy:M_TEETERTOY,bubblemachine:M_BUBBLEMACHINE,bonsai:M_BONSAI,globe:M_GLOBE,snowglobe:M_SNOWGLOBE,campfire:M_CAMPFIRE}[id]; }
+    function furnMatrix(id){ return {pond:M_POND,cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT,catwheel:M_CATWHEEL,rug:M_RUG,window:M_WINDOW,fishtank:M_FISHTANK,fireplace:M_FIREPLACE,fan:M_FAN,hammock:M_HAMMOCK,teaser:M_TEASER,wallclock:M_WALLCLOCK,hangplant:M_HANGPLANT,mobile:M_MOBILE,chandelier:M_CHANDELIER,jingleball:M_JINGLEBALL,frame:M_FRAME,shelf:M_SHELF,mirror:M_MIRROR,neon:M_NEON,sconce:M_SCONCE,garland:M_GARLAND,poster:M_POSTER,tapestry:M_TAPESTRY,cactus:M_CACTUS,yarnbasket:M_YARNBASKET,floorlamp:M_FLOORLAMP,beanbag:M_BEANBAG,groomstation:M_GROOMSTATION,springtoy:M_SPRINGTOY,tunnel:M_TUNNEL,teepee:M_TEEPEE,bookshelf:M_BOOKSHELF,birdcage:M_BIRDCAGE,lavalamp:M_LAVALAMP,laserpost:M_LASERPOST,waterfountain:M_WATERFOUNTAIN,sofa:M_SOFA,recordplayer:M_RECORDPLAYER,terrarium:M_TERRARIUM,ballpit:M_BALLPIT,grandfaclock:M_GRANDFACLOCK,bunkbed:M_BUNKBED,crystalfountain:M_CRYSTALFOUNTAIN,dartboard:M_DARTBOARD,cuckooclock:M_CUCKOOCLOCK,roundbed:M_ROUNDBED,donutbed:M_DONUTBED,cavebed:M_CAVEBED,canopybed:M_CANOPYBED,throne:M_THRONE,mousetoy:M_MOUSETOY,catnippillow:M_CATNIPPILLOW,puzzlefeeder:M_PUZZLEFEEDER,balltrack:M_BALLTRACK,teetertoy:M_TEETERTOY,bubblemachine:M_BUBBLEMACHINE,bonsai:M_BONSAI,globe:M_GLOBE,snowglobe:M_SNOWGLOBE,campfire:M_CAMPFIRE,gramophone:M_GRAMOPHONE,arcademachine:M_ARCADEMACHINE,jukebox:M_JUKEBOX,crystalcluster:M_CRYSTALCLUSTER,easel:M_EASEL,floorvase:M_FLOORVASE,suitofarmor:M_SUITOFARMOR,hourglass:M_HOURGLASS,telescope:M_TELESCOPE,gumballmachine:M_GUMBALLMACHINE,wallvines:M_WALLVINES,pennant:M_PENNANT,wallmask:M_WALLMASK,barometer:M_BAROMETER,stringlights:M_STRINGLIGHTS,wallbutterfly:M_WALLBUTTERFLY,cornershelf:M_CORNERSHELF,wallsun:M_WALLSUN}[id]; }
     function furnSvg(id, opt){ return pxSvg(furnMatrix(id), FURN_PALS[id], opt); }
     // 캠 전용 연출(움직이는 부분만 오버레이로 분리해 CSS 애니메이션): 같은 매트릭스를 팔레트만 나눠 두 겹으로 그림.
     //  base=움직이는 글자 제외, fx=그 글자만 → 완벽히 겹쳐 정지 배경 + 움직이는 부품(캣휠 트레드 회전·펫알 방울 흔들림·화분 잎 살랑).
@@ -3851,6 +4244,15 @@
       globe: {type:'spin', move:['A', 'a', 'G', 'g', 'L'] },
       snowglobe: {type:'drift', move:['S', 's', 'H'] },
       campfire: {type:'flicker', move:['f', 'F', 'r', 'o'] },
+      gramophone: {type:'spin', move:['R'] },
+      arcademachine: {type:'blink', move:['S', 'R', 'Y', 'B', 'L'] },
+      jukebox: {type:'blink', move:['R', 'B', 'Y', 'G'] },
+      crystalcluster: {type:'sway', move:['h', 'H', 'P', 'C', 'W'] },
+      hourglass: {type:'drift', move:['S', 'y'] },
+      wallvines: {type:'sway', move:['L', 'l', 'I', 'f', 'F'] },
+      pennant: {type:'sway', move:['R', 'B', 'Y', 'G', 'W'] },
+      stringlights: {type:'blink', move:['R', 'Y', 'G', 'B', 'P', 'H'] },
+      wallsun: {type:'spin', move:['o', 'O', 'H'] },
     };
     function palPick(pal, keys, keep){ const o={}; Object.keys(pal).forEach(function(k){ const on=keys.indexOf(k)>=0; if(on===keep) o[k]=pal[k]; }); return o; }
     // 연출 있는 가구를 base+fx 겹 SVG로. (연출 없으면 일반 furnSvg 반환)
@@ -3869,13 +4271,15 @@
       return furnSvg(itemId, opt);
     }
     function poopSvg(opt){ return pxSvg(M_POOP, POOP_PAL, opt); }
-    function consumSvg(id, opt){ return id==='food'?pxSvg(M_FOOD,FOOD_PAL,opt):pxSvg(M_WATER,WATER_PAL,opt); }
+    // 소비 아이콘 렌더 — id→매트릭스/팔레트 룩업(사료·물·고급사료·정수물·츄르·영양제)
+    const CONSUM_ART={ food:[M_FOOD,FOOD_PAL], water:[M_WATER,WATER_PAL], food_plus:[M_FOODPLUS,FOODPLUS_PAL], water_plus:[M_WATERPLUS,WATERPLUS_PAL], treat:[M_TREAT,TREAT_PAL], tonic:[M_TONIC,TONIC_PAL] };
+    function consumSvg(id, opt){ const a=CONSUM_ART[id]||CONSUM_ART.food; return pxSvg(a[0],a[1],opt); }
     // 가구 표시 배율(ITEM_CATALOG.size) — 캣타워·스크래처=2(크게), 방석=0.7·밥그릇=0.5(작게)
     function furnScale(id){ const it=ITEM_CATALOG.find(x=>x.id===id); return (it&&it.size)||1; }
     // 방(dock·홈)에서의 가구 렌더 높이(px) — 발자국 세로 칸수(footH)에 비례해 키움(캣타워 6칸=제일 큼, 스크래처 1칸=고양이 키만큼, 방석·밥그릇 1칸).
     // 고양이 상호작용(캣타워 3층 올라가기 등)이 맞아떨어지도록 렌더·엔진(fh)이 같은 값을 쓴다. depth(뒤로 갈수록) 작게.
     // 방 렌더 높이 배율(실물감) — 캣타워 제일 큼, 스크래처는 고양이 키만큼, 화장실=낮은 상자, 방석·그릇 작게.
-    const ROOM_H = { pond:2.2, tower:2.5, scratcher:1.4, pethouse:2.8, catwheel:3.0, plant:1.5, litterbox:0.75, cushion:1, bowl:0.5, waterbowl:0.5, rug:2.6, window:1.4, fishtank:1.4, fireplace:1.4, fan:2.7, hammock:1.8, teaser:2.4, wallclock:1.4, hangplant:1.4, mobile:1.4, chandelier:2.2, jingleball:0.7, frame:1.4, shelf:1.4, mirror:1.4, neon:1.4, sconce:1.4, garland:1.4, poster:1.4, tapestry:1.4, cactus:1.5, yarnbasket:1.0, floorlamp:2.6, beanbag:1.15, groomstation:1.5, springtoy:1.3, tunnel:1.2, teepee:2.4, bookshelf:2.6, birdcage:2.2, lavalamp:2.0, laserpost:1.6, waterfountain:1.2, sofa:1.4, recordplayer:1.2, terrarium:1.6, ballpit:1.6, grandfaclock:2.8, bunkbed:2.8, crystalfountain:2.4, dartboard:1.4, cuckooclock:1.4, roundbed:1.0, donutbed:1.0, cavebed:2.2, canopybed:2.8, throne:2.4, mousetoy:0.7, catnippillow:0.9, puzzlefeeder:1.0, balltrack:1.2, teetertoy:1.2, bubblemachine:1.6, bonsai:1.6, globe:1.4, snowglobe:1.5, campfire:1.4 };   // 1×1 벽 가구=1.4: 벽 1칸에 맞춰 겹침 방지. 샹들리에=2.2(매다는 대형 센터피스, footW2). 가랜드=footW3.
+    const ROOM_H = { pond:2.2, tower:2.5, scratcher:1.4, pethouse:2.8, catwheel:3.0, plant:1.5, litterbox:0.75, cushion:1, bowl:0.5, waterbowl:0.5, rug:2.6, window:1.4, fishtank:1.4, fireplace:1.4, fan:2.7, hammock:1.8, teaser:2.4, wallclock:1.4, hangplant:1.4, mobile:1.4, chandelier:2.2, jingleball:0.7, frame:1.4, shelf:1.4, mirror:1.4, neon:1.4, sconce:1.4, garland:1.4, poster:1.4, tapestry:1.4, cactus:1.5, yarnbasket:1.0, floorlamp:2.6, beanbag:1.15, groomstation:1.5, springtoy:1.3, tunnel:1.2, teepee:2.4, bookshelf:2.6, birdcage:2.2, lavalamp:2.0, laserpost:1.6, waterfountain:1.2, sofa:1.4, recordplayer:1.2, terrarium:1.6, ballpit:1.6, grandfaclock:2.8, bunkbed:2.8, crystalfountain:2.4, dartboard:1.4, cuckooclock:1.4, roundbed:1.0, donutbed:1.0, cavebed:2.2, canopybed:2.8, throne:2.4, mousetoy:0.7, catnippillow:0.9, puzzlefeeder:1.0, balltrack:1.2, teetertoy:1.2, bubblemachine:1.6, bonsai:1.6, globe:1.4, snowglobe:1.5, campfire:1.4, gramophone:1.6, arcademachine:2.8, jukebox:2.0, crystalcluster:1.8, easel:2.2, floorvase:2.0, suitofarmor:2.6, hourglass:1.6, telescope:2.2, gumballmachine:1.8, wallvines:1.4, pennant:1.4, wallmask:1.4, barometer:1.4, stringlights:1.4, wallbutterfly:1.4, cornershelf:1.4, wallsun:1.4 };   // 1×1 벽 가구=1.4: 벽 1칸에 맞춰 겹침 방지. 샹들리에=2.2(매다는 대형 센터피스, footW2). 가랜드=footW3.
     // ---- 배치 격자(12칸) 가로 좌표 공유 헬퍼 ----
     // 에디터(평면 그리드)·드롭프리뷰·썸네일은 gridLeftFrac/gridSpanFrac(칸 좌측 edge·폭)을 그대로 쓴다.
     // 캠(원근)은 camAnchorMode로 발자국을 "가운데 정렬 + 양끝 벽 스냅" 배치해 좌우 벽까지 고르게 채운다.
@@ -3892,7 +4296,7 @@
       if(right===GRID_N && c!==1) return 'right';
       return 'center'; }
     // 가구 그래픽 가로세로비(cols/rows) — 그래픽 폭 = fh*aspect. 캠 중심 x 계산(buildActors)에 사용.
-    const FURN_ASPECT = { pond:1.722, tower:0.64, scratcher:0.842, pethouse:0.895, catwheel:1.0, plant:0.727, litterbox:1.286, cushion:1.2, bowl:1.333, waterbowl:1.333, rug:2.154, window:0.875, fishtank:1.067, fireplace:1.067, fan:0.8, hammock:0.941, teaser:0.842, wallclock:0.889, hangplant:1.0, mobile:1.333, chandelier:1.333, jingleball:1.067, frame:1.077, shelf:1.6, mirror:1.0, neon:1.143, sconce:1.143, garland:3.286, poster:1.0, tapestry:0.923, cactus:0.615, yarnbasket:0.9, floorlamp:0.64, beanbag:1.059, groomstation:0.762, springtoy:0.762, tunnel:1.421, teepee:0.8, bookshelf:0.615, birdcage:0.667, lavalamp:0.696, laserpost:0.762, waterfountain:0.762, sofa:1.688, recordplayer:0.941, terrarium:0.941, ballpit:1.867, grandfaclock:0.571, bunkbed:0.727, crystalfountain:1.368, dartboard:1.0, cuckooclock:0.762, roundbed:1.385, donutbed:1.385, cavebed:1.067, canopybed:1.067, throne:1.067, mousetoy:1.333, catnippillow:1.417, puzzlefeeder:1.333, balltrack:2.083, teetertoy:1.143, bubblemachine:1.067, bonsai:0.889, globe:1.0, snowglobe:1.067, campfire:1.067 };
+    const FURN_ASPECT = { pond:1.722, tower:0.64, scratcher:0.842, pethouse:0.895, catwheel:1.0, plant:0.727, litterbox:1.286, cushion:1.2, bowl:1.333, waterbowl:1.333, rug:2.154, window:0.875, fishtank:1.067, fireplace:1.067, fan:0.8, hammock:0.941, teaser:0.842, wallclock:0.889, hangplant:1.0, mobile:1.333, chandelier:1.333, jingleball:1.067, frame:1.077, shelf:1.6, mirror:1.0, neon:1.143, sconce:1.143, garland:3.286, poster:1.0, tapestry:0.923, cactus:0.615, yarnbasket:0.9, floorlamp:0.64, beanbag:1.059, groomstation:0.762, springtoy:0.762, tunnel:1.421, teepee:0.8, bookshelf:0.615, birdcage:0.667, lavalamp:0.696, laserpost:0.762, waterfountain:0.762, sofa:1.688, recordplayer:0.941, terrarium:0.941, ballpit:1.867, grandfaclock:0.571, bunkbed:0.727, crystalfountain:1.368, dartboard:1.0, cuckooclock:0.762, roundbed:1.385, donutbed:1.385, cavebed:1.067, canopybed:1.067, throne:1.067, mousetoy:1.333, catnippillow:1.417, puzzlefeeder:1.333, balltrack:2.083, teetertoy:1.143, bubblemachine:1.067, bonsai:0.889, globe:1.0, snowglobe:1.067, campfire:1.067, gramophone:1.0, arcademachine:1.0, jukebox:1.067, crystalcluster:1.143, easel:1.067, floorvase:1.067, suitofarmor:1.0, hourglass:1.067, telescope:1.0, gumballmachine:1.067, wallvines:1.308, pennant:1.75, wallmask:0.923, barometer:0.857, stringlights:3.143, wallbutterfly:1.091, cornershelf:1.333, wallsun:1.0 };
     function furnAspect(id){ return FURN_ASPECT[id]||1; }
     function furnRoomH(id, isDock, depth){
       const mult = ROOM_H[id] || 1;
@@ -4009,7 +4413,7 @@
     function normalizeGame(g){ g=g||{}; return migratePetIds({
       coins: clampCoins(g.coins), gold: clampGold(g.gold),
       owned:{ cats:(g.owned&&g.owned.cats)||{}, items:(g.owned&&g.owned.items)||{}, wallpapers:(g.owned&&g.owned.wallpapers)||{}, floors:(g.owned&&g.owned.floors)||{}, bgfx:(g.owned&&g.owned.bgfx)||{} },
-      consum:{ food:clampConsum(g.consum&&g.consum.food), water:clampConsum(g.consum&&g.consum.water), egg:clampConsum(g.consum&&g.consum.egg), box:clampConsum(g.consum&&g.consum.box), rainbow_egg:clampConsum(g.consum&&g.consum.rainbow_egg), rainbow_box:clampConsum(g.consum&&g.consum.rainbow_box), ddeul:clampConsum(g.consum&&g.consum.ddeul) },
+      consum:{ food:clampConsum(g.consum&&g.consum.food), water:clampConsum(g.consum&&g.consum.water), food_plus:clampConsum(g.consum&&g.consum.food_plus), water_plus:clampConsum(g.consum&&g.consum.water_plus), treat:clampConsum(g.consum&&g.consum.treat), tonic:clampConsum(g.consum&&g.consum.tonic), egg:clampConsum(g.consum&&g.consum.egg), box:clampConsum(g.consum&&g.consum.box), rainbow_egg:clampConsum(g.consum&&g.consum.rainbow_egg), rainbow_box:clampConsum(g.consum&&g.consum.rainbow_box), ddeul:clampConsum(g.consum&&g.consum.ddeul) },
       home: normalizeHome(g.home, HOME_OPTS),   // 여러 방(프리셋): rooms[]·current·roomSlots·slots·changedAt (레거시 flat 자동 이관)
       missions: g.missions||{}, progress: g.progress||{}, codes: g.codes||{},
       customMissions: g.customMissions||{},   // 내 미션(커스텀 습관): {id:{title,coinReward,active,createdAt,order}}
@@ -4028,7 +4432,9 @@
       todoDay: (g.todoDay && typeof g.todoDay==='object') ? g.todoDay : {},        // 할일 완료 은화 하루 카운트(≤TODO_DAILY_CAP)
       petDay: (g.petDay && typeof g.petDay==='object') ? g.petDay : {},            // 쓰다듬기 은화 하루 카운트(≤PET_DAILY_CAP; 애정은 무제한)
       qualityDay: (g.qualityDay && typeof g.qualityDay==='object') ? g.qualityDay : {},   // 성실 기록 보너스 하루 카운트(≤QUALITY_DAILY_CAP)
-      gachaGold: (g.gachaGold && typeof g.gachaGold==='object') ? g.gachaGold : {}  // 가챠 부산물 금화 하루 카운트(≤GACHA_GOLD_CAP 뽑)
+      gachaGold: (g.gachaGold && typeof g.gachaGold==='object') ? g.gachaGold : {},  // 가챠 부산물 금화 하루 카운트(≤GACHA_GOLD_CAP 뽑)
+      treatDay: (g.treatDay && typeof g.treatDay==='object') ? g.treatDay : {},      // 🍡 츄르(간식) 구매 하루 카운트(≤dailyBuy) {day,n}
+      boost: (g.boost && typeof g.boost==='object') ? { until:Math.max(0,Math.floor(Number(g.boost.until)||0)), mult:Math.max(1,Number(g.boost.mult)||1) } : { until:0, mult:1 }   // 💊 수확 수익 부스트 버프 {until(ms), mult}
     }); }
     // 선물함 목록을 항상 배열로 정규화(RTDB가 객체로 돌려줄 수 있어 방어)
     function normalizeGifts(x){ if(Array.isArray(x)) return x.filter(Boolean); if(x&&typeof x==='object') return Object.keys(x).map(k=>x[k]).filter(Boolean); return []; }
@@ -4379,6 +4785,10 @@
     const CONSUM_META = {
       food:      { name:'사료',       icon:o=>consumSvg('food',o) },
       water:     { name:'물',         icon:o=>consumSvg('water',o) },
+      food_plus: { name:'고급사료',   icon:o=>consumSvg('food_plus',o) },   // 그릇 탭/수확으로 소모(홈)
+      water_plus:{ name:'정수물',     icon:o=>consumSvg('water_plus',o) },
+      treat:     { name:'츄르',       icon:o=>consumSvg('treat',o),  use:'treat' },   // 🍡 가방에서 펫 선택해 사용(애정+1)
+      tonic:     { name:'영양제',     icon:o=>consumSvg('tonic',o),  use:'tonic' },   // 💊 가방에서 사용(수확 부스트 3h)
       egg:       { name:'펫알',       icon:o=>eggSvg(0,o),        use:'egg'  },   // 일반 확률 오픈
       box:       { name:'랜덤박스',   icon:o=>boxSvg(o),          use:'box'  },
       rainbow_egg:{ name:'무지개알',  icon:o=>rainbowEggSvg(o),   use:'rb_egg' },  // 특별↑ 확률 오픈
@@ -4575,16 +4985,20 @@
     // 🎒 가방 — 보유한 소비 아이템(사료·물·펫알·랜덤박스·무지개알·무지개박스)을 보고 사용.
     function openBag(){
       const build=()=>{
-        const order=['egg','box','ddeul','rainbow_egg','rainbow_box','food','water'];
+        const order=['egg','box','ddeul','rainbow_egg','rainbow_box','treat','tonic','food','water','food_plus','water_plus'];
         const rows=order.filter(k=>consumQty(k)>0);
+        const g=state.game, boostOn=activeBoostMult(g)>1;
         let h='<div class="bag">';
         if(!rows.length){ h+='<div class="empty" style="padding:30px 12px;">가방이 비었어요. 알뜰샵·선물함에서 아이템을 얻어보세요 🎒</div>'; }
         else h+=rows.map(k=>{ const m=CONSUM_META[k], q=consumQty(k);
-          // 알·박스류는 가방에서 바로 안 열고, 가챠샵으로 이동해서 연다(사료·물만 홈 그릇 탭).
-          const useBtn = m.use ? '<button class="buy ghost sm" onclick="goGachaShop()" aria-label="'+m.name+' 가챠샵에서 열기">가챠샵에서 열기</button>'
-                               : '<span class="qty" style="font-size:11px;color:var(--sub)">홈에서 그릇 탭</span>';
-          return '<div class="bagrow"><span class="bgic">'+m.icon({h:34})+'</span><b class="bgnm'+((k==='rainbow_egg'||k==='rainbow_box'||k==='ddeul')?' tier-rainbow':'')+'">'+m.name+'</b><span class="qty">보유 '+q.toLocaleString()+(q>=MAX_CONSUM?maxChip():'')+'</span>'+useBtn+'</div>'; }).join('');
-        h+='<div class="note" style="margin-top:12px;">사료·물은 홈 화면에서 <b>밥·물 그릇을 탭</b>해 사용해요. 펫알·랜덤박스·무지개 아이템은 <b>가챠샵</b>에서 열어요.</div></div>';
+          // 가방 사용 3갈래: 간식·영양제=바로 사용 / 알·박스류=가챠샵 이동 / 사료·물류=홈 그릇 탭 안내.
+          const bagUse=(m.use==='treat'||m.use==='tonic');
+          const useBtn = bagUse ? '<button class="buy sm" onclick="useBagItem(\''+k+'\')" aria-label="'+m.name+' 사용">사용</button>'
+                       : (m.use ? '<button class="buy ghost sm" onclick="goGachaShop()" aria-label="'+m.name+' 가챠샵에서 열기">가챠샵에서 열기</button>'
+                                : '<span class="qty" style="font-size:11px;color:var(--sub)">홈에서 그릇 탭</span>');
+          const sub=(k==='tonic'&&boostOn)?' <span class="tagmini">사용중 '+fmtDur(boostRemain(g))+'</span>':'';
+          return '<div class="bagrow"><span class="bgic">'+m.icon({h:34})+'</span><b class="bgnm'+((k==='rainbow_egg'||k==='rainbow_box'||k==='ddeul')?' tier-rainbow':'')+'">'+m.name+sub+'</b><span class="qty">보유 '+q.toLocaleString()+(q>=MAX_CONSUM?maxChip():'')+'</span>'+useBtn+'</div>'; }).join('');
+        h+='<div class="note" style="margin-top:12px;">사료·물·고급사료·정수물은 홈에서 <b>밥·물 그릇을 탭</b>(또는 수확)해 써요. <b>츄르</b>는 펫을 골라 애정을, <b>영양제</b>는 3시간 수익 부스트에 써요. 펫알·랜덤박스·무지개는 <b>가챠샵</b>에서 열어요.</div></div>';
         return h;
       };
       openSheet('가방', build());
@@ -4594,7 +5008,59 @@
       if(use==='egg'||use==='box') useHeldGacha(use);
       else if(use==='rb_egg') useRainbow('egg');
       else if(use==='rb_box') useRainbow('box');
-      else if(use==='ddeul') useHeldDdeul(); }
+      else if(use==='ddeul') useHeldDdeul();
+      else if(use==='treat') useTreat();
+      else if(use==='tonic') useTonic(); }
+    // ⏱️ ms→"Nh Mm"/"Mm" 간단 표기(부스트 남은시간·소비템)
+    function fmtDur(ms){ ms=Math.max(0,Number(ms)||0); const mm=Math.round(ms/60000), h=Math.floor(mm/60), m=mm%60; return h>0?(h+'시간'+(m?' '+m+'분':'')):(m+'분'); }
+    // 🍡 츄르: 펫 선택 시트 → applyTreat(id)로 애정 상승(쿨다운 무시)
+    function useTreat(){
+      if(consumQty('treat')<=0){ toast('츄르가 없어요 · 알뜰샵 소비 탭에서 구매', true); return; }
+      const own=ownedCatsMap(), ids=Object.keys(own);
+      if(!ids.length){ toast('먼저 펫을 데려오세요'); return; }
+      const build=()=>{
+        let h='<div class="bag"><div class="note" style="margin-bottom:10px;">츄르를 줄 펫을 선택하세요 · 보유 <b>'+consumQty('treat')+'</b>개</div>';
+        h+=ids.map(id=>{ const lv=affectionLevel((own[id]||{}).affection||0).level;
+          return '<button class="bagrow treatpick" onclick="applyTreat(\''+id+'\')" aria-label="'+escapeHtml(catName(id))+'에게 츄르 주기">'
+            +'<span class="bgic">'+catFace(id,{h:34})+'</span><b class="bgnm">'+escapeHtml(catName(id))+'</b>'
+            +'<span class="qty">애정 Lv.'+lv+'</span><span class="bgic tp-treat">'+consumSvg('treat',{h:24})+'</span></button>'; }).join('');
+        h+='</div>';
+        return h;
+      };
+      openSheet('츄르 주기', build());
+      state._sheetRefresh=()=>{ const b=$('sheetBody'); if(b) b.innerHTML=build(); };
+    }
+    function applyTreat(id){
+      if(!id||!ownsCat(id)){ toast('펫을 찾을 수 없어요', true); return; }
+      if(consumQty('treat')<=0){ toast('츄르가 없어요', true); return; }
+      const eff=((CONSUM_CATALOG.find(c=>c.id==='treat')||{}).effect)||{affection:1};
+      const beforeCoins=coins(), beforeGold=gold(); _affLevelUp=null; let did=false;
+      gameRef().transaction(g=>{ g=normalizeGame(g);
+        if((Number(g.consum.treat)||0)<=0 || !g.owned.cats[id]){ did=false; return g; }
+        g.consum.treat-=1; did=true;
+        const gain=applyAffectionGain(g, id, eff.affection||1);
+        _affLevelUp=(gain&&gain.after>gain.before)?{ id, level:gain.after, gold:gain.gold, silver:gain.silver }:null;
+        return g;
+      }).then(r=>{ if(!(r&&r.committed&&did)) return;
+        const x=innerWidth/2, y=innerHeight/2; heartFx(x,y);
+        const lvUp=_affLevelUp, dSilver=(lvUp&&lvUp.silver)||0, dGold=(lvUp&&lvUp.gold)||0;
+        if(dSilver>0||dGold>0) rewardFly(x,y,dSilver,dGold,beforeCoins,beforeGold);
+        if(lvUp){ affLevelFx(x,y); toast('❤ '+catName(id)+' 애정 레벨 '+lvUp.level+(lvUp.gold?' · 만렙! 금화 +'+lvUp.gold:'')+(dSilver>0?' · 은화 +'+dSilver:'')); _affLevelUp=null; }
+        else toast('🍡 '+catName(id)+'에게 츄르 · 애정 +'+(eff.affection||1));
+        if(consumQty('treat')<=0){ closeSheet(); } else if(state._sheetRefresh) state._sheetRefresh();
+      });
+    }
+    // 💊 영양제: 사용하면 수확 수익 부스트 활성(활성 중이면 남은시간에 지속 가산)
+    function useTonic(){
+      if(consumQty('tonic')<=0){ toast('영양제가 없어요 · 알뜰샵 소비 탭에서 구매', true); return; }
+      const eff=((CONSUM_CATALOG.find(c=>c.id==='tonic')||{}).effect)||{boost:1.5, ms:3*60*60*1000};
+      gameRef().transaction(g=>{ g=normalizeGame(g); if((Number(g.consum.tonic)||0)<=0) return;
+        g.consum.tonic-=1; const now=Date.now();
+        const cur=(g.boost&&Number(g.boost.until)>now)?Number(g.boost.until):now;   // 활성 중이면 남은시간에 이어붙임(배율 동일)
+        g.boost={ until:cur+(eff.ms||0), mult:eff.boost||1.5 };
+        return g;
+      }).then(r=>{ if(r&&r.committed){ toast('💊 영양제 사용 · 수확 수익 ×'+(eff.boost||1.5)+' '+fmtDur(boostRemain(state.game))); if(state._sheetRefresh) state._sheetRefresh(); if(typeof renderCatHouse==='function') renderCatHouse(); } });
+    }
     // 보유한 펫알/랜덤박스(소비 인벤토리)를 일반 확률로 오픈 — 은화 대신 인벤토리 1개 소모, 금화+1 지급.
     // 🥇 가챠 부산물 금화 — 하루 GACHA_GOLD_CAP뽑까지만 지급(경제 정책 §5: 은화→금화 세탁 차단). want=이번에 주려는 금화(뽑 수).
     //   g 트랜잭션 안에서 호출. gachaGold={day,n} 카운터로 하루 상한. 실제 지급액 반환.
@@ -4807,6 +5273,55 @@
     function setPetDeleted(id, del){ catalogRef().child(id+'/deleted').set(!!del); }
     function deletePetSoft(id){ confirmSheet('이 펫을 삭제할까요? 앱에서 숨겨지고(이미지는 보존) 개발자 화면에서 복구할 수 있어요.', ()=>{ setPetDeleted(id,true); toast('삭제(숨김) 처리했어요'); if(state._devPetSel===id) state._devPetSel=null; if(typeof openDevPetManager==='function') openDevPetManager(); }); }
     function restorePet(id){ setPetDeleted(id,false); toast('복구했어요'); if(typeof openDevPetManager==='function') openDevPetManager(); }
+
+    // ---- dev: 🎞️ 모션 관리(펫별 클립 미리보기) ----
+    // 펫을 고르면 그 펫이 가진 다중 모션 클립(PET_CLIPS)을 목록으로 보여주고, 선택하면 ① 실제 재생(라이브 .cspr 필름)
+    // ② 원본 시트 이미지 ③ 메타(프레임·fps·방향·종류)를 확인한다. 규칙은 docs/pet-motion-guide.md.
+    let _devMotionPet=null, _devMotionClip='idle';
+    function petsWithClips(){ return Object.keys(PET_SPRITES).filter(id=>{ const c=PET_SPRITES[id]&&PET_SPRITES[id].clips; return c&&Object.keys(c).length; }); }
+    // 라이브 미리보기 — 실제 엔진과 동일한 CSS 필름(.csprf steps)으로 클립 재생(정면=south·옆=east 원본 방향 그대로).
+    //  once 클립도 미리보기에선 반복 재생(검수 편의). 클립이 없으면 폴백(정지 스틸/걷기)로 안내.
+    function motionLiveHtml(id, clip, cell){
+      cell=cell||120; const r=(typeof resolveClip==='function')?resolveClip(id, clip):null;
+      if(!r) return '<div style="width:'+cell+'px;height:'+cell+'px;margin:0 auto;display:flex;align-items:flex-end;justify-content:center;">'+catFace(id,{h:Math.round(cell*0.8),eager:true})+'</div>';
+      if(r.key==='walk'){ ensurePetArt(id); return '<div style="margin:0 auto;width:'+cell+'px;">'+catActorHTML(id, cell)+'</div>'; }
+      return '<div class="cspr" style="width:'+cell+'px;height:'+cell+'px;image-rendering:pixelated;margin:0 auto;'
+        +'--sheet:url('+r.url+');--fw:'+(cell*r.frames)+'px;--wdur:'+r.dur.toFixed(2)+'s;">'
+        +'<i class="csprf" style="animation-timing-function:steps('+r.frames+')"></i></div>';
+    }
+    function devPickMotion(k){ _devMotionClip=k; if(typeof openDevMotions==='function') openDevMotions(); }
+    function devMotionSelPet(id){ _devMotionPet=id; if(typeof openDevMotions==='function') openDevMotions(); }
+    function openDevMotions(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용', true); return; }
+      const pets=petsWithClips();
+      if(!pets.length){ openSheet('모션 관리', '<div class="note">아직 모션 클립을 가진 펫이 없어요. 펫 zip에 프리셋 애니 폴더(Idle·Eating·Running…)를 넣어 업로드하거나 정적 시트(&lt;클립키&gt;.png)를 추가하세요. 규칙: docs/pet-motion-guide.md</div>'); return; }
+      if(!_devMotionPet || pets.indexOf(_devMotionPet)<0) _devMotionPet=pets[0];
+      const id=_devMotionPet, clips=PET_SPRITES[id].clips||{};
+      const order=Object.keys(PET_CLIPS), clipKeys=order.filter(k=>clips[k]);
+      if(clipKeys.indexOf(_devMotionClip)<0) _devMotionClip=clipKeys[0];
+      const clip=_devMotionClip, def=PET_CLIPS[clip]||{}, frames=clips[clip]||0;
+      const kind = def.once ? (def.hold?'원샷+유지(1회 재생 후 마지막 프레임)':'원샷(1회 재생)') : '반복';
+      const nm=(PET_CATALOG.find(c=>c.id===id)||{}).name||id;
+      // 펫 선택(클립 보유 펫만)
+      let h='<div class="field"><label>펫</label><select class="input" onchange="devMotionSelPet(this.value)">'
+        + pets.map(p=>{ const pn=(PET_CATALOG.find(c=>c.id===p)||{}).name||p; return '<option value="'+p+'"'+(p===id?' selected':'')+'>'+escapeHtml(pn)+' · '+p+'</option>'; }).join('')
+        + '</select></div>';
+      // 라이브 미리보기(카드)
+      h+='<div style="text-align:center;background:var(--card,#0001);border-radius:12px;padding:14px 8px 8px;margin:8px 0;">'
+        + motionLiveHtml(id, clip, 132)
+        + '<div style="margin-top:8px;font-size:12px;color:var(--muted,#888);">'+escapeHtml(nm)+' · <b>'+clip+'</b> — '+frames+'프레임 · '+(def.fps||8)+'fps · '+(def.dir||'south')+' · '+kind+'</div></div>';
+      // 클립 칩(보유한 것만 활성, 없는 것은 흐리게 표시)
+      h+='<div class="note" style="margin:6px 0;">모션을 눌러 실제 재생을 확인하세요. 원샷 모션은 미리보기에선 반복 재생됩니다(실제 앱에선 1회).</div>';
+      h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">';
+      order.forEach(k=>{ const has=!!clips[k];
+        h+='<button class="chip'+(k===clip?' on':'')+'"'+(has?'':' disabled')+' style="'+(has?'':'opacity:.4;')+'"'+(has?(' onclick="devPickMotion(\''+k+'\')"'):'')+'>'+k+(has?' ·'+clips[k]:'')+'</button>'; });
+      h+='</div>';
+      // 원본 시트 이미지(가로 스트립)
+      const sheetUrl=(typeof sprClipUrl==='function')?sprClipUrl(id, clip):'';
+      if(sheetUrl){ h+='<div class="field"><label>시트('+frames+'프레임 · 왼→오)</label>'
+        + '<div style="overflow-x:auto;background:var(--card,#0001);border-radius:8px;padding:6px;"><img src="'+sheetUrl+'" alt="" style="image-rendering:pixelated;height:96px;width:auto;max-width:none;"></div></div>'; }
+      h+='<div class="note" style="margin-top:8px;">모션 규칙·프레임 사양은 <code>docs/pet-motion-guide.md</code>. 새 시트는 <code>tools/pet_motion_build.py</code>로 제작해 <code>&lt;클립키&gt;.png</code>로 저장 후 <code>pets.json</code>의 <code>clips</code>에 프레임 수를 기록하세요.</div>';
+      openSheet('🎞️ 모션 관리', h);
+    }
 
     // ---- dev: 펫 관리(목록·추가·수정·삭제/복구) + zip 처리 ----
     let _devPetTarget=null;   // 수정 대상 id(null=신규 추가)
@@ -5244,7 +5759,7 @@
     // ❤️ 행복도 입력 산출(순수 roomMood에 넘길 값): 밥·물 신선도·평균 애정·수확 신선도 등
     function roomMoodInputs(g, R){ const now=Date.now();
       let bowls=0, fr=0; const pl=(R&&R.placed)||{};
-      Object.keys(pl).forEach(k=>{ const e=pl[k]; if(e&&(e.itemId==='bowl'||e.itemId==='waterbowl')){ bowls++; fr+=e.filledAt?Math.max(0,Math.min(1,(FILL_MS-(now-e.filledAt))/FILL_MS)):0; } });
+      Object.keys(pl).forEach(k=>{ const e=pl[k]; if(e&&(e.itemId==='bowl'||e.itemId==='waterbowl')){ bowls++; const fm=fillDurOf(e); fr+=e.filledAt?Math.max(0,Math.min(1,(fm-(now-e.filledAt))/fm)):0; } });
       const affs=(R&&R.active||[]).map(id=>affectionLevel(((g&&g.owned&&g.owned.cats[id])||{}).affection||0).level);
       const ca=Number(R&&R.caredAt)||0;
       return { pets:(R&&R.active||[]).length, furn:enrichTypeCount(R), poops:Number(R&&R.poops)||0,
@@ -5253,10 +5768,12 @@
     function batchBtnHtml(){ const g=state.game, R=g?room():null;
       const pend=g?allRoomsIdleYield(g):0, mood=g?roomMood(roomMoodInputs(g,R)):0;   // 대기 수익 = 모든 방 합
       const mult=g?_yieldMult(g):1, boost=g&&recordedToday();   // 🔺 수익배율(애정·도감·앱사용)·🍀 오늘 기록 부스트
-      const mtxt='수익 x'+mult.toFixed(2)+' (애정·도감·기록)'+(boost?' · 🍀오늘 기록 부스트':' · 오늘 기록하면 +부스트');
+      const bmult=g?activeBoostMult(g):1, brem=g?boostRemain(g):0;   // 💊 영양제 부스트(활성 시 ×mult)
+      const mtxt='수익 x'+mult.toFixed(2)+' (애정·도감·기록)'+(boost?' · 🍀오늘 기록 부스트':' · 오늘 기록하면 +부스트')+(bmult>1?' · 💊영양제 ×'+bmult+' '+fmtDur(brem):'');
       return '<div class="cr-topright">'+
+        (bmult>1?'<span class="cr-boost" title="영양제 부스트 · 수확 수익 ×'+bmult+' · '+fmtDur(brem)+' 남음">💊×'+bmult+'</span>':'')+
         '<span class="cr-mood" title="행복도 '+mood+'% — 밥·물 챙기고 🌾수확하면 올라가요(똥은 감점) · 행복할수록 자동 은화↑">'+heartSvg({h:13,off:mood<45})+'<b>'+mood+'%</b></span>'+
-        '<button class="cr-batch'+(pend>0?' has-yield':'')+(boost?' boosted':'')+'" onclick="event.stopPropagation();batchCare(this)" title="'+mtxt+'" aria-label="전체 수확: 행복도 기반 자동 은화 받고 밥·물 채우고 똥 정리 ('+mtxt+')">수확'+(pend>0?'<span class="yield-chip">+'+pend+'</span>':'')+'</button>'+walletHtml()+'</div>'; }
+        '<button class="cr-batch'+(pend>0?' has-yield':'')+(boost||bmult>1?' boosted':'')+'" onclick="event.stopPropagation();batchCare(this)" title="'+mtxt+'" aria-label="전체 수확: 행복도 기반 자동 은화 받고 밥·물 채우고 똥 정리 ('+mtxt+')">수확'+(pend>0?'<span class="yield-chip">+'+pend+'</span>':'')+'</button>'+walletHtml()+'</div>'; }
     // 배치 가구를 무대 바닥에 배경으로(가로=열, 앞뒤 깊이=행)
     function renderDockProps(){
       const box=$('cdProps'); if(!box) return;
@@ -5856,6 +6373,17 @@
       }
     }
     // 쓰다듬기: 펫별 하루 1번만(RTDB owned.cats[id].pettedAt로 지속). 성공 시 하트 연출 + 은화 PET_PET_REWARD(10) 보상(지갑으로 날아가는 연출·카운트업). 쿨다운 중엔 하트 없음.
+    // 애정 상승 + 레벨업 보상(레벨 소보상 은화·만렙 금화)을 트랜잭션 g에 적용. 쿨다운/쓰다듬기 은화는 호출측 담당(쓰다듬기=bumpAffection, 간식=applyTreat).
+    // 반환 {before,after,silver,gold}. after>before면 레벨업.
+    function applyAffectionGain(g, id, amount){
+      const c=g.owned.cats[id]; if(!c) return null;
+      const before=affectionLevel(c.affection).level;
+      c.affection=(Number(c.affection)||0)+Math.max(1, Math.floor(Number(amount)||1));
+      const after=affectionLevel(c.affection).level; let silver=0, gd=0;
+      if(after>before){ const lvR=affLevelReward(after); if(lvR>0){ g.coins=clampCoins((g.coins||0)+lvR); silver=lvR; }
+        if(after>=5){ g.gold=clampGold((g.gold||0)+5); gd=5; } }
+      return { before, after, silver, gold:gd };
+    }
     function bumpAffection(id, x, y){
       if(!id || !ownsCat(id)) return;
       const now=Date.now(), last=Number((ownedCatsMap()[id]||{}).pettedAt)||0;
@@ -5870,12 +6398,8 @@
         // 🐾 쓰다듬기 은화는 하루 PET_DAILY_CAP마리까지만(애정은 항상 +1). 상한 넘으면 은화 없이 애정만.
         const dkey=kstDayKey(); if((g.petDay&&g.petDay.day)!==dkey) g.petDay={day:dkey,n:0};
         if((Number(g.petDay.n)||0)<PET_DAILY_CAP){ g.petDay.n=(Number(g.petDay.n)||0)+1; g.coins=clampCoins((g.coins||0)+PET_PET_REWARD); paid=true; }
-        const before=affectionLevel(c.affection).level; c.affection=(Number(c.affection)||0)+1;
-        const after=affectionLevel(c.affection).level;
-        if(after>before){ _affLevelUp={ id, level:after, gold:0, silver:0 };
-          const lvR=affLevelReward(after); if(lvR>0){ g.coins=clampCoins((g.coins||0)+lvR); _affLevelUp.silver=lvR; }   // 레벨업 소보상 은화(레벨1~5=20·30·50·80·100) — 마일스톤이라 상한 무관
-          if(after>=5){ g.gold=clampGold((g.gold||0)+5); _affLevelUp.gold=5; }   // 애정 만렙(레벨5) 1회 도달 보상 — 레벨은 한 번만 오르므로 자동 멱등
-        }
+        const gain=applyAffectionGain(g, id, 1);   // 애정+1 + 레벨업 보상(공유 헬퍼)
+        _affLevelUp=(gain&&gain.after>gain.before)?{ id, level:gain.after, gold:gain.gold, silver:gain.silver }:null;
         return g;
       }).then(res=>{ if(res&&res.committed&&did){ heartFx(x,y);   // 실제 쓰다듬었을 때만 하트 액션
         const lvUp=_affLevelUp, base=paid?PET_PET_REWARD:0, dSilver=base+((lvUp&&lvUp.silver)||0), dGold=(lvUp&&lvUp.gold)||0;
@@ -6464,15 +6988,26 @@
     function catShopHtml(){
       let h='';
       if(_shopSub==='consum'){
+        const pf=harvestPref('food'), pw=harvestPref('water');
+        // 🌾 수확·그릇 급여 자동채움 선호(기본 ↔ 고급) — pickFill이 읽음
+        h+='<div class="hpref"><div class="hpref-t">🌾 수확·그릇 급여에 쓸 사료·물</div>'
+          +'<div class="hpref-row"><span class="hpref-l">사료</span><div class="subseg hpref-seg"><button class="'+(pf==='food'?'on':'')+'" onclick="setHarvestPref(\'food\',\'food\')">기본 사료</button><button class="'+(pf==='food_plus'?'on':'')+'" onclick="setHarvestPref(\'food\',\'food_plus\')">고급사료</button></div></div>'
+          +'<div class="hpref-row"><span class="hpref-l">물</span><div class="subseg hpref-seg"><button class="'+(pw==='water'?'on':'')+'" onclick="setHarvestPref(\'water\',\'water\')">기본 물</button><button class="'+(pw==='water_plus'?'on':'')+'" onclick="setHarvestPref(\'water\',\'water_plus\')">정수물</button></div></div>'
+          +'<div class="note" style="margin:6px 0 0;">선택한 사료·물이 떨어지면 자동으로 기본 사료·물로 채워요.</div></div>';
         h+=CONSUM_CATALOG.map(c=>{
-          const enough=coins()>=c.price;
-          const act=enough?'<button class="buy" aria-label="'+c.name+' 구매('+c.price+' 은화)" onclick="buyConsum(\''+c.id+'\')">구매</button>':'<button class="buy dis" disabled>부족</button>';
+          const gcur=(c.cur==='gold'), have=gcur?gold():coins();
+          const td=(state.game&&state.game.treatDay)||{}, boughtToday=(c.dailyBuy&&td.day===kstDayKey())?(Number(td.n)||0):0, capHit=(c.dailyBuy&&boughtToday>=c.dailyBuy);
+          const enough=have>=c.price && !capHit;
+          const curIcon=gcur?goldSvg({h:16}):coinSvg({h:16});
+          const act=enough?'<button class="buy" aria-label="'+c.name+' 구매('+c.price+(gcur?' 금화':' 은화')+')" onclick="buyConsum(\''+c.id+'\')">구매</button>'
+                          :(capHit?'<button class="buy dis" disabled>오늘 완료</button>':'<button class="buy dis" disabled>부족</button>');
+          const tag=(c.effect&&c.effect.affection)?'애정':((c.effect&&c.effect.boost)?'부스트':((c.effect&&c.effect.fill)?'채움':'소비'));
           return '<div class="shopcard"><div class="thumb"><span class="furnfit">'+consumSvg(c.id,{fit:true})+'</span></div>'+
-            '<div class="meta"><b>'+c.name+' <span class="tagmini">소비</span></b><div class="desc">'+c.desc+'</div>'+
-            '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+c.price+'</span></div>'+
-            '<div class="act">'+act+'<span class="qty">보유 '+consumQty(c.id).toLocaleString()+(consumQty(c.id)>=MAX_CONSUM?maxChip():'')+'</span></div></div>';
+            '<div class="meta"><b>'+c.name+' <span class="tagmini">'+tag+'</span></b><div class="desc">'+c.desc+'</div>'+
+            '<span class="price"><span class="ci">'+curIcon+'</span>'+c.price+'</span></div>'+
+            '<div class="act">'+act+'<span class="qty">보유 '+consumQty(c.id).toLocaleString()+(consumQty(c.id)>=MAX_CONSUM?maxChip():'')+(c.dailyBuy?' · 오늘 '+boughtToday+'/'+c.dailyBuy:'')+'</span></div></div>';
         }).join('');
-        h+='<div class="note"><b>소비 아이템</b>은 배치할 수 없어요. 홈 화면에서 <b>밥그릇·물그릇을 탭</b>하면 사료·물을 1개 써서 채워집니다(3시간 뒤 비워짐).</div>';
+        h+='<div class="note"><b>소비 아이템</b>은 배치할 수 없어요. <b>사료·물·고급사료·정수물</b>은 홈에서 밥·물 그릇을 탭(또는 수확)해 채우고, <b>츄르</b>는 가방에서 펫을 골라 애정을, <b>영양제</b>는 가방에서 3시간 수익 부스트에 써요.</div>';
         return h;
       }
       if(_shopSub==='event'){
@@ -6576,28 +7111,50 @@
     }
     // ===== 🍚💧 다마고치: 사료·물 소비 / 급여 / 배변 / 똥 수거 =====
     function consumQty(id){ return clampConsum((state.game&&state.game.consum&&state.game.consum[id]))||0; }
-    // 소비 아이템 구매(1은화, 배치 불가)
+    // 소비 아이템 구매(배치 불가) — cur='gold'면 금화, dailyBuy면 하루 구매 상한(간식).
     function buyConsum(id){
       const c=CONSUM_CATALOG.find(x=>x.id===id); if(!c) return;
-      if(consumQty(id)>=MAX_CONSUM){ toast(c.name+' 최대 보유량이에요('+MAX_CONSUM.toLocaleString()+'개)', true); return; }   // 캡 도달 시 구매 차단(은화 낭비 방지)
-      if(coins()<c.price){ toast((c.price-coins())+' 은화 부족', true); return; }
-      gameRef().transaction(g=>{ g=normalizeGame(g); if(g.coins<c.price || (Number(g.consum[id])||0)>=MAX_CONSUM) return;
-        g.coins-=c.price; g.consum[id]=(Number(g.consum[id])||0)+1; return g;
+      const gcur=(c.cur==='gold');
+      if(consumQty(id)>=MAX_CONSUM){ toast(c.name+' 최대 보유량이에요('+MAX_CONSUM.toLocaleString()+'개)', true); return; }   // 캡 도달 시 구매 차단
+      if(c.dailyBuy){ const td=(state.game&&state.game.treatDay)||{}, n=(td.day===kstDayKey())?(Number(td.n)||0):0;
+        if(n>=c.dailyBuy){ toast(c.name+'은 하루 '+c.dailyBuy+'개까지 살 수 있어요', true); return; } }
+      if(gcur){ if(gold()<c.price){ toast((c.price-gold())+' 금화 부족', true); return; } }
+      else { if(coins()<c.price){ toast((c.price-coins())+' 은화 부족', true); return; } }
+      gameRef().transaction(g=>{ g=normalizeGame(g); if((Number(g.consum[id])||0)>=MAX_CONSUM) return;
+        if(c.dailyBuy){ const dk=kstDayKey(); if((g.treatDay&&g.treatDay.day)!==dk) g.treatDay={day:dk,n:0};
+          if((Number(g.treatDay.n)||0)>=c.dailyBuy) return; g.treatDay.n=(Number(g.treatDay.n)||0)+1; }   // 실패 시 트랜잭션 abort로 함께 롤백
+        if(gcur){ if(g.gold<c.price) return; g.gold=clampGold(g.gold-c.price); }
+        else { if(g.coins<c.price) return; g.coins=clampCoins(g.coins-c.price); }
+        g.consum[id]=(Number(g.consum[id])||0)+1; return g;
       }).then(res=>{ if(res.committed) toast(c.name+' +1'); });
     }
-    // 채워진 상태인지(채운 뒤 3시간 이내)
-    function isFilled(key){ const p=room().placed[key]; return !!(p&&p.filledAt&&(Date.now()-p.filledAt)<FILL_MS); }
-    // 홈에서 밥/물 그릇 탭 → 사료/물 1 소모하고 채움(이미 차 있으면 무시)
+    // 소비템의 채움 지속시간(ms) — 고급사료·정수물=6h, 기본=3h(FILL_MS)
+    function consumFillMs(id){ const c=CONSUM_CATALOG.find(x=>x.id===id); return (c&&c.effect&&c.effect.ms)||FILL_MS; }
+    // 배치된 그릇의 채움 지속(그 그릇을 채운 소비템 기준으로 저장된 fillMs, 없으면 3h)
+    function fillDurOf(p){ return (p&&Number(p.fillMs)>0)?Number(p.fillMs):FILL_MS; }
+    // 🌾 수확·급여 자동채움 선호(localStorage) — 기본 사료 ↔ 고급사료 / 물 ↔ 정수물. 보유 없으면 자동 폴백.
+    function harvestPref(kind){ const def=(kind==='water')?'water':'food', v=lsGet(kind==='water'?'harvestWater':'harvestFood', def);
+      return (v==='food'||v==='water'||v==='food_plus'||v==='water_plus')?v:def; }
+    function setHarvestPref(kind, val){ lsSet(kind==='water'?'harvestWater':'harvestFood', val); if(typeof renderCatHouse==='function') renderCatHouse(); }
+    // 채움에 쓸 소비템 결정 — 선호(있고 보유>0)면 그 키, 아니면 기본 사료/물>0면 기본, 둘 다 0이면 null. {key, ms} 반환.
+    function pickFill(g, kind){ const cs=(g&&g.consum)||{}, base=(kind==='water')?'water':'food', pref=harvestPref(kind);
+      const order=(pref&&pref!==base)?[pref,base]:[base];
+      for(let i=0;i<order.length;i++){ const k=order[i]; if((Number(cs[k])||0)>0) return { key:k, ms:consumFillMs(k) }; }
+      return null; }
+    // 채워진 상태인지(채운 뒤 지속시간 이내 — 그릇별 fillMs)
+    function isFilled(key){ const p=room().placed[key]; return !!(p&&p.filledAt&&(Date.now()-p.filledAt)<fillDurOf(p)); }
+    // 홈에서 밥/물 그릇 탭 → 선호 소비템 1 소모하고 채움(이미 차 있으면 무시)
     function feedBowl(key){
       const p=room().placed[key]; if(!p) return;
       const id=p.itemId; if(id!=='bowl'&&id!=='waterbowl') return;
       if(isFilled(key)){ toast('아직 남아 있어요'); return; }
-      const need=id==='bowl'?'food':'water', nm=id==='bowl'?'사료':'물';
-      if(consumQty(need)<=0){ toast(nm+'가 없어요 · 알뜰샵 소비 탭에서 구매', true); return; }
+      const kind=id==='bowl'?'food':'water', nm=id==='bowl'?'사료':'물';
+      if(!pickFill(state.game, kind)){ toast(nm+'가 없어요 · 알뜰샵 소비 탭에서 구매', true); return; }
       const rid=curRoomId();   // 보고 있는 방을 id로 겨냥(방 삭제/전환 경합에도 정확)
       gameRef().transaction(g=>{ g=normalizeGame(g);
-        const R=gRoomById(g, rid); if((Number(g.consum[need])||0)<=0 || !R.placed[key]) return;
-        g.consum[need]-=1; R.placed[key].filledAt=Date.now(); return g;
+        const R=gRoomById(g, rid); if(!R.placed[key]) return;
+        const pick=pickFill(g, kind); if(!pick) return;
+        g.consum[pick.key]-=1; R.placed[key].filledAt=Date.now(); R.placed[key].fillMs=pick.ms; return g;
       }).then(r=>{ if(r&&r.committed) toast(id==='bowl'?'밥을 채웠어요 🍚':'물을 채웠어요 💧'); });
     }
     // 채워진 지 3시간 지난 그릇을 비우고, 비운 개수만큼 똥을 쌓는다(멱등: filledAt 지우면 재발동 안 함)
@@ -6606,13 +7163,13 @@
       const g=state.game; if(!g||!g.home) return;
       const now=Date.now();   // 모든 방의 그릇을 점검(안 보는 방도 3h 뒤 비워지며 그 방 똥 누적)
       if(now-_lastRecon<3000) return; _lastRecon=now;   // 렌더 경로에서 매 렌더 호출돼도 3초 스로틀(3시간 만료 기준이라 지장 없음, 중복 트랜잭션 방지)
-      let expired=0; (g.home.rooms||[]).forEach(r=>{ const pl=(r&&r.placed)||{}; Object.keys(pl).forEach(k=>{ const e=pl[k]; if(e&&e.filledAt&&(now-e.filledAt)>=FILL_MS) expired++; }); });
+      let expired=0; (g.home.rooms||[]).forEach(r=>{ const pl=(r&&r.placed)||{}; Object.keys(pl).forEach(k=>{ const e=pl[k]; if(e&&e.filledAt&&(now-e.filledAt)>=fillDurOf(e)) expired++; }); });
       if(!expired) return;
       gameRef().transaction(gg=>{ if(gg==null) return;   // 자동 발동(사용자 조작 없음) → null 첫 패스에 기본 홈을 제안하지 않음(재접속 clobber 방지)
         gg=normalizeGame(gg); const n=Date.now();
         (gg.home.rooms||[]).forEach(R=>{ const pl=R.placed||{}; let poop=0;
           const hasLitter=Object.keys(pl).some(k=>pl[k]&&pl[k].itemId==='litterbox');   // 화장실 있는 방에서만 똥 누적(없으면 그릇만 비움) — '안 보이는 똥'을 batchCare가 보상하던 문제 차단
-          Object.keys(pl).forEach(k=>{ const e=pl[k]; if(e&&e.filledAt&&(n-e.filledAt)>=FILL_MS){ e.filledAt=null; poop++; } });
+          Object.keys(pl).forEach(k=>{ const e=pl[k]; if(e&&e.filledAt&&(n-e.filledAt)>=fillDurOf(e)){ e.filledAt=null; poop++; } });
           if(poop && hasLitter) R.poops=(Number(R.poops)||0)+poop; });
         return gg;
       });
@@ -6683,11 +7240,16 @@
       const dexPct=(dexProgress(own, dexCatIds())||{}).pct||0;
       const affLv=totalAffectionLv(own);
       return yieldMultiplier(dexPct, affLv, recordDaysThisWeek(), recordedToday()); }
-    // 방의 현재까지 쌓인 유휴 은화(harvestAt 이후 경과). g=game, R=room, mult=전역 배율(미전달 시 계산). util.roomYield(순수·행복도 기반).
+    // 💊 영양제 부스트 배율 — 활성(until>now)이면 g.boost.mult, 아니면 1. 남은시간(ms)도 boostRemain로 조회.
+    function activeBoostMult(g){ const b=g&&g.boost; return (b&&Number(b.until)>Date.now())?(Number(b.mult)||1):1; }
+    function boostRemain(g){ const b=g&&g.boost; return (b&&Number(b.until)>Date.now())?(Number(b.until)-Date.now()):0; }
+    // 유효 수익배율 = 전역배율(애정·도감·앱사용) × 부스트배율. 유휴 은화 산출 3경로가 공유.
+    function effYieldMult(g){ return _yieldMult(g)*activeBoostMult(g); }
+    // 방의 현재까지 쌓인 유휴 은화(harvestAt 이후 경과). g=game, R=room, mult=유효 배율(미전달 시 계산). util.roomYield(순수·행복도 기반).
     function roomIdleYield(g, R, mult){ if(!g||!R) return 0; const ha=Number(R.harvestAt)||0; if(!ha) return 0;
       const affLevels=(R.active||[]).map(id=>affectionLevel(((g.owned&&g.owned.cats[id])||{}).affection||0).level);
       const mood=roomMood(roomMoodInputs(g, R));
-      return roomYield(affLevels, mood, Date.now()-ha, (mult==null?_yieldMult(g):mult)); }
+      return roomYield(affLevels, mood, Date.now()-ha, (mult==null?effYieldMult(g):mult)); }
     // 접속 시 방별 harvestAt(수확시계)을 1회 초기화(0인 방만 now로) — 첫 로드 때 거대한 미수확분이 잡히는 것 방지. 멱등.
     let _harvestInit=false;
     function ensureHarvestClocks(){ if(_harvestInit) return; const g=state.game; if(!g||!g.home||!g.home.rooms) return;
@@ -6713,7 +7275,7 @@
         if(k==='ddeul' && typeof starBurst==='function') starBurst(cx+off, cy);   // 뜰알(한정 픽업)은 별 버스트 추가
       });
     }
-    function allRoomsIdleYield(g){ if(!g||!g.home||!Array.isArray(g.home.rooms)) return 0; const mult=_yieldMult(g); let s=0; g.home.rooms.forEach(R=>{ s+=roomIdleYield(g,R,mult); }); return s; }   // 배율 1회 계산 후 공유
+    function allRoomsIdleYield(g){ if(!g||!g.home||!Array.isArray(g.home.rooms)) return 0; const mult=effYieldMult(g); let s=0; g.home.rooms.forEach(R=>{ s+=roomIdleYield(g,R,mult); }); return s; }   // 배율 1회 계산 후 공유(부스트 포함)
     // 🌾 수확: 모든 방을 한 번에 — 유휴 가구수익 + 빈 밥/물그릇 채움 + 똥 치움(현재 방 먼저 채워 소모품 부족 시 보이는 방 우선).
     function batchCare(btnEl){
       if(!state.game){ return; }
@@ -6721,15 +7283,17 @@
       gameRef().transaction(g=>{ g=normalizeGame(g); const now=Date.now(); const rooms=g.home.rooms||[], cur=g.home.current|0;
         filledN=0; shortFood=false; shortWater=false; goldBonus=0; dropEgg=0; dropBox=0; dropDdeul=0;   // 재실행(Firebase 재시도)마다 리셋 → 커밋된 마지막 실행값이 남음
         const order=[]; if(rooms[cur]) order.push(cur); rooms.forEach((_,i)=>{ if(i!==cur) order.push(i); });   // 현재 방 우선(소모품 부족 시)
-        const mult=_yieldMult(g);   // 전역 수익배율 1회 스냅샷(방마다 재계산 방지·재시도 시 동일 g에서 동일값)
+        const mult=effYieldMult(g);   // 유효 수익배율(애정·도감·앱사용 × 부스트) 1회 스냅샷 — 방마다 재계산 방지·재시도 시 동일 g에서 동일값
         // ⏱️ 수확 드롭 롤 횟수 = 활성 펫이 있는 방의 최장 경과시간(시간, 24h캡). harvestAt 리셋 전에 계산.
         let maxElapsed=0; rooms.forEach(R=>{ if(R && ((R.active||[]).length>0)){ const ha=Number(R.harvestAt)||0; if(ha) maxElapsed=Math.max(maxElapsed, now-ha); } });
         const rollH=Math.max(0, Math.min(24, Math.floor(maxElapsed/3600000)));
         order.forEach(i=>{ const R=rooms[i]; if(!R) return; const pl=R.placed||{};
           const y=roomIdleYield(g, R, mult); if(y>0) g.coins=clampCoins(g.coins+y); R.harvestAt=now; R.caredAt=now;   // 유휴 은화(행복도 기반) + 시계 리셋 + 행복도 수확신선도 갱신(눌러야 오름)
-          Object.keys(pl).forEach(k=>{ const e=pl[k]; if(!e) return; const filled=e.filledAt&&(now-e.filledAt)<FILL_MS;
-            if(!filled){ if(e.itemId==='bowl'){ if(g.consum.food>0){ g.consum.food-=1; e.filledAt=now; filledN++; } else shortFood=true; }
-              else if(e.itemId==='waterbowl'){ if(g.consum.water>0){ g.consum.water-=1; e.filledAt=now; filledN++; } else shortWater=true; } } });
+          Object.keys(pl).forEach(k=>{ const e=pl[k]; if(!e) return; const filled=e.filledAt&&(now-e.filledAt)<fillDurOf(e);
+            if(!filled){ const kind=e.itemId==='bowl'?'food':(e.itemId==='waterbowl'?'water':null); if(!kind) return;
+              const pick=pickFill(g, kind);   // 선호(고급사료/정수물) 우선, 소진 시 기본으로 폴백
+              if(pick){ g.consum[pick.key]-=1; e.filledAt=now; e.fillMs=pick.ms; filledN++; }
+              else if(kind==='food') shortFood=true; else shortWater=true; } });
           const poops=Number(R.poops)||0; if(poops>0){ g.coins=clampCoins(g.coins+poops*POOP_REWARD); R.poops=0; }
         });
         // 🪙 수확 드롭 — 경과 시간(rollH·24h캡)만큼 시간당 확률 롤: 금화 10% + 가챠 아이템(펫알/랜덤박스/뜰알) 각 1%. (구 '하루 1회 금화 1~5' 삭제)
@@ -7091,7 +7655,7 @@
     // @gen:end
     const ITEM_TIER = { pond:'limited', cushion:'normal', waterbowl:'normal', litterbox:'normal', plant:'normal', bowl:'uncommon', scratcher:'rare', pethouse:'epic', tower:'legend', catwheel:'limited',
       rug:'rare', fishtank:'epic', window:'legend', fireplace:'legend', fan:'legend', hammock:'legend', teaser:'legend', wallclock:'legend', hangplant:'legend', mobile:'legend', chandelier:'limited', jingleball:'legend',
-      frame:'legend', shelf:'legend', mirror:'legend', neon:'legend', sconce:'legend', garland:'legend', poster:'legend', tapestry:'legend', cactus:'rare', yarnbasket:'uncommon', floorlamp:'epic', beanbag:'rare', groomstation:'uncommon', springtoy:'epic', tunnel:'rare', teepee:'rare', bookshelf:'rare', birdcage:'epic', lavalamp:'epic', laserpost:'epic', waterfountain:'epic', sofa:'rare', recordplayer:'epic', terrarium:'epic', ballpit:'legend', grandfaclock:'legend', bunkbed:'rare', crystalfountain:'limited', dartboard:'rare', cuckooclock:'epic', roundbed:'rare', donutbed:'rare', cavebed:'epic', canopybed:'legend', throne:'legend', mousetoy:'uncommon', catnippillow:'rare', puzzlefeeder:'rare', balltrack:'epic', teetertoy:'rare', bubblemachine:'epic', bonsai:'rare', globe:'epic', snowglobe:'epic', campfire:'epic' };   // 러그=희귀·어항=특별·창문 등 장식/벽 가구=전설. 특별↑은 아래 isGachaOnlyItem로 자동 랜덤박스 전용
+      frame:'legend', shelf:'legend', mirror:'legend', neon:'legend', sconce:'legend', garland:'legend', poster:'legend', tapestry:'legend', cactus:'rare', yarnbasket:'uncommon', floorlamp:'epic', beanbag:'rare', groomstation:'uncommon', springtoy:'epic', tunnel:'rare', teepee:'rare', bookshelf:'rare', birdcage:'epic', lavalamp:'epic', laserpost:'epic', waterfountain:'epic', sofa:'rare', recordplayer:'epic', terrarium:'epic', ballpit:'legend', grandfaclock:'legend', bunkbed:'rare', crystalfountain:'limited', dartboard:'rare', cuckooclock:'epic', roundbed:'rare', donutbed:'rare', cavebed:'epic', canopybed:'legend', throne:'legend', mousetoy:'uncommon', catnippillow:'rare', puzzlefeeder:'rare', balltrack:'epic', teetertoy:'rare', bubblemachine:'epic', bonsai:'rare', globe:'epic', snowglobe:'epic', campfire:'epic', gramophone:'epic', arcademachine:'legend', jukebox:'epic', crystalcluster:'legend', easel:'rare', floorvase:'rare', suitofarmor:'legend', hourglass:'rare', telescope:'epic', gumballmachine:'rare', wallvines:'rare', pennant:'uncommon', wallmask:'rare', barometer:'epic', stringlights:'epic', wallbutterfly:'rare', cornershelf:'rare', wallsun:'epic' };   // 러그=희귀·어항=특별·창문 등 장식/벽 가구=전설. 특별↑은 아래 isGachaOnlyItem로 자동 랜덤박스 전용
     // 🪑 비(非)펫 아이템 전역 등급/가격 오버라이드 — 관리자 쓰기·전체 읽기. 미설정은 기본값(_TIER 상수/카탈로그 price).
     //   config/furniture/{id}:{tier,price} = 가구, config/wallpaper/{id} = 벽지, config/floor/{id} = 바닥 스킨.
     let _furnCfg={}, _wallCfg={}, _floorCfg={};
@@ -7450,7 +8014,7 @@
     //  · mount(거는형=창문·벽시계): 벽 밴드 안에서 행이 높이(r4=바닥근처54%…r1=천장쪽). bottom 앵커.
     //  · hang(매다는형=모빌·행잉플랜트): 천장쪽 top 앵커로 아래로 늘어짐(행이 낮을수록 위).
     const WALL_MOUNT_BASE = 54, WALL_MOUNT_STEP = 11;   // mount r행 bottom%: r4=54 … r1=87
-    const WALL_ANCHOR = { fireplace:'floor', window:'mount', wallclock:'mount', hangplant:'hang', mobile:'hang', chandelier:'hang', garland:'hang', tapestry:'hang', dartboard:'mount', cuckooclock:'mount' };
+    const WALL_ANCHOR = { fireplace:'floor', window:'mount', wallclock:'mount', hangplant:'hang', mobile:'hang', chandelier:'hang', garland:'hang', tapestry:'hang', dartboard:'mount', cuckooclock:'mount', wallvines:'hang', pennant:'mount', wallmask:'mount', barometer:'mount', stringlights:'hang', wallbutterfly:'mount', cornershelf:'mount', wallsun:'mount' };
     function wallAnchorOf(id){ return WALL_ANCHOR[id] || 'mount'; }
     function wallFoot(id){ return { w:itemFoot(id).w, h:1 }; }   // 벽 가구는 가로 footW × 세로 1칸 점유
     const _wallFootW = id => wallFoot(id).w;   // 순수 헬퍼(util.js)에 주입할 발자국 너비 함수

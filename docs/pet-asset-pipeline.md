@@ -69,6 +69,7 @@ sheet.save("walk.png")   # rotations 4장은 그대로 복사
 | Licking | `lick` | south | 유휴 그루밍(원샷) |
 | Angry | `angry` | south | (예약 — 트리거 UX 확정 전 미사용) |
 
+- **📐 모션 제작 규칙**: 프레임 수·키포즈·픽셀 변형은 [pet-motion-guide.md](pet-motion-guide.md)가 단일 소스(외부 애니 자료 종합, 고양이/개 두 계통). 새 시트는 `tools/pet_motion_build.py`로 기존 프레임을 픽셀 서저리(cut/shift/redraw)해 만들고 라이트/다크 확대 렌더로 검수한다. 표범(cat_leopard)이 첫 적용 사례(9종).
 - **취득 우선순위**(순차 취득 계획): 1차 `idle`·`sit`·`eat`·`drink` → 2차 `run`·`belly`·`jump` → 3차 `yawn`·`lick`(+전이 모션·`angry`는 보류).
 - **방향은 표의 1개만** 취득한다(west는 `scaleX(-1)` 플립, 옆을 보는 자리(스크래처 등)는 클립 없이 기존 스틸). Walking은 기존 `walk.png`가 담당하므로 재취득 불필요.
 - **dev zip 업로드**: zip 안에 프리셋 애니 폴더(`Eating/south/frame_*.png` 등)가 있으면 `_processPetZip`이 자동 인식·합성해 **`catalogPets/{id}.clips`**(클립키→프레임 수) + **`catalogPetArt/{id}.clips`**(시트 data URL)로 저장한다. 폴더명은 대소문자·공백·하이픈 무관(`Seated on Belly Idle`≒`seated-on-belly-idle`), 프레임 2장 이상만 인식, 클립당 최대 12프레임. zip 재업로드 시 클립도 통째로 교체(없으면 소거).
