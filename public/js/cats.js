@@ -8962,11 +8962,16 @@
     function palPicH(id){ const rh=(ROOM_H[id]||1); return Math.max(16,Math.min(30,Math.round(11+Math.sqrt(rh)*7.5))); }
     // 빈 격자 첫 사용 안내(격자 안 오버레이)
     function emptyGridHint(){ return '<div class="pe-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg><span>아래 가구를 <b>꾹 눌러</b> 격자로 끌어다 놓아보세요</span></div>'; }
-    // 되돌리기(1스텝) — 배치 변경 직전 현재 방 스냅샷 저장, 버튼으로 복원. 방이 바뀌면 무효.
-    let _undoSnap=null;
-    function captureUndo(){ try{ const r=room(); _undoSnap={ roomId:curRoomId(), placed:Object.assign({},r.placed||{}), wallPlaced:Object.assign({},r.wallPlaced||{}), wallpaper:r.wallpaper||'default', floor:r.floor||'default' }; }catch(e){ _undoSnap=null; } }   // 벽지·바닥도 스냅샷(변경 undo 지원)
-    function undoPlace(){ if(!_undoSnap || _undoSnap.roomId!==curRoomId()){ _undoSnap=null; return; } const s=_undoSnap; _undoSnap=null;
-      roomTx(s.roomId, roomIdx(), R=>{ R.placed=s.placed; R.wallPlaced=s.wallPlaced; if(s.wallpaper!=null) R.wallpaper=s.wallpaper; if(s.floor!=null) R.floor=s.floor; }, ()=>{ if(state._sheetRefresh) state._sheetRefresh(); toast('되돌렸어요'); }); }
+    // 되돌리기(다단계) — 배치 변경 직전 현재 방 스냅샷을 방별 스택에 push, 버튼으로 최근 것부터 복원(최대 UNDO_MAX). 방마다 독립 스택.
+    const UNDO_MAX=8;
+    let _undoStacks={};   // roomId → [snap,...]. 배치·이동·회수·자동정리·벽지/바닥 변경이 모두 captureUndo로 push.
+    function captureUndo(){ try{ const r=room(), rid=curRoomId(); const st=_undoStacks[rid]||(_undoStacks[rid]=[]);
+        st.push({ placed:Object.assign({},r.placed||{}), wallPlaced:Object.assign({},r.wallPlaced||{}), wallpaper:r.wallpaper||'default', floor:r.floor||'default' });
+        if(st.length>UNDO_MAX) st.shift();
+      }catch(e){} }
+    function undoCount(){ const st=_undoStacks[curRoomId()]; return st?st.length:0; }
+    function undoPlace(){ const rid=curRoomId(), st=_undoStacks[rid]; if(!st||!st.length) return; const s=st.pop();
+      roomTx(rid, roomIdx(), R=>{ R.placed=s.placed; R.wallPlaced=s.wallPlaced; if(s.wallpaper!=null) R.wallpaper=s.wallpaper; if(s.floor!=null) R.floor=s.floor; }, ()=>{ if(state._sheetRefresh) state._sheetRefresh(); const n=undoCount(); toast('되돌렸어요'+(n?(' · '+n+'단계 더'):'')); }); }
     // ✨ 가구 자동 정리 — 현재 방 배치를 뒤→앞·발자국 큰 것부터·등급순으로 격자에 다시 채운다(펫은 자율이라 미변경, 벽지·바닥·똥·펫 그대로).
     //    기존 배치 헬퍼만 재사용(areaFree/occupiedCells/isFloorItem/CARE_ITEMS/wallAreaFree/captureUndo/roomTx). filledAt(그릇 채움) 보존. 지오메트리(camDepth/camZ/splitProps)는 렌더타임 그대로.
     function autoArrangeRoom(){
@@ -9013,11 +9018,11 @@
       });
     }
     function placeActionsBar(){ const r=room(); const hasAny=Object.keys(r.placed||{}).length||Object.keys(r.wallPlaced||{}).length;
-      const canUndo=!!(_undoSnap && _undoSnap.roomId===curRoomId());
+      const canUndo=undoCount()>0;
       if(!hasAny && !canUndo) return '';
       return '<div class="placeacts">'+
         (hasAny?'<button class="pa-btn" onclick="autoArrangeRoom()" aria-label="가구 자동 정리(뒤→앞·크기순)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>자동 정리</button>':'')+
-        (canUndo?'<button class="pa-btn" onclick="undoPlace()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>되돌리기</button>':'')+
+        (canUndo?'<button class="pa-btn" onclick="undoPlace()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>되돌리기'+(undoCount()>1?' <b>'+undoCount()+'</b>':'')+'</button>':'')+
         (hasAny?'<button class="pa-btn danger" onclick="captureUndo();clearRoom(curRoomId(),roomIdx())"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>이 방 비우기</button>':'')+
       '</div>'; }
     function catPlaceHtml(){
@@ -9100,7 +9105,7 @@
     const DEX_ITEM_CATS=[['all','전체'],['furn','기구물'],['wall','벽지'],['floor','바닥'],['bgfx','배경효과']];
     // 아이템 도감 통합 목록 {id,kind,cat,name,tier,has} — 기구물(케어·휴식·놀이·장식)+벽지+바닥+배경효과(default 표면 제외, 소비 제외)
     function dexItemList(){ const out=[];
-      ITEM_CATALOG.forEach(function(it){ out.push({ id:it.id, kind:'furn', cat:placeCatOf(it.id), name:it.name, tier:itemTierOf(it.id), has:itemQty(it.id)>0 }); });
+      ITEM_CATALOG.forEach(function(it){ out.push({ id:it.id, kind:'furn', cat:placeCatOf(it.id), name:it.name, tier:itemTierOf(it.id), has:itemQty(it.id)>0, qty:itemQty(it.id), placed:itemPlacedAll(it.id) }); });
       WALLPAPER_CATALOG.forEach(function(w){ if(w.id==='default') return; out.push({ id:w.id, kind:'wall', cat:'wall', name:w.name, tier:assetTierOf('wallpaper',w.id), has:ownsWall(w.id) }); });
       FLOOR_CATALOG.forEach(function(f){ if(f.id==='default') return; out.push({ id:f.id, kind:'floor', cat:'floor', name:f.name, tier:assetTierOf('floor',f.id), has:ownsFloor(f.id) }); });
       (typeof BGFX_CATALOG!=='undefined'?BGFX_CATALOG:[]).forEach(function(b){ out.push({ id:b.id, kind:'bgfx', cat:'bgfx', name:b.name, tier:'limited', has:ownsBgfx(b.id) }); });
@@ -9120,9 +9125,9 @@
       let h='<div class="dexhead"><div class="row" style="justify-content:space-between;"><b>아이템 수집</b><span class="s">'+owN+' / '+tot+' ('+pct+'%)</span></div><div class="bar"><i style="width:'+pct+'%"></i></div></div>';
       h+='<div class="subseg dextabs">'+DEX_ITEM_CATS.map(function(t){ const id=t[0], n=all.filter(function(it){ return id==='all'||it.kind===id; }).length;
         return '<button class="'+(_dexItemCat===id?'on':'')+'" onclick="setDexItemCat(\''+id+'\')">'+t[1]+' <b>'+n+'</b></button>'; }).join('')+'</div>';
-      const cell=function(it){ return '<div class="dexcell'+(it.has?' tbring tb-'+(it.tier||'normal'):' locked')+'" title="'+escapeHtml(it.has?it.name:'미보유')+'">'+
+      const cell=function(it){ const cnt=(it.has&&it.kind==='furn')?('<div class="dexqty">보유 '+it.qty+(it.placed?' · 배치 '+it.placed:'')+'</div>'):''; return '<div class="dexcell'+(it.has?' tbring tb-'+(it.tier||'normal'):' locked')+'" title="'+escapeHtml(it.has?it.name:'미보유')+'">'+
         '<div class="dexpic">'+dexItemThumb(it)+'</div>'+
-        '<div class="dexnm">'+(it.has?escapeHtml(it.name):'<span class="q">???</span>')+'</div></div>'; };
+        '<div class="dexnm">'+(it.has?escapeHtml(it.name):'<span class="q">???</span>')+'</div>'+cnt+'</div>'; };
       const grp=function(title, arr){ if(!arr.length) return ''; const o=arr.filter(function(x){ return x.has; }).length;
         return '<div class="dexgroup"><div class="dexgh"><span class="dexgt">'+title+'</span><span class="dexgn">'+o+'/'+arr.length+'</span></div><div class="dexgrid">'+arr.map(cell).join('')+'</div></div>'; };
       if(_dexItemCat==='all'||_dexItemCat==='furn'){ PLACE_CATS.forEach(function(pc){ h+=grp('기구물 · '+pc[1], pool.filter(function(it){ return it.kind==='furn'&&it.cat===pc[0]; })); }); }

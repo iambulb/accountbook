@@ -1269,6 +1269,7 @@
     .palcatrow .placecat { flex:1; min-width:0; }
     .palshop { flex:none; display:inline-flex; align-items:center; gap:4px; padding:6px 11px; border-radius:11px; background:var(--soft); color:var(--text2); font-size:12px; font-weight:800; white-space:nowrap; }
     .palshop:active { transform:scale(.96); }
+    .dexcell .dexqty { font-size:8.5px; font-weight:800; color:var(--sub); margin-top:1px; line-height:1.1; }
     /* 빈 격자 첫 사용 안내(오버레이) */
     .pe-empty { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; pointer-events:none; color:var(--sub); font-size:12px; font-weight:700; text-align:center; padding:12px; }
     .pe-empty svg { width:26px; height:26px; opacity:.6; }
