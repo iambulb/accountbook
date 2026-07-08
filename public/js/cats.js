@@ -6568,7 +6568,15 @@
     // 비디오 PiP(canvas→captureStream→video PiP): 유튜브식 창 크롬(호버 시에만 컨트롤). OffscreenCanvas 워커로 백그라운드에서도 계속 그림.
     function vpipSupported(){ try{ return typeof window!=='undefined' && typeof OffscreenCanvas!=='undefined' && !!document.pictureInPictureEnabled
       && !!HTMLCanvasElement.prototype.captureStream && !!HTMLVideoElement.prototype.requestPictureInPicture && typeof Worker!=='undefined'; }catch(e){ return false; } }
-    function pipSupported(){ return docPipSupported() || vpipSupported(); }   // 버튼 노출 기준(둘 중 하나라도)
+    // 📵 모바일/태블릿 감지 — PiP는 데스크톱 브라우저 전용(사용자 결정): 아이폰=canvas.captureStream 미지원이라 원천 불가(유튜브 PiP는 '진짜 비디오'라 가능),
+    // 안드로이드 Chrome/TWA=API는 전부 있으나 실기기 미검증이라 깨진 버튼 방지 차원에서 숨김(기기 검증 후 개방 여지).
+    function _pipMobileLike(){ try{
+      if(navigator.userAgentData && navigator.userAgentData.mobile) return true;               // Chromium 신뢰 신호(안드로이드 폰·TWA)
+      if(/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'')) return true;        // UA 폴백
+      if(/Mac/i.test(navigator.platform||'') && (navigator.maxTouchPoints||0)>1) return true;  // iPadOS 데스크톱 위장 UA
+      return false;
+    }catch(e){ return false; } }
+    function pipSupported(){ return !_pipMobileLike() && (docPipSupported() || vpipSupported()); }   // 버튼 노출 기준 — 데스크톱 브라우저 + 둘 중 하나라도 지원(불가 환경은 애초에 안 그림)
     // 열려 있나 + 자가치유: 창이 pagehide 없이 죽는 엣지(브라우저가 이벤트를 못 준 경우)에도 다음 호출(매 프레임 activeStages·onGameChange 등)에서
     // 즉시 정리한다 — 안 하면 닫힌 창의 rAF에 예약된 엔진 체인이 증발한 채 _eng.raf만 남아 "펫 전체 정지"류 버그가 된다.
     function pipOpen(){ if(_pip && (!_pip.win || _pip.win.closed)) _pipClosed(); return !!_pip; }
@@ -6627,6 +6635,7 @@
     function pipBtnClick(ev){ if(ev) ev.stopPropagation(); if(_pipLpFired){ _pipLpFired=false; return; } openPipCam(); }
     // 열기 디스패처 — 선택 방식 우선, 미지원이면 반대 방식 폴백
     function openPipCam(){
+      if(_pipMobileLike()){ toast('PiP 미니 캠은 데스크톱 브라우저(크롬·엣지)에서만 쓸 수 있어요', true); return; }   // 📵 버튼이 없어 정상 경로론 못 오지만 콘솔·구버전 캐시 방어
       if(vpipOpen()){ closeVideoPip(); return; }                       // 토글: 재탭=닫기
       if(pipOpen()){ try{ _pip.win.close(); }catch(e){} return; }
       const wantDoc = pipMode()==='doc';
