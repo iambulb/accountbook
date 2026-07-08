@@ -292,6 +292,18 @@
       $('authDesc').textContent = m==='signup'?'가입하고 오늘도 알뜰하게~':'로그인하고 오늘도 알뜰하게~';
     }
     function submitAuth(){ authMode==='signup'?signup():login(); }
+    // Firebase 인증 에러 → 친절한 한국어. 최신 SDK는 비번틀림·미가입을 모두 auth/invalid-credential로 반환(원문 영어 "The supplied auth credential..." 노출 방지).
+    function authErrMsg(e){ const c=(e&&e.code)||'';
+      if(c==='auth/invalid-credential'||c==='auth/wrong-password'||c==='auth/user-not-found'||c==='auth/invalid-login-credentials') return '이메일 또는 비밀번호가 올바르지 않아요. 다시 확인해 주세요.';
+      if(c==='auth/invalid-email') return '이메일 형식이 올바르지 않아요';
+      if(c==='auth/email-already-in-use') return '이미 가입된 이메일이에요. 로그인해 주세요.';
+      if(c==='auth/weak-password') return '비밀번호는 6자 이상이어야 합니다';
+      if(c==='auth/too-many-requests') return '시도가 많아 잠시 제한됐어요. 잠시 후 다시 시도하거나 비밀번호를 재설정해 주세요.';
+      if(c==='auth/network-request-failed') return '네트워크 연결을 확인해 주세요';
+      if(c==='auth/user-disabled') return '정지된 계정이에요';
+      if(c==='auth/operation-not-allowed') return '이메일 로그인이 비활성화돼 있어요 (관리자에게 문의)';
+      return (e&&e.message)||'로그인에 실패했어요';
+    }
     function signup(){
       const name=val('authName').trim(), email=val('authEmail').trim(), pw=val('authPassword');
       if(!name||!email||!pw){ toast('이름·이메일·비밀번호를 모두 입력하세요', true); return; }
@@ -300,13 +312,13 @@
       beforeAuth(email)
         .then(()=>auth.createUserWithEmailAndPassword(email,pw))
         .then(()=>db.ref('users/'+auth.currentUser.uid).update({ name, email, createdAt:new Date().toISOString() }))
-        .catch(e=>{ justSignedUp=false; toast(e.message, true); });
+        .catch(e=>{ justSignedUp=false; toast(authErrMsg(e), true); });
     }
     function login(){
       const email=val('authEmail').trim(), pw=val('authPassword');
       if(!email||!pw){ toast('이메일과 비밀번호를 입력하세요', true); return; }
       justSignedUp=false;
-      beforeAuth(email).then(()=>auth.signInWithEmailAndPassword(email,pw)).catch(e=>toast(e.message, true));
+      beforeAuth(email).then(()=>auth.signInWithEmailAndPassword(email,pw)).catch(e=>toast(authErrMsg(e), true));
     }
     function logout(){ confirmSheet('로그아웃할까요? (아이디 저장·자동 로그인 설정은 유지돼요)', ()=>auth.signOut(), {title:'로그아웃', okLabel:'로그아웃'}); }
     // 비밀번호 변경(내 프로필) — 현재 비번으로 재인증 후 변경(requires-recent-login 방지)

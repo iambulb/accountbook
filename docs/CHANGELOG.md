@@ -8,6 +8,9 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 수정 — 🔑 로그인/가입 실패 메시지 한국어화
+- 로그인·가입 실패 시 Firebase 원문 영어("The supplied auth credential is incorrect, malformed or has expired") 대신 **친절한 한국어**로 안내(`authErrMsg`). 최신 Firebase SDK가 비번틀림·미가입을 모두 `auth/invalid-credential`로 반환 → "이메일 또는 비밀번호가 올바르지 않아요"로 매핑(too-many-requests·network·email-already-in-use 등도 안내). 비번을 잊었으면 로그인 화면 '로그인 도움'에서 재설정 메일.
+
 ### 변경 — 🖥️ 펫캠 PiP 미니 캠 안드로이드 개방(iOS만 제외)
 - PiP 버튼 노출 게이트를 '모바일 전체 차단'에서 **iOS(아이폰·아이패드)만 차단**으로 완화(`_pipMobileLike`→`_pipIOSLike`). 안드로이드 Chrome·TWA는 🎬 비디오 PiP 사용 가능(창 방식은 데스크톱 전용 — 전환 시도 시 안내). iOS는 `canvas.captureStream` 미지원이라 계속 숨김. features.md 갱신.
 
