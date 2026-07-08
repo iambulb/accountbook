@@ -253,6 +253,7 @@
       document.documentElement.setAttribute('data-theme', state.theme);
       const b=$('themeBtn'); if(b) b.innerHTML = state.theme==='dark'?ICON_SUN:ICON_MOON;
       const meta=document.querySelector('meta[name=theme-color]'); if(meta) meta.content = state.theme==='dark'?'#16181d':'#ffffff';
+      if(typeof syncPipTheme==='function') syncPipTheme();   // 🖥️ 펫캠 PiP 미니 창에도 다크/라이트 테마 반영(cats.js)
     }
     function toggleTheme(){ state.theme = state.theme==='dark'?'light':'dark'; localStorage.setItem('theme', state.theme); applyTheme(); if(state.tab==='stats') renderStats(); }
 

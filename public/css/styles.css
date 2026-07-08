@@ -747,6 +747,14 @@
     .cd-coin.tap { animation:coinpress .18s ease; }
     @keyframes coinpress { 40%{ transform:scale(.84); } 100%{ transform:scale(1); } }
     .cd-room .cd-actor { bottom:0; }   /* 맨 앞(depth0) 펫 발이 캠 최하단에 닿게 */
+    /* 🖥️ 펫캠 PiP — dock 캠 우하단 버튼(pipSupported() 데스크톱 크롬·엣지에서만 렌더됨) */
+    .cd-room .cd-pip { position:absolute; right:8px; bottom:6px; z-index:45; display:inline-flex; align-items:center; justify-content:center; width:28px; height:22px; padding:0; border:1px solid var(--bd); border-radius:8px; background:var(--card); opacity:.85; cursor:pointer; line-height:0; }
+    .cd-room .cd-pip svg { display:block; image-rendering:pixelated; }
+    .cd-room .cd-pip.on { border-color:var(--primary); opacity:1; }
+    /* 🖥️ PiP 미니 창 문서(body.piproom) — 방(가상 높이 200px)을 창 크기에 맞춰 통째로 scale(원근·펫 크기 dock와 동일 유지).
+       pointer-events:none = 시청 전용(PiP 문서엔 앱 스크립트가 없어 inline 핸들러가 동작 불가 → 조작 원천 차단). */
+    body.piproom { margin:0; overflow:hidden; background:var(--canvas); }
+    body.piproom .cd-room { position:absolute; left:0; top:0; transform-origin:0 0; pointer-events:none; }
     .cr-floor { position:absolute; left:0; right:0; bottom:0; height:calc(var(--cam-floor) + 1px); background:var(--soft2); z-index:0; }   /* 경계 1px을 바닥으로 채움(흰 경계선 제거) */
     /* 🧵 집꾸미기 픽셀 타일 배경(canvas PNG)을 크게 반복해도 도트가 뭉개지지 않게 */
     .cr-floor, .cr-wall, .cd-room .cr-floor, .wallsw, .fx-tile { image-rendering:pixelated; }
