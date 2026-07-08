@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 펫 모션 클립 시트 제작 v2 — 기존 스프라이트(walk 8f + 4방향 스틸)에서
-idle·sit·belly·eat·drink·run·jump·yawn·lick 클립 시트(가로 스트립 PNG)를 만든다.
+idle·sit·belly·eat·drink·run·jump·yawn·angry·sleep 클립 시트(가로 스트립 PNG)를 만든다.
 규칙은 docs/pet-motion-guide.md. 표범(cat_leopard)이 첫 사례.
+(lick 그루밍은 정면 기반 림 재드로잉이 무리라 폐기 — 2026-07.)
 
 v1(사각 박스 cut/shift)의 구멍·흰 띠 버그를 폐기하고 v2 기법으로 전면 교체:
   1) 아코디언(행 삽입/삭제) — 몸통 밴드에서 행을 균등 삽입/제거해 스쿼시&스트레치.
@@ -15,7 +16,7 @@ v1(사각 박스 cut/shift)의 구멍·흰 띠 버그를 폐기하고 v2 기법�
 사용:
   python tools/pet_motion_build.py cat_leopard             # 검수 시트만(scratchpad)
   python tools/pet_motion_build.py cat_leopard --write     # public/assets/.../<clip>.png 저장
-  python tools/pet_motion_build.py cat_leopard --only=yawn,lick
+  python tools/pet_motion_build.py cat_leopard --only=yawn,sleep
 """
 import os, sys
 from PIL import Image, ImageDraw
@@ -181,46 +182,30 @@ M_TONGUE_CURL = [   # x54, y49  혀 말아 올림(drink)
  'PPP',
 ]
 
-# ── lick: 왼 앞다리 들어 핥기 — "림 들기 규칙"(pet-motion-guide §3):
-#    ① 비워진 자리는 투명(흰 구멍)이 아니라 뒤에 가려져 있던 부위(배·뒷발)를 재드로잉
-#    ② 든 림은 2세그먼트 ㄱ자 — 전완은 수직(가슴에 붙임), 팔꿈치는 몸 옆에서 1px 벌어짐
-#    ③ 발끝은 턱 밑 1~2px, 발바닥 패드는 얼굴 쪽. 좌표계 x0=44. 오른다리 x56+ 유지.
-M_LEG_CLEAR = [     # x0=44, y0=69: 왼 앞다리 소거 → 배(위) + 그늘 + 뒷발(아래) 재드로잉
- '.....sBBBs.X..',   # y69  다리 뿌리었던 곳 → 사타구니(몸색+음영)
- '.....sBBBsX...',   # y70
- '.....SsBsOX...',   # y71
- '.....OSsSOX...',   # y72  배 밑 그늘(뒷발 위 recess)
- '....OtbBbOX...',   # y73  뒷다리 앞면 등장
- '....ObcccO....',   # y74  뒷발(그늘진 크림 — 앞발보다 어둡게)
- '....OcCCcO....',   # y75
- '....OcvCvO....',   # y76  발가락 음영
- '.....KOOO.....',   # y77  뒷발 바닥 외곽선(접지선 y77 유지)
+# ── angry: 하악질 — 귀 눕힘(플랫) + 눈 가늘게 + 송곳니 보이는 개구 + 몸 낮춤 ──
+# 귀 눕힘: 뾰족 귀 끝(y30~32)을 지우고 옆으로 접힌 귀(음영 처리)로 재드로잉. x0=42, y0=30.
+M_EARS_FLAT = [
+ 'XXXXXXX..............XXXXXX.',   # y30  귀 끝 소거
+ 'XXXXXXXXX...........XXXXXXX.',   # y31  (머리 위 외곽선 x53~58 유지)
+ 'XXXXXXXXX...........XXXXXXX.',   # y32  돔 중앙(x51~60)만 유지
+ '....XXOsb............sOXXX..',   # y33  접힌 귀 시작(음영 폴드)
+ '...XOssB............BssOXX..',   # y34  옆으로 눕힌 귀(어두운 뒷면)
+ '....OsB..............sOX....',   # y35
+ '....KsB..............s......',   # y36  폴드 밑단
 ]
-M_ARM_HI = [        # x0=44, y0=53: 발끝이 턱 밑(핥기). 전완 수직·팔꿈치 y62~63
- '.....OCCO....',   # y53  발끝(크림 발가락, 턱 바로 밑)
- '....OCvCCO...',   # y54  발바닥 패드는 얼굴 쪽
- '....OCvCO....',   # y55
- '....OBsBO....',   # y56  발목
- '....OBsBO....',   # y57  전완(수직, 가슴 앞)
- '....OBsBO....',   # y58
- '....OBsBO....',   # y59
- '....OBsBO....',   # y60
- '....ObsBO....',   # y61
- '...OBbsBO....',   # y62  팔꿈치(몸 옆으로 1px)
- '...OBBBO.....',   # y63
- '....OBBO.....',   # y64  상완→어깨 이음(몸에 흡수)
- '.....OBO.....',   # y65
+M_MOUTH_HISS = [    # x53, y48  하악 개구 — 윗니 송곳니(크림) 2점
+ 'OddddO',
+ 'OCddCO',
+ '.KKKK.',
 ]
-M_ARM_LO = [        # x0=44, y0=61: 발 가슴 앞(전이 프레임), 짧은 수직 전완
- '.....OCCO....',   # y61  발끝
- '....OCvCCO...',   # y62
- '....OCvCO....',   # y63
- '....OBsBO....',   # y64  발목
- '....ObsBO....',   # y65
- '...OBbsBO....',   # y66  팔꿈치
- '...OBBBO.....',   # y67
- '....OBBO.....',   # y68  어깨 이음
-]
+
+# ── sleep: 옆모습(east) 엎드려 눈 감고 잠 — 다리 접힘(아코디언 대압축) +
+#    머리 숙임(시어) + 눈 감김 + 느린 호흡. east 눈(초록) 좌표: (74~76,y41)·(75~76,y42).
+def eyes_closed_east(f):
+    """east 스틸 눈 감김: 초록 → 눈꺼풀(몸색), 아랫줄에 감은 속눈썹 라인."""
+    for x in (74,75,76): stamp(f, x,41, ['B'])
+    for x in (75,76):    stamp(f, x,42, ['K'])
+    return f
 
 # ─────────────────────────────────────────────────────────────────────────
 # 클립 빌더 (south 계열)
@@ -282,23 +267,31 @@ def m_yawn(frames, stills, fw):
         out.append(snap(f))
     return out
 
-def m_lick(frames, stills, fw):
-    """그루밍(once): 왼 앞다리 들어 핥기. 다리 소거+사타구니 재드로잉 후
-    어깨에 이어지는 팔을 새로 그림(떠 있는 발 금지)."""
+def m_angry(frames, stills, fw):
+    """하악질(once): 귀 눕힘·눈 가늘게(전조) → 하악(개구+송곳니·몸 낮춤, 2f hold) → 중립.
+    once라 마지막 프레임=중립(hold 대상)."""
     s = stills['south']; out=[]
-    def paw(f, hi, tongue):
-        stamp(f, 44,69, M_LEG_CLEAR)
-        outline_repair(f, (44,60,58,79))
-        if hi: stamp(f, 44,53, M_ARM_HI)
-        else:  stamp(f, 44,61, M_ARM_LO)
-        if tongue: stamp(f, 53,51, ['.P','PP'])   # 입가(숙임 후)→발끝 혀
+    def base_angry(f):
+        stamp(f, 42,30, M_EARS_FLAT)
+        outline_repair(f, (42,29,70,39))
+        for x in (50,51,52,59,60): stamp(f, x,41, ['B'])   # 눈 가늘게(윗줄 감김)
         return f
-    out.append(snap(s.copy()))                                    # f0 중립
-    out.append(snap(paw(accordion(s, NECK[0],NECK[1],-1), False, False)))  # f1 발 낮게
-    out.append(snap(paw(accordion(s, NECK[0],NECK[1],-2), True, True)))   # f2 발 높게+혀
-    out.append(snap(paw(accordion(s, NECK[0],NECK[1],-2), True, False)))  # f3 핥는 스트로크
-    out.append(snap(paw(accordion(s, NECK[0],NECK[1],-1), False, False)))  # f4 발 낮게
-    out.append(snap(s.copy()))                                    # f5 중립(hold 대상)
+    f0 = base_angry(s.copy())                              # 전조: 귀 눕힘+눈 가늘게
+    def hiss():
+        f = base_angry(accordion(s, CHEST[0], CHEST[1], -1))   # 몸 1px 낮춤(웅크림)
+        stamp(f, 53,48, M_MOUTH_HISS, dy=1)
+        return f
+    out=[snap(f0), snap(hiss()), snap(hiss()), snap(s.copy())]
+    return out
+
+def m_sleep(frames, stills, fw):
+    """잠(east, loop): 다리 접어 엎드림(대압축) + 머리 숙임(시어) + 눈 감김 + 느린 호흡 ±1.
+    발 접지선 유지(다리가 몸 밑에 접힘)."""
+    e = eyes_closed_east(stills['east'].copy())
+    out=[]
+    for dd in (-11,-12,-11,-10):                            # 호흡: 등이 1px씩 오르내림
+        f = shear_up(accordion(e, LEGS_E[0], LEGS_E[1], dd), 70,84, -2)   # 코끝만 살짝 떨굼(꾸벅) — 램프가 머리를 가로지르면 턱이 벌어져 보임
+        out.append(snap(f))
     return out
 
 # ─────────────────────────────────────────────────────────────────────────
@@ -330,8 +323,8 @@ def m_jump(frames, stills, fw):
     return [snap(f) for f in (f0,f1,f2,f3,f4,f5)]
 
 BUILDERS = {'idle':m_idle,'sit':m_sit,'belly':m_belly,'eat':m_eat,'drink':m_drink,
-            'run':m_run,'jump':m_jump,'yawn':m_yawn,'lick':m_lick}
-CLIP_FRAMES = {'idle':4,'sit':4,'belly':4,'eat':6,'drink':4,'run':8,'jump':6,'yawn':6,'lick':6}
+            'run':m_run,'jump':m_jump,'yawn':m_yawn,'angry':m_angry,'sleep':m_sleep}
+CLIP_FRAMES = {'idle':4,'sit':4,'belly':4,'eat':6,'drink':4,'run':8,'jump':6,'yawn':6,'angry':4,'sleep':4}
 
 def strip(frames):
     fw = frames[0].size[0]
