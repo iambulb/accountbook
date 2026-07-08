@@ -4166,16 +4166,10 @@
       const spr=sprRb?egg2SprRbSvg():pxSvg(M_EGG2_SPR, EGG2_PAL);
       return '<span class="fx-ddflower fx-ddspr'+(sprRb?' ddflw-rb ddflw-fix':'')+'">'+spr+'</span><span class="fx-ddbody">'+pxSvg(M_EGG2_BODY, EGG2_PAL)+'</span>'; }
     // ===== 🌈 v2 무지개알(개발자 '배너 관리' 미리보기 전용) — 뜰알 복사: 고양이 검은색→무지개 채색(눈·입 유지)·꽃→커진 무지개 색바퀴 꽃 =====
-    const EGG2_RB_PAL=Object.assign({},DDEUL_PAL,{B:'RAINBOW',H:'RAINBOW',b:'RAINBOW',c:'RAINBOW'});   // 껍질·흙·이끼·눈·입은 뜰알 그대로(줄무늬 b·머즐 c도 무지개에 녹임)
-    // 🥚 흙·이끼 없는 깨끗한 무지개알 몸통(뜰알 몸통에서 흙/이끼 제거·하단 껍질로 재드로잉). 껍질 I/W/S/D=은은한 파스텔 무지개(RAINBOW2), 고양이 B/H=선명한 무지개, 눈·입은 진하게.
-    const M_RBEGG=[
-      "..........XXXX..........","........XXXXXXXX........",".......XXIIIIWWXX.......","......XIIIIIWWWWWX......",".....XIIIIIWWWWWWSX.....",
-      "....XXIIIIWWWWWWSSXX....","....XIIIIWWWWWWSSSSX....","...XIIIIWWWWWWWSSSSSX...","...XIIIIWWWWWWSSSSSSX...","..XIIIBBBWWWWSSBBBSSSX..",
-      "..XIIIBBHBWWSSBHBBSSDX..","..XIIBBBBBBBBBBBBBBDDX..","..XIWBBBBBBBBBBBBBBDDX..",".XIIWHBBBBBBBBBBBBHDDDX.",".XIWWBBBBEBBBBEBBBBDDDX.",
-      "..XWWBBBBBBBBBBBBSDDX...","..XWWBBBBBBBBBBBBSDDX...","..XWWSBBBBqPPqBBBSDDX...","..XWWSBBBBqQQqBBBSDDX...","..XWSSBBBBBBBBBBSSDDX...",
-      "...XWSSSBBBBBBSSSDDX....","...XWSSSSBBBBSSSDDDX....","....XSSSSSSSSSSDDDX.....",".....XSSSSSSSSDDDDX.....","......XXSSSSDDDDXX......",
-      "........XXXXXXXX........"];
-    const EGG2_RB2_PAL=Object.assign({},EGG2_RB_PAL,{I:'RAINBOW2',W:'RAINBOW2',S:'RAINBOW2',D:'RAINBOW2',E:'#3a2410'});   // 껍질=은은한 파스텔 무지개, 눈=진하게
+    // 흙·이끼 = 🌟 금빛 찬란 명암(복구, 사용자 지침): 흙 4톤(o 하이라이트~n 깊은그림자)을 금가루 톤으로, 이끼 3톤(m/G/g)은 금빛 도는 올리브그린+금 글린트로 — 무지개 몸통과 어울리는 보물 느낌. PIL 라이트/다크 검수(scratchpad rbegg_gold.py).
+    const EGG2_RB_PAL=Object.assign({},DDEUL_PAL,{B:'RAINBOW',H:'RAINBOW',b:'RAINBOW',c:'RAINBOW',
+      o:'#ffe897',R:'#eec455',r:'#c0902c',n:'#8a5e16',m:'#f6e388',G:'#b6c23e',g:'#7d8f22'});   // 껍질·눈·입은 뜰알 그대로(줄무늬 b·머즐 c는 무지개에 녹임)
+    const EGG2_RB2_PAL=Object.assign({},EGG2_RB_PAL,{I:'RAINBOW2',W:'RAINBOW2',S:'RAINBOW2',D:'RAINBOW2',E:'#3a2410'});   // 껍질=은은한 파스텔 무지개, 눈=진하게(금빛 흙·이끼는 EGG2_RB_PAL에서 상속)
     function rbEgg2FxHtml(){ return '<span class="fx-ddflower ddflw-rb ddflw-fix">'+ddeulFlwRbSvg()+'</span><span class="fx-ddbody">'+pxSvg(M_DDEUL_BODY, EGG2_RB_PAL)+'</span>'; }
     // 정적 무지개알 이미지(배너 아이템 등) — 무지개 고양이알 몸통 + 커진 무지개꽃. noFx=true면 오오라·트윙클 없이 꽃+몸통만(배너 데코용). h=몸통 높이(px).
     function rbEgg2Html(h, noFx){ h=h||52; const fh=Math.round(h*0.30);   // 꽃 5행(몸통 대비 19%)×1.55 ≈ 30%
@@ -4185,7 +4179,7 @@
           tw+='<span class="fx-tw" style="--tx:'+x+'px;--ty:'+y+'px;animation-delay:'+(Math.random()*1.1).toFixed(2)+'s;animation-duration:'+(1.1+Math.random()*0.7).toFixed(2)+'s">'+spark4Svg('RAINBOW',{h:9+Math.round(Math.random()*4)})+'</span>'; }
         fx='<span class="rbegg2-fx"><span class="rbegg2-aura">'+auraSvg('RAINBOW',{h:Math.round(h*1.3)})+'</span>'+tw+'</span>'; }
       return '<span class="rbegg2">'+fx+
-        '<span class="rbegg2-flw">'+ddeulFlwRbSvg({h:fh})+'</span>'+pxSvg(M_RBEGG, EGG2_RB2_PAL, {h:h})+'</span>'; }   // 흙·이끼 없는 깨끗한 알 + 은은한 파스텔 무지개 껍질
+        '<span class="rbegg2-flw">'+ddeulFlwRbSvg({h:fh})+'</span>'+pxSvg(M_DDEUL_BODY, EGG2_RB2_PAL, {h:h})+'</span>'; }   // 흙·이끼 복구(금빛 명암) + 은은한 파스텔 무지개 껍질
     // 🌸 v2 무지개알 오픈(전설↑ 결과): 꽃이 뚝 떨어지고(ddflw-drop) 알 주변으로 무지개 꽃 6개가 흩날림. it=알 요소·st=흩날림 부착 무대·small=10뽑 알 스케일.
     function rbFlowerDropFx(it, st, small){
       const fl=it&&it.querySelector&&it.querySelector('.fx-ddflower'); if(fl) fl.classList.add('ddflw-drop');
