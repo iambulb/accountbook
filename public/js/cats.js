@@ -4719,6 +4719,16 @@
     const M_COINPILE=["....HH...HH....","..HLLLHHLLLH...",".HLLLLLLLLLLH..","HLLDLLDLLDLLLH.","HLLLLLLLLLLLLLH","DLLDLLDLLDLLDLL","DLLLLLLLLLLLLLD",".DDLLDLLDLLDDD.","..DDDDDDDDDDD.."];
     const COINPILE_PAL={H:'#fff0b8',L:'#F4D06B',D:'#caa23a'};
     function coinPileSvg(opt){ return pxSvg(M_COINPILE, COINPILE_PAL, opt); }
+    // 🏛️ 황궁 보물창고 배너 스프라이트 — 금기둥(플루팅·보석 인레이)·매달린 등불(불꽃)·전폭 보물바닥(금·은화+보석 밀집). 밝은 금빛.
+    const M_TPILLAR=["................","....KHHHHHHK....","..KHGGGGGGGGGK..",".KGGGGGeEGGGGGK.",".KGGGGGGGGGGGGK.",".KddddddddddddK.","...KHHdGGdddK...","...KHHdGGdddK...","...KHHdGGdddK...","...KHHdGGdddK...","...KHHdGGdddK...","...KHHdGGdddK...","...KHHdGGdddK...","...KHHdGGdddK...","...KHHdGGdddK...","...KHHdGGdddK...","...KHHdGGdddK...","...KHHdGGdddK...","...KHHdGGdddK...","...KHHdGGdddK...","...KHHdGGdddK...","...KHHdGGdddK...","...KHHdGGdddK...","...KHHdGGdddK...","...KHHdGGdddK...","...KHHdGGdddK...","...KHHdGGdddK...","..KGGGHHHHGGGK..",".KggggggggggggK.","KggggggggggggggK","KggggggggggggggK",".KddddddddddddK.","..KKKKKKKKKKKK..","................"];
+    const TPILLAR_PAL={K:'#5c4410',d:'#8a6a1e',g:'#caa23a',G:'#F4D06B',H:'#fff0b8',W:'#ffffff',e:'#ff5d6c',E:'#ffc0c6'};
+    function tPillarSvg(opt){ return pxSvg(M_TPILLAR, TPILLAR_PAL, opt); }
+    const M_TLANTERN=["....CC....","....CC....","...KGGK...","..KGHHGK..",".KdGGGGdK.",".KGfrrfGK.","KGGfFFfGGK","KGGfFFfGGK","KGGfrrfGGK",".KGHffHGK.",".KGGffGGK.",".KdGGGGdK.","..KdggdK..","...KddK...","....KK....","....d....."];
+    const TLANTERN_PAL={K:'#4a3a12',d:'#8a6a1e',g:'#caa23a',G:'#F4D06B',H:'#fff0b8',C:'#6b5518',F:'#ff7a2e',f:'#ffe07a',r:'#ff5a2a',W:'#fff6d0'};
+    function tLanternSvg(opt){ return pxSvg(M_TLANTERN, TLANTERN_PAL, opt); }
+    const M_THOARD=["........................................................","........................................................","..................................................d..d..",".OdddO..........dW.............................uUOddOd..","OHOdOHOd.d..dOddddddd........................OSuOHOOHOdd","ddSdddOOHOddOHOdddddd.d............dOH.d..LSOSLSddddOHOd","dSLSdOHddddSdddddOddddO.......dddOdEdddddsssdsssddOHdddd","dsssddddOddUssddOHOOdOHOdddOHOddOHWEeWdddddPddddddddEddd","dddEdddOHOuUuddddPOHOdddddddddddddeWeOddOdpPpddddddeEedd","ddeEeOdddduuudOdpPdddddOdOddOddSddOHOHOOHOpppdOdddSeeedd","ddeeOHOdddOKdOHOUppddSSHOHOOHOSSSddddddddddKdOUOddssKdOd","ddOKdOdddOHOddduUuddSSLSddOddOSLSdddddddddPdOuUudddSdOHO","dOHOOHOdOddddSduuuddssssdOHOddsssdddOddOdpPpduuuddSLWddd","dddddddOHOddSLSdKddddddddddddddddddOHOOHOpppddKdddsssddd","ddddddddWdddsssdddddddddddddddddddddddddddKddddddddddddd"];
+    const THOARD_PAL={K:'#7a5e1c',d:'#8a6a1e',o:'#caa23a',O:'#F4D06B',H:'#fff0b8',s:'#8a94a8',S:'#c2cad8',L:'#eef2f8',e:'#ff5d6c',E:'#ffc0c6',u:'#5aa9e6',U:'#cfeaff',v:'#5bbf7a',V:'#c6f5d8',p:'#c77dff',P:'#eccfff',W:'#ffffff'};
+    function tHoardSvg(opt){ return pxSvg(M_THOARD, THOARD_PAL, opt); }
     // 🌠 무지개 별똥별(comet) — 대각선 ↘(머리 우하단 4방 별·꼬리 좌상단). 무지개는 RAINBOW 팔레트(움직이는 그라디언트), 코어=흰빛. 10연차 밤(무지개) 하늘 연출.
     const M_SHOOT=["....................","....................","....................","...R................","....R...............",".....R..............","......R.............",".......RR...........",".......RRR..........","........RRR.........",".........RRRR.R.....","..........RRRRR.....","..........RRRRRR....","...........RRRWRR...","..........RRRWWWRRR.","............RRWRR...",".............RRR....","..............R.....","..............R.....","...................."];
     const SHOOT_PAL={R:'RAINBOW',W:'#ffffff'};
@@ -8151,32 +8161,37 @@
     function treasureSceneHtml(mode){
       mode=mode||'banner'; const ck=(_pkV2?'v2|':'')+mode; if(_treasureCache[ck]) return _treasureCache[ck];
       const reveal=mode==='reveal', sz=reveal?1.8:1, S=function(h){ return Math.max(1,Math.round(h*sz)); };
-      // ✨ 상단 — 무지개 광선/오오라 + 반짝임 다수 + 떠다니는 보석
-      let sky='<span class="pk-tvrays">'+lightLayers({aura:S(130),rays:S(160),rainbow:true})+'</span>';
-      const TWC=['#ffd84a','#8fd0ff','#ff9ec2','#d0a8f0','#ffffff'];
-      const TW=pkSlots(pkCount(14),710); for(let i=0;i<TW.length;i++){ const o=TW[i], hh=S(Math.round(5+pkRand(i,72)*4)), del=(pkRand(i,73)*2.6).toFixed(2), b=(28+(1-o.yy)*66).toFixed(1);
+      // ─── 뒷벽/천장 — 무지개 광선·오오라 + 황제 왕관 엠블럼 + 매달린 등불(불꽃) + 부유 보석 + 반짝임 ───
+      let sky='<span class="pk-tvrays">'+lightLayers({aura:S(150),rays:S(184),rainbow:true})+'</span>';
+      sky+='<span class="pk-tcrest">'+crownSvg({h:S(40)})+'</span>';   // 황제 왕관 = 황궁 상징(뒷벽 중앙)
+      [[15,'0'],[85,'-1.3'],[31,'-.6'],[69,'-1.9']].forEach(function(t){ sky+='<span class="pk-tlantern" style="left:'+t[0]+'%;animation-delay:'+t[1]+'s;">'+tLanternSvg({h:S(27)})+'</span>'; });   // 매달린 등불
+      const TWC=['#ffe89a','#ffffff','#ffd0e6','#d6ecff','#fff0b8'];
+      const TW=pkSlots(pkCount(16),710); for(let i=0;i<TW.length;i++){ const o=TW[i], hh=S(Math.round(5+pkRand(i,72)*4)), del=(pkRand(i,73)*2.6).toFixed(2), b=(20+(1-o.yy)*70).toFixed(1);
         sky+='<span class="pk-star" style="left:'+o.x+'%;bottom:'+b+'%;animation-delay:'+del+'s;color:'+TWC[i%TWC.length]+'">'+sparkSvg({h:hh})+'</span>'; }
-      const GC=['blue','purple','pink','gold','green']; const FG=pkSlots(pkCount(5),720); for(let i=0;i<FG.length;i++){ const o=FG[i], hh=S(Math.round(9+pkRand(i,74)*4)), dur=(4.5+pkRand(i,75)*3).toFixed(1), del=(-pkRand(i,76)*4).toFixed(2), b=(34+(1-o.yy)*52).toFixed(1);
+      const GC=['blue','purple','pink','gold','green']; const FG=pkSlots(pkCount(6),720); for(let i=0;i<FG.length;i++){ const o=FG[i], hh=S(Math.round(9+pkRand(i,74)*4)), dur=(4.5+pkRand(i,75)*3).toFixed(1), del=(-pkRand(i,76)*4).toFixed(2), b=(30+(1-o.yy)*56).toFixed(1);
         sky+='<span class="pk-tgem" style="left:'+o.x+'%;bottom:'+b+'%;--d:'+dur+'s;animation-delay:'+del+'s;">'+gemSvg(GC[i%GC.length],{h:hh})+'</span>'; }
-      // 🏆 하단 보물 더미 — 금빛 언덕 + 양옆 무더기(중앙 비움)
-      let f='<span class="pk-thill" style="left:50%;bottom:-2px;">'+hillSvg(HILL_TREASURE,{h:S(30)})+'</span>';
-      const L=[[8,8,'coinpile',18,''],[19,16,'goldbar',11,'pk-tsheen'],[26,23,'gem:purple',13,'pk-tbob'],[4,20,'crown',15,''],[33,6,'box:#ffd84a',20,''],[14,12,'gem:green',9,'pk-tglint'],[30,10,'gold',9,'pk-tglint']];
-      const R=[[92,8,'coinpile',18,''],[81,15,'goldbar',11,'pk-tsheen'],[74,23,'gem:blue',13,'pk-tbob'],[96,20,'trophy',15,''],[67,6,'box:#8fd0ff',20,''],[86,12,'gem:pink',9,'pk-tglint'],[70,10,'gold',9,'pk-tglint']];
-      function prop(a){ const l=a[0],b=a[1],kind=a[2],h=a[3],cls=a[4]; let ic;
+      // ─── 바닥 — 전폭 보물바닥(금·은화+보석) + 금기둥 L/R + 흩뿌린 보물 + 흔들리는 뜰알·무지개알·무지개박스(중앙 히어로박스 자리 비움) ───
+      let f='<span class="pk-thoard" style="left:26%;bottom:-2px;">'+tHoardSvg({h:S(46)})+'</span>'+
+            '<span class="pk-thoard flip" style="left:74%;bottom:-2px;">'+tHoardSvg({h:S(46)})+'</span>';
+      f+='<span class="pk-tpillar" style="left:8%;bottom:0;z-index:2;">'+tPillarSvg({h:S(88)})+'</span>'+
+         '<span class="pk-tpillar" style="left:92%;bottom:0;z-index:2;">'+tPillarSvg({h:S(88)})+'</span>';
+      const PR=[[13,10,'coinpile',16,''],[88,9,'coinpile',16,''],[20,7,'goldbar',10,'pk-tsheen'],[80,6,'goldbar',10,'pk-tsheen'],[5,7,'gem:purple',10,'pk-tglint'],[95,7,'gem:blue',10,'pk-tglint'],[44,5,'gold',9,'pk-tglint'],[56,5,'gold',9,'pk-tglint']];
+      PR.forEach(function(a){ const l=a[0],b=a[1],kind=a[2],h=a[3],cls=a[4]; let ic;
         if(kind==='coinpile') ic=coinPileSvg({h:S(h)});
         else if(kind==='goldbar') ic=goldBarSvg({h:S(h)});
-        else if(kind==='crown') ic=crownSvg({h:S(h)});
-        else if(kind==='trophy') ic=trophySvg({h:S(h)});
         else if(kind==='gold') ic=goldSvg({h:S(h)});
-        else if(kind.indexOf('gem:')===0) ic=gemSvg(kind.slice(4),{h:S(h)});
-        else ic=boxOpenSvg(kind.slice(4),true,{h:S(h)});
-        const z=(kind.indexOf('box:')===0)?2:(kind.indexOf('gem:')===0?4:3);
-        return '<span class="pk-tprop '+cls+'" style="left:'+l+'%;bottom:'+b+'%;z-index:'+z+';">'+ic+'</span>'; }
-      L.forEach(function(a){ f+=prop(a); }); R.forEach(function(a){ f+=prop(a); });
-      [[16,18],[84,18],[50,9],[28,15],[72,15],[42,7],[58,7]].forEach(function(t,i){ f+='<span class="pk-star" style="left:'+t[0]+'%;bottom:'+t[1]+'%;animation-delay:'+(pkRand(i,77)*2).toFixed(2)+'s;color:#fff0b8">'+sparkSvg({h:S(6)})+'</span>'; });
-      // 공중 트윙클(4점 별)
-      let air=''; const AR=pkSlots(pkCount(8),730); for(let i=0;i<AR.length;i++){ const o=AR[i], del=(pkRand(i,78)*2.4).toFixed(2), b=(18+(1-o.yy)*62).toFixed(1);
-        air+='<span class="pk-star" style="left:'+o.x+'%;bottom:'+b+'%;animation-delay:'+del+'s;color:#fff0b8">'+spark4Svg('#fff0b8',{h:S(7)})+'</span>'; }
+        else ic=gemSvg(kind.slice(4),{h:S(h)});
+        f+='<span class="pk-tprop '+cls+'" style="left:'+l+'%;bottom:'+b+'%;z-index:3;">'+ic+'</span>'; });
+      const EG=[[20,8,'ddeul',30,'s0'],[33,7,'rbox',30,'s1'],[67,7,'regg',28,'s2'],[80,8,'rbox',30,'s3']];
+      EG.forEach(function(a){ const l=a[0],b=a[1],kind=a[2],h=a[3],cls=a[4]; let ic;
+        if(kind==='ddeul') ic=ddeulEggSvg({h:S(h)});
+        else if(kind==='regg') ic=rainbowEggSvg({h:S(h)});
+        else ic=rainbowBoxSvg({h:S(h)});
+        f+='<span class="pk-tsway '+cls+'" style="left:'+l+'%;bottom:'+b+'%;z-index:5;">'+ic+'</span>'; });
+      [[16,16],[84,16],[38,10],[62,10],[50,3]].forEach(function(t,i){ f+='<span class="pk-star" style="left:'+t[0]+'%;bottom:'+t[1]+'%;animation-delay:'+(pkRand(i,77)*2).toFixed(2)+'s;color:#fff6d0">'+sparkSvg({h:S(6)})+'</span>'; });
+      // ─── 공중 트윙클(4점 별) ───
+      let air=''; const AR=pkSlots(pkCount(9),730); for(let i=0;i<AR.length;i++){ const o=AR[i], del=(pkRand(i,78)*2.4).toFixed(2), b=(16+(1-o.yy)*66).toFixed(1);
+        air+='<span class="pk-star" style="left:'+o.x+'%;bottom:'+b+'%;animation-delay:'+del+'s;color:#fff6d0">'+spark4Svg('#fff6d0',{h:S(7)})+'</span>'; }
       _treasureCache[ck]='<div class="pkscene pk-treasure'+(reveal?' pk-reveal':'')+(_pkV2?' pk-v2':'')+'" aria-hidden="true">'+
         '<div class="pk-sky">'+sky+'</div><div class="pk-field">'+f+'</div><div class="pk-air">'+air+'</div></div>';
       return _treasureCache[ck];

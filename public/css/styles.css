@@ -1507,6 +1507,30 @@
     .ten-egg.tremble .fx-ddflower.ddflw-big { animation:fxflwswingbig .2s ease infinite; }
     @keyframes fxflwswingbig { 0%,100%{transform:scale(1.55) rotate(0)} 14%{transform:scale(1.55) rotate(-27deg)} 40%{transform:scale(1.55) rotate(24deg)} 64%{transform:scale(1.55) rotate(-15deg)} 85%{transform:scale(1.55) rotate(8deg)} }
     .ten-ddeulegg .fx-ddbody .px { display:block; height:42px; width:auto; filter:drop-shadow(0 3px 4px rgba(0,0,0,.3)); }
+    /* ===== 🎨 v2 신규 펫알/무지개알(개발자 배너관리 미리보기, _pkV2) — 새싹·커진 무지개꽃·꽃 뚝+흩날림 ===== */
+    /* 커진 꽃/새싹(정적 유지 ddflw-fix) — 큰 채로 탭 팔랑·climax 스윙(스케일 유지한 회전) */
+    .fx-ddflower.ddflw-fix { transform:scale(1.55); }
+    .fx-ddflower.ddflw-fix.flswing, .fx-ddflower.ddflw-big.flswing { animation:fxflwtapbig .5s ease; }
+    .fx-ddeulegg.fx-tremble .fx-ddflower.ddflw-fix, .ten-egg.tremble .fx-ddflower.ddflw-fix { animation:fxflwswingbig .2s ease infinite; }
+    @keyframes fxflwtapbig { 0%{transform:scale(1.55) rotate(0)} 12%{transform:scale(1.55) rotate(-32deg)} 30%{transform:scale(1.55) rotate(27deg)} 48%{transform:scale(1.55) rotate(-20deg)} 66%{transform:scale(1.55) rotate(14deg)} 82%{transform:scale(1.55) rotate(-8deg)} 100%{transform:scale(1.55) rotate(0)} }
+    /* 🌸 무지개알 오픈(전설↑): 꽃이 줄기째 뚝 떨어짐 — tremble 스윙·fix보다 뒤(같은 특이도는 후순위 승리)라 항상 이김 */
+    .fx-ddflower.ddflw-drop, .fx-ddeulegg.fx-tremble .fx-ddflower.ddflw-drop, .ten-egg.tremble .fx-ddflower.ddflw-drop { animation:flwdrop .8s cubic-bezier(.45,.06,.8,.5) forwards; }
+    @keyframes flwdrop { 0%{ transform:scale(1.55) rotate(0); opacity:1; } 25%{ transform:scale(1.5) translateY(14%) rotate(34deg); } 100%{ transform:scale(1.4) translateY(430%) rotate(150deg); opacity:0; } }
+    /* 🌈 무지개 꽃 6개 흩날림(알 중심 기준) — 낙하·확산(fx-rbfl, --fx/--fy/--fr 인라인)+살랑(rbfl-in) 2겹 */
+    .fx-rbfls { position:absolute; left:50%; top:50%; width:0; height:0; z-index:4; pointer-events:none; }
+    .fx-rbfl { position:absolute; left:0; top:0; opacity:0; animation:rbflfall 1.3s ease-in forwards; }
+    .rbfl-in { display:block; line-height:0; animation:rbflsway .5s ease-in-out infinite; }
+    .rbfl-in .px { display:block; image-rendering:pixelated; }
+    @keyframes rbflfall { 0%{ opacity:0; transform:translate(-50%,-50%) scale(.5); } 14%{ opacity:1; } 100%{ opacity:0; transform:translate(calc(-50% + var(--fx,40px)), calc(-50% + var(--fy,90px))) rotate(var(--fr,140deg)) scale(1); } }
+    @keyframes rbflsway { 0%,100%{ transform:rotate(-16deg);} 50%{ transform:rotate(16deg);} }
+    /* 🌈 정적 무지개알(배너 아이템 rbEgg2Html) — 알 뒤 무지개 오오라(z:-1, .rbegg2가 스택 컨텍스트라 카드 배경 아래로 안 새어나감) + 주변 트윙클 */
+    .rbegg2 { position:relative; z-index:0; display:inline-flex; flex-direction:column; align-items:center; line-height:0; }
+    .rbegg2 .px { display:block; image-rendering:pixelated; }
+    .rbegg2-flw { line-height:0; }
+    .rbegg2-fx { position:absolute; left:50%; top:56%; width:0; height:0; z-index:-1; pointer-events:none; }
+    .rbegg2-aura { position:absolute; left:0; top:0; line-height:0; transform:translate(-50%,-50%); animation:ten-auraglow 2.4s ease-in-out infinite; }
+    @media (prefers-reduced-motion: reduce){ .fx-rbfl, .rbfl-in, .rbegg2-aura, .fx-ddflower.ddflw-fix.flswing, .fx-ddflower.ddflw-big.flswing { animation:none; } }
+    body.lite .rbegg2-aura, body.lite .rbegg2 .fx-tw { animation:none !important; }   /* 🔋 저사양: 배너 상시 루프만 컷(오픈 원샷 흩날림은 유지) */
     /* 🎁 랜덤박스 10연차 — 둥지 안 상자(알 대신) + 피날레/리빌 가구 썸네일 */
     .ten-boxegg { display:block; line-height:0; }
     .ten-boxegg .px { display:block; height:min(14vw,54px); width:auto; image-rendering:pixelated; filter:drop-shadow(0 3px 4px rgba(0,0,0,.32)); }
@@ -1909,11 +1933,20 @@
     .pk-tag b { color:var(--text); font-weight:800; }
     .pkscene { position:relative; height:156px; overflow:hidden; background:linear-gradient(#bfe6ff 0%, #dcf3ff 60%); }
     /* 🏆 보물(랜덤박스) 배너 씬 — 무지개빛 금고 */
-    .pkscene.pk-treasure { background:linear-gradient(180deg,#241a3a 0%,#3a2a58 40%,#5a3f68 64%,#7a5540 100%); }
-    :root[data-theme="dark"] .pkscene.pk-treasure { background:linear-gradient(180deg,#160f28 0%,#281c40 40%,#402c4c 64%,#563c2c 100%); }
-    .pk-treasure .pk-tvrays { position:absolute; left:50%; top:42%; transform:translate(-50%,-50%); z-index:0; }
-    .pk-treasure .pk-thill { position:absolute; transform:translateX(-50%); image-rendering:pixelated; line-height:0; z-index:1; }
+    /* 🏛️ 황궁 보물창고 — 밝은 금빛 금고(라디언트 중앙 발광 + 따뜻한 금 그라디언트) */
+    .pkscene.pk-treasure { background:radial-gradient(160px 100px at 50% 32%, rgba(255,246,205,.95), rgba(255,216,120,.4) 48%, transparent 76%), linear-gradient(180deg,#b07f26 0%,#d5a238 30%,#eec163 56%,#e3ad44 78%,#c68a2c 100%); }
+    :root[data-theme="dark"] .pkscene.pk-treasure { background:radial-gradient(160px 100px at 50% 32%, rgba(255,238,180,.85), rgba(235,196,110,.36) 48%, transparent 76%), linear-gradient(180deg,#8a641f 0%,#a87e28 30%,#c69a44 56%,#b58836 78%,#96701f 100%); }
+    .pk-treasure .pk-tvrays { position:absolute; left:50%; top:40%; transform:translate(-50%,-50%); z-index:0; }
+    .pk-treasure .pk-tcrest { position:absolute; left:50%; top:5%; transform:translate(-50%,0); image-rendering:pixelated; line-height:0; z-index:2; animation:pktcrest 3.4s ease-in-out infinite; filter:drop-shadow(0 1px 0 rgba(120,80,10,.5)); }
+    .pk-treasure .pk-tlantern { position:absolute; top:0; transform:translateX(-50%); transform-origin:50% 0; image-rendering:pixelated; line-height:0; z-index:3; animation:pktlant 2.7s ease-in-out infinite; }
+    .pk-treasure .pk-tpillar { position:absolute; transform:translateX(-50%); image-rendering:pixelated; line-height:0; }
+    .pk-treasure .pk-thoard { position:absolute; transform:translateX(-50%); image-rendering:pixelated; line-height:0; z-index:1; }
+    .pk-treasure .pk-thoard.flip { transform:translateX(-50%) scaleX(-1); }
     .pk-treasure .pk-tprop { position:absolute; transform:translateX(-50%); image-rendering:pixelated; line-height:0; }
+    .pk-treasure .pk-tsway { position:absolute; transform:translateX(-50%); transform-origin:50% 100%; image-rendering:pixelated; line-height:0; animation:pktsway 2.8s ease-in-out infinite; }
+    .pk-treasure .pk-tsway.s1 { animation-delay:-.7s; animation-duration:3.2s; }
+    .pk-treasure .pk-tsway.s2 { animation-delay:-1.4s; animation-duration:2.5s; }
+    .pk-treasure .pk-tsway.s3 { animation-delay:-.4s; animation-duration:3.0s; }
     .pk-treasure .pk-tgem { position:absolute; transform:translateX(-50%); image-rendering:pixelated; line-height:0; animation:pktgem var(--d,5s) ease-in-out infinite; }
     .pk-treasure .pk-tbob { animation:pktbob 3s ease-in-out infinite; }
     .pk-treasure .pk-tsheen { animation:pktsheen 2.4s ease-in-out infinite; }
@@ -1921,9 +1954,12 @@
     @keyframes pktgem { 0%,100%{ transform:translate(-50%,2px); } 50%{ transform:translate(-50%,-6px); } }
     @keyframes pktbob { 0%,100%{ transform:translate(-50%,0); } 50%{ transform:translate(-50%,-4px); } }
     @keyframes pktsheen { 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.4); } }
-    @keyframes pktglint { 0%,100%{ filter:brightness(1); } 45%{ filter:brightness(1.6); } }
-    body.lite .pk-treasure .pk-tgem, body.lite .pk-treasure .pk-tbob, body.lite .pk-treasure .pk-tsheen, body.lite .pk-treasure .pk-tglint { animation:none !important; }
-    @media (prefers-reduced-motion: reduce){ .pk-treasure .pk-tgem, .pk-treasure .pk-tbob, .pk-treasure .pk-tsheen, .pk-treasure .pk-tglint { animation:none; } }
+    @keyframes pktglint { 0%,100%{ filter:brightness(1); } 45%{ filter:brightness(1.7); } }
+    @keyframes pktsway { 0%,100%{ transform:translateX(-50%) rotate(-5deg); } 50%{ transform:translateX(-50%) rotate(5deg); } }
+    @keyframes pktcrest { 0%,100%{ transform:translate(-50%,0); filter:brightness(1); } 50%{ transform:translate(-50%,-3px); filter:brightness(1.18); } }
+    @keyframes pktlant { 0%,100%{ transform:translateX(-50%) rotate(-3deg); filter:brightness(1); } 50%{ transform:translateX(-50%) rotate(3deg); filter:brightness(1.3); } }
+    body.lite .pk-treasure .pk-tgem, body.lite .pk-treasure .pk-tbob, body.lite .pk-treasure .pk-tsheen, body.lite .pk-treasure .pk-tglint, body.lite .pk-treasure .pk-tsway, body.lite .pk-treasure .pk-tlantern, body.lite .pk-treasure .pk-tcrest { animation:none !important; }
+    @media (prefers-reduced-motion: reduce){ .pk-treasure .pk-tgem, .pk-treasure .pk-tbob, .pk-treasure .pk-tsheen, .pk-treasure .pk-tglint, .pk-treasure .pk-tsway, .pk-treasure .pk-tlantern, .pk-treasure .pk-tcrest { animation:none; } }
     :root[data-theme="dark"] .pkscene { background:linear-gradient(#1f2b44,#26364f); }
     .pkscene .px, .pkscene img { image-rendering:pixelated; }
     /* 🌲 전설·신화·한정 등장 배경 = 픽업 씬 전체화면(리빌, 배회 픽업 펫 #pkRevStage 포함). 펫·텍스트(.fx-reveal.rev-scene z-index:2)는 이 위에. */
