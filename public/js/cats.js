@@ -9125,12 +9125,12 @@
     const UNDO_MAX=8;
     let _undoStacks={};   // roomId → [snap,...]. 배치·이동·회수·자동정리·벽지/바닥 변경이 모두 captureUndo로 push.
     function captureUndo(){ try{ const r=room(), rid=curRoomId(); const st=_undoStacks[rid]||(_undoStacks[rid]=[]);
-        st.push({ placed:Object.assign({},r.placed||{}), wallPlaced:Object.assign({},r.wallPlaced||{}), wallpaper:r.wallpaper||'default', floor:r.floor||'default' });
+        st.push({ placed:Object.assign({},r.placed||{}), wallPlaced:Object.assign({},r.wallPlaced||{}), wallpaper:r.wallpaper||'default', floor:r.floor||'default', active:(r.active||[]).slice(), poops:r.poops||0 });   // active·poops도 스냅샷 — '이 방 비우기'(펫·똥 제거) 되돌리기 때 복원(다른 경로엔 안 바뀐 값이라 무해)
         if(st.length>UNDO_MAX) st.shift();
       }catch(e){} }
     function undoCount(){ const st=_undoStacks[curRoomId()]; return st?st.length:0; }
     function undoPlace(){ const rid=curRoomId(), st=_undoStacks[rid]; if(!st||!st.length) return; const s=st.pop();
-      roomTx(rid, roomIdx(), R=>{ R.placed=s.placed; R.wallPlaced=s.wallPlaced; if(s.wallpaper!=null) R.wallpaper=s.wallpaper; if(s.floor!=null) R.floor=s.floor; }, ()=>{ if(state._sheetRefresh) state._sheetRefresh(); const n=undoCount(); toast('되돌렸어요'+(n?(' · '+n+'단계 더'):'')); }); }
+      roomTx(rid, roomIdx(), R=>{ R.placed=s.placed; R.wallPlaced=s.wallPlaced; if(s.wallpaper!=null) R.wallpaper=s.wallpaper; if(s.floor!=null) R.floor=s.floor; if(s.active) R.active=s.active; if(s.poops!=null) R.poops=s.poops; }, ()=>{ if(state._sheetRefresh) state._sheetRefresh(); const n=undoCount(); toast('되돌렸어요'+(n?(' · '+n+'단계 더'):'')); }); }
     // ✨ 가구 자동 정리 — 현재 방 배치를 뒤→앞·발자국 큰 것부터·등급순으로 격자에 다시 채운다(펫은 자율이라 미변경, 벽지·바닥·똥·펫 그대로).
     //    기존 배치 헬퍼만 재사용(areaFree/occupiedCells/isFloorItem/CARE_ITEMS/wallAreaFree/captureUndo/roomTx). filledAt(그릇 채움) 보존. 지오메트리(camDepth/camZ/splitProps)는 렌더타임 그대로.
     function autoArrangeRoom(){
