@@ -1271,6 +1271,7 @@
     .palcatrow .placecat { flex:1; min-width:0; }
     .palshop { flex:none; display:inline-flex; align-items:center; gap:4px; padding:6px 11px; border-radius:11px; background:var(--soft); color:var(--text2); font-size:12px; font-weight:800; white-space:nowrap; }
     .palshop:active { transform:scale(.96); }
+    .fillrow { display:flex; justify-content:flex-end; margin:4px 0 2px; }
     .catchip .cn-fav { position:absolute; top:3px; left:3px; z-index:3; width:19px; height:19px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; color:#ffd24a; background:color-mix(in srgb,var(--card) 70%,transparent); }
     .catchip .cn-fav svg { width:12px; height:12px; }
     .catchip .cn-fav:not(.on) { color:var(--sub); }

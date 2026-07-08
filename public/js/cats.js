@@ -3288,7 +3288,19 @@
     const FILL_MS = 3*60*60*1000;   // 그릇이 채워진 뒤 비워지기까지(3시간)
     const MOOD_CARE_MS = 24*60*60*1000;   // ❤️ 수확(caredAt) 후 행복도 보너스가 0으로 빠지는 시간(24h)
     const POOP_REWARD = 4;          // 똥 하나 치우면 얻는 은화
-    const CARE_ITEMS = ['bowl','waterbowl','litterbox'];   // 케어 아이템 — 방당 종류별 1개만 배치 허용(placeItemTx에서 강제)
+    const CARE_ITEMS = ['bowl','waterbowl','litterbox'];   // 케어 아이템(밥·물·화장실)
+    function careCap(){ return Math.max(1, Math.min(3, activeCats().length)); }   // 방당 상한 = 이 방 활성 펫 수(최대 3, 다묘 대응). enrichTypeCount가 케어를 제외하므로 개수는 행복도·enrichment에 영향 없음(순수 배치 편의).
+    // 🐾 빈 활성 슬롯을 대기(어느 방에도 없는) 보유 펫으로 자동 채움 — 즐겨찾기·최근 순. 한 번에.
+    function autoFillSlots(){ const sc=slotCount(); if(activeCats().length>=sc){ toast('이 방 슬롯이 이미 가득 찼어요'); return; }
+      const rid=curRoomId(); let added=0;
+      gameRef().transaction(function(g){ g=normalizeGame(g); const R=gRoomById(g,rid); R.active=R.active||[]; added=0;
+        const cats=g.owned.cats||{}, inRoom={}; (g.home.rooms||[]).forEach(function(r){ (r.active||[]).forEach(function(id){ inRoom[id]=1; }); });
+        const waiting=Object.keys(cats).filter(function(id){ return !inRoom[id] && PET_CATALOG.some(function(x){ return x.id===id; }); });
+        waiting.sort(function(a,b){ return ((cats[b]||{}).fav?1:0)-((cats[a]||{}).fav?1:0) || String((cats[b]||{}).boughtAt||'').localeCompare(String((cats[a]||{}).boughtAt||'')); });
+        let need=sc-(R.active.filter(function(id){ return cats[id]; }).length);
+        for(let i=0;i<waiting.length && need>0;i++){ R.active.push(waiting[i]); added++; need--; }
+        if(!added) return; g.home.changedAt=new Date().toISOString(); return g;
+      }).then(function(r){ if(r&&r.committed&&added) toast('빈 슬롯을 '+added+'마리로 채웠어요 🐾'); else toast('데려올 대기 펫이 없어요'); }); }
     // 🪙 수확 드롭(경제 정책 §3-C 보강): 하루 1회 금화 뭉텅이 대신, 경과 시간(시간 단위·24h캡)마다 시간당 확률 롤.
     //   금화 10% + 가챠 아이템(펫알·랜덤박스·뜰알) 각 1%. 활성 펫 있을 때만. (구 HARVEST_GOLD_* 삭제)
     const HARVEST_ROLL = { gold:0.10, egg:0.01, box:0.01, ddeul:0.01 };
@@ -4469,9 +4481,9 @@
     const M_CLOUD1=[".....HHHHHH.....","...HHWWWWWWHH...","..HWWWWWWWWWWH..",".HWWWWWWWWWWWWH.","HWWWWWWWWWWWWWWH","WWWWWWWWWWWWWWWW",".SSSSSSSSSSSSSS."];
     const M_CLOUD2=["...HHHH...",".HHWWWWHH.","HWWWWWWWWH","WWWWWWWWWW",".SSSSSSSS."];
     const M_CLOUD3=["..HHH..",".HWWWH.","WWWWWWW",".SSSSS."];
-    const CLOUD_PALS={w:{W:'#ffffff',H:'#eef6ff',S:'#d3e4f3'},p:{W:'#fff2f8',H:'#ffe9f2',S:'#f2cfe0'},b:{W:'#f0f8ff',H:'#e4f1ff',S:'#cfe2f5'},
-      so:{W:'#ffd9a8',H:'#ffc286',S:'#f0a25e'},sp:{W:'#ffc6cf',H:'#ff9fb0',S:'#e77e97'},sv:{W:'#dcc2ea',H:'#c6a4dc',S:'#a888c6'}};   // 🌇 노을에 비친 구름(주황·분홍·보라)
-    function cloudSvg(which,tint,opt){ const M=[M_CLOUD1,M_CLOUD2,M_CLOUD3][which]||M_CLOUD1; return pxSvg(M, CLOUD_PALS[tint||'w'], opt); }
+    const CLOUD_PALS={w:{W:'#ffffff',H:'#eef6ff',S:'#d3e4f3',D:'#bcd3e8'},p:{W:'#fff2f8',H:'#ffe9f2',S:'#f2cfe0',D:'#e2b6d0'},b:{W:'#f0f8ff',H:'#e4f1ff',S:'#cfe2f5',D:'#b9d0ea'},
+      so:{W:'#ffd9a8',H:'#ffc286',S:'#f0a25e',D:'#dd8c4c'},sp:{W:'#ffc6cf',H:'#ff9fb0',S:'#e77e97',D:'#d66a86'},sv:{W:'#dcc2ea',H:'#c6a4dc',S:'#a888c6',D:'#9678b6'}};   // 🌇 노을에 비친 구름(주황·분홍·보라) — D=v2 밑그늘
+    function cloudSvg(which,tint,opt){ const A=_pkV2?[M2_CLOUD1,M2_CLOUD2,M2_CLOUD3]:[M_CLOUD1,M_CLOUD2,M_CLOUD3]; return pxSvg(A[which]||A[0], CLOUD_PALS[tint||'w'], opt); }
     // 활엽수: 둥근 캐노피(H하이라이트/L기본/l중간/D그림자/X외곽, 클럼프 음영) + 트렁크(T/w/t 나뭇결) 분리(캐노피만 바람에 살랑)
     const M_TREETOP=["....HHH......","..HHLLLHH....",".HLLLLLLLH...","HLLLLLLlLLH..","HLLHLLLllLDH.","HLLLLLllllLDH",".HLLLlllllDDH",".HLLLllllDDD.","..HLLllDDDD..","...XLllDDX...","....XXDX....."];
     const M_TRUNK=[".TTt.",".Twt.",".Twt.","TTwtt"];
@@ -4479,39 +4491,40 @@
     // 침엽수(3단 삼각) — 눈빛 하이라이트(H)+음영(l/D)+나뭇결 기둥. 원근 뒤쪽용
     const M_PINE=["....H....","...HLD...","...LLl...","..HLLLD..","..LLLll..",".HLLLLlD.",".LLLLlll.","HLLLLLllD","LLLLLllll","..LLll...","...TT....","...Tt...."];
     const PINE_PAL={H:'#8fe08a',L:'#4aa85a',l:'#347a44',D:'#245c34',T:'#6e4426',t:'#543216'};
-    function treeTopSvg(opt){ return pxSvg(M_TREETOP, TREE_PAL, opt); }
-    function trunkSvg(opt){ return pxSvg(M_TRUNK, TREE_PAL, opt); }
-    function pineSvg(opt){ return pxSvg(M_PINE, PINE_PAL, opt); }
+    function treeTopSvg(opt){ return pxSvg(_pkV2?M2_TREETOP:M_TREETOP, TREE_PAL, opt); }
+    function trunkSvg(opt){ return pxSvg(_pkV2?M2_TRUNK:M_TRUNK, TREE_PAL, opt); }
+    function pineSvg(opt){ return pxSvg(_pkV2?M2_PINE:M_PINE, PINE_PAL, opt); }
     const M_FLOWER=[".P.P.","PCPCP",".PCP.","..S..",".S.S."];
-    const FLOWER_PALS={r:{S:'#3f9a45',P:'#ff5d6c',C:'#ffd84a'},y:{S:'#3f9a45',P:'#ffd84a',C:'#ff8a3c'},p:{S:'#3f9a45',P:'#c77dff',C:'#ffe98f'},
-      su:{S:'#4c8a4e',P:'#d15fa6',C:'#ffcf7a'},sg:{S:'#4c8a4e',P:'#ff9b3c',C:'#ffe6a0'},sw:{S:'#4c8a4e',P:'#ffe3c4',C:'#ff7a5c'}};   // 🌇 노을 꽃(자홍·금빛·크림) — 줄기는 살짝 어두운 초록
-    function flowerSvg(tint,opt){ return pxSvg(M_FLOWER, FLOWER_PALS[tint||'r'], opt); }
+    const FLOWER_PALS={r:{S:'#3f9a45',P:'#ff5d6c',C:'#ffd84a',d:'#e04355'},y:{S:'#3f9a45',P:'#ffd84a',C:'#ff8a3c',d:'#e0b833'},p:{S:'#3f9a45',P:'#c77dff',C:'#ffe98f',d:'#a95fe0'},
+      su:{S:'#4c8a4e',P:'#d15fa6',C:'#ffcf7a',d:'#b04788'},sg:{S:'#4c8a4e',P:'#ff9b3c',C:'#ffe6a0',d:'#e0801f'},sw:{S:'#4c8a4e',P:'#ffe3c4',C:'#ff7a5c',d:'#eec4a4'}};   // 🌇 노을 꽃(자홍·금빛·크림) — 줄기는 살짝 어두운 초록, d=v2 꽃잎 그늘
+    // v2 꽃은 줄기·잎이 생겨 매트릭스가 세로로 길어짐 → h를 1.35배 보정해 꽃머리 체감 크기를 v1과 맞춤
+    function flowerSvg(tint,opt){ if(_pkV2&&opt&&opt.h){ opt=Object.assign({},opt,{h:Math.round(opt.h*1.35)}); } return pxSvg(_pkV2?M2_FLOWER:M_FLOWER, FLOWER_PALS[tint||'r'], opt); }
     const M_TUFT=["G.g.G","GgGgG","GGGGG",".ggg."];
     const TUFT_PAL={G:'#5bb85b',g:'#3f9a45',H:'#8fd47f'};
-    function tuftSvg(opt){ return pxSvg(M_TUFT, TUFT_PAL, opt); }
+    function tuftSvg(opt){ return pxSvg(_pkV2?M2_TUFT:M_TUFT, TUFT_PAL, opt); }
     // 🦋 나비(9×7) — 큰 윗날개+좁아지는 아랫날개+어두운 몸통. 색은 tint별(주황/파랑/분홍/노랑). 배너에서 살랑살랑 날아다님(.pk-bfly).
     const M_BFLY=[".WWW.WWW.","WWWWBWWWW","WWWHBHWWW",".WWHBHWW.","..WHBHW..","..WWBWW..","...W.W..."];
-    const BFLY_PALS={o:{W:'#ff9d3c',H:'#ffd27a',B:'#3a2a18'},b:{W:'#5aa9ff',H:'#a9d4ff',B:'#22314a'},p:{W:'#ff7fbf',H:'#ffc3e0',B:'#4a2238'},y:{W:'#ffd84a',H:'#fff0a8',B:'#4a3a12'}};
-    function butterflySvg(tint,opt){ return pxSvg(M_BFLY, BFLY_PALS[tint||'o'], opt); }
+    const BFLY_PALS={o:{W:'#ff9d3c',H:'#ffd27a',B:'#3a2a18',w:'#d97a24'},b:{W:'#5aa9ff',H:'#a9d4ff',B:'#22314a',w:'#3d84d6'},p:{W:'#ff7fbf',H:'#ffc3e0',B:'#4a2238',w:'#e05a9c'},y:{W:'#ffd84a',H:'#fff0a8',B:'#4a3a12',w:'#e0b422'}};   // w=v2 날개 테두리 그늘
+    function butterflySvg(tint,opt){ return pxSvg(_pkV2?M2_BFLY:M_BFLY, BFLY_PALS[tint||'o'], opt); }
     // 🦋 나비별 '제각각' 이동 경로 CSS 변수(fxflit 키프레임이 읽음) — 나비마다 다른 방향/거리로 흩날리게. rnd()=0~1 난수 함수(FX=Math.random 랜덤, 배너=pkRand 결정적).
     function bflyDriftVars(rnd){ const p=function(){ return Math.round((rnd()*2-1)*22); }; return '--x1:'+p()+'px;--y1:'+p()+'px;--x2:'+p()+'px;--y2:'+p()+'px;--x3:'+p()+'px;--y3:'+p()+'px'; }
     // 🪨 원근 큐 에셋(한정 픽업 배너) — 깊이에 따라 크기·바닥선을 펫과 같은 척도로 배치해 펫이 앞뒤로 움직일 때 원근을 읽히게 함. 전부 도트(crispEdges).
     // 징검다리(디딤돌): 앞→뒤 한 줄, 뒤로 갈수록 작게 → 선 원근. 펫 발밑에 깔려 거의 안 가림.
     const M_STONE=["..XXXXX..",".XLLLLLX.","XLILLMMDX","XMMMMMDDX",".XDDDDDX."];
     const STONE_PAL={X:'#6f757e',L:'#cfd4da',I:'#eef0f3',M:'#a6acb4',D:'#858b94'};
-    function stoneSvg(opt){ return pxSvg(M_STONE, STONE_PAL, opt); }
+    function stoneSvg(opt){ return pxSvg(_pkV2?M2_STONE:M_STONE, STONE_PAL, opt); }
     // 중간 바위(boulder): 이끼(G/g) 얹힌 3면 음영 바위. 펫이 뒤에선 그 뒤로(가려짐), 앞에선 앞으로 지나가는 겹침(occlusion) 큐 — z를 펫과 같은 12-depth*11 척도로.
     const M_ROCK=["...gGGg....","..XXXXXX...",".XLLLLMMX..","XLLLLLMMMX.","XLLLMMMMMDX","XLMMMMMMDDX","XMMMMMDDDDX",".XMMDDDDDX.","..XXXXXXX.."];
-    const ROCK_PAL={X:'#565c66',L:'#9aa2ac',M:'#7c838d',D:'#626973',G:'#6fbf46',g:'#4e9636'};
-    function rockSvg(opt){ return pxSvg(M_ROCK, ROCK_PAL, opt); }
+    const ROCK_PAL={X:'#565c66',L:'#9aa2ac',M:'#7c838d',D:'#626973',G:'#6fbf46',g:'#4e9636',I:'#c6ccd4'};   // I=v2 하이라이트
+    function rockSvg(opt){ return pxSvg(_pkV2?M2_ROCK:M_ROCK, ROCK_PAL, opt); }
     // 낮은 말뚝 울타리(뾰족 말뚝 3+나뭇결+2레일): 옆쪽에 앞→뒤로 작아지게 놓아 선 원근. 낮아서 펫을 덜 가림(필드=펫 뒤).
     const M_FENCE=[".T....T....T.","TWwT.TWwT.TWw","TWwT.TWwT.TWw","RRRRRRRRRRRRR","TWwT.TWwT.TWw","TWwT.TWwT.TWw","RRRRRRRRRRRRR","TWwT.TWwT.TWw","TWwT.TWwT.TWw"];
     const FENCE_PAL={T:'#5f3e22',W:'#c39a63',w:'#96703f',R:'#8a6038'};
-    function fenceSvg(opt){ return pxSvg(M_FENCE, FENCE_PAL, opt); }
+    function fenceSvg(opt){ return pxSvg(_pkV2?M2_FENCE:M_FENCE, FENCE_PAL, opt); }
     // ===== 🍁 노을 배너 전용 에셋(단풍·고추잠자리·물고기) — 픽셀 아트 =====
     // 단풍나무: M_TREETOP 모양 재사용 + 가을 팔레트(주황→빨강 명암).
     const MAPLE_PAL={H:'#f5aa46',L:'#e86e36',l:'#d2482c',D:'#962828',X:'#601c1c'};
-    function mapleSvg(opt){ return pxSvg(M_TREETOP, MAPLE_PAL, opt); }
+    function mapleSvg(opt){ return pxSvg(_pkV2?M2_TREETOP:M_TREETOP, MAPLE_PAL, opt); }
     // 🍁 단풍잎(낙엽·알 주변 연출) — 가을 주황/빨강, 아래 줄기.
     const M_LEAF=["..X.X.X..",".XyOyOyX.","XOOyOyOOX",".XOOyOOX.","XOOOyOOOX",".XrOyOrX.","..XrOrX..","...XsX...","...Xs...."];
     const LEAF_PAL={O:'#e87832',r:'#c83a2c',y:'#f8ba50',X:'#782c1c',s:'#785028'};
@@ -4527,14 +4540,14 @@
       {O:'#b42828',r:'#801818',y:'#e05848'}    // 심홍
     ];
     function randLeafCol(){ return LEAF_COLS[Math.floor(Math.random()*LEAF_COLS.length)]; }
-    function mapleLeafSvg(opt, col){ return pxSvg(M_LEAF, col?Object.assign({},LEAF_PAL,col):LEAF_PAL, opt); }
+    function mapleLeafSvg(opt, col){ return pxSvg(_pkV2?M2_LEAF:M_LEAF, col?Object.assign({},LEAF_PAL,col):LEAF_PAL, opt); }
     // 🔁 픽셀 매트릭스 90° 시계방향 회전(무손실 전치) — 세로 스프라이트를 가로로. 상단 행→우측 열(=머리가 오른쪽).
     function rot90cw(M){ const oR=M.length, oC=M[0].length, out=[]; for(let i=0;i<oC;i++){ let s=''; for(let j=0;j<oR;j++){ s+=M[oR-1-j][i]; } out.push(s); } return out; }
     // 🍁 고추잠자리(원본=세로) → 가로로 눕힘(M_DFLY_H). R=빨강 r=진빨강 X=외곽 E=눈 W/w/v=날개(밝·그림자·맥).
     const M_DFLY=["......X......",".....XEX.....",".....XRX.....","vWWWwXRXwWWWv",".vWWwXRXwWWv.","...wwXRXww...",".vWWwXRXwWWv.","vWWWwXRXwWWWv",".....XRX.....",".....XRX.....",".....XrX.....",".....XrX.....","......r......"];
     const M_DFLY_H=rot90cw(M_DFLY);
     const DFLY_PAL={R:'#e83636',r:'#b41e1e',X:'#601414',E:'#fce060',W:'#e0ecf8',w:'#b2c6de',v:'#92a8c6'};
-    function dragonflySvg(opt){ return pxSvg(M_DFLY_H, DFLY_PAL, opt); }   // 가로 잠자리
+    function dragonflySvg(opt){ return pxSvg(_pkV2?M2_DFLY_H:M_DFLY_H, DFLY_PAL, opt); }   // 가로 잠자리
     // 🐟 물고기(koi, 옆모습·헤엄): 머리=왼쪽(눈 E), 꼬리=오른쪽. O/o=주황 W=흰배.
     const M_FISH=["....ooo.....","..oOOOOOo..o",".oOWWOOOOooo","oEOWWOOOOooo",".oOOOOOOOoo.","..ooOOOo...o"];
     const FISH_PAL={O:'#f2923a',o:'#ce6822',W:'#fff2de',E:'#261a12'};
@@ -4574,20 +4587,20 @@
     // ✨ 반딧불: 발광 코어(Y·H)+헤일로(h)+몸통(g/b). 깜빡임·글로우는 CSS(.pk-fire).
     const M_FIRE=["..hHh..",".hYYYh.","hYYHYYh",".hYYYh.","..hYh..","...g...","...b..."];
     const FIRE_PAL={Y:'#f2ff9e',H:'#ffffe0',h:'#c8e86a',g:'#78963c',b:'#2a3a1a'};
-    function fireflySvg(opt){ return pxSvg(M_FIRE, FIRE_PAL, opt); }
+    function fireflySvg(opt){ return pxSvg(_pkV2?M2_FIRE:M_FIRE, FIRE_PAL, opt); }
     // 밤·달빛 팔레트(기존 매트릭스 재사용, MAPLE_PAL 선례): 어두운 청록 그림자 + 차가운 달빛 하이라이트.
     const TREE_NIGHT={H:'#6f9b86',L:'#375f52',l:'#294a42',D:'#1c3330',X:'#0f1c1a',T:'#241b2a',w:'#352842',t:'#160f1c'};
-    function nightTreeSvg(opt){ return pxSvg(M_TREETOP, TREE_NIGHT, opt); }
+    function nightTreeSvg(opt){ return pxSvg(_pkV2?M2_TREETOP:M_TREETOP, TREE_NIGHT, opt); }
     const PINE_NIGHT={H:'#6f9b86',L:'#375f52',l:'#294a42',D:'#1c3330',T:'#241b2a',t:'#160f1c'};
-    function nightPineSvg(opt){ return pxSvg(M_PINE, PINE_NIGHT, opt); }
+    function nightPineSvg(opt){ return pxSvg(_pkV2?M2_PINE:M_PINE, PINE_NIGHT, opt); }
     const TUFT_NIGHT={G:'#375f52',g:'#294a42',H:'#6f9b86'};
-    function nightTuftSvg(opt){ return pxSvg(M_TUFT, TUFT_NIGHT, opt); }
+    function nightTuftSvg(opt){ return pxSvg(_pkV2?M2_TUFT:M_TUFT, TUFT_NIGHT, opt); }
     const STONE_NIGHT={X:'#2a3040',L:'#6b7490',I:'#8b94b0',M:'#4a5470',D:'#353d54'};
-    function nightStoneSvg(opt){ return pxSvg(M_STONE, STONE_NIGHT, opt); }
-    const FLOWER_NIGHT={a:{S:'#2c4a42',P:'#8a5a7a',C:'#efe0f6'},b:{S:'#2c4a42',P:'#5a7ab0',C:'#dcecf8'},c:{S:'#2c4a42',P:'#7a6ab0',C:'#e6def8'}};
-    function nightFlowerSvg(tn,opt){ return pxSvg(M_FLOWER, FLOWER_NIGHT[tn]||FLOWER_NIGHT.a, opt); }
-    const CLOUD_NIGHT={mw:{W:'#c9d4e8',H:'#aebbd8',S:'#8a9bc0'},mb:{W:'#b6c4de',H:'#98a9cc',S:'#7486ae'},md:{W:'#9fadc8',H:'#8496ba',S:'#647698'}};
-    function moonCloudSvg(which,tn,opt){ return pxSvg([M_CLOUD1,M_CLOUD2,M_CLOUD3][which]||M_CLOUD1, CLOUD_NIGHT[tn]||CLOUD_NIGHT.mw, opt); }
+    function nightStoneSvg(opt){ return pxSvg(_pkV2?M2_STONE:M_STONE, STONE_NIGHT, opt); }
+    const FLOWER_NIGHT={a:{S:'#2c4a42',P:'#8a5a7a',C:'#efe0f6',d:'#6f4662'},b:{S:'#2c4a42',P:'#5a7ab0',C:'#dcecf8',d:'#48619c'},c:{S:'#2c4a42',P:'#7a6ab0',C:'#e6def8',d:'#62549c'}};   // d=v2 꽃잎 그늘
+    function nightFlowerSvg(tn,opt){ if(_pkV2&&opt&&opt.h){ opt=Object.assign({},opt,{h:Math.round(opt.h*1.35)}); } return pxSvg(_pkV2?M2_FLOWER:M_FLOWER, FLOWER_NIGHT[tn]||FLOWER_NIGHT.a, opt); }
+    const CLOUD_NIGHT={mw:{W:'#c9d4e8',H:'#aebbd8',S:'#8a9bc0',D:'#7488ae'},mb:{W:'#b6c4de',H:'#98a9cc',S:'#7486ae',D:'#5f74a0'},md:{W:'#9fadc8',H:'#8496ba',S:'#647698',D:'#54668c'}};   // D=v2 밑그늘
+    function moonCloudSvg(which,tn,opt){ const A=_pkV2?[M2_CLOUD1,M2_CLOUD2,M2_CLOUD3]:[M_CLOUD1,M_CLOUD2,M_CLOUD3]; return pxSvg(A[which]||A[0], CLOUD_NIGHT[tn]||CLOUD_NIGHT.mw, opt); }
     const STAR_NIGHT={X:'#8b94b0',B:'#cdd6ee',H:'#ffffff',D:'#aab4d2'};   // 별 v2 글자(X/B/H/D)에 맞춘 밤하늘 페일블루
     function nightStarSvg(opt){ return pxSvg(M_STAR, STAR_NIGHT, opt); }
     // ===== 🥚🌿 알뜰 메인 아이콘(egg-garden) 매트릭스(icons/egg-garden.svg 파싱) — 배너별 재색용. 그룹: 알(X D W)·고양이(B E P)·꽃(F Y)·잔디(G g)·흙(R r) =====
@@ -4622,8 +4635,8 @@
     // 🎏 잉어 — 원본=세로(머리 위·꼬리 아래), 가로 버전 M_KOI_H(rot90cw → 머리 오른쪽·꼬리 왼쪽). X외곽 B몸통 S반점 f지느러미. 색 변주 KOI_PALS.
     const M_KOI=["....X....","...XBX...","..XBBBX..",".XBBBBBX.",".XBSSBBX.","XBBBBBBBX","fXBBBBBXf","fXBBSSBXf",".XBBBBBX.",".XSSBBBX.",".XBBBBBX.","..XBBBX..","..XBBBX..","...XBX...","..fXBXf..",".ffX.Xff."];
     const M_KOI_H=rot90cw(M_KOI);   // 가로 잉어(머리→오른쪽). 왼쪽 보게 하려면 CSS scaleX(-1).
-    const KOI_PALS={o:{X:'#8c461a',B:'#f2923a',S:'#ce6822',f:'#ffce96'},w:{X:'#963c3c',B:'#fafafa',S:'#e24040',f:'#ffd2d2'},g:{X:'#96781e',B:'#f6ce50',S:'#463c28',f:'#ffeeaa'}};
-    function koiSvg(tint, opt){ return pxSvg(M_KOI_H, KOI_PALS[tint]||KOI_PALS.o, opt); }   // 가로 잉어(연못 헤엄)
+    const KOI_PALS={o:{X:'#8c461a',B:'#f2923a',S:'#ce6822',f:'#ffce96',W:'#fff2de'},w:{X:'#963c3c',B:'#fafafa',S:'#e24040',f:'#ffd2d2',W:'#ffffff'},g:{X:'#96781e',B:'#f6ce50',S:'#463c28',f:'#ffeeaa',W:'#fff6d8'}};   // W=v2 배(밝은 띠)
+    function koiSvg(tint, opt){ return pxSvg(_pkV2?M2_KOI_H:M_KOI_H, KOI_PALS[tint]||KOI_PALS.o, opt); }   // 가로 잉어(연못 헤엄)
     // ☀️ 지는 해 — 전용 도트 원반(크레이터 없이 방사형 따뜻한 명암, 달 느낌 제거). I밝은중심→M금빛→S주황→d가장자리→X외곽. PIL 라이트/다크 검수.
     const M_SUN=[
       ".......XXXXXXXX.......",".....XXddddddddXX.....","....XddddSSSSddddX....","...XdddSSSSSSSSdddX...",
@@ -4636,16 +4649,16 @@
     function sunSvg(opt){ return pxSvg(M_SUN, SUN_PAL, opt); }
     // 🪷 연꽃(top-down) — 바깥 분홍꽃잎(F)·안쪽 연분홍(C)·노란중심(Y). 연못 위에 떠서 흔들(pkfloat).
     const M_LOTUS=["...FFF...","..FFFFF..",".FFCCCFF.",".FCCYCCF.","FFCYYYCFF",".FCCYCCF.",".FFCCCFF.","..FFFFF..","...FFF..."];
-    const LOTUS_PAL={F:'#ff8fb4',C:'#ffc8de',Y:'#ffde60'};
-    function lotusSvg(opt){ return pxSvg(M_LOTUS, LOTUS_PAL, opt); }
+    const LOTUS_PAL={F:'#ff8fb4',C:'#ffc8de',Y:'#ffde60',f:'#e06a94'};   // f=v2 꽃잎 그늘
+    function lotusSvg(opt){ return pxSvg(_pkV2?M2_LOTUS:M_LOTUS, LOTUS_PAL, opt); }
     // 🌿 연잎 — 둥근 잎 + 오른쪽 쐐기 홈(V컷). G밝 d진.
     const M_LILYPAD=["..GGGGG..",".GGGGGGd.","GGGGGGdd.","GGGGGG..d","GGGGGGdd.",".GGGGGdd.","..Gdddd.."];
-    const LILY_PAL={G:'#5ab24a',d:'#3a7e32'};
-    function lilyPadSvg(opt){ return pxSvg(M_LILYPAD, LILY_PAL, opt); }
+    const LILY_PAL={G:'#5ab24a',d:'#3a7e32',g:'#4a9a3e'};   // g=v2 중간톤
+    function lilyPadSvg(opt){ return pxSvg(_pkV2?M2_LILYPAD:M_LILYPAD, LILY_PAL, opt); }
     // ⛰️ 먼 언덕(실루엣) — 아이콘 뒤 빈 하늘/지평선 채우기용. 배너별 팔레트로 재색(낮=초록·노을=보랏빛·밤=짙은청록). H본체 h윗선.
     const M_HILL=[".........hhhhhh.........","......hhHHHHHHHHhh......","...hhHHHHHHHHHHHHHHhh...",".hHHHHHHHHHHHHHHHHHHHHh.","HHHHHHHHHHHHHHHHHHHHHHHH","HHHHHHHHHHHHHHHHHHHHHHHH","HHHHHHHHHHHHHHHHHHHHHHHH"];
-    const HILL_DAY={H:'#5ea650',h:'#7ac468'}, HILL_SUNSET={H:'#7a5678',h:'#a06e8c'}, HILL_NIGHT={H:'#1e3430',h:'#304a42'};
-    function hillSvg(pal,opt){ return pxSvg(M_HILL, pal||HILL_DAY, opt); }
+    const HILL_DAY={H:'#5ea650',h:'#7ac468',d:'#4c8a40'}, HILL_SUNSET={H:'#7a5678',h:'#a06e8c',d:'#644460'}, HILL_NIGHT={H:'#1e3430',h:'#304a42',d:'#152622'};   // d=v2 밑그늘
+    function hillSvg(pal,opt){ return pxSvg(_pkV2?M2_HILL:M_HILL, pal||HILL_DAY, opt); }
     // 🌠 무지개 별똥별(comet) — 대각선 ↘(머리 우하단 4방 별·꼬리 좌상단). 무지개는 RAINBOW 팔레트(움직이는 그라디언트), 코어=흰빛. 10연차 밤(무지개) 하늘 연출.
     const M_SHOOT=["....................","....................","....................","...R................","....R...............",".....R..............","......R.............",".......RR...........",".......RRR..........","........RRR.........",".........RRRR.R.....","..........RRRRR.....","..........RRRRRR....","...........RRRWRR...","..........RRRWWWRRR.","............RRWRR...",".............RRR....","..............R.....","..............R.....","...................."];
     const SHOOT_PAL={R:'RAINBOW',W:'#ffffff'};
@@ -4654,6 +4667,41 @@
     const M_SHADOW=[".SSSSSSS.","SSSSSSSSS",".SSSSSSS."];
     const SHADOW_PAL={S:'#12240c'};
     function shadowSvg(opt){ return pxSvg(M_SHADOW, SHADOW_PAL, opt); }
+    // ===== 🎨 픽업배너 v2 고해상도 씬 에셋 (2026-07, 기구물 22종 리디자인 기준) =====
+    //  · 기존 매트릭스의 글자(팔레트)를 그대로 쓰되 해상도 1.6~2배 + 3~4톤 음영 + 외곽선(디테일 픽셀아트 기준).
+    //  · 신규 글자(구름 D·꽃 d·나비 w·바위 I·잉어 W·연꽃 f·연잎 g·언덕 d)는 기존 팔레트에 색만 추가 — 밤/노을 틴트 팔레트 전부 호환 유지.
+    //  · _pkV2 플래그가 켜진 동안만 각 헬퍼가 v2 매트릭스로 전환 — 현재는 개발자 모드 '배너 관리'(openDevBannerManager) 미리보기 전용.
+    //    라이브 배너(가챠 탭)는 v1 유지. 전면 적용 시 이 플래그 기본값만 바꾸면 됨(씬 캐시는 v2 키로 분리돼 안전).
+    //  · 전부 스크래치패드 PIL 컨택트시트(라이트/다크/밤배경)로 검수 후 이식 (CLAUDE.md 워크플로).
+    let _pkV2=false;
+    const M2_CLOUD1=["..............................",".........HHHH...HHHHH.........","......HHHWWWWHHHHWWWWHH.......","....HHWWWWWWWWHWWWWWWWWHH.....","...HWWWWWWWWWWWWWWWWWWWWWH....",".HHWWWWWWWWWWWWWWWWWWWWWWWHH..",".HWWWWWWWWWWWWWWWWWWWWWWWWWWH.","HWWWWWWWWWWWWWWWWWWWWWWWWWWWWH","HWWWWWWWWWWWWWWWWWWWWWWWWWWWWH",".SWWWWWWWWWWWWWWWWWWWWWWWWWWS.",".SSSSSWWWWSSSSWWWWWSSSSWWSSSS.","..DDDDDDDDDDDDDDDDDDDDDDDDD..."];
+    const M2_CLOUD2=["....................","......HHHHH.........","....HHWWWWWHH.......","..HHWWWWWWWWWHH.....",".HWWWWWWWWWWWWWH....","HWWWWWWWWWWWWWWWWH..","SWWWWWWWWWWWWWWWWS..",".SSSSWWWWSSSWWWSSS..","..DDDDDDDDDDDDDD...."];
+    const M2_CLOUD3=[".............","....HHHH.....","..HHWWWWH....",".HWWWWWWWWH..","HWWWWWWWWWWH.","SWWWWWWWWWWS.",".SSDDDDDDSS.."];
+    const M2_TREETOP=["......................",".......HHHHHH.........",".....HHLLLLLHHH.......","....HLLLLLLLLLHH......","...HLLLLHHLLLLLLH.....","..HLLLHHLLLLLlLLLH....","..HLLLLLLLLLllLLLDH...",".HLLLLLLLLLLllllLLDH..",".HLLHHLLLLllllllLDDH..",".HLLLLLLLllllllllDDH..",".XLLLLLllllllllDDDDX..",".XLLLLllllllDDDDDDDX..","..XLLllllllDDDDDDDX...","..XXlllllDDDDDDDDX....","....XXllDDDDDDXX......","......XXXDDDXX........","........XXXX..........","......................"];
+    const M2_TRUNK=["..TwwTt..","..TwwTt..","..TwwTt..","..TwwTt..","..TwwTt..",".TTwwTtt.",".TwwTTtt.","TTwwTTttT"];
+    const M2_PINE=["...............",".......H.......","......HLD......","......HLD......",".....HLLlD.....",".....HLLlD.....","....HLLLllD....","....HLLLllD....","...HLLLLlllD...","..HLLLLLllllD..","....HLLLllD....","...HLLLLlllD...","...HLLLLlllD...","..HLLLLLllllD..",".HLLLLLLlllllD.","....HLLLllD....","...HLLLLlllD...","..HLLLLLllllD..",".HLLLLLLlllllD.","HLLLLLLLllllllD","......TTt......","......TTt......","......TTt......",".....TTTtt.....","..............."];
+    const M2_FLOWER=["...........","...P.P.P...","..PPdPdPP..","..PPPCPPP..",".PPdCCCdPP.","..PPPCPPP..","..PPdPdPP..","...P.P.P...","....dPd....",".....S.....","..SS.S.....",".SSS.S.SS..",".....S.SSS."];
+    const M2_TUFT=[".............",".H...H...H...",".G.H.G.H.G...",".G.G.GG.G.H..",".gG.GgG.GG.G.",".gGGgGGgGGgG.","..gGgGgGgGg..","..ggggggggg..","............."];
+    const M2_BFLY=["..B.......B..","...B.....B...",".wWWw.B.wWWw.","wWHWWwBwWWHWw","wWWWWwBwWWWWw",".wWWWwBwWWWw.","..wWWwBwWWw..","..wWHwBwHWw..","...wWw.wWw...","....w...w...."];
+    const M2_STONE=[".............","...XXXXXXX...","..XLIILLLMX..",".XLILLLMMMDX.",".XLLLMMMDDDX.","..XMMDDDDDX..","...XXXXXXX..."];
+    const M2_ROCK=[".......gGGg........",".....gGGGGGg.......","....XXXXXXXXX......","...XLLILLLMMMX.....","..XLLILLLLMMMMX....",".XLLLLLLLMMMMMDX...",".XLLLLLLMMMMMDDX...","XLLLLLMMMMMMDDDDX..","XLLLMMMMMMMDDDDDX..","XLMMMMMMMDDDDDDDX..","XMMMMMMDDDDDDDDDX..",".XMMMDDDDDDDDDDX...","..XMMDDDDDDDDDX....","...XXXXXXXXXXX....."];
+    const M2_FENCE=["..T....T....T....T...",".TWw..TWw..TWw..TWw..",".TWwT.TWwT.TWwT.TWwT.",".TWwT.TWwT.TWwT.TWwT.","RRRRRRRRRRRRRRRRRRRRR","RwwwwwwwwwwwwwwwwwwwR",".TWwT.TWwT.TWwT.TWwT.",".TWwT.TWwT.TWwT.TWwT.","RRRRRRRRRRRRRRRRRRRRR","RwwwwwwwwwwwwwwwwwwwR",".TWwT.TWwT.TWwT.TWwT.",".TWwT.TWwT.TWwT.TWwT.","....................."];
+    const M2_LEAF=[".............","..X...X...X..","..XX.XyX.XX..","...XOXyXOX...","..XOOOyOOOX..",".XyOOOyOOOyX.","XXOOOyyyOOOXX","..XOOyOyOOX..","...XrOyOrX...","..XrrOyOrrX..","...XXryrXX...",".....XyX.....",".....XsX.....","......ss....."];
+    const M2_DFLY=[".......X.......","......XEX......",".....XEEEX.....","......XRX......","vvWWWwXRXwWWWvv","vWWWWwXRXwWWWWv",".vWWWwXrXwWWWv.","...wwwXRXwww...",".vWWWwXRXwWWWv.","vWWWWwXrXwWWWWv","vvWWWwXRXwWWWvv","......XRX......","......XrX......","......XRX......","......XrX......","......XrX......",".......r.......",".......r.......","..............."];
+    const M2_DFLY_H=rot90cw(M2_DFLY);
+    const M2_KOI=[".....XX.....","....XBBX....","...XBBBBX...","..XBBBBBBX..","..XBWWBBBX..",".XBBWWBSSBX.",".XBBWWBSSBX.","fXBBWWBBBBXf","fXBBWWBBBBXf",".XBBWWBSSBX.",".XBBWWBSSBX.",".XBBWWBBBBX.","..XBWWBBBX..","..XBWWBSBX..","..XBBWBBBX..","...XBBBBX...","...XBBBX....","....XBX.....","...fXBXf....","..ffXBXff...",".fff.X.fff..","............"];
+    const M2_KOI_H=rot90cw(M2_KOI);
+    const M2_LOTUS=[".............",".....FFF.....","..F.FFFFF.F..",".FFFFCCCFFFF.",".FFCCCCCCCFF.","FFCCCYYYCCCFF",".FfCCYYYCCfF.",".FffCCCCCffF.","..fffFFFfff..","....fffff....","............."];
+    const M2_LILYPAD=["...............","....GGGGGG.....","..GGGGGGGGGG...",".GGGGGGGGGGGg..",".GGGGGGGGgg....",".GGGGGGGg......",".GGGGGGGGggg...",".GGGGGGGGGGgg..","..gGGGGGGGgg...","...gggdddd....."];
+    const M2_FIRE=["....h....","..hhHhh..",".hHYYYHh.",".hYYHYYh.","hYYHHHYYh",".hYYHYYh.",".hHYYYHh.","..hhHhh..","....h....","...g.....","...gg....","....b...."];
+    const M2_HILL=[".............hhhhhh...............",".........hhhHHHHHHHhhh............","......hhHHHHHHHHHHHHHHhh..........","....hhHHHHHHHHHHHHHHHHHHhh........","..hhHHHHHHHHHHHHHHHHHHHHHHhh......",".hHHHHHHHHHHHHHHHHHHHHHHHHHHh.....","hHHHHHHHHHHHHHHHHHHHHHHHHHHHHh....","HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH..","HHHHHHHHHdddHHHHHHHddHHHHHHHHHHHH.","HHHHHHHddddddHHHdddddHHHHHHHHHHHH.","dddddddddddddddddddddddddddddddd.."];
+    // 🟩 v2 필드 잔디 — 반복 타일은 반드시 canvas→PNG data URI(tileBg) (CLAUDE.md 규칙: SVG data URI 배경 금지). 테마별 캐시.
+    const M2_GRASSTILE=["GGGGLGGGGGGDGG","GGDGGGGGLGGGGG","GGGGGGDGGGGHLG","GLGGGGGGGGDGGG","GGGGDGGGLGGGGG","GGGGGGGGGGGGDG","GDGGGHLGGGGGGG","GGGGGGGGGDGGGG","GGLGGDGGGGGGLG","GGGGGGGGGGGGGG","GDGGGGGGLGGDGG","GGGGLGGGGGGGGG","GGGGGGDGGGHLGG","GLGGGGGGGGGDGG"];
+    const GRASS2_PALS={ day:{G:'#5fbf6a',L:'#74cf78',D:'#4da75a',H:'#8fdd8a'}, sunset:{G:'#6f9c50',L:'#82b05e',D:'#5d8443',H:'#9cc46e'}, night:{G:'#24402e',L:'#2f5039',D:'#1c3325',H:'#3a614a'} };
+    const _pkGrassCache={};
+    function pkGrassBg(theme){ if(!_pkGrassCache[theme]) _pkGrassCache[theme]=tileBg(M2_GRASSTILE, GRASS2_PALS[theme]||GRASS2_PALS.day, 28, 28); return _pkGrassCache[theme]; }
+    // v2일 때만 잔디 타일 인라인(픽셀 텍스처) — v1은 기존 CSS 단색+::before 줄무늬 유지
+    function pkGrassDiv(theme){ return _pkV2 ? '<div class="pk-grass" style="background:'+pkGrassBg(theme)+';image-rendering:pixelated"></div>' : '<div class="pk-grass"></div>'; }
     // 알뜰샵·팔레트·격자용 대표 아트(물그릇은 물 채운 파란 그릇으로 구분 표시)
     function furnMatrix(id){ return {pond:M_POND,cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT,catwheel:M_CATWHEEL,rug:M_RUG,window:M_WINDOW,fishtank:M_FISHTANK,fireplace:M_FIREPLACE,fan:M_FAN,hammock:M_HAMMOCK,teaser:M_TEASER,wallclock:M_WALLCLOCK,hangplant:M_HANGPLANT,mobile:M_MOBILE,chandelier:M_CHANDELIER,jingleball:M_JINGLEBALL,frame:M_FRAME,shelf:M_SHELF,mirror:M_MIRROR,neon:M_NEON,sconce:M_SCONCE,garland:M_GARLAND,poster:M_POSTER,tapestry:M_TAPESTRY,cactus:M_CACTUS,yarnbasket:M_YARNBASKET,floorlamp:M_FLOORLAMP,beanbag:M_BEANBAG,groomstation:M_GROOMSTATION,springtoy:M_SPRINGTOY,tunnel:M_TUNNEL,teepee:M_TEEPEE,bookshelf:M_BOOKSHELF,birdcage:M_BIRDCAGE,lavalamp:M_LAVALAMP,laserpost:M_LASERPOST,waterfountain:M_WATERFOUNTAIN,sofa:M_SOFA,recordplayer:M_RECORDPLAYER,terrarium:M_TERRARIUM,ballpit:M_BALLPIT,grandfaclock:M_GRANDFACLOCK,bunkbed:M_BUNKBED,crystalfountain:M_CRYSTALFOUNTAIN,dartboard:M_DARTBOARD,cuckooclock:M_CUCKOOCLOCK,roundbed:M_ROUNDBED,donutbed:M_DONUTBED,cavebed:M_CAVEBED,canopybed:M_CANOPYBED,throne:M_THRONE,mousetoy:M_MOUSETOY,catnippillow:M_CATNIPPILLOW,puzzlefeeder:M_PUZZLEFEEDER,balltrack:M_BALLTRACK,teetertoy:M_TEETERTOY,bubblemachine:M_BUBBLEMACHINE,bonsai:M_BONSAI,globe:M_GLOBE,snowglobe:M_SNOWGLOBE,campfire:M_CAMPFIRE,gramophone:M_GRAMOPHONE,arcademachine:M_ARCADEMACHINE,jukebox:M_JUKEBOX,crystalcluster:M_CRYSTALCLUSTER,easel:M_EASEL,floorvase:M_FLOORVASE,suitofarmor:M_SUITOFARMOR,hourglass:M_HOURGLASS,telescope:M_TELESCOPE,gumballmachine:M_GUMBALLMACHINE,wallvines:M_WALLVINES,pennant:M_PENNANT,wallmask:M_WALLMASK,barometer:M_BAROMETER,stringlights:M_STRINGLIGHTS,wallbutterfly:M_WALLBUTTERFLY,cornershelf:M_CORNERSHELF,wallsun:M_WALLSUN,treatjar:M_TREATJAR,catgrass:M_CATGRASS,groomarch:M_GROOMARCH,heatpad:M_HEATPAD,peekbox:M_PEEKBOX,tetherpole:M_TETHERPOLE,windmilltoy:M_WINDMILLTOY,crinklebag:M_CRINKLEBAG,roundrug:M_ROUNDRUG,runner:M_RUNNER,koipond:M_KOIPOND,displaycase:M_DISPLAYCASE,woodstove:M_WOODSTOVE,mushroomlamp:M_MUSHROOMLAMP,statuecat:M_STATUECAT,teacart:M_TEACART,crystaltree:M_CRYSTALTREE}[id]; }
     function furnSvg(id, opt){ return pxSvg(furnMatrix(id), FURN_PALS[id], opt); }
@@ -7129,6 +7177,8 @@
       if(sc<MAX_SLOTS) slotRow+='<button class="slot locked" onclick="buySlot()" aria-label="고양이 슬롯 확장(금화 '+SLOT_PRICE+')"><svg class="lockic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span class="slotgold">'+goldSvg({h:13})+SLOT_PRICE+'</span></button>';
       slotRow+='</div>';
       h+=slotRow;
+      const _emptySlots=sc-cats.length, _waiting=ownedCatList().filter(id=>petRoomIndex(id)<0).length;
+      if(_emptySlots>0 && _waiting>0) h+='<div class="fillrow"><button class="pa-btn" onclick="autoFillSlots()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>빈 슬롯 자동 채우기 <b>'+Math.min(_emptySlots,_waiting)+'</b></button></div>';
       // 펫 컬렉션 관리(수백 마리 그리드)는 '펫' 탭으로 분리 — 홈은 이 방의 활성 펫·돌봄만(홈 과부하 해소).
       if(!owned.length) h+='<div class="empty" style="padding:16px 20px;">아직 펫이 없어요. 알뜰샵에서 입양해 보세요 🐾 <button class="btn ghost" onclick="setCatTab(\'shop\')">알뜰샵</button></div>';
       else h+='<div class="hintline" style="margin-top:8px;align-items:center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span style="flex:1"><b>펫</b> 탭에서 이 방으로 데려오거나 관리해요.'+(sc<MAX_SLOTS?' 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장.':'')+'</span><button class="btn ghost" style="flex:none" onclick="setCatTab(\'pet\')">펫 관리 →</button></div>';
@@ -8671,7 +8721,7 @@
         const qty=Number((g.owned.items[sel]||{}).qty)||0, placedAll=(typeof sumPlacedItem==='function')?sumPlacedItem(g.home.rooms, sel):0;
         if(qty-placedAll<=0) return;                                   // 남은 수량 없음(복제 차단)
         if(!areaFree(r,c,foot.w,foot.h,R.placed,null,isFloorItem(sel))) return;         // 겹침(바닥 아이템은 겹침 허용)
-        if(CARE_ITEMS.indexOf(sel)>=0){ const cnt=Object.keys(R.placed).filter(k=>R.placed[k]&&R.placed[k].itemId===sel).length; if(cnt>=1) return; }   // 케어 아이템(밥·물·화장실)은 방당 종류별 1개만
+        if(CARE_ITEMS.indexOf(sel)>=0){ const cnt=Object.keys(R.placed).filter(k=>R.placed[k]&&R.placed[k].itemId===sel).length, cap=Math.max(1,Math.min(3,(R.active||[]).filter(id=>g.owned.cats&&g.owned.cats[id]).length)); if(cnt>=cap) return; }   // 케어=이 방 펫 수만큼(최대 3, 다묘 대응)
         R.placed[r+'_'+c]={itemId:sel}; g.home.changedAt=new Date().toISOString(); return g;
       }).then(function(res){ touchHome(); if(res&&res.committed){ placePopFx('placeGrid', r, c, foot); catHaptic(12); } });
     }
@@ -8680,8 +8730,8 @@
       const grid=$('placeGrid'); if(!grid) return;
       if(!_selItem){ toast('놓을 가구를 먼저 선택하세요'); return; }
       if(itemRemaining(_selItem)<=0){ toast('배치할 수량이 없어요(알뜰샵에서 구매)', true); return; }
-      // 밥·물그릇·화장실은 고양이 최대 마릿수(슬롯 수)만큼만 배치 가능
-      if(CARE_ITEMS.indexOf(_selItem)>=0 && itemPlaced(_selItem)>=1){ toast('그 종류는 방마다 1개만 놓을 수 있어요', true); return; }
+      // 밥·물그릇·화장실은 이 방 펫 수만큼(최대 3) 배치 가능(다묘 대응)
+      if(CARE_ITEMS.indexOf(_selItem)>=0 && itemPlaced(_selItem)>=careCap()){ toast('그 종류는 이 방 펫 수만큼(최대 3개) 놓을 수 있어요', true); return; }
       const foot=itemFoot(_selItem), cell=dropCell(grid, e.clientX, e.clientY, foot), r=cell.r, c=cell.c;   // 포인터=발자국 가운데
       const placed=room().placed||{};
       if(!areaFree(r,c,foot.w,foot.h,placed,null,isFloorItem(_selItem))){ toast('그 자리엔 놓을 수 없어요(겹침)', true); return; }
@@ -8801,7 +8851,7 @@
       const grid=$('placeGrid'); if(!grid) return; const r=grid.getBoundingClientRect();
       if(!(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)) return;   // 그리드 밖에 놓으면 취소
       if(itemRemaining(d.id)<=0){ toast('남은 수량이 없어요', true); return; }
-      if(CARE_ITEMS.indexOf(d.id)>=0 && itemPlaced(d.id)>=1){ toast('그 종류는 방마다 1개만 놓을 수 있어요', true); return; }
+      if(CARE_ITEMS.indexOf(d.id)>=0 && itemPlaced(d.id)>=careCap()){ toast('그 종류는 이 방 펫 수만큼(최대 3개) 놓을 수 있어요', true); return; }
       const cell=dropCell(grid,e.clientX,e.clientY,d.foot), rr=cell.r, cc=cell.c;
       const placed=room().placed||{};
       if(!areaFree(rr,cc,d.foot.w,d.foot.h,placed,null,isFloorItem(d.id))){ toast('그 자리엔 놓을 수 없어요(겹침)', true); return; }
