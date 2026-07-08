@@ -3000,7 +3000,7 @@
       "........................",
       "........................"
     ];
-    // 🐱 랜덤박스(고양이얼굴 버전, _pkV2 배너 전용) — 물음표(Q) 자리에 펫알과 같은 개선 치즈태비 얼굴(Y외곽·j얼굴·h안쪽귀·b태비줄무늬·k크림머즐·r분홍코·y눈·x입). BOX_PAL=치즈태비, BOX_PAL_RB=무지개(얼굴 j/h/b만 무지개, 머즐·코·눈·입 유지).
+    // 🐱 랜덤박스(고양이얼굴 버전, _pkV2 배너 전용) — 물음표(Q) 자리에 펫알과 같은 치즈태비 얼굴(Y외곽·j얼굴·h안쪽귀·b태비줄무늬·k크림머즐·코 없이 중앙 ω 입 x·y눈). BOX_PAL=치즈태비, BOX_PAL_RB=무지개(얼굴 j/h/b만 무지개, 머즐·눈·입 유지).
     const M_BOX_CAT = [
       "........................",
       "........................",
@@ -3018,9 +3018,9 @@
       "..XmWWYjbjjjjjjbjYSSnX..",
       "..XMWWYjjyjjjjyjjYSSnX..",
       "..XmWWYjkkkkkkkkjYSSnX..",
-      "..XMWWYjkkrrrrkkjYSSnX..",
-      "..XmWWYjkkxxxxkkjYDDnX..",
-      "..XMWWWYjkkkkkkjYDDDnX..",
+      "..XMWWYjkkkkkkkkjYSSnX..",
+      "..XmWWYjkkxkkxkkjYDDnX..",
+      "..XMWWWYjkkxxkkjYDDDnX..",
       "..XMWWWSYYkkkkYYDDDDMX..",
       "..XXXXXXXXXXXXXXXXXXXX..",
       "........................"
@@ -4139,14 +4139,14 @@
     // ===== 🥚 v2 기본 펫알(개발자 '배너 관리' 미리보기 전용, _pkV2 게이트) — 뜰알 복사: 꽃→새싹·검은고양이→치즈태비(색만)·흙 황토·이끼 연두 =====
     // PIL 라이트/다크 검수 완료(scratchpad egg2_check.py). 라이브 반영 시 eggSvg 계열 교체 예정.
     const M_EGG2_SPR=["LL.Vv","LLtVv",".LtV.","..t..","..T.."];   // 🌱 새싹(5×5, 줄기 col2 — M_DDEUL_FLW와 동일 규격이라 몸통 정렬 그대로)
-    // 🐱 치즈태비 전용 몸통(뜰알 공유 몸통에서 얼굴만 개선) — 이마 태비 줄무늬(b) + 볼 명암(b) + 넓은 크림 머즐(c) + 분홍 코(N) + 귀여운 입(q/Q). 눈(E) 위치 유지. (뜰알 M_DDEUL_BODY는 검은고양이라 그대로 둠)
+    // 🐱 치즈태비 전용 몸통(뜰알 공유 몸통에서 얼굴만 개선) — 이마 태비 줄무늬·볼 명암(b) + 크림 머즐(c, 컴팩트) + 코 없이 중앙 ω 입(q). 눈(E) 유지. 하단=마른 황토 흙(o/R/r/n 4톤)+황토 머금은 올리브 이끼(m/G/g 3톤, 우측 타고 오름). (뜰알 M_DDEUL_BODY는 검은고양이라 그대로 둠)
     const M_EGG2_BODY=[
       "..........XXXX..........","........XXXXXXXX........",".......XXIIIIWWXX.......","......XIIIIIWWWWWX......",".....XIIIIIWWWWWWSX.....",
       "....XXIIIIWWWWWWSSXX....","....XIIIIWWWWWWSSSSX....","...XIIIIWWWWWWWSSSSSX...","...XIIIIWWWWWWSSSSSSX...","..XIIIBBBWWWWSSBBBSSSX..",
       "..XIIIBBHBWWSSBHBBSSDX..","..XIIBBbBBBbbBBbBBBDDX..","..XIWBBbBBBbbBBbBBBDDX..",".XIIWHBBBBBBBBBBBBHDDDX.",".XIWWBBBBEBBBBEBBBBDDDX.",
-      "..XWWBbBBcccccccBbBggg..","..XWWBBBcccNNcccccBggg..","..XWWWBBcccqNNqcccBgggg.","..XWWWBBBccqQQqccBBgggg.","...XWSSBBcccccccBBgggg..",
-      "...XSSSSBBBBBBBBggggg...","....XSSSSSBBBBRRgggg....","....XnRRRRRRRRggRggg....",".....nnRRrrrrrggrgg.....","......nnrrrrrgrrgg......",
-      "........ngnnngnn........"];
+      "..XWWBbBBcccccBBBbBgmG..","..XWWBBBcccccccBBBBmGg..","..XWWWBBccqccqcBBBBmGgg.","..XWWWBBBccqqcBBBBmGggg.","...XWSSBBBccccBBBmGggg..",
+      "...XSSSSBBBBBoRmGGgg....","....XSSSoRRRRoRmGGgg....","....XnoRRRrRRoRmGGgg....",".....noRRrrrRoRmGgg.....","......nrRrrRrRmGgg......",
+      "........nrRRrmg........."];
     const M_EGG2=[
       "..........LL.Vv.........",
       "..........LLtVv.........",
@@ -4155,7 +4155,7 @@
       "...........tT..........."
     ].concat(M_EGG2_BODY);
     // 치즈태비(B 몸·H 안쪽귀·E 눈 + b 태비 줄무늬(이마·볼)·c 크림 머즐(넓게)·N 분홍 코·q/Q 입) + 황토 흙(R/r/o/n) + 연두 이끼(G/g/m) + 초록 새싹(L/V/v)
-    const EGG2_PAL=Object.assign({},DDEUL_PAL,{B:'#ef9f42',H:'#d47f2b',E:'#43290f',b:'#c9701f',c:'#fbe9c8',N:'#e0757a',R:'#b8863c',r:'#8a5f28',o:'#caa055',n:'#6b4a1e',G:'#7cc94a',g:'#57a134',m:'#a8e072',L:'#a5e26b',V:'#58b840',v:'#3f8a2f'});
+    const EGG2_PAL=Object.assign({},DDEUL_PAL,{B:'#ef9f42',H:'#d47f2b',E:'#43290f',b:'#c9701f',c:'#fbe9c8',o:'#dbb56b',R:'#c39a55',r:'#9c7539',n:'#6f5026',m:'#c2cd72',G:'#93a049',g:'#68732f',L:'#a5e26b',V:'#58b840',v:'#3f8a2f'});   // 흙=마른 황토 4톤(o·R·r·n), 이끼=황토 머금은 올리브 3톤(m·G·g)
     function egg2Svg(opt){ return pxSvg(M_EGG2, EGG2_PAL, opt); }
     // 🌈 무지개 새싹(색바퀴) — 왼잎 빨·주+노, 오른잎 초·파+보. 무지개 발동 조건(rbUpgradeChance) 시 새싹이 커지며 이 색으로.
     const M_EGG2_SPR_RB=["AB.DE","ABtDE",".CtF.","..t..","..T.."];
