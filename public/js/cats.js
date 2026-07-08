@@ -6527,7 +6527,7 @@
     function _engWin(){ return (typeof document!=='undefined'&&document.hidden&&pipOpen())?_pip.win:window; }
     // PiP 문서에선 전역 함수가 없어 inline 핸들러가 동작할 수 없으므로 상호작용 속성을 전부 벗긴다(시청 전용·키보드 포커스도 차단).
     function _pipStatic(html){ return String(html).replace(/ (?:onclick|onkeydown)="[^"]*"/g,'').replace(/ role="button"/g,'').replace(/ tabindex="0"/g,''); }
-    function _pipSetCamTxt(){ if(!pipOpen()) return; const el=_pip.doc.getElementById('ppCamTxt'); if(el) el.textContent=(room().emoji?room().emoji+' ':'')+(room().name||'우리집'); }
+    function _pipSetCamTxt(){ if(!pipOpen()) return; try{ _pip.doc.title='알뜰 펫캠 · '+(room().emoji?room().emoji+' ':'')+(room().name||'우리집'); }catch(e){} }   // 창 안 LIVE 배지·방 이름은 안 그림(사용자 지침) — 방 이름은 창 제목으로만
     function syncPipTheme(){ if(!pipOpen()) return; try{ _pip.doc.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme')||'light'); }catch(e){} }
     // 창 크기 → 가상 방(폭 가변 × 높이 PIP_VH)을 scale로 꽉 채움. 가상 폭이 바뀔 때만 액터 재클램프(markCatDirty).
     function _pipLayout(){ if(!pipOpen()||!_pip.room) return;
@@ -6571,9 +6571,8 @@
         }catch(e){}
         doc.body.className='piproom'+(document.body.classList.contains('lite')?' lite':'');
         doc.body.innerHTML='<div class="cd-room" id="ppRoom">'+roomShellBase(currentWall(), currentFloor())+
-          '<span class="cr-cam cd-cam"><i></i>LIVE · <span class="cd-camtxt" id="ppCamTxt"></span></span>'+
           '<div class="cr-props" id="ppProps"></div><div class="cr-stage" id="ppStage" data-hh="64"></div>'+
-          roomOverlay(currentBgfx())+'</div>';
+          roomOverlay(currentBgfx())+'</div>';   // LIVE 배지·방 이름 없음(사용자 지침 — 미니 창은 방 화면만 깔끔하게, 방 이름은 창 제목으로만)
         _pip={ win:win, doc:doc, room:doc.getElementById('ppRoom'), props:doc.getElementById('ppProps'), stage:doc.getElementById('ppStage'), _vw:0 }; _pipGone=false;
         syncPipTheme(); _pipSetCamTxt(); _pipLayout(); renderPipProps(); renderPipCats();
         let rz=0; win.addEventListener('resize', function(){ clearTimeout(rz); rz=setTimeout(_pipLayout, 120); });   // scale만 갱신(가상 폭 변화 시에만 재빌드)
