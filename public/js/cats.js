@@ -4094,12 +4094,59 @@
     const DDEUL_FLW_RB_PAL={A:'#f0445a',B:'#f5883c',C:'#f2c84b',D:'#38c172',E:'#22c3b0',F:'#3182f6',G:'#6c5ce0',H:'#c56ad6',Y:'#ffe06a',t:'#4e9636',T:'#3f7a2c'};   // 좌상→시계방향 빨·주·노·초·청록·파·남·보 + 중심 노랑·줄기 초록
     function ddeulFlwRbSvg(opt){ return pxSvg(M_DDEUL_FLW_RB, DDEUL_FLW_RB_PAL, opt); }
     // 컨테이너 안의 .fx-ddflower를 무지개 꽃(색 바퀴)으로 재렌더 + 클래스 표식. 뜰알(꽃 있음)이 아니면 no-op. 바꿨으면 true.
+    // 🌱 v2 펫알(fx-ddspr=새싹)이면 무지개 '새싹'(색바퀴)으로 + 커진 상태(ddflw-fix) — 뜰알 꽃과 같은 조건·타이밍 공유.
     function ddeulFlowerRb(container){ const fl=container&&container.querySelector&&container.querySelector('.fx-ddflower'); if(!fl) return false;
-      fl.classList.add('ddflw-rb'); fl.innerHTML=ddeulFlwRbSvg(); return true; }
+      fl.classList.add('ddflw-rb');
+      if(fl.classList.contains('fx-ddspr')){ fl.innerHTML=egg2SprRbSvg(); fl.classList.add('ddflw-fix'); }
+      else fl.innerHTML=ddeulFlwRbSvg();
+      return true; }
     // flw={C,F,f} 주면 꽃잎 색만 교체(몸통·중심·줄기 유지). flw===DDEUL_FLW_RB면 무지개 색바퀴 꽃. 안 주면 기본 핑크.
     function ddeulFxHtml(flw){ const rb=(flw===DDEUL_FLW_RB); const pal=(flw&&!rb)?Object.assign({},DDEUL_PAL,flw):DDEUL_PAL;
       const flwSvg=rb?ddeulFlwRbSvg():pxSvg(M_DDEUL_FLW, pal);
       return '<span class="fx-ddflower'+(rb?' ddflw-rb':'')+'">'+flwSvg+'</span><span class="fx-ddbody">'+pxSvg(M_DDEUL_BODY, pal)+'</span>'; }
+    // ===== 🥚 v2 기본 펫알(개발자 '배너 관리' 미리보기 전용, _pkV2 게이트) — 뜰알 복사: 꽃→새싹·검은고양이→치즈태비(색만)·흙 황토·이끼 연두 =====
+    // PIL 라이트/다크 검수 완료(scratchpad egg2_check.py). 라이브 반영 시 eggSvg 계열 교체 예정.
+    const M_EGG2_SPR=["LL.Vv","LLtVv",".LtV.","..t..","..T.."];   // 🌱 새싹(5×5, 줄기 col2 — M_DDEUL_FLW와 동일 규격이라 몸통 정렬 그대로)
+    const M_EGG2=[
+      "..........LL.Vv.........",
+      "..........LLtVv.........",
+      "...........LtV..........",
+      "............t...........",
+      "...........tT..........."
+    ].concat(M_DDEUL_BODY);
+    // 치즈태비(B 몸·H 안쪽귀·E 눈 색만 교체, 형태 유지) + 황토 흙(R/r/o/n) + 연두 이끼(G/g/m) + 초록 새싹(L/V/v)
+    const EGG2_PAL=Object.assign({},DDEUL_PAL,{B:'#ef9f42',H:'#d47f2b',E:'#43290f',R:'#b8863c',r:'#8a5f28',o:'#caa055',n:'#6b4a1e',G:'#7cc94a',g:'#57a134',m:'#a8e072',L:'#a5e26b',V:'#58b840',v:'#3f8a2f'});
+    function egg2Svg(opt){ return pxSvg(M_EGG2, EGG2_PAL, opt); }
+    // 🌈 무지개 새싹(색바퀴) — 왼잎 빨·주+노, 오른잎 초·파+보. 무지개 발동 조건(rbUpgradeChance) 시 새싹이 커지며 이 색으로.
+    const M_EGG2_SPR_RB=["AB.DE","ABtDE",".CtF.","..t..","..T.."];
+    const EGG2_SPR_RB_PAL={A:'#f0445a',B:'#f5883c',C:'#f2c84b',D:'#38c172',E:'#3182f6',F:'#9b6fc8',t:'#4e9636',T:'#3f7a2c'};
+    function egg2SprRbSvg(opt){ return pxSvg(M_EGG2_SPR_RB, EGG2_SPR_RB_PAL, opt); }
+    // v2 펫알 FX 분리 렌더(뜰알 ddeulFxHtml과 동일 구조 — 새싹+몸통, 탭 시 새싹이 줄기에서 팔랑). sprRb=true면 무지개 새싹(커진 상태 유지 ddflw-fix).
+    function egg2FxHtml(sprRb){
+      const spr=sprRb?egg2SprRbSvg():pxSvg(M_EGG2_SPR, EGG2_PAL);
+      return '<span class="fx-ddflower fx-ddspr'+(sprRb?' ddflw-rb ddflw-fix':'')+'">'+spr+'</span><span class="fx-ddbody">'+pxSvg(M_DDEUL_BODY, EGG2_PAL)+'</span>'; }
+    // ===== 🌈 v2 무지개알(개발자 '배너 관리' 미리보기 전용) — 뜰알 복사: 고양이 검은색→무지개 채색(눈·입 유지)·꽃→커진 무지개 색바퀴 꽃 =====
+    const EGG2_RB_PAL=Object.assign({},DDEUL_PAL,{B:'RAINBOW',H:'RAINBOW'});   // 껍질·흙·이끼·눈·입은 뜰알 그대로
+    function rbEgg2FxHtml(){ return '<span class="fx-ddflower ddflw-rb ddflw-fix">'+ddeulFlwRbSvg()+'</span><span class="fx-ddbody">'+pxSvg(M_DDEUL_BODY, EGG2_RB_PAL)+'</span>'; }
+    // 정적 무지개알 이미지(배너 아이템 등) — 알 뒤 무지개 오오라 + 주변 무지개 트윙클(도트) + 커진 무지개꽃. h=몸통 높이(px).
+    function rbEgg2Html(h){ h=h||52; const fh=Math.round(h*0.30);   // 꽃 5행(몸통 대비 19%)×1.55 ≈ 30%
+      let tw=''; for(let i=0;i<4;i++){ const a=(i/4)*360+28+Math.random()*20, d=h*(0.52+Math.random()*0.22);
+        const x=Math.round(Math.cos(a*Math.PI/180)*d), y=Math.round(Math.sin(a*Math.PI/180)*d*0.9);
+        tw+='<span class="fx-tw" style="--tx:'+x+'px;--ty:'+y+'px;animation-delay:'+(Math.random()*1.1).toFixed(2)+'s;animation-duration:'+(1.1+Math.random()*0.7).toFixed(2)+'s">'+spark4Svg('RAINBOW',{h:9+Math.round(Math.random()*4)})+'</span>'; }
+      return '<span class="rbegg2"><span class="rbegg2-fx"><span class="rbegg2-aura">'+auraSvg('RAINBOW',{h:Math.round(h*1.3)})+'</span>'+tw+'</span>'+
+        '<span class="rbegg2-flw">'+ddeulFlwRbSvg({h:fh})+'</span>'+pxSvg(M_DDEUL_BODY, EGG2_RB_PAL, {h:h})+'</span>'; }
+    // 🌸 v2 무지개알 오픈(전설↑ 결과): 꽃이 뚝 떨어지고(ddflw-drop) 알 주변으로 무지개 꽃 6개가 흩날림. it=알 요소·st=흩날림 부착 무대·small=10뽑 알 스케일.
+    function rbFlowerDropFx(it, st, small){
+      const fl=it&&it.querySelector&&it.querySelector('.fx-ddflower'); if(fl) fl.classList.add('ddflw-drop');
+      if(!st) return; const n=6; let s='';
+      for(let i=0;i<n;i++){ const ang=((i+0.25+Math.random()*0.5)/n)*Math.PI*2;   // 섹터 분산(뭉침 방지)
+        const R=small?(24+Math.random()*18):(64+Math.random()*58);
+        const fxx=Math.round(Math.cos(ang)*R), fyy=Math.round(Math.abs(Math.sin(ang))*R*0.6+(small?24:66)+Math.random()*(small?14:38));
+        const hh=small?(8+Math.round(Math.random()*3)):(15+Math.round(Math.random()*6));
+        const dur=(1.1+Math.random()*0.6).toFixed(2), del=(Math.random()*0.18).toFixed(2), rot=Math.round(120+Math.random()*160)*(i%2?1:-1);
+        s+='<span class="fx-rbfl" style="--fx:'+fxx+'px;--fy:'+fyy+'px;--fr:'+rot+'deg;animation-delay:'+del+'s;animation-duration:'+dur+'s"><span class="rbfl-in" style="animation-delay:'+(-Math.random()*0.5).toFixed(2)+'s">'+ddeulFlwRbSvg({h:hh})+'</span></span>'; }
+      st.insertAdjacentHTML('beforeend','<span class="fx-rbfls" aria-hidden="true">'+s+'</span>');
+    }
     const SHELL_PAL={X:'#8d8368',I:'#fffef8',W:'#f7f3ea',S:'#e6dfce'};   // 껍질 조각도 알과 같은 크림 4톤(I 하이라이트·W·S + X 테두리)
     const SHELL_PAL_RB={X:'#8d8368',I:'RAINBOW',W:'RAINBOW',S:'RAINBOW'};
     function shellSvg(which, rainbow, opt){ const M=[M_SHELL_A,M_SHELL_B,M_SHELL_C][which]||M_SHELL_A; return pxSvg(M, rainbow?SHELL_PAL_RB:SHELL_PAL, opt); }
@@ -7184,9 +7231,9 @@
       let h='<div class="catroom" id="catRoom">'+roomShellBase(currentWall(), currentFloor())+'<span class="cr-cam"><i></i>LIVE · '+escapeHtml(roomName)+'</span>'+batchBtnHtml()+'<div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div>'+roomOverlay(currentBgfx())+'</div>';
       // 빈 방(가구·펫 없음) 안내 — 방 확장 직후 '사라진 것처럼' 보이는 혼동 방지
       if(!list.length && !cats.length) h+='<div class="hintline" style="margin:8px 0 0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>새 방이에요! <b>펫</b> 탭에서 <b>펫을 이 방으로 데려오고</b>, <b>배치</b> 탭에서 가구를 놓아보세요. (다른 방과 따로 저장돼요)</div>';
-      // 안내: 그릇 채우기 / 똥 수거
+      // 안내: 그릇 채우기 / 똥 수거 — 완전 빈 새 방(가구·펫 없음)에선 위 '새 방' 안내만 두고 생략(힌트 3장 적층 방지, 채울 그릇도 없음)
       const poops=room().poops||0;
-      h+='<div class="hintline" style="margin:8px 0 0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>밥·물 그릇을 탭해 채우고(3시간 뒤 비워짐), 쌓인 <b>똥을 탭해 치우면 +'+POOP_REWARD+' 은화</b>'+(poops&&!litters.length?' · 화장실을 놓아야 똥을 치울 수 있어요':'')+'.</div>';
+      if(list.length || cats.length) h+='<div class="hintline" style="margin:8px 0 0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>밥·물 그릇을 탭해 채우고(3시간 뒤 비워짐), 쌓인 <b>똥을 탭해 치우면 +'+POOP_REWARD+' 은화</b>'+(poops&&!litters.length?' · 화장실을 놓아야 똥을 치울 수 있어요':'')+'.</div>';
       const owned=ownedCatList();
       const sc=slotCount();
       h+='<div class="sech"><span class="l">이 방 펫</span><span class="s">'+cats.length+' / '+sc+' 활성</span></div>';
@@ -7391,11 +7438,13 @@
     // 🥚 펫알 배너 = 노을 씬 + 노을 테두리/FX(테마 정합) + 배너 이미지 아래 펫알 이미지·설명·소모재화 + 1뽑/10뽑(소모재화) + 확률 보기.
     function eggBannerHtml(live){
       // 🎨 v2(개발자 미리보기): 오오라를 뜰알·무지개와 동일한 무지개로 통일 + 알 크기=뜰알 배너 메인 아이콘과 동일(52) (사용자 지침). 라이브(v1)는 노을 오오라·기존 크기 유지.
+      //    + v2 신규 펫알 아트(뜰알 복사 — 새싹·치즈태비·황토 흙·연두 이끼, egg2Svg) — 라이브는 기존 크림알 유지.
       const fx=_pkV2?gbRainbowFx():gbSunsetFx(), cls=_pkV2?'gb-rb gb-eglow':'gb-rb gb-sun', eh=_pkV2?52:56;
+      const eggArt=(h)=>_pkV2?egg2Svg({h:h}):eggSvg(0,{h:h});
       return '<div class="gbanner gb-eggbn"><div class="gb-head"><b class="gb-t gb-sunset-t">🌇 펫알 · 노을</b><span class="pk-tag">매일 만나는 새 친구</span></div>'+
-        '<div class="gb-scene">'+sunsetSceneHtml()+gbCenterHtml(eggSvg(0,{h:eh}), fx, cls)+'</div>'+
+        '<div class="gb-scene">'+sunsetSceneHtml()+gbCenterHtml(eggArt(eh), fx, cls)+'</div>'+
         // 🥚 배너 이미지 아래 — 펫알 이미지·설명·소모재화
-        '<div class="gb-item"><div class="gb-item-ic">'+eggSvg(0,{h:52})+'</div>'+
+        '<div class="gb-item"><div class="gb-item-ic">'+eggArt(52)+'</div>'+
           '<div class="gb-item-meta"><b>펫알</b>'+
           '<div class="gb-item-desc">열면 펫이 랜덤으로! 등급이 높을수록 귀해요.<br>열 때마다 금화 1개 지급.</div>'+
           '<div class="gb-item-cost">1뽑당 소모 '+gachaCostHtml(GACHA_PRICE,0,1)+'</div></div></div>'+
@@ -7420,8 +7469,8 @@
       const gp=(typeof rbPriceGold==='function')?rbPriceGold('egg'):5;
       return '<div class="gbanner gb-rainbow"><div class="gb-head"><b class="gb-t tier-rainbow">🌈 무지개 · 밤</b></div>'+
         '<div class="gb-scene">'+nightSceneHtml()+devPickupStageHtml(DEV_NIGHT_PICKUP)+gbCenterHtml(eggGardenSvg(EGG_NIGHT,{h:54}), fx, 'gb-rb gb-glow')+'</div>'+
-        // 🌈 배너 이미지 아래 — 무지개알 이미지·설명·소모재화(금화 전용)
-        '<div class="gb-item"><div class="gb-item-ic">'+rainbowEggSvg({h:52})+'</div>'+
+        // 🌈 배너 이미지 아래 — 무지개알 이미지·설명·소모재화(금화 전용). v2=신규 무지개알(뜰알 복사·무지개 고양이·큰 무지개꽃 + 무지개 오오라·트윙클 상시)
+        '<div class="gb-item"><div class="gb-item-ic">'+(_pkV2?rbEgg2Html(52):rainbowEggSvg({h:52}))+'</div>'+
           '<div class="gb-item-meta"><b class="tier-rainbow">무지개알 <span class="tagmini tier-rainbow">밤</span></b>'+
           '<div class="gb-item-desc">열면 <b>특별↑</b> 펫만! 금화로 확정 뽑기.<br>달빛 밤하늘 아래 반딧불이 반짝여요.</div>'+
           '<div class="gb-item-cost">1뽑당 소모 '+gachaCostHtml(0,gp,1)+'</div></div></div>'+
@@ -7432,7 +7481,7 @@
       if(!(typeof isDev==='function'&&isDev())) return;
       _pkV2=true;   // 🎨 개발자 미리보기 연출(단발 리빌·10연차)도 v2 고해상도 씬 배경으로 — closeFx/closeTenFx에서 해제(라이브 뽑기 경로는 안 거침)
       if(theme==='night'){ _devPickupOverride=DEV_NIGHT_PICKUP;   // 🌙 밤 = 흑표범·카라칼 미리보기(라이브 픽업 안 건드림, FX 닫힐 때 해제)
-        if(ten) devPreview10('oneExclusive', kind, theme); else devPreview(kind, 'exclusive', pickupMember()); return; }
+        if(ten) devPreview10('oneExclusive', kind, theme); else devPreview(kind, 'exclusive', pickupMember(), true); return; }   // 밤 1뽑 = 무지개알 오픈으로(rainbow) — v2 신규 무지개알 아트·연출 미리보기
       if(ten){ devPreview10('random', kind, theme); }
       else devPreview(kind, 'legend');
     }
@@ -9148,14 +9197,20 @@
         floors.forEach(function(p){ const f=itemFoot(p.itemId); let done=false;
           for(let r=1;r+f.h-1<=GRID_ROWS && !done;r++) for(let c=1;c+f.w-1<=GRID_N && !done;c++){ const k=r+'_'+c; if(!out[k] && areaFree(r,c,f.w,f.h,out,null,true)){ out[k]=cell(p); done=true; } }
           if(!done) leftover.push(p); });
-        // 큰 가구(발자국≥2)는 뒷줄부터, 작은 1×1은 앞줄부터 채워 방 전체에 깊이감 있게 펼침 — 큰 쇼피스=뒤, 작은 소품·케어(밥·물·화장실 1×1)=앞(펫이 닿기 쉬움).
-        const big=regs.filter(function(p){ const f=itemFoot(p.itemId); return f.w*f.h>=2; });
-        const small=regs.filter(function(p){ const f=itemFoot(p.itemId); return f.w*f.h<2; });
+        // 큰 가구(발자국≥2)=뒷줄부터, 케어(밥·물·화장실)=앞줄에 나란히 묶어서, 작은 소품=그 뒤 앞줄부터 — 방 전체에 깊이감 있게 펼침(큰 쇼피스=뒤, 케어·작은 소품=앞이라 펫이 닿기 쉬움).
+        const isCare=function(p){ return CARE_ITEMS.indexOf(p.itemId)>=0; };
+        const care=regs.filter(isCare);
+        const big=regs.filter(function(p){ const f=itemFoot(p.itemId); return !isCare(p) && f.w*f.h>=2; });
+        const small=regs.filter(function(p){ const f=itemFoot(p.itemId); return !isCare(p) && f.w*f.h<2; });
+        care.sort(function(a,b){ return (CARE_ITEMS.indexOf(a.itemId)-CARE_ITEMS.indexOf(b.itemId)) || (a.itemId<b.itemId?-1:1); });   // 밥→물→화장실 순으로 묶기
         big.sort(function(a,b){ const fa=itemFoot(a.itemId),fb=itemFoot(b.itemId); return (fb.w*fb.h)-(fa.w*fa.h) || (tierRank(itemTierOf(b.itemId))-tierRank(itemTierOf(a.itemId))) || (a.itemId<b.itemId?-1:1); });
         small.sort(function(a,b){ return (tierRank(itemTierOf(b.itemId))-tierRank(itemTierOf(a.itemId))) || (a.itemId<b.itemId?-1:1); });
         big.forEach(function(p){ const f=itemFoot(p.itemId); let done=false;
           for(let r=1;r+f.h-1<=GRID_ROWS && !done;r++) for(let c=1;c+f.w-1<=GRID_N && !done;c++){ const k=r+'_'+c; if(!out[k] && areaFree(r,c,f.w,f.h,out,null,false)){ out[k]=cell(p); done=true; } }
           if(!done) leftover.push(p); });   // 뒤→앞 first-fit
+        care.forEach(function(p){ const f=itemFoot(p.itemId); let done=false;
+          for(let r=GRID_ROWS;r>=1 && !done;r--) for(let c=1;c+f.w-1<=GRID_N && !done;c++){ const k=r+'_'+c; if(!out[k] && areaFree(r,c,f.w,f.h,out,null,false)){ out[k]=cell(p); done=true; } }
+          if(!done) leftover.push(p); });   // 케어=앞줄부터 나란히(먼저 놓아 연속 칸에 묶임)
         small.forEach(function(p){ let done=false;
           for(let r=GRID_ROWS;r>=1 && !done;r--) for(let c=1;c<=GRID_N && !done;c++){ const k=r+'_'+c; if(!out[k] && areaFree(r,c,1,1,out,null,false)){ out[k]=cell(p); done=true; } }
           if(!done) leftover.push(p); });   // 앞→뒤 first-fit(1×1)
@@ -9168,9 +9223,15 @@
           for(let ri=0;ri<rows.length && !done;ri++){ const r=rows[ri];
             for(let c=1;c+w-1<=WALL_COLS && !done;c++){ const k=r+'_'+c; if(!wout[k] && wallAreaFree(r,c,w,wout,null)){ wout[k]=cell(p); done=true; } } }
           if(!done) wleft.push(p); });
+        // ── 중앙 정렬: 배치 전체 바운딩박스를 가로 중앙으로 이동(모든 칸 균일 시프트=충돌 안전, 왼쪽 쏠림 해소) ──
+        const centerCols=function(dict, cols, footFn){ const keys=Object.keys(dict); if(!keys.length) return dict;
+          let minC=Infinity,maxC=-Infinity; keys.forEach(function(k){ const c=+k.split('_')[1], w=footFn(dict[k].itemId).w; if(c<minC)minC=c; if(c+w-1>maxC)maxC=c+w-1; });
+          const shift=Math.floor(((cols-maxC)-(minC-1))/2); if(!shift) return dict;
+          const nd={}; keys.forEach(function(k){ const pr=k.split('_'); nd[pr[0]+'_'+(+pr[1]+shift)]=dict[k]; }); return nd; };   // 균일 이동이라 상대 위치·겹침 그대로 유지
+        const outC=centerCols(out, GRID_N, itemFoot), woutC=centerCols(wout, WALL_COLS, wallFoot);
         // ── 커밋(단일 roomTx, captureUndo로 한 번에 되돌리기) ──
         captureUndo();
-        roomTx(rid, ridx, function(R){ R.placed=out; R.wallPlaced=wout; }, function(){
+        roomTx(rid, ridx, function(R){ R.placed=outC; R.wallPlaced=woutC; }, function(){
           openCatHouse('place');   // 확인시트로 닫힌 알뜰홈을 배치 탭으로 다시 열어 정렬 결과·되돌리기 버튼 노출
           const nleft=leftover.length+wleft.length;
           toast(nleft?('가구를 정리했어요 ✨ · 자리가 부족한 '+nleft+'개는 대기(인벤토리로)'):'가구를 정리했어요 ✨'); });
@@ -9530,7 +9591,7 @@
     function runGachaFx(kind, res, dup, refund, rainbow, isNew){
       const fx=$('catFx'); if(!fx){ toast((kind==='egg'?'펫알':'랜덤박스')+' 획득!'); pullEnd(); return; }
       _fxClear();   // 이전 FX 잔여 타이머 취소(빠른 재오픈 교차 방지)
-      _fx={ kind, res, dup, refund:refund||0, stage:0, rainbow:!!rainbow, gold: (rainbow||kind==='ddeul')?0:1, isNew:!!isNew };   // 무지개·뜰알은 금화 보상 없음(뜰알은 금화 소모). isNew=처음 획득(NEW 배지)
+      _fx={ kind, res, dup, refund:refund||0, stage:0, rainbow:!!rainbow, gold: (rainbow||kind==='ddeul')?0:1, isNew:!!isNew, v2egg:(_pkV2&&kind==='egg') };   // 무지개·뜰알은 금화 보상 없음(뜰알은 금화 소모). isNew=처음 획득(NEW 배지). v2egg=개발자 배너관리 미리보기의 신규 펫알/무지개알 아트(뜰알식 연출)
       if(isEggKind(kind) && typeof hasSprite==='function' && hasSprite(res.id)){ try{ const _pi=new Image(); _pi.src=sprStill(res.id,'south'); if(_pi.decode) _pi.decode().catch(function(){}); }catch(e){} }   // 등장 스프라이트 미리 로드·디코드(펫알·뜰알 공통) → 마지막에 바로 표시
       if(typeof prewarmGachaFxPads==='function') prewarmGachaFxPads();   // 연출 고양이 발끝 여백 미리 측정(탭하는 동안 캐시 완료 → 첫 등장 세로 점프 방지)
       if(reducedMotion()){ fxReveal(); return; }   // 모션 최소화: 바로 결과
@@ -9550,11 +9611,12 @@
         if(rainbow && !st0.querySelector('.fx-spark')) st0.insertAdjacentHTML('afterbegin', fxSparkles(16));
         return;
       }
-      const art = rainbow ? (isEggKind(kind)? rainbowEggSvg({h:150}) : rainbowBoxSvg({h:150}))
-                          : (isDdeul? ddeulFxHtml() : (isEggKind(kind)? eggSvg(0,{h:150}) : boxSvg({h:150})));
+      const v2e=_fx.v2egg;   // 🎨 v2 펫알/무지개알(배너관리 미리보기): 뜰알식 분리 렌더(새싹/꽃+몸통) — 크기·흔들림 CSS는 .fx-ddeulegg 공유
+      const art = rainbow ? (isEggKind(kind)? (v2e?rbEgg2FxHtml():rainbowEggSvg({h:150})) : rainbowBoxSvg({h:150}))
+                          : (isDdeul? ddeulFxHtml() : (isEggKind(kind)? (v2e?egg2FxHtml():eggSvg(0,{h:150})) : boxSvg({h:150})));
       fx.innerHTML='<div class="fx-scrim"></div><div class="fx-stage'+(rainbow?' fx-rb':'')+(isDdeul?' fx-ddeul':'')+'">'+
         (rainbow?fxSparkles(16):'')+
-        '<div class="fx-item pop '+(isEggKind(kind)?'fx-egg':'fx-box')+(isDdeul?' fx-ddeulegg':'')+(rainbow?' fx-rainbow':'')+'" id="fxItem" role="button" aria-label="'+hint+'" onclick="fxTap()">'+art+'</div>'+
+        '<div class="fx-item pop '+(isEggKind(kind)?'fx-egg':'fx-box')+((isDdeul||v2e)?' fx-ddeulegg':'')+(rainbow?' fx-rainbow':'')+'" id="fxItem" role="button" aria-label="'+hint+'" onclick="fxTap()">'+art+'</div>'+
         '<div class="fx-hint" id="fxHint">'+hint+'</div></div>';
       fx.className='fx on';
     }
@@ -9598,12 +9660,16 @@
       _fx.stage++;
       if(_fx.stage>=3){ _fx.busy=true; fxClimax(); return; }   // 알·박스 모두 3번 탭에 오픈
       if(isEggKind(_fx.kind)){
-        if(_fx.stage===2 && !_fx.rainbow && _fx.kind!=='ddeul') maybeRainbowUpgrade();   // 2번째 탭 직후: 특별↑이면 확률로 무지개알 승급(뜰알은 제외 — 뜰알은 무지개+나비 전용 연출)
+        const ddLike=_fx.kind==='ddeul'||_fx.v2egg;   // 🎨 v2 펫알(배너관리 미리보기)도 뜰알식(균열 없음·새싹 팔랑·무지개=새싹 커짐+무지개색)
+        if(_fx.stage===2 && !_fx.rainbow && !ddLike) maybeRainbowUpgrade();   // 2번째 탭 직후: 특별↑이면 확률로 무지개알 승급(뜰알·v2 펫알은 제외 — 꽃/새싹 무지개 전용 연출)
         if(_fx.stage===2 && _fx.kind==='ddeul' && (_fx.res.tier==='exclusive' || Math.random()<rbUpgradeChance(_fx.res.tier))) ddeulPickupFx(it.closest('.fx-stage'));   // 뜰알 무지개+나비 = 펫알 무지개알 승급과 '같은 조건'(특별50%·전설/신화100%) + 한정(exclusive)이면 항상. 무조건 아님.
+        if(_fx.stage===2 && _fx.v2egg && !_fx.rainbow && Math.random()<rbUpgradeChance(_fx.res.tier)) ddeulPickupFx(it.closest('.fx-stage'));   // 🌱 v2 펫알: 뜰알 꽃과 같은 조건 — 새싹이 커지며 무지개색(ddeulFlowerRb가 fx-ddspr 감지)
         if(_fx.stage===2 && _fx.kind!=='ddeul' && _fx.rainbow) ddeulPickupFx(it.closest('.fx-stage'));   // 펫알(무지개알로 승급) · 무지개알(원래부터)도 뜰알과 동일한 무지개+나비 연출 — 승급 조건과 같은 타이밍/조건
-        it.innerHTML = _fx.kind==='ddeul' ? ddeulFxHtml(_fx._flwRb?DDEUL_FLW_RB:undefined) : (_fx.rainbow?rainbowEggStage(_fx.stage,{h:150}):eggSvg(_fx.stage,{h:150}));   // 나비 연출(무지개) 시 꽃 무지개 유지
+        it.innerHTML = _fx.kind==='ddeul' ? ddeulFxHtml(_fx._flwRb?DDEUL_FLW_RB:undefined)
+          : _fx.v2egg ? (_fx.rainbow?rbEgg2FxHtml():egg2FxHtml(_fx._flwRb))
+          : (_fx.rainbow?rainbowEggStage(_fx.stage,{h:150}):eggSvg(_fx.stage,{h:150}));   // 나비 연출(무지개) 시 꽃/새싹 무지개 유지
         it.classList.remove('shake'); void it.offsetWidth; it.classList.add('shake');   // 탭마다 알이 좌우로 크게 흔들림
-        if(_fx.kind==='ddeul'){ const fl=it.querySelector('.fx-ddflower'); if(fl) fl.classList.add('flswing'); }   // 뜰알: 탭 흔들림에 맞춰 꽃도 줄기에서 팔랑(갓 렌더된 요소라 클래스 추가만으로 재생)
+        if(ddLike){ const fl=it.querySelector('.fx-ddflower'); if(fl) fl.classList.add('flswing'); }   // 뜰알·v2 펫알: 탭 흔들림에 맞춰 꽃/새싹도 줄기에서 팔랑(갓 렌더된 요소라 클래스 추가만으로 재생)
         fxCrackChips(_fx.stage);   // 탭마다 껍질 조각이 튀어 깨짐을 강조
       } else {
         if(_fx.stage===2 && !_fx.rainbow) maybeRainbowUpgrade();   // 🎁 박스도 특별↑이면 무지개박스로 승급(펫알 무지개알과 동일 조건)
@@ -9708,6 +9774,8 @@
         st.style.color=t.color;   // 열리는 순간부터 등급색 — 빛·픽셀 파티클·버스트·등장이 currentColor로 등급색을 따른다(그 전엔 흰빛이라 등급 스포일러 방지)
         it.classList.remove('fx-preshake','fx-hit','shake','boxshake'); void it.offsetWidth; it.classList.add('fx-tremble');
         if(_fx.kind==='ddeul'){ it.innerHTML=ddeulFxHtml(_fx._flwRb?DDEUL_FLW_RB:undefined); fxCrackChips(4); }   // 뜰알: 고양이 얼굴 알이 크게 들썩(꽃도 크게 흔들림)+껍질 조각 튐 후 버스트. 무지개 연출이면 꽃 무지개 유지.
+        else if(_fx.v2egg){ it.innerHTML=(_fx.rainbow?rbEgg2FxHtml():egg2FxHtml(_fx._flwRb)); fxCrackChips(4);   // 🎨 v2 펫알/무지개알: 뜰알과 동일 — 균열 없이 크게 들썩(새싹/꽃 큰 흔들림)+껍질 조각
+          if(_fx.rainbow && tierRank(_fx.res.tier)>=tierRank('legend')) rbFlowerDropFx(it, st); }   // 🌈🌸 무지개알 전설↑: 꽃이 뚝 떨어지고 무지개 꽃 6개가 알 주변에 흩날림
         else if(isEgg){ it.innerHTML=eggCrackSvg(t.color, _fx.rainbow, {h:150}); fxCrackChips(4); }   // 알이 크게 갈라지고 틈새로 등급색 빛
         else { it.innerHTML=boxOpenSvg(t.color, _fx.rainbow, {h:150}); it.classList.add('fx-ajar'); }   // 박스: 뚜껑 열리고 틈새로 등급색 빛
         // 갈라진 틈으로 새어나오는 등급색 픽셀 빛 — 은은한 오오라 + 역회전 광선 2겹(둥근 글로우 금지, 도트). 등급↑ 크고 밝게(--lk)
@@ -9795,6 +9863,8 @@
     function tenEggSvg(it, stage){
       if(it.kind==='box') return '<span class="ten-boxegg">'+((it.rainbow&&it._rbShown)?rainbowBoxSvg({h:54}):boxSvg({h:54}))+'</span>';   // 랜덤박스(무지개박스 승급 시 무지개)
       if(it.kind==='ddeul'){ if(!it._flw) it._flw=randDdeulFlower(); return '<span class="ten-ddeulegg">'+ddeulFxHtml(it._flw)+'</span>'; }   // 뜰알: 꽃+몸통 분리(탭 시 꽃 팔랑) + 알마다 꽃 색 랜덤
+      if(_fx10 && _fx10.v2 && it.kind==='egg'){   // 🎨 v2(배너관리 미리보기): 밤(무지개 배너)=신규 무지개알·그 외=신규 펫알(새싹) — 뜰알처럼 꽃/새싹+몸통 분리
+        return '<span class="ten-ddeulegg ten-egg2">'+(_fx10.theme==='night'?rbEgg2FxHtml():egg2FxHtml(it._sprRb))+'</span>'; }
       if(it.rainbow && it._rbShown) return rainbowEggStage(Math.min(stage,2),{h:52});   // h 속성으로 크기 확정(오픈 알과 동일) — width:100%/height:auto 는 WebView서 작게 뭉개짐
       return eggSvg(stage,{h:52}); }
     // 둥지(뒤판+앞테두리) + 알 10개 흩뿌림(TEN_POS, 비겹침) / 피날레 펫. 알·펫 위치 동일(같은 좌표·z).
@@ -9879,6 +9949,8 @@
         b+='<span class="fx-ddbfly ten-bfly" style="margin:'+my+'px 0 0 '+mx+'px;--d:'+dur+'s;animation-delay:'+del+'s;'+bflyDriftVars(Math.random)+'">'+inner+'</span>'; }
       const wrap=document.createElement('span'); wrap.className='ten-bflies'; wrap.innerHTML=b; eggEl.appendChild(wrap);
       if(it && it.kind==='ddeul'){ it._flw=DDEUL_FLW_RB; ddeulFlowerRb(eggEl); const fl=eggEl.querySelector('.fx-ddflower'); if(fl) fl.classList.add('ddflw-big'); }   // 🌈 뜰알: 이 알 꽃을 무지개색으로(오픈까지 it._flw로 유지) + 좀 더 크게(ddflw-big)
+      else if(it && _fx10 && _fx10.v2 && it.kind==='egg' && _fx10.theme!=='night'){ it._sprRb=true;   // 🌱 v2 펫알: 새싹이 커지며 무지개색(뜰알 꽃과 동일 조건·타이밍, 오픈까지 it._sprRb로 유지). 밤(무지개알)은 이미 무지개 꽃이라 제외.
+        const fl=eggEl.querySelector('.fx-ddflower'); if(fl){ fl.innerHTML=egg2SprRbSvg(); fl.classList.add('ddflw-rb','ddflw-big'); } }
     }
     // 카메오 펫 선정: 한정=픽업 펫(삵·표범), 그 외 전설↑=전설/신화 스프라이트 랜덤
     function tenCameoPet(it){ if(it.tier==='exclusive'){ const pk=pickupMember(); if(pk) return pk; }
@@ -9906,10 +9978,15 @@
     // 알 오픈(크랙+틈새빛)
     function tenOpenEgg(it){ const el=$('tenEgg'+it.i); if(!el||it._open) return; it._open=true;
       const t=tierInfo(it.tier), ex=it.tier==='exclusive';
+      const v2e=_fx10 && _fx10.v2 && it.kind==='egg', v2rb=v2e && _fx10.theme==='night';   // 🎨 v2 신규 펫알/무지개알(균열 없음 — 뜰알처럼 그대로 빛남)
       el.classList.add('open'); el.style.color=ex?'':(t.color||'#fff');
-      el.innerHTML=(it.kind==='box'?'<span class="ten-boxegg">'+boxOpenSvg(t.color, !!(it.rainbow&&it._rbShown), {h:54})+'</span>':it.kind==='ddeul'?ddeulEggSvg({h:52}, it._flw):eggCrackSvg(t.color, !!(it.rainbow&&it._rbShown), {h:52}))+
+      el.innerHTML=(it.kind==='box'?'<span class="ten-boxegg">'+boxOpenSvg(t.color, !!(it.rainbow&&it._rbShown), {h:54})+'</span>'
+        :it.kind==='ddeul'?ddeulEggSvg({h:52}, it._flw)
+        :v2e?'<span class="ten-ddeulegg ten-egg2">'+(v2rb?rbEgg2FxHtml():egg2FxHtml(it._sprRb))+'</span>'
+        :eggCrackSvg(t.color, !!(it.rainbow&&it._rbShown), {h:52}))+
         '<span class="ten-crlight">'+lightLayers({aura:64, rays:82, rainbow:ex})+'</span>';
       el.classList.remove('shake','tremble'); void el.offsetWidth; el.classList.add('hit');
+      if(v2rb && tierRank(it.tier)>=tierRank('legend')) rbFlowerDropFx(el, el, true);   // 🌈🌸 v2 무지개알 전설↑: 꽃 뚝 + 무지개 꽃 6개 흩날림(알 스케일)
       if(!liteMode()){ const s=document.createElement('span'); s.className='ten-eggfx'; s.innerHTML=fxSparkles(5); el.appendChild(s); }
     }
     // 진입점 — items=[{id,tier,kind,rainbow,dup,refund,isNew}]×10
@@ -9954,7 +10031,7 @@
       // side = 알의 '실제 화면 위치'(TEN_POS 흩뿌림 x) 기준 좌/우 → 카메오가 가까운 쪽에서 걸어와 알을 지나치지 않게(격자 i%2는 흩뿌림과 안 맞아 반대편서 걸어와 다른 알을 지나쳐 치던 버그).
       const items=(list||[]).slice(0,TEN_N).map(function(it,i){ return Object.assign({ kind:'egg' }, it, { i:i, col:i%TEN_COLS, row:(i/TEN_COLS|0), side:((TEN_POS[i]&&TEN_POS[i][0]<50)?'l':'r') }); });
       const isBox = opts.kind==='box' || (items[0]&&items[0].kind==='box');   // 🎁 랜덤박스 10연차: 카메오·로밍 없음(가구는 못 걸어다님) → 정적 리빌/피날레
-      _fx10={ items:items, order:tenShuffle(items.length), stage:0, busy:true, phase:'nest', ridx:0, preview:!!opts.preview, isBox:isBox,
+      _fx10={ items:items, order:tenShuffle(items.length), stage:0, busy:true, phase:'nest', ridx:0, preview:!!opts.preview, isBox:isBox, v2:_pkV2,   // v2=배너관리 미리보기(신규 펫알/무지개알 아트·뜰알식 연출)
         theme: opts.theme||(isBox?'':'rainbow'),   // 🌇 sunset=노을(펫알): 배경 노을 씬 + 무지개 하늘 연출 생략. 박스=기본 초원.
         skyRainbow: !isBox && items.some(function(x){ return x.tier==='limited'||x.tier==='exclusive'; }) };
       items.forEach(function(x){ if(hasSprite(x.id)) ensurePetArt(x.id); });
@@ -9988,7 +10065,7 @@
     function tenTapShake(stage){ const nest=document.querySelector('.ten-nest'); if(nest){ nest.classList.remove('drop','shake'); void nest.offsetWidth; nest.classList.add('shake'); }
       const shakers=[];   // 🔋 알마다 void offsetWidth(강제 리플로우 N회) 하던 것을 배치: remove 전부 → 리플로우 1회 → add 전부
       _fx10.items.forEach(function(it){ const el=$('tenEgg'+it.i); if(!el) return;
-        if(it.kind==='ddeul'){ const fl=el.querySelector('.fx-ddflower'); if(fl){ fl.classList.remove('flswing'); shakers.push([fl,'flswing']); } }   // 뜰알: 꽃이 팔랑(스윙만)
+        if(it.kind==='ddeul' || (_fx10.v2 && it.kind==='egg')){ const fl=el.querySelector('.fx-ddflower'); if(fl){ fl.classList.remove('flswing'); shakers.push([fl,'flswing']); } }   // 뜰알·v2 펫알: 꽃/새싹이 팔랑(스윙만 — 균열 재렌더 없음)
         else { el.innerHTML=tenEggSvg(it, stage); }
         el.classList.remove('shake'); shakers.push([el,'shake']); });
       void document.body.offsetWidth;   // 강제 리플로우 1회(애니 재시작용)
@@ -10005,8 +10082,8 @@
         if(it.kind==='ddeul' && (it.tier==='exclusive' || Math.random()<rbUpgradeChance(it.tier))) tenEggButterflies(el, it); });
       setTenHint('마지막 탭!'); }
     function tenClimax(){ const wrap=$('tenWrap'); if(!wrap) return; setTenHint('');
-      // 🌸 뜰알: 알이 빛나기 전에 꽃이 엄청 흔들리는 연출(단일 뜰알 climax와 동일 — 알 톡톡 떨림 + 꽃 큰 스윙). 각 알이 열릴 때 tenOpenEgg가 해제.
-      _fx10.items.forEach(function(it){ if(it.kind==='ddeul'){ const el=$('tenEgg'+it.i); if(el){ el.classList.remove('shake'); void el.offsetWidth; el.classList.add('tremble'); } } });
+      // 🌸 뜰알·v2 펫알: 알이 빛나기 전에 꽃/새싹이 엄청 흔들리는 연출(단일 climax와 동일 — 알 톡톡 떨림 + 큰 스윙). 각 알이 열릴 때 tenOpenEgg가 해제.
+      _fx10.items.forEach(function(it){ if(it.kind==='ddeul' || (_fx10.v2 && it.kind==='egg')){ const el=$('tenEgg'+it.i); if(el){ el.classList.remove('shake'); void el.offsetWidth; el.classList.add('tremble'); } } });
       const legend=tierRank('legend'), lanes={ l:[], r:[] };
       _fx10.items.forEach(function(it){ if(tierRank(it.tier)>=legend) lanes[it.side].push(it); });   // 🐾 전설↑ 아이템엔 펫 카메오가 걸어나와 톡(펫알·박스 동일 조건). 박스=가구지만 걸어오는 건 펫이라 무방.
       let maxEnd=0;
@@ -10149,13 +10226,13 @@
       saveDevCfg(c); toast('개발자 설정을 저장했어요'); closeSheet();
     }
     function resetDevGacha(){ localStorage.removeItem('catDevCfg'); toast('기본값으로 초기화'); openDevGacha(); }
-    // 연출만 미리보기(은화 소모·지급 없음)
-    function devPreview(kind, tierId, forceId){
+    // 연출만 미리보기(은화 소모·지급 없음). rainbow=true면 무지개알(구매) 오픈으로 연출(무지개 배너 미리보기용).
+    function devPreview(kind, tierId, forceId, rainbow){
       const map = isEggKind(kind)? effCatTier() : effItemTier();   // 뜰알(ddeul)도 펫알과 동일하게 펫 등급 맵 사용
       let id = forceId || Object.keys(map).find(k=>map[k]===tierId);
       if(kind==='ddeul' && tierId==='exclusive'){ const pk=(typeof LIMITED_PICKUP!=='undefined') && pickupMember(); if(pk) id=pk; }   // 한정 = 픽업 펫(삵·표범)으로 연출
       if(!id) id = isEggKind(kind) ? (Object.keys(map)[0]||'cat_mackerel') : (Object.keys(map)[0]||'cushion');
-      closeSheet(); _fx=null; runGachaFx(kind, { id, tier:tierId }, false, 0, false, true);   // 미리보기는 NEW 배지도 함께 표시
+      closeSheet(); _fx=null; runGachaFx(kind, { id, tier:tierId }, false, 0, !!rainbow, true);   // 미리보기는 NEW 배지도 함께 표시
     }
     // ---- 다마고치 테스트(개발자 전용, 즉시) ----
     function devGiveConsum(){ if(!isDev())return; gameRef().transaction(g=>{ g=normalizeGame(g); g.consum.food+=10; g.consum.water+=10; return g; }).then(r=>{ if(r&&r.committed) toast('사료·물 +10'); }); }
