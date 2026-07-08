@@ -1575,7 +1575,7 @@
     @keyframes ten-eggshake { 0%,100%{transform:translate(-50%,-50%) rotate(0)} 12%{transform:translate(calc(-50% - 12px),-50%) rotate(-16deg)} 34%{transform:translate(calc(-50% + 12px),-50%) rotate(15deg)} 56%{transform:translate(calc(-50% - 9px),-50%) rotate(-11deg)} 78%{transform:translate(calc(-50% + 6px),-50%) rotate(7deg)} }
     @keyframes ten-egghit { 0%{transform:translate(-50%,-50%) rotate(0)} 20%{transform:translate(calc(-50% + 9px),-50%) rotate(6deg)} 45%{transform:translate(calc(-50% - 7px),-50%) rotate(-5deg)} 70%{transform:translate(calc(-50% + 4px),-50%) rotate(3deg)} 100%{transform:translate(-50%,-50%) rotate(0)} }
     @keyframes ten-auraglow { 0%,100%{ opacity:.3; transform:translate(-50%,-50%) scale(.9); } 50%{ opacity:.52; transform:translate(-50%,-50%) scale(1.06); } }
-    @media (prefers-reduced-motion: reduce){ .ten-nest.drop, .ten-nest.shake, .ten-bob, .ten-bfly, .ten-bfly .bf-wing, .ten-petaura, .ten-skyrb, .ten-md-bf .bf-wing, .ten-skysun, .ten-skyshoot, .ten-ddflower.ddflw-big { animation:none; } .ten-skyrb { clip-path:none; opacity:.9; } .ten-skysun { top:20%; opacity:1; } .ten-skyshoot { left:74%; top:39%; opacity:1; } .ten-ddeulegg .fx-ddflower.ddflw-big { transform:scale(1.55); } }
+    @media (prefers-reduced-motion: reduce){ .ten-nest.drop, .ten-nest.shake, .ten-bob, .ten-bfly, .ten-bfly .bf-wing, .ten-petaura, .ten-skyrb, .ten-md-bf .bf-wing, .ten-skysun, .ten-skyshoot, .ten-skydia, .ten-skydia .td-rays, .ten-skydia .td-body, .ten-ddflower.ddflw-big { animation:none; } .ten-skyrb { clip-path:none; opacity:.9; } .ten-skysun { top:20%; opacity:1; } .ten-skydia { opacity:1; } .ten-skyshoot { left:74%; top:39%; opacity:1; } .ten-ddeulegg .fx-ddflower.ddflw-big { transform:scale(1.55); } }
     body.lite .ten-bfly, body.lite .ten-bfly .bf-wing, body.lite .ten-md-bf .bf-wing { animation:none !important; }   /* 결승 bob·오오라·균열빛은 살림(원샷 페이오프), 배경 나비 등 주변 루프만 컷 */
     /* 🔤 픽셀(도트) 텍스트 이미지 — 리빌 등급명/이름. 확대해도 안 뭉개지게 pixelated + 살짝 위아래 흔들림(가독성 유지). */
     .pxtext { display:block; margin:0 auto; image-rendering:auto; }   /* 결과 텍스트는 레티나로 그려 선명하게(도트화 안 함) */
@@ -1935,10 +1935,15 @@
     /* 🏛️ 황궁 보물창고 — 밝은 금빛 금고(라디언트 중앙 발광 + 따뜻한 금 그라디언트) */
     .pkscene.pk-treasure { background:radial-gradient(160px 100px at 50% 32%, rgba(255,246,205,.95), rgba(255,216,120,.4) 48%, transparent 76%), linear-gradient(180deg,#b07f26 0%,#d5a238 30%,#eec163 56%,#e3ad44 78%,#c68a2c 100%); }
     :root[data-theme="dark"] .pkscene.pk-treasure { background:radial-gradient(160px 100px at 50% 32%, rgba(255,238,180,.85), rgba(235,196,110,.36) 48%, transparent 76%), linear-gradient(180deg,#8a641f 0%,#a87e28 30%,#c69a44 56%,#b58836 78%,#96701f 100%); }
-    /* 💎 거대 무지개 다이아몬드(뒷배경 센터피스) — 씬 루트 직속(z0, 하늘·바닥보다 뒤). 도트 선버스트 광선(발산 펄스)+본체 부양·광휘(둥근 글로우·blur 금지 규칙 준수) */
-    .pk-treasure .pk-tdia { position:absolute; left:50%; top:34%; transform:translate(-50%,-50%); z-index:0; line-height:0; pointer-events:none; }
-    .pk-treasure .pk-tdia .td-rays { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); line-height:0; animation:pktdrays 3.6s ease-in-out infinite; }
-    .pk-treasure .pk-tdia .td-body { position:relative; display:inline-block; line-height:0; animation:pktdia 4.2s ease-in-out infinite; }
+    /* 💎 거대 무지개 다이아몬드(뒷배경 센터피스) — 씬 루트 직속(z0, 하늘·바닥보다 뒤). 도트 선버스트 광선(발산 펄스)+본체 부양·광휘(둥근 글로우·blur 금지 규칙 준수).
+       배너에서만 상시 표시(하늘 높이 — 히어로/아이템 안 가리게), reveal은 .ten-skydia(무지개 승급 조건, 제자리 스르르)로만 등장 */
+    .pk-treasure .pk-tdia { position:absolute; left:50%; top:20%; transform:translate(-50%,-50%); z-index:0; line-height:0; pointer-events:none; }
+    .pk-treasure .pk-tdia .td-rays, .ten-skydia .td-rays { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); line-height:0; animation:pktdrays 3.6s ease-in-out infinite; }
+    .pk-treasure .pk-tdia .td-body, .ten-skydia .td-body { position:relative; display:inline-block; line-height:0; animation:pktdia 4.2s ease-in-out infinite; }
+    /* 💎 리빌(1뽑·10뽑) 다이아 등장 — 노을 해(ten-skysun)와 동일 조건에서 하늘 높이 '제자리 스르르' 페이드(이동 없음, 아이템·카드 안 가림) */
+    .ten-skydia { position:absolute; left:50%; top:13%; transform:translate(-50%,-50%); z-index:1; line-height:0; pointer-events:none; opacity:0; animation:ten-diarise 1.9s ease-out .05s forwards; }
+    .ten-skydia .px { display:block; image-rendering:pixelated; }
+    @keyframes ten-diarise { 0%{ opacity:0; } 100%{ opacity:1; } }
     @keyframes pktdrays { 0%,100%{ transform:translate(-50%,-50%) scale(.92); opacity:.7; } 50%{ transform:translate(-50%,-50%) scale(1.06); opacity:1; } }
     @keyframes pktdia { 0%,100%{ transform:translateY(0); filter:brightness(1); } 50%{ transform:translateY(-4px); filter:brightness(1.16); } }
     /* 💰 금화 비 — 바깥=낙하(pk-fallleaf 패턴), 안쪽=플립+글린트(steps — 도트 코인 회전 느낌) */

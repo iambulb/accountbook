@@ -8343,12 +8343,15 @@
     //    울타리·큰돌 대신 옆에 흐르는 계곡(물고기 헤엄)+줄지은 작은 돌들, 노을빛 뜰, 나비→고추잠자리. 결정적(pkRand)·캐시.
     let _sunsetCache={};   // 키별 캐시(mode|variant) — variant 'box'=랜덤박스 배너(연못 대신 선물상자 무더기)
     let _treasureCache={};
+    // 💎 거대 무지개 다이아 2겹(광선+본체) 공용 마크업 — 배너 씬(.pk-tdia)과 리빌 등장 요소(.ten-skydia)가 공유.
+    function tDiaLayersHtml(sz){ const k=sz||1; return '<span class="td-rays">'+raysSvg('RAINBOW',{h:Math.round(150*k)})+'</span><span class="td-body">'+tDiaSvg({h:Math.round(78*k)})+'</span>'; }
     // 🏆 보물 배너 씬 — 금은보화·보석·무지개빛 금고. 중앙(히어로 박스 자리)은 비워 양옆·상하로 트레저 배치. 다층 모션(광선·보석 부유·금괴 반짝·동전 글린트·트윙클).
     function treasureSceneHtml(mode){
       mode=mode||'banner'; const ck=(_pkV2?'v2|':'')+mode; if(_treasureCache[ck]) return _treasureCache[ck];
       const reveal=mode==='reveal', sz=reveal?1.8:1, S=function(h){ return Math.max(1,Math.round(h*sz)); };
       // ─── 뒷벽/천장 — 💎 거대 무지개 다이아몬드(도트 선버스트 광선+숨쉬는 광휘, 구 무지개 오오라 대체) + 매달린 등불(불꽃) + 부유 보석 + 반짝임 ───
-      const dia='<span class="pk-tdia"><span class="td-rays">'+raysSvg('RAINBOW',{h:S(150)})+'</span><span class="td-body">'+tDiaSvg({h:S(78)})+'</span></span>';   // 씬 루트 직속(하늘 40% 클립 밖) — 하늘/바닥에 걸치는 뒷배경 센터피스
+      // 💎 배너에서만 다이아가 기본 표시. reveal(1뽑·10뽑)은 '기본 미표시'(노을 해와 동일 규칙) — 무지개 승급 조건일 때만 tenSkyRiseDia로 제자리 스르르 등장.
+      const dia=reveal?'':'<span class="pk-tdia">'+tDiaLayersHtml()+'</span>';   // 씬 루트 직속(하늘 40% 클립 밖) — 하늘/바닥에 걸치는 뒷배경 센터피스
       let sky='';
       [[15,'0'],[85,'-1.3'],[31,'-.6'],[69,'-1.9']].forEach(function(t){ sky+='<span class="pk-tlantern" style="left:'+t[0]+'%;animation-delay:'+t[1]+'s;">'+tLanternSvg({h:S(27)})+'</span>'; });   // 매달린 등불
       const TWC=['#ffe89a','#ffffff','#ffd0e6','#d6ecff','#fff0b8'];
@@ -10061,6 +10064,7 @@
           (_fx.dup?'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>+'+_fx.refund+' 은화 (중복)</span>':'')+'</div>'+
         '<button class="btn" onclick="closeFx()">확인</button>'+
         '<div class="fx-confetti">'+(conf?fxConfetti(conf):'')+'</div></div>';
+      if(boxScene && rb){ const sc=fx.querySelector('.pkscene'); if(sc) tenSkyRiseDia(sc); }   // 💎 1뽑: 무지개 승급일 때만(노을 해와 동일 조건) 다이아 스르르
       fx.className='fx on reveal';
     }
     function closeFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx=null; _devPickupOverride=null; _pkV2=false; pullEnd(); }   // _pkV2 해제 = 개발자 미리보기 v2 씬 종료(실전 뽑기에선 원래 false라 무해)
@@ -10107,6 +10111,10 @@
     // 🌅 노을(펫알) 하늘 연출 — 해가 아래에서 위로 스르르 떠오름(도트 해 M_SUN 재사용).
     function tenSkyRiseSun(wrap){ if(!wrap || wrap.querySelector('.ten-skysun')) return;
       const el=document.createElement('span'); el.className='ten-skysun'; el.innerHTML=sunSvg({h:96}); wrap.appendChild(el); }
+    // 💎 보물(랜덤박스) 하늘 연출 — 거대 무지개 다이아가 하늘 높은 곳에서 '제자리 스르르' 페이드 등장(이동 없음).
+    //    노을 해(tenSkyRiseSun)와 동일 조건·동일 시점(무지개 승급 아이템이 있을 때만, 1뽑=fxReveal·10뽑=tenTap2)에서 호출.
+    function tenSkyRiseDia(wrap){ if(!wrap || wrap.querySelector('.ten-skydia')) return;
+      const el=document.createElement('span'); el.className='ten-skydia'; el.innerHTML=tDiaLayersHtml(1.55); wrap.appendChild(el); }
     // 🌠 밤(무지개) 하늘 연출 — 큰 무지개 별똥별이 좌측상단→우측하단으로 무지개빛 내며 떨어짐.
     function tenSkyShoot(wrap){ if(!wrap || wrap.querySelector('.ten-skyshoot')) return;
       const el=document.createElement('span'); el.className='ten-skyshoot'; el.innerHTML=shootStarSvg({h:82}); wrap.appendChild(el); }
@@ -10290,6 +10298,8 @@
       if(_fx10.skyRainbow) tenSkyFx($('tenWrap'));
       // 🌅 노을(펫알·박스) 하늘 해는 '기본 미표시'(사용자 지침) — 무지개 조건(rbUpgradeChance→it.rainbow) 펫이 하나라도 있으면 그때만 위로 스르르 떠올라 유지.
       if(_fx10.theme==='sunset' && _fx10.items.some(function(it){ return (it.kind==='egg'||it.kind==='box') && it.rainbow; })) tenSkyRiseSun($('tenWrap'));
+      // 💎 보물(랜덤박스) 테마: 노을 해와 동일 조건(무지개 승급 있을 때만) → 거대 다이아가 제자리 스르르 등장
+      if(_fx10.theme==='treasure' && _fx10.items.some(function(it){ return (it.kind==='egg'||it.kind==='box') && it.rainbow; })) tenSkyRiseDia($('tenWrap'));
       // 알 주변: 뜰알=나비, 펫알·박스=낙엽(단풍잎). 조건 동일(무지개 승급 시). tenEggButterflies가 sunset 테마면 단풍잎을 그린다.
       _fx10.items.forEach(function(it){ const el=$('tenEgg'+it.i); if(!el) return;
         if((it.kind==='egg'||it.kind==='box') && it.rainbow && !liteMode()){ const s=document.createElement('span'); s.className='ten-eggfx'; s.innerHTML=fxSparkles(6); el.appendChild(s); tenEggButterflies(el, it); }   // 무지개 승급 반짝임 + 낙엽(sunset 테마)
