@@ -7920,7 +7920,7 @@
     function boxBannerHtml(live){
       // 🎨 v2(개발자 미리보기): 무지개 오오라 + 박스 크기=뜰알 배너 메인 아이콘과 동일(52) (사용자 지침). 라이브(v1)는 노을 오오라·기존 크기 유지.
       const fx=_pkV2?gbRainbowFx():gbSunsetFx(), cls=_pkV2?'gb-rb gb-eglow':'gb-rb gb-sun', bh=_pkV2?52:54;
-      return '<div class="gbanner gb-box gb-eggbn"><div class="gb-head"><b class="gb-t gb-sunset-t">🎁 랜덤박스 · 노을</b><span class="pk-tag">방을 꾸미는 가구·바닥·벽지</span></div>'+
+      return '<div class="gbanner gb-box gb-eggbn"><div class="gb-head"><b class="gb-t gb-sunset-t">🎁 랜덤박스 · 금은보화</b><span class="pk-tag">방을 꾸미는 가구·바닥·벽지</span></div>'+
         '<div class="gb-scene">'+(_pkV2?treasureSceneHtml('banner'):sunsetSceneHtml('banner','box'))+gbCenterHtml(boxSvg({h:bh}), fx, cls)+'</div>'+
         // 🎁 배너 이미지 아래 — 랜덤박스 이미지·설명·소모재화
         '<div class="gb-item"><div class="gb-item-ic">'+boxSvg({h:52})+'</div>'+
