@@ -80,6 +80,22 @@ def accordion(im, y0, y1, dd):
         for y in range(h): dst[x,y] = new[y]
     return out
 
+def shear_up(im, x0, x1, total):
+    """픽셀 시어(정수 열 시프트) = 회전 근사 기울기: x0→x1로 갈수록 열을 위로
+    (total<0이면 아래로) 옮긴다. 도약(앞몸 들림)·착지(앞몸 낮춤) 기울기용 —
+    열 전체가 통째로 움직여 구멍이 생기지 않는다."""
+    if total == 0: return im.copy()
+    w,h = im.size; out = Image.new('RGBA',(w,h),(0,0,0,0))
+    src = im.load(); dst = out.load()
+    for x in range(w):
+        t = 0 if x <= x0 else (total if x >= x1 else round(total*(x-x0)/(x1-x0)))
+        for y in range(h):
+            c = src[x,y]
+            if c[3]==0: continue
+            ny = y - t
+            if 0 <= ny < h: dst[x,ny] = c
+    return out
+
 def move_mask(im, box, dx, dy):
     """box 안 불투명 픽셀(실루엣 마스크)만 (dx,dy) 이동. 빈 자리는 투명
     (부위가 '움직인' 것) — 이음새는 outline_repair로 재처리."""
@@ -141,23 +157,20 @@ M_MOUTH_SMALL = [   # x53, y48  살짝 벌림(씹기/랩핑 기본)
  'ODDDDO',
  '.KKKK.',
 ]
-M_MOUTH_MID = [     # x52, y47  중간 개구(하품 진행)
- '.OddddO.',
- 'OdDDDDdO',
- 'OdDPPDdO',
- 'OdDDDDdO',
- '.ODDDDO.',
- '..KKKK..',
+M_MOUTH_MID = [     # x53, y47  중간 개구(하품 진행) — 개구 폭≤머즐 2/3 규칙
+ '.OddO.',
+ 'OdDDdO',
+ 'OdPPdO',
+ '.OddO.',
+ '..KK..',
 ]
-M_MOUTH_WIDE = [    # x51, y46  최대 개구(하품 정점) — 혀 내밈
- '..OOddOO..',
- '.OddddddO.',
- 'OdDDDDDDdO',
- 'OdDDDDDDdO',
- 'OdDPPPPDdO',
- '.OPPPPPPO.',
- '..OPPPPO..',
- '...KKKK...',
+M_MOUTH_WIDE = [    # x52, y47  최대 개구(하품 정점) — 혀 내밈. 코(y45~46)는 유지
+ '.OOddOO.',
+ 'OddddddO',
+ 'OdDDDDdO',
+ 'OdPPPPdO',
+ '.OPPPPO.',
+ '..KKKK..',
 ]
 M_TONGUE_DOWN = [   # x54, y50  혀 내려 수면 터치(drink)
  'PPP',
@@ -168,40 +181,45 @@ M_TONGUE_CURL = [   # x54, y49  혀 말아 올림(drink)
  'PPP',
 ]
 
-# ── lick: 왼 앞다리 들어 핥기 — 다리 소거+사타구니 재드로잉, 팔은 어깨에서
-#    이어지는 ㄱ자 림(limb)으로 새로 그림. 좌표계 x0=44. 오른다리 x56+ 유지.
-M_LEG_CLEAR = [     # x0=44, y0=69: 왼 다리·발 소거 + 배 아래 음영/밑선 아치
- '.....sBBBsXX..',   # y69  다리 뿌리었던 곳 → 사타구니(몸색+음영)
+# ── lick: 왼 앞다리 들어 핥기 — "림 들기 규칙"(pet-motion-guide §3):
+#    ① 비워진 자리는 투명(흰 구멍)이 아니라 뒤에 가려져 있던 부위(배·뒷발)를 재드로잉
+#    ② 든 림은 2세그먼트 ㄱ자 — 전완은 수직(가슴에 붙임), 팔꿈치는 몸 옆에서 1px 벌어짐
+#    ③ 발끝은 턱 밑 1~2px, 발바닥 패드는 얼굴 쪽. 좌표계 x0=44. 오른다리 x56+ 유지.
+M_LEG_CLEAR = [     # x0=44, y0=69: 왼 앞다리 소거 → 배(위) + 그늘 + 뒷발(아래) 재드로잉
+ '.....sBBBs.X..',   # y69  다리 뿌리었던 곳 → 사타구니(몸색+음영)
  '.....sBBBsX...',   # y70
- '.....OsBsOX...',   # y71
- '.....XOOOX....',   # y72  배 밑 외곽선(아치)
- '.....XXXXX....',   # y73  이하 빈 공간(발 들었음)
- '.....XXXXXX...',   # y74
- '.....XXXXXX...',   # y75
- '.....XXXXXX...',   # y76
- '.....XXXXXX...',   # y77
+ '.....SsBsOX...',   # y71
+ '.....OSsSOX...',   # y72  배 밑 그늘(뒷발 위 recess)
+ '....OtbBbOX...',   # y73  뒷다리 앞면 등장
+ '....ObcccO....',   # y74  뒷발(그늘진 크림 — 앞발보다 어둡게)
+ '....OcCCcO....',   # y75
+ '....OcvCvO....',   # y76  발가락 음영
+ '.....KOOO.....',   # y77  뒷발 바닥 외곽선(접지선 y77 유지)
 ]
-M_ARM_HI = [        # x0=44, y0=53: 발끝이 턱 밑(핥기), 팔꿈치는 왼쪽 아래 몸에 연결
- '.....OCCCO...',   # y53  발끝(크림 발가락)
- '....OCvCvCO..',   # y54
- '....OCvCCO...',   # y55
- '....OBsBBO...',   # y56  발목
- '....OBsBO....',   # y57
- '...OBsBBO....',   # y58  전완(안→밖 대각)
- '...OBsBO.....',   # y59
- '..OBsBBO.....',   # y60
- '..ObBBO......',   # y61  팔꿈치
- '..OBBBO......',   # y62  어깨/몸 이음(하운치 위)
- '...OBBO......',   # y63
+M_ARM_HI = [        # x0=44, y0=53: 발끝이 턱 밑(핥기). 전완 수직·팔꿈치 y62~63
+ '.....OCCO....',   # y53  발끝(크림 발가락, 턱 바로 밑)
+ '....OCvCCO...',   # y54  발바닥 패드는 얼굴 쪽
+ '....OCvCO....',   # y55
+ '....OBsBO....',   # y56  발목
+ '....OBsBO....',   # y57  전완(수직, 가슴 앞)
+ '....OBsBO....',   # y58
+ '....OBsBO....',   # y59
+ '....OBsBO....',   # y60
+ '....ObsBO....',   # y61
+ '...OBbsBO....',   # y62  팔꿈치(몸 옆으로 1px)
+ '...OBBBO.....',   # y63
+ '....OBBO.....',   # y64  상완→어깨 이음(몸에 흡수)
+ '.....OBO.....',   # y65
 ]
-M_ARM_LO = [        # x0=44, y0=61: 발 가슴 앞(전이 프레임), 짧은 팔
- '....OCCCO....',   # y61  발끝
- '...OCvCCO....',   # y62
- '...OCvCO.....',   # y63
- '...OBsBO.....',   # y64
- '..OBsBBO.....',   # y65
- '..ObBBO......',   # y66  팔꿈치→몸 이음
- '..OBBO.......',   # y67
+M_ARM_LO = [        # x0=44, y0=61: 발 가슴 앞(전이 프레임), 짧은 수직 전완
+ '.....OCCO....',   # y61  발끝
+ '....OCvCCO...',   # y62
+ '....OCvCO....',   # y63
+ '....OBsBO....',   # y64  발목
+ '....ObsBO....',   # y65
+ '...OBbsBO....',   # y66  팔꿈치
+ '...OBBBO.....',   # y67
+ '....OBBO.....',   # y68  어깨 이음
 ]
 
 # ─────────────────────────────────────────────────────────────────────────
@@ -258,8 +276,8 @@ def m_yawn(frames, stills, fw):
     for dd,mo,ec in plan:
         f = accordion(s, NECK[0], NECK[1], dd)   # dd>0 = 머리 젖힘(위로)
         if mo=='small': stamp(f, 53,48, M_MOUTH_SMALL, dy=-dd)
-        elif mo=='mid': stamp(f, 52,47, M_MOUTH_MID, dy=-dd)
-        elif mo=='wide': stamp(f, 51,46, M_MOUTH_WIDE, dy=-dd)
+        elif mo=='mid': stamp(f, 53,47, M_MOUTH_MID, dy=-dd)
+        elif mo=='wide': stamp(f, 52,47, M_MOUTH_WIDE, dy=-dd)
         if ec: eyes_closed(f, dy=-dd)
         out.append(snap(f))
     return out
@@ -294,18 +312,21 @@ def m_run(frames, stills, fw):
     return [snap(accordion(f, LEGS_E[0], LEGS_E[1], bob[i])) for i,f in enumerate(frames)]
 
 def m_jump(frames, stills, fw):
-    """제자리 점프(once): 웅크림(2f)→도약(신전)→체공(다리 모아 전체 상승)→착지 스쿼시→기준."""
-    e = stills['east']; fwpx = e.size[0]
+    """제자리 점프(once) — 포물선 아크 + 몸 기울기(픽셀 시어)로 도약 디테일:
+    웅크림 → 앞몸 들어 도약(뒷발 접지·코 위로) → 체공 최고점(다리 모음·코 위)
+    → 하강(코 아래로) → 착지(앞발 먼저 닿고 엉덩이 들림+스쿼시) → 기준.
+    east 머리=오른쪽: shear_up(20,80,+n)=앞몸 n px 상승."""
+    e = stills['east']
     def lift(im, dy):
         g = Image.new('RGBA', im.size, (0,0,0,0))
         g.alpha_composite(im, (0,dy))
         return g
-    f0 = accordion(e, LEGS_E[0], LEGS_E[1], -3)
-    f1 = accordion(e, LEGS_E[0], LEGS_E[1], -5)
-    f2 = accordion(e, LEGS_E[0], LEGS_E[1], 3)
-    f3 = lift(accordion(e, LEGS_E[0], LEGS_E[1], -3), -9)
-    f4 = accordion(e, LEGS_E[0], LEGS_E[1], -4)
-    f5 = e.copy()
+    f0 = accordion(e, LEGS_E[0], LEGS_E[1], -5)                    # 웅크림(anticipation)
+    f1 = shear_up(accordion(e, LEGS_E[0], LEGS_E[1], 2), 40,80, 5)  # 도약: 뒷발 접지(x≤40 고정), 앞몸 5px 들림
+    f2 = shear_up(lift(accordion(e, LEGS_E[0], LEGS_E[1], -4), -9), 20,80, 2)   # 체공 최고점: 다리 모음·코 위
+    f3 = shear_up(lift(accordion(e, LEGS_E[0], LEGS_E[1], -4), -6), 20,80, -2)  # 하강: 코 아래로
+    f4 = shear_up(lift(accordion(e, LEGS_E[0], LEGS_E[1], -3), -3), 30,66, -3)  # 착지: 앞발 접지(x≥66 풀시프트)·엉덩이 들림
+    f5 = e.copy()                                                   # 기준(hold 대상)
     return [snap(f) for f in (f0,f1,f2,f3,f4,f5)]
 
 BUILDERS = {'idle':m_idle,'sit':m_sit,'belly':m_belly,'eat':m_eat,'drink':m_drink,
