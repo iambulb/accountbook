@@ -3459,10 +3459,7 @@
     function bgfxOverlayHtml(id){ if(!id) return ''; const lite=liteMode(); const N=k=>Math.max(3,Math.round(k*(lite?0.6:1))); let s='';
       // 🧭 균일 분포 + 원근(사용자 지침): 캠 전체를 지터드 그리드로 나눠 한 칸에 하나씩(간격 확보) 배치하고,
       //    세로 밴드로 깊이를 준다 — 뒤(위)일수록 높은 bottom%·작게, 앞(아래)일수록 낮은 bottom%·크게. DOM 순서=뒤→앞이라 앞이 위로 그려짐.
-      function slots(n, seed){ const cols=Math.max(2,Math.round(Math.sqrt(n*1.7))), rows=Math.max(1,Math.ceil(n/cols)), a=[];
-        for(let i=0;i<n;i++){ const cx=i%cols, cy=(i/cols)|0, jx=pkRand(i,seed), jy=pkRand(i,seed+1);
-          const x=((cx+0.18+jx*0.64)/cols)*100, yy=(rows<=1?0.5:(cy+0.16+jy*0.68)/rows);   // yy: 0=뒤/위 … 1=앞/아래
-          a.push({x:+x.toFixed(1), yy:yy}); } return a; }
+      const slots=(n,seed)=>pkSlots(n,seed);   // 공용 지터드 그리드(pkSlots) 사용
       const persB=yy=>(13+(1-yy)*72).toFixed(1);   // 원근 세로: 뒤(위)=높은 bottom%, 앞(아래)=낮은 bottom%(컴 전체 13~85%)
       const persS=yy=>(0.66+yy*0.62);               // 원근 크기: 앞일수록 크게
       function bfly(n, tints){ const P=slots(n,110); for(let i=0;i<n;i++){ const o=P[i], hh=Math.round((12+pkRand(i,13)*5)*persS(o.yy)), dur=(6+pkRand(i,14)*5).toFixed(1), fd=(0.30+pkRand(i,15)*0.26).toFixed(2), del=(-pkRand(i,16)*8).toFixed(2); let _s=20; const rnd=()=>pkRand(i,_s++);
@@ -7878,6 +7875,10 @@
     function pickupExists(id){ return !!id && PET_CATALOG.some(c=>c.id===id); }
     // 결정적 의사난수(0~1) — 인덱스·시드로 매 렌더 동일한 "랜덤 배치"(Math.random은 재렌더마다 튀어 금지).
     function pkRand(i,s){ const x=Math.sin((i+1)*12.9898+s*4.1414)*43758.5453; return x-Math.floor(x); }
+    // 🧭 균일 분포용 지터드 그리드(배경효과·픽업배너 공용): 칸마다 하나씩(가로·세로 균일 + 간격)으로 뭉침 방지. 원근은 호출부가 yy(0=뒤/위 … 1=앞/아래)로 bottom%·크기 매핑. 결정적(pkRand)이라 캐시 안전.
+    function pkSlots(n, seed){ const cols=Math.max(2,Math.round(Math.sqrt(n*1.7))), rows=Math.max(1,Math.ceil(n/cols)), a=[];
+      for(let i=0;i<n;i++){ const cx=i%cols, cy=(i/cols)|0, jx=pkRand(i,seed), jy=pkRand(i,seed+1);
+        a.push({ x:+(((cx+0.18+jx*0.64)/cols)*100).toFixed(1), yy:(rows<=1?0.5:(cy+0.16+jy*0.68)/rows) }); } return a; }
     // 가챠 탭 상단 한정 픽업 배너 — 하늘(흐르는 구름 다수)+넓고 연한 무지개(1초 뒤 사르르)+뜰(흙·풀·꽃·원근 나무를 필드 전체에 원근 분포, 바람에 살랑) 가운데 로그인 알, 픽업 펫 둘은 캠 엔진(#pkStage)으로 걸어와 자유 배회.
     //  · 깊이 d(0=앞·크게·아래 ~ 1=뒤·작게·위): bottom%=d*범위, 크기=1-d*0.5. 나무는 뒤쪽(d 큼)만 → 펫 안 가림+하늘 안 침범.
     let _pkSceneCache={};   // 픽업 씬 메모 — 씬은 pkRand(결정적 시드)+상수 LIMITED_PICKUP에만 의존해 완전 결정적. (mode,픽업펫)로 1회만 생성하고, RTDB 틱마다 _sheetRefresh가 255KB/~4천 rect를 재생성하던 것을 제거. 픽업펫이 바뀌면 키가 달라져 자동 무효화.
@@ -7924,11 +7925,11 @@
       let fence=''; [0.1,0.42,0.74].forEach(function(d){ const l=(10+d*9).toFixed(1);
         fence+='<span class="pk-fence" style="left:'+l+'%;bottom:'+(d*53).toFixed(1)+'%;z-index:1;">'+fenceSvg({h:S(Math.max(8,Math.round(20*depthScale(d))))})+'</span>'; });
       // 🦋 나비 5마리 — 섹터로 고르게(쏠림 없이 간격)·각자 제각각 팔랑(방향·경로 다름). 결정적 pkRand(재렌더 안정, 캐시)
-      let bflies=''; const BFT=['o','b','p','y','o'];
-      for(let i=0;i<5;i++){ const l=(9+((i+0.5)/5)*82 + (pkRand(i,61)-0.5)*7).toFixed(1), b=(24+pkRand(i,62)*50).toFixed(1),
-        hh=S(Math.round(9+pkRand(i,63)*4)), dur=(6.5+pkRand(i,64)*5).toFixed(1), del=(-pkRand(i,65)*8).toFixed(2), fdur=(0.32+pkRand(i,66)*0.24).toFixed(2);
+      let bflies=''; const BFT=['o','b','p','y','o']; { const P=pkSlots(5,610);   // 🦋 나비 5 — 그리드로 캠 전체 고루·간격 + 세로밴드 원근(뒤=위·작게, 앞=아래·크게)
+      for(let i=0;i<5;i++){ const o=P[i], b=(22+(1-o.yy)*50).toFixed(1),
+        hh=S(Math.round((9+pkRand(i,63)*3)*(0.70+o.yy*0.58))), dur=(6.5+pkRand(i,64)*5).toFixed(1), del=(-pkRand(i,65)*8).toFixed(2), fdur=(0.32+pkRand(i,66)*0.24).toFixed(2);
         let _s=80; const rnd=function(){ return pkRand(i,_s++); };
-        bflies+='<span class="pk-bfly" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;--fd:'+fdur+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="bf-wing">'+butterflySvg(BFT[i],{h:hh})+'</span></span>'; }
+        bflies+='<span class="pk-bfly" style="left:'+o.x+'%;bottom:'+b+'%;--d:'+dur+'s;--fd:'+fdur+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="bf-wing">'+butterflySvg(BFT[i],{h:hh})+'</span></span>'; } }
       // 🌑 깊이 그림자(펫 발밑, 액터 scale 그대로라 앞=크게·뒤=작게) — .cd-shadow는 배너(pkstage)에서만 보임(CSS). --pad(발밑 여백)로 발끝에 정렬.
       const actor=(id,lx)=> pickupExists(id) ? '<div class="cd-actor" data-cat="'+id+'" data-hh="'+H+'" style="left:'+lx+'px;"><span class="cd-shadow">'+shadowSvg({h:9})+'</span>'+catActorHTML(id,H)+'</div>' : '';
       // 🪨 중간 바위(겹침 큐, z=펫과 같은 12-depth*11 → 그보다 뒤 펫은 바위 뒤로 가려짐) + 🌿 전경 프레이밍(맨 앞 큰 풀·꽃, z 최상). 무대(pkstage) 안에 둠.
@@ -8013,13 +8014,13 @@
       let hills=''; const HX=[16,50,84], HH=[26,20,24]; for(let i=0;i<3;i++){
         hills+='<span class="pk-hill" style="left:'+HX[i]+'%;bottom:-2px;z-index:0;">'+hillSvg(HILL_SUNSET,{h:S(HH[i])})+'</span>'; }
       // 🍁 고추잠자리(나비 대신) — 갯수 줄임(6→3)
-      let dflies=''; for(let i=0;i<3;i++){ const l=(14+((i+0.5)/3)*70+(pkRand(i,61)-0.5)*7).toFixed(1), b=(28+pkRand(i,62)*44).toFixed(1),
-        hh=Math.round(11+pkRand(i,63)*5), dur=(6.5+pkRand(i,64)*5).toFixed(1), del=(-pkRand(i,65)*8).toFixed(2);
+      let dflies=''; { const P=pkSlots(3,640); for(let i=0;i<3;i++){ const o=P[i], b=(26+(1-o.yy)*44).toFixed(1),   // 🍁 고추잠자리 3 — 그리드 균일+원근
+        hh=Math.round((10+pkRand(i,63)*4)*(0.72+o.yy*0.55)), dur=(6.5+pkRand(i,64)*5).toFixed(1), del=(-pkRand(i,65)*8).toFixed(2);
         let _s=90; const rnd=function(){ return pkRand(i,_s++); };
-        dflies+='<span class="pk-dfly" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="df-body">'+dragonflySvg({h:S(hh)})+'</span></span>'; }
+        dflies+='<span class="pk-dfly" style="left:'+o.x+'%;bottom:'+b+'%;--d:'+dur+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="df-body">'+dragonflySvg({h:S(hh)})+'</span></span>'; } }
       // 🍁 살랑살랑 내려오는 단풍잎 — 위에서 떨어지며 좌우로 흔들림(제각각 위치·속도·회전)
-      let leaves=''; const LN=7; for(let i=0;i<LN;i++){ const l=(6+pkRand(i,201)*88).toFixed(1), dur=(7+pkRand(i,202)*6).toFixed(1),
-        del=(-pkRand(i,203)*10).toFixed(2), sw=(2.4+pkRand(i,204)*1.6).toFixed(1), hh=Math.round(9+pkRand(i,205)*5), dir=(pkRand(i,206)<0.5?-1:1);
+      let leaves=''; const LN=8; for(let i=0;i<LN;i++){ const l=((i+0.5)/LN*90+5+(pkRand(i,201)-0.5)*(80/LN)).toFixed(1), d=pkRand(i,208), dur=(7+d*6).toFixed(1),   // 🍁 낙엽 — 가로 n열 균일 + 깊이별 크기·낙하속도(뒤=작고 느림)
+        del=(-pkRand(i,203)*10).toFixed(2), sw=(2.4+pkRand(i,204)*1.6).toFixed(1), hh=Math.round((9+pkRand(i,205)*5)*(0.72+(1-d)*0.5)), dir=(pkRand(i,206)<0.5?-1:1);
         leaves+='<span class="pk-fallleaf" style="left:'+l+'%;--d:'+dur+'s;--sw:'+sw+'s;--dir:'+dir+';animation-delay:'+del+'s;"><span class="fl-in">'+mapleLeafSvg({h:S(hh)}, LEAF_COLS[Math.floor(pkRand(i,207)*LEAF_COLS.length)])+'</span></span>'; }
       // ☀️ 배너에서만 지는 해가 기본으로 떠오름. reveal(10연차)은 '기본 미표시'(사용자 지침) — 무지개 조건일 때만 tenSkyRiseSun으로 띄운다.
       const risesun = reveal ? '' : ('<span class="pk-risesun">'+sunSvg({h:S(64)})+'</span>');
@@ -8060,10 +8061,10 @@
         soil+='<span class="pk-soil" style="left:'+l+'%;bottom:'+bot+'%;width:'+w+'px"></span>'; }
       let stones=''; for(let i=0;i<6;i++){ const d=pkRand(i,171)*0.6, l=(10+pkRand(i,172)*80).toFixed(1), sc=1-d*0.4, bot=(d*66).toFixed(1);
         stones+='<span class="pk-stone" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+nightStoneSvg({h:S(Math.max(6,Math.round(11*sc)))})+'</span>'; }
-      let fires=''; for(let i=0;i<pkCount(18);i++){ const l=(6+pkRand(i,181)*88).toFixed(1), b=(14+pkRand(i,182)*62).toFixed(1),
-        hh=Math.round(8+pkRand(i,183)*6), dur=(6+pkRand(i,184)*6).toFixed(1), del=(-pkRand(i,185)*8).toFixed(2), bd=(0.9+pkRand(i,186)*1.6).toFixed(2);
+      let fires=''; { const NFI=pkCount(18), P=pkSlots(NFI,170); for(let i=0;i<NFI;i++){ const o=P[i], b=(13+(1-o.yy)*63).toFixed(1),   // ✨ 반딧불 — 그리드 균일+원근(캠 전체)
+        hh=Math.round((8+pkRand(i,183)*4)*(0.70+o.yy*0.56)), dur=(6+pkRand(i,184)*6).toFixed(1), del=(-pkRand(i,185)*8).toFixed(2), bd=(0.9+pkRand(i,186)*1.6).toFixed(2);
         let _s=190; const rnd=function(){ return pkRand(i,_s++); };
-        fires+='<span class="pk-fire" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;--bd:'+bd+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="ff-core">'+fireflySvg({h:S(hh)})+'</span></span>'; }
+        fires+='<span class="pk-fire" style="left:'+o.x+'%;bottom:'+b+'%;--d:'+dur+'s;--bd:'+bd+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="ff-core">'+fireflySvg({h:S(hh)})+'</span></span>'; } }
       // ⛰️ 아이콘 뒤 빈 하늘 채우기 — 지평선 먼 언덕(짙은 청록)
       let hills=''; const HX=[18,50,82], HH=[26,24,28]; for(let i=0;i<3;i++){
         hills+='<span class="pk-hill" style="left:'+HX[i]+'%;bottom:-2px;z-index:0;">'+hillSvg(HILL_NIGHT,{h:S(HH[i])})+'</span>'; }
@@ -9662,12 +9663,12 @@
         const tr=night?(i%2?nightPineSvg({h:sp}):nightTreeSvg({h:sp})):mapleSvg({h:sp});
         h+='<span class="ten-md ten-md-tr" style="left:'+l+'%;bottom:'+b+'%">'+tr+'</span>'; }
       // ✨ 날아다니는 요소 — 밤=반딧불·가을=고추잠자리 (중경 공중 채움, 드리프트)
-      if(!lite) for(let i=0;i<7;i++){ const l=(8+pkRand(i,41)*84).toFixed(1), b=(24+pkRand(i,42)*34).toFixed(1), sp=Math.round(10+pkRand(i,43)*4),
+      if(!lite){ const P=pkSlots(7,470); for(let i=0;i<7;i++){ const o=P[i], l=o.x, b=(22+(1-o.yy)*36).toFixed(1), sp=Math.round((9+pkRand(i,43)*3)*(0.72+o.yy*0.5)),   // ✨ 반딧불/잠자리 — 그리드 균일+원근
         dur=(6+pkRand(i,44)*5).toFixed(1), del=(-pkRand(i,46)*7).toFixed(2); let _s=70; const rnd=function(){ return pkRand(i,_s++); };
         if(night) h+='<span class="pk-fire" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;--bd:'+(1+pkRand(i,45)*1.4).toFixed(2)+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="ff-core">'+fireflySvg({h:sp})+'</span></span>';
-        else h+='<span class="pk-dfly" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="df-body">'+dragonflySvg({h:sp})+'</span></span>'; }
+        else h+='<span class="pk-dfly" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="df-body">'+dragonflySvg({h:sp})+'</span></span>'; } }
       // 🍁 가을: 살랑 내려오는 단풍잎 몇 장 더
-      if(!lite && !night) for(let i=0;i<5;i++){ const l=(8+pkRand(i,81)*84).toFixed(1), dur=(7+pkRand(i,82)*5).toFixed(1), del=(-pkRand(i,83)*9).toFixed(2), sw=(2.4+pkRand(i,84)*1.5).toFixed(1), sp=Math.round(9+pkRand(i,85)*4), dir=(pkRand(i,86)<0.5?-1:1);
+      if(!lite && !night) for(let i=0;i<6;i++){ const l=((i+0.5)/6*88+6+(pkRand(i,81)-0.5)*(80/6)).toFixed(1), d=pkRand(i,88), dur=(7+d*5).toFixed(1), del=(-pkRand(i,83)*9).toFixed(2), sw=(2.4+pkRand(i,84)*1.5).toFixed(1), sp=Math.round((9+pkRand(i,85)*4)*(0.72+(1-d)*0.5)), dir=(pkRand(i,86)<0.5?-1:1);
         h+='<span class="pk-fallleaf" style="left:'+l+'%;--d:'+dur+'s;--sw:'+sw+'s;--dir:'+dir+';animation-delay:'+del+'s;"><span class="fl-in">'+mapleLeafSvg({h:sp}, LEAF_COLS[Math.floor(pkRand(i,87)*LEAF_COLS.length)])+'</span></span>'; }
       return '<div class="ten-meadow'+(night?' ten-mnight':'')+'" aria-hidden="true">'+h+'</div>';
     }
