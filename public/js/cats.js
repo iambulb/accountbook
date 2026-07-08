@@ -285,60 +285,52 @@
     // 팔레트: X=진한 목재·P/H=기둥 목재·W/C/L=카펫(기본/음영/하이라이트)·R/S=시살 밧줄·T/O=장난감 공·K=끈.
     const M_TOWER = [
       "................",
-      ".....LCCCCL.....",
-      "....CWWWWWWC....",
-      "....CWWWWWWC....",
-      "....XCCCCCCX....",
-      "...LLLLLLLLLL...",
-      "..WWWWWWWWWWWK..",
-      "..CCCCCCCCCCCK..",
-      "...XXXXXXXXXXK..",
-      "......SSSS...K..",
-      "......SRRS..OOT.",
-      "....LLLLLLLLTTT.",
-      "...WWWWWWWWWW...",
-      "...WWWWWWWWWW...",
-      "...CCCCCCCCCC...",
-      "....XXXXXXXX....",
-      "......SSSS......",
-      "......SRRS......",
-      "......SSSS......",
-      "......SRRS......",
-      "..LLLLLLLLLLLL..",
-      ".WWWWWWWWWWWWWW.",
-      ".WWWWWWWWWWWWWW.",
-      ".CCCCCCCCCCCCCC.",
-      "..XXXXXXXXXXXX..",
-      "......XPHX......",
-      "......XPHX......",
-      ".HHHHHHHHHHHHHH.",
-      ".XXXXXXXXXXXXXX.",
-      "..XXX......XXX.."
+      ".....K..........",
+      ".....K..........",
+      ".....T..........",
+      "....TOT.........",
+      "....TOT.........",
+      "....TTT.........",
+      "..LLLLLLLL......",
+      ".LWWWWWWWWL.....",
+      ".LWHWHWHWWL.....",
+      ".LRRRRRRRRL.....",
+      "....XPX.........",
+      "....XPX.........",
+      "..LLLLLLLLLL....",
+      ".LWHWHWHWHWWL...",
+      ".LSSSSSSSSSSL...",
+      ".LRRRRRRRRRRL...",
+      "....XPX.........",
+      "....XPX.........",
+      "LLLLLLLLLLLLLL..",
+      "LWHWHWHWHWHWWL..",
+      "LRRRRRRRRRRRRL..",
+      "LWWWWWWWWWWWWL..",
+      "xXPXXXXXXXXPXx..",
+      ".xXX......XXx...",
     ];
     // 스크래처(1×1) — 캣타워처럼 디테일하게: 카펫 캡 + 시살(밧줄) 감은 기둥(S 밝은 밧줄/R 홈 교대) + 매달린 장난감 공(O) + 발 달린 카펫 베이스. 14×22 → 가로세로비 ≈0.636.
     const M_SCRATCHER = [
-      "....LWWWWL....",
-      "...XWWWWWWX...",
-      "...XCCCCCCX...",
-      "....XSSSSXT...",
-      "....XRRRRX.T..",
-      "....XSSSSXHOO.",
-      "....XRRRRXOOO.",
-      "....XSSSSX.OO.",
-      "....XRRRRX....",
-      "....XSSSSX....",
-      "....XRRRRX....",
-      "....XSSSSX....",
-      "....XRRRRX....",
-      "....XSSSSX....",
-      "....XRRRRX....",
-      "....XSSSSX....",
-      "..LLLLLLLLLL..",
-      ".XWWWWWWWWWWX.",
-      ".XWWWWWWWWWWX.",
-      ".XCCCCCCCCCCX.",
-      ".XXXXXXXXXXXX.",
-      "..XX......XX.."
+      "................",
+      ".......K........",
+      ".......T........",
+      "......THT.......",
+      "......TOT.......",
+      "......TTT.......",
+      ".....RSSR.......",
+      ".....RSSR.......",
+      ".....SWWS.......",
+      ".....SCCS.......",
+      ".....SWWS.......",
+      ".....SCCS.......",
+      ".....SWWS.......",
+      ".....SCCS.......",
+      "....RSWWSR......",
+      "...LLLLLLLL.....",
+      "..LWWWWWWWWL....",
+      "..LRRRRRRRRL....",
+      "..xXXXXXXXXx....",
     ];
     // 펫하우스(2×2): 박공 지붕(R 지붕·r 기와줄)+ 통나무 벽(W/w 널결)+ 정면 출입구(D=어두운 실내). 출입구 안 앞에 펫이 앉아 정면(south)을 봄. 22×20 → 가로세로비 1.1.
     // 펫하우스(개집) — 사다리꼴(윗변 짧고 밑변 넓은) 지붕 + 처마 돌출 + 아치형 문. 22×21, 가로세로비 ≈1.05.
@@ -366,30 +358,26 @@
     // 캣휠(러닝휠): 러닝 트랙 링(X=림·W=밴드·H=하이라이트·T=러닝 발판(rung)) + 가운데 축(허브) + 롤러(R)·나무 스탠드(D). 캠에선 링 전체가 제자리 회전.
     // 맨 위 1줄 여백(윗부분 잘려 보이지 않게). 24×24, 가로세로비 1.0. 회전 중심 ≈ (47.9%, 43.75%).
     const M_CATWHEEL = [
-      "........................",
-      "...........XX...........",
-      "........XXXHHXXX........",
-      "......XXTTHHHHTTXX......",
-      ".....XHHHXXXXXXHHWX.....",
-      "....XWHXX......XXWWX....",
-      "....XWXX........XXWX....",
-      "...XTWX..........XWTX...",
-      "...XTX............XTX...",
-      "...XWX.....XX.....XWX...",
-      "..XWWX....XWWX....XWWX..",
-      "..XWWX....XWWX....XWWX..",
-      "...XWX.....XX.....XWX...",
-      "...XTX............XTX...",
-      "...XTWX..........XWTX...",
-      "....XWXX........XXWX....",
-      "....XWWXX......XXWWX....",
-      ".....XWWWXXXXXXWWWX.....",
-      "......XXTTWWWWTTXX......",
-      "........RRXWWRRX........",
-      "........RR...RR.........",
-      "......DDDDDDDDDDD.......",
-      "...DDDDDDDDDDDDDDDDD....",
-      "DDDDDDDDDDDDDDDDDDDDDDD."
+      "....................",
+      ".......XXXXXX.......",
+      ".....XXWWWWWWXX.....",
+      "....XWWHHHHHHWWX....",
+      "...XWHTtTtTtTtHWX...",
+      "..XWHtTTTTTTTTtHWX..",
+      "..XWTtTHHHHTtTtTWX..",
+      ".XWHTtTHWWHTtTtTHWX.",
+      ".XWTtTtHWWHTtTtTtWX.",
+      ".XWHTtTHWWHTtTtTHWX.",
+      ".XWTtTtHHHHTtTtTtWX.",
+      "..XWHtTTTTTTTTtHWX..",
+      "..XWWHTtTtTtTtHWWX..",
+      "...XWWHHHHHHHHWWX...",
+      "....XXWWWWWWWWXX....",
+      ".....xXXXXXXXXx.....",
+      "....RRRr..rRRRr.....",
+      "...RRRRR..RRRRR.....",
+      "...dRRRd..dRRRd.....",
+      "..ddddd....ddddd....",
     ];
     const CAT_PALS = {
       cat_mackerel:{X:'#3b4048',B:'#9AA6B4',L:'#D8DDE3',S:'#6E7A8A',E:'#22242b',P:'#E08b9d',I:'#E6A9B4'},
@@ -403,40 +391,44 @@
     // 화분(장식): 초록 잎(L=밝은 초록, G=진한 초록 테두리) + 테라코타 화분(P) + 화분 테두리(X). 세로형(8×14).
     // 화분(1×1, 세로형): 무성한 잎(G 진초록·L 잎·l 하이라이트) + 줄기(S, 잎만 살랑이도록 잎과 글자 분리) + 테라코타 화분(P/p 음영·X 외곽). 12×20 → 가로세로비 0.6.
     const M_PLANT = [
-      "....GG......",
-      "...GllG.GG..",
-      "..GlLLGGllG.",
-      ".GLLLLlLLLG.",
-      ".GLlGLLLGLG.",
-      "GLLLGLlGLLLG",
-      ".GLLLLLLLLG.",
-      ".lGLLLLLLGl.",
-      "..GLLGGLLG..",
-      "...GLLLLG...",
-      "....GllG....",
-      ".....GG.....",
-      ".....SS.....",
-      "....XPPX....",
-      "...XPppPX...",
-      "...PppppP...",
-      "...PppppP...",
-      "...pPPPPp...",
-      "....XppX....",
-      ".....XX....."
+      "................",
+      "....GLl..lLG....",
+      "...GLLIllILLG...",
+      "..GLIllLLllILG..",
+      "..GLLIlLLlILLG..",
+      ".GLLLIllLLIlLLG.",
+      ".GLIlLLGGLLlILG.",
+      ".GLLIlLGGLlILLG.",
+      "..GLLIllSllILLG.",
+      "..GLLLIlSlILLLG.",
+      "...GLLIlSlILLG..",
+      "....GLLISILLG...",
+      ".....GLISIG.....",
+      ".....GGSGG......",
+      "......xSx.......",
+      ".....xPPPx......",
+      "....xPHHHPx.....",
+      "...xPHppppHx....",
+      "...PppppppppP...",
+      "...pPPPPPPPPp...",
+      "....xpeeepx.....",
+      ".....xpppx......",
     ];
     // 러그(바닥 아이템, 28×11 가로세로비 2.545): 술(F 좌우 프린지)+이중 테두리(X 진한 외곽·o 안쪽)+바탕(B)+금 마름모 메달리온(G/N 중심)+모서리 장식(L). 높이 없이 바닥에 깔리고 위에 다른 가구를 올릴 수 있음. footW3×footH2.
     const M_RUG = [
       "..XXXXXXXXXXXXXXXXXXXXXXXX..",
-      "F.XooooooooooooooooooooooX.F",
-      "..XoLBBBBBBBBBBBBBBBBBBLoX..",
-      "F.XoBBBBBBBBBGGBBBBBBBBBoX.F",
-      "..XoBBBBBBBBGLLGBBBBBBBBoX..",
-      "F.XoBBBBBBBGLNNLGBBBBBBBoX.F",
-      "..XoBBBBBBBBGLLGBBBBBBBBoX..",
-      "F.XoBBBBBBBBBGGBBBBBBBBBoX.F",
-      "..XoLBBBBBBBBBBBBBBBBBBLoX..",
-      "F.XooooooooooooooooooooooX.F",
-      "..XXXXXXXXXXXXXXXXXXXXXXXX.."
+      "F.XoooooooooooooooooooooX.F.",
+      "..XoLlLlLlLlLlLlLlLlLlLoX...",
+      "F.XoBBBBBBBBBGgGBBBBBBBBoX.F",
+      "..XoBBCBBBBBGGYGGBBBBCBBoX..",
+      "F.XoBBBBBBBGgGNGgGBBBBBBoX.F",
+      "..XoBCBBBBGGYGYGGBBBBCBBoX..",
+      "F.XoBBBBBBBGgGNGgGBBBBBBoX.F",
+      "..XoBBCBBBBBGGYGGBBBBCBBoX..",
+      "F.XoBBBBBBBBBGgGBBBBBBBBoX.F",
+      "..XoLlLlLlLlLlLlLlLlLlLoX...",
+      "F.XoooooooooooooooooooooX.F.",
+      "..XXXXXXXXXXXXXXXXXXXXXXXX..",
     ];
     // 창문(18×20 가로세로비 0.9): 원목틀(X 외곽·W 나무·w 창턱)+하늘(S)+해(U/u)+구름(C, 캠에서만 좌우로 천천히 흘러감).
     const M_WINDOW = [
@@ -463,22 +455,21 @@
     ];
     // 어항(18×16 가로세로비 1.125): 유리틀(X)+유리(G)+물(A/a)+수초(P/p)+금붕어(F/f)+기포(b)+자갈(R)+받침(D). 캠에서만 금붕어·기포가 헤엄치듯 살랑.
     const M_FISHTANK = [
-      "..XXXXXXXXXXXXXX..",
-      ".XGGGGGGGGGGGGGGX.",
-      "XGAAAAAAAAAAAAAAGX",
-      "XGAAAAAbAAAAAAAAGX",
-      "XGAAAAAAAAAApAAAGX",
-      "XGAAAAAAAAAPPPAAGX",
-      "XGAAFFFAAAAPpPAAGX",
-      "XGAFffFAAAAPPPAAGX",
-      "XGAFFFAbAAAaPaAAGX",
-      "XGAAAAAAAAAPPPAaGX",
-      "XGAAAAAAAAaPpPaAGX",
-      "XGRRRRRRRRRRRRRRGX",
-      "XGRRRRRRRRRRRRRRGX",
-      ".XGGGGGGGGGGGGGGX.",
-      "..XDDDDDDDDDDDDX..",
-      "...DDDDDDDDDDDD..."
+      "................",
+      "..XXXXXXXXXXXX..",
+      ".XGgggggggggGX..",
+      ".XgAAAAAAAAAgX..",
+      ".XgAAbAAAAAAgX..",
+      ".XgAApAFFAApgX..",
+      ".XgApPFffFAPgX..",
+      ".XgAPpAFFAbpgX..",
+      ".XgAbAAAAAApgX..",
+      ".XgApAAbAAAPgX..",
+      ".XgAPpAAApPagX..",
+      ".XgRrRrRrRrRgX..",
+      ".XxRRRRRRRRRxX..",
+      "..XXxxxxxxxxXX..",
+      "..DDD......DDD..",
     ];
     // 벽난로(18×16 가로세로비 1.125): 벽돌(K/k)+맨틀(W/w)+아궁이(D)+장작(W/w)+불꽃(f 노랑·F 주황·r 빨강, 캠에서만 일렁임 flicker).
     const M_FIREPLACE = [
@@ -489,27 +480,68 @@
     ];
     // 선풍기(16×22 가로세로비 0.727): 케이지 림(X)+날개(G 중간·L 하이라이트·D 그림자 명암, 회전)+허브(h)+목(N)+받침(S/s). ※ B(진한 하늘색 날개)는 팔레트 미등록=투명(뒷배경 비침). 명암 글자 L·D도 FURN_ANIM.fan.move에 넣어야 함께 회전.
     const M_FAN = [
-      "......XXXX......","....XXBBBBXX....","...X.BBBBBB.X...","..X..LBBBBL..X..",
-      ".XX.LGBBBBGL.XX.",".X.DLGGBBGGLD.X.",".X.GGGDhhDGGG.X.",".X.GDDhhhhBBBBX.",
-      ".XBBBBBhhBBBBBX.",".XBBBBBGGBBBBBX.",".XXBBBLGGDBBBXX.","..XBBDLGGDLBBX..",
-      "...XB.LGGD.BX...","....XX....XX....","......XXXX......",".......NN.......",
-      ".......NN.......",".......NN.......",".....SSSSSS.....","....SSSSSSSS....",
-      "...SSSSSSSSSS...","...ssssssssss..."
+      "................",
+      "....XXXXXX......",
+      "..XXGGDDGGXX....",
+      ".XGLGDhDGLGX....",
+      ".XGDGLhLGDGX....",
+      "XGLGGDhDGGLGX...",
+      "XGDLGhhhGLDGX...",
+      "XGGDGhhhGDGGX...",
+      "XGLGGDhDGGLGX...",
+      ".XGDGLhLGDGX....",
+      ".XGLGDhDGLGX....",
+      "..XXGGDDGGXX....",
+      "....XSSSSX......",
+      ".....NnnN.......",
+      ".....NnnN.......",
+      ".....NnnN.......",
+      "....SNnnNS......",
+      "...SSSSSSSS.....",
+      "..sSSSSSSSSs....",
+      "..sssssssss.....",
     ];
     // 해먹(16×13 가로세로비 1.231): 나무 기둥(X/W/w)+끈(K)+천 요람(C/c 음영·L 밝음)+베개(P/p, 캠에서만 살랑 swing). 펫이 안에 올라가 쉼. footW1×footH1.
     const M_HAMMOCK = [
-      "................",".X............X.",".W............W.",".W.K........K.W.",
-      ".W..K......K..W.",".W..CPPLLLLLC.W.",".w.CLPPLLLLLLCw.",".w.CLLLLLLLLLCw.",
-      "...CcLLLLLLcC...","....CccccccC....",".....CccccC.....","......cCCc......",
-      "................"
+      "................",
+      ".X..........X...",
+      ".WX........XW...",
+      ".WWK........WW..",
+      ".WWKKKKKKKKKWW..",
+      ".WWKCcCcCcCKWW..",
+      ".WWKCLlLlLCKWW..",
+      ".WWKPpLLLpPKWW..",
+      ".WWKCLLLLLCKWW..",
+      ".WWKcCLLLCcKWW..",
+      ".WWKKcCcCcKKWW..",
+      ".WW.KKKKKKK.WW..",
+      ".WW........WW...",
+      ".WW........WW...",
+      ".Ww........wW...",
+      "xWWw........wWWx",
+      ".xX..........Xx.",
     ];
     // 낚싯대 장난감(16×20 가로세로비 0.8): 받침(S/s)+대(R)+줄(K)+깃털 장난감(F/f·T 술, 캠에서만 흔들 swing). 펫이 옆에서 톡톡.
     const M_TEASER = [
-      ".......RRRRRRR..",".......R.....K..",".......R.....K..",".......R.....K..",
-      ".......R.....K..",".......R....FfF.",".......R...FfffF",".......R...FfffF",
-      ".......R....FfF.",".......R.....T..",".......R........",".......R........",
-      ".......R........",".......R........",".......R........",".......R........",
-      ".....SSSSS......","....SSSSSSS.....","...SSSSSSSSS....","....sssssss....."
+      "................",
+      ".........HFf....",
+      "........HFFfF...",
+      ".......KFTFFf...",
+      "......K.FFTFf...",
+      ".....K..fFFf....",
+      "....K...TfF.....",
+      "...K............",
+      "..R.............",
+      ".Rr.............",
+      ".Rr.............",
+      ".Rr.............",
+      ".Rr.............",
+      ".Rr.............",
+      ".Rr.............",
+      ".Rr.............",
+      "SsRsS...........",
+      "sSSSSs..........",
+      "ssssss..........",
     ];
     // 벽시계(14×22 가로세로비 0.636): 나무 몸통(W/w)+시계판(L·D 바늘)+추(K 봉·O 놋쇠, 캠에서만 좌우로 흔들 swing).
     const M_WALLCLOCK = [
@@ -543,8 +575,21 @@
     ];
     // 방울공(12×12 가로세로비 1.0): 공(B/b 음영·L 하이라이트·X 외곽)+방울선(D)+방울(S). 캠에서만 통통 흔들(swing).
     const M_JINGLEBALL = [
-      "............","...XXXXXX...","..XXLBBBXX..",".XXLLLBBBXX.",".XLLLLBBBBX.",".XDDDDDDDDX.",
-      ".XDDDDDDDDX.",".XBBBBBBbbX.",".XXBBSSbbXX.","..XXBBbbXX..","...XXXXXX...","............"
+      "................",
+      ".....XXXX.......",
+      "...XXBBBBXX.....",
+      "..XBLLHHLBBX....",
+      ".XBLHHHHHLBBX...",
+      ".XBLHHLLHLBBX...",
+      "XBLHLBBbLLBBbX..",
+      "XBLLBBSSbBBBbX..",
+      "XBBBBSssSBBBbX..",
+      "XBbBBSSSSBBbbX..",
+      ".XBbBBbBBBbBX...",
+      ".XBbbBBBBbbBX...",
+      "..XBbbbbbbBX....",
+      "...XxBbbBxX.....",
+      ".....XXXX.......",
     ];
     // ===== 🖼️ 벽 가구 콘텐츠(전부 wall:true, mount 앵커) =====
     // 액자(16×15): 금테(X/W/w)+풍경(하늘 S·해 U·구름 c·언덕 G/g·나무 t/T).
@@ -762,24 +807,24 @@
       'SSSSMSSSSSSSMSSS',
     ];
     const M_POND = [
-      '..............................',
-      '........kkkkkHHHHkkkkk........',
-      '.....kkkwwwmmmmmmmmwwwkkk.....',
-      '...kkHwmmmmSmmmmmmmmmmmwHkk...',
-      '..kkwmPPPPPmmmmmmmmrrmmmmwkk..',
-      '.kHwmPPPFPPPWWWWWWWmmmrmmmwHk.',
-      'kKwmPPPFYFmmPWWWWWWWWmmrmmmwKk',
-      'kHwmmpppFpppWWWoOXOWtWmmmmmwHk',
-      'KHwmmrpppppWWWWOOOOotWmmrmmwHK',
-      'KKwmmSmmWWWWWWWWWOoWPPPPrmmwKK',
-      'KKwmmmmmWWWWWWWWWWPPPPPPPPmwKK',
-      'kKwmmmrmmWWWWWWWWPPPPPPmmmPwKk',
-      '.KKwmtOXommWSWWWWppppppmmmpKK.',
-      '..KKwmOomrrmmmmmmmppppppppKK..',
-      '...KKKwmmmmmmmmmmmmmppppKKK...',
-      '.....KKKwwwmmmmmmmmwwwKKK.....',
-      '........KKKKKKKKKKKKKK........',
-      '..............................',
+      "...............................",
+      "........kkkHHHHHHkkk...........",
+      ".....kkwwmmmmmmmmmmwwkk........",
+      "...kkHwmmmmSmmmmrmmmmwHkk......",
+      "..kHwmmPPPPmmmmmmmmrmmmwHk.....",
+      ".kHwmPPPFPPmmmWWWWWmmrmmmwHk...",
+      "kKwmPPFYFPmmWWWWWWWWmmmrmmwKk..",
+      "kHwmmpppppmWWWoOXOWWmmmmmmwHk..",
+      "KHwmmrmmmmWWWWOOOOoWWtWmmrmwHK.",
+      "KKwmSmmmmWWWWWWWOoWWPPPPmmmwKK.",
+      "KKwmmmmrmWWWWWWWWWPPPPPPPPmwKK.",
+      ".KwmmmmmmmWWWWWWPPPPPPPmmmpwK..",
+      ".KKwmtOXommmSmmmmpppppppmmpKK..",
+      "..KKwmOomrrmmmmmmmmppppppppKK..",
+      "...KKKwmmmmmmmmmmmmmpppppKKK...",
+      ".....KKwwwmmmmmmmmmmwwwKKK.....",
+      "........KKKKKKKKKKKKKKK........",
+      "...............................",
     ];
     const M_FLOOR_CARPET = [
       'AABAABAABAABAABA',
@@ -1058,7 +1103,7 @@
       woodwall: {L:'#c99a63',M:'#b5834b',S:'#8a5f34',G:'#d8ad78'},
       damask: {B:'#3a3f6b',G:'#4a5188',o:'#c7a24a',y:'#e6c96b'},
     };
-    const POND_PAL = {K:'#9aa1ab', k:'#7c828d', H:'#c3c9d1', W:'#c9ebf7', m:'#93d3ee', w:'#5cabd6', r:'#e0f4fc', S:'#ffffff', P:'#63b25f', p:'#4a9247', F:'#ff9ec2', Y:'#ffe14a', O:'#ff8a3d', o:'#e0662a', X:'#ffffff', t:'#ff8a3d'};
+    const POND_PAL = {K:'#9aa1ab',k:'#7c828d',H:'#c3c9d1',W:'#c9ebf7',m:'#93d3ee',w:'#5cabd6',r:'#e6f6fd',S:'#ffffff',P:'#63b25f',p:'#4a9247',F:'#ff9ec2',Y:'#ffe14a',O:'#ff8a3d',o:'#e0662a',X:'#ffffff',t:'#ff8a3d'};
     const M_CACTUS = [
       '................',
       '.......fFf......',
@@ -1558,7 +1603,7 @@
       '....O....O......',
       '....o....o......',
     ];
-    const FURN_PALS={ pond:POND_PAL, cushion:{X:'#3f4753',C:'#7a8695',D:'#5b6470',L:'#c2cad4',H:'#e2e7ee',B:'#4a5361',t:'#e0b84a',s:'#c49a30'}, bowl:{X:'#3f4753',W:'#dfe4ea',w:'#c2c8d0',L:'#f2f5f8',D:'#a9b0ba',F:'#d68b4a',f:'#b06a2e',g:'#efb37a',K:'#8a5427'}, waterbowl:{X:'#3f4753',W:'#dfe4ea',w:'#c2c8d0',L:'#f2f5f8',D:'#a9b0ba',A:'#5aa9e6',a:'#3f86c4',h:'#bfe2fb',H:'#e6f3fc'}, tower:{X:'#5e3f22',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#5e3f22',W:'#c99a5f',C:'#a87c46',L:'#e6c085',S:'#d8b98a',R:'#b8935f',T:'#6b4a2a',O:'#d9694e',H:'#f2a98f'}, litterbox:{B:'#5b9bd8',b:'#3f79b5',e:'#9ccaf0',k:'#2f6098',W:'#f5f8fc',w:'#d3e3f4',v:'#c2d8ee'}, pethouse:{X:'#4a3624',x:'#2f2216',R:'#d9694e',r:'#b8503a',H:'#f0967a',h:'#ffb59c',W:'#e8c98f',w:'#d4b06a',v:'#c49a54',D:'#241a12',d:'#3e2e1e',K:'#5a4632',o:'#e0b84a'}, plant:{X:'#7c5028',L:'#7cc652',G:'#4e9636',P:'#c8763e',p:'#a85e2c',l:'#9ad86a',S:'#6f9440'}, catwheel:{X:'#2f6f68',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',R:'#c9a06a',D:'#6b5842'}, rug:{F:'#efe3cf',X:'#5e2028',o:'#8a3a44',B:'#c0505e',C:'#a5424e',L:'#e6b3a0',G:'#e6b24a',g:'#b9862f',N:'#3a2436'}, window:{X:'#6b4a2a',W:'#9a734a',w:'#b58d5e',S:'#bfe3f5',C:'#ffffff',U:'#ffd968',u:'#f2b93c'}, fishtank:{X:'#5b7b86',G:'#bfe6ef',A:'#5aa9e6',a:'#3f86c4',P:'#4e9636',p:'#7cc652',F:'#f2933c',f:'#ffd27a',b:'#dff3ff',R:'#cdb98c',D:'#3a5a63'}, fireplace:{X:'#4a3626',W:'#7a5230',w:'#9c6f3f',K:'#b0563f',k:'#c8785a',D:'#241a13',f:'#ffd54a',F:'#f2913c',r:'#e05230',S:'#9298a2',s:'#767c86'}, fan:{X:'#3f5a63',G:'#cfe6ee',L:'#eef7fb',D:'#a7cdda',h:'#e0b84a',N:'#7a828c',S:'#9298a2',s:'#6f747c'}, hammock:{X:'#5a4632',W:'#7a5a3a',w:'#9c6f3f',K:'#b7a78f',C:'#3c7d6d',c:'#2f6357',L:'#5bb39d',P:'#e8c98f',p:'#cba765'}, teaser:{R:'#6b7280',K:'#b0b6bd',F:'#e2607a',f:'#f2a7b8',T:'#c94a66',S:'#7a5230',s:'#9c6f3f'}, wallclock:{X:'#3a2e22',W:'#8a5a34',w:'#a8763f',L:'#f2e6c8',D:'#2a221a',K:'#6b5a3a',O:'#e0b84a'}, hangplant:{X:'#5a4632',K:'#b7a78f',P:'#c8763e',p:'#a85e2c',G:'#4e9636',L:'#7cc652',l:'#9ad86a',g:'#3f7a2c'}, mobile:{X:'#5a4632',K:'#b7a78f',M:'#7a5a3a',A:'#f2c84b',a:'#d6a832',B:'#8fb8e6',b:'#6f97c4',C:'#f2a7b8',c:'#d98098'}, jingleball:{X:'#8a3a2c',B:'#e0552f',b:'#b8452a',L:'#f2a06a',D:'#7a2f22',S:'#ffd24a'}, frame:{X:'#4a3626',W:'#caa23a',w:'#e6c96b',S:'#bfe3f5',U:'#ffd968',c:'#ffffff',G:'#5aa860',g:'#3f7a48',t:'#7a5230',T:'#4e9636'}, shelf:{W:'#9a734a',w:'#6b4a2a',K:'#5a5f68',G:'#4e9636',L:'#7cc652',P:'#c8763e',p:'#a85e2c',B:'#d9694e',r:'#f0967a',o:'#b8503a',C:'#8fb8e6',c:'#bfe3f5'}, mirror:{X:'#8a6a1e',W:'#e6c96b',w:'#b98f2f',H:'#fff0b8',A:'#9fbccb',a:'#7fa2b4',b:'#cfe4ee',h:'#ffffff',o:'#f2d878'}, neon:{g:'#c0387f',N:'#ff2f8f',H:'#ff9ecf',C:'#ffffff',S:'#ffe6f4'}, sconce:{K:'#5a5f68',k:'#8a909a',H:'#b6bcc6',F:'#ff8a2e',Y:'#ffd23e',y:'#fff2a8'}, chandelier:{K:'#6b5220',f:'#7c5f28',F:'#c49b45',H:'#f6dd94',Y:'#ffd35e',y:'#ff9e3d',W:'#fff6df',C:'#e3f2fb',c:'#a9cfe4',o:'#ffffff'}, garland:{K:'#6b5a3a',A:'#e0552f',B:'#ffd54a',C:'#4e9636',a:'#b8452a',b:'#caa23a',c:'#3f7a2c',h:'#ffffff'}, poster:{X:'#3a2e22',S:'#bfe3f5',U:'#ffd968',M:'#5a7d8a',P:'#efe3cf',d:'#c94a66'}, tapestry:{K:'#7a5230',w:'#9c6f3f',C:'#7a4a8a',D:'#a86fc0',o:'#e0a43c',O:'#ffd968',f:'#c9a06a'}, cactus:{e:'#6b4a2a',x:'#7c5028',P:'#c8763e',p:'#a85e2c',H:'#e0a05a',D:'#2f7a3e',G:'#43a058',L:'#6fc47f',I:'#8fdc97',s:'#dff5cf',f:'#ff5f9e',F:'#ff9ec2',Y:'#ffe14a'}, yarnbasket:{X:'#6b4423',W:'#c49a5c',w:'#a37c42',D:'#8a6535',H:'#dbb578',Y:'#e2607a',y:'#f2a7b8',R:'#5aa9e6',r:'#bfe2fb',B:'#f2c84b',b:'#ffe6a8',G:'#5bbf7a',g:'#9be0af',k:'#3a2a18'}, floorlamp:{K:'#5a5f68',k:'#3a3e45',D:'#2a2d33',S:'#e8c98f',s:'#cfa864',T:'#b98f52',F:'#fff3c4',Y:'#ffde6a',H:'#fffbe6',o:'#ffb84a',M:'#7a8088'}, beanbag:{k:'#254a63',D:'#3f6f8a',B:'#5b9bd8',L:'#8fc2ec',H:'#bfe2fb',S:'#2f5570',p:'#e6b24a'}, groomstation:{X:'#5a3a1c',k:'#3a2513',W:'#d9694e',w:'#b8503a',H:'#f0967a',s:'#efe9db',S:'#c9c2b2',t:'#a89a82',B:'#8a6a3f',b:'#6b4f2a',D:'#5a4228'}, springtoy:{D:'#2f3238',k:'#4a4f57',K:'#8a909a',H:'#c3c9d1',B:'#e0552f',b:'#b8452a',L:'#ff9e6a',R:'#ff7a4a',S:'#ffd24a',W:'#fff0d0',x:'#7a2f1c'}, tunnel:{X:'#3f4a52',K:'#5a6570',W:'#5aa9e6',w:'#3f86c4',H:'#bfe2fb',R:'#f2c84b',r:'#e0a838',D:'#1a2530',d:'#26333f',G:'#5bbf7a'}, teepee:{W:'#efe3cf',w:'#d8cbb2',D:'#b8a888',d:'#9c8e70',K:'#2a1e14',k:'#4a3826',X:'#7a5230',x:'#5a3a1c',R:'#d9694e',r:'#b8503a',B:'#5aa9e6',Y:'#e6b24a',f:'#ff5f9e'}, bookshelf:{X:'#4a3220',x:'#3a2818',W:'#7a5a3a',w:'#9c7548',H:'#b58a55',k:'#2a1c10',R:'#d9694e',r:'#a84636',G:'#4e9636',g:'#3a7028',B:'#3f86c4',b:'#2f6698',Y:'#e6b24a',y:'#c4922f',P:'#a86fc0',p:'#7d4e94',o:'#e0a43c',T:'#5bbf7a',S:'#7c5028',A:'#efe3cf'}, birdcage:{K:'#8a909a',k:'#5a5f68',D:'#3a3e45',W:'#d8dde3',w:'#aab0b8',H:'#eef1f5',Y:'#ffd24a',y:'#e0a838',o:'#ff8a3d',B:'#e0552f',T:'#7a5230',t:'#5a3a1c',R:'#ff5f5f'}, lavalamp:{K:'#5a5f68',k:'#3a3e45',D:'#2a2d33',G:'#cfeaf3',g:'#a6d4e2',H:'#eef8fc',R:'#e0431f',o:'#ff7a2e',O:'#ff9e4a',Y:'#ffd24a',r:'#c23418',W:'#fff0b8'}, laserpost:{K:'#5a5f68',k:'#3a3e45',D:'#2a2d33',W:'#8a909a',w:'#aab0b8',H:'#d8dde3',R:'#ff2f4f',r:'#ff7a8a',L:'#ff9ea8',P:'#ffd0d6',Y:'#ffe14a'}, waterfountain:{X:'#3a4652',x:'#2a333d',B:'#8fb8e6',b:'#6f97c4',K:'#5a6f82',A:'#5aa9e6',a:'#3f86c4',H:'#bfe2fb',h:'#e6f3fc',W:'#d0d6dd',w:'#aab2bc',D:'#8a929c'}, sofa:{x:'#5a3a22',k:'#4a2e1a',D:'#8a5a3a',B:'#c98a5a',L:'#e0ad78',H:'#f0c894',c:'#e6b24a',C:'#c4922f',S:'#b07840',t:'#3a2410'}, recordplayer:{X:'#3a2818',W:'#9c7548',w:'#7a5a3a',H:'#c4a06a',k:'#2a1c10',D:'#1e1e22',d:'#3a3a42',g:'#55555e',R:'#d9694e',r:'#a84636',K:'#8a909a',S:'#c9c2b2',Y:'#ffd24a'}, terrarium:{K:'#6b5220',k:'#4a3814',H:'#8a6a2c',G:'#d8f0f5',g:'#b0dce6',h:'#eefaff',x:'#7c5028',X:'#5a3a1c',e:'#6b4a2a',L:'#7cc652',l:'#9be0af',D:'#4e9636',S:'#9298a2',s:'#c0c6ce',f:'#ff5f9e',F:'#ffe14a'}, ballpit:{X:'#2f6f9e',x:'#245a80',W:'#5aa9e6',w:'#3f86c4',H:'#bfe2fb',R:'#e0552f',r:'#ff8a5a',Y:'#ffd24a',y:'#fff0a8',G:'#4e9636',g:'#7cc652',P:'#f2a7b8',p:'#ffd0e0',B:'#8fb8e6',b:'#c3ddf5'}, grandfaclock:{X:'#4a3218',x:'#3a2610',W:'#7a5230',w:'#9c6f3f',H:'#b58a55',k:'#2a1a0c',L:'#f2e6c8',l:'#e0d0a8',D:'#2a221a',O:'#e0b84a',o:'#c49a30',K:'#8a6a3a',G:'#bfe3f5',g:'#8fc2ec',R:'#d9694e'}, bunkbed:{X:'#4a3218',x:'#3a2610',W:'#9c6f3f',w:'#c99a63',H:'#dbb578',k:'#2a1a0c',M:'#e8e2d4',m:'#cfc7b8',R:'#d9694e',r:'#f0967a',B:'#5aa9e6',b:'#8fc2ec',P:'#f2c84b',p:'#ffe6a8',G:'#5bbf7a'}, crystalfountain:{W:'#d0d6dd',w:'#aab2bc',X:'#7a828c',x:'#5a626c',A:'#5aa9e6',a:'#3f86c4',H:'#bfe2fb',h:'#e6f3fc',s:'#eaf6ff',C:'#a9cfe4',c:'#7fb2d4',B:'#dff3ff',K:'#ffffff'}, dartboard:{X:'#2a221a',x:'#1a140e',R:'#d9694e',r:'#a84636',G:'#4e9636',g:'#3a7028',W:'#efe3cf',w:'#cfc4b0',K:'#5a5f68',Y:'#e6b24a',H:'#ffffff',B:'#3f86c4',S:'#c9c2b2'}, cuckooclock:{X:'#3a2410',x:'#2a1808',W:'#7a5230',w:'#9c6f3f',H:'#b58a55',k:'#1a1006',R:'#c0392b',r:'#e05545',G:'#4e9636',g:'#3a7028',L:'#f2e6c8',l:'#e0d0a8',D:'#2a1c12',O:'#e0b84a',o:'#c49a30',Y:'#ffd24a',B:'#8fb8e6',K:'#8a909a'} };
+    const FURN_PALS={ pond:POND_PAL, cushion:{X:'#3f4753',C:'#7a8695',D:'#5b6470',L:'#c2cad4',H:'#e2e7ee',B:'#4a5361',t:'#e0b84a',s:'#c49a30'}, bowl:{X:'#3f4753',W:'#dfe4ea',w:'#c2c8d0',L:'#f2f5f8',D:'#a9b0ba',F:'#d68b4a',f:'#b06a2e',g:'#efb37a',K:'#8a5427'}, waterbowl:{X:'#3f4753',W:'#dfe4ea',w:'#c2c8d0',L:'#f2f5f8',D:'#a9b0ba',A:'#5aa9e6',a:'#3f86c4',h:'#bfe2fb',H:'#e6f3fc'}, tower:{X:'#5e3f22',x:'#3f2a16',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#5e3f22',x:'#3f2a16',W:'#c99a5f',C:'#a87c46',L:'#e6c085',S:'#d8b98a',R:'#b8935f',T:'#6b4a2a',O:'#d9694e',H:'#f2a98f',K:'#4a3218'}, litterbox:{B:'#5b9bd8',b:'#3f79b5',e:'#9ccaf0',k:'#2f6098',W:'#f5f8fc',w:'#d3e3f4',v:'#c2d8ee'}, pethouse:{X:'#4a3624',x:'#2f2216',R:'#d9694e',r:'#b8503a',H:'#f0967a',h:'#ffb59c',W:'#e8c98f',w:'#d4b06a',v:'#c49a54',D:'#241a12',d:'#3e2e1e',K:'#5a4632',o:'#e0b84a'}, plant:{x:'#5a3a1c',P:'#c8763e',p:'#a85e2c',H:'#e0a05a',e:'#6b4a2a',S:'#6f9440',G:'#3f7a2c',L:'#7cc652',l:'#9ad86a',I:'#b8e88f'}, catwheel:{X:'#2f6f68',x:'#1e4a44',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',t:'#3a7a70',R:'#c9a06a',r:'#a8824f',D:'#6b5842',d:'#4a3e2e'}, rug:{F:'#efe3cf',X:'#5e2028',x:'#3a1218',o:'#8a3a44',B:'#c0505e',C:'#a5424e',L:'#e6b3a0',l:'#f0c9bc',G:'#e6b24a',g:'#b9862f',N:'#3a2436',Y:'#ffd968'}, window:{X:'#6b4a2a',W:'#9a734a',w:'#b58d5e',S:'#bfe3f5',C:'#ffffff',U:'#ffd968',u:'#f2b93c'}, fishtank:{X:'#5b7b86',x:'#3a5560',G:'#cfeef6',g:'#a6d8e6',A:'#5aa9e6',a:'#3f86c4',P:'#3f7a2c',p:'#5bbf7a',F:'#f2933c',f:'#ffd27a',b:'#dff3ff',R:'#cdb98c',r:'#a8946a',D:'#3a5a63'}, fireplace:{X:'#4a3626',W:'#7a5230',w:'#9c6f3f',K:'#b0563f',k:'#c8785a',D:'#241a13',f:'#ffd54a',F:'#f2913c',r:'#e05230',S:'#9298a2',s:'#767c86'}, fan:{X:'#3f5a63',x:'#2a3d44',G:'#cfe6ee',L:'#eef7fb',D:'#a7cdda',h:'#e0b84a',N:'#7a828c',n:'#5a616a',S:'#9298a2',s:'#6f747c'}, hammock:{X:'#5a4632',x:'#3a2e1e',W:'#7a5a3a',w:'#9c6f3f',K:'#b7a78f',C:'#3c7d6d',c:'#2f6357',L:'#5bb39d',l:'#7fd0be',P:'#e8c98f',p:'#cba765'}, teaser:{R:'#6b7280',r:'#4a505a',K:'#c0c6cd',F:'#e2607a',f:'#f2a7b8',H:'#ff9ec2',T:'#c94a66',S:'#7a5230',s:'#9c6f3f',x:'#5a3a22'}, wallclock:{X:'#3a2e22',W:'#8a5a34',w:'#a8763f',L:'#f2e6c8',D:'#2a221a',K:'#6b5a3a',O:'#e0b84a'}, hangplant:{X:'#5a4632',K:'#b7a78f',P:'#c8763e',p:'#a85e2c',G:'#4e9636',L:'#7cc652',l:'#9ad86a',g:'#3f7a2c'}, mobile:{X:'#5a4632',K:'#b7a78f',M:'#7a5a3a',A:'#f2c84b',a:'#d6a832',B:'#8fb8e6',b:'#6f97c4',C:'#f2a7b8',c:'#d98098'}, jingleball:{X:'#8a3a2c',x:'#5a231a',B:'#e0552f',b:'#b8452a',L:'#f2a06a',H:'#ffcfa8',D:'#7a2f22',S:'#ffd24a',s:'#e0a838',K:'#8a909a'}, frame:{X:'#4a3626',W:'#caa23a',w:'#e6c96b',S:'#bfe3f5',U:'#ffd968',c:'#ffffff',G:'#5aa860',g:'#3f7a48',t:'#7a5230',T:'#4e9636'}, shelf:{W:'#9a734a',w:'#6b4a2a',K:'#5a5f68',G:'#4e9636',L:'#7cc652',P:'#c8763e',p:'#a85e2c',B:'#d9694e',r:'#f0967a',o:'#b8503a',C:'#8fb8e6',c:'#bfe3f5'}, mirror:{X:'#8a6a1e',W:'#e6c96b',w:'#b98f2f',H:'#fff0b8',A:'#9fbccb',a:'#7fa2b4',b:'#cfe4ee',h:'#ffffff',o:'#f2d878'}, neon:{g:'#c0387f',N:'#ff2f8f',H:'#ff9ecf',C:'#ffffff',S:'#ffe6f4'}, sconce:{K:'#5a5f68',k:'#8a909a',H:'#b6bcc6',F:'#ff8a2e',Y:'#ffd23e',y:'#fff2a8'}, chandelier:{K:'#6b5220',f:'#7c5f28',F:'#c49b45',H:'#f6dd94',Y:'#ffd35e',y:'#ff9e3d',W:'#fff6df',C:'#e3f2fb',c:'#a9cfe4',o:'#ffffff'}, garland:{K:'#6b5a3a',A:'#e0552f',B:'#ffd54a',C:'#4e9636',a:'#b8452a',b:'#caa23a',c:'#3f7a2c',h:'#ffffff'}, poster:{X:'#3a2e22',S:'#bfe3f5',U:'#ffd968',M:'#5a7d8a',P:'#efe3cf',d:'#c94a66'}, tapestry:{K:'#7a5230',w:'#9c6f3f',C:'#7a4a8a',D:'#a86fc0',o:'#e0a43c',O:'#ffd968',f:'#c9a06a'}, cactus:{e:'#6b4a2a',x:'#7c5028',P:'#c8763e',p:'#a85e2c',H:'#e0a05a',D:'#2f7a3e',G:'#43a058',L:'#6fc47f',I:'#8fdc97',s:'#dff5cf',f:'#ff5f9e',F:'#ff9ec2',Y:'#ffe14a'}, yarnbasket:{X:'#6b4423',W:'#c49a5c',w:'#a37c42',D:'#8a6535',H:'#dbb578',Y:'#e2607a',y:'#f2a7b8',R:'#5aa9e6',r:'#bfe2fb',B:'#f2c84b',b:'#ffe6a8',G:'#5bbf7a',g:'#9be0af',k:'#3a2a18'}, floorlamp:{K:'#5a5f68',k:'#3a3e45',D:'#2a2d33',S:'#e8c98f',s:'#cfa864',T:'#b98f52',F:'#fff3c4',Y:'#ffde6a',H:'#fffbe6',o:'#ffb84a',M:'#7a8088'}, beanbag:{k:'#254a63',D:'#3f6f8a',B:'#5b9bd8',L:'#8fc2ec',H:'#bfe2fb',S:'#2f5570',p:'#e6b24a'}, groomstation:{X:'#5a3a1c',k:'#3a2513',W:'#d9694e',w:'#b8503a',H:'#f0967a',s:'#efe9db',S:'#c9c2b2',t:'#a89a82',B:'#8a6a3f',b:'#6b4f2a',D:'#5a4228'}, springtoy:{D:'#2f3238',k:'#4a4f57',K:'#8a909a',H:'#c3c9d1',B:'#e0552f',b:'#b8452a',L:'#ff9e6a',R:'#ff7a4a',S:'#ffd24a',W:'#fff0d0',x:'#7a2f1c'}, tunnel:{X:'#3f4a52',K:'#5a6570',W:'#5aa9e6',w:'#3f86c4',H:'#bfe2fb',R:'#f2c84b',r:'#e0a838',D:'#1a2530',d:'#26333f',G:'#5bbf7a'}, teepee:{W:'#efe3cf',w:'#d8cbb2',D:'#b8a888',d:'#9c8e70',K:'#2a1e14',k:'#4a3826',X:'#7a5230',x:'#5a3a1c',R:'#d9694e',r:'#b8503a',B:'#5aa9e6',Y:'#e6b24a',f:'#ff5f9e'}, bookshelf:{X:'#4a3220',x:'#3a2818',W:'#7a5a3a',w:'#9c7548',H:'#b58a55',k:'#2a1c10',R:'#d9694e',r:'#a84636',G:'#4e9636',g:'#3a7028',B:'#3f86c4',b:'#2f6698',Y:'#e6b24a',y:'#c4922f',P:'#a86fc0',p:'#7d4e94',o:'#e0a43c',T:'#5bbf7a',S:'#7c5028',A:'#efe3cf'}, birdcage:{K:'#8a909a',k:'#5a5f68',D:'#3a3e45',W:'#d8dde3',w:'#aab0b8',H:'#eef1f5',Y:'#ffd24a',y:'#e0a838',o:'#ff8a3d',B:'#e0552f',T:'#7a5230',t:'#5a3a1c',R:'#ff5f5f'}, lavalamp:{K:'#5a5f68',k:'#3a3e45',D:'#2a2d33',G:'#cfeaf3',g:'#a6d4e2',H:'#eef8fc',R:'#e0431f',o:'#ff7a2e',O:'#ff9e4a',Y:'#ffd24a',r:'#c23418',W:'#fff0b8'}, laserpost:{K:'#5a5f68',k:'#3a3e45',D:'#2a2d33',W:'#8a909a',w:'#aab0b8',H:'#d8dde3',R:'#ff2f4f',r:'#ff7a8a',L:'#ff9ea8',P:'#ffd0d6',Y:'#ffe14a'}, waterfountain:{X:'#3a4652',x:'#2a333d',B:'#8fb8e6',b:'#6f97c4',K:'#5a6f82',A:'#5aa9e6',a:'#3f86c4',H:'#bfe2fb',h:'#e6f3fc',W:'#d0d6dd',w:'#aab2bc',D:'#8a929c'}, sofa:{x:'#5a3a22',k:'#4a2e1a',D:'#8a5a3a',B:'#c98a5a',L:'#e0ad78',H:'#f0c894',c:'#e6b24a',C:'#c4922f',S:'#b07840',t:'#3a2410'}, recordplayer:{X:'#3a2818',W:'#9c7548',w:'#7a5a3a',H:'#c4a06a',k:'#2a1c10',D:'#1e1e22',d:'#3a3a42',g:'#55555e',R:'#d9694e',r:'#a84636',K:'#8a909a',S:'#c9c2b2',Y:'#ffd24a'}, terrarium:{K:'#6b5220',k:'#4a3814',H:'#8a6a2c',G:'#d8f0f5',g:'#b0dce6',h:'#eefaff',x:'#7c5028',X:'#5a3a1c',e:'#6b4a2a',L:'#7cc652',l:'#9be0af',D:'#4e9636',S:'#9298a2',s:'#c0c6ce',f:'#ff5f9e',F:'#ffe14a'}, ballpit:{X:'#2f6f9e',x:'#245a80',W:'#5aa9e6',w:'#3f86c4',H:'#bfe2fb',R:'#e0552f',r:'#ff8a5a',Y:'#ffd24a',y:'#fff0a8',G:'#4e9636',g:'#7cc652',P:'#f2a7b8',p:'#ffd0e0',B:'#8fb8e6',b:'#c3ddf5'}, grandfaclock:{X:'#4a3218',x:'#3a2610',W:'#7a5230',w:'#9c6f3f',H:'#b58a55',k:'#2a1a0c',L:'#f2e6c8',l:'#e0d0a8',D:'#2a221a',O:'#e0b84a',o:'#c49a30',K:'#8a6a3a',G:'#bfe3f5',g:'#8fc2ec',R:'#d9694e'}, bunkbed:{X:'#4a3218',x:'#3a2610',W:'#9c6f3f',w:'#c99a63',H:'#dbb578',k:'#2a1a0c',M:'#e8e2d4',m:'#cfc7b8',R:'#d9694e',r:'#f0967a',B:'#5aa9e6',b:'#8fc2ec',P:'#f2c84b',p:'#ffe6a8',G:'#5bbf7a'}, crystalfountain:{W:'#d0d6dd',w:'#aab2bc',X:'#7a828c',x:'#5a626c',A:'#5aa9e6',a:'#3f86c4',H:'#bfe2fb',h:'#e6f3fc',s:'#eaf6ff',C:'#a9cfe4',c:'#7fb2d4',B:'#dff3ff',K:'#ffffff'}, dartboard:{X:'#2a221a',x:'#1a140e',R:'#d9694e',r:'#a84636',G:'#4e9636',g:'#3a7028',W:'#efe3cf',w:'#cfc4b0',K:'#5a5f68',Y:'#e6b24a',H:'#ffffff',B:'#3f86c4',S:'#c9c2b2'}, cuckooclock:{X:'#3a2410',x:'#2a1808',W:'#7a5230',w:'#9c6f3f',H:'#b58a55',k:'#1a1006',R:'#c0392b',r:'#e05545',G:'#4e9636',g:'#3a7028',L:'#f2e6c8',l:'#e0d0a8',D:'#2a1c12',O:'#e0b84a',o:'#c49a30',Y:'#ffd24a',B:'#8fb8e6',K:'#8a909a'} };
     const POOP_PAL={X:'#4a3218',K:'#7a5230'};
     const FOOD_PAL={D:'#7a4a20',F:'#d68b4a',f:'#b06a2e',H:'#efb37a',L:'#f2e4c6',l:'#d8c49e',K:'#8a5427',k:'#6b3f1c',W:'#ffffff'};
     const WATER_PAL={D:'#3f86c4',d:'#2f6698',A:'#8fc2ec',a:'#5aa9e6',H:'#dff0fc',L:'#f2f7fc',l:'#cfe0ee',K:'#e2607a'};
@@ -3393,21 +3438,21 @@
       pond:    [ { type:'drift', move:['O','o','X','t'], cls:'pondfish' },   // 물고기 2마리 활발히 헤엄(fffish)
                  { type:'drift', move:['P','p'], cls:'pondleaf' },          // 수련잎 잔잔히 흔들(ffleaf)
                  { type:'drift', move:['r','S'], cls:'pondwater' } ],       // 물 하이라이트/반짝임 잔잔히 일렁(ffripple)
-      catwheel:{ type:'spin',  move:['X','W','H','T'] },   // 링(림·밴드·하이라이트·발판) 전체가 축 중심으로 제자리 회전 — 롤러 R·스탠드 D만 정지
+      catwheel:{ type:'spin',  move:['T','t','H'] },   // 링(림·밴드·하이라이트·발판) 전체가 축 중심으로 제자리 회전 — 롤러 R·스탠드 D만 정지
       tower:   { type:'swing', move:['T','O','K'] },   // 매달린 장난감 공(빨강 T·하이라이트 O)+끈(K)
-      scratcher:{type:'swing', move:['T','O','H'] },   // 매달린 공(O)+하이라이트(H)+끈(T)
-      plant:   { type:'sway',  move:['G','L','l'] },   // 잎만 살랑(줄기 S·화분 P/p/X는 정지)
+      scratcher:{type:'swing', move:['T','O','H','K'] },   // 매달린 공(O)+하이라이트(H)+끈(T)
+      plant:   { type:'sway',  move:['G','L','l','I'] },   // 잎만 살랑(줄기 S·화분 P/p/X는 정지)
       window:  { type:'drift', move:['C'] },           // 구름만 좌우로 천천히 흘러감(하늘 S·해 U/u·틀은 정지)
       fishtank:{ type:'drift', move:['F','f','b'] },   // 금붕어+기포만 헤엄치듯 좌우로(물 A·수초 P·자갈 R은 정지)
       fireplace:{type:'flicker',move:['f','F','r'] },  // 불꽃만 일렁임(벽돌·맨틀·장작은 정지)
       fan:     { type:'spin',  move:['G','L','D','h'] },   // 케이지 안 날개(G 중간·L 하이라이트·D 그림자 명암)+허브(h)가 함께 회전(림 X·목·받침은 정지). 진한 하늘색 날개(B)는 팔레트에서 빼 투명 처리(뒷배경 비침)
-      hammock: { type:'swing', move:['K','C','c','L','P','p'] },// 끈+천 요람+베개가 매단 지점에서 살랑(기둥 X/W/w 정지)
-      teaser:  { type:'swing', move:['K','F','f','T'] },// 줄+깃털 장난감이 대 끝에서 흔들(대 R·받침 정지)
+      hammock: { type:'swing', move:['K','C','c','L','l','P','p'] },// 끈+천 요람+베개가 매단 지점에서 살랑(기둥 X/W/w 정지)
+      teaser:  { type:'swing', move:['K','F','f','H','T'] },// 줄+깃털 장난감이 대 끝에서 흔들(대 R·받침 정지)
       wallclock:{type:'swing', move:['K','O'] },       // 추(봉+놋쇠)만 좌우로(몸통·시계판 정지)
       hangplant:{type:'swing', move:['K','P','p','G','L','l','g'] }, // 걸이 아래 전체가 살랑(천장 걸이 X 정지)
       mobile:  { type:'swing', move:['K','M','A','a','B','b','C','c'] }, // 막대+매달린 별·달·하트 전체가 살랑(걸이 X 정지)
       chandelier:{type:'sway', move:['K','f','F','H','Y','y','W','C','c','o'] }, // 천장에서 전체가 흔들(매다는형, 상단 피벗) — 더 활발하게(각↑·빠르게)
-      jingleball:{type:'swing', move:['X','B','b','L','D','S'] },  // 공 전체가 바닥에서 통통(바닥 접점 중심)
+      jingleball:{type:'swing', move:['X','B','b','L','H','S'] },  // 공 전체가 바닥에서 통통(바닥 접점 중심)
       neon:    {type:'blink',  move:['g','N','H','C','S'] },   // 네온 하트+글로우+반짝임이 네온처럼 파르르 깜빡(더 활발)
       sconce:  {type:'flicker',move:['F','Y','y'] },   // 벽등 촛불이 활발히 일렁(빠르게·크게)
       mirror:  {type:'sheen',  move:['h'] },   // 거울 사선 광택이 반짝 스윕(정적→연출 추가)
@@ -3468,7 +3513,7 @@
       if(right===GRID_N && c!==1) return 'right';
       return 'center'; }
     // 가구 그래픽 가로세로비(cols/rows) — 그래픽 폭 = fh*aspect. 캠 중심 x 계산(buildActors)에 사용.
-    const FURN_ASPECT = { pond:1.667, tower:0.533, scratcher:0.636, pethouse:0.895, catwheel:1.0, plant:0.6, litterbox:1.286, cushion:1.2, bowl:1.333, waterbowl:1.333, rug:2.545, window:0.9, fishtank:1.125, fireplace:1.125, fan:0.727, hammock:1.231, teaser:0.8, wallclock:0.636, hangplant:0.7, mobile:1.2, chandelier:1.0, jingleball:1.0, frame:1.067, shelf:1.667, mirror:0.632, neon:1.286, sconce:0.778, garland:2.667, poster:0.778, tapestry:0.727, cactus:0.615, yarnbasket:0.9, floorlamp:0.64, beanbag:1.059, groomstation:0.762, springtoy:0.762, tunnel:1.421, teepee:0.8, bookshelf:0.615, birdcage:0.667, lavalamp:0.696, laserpost:0.762, waterfountain:0.762, sofa:1.688, recordplayer:0.941, terrarium:0.941, ballpit:1.867, grandfaclock:0.571, bunkbed:0.727, crystalfountain:1.368, dartboard:1.0, cuckooclock:0.762 };
+    const FURN_ASPECT = { pond:1.722, tower:0.64, scratcher:0.842, pethouse:0.895, catwheel:1.0, plant:0.727, litterbox:1.286, cushion:1.2, bowl:1.333, waterbowl:1.333, rug:2.154, window:0.9, fishtank:1.067, fireplace:1.125, fan:0.8, hammock:0.941, teaser:0.842, wallclock:0.636, hangplant:0.7, mobile:1.2, chandelier:1.0, jingleball:1.067, frame:1.067, shelf:1.667, mirror:0.632, neon:1.286, sconce:0.778, garland:2.667, poster:0.778, tapestry:0.727, cactus:0.615, yarnbasket:0.9, floorlamp:0.64, beanbag:1.059, groomstation:0.762, springtoy:0.762, tunnel:1.421, teepee:0.8, bookshelf:0.615, birdcage:0.667, lavalamp:0.696, laserpost:0.762, waterfountain:0.762, sofa:1.688, recordplayer:0.941, terrarium:0.941, ballpit:1.867, grandfaclock:0.571, bunkbed:0.727, crystalfountain:1.368, dartboard:1.0, cuckooclock:0.762 };
     function furnAspect(id){ return FURN_ASPECT[id]||1; }
     function furnRoomH(id, isDock, depth){
       const mult = ROOM_H[id] || 1;
