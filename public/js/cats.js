@@ -3456,20 +3456,28 @@
       if(id==='fireflies') return fireflySvg({h:h});
       return butterflySvg(id==='rainbowflutter'?'p':'o',{h:h}); }
     // 배경효과 오버레이 스프라이트(픽업씬 조각 재사용: pk-bfly/pk-fallleaf/pk-dfly/pk-fire). 위치는 결정적(pkRand)이라 재렌더에 안 튐.
-    function bgfxOverlayHtml(id){ if(!id) return ''; const lite=liteMode(); const N=k=>Math.max(2,Math.round(k*(lite?0.55:1))); let s='';
-      function bfly(n, tints){ for(let i=0;i<n;i++){ const l=(6+pkRand(i,11)*88).toFixed(1), b=(20+pkRand(i,12)*60).toFixed(1), hh=Math.round(12+pkRand(i,13)*6), dur=(6+pkRand(i,14)*5).toFixed(1), fd=(0.30+pkRand(i,15)*0.26).toFixed(2), del=(-pkRand(i,16)*8).toFixed(2); let _s=20; const rnd=()=>pkRand(i,_s++);
-        s+='<span class="pk-bfly" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;--fd:'+fd+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="bf-wing">'+butterflySvg(tints[i%tints.length],{h:hh})+'</span></span>'; } }
-      function leaf(n, colf){ for(let i=0;i<n;i++){ const l=(5+pkRand(i,31)*90).toFixed(1), dur=(6.5+pkRand(i,32)*6).toFixed(1), del=(-pkRand(i,33)*10).toFixed(2), sw=(2.2+pkRand(i,34)*1.6).toFixed(1), hh=Math.round(10+pkRand(i,35)*5), dir=(pkRand(i,36)<0.5?-1:1);
-        s+='<span class="pk-fallleaf" style="left:'+l+'%;--d:'+dur+'s;--sw:'+sw+'s;--dir:'+dir+';animation-delay:'+del+'s;"><span class="fl-in">'+colf(i,hh)+'</span></span>'; } }
-      function dfly(n){ for(let i=0;i<n;i++){ const l=(8+pkRand(i,41)*84).toFixed(1), b=(26+pkRand(i,42)*54).toFixed(1), hh=Math.round(11+pkRand(i,43)*5), dur=(6+pkRand(i,44)*5).toFixed(1), del=(-pkRand(i,45)*8).toFixed(2); let _s=50; const rnd=()=>pkRand(i,_s++);
-        s+='<span class="pk-dfly" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="df-body">'+dragonflySvg({h:hh})+'</span></span>'; } }
-      function fire(n){ for(let i=0;i<n;i++){ const l=(6+pkRand(i,61)*88).toFixed(1), b=(18+pkRand(i,62)*62).toFixed(1), hh=Math.round(9+pkRand(i,63)*4), dur=(5+pkRand(i,64)*5).toFixed(1), bd=(1+pkRand(i,65)*1.4).toFixed(2), del=(-pkRand(i,66)*6).toFixed(2); let _s=70; const rnd=()=>pkRand(i,_s++);
-        s+='<span class="pk-fire" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;--bd:'+bd+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="ff-core">'+fireflySvg({h:hh})+'</span></span>'; } }
-      if(id==='butterflies') bfly(N(6),['o','b','p','y']);
-      else if(id==='rainbowflutter') bfly(N(9),['o','b','p','y','o','p']);
-      else if(id==='mapleleaves') leaf(N(9),(i,hh)=>mapleLeafSvg({h:hh}, LEAF_COLS[Math.floor(pkRand(i,207)*LEAF_COLS.length)]));
-      else if(id==='sakura') leaf(N(9),(i,hh)=>petalSvg({h:hh}));
-      else if(id==='dragonflies') dfly(N(4));
+    function bgfxOverlayHtml(id){ if(!id) return ''; const lite=liteMode(); const N=k=>Math.max(3,Math.round(k*(lite?0.6:1))); let s='';
+      // 🧭 균일 분포 + 원근(사용자 지침): 캠 전체를 지터드 그리드로 나눠 한 칸에 하나씩(간격 확보) 배치하고,
+      //    세로 밴드로 깊이를 준다 — 뒤(위)일수록 높은 bottom%·작게, 앞(아래)일수록 낮은 bottom%·크게. DOM 순서=뒤→앞이라 앞이 위로 그려짐.
+      function slots(n, seed){ const cols=Math.max(2,Math.round(Math.sqrt(n*1.7))), rows=Math.max(1,Math.ceil(n/cols)), a=[];
+        for(let i=0;i<n;i++){ const cx=i%cols, cy=(i/cols)|0, jx=pkRand(i,seed), jy=pkRand(i,seed+1);
+          const x=((cx+0.18+jx*0.64)/cols)*100, yy=(rows<=1?0.5:(cy+0.16+jy*0.68)/rows);   // yy: 0=뒤/위 … 1=앞/아래
+          a.push({x:+x.toFixed(1), yy:yy}); } return a; }
+      const persB=yy=>(13+(1-yy)*72).toFixed(1);   // 원근 세로: 뒤(위)=높은 bottom%, 앞(아래)=낮은 bottom%(컴 전체 13~85%)
+      const persS=yy=>(0.66+yy*0.62);               // 원근 크기: 앞일수록 크게
+      function bfly(n, tints){ const P=slots(n,110); for(let i=0;i<n;i++){ const o=P[i], hh=Math.round((12+pkRand(i,13)*5)*persS(o.yy)), dur=(6+pkRand(i,14)*5).toFixed(1), fd=(0.30+pkRand(i,15)*0.26).toFixed(2), del=(-pkRand(i,16)*8).toFixed(2); let _s=20; const rnd=()=>pkRand(i,_s++);
+        s+='<span class="pk-bfly" style="left:'+o.x+'%;bottom:'+persB(o.yy)+'%;--d:'+dur+'s;--fd:'+fd+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="bf-wing">'+butterflySvg(tints[i%tints.length],{h:hh})+'</span></span>'; } }
+      function leaf(n, colf){ for(let i=0;i<n;i++){ const x=((i+0.5)/n*94+3+(pkRand(i,31)-0.5)*(84/n)).toFixed(1), d=pkRand(i,37), hh=Math.round((10+pkRand(i,35)*5)*(0.72+(1-d)*0.5)), dur=(6.5+d*6).toFixed(1), del=(-pkRand(i,33)*10).toFixed(2), sw=(2.2+pkRand(i,34)*1.6).toFixed(1), dir=(pkRand(i,36)<0.5?-1:1);   // 세로 낙하라 가로만 균일 배분 + 깊이로 크기·속도 차등(뒤=작고 느림)
+        s+='<span class="pk-fallleaf" style="left:'+x+'%;--d:'+dur+'s;--sw:'+sw+'s;--dir:'+dir+';animation-delay:'+del+'s;"><span class="fl-in">'+colf(i,hh)+'</span></span>'; } }
+      function dfly(n){ const P=slots(n,140); for(let i=0;i<n;i++){ const o=P[i], hh=Math.round((11+pkRand(i,43)*5)*persS(o.yy)), dur=(6+pkRand(i,44)*5).toFixed(1), del=(-pkRand(i,45)*8).toFixed(2); let _s=50; const rnd=()=>pkRand(i,_s++);
+        s+='<span class="pk-dfly" style="left:'+o.x+'%;bottom:'+persB(o.yy)+'%;--d:'+dur+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="df-body">'+dragonflySvg({h:hh})+'</span></span>'; } }
+      function fire(n){ const P=slots(n,170); for(let i=0;i<n;i++){ const o=P[i], hh=Math.round((9+pkRand(i,63)*4)*persS(o.yy)), dur=(5+pkRand(i,64)*5).toFixed(1), bd=(1+pkRand(i,65)*1.4).toFixed(2), del=(-pkRand(i,66)*6).toFixed(2); let _s=70; const rnd=()=>pkRand(i,_s++);
+        s+='<span class="pk-fire" style="left:'+o.x+'%;bottom:'+persB(o.yy)+'%;--d:'+dur+'s;--bd:'+bd+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="ff-core">'+fireflySvg({h:hh})+'</span></span>'; } }
+      if(id==='butterflies') bfly(N(7),['o','b','p','y']);
+      else if(id==='rainbowflutter') bfly(N(10),['o','b','p','y','o','p']);
+      else if(id==='mapleleaves') leaf(N(10),(i,hh)=>mapleLeafSvg({h:hh}, LEAF_COLS[Math.floor(pkRand(i,207)*LEAF_COLS.length)]));
+      else if(id==='sakura') leaf(N(10),(i,hh)=>petalSvg({h:hh}));
+      else if(id==='dragonflies') dfly(N(5));
       else if(id==='fireflies') fire(N(8));
       return s; }
     function roomOverlay(bgfxId){ return '<div class="cr-overlay" aria-hidden="true">'+bgfxOverlayHtml(bgfxId)+'</div>'; }
@@ -8967,16 +8975,59 @@
     let _dexTab=lsGet('dexTab','all');   // 도감 종별 탭('all'=전체 / species 코드)
     function setDexTab(t){ _dexTab=t||'all'; lsSet('dexTab',_dexTab); if(state._sheetRefresh) state._sheetRefresh(); }
     function dexSpeciesList(){ const seen={}, list=[]; dexCatalog().forEach(c=>{ const s=c.species||'cat'; if(!seen[s]){ seen[s]=1; list.push(s); } }); return list; }   // 도감 등장 종(순서 유지·중복 제거) — 획득 가능한 펫만(휴면 한정 제외)
-    // 🔋 도감 재빌드 서명 — 보유 펫 id+애정레벨+현재 탭. 코인·똥·수확 틱엔 불변이라 190셀 통째 재빌드를 스킵.
+    // 🗂️ 도감 상위 축: 펫 | 아이템(기구물·벽지·바닥·배경효과 — 소비는 소모품이라 제외)
+    let _dexKind=lsGet('dexKind','pet');
+    function setDexKind(k){ _dexKind=(k==='item'?'item':'pet'); lsSet('dexKind',_dexKind); if(state._sheetRefresh) state._sheetRefresh(); }
+    let _dexItemCat=lsGet('dexItemCat','all');   // 아이템 도감 분류('all'/'furn'/'wall'/'floor'/'bgfx')
+    function setDexItemCat(c){ _dexItemCat=c||'all'; lsSet('dexItemCat',_dexItemCat); if(state._sheetRefresh) state._sheetRefresh(); }
+    const DEX_ITEM_CATS=[['all','전체'],['furn','기구물'],['wall','벽지'],['floor','바닥'],['bgfx','배경효과']];
+    // 아이템 도감 통합 목록 {id,kind,cat,name,tier,has} — 기구물(케어·휴식·놀이·장식)+벽지+바닥+배경효과(default 표면 제외, 소비 제외)
+    function dexItemList(){ const out=[];
+      ITEM_CATALOG.forEach(function(it){ out.push({ id:it.id, kind:'furn', cat:placeCatOf(it.id), name:it.name, tier:itemTierOf(it.id), has:itemQty(it.id)>0 }); });
+      WALLPAPER_CATALOG.forEach(function(w){ if(w.id==='default') return; out.push({ id:w.id, kind:'wall', cat:'wall', name:w.name, tier:assetTierOf('wallpaper',w.id), has:ownsWall(w.id) }); });
+      FLOOR_CATALOG.forEach(function(f){ if(f.id==='default') return; out.push({ id:f.id, kind:'floor', cat:'floor', name:f.name, tier:assetTierOf('floor',f.id), has:ownsFloor(f.id) }); });
+      (typeof BGFX_CATALOG!=='undefined'?BGFX_CATALOG:[]).forEach(function(b){ out.push({ id:b.id, kind:'bgfx', cat:'bgfx', name:b.name, tier:'limited', has:ownsBgfx(b.id) }); });
+      return out; }
+    function dexItemThumb(it){
+      if(it.kind==='furn') return '<span class="furnfit">'+furnSvg(it.id,{fit:true})+'</span>';
+      if(it.kind==='wall') return '<span class="dexswatch" style="background:'+wallCss(it.id)+'"></span>';
+      if(it.kind==='floor') return '<span class="dexswatch" style="background:'+floorCss(it.id)+'"></span>';
+      if(it.kind==='bgfx') return bgfxThumb(it.id, 46);
+      return ''; }
+    // 아이템 도감 본문(펫과 같은 dex CSS 재사용) — 분류탭 + 그룹 그리드(기구물은 케어/휴식/놀이/장식 하위그룹)
+    function buildItemDex(){
+      const all=dexItemList();
+      if(_dexItemCat!=='all' && !DEX_ITEM_CATS.some(function(c){ return c[0]===_dexItemCat; })) _dexItemCat='all';
+      const pool=all.filter(function(it){ return _dexItemCat==='all'||it.kind===_dexItemCat; });
+      const owN=pool.filter(function(it){ return it.has; }).length, tot=pool.length, pct=tot?Math.round(owN/tot*100):0;
+      let h='<div class="dexhead"><div class="row" style="justify-content:space-between;"><b>아이템 수집</b><span class="s">'+owN+' / '+tot+' ('+pct+'%)</span></div><div class="bar"><i style="width:'+pct+'%"></i></div></div>';
+      h+='<div class="subseg dextabs">'+DEX_ITEM_CATS.map(function(t){ const id=t[0], n=all.filter(function(it){ return id==='all'||it.kind===id; }).length;
+        return '<button class="'+(_dexItemCat===id?'on':'')+'" onclick="setDexItemCat(\''+id+'\')">'+t[1]+' <b>'+n+'</b></button>'; }).join('')+'</div>';
+      const cell=function(it){ return '<div class="dexcell'+(it.has?' tbring tb-'+(it.tier||'normal'):' locked')+'" title="'+escapeHtml(it.has?it.name:'미보유')+'">'+
+        '<div class="dexpic">'+dexItemThumb(it)+'</div>'+
+        '<div class="dexnm">'+(it.has?escapeHtml(it.name):'<span class="q">???</span>')+'</div></div>'; };
+      const grp=function(title, arr){ if(!arr.length) return ''; const o=arr.filter(function(x){ return x.has; }).length;
+        return '<div class="dexgroup"><div class="dexgh"><span class="dexgt">'+title+'</span><span class="dexgn">'+o+'/'+arr.length+'</span></div><div class="dexgrid">'+arr.map(cell).join('')+'</div></div>'; };
+      if(_dexItemCat==='all'||_dexItemCat==='furn'){ PLACE_CATS.forEach(function(pc){ h+=grp('기구물 · '+pc[1], pool.filter(function(it){ return it.kind==='furn'&&it.cat===pc[0]; })); }); }
+      if(_dexItemCat==='all'||_dexItemCat==='wall') h+=grp('벽지', pool.filter(function(it){ return it.kind==='wall'; }));
+      if(_dexItemCat==='all'||_dexItemCat==='floor') h+=grp('바닥', pool.filter(function(it){ return it.kind==='floor'; }));
+      if(_dexItemCat==='all'||_dexItemCat==='bgfx') h+=grp('배경효과', pool.filter(function(it){ return it.kind==='bgfx'; }));
+      return h;
+    }
+    // 🔋 도감 재빌드 서명 — 상위축+탭+보유 펫(애정)+보유 아이템 키. 코인·똥·수확 틱엔 불변이라 통째 재빌드를 스킵.
     let _dexLastSig='';
-    function _dexRefreshSig(){ const o=ownedCatsMap(); return _dexTab+'|'+Object.keys(o).sort().map(function(id){ return id+':'+((o[id]&&o[id].affection)||0); }).join(','); }
+    function _dexRefreshSig(){ const o=ownedCatsMap(), ow=(state.game&&state.game.owned)||{};
+      const ik=Object.keys(ow.items||{}).sort().join(',')+'#'+Object.keys(ow.wallpapers||{}).sort().join(',')+'#'+Object.keys(ow.floors||{}).sort().join(',')+'#'+Object.keys(ow.bgfx||{}).sort().join(',');
+      return _dexKind+'|'+_dexTab+'|'+_dexItemCat+'|'+Object.keys(o).sort().map(function(id){ return id+':'+((o[id]&&o[id].affection)||0); }).join(',')+'|'+ik; }
     function openPetDex(){
       const build=()=>{
+        const kindTabs='<div class="subseg dexkind"><button class="'+(_dexKind==='pet'?'on':'')+'" onclick="setDexKind(\'pet\')">펫</button><button class="'+(_dexKind==='item'?'on':'')+'" onclick="setDexKind(\'item\')">아이템</button></div>';
+        if(_dexKind==='item') return kindTabs+buildItemDex();   // 🗂️ 아이템 도감
         const owned=ownedCatsMap(), species=dexSpeciesList();
         if(_dexTab!=='all' && species.indexOf(_dexTab)<0) _dexTab='all';   // 사라진 종 방어
         const pool=dexCatalog().filter(c=> _dexTab==='all' || (c.species||'cat')===_dexTab);   // 획득 가능한 펫만(휴면 한정펫은 도감에서 숨김 = 미출시)
         const prog=dexProgress(owned, pool.map(c=>c.id));   // 현재 탭 기준 진행도
-        let h='<div class="dexhead"><div class="row" style="justify-content:space-between;"><b>수집'+(_dexTab!=='all'?' · '+escapeHtml(SPECIES_LABEL[_dexTab]||_dexTab):'')+'</b><span class="s">'+prog.owned+' / '+prog.total+' ('+prog.pct+'%)</span></div><div class="bar"><i style="width:'+prog.pct+'%"></i></div></div>';
+        let h=kindTabs+'<div class="dexhead"><div class="row" style="justify-content:space-between;"><b>수집'+(_dexTab!=='all'?' · '+escapeHtml(SPECIES_LABEL[_dexTab]||_dexTab):'')+'</b><span class="s">'+prog.owned+' / '+prog.total+' ('+prog.pct+'%)</span></div><div class="bar"><i style="width:'+prog.pct+'%"></i></div></div>';
         // 종별 탭(전체 + 종). 옆으로 스크롤(.subseg).
         const tabs=[['all','전체']].concat(species.map(s=>[s,(SPECIES_LABEL[s]||s)]));
         h+='<div class="subseg dextabs">'+tabs.map(function(t){ const id=t[0], nm=t[1], n=dexCatalog().filter(c=>id==='all'||(c.species||'cat')===id).length;
@@ -8995,7 +9046,7 @@
         });
         return h;
       };
-      openSheet('펫 도감', build());
+      openSheet('도감', build());
       _dexLastSig=_dexRefreshSig();
       state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const sig=_dexRefreshSig(); if(sig===_dexLastSig) return; _dexLastSig=sig; const st=b.scrollTop; b.innerHTML=build(); b.scrollTop=st; };   // 🔋 서명 불변 시(코인 틱 등) 재빌드 스킵
     }
@@ -9123,11 +9174,10 @@
       if(gc>0){ h+='<div class="newsalert" role="button" tabindex="0" onclick="openGiftbox()"><span class="nai">'+giftSvg({h:30})+'</span><div class="nat"><b>선물 '+gc+'개가 도착했어요</b><span>탭해서 선물함에서 받으세요</span></div><span class="buy">받기</span></div>'; }
       else { h+='<div class="note" style="margin:2px 0 6px;">받을 선물이 없어요. 친구 집에서 응원 선물을 주고받거나 코드를 입력해 보세요.</div>'; }
       h+='<div class="sech" style="margin-top:16px;"><span class="l"><span class="sech-ic" style="color:var(--gold,#e0a43c);">'+sparkSvg({h:15})+'</span> 이벤트</span></div>';
-      h+=limitedPickupBanner();   // 🌈 한정 픽업 배너(있을 때만) — 이달의 할인펫 배너 위에
-      const fid=featuredCatId();
-      if(fid){ const fc=PET_CATALOG.find(function(x){ return x.id===fid; }); if(fc){
-        h+='<div class="featbanner" role="button" tabindex="0" onclick="openShop()"><span class="fstar">'+sparkSvg({h:20})+'</span><div class="fb-txt"><b>'+monthLabelKo()+' 이달의 펫 · '+catNameSpan(fid,fc.name)+'</b><span class="s">이번 달만 '+Math.round(FEATURED_DISCOUNT*100)+'% 할인 — '+catBuyPrice(fid)+' 은화'+(ownsCat(fid)?' (보유 완료)':' · 사러가기')+'</span></div><span class="fb-face">'+catFace(fid,{h:40})+'</span></div>'; } }
-      else { h+='<div class="note" style="margin:2px 0 6px;">진행 중인 이벤트가 곧 열려요.</div>'; }
+      const _lp=limitedPickupBanner();   // 🌈 한정 픽업 배너(있을 때만)
+      h+=_lp;
+      // 🚧 이달의 할인펫 배너는 잠시 제거(추후 재도입 예정) — featuredCatId 로직은 보존
+      if(!_lp) h+='<div class="note" style="margin:2px 0 6px;">진행 중인 이벤트가 곧 열려요.</div>';
       h+='<div class="sech" style="margin-top:16px;"><span class="l"><span class="sech-ic">'+megaSvg({h:16})+'</span> 공지사항</span></div>';
       // 공지사항 = ① 운영자 공지(제목+내용, config/announce) + ② 업데이트 내역(최신 1건). 홍보·개발자 문구는 업데이트 내역에서 제외.
       const _ann=announceList();
