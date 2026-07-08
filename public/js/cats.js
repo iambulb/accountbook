@@ -3032,6 +3032,8 @@
     // 무지개알/무지개박스: 껍질·몸체·뚜껑을 통째로 RAINBOW(움직이는 세로 무지개), 물음표(Q)는 흰색 대비, 금장(m/M/n)은 유지, 외곽(X)은 중립. 고양이얼굴(j/h)=RAINBOW·눈/코(y/x)·외곽(Y)은 진하게 유지(무지개 몸체 위에서도 또렷).
     const EGG_PAL_RB={X:'#8d8368',I:'RAINBOW',W:'RAINBOW',S:'RAINBOW',D:'RAINBOW',k:'RAINBOW',Q:'#FBFBFD',L:'#FBFBFD'};
     const BOX_PAL_RB={X:'#6f7688',C:'RAINBOW',c:'RAINBOW',W:'RAINBOW',S:'RAINBOW',D:'RAINBOW',m:'#f4dd8f',M:'#f8ecc0',n:'#b48a2f',Q:'#FBFBFD',Z:'#FBFBFD',o:'#F4D06B',O:'#fff0b8',e:'#ff5d6c',E:'#ffc0c6',u:'#5aa9e6',U:'#cfeaff',v:'#5bbf7a',V:'#c6f5d8',p:'#c77dff',P:'#eccfff',G:'#ffffff',Y:'#4a2f16',j:'RAINBOW',h:'RAINBOW',y:'#3a2410',x:'#7a3a48'};
+    // 무지개박스(은은 버전, _pkV2 배너) — 몸체·뚜껑을 은은한 파스텔 무지개(RAINBOW2)로, 고양이얼굴(j/h)만 선명한 무지개로 남겨 또렷하게(알과 톤 통일).
+    const BOX_PAL_RB2=Object.assign({},BOX_PAL_RB,{C:'RAINBOW2',c:'RAINBOW2',W:'RAINBOW2',S:'RAINBOW2',D:'RAINBOW2'});
 
     // 카탈로그(코드 상수) — 저장은 보유 id만. id는 종·색 구분(예: cat_calico, dog_corgi), species는 분류/필터용.
     // 새 동물(네발 짐승) 처리 규칙은 docs/pet-asset-pipeline.md 참고.
@@ -3589,14 +3591,18 @@
     // ---- 픽셀 렌더 ----
     function pxSvg(map, pal, opt){
       opt=opt||{}; pal=pal||{}; if(!map||!map.length||map[0]==null) return '';   // 방어: 팔레트/매트릭스가 없어도 절대 throw 안 함(삭제된 펫 등 미정의 팔레트로 렌더가 캠·알뜰홈 전체를 깨뜨리던 크래시 방지)
-      const cols=map[0].length, rows=map.length; let r=''; let rbw=false; const rid='pxrbw'+(pxSvg._n=(pxSvg._n||0)+1);
+      const cols=map[0].length, rows=map.length; let r=''; let rbw=false, rbw2=false; const rid='pxrbw'+(pxSvg._n=(pxSvg._n||0)+1), rid2=rid+'s';
       for(let y=0;y<rows;y++){ const row=map[y];
         for(let x=0;x<cols;x++){ const ch=row[x]; if(ch===' '||ch==='.')continue; const c=pal[ch]; if(!c)continue;
-          const f=c==='RAINBOW'?(rbw=true,'url(#'+rid+')'):c; r+='<rect x="'+x+'" y="'+y+'" width="1.05" height="1.05" fill="'+f+'"/>'; } }
+          const f=c==='RAINBOW'?(rbw=true,'url(#'+rid+')'):c==='RAINBOW2'?(rbw2=true,'url(#'+rid2+')'):c; r+='<rect x="'+x+'" y="'+y+'" width="1.05" height="1.05" fill="'+f+'"/>'; } }   // RAINBOW=선명한 무지개, RAINBOW2=은은한 파스텔 무지개(둘 다 세로 이동 그라디언트)
       const sz = opt.h ? ('height="'+opt.h+'"') : (opt.w? ('width="'+opt.w+'"') : '');
       const wh = opt.fit ? 'width="100%" height="100%"' : sz;
       const rbAnim = _rbStatic ? '' : '<animateTransform attributeName="gradientTransform" type="translate" from="0 0" to="0 9" dur="1.6s" repeatCount="indefinite"/>';   // 저사양·모션축소면 정적(SMIL 생략)
-      return '<svg class="px '+(opt.cls||'')+'" viewBox="0 0 '+cols+' '+rows+'" '+wh+' shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet">'+(rbw?'<defs><linearGradient id="'+rid+'" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="9" spreadMethod="repeat"><stop offset="0" stop-color="#F04452"/><stop offset=".17" stop-color="#F0883C"/><stop offset=".34" stop-color="#F2C84B"/><stop offset=".5" stop-color="#2FAE7A"/><stop offset=".67" stop-color="#3182F6"/><stop offset=".84" stop-color="#9B6FC8"/><stop offset="1" stop-color="#F04452"/>'+rbAnim+'</linearGradient></defs>':'')+r+'</svg>';
+      const grad=function(id,st){ return '<linearGradient id="'+id+'" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="9" spreadMethod="repeat">'+st+rbAnim+'</linearGradient>'; };
+      const RBST='<stop offset="0" stop-color="#F04452"/><stop offset=".17" stop-color="#F0883C"/><stop offset=".34" stop-color="#F2C84B"/><stop offset=".5" stop-color="#2FAE7A"/><stop offset=".67" stop-color="#3182F6"/><stop offset=".84" stop-color="#9B6FC8"/><stop offset="1" stop-color="#F04452"/>';
+      const RB2ST='<stop offset="0" stop-color="#F5C1CB"/><stop offset=".17" stop-color="#F7D8BE"/><stop offset=".34" stop-color="#F6EBC2"/><stop offset=".5" stop-color="#CBE9D6"/><stop offset=".67" stop-color="#CBDDF4"/><stop offset=".84" stop-color="#DECDEE"/><stop offset="1" stop-color="#F5C1CB"/>';   // 은은한 파스텔 무지개
+      const defs=(rbw||rbw2)?('<defs>'+(rbw?grad(rid,RBST):'')+(rbw2?grad(rid2,RB2ST):'')+'</defs>'):'';
+      return '<svg class="px '+(opt.cls||'')+'" viewBox="0 0 '+cols+' '+rows+'" '+wh+' shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet">'+defs+r+'</svg>';
     }
     function catPal(id){ return CAT_PALS[id]||CAT_PALS.cat_mackerel; }   // 미정의(삭제/미지원) 펫은 기본 고등어 팔레트로 폴백(블랭크·크래시 방지)
     function catFront(id, opt){ return pxSvg(id==='cat_calico'?M_CALICO_FRONT:M_CAT_FRONT, catPal(id), opt); }
@@ -3861,7 +3867,7 @@
     function boxSvg(opt){ return pxSvg(_pkV2?M_BOX_CAT:M_BOX, BOX_PAL, opt); }   // _pkV2 배너=고양이얼굴 박스, 라이브=물음표 박스
     // 무지개알/무지개박스 — 기존 알/상자 도트에 움직이는 무지개 채색(반짝임은 CSS .fx-rainbow/.rb-thumb).
     function rainbowEggSvg(opt){ return pxSvg(M_EGG, EGG_PAL_RB, opt); }
-    function rainbowBoxSvg(opt){ return pxSvg(_pkV2?M_BOX_CAT:M_BOX, BOX_PAL_RB, opt); }   // _pkV2 배너=무지개 고양이얼굴 박스, 라이브=물음표 박스
+    function rainbowBoxSvg(opt){ return pxSvg(_pkV2?M_BOX_CAT:M_BOX, _pkV2?BOX_PAL_RB2:BOX_PAL_RB, opt); }   // _pkV2 배너=은은한 무지개 고양이 박스, 라이브=선명 무지개 물음표 박스
     function rainbowEggStage(stage, opt){ return pxSvg([M_EGG,M_EGG_C1,M_EGG_C2][stage]||M_EGG, EGG_PAL_RB, opt); }
     // 3번째 탭: 크게 갈라진 알 + 틈새로 새어나오는 등급색 빛(L=등급색). rainbow면 껍질은 무지갯빛 유지.
     function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); if(rainbow) pal.X='RAINBOW'; return pxSvg(M_EGG_C3, pal, opt); }   // 무지개알 열 때: 테두리(X)까지 무지개색
@@ -4153,6 +4159,15 @@
       return '<span class="fx-ddflower fx-ddspr'+(sprRb?' ddflw-rb ddflw-fix':'')+'">'+spr+'</span><span class="fx-ddbody">'+pxSvg(M_DDEUL_BODY, EGG2_PAL)+'</span>'; }
     // ===== 🌈 v2 무지개알(개발자 '배너 관리' 미리보기 전용) — 뜰알 복사: 고양이 검은색→무지개 채색(눈·입 유지)·꽃→커진 무지개 색바퀴 꽃 =====
     const EGG2_RB_PAL=Object.assign({},DDEUL_PAL,{B:'RAINBOW',H:'RAINBOW',b:'RAINBOW',c:'RAINBOW'});   // 껍질·흙·이끼·눈·입은 뜰알 그대로(줄무늬 b·머즐 c도 무지개에 녹임)
+    // 🥚 흙·이끼 없는 깨끗한 무지개알 몸통(뜰알 몸통에서 흙/이끼 제거·하단 껍질로 재드로잉). 껍질 I/W/S/D=은은한 파스텔 무지개(RAINBOW2), 고양이 B/H=선명한 무지개, 눈·입은 진하게.
+    const M_RBEGG=[
+      "..........XXXX..........","........XXXXXXXX........",".......XXIIIIWWXX.......","......XIIIIIWWWWWX......",".....XIIIIIWWWWWWSX.....",
+      "....XXIIIIWWWWWWSSXX....","....XIIIIWWWWWWSSSSX....","...XIIIIWWWWWWWSSSSSX...","...XIIIIWWWWWWSSSSSSX...","..XIIIBBBWWWWSSBBBSSSX..",
+      "..XIIIBBHBWWSSBHBBSSDX..","..XIIBBBBBBBBBBBBBBDDX..","..XIWBBBBBBBBBBBBBBDDX..",".XIIWHBBBBBBBBBBBBHDDDX.",".XIWWBBBBEBBBBEBBBBDDDX.",
+      "..XWWBBBBBBBBBBBBSDDX...","..XWWBBBBBBBBBBBBSDDX...","..XWWSBBBBqPPqBBBSDDX...","..XWWSBBBBqQQqBBBSDDX...","..XWSSBBBBBBBBBBSSDDX...",
+      "...XWSSSBBBBBBSSSDDX....","...XWSSSSBBBBSSSDDDX....","....XSSSSSSSSSSDDDX.....",".....XSSSSSSSSDDDDX.....","......XXSSSSDDDDXX......",
+      "........XXXXXXXX........"];
+    const EGG2_RB2_PAL=Object.assign({},EGG2_RB_PAL,{I:'RAINBOW2',W:'RAINBOW2',S:'RAINBOW2',D:'RAINBOW2',E:'#3a2410'});   // 껍질=은은한 파스텔 무지개, 눈=진하게
     function rbEgg2FxHtml(){ return '<span class="fx-ddflower ddflw-rb ddflw-fix">'+ddeulFlwRbSvg()+'</span><span class="fx-ddbody">'+pxSvg(M_DDEUL_BODY, EGG2_RB_PAL)+'</span>'; }
     // 정적 무지개알 이미지(배너 아이템 등) — 무지개 고양이알 몸통 + 커진 무지개꽃. noFx=true면 오오라·트윙클 없이 꽃+몸통만(배너 데코용). h=몸통 높이(px).
     function rbEgg2Html(h, noFx){ h=h||52; const fh=Math.round(h*0.30);   // 꽃 5행(몸통 대비 19%)×1.55 ≈ 30%
@@ -4162,7 +4177,7 @@
           tw+='<span class="fx-tw" style="--tx:'+x+'px;--ty:'+y+'px;animation-delay:'+(Math.random()*1.1).toFixed(2)+'s;animation-duration:'+(1.1+Math.random()*0.7).toFixed(2)+'s">'+spark4Svg('RAINBOW',{h:9+Math.round(Math.random()*4)})+'</span>'; }
         fx='<span class="rbegg2-fx"><span class="rbegg2-aura">'+auraSvg('RAINBOW',{h:Math.round(h*1.3)})+'</span>'+tw+'</span>'; }
       return '<span class="rbegg2">'+fx+
-        '<span class="rbegg2-flw">'+ddeulFlwRbSvg({h:fh})+'</span>'+pxSvg(M_DDEUL_BODY, EGG2_RB_PAL, {h:h})+'</span>'; }
+        '<span class="rbegg2-flw">'+ddeulFlwRbSvg({h:fh})+'</span>'+pxSvg(M_RBEGG, EGG2_RB2_PAL, {h:h})+'</span>'; }   // 흙·이끼 없는 깨끗한 알 + 은은한 파스텔 무지개 껍질
     // 🌸 v2 무지개알 오픈(전설↑ 결과): 꽃이 뚝 떨어지고(ddflw-drop) 알 주변으로 무지개 꽃 6개가 흩날림. it=알 요소·st=흩날림 부착 무대·small=10뽑 알 스케일.
     function rbFlowerDropFx(it, st, small){
       const fl=it&&it.querySelector&&it.querySelector('.fx-ddflower'); if(fl) fl.classList.add('ddflw-drop');
@@ -7549,11 +7564,11 @@
       document.body.appendChild(wrap);
     }
     function closePickupPeek(){ const m=$('pkPeek'); if(m) m.remove(); }
-    // 🌱 뜰알 배너 = 상단 한정 픽업 쇼케이스(양쪽 큰 초상 + 가운데 텍스트) + 배회 픽업 펫이 도는 씬 + 알뜰 아이콘 센터.
+    // 🌱 뜰알 배너 = 상단 한정 픽업 쇼케이스(양쪽 큰 초상 + 가운데 텍스트) + 배회 픽업 펫이 도는 씬 + 센터(라이브=알뜰 아이콘 · v2 개발자 배너관리=뜰알 — 펫알 배너의 알 센터와 통일).
     function ddeulBannerHtml(live){
       return '<div class="gbanner gb-ddeul">'+
         ddeulPickupShowcase()+
-        '<div class="gb-scene">'+pickupSceneHtml('banner')+gbCenterHtml(eggGardenSvg(EGG_DEFAULT,{h:52}), gbRainbowFx(), 'gb-rb gb-eglow')+'</div>'+
+        '<div class="gb-scene">'+pickupSceneHtml('banner')+gbCenterHtml(_pkV2?ddeulEggSvg({h:52}):eggGardenSvg(EGG_DEFAULT,{h:52}), gbRainbowFx(), 'gb-rb gb-eglow')+'</div>'+
         // 🌱 배너 이미지 아래 — 뜰알 이미지·설명·소모재화(한정 강조)
         '<div class="gb-item gb-ddeul-item"><div class="gb-item-ic">'+ddeulEggSvg({h:52})+'</div>'+
           '<div class="gb-item-meta"><b class="tier-rainbow">뜰알 <span class="tagmini tier-rainbow">한정 픽업</span></b>'+
