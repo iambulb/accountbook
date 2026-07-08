@@ -6947,6 +6947,7 @@
         if(!isShop){ h+='<div class="catseg">'+[['home','홈'],['pet','펫'],['place','배치']].map(function(t){ return '<button class="'+(_catTab===t[0]?'on':'')+'" onclick="setCatTab(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>'; }
         if(isShop) h+=shopSubsegHtml();   // 알뜰샵 서브탭(sticky 헤더 안)
         h+='</div>';   // .cathead 닫기(여기까지 sticky)
+        if(!isShop) h+=roomStripHtml();   // 🏠 룸 스위처 1회 렌더(홈·펫·배치 공용) — 이전엔 홈/배치가 각자 그려 중복(펫 탭엔 없었음). 헤더 바로 아래·본문 위.
         if(isShop) h+='<div class="shopwrap">'+catShopHtml()+'</div>';   // min-height로 탭마다 시트 높이 동일(소비처럼 항목 적어도 안 줄어듦)
         else if(_catTab==='place') h+=catPlaceHtml();
         else if(_catTab==='pet') h+=catPetHtml();
@@ -7086,7 +7087,7 @@
       const spH=splitProps(list, p=>propMarkup(p,false,false,true));   // 바닥 아이템(러그·연못) 먼저 → 맨 아래
       const props=spH.floor+wallPlacedList().map(p=>wallPropMarkup(p,false,true)).join('')+spH.other;   // 바닥 아이템 → 벽 가구(뒤) + 일반 가구. live=true → 홈 LIVE 캠 연출
       const roomName=(room().name)||'우리집';
-      let h=roomStripHtml()+'<div class="catroom" id="catRoom">'+roomShellBase(currentWall(), currentFloor())+'<span class="cr-cam"><i></i>LIVE · '+escapeHtml(roomName)+'</span>'+batchBtnHtml()+'<div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div>'+roomOverlay(currentBgfx())+'</div>';
+      let h='<div class="catroom" id="catRoom">'+roomShellBase(currentWall(), currentFloor())+'<span class="cr-cam"><i></i>LIVE · '+escapeHtml(roomName)+'</span>'+batchBtnHtml()+'<div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div>'+roomOverlay(currentBgfx())+'</div>';
       // 빈 방(가구·펫 없음) 안내 — 방 확장 직후 '사라진 것처럼' 보이는 혼동 방지
       if(!list.length && !cats.length) h+='<div class="hintline" style="margin:8px 0 0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>새 방이에요! <b>펫</b> 탭에서 <b>펫을 이 방으로 데려오고</b>, <b>배치</b> 탭에서 가구를 놓아보세요. (다른 방과 따로 저장돼요)</div>';
       // 안내: 그릇 채우기 / 똥 수거
@@ -7452,7 +7453,7 @@
     function selectShopCat(id){ _shopSelCat=(_shopSelCat===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     // 알뜰샵 서브탭(펫/가구/소비/벽지/가챠) — cathead(sticky) 안에 넣어 스크롤해도 상단 고정. '펫'=구 '고양이'(호랑이·사자 등 포함이라 펫으로 통일). ('가챠' 탭 키는 내부적으로 'event' 유지)
     const SHOP_SUBS=[['event','이벤트'],['egg','펫알'],['box','랜덤박스'],['rainbow','무지개'],['consum','소비']];   // 🚧 은화 구매 탭(펫·가구·벽지·바닥)은 잠시 제거 — 가챠(이벤트·펫알·랜덤박스·무지개) + 소비만. (추후 금화 로테이션 판매로 재도입 예정)
-    const SHOP_LEGACY_BUYTABS=false;   // 🚧 휴면(레거시) 은화 매수탭 게이트 — catShopHtml의 floor/wall/cats/가구 분기를 하드 펜스(SHOP_SUBS에서도 빠져 도달 불가). 재도입 시 true + SHOP_SUBS 복원. 삭제는 헬퍼 호출부 grep 후 2단계.
+    const SHOP_LEGACY_BUYTABS=false;   // 🚧 휴면(레거시) 은화 매수탭 게이트 — catShopHtml의 floor/wall/cats/가구 분기를 하드 펜스(SHOP_SUBS에서도 빠져 도달 불가). buyCat/buyItem/buyFloor/buyWall·surfaceShopGrid·필터/정렬 헬퍼가 이 블록 전용이라 삭제하지 않고 보존 — 재도입(금화 로테이션 판매) 시 true + SHOP_SUBS 복원.
     function shopSubsegHtml(){
       if(!SHOP_SUBS.some(function(t){ return t[0]===_shopSub; })) _shopSub='event';   // 제거된 탭 상태면 이벤트로 폴백
       return '<div class="subseg">'+SHOP_SUBS.map(function(t){ return '<button class="'+(_shopSub===t[0]?'on':'')+'" onclick="setShopSub(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
@@ -7516,7 +7517,7 @@
         h+='<div class="note">'+gachaNoteFor('rainbow')+'</div>';
         return h;
       }
-      if(SHOP_LEGACY_BUYTABS){   // 🚧 아래 은화 매수탭(바닥·벽지·펫·가구)은 휴면 — 위 SHOP_SUBS에 없어 현재 도달 불가. 삭제는 헬퍼 호출부 grep 후 2단계.
+      if(SHOP_LEGACY_BUYTABS){   // 🚧 아래 은화 매수탭(바닥·벽지·펫·가구)은 휴면 — 위 SHOP_SUBS에 없어 현재 도달 불가(재도입까지 보존, 삭제 안 함).
       if(_shopSub==='floor'){
         h+=surfaceShopGrid('floor');
         h+='<div class="note"><b>바닥 스킨</b>은 <b>알뜰홈 방꾸미기</b>에서 방마다 골라 깔아요. <b>특별↑ 등급</b> 바닥은 <b>랜덤박스</b>로만 나와요.</div>';
@@ -8971,7 +8972,7 @@
         const palBody=pal||'<div class="palempty">이 분류에 보유한 가구가 없어요<br><span>알뜰샵·랜덤박스에서 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>';
         body=grid+dragHint+catTabs+'<div class="palette catinv">'+palBody+'</div>'+skinPickerHtml('floor')+bgfxPickerHtml();
       }
-      return roomStripHtml()+'<div class="editwrap">'+preview+toggle+placeActionsBar()+body+'</div>';
+      return '<div class="editwrap">'+preview+toggle+placeActionsBar()+body+'</div>';
     }
     function missionRow(m){
       const claimed=missionClaimed(m), ok=m.check();
