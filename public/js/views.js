@@ -1815,7 +1815,7 @@
       h+=gcell((typeof shopSvg==='function'?shopSvg({h:26}):'🏪'),'알뜰샵','openShop()');
       h+=gcell((typeof bellSvg==='function'?bellSvg({h:26}):'🔔'),'소식','openNews()', (typeof newsMoreCount==='function'?newsMoreCount():0));   // 선물 제외: 안 쓴 쿠폰+안 본 공지만(선물은 선물함 셀에)
       h+=gcell((typeof missionSvg==='function'?missionSvg({h:26}):'📋'),'미션','openMissions()');
-      h+=gcell((typeof dexSvg==='function'?dexSvg({h:26}):'📖'),'펫도감','openPetDex()');
+      h+=gcell((typeof dexSvg==='function'?dexSvg({h:26}):'📖'),'도감','openPetDex()');
       h+=gcell(giftSvg({h:26}),'선물함','openGiftbox()', (typeof giftUnread==='function'?giftUnread():0));
       h+=gcell((typeof bagSvg==='function'?bagSvg({h:26}):''),'가방','openBag()');
       h+=gcell((typeof peopleSvg==='function'?peopleSvg({h:26}):MORE_ICON.members),'친구','openFriendsSheet()', (typeof state.friendReqs==='object'?Object.keys(state.friendReqs||{}).length:0)||0);

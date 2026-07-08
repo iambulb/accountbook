@@ -880,6 +880,12 @@
     .dexcell .dexlv { font-size:9px; color:#e0567a; letter-spacing:-1px; }
     .dexcell.locked .dexpic { filter:brightness(0) opacity(.26); }   /* 미보유=실루엣 */
     .dexcell.locked { opacity:.9; }
+    /* 🗂️ 도감 상위 탭(펫 | 아이템) */
+    .subseg.dexkind { margin-bottom:10px; }
+    /* 아이템 도감 셀 — 기구물 도트 SVG는 아래정렬·크기맞춤, 벽지/바닥은 패턴 스와치 */
+    .dexcell .dexpic .furnfit { width:52px; height:54px; display:flex; align-items:center; justify-content:center; }
+    .dexcell .dexpic .furnfit .px { width:100%; height:100%; }
+    .dexcell .dexpic .dexswatch { align-self:center; width:46px; height:46px; border-radius:8px; image-rendering:pixelated; box-shadow:inset 0 0 0 1px rgba(0,0,0,.10); }
     /* 도감: 종별 탭 + 등급별 그룹(연한 구분선·간격으로 살짝 구분) */
     .dextabs { margin:0 2px 12px; }
     .dexgroup { margin-top:16px; }
