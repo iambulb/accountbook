@@ -3000,13 +3000,38 @@
       "........................",
       "........................"
     ];
+    // 🐱 랜덤박스(고양이얼굴 버전, _pkV2 배너 전용) — 물음표(Q) 자리에 펫알과 같은 고양이 얼굴(Y외곽·j얼굴·h안쪽귀·y눈·x코입). BOX_PAL=치즈태비, BOX_PAL_RB=무지개 고양이.
+    const M_BOX_CAT = [
+      "........................",
+      "........................",
+      "........................",
+      "......XCCCCCCccccX......",
+      "....XCCCCCCCCCcccccX....",
+      "...CCCCCCCCCCCCcccccc...",
+      "..XCCCCCCCCCCCCCcccccX..",
+      "..CCCCCCCCCCnCCCCccccc..",
+      ".XmmmmmmmmmmmmmmmmmmmmX.",
+      "..XmmmmmmmMMMmmmmmmmmX..",
+      "..XMWWYYWWWnWWWWYYSSMX..",
+      "..XmWWYjjYWWWWYjjYSSnX..",
+      "..XMWWYjhYYYYYYhjYSSnX..",
+      "..XmWWYjjjjjjjjjjYSSnX..",
+      "..XMWWYjjyjjjjyjjYSSnX..",
+      "..XmWWYjjjjjjjjjjYSSnX..",
+      "..XMWWYjjjjxxjjjjYSSnX..",
+      "..XmWWWYjjjjjjjjYSSDnX..",
+      "..XMWWWSYYjjjjYYSDDDnX..",
+      "..XMWWSSSSSSSSSSDDDDMX..",
+      "..XXXXXXXXXXXXXXXXXXXX..",
+      "........................"
+    ];
     // 펫알(크림): 4톤 명암 I·W·S·D + k 잔점, X 외곽. Q=무지개 물음표. L=균열 틈새 빛(C2=따뜻한 흰빛 기본, 오픈 때 eggCrackSvg가 등급색으로 덮음).
     const EGG_PAL={X:'#8d8368',I:'#fffef8',W:'#f7f3ea',S:'#e6dfce',D:'#d3cbb6',k:'#ddd6c4',Q:'RAINBOW',L:'#fff3c8'};
-    // 랜덤박스(파스텔+금장): 돔뚜껑 C/c, 몸체 W·S·D, 금장 m/M/n, X 외곽. Q=무지개 물음표. Z=오픈 빛(등급색으로 덮임).
-    const BOX_PAL={X:'#6f7688',C:'#eef1f7',c:'#d0d7e4',W:'#dbe1ec',S:'#bcc4d4',D:'#9aa5b9',m:'#f4dd8f',M:'#f8ecc0',n:'#b48a2f',Q:'RAINBOW',Z:'#fff3c8',o:'#F4D06B',O:'#fff0b8',e:'#ff5d6c',E:'#ffc0c6',u:'#5aa9e6',U:'#cfeaff',v:'#5bbf7a',V:'#c6f5d8',p:'#c77dff',P:'#eccfff',G:'#ffffff'};
-    // 무지개알/무지개박스: 껍질·몸체·뚜껑을 통째로 RAINBOW(움직이는 세로 무지개), 물음표(Q)는 흰색 대비, 금장(m/M/n)은 유지, 외곽(X)은 중립.
+    // 랜덤박스(파스텔+금장): 돔뚜껑 C/c, 몸체 W·S·D, 금장 m/M/n, X 외곽. Q=무지개 물음표. Z=오픈 빛(등급색으로 덮임). Y/j/h/y/x=고양이얼굴(M_BOX_CAT, 치즈태비).
+    const BOX_PAL={X:'#6f7688',C:'#eef1f7',c:'#d0d7e4',W:'#dbe1ec',S:'#bcc4d4',D:'#9aa5b9',m:'#f4dd8f',M:'#f8ecc0',n:'#b48a2f',Q:'RAINBOW',Z:'#fff3c8',o:'#F4D06B',O:'#fff0b8',e:'#ff5d6c',E:'#ffc0c6',u:'#5aa9e6',U:'#cfeaff',v:'#5bbf7a',V:'#c6f5d8',p:'#c77dff',P:'#eccfff',G:'#ffffff',Y:'#7a5a2e',j:'#ef9f42',h:'#d47f2b',y:'#3a2410',x:'#7a3a48'};
+    // 무지개알/무지개박스: 껍질·몸체·뚜껑을 통째로 RAINBOW(움직이는 세로 무지개), 물음표(Q)는 흰색 대비, 금장(m/M/n)은 유지, 외곽(X)은 중립. 고양이얼굴(j/h)=RAINBOW·눈/코(y/x)·외곽(Y)은 진하게 유지(무지개 몸체 위에서도 또렷).
     const EGG_PAL_RB={X:'#8d8368',I:'RAINBOW',W:'RAINBOW',S:'RAINBOW',D:'RAINBOW',k:'RAINBOW',Q:'#FBFBFD',L:'#FBFBFD'};
-    const BOX_PAL_RB={X:'#6f7688',C:'RAINBOW',c:'RAINBOW',W:'RAINBOW',S:'RAINBOW',D:'RAINBOW',m:'#f4dd8f',M:'#f8ecc0',n:'#b48a2f',Q:'#FBFBFD',Z:'#FBFBFD',o:'#F4D06B',O:'#fff0b8',e:'#ff5d6c',E:'#ffc0c6',u:'#5aa9e6',U:'#cfeaff',v:'#5bbf7a',V:'#c6f5d8',p:'#c77dff',P:'#eccfff',G:'#ffffff'};
+    const BOX_PAL_RB={X:'#6f7688',C:'RAINBOW',c:'RAINBOW',W:'RAINBOW',S:'RAINBOW',D:'RAINBOW',m:'#f4dd8f',M:'#f8ecc0',n:'#b48a2f',Q:'#FBFBFD',Z:'#FBFBFD',o:'#F4D06B',O:'#fff0b8',e:'#ff5d6c',E:'#ffc0c6',u:'#5aa9e6',U:'#cfeaff',v:'#5bbf7a',V:'#c6f5d8',p:'#c77dff',P:'#eccfff',G:'#ffffff',Y:'#4a2f16',j:'RAINBOW',h:'RAINBOW',y:'#3a2410',x:'#7a3a48'};
 
     // 카탈로그(코드 상수) — 저장은 보유 id만. id는 종·색 구분(예: cat_calico, dog_corgi), species는 분류/필터용.
     // 새 동물(네발 짐승) 처리 규칙은 docs/pet-asset-pipeline.md 참고.
@@ -3833,10 +3858,10 @@
     const SHOP_PAL={K:'#6f7681',S:'#d6dbe1',A:'#4a4f57',D:'#a8afb8',E:'#d6dbe1',P:'#cf8f6c',R:'#e07a5f',W:'#f6ede2'};   // 은화 톤(COIN_PAL)+차양 두 색
     function shopSvg(opt){ return pxSvg(M_SHOP, SHOP_PAL, opt); }
     function eggSvg(stage, opt){ return pxSvg(stage>=2?M_EGG_C2:(stage>=1?M_EGG_C1:M_EGG), EGG_PAL, opt); }
-    function boxSvg(opt){ return pxSvg(M_BOX, BOX_PAL, opt); }
+    function boxSvg(opt){ return pxSvg(_pkV2?M_BOX_CAT:M_BOX, BOX_PAL, opt); }   // _pkV2 배너=고양이얼굴 박스, 라이브=물음표 박스
     // 무지개알/무지개박스 — 기존 알/상자 도트에 움직이는 무지개 채색(반짝임은 CSS .fx-rainbow/.rb-thumb).
     function rainbowEggSvg(opt){ return pxSvg(M_EGG, EGG_PAL_RB, opt); }
-    function rainbowBoxSvg(opt){ return pxSvg(M_BOX, BOX_PAL_RB, opt); }
+    function rainbowBoxSvg(opt){ return pxSvg(_pkV2?M_BOX_CAT:M_BOX, BOX_PAL_RB, opt); }   // _pkV2 배너=무지개 고양이얼굴 박스, 라이브=물음표 박스
     function rainbowEggStage(stage, opt){ return pxSvg([M_EGG,M_EGG_C1,M_EGG_C2][stage]||M_EGG, EGG_PAL_RB, opt); }
     // 3번째 탭: 크게 갈라진 알 + 틈새로 새어나오는 등급색 빛(L=등급색). rainbow면 껍질은 무지갯빛 유지.
     function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); if(rainbow) pal.X='RAINBOW'; return pxSvg(M_EGG_C3, pal, opt); }   // 무지개알 열 때: 테두리(X)까지 무지개색
@@ -4129,12 +4154,14 @@
     // ===== 🌈 v2 무지개알(개발자 '배너 관리' 미리보기 전용) — 뜰알 복사: 고양이 검은색→무지개 채색(눈·입 유지)·꽃→커진 무지개 색바퀴 꽃 =====
     const EGG2_RB_PAL=Object.assign({},DDEUL_PAL,{B:'RAINBOW',H:'RAINBOW',b:'RAINBOW',c:'RAINBOW'});   // 껍질·흙·이끼·눈·입은 뜰알 그대로(줄무늬 b·머즐 c도 무지개에 녹임)
     function rbEgg2FxHtml(){ return '<span class="fx-ddflower ddflw-rb ddflw-fix">'+ddeulFlwRbSvg()+'</span><span class="fx-ddbody">'+pxSvg(M_DDEUL_BODY, EGG2_RB_PAL)+'</span>'; }
-    // 정적 무지개알 이미지(배너 아이템 등) — 알 뒤 무지개 오오라 + 주변 무지개 트윙클(도트) + 커진 무지개꽃. h=몸통 높이(px).
-    function rbEgg2Html(h){ h=h||52; const fh=Math.round(h*0.30);   // 꽃 5행(몸통 대비 19%)×1.55 ≈ 30%
-      let tw=''; for(let i=0;i<4;i++){ const a=(i/4)*360+28+Math.random()*20, d=h*(0.52+Math.random()*0.22);
-        const x=Math.round(Math.cos(a*Math.PI/180)*d), y=Math.round(Math.sin(a*Math.PI/180)*d*0.9);
-        tw+='<span class="fx-tw" style="--tx:'+x+'px;--ty:'+y+'px;animation-delay:'+(Math.random()*1.1).toFixed(2)+'s;animation-duration:'+(1.1+Math.random()*0.7).toFixed(2)+'s">'+spark4Svg('RAINBOW',{h:9+Math.round(Math.random()*4)})+'</span>'; }
-      return '<span class="rbegg2"><span class="rbegg2-fx"><span class="rbegg2-aura">'+auraSvg('RAINBOW',{h:Math.round(h*1.3)})+'</span>'+tw+'</span>'+
+    // 정적 무지개알 이미지(배너 아이템 등) — 무지개 고양이알 몸통 + 커진 무지개꽃. noFx=true면 오오라·트윙클 없이 꽃+몸통만(배너 데코용). h=몸통 높이(px).
+    function rbEgg2Html(h, noFx){ h=h||52; const fh=Math.round(h*0.30);   // 꽃 5행(몸통 대비 19%)×1.55 ≈ 30%
+      let fx='';
+      if(!noFx){ let tw=''; for(let i=0;i<4;i++){ const a=(i/4)*360+28+Math.random()*20, d=h*(0.52+Math.random()*0.22);
+          const x=Math.round(Math.cos(a*Math.PI/180)*d), y=Math.round(Math.sin(a*Math.PI/180)*d*0.9);
+          tw+='<span class="fx-tw" style="--tx:'+x+'px;--ty:'+y+'px;animation-delay:'+(Math.random()*1.1).toFixed(2)+'s;animation-duration:'+(1.1+Math.random()*0.7).toFixed(2)+'s">'+spark4Svg('RAINBOW',{h:9+Math.round(Math.random()*4)})+'</span>'; }
+        fx='<span class="rbegg2-fx"><span class="rbegg2-aura">'+auraSvg('RAINBOW',{h:Math.round(h*1.3)})+'</span>'+tw+'</span>'; }
+      return '<span class="rbegg2">'+fx+
         '<span class="rbegg2-flw">'+ddeulFlwRbSvg({h:fh})+'</span>'+pxSvg(M_DDEUL_BODY, EGG2_RB_PAL, {h:h})+'</span>'; }
     // 🌸 v2 무지개알 오픈(전설↑ 결과): 꽃이 뚝 떨어지고(ddflw-drop) 알 주변으로 무지개 꽃 6개가 흩날림. it=알 요소·st=흩날림 부착 무대·small=10뽑 알 스케일.
     function rbFlowerDropFx(it, st, small){
@@ -5146,7 +5173,10 @@
     }
     // ⚡ game 델타마다 dock·홈을 통째로 갱신하던 것을 rAF 코얼레싱(연속 변경 1프레임 1회) + dock 숨김이면 dock DOM 갱신 스킵.
     let _ogcRAF=0;
-    function onGameChange(){ if(_ogcRAF) return; _ogcRAF=requestAnimationFrame(function(){ _ogcRAF=0; _onGameChangeNow(); }); }
+    function onGameChange(){ if(_ogcRAF) return; _ogcRAF=1;
+      // 🖥️ 메인 탭이 숨겨진 채 PiP만 떠 있으면 메인 rAF가 안 돌므로 PiP 창의 rAF로 코얼레싱(미니 캠 라이브 반영 유지). PiP가 닫히면 _pipClosed가 메인으로 재예약.
+      const raf=(typeof document!=='undefined'&&document.hidden&&typeof pipOpen==='function'&&pipOpen())?_pip.win.requestAnimationFrame.bind(_pip.win):requestAnimationFrame;
+      raf(function(){ _ogcRAF=0; _onGameChangeNow(); }); }
     function _onGameChangeNow(){
       updateNewsBadge();
       if(dockMode()!=='hidden'){   // 🔋 dock 숨김이면 dock DOM 갱신 불필요(보일 때만)
@@ -5157,6 +5187,14 @@
         const tr=dw&&dw.querySelector('.cr-topright'); if(tr) tr.outerHTML=batchBtnHtml();   // dock 하트(행복도)·수확칩도 라이브 반영 — renderDock에서만 만들어져 0%로 굳던 버그(지갑은 _walletDisp/syncWalletText라 재렌더 안전)
         renderDockProps();
         renderDockCats();
+      }
+      if(typeof pipOpen==='function' && pipOpen()){   // 🖥️ PiP 미니 캠도 dock와 동일하게 라이브 패치(벽·바닥·오버레이·방이름·가구·펫)
+        try{
+          const pw=_pip.room.querySelector('.cr-wall'); if(pw){ pw.style.background=wallCss(currentWall()); pw.innerHTML=wallSceneHtml(currentWall()); }
+          const pf=_pip.room.querySelector('.cr-floor'); if(pf){ pf.style.background=floorCss(currentFloor()); pf.innerHTML=floorSceneHtml(currentFloor()); }
+          const po=_pip.room.querySelector('.cr-overlay'); if(po) po.innerHTML=bgfxOverlayHtml(currentBgfx());
+          _pipSetCamTxt(); renderPipProps(); renderPipCats();
+        }catch(e){}
       }
       if(state.view==='home' && typeof renderHome==='function') renderHome();   // 홈의 미션·은화 즉시 반영
       refreshMoreBadges();   // 더보기 그리드 알림 뱃지(선물함·소식…)가 game 변화(선물 받기·쿠폰 사용·공지 확인)에 즉시 반영되도록
@@ -5876,6 +5914,7 @@
     let _artRerenderT=0;
     function _petArtRerender(){ clearTimeout(_artRerenderT); _artRerenderT=setTimeout(_petArtRerenderNow, 80); }   // 여러 런타임 펫 아트가 잇달아 도착해도 무대 재빌드를 1회로 합침(재빌드 폭주 방지)
     function _petArtRerenderNow(){ const cd=$('cdStage'); if(cd) cd.dataset.sig=''; const cr=$('crStage'); if(cr) cr.dataset.sig='';
+      if(typeof pipOpen==='function' && pipOpen() && _pip.stage){ _pip.stage.dataset.sig=''; renderPipCats(); }   // 🖥️ PiP 무대도 아트 도착 반영(도트 알 → 스프라이트)
       if(typeof renderDockCats==='function') renderDockCats();
       if(typeof mountRoomWalk==='function') mountRoomWalk();
       if(state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh(); }
@@ -6427,6 +6466,87 @@
       stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+(hasSprite(id)?'<span class="cd-shadow">'+shadowSvg({h:Math.max(6,Math.round(s*0.16))})+'</span>':'')+catActorHTML(id,s)+'</div>'; }).join('');
       markCatDirty();
     }
+    // ================= 🖥️ 펫캠 PiP — Document Picture-in-Picture (데스크톱 크롬·엣지 116+ 전용) =================
+    // 캠 방을 '항상 위(always-on-top)' 미니 창으로 미러링(스팀 오버레이처럼 다른 작업 중에도 떠 있음). 시청 전용 —
+    // PiP 문서엔 앱 스크립트가 없어 inline onclick이 ReferenceError라, pointer-events:none(+핸들러 제거)으로 조작을 원천 차단.
+    // · 미지원(모바일/TWA/파이어폭스/사파리)이면 pipSupported()=false → 버튼조차 안 그려지고 아래 코드 전부 휴면(비용 0) — 모바일 최적화 영향 없음.
+    // · 무대는 가상 높이 PIP_VH(=dock .cd-room 200px)로 렌더하고 창 크기엔 transform:scale로 맞춤 → 펫·가구 px 크기·원근이
+    //   dock와 완전히 동일(캠 비율 불변식 유지). 리사이즈는 transform만 갱신하고 가상 폭이 바뀔 때만 재빌드(비용 최소).
+    // · 엔진 편입: activeStages()가 _pip.stage를 5번째 무대로 포함, 메인 탭이 숨겨지면 PiP 창의 rAF(_engWin)로 루프를 이어가
+    //   "웹서핑/작업 중에도 미니 캠이 계속 움직이는" 시나리오가 실제로 동작한다(메인 rAF는 숨김 탭에서 정지하므로).
+    // · 정리: 창 pagehide에서 무대 지속 캐시(_stageW/_petX/_petDepth/_petVz/_petPose)와 rAF 체인을 정리·복구(메모리 누수·유령 무대 방지).
+    const PIP_VH=200;   // 가상 방 높이 = dock .cd-room(200px)과 동일 → 같은 원근·크기
+    let _pip=null;      // { win, doc, room, props, stage, _vw } — 창이 떠 있는 동안만 존재
+    function pipSupported(){ return typeof window!=='undefined' && 'documentPictureInPicture' in window; }
+    function pipOpen(){ return !!(_pip && _pip.win && !_pip.win.closed); }
+    function _engWin(){ return pipOpen()?_pip.win:window; }   // 걷기 엔진 rAF 스케줄 창 — PiP가 떠 있으면 그 창(항상 보임) 기준
+    // PiP 문서에선 전역 함수가 없어 inline 핸들러가 동작할 수 없으므로 상호작용 속성을 전부 벗긴다(시청 전용·키보드 포커스도 차단).
+    function _pipStatic(html){ return String(html).replace(/ (?:onclick|onkeydown)="[^"]*"/g,'').replace(/ role="button"/g,'').replace(/ tabindex="0"/g,''); }
+    function _pipSetCamTxt(){ if(!pipOpen()) return; const el=_pip.doc.getElementById('ppCamTxt'); if(el) el.textContent=(room().emoji?room().emoji+' ':'')+(room().name||'우리집'); }
+    function syncPipTheme(){ if(!pipOpen()) return; try{ _pip.doc.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme')||'light'); }catch(e){} }
+    // 창 크기 → 가상 방(폭 가변 × 높이 PIP_VH)을 scale로 꽉 채움. 가상 폭이 바뀔 때만 액터 재클램프(markCatDirty).
+    function _pipLayout(){ if(!pipOpen()||!_pip.room) return;
+      const w=_pip.win.innerWidth||320, h=_pip.win.innerHeight||PIP_VH, sc=Math.max(0.2, h/PIP_VH);
+      const vw=Math.max(120, Math.round(w/sc));
+      const st=_pip.room.style; st.width=vw+'px'; st.height=PIP_VH+'px'; st.transform='scale('+sc.toFixed(4)+')';
+      if(_pip._vw!==vw){ _pip._vw=vw; markCatDirty(); } }
+    // 가구·똥(라이브 연출 포함)을 PiP 방에 렌더 — renderDockProps와 동일한 서명 가드(game 틱마다 DOM 재생성·연출 리셋 방지)
+    function renderPipProps(){ if(!pipOpen()||!_pip.props) return;
+      const r=room(); const sig='p:'+curRoomId()+'|'+JSON.stringify(r.placed||{})+'|'+JSON.stringify(r.wallPlaced||{})+'|'+(Number(r.poops)||0);
+      if(_pip.props.dataset.sig===sig) return; _pip.props.dataset.sig=sig;
+      const list=placedList().sort((a,b)=>a.r-b.r); distributePoops(list);
+      const wallProps=wallPlacedList().map(p=>wallPropMarkup(p,true,true)).join('');
+      const sp=splitProps(list, p=>propMarkup(p,true,false,true));   // dock와 동일: 그릇 채움 상태·live 연출 포함(핸들러는 아래서 제거)
+      _pip.props.innerHTML=_pipStatic(sp.floor+wallProps+sp.other); }
+    // 활성 펫을 PiP 무대에 — renderDockCats와 동일한 서명 가드(스프라이트 리로드·애니 리셋 깜빡임 방지)
+    function renderPipCats(){ if(!pipOpen()||!_pip.stage) return;
+      const stage=_pip.stage; const list=activeCats().slice(0,slotCount());
+      ensurePetArtMany(list);
+      const sig='c:'+list.join(',');
+      if(stage.dataset.sig===sig && stage.querySelector('.cd-actor')) return;
+      stage.dataset.sig=sig;
+      if(!list.length){ stage.innerHTML='<span class="cd-empty">펫이 없어요</span>'; markCatDirty(); return; }
+      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+(hasSprite(id)?'<span class="cd-shadow">'+shadowSvg({h:Math.max(6,Math.round(s*0.16))})+'</span>':'')+catActorHTML(id,s)+'</div>'; }).join('');
+      markCatDirty(); }
+    // dock 캠 우하단 PiP 버튼(지원 브라우저에서만 렌더 — 모바일에선 마크업 자체가 없음)
+    function pipBtnHtml(){ if(!pipSupported()) return '';
+      const on=pipOpen();
+      return '<button class="cd-pip'+(on?' on':'')+'" onclick="event.stopPropagation();openPipCam()" aria-pressed="'+(on?'true':'false')+'" title="'+(on?'PiP 미니 창 닫기':'펫캠을 항상 위 미니 창(PiP)으로')+'" aria-label="펫캠 PiP 미니 창 열기/닫기">'+pipSvg({h:13})+'</button>'; }
+    function _pipBtnSync(){ const b=document.querySelector('.catdock .cd-pip'); if(!b) return; const on=pipOpen();
+      b.classList.toggle('on', on); b.setAttribute('aria-pressed', on?'true':'false'); b.title=on?'PiP 미니 창 닫기':'펫캠을 항상 위 미니 창(PiP)으로'; }
+    function openPipCam(){
+      if(!pipSupported()){ toast('이 브라우저는 PiP 미니 캠을 지원하지 않아요(데스크톱 크롬·엣지)', true); return; }
+      if(pipOpen()){ try{ _pip.win.close(); }catch(e){} return; }   // 토글: 버튼 재탭=닫기(pagehide 정리 경유)
+      documentPictureInPicture.requestWindow({ width:380, height:224 }).then(function(win){
+        const doc=win.document;
+        try{
+          const base=doc.createElement('base'); base.href=document.baseURI; doc.head.appendChild(base);   // 스프라이트 PNG 등 상대 URL 해석 보장
+          document.querySelectorAll('link[rel="stylesheet"]').forEach(function(l){ const n=doc.createElement('link'); n.rel='stylesheet'; n.href=l.href; doc.head.appendChild(n); });   // styles.css 재사용(HTTP 캐시 히트 — 중복 다운로드 없음)
+          doc.title='알뜰 펫캠';
+        }catch(e){}
+        doc.body.className='piproom'+(document.body.classList.contains('lite')?' lite':'');
+        doc.body.innerHTML='<div class="cd-room" id="ppRoom">'+roomShellBase(currentWall(), currentFloor())+
+          '<span class="cr-cam cd-cam"><i></i>LIVE · <span class="cd-camtxt" id="ppCamTxt"></span></span>'+
+          '<div class="cr-props" id="ppProps"></div><div class="cr-stage" id="ppStage" data-hh="64"></div>'+
+          roomOverlay(currentBgfx())+'</div>';
+        _pip={ win:win, doc:doc, room:doc.getElementById('ppRoom'), props:doc.getElementById('ppProps'), stage:doc.getElementById('ppStage'), _vw:0 };
+        syncPipTheme(); _pipSetCamTxt(); _pipLayout(); renderPipProps(); renderPipCats();
+        let rz=0; win.addEventListener('resize', function(){ clearTimeout(rz); rz=setTimeout(_pipLayout, 120); });   // scale만 갱신(가상 폭 변화 시에만 재빌드)
+        win.addEventListener('pagehide', _pipClosed, { once:true });   // 창 닫힘(수동·브라우저/앱 종료) → 정리
+        _pipBtnSync(); markCatDirty(); _eng.last=0; startCatLoop();
+      }).catch(function(){ toast('PiP 창을 열지 못했어요', true); });
+    }
+    // 창 닫힘 정리 — 무대별 지속 캐시 제거(누수·유령 무대 방지) + rAF 체인·game 코얼레싱을 메인 창으로 복구
+    function _pipClosed(){
+      _pip=null;
+      delete _stageW.ppStage; delete _stageRemeasure.ppStage;
+      [_petX,_petDepth,_petVz,_petPose].forEach(function(m){ Object.keys(m).forEach(function(k){ if(k.indexOf('ppStage:')===0) delete m[k]; }); });
+      // PiP 창의 rAF에 걸려 있던 다음 프레임 예약은 창과 함께 증발 → 메인 창에서 재가동(탭이 숨김이면 visibilitychange 복귀 시)
+      try{ if(_eng.raf && _eng.win && _eng.win!==window && !_eng.win.closed) _eng.win.cancelAnimationFrame(_eng.raf); }catch(e){}
+      _eng.raf=0; _eng.win=null; _eng.last=0; markCatDirty(); startCatLoop();
+      if(_ogcRAF){ _ogcRAF=0; onGameChange(); }   // PiP rAF에 걸려 있던 game 델타 코얼레싱도 메인으로 재예약(라이브 패치 유실 방지)
+      _pipBtnSync();
+    }
     // ---- 통합 걷기 엔진: 단일 rAF가 "지금 보이는 무대"(시트 방 또는 dock)만 애니메이션 ----
     // 고양이는 방/시트에 배치된 가구로 가끔 다가가 잠시 머문다(상호작용). 스트립엔 가구가 없어 자유 배회.
     // 🔋 가벼운 모드(저사양) — 사용자가 켜면 '장식/무거운 애니만' 끈다: 가구 연출·구름·나비·씬 정지, 걷기 엔진은 낮은 fps로 '계속 걷고', 가챠도 알/박스 탭·균열·결과 과정을 그대로 보여주되 흔들림·파티클·오오라만 제거(body.lite CSS). 저사양 폰 배터리/발열/버벅임 완화.
@@ -6439,6 +6559,7 @@
     function fxCount(n){ return liteMode()?Math.max(1,Math.round(n*0.55)):n; }   // 🔋 저사양 가챠 원샷 파티클 개수 감축(연출은 유지, 노드만 ~55%)
     function invalidateSceneCaches(){ _pkSceneCache={}; _sunsetCache={}; _nightCache={}; }   // 씬 HTML에 무지개 애니 여부가 구워지므로 토글 시 무효화
     function setLiteMode(on){ try{ localStorage.setItem('liteMode', on?'1':'0'); }catch(e){} applyLiteMode();
+      if(typeof pipOpen==='function' && pipOpen()){ try{ _pip.doc.body.classList.toggle('lite', !!on); }catch(e){} }   // 🖥️ PiP 창 body.lite 동기화
       refreshRbStatic(); invalidateSceneCaches();   // 🔋 무지개 정적화·씬 개수 변화 즉시 반영
       if(typeof markCatDirty==='function') markCatDirty(); if(typeof startCatLoop==='function') startCatLoop();   // 엔진 fps 예산 재평가·정지스틸 재빌드
       if(typeof rerender==='function') rerender();
@@ -6598,6 +6719,8 @@
     //    (예전 단일 무대 엔진은 남은 frStage를 계속 활성 무대로 잡아, 친구 집을 닫아도 dock 캠이 영영 멈춰 앱 재시작 전까지 안 움직였다.)
     function activeStages(){
       const out=[];
+      const pip=(pipOpen()&&_pip.stage&&_pip.stage.isConnected)?_pip.stage:null;   // 🖥️ PiP 미니 캠 — 항상 위에 떠 있어 언제나 보임
+      if(typeof document!=='undefined'&&document.hidden) return pip?[pip]:[];      // 탭 숨김: 메인 무대는 어차피 안 보이니 PiP만 스텝(절전)
       const sheetOpen=$('sheet')&&$('sheet').classList.contains('on');
       if(sheetOpen){
         const fr=$('frStage'); if(fr) out.push(fr);                                             // 친구 집 방문 중인 방
@@ -6606,6 +6729,7 @@
       }
       if(!sheetOpen && dockMode()!=='hidden'){ const s=$('cdStage'); if(s && out.indexOf(s)<0) out.push(s); }  // 🔋 하단 dock 캠 — 시트/오버레이에 가려지면(sheetOpen) 로밍 정지(안 보이니 배터리 절약), 닫으면 재개
       const pr=$('pkRevStage'); if(pr && out.indexOf(pr)<0) out.push(pr);                          // 🌲 전설/신화/한정 등장 연출 배경 씬의 픽업 펫 배회(연출 떠 있을 때만 DOM 존재)
+      if(pip) out.push(pip);                                                                       // 🖥️ PiP 미니 캠(별도 창이라 시트·dock 숨김과 무관하게 항상 활성)
       return out;
     }
     let _stageW={};   // 무대별 마지막으로 '측정된' 폭 캐시 — 레이아웃 전(clientWidth=0) 재빌드에서 잘못된 좁은 폭을 쓰지 않게(우측 몰림 방지)
@@ -6908,9 +7032,10 @@
       }
       moved.forEach(a=>{ applyDepth(a); setXform(a); a._pdir=a.dir; });   // 밀린 펫만 트랜스폼 갱신
     }
-    function catLoop(ts){
-      if(document.hidden){ _eng.raf=0; return; }   // 탭 숨김 → 루프 정지(복귀 시 visibilitychange로 재개, 유휴 배터리 절약)
-      _eng.raf=requestAnimationFrame(catLoop);      // 다음 프레임 먼저 예약(아래 작업이 예외로 죽어도 루프 유지 — 예전엔 예외 시 재예약이 건너뛰어져 펫이 앱 재시작까지 완전 정지)
+    function catLoop(){
+      if(document.hidden && !pipOpen()){ _eng.raf=0; _eng.win=null; return; }   // 탭 숨김 → 루프 정지(복귀 시 visibilitychange로 재개, 유휴 배터리 절약). 🖥️ PiP 창이 떠 있으면 계속(그 창은 항상 보임)
+      const _w=_engWin(); _eng.win=_w; _eng.raf=_w.requestAnimationFrame(catLoop);   // 다음 프레임 먼저 예약(아래 작업이 예외로 죽어도 루프 유지). 🖥️ PiP가 열려 있으면 PiP 창의 rAF — 메인 탭이 숨겨져도(rAF 정지) 미니 캠은 계속 움직인다.
+      const ts=Date.now();   // ⏱ rAF 타임스탬프는 창(메인/PiP)마다 원점이 달라 섞어 쓸 수 없음 → 벽시계(ms)로 통일(dt 상한 90ms가 전환 순간을 흡수)
       const want=activeStages();                    // 값싼 조회(몇 개 getElementById) — 예산 결정에 필요해 게이트 앞에서 1회 계산 후 아래서 재사용
       // 🔋 프레임레이트 캡 — 걷기는 30fps면 충분(저사양 CPU/GPU·배터리 절반↓). 가벼운 모드 22fps. OS 모션최소화 5fps(사실상 정지). dock 스트립만 활성(홈캠·방·친구방·리빌 없음)이면 사용자가 포커스 안 하므로 12fps로.
       const dockOnly = want.length===1 && want[0] && want[0].id==='cdStage';
@@ -6942,12 +7067,12 @@
         +(document.body.classList.contains('sheet-open')?' · SHEET':'')+(document.body.classList.contains('apphidden')?' · HIDDEN':'')+(liteMode()?' · LITE':'');
     }
     if(typeof document!=='undefined') _perfHudSync();   // 새로고침해도 켠 상태 복원
-    function startCatLoop(){ if(!_eng.raf && !(typeof document!=='undefined'&&document.hidden)) _eng.raf=requestAnimationFrame(catLoop); }
+    function startCatLoop(){ if(!_eng.raf && !(typeof document!=='undefined'&&document.hidden&&!pipOpen())){ const _w=_engWin(); _eng.win=_w; _eng.raf=_w.requestAnimationFrame(catLoop); } }   // 🖥️ PiP가 떠 있으면 탭 숨김 중에도 PiP 창 rAF로 가동
     // 🔋 백그라운드/화면잠금 시 전면 정지 — catLoop뿐 아니라 배너 CSS/SMIL·60s 타이머까지 멈춰 배터리·발열 절감(브라우저 hidden 스로틀에 비의존).
     function _applyAppHidden(hidden){
       try{ document.body.classList.toggle('apphidden', hidden); }catch(_e){}
       try{ document.querySelectorAll('.pkscene svg').forEach(function(s){ if(hidden){ if(s.pauseAnimations) s.pauseAnimations(); } else if(s.unpauseAnimations) s.unpauseAnimations(); }); }catch(_e){}   // 🌈 CSS로 안 멈추는 무지개 SMIL 정지/재개
-      if(hidden){ if(state._petTimer){ clearInterval(state._petTimer); state._petTimer=0; } }   // 60s 그릇정산 웨이크 제거
+      if(hidden){ if(state._petTimer && !pipOpen()){ clearInterval(state._petTimer); state._petTimer=0; } }   // 60s 그릇정산 웨이크 제거 — 🖥️ PiP 시청 중이면 유지(숨김 탭 스로틀로 어차피 ≥1분 간격)
       else if(state.game && !state._petTimer && typeof reconcilePets==='function'){ state._petTimer=setInterval(reconcilePets, 60000); }   // 복귀 시 재무장
     }
     if(typeof document!=='undefined'){
@@ -8206,7 +8331,7 @@
       const EG=[[20,8,'ddeul',30,'s0'],[33,7,'rbox',30,'s1'],[67,7,'regg',28,'s2'],[80,8,'rbox',30,'s3']];
       EG.forEach(function(a){ const l=a[0],b=a[1],kind=a[2],h=a[3],cls=a[4]; let ic;
         if(kind==='ddeul') ic=ddeulEggSvg({h:S(h)});
-        else if(kind==='regg') ic=rainbowEggSvg({h:S(h)});
+        else if(kind==='regg') ic=rbEgg2Html(S(h), true);   // 무지개 고양이알 + 무지개꽃(오오라·트윙클 없이 — 배너 데코)
         else ic=rainbowBoxSvg({h:S(h)});
         f+='<span class="pk-tsway '+cls+'" style="left:'+l+'%;bottom:'+b+'%;z-index:5;">'+ic+'</span>'; });
       [[16,16],[84,16],[38,10],[62,10],[50,3]].forEach(function(t,i){ f+='<span class="pk-star" style="left:'+t[0]+'%;bottom:'+t[1]+'%;animation-delay:'+(pkRand(i,77)*2).toFixed(2)+'s;color:#fff6d0">'+sparkSvg({h:S(6)})+'</span>'; });
@@ -9525,14 +9650,14 @@
       updateNewsBadge(); refreshMoreBadges(); }   // 로컬 저장으로 안 본 공지=0 됐으니 더보기 '소식' 뱃지도 즉시 갱신(RTDB set이 값 동일이면 리스너가 안 뜨므로 여기서 직접)
     function unseenNoticeCount(){ const seen=newsSeenAt(); let n=0; const u=latestUpdate(); if(u && (u.date||'')>seen) n++; ANNOUNCE.forEach(function(a){ if((a.at||'').slice(0,10)>seen) n++; }); return n; }   // 안 본 운영자 공지 + 최신 업데이트
     function giftUnread(){ return giftCount() + (typeof mailCount==='function'?mailCount():0); }   // 안 받은 선물 = 코드보상(gifts) + 친구선물(mailbox)
-    function newsUnread(){ return giftUnread() + unseenNoticeCount(); }   // (브랜드 아이콘) 뱃지 = 안 받은 선물(코드+친구) + 안 본 공지
+    function newsUnread(){ return giftUnread() + unusedCouponCount() + unseenNoticeCount(); }   // (브랜드 아이콘) 알림 = 안 받은 선물(코드+친구) + 안 쓴 쿠폰 + 안 본 공지(새 업데이트 포함)
     // 아직 안 쓴 프로모 쿠폰 개수(state.game.codes에 없는 PROMO_CODES 키 수).
     function unusedCouponCount(){ const codes=(state.game&&state.game.codes)||{}; return Object.keys(PROMO_CODES).filter(function(c){ return !codes[c]; }).length; }
     // 더보기 '소식' 셀 뱃지 = 안 쓴 쿠폰 + 안 본 공지 (선물은 제외 — 선물 알림은 '선물함' 셀과 브랜드 아이콘에만 표시해 중복/혼동 방지).
     // 소식 탭 진입(markNewsSeen) 후엔 안 본 공지=0 → 안 쓴 쿠폰 수만 남는다.
     function newsMoreCount(){ return unusedCouponCount() + unseenNoticeCount(); }
-    // 좌상단 브랜드(알뜰 메인) 아이콘 = 소식 진입. 그 위에 안 받은 선물(코드+친구)+안 본 공지 수를 뱃지로.
-    function updateNewsBadge(){ const el=$('newsBadge'); if(!el) return; const n=newsUnread(); if(n>0){ el.textContent=n>9?'9+':String(n); el.hidden=false; } else { el.hidden=true; el.textContent=''; } }
+    // 좌상단 브랜드(알뜰 메인) 아이콘 = 소식 진입. 알림은 **빨간 점 하나(아이콘 우측 상단, 숫자 없음)** — 안 받은 선물·안 쓴 쿠폰·안 본 공지(새 업데이트) 중 하나라도 있으면 표시(사용자 지침: 아이콘 알림은 이 점 하나로 통합, 미처리 초록 점도 브랜드에서 제거).
+    function updateNewsBadge(){ const el=$('newsBadge'); if(!el) return; el.textContent=''; el.hidden=!(newsUnread()>0); }
     // 더보기 그리드의 알림 뱃지(선물함=giftUnread·소식=newsMoreCount 등)는 renderMore 시점에만 계산된다.
     // game/localStorage가 바뀌어도(선물 받기·쿠폰 사용·공지 확인) 더보기 화면이 다시 안 그려지면 뱃지가 남으므로, 더보기 탭이 떠 있으면 즉시 재렌더해 알림을 지운다.
     function refreshMoreBadges(){ if(state.view==='mode' && state.tab==='more' && typeof renderMore==='function') renderMore(); }
