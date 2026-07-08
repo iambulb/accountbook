@@ -3038,6 +3038,40 @@
     const BOX2_PAL={X:'#4a3018',H:'#cf9250',W:'#b0763a',S:'#8a561f',s:'#6e421a',D:'#5f3a17',M:'#ffedb0',m:'#f4d06b',n:'#b48a2f',F:'#faf6ec',O:'#ef9f42',B:'#35323a',i:'#e8a0a8',E:'#43290f',P:'#f2a0b4',Q:'#7a3a48',q:'#b56576'};
     // 🌈 무지개박스 v2 — 나무=은은한 파스텔 무지개(RAINBOW2)·고양이 얼굴=선명한 무지개(RAINBOW, 눈·입은 유지해 또렷)·금장/외곽은 그대로(무지개알과 톤 통일).
     const BOX2_RB_PAL=Object.assign({},BOX2_PAL,{H:'RAINBOW2',W:'RAINBOW2',S:'RAINBOW2',s:'RAINBOW2',D:'RAINBOW2',F:'RAINBOW',O:'RAINBOW',B:'RAINBOW',i:'RAINBOW'});
+    // 📦✨ 열린 나무 보물상자(오픈 연출용, 26×28) — 뚜껑이 좌측으로 젖혀지고(밑면 어두운 나무+금 림) 입구에서 등급색 빛(Z)이 위로 갈수록 좁아지는 돔으로 새어나오며 보석·금화가 넘침.
+    //   몸통(rows 9~)은 M_BOX2와 동일(삼색이/무지개 얼굴 유지). 보석·금화 글자(o/w/e/r/u/U/v/V/p/a/G)는 얼굴 글자(O/E/P 등)와 충돌 없게 별도 배정. PIL 라이트/다크·등급색 3종 검수(scratchpad box2_open.py).
+    const M_BOX2_OPEN = [
+      "..........................",
+      ".....XXXXXXXXXXXXXX.......",
+      "....XDDDDDDDDDDDDDDX......",
+      "....XmmmmmMMmmmmmmmX......",
+      "........Z...ZZ...Z........",
+      "......ZZZ.ZZZZZ.ZZZ.......",
+      ".....ZZZZZZZZZZZZZZZZ.....",
+      "....ZZZZZZZZZZZZZZZZZZ....",
+      "..GowerUuvVpaGevuUpavowe..",
+      ".XmmmommmmmMMmmmmmmommmmX.",
+      ".XnnnnnnnnnnnnnnnnnnnnnnX.",
+      "..XMmHWWWWWWWWWWWWSSSmMX..",
+      "..XHWsWOOOWWWSSSBBBSsSDX..",
+      "..XHWsWOOiOWWSSBiBBSsSDX..",
+      "..XHWsOOOOOFFFFBBBBBsSDX..",
+      "..XHWsOOOOFFFFFFBBBBsSDX..",
+      "..XHWsOOFFFFFFFFFFBBsSDX..",
+      "..XHWsFFFFEFFFFEFFFFsSDX..",
+      "..XHWsFFFFFFFFFFFFFFsSDX..",
+      "..XHWsFFFFFFFFFFFFFFsSDX..",
+      "..XHWsWFFFFFPPFFFFFSsSDX..",
+      "..XHWsWFFFFqQQqFFFFSsSDX..",
+      "..XHWsWWFFFFFFFFFFSSsSDX..",
+      "..XMmHWWWWWWWWWWWWSSSmMX..",
+      "..XnmmmmmmmmmmmmmmmmmmnX..",
+      "..XXXXXXXXXXXXXXXXXXXXXX..",
+      "....XDDX..........XDDX....",
+      ".........................."
+    ];
+    // 오픈 전용 추가 글자 — 금화(o/w)·루비(e/r)·사파이어(u/U)·에메랄드(v/V)·자수정(p/a)·흰 스파클(G). Z=오픈 빛(렌더 시 등급색으로 덮임).
+    const BOX2_OPEN_EXTRA={o:'#F4D06B',w:'#fff0b8',e:'#ff5d6c',r:'#ffc0c6',u:'#5aa9e6',U:'#cfeaff',v:'#5bbf7a',V:'#c6f5d8',p:'#c77dff',a:'#eccfff',G:'#ffffff',Z:'#fff3c8'};
     // 펫알(크림): 4톤 명암 I·W·S·D + k 잔점, X 외곽. Q=무지개 물음표. L=균열 틈새 빛(C2=따뜻한 흰빛 기본, 오픈 때 eggCrackSvg가 등급색으로 덮음).
     const EGG_PAL={X:'#8d8368',I:'#fffef8',W:'#f7f3ea',S:'#e6dfce',D:'#d3cbb6',k:'#ddd6c4',Q:'RAINBOW',L:'#fff3c8'};
     // 랜덤박스(파스텔+금장, 라이브 전용): 돔뚜껑 C/c, 몸체 W·S·D, 금장 m/M/n, X 외곽. Q=무지개 물음표. Z=오픈 빛(등급색으로 덮임). (v2 배너 상자는 M_BOX2/BOX2_PAL — 구 M_BOX_CAT은 제거됨.)
@@ -4223,7 +4257,9 @@
         s+='<span class="fx-tw" style="--tx:'+x+'px;--ty:'+y+'px;animation-delay:'+del+'s;animation-duration:'+du+'s">'+spark4Svg(cc,{h:h})+'</span>'; }
       return s; }
     // 랜덤박스 오픈: 뚜껑 열리고 틈새로 등급색 빛(Z). rainbow면 몸체는 무지갯빛 유지.
-    function boxOpenSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?BOX_PAL_RB:BOX_PAL, {Z:tierColor||'#FBFBFD'}); return pxSvg(M_BOX_OPEN, pal, opt); }
+    function boxOpenSvg(tierColor, rainbow, opt){
+      if(_pkV2){ const pal=Object.assign({}, rainbow?BOX2_RB_PAL:BOX2_PAL, BOX2_OPEN_EXTRA, {Z:tierColor||'#FBFBFD'}); return pxSvg(M_BOX2_OPEN, pal, opt); }   // v2 배너/연출=열린 나무 보물상자(닫힌 M_BOX2와 통일)
+      const pal=Object.assign({}, rainbow?BOX_PAL_RB:BOX_PAL, {Z:tierColor||'#FBFBFD'}); return pxSvg(M_BOX_OPEN, pal, opt); }   // 라이브=기존 파스텔 오픈 박스
     // 🎁 선물함 아이콘 — 리본을 정갈하게 묶은 선물상자(도트). X=진빨강 테두리, B=빨강 몸체, L=뚜껑(밝은), R=금 리본, Y=리본 하이라이트/뚜껑선.
     const M_GIFT = [
       "................",
