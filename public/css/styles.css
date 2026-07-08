@@ -1935,8 +1935,17 @@
     /* 🏛️ 황궁 보물창고 — 밝은 금빛 금고(라디언트 중앙 발광 + 따뜻한 금 그라디언트) */
     .pkscene.pk-treasure { background:radial-gradient(160px 100px at 50% 32%, rgba(255,246,205,.95), rgba(255,216,120,.4) 48%, transparent 76%), linear-gradient(180deg,#b07f26 0%,#d5a238 30%,#eec163 56%,#e3ad44 78%,#c68a2c 100%); }
     :root[data-theme="dark"] .pkscene.pk-treasure { background:radial-gradient(160px 100px at 50% 32%, rgba(255,238,180,.85), rgba(235,196,110,.36) 48%, transparent 76%), linear-gradient(180deg,#8a641f 0%,#a87e28 30%,#c69a44 56%,#b58836 78%,#96701f 100%); }
-    .pk-treasure .pk-tvrays { position:absolute; left:50%; top:40%; transform:translate(-50%,-50%); z-index:0; }
-    .pk-treasure .pk-tcrest { position:absolute; left:50%; top:5%; transform:translate(-50%,0); image-rendering:pixelated; line-height:0; z-index:2; animation:pktcrest 3.4s ease-in-out infinite; filter:drop-shadow(0 1px 0 rgba(120,80,10,.5)); }
+    /* 💎 거대 무지개 다이아몬드(뒷배경 센터피스) — 씬 루트 직속(z0, 하늘·바닥보다 뒤). 도트 선버스트 광선(발산 펄스)+본체 부양·광휘(둥근 글로우·blur 금지 규칙 준수) */
+    .pk-treasure .pk-tdia { position:absolute; left:50%; top:34%; transform:translate(-50%,-50%); z-index:0; line-height:0; pointer-events:none; }
+    .pk-treasure .pk-tdia .td-rays { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); line-height:0; animation:pktdrays 3.6s ease-in-out infinite; }
+    .pk-treasure .pk-tdia .td-body { position:relative; display:inline-block; line-height:0; animation:pktdia 4.2s ease-in-out infinite; }
+    @keyframes pktdrays { 0%,100%{ transform:translate(-50%,-50%) scale(.92); opacity:.7; } 50%{ transform:translate(-50%,-50%) scale(1.06); opacity:1; } }
+    @keyframes pktdia { 0%,100%{ transform:translateY(0); filter:brightness(1); } 50%{ transform:translateY(-4px); filter:brightness(1.16); } }
+    /* 💰 금화 비 — 바깥=낙하(pk-fallleaf 패턴), 안쪽=플립+글린트(steps — 도트 코인 회전 느낌) */
+    .pk-treasure .pk-tcoinfall { position:absolute; top:-10%; z-index:6; line-height:0; pointer-events:none; transform:translateX(-50%); animation:pktfall var(--d,3.8s) linear infinite; }
+    .pk-treasure .pk-tcoinfall .tc-flip { display:inline-block; line-height:0; animation:pktflip var(--f,1.1s) steps(1,end) infinite; }
+    @keyframes pktfall { 0%{ top:-10%; } 100%{ top:104%; } }
+    @keyframes pktflip { 0%,100%{ transform:scaleX(1); filter:brightness(1); } 25%{ transform:scaleX(.45); filter:brightness(1.55); } 50%{ transform:scaleX(1); filter:brightness(1.12); } 75%{ transform:scaleX(.45); filter:brightness(1.55); } }
     .pk-treasure .pk-tlantern { position:absolute; top:0; transform:translateX(-50%); transform-origin:50% 0; image-rendering:pixelated; line-height:0; z-index:3; animation:pktlant 2.7s ease-in-out infinite; }
     .pk-treasure .pk-tpillar { position:absolute; transform:translateX(-50%); image-rendering:pixelated; line-height:0; }
     .pk-treasure .pk-thoard { position:absolute; transform:translateX(-50%); image-rendering:pixelated; line-height:0; z-index:1; }
@@ -1955,10 +1964,9 @@
     @keyframes pktsheen { 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.4); } }
     @keyframes pktglint { 0%,100%{ filter:brightness(1); } 45%{ filter:brightness(1.7); } }
     @keyframes pktsway { 0%,100%{ transform:translateX(-50%) rotate(-5deg); } 50%{ transform:translateX(-50%) rotate(5deg); } }
-    @keyframes pktcrest { 0%,100%{ transform:translate(-50%,0); filter:brightness(1); } 50%{ transform:translate(-50%,-3px); filter:brightness(1.18); } }
     @keyframes pktlant { 0%,100%{ transform:translateX(-50%) rotate(-3deg); filter:brightness(1); } 50%{ transform:translateX(-50%) rotate(3deg); filter:brightness(1.3); } }
-    body.lite .pk-treasure .pk-tgem, body.lite .pk-treasure .pk-tbob, body.lite .pk-treasure .pk-tsheen, body.lite .pk-treasure .pk-tglint, body.lite .pk-treasure .pk-tsway, body.lite .pk-treasure .pk-tlantern, body.lite .pk-treasure .pk-tcrest { animation:none !important; }
-    @media (prefers-reduced-motion: reduce){ .pk-treasure .pk-tgem, .pk-treasure .pk-tbob, .pk-treasure .pk-tsheen, .pk-treasure .pk-tglint, .pk-treasure .pk-tsway, .pk-treasure .pk-tlantern, .pk-treasure .pk-tcrest { animation:none; } }
+    body.lite .pk-treasure .pk-tgem, body.lite .pk-treasure .pk-tbob, body.lite .pk-treasure .pk-tsheen, body.lite .pk-treasure .pk-tglint, body.lite .pk-treasure .pk-tsway, body.lite .pk-treasure .pk-tlantern, body.lite .pk-treasure .pk-tdia .td-rays, body.lite .pk-treasure .pk-tdia .td-body, body.lite .pk-treasure .pk-tcoinfall, body.lite .pk-treasure .pk-tcoinfall .tc-flip { animation:none !important; }
+    @media (prefers-reduced-motion: reduce){ .pk-treasure .pk-tgem, .pk-treasure .pk-tbob, .pk-treasure .pk-tsheen, .pk-treasure .pk-tglint, .pk-treasure .pk-tsway, .pk-treasure .pk-tlantern, .pk-treasure .pk-tdia .td-rays, .pk-treasure .pk-tdia .td-body, .pk-treasure .pk-tcoinfall, .pk-treasure .pk-tcoinfall .tc-flip { animation:none; } }
     :root[data-theme="dark"] .pkscene { background:linear-gradient(#1f2b44,#26364f); }
     .pkscene .px, .pkscene img { image-rendering:pixelated; }
     /* 🌲 전설·신화·한정 등장 배경 = 픽업 씬 전체화면(리빌, 배회 픽업 펫 #pkRevStage 포함). 펫·텍스트(.fx-reveal.rev-scene z-index:2)는 이 위에. */
