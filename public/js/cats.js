@@ -3916,7 +3916,6 @@
     // 무지개알/무지개박스 — 기존 알/상자 도트에 움직이는 무지개 채색(반짝임은 CSS .fx-rainbow/.rb-thumb).
     function rainbowEggSvg(opt){ return pxSvg(M_EGG, EGG_PAL_RB, opt); }
     function rainbowBoxSvg(opt){ return _pkV2? pxSvg(M_BOX2, BOX2_RB_PAL, opt) : pxSvg(M_BOX, BOX_PAL_RB, opt); }   // v2(상시)=파스텔 무지개 나무상자+무지개 얼굴(M_BOX2) — 아이템 이미지·랜덤박스 승급 연출 공용
-    function rainbowBoxV1Svg(opt){ return pxSvg(M_BOX, BOX_PAL_RB, opt); }   // 구(v1) 선명 무지개 물음표 박스 — 무지개박스 '아이템 사용(1뽑)' 연출 전용(기존 연출 유지, 사용자 지침)
     function rainbowEggStage(stage, opt){ return pxSvg([M_EGG,M_EGG_C1,M_EGG_C2][stage]||M_EGG, EGG_PAL_RB, opt); }
     // 3번째 탭: 크게 갈라진 알 + 틈새로 새어나오는 등급색 빛(L=등급색). rainbow면 껍질은 무지갯빛 유지.
     function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); if(rainbow) pal.X='RAINBOW'; return pxSvg(M_EGG_C3, pal, opt); }   // 무지개알 열 때: 테두리(X)까지 무지개색
@@ -4262,10 +4261,10 @@
         const h=12+Math.round(Math.random()*8), del=(Math.random()*1.1).toFixed(2), du=(1.1+Math.random()*0.7).toFixed(2);
         s+='<span class="fx-tw" style="--tx:'+x+'px;--ty:'+y+'px;animation-delay:'+del+'s;animation-duration:'+du+'s">'+spark4Svg(cc,{h:h})+'</span>'; }
       return s; }
-    // 랜덤박스 오픈: 뚜껑 열리고 틈새로 등급색 빛(Z). rainbow면 몸체는 무지갯빛 유지.
-    function boxOpenSvg(tierColor, rainbow, opt, v1){
-      if(_pkV2 && !v1){ const pal=Object.assign({}, rainbow?BOX2_RB_PAL:BOX2_PAL, BOX2_OPEN_EXTRA, {Z:tierColor||'#FBFBFD'}); return pxSvg(M_BOX2_OPEN, pal, opt); }   // v2(상시)=열린 나무 보물상자(닫힌 M_BOX2와 통일)
-      const pal=Object.assign({}, rainbow?BOX_PAL_RB:BOX_PAL, {Z:tierColor||'#FBFBFD'}); return pxSvg(M_BOX_OPEN, pal, opt); }   // v1 인자=기존 파스텔 오픈 박스 — 무지개박스 '아이템 사용(1뽑)' 연출 전용
+    // 랜덤박스 오픈: 열린 나무 보물상자(닫힌 M_BOX2와 통일) — 뚜껑 젖힘+등급색 빛(Z)+보석·금화. rainbow면 무지개 나무상자(무지개박스도 v2 통일).
+    function boxOpenSvg(tierColor, rainbow, opt){
+      if(_pkV2){ const pal=Object.assign({}, rainbow?BOX2_RB_PAL:BOX2_PAL, BOX2_OPEN_EXTRA, {Z:tierColor||'#FBFBFD'}); return pxSvg(M_BOX2_OPEN, pal, opt); }
+      const pal=Object.assign({}, rainbow?BOX_PAL_RB:BOX_PAL, {Z:tierColor||'#FBFBFD'}); return pxSvg(M_BOX_OPEN, pal, opt); }   // (_pkV2 상시 true — 구 파스텔 경로는 폴백용으로만 유지)
     // 🎁 선물함 아이콘 — 리본을 정갈하게 묶은 선물상자(도트). X=진빨강 테두리, B=빨강 몸체, L=뚜껑(밝은), R=금 리본, Y=리본 하이라이트/뚜껑선.
     const M_GIFT = [
       "................",
@@ -4872,7 +4871,7 @@
     //  · 신규 글자(구름 D·꽃 d·나비 w·바위 I·잉어 W·연꽃 f·연잎 g·언덕 d)는 기존 팔레트에 색만 추가 — 밤/노을 틴트 팔레트 전부 호환 유지.
     //  · _pkV2 플래그가 켜진 동안만 각 헬퍼가 v2 매트릭스로 전환.
     //  · 🎉 2026-07-08 v2 정식 반영 — 기본값 true(라이브·개발자 공통 v2: 뜰알/펫알/랜덤박스 배너·씬·연출 전부).
-    //    예외(기존 v1 유지): 무지개알·무지개박스 '아이템 사용(1뽑)' 연출 — runGachaFx의 v2egg 조건·rainbowBoxV1Svg·boxOpenSvg v1 인자 참고.
+    //    무지개알·무지개박스 '아이템 사용(1뽑)' 연출도 v2 통일(2026-07-09) — 무지개알=뜰알식(큰 무지개꽃·전설↑ 꽃 뚝+흩날림), 무지개박스=무지개 나무상자 오픈.
     //    v2 무지개 밤 배너(rainbowBannerHtml)는 개발자 '배너 관리' 전용(추후 다른 픽업용으로 대기), 라이브 무지개 탭은 구매/사용 카드 유지.
     //  · 전부 스크래치패드 PIL 컨택트시트(라이트/다크/밤배경)로 검수 후 이식 (CLAUDE.md 워크플로).
     let _pkV2=true;
@@ -10062,8 +10061,8 @@
     function pullEnd(){ _pullBusy=false; if(_pullBusyT){ clearTimeout(_pullBusyT); _pullBusyT=null; } }
     // 커밋 전 즉시 뜨는 '준비' 오버레이 — 탭 즉시 알/상자가 보여 지연 동안의 중복 구매를 막는다. 커밋되면 runGachaFx가 같은 알을 '탭 가능' 상태로 교체(끊김 없음).
     function gachaPending(kind, rainbow){ const fx=$('catFx'); if(!fx) return; _fxClear();
-      const egg=isEggKind(kind), v2e=(kind==='egg' && !rainbow);   // 라이브 펫알=v2 새싹알(runGachaFx의 v2egg와 동일 판정 — 대기→본연출 제자리 승격 정합)
-      const art = rainbow ? (egg?rainbowEggSvg({h:150}):rainbowBoxV1Svg({h:150}))
+      const egg=isEggKind(kind), v2e=(kind==='egg');   // 라이브 펫알/무지개알=v2 뜰알식 알(runGachaFx의 v2egg와 동일 판정 — 대기→본연출 제자리 승격 정합)
+      const art = rainbow ? (egg?(v2e?rbEgg2FxHtml():rainbowEggSvg({h:150})):rainbowBoxSvg({h:150}))
                           : (kind==='ddeul'?ddeulFxHtml():(egg?(v2e?egg2FxHtml():eggSvg(0,{h:150})):boxSvg({h:150})));
       fx.innerHTML='<div class="fx-scrim"></div><div class="fx-stage'+(rainbow?' fx-rb':'')+(kind==='ddeul'?' fx-ddeul':'')+'">'+
         '<div class="fx-item pop '+(egg?'fx-egg':'fx-box')+((kind==='ddeul'||v2e)?' fx-ddeulegg':'')+(rainbow?' fx-rainbow':'')+'">'+art+'</div>'+
@@ -10079,8 +10078,8 @@
     function runGachaFx(kind, res, dup, refund, rainbow, isNew){
       const fx=$('catFx'); if(!fx){ toast((kind==='egg'?'펫알':'랜덤박스')+' 획득!'); pullEnd(); return; }
       _fxClear();   // 이전 FX 잔여 타이머 취소(빠른 재오픈 교차 방지)
-      _fx={ kind, res, dup, refund:refund||0, stage:0, rainbow:!!rainbow, gold: (rainbow||kind==='ddeul')?0:1, isNew:!!isNew, v2egg:(kind==='egg' && (!rainbow || !!_devPickupOverride)) };   // 무지개·뜰알은 금화 보상 없음(뜰알은 금화 소모). isNew=처음 획득(NEW 배지).
-      // v2egg=신규 펫알 아트(뜰알식 연출, 라이브 정식) — 단 '무지개알 아이템 사용'(rainbow=true)은 기존(v1 크랙) 연출 유지(사용자 지침). 개발자 무지개 밤 배너 미리보기(_devPickupOverride)만 v2 무지개알 연출.
+      _fx={ kind, res, dup, refund:refund||0, stage:0, rainbow:!!rainbow, gold: (rainbow||kind==='ddeul')?0:1, isNew:!!isNew, v2egg:(kind==='egg') };   // 무지개·뜰알은 금화 보상 없음(뜰알은 금화 소모). isNew=처음 획득(NEW 배지).
+      // v2egg=신규 펫알/무지개알 아트(뜰알식 연출, 라이브 정식) — 무지개알 '아이템 사용(1뽑)'도 v2 연출(큰 무지개꽃 흔들림·전설↑ 꽃 뚝+무지개 꽃 흩날림)로 통일(2026-07-09 사용자 지침).
       if(isEggKind(kind) && typeof hasSprite==='function' && hasSprite(res.id)){ try{ const _pi=new Image(); _pi.src=sprStill(res.id,'south'); if(_pi.decode) _pi.decode().catch(function(){}); }catch(e){} }   // 등장 스프라이트 미리 로드·디코드(펫알·뜰알 공통) → 마지막에 바로 표시
       if(typeof prewarmGachaFxPads==='function') prewarmGachaFxPads();   // 연출 고양이 발끝 여백 미리 측정(탭하는 동안 캐시 완료 → 첫 등장 세로 점프 방지)
       if(reducedMotion()){ fxReveal(); return; }   // 모션 최소화: 바로 결과
@@ -10101,7 +10100,7 @@
         return;
       }
       const v2e=_fx.v2egg;   // 🎨 v2 펫알: 뜰알식 분리 렌더(새싹+몸통) — 크기·흔들림 CSS는 .fx-ddeulegg 공유. 무지개알/무지개박스 '사용'은 기존(v1) 아트.
-      const art = rainbow ? (isEggKind(kind)? (v2e?rbEgg2FxHtml():rainbowEggSvg({h:150})) : rainbowBoxV1Svg({h:150}))
+      const art = rainbow ? (isEggKind(kind)? (v2e?rbEgg2FxHtml():rainbowEggSvg({h:150})) : rainbowBoxSvg({h:150}))
                           : (isDdeul? ddeulFxHtml() : (isEggKind(kind)? (v2e?egg2FxHtml():eggSvg(0,{h:150})) : boxSvg({h:150})));
       fx.innerHTML='<div class="fx-scrim"></div><div class="fx-stage'+(rainbow?' fx-rb':'')+(isDdeul?' fx-ddeul':'')+'">'+
         (rainbow?fxSparkles(16):'')+
@@ -10166,7 +10165,7 @@
       } else {
         if(_fx.stage===2 && !_fx.rainbow) maybeRainbowUpgrade();   // 🎁 박스도 특별↑이면 무지개박스로 승급(펫알 무지개알과 동일 조건)
         if(_fx.stage===2 && _fx.rainbow) ddeulPickupFx(it.closest('.fx-stage'));   // 🌈🦋 무지개박스도 무지개알과 '같은 조건·타이밍'(2번째 탭·rainbow)으로 무지개+나비 연출
-        if(_fx.rainbow) it.innerHTML=(_fx.rbUpgrade?rainbowBoxSvg({h:150}):rainbowBoxV1Svg({h:150}));   // 승급=새 무지개 나무상자 / 아이템 사용(처음부터 rainbow)=기존 v1 박스 유지
+        if(_fx.rainbow) it.innerHTML=rainbowBoxSvg({h:150});   // 승급·아이템 사용 모두 새 무지개 나무상자(v2 통일)
         it.classList.remove('boxshake'); void it.offsetWidth; it.classList.add('boxshake');   // 박스: 양옆으로 들고 흔드는 느낌
       }
     }
@@ -10269,7 +10268,7 @@
         else if(_fx.v2egg){ it.innerHTML=(_fx.rainbow?rbEgg2FxHtml():egg2FxHtml(_fx._flwRb)); fxCrackChips(4);   // 🎨 v2 펫알/무지개알: 뜰알과 동일 — 균열 없이 크게 들썩(새싹/꽃 큰 흔들림)+껍질 조각
           if(_fx.rainbow && tierRank(_fx.res.tier)>=tierRank('legend')) rbFlowerDropFx(it, st); }   // 🌈🌸 무지개알 전설↑: 꽃이 뚝 떨어지고 무지개 꽃 6개가 알 주변에 흩날림
         else if(isEgg){ it.innerHTML=eggCrackSvg(t.color, _fx.rainbow, {h:150}); fxCrackChips(4); }   // 알이 크게 갈라지고 틈새로 등급색 빛
-        else { it.innerHTML=boxOpenSvg(t.color, _fx.rainbow, {h:150}, _fx.rainbow&&!_fx.rbUpgrade); it.classList.add('fx-ajar'); }   // 박스: 뚜껑 열리고 틈새로 등급색 빛 (무지개박스 '사용'만 기존 v1 오픈)
+        else { it.innerHTML=boxOpenSvg(t.color, _fx.rainbow, {h:150}); it.classList.add('fx-ajar'); }   // 박스: 열린 나무 보물상자 + 틈새 등급색 빛(무지개박스 사용도 v2 통일)
         // 갈라진 틈으로 새어나오는 등급색 픽셀 빛 — 은은한 오오라 + 역회전 광선 2겹(둥근 글로우 금지, 도트). 등급↑ 크고 밝게(--lk)
         st.insertAdjacentHTML('afterbegin','<div class="fx-cracklight" style="color:'+t.color+';--lk:'+lk+'">'+lightLayers({aura:170, rays:220, rainbow:exL})+'</div>');   // 한정=틈새로 새는 빛도 무지개
       }, t0);
@@ -10322,7 +10321,7 @@
       const art=isEggKind(_fx.kind)?catFace(_fx.res.id,{h:118,eager:true}):rewardBoxArt(_fx.res);   // eager: 등장 즉시 표시(lazy면 ~1초 늦게 뜸)
       // 🌲 전설·신화·한정 펫 등장 = 픽업 배너 씬 전체를 배경으로(픽업 펫 2마리도 씬에서 배회). 그 외 등급은 기본 연출.
       const sceneBg = isEggKind(_fx.kind) && (_fx.res.tier==='limited' || _fx.res.tier==='exclusive');   // 픽업 씬 배경 = 신화(limited)·한정(exclusive)만(전설 제외)
-      const boxScene = (_fx.kind==='box') && !(_fx.rainbow && !_fx.rbUpgrade);   // 💎 랜덤박스 오픈=보물 금고 씬 배경(v2 정식). 무지개박스 '아이템 사용'만 기존(씬 없음) 유지
+      const boxScene = (_fx.kind==='box');   // 💎 랜덤박스·무지개박스 오픈=보물 금고 씬 배경(v2 정식)
       const skyLayer = sceneBg ? pickupSceneHtml('reveal') : (boxScene ? treasureSceneHtml('reveal') : '');   // 배너 씬 재사용 — 배경 + 배회 픽업 펫(알·헤더 없음)
       fx.innerHTML='<div class="fx-scrim"></div>'+skyLayer+'<div class="fx-reveal tier-'+t.id+' rank-'+rank+((rb||ex)?' rev-rb':'')+((sceneBg||boxScene)?' rev-scene':'')+'">'+   // 한정도 rev-rb(무지개 프레임=박스)
         '<div class="fx-art pop">'+
