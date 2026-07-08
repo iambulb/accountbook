@@ -3912,7 +3912,8 @@
     function boxSvg(opt){ return _pkV2? pxSvg(M_BOX2, BOX2_PAL, opt) : pxSvg(M_BOX, BOX_PAL, opt); }   // _pkV2 배너=나무 보물상자+삼색이 얼굴(M_BOX2), 라이브=물음표 파스텔 박스
     // 무지개알/무지개박스 — 기존 알/상자 도트에 움직이는 무지개 채색(반짝임은 CSS .fx-rainbow/.rb-thumb).
     function rainbowEggSvg(opt){ return pxSvg(M_EGG, EGG_PAL_RB, opt); }
-    function rainbowBoxSvg(opt){ return _pkV2? pxSvg(M_BOX2, BOX2_RB_PAL, opt) : pxSvg(M_BOX, BOX_PAL_RB, opt); }   // _pkV2 배너=파스텔 무지개 나무상자+무지개 얼굴(M_BOX2), 라이브=선명 무지개 물음표 박스
+    function rainbowBoxSvg(opt){ return _pkV2? pxSvg(M_BOX2, BOX2_RB_PAL, opt) : pxSvg(M_BOX, BOX_PAL_RB, opt); }   // v2(상시)=파스텔 무지개 나무상자+무지개 얼굴(M_BOX2) — 아이템 이미지·랜덤박스 승급 연출 공용
+    function rainbowBoxV1Svg(opt){ return pxSvg(M_BOX, BOX_PAL_RB, opt); }   // 구(v1) 선명 무지개 물음표 박스 — 무지개박스 '아이템 사용(1뽑)' 연출 전용(기존 연출 유지, 사용자 지침)
     function rainbowEggStage(stage, opt){ return pxSvg([M_EGG,M_EGG_C1,M_EGG_C2][stage]||M_EGG, EGG_PAL_RB, opt); }
     // 3번째 탭: 크게 갈라진 알 + 틈새로 새어나오는 등급색 빛(L=등급색). rainbow면 껍질은 무지갯빛 유지.
     function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); if(rainbow) pal.X='RAINBOW'; return pxSvg(M_EGG_C3, pal, opt); }   // 무지개알 열 때: 테두리(X)까지 무지개색
@@ -4225,6 +4226,8 @@
         fx='<span class="rbegg2-fx"><span class="rbegg2-aura">'+auraSvg('RAINBOW',{h:Math.round(h*1.3)})+'</span>'+tw+'</span>'; }
       return '<span class="rbegg2">'+fx+
         '<span class="rbegg2-flw">'+ddeulFlwRbSvg({h:fh})+'</span>'+pxSvg(M_DDEUL_BODY, EGG2_RB2_PAL, {h:h})+'</span>'; }   // 흙·이끼 복구(금빛 명암) + 은은한 파스텔 무지개 껍질
+    // 🌈 무지개알 '아이템 이미지'(라이브 공용 — 무지개 탭 카드·가방·쿠폰·지급 등) — 새 무지개알(꽃+몸통, 오오라 없음)을 전체 높이 h에 맞춰 렌더(꽃 포함 총높이≈h).
+    function rainbowEggImg(h){ return rbEgg2Html(Math.round((h||52)*0.77), true); }
     // 🌸 v2 무지개알 오픈(전설↑ 결과): 꽃이 뚝 떨어지고(ddflw-drop) 알 주변으로 무지개 꽃 6개가 흩날림. it=알 요소·st=흩날림 부착 무대·small=10뽑 알 스케일.
     function rbFlowerDropFx(it, st, small){
       const fl=it&&it.querySelector&&it.querySelector('.fx-ddflower'); if(fl) fl.classList.add('ddflw-drop');
@@ -4257,9 +4260,9 @@
         s+='<span class="fx-tw" style="--tx:'+x+'px;--ty:'+y+'px;animation-delay:'+del+'s;animation-duration:'+du+'s">'+spark4Svg(cc,{h:h})+'</span>'; }
       return s; }
     // 랜덤박스 오픈: 뚜껑 열리고 틈새로 등급색 빛(Z). rainbow면 몸체는 무지갯빛 유지.
-    function boxOpenSvg(tierColor, rainbow, opt){
-      if(_pkV2){ const pal=Object.assign({}, rainbow?BOX2_RB_PAL:BOX2_PAL, BOX2_OPEN_EXTRA, {Z:tierColor||'#FBFBFD'}); return pxSvg(M_BOX2_OPEN, pal, opt); }   // v2 배너/연출=열린 나무 보물상자(닫힌 M_BOX2와 통일)
-      const pal=Object.assign({}, rainbow?BOX_PAL_RB:BOX_PAL, {Z:tierColor||'#FBFBFD'}); return pxSvg(M_BOX_OPEN, pal, opt); }   // 라이브=기존 파스텔 오픈 박스
+    function boxOpenSvg(tierColor, rainbow, opt, v1){
+      if(_pkV2 && !v1){ const pal=Object.assign({}, rainbow?BOX2_RB_PAL:BOX2_PAL, BOX2_OPEN_EXTRA, {Z:tierColor||'#FBFBFD'}); return pxSvg(M_BOX2_OPEN, pal, opt); }   // v2(상시)=열린 나무 보물상자(닫힌 M_BOX2와 통일)
+      const pal=Object.assign({}, rainbow?BOX_PAL_RB:BOX_PAL, {Z:tierColor||'#FBFBFD'}); return pxSvg(M_BOX_OPEN, pal, opt); }   // v1 인자=기존 파스텔 오픈 박스 — 무지개박스 '아이템 사용(1뽑)' 연출 전용
     // 🎁 선물함 아이콘 — 리본을 정갈하게 묶은 선물상자(도트). X=진빨강 테두리, B=빨강 몸체, L=뚜껑(밝은), R=금 리본, Y=리본 하이라이트/뚜껑선.
     const M_GIFT = [
       "................",
@@ -4864,10 +4867,12 @@
     // ===== 🎨 픽업배너 v2 고해상도 씬 에셋 (2026-07, 기구물 22종 리디자인 기준) =====
     //  · 기존 매트릭스의 글자(팔레트)를 그대로 쓰되 해상도 1.6~2배 + 3~4톤 음영 + 외곽선(디테일 픽셀아트 기준).
     //  · 신규 글자(구름 D·꽃 d·나비 w·바위 I·잉어 W·연꽃 f·연잎 g·언덕 d)는 기존 팔레트에 색만 추가 — 밤/노을 틴트 팔레트 전부 호환 유지.
-    //  · _pkV2 플래그가 켜진 동안만 각 헬퍼가 v2 매트릭스로 전환 — 현재는 개발자 모드 '배너 관리'(openDevBannerManager) 미리보기 전용.
-    //    라이브 배너(가챠 탭)는 v1 유지. 전면 적용 시 이 플래그 기본값만 바꾸면 됨(씬 캐시는 v2 키로 분리돼 안전).
+    //  · _pkV2 플래그가 켜진 동안만 각 헬퍼가 v2 매트릭스로 전환.
+    //  · 🎉 2026-07-08 v2 정식 반영 — 기본값 true(라이브·개발자 공통 v2: 뜰알/펫알/랜덤박스 배너·씬·연출 전부).
+    //    예외(기존 v1 유지): 무지개알·무지개박스 '아이템 사용(1뽑)' 연출 — runGachaFx의 v2egg 조건·rainbowBoxV1Svg·boxOpenSvg v1 인자 참고.
+    //    v2 무지개 밤 배너(rainbowBannerHtml)는 개발자 '배너 관리' 전용(추후 다른 픽업용으로 대기), 라이브 무지개 탭은 구매/사용 카드 유지.
     //  · 전부 스크래치패드 PIL 컨택트시트(라이트/다크/밤배경)로 검수 후 이식 (CLAUDE.md 워크플로).
-    let _pkV2=false;
+    let _pkV2=true;
     const M2_CLOUD1=["..............................",".........HHHH...HHHHH.........","......HHHWWWWHHHHWWWWHH.......","....HHWWWWWWWWHWWWWWWWWHH.....","...HWWWWWWWWWWWWWWWWWWWWWH....",".HHWWWWWWWWWWWWWWWWWWWWWWWHH..",".HWWWWWWWWWWWWWWWWWWWWWWWWWWH.","HWWWWWWWWWWWWWWWWWWWWWWWWWWWWH","HWWWWWWWWWWWWWWWWWWWWWWWWWWWWH",".SWWWWWWWWWWWWWWWWWWWWWWWWWWS.",".SSSSSWWWWSSSSWWWWWSSSSWWSSSS.","..DDDDDDDDDDDDDDDDDDDDDDDDD..."];
     const M2_CLOUD2=["....................","......HHHHH.........","....HHWWWWWHH.......","..HHWWWWWWWWWHH.....",".HWWWWWWWWWWWWWH....","HWWWWWWWWWWWWWWWWH..","SWWWWWWWWWWWWWWWWS..",".SSSSWWWWSSSWWWSSS..","..DDDDDDDDDDDDDD...."];
     const M2_CLOUD3=[".............","....HHHH.....","..HHWWWWH....",".HWWWWWWWWH..","HWWWWWWWWWWH.","SWWWWWWWWWWS.",".SSDDDDDDSS.."];
@@ -5273,6 +5278,7 @@
           _pipSetCamTxt(); renderPipProps(); renderPipCats();
         }catch(e){}
       }
+      if(typeof vpipOpen==='function' && vpipOpen()){ try{ _vpipSync(); }catch(e){} }   // 🎬 비디오 PiP도 방·가구·펫 변경 라이브 반영(서명 가드)
       if(state.view==='home' && typeof renderHome==='function') renderHome();   // 홈의 미션·은화 즉시 반영
       refreshMoreBadges();   // 더보기 그리드 알림 뱃지(선물함·소식…)가 game 변화(선물 받기·쿠폰 사용·공지 확인)에 즉시 반영되도록
       if(state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh();
@@ -5519,7 +5525,7 @@
       tonic:     { name:'영양제',     icon:o=>consumSvg('tonic',o),  use:'tonic' },   // 💊 가방에서 사용(수확 부스트 3h)
       egg:       { name:'펫알',       icon:o=>eggSvg(0,o),        use:'egg'  },   // 일반 확률 오픈
       box:       { name:'랜덤박스',   icon:o=>boxSvg(o),          use:'box'  },
-      rainbow_egg:{ name:'무지개알',  icon:o=>rainbowEggSvg(o),   use:'rb_egg' },  // 특별↑ 확률 오픈
+      rainbow_egg:{ name:'무지개알',  icon:o=>rainbowEggImg((o&&o.h)||52),   use:'rb_egg' },  // 특별↑ 확률 오픈 — 아이템 이미지=새 무지개알(뜰알 기반)
       rainbow_box:{ name:'무지개박스',icon:o=>rainbowBoxSvg(o),   use:'rb_box' },
       ddeul:     { name:'뜰알',       icon:o=>ddeulEggSvg(o),     use:'ddeul' }   // 🌱 한정 픽업(뜰알) — 보유 1개 소모해 열면 DDEUL_TIERS 확률(개발자 선물/지급 전용, 상점 비매)
     };
@@ -5992,6 +5998,7 @@
     function _petArtRerender(){ clearTimeout(_artRerenderT); _artRerenderT=setTimeout(_petArtRerenderNow, 80); }   // 여러 런타임 펫 아트가 잇달아 도착해도 무대 재빌드를 1회로 합침(재빌드 폭주 방지)
     function _petArtRerenderNow(){ const cd=$('cdStage'); if(cd) cd.dataset.sig=''; const cr=$('crStage'); if(cr) cr.dataset.sig='';
       if(typeof pipOpen==='function' && pipOpen() && _pip.stage){ _pip.stage.dataset.sig=''; renderPipCats(); }   // 🖥️ PiP 무대도 아트 도착 반영(도트 알 → 스프라이트)
+      if(typeof vpipOpen==='function' && vpipOpen()){ _vpip.sigCats=''; try{ _vpipSync(); }catch(e){} }   // 🎬 비디오 PiP도 런타임 펫 아트 도착 시 재동기화
       if(typeof renderDockCats==='function') renderDockCats();
       if(typeof mountRoomWalk==='function') mountRoomWalk();
       if(state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh(); }
@@ -6555,7 +6562,11 @@
     const PIP_VH=200;   // 가상 방 높이 = dock .cd-room(200px)과 동일 → 같은 원근·크기
     let _pip=null;      // { win, doc, room, props, stage, _vw } — 창이 떠 있는 동안만 존재
     let _pipGone=true;  // 정리(idempotent) 플래그 — pagehide와 자가치유가 겹쳐 불려도 _pipClosed가 1회만 정리(중복 정리→rAF 이중 체인 방지)
-    function pipSupported(){ return typeof window!=='undefined' && 'documentPictureInPicture' in window; }
+    function docPipSupported(){ return typeof window!=='undefined' && 'documentPictureInPicture' in window; }
+    // 비디오 PiP(canvas→captureStream→video PiP): 유튜브식 창 크롬(호버 시에만 컨트롤). OffscreenCanvas 워커로 백그라운드에서도 계속 그림.
+    function vpipSupported(){ try{ return typeof window!=='undefined' && typeof OffscreenCanvas!=='undefined' && !!document.pictureInPictureEnabled
+      && !!HTMLCanvasElement.prototype.captureStream && !!HTMLVideoElement.prototype.requestPictureInPicture && typeof Worker!=='undefined'; }catch(e){ return false; } }
+    function pipSupported(){ return docPipSupported() || vpipSupported(); }   // 버튼 노출 기준(둘 중 하나라도)
     // 열려 있나 + 자가치유: 창이 pagehide 없이 죽는 엣지(브라우저가 이벤트를 못 준 경우)에도 다음 호출(매 프레임 activeStages·onGameChange 등)에서
     // 즉시 정리한다 — 안 하면 닫힌 창의 rAF에 예약된 엔진 체인이 증발한 채 _eng.raf만 남아 "펫 전체 정지"류 버그가 된다.
     function pipOpen(){ if(_pip && (!_pip.win || _pip.win.closed)) _pipClosed(); return !!_pip; }
@@ -6564,7 +6575,10 @@
     // PiP 문서에선 전역 함수가 없어 inline 핸들러가 동작할 수 없으므로 상호작용 속성을 전부 벗긴다(시청 전용·키보드 포커스도 차단).
     function _pipStatic(html){ return String(html).replace(/ (?:onclick|onkeydown)="[^"]*"/g,'').replace(/ role="button"/g,'').replace(/ tabindex="0"/g,''); }
     function _pipSetCamTxt(){ if(!pipOpen()) return; try{ _pip.doc.title='알뜰 펫캠 · '+(room().emoji?room().emoji+' ':'')+(room().name||'우리집'); }catch(e){} }   // 창 안 LIVE 배지·방 이름은 안 그림(사용자 지침) — 방 이름은 창 제목으로만
-    function syncPipTheme(){ if(!pipOpen()) return; try{ _pip.doc.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme')||'light'); }catch(e){} }
+    function syncPipTheme(){
+      if(pipOpen()){ try{ _pip.doc.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme')||'light'); }catch(e){} }
+      if(typeof vpipOpen==='function' && vpipOpen()){ try{ _vpip.sigProps=''; _vpipSync(); }catch(e){} }   // 🎬 비디오 PiP: CSS 변수 계산값이 바뀌므로 정적 씬 재래스터
+    }
     // 창 크기 → 가상 방(폭 가변 × 높이 PIP_VH)을 scale로 꽉 채움. 가상 폭이 바뀔 때만 액터 재클램프(markCatDirty).
     function _pipLayout(){ if(!pipOpen()||!_pip.room) return;
       const w=_pip.win.innerWidth||320, h=_pip.win.innerHeight||PIP_VH, sc=Math.max(0.2, h/PIP_VH);
@@ -6590,15 +6604,39 @@
       stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+(hasSprite(id)?'<span class="cd-shadow">'+shadowSvg({h:Math.max(6,Math.round(s*0.16))})+'</span>':'')+catActorHTML(id,s)+'</div>'; }).join('');
       markCatDirty(); }
     // dock 캠 우하단 PiP 버튼(지원 브라우저에서만 렌더 — 모바일에선 마크업 자체가 없음)
+    function _pipBtnTitle(on){ return on?'PiP 미니 창 닫기':'펫캠 PiP 미니 창 · 길게 누르면 방식 전환('+(pipMode()==='doc'?'현재: 🪟 창':'현재: 🎬 비디오')+')'; }
     function pipBtnHtml(){ if(!pipSupported()) return '';
-      const on=pipOpen();
-      return '<button class="cd-pip'+(on?' on':'')+'" onclick="event.stopPropagation();openPipCam()" aria-pressed="'+(on?'true':'false')+'" title="'+(on?'PiP 미니 창 닫기':'펫캠을 항상 위 미니 창(PiP)으로')+'" aria-label="펫캠 PiP 미니 창 열기/닫기">'+pipSvg({h:13})+'</button>'; }
-    function _pipBtnSync(){ const b=document.querySelector('.catdock .cd-pip'); if(!b) return; const on=pipOpen();
-      b.classList.toggle('on', on); b.setAttribute('aria-pressed', on?'true':'false'); b.title=on?'PiP 미니 창 닫기':'펫캠을 항상 위 미니 창(PiP)으로'; }
+      const on=pipOpen()||vpipOpen();
+      return '<button class="cd-pip'+(on?' on':'')+'" onclick="pipBtnClick(event)" onpointerdown="pipBtnDown()" onpointerup="pipBtnUp()" onpointerleave="pipBtnUp()" aria-pressed="'+(on?'true':'false')+'" title="'+_pipBtnTitle(on)+'" aria-label="펫캠 PiP 미니 창 열기/닫기 (길게: 방식 전환)">'+pipSvg({h:13})+'</button>'; }
+    function _pipBtnSync(){ const b=document.querySelector('.catdock .cd-pip'); if(!b) return; const on=pipOpen()||vpipOpen();
+      b.classList.toggle('on', on); b.setAttribute('aria-pressed', on?'true':'false'); b.title=_pipBtnTitle(on); }
+    // ── PiP 방식 2종: 'video'(기본·유튜브식 — 창 크롬이 호버 시에만 보여 깔끔) / 'doc'(Document PiP — 가구 연출·움직이는 벽지까지 전부, 대신 상단바 상시 표시) ──
+    // Document PiP 상단바(주소·X)는 Chrome 보안 UI라 웹에서 숨길 수 없음 → 깔끔함을 원하면 비디오 PiP로(사용자 선택). dock 버튼 길게 누르면 전환.
+    function pipMode(){ try{ return localStorage.getItem('pipMode')==='doc'?'doc':'video'; }catch(e){ return 'video'; } }
+    function togglePipMode(){ const m=pipMode()==='doc'?'video':'doc'; try{ localStorage.setItem('pipMode', m); }catch(e){}
+      if(vpipOpen()) closeVideoPip(); if(pipOpen()){ try{ _pip.win.close(); }catch(e){} }   // 열려 있던 창은 닫고(방식이 다르니) 다시 열게 안내
+      toast(m==='video'?'PiP 방식: 🎬 비디오 — 유튜브처럼 컨트롤이 호버 시에만 보여요(가구 연출은 정지). 버튼을 다시 눌러 여세요'
+                       :'PiP 방식: 🪟 창 — 가구 연출·움직이는 배경까지 전부 나와요(상단바는 항상 표시). 버튼을 다시 눌러 여세요');
+      _pipBtnSync(); }
+    // 버튼 탭=열기/닫기, 길게(0.55s)=방식 전환
+    let _pipLpT=0, _pipLpFired=false;
+    function pipBtnDown(){ _pipLpFired=false; clearTimeout(_pipLpT); _pipLpT=setTimeout(function(){ _pipLpFired=true; togglePipMode(); }, 550); }
+    function pipBtnUp(){ clearTimeout(_pipLpT); }
+    function pipBtnClick(ev){ if(ev) ev.stopPropagation(); if(_pipLpFired){ _pipLpFired=false; return; } openPipCam(); }
+    // 열기 디스패처 — 선택 방식 우선, 미지원이면 반대 방식 폴백
     function openPipCam(){
-      if(!pipSupported()){ toast('이 브라우저는 PiP 미니 캠을 지원하지 않아요(데스크톱 크롬·엣지)', true); return; }
-      if(pipOpen()){ try{ _pip.win.close(); }catch(e){} return; }   // 토글: 버튼 재탭=닫기(pagehide 정리 경유)
-      documentPictureInPicture.requestWindow({ width:380, height:224 }).then(function(win){
+      if(vpipOpen()){ closeVideoPip(); return; }                       // 토글: 재탭=닫기
+      if(pipOpen()){ try{ _pip.win.close(); }catch(e){} return; }
+      const wantDoc = pipMode()==='doc';
+      if(wantDoc && docPipSupported()) return openDocPip();
+      if(!wantDoc && vpipSupported()) return openVideoPip();
+      if(docPipSupported()) return openDocPip();
+      if(vpipSupported()) return openVideoPip();
+      toast('이 브라우저는 PiP 미니 캠을 지원하지 않아요(데스크톱 크롬·엣지)', true);
+    }
+    function openDocPip(){
+      // disallowReturnToOpener: '탭으로 돌아가기' 버튼 숨김(Chrome 124+, 이전 버전은 무시) — 상단바를 최대한 깔끔하게
+      documentPictureInPicture.requestWindow({ width:380, height:224, disallowReturnToOpener:true }).then(function(win){
         const doc=win.document;
         try{
           const base=doc.createElement('base'); base.href=document.baseURI; doc.head.appendChild(base);   // 스프라이트 PNG 등 상대 URL 해석 보장
@@ -6628,6 +6666,192 @@
       if(_ogcRAF){ _ogcRAF=0; onGameChange(); }   // PiP rAF에 걸려 있던 game 델타 코얼레싱도 메인으로 재예약(라이브 패치 유실 방지)
       _pipBtnSync();
     }
+    // ================= 🎬 비디오 PiP(기본) — canvas→captureStream→video.requestPictureInPicture =================
+    // 유튜브 PiP와 동일한 창: 평소엔 화면만 보이고 마우스를 올려야 컨트롤(탭 복귀·X)이 나타남(사용자 요청 — Document PiP 상단바는 숨길 수 없어 방식 자체를 전환).
+    // 구성: ① 방 정적 레이어(벽지·바닥·가구·벽가구·똥·그릇 채움) = 기존 마크업(propMarkup 등 인라인 좌표)을 foreignObject SVG로 감싸 1회 래스터(ImageBitmap)
+    //      ② 펫 = 걷기 시트/정지 스틸 ImageBitmap을 워커로 넘겨 워커가 자체 미니 배회 심(걷기 필름·정면 멈춤·깊이 원근)으로 매 프레임 드로잉
+    //      ③ OffscreenCanvas + 워커 setInterval(33ms) — 워커 타이머는 탭 숨김 스로틀을 안 받아 "다른 창에서 작업 중"에도 계속 움직임(메인 rAF 불필요)
+    // 한계(수용): 가구 캠 연출(FURN_ANIM)·움직이는 벽지 씬·배경효과 오버레이는 정지(정적 래스터). 펫 걷기·배치·똥·테마는 유지.
+    // 정리: leavepictureinpicture(X·토글)에서 워커 종료·스트림 정지·DOM 제거(누수 방지). 방/가구/펫 변경은 서명 가드로 비트맵만 재전송.
+    let _vpip=null;   // { video, canvas, worker, stream, sigProps, sigCats } — 떠 있는 동안만
+    function vpipOpen(){ return !!_vpip; }
+    const _VPIP_W=360, _VPIP_H=200, _VPIP_SC=2;   // 가상 방 360×200(dock 비율) × 2배 래스터(720×400)
+    // 방 정적 레이어 — 캔버스에 직접 페인트(벽지·바닥 타일/그라디언트 + 가구·벽가구·똥·그릇 채움).
+    // ⚠️ foreignObject SVG 래스터는 쓸 수 없다(실측 버그): Chrome이 foreignObject 포함 SVG 이미지를 origin-unclean(오염)으로
+    //    취급해 "Non-origin-clean ImageBitmap cannot be transferred" — 워커 전송·captureStream이 전부 막힌다.
+    //    → 배치 좌표 수학을 propMarkup/wallPropMarkup과 동일식으로 계산해 pxSvg 데이터URI(클린)를 drawImage 한다.
+    function _vpipResolveCss(s){ try{ const cs=getComputedStyle(document.documentElement);
+      return String(s||'').replace(/var\((--[a-z0-9-]+)(?:\s*,[^)]*)?\)/gi, function(m,n){ const v=cs.getPropertyValue(n).trim(); return v||m; });
+    }catch(e){ return s; } }
+    function _vpipImgLoad(u){ return new Promise(function(res,rej){ const im=new Image(); im.onload=function(){ res(im); }; im.onerror=rej; im.src=u; }); }
+    function _vpipBmp(url){ return _vpipImgLoad(url).then(function(im){ return createImageBitmap(im); }); }
+    function _svgUri(s){ return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(_vpipResolveCss(String(s||'').replace(/<svg /g,'<svg xmlns="http://www.w3.org/2000/svg" '))); }
+    // 벽지/바닥 CSS 배경 → 캔버스 드로어(타일 url=패턴, 그라디언트=세로 근사, 단색=fill). 로드 후 fn(ctx)를 돌려 painter 순서 보장.
+    function _vpipBgFill(css, x, y, w, h){
+      css=String(css||'');
+      const m=css.match(/url\(\s*'?(data:image\/[^')\s]+)'?\s*\)/);
+      if(m){ const sz=css.match(/\/\s*([\d.]+)px\s+([\d.]+)px/);
+        return _vpipImgLoad(m[1]).then(function(im){ return function(ctx){
+          const tw=Math.max(1, Math.round(sz?parseFloat(sz[1]):im.width)), th=Math.max(1, Math.round(sz?parseFloat(sz[2]):im.height));
+          const tc=document.createElement('canvas'); tc.width=tw; tc.height=th;
+          const tx=tc.getContext('2d'); tx.imageSmoothingEnabled=false; tx.drawImage(im,0,0,tw,th);
+          ctx.save(); ctx.fillStyle=ctx.createPattern(tc,'repeat'); ctx.translate(x,y); ctx.fillRect(0,0,w,h); ctx.restore(); };
+        }, function(){ return function(){}; }); }
+      return Promise.resolve(function(ctx){
+        const cols=css.match(/#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)/g);
+        if(css.indexOf('gradient')>=0 && cols && cols.length>1){ const g=ctx.createLinearGradient(0,y,0,y+h);
+          for(let i=0;i<cols.length;i++){ try{ g.addColorStop(i/(cols.length-1), cols[i]); }catch(e){} } ctx.fillStyle=g; }
+        else ctx.fillStyle=(cols&&cols[0])||'#ece7dc';
+        ctx.fillRect(x,y,w,h); });
+    }
+    // 배치물 페인트 목록 — dock 캠과 동일한 painter 순서(바닥아이템 → 벽가구 → 일반 뒤→앞)·앵커·원근
+    function _vpipPaintList(){
+      const W=_VPIP_W, H=_VPIP_H;
+      function anchorX(c, footW, gw){ const md=camAnchorMode(c, footW);
+        const ax = md==='left'?0 : md==='right'?W : (gridLeftFrac(c)+gridSpanFrac(footW)/2)*W;
+        return ax + gw*(md==='left'?0 : md==='right'?-1 : -0.5); }
+      const list=placedList().sort((a,b)=>a.r-b.r); distributePoops(list);
+      const flo=[], oth=[], wall=[];
+      list.forEach(function(p){ const foot=itemFoot(p.itemId), fr=p.r+foot.h-1, depth=camDepth(fr);
+        const fh=furnRoomH(p.itemId,true,depth), gw=fh*furnAspect(p.itemId);
+        const x=anchorX(p.c, foot.w, gw), yB=H*(1-camFurnBottom(depth)/100);
+        const tap=(p.itemId==='bowl'||p.itemId==='waterbowl');
+        const it={ url:_svgUri(tap? furnRoomSvg(p.itemId,p.key,{h:fh}) : furnSvg(p.itemId,{h:fh})), x:x, y:yB-fh, w:gw, h:fh, flip:!!p.flip, fr:fr };
+        (isFloorItem(p.itemId)?flo:oth).push(it);
+        if(p.itemId==='litterbox'){ const ph=Math.max(6,Math.round(fh*0.32));   // propMarkup의 똥 슬롯 %와 동일
+          (p._poops||[]).forEach(function(s){ oth.push({ url:_svgUri(poopSvg({h:ph})), x:x+gw*(20+(s%3)*26)/100, y:(yB-fh)+fh*(30+((s/3|0)*20))/100, w:ph, h:ph, flip:false, fr:fr+0.01 }); }); }
+      });
+      wallPlacedList().forEach(function(p){ const foot=wallFoot(p.itemId), anchor=wallAnchorOf(p.itemId);
+        let fh, y;
+        if(anchor==='floor'){ fh=furnRoomH(p.itemId,true,1); y=H*(1-camFurnBottom(1)/100)-fh; }                                 // 바닥형: 맨 뒤 바닥선
+        else if(anchor==='hang'){ fh=furnWallH(p.itemId,true); y=H*(((p.r-1)/WALL_ROWS)*46)/100; }                              // 매다는형: 천장 top 앵커
+        else { fh=furnWallH(p.itemId,true); y=H*(1-(WALL_MOUNT_BASE+(WALL_ROWS-p.r)*WALL_MOUNT_STEP)/100)-fh; }                 // 거는형: 벽 밴드 bottom
+        const gw=fh*furnAspect(p.itemId);
+        wall.push({ url:_svgUri(furnSvg(p.itemId,{h:fh})), x:anchorX(p.c, foot.w, gw), y:y, w:gw, h:fh, flip:false, fr:0 });
+      });
+      oth.sort(function(a,b){ return a.fr-b.fr; });
+      return flo.concat(wall).concat(oth);
+    }
+    function _vpipBuildScene(){
+      const W=_VPIP_W, H=_VPIP_H;
+      try{
+        const paint=_vpipPaintList();
+        const cv=document.createElement('canvas'); cv.width=W*_VPIP_SC; cv.height=H*_VPIP_SC;
+        const ctx=cv.getContext('2d');
+        return Promise.all([
+          _vpipBgFill(_vpipResolveCss(wallCss(currentWall())), 0, 0, W, H*0.462),
+          _vpipBgFill(_vpipResolveCss(floorCss(currentFloor())), 0, H*0.455, W, H*0.545)
+        ].concat(paint.map(function(it){ return _vpipImgLoad(it.url).catch(function(){ return null; }); })))
+        .then(function(res){
+          ctx.setTransform(_VPIP_SC,0,0,_VPIP_SC,0,0); ctx.imageSmoothingEnabled=false;
+          res[0](ctx); res[1](ctx);   // 벽 → 바닥(경계 덮음)
+          for(let i=0;i<paint.length;i++){ const im=res[2+i]; if(!im) continue; const it=paint[i];
+            ctx.save();
+            if(it.flip){ ctx.translate(it.x+it.w/2,0); ctx.scale(-1,1); ctx.translate(-(it.x+it.w/2),0); }   // transform-origin center와 동일한 좌우 반전
+            try{ ctx.drawImage(im, it.x, it.y, it.w, it.h); }catch(e){}
+            ctx.restore(); }
+          return createImageBitmap(cv);
+        }).catch(function(){ return null; });
+      }catch(e){ return Promise.resolve(null); }   // 씬 실패해도 펫만으로 진행
+    }
+    // 활성 펫 에셋(ImageBitmap): 스프라이트=걷기 시트+south(+frontWalk면 east 스틸) / SVG 매트릭스 펫=정면 스틸(제자리 — 정면 이동 금지 불변식)
+    function _vpipPetAssets(){ const list=activeCats().slice(0,slotCount()); ensurePetArtMany(list);
+      return Promise.all(list.map(function(id){ const hh=petActorPx(id,32,200);
+        if(hasSprite(id)){ const spr=PET_SPRITES[id]; if(spr.runtime&&!spr.urls) return Promise.resolve(null);   // 아트 로딩 전 — 도착 시 _petArtRerenderNow가 재동기화
+          const fw=!!spr.frontWalk;
+          return Promise.all([_vpipBmp(sprWalkUrl(spr)), _vpipBmp(sprStill(id,'south')), fw?_vpipBmp(sprStill(id,'east')):Promise.resolve(null)])
+            .then(function(bs){ return { hh:hh, frames:spr.frames||6, frontWalk:fw, sheet:bs[0], south:bs[1], east:bs[2]||null }; })
+            .catch(function(){ return null; });
+        }
+        return _vpipBmp('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(catFace(id,{h:hh})))
+          .then(function(b){ return { hh:hh, frames:1, frontWalk:true, stationary:true, sheet:null, south:b, east:null }; })
+          .catch(function(){ return null; });
+      })).then(function(arr){ return arr.filter(Boolean); }); }
+    // 워커 소스(Blob) — 미니 배회 심 + 드로잉. dock 엔진 상수(RISE 0.53·근1.5/원0.86·발밑 0.16) 공유해 원근 일치.
+    let _vpipWURL=null;
+    function _vpipWorkerUrl(){ if(_vpipWURL) return _vpipWURL;
+      const src=[
+        "var W=360,H=200,SC=2,ctx=null,bg=null,pets=[],rm=false,last=0,timer=0;",
+        "function setPets(list){ pets=(list||[]).map(function(p,i){ var e={}; for(var k in p) e[k]=p[k];",
+        "  e.x=16+Math.random()*(W-e.hh-32); e.dir=Math.random()<0.5?-1:1; e.v=0.018+Math.random()*0.02;",
+        "  e.depth=Math.random(); e.vz=(Math.random()*2-1)*0.00004;",
+        "  e.mode=(rm||e.stationary)?'pause':'roam'; e.pt=1e9; if(!rm&&!e.stationary) e.pt=0; return e; }); }",
+        "function step(dt){ if(rm) return; for(var i=0;i<pets.length;i++){ var a=pets[i]; if(a.stationary) continue;",
+        "  if(a.mode==='pause'){ a.pt-=dt; if(a.pt<=0){ a.mode='roam'; a.dir=Math.random()<0.5?-1:1; } continue; }",
+        "  var ds=1.5-(1.5-0.86)*a.depth, w=a.hh*ds;",
+        "  a.x+=a.dir*a.v*dt; if(a.x<2){ a.x=2; a.dir=1; } if(a.x>W-w){ a.x=Math.max(2,W-w); a.dir=-1; }",
+        "  a.depth=Math.max(0,Math.min(1,a.depth+a.vz*dt)); if(Math.random()<0.004) a.vz=(Math.random()*2-1)*0.00004;",
+        "  if(Math.random()<0.0022){ a.mode='pause'; a.pt=2200+Math.random()*3800; }",
+        "} }",
+        "function draw(now){ if(!ctx) return; ctx.setTransform(SC,0,0,SC,0,0); ctx.imageSmoothingEnabled=false;",
+        "  ctx.clearRect(0,0,W,H); if(bg) ctx.drawImage(bg,0,0,W,H);",
+        "  var ord=pets.slice().sort(function(a,b){ return b.depth-a.depth; });",   // 멀리(depth1)부터 → 가까운 펫이 위에
+        "  for(var i=0;i<ord.length;i++){ var a=ord[i]; var ds=1.5-(1.5-0.86)*a.depth, h=a.hh*ds, w=h;",
+        "    var y=H-(a.depth*0.53*H)-h+h*0.16;",   // rise + 발밑 투명여백(0.16) 상쇄
+        "    var moving=(a.mode==='roam'&&!a.stationary), flip=(moving&&a.dir<0);",
+        "    ctx.save(); if(flip){ ctx.translate(a.x+w,0); ctx.scale(-1,1); } else { ctx.translate(a.x,0); }",
+        "    try{",
+        "      if(moving&&a.sheet&&!a.frontWalk){ var sw=a.sheet.width/a.frames, fr=Math.floor(now/110)%a.frames; ctx.drawImage(a.sheet, fr*sw,0,sw,a.sheet.height, 0,y,w,h); }",
+        "      else if(moving&&a.frontWalk&&a.east){ ctx.drawImage(a.east,0,y,w,h); }",
+        "      else if(a.south){ ctx.drawImage(a.south,0,y,w,h); }",
+        "    }catch(e){}",
+        "    ctx.restore(); }",
+        "}",
+        "function tick(){ var now=Date.now(), dt=Math.min(90, last?now-last:33); last=now; step(dt); draw(now); }",
+        "onmessage=function(ev){ var d=ev.data||{};",
+        "  if(d.t==='init'){ var cv=d.canvas; ctx=cv.getContext('2d'); SC=d.sc||2; W=d.W||360; H=d.H||200; bg=d.bg||null; rm=!!d.rm; setPets(d.pets); last=0; clearInterval(timer); timer=setInterval(tick,33); }",
+        "  else if(d.t==='bg'){ bg=d.bg||null; }",
+        "  else if(d.t==='pets'){ setPets(d.pets); }",
+        "};"
+      ].join('\n');
+      _vpipWURL=URL.createObjectURL(new Blob([src],{type:'text/javascript'})); return _vpipWURL; }
+    function openVideoPip(){
+      const rId=curRoomId();
+      Promise.all([_vpipBuildScene(), _vpipPetAssets()]).then(function(res){
+        if(vpipOpen()||pipOpen()) return;   // 로딩 사이 중복 열림 방지
+        const bg=res[0], pets=res[1];
+        const cv=document.createElement('canvas'); cv.width=_VPIP_W*_VPIP_SC; cv.height=_VPIP_H*_VPIP_SC;
+        cv.style.cssText='position:fixed;left:-99999px;top:0;'; document.body.appendChild(cv);
+        const stream=cv.captureStream(30);
+        const off=cv.transferControlToOffscreen();
+        const worker=new Worker(_vpipWorkerUrl());
+        const xf=[off]; if(bg) xf.push(bg); pets.forEach(function(p){ ['sheet','south','east'].forEach(function(k){ if(p[k]) xf.push(p[k]); }); });
+        worker.postMessage({t:'init', canvas:off, sc:_VPIP_SC, W:_VPIP_W, H:_VPIP_H, bg:bg, rm:reducedMotion(), pets:pets}, xf);
+        const v=document.createElement('video'); v.muted=true; v.playsInline=true; v.autoplay=true;
+        v.style.cssText='position:fixed;left:-99999px;top:0;width:'+_VPIP_W+'px;'; v.srcObject=stream; document.body.appendChild(v);
+        const r=room();
+        _vpip={ video:v, canvas:cv, worker:worker, stream:stream,
+          sigProps:'p:'+rId+'|'+JSON.stringify(r.placed||{})+'|'+JSON.stringify(r.wallPlaced||{})+'|'+(Number(r.poops)||0)+'|'+currentWall()+'|'+currentFloor(),
+          sigCats:'c:'+activeCats().slice(0,slotCount()).join(',') };
+        v.addEventListener('leavepictureinpicture', _vpipClosed, {once:true});   // X·토글·다른 PiP로 대체 등 모든 닫힘 경로
+        return v.play().then(function(){ return v.requestPictureInPicture(); }).then(function(){ _pipBtnSync(); });
+      }).catch(function(e){
+        try{ console.warn('비디오 PiP 실패 — 폴백', e); }catch(_e){}
+        _vpipClosed();   // 부분 생성물 정리
+        if(docPipSupported()){ openDocPip(); }   // 활성화가 남아 있으면 창 PiP로 폴백
+        else toast('PiP를 열지 못했어요', true);
+      });
+    }
+    function closeVideoPip(){ if(!_vpip) return;
+      if(document.pictureInPictureElement===_vpip.video){ document.exitPictureInPicture().catch(function(){ _vpipClosed(); }); }   // exit → leave 이벤트 → _vpipClosed
+      else _vpipClosed(); }
+    function _vpipClosed(){ const s=_vpip; _vpip=null; if(!s) return;   // idempotent(leave 이벤트+수동 정리 중복 안전)
+      try{ if(s.worker) s.worker.terminate(); }catch(e){}
+      try{ if(s.stream) s.stream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){}
+      try{ if(s.video){ s.video.srcObject=null; s.video.remove(); } }catch(e){}
+      try{ if(s.canvas) s.canvas.remove(); }catch(e){}
+      _pipBtnSync(); }
+    // 방·가구·펫 변경 라이브 반영 — 서명 가드로 바뀐 쪽 비트맵만 재생성·전송(onGameChange에서 호출)
+    function _vpipSync(){ if(!vpipOpen()) return;
+      const r=room();
+      const ps='p:'+curRoomId()+'|'+JSON.stringify(r.placed||{})+'|'+JSON.stringify(r.wallPlaced||{})+'|'+(Number(r.poops)||0)+'|'+currentWall()+'|'+currentFloor();
+      if(_vpip.sigProps!==ps){ _vpip.sigProps=ps;
+        _vpipBuildScene().then(function(bg){ if(vpipOpen()&&bg) _vpip.worker.postMessage({t:'bg', bg:bg}, [bg]); }); }
+      const cs='c:'+activeCats().slice(0,slotCount()).join(',');
+      if(_vpip.sigCats!==cs){ _vpip.sigCats=cs;
+        _vpipPetAssets().then(function(pets){ if(!vpipOpen()) return;
+          const xf=[]; pets.forEach(function(p){ ['sheet','south','east'].forEach(function(k){ if(p[k]) xf.push(p[k]); }); });
+          _vpip.worker.postMessage({t:'pets', pets:pets}, xf); }); } }
     // ---- 통합 걷기 엔진: 단일 rAF가 "지금 보이는 무대"(시트 방 또는 dock)만 애니메이션 ----
     // 고양이는 방/시트에 배치된 가구로 가끔 다가가 잠시 머문다(상호작용). 스트립엔 가구가 없어 자유 배회.
     // 🔋 가벼운 모드(저사양) — 사용자가 켜면 '장식/무거운 애니만' 끈다: 가구 연출·구름·나비·씬 정지, 걷기 엔진은 낮은 fps로 '계속 걷고', 가챠도 알/박스 탭·균열·결과 과정을 그대로 보여주되 흔들림·파티클·오오라만 제거(body.lite CSS). 저사양 폰 배터리/발열/버벅임 완화.
@@ -7575,7 +7799,7 @@
         h+='<div class="subseg normalsub">'+[['egg','펫알'],['box','랜덤박스']].map(function(t){ return '<button class="'+(_normalSub===t[0]?'on':'')+'" onclick="setNormalSub(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
         h+=(_normalSub==='egg'?eggBannerHtml(true):boxBannerHtml(true));   // 펫알=노을 배너(펫 지급)·랜덤박스=랜덤박스 배너(가구/바닥/벽지 지급)
       } else if(tab==='rainbow'){
-        const rb=[['egg','무지개알','열면 특별90 · 전설8 · 신화2%. 특별↑ 고양이만!', rainbowEggSvg({h:66,cls:'rb-thumb'})],
+        const rb=[['egg','무지개알','열면 특별90 · 전설8 · 신화2%. 특별↑ 고양이만!', rainbowEggImg(66)],
                   ['box','무지개박스','열면 특별90 · 전설8 · 신화2%. 특별↑ 가구만!', rainbowBoxSvg({h:56,cls:'rb-thumb'})]];
         h+='<div class="rb-hh"><span class="tier-rainbow">✨ 무지개</span> · 금화 전용 · 특별↑ 확정</div>';
         h+=rb.map(([k,nm,desc,art])=>{ const key=rainbowKey(k), qty=consumQty(key), price=rbPriceGold(k), canBuy=gold()>=price;
@@ -7653,7 +7877,7 @@
       if(gold) s+=(s?' ':'')+'<span class="ci">'+goldSvg({h:h})+'</span>'+(gold*m);
       return s||'무료'; }
     // 보유 알/박스류 픽셀 아이콘(소비 인벤토리 키별).
-    function heldItemIcon(key, h){ h=h||13; if(key==='ddeul') return ddeulEggSvg({h:h}); if(key==='rainbow_egg') return rainbowEggSvg({h:h}); if(key==='rainbow_box') return rainbowBoxSvg({h:h}); if(key==='box') return boxSvg({h:h}); return eggSvg(0,{h:h}); }
+    function heldItemIcon(key, h){ h=h||13; if(key==='ddeul') return ddeulEggSvg({h:h}); if(key==='rainbow_egg') return rainbowEggImg(h); if(key==='rainbow_box') return rainbowBoxSvg({h:h}); if(key==='box') return boxSvg({h:h}); return eggSvg(0,{h:h}); }
     // 🧾 뽑기 소모 표기 — 보유 알/박스를 먼저 쓰고(개수), 부족분만 재화로 구매. "🥚×3 + 🪙700" 식(수집형 게임 관례).
     function gbPullCostHtml(heldKey, silver, gold, n){
       const held=heldKey?consumQty(heldKey):0, useHeld=Math.min(n, held), buyN=n-useHeld; const parts=[];
@@ -7794,7 +8018,7 @@
         });
         return g;
       }).then(function(r){ _pullBusy=false;
-        if(r&&r.committed){ const theme=(kind==='ddeul')?'rainbow':'sunset'; runTenGachaFx(list, { kind:kind, theme:theme }); if(state._sheetRefresh) setTimeout(function(){ if(state._sheetRefresh) state._sheetRefresh(); }, 50); }
+        if(r&&r.committed){ const theme=(kind==='ddeul')?'rainbow':(kind==='box'?'treasure':'sunset'); runTenGachaFx(list, { kind:kind, theme:theme }); if(state._sheetRefresh) setTimeout(function(){ if(state._sheetRefresh) state._sheetRefresh(); }, 50); }   // 🎉 v2 정식: 랜덤박스 10뽑=보물 금고 씬(개발자 미리보기와 동일)
         else toast('처리 중이에요 — 잠시 후 다시 시도해 주세요', true);
       }).catch(function(){ _pullBusy=false; });
     }
@@ -7803,14 +8027,12 @@
     const BANNER_TABS=[['ddeul','뜰알'],['egg','펫알'],['box','랜덤박스'],['rainbow','무지개']];
     function setBannerTab(t){ _bannerTab=t||'ddeul'; if(state._sheetRefresh) state._sheetRefresh(); }
     function openDevBannerManager(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
-      const build=()=>{ _pkV2=true;   // 🎨 v2 고해상도 씬은 개발자 미리보기에서만 — 빌드 동안만 켜고 반드시 해제(라이브 배너는 v1 유지)
-        try{
+      const build=()=>{   // 🎉 v2 정식 반영 이후 _pkV2 상시 true — 뜰알/펫알/랜덤박스는 라이브와 동일, 무지개 밤 배너만 여기 전용(추후 다른 픽업용 대기)
         if(!BANNER_TABS.some(t=>t[0]===_bannerTab)) _bannerTab='ddeul';
-        let h='<div class="note">가챠 배너 미리보기(🎨 <b>v2 고해상도 씬</b> — 라이브는 아직 v1) — 탭별로 확인. <b>펫알</b>=노을 연못·<b>랜덤박스</b>=노을 선물상자(전용 배경 분화). 버튼은 <b>미리보기</b>(1회=강제 전설·10회=연출)로 소모 없음.</div>';
+        let h='<div class="note">가챠 배너 미리보기 — 뜰알·펫알·랜덤박스는 <b>라이브와 동일(v2 정식 반영)</b>, <b>무지개(밤 배너)</b>는 추후 픽업용으로 여기서만 확인. 버튼은 <b>미리보기</b>(1회=강제 전설·10회=연출)로 소모 없음.</div>';
         h+='<div class="subseg">'+BANNER_TABS.map(t=>'<button class="'+(_bannerTab===t[0]?'on':'')+'" onclick="setBannerTab(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div>';
         h+=(_bannerTab==='ddeul'?ddeulBannerHtml():_bannerTab==='egg'?eggBannerHtml():_bannerTab==='box'?boxBannerHtml():rainbowBannerHtml());
         return h;
-        } finally { _pkV2=false; }
       };
       openSheet('배너 관리', build());
       state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const st=b.scrollTop; b.innerHTML=build(); b.scrollTop=st; if(typeof pkObserveScenes==='function') pkObserveScenes(); };
@@ -9764,7 +9986,7 @@
     // game/localStorage가 바뀌어도(선물 받기·쿠폰 사용·공지 확인) 더보기 화면이 다시 안 그려지면 뱃지가 남으므로, 더보기 탭이 떠 있으면 즉시 재렌더해 알림을 지운다.
     function refreshMoreBadges(){ if(state.view==='mode' && state.tab==='more' && typeof renderMore==='function') renderMore(); }
     // 쿠폰 보상 픽셀 아이콘(PROMO_CODES 타입별) — 이모지 대신 도트 아이콘 재사용.
-    function couponIcon(d){ if(d.type==='coins') return coinSvg({h:15}); if(d.key==='ddeul') return ddeulEggSvg({h:16}); if(d.key==='rainbow_egg') return rainbowEggSvg({h:16}); if(d.key==='rainbow_box') return rainbowBoxSvg({h:16}); if(d.key==='egg') return eggSvg(0,{h:16}); if(d.key==='box') return boxSvg({h:16}); return coinSvg({h:15}); }
+    function couponIcon(d){ if(d.type==='coins') return coinSvg({h:15}); if(d.key==='ddeul') return ddeulEggSvg({h:16}); if(d.key==='rainbow_egg') return rainbowEggImg(16); if(d.key==='rainbow_box') return rainbowBoxSvg({h:16}); if(d.key==='egg') return eggSvg(0,{h:16}); if(d.key==='box') return boxSvg({h:16}); return coinSvg({h:15}); }
     // 🎟️ 쿠폰번호 탭 → 클립보드 복사 + 눌림 연출 + 토스트. (인라인 onclick=copyCouponCode(this))
     function copyCouponCode(el){ if(!el) return; const code=(el.textContent||'').trim(); if(!code) return;
       const flash=function(){ el.classList.remove('copied'); void el.offsetWidth; el.classList.add('copied'); toast('쿠폰번호가 복사되었어요 📋'); };
@@ -9837,11 +10059,11 @@
     function pullEnd(){ _pullBusy=false; if(_pullBusyT){ clearTimeout(_pullBusyT); _pullBusyT=null; } }
     // 커밋 전 즉시 뜨는 '준비' 오버레이 — 탭 즉시 알/상자가 보여 지연 동안의 중복 구매를 막는다. 커밋되면 runGachaFx가 같은 알을 '탭 가능' 상태로 교체(끊김 없음).
     function gachaPending(kind, rainbow){ const fx=$('catFx'); if(!fx) return; _fxClear();
-      const egg=isEggKind(kind);
-      const art = rainbow ? (egg?rainbowEggSvg({h:150}):rainbowBoxSvg({h:150}))
-                          : (kind==='ddeul'?ddeulFxHtml():(egg?eggSvg(0,{h:150}):boxSvg({h:150})));
+      const egg=isEggKind(kind), v2e=(kind==='egg' && !rainbow);   // 라이브 펫알=v2 새싹알(runGachaFx의 v2egg와 동일 판정 — 대기→본연출 제자리 승격 정합)
+      const art = rainbow ? (egg?rainbowEggSvg({h:150}):rainbowBoxV1Svg({h:150}))
+                          : (kind==='ddeul'?ddeulFxHtml():(egg?(v2e?egg2FxHtml():eggSvg(0,{h:150})):boxSvg({h:150})));
       fx.innerHTML='<div class="fx-scrim"></div><div class="fx-stage'+(rainbow?' fx-rb':'')+(kind==='ddeul'?' fx-ddeul':'')+'">'+
-        '<div class="fx-item pop '+(egg?'fx-egg':'fx-box')+(kind==='ddeul'?' fx-ddeulegg':'')+(rainbow?' fx-rainbow':'')+'">'+art+'</div>'+
+        '<div class="fx-item pop '+(egg?'fx-egg':'fx-box')+((kind==='ddeul'||v2e)?' fx-ddeulegg':'')+(rainbow?' fx-rainbow':'')+'">'+art+'</div>'+
         '<div class="fx-hint fx-hint-wait">뽑는 중…</div></div>';
       fx.className='fx on'; }
     function itemName(kind,id){ return kind==='egg'?catName(id):((ITEM_CATALOG.find(x=>x.id===id)||{}).name||id); }
@@ -9854,7 +10076,8 @@
     function runGachaFx(kind, res, dup, refund, rainbow, isNew){
       const fx=$('catFx'); if(!fx){ toast((kind==='egg'?'펫알':'랜덤박스')+' 획득!'); pullEnd(); return; }
       _fxClear();   // 이전 FX 잔여 타이머 취소(빠른 재오픈 교차 방지)
-      _fx={ kind, res, dup, refund:refund||0, stage:0, rainbow:!!rainbow, gold: (rainbow||kind==='ddeul')?0:1, isNew:!!isNew, v2egg:(_pkV2&&kind==='egg') };   // 무지개·뜰알은 금화 보상 없음(뜰알은 금화 소모). isNew=처음 획득(NEW 배지). v2egg=개발자 배너관리 미리보기의 신규 펫알/무지개알 아트(뜰알식 연출)
+      _fx={ kind, res, dup, refund:refund||0, stage:0, rainbow:!!rainbow, gold: (rainbow||kind==='ddeul')?0:1, isNew:!!isNew, v2egg:(kind==='egg' && (!rainbow || !!_devPickupOverride)) };   // 무지개·뜰알은 금화 보상 없음(뜰알은 금화 소모). isNew=처음 획득(NEW 배지).
+      // v2egg=신규 펫알 아트(뜰알식 연출, 라이브 정식) — 단 '무지개알 아이템 사용'(rainbow=true)은 기존(v1 크랙) 연출 유지(사용자 지침). 개발자 무지개 밤 배너 미리보기(_devPickupOverride)만 v2 무지개알 연출.
       if(isEggKind(kind) && typeof hasSprite==='function' && hasSprite(res.id)){ try{ const _pi=new Image(); _pi.src=sprStill(res.id,'south'); if(_pi.decode) _pi.decode().catch(function(){}); }catch(e){} }   // 등장 스프라이트 미리 로드·디코드(펫알·뜰알 공통) → 마지막에 바로 표시
       if(typeof prewarmGachaFxPads==='function') prewarmGachaFxPads();   // 연출 고양이 발끝 여백 미리 측정(탭하는 동안 캐시 완료 → 첫 등장 세로 점프 방지)
       if(reducedMotion()){ fxReveal(); return; }   // 모션 최소화: 바로 결과
@@ -9866,7 +10089,7 @@
       const st0=fx.querySelector('.fx-stage'), it0=fx.querySelector('.fx-item'), h0=fx.querySelector('.fx-hint');
       const pendingMatch = fx.classList.contains('on') && st0 && it0 && h0 && h0.classList.contains('fx-hint-wait')
         && it0.classList.contains(isEggKind(kind)?'fx-egg':'fx-box')
-        && it0.classList.contains('fx-ddeulegg')===isDdeul
+        && it0.classList.contains('fx-ddeulegg')===(isDdeul||_fx.v2egg)
         && it0.classList.contains('fx-rainbow')===!!rainbow;
       if(pendingMatch){
         it0.id='fxItem'; it0.setAttribute('role','button'); it0.setAttribute('aria-label',hint); it0.setAttribute('onclick','fxTap()');
@@ -9874,8 +10097,8 @@
         if(rainbow && !st0.querySelector('.fx-spark')) st0.insertAdjacentHTML('afterbegin', fxSparkles(16));
         return;
       }
-      const v2e=_fx.v2egg;   // 🎨 v2 펫알/무지개알(배너관리 미리보기): 뜰알식 분리 렌더(새싹/꽃+몸통) — 크기·흔들림 CSS는 .fx-ddeulegg 공유
-      const art = rainbow ? (isEggKind(kind)? (v2e?rbEgg2FxHtml():rainbowEggSvg({h:150})) : rainbowBoxSvg({h:150}))
+      const v2e=_fx.v2egg;   // 🎨 v2 펫알: 뜰알식 분리 렌더(새싹+몸통) — 크기·흔들림 CSS는 .fx-ddeulegg 공유. 무지개알/무지개박스 '사용'은 기존(v1) 아트.
+      const art = rainbow ? (isEggKind(kind)? (v2e?rbEgg2FxHtml():rainbowEggSvg({h:150})) : rainbowBoxV1Svg({h:150}))
                           : (isDdeul? ddeulFxHtml() : (isEggKind(kind)? (v2e?egg2FxHtml():eggSvg(0,{h:150})) : boxSvg({h:150})));
       fx.innerHTML='<div class="fx-scrim"></div><div class="fx-stage'+(rainbow?' fx-rb':'')+(isDdeul?' fx-ddeul':'')+'">'+
         (rainbow?fxSparkles(16):'')+
@@ -9939,7 +10162,7 @@
       } else {
         if(_fx.stage===2 && !_fx.rainbow) maybeRainbowUpgrade();   // 🎁 박스도 특별↑이면 무지개박스로 승급(펫알 무지개알과 동일 조건)
         if(_fx.stage===2 && _fx.rainbow) ddeulPickupFx(it.closest('.fx-stage'));   // 🌈🦋 무지개박스도 무지개알과 '같은 조건·타이밍'(2번째 탭·rainbow)으로 무지개+나비 연출
-        if(_fx.rainbow) it.innerHTML=rainbowBoxSvg({h:150});   // 승급 시 무지개박스로 교체(다음 탭 climax에서 무지개 오픈)
+        if(_fx.rainbow) it.innerHTML=(_fx.rbUpgrade?rainbowBoxSvg({h:150}):rainbowBoxV1Svg({h:150}));   // 승급=새 무지개 나무상자 / 아이템 사용(처음부터 rainbow)=기존 v1 박스 유지
         it.classList.remove('boxshake'); void it.offsetWidth; it.classList.add('boxshake');   // 박스: 양옆으로 들고 흔드는 느낌
       }
     }
@@ -10042,7 +10265,7 @@
         else if(_fx.v2egg){ it.innerHTML=(_fx.rainbow?rbEgg2FxHtml():egg2FxHtml(_fx._flwRb)); fxCrackChips(4);   // 🎨 v2 펫알/무지개알: 뜰알과 동일 — 균열 없이 크게 들썩(새싹/꽃 큰 흔들림)+껍질 조각
           if(_fx.rainbow && tierRank(_fx.res.tier)>=tierRank('legend')) rbFlowerDropFx(it, st); }   // 🌈🌸 무지개알 전설↑: 꽃이 뚝 떨어지고 무지개 꽃 6개가 알 주변에 흩날림
         else if(isEgg){ it.innerHTML=eggCrackSvg(t.color, _fx.rainbow, {h:150}); fxCrackChips(4); }   // 알이 크게 갈라지고 틈새로 등급색 빛
-        else { it.innerHTML=boxOpenSvg(t.color, _fx.rainbow, {h:150}); it.classList.add('fx-ajar'); }   // 박스: 뚜껑 열리고 틈새로 등급색 빛
+        else { it.innerHTML=boxOpenSvg(t.color, _fx.rainbow, {h:150}, _fx.rainbow&&!_fx.rbUpgrade); it.classList.add('fx-ajar'); }   // 박스: 뚜껑 열리고 틈새로 등급색 빛 (무지개박스 '사용'만 기존 v1 오픈)
         // 갈라진 틈으로 새어나오는 등급색 픽셀 빛 — 은은한 오오라 + 역회전 광선 2겹(둥근 글로우 금지, 도트). 등급↑ 크고 밝게(--lk)
         st.insertAdjacentHTML('afterbegin','<div class="fx-cracklight" style="color:'+t.color+';--lk:'+lk+'">'+lightLayers({aura:170, rays:220, rainbow:exL})+'</div>');   // 한정=틈새로 새는 빛도 무지개
       }, t0);
@@ -10095,7 +10318,7 @@
       const art=isEggKind(_fx.kind)?catFace(_fx.res.id,{h:118,eager:true}):rewardBoxArt(_fx.res);   // eager: 등장 즉시 표시(lazy면 ~1초 늦게 뜸)
       // 🌲 전설·신화·한정 펫 등장 = 픽업 배너 씬 전체를 배경으로(픽업 펫 2마리도 씬에서 배회). 그 외 등급은 기본 연출.
       const sceneBg = isEggKind(_fx.kind) && (_fx.res.tier==='limited' || _fx.res.tier==='exclusive');   // 픽업 씬 배경 = 신화(limited)·한정(exclusive)만(전설 제외)
-      const boxScene = (_fx.kind==='box') && _pkV2;   // 💎 개발자(v2) 랜덤박스 오픈은 보물 금고 씬 배경
+      const boxScene = (_fx.kind==='box') && !(_fx.rainbow && !_fx.rbUpgrade);   // 💎 랜덤박스 오픈=보물 금고 씬 배경(v2 정식). 무지개박스 '아이템 사용'만 기존(씬 없음) 유지
       const skyLayer = sceneBg ? pickupSceneHtml('reveal') : (boxScene ? treasureSceneHtml('reveal') : '');   // 배너 씬 재사용 — 배경 + 배회 픽업 펫(알·헤더 없음)
       fx.innerHTML='<div class="fx-scrim"></div>'+skyLayer+'<div class="fx-reveal tier-'+t.id+' rank-'+rank+((rb||ex)?' rev-rb':'')+((sceneBg||boxScene)?' rev-scene':'')+'">'+   // 한정도 rev-rb(무지개 프레임=박스)
         '<div class="fx-art pop">'+
@@ -10115,7 +10338,7 @@
       if(boxScene && rb){ const sc=fx.querySelector('.pkscene'); if(sc) tenSkyRiseDia(sc); }   // 💎 1뽑: 무지개 승급일 때만(노을 해와 동일 조건) 다이아 스르르
       fx.className='fx on reveal';
     }
-    function closeFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx=null; _devPickupOverride=null; _pkV2=false; pullEnd(); }   // _pkV2 해제 = 개발자 미리보기 v2 씬 종료(실전 뽑기에선 원래 false라 무해)
+    function closeFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx=null; _devPickupOverride=null; pullEnd(); }   // (_pkV2는 이제 상시 true — 리셋 안 함)
 
     // ================= 🥚×10 10연차 뽑기 연출 (개발자 미리보기 전용 · 인벤토리 무소모) =================
     // 단일 뽑기(_fx)와 완전 분리된 _fx10 상태로 구동. 타이머는 전부 _fxT/_fxClear 경유. 배경은 pickupSceneHtml('reveal')(캐시) 재사용.
@@ -10425,7 +10648,7 @@
     // 피날레에서 화면을 탭하면 그때 펫들이 배회 시작(그 전까지는 정지 유지). 1회만. 박스는 배회 없음.
     function tenFinaleTap(){ if(!_fx10 || _fx10.phase!=='finale' || _fx10._roaming) return; _fx10._roaming=true; setTenHint(''); const rm=reducedMotion(); if(!rm && !_fx10.isBox) tenStartRoam();
       const b=document.querySelector('.ten-takebtn'); if(b) _fxT(function(){ b.classList.remove('pending'); }, (rm||_fx10.isBox)?0:520); }   // 펫이 배회 시작한 뒤(≈0.5s) 입양하기 버튼 페이드인
-    function closeTenFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx10=null; _devPickupOverride=null; _pkV2=false; if(typeof markCatDirty==='function') markCatDirty(); }   // 로밍 무대(#pkRevStage) 제거 → 엔진 그룹 정리. _pkV2 해제(개발자 미리보기 v2 씬 종료)
+    function closeTenFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx10=null; _devPickupOverride=null; if(typeof markCatDirty==='function') markCatDirty(); }   // 로밍 무대(#pkRevStage) 제거 → 엔진 그룹 정리. (_pkV2는 상시 true)
     // 개발자 미리보기: 시나리오별 강제 결과 10개 → 연출만 재생(인벤토리 무소모)
     function devPreview10(scenario, kind, theme){ if(!isDev()) return; kind=kind||'egg';
       if(kind==='box'){ devPreview10Box(scenario, theme); return; }   // 🎁 랜덤박스 10연차(가구/바닥/벽지)
@@ -10485,7 +10708,7 @@
       // 재화 추가(지급) — 은화·금화·펫알·랜덤박스·무지개알·무지개박스를 입력 수량만큼 내 계정에 지급
       h+='<div class="sec-title" style="margin-top:18px;">재화 추가(지급)</div>';
       h+='<div class="note" style="margin-bottom:8px;">입력한 수량만큼 <b>내 계정</b>에 지급해요(비우면 건너뜀, 음수면 차감·0 미만은 안 됨).</div>';
-      { const cur6=[['coins','은화',coinSvg({h:18})],['gold','금화',goldSvg({h:18})],['egg','펫알',eggSvg(0,{h:18})],['box','랜덤박스',boxSvg({h:18})],['rainbow_egg','무지개알',rainbowEggSvg({h:18})],['rainbow_box','무지개박스',rainbowBoxSvg({h:18})],['ddeul','뜰알',ddeulEggSvg({h:18})]];
+      { const cur6=[['coins','은화',coinSvg({h:18})],['gold','금화',goldSvg({h:18})],['egg','펫알',eggSvg(0,{h:18})],['box','랜덤박스',boxSvg({h:18})],['rainbow_egg','무지개알',rainbowEggImg(18)],['rainbow_box','무지개박스',rainbowBoxSvg({h:18})],['ddeul','뜰알',ddeulEggSvg({h:18})]];
         h+=cur6.map(function(c){ return '<div class="row" style="padding:5px 2px;align-items:center;"><span style="display:flex;align-items:center;gap:8px;min-width:0;"><span style="display:inline-flex;flex:none;">'+c[2]+'</span>'+c[1]+'</span><input class="input" style="width:120px;text-align:right;" inputmode="numeric" id="dv_'+c[0]+'" placeholder="0"></div>'; }).join(''); }
       h+='<button class="btn" style="margin-top:12px;" onclick="devGrantCurrency()">지급</button>';
       openSheet('개발자 · 재화관리', h);
