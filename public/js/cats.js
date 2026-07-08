@@ -3000,7 +3000,7 @@
       "........................",
       "........................"
     ];
-    // 🐱 랜덤박스(고양이얼굴 버전, _pkV2 배너 전용) — 물음표(Q) 자리에 펫알과 같은 고양이 얼굴(Y외곽·j얼굴·h안쪽귀·y눈·x코입). BOX_PAL=치즈태비, BOX_PAL_RB=무지개 고양이.
+    // 🐱 랜덤박스(고양이얼굴 버전, _pkV2 배너 전용) — 물음표(Q) 자리에 펫알과 같은 개선 치즈태비 얼굴(Y외곽·j얼굴·h안쪽귀·b태비줄무늬·k크림머즐·r분홍코·y눈·x입). BOX_PAL=치즈태비, BOX_PAL_RB=무지개(얼굴 j/h/b만 무지개, 머즐·코·눈·입 유지).
     const M_BOX_CAT = [
       "........................",
       "........................",
@@ -3014,24 +3014,24 @@
       "..XmmmmmmmMMMmmmmmmmmX..",
       "..XMWWYYWWWnWWWWYYSSMX..",
       "..XmWWYjjYWWWWYjjYSSnX..",
-      "..XMWWYjhYYYYYYhjYSSnX..",
-      "..XmWWYjjjjjjjjjjYSSnX..",
+      "..XMWWYjhYbbbbYhjYSSnX..",
+      "..XmWWYjbjjjjjjbjYSSnX..",
       "..XMWWYjjyjjjjyjjYSSnX..",
-      "..XmWWYjjjjjjjjjjYSSnX..",
-      "..XMWWYjjjjxxjjjjYSSnX..",
-      "..XmWWWYjjjjjjjjYSSDnX..",
-      "..XMWWWSYYjjjjYYSDDDnX..",
-      "..XMWWSSSSSSSSSSDDDDMX..",
+      "..XmWWYjkkkkkkkkjYSSnX..",
+      "..XMWWYjkkrrrrkkjYSSnX..",
+      "..XmWWYjkkxxxxkkjYDDnX..",
+      "..XMWWWYjkkkkkkjYDDDnX..",
+      "..XMWWWSYYkkkkYYDDDDMX..",
       "..XXXXXXXXXXXXXXXXXXXX..",
       "........................"
     ];
     // 펫알(크림): 4톤 명암 I·W·S·D + k 잔점, X 외곽. Q=무지개 물음표. L=균열 틈새 빛(C2=따뜻한 흰빛 기본, 오픈 때 eggCrackSvg가 등급색으로 덮음).
     const EGG_PAL={X:'#8d8368',I:'#fffef8',W:'#f7f3ea',S:'#e6dfce',D:'#d3cbb6',k:'#ddd6c4',Q:'RAINBOW',L:'#fff3c8'};
     // 랜덤박스(파스텔+금장): 돔뚜껑 C/c, 몸체 W·S·D, 금장 m/M/n, X 외곽. Q=무지개 물음표. Z=오픈 빛(등급색으로 덮임). Y/j/h/y/x=고양이얼굴(M_BOX_CAT, 치즈태비).
-    const BOX_PAL={X:'#6f7688',C:'#eef1f7',c:'#d0d7e4',W:'#dbe1ec',S:'#bcc4d4',D:'#9aa5b9',m:'#f4dd8f',M:'#f8ecc0',n:'#b48a2f',Q:'RAINBOW',Z:'#fff3c8',o:'#F4D06B',O:'#fff0b8',e:'#ff5d6c',E:'#ffc0c6',u:'#5aa9e6',U:'#cfeaff',v:'#5bbf7a',V:'#c6f5d8',p:'#c77dff',P:'#eccfff',G:'#ffffff',Y:'#7a5a2e',j:'#ef9f42',h:'#d47f2b',y:'#3a2410',x:'#7a3a48'};
+    const BOX_PAL={X:'#6f7688',C:'#eef1f7',c:'#d0d7e4',W:'#dbe1ec',S:'#bcc4d4',D:'#9aa5b9',m:'#f4dd8f',M:'#f8ecc0',n:'#b48a2f',Q:'RAINBOW',Z:'#fff3c8',o:'#F4D06B',O:'#fff0b8',e:'#ff5d6c',E:'#ffc0c6',u:'#5aa9e6',U:'#cfeaff',v:'#5bbf7a',V:'#c6f5d8',p:'#c77dff',P:'#eccfff',G:'#ffffff',Y:'#7a5a2e',j:'#ef9f42',h:'#d47f2b',b:'#c9701f',k:'#fbe9c8',r:'#e0757a',y:'#3a2410',x:'#7a3a48'};
     // 무지개알/무지개박스: 껍질·몸체·뚜껑을 통째로 RAINBOW(움직이는 세로 무지개), 물음표(Q)는 흰색 대비, 금장(m/M/n)은 유지, 외곽(X)은 중립. 고양이얼굴(j/h)=RAINBOW·눈/코(y/x)·외곽(Y)은 진하게 유지(무지개 몸체 위에서도 또렷).
     const EGG_PAL_RB={X:'#8d8368',I:'RAINBOW',W:'RAINBOW',S:'RAINBOW',D:'RAINBOW',k:'RAINBOW',Q:'#FBFBFD',L:'#FBFBFD'};
-    const BOX_PAL_RB={X:'#6f7688',C:'RAINBOW',c:'RAINBOW',W:'RAINBOW',S:'RAINBOW',D:'RAINBOW',m:'#f4dd8f',M:'#f8ecc0',n:'#b48a2f',Q:'#FBFBFD',Z:'#FBFBFD',o:'#F4D06B',O:'#fff0b8',e:'#ff5d6c',E:'#ffc0c6',u:'#5aa9e6',U:'#cfeaff',v:'#5bbf7a',V:'#c6f5d8',p:'#c77dff',P:'#eccfff',G:'#ffffff',Y:'#4a2f16',j:'RAINBOW',h:'RAINBOW',y:'#3a2410',x:'#7a3a48'};
+    const BOX_PAL_RB={X:'#6f7688',C:'RAINBOW',c:'RAINBOW',W:'RAINBOW',S:'RAINBOW',D:'RAINBOW',m:'#f4dd8f',M:'#f8ecc0',n:'#b48a2f',Q:'#FBFBFD',Z:'#FBFBFD',o:'#F4D06B',O:'#fff0b8',e:'#ff5d6c',E:'#ffc0c6',u:'#5aa9e6',U:'#cfeaff',v:'#5bbf7a',V:'#c6f5d8',p:'#c77dff',P:'#eccfff',G:'#ffffff',Y:'#4a2f16',j:'RAINBOW',h:'RAINBOW',b:'RAINBOW',k:'#fbe9c8',r:'#e0757a',y:'#3a2410',x:'#7a3a48'};
     // 무지개박스(은은 버전, _pkV2 배너) — 몸체·뚜껑을 은은한 파스텔 무지개(RAINBOW2)로, 고양이얼굴(j/h)만 선명한 무지개로 남겨 또렷하게(알과 톤 통일).
     const BOX_PAL_RB2=Object.assign({},BOX_PAL_RB,{C:'RAINBOW2',c:'RAINBOW2',W:'RAINBOW2',S:'RAINBOW2',D:'RAINBOW2'});
 
@@ -4139,15 +4139,23 @@
     // ===== 🥚 v2 기본 펫알(개발자 '배너 관리' 미리보기 전용, _pkV2 게이트) — 뜰알 복사: 꽃→새싹·검은고양이→치즈태비(색만)·흙 황토·이끼 연두 =====
     // PIL 라이트/다크 검수 완료(scratchpad egg2_check.py). 라이브 반영 시 eggSvg 계열 교체 예정.
     const M_EGG2_SPR=["LL.Vv","LLtVv",".LtV.","..t..","..T.."];   // 🌱 새싹(5×5, 줄기 col2 — M_DDEUL_FLW와 동일 규격이라 몸통 정렬 그대로)
+    // 🐱 치즈태비 전용 몸통(뜰알 공유 몸통에서 얼굴만 개선) — 이마 태비 줄무늬(b) + 볼 명암(b) + 넓은 크림 머즐(c) + 분홍 코(N) + 귀여운 입(q/Q). 눈(E) 위치 유지. (뜰알 M_DDEUL_BODY는 검은고양이라 그대로 둠)
+    const M_EGG2_BODY=[
+      "..........XXXX..........","........XXXXXXXX........",".......XXIIIIWWXX.......","......XIIIIIWWWWWX......",".....XIIIIIWWWWWWSX.....",
+      "....XXIIIIWWWWWWSSXX....","....XIIIIWWWWWWSSSSX....","...XIIIIWWWWWWWSSSSSX...","...XIIIIWWWWWWSSSSSSX...","..XIIIBBBWWWWSSBBBSSSX..",
+      "..XIIIBBHBWWSSBHBBSSDX..","..XIIBBbBBBbbBBbBBBDDX..","..XIWBBbBBBbbBBbBBBDDX..",".XIIWHBBBBBBBBBBBBHDDDX.",".XIWWBBBBEBBBBEBBBBDDDX.",
+      "..XWWBbBBcccccccBbBggg..","..XWWBBBcccNNcccccBggg..","..XWWWBBcccqNNqcccBgggg.","..XWWWBBBccqQQqccBBgggg.","...XWSSBBcccccccBBgggg..",
+      "...XSSSSBBBBBBBBggggg...","....XSSSSSBBBBRRgggg....","....XnRRRRRRRRggRggg....",".....nnRRrrrrrggrgg.....","......nnrrrrrgrrgg......",
+      "........ngnnngnn........"];
     const M_EGG2=[
       "..........LL.Vv.........",
       "..........LLtVv.........",
       "...........LtV..........",
       "............t...........",
       "...........tT..........."
-    ].concat(M_DDEUL_BODY);
-    // 치즈태비(B 몸·H 안쪽귀·E 눈 + b 태비 줄무늬(이마 세로3·볼)·c 머즐/턱 크림 — 형태 유지) + 황토 흙(R/r/o/n) + 연두 이끼(G/g/m) + 초록 새싹(L/V/v)
-    const EGG2_PAL=Object.assign({},DDEUL_PAL,{B:'#ef9f42',H:'#d47f2b',E:'#43290f',b:'#c9701f',c:'#f9d9a0',R:'#b8863c',r:'#8a5f28',o:'#caa055',n:'#6b4a1e',G:'#7cc94a',g:'#57a134',m:'#a8e072',L:'#a5e26b',V:'#58b840',v:'#3f8a2f'});
+    ].concat(M_EGG2_BODY);
+    // 치즈태비(B 몸·H 안쪽귀·E 눈 + b 태비 줄무늬(이마·볼)·c 크림 머즐(넓게)·N 분홍 코·q/Q 입) + 황토 흙(R/r/o/n) + 연두 이끼(G/g/m) + 초록 새싹(L/V/v)
+    const EGG2_PAL=Object.assign({},DDEUL_PAL,{B:'#ef9f42',H:'#d47f2b',E:'#43290f',b:'#c9701f',c:'#fbe9c8',N:'#e0757a',R:'#b8863c',r:'#8a5f28',o:'#caa055',n:'#6b4a1e',G:'#7cc94a',g:'#57a134',m:'#a8e072',L:'#a5e26b',V:'#58b840',v:'#3f8a2f'});
     function egg2Svg(opt){ return pxSvg(M_EGG2, EGG2_PAL, opt); }
     // 🌈 무지개 새싹(색바퀴) — 왼잎 빨·주+노, 오른잎 초·파+보. 무지개 발동 조건(rbUpgradeChance) 시 새싹이 커지며 이 색으로.
     const M_EGG2_SPR_RB=["AB.DE","ABtDE",".CtF.","..t..","..T.."];
@@ -4156,7 +4164,7 @@
     // v2 펫알 FX 분리 렌더(뜰알 ddeulFxHtml과 동일 구조 — 새싹+몸통, 탭 시 새싹이 줄기에서 팔랑). sprRb=true면 무지개 새싹(커진 상태 유지 ddflw-fix).
     function egg2FxHtml(sprRb){
       const spr=sprRb?egg2SprRbSvg():pxSvg(M_EGG2_SPR, EGG2_PAL);
-      return '<span class="fx-ddflower fx-ddspr'+(sprRb?' ddflw-rb ddflw-fix':'')+'">'+spr+'</span><span class="fx-ddbody">'+pxSvg(M_DDEUL_BODY, EGG2_PAL)+'</span>'; }
+      return '<span class="fx-ddflower fx-ddspr'+(sprRb?' ddflw-rb ddflw-fix':'')+'">'+spr+'</span><span class="fx-ddbody">'+pxSvg(M_EGG2_BODY, EGG2_PAL)+'</span>'; }
     // ===== 🌈 v2 무지개알(개발자 '배너 관리' 미리보기 전용) — 뜰알 복사: 고양이 검은색→무지개 채색(눈·입 유지)·꽃→커진 무지개 색바퀴 꽃 =====
     const EGG2_RB_PAL=Object.assign({},DDEUL_PAL,{B:'RAINBOW',H:'RAINBOW',b:'RAINBOW',c:'RAINBOW'});   // 껍질·흙·이끼·눈·입은 뜰알 그대로(줄무늬 b·머즐 c도 무지개에 녹임)
     // 🥚 흙·이끼 없는 깨끗한 무지개알 몸통(뜰알 몸통에서 흙/이끼 제거·하단 껍질로 재드로잉). 껍질 I/W/S/D=은은한 파스텔 무지개(RAINBOW2), 고양이 B/H=선명한 무지개, 눈·입은 진하게.
@@ -6505,9 +6513,13 @@
     // · 정리: 창 pagehide에서 무대 지속 캐시(_stageW/_petX/_petDepth/_petVz/_petPose)와 rAF 체인을 정리·복구(메모리 누수·유령 무대 방지).
     const PIP_VH=200;   // 가상 방 높이 = dock .cd-room(200px)과 동일 → 같은 원근·크기
     let _pip=null;      // { win, doc, room, props, stage, _vw } — 창이 떠 있는 동안만 존재
+    let _pipGone=true;  // 정리(idempotent) 플래그 — pagehide와 자가치유가 겹쳐 불려도 _pipClosed가 1회만 정리(중복 정리→rAF 이중 체인 방지)
     function pipSupported(){ return typeof window!=='undefined' && 'documentPictureInPicture' in window; }
-    function pipOpen(){ return !!(_pip && _pip.win && !_pip.win.closed); }
-    function _engWin(){ return pipOpen()?_pip.win:window; }   // 걷기 엔진 rAF 스케줄 창 — PiP가 떠 있으면 그 창(항상 보임) 기준
+    // 열려 있나 + 자가치유: 창이 pagehide 없이 죽는 엣지(브라우저가 이벤트를 못 준 경우)에도 다음 호출(매 프레임 activeStages·onGameChange 등)에서
+    // 즉시 정리한다 — 안 하면 닫힌 창의 rAF에 예약된 엔진 체인이 증발한 채 _eng.raf만 남아 "펫 전체 정지"류 버그가 된다.
+    function pipOpen(){ if(_pip && (!_pip.win || _pip.win.closed)) _pipClosed(); return !!_pip; }
+    // 걷기 엔진 rAF 스케줄 창 — 평소엔 메인 창(PiP 무대도 메인 루프가 함께 구동), "메인 탭이 숨겨져 메인 rAF가 멈출 때만" PiP 창으로 옮긴다(항상 보이는 창).
+    function _engWin(){ return (typeof document!=='undefined'&&document.hidden&&pipOpen())?_pip.win:window; }
     // PiP 문서에선 전역 함수가 없어 inline 핸들러가 동작할 수 없으므로 상호작용 속성을 전부 벗긴다(시청 전용·키보드 포커스도 차단).
     function _pipStatic(html){ return String(html).replace(/ (?:onclick|onkeydown)="[^"]*"/g,'').replace(/ role="button"/g,'').replace(/ tabindex="0"/g,''); }
     function _pipSetCamTxt(){ if(!pipOpen()) return; const el=_pip.doc.getElementById('ppCamTxt'); if(el) el.textContent=(room().emoji?room().emoji+' ':'')+(room().name||'우리집'); }
@@ -6557,21 +6569,22 @@
           '<span class="cr-cam cd-cam"><i></i>LIVE · <span class="cd-camtxt" id="ppCamTxt"></span></span>'+
           '<div class="cr-props" id="ppProps"></div><div class="cr-stage" id="ppStage" data-hh="64"></div>'+
           roomOverlay(currentBgfx())+'</div>';
-        _pip={ win:win, doc:doc, room:doc.getElementById('ppRoom'), props:doc.getElementById('ppProps'), stage:doc.getElementById('ppStage'), _vw:0 };
+        _pip={ win:win, doc:doc, room:doc.getElementById('ppRoom'), props:doc.getElementById('ppProps'), stage:doc.getElementById('ppStage'), _vw:0 }; _pipGone=false;
         syncPipTheme(); _pipSetCamTxt(); _pipLayout(); renderPipProps(); renderPipCats();
         let rz=0; win.addEventListener('resize', function(){ clearTimeout(rz); rz=setTimeout(_pipLayout, 120); });   // scale만 갱신(가상 폭 변화 시에만 재빌드)
         win.addEventListener('pagehide', _pipClosed, { once:true });   // 창 닫힘(수동·브라우저/앱 종료) → 정리
         _pipBtnSync(); markCatDirty(); _eng.last=0; startCatLoop();
       }).catch(function(){ toast('PiP 창을 열지 못했어요', true); });
     }
-    // 창 닫힘 정리 — 무대별 지속 캐시 제거(누수·유령 무대 방지) + rAF 체인·game 코얼레싱을 메인 창으로 복구
+    // 창 닫힘 정리(idempotent) — 무대별 지속 캐시 제거(누수·유령 무대 방지) + rAF 체인·game 코얼레싱을 메인 창으로 복구
     function _pipClosed(){
+      if(_pipGone) return; _pipGone=true;   // pagehide + pipOpen 자가치유가 겹쳐도 1회만(중복 정리 시 rAF 이중 체인 위험)
       _pip=null;
       delete _stageW.ppStage; delete _stageRemeasure.ppStage;
       [_petX,_petDepth,_petVz,_petPose].forEach(function(m){ Object.keys(m).forEach(function(k){ if(k.indexOf('ppStage:')===0) delete m[k]; }); });
-      // PiP 창의 rAF에 걸려 있던 다음 프레임 예약은 창과 함께 증발 → 메인 창에서 재가동(탭이 숨김이면 visibilitychange 복귀 시)
-      try{ if(_eng.raf && _eng.win && _eng.win!==window && !_eng.win.closed) _eng.win.cancelAnimationFrame(_eng.raf); }catch(e){}
-      _eng.raf=0; _eng.win=null; _eng.last=0; markCatDirty(); startCatLoop();
+      // 엔진 체인이 PiP 창의 rAF에 있었다면(메인 탭 숨김 중) 창과 함께 증발 → 리셋 후 재가동. 메인 창 체인이면 건드리지 않는다(이중 체인 방지).
+      if(_eng.raf && _eng.win && _eng.win!==window){ try{ if(!_eng.win.closed) _eng.win.cancelAnimationFrame(_eng.raf); }catch(e){} _eng.raf=0; _eng.win=null; }
+      _eng.last=0; markCatDirty(); startCatLoop();
       if(_ogcRAF){ _ogcRAF=0; onGameChange(); }   // PiP rAF에 걸려 있던 game 델타 코얼레싱도 메인으로 재예약(라이브 패치 유실 방지)
       _pipBtnSync();
     }
@@ -7104,7 +7117,12 @@
       else if(state.game && !state._petTimer && typeof reconcilePets==='function'){ state._petTimer=setInterval(reconcilePets, 60000); }   // 복귀 시 재무장
     }
     if(typeof document!=='undefined'){
-      document.addEventListener('visibilitychange', function(){ const h=document.hidden; _applyAppHidden(h); if(!h){ _eng.last=0; startCatLoop(); } });   // 탭 복귀 시 루프 재개
+      document.addEventListener('visibilitychange', function(){ const h=document.hidden; _applyAppHidden(h);
+        if(!h){ _eng.last=0; startCatLoop(); }   // 탭 복귀 시 루프 재개(PiP rAF에 있던 체인은 다음 프레임에 _engWin이 메인으로 자동 복귀)
+        else if(pipOpen() && _eng.raf){   // 🖥️ 탭 숨김 + PiP 열림: 메인 rAF에 걸린 체인은 숨김 동안 얼어붙으므로 PiP 창 rAF로 옮겨 미니 캠을 계속 굴린다
+          try{ (_eng.win||window).cancelAnimationFrame(_eng.raf); }catch(e){}
+          _eng.raf=0; _eng.win=null; _eng.last=0; startCatLoop();
+        } });
       window.addEventListener('pagehide', function(){ _applyAppHidden(true); });     // iOS PWA/TWA 백그라운드 전환
       window.addEventListener('pageshow', function(){ _applyAppHidden(false); _eng.last=0; startCatLoop(); });
     }
