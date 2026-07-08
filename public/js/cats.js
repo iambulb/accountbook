@@ -3000,40 +3000,51 @@
       "........................",
       "........................"
     ];
-    // 🐱 랜덤박스(고양이얼굴 버전, _pkV2 배너 전용) — 물음표(Q) 자리에 펫알과 같은 치즈태비 얼굴(Y외곽·j얼굴·h안쪽귀·b태비줄무늬·k크림머즐·코 없이 중앙 ω 입 x·y눈). BOX_PAL=치즈태비, BOX_PAL_RB=무지개(얼굴 j/h/b만 무지개, 머즐·눈·입 유지).
-    const M_BOX_CAT = [
-      "........................",
-      "........................",
-      "........................",
-      "......XCCCCCCccccX......",
-      "....XCCCCCCCCCcccccX....",
-      "...CCCCCCCCCCCCcccccc...",
-      "..XCCCCCCCCCCCCCcccccX..",
-      "..CCCCCCCCCCnCCCCccccc..",
-      ".XmmmmmmmmmmmmmmmmmmmmX.",
-      "..XmmmmmmmMMMmmmmmmmmX..",
-      "..XMWWYYWWWnWWWWYYSSMX..",
-      "..XmWWYjjYWWWWYjjYSSnX..",
-      "..XMWWYjhYbbbbYhjYSSnX..",
-      "..XmWWYjbjjjjjjbjYSSnX..",
-      "..XMWWYjjyjjjjyjjYSSnX..",
-      "..XmWWYjkkkkkkkkjYSSnX..",
-      "..XMWWYjkkkkkkkkjYSSnX..",
-      "..XmWWYjkkxkkxkkjYDDnX..",
-      "..XMWWWYjkkxxkkjYDDDnX..",
-      "..XMWWWSYYkkkkYYDDDDMX..",
-      "..XXXXXXXXXXXXXXXXXXXX..",
-      "........................"
+    // 🐱📦 랜덤박스 v2(_pkV2 배너 전용, 26×28 — 뜰알 해상도급) — 일본 애니풍 '보물이 들어있을 법한' 나무 상자:
+    //   돔형 뚜껑(나무 4톤 H/W/S/D + 중앙 금 스트랩 m)·금 림 밴드(m/M/n)·모서리 금장·금 베이스 트림·발.
+    //   전면 = 뜰알(M_DDEUL rows14~24)의 고양이 얼굴 픽셀을 '그대로' 이식(귀·눈 E·입 P/Q/q 동일 형태) — 랜덤박스=삼색이(F 흰 바탕·O 주황 패치·B 검정 패치·i 안쪽귀 핑크).
+    //   s=세로 플랭크 이음선. PIL 라이트/다크 검수(scratchpad box2.py). 라이브는 기존 M_BOX(물음표 파스텔 상자) 유지.
+    const M_BOX2 = [
+      "..........................",
+      "........XXXXXXXXXX........",
+      "......XHHHHHmmHHHWWX......",
+      ".....XHHHHHHmmHHWWWWX.....",
+      "....XHHHHHHHmmHWWWWWSX....",
+      "...XHHWWWWWWmmWWWWWSSSX...",
+      "...XHWWWWWWWmmWWWWSSSSX...",
+      "..XWWWWWWWWWmmWWWWWSSSSX..",
+      "..XWWWWWWWWWmmWWWWSSSSSX..",
+      ".XmmmmmmmmmmMMmmmmmmmmmmX.",
+      ".XnnnnnnnnnnnnnnnnnnnnnnX.",
+      "..XMmHWWWWWWWWWWWWSSSmMX..",
+      "..XHWsWOOOWWWSSSBBBSsSDX..",
+      "..XHWsWOOiOWWSSBiBBSsSDX..",
+      "..XHWsOOOOOFFFFBBBBBsSDX..",
+      "..XHWsOOOOFFFFFFBBBBsSDX..",
+      "..XHWsOOFFFFFFFFFFBBsSDX..",
+      "..XHWsFFFFEFFFFEFFFFsSDX..",
+      "..XHWsFFFFFFFFFFFFFFsSDX..",
+      "..XHWsFFFFFFFFFFFFFFsSDX..",
+      "..XHWsWFFFFFPPFFFFFSsSDX..",
+      "..XHWsWFFFFqQQqFFFFSsSDX..",
+      "..XHWsWWFFFFFFFFFFSSsSDX..",
+      "..XMmHWWWWWWWWWWWWSSSmMX..",
+      "..XnmmmmmmmmmmmmmmmmmmnX..",
+      "..XXXXXXXXXXXXXXXXXXXXXX..",
+      "....XDDX..........XDDX....",
+      ".........................."
     ];
+    // 나무(4톤+이음선 s)·금장(M/m/n)·삼색이 얼굴(F/O/B/i)·눈(E)·입(P/Q/q — 뜰알과 동일 색)
+    const BOX2_PAL={X:'#4a3018',H:'#cf9250',W:'#b0763a',S:'#8a561f',s:'#6e421a',D:'#5f3a17',M:'#ffedb0',m:'#f4d06b',n:'#b48a2f',F:'#faf6ec',O:'#ef9f42',B:'#35323a',i:'#e8a0a8',E:'#43290f',P:'#f2a0b4',Q:'#7a3a48',q:'#b56576'};
+    // 🌈 무지개박스 v2 — 나무=은은한 파스텔 무지개(RAINBOW2)·고양이 얼굴=선명한 무지개(RAINBOW, 눈·입은 유지해 또렷)·금장/외곽은 그대로(무지개알과 톤 통일).
+    const BOX2_RB_PAL=Object.assign({},BOX2_PAL,{H:'RAINBOW2',W:'RAINBOW2',S:'RAINBOW2',s:'RAINBOW2',D:'RAINBOW2',F:'RAINBOW',O:'RAINBOW',B:'RAINBOW',i:'RAINBOW'});
     // 펫알(크림): 4톤 명암 I·W·S·D + k 잔점, X 외곽. Q=무지개 물음표. L=균열 틈새 빛(C2=따뜻한 흰빛 기본, 오픈 때 eggCrackSvg가 등급색으로 덮음).
     const EGG_PAL={X:'#8d8368',I:'#fffef8',W:'#f7f3ea',S:'#e6dfce',D:'#d3cbb6',k:'#ddd6c4',Q:'RAINBOW',L:'#fff3c8'};
-    // 랜덤박스(파스텔+금장): 돔뚜껑 C/c, 몸체 W·S·D, 금장 m/M/n, X 외곽. Q=무지개 물음표. Z=오픈 빛(등급색으로 덮임). Y/j/h/y/x=고양이얼굴(M_BOX_CAT, 치즈태비).
-    const BOX_PAL={X:'#6f7688',C:'#eef1f7',c:'#d0d7e4',W:'#dbe1ec',S:'#bcc4d4',D:'#9aa5b9',m:'#f4dd8f',M:'#f8ecc0',n:'#b48a2f',Q:'RAINBOW',Z:'#fff3c8',o:'#F4D06B',O:'#fff0b8',e:'#ff5d6c',E:'#ffc0c6',u:'#5aa9e6',U:'#cfeaff',v:'#5bbf7a',V:'#c6f5d8',p:'#c77dff',P:'#eccfff',G:'#ffffff',Y:'#7a5a2e',j:'#ef9f42',h:'#d47f2b',b:'#c9701f',k:'#fbe9c8',r:'#e0757a',y:'#3a2410',x:'#7a3a48'};
-    // 무지개알/무지개박스: 껍질·몸체·뚜껑을 통째로 RAINBOW(움직이는 세로 무지개), 물음표(Q)는 흰색 대비, 금장(m/M/n)은 유지, 외곽(X)은 중립. 고양이얼굴(j/h)=RAINBOW·눈/코(y/x)·외곽(Y)은 진하게 유지(무지개 몸체 위에서도 또렷).
+    // 랜덤박스(파스텔+금장, 라이브 전용): 돔뚜껑 C/c, 몸체 W·S·D, 금장 m/M/n, X 외곽. Q=무지개 물음표. Z=오픈 빛(등급색으로 덮임). (v2 배너 상자는 M_BOX2/BOX2_PAL — 구 M_BOX_CAT은 제거됨.)
+    const BOX_PAL={X:'#6f7688',C:'#eef1f7',c:'#d0d7e4',W:'#dbe1ec',S:'#bcc4d4',D:'#9aa5b9',m:'#f4dd8f',M:'#f8ecc0',n:'#b48a2f',Q:'RAINBOW',Z:'#fff3c8',o:'#F4D06B',O:'#fff0b8',e:'#ff5d6c',E:'#ffc0c6',u:'#5aa9e6',U:'#cfeaff',v:'#5bbf7a',V:'#c6f5d8',p:'#c77dff',P:'#eccfff',G:'#ffffff'};
+    // 무지개알/무지개박스(라이브): 껍질·몸체·뚜껑을 통째로 RAINBOW(움직이는 세로 무지개), 물음표(Q)는 흰색 대비, 금장(m/M/n)은 유지, 외곽(X)은 중립.
     const EGG_PAL_RB={X:'#8d8368',I:'RAINBOW',W:'RAINBOW',S:'RAINBOW',D:'RAINBOW',k:'RAINBOW',Q:'#FBFBFD',L:'#FBFBFD'};
-    const BOX_PAL_RB={X:'#6f7688',C:'RAINBOW',c:'RAINBOW',W:'RAINBOW',S:'RAINBOW',D:'RAINBOW',m:'#f4dd8f',M:'#f8ecc0',n:'#b48a2f',Q:'#FBFBFD',Z:'#FBFBFD',o:'#F4D06B',O:'#fff0b8',e:'#ff5d6c',E:'#ffc0c6',u:'#5aa9e6',U:'#cfeaff',v:'#5bbf7a',V:'#c6f5d8',p:'#c77dff',P:'#eccfff',G:'#ffffff',Y:'#4a2f16',j:'RAINBOW',h:'RAINBOW',b:'RAINBOW',k:'#fbe9c8',r:'#e0757a',y:'#3a2410',x:'#7a3a48'};
-    // 무지개박스(은은 버전, _pkV2 배너) — 몸체·뚜껑을 은은한 파스텔 무지개(RAINBOW2)로, 고양이얼굴(j/h)만 선명한 무지개로 남겨 또렷하게(알과 톤 통일).
-    const BOX_PAL_RB2=Object.assign({},BOX_PAL_RB,{C:'RAINBOW2',c:'RAINBOW2',W:'RAINBOW2',S:'RAINBOW2',D:'RAINBOW2'});
+    const BOX_PAL_RB={X:'#6f7688',C:'RAINBOW',c:'RAINBOW',W:'RAINBOW',S:'RAINBOW',D:'RAINBOW',m:'#f4dd8f',M:'#f8ecc0',n:'#b48a2f',Q:'#FBFBFD',Z:'#FBFBFD',o:'#F4D06B',O:'#fff0b8',e:'#ff5d6c',E:'#ffc0c6',u:'#5aa9e6',U:'#cfeaff',v:'#5bbf7a',V:'#c6f5d8',p:'#c77dff',P:'#eccfff',G:'#ffffff'};
 
     // 카탈로그(코드 상수) — 저장은 보유 id만. id는 종·색 구분(예: cat_calico, dog_corgi), species는 분류/필터용.
     // 새 동물(네발 짐승) 처리 규칙은 docs/pet-asset-pipeline.md 참고.
@@ -3864,10 +3875,10 @@
     const SHOP_PAL={K:'#6f7681',S:'#d6dbe1',A:'#4a4f57',D:'#a8afb8',E:'#d6dbe1',P:'#cf8f6c',R:'#e07a5f',W:'#f6ede2'};   // 은화 톤(COIN_PAL)+차양 두 색
     function shopSvg(opt){ return pxSvg(M_SHOP, SHOP_PAL, opt); }
     function eggSvg(stage, opt){ return pxSvg(stage>=2?M_EGG_C2:(stage>=1?M_EGG_C1:M_EGG), EGG_PAL, opt); }
-    function boxSvg(opt){ return pxSvg(_pkV2?M_BOX_CAT:M_BOX, BOX_PAL, opt); }   // _pkV2 배너=고양이얼굴 박스, 라이브=물음표 박스
+    function boxSvg(opt){ return _pkV2? pxSvg(M_BOX2, BOX2_PAL, opt) : pxSvg(M_BOX, BOX_PAL, opt); }   // _pkV2 배너=나무 보물상자+삼색이 얼굴(M_BOX2), 라이브=물음표 파스텔 박스
     // 무지개알/무지개박스 — 기존 알/상자 도트에 움직이는 무지개 채색(반짝임은 CSS .fx-rainbow/.rb-thumb).
     function rainbowEggSvg(opt){ return pxSvg(M_EGG, EGG_PAL_RB, opt); }
-    function rainbowBoxSvg(opt){ return pxSvg(_pkV2?M_BOX_CAT:M_BOX, _pkV2?BOX_PAL_RB2:BOX_PAL_RB, opt); }   // _pkV2 배너=은은한 무지개 고양이 박스, 라이브=선명 무지개 물음표 박스
+    function rainbowBoxSvg(opt){ return _pkV2? pxSvg(M_BOX2, BOX2_RB_PAL, opt) : pxSvg(M_BOX, BOX_PAL_RB, opt); }   // _pkV2 배너=파스텔 무지개 나무상자+무지개 얼굴(M_BOX2), 라이브=선명 무지개 물음표 박스
     function rainbowEggStage(stage, opt){ return pxSvg([M_EGG,M_EGG_C1,M_EGG_C2][stage]||M_EGG, EGG_PAL_RB, opt); }
     // 3번째 탭: 크게 갈라진 알 + 틈새로 새어나오는 등급색 빛(L=등급색). rainbow면 껍질은 무지갯빛 유지.
     function eggCrackSvg(tierColor, rainbow, opt){ const pal=Object.assign({}, rainbow?EGG_PAL_RB:EGG_PAL, {L:tierColor||'#FBFBFD'}); if(rainbow) pal.X='RAINBOW'; return pxSvg(M_EGG_C3, pal, opt); }   // 무지개알 열 때: 테두리(X)까지 무지개색
@@ -4139,14 +4150,14 @@
     // ===== 🥚 v2 기본 펫알(개발자 '배너 관리' 미리보기 전용, _pkV2 게이트) — 뜰알 복사: 꽃→새싹·검은고양이→치즈태비(색만)·흙 황토·이끼 연두 =====
     // PIL 라이트/다크 검수 완료(scratchpad egg2_check.py). 라이브 반영 시 eggSvg 계열 교체 예정.
     const M_EGG2_SPR=["LL.Vv","LLtVv",".LtV.","..t..","..T.."];   // 🌱 새싹(5×5, 줄기 col2 — M_DDEUL_FLW와 동일 규격이라 몸통 정렬 그대로)
-    // 🐱 치즈태비 전용 몸통(뜰알 공유 몸통에서 얼굴만 개선) — 이마 태비 줄무늬·볼 명암(b) + 크림 머즐(c, 컴팩트) + 코 없이 중앙 ω 입(q). 눈(E) 유지. 하단=마른 황토 흙(o/R/r/n 4톤)+황토 머금은 올리브 이끼(m/G/g 3톤, 우측 타고 오름). (뜰알 M_DDEUL_BODY는 검은고양이라 그대로 둠)
+    // 🐱 치즈태비 전용 몸통 — 뜰알 알부분(M_DDEUL) 그대로에 얼굴만: 코 제거 + 중앙 ω 입(q). 이마 태비 줄무늬·볼 명암(b)·크림 머즐(c, 컴팩트)·눈(E)은 뜰알 몸통 구조 유지. 하단=마른 황토(o/R/r/n)+황토 머금은 올리브 이끼(m/G/g)는 뜰알 패턴을 EGG2_PAL 색으로. (뜰알 자체는 M_DDEUL로 그대로, 여긴 코 없는 ω 입만 다름)
     const M_EGG2_BODY=[
       "..........XXXX..........","........XXXXXXXX........",".......XXIIIIWWXX.......","......XIIIIIWWWWWX......",".....XIIIIIWWWWWWSX.....",
       "....XXIIIIWWWWWWSSXX....","....XIIIIWWWWWWSSSSX....","...XIIIIWWWWWWWSSSSSX...","...XIIIIWWWWWWSSSSSSX...","..XIIIBBBWWWWSSBBBSSSX..",
-      "..XIIIBBHBWWSSBHBBSSDX..","..XIIBBbBBBbbBBbBBBDDX..","..XIWBBbBBBbbBBbBBBDDX..",".XIIWHBBBBBBBBBBBBHDDDX.",".XIWWBBBBEBBBBEBBBBDDDX.",
-      "..XWWBbBBcccccBBBbBgmG..","..XWWBBBcccccccBBBBmGg..","..XWWWBBccqccqcBBBBmGgg.","..XWWWBBBccqqcBBBBmGggg.","...XWSSBBBccccBBBmGggg..",
-      "...XSSSSBBBBBoRmGGgg....","....XSSSoRRRRoRmGGgg....","....XnoRRRrRRoRmGGgg....",".....noRRrrrRoRmGgg.....","......nrRrrRrRmGgg......",
-      "........nrRRrmg........."];
+      "..XIIIBBHBWWSSBHBBSSDX..","..XIIBBBBbBBbBBbBBBDDX..","..XIWBBBBbBBbBBbBBBDDX..",".XIIWHBBBBBBBBBBBBHDDDX.",".XIWWBBBBEBBBBEBBBBDDDX.",
+      "..XWWBbbBBBBBBBBbbBmGg..","..XWWBBbBBBBBBBBbBBGgg..","..XWWWBBBcqccqcBBBmGGg..","..XWWWBBBccqqccBBBGGgg..","...XWSSBBBccccBBBGmGg...",
+      "...XSSSSBBBBBBBBmGGgg...","....XSSSSSBBBBooGGgg....","....XnRoRRRRoRGgrGgg....",".....nnRorrRrrGgrgg.....","......nnrrnrrGrrgg......",
+      "........nrnnngnn........"];
     const M_EGG2=[
       "..........LL.Vv.........",
       "..........LLtVv.........",
@@ -6566,7 +6577,7 @@
         _pip={ win:win, doc:doc, room:doc.getElementById('ppRoom'), props:doc.getElementById('ppProps'), stage:doc.getElementById('ppStage'), _vw:0 }; _pipGone=false;
         syncPipTheme(); _pipSetCamTxt(); _pipLayout(); renderPipProps(); renderPipCats();
         let rz=0; win.addEventListener('resize', function(){ clearTimeout(rz); rz=setTimeout(_pipLayout, 120); });   // scale만 갱신(가상 폭 변화 시에만 재빌드)
-        win.addEventListener('pagehide', _pipClosed, { once:true });   // 창 닫힘(수동·브라우저/앱 종료) → 정리
+        win.addEventListener('pagehide', function(){ if(_pip && _pip.win===win) _pipClosed(); }, { once:true });   // 창 닫힘(수동·브라우저/앱 종료) → 정리. ⚠️ "자기 창일 때만" — 닫기→곧바로 재열기 시 이전 창의 늦은 pagehide가 새 세션을 파괴하는 레이스 방지
         _pipBtnSync(); markCatDirty(); _eng.last=0; startCatLoop();
       }).catch(function(){ toast('PiP 창을 열지 못했어요', true); });
     }
