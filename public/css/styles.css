@@ -1553,7 +1553,7 @@
     .ten-boxitem { line-height:0; } .ten-boxitem .px { display:block; image-rendering:pixelated; }
     .ten-boxart .px { image-rendering:pixelated; }
     .ten-crlight { position:absolute; left:50%; top:40%; width:0; height:0; z-index:2; pointer-events:none; }
-    .ten-eggfx { position:absolute; inset:0; z-index:3; pointer-events:none; }
+    .ten-eggfx { position:absolute; inset:0; z-index:3; pointer-events:none; color:#ffe27a; }   /* ✨ 무지개 승급 반짝임(fxSparkles) 색 지정 — 없으면 currentColor가 어두운 기본색을 상속해 '검정 반짝'으로 렌더되던 버그(펫알·박스 공통) */
     .ten-bflies { position:absolute; left:50%; top:40%; width:0; height:0; z-index:4; pointer-events:none; }
     .ten-bfly { top:0; left:0; }
     /* 피날레 — 펫 정면(둥지 같은 흩뿌림 좌표) + 뒤 등급색 오오라 + 통통 */
