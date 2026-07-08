@@ -6224,7 +6224,17 @@
     let _walletDisp={coins:null,gold:null}, _walletGen={coins:0,gold:0};
     function walletCoinDisp(){ return _walletDisp.coins!=null?_walletDisp.coins:coins(); }
     function walletGoldDisp(){ return _walletDisp.gold!=null?_walletDisp.gold:gold(); }
-    function walletHtml(){ return '<div class="cd-wallet" aria-label="보유 은화·금화">'+
+    // 👛 지갑 트랜지언트 표시 — 평소엔 숨겨 캠 상단(LIVE 배지)을 안 가리고, 재화 획득 연출 순간에만 잠깐 표시.
+    //   만료시각(_walletShowUntil) 기반이라 표시 중 재렌더(batchBtnHtml 재생성)가 끼어들어도 walletHtml이 .show를 복원한다.
+    let _walletShowUntil=0, _walletHideT=0;
+    function walletVisible(){ return Date.now()<_walletShowUntil; }
+    function walletShow(ms){ ms=ms||2600; _walletShowUntil=Date.now()+ms;
+      document.querySelectorAll('.cd-wallet').forEach(w=>{
+        if(!w.classList.contains('show')){ w.classList.add('show','in'); setTimeout(()=>w.classList.remove('in'),260); }   // 팝인은 숨김→표시 전환 때만(연속 획득 시 재팝 방지)
+      });
+      clearTimeout(_walletHideT);
+      _walletHideT=setTimeout(function(){ _walletShowUntil=0; document.querySelectorAll('.cd-wallet').forEach(w=>w.classList.remove('show','in')); }, ms); }
+    function walletHtml(){ return '<div class="cd-wallet'+(walletVisible()?' show':'')+'" aria-label="보유 은화·금화">'+
       '<span class="cw-coin"><span class="cw-ic">'+coinSvg({h:14})+'</span><span class="cw-n">'+walletCoinDisp().toLocaleString()+'</span></span>'+
       '<span class="cw-gold"><span class="cw-ic">'+goldSvg({h:14})+'</span><span class="cw-n">'+walletGoldDisp().toLocaleString()+'</span></span></div>'; }
     // ❤️ 행복도 입력 산출(순수 roomMood에 넘길 값): 밥·물 신선도·평균 애정·수확 신선도 등
@@ -6959,11 +6969,13 @@
       state._sheetRefresh=()=>{ if(_drag||_pal||_rmDrag||_wdrag||_wpal) return;   // 드래그(배치) 중엔 재렌더 스킵 — 드래그 요소가 뜯겨 스크롤 잠금이 남는 것 방지(드래그 끝나면 배치 커밋이 다시 리프레시)
         const b=$('sheetBody'); if(!b) return; const st=b.scrollTop;
         const pal=b.querySelector('.palette'); const palL=pal?pal.scrollLeft:0;   // 배치 팔레트(가로 스크롤) 위치 보존 — 스크롤해 아이템 선택 시 처음으로 안 튀게(우리집 펫은 세로 그리드라 세로 scrollTop만 보존)
+        const rms=b.querySelector('.rmstrip'); const rmsL=rms?rms.scrollLeft:0;   // 룸 스위처 가로 스크롤 위치 보존(뒤쪽 방 탭 시 맨 앞으로 안 튀게)
         const keepGrid=(_catTab==='pet')?b.querySelector('#petGrid'):null;   // 펫 탭: 기존 펫 그리드 노드 보존(빈 placeholder로 되붙여 수백 타일 재파싱·이미지 리로드 회피)
         b.innerHTML=build();
         if(_catTab==='pet'){ const ph=b.querySelector('#petGrid'); if(keepGrid && ph) ph.replaceWith(keepGrid); renderPetGrid(); }   // 되살린 그리드에 바뀐 타일만 갱신(없으면 채움)
         b.scrollTop=st;
         const npal=b.querySelector('.palette'); if(npal) npal.scrollLeft=palL;
+        const nrms=b.querySelector('.rmstrip'); if(nrms) nrms.scrollLeft=rmsL;
         if(_catTab==='home') mountRoomWalk(); pkObserveScenes(); updateShopHeadWallet(); };   // A4: 재빌드된 씬 재관찰 + 알뜰샵 잔액(구매 후) 갱신
       if(_catTab==='home') setTimeout(mountRoomWalk, 30);
       if(_catTab==='pet') renderPetGrid();
@@ -7103,7 +7115,7 @@
       slotRow+='</div>';
       h+=slotRow;
       // 펫 컬렉션 관리(수백 마리 그리드)는 '펫' 탭으로 분리 — 홈은 이 방의 활성 펫·돌봄만(홈 과부하 해소).
-      if(!owned.length) h+='<div class="empty" style="padding:16px 20px;">아직 펫이 없어요. 알뜰샵에서 입양해 보세요 🐾</div>';
+      if(!owned.length) h+='<div class="empty" style="padding:16px 20px;">아직 펫이 없어요. 알뜰샵에서 입양해 보세요 🐾 <button class="btn ghost" onclick="setCatTab(\'shop\')">알뜰샵</button></div>';
       else h+='<div class="hintline" style="margin-top:8px;align-items:center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span style="flex:1"><b>펫</b> 탭에서 이 방으로 데려오거나 관리해요.'+(sc<MAX_SLOTS?' 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장.':'')+'</span><button class="btn ghost" style="flex:none" onclick="setCatTab(\'pet\')">펫 관리 →</button></div>';
       return h;
     }
@@ -7596,7 +7608,7 @@
     }
     // ---- 가구 인벤토리/배치 ----
     function itemQty(id){ const it=state.game&&state.game.owned.items[id]; return it?(Number(it.qty)||0):0; }
-    function placedList(){ const p=room().placed||{}; return Object.keys(p).map(k=>({key:k, r:+k.split('_')[0], c:+k.split('_')[1], itemId:p[k].itemId, filledAt:p[k].filledAt||null})); }   // filledAt=먹기/마시기 클립 판정(furnClip)
+    function placedList(){ const p=room().placed||{}; return Object.keys(p).map(k=>({key:k, r:+k.split('_')[0], c:+k.split('_')[1], itemId:p[k].itemId, filledAt:p[k].filledAt||null, fillMs:p[k].fillMs||null})); }   // filledAt=먹기/마시기 클립 판정(furnClip), fillMs=그릇 채움 지속(고급사료·정수물 6h) 보존용
     function itemPlaced(id){ return placedList().filter(x=>x.itemId===id).length; }          // 현재 방 배치 수(케어 아이템 방당 상한용)
     function itemPlacedAll(id){ return sumPlacedItem(homeH().rooms, id); }                    // 전 방 배치 합(전역 인벤토리 소진 — 복제 방지)
     function itemRemaining(id){ return itemQty(id)-itemPlacedAll(id); }                       // 남은 수량 = 보유 - 모든 방 배치
@@ -7682,7 +7694,7 @@
       const x=e?e.clientX:innerWidth/2, y=e?e.clientY:innerHeight/2, rid=curRoomId();
       gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoomById(g, rid); if((Number(R.poops)||0)<=0) return;
         R.poops=(Number(R.poops)||0)-1; g.coins=clampCoins((g.coins||0)+POOP_REWARD); return g;
-      }).then(r=>{ if(r&&r.committed) poopFx(x,y); });
+      }).then(r=>{ if(r&&r.committed){ poopFx(x,y); walletShow(); } });   // 👛 은화 획득이므로 트랜지언트 지갑도 잠깐 표시
     }
     function poopFx(x,y){ const el=document.createElement('div'); el.className='poopfx';
       el.innerHTML='<span class="pi">'+coinSvg({h:14})+'</span>+'+POOP_REWARD;
@@ -7723,8 +7735,14 @@
     // 쓰다듬기·돌보기 보상: 은화(dCoins)·금화(dGold)가 지갑으로 날아가고, 날아오는 동안 옛값을 유지하다 도착 즈음 현재값으로 실시간 카운트업
     function rewardFly(x,y,dCoins,dGold,prevCoins,prevGold){
       const w=walletEl(); if(!w) return;
-      if(dCoins>0){ walletHold('coins',prevCoins); flyCurrency(x,y,dCoins,'coin',w); }   // 도착 전엔 옛값 고정(새값 깜빡임 방지)
-      if(dGold>0){  walletHold('gold', prevGold);  flyCurrency(x,y,dGold,'gold',w); }
+      walletShow();   // 👛 숨겨둔 지갑을 먼저 표시(트랜지언트) — display:none 상태에선 coinTarget 좌표가 0이라, 다음 프레임에 좌표를 재서 발사
+      if(dCoins>0) walletHold('coins',prevCoins);   // 도착 전엔 옛값 고정(새값 깜빡임 방지)
+      if(dGold>0)  walletHold('gold', prevGold);
+      requestAnimationFrame(function(){   // 표시 후 reflow 끝난 다음 프레임에 지갑 좌표 측정
+        const wNow=walletEl()||w;   // 프레임 사이 재렌더로 노드가 교체됐을 수 있어 재조회(detached rect 0 방지)
+        if(dCoins>0) flyCurrency(x,y,dCoins,'coin',wNow);
+        if(dGold>0)  flyCurrency(x,y,dGold,'gold',wNow);
+      });
       setTimeout(function(){   // 코인이 도착할 즈음 카운트업 시작
         if(dCoins>0) walletRoll('coins', prevCoins, coins());
         if(dGold>0)  walletRoll('gold',  prevGold,  gold());
@@ -7732,7 +7750,8 @@
       }, 430);
     }
     // 은화 전용 날아오기(prev 미상 호출자용) — 카운트업 없이 날아가기+톡
-    function coinFlyFx(x,y,n){ const w=walletEl(); if(!w) return; flyCurrency(x,y,n,'coin',w);
+    function coinFlyFx(x,y,n){ const w=walletEl(); if(!w) return; walletShow();
+      requestAnimationFrame(function(){ flyCurrency(x,y,n,'coin',walletEl()||w); });   // 표시 후 다음 프레임에 좌표 측정 + 노드 재조회(트랜지언트 지갑)
       setTimeout(()=>{ const w2=walletEl(); if(w2){ w2.classList.add('bump'); setTimeout(()=>w2.classList.remove('bump'),320); } }, 430); }
     // 🌾 유휴 은화 — 행복도 기반 자동수익. 펫이 자동 상호작용하는 가구(INTERACTIVE_FURN — furnSpot 옆 단일 소스)는 행복도의 enrichment(종류)로만 반영(도배 무의미).
     // 🪴 enrichment '종류' 수 — 상호작용 가구 중 케어템(밥·물·화장실) 제외한 고유 itemId 개수. 행복도 enrichment(2종 포화)용. 같은 종류 여러 개 놔도 1.
@@ -7777,6 +7796,17 @@
         if(k==='ddeul' && typeof starBurst==='function') starBurst(cx+off, cy);   // 뜰알(한정 픽업)은 별 버스트 추가
       });
     }
+    // 🌾 수확 획득량 플로팅 — 수확 버튼 근처에서 은화(+금화) 픽셀 아이콘과 "+N"이 떠오르며 페이드(도트·원샷).
+    //   지갑이 평소 숨김(트랜지언트)이라 획득량이 즉시 눈에 들어오도록 버튼 쪽에 한 번 더 표기. 모션축소면 CSS가 정지 표시.
+    function yieldFloatFx(x, y, n, gd){ if(!(n>0) && !(gd>0)) return;
+      const el=document.createElement('div'); el.className='yieldfloat';
+      let h='';
+      if(n>0)  h+='<span class="yf-row">'+coinSvg({h:14})+'<b>+'+Number(n).toLocaleString()+'</b></span>';
+      if(gd>0) h+='<span class="yf-row">'+goldSvg({h:14})+'<b>+'+Number(gd).toLocaleString()+'</b></span>';
+      el.innerHTML=h;
+      el.style.left=(x||innerWidth/2)+'px'; el.style.top=(y||innerHeight/2)+'px';
+      document.body.appendChild(el); setTimeout(()=>el.remove(), 1250);
+    }
     function allRoomsIdleYield(g){ if(!g||!g.home||!Array.isArray(g.home.rooms)) return 0; const mult=effYieldMult(g); let s=0; g.home.rooms.forEach(R=>{ s+=roomIdleYield(g,R,mult); }); return s; }   // 배율 1회 계산 후 공유(부스트 포함)
     // 🌾 수확: 모든 방을 한 번에 — 유휴 가구수익 + 빈 밥/물그릇 채움 + 똥 치움(현재 방 먼저 채워 소모품 부족 시 보이는 방 우선).
     function batchCare(btnEl){
@@ -7814,11 +7844,13 @@
         let x=innerWidth/2, y=200; if(btnEl&&btnEl.getBoundingClientRect){ const b=btnEl.getBoundingClientRect(); x=b.left; y=b.bottom+100; }   // 캠 안쪽(버튼 아래)에서 지갑으로 올라오게
         const short=(shortFood&&shortWater)?'사료·물':(shortFood?'사료':(shortWater?'물':''));
         const dropped=(dropEgg>0||dropBox>0||dropDdeul>0);
-        if(gained>0 || filledN>0 || goldBonus>0 || dropped){ if(gained>0||goldBonus>0) rewardFly(x,y, gained, goldBonus, before, beforeGold);
+        if(gained>0 || filledN>0 || goldBonus>0 || dropped){ if(gained>0||goldBonus>0){ rewardFly(x,y, gained, goldBonus, before, beforeGold);
+            if(typeof yieldFloatFx==='function') yieldFloatFx(x, y-80, gained, goldBonus); }   // 🌾 획득량 "+N" 플로팅(버튼 근처, 지갑은 트랜지언트라 즉시 표기)
           if(dropped && typeof harvestDropFx==='function') harvestDropFx(x, y, { egg:dropEgg, box:dropBox, ddeul:dropDdeul });   // 🎁 드롭 원샷 픽셀 연출(뜰알=선버스트)
-          const dropMsg=(dropEgg>0?' · 🥚펫알 +'+dropEgg:'')+(dropBox>0?' · 📦랜덤박스 +'+dropBox:'')+(dropDdeul>0?' · 🌱뜰알 +'+dropDdeul:'');
-          let msg='🌾 전체 수확 완료'+(gained>0?' · +'+gained+' 은화 🪙':'')+(goldBonus>0?' · +'+goldBonus+' 금화 🥇':'')+dropMsg+(filledN>0?' · 밥/물 '+filledN+'칸':'')+(short?' · '+short+' 부족(일부 미충전)':'');
-          toast(msg); }
+          if(goldBonus>0 || dropped || filledN>0 || short){   // 은화만 얻은 평범한 수확은 토스트 생략(플로팅+지갑 카운트업이 대신) — 부가 정보 있을 때만
+            const dropMsg=(dropEgg>0?' · 🥚펫알 +'+dropEgg:'')+(dropBox>0?' · 📦랜덤박스 +'+dropBox:'')+(dropDdeul>0?' · 🌱뜰알 +'+dropDdeul:'');
+            let msg='🌾 전체 수확 완료'+(gained>0?' · +'+gained+' 은화 🪙':'')+(goldBonus>0?' · +'+goldBonus+' 금화 🥇':'')+dropMsg+(filledN>0?' · 밥/물 '+filledN+'칸':'')+(short?' · '+short+' 부족(일부 미충전)':'');
+            toast(msg); } }
         else if(short) toast('🌾 '+short+'이 없어요 · 알뜰샵 소비 탭에서 구매', true);
         else toast('🌾 아직 모인 게 없어요 (상호작용 가구를 놓아보세요)');
       });
@@ -8927,10 +8959,12 @@
     // ✨ 가구 자동 정리 — 현재 방 배치를 뒤→앞·발자국 큰 것부터·등급순으로 격자에 다시 채운다(펫은 자율이라 미변경, 벽지·바닥·똥·펫 그대로).
     //    기존 배치 헬퍼만 재사용(areaFree/occupiedCells/isFloorItem/CARE_ITEMS/wallAreaFree/captureUndo/roomTx). filledAt(그릇 채움) 보존. 지오메트리(camDepth/camZ/splitProps)는 렌더타임 그대로.
     function autoArrangeRoom(){
+      const rid=curRoomId(), ridx=roomIdx();   // 확인시트 열기 전 방을 고정 — 멀티기기 원격 방전환 시 엉뚱한 방에 쓰는 것 방지
       const fl=placedList(), wl=wallPlacedList();
       if(!fl.length && !wl.length){ toast('정리할 가구가 없어요'); return; }
       confirmSheet('가구 배치를 뒤→앞·크기 순으로 자동 정리할까요?\n(가구만 옮겨요 · 펫·벽지·바닥은 그대로 · 되돌리기 가능)', function(){
-        const cell=function(p){ const o={itemId:p.itemId}; if(p.filledAt) o.filledAt=p.filledAt; return o; };   // filledAt(밥·물 채움) 보존
+        if(curRoomId()!==rid){ toast('방이 바뀌어 정리를 취소했어요', true); return; }   // 확인 대기 중 방이 바뀌었으면 취소(멀티기기 클로버 방지)
+        const cell=function(p){ const o={itemId:p.itemId}; if(p.filledAt) o.filledAt=p.filledAt; if(p.fillMs) o.fillMs=p.fillMs; return o; };   // filledAt·fillMs(밥·물 채움·지속) 보존
         // ── 바닥 격자(12×8) ──
         const out={}, leftover=[];
         const floors=fl.filter(function(p){ return isFloorItem(p.itemId); });
@@ -8961,8 +8995,8 @@
           if(!done) wleft.push(p); });
         // ── 커밋(단일 roomTx, captureUndo로 한 번에 되돌리기) ──
         captureUndo();
-        roomTx(curRoomId(), roomIdx(), function(R){ R.placed=out; R.wallPlaced=wout; }, function(){
-          if(state._sheetRefresh) state._sheetRefresh();
+        roomTx(rid, ridx, function(R){ R.placed=out; R.wallPlaced=wout; }, function(){
+          openCatHouse('place');   // 확인시트로 닫힌 알뜰홈을 배치 탭으로 다시 열어 정렬 결과·되돌리기 버튼 노출
           const nleft=leftover.length+wleft.length;
           toast(nleft?('가구를 정리했어요 ✨ · 자리가 부족한 '+nleft+'개는 대기(인벤토리로)'):'가구를 정리했어요 ✨'); });
       });
@@ -9011,7 +9045,7 @@
         const catTabs='<div class="subseg placecat">'+PLACE_CATS.map(c=>{ const inCat=owned.filter(it=>placeCatOf(it.id)===c[0]), nOwn=inCat.length, nAvail=inCat.filter(it=>itemRemaining(it.id)>0).length;
           return '<button class="'+(_placeCat===c[0]?'on':'')+(nOwn?'':' dim')+'"'+(nOwn?'':' aria-disabled="true"')+' onclick="setPlaceCat(\''+c[0]+'\')">'+c[1]+(nAvail?' <b>'+nAvail+'</b>':'')+'</button>'; }).join('')+'</div>';
         const pal=owned.filter(it=>placeCatOf(it.id)===_placeCat).map(it=>{ const foot=itemFoot(it.id), rem=itemRemaining(it.id), qty=itemQty(it.id), sold=rem<=0, ft=itemTierOf(it.id);
-          return '<button class="pitem'+(_selItem===it.id?' on':'')+(sold?' soldout':'')+'"'+(sold?' aria-disabled="true"':'')+' onpointerdown="palDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selItem(\''+it.id+'\')"><span class="pic tbring tb-'+ft+'">'+furnSvg(it.id,{h:palPicH(it.id)})+tierBadgeHtml(ft)+'</span><span>'+it.name+'</span><span class="pq">'+(sold?('보유 '+qty+' · 전부 배치됨'):(foot.w+'×'+foot.h+' · 보유 '+qty+' · 남은 '+rem))+'</span></button>'; }).join('');
+          return '<button class="pitem'+(_selItem===it.id?' on':'')+(sold?' soldout':'')+'"'+(sold?' aria-disabled="true"':'')+' onpointerdown="palDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selItem(\''+it.id+'\')"><span class="pic tbring tb-'+ft+'">'+furnSvg(it.id,{h:palPicH(it.id)})+tierBadgeHtml(ft)+'</span><span>'+it.name+'</span><span class="pq">'+(sold?('보유'+qty+' · 전부 배치됨'):(foot.w+'×'+foot.h+' · 보유'+qty+' · 남은'+rem))+'</span></button>'; }).join('');
         const dragHint='<div class="hintline" style="margin:8px 0 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5V5.5a1.5 1.5 0 0 1 3 0v5"/><path d="M12 10V4.5a1.5 1.5 0 0 1 3 0V10"/><path d="M15 9.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-1a6 6 0 0 1-5.2-3l-2-3.5a1.5 1.5 0 0 1 2.6-1.5L9 14"/></svg><b>꾹 눌러서</b> 끌면 배치·이동돼요(짧게 탭하면 선택·메뉴). 화면 스크롤과 겹치지 않아요.</div>';
         const palBody=pal||'<div class="palempty">이 분류에 보유한 가구가 없어요<br><span>알뜰샵·랜덤박스에서 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>';
         body=grid+dragHint+catTabs+'<div class="palette catinv">'+palBody+'</div>'+skinPickerHtml('floor')+bgfxPickerHtml();
