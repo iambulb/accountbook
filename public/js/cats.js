@@ -1718,7 +1718,249 @@
       '....O....O......',
       '....o....o......',
     ];
-    const FURN_PALS={ pond:POND_PAL, cushion:{X:'#3f4753',C:'#7a8695',D:'#5b6470',L:'#c2cad4',H:'#e2e7ee',B:'#4a5361',t:'#e0b84a',s:'#c49a30'}, bowl:{X:'#3f4753',W:'#dfe4ea',w:'#c2c8d0',L:'#f2f5f8',D:'#a9b0ba',F:'#d68b4a',f:'#b06a2e',g:'#efb37a',K:'#8a5427'}, waterbowl:{X:'#3f4753',W:'#dfe4ea',w:'#c2c8d0',L:'#f2f5f8',D:'#a9b0ba',A:'#5aa9e6',a:'#3f86c4',h:'#bfe2fb',H:'#e6f3fc'}, tower:{X:'#5e3f22',x:'#3f2a16',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#5e3f22',x:'#3f2a16',W:'#c99a5f',C:'#a87c46',L:'#e6c085',S:'#d8b98a',R:'#b8935f',T:'#6b4a2a',O:'#d9694e',H:'#f2a98f',K:'#4a3218'}, litterbox:{B:'#5b9bd8',b:'#3f79b5',e:'#9ccaf0',k:'#2f6098',W:'#f5f8fc',w:'#d3e3f4',v:'#c2d8ee'}, pethouse:{X:'#4a3624',x:'#2f2216',R:'#d9694e',r:'#b8503a',H:'#f0967a',h:'#ffb59c',W:'#e8c98f',w:'#d4b06a',v:'#c49a54',D:'#241a12',d:'#3e2e1e',K:'#5a4632',o:'#e0b84a'}, plant:{x:'#5a3a1c',P:'#c8763e',p:'#a85e2c',H:'#e0a05a',e:'#6b4a2a',S:'#6f9440',G:'#3f7a2c',L:'#7cc652',l:'#9ad86a',I:'#b8e88f'}, catwheel:{X:'#2f6f68',x:'#1e4a44',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',t:'#3a7a70',R:'#c9a06a',r:'#a8824f',D:'#6b5842',d:'#4a3e2e'}, rug:{F:'#efe3cf',X:'#5e2028',x:'#3a1218',o:'#8a3a44',B:'#c0505e',C:'#a5424e',L:'#e6b3a0',l:'#f0c9bc',G:'#e6b24a',g:'#b9862f',N:'#3a2436',Y:'#ffd968'}, window:{X:'#5a3a1c',W:'#9a734a',w:'#b58d5e',H:'#c9a570',S:'#bfe3f5',s:'#9fd0ea',C:'#ffffff',c:'#eaf6ff',U:'#ffd968',u:'#f2b93c',Y:'#fff0b0'}, fishtank:{X:'#5b7b86',x:'#3a5560',G:'#cfeef6',g:'#a6d8e6',A:'#5aa9e6',a:'#3f86c4',P:'#3f7a2c',p:'#5bbf7a',F:'#f2933c',f:'#ffd27a',b:'#dff3ff',R:'#cdb98c',r:'#a8946a',D:'#3a5a63'}, fireplace:{X:'#4a3626',W:'#8a5230',w:'#9c6f3f',H:'#b0824f',K:'#b0563f',k:'#c8785a',m:'#8a4636',D:'#1a1108',d:'#2f2016',f:'#ffe14a',F:'#ff9e3d',r:'#ff5f2e',S:'#5a4a3a',L:'#7a6a52'}, fan:{X:'#3f5a63',x:'#2a3d44',G:'#cfe6ee',L:'#eef7fb',D:'#a7cdda',h:'#e0b84a',N:'#7a828c',n:'#5a616a',S:'#9298a2',s:'#6f747c'}, hammock:{X:'#5a4632',x:'#3a2e1e',W:'#7a5a3a',w:'#9c6f3f',K:'#b7a78f',C:'#3c7d6d',c:'#2f6357',L:'#5bb39d',l:'#7fd0be',P:'#e8c98f',p:'#cba765'}, teaser:{R:'#6b7280',r:'#4a505a',K:'#c0c6cd',F:'#e2607a',f:'#f2a7b8',H:'#ff9ec2',T:'#c94a66',S:'#7a5230',s:'#9c6f3f',x:'#5a3a22'}, wallclock:{X:'#3a2e22',W:'#8a5a34',w:'#a8763f',H:'#c49560',L:'#f2e6c8',l:'#e0d0a8',D:'#2a221a',K:'#6b5a3a',O:'#e0b84a',o:'#c49a30',M:'#4a3a26'}, hangplant:{X:'#5a4632',K:'#b7a78f',k:'#8a7a62',P:'#c8763e',p:'#a85e2c',H:'#e0a05a',G:'#3f7a2c',L:'#7cc652',l:'#9ad86a',g:'#5a9636',I:'#b8e88f'}, mobile:{X:'#5a4632',K:'#b7a78f',k:'#8a7a62',M:'#7a5a3a',A:'#ffd54a',a:'#e0b02c',B:'#8fb8e6',b:'#6f97c4',C:'#f2a7b8',c:'#d98098',W:'#fff6df'}, jingleball:{X:'#8a3a2c',x:'#5a231a',B:'#e0552f',b:'#b8452a',L:'#f2a06a',H:'#ffcfa8',D:'#7a2f22',S:'#ffd24a',s:'#e0a838',K:'#8a909a'}, frame:{X:'#4a3626',W:'#caa23a',w:'#e6c96b',H:'#fff0b8',S:'#bfe3f5',U:'#ffd968',c:'#ffffff',G:'#5aa860',g:'#3f7a48',t:'#7a5230',T:'#4e9636',m:'#8a6a4a'}, shelf:{W:'#9a734a',w:'#6b4a2a',H:'#b58a55',K:'#5a5f68',G:'#4e9636',L:'#7cc652',P:'#c8763e',p:'#a85e2c',B:'#d9694e',r:'#f0967a',o:'#b8503a',C:'#8fb8e6',c:'#bfe3f5',Y:'#ffd24a',X:'#3a2818'}, mirror:{X:'#8a6a1e',W:'#e6c96b',w:'#b98f2f',H:'#fff0b8',A:'#9fbccb',a:'#7fa2b4',b:'#cfe4ee',h:'#ffffff',o:'#f2d878',v:'#6f8ea0'}, neon:{g:'#c0387f',G:'#8a2358',N:'#ff2f8f',n:'#e01a76',H:'#ff9ecf',C:'#ffffff',S:'#ffe6f4',k:'#3a2030'}, sconce:{K:'#5a5f68',k:'#8a909a',D:'#3a3e45',H:'#b6bcc6',h:'#d8dde3',F:'#ff8a2e',Y:'#ffd23e',y:'#fff2a8',W:'#f2e6c8',w:'#d8c49e'}, chandelier:{K:'#6b5220',k:'#4a3814',F:'#c49b45',f:'#a8823a',H:'#f6dd94',Y:'#ffd35e',y:'#ff9e3d',W:'#fff6df',C:'#dff0fb',c:'#a9cfe4',o:'#ffffff',v:'#7fb2d4'}, garland:{K:'#6b5a3a',k:'#4a3e28',A:'#e0552f',B:'#ffd54a',C:'#4e9636',a:'#8fb8e6',b:'#f2a7b8',c:'#c0387f',H:'#ffffff'}, poster:{X:'#3a2e22',x:'#22190f',S:'#bfe3f5',s:'#8fc8e6',U:'#ffd968',M:'#5a7d8a',m:'#3f5a66',P:'#efe3cf',d:'#c94a66',G:'#5aa860',W:'#ffffff'}, tapestry:{K:'#7a5230',k:'#5a3a1c',w:'#9c6f3f',C:'#7a4a8a',c:'#5a2f6a',D:'#a86fc0',o:'#e0a43c',O:'#ffd968',f:'#c9a06a',R:'#c05070',W:'#efe3cf'}, cactus:{e:'#6b4a2a',x:'#7c5028',P:'#c8763e',p:'#a85e2c',H:'#e0a05a',D:'#2f7a3e',G:'#43a058',L:'#6fc47f',I:'#8fdc97',s:'#dff5cf',f:'#ff5f9e',F:'#ff9ec2',Y:'#ffe14a'}, yarnbasket:{X:'#6b4423',W:'#c49a5c',w:'#a37c42',D:'#8a6535',H:'#dbb578',Y:'#e2607a',y:'#f2a7b8',R:'#5aa9e6',r:'#bfe2fb',B:'#f2c84b',b:'#ffe6a8',G:'#5bbf7a',g:'#9be0af',k:'#3a2a18'}, floorlamp:{K:'#5a5f68',k:'#3a3e45',D:'#2a2d33',S:'#e8c98f',s:'#cfa864',T:'#b98f52',F:'#fff3c4',Y:'#ffde6a',H:'#fffbe6',o:'#ffb84a',M:'#7a8088'}, beanbag:{k:'#254a63',D:'#3f6f8a',B:'#5b9bd8',L:'#8fc2ec',H:'#bfe2fb',S:'#2f5570',p:'#e6b24a'}, groomstation:{X:'#5a3a1c',k:'#3a2513',W:'#d9694e',w:'#b8503a',H:'#f0967a',s:'#efe9db',S:'#c9c2b2',t:'#a89a82',B:'#8a6a3f',b:'#6b4f2a',D:'#5a4228'}, springtoy:{D:'#2f3238',k:'#4a4f57',K:'#8a909a',H:'#c3c9d1',B:'#e0552f',b:'#b8452a',L:'#ff9e6a',R:'#ff7a4a',S:'#ffd24a',W:'#fff0d0',x:'#7a2f1c'}, tunnel:{X:'#3f4a52',K:'#5a6570',W:'#5aa9e6',w:'#3f86c4',H:'#bfe2fb',R:'#f2c84b',r:'#e0a838',D:'#1a2530',d:'#26333f',G:'#5bbf7a'}, teepee:{W:'#efe3cf',w:'#d8cbb2',D:'#b8a888',d:'#9c8e70',K:'#2a1e14',k:'#4a3826',X:'#7a5230',x:'#5a3a1c',R:'#d9694e',r:'#b8503a',B:'#5aa9e6',Y:'#e6b24a',f:'#ff5f9e'}, bookshelf:{X:'#4a3220',x:'#3a2818',W:'#7a5a3a',w:'#9c7548',H:'#b58a55',k:'#2a1c10',R:'#d9694e',r:'#a84636',G:'#4e9636',g:'#3a7028',B:'#3f86c4',b:'#2f6698',Y:'#e6b24a',y:'#c4922f',P:'#a86fc0',p:'#7d4e94',o:'#e0a43c',T:'#5bbf7a',S:'#7c5028',A:'#efe3cf'}, birdcage:{K:'#8a909a',k:'#5a5f68',D:'#3a3e45',W:'#d8dde3',w:'#aab0b8',H:'#eef1f5',Y:'#ffd24a',y:'#e0a838',o:'#ff8a3d',B:'#e0552f',T:'#7a5230',t:'#5a3a1c',R:'#ff5f5f'}, lavalamp:{K:'#5a5f68',k:'#3a3e45',D:'#2a2d33',G:'#cfeaf3',g:'#a6d4e2',H:'#eef8fc',R:'#e0431f',o:'#ff7a2e',O:'#ff9e4a',Y:'#ffd24a',r:'#c23418',W:'#fff0b8'}, laserpost:{K:'#5a5f68',k:'#3a3e45',D:'#2a2d33',W:'#8a909a',w:'#aab0b8',H:'#d8dde3',R:'#ff2f4f',r:'#ff7a8a',L:'#ff9ea8',P:'#ffd0d6',Y:'#ffe14a'}, waterfountain:{X:'#3a4652',x:'#2a333d',B:'#8fb8e6',b:'#6f97c4',K:'#5a6f82',A:'#5aa9e6',a:'#3f86c4',H:'#bfe2fb',h:'#e6f3fc',W:'#d0d6dd',w:'#aab2bc',D:'#8a929c'}, sofa:{x:'#5a3a22',k:'#4a2e1a',D:'#8a5a3a',B:'#c98a5a',L:'#e0ad78',H:'#f0c894',c:'#e6b24a',C:'#c4922f',S:'#b07840',t:'#3a2410'}, recordplayer:{X:'#3a2818',W:'#9c7548',w:'#7a5a3a',H:'#c4a06a',k:'#2a1c10',D:'#1e1e22',d:'#3a3a42',g:'#55555e',R:'#d9694e',r:'#a84636',K:'#8a909a',S:'#c9c2b2',Y:'#ffd24a'}, terrarium:{K:'#6b5220',k:'#4a3814',H:'#8a6a2c',G:'#d8f0f5',g:'#b0dce6',h:'#eefaff',x:'#7c5028',X:'#5a3a1c',e:'#6b4a2a',L:'#7cc652',l:'#9be0af',D:'#4e9636',S:'#9298a2',s:'#c0c6ce',f:'#ff5f9e',F:'#ffe14a'}, ballpit:{X:'#2f6f9e',x:'#245a80',W:'#5aa9e6',w:'#3f86c4',H:'#bfe2fb',R:'#e0552f',r:'#ff8a5a',Y:'#ffd24a',y:'#fff0a8',G:'#4e9636',g:'#7cc652',P:'#f2a7b8',p:'#ffd0e0',B:'#8fb8e6',b:'#c3ddf5'}, grandfaclock:{X:'#4a3218',x:'#3a2610',W:'#7a5230',w:'#9c6f3f',H:'#b58a55',k:'#2a1a0c',L:'#f2e6c8',l:'#e0d0a8',D:'#2a221a',O:'#e0b84a',o:'#c49a30',K:'#8a6a3a',G:'#bfe3f5',g:'#8fc2ec',R:'#d9694e'}, bunkbed:{X:'#4a3218',x:'#3a2610',W:'#9c6f3f',w:'#c99a63',H:'#dbb578',k:'#2a1a0c',M:'#e8e2d4',m:'#cfc7b8',R:'#d9694e',r:'#f0967a',B:'#5aa9e6',b:'#8fc2ec',P:'#f2c84b',p:'#ffe6a8',G:'#5bbf7a'}, crystalfountain:{W:'#d0d6dd',w:'#aab2bc',X:'#7a828c',x:'#5a626c',A:'#5aa9e6',a:'#3f86c4',H:'#bfe2fb',h:'#e6f3fc',s:'#eaf6ff',C:'#a9cfe4',c:'#7fb2d4',B:'#dff3ff',K:'#ffffff'}, dartboard:{X:'#2a221a',x:'#1a140e',R:'#d9694e',r:'#a84636',G:'#4e9636',g:'#3a7028',W:'#efe3cf',w:'#cfc4b0',K:'#5a5f68',Y:'#e6b24a',H:'#ffffff',B:'#3f86c4',S:'#c9c2b2'}, cuckooclock:{X:'#3a2410',x:'#2a1808',W:'#7a5230',w:'#9c6f3f',H:'#b58a55',k:'#1a1006',R:'#c0392b',r:'#e05545',G:'#4e9636',g:'#3a7028',L:'#f2e6c8',l:'#e0d0a8',D:'#2a1c12',O:'#e0b84a',o:'#c49a30',Y:'#ffd24a',B:'#8fb8e6',K:'#8a909a'} };
+    const M_ROUNDBED = [
+      "..................",
+      "....WWWWWWWWWW....",
+      "..WWLLLLLLLLLLWW..",
+      ".WLHLLLLLLLLLLHLW.",
+      ".WLLMMMMMMMMMMLLW.",
+      "WLLMmmmmmmmmmmMLLW",
+      "WLMmMMMMMMMMMmMLMW",
+      "WLMmMMMMMMMMMmMLMW",
+      "WLLMmmmmmmmmmmMLLW",
+      ".WLLMMMMMMMMMMLLW.",
+      ".WLHLLLLLLLLLLHLW.",
+      "..WWSLLLLLLLLSWW..",
+      "....WWWWWWWWWW....",
+    ];
+    const M_DONUTBED = [
+      "..................",
+      "....WWWWWWWWWW....",
+      "..WWLHLHLHLHLLWW..",
+      ".WLHLLLLLLLLLLHLW.",
+      ".WLLLMMMMMMMMLLLW.",
+      "WLHLMmmmmmmmmMLHLW",
+      "WLLMmMMMMMMMMmMLLW",
+      "WLLMmMMMMMMMMmMLLW",
+      "WLHLMmmmmmmmmMLHLW",
+      ".WLLLMMMMMMMMLLLW.",
+      ".WLHLLLLLLLLLLHLW.",
+      "..WWSLHLHLHLSWW...",
+      "....WWWWWWWWWW....",
+    ];
+    const M_CAVEBED = [
+      "................",
+      "....gGGg........",
+      "...GgGGGg.......",
+      "..WWWWWWWWW.....",
+      ".WHwwwwwwwHW....",
+      ".WwWWDDDWWwW....",
+      "WHwWDdddDWwHW...",
+      "WwWDdDDDdDWwW...",
+      "WwWDdMmmDdWwW...",
+      "WwWDdMMMdDWwW...",
+      "WwWDddddDDWwW...",
+      "WHwWDDDDDWwHW...",
+      ".WwwwwwwwwwW....",
+      ".xWWWWWWWWWx....",
+      "..xwwwwwwwx.....",
+    ];
+    const M_CANOPYBED = [
+      "................",
+      "..oPPPPPPPPo....",
+      ".PpPPPPPPPPpP...",
+      ".PpXwwwwwwXpP...",
+      ".P.X......X.P...",
+      "...X......X.....",
+      "...XwHHHHwX.....",
+      "...XMMMMMMX.....",
+      "...XMRRRRmX.....",
+      "...XMMMMMMX.....",
+      "...XwwwwwwX.....",
+      "...XwHHHHwX.....",
+      "..xXwwwwwwXx....",
+      "..xX......Xx....",
+      "..xXk....kXx....",
+    ];
+    const M_THRONE = [
+      "................",
+      ".....WHW........",
+      "....WoHoW.......",
+      "...WHWHWHW......",
+      "...WwWXWwW......",
+      "..WHXRRRXHW.....",
+      "..WwXRrRXwW.....",
+      "..WHXRRRXHW.....",
+      "..WwXRrRXwW.....",
+      "..WHWMMMWHW.....",
+      "..WwWMMMWwW.....",
+      "..WHWWWWWHW.....",
+      "..xWwwwwwWx.....",
+      "..xW.....Wx.....",
+      "..xX.....Xx.....",
+    ];
+    const M_MOUSETOY = [
+      "................",
+      "........w.......",
+      ".......ww.......",
+      "......GGg.......",
+      ".....GGGGg......",
+      "...PGHGGGGg.....",
+      "..PGHGGeGGGg....",
+      "..GGGGGGGGGg....",
+      "..gGGGGGGGgT....",
+      "...ggGGGgg.TT...",
+      "....gggg...TTT..",
+      "...............T",
+    ];
+    const M_CATNIPPILLOW = [
+      ".................",
+      "...WWWWWWWWWW....",
+      "..WLHLLLLLLHLW...",
+      ".WLLGllGllGLLW...",
+      ".WLlGLLGLLGlLW...",
+      ".WLLllHllHlLLW...",
+      ".WLGLLGoGLLGLW...",
+      ".WLlGLLGLLGlLW...",
+      ".WLLGllGllGLLW...",
+      ".WLHLLLLLLHLW....",
+      "..WwwwwwwwwwW....",
+      "...WWWWWWWWW.....",
+    ];
+    const M_PUZZLEFEEDER = [
+      "................",
+      "..WWWWWWWWWWWW..",
+      ".WHwwwwwwwwwwHW.",
+      ".WwDLwDLwDLwDwW.",
+      ".WwLYLwoKwLYLwW.",
+      ".WwDwLYLwLDwDwW.",
+      ".WwLKowDwoYLLwW.",
+      ".WwDLwDLwDLwDwW.",
+      ".WwLYowLYowKLwW.",
+      ".WHwwwwwwwwwwHW.",
+      ".WwwwwwwwwwwwW..",
+      "..XWWWWWWWWWX...",
+    ];
+    const M_BALLTRACK = [
+      ".........................",
+      "...WWWWWWWWWWWWWWWWWW....",
+      "..WHwwwwwwwwwwwwwwwwHW...",
+      "..WwRrRwwwwwwwwGgGwwwW...",
+      "..WwRRRwwYyYwwwGGGwwwW...",
+      "..WwwwwwYYYwwwwwwwwwwW...",
+      "..WLwwwwwYwwwwwwwwLwwW...",
+      "..WwwRrwwwwwGgwwwYywwW...",
+      "..WwRRRwwwwGGGwwwYYYwW...",
+      "..WHwwwwwwwwwwwwwwwwHW...",
+      "..XWWWWWWWWWWWWWWWWWWX...",
+      "...DDD..........DDD......",
+    ];
+    const M_TEETERTOY = [
+      "................",
+      "...R........B...",
+      "..RrHR....BbHB..",
+      "..RRRR....BBBB..",
+      "...WWWWWWWWWW...",
+      "..WwWWWWWWWWwW..",
+      "...WWWWWWWWWW...",
+      ".......YY.......",
+      "......YHHY......",
+      "......YYYY......",
+      ".....WwWWwW.....",
+      "....WWWWWWWW....",
+      "...DWwwwwwwWD...",
+      "...DDDDDDDDDD...",
+    ];
+    const M_BUBBLEMACHINE = [
+      "................",
+      "....B...b.......",
+      "...BLB.bLb..B...",
+      "....B...b..BLB..",
+      "..b....B....B...",
+      ".BLB..BLB...b...",
+      "..b....B........",
+      "...WWWWWWWWW....",
+      "..WHwwwwwwwHW...",
+      "..WwYwwwwYwwW...",
+      "..WwwwwwwwwwW...",
+      "..WHwwwwwwwHW...",
+      "..XWwwwwwwwWX...",
+      "...XWWWWWWWX....",
+      "....DWWWWWD.....",
+    ];
+    const M_BONSAI = [
+      "................",
+      "....GLlIlLG.....",
+      "...GLIllILLG....",
+      "..LLlIfLIlLLl...",
+      ".GLLIllLLIlLG...",
+      "..GLlIGLLIlG....",
+      "....GLGSLIL.....",
+      ".....LGSGl......",
+      "......SXS.......",
+      "..GLl.SXS.lLG...",
+      ".GLLIllSllILLG..",
+      "..GLIlGSGlILG...",
+      "....GGSXSGG.....",
+      "...xPPPHPPPx....",
+      "..xPHpppppHPx...",
+      "..pPPPPPPPPPp...",
+      "..peXeXeXeXep...",
+      "...xpppppppx....",
+    ];
+    const M_GLOBE = [
+      "................",
+      ".......o........",
+      "......oKo.......",
+      ".....HAAAaH.....",
+      "....HAaGgAaH....",
+      "...KAAGGgAAaK...",
+      "...HAGgLaGgAH...",
+      "...AaGGaAGgaA...",
+      "...HAaGgAGgAH...",
+      "...KAAGgaGGAK...",
+      "....HAaGgAaH....",
+      ".....HAaAaH.....",
+      "......KWWK......",
+      ".....xWKKWx.....",
+      "....xWWKKWWx....",
+      "....xxWWWWxx....",
+    ];
+    const M_SNOWGLOBE = [
+      "................",
+      ".....GGGGGG.....",
+      "...GGgS.sGGGg...",
+      "..GGsS.....GGg..",
+      "..GSg..S.s.gSG..",
+      ".GGs.s..TtT.GGg.",
+      ".Gg.S..TtRtTsGg.",
+      ".GS...TTtttTTgG.",
+      ".GgS.tTttRttTgG.",
+      ".GG.s.TTtttT.GG.",
+      "..GgSssHHHssgG..",
+      "..GGgHHHHHHgGG..",
+      "...KWWWWWWWWK...",
+      "..xWKKKKKKKKWx..",
+      "..xxWWWWWWWWxx..",
+    ];
+    const M_CAMPFIRE = [
+      "................",
+      "......f.........",
+      ".....frf........",
+      ".....fFf.f......",
+      "....frFrfrf.....",
+      "...ffFFFrFf.....",
+      "...frFrFFrFf....",
+      "..frFFrFFFrf....",
+      "..frFFFFFFFo....",
+      "..frFrFFFrFo....",
+      "..oFFFrFFFoo....",
+      ".KwWDWDWDWwK....",
+      "KkWDwDwDwDWkK...",
+      ".kSkSkSkSkSk....",
+      "..KkKkKkKk......",
+    ];
+    const FURN_PALS={ pond:POND_PAL, cushion:{X:'#3f4753',C:'#7a8695',D:'#5b6470',L:'#c2cad4',H:'#e2e7ee',B:'#4a5361',t:'#e0b84a',s:'#c49a30'}, bowl:{X:'#3f4753',W:'#dfe4ea',w:'#c2c8d0',L:'#f2f5f8',D:'#a9b0ba',F:'#d68b4a',f:'#b06a2e',g:'#efb37a',K:'#8a5427'}, waterbowl:{X:'#3f4753',W:'#dfe4ea',w:'#c2c8d0',L:'#f2f5f8',D:'#a9b0ba',A:'#5aa9e6',a:'#3f86c4',h:'#bfe2fb',H:'#e6f3fc'}, tower:{X:'#5e3f22',x:'#3f2a16',P:'#8a6a3f',H:'#a5824f',W:'#c99a5f',C:'#a87c46',L:'#e6c085',R:'#e0bd82',S:'#c39a5c',T:'#d9694e',O:'#f2a98f',K:'#4a3218'}, scratcher:{X:'#5e3f22',x:'#3f2a16',W:'#c99a5f',C:'#a87c46',L:'#e6c085',S:'#d8b98a',R:'#b8935f',T:'#6b4a2a',O:'#d9694e',H:'#f2a98f',K:'#4a3218'}, litterbox:{B:'#5b9bd8',b:'#3f79b5',e:'#9ccaf0',k:'#2f6098',W:'#f5f8fc',w:'#d3e3f4',v:'#c2d8ee'}, pethouse:{X:'#4a3624',x:'#2f2216',R:'#d9694e',r:'#b8503a',H:'#f0967a',h:'#ffb59c',W:'#e8c98f',w:'#d4b06a',v:'#c49a54',D:'#241a12',d:'#3e2e1e',K:'#5a4632',o:'#e0b84a'}, plant:{x:'#5a3a1c',P:'#c8763e',p:'#a85e2c',H:'#e0a05a',e:'#6b4a2a',S:'#6f9440',G:'#3f7a2c',L:'#7cc652',l:'#9ad86a',I:'#b8e88f'}, catwheel:{X:'#2f6f68',x:'#1e4a44',W:'#4fb3a6',H:'#8fe0d4',T:'#245c55',t:'#3a7a70',R:'#c9a06a',r:'#a8824f',D:'#6b5842',d:'#4a3e2e'}, rug:{F:'#efe3cf',X:'#5e2028',x:'#3a1218',o:'#8a3a44',B:'#c0505e',C:'#a5424e',L:'#e6b3a0',l:'#f0c9bc',G:'#e6b24a',g:'#b9862f',N:'#3a2436',Y:'#ffd968'}, window:{X:'#5a3a1c',W:'#9a734a',w:'#b58d5e',H:'#c9a570',S:'#bfe3f5',s:'#9fd0ea',C:'#ffffff',c:'#eaf6ff',U:'#ffd968',u:'#f2b93c',Y:'#fff0b0'}, fishtank:{X:'#5b7b86',x:'#3a5560',G:'#cfeef6',g:'#a6d8e6',A:'#5aa9e6',a:'#3f86c4',P:'#3f7a2c',p:'#5bbf7a',F:'#f2933c',f:'#ffd27a',b:'#dff3ff',R:'#cdb98c',r:'#a8946a',D:'#3a5a63'}, fireplace:{X:'#4a3626',W:'#8a5230',w:'#9c6f3f',H:'#b0824f',K:'#b0563f',k:'#c8785a',m:'#8a4636',D:'#1a1108',d:'#2f2016',f:'#ffe14a',F:'#ff9e3d',r:'#ff5f2e',S:'#5a4a3a',L:'#7a6a52'}, fan:{X:'#3f5a63',x:'#2a3d44',G:'#cfe6ee',L:'#eef7fb',D:'#a7cdda',h:'#e0b84a',N:'#7a828c',n:'#5a616a',S:'#9298a2',s:'#6f747c'}, hammock:{X:'#5a4632',x:'#3a2e1e',W:'#7a5a3a',w:'#9c6f3f',K:'#b7a78f',C:'#3c7d6d',c:'#2f6357',L:'#5bb39d',l:'#7fd0be',P:'#e8c98f',p:'#cba765'}, teaser:{R:'#6b7280',r:'#4a505a',K:'#c0c6cd',F:'#e2607a',f:'#f2a7b8',H:'#ff9ec2',T:'#c94a66',S:'#7a5230',s:'#9c6f3f',x:'#5a3a22'}, wallclock:{X:'#3a2e22',W:'#8a5a34',w:'#a8763f',H:'#c49560',L:'#f2e6c8',l:'#e0d0a8',D:'#2a221a',K:'#6b5a3a',O:'#e0b84a',o:'#c49a30',M:'#4a3a26'}, hangplant:{X:'#5a4632',K:'#b7a78f',k:'#8a7a62',P:'#c8763e',p:'#a85e2c',H:'#e0a05a',G:'#3f7a2c',L:'#7cc652',l:'#9ad86a',g:'#5a9636',I:'#b8e88f'}, mobile:{X:'#5a4632',K:'#b7a78f',k:'#8a7a62',M:'#7a5a3a',A:'#ffd54a',a:'#e0b02c',B:'#8fb8e6',b:'#6f97c4',C:'#f2a7b8',c:'#d98098',W:'#fff6df'}, jingleball:{X:'#8a3a2c',x:'#5a231a',B:'#e0552f',b:'#b8452a',L:'#f2a06a',H:'#ffcfa8',D:'#7a2f22',S:'#ffd24a',s:'#e0a838',K:'#8a909a'}, frame:{X:'#4a3626',W:'#caa23a',w:'#e6c96b',H:'#fff0b8',S:'#bfe3f5',U:'#ffd968',c:'#ffffff',G:'#5aa860',g:'#3f7a48',t:'#7a5230',T:'#4e9636',m:'#8a6a4a'}, shelf:{W:'#9a734a',w:'#6b4a2a',H:'#b58a55',K:'#5a5f68',G:'#4e9636',L:'#7cc652',P:'#c8763e',p:'#a85e2c',B:'#d9694e',r:'#f0967a',o:'#b8503a',C:'#8fb8e6',c:'#bfe3f5',Y:'#ffd24a',X:'#3a2818'}, mirror:{X:'#8a6a1e',W:'#e6c96b',w:'#b98f2f',H:'#fff0b8',A:'#9fbccb',a:'#7fa2b4',b:'#cfe4ee',h:'#ffffff',o:'#f2d878',v:'#6f8ea0'}, neon:{g:'#c0387f',G:'#8a2358',N:'#ff2f8f',n:'#e01a76',H:'#ff9ecf',C:'#ffffff',S:'#ffe6f4',k:'#3a2030'}, sconce:{K:'#5a5f68',k:'#8a909a',D:'#3a3e45',H:'#b6bcc6',h:'#d8dde3',F:'#ff8a2e',Y:'#ffd23e',y:'#fff2a8',W:'#f2e6c8',w:'#d8c49e'}, chandelier:{K:'#6b5220',k:'#4a3814',F:'#c49b45',f:'#a8823a',H:'#f6dd94',Y:'#ffd35e',y:'#ff9e3d',W:'#fff6df',C:'#dff0fb',c:'#a9cfe4',o:'#ffffff',v:'#7fb2d4'}, garland:{K:'#6b5a3a',k:'#4a3e28',A:'#e0552f',B:'#ffd54a',C:'#4e9636',a:'#8fb8e6',b:'#f2a7b8',c:'#c0387f',H:'#ffffff'}, poster:{X:'#3a2e22',x:'#22190f',S:'#bfe3f5',s:'#8fc8e6',U:'#ffd968',M:'#5a7d8a',m:'#3f5a66',P:'#efe3cf',d:'#c94a66',G:'#5aa860',W:'#ffffff'}, tapestry:{K:'#7a5230',k:'#5a3a1c',w:'#9c6f3f',C:'#7a4a8a',c:'#5a2f6a',D:'#a86fc0',o:'#e0a43c',O:'#ffd968',f:'#c9a06a',R:'#c05070',W:'#efe3cf'}, cactus:{e:'#6b4a2a',x:'#7c5028',P:'#c8763e',p:'#a85e2c',H:'#e0a05a',D:'#2f7a3e',G:'#43a058',L:'#6fc47f',I:'#8fdc97',s:'#dff5cf',f:'#ff5f9e',F:'#ff9ec2',Y:'#ffe14a'}, yarnbasket:{X:'#6b4423',W:'#c49a5c',w:'#a37c42',D:'#8a6535',H:'#dbb578',Y:'#e2607a',y:'#f2a7b8',R:'#5aa9e6',r:'#bfe2fb',B:'#f2c84b',b:'#ffe6a8',G:'#5bbf7a',g:'#9be0af',k:'#3a2a18'}, floorlamp:{K:'#5a5f68',k:'#3a3e45',D:'#2a2d33',S:'#e8c98f',s:'#cfa864',T:'#b98f52',F:'#fff3c4',Y:'#ffde6a',H:'#fffbe6',o:'#ffb84a',M:'#7a8088'}, beanbag:{k:'#254a63',D:'#3f6f8a',B:'#5b9bd8',L:'#8fc2ec',H:'#bfe2fb',S:'#2f5570',p:'#e6b24a'}, groomstation:{X:'#5a3a1c',k:'#3a2513',W:'#d9694e',w:'#b8503a',H:'#f0967a',s:'#efe9db',S:'#c9c2b2',t:'#a89a82',B:'#8a6a3f',b:'#6b4f2a',D:'#5a4228'}, springtoy:{D:'#2f3238',k:'#4a4f57',K:'#8a909a',H:'#c3c9d1',B:'#e0552f',b:'#b8452a',L:'#ff9e6a',R:'#ff7a4a',S:'#ffd24a',W:'#fff0d0',x:'#7a2f1c'}, tunnel:{X:'#3f4a52',K:'#5a6570',W:'#5aa9e6',w:'#3f86c4',H:'#bfe2fb',R:'#f2c84b',r:'#e0a838',D:'#1a2530',d:'#26333f',G:'#5bbf7a'}, teepee:{W:'#efe3cf',w:'#d8cbb2',D:'#b8a888',d:'#9c8e70',K:'#2a1e14',k:'#4a3826',X:'#7a5230',x:'#5a3a1c',R:'#d9694e',r:'#b8503a',B:'#5aa9e6',Y:'#e6b24a',f:'#ff5f9e'}, bookshelf:{X:'#4a3220',x:'#3a2818',W:'#7a5a3a',w:'#9c7548',H:'#b58a55',k:'#2a1c10',R:'#d9694e',r:'#a84636',G:'#4e9636',g:'#3a7028',B:'#3f86c4',b:'#2f6698',Y:'#e6b24a',y:'#c4922f',P:'#a86fc0',p:'#7d4e94',o:'#e0a43c',T:'#5bbf7a',S:'#7c5028',A:'#efe3cf'}, birdcage:{K:'#8a909a',k:'#5a5f68',D:'#3a3e45',W:'#d8dde3',w:'#aab0b8',H:'#eef1f5',Y:'#ffd24a',y:'#e0a838',o:'#ff8a3d',B:'#e0552f',T:'#7a5230',t:'#5a3a1c',R:'#ff5f5f'}, lavalamp:{K:'#5a5f68',k:'#3a3e45',D:'#2a2d33',G:'#cfeaf3',g:'#a6d4e2',H:'#eef8fc',R:'#e0431f',o:'#ff7a2e',O:'#ff9e4a',Y:'#ffd24a',r:'#c23418',W:'#fff0b8'}, laserpost:{K:'#5a5f68',k:'#3a3e45',D:'#2a2d33',W:'#8a909a',w:'#aab0b8',H:'#d8dde3',R:'#ff2f4f',r:'#ff7a8a',L:'#ff9ea8',P:'#ffd0d6',Y:'#ffe14a'}, waterfountain:{X:'#3a4652',x:'#2a333d',B:'#8fb8e6',b:'#6f97c4',K:'#5a6f82',A:'#5aa9e6',a:'#3f86c4',H:'#bfe2fb',h:'#e6f3fc',W:'#d0d6dd',w:'#aab2bc',D:'#8a929c'}, sofa:{x:'#5a3a22',k:'#4a2e1a',D:'#8a5a3a',B:'#c98a5a',L:'#e0ad78',H:'#f0c894',c:'#e6b24a',C:'#c4922f',S:'#b07840',t:'#3a2410'}, recordplayer:{X:'#3a2818',W:'#9c7548',w:'#7a5a3a',H:'#c4a06a',k:'#2a1c10',D:'#1e1e22',d:'#3a3a42',g:'#55555e',R:'#d9694e',r:'#a84636',K:'#8a909a',S:'#c9c2b2',Y:'#ffd24a'}, terrarium:{K:'#6b5220',k:'#4a3814',H:'#8a6a2c',G:'#d8f0f5',g:'#b0dce6',h:'#eefaff',x:'#7c5028',X:'#5a3a1c',e:'#6b4a2a',L:'#7cc652',l:'#9be0af',D:'#4e9636',S:'#9298a2',s:'#c0c6ce',f:'#ff5f9e',F:'#ffe14a'}, ballpit:{X:'#2f6f9e',x:'#245a80',W:'#5aa9e6',w:'#3f86c4',H:'#bfe2fb',R:'#e0552f',r:'#ff8a5a',Y:'#ffd24a',y:'#fff0a8',G:'#4e9636',g:'#7cc652',P:'#f2a7b8',p:'#ffd0e0',B:'#8fb8e6',b:'#c3ddf5'}, grandfaclock:{X:'#4a3218',x:'#3a2610',W:'#7a5230',w:'#9c6f3f',H:'#b58a55',k:'#2a1a0c',L:'#f2e6c8',l:'#e0d0a8',D:'#2a221a',O:'#e0b84a',o:'#c49a30',K:'#8a6a3a',G:'#bfe3f5',g:'#8fc2ec',R:'#d9694e'}, bunkbed:{X:'#4a3218',x:'#3a2610',W:'#9c6f3f',w:'#c99a63',H:'#dbb578',k:'#2a1a0c',M:'#e8e2d4',m:'#cfc7b8',R:'#d9694e',r:'#f0967a',B:'#5aa9e6',b:'#8fc2ec',P:'#f2c84b',p:'#ffe6a8',G:'#5bbf7a'}, crystalfountain:{W:'#d0d6dd',w:'#aab2bc',X:'#7a828c',x:'#5a626c',A:'#5aa9e6',a:'#3f86c4',H:'#bfe2fb',h:'#e6f3fc',s:'#eaf6ff',C:'#a9cfe4',c:'#7fb2d4',B:'#dff3ff',K:'#ffffff'}, dartboard:{X:'#2a221a',x:'#1a140e',R:'#d9694e',r:'#a84636',G:'#4e9636',g:'#3a7028',W:'#efe3cf',w:'#cfc4b0',K:'#5a5f68',Y:'#e6b24a',H:'#ffffff',B:'#3f86c4',S:'#c9c2b2'}, cuckooclock:{X:'#3a2410',x:'#2a1808',W:'#7a5230',w:'#9c6f3f',H:'#b58a55',k:'#1a1006',R:'#c0392b',r:'#e05545',G:'#4e9636',g:'#3a7028',L:'#f2e6c8',l:'#e0d0a8',D:'#2a1c12',O:'#e0b84a',o:'#c49a30',Y:'#ffd24a',B:'#8fb8e6',K:'#8a909a'}, roundbed:{X:'#5a3a1c',W:'#c98a5a',w:'#a87040',L:'#e0ad78',H:'#f2cf9e',M:'#efe9dc',m:'#d6cdb8',S:'#b07840'}, donutbed:{X:'#7a2f2c',W:'#e0552f',w:'#b8452a',L:'#ff9e6a',H:'#ffcaa8',M:'#f2e4c6',m:'#d8c49e',S:'#c23418'}, cavebed:{X:'#4a3628',x:'#2f2218',W:'#8a6a4a',w:'#6b4f36',H:'#a5825a',G:'#7a9a5a',g:'#5a7a3e',D:'#1a120a',d:'#2e2016',M:'#e8dcc8',m:'#cfc0a8'}, canopybed:{X:'#4a3218',x:'#2f2010',W:'#9c6f3f',w:'#7a5230',H:'#c49560',P:'#c77dff',p:'#9a4fd0',M:'#efe9dc',m:'#d6cdb8',R:'#ff9ec2',o:'#e0b84a',k:'#2a1a0c'}, throne:{X:'#6b5220',x:'#4a3814',W:'#e0b84a',w:'#c49a30',H:'#ffe89a',R:'#c0392b',r:'#8a2820',o:'#ff5f8f',M:'#efe0b8',G:'#5aa860'}, mousetoy:{X:'#5a5560',G:'#9aa0aa',g:'#7a808a',H:'#c8ccd4',P:'#ff9ec2',e:'#2a2a30',T:'#d8b8c8',w:'#efe4c6',k:'#3a3a42'}, catnippillow:{X:'#3a6a3e',W:'#5aa860',w:'#468a4c',L:'#7cc472',H:'#a5e09a',G:'#3f7a2c',l:'#9ad86a',o:'#e0b84a'}, puzzlefeeder:{X:'#3a5a63',W:'#5aa9e6',w:'#3f86c4',H:'#bfe2fb',Y:'#ffd24a',o:'#ff8a3d',D:'#2a3d44',L:'#8fc2ec',K:'#f2933c'}, balltrack:{X:'#3a4652',W:'#6f97c4',w:'#4a6f9c',H:'#8fb8e6',R:'#e0552f',r:'#ff8a5a',Y:'#ffd24a',G:'#5bbf7a',D:'#2a333d',L:'#bfe2fb',y:'#fff0a8',g:'#3f8a4c'}, teetertoy:{X:'#5a3a1c',W:'#c99a5f',w:'#a87040',R:'#e0552f',r:'#b8452a',B:'#5aa9e6',b:'#3f86c4',Y:'#ffd24a',H:'#ff9e6a',D:'#3a2610'}, bubblemachine:{X:'#3a4652',W:'#8a909a',w:'#6b7078',H:'#c3c9d1',D:'#2a2d33',B:'#bfe2fb',b:'#8fc2ec',L:'#eef8fc',Y:'#ffd24a',P:'#f2a7b8'}, bonsai:{x:'#5a3a1c',P:'#8a5a34',p:'#6b4526',H:'#a5824f',e:'#6b4a2a',X:'#3a2612',S:'#6b4a2a',G:'#3f7a2c',L:'#5aa860',l:'#7cc472',I:'#a5e09a',f:'#ff9ec2'}, globe:{X:'#5a3a1c',x:'#3a2610',W:'#c49560',H:'#e0c088',A:'#5aa9e6',a:'#3f86c4',G:'#5bbf7a',g:'#3f8a4c',L:'#bfe2fb',K:'#8a6a3a',o:'#e0b84a'}, snowglobe:{X:'#5a3a1c',x:'#3a2610',W:'#c49560',G:'#cfeaf6',g:'#a6d4e2',H:'#eef8fc',S:'#ffffff',s:'#dbe6f2',T:'#5aa860',t:'#3f7a2c',R:'#d9694e',K:'#8a6a3a'}, campfire:{X:'#4a3626',W:'#8a5230',w:'#6b4326',D:'#2a1c12',K:'#5a5560',k:'#7a7580',f:'#ffe14a',F:'#ff9e3d',r:'#ff5f2e',o:'#e0662a',S:'#9298a2'} };
     const POOP_PAL={X:'#4a3218',K:'#7a5230'};
     const FOOD_PAL={D:'#7a4a20',F:'#d68b4a',f:'#b06a2e',H:'#efb37a',L:'#f2e4c6',l:'#d8c49e',K:'#8a5427',k:'#6b3f1c',W:'#ffffff'};
     const WATER_PAL={D:'#3f86c4',d:'#2f6698',A:'#8fc2ec',a:'#5aa9e6',H:'#dff0fc',L:'#f2f7fc',l:'#cfe0ee',K:'#e2607a'};
@@ -2173,6 +2415,21 @@
       { id:'crystalfountain', cat:'decor', name:'크리스탈분수', size:2.0, footW:2, footH:2, desc:'물이 솟는 크리스탈 분수 — 방의 중심.' },
       { id:'dartboard', cat:'decor', name:'다트판', size:1.2, footW:1, footH:1,wall:true, desc:'벽에 거는 다트판.' },
       { id:'cuckooclock', cat:'decor', name:'뻐꾸기시계', size:1.2, footW:1, footH:1,wall:true, desc:'벽에 거는 뻐꾸기시계. 추가 흔들려요.' },
+      { id:'roundbed', cat:'rest', name:'원형베드', size:1.2, footW:1, footH:1, desc:'폭신한 원형 베드에 파묻혀 쉬어요.' },
+      { id:'donutbed', cat:'rest', name:'도넛베드', size:1.2, footW:1, footH:1, desc:'도넛 모양 베드 안에 동그랗게 말고 자요.' },
+      { id:'cavebed', cat:'rest', name:'동굴하우스', size:1.6, footW:1, footH:1, desc:'동굴 같은 아늑한 집에 들어가 정면을 보며 쉬어요.' },
+      { id:'canopybed', cat:'rest', name:'캐노피침대', size:1.8, footW:1, footH:2, desc:'화려한 캐노피 침대에서 우아하게 누워요.' },
+      { id:'throne', cat:'rest', name:'고양이왕좌', size:1.6, footW:1, footH:1, desc:'황금 왕좌에 앉아 위엄있게 쉬어요.' },
+      { id:'mousetoy', cat:'play', name:'쥐돌이', size:0.9, footW:1, footH:1, desc:'옆에서 쥐 장난감을 톡톡 굴려요.' },
+      { id:'catnippillow', cat:'play', name:'캣닢쿠션', size:1.0, footW:1, footH:1, desc:'캣닢 쿠션에 얼굴을 부비며 뒹굴어요.' },
+      { id:'puzzlefeeder', cat:'play', name:'퍼즐급식기', size:1.0, footW:1, footH:1, desc:'구멍에서 간식을 꺼내려 앞발로 톡톡 건드려요.' },
+      { id:'balltrack', cat:'play', name:'볼트랙', size:1.8, footW:2, footH:1, desc:'트랙 안 공을 앞발로 빙글빙글 굴려요.' },
+      { id:'teetertoy', cat:'play', name:'시소장난감', size:1.1, footW:1, footH:1, desc:'시소 양끝 공을 번갈아 톡톡 눌러요.' },
+      { id:'bubblemachine', cat:'play', name:'버블머신', size:1.2, footW:1, footH:1, desc:'비눗방울이 뽀글뽀글 올라와요.' },
+      { id:'bonsai', cat:'decor', name:'분재', size:1.2, footW:1, footH:1, desc:'정갈한 분재. 잎이 살랑여요.' },
+      { id:'globe', cat:'decor', name:'지구본', size:1.2, footW:1, footH:1, desc:'빙글 도는 앤티크 지구본.' },
+      { id:'snowglobe', cat:'decor', name:'스노우볼', size:1.2, footW:1, footH:1, desc:'눈이 내리는 스노우볼.' },
+      { id:'campfire', cat:'decor', name:'모닥불', size:1.2, footW:1, footH:1, desc:'장작이 타닥타닥 타오르는 모닥불.' },
     ];
     // 소비 아이템(배치 불가) — 홈에서 밥그릇/물그릇을 탭해 채울 때 소모. 알뜰샵 "소비" 탭에서 구매.
     const CONSUM_CATALOG = [
@@ -2605,7 +2862,7 @@
       cat_puma:{ walk:'assets/pets/cat/cat_puma/walk.png', frames:8, stills:true, scale:5 },
       cat_snowleopard:{ walk:'assets/pets/cat/cat_snowleopard/walk.png', frames:8, stills:true, scale:5 },
       cat_caracal:{ walk:'assets/pets/cat/cat_caracal/walk.png', frames:8, stills:true, scale:5 },
-      cat_leopard:{ walk:'assets/pets/cat/cat_leopard/walk.png', frames:8, stills:true, scale:5 },
+      cat_leopard:{ walk:'assets/pets/cat/cat_leopard/walk.png', frames:8, stills:true, scale:5, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, run:8, jump:6, yawn:6, lick:6 } },
       cat_blackpanther:{ walk:'assets/pets/cat/cat_blackpanther/walk.png', frames:8, stills:true, scale:5 },
       cat_ocelot:{ walk:'assets/pets/cat/cat_ocelot/walk.png', frames:8, stills:true, scale:4 },
       cat_sandcat:{ walk:'assets/pets/cat/cat_sandcat/walk.png', frames:6, stills:true },
@@ -3544,7 +3801,7 @@
     const SHADOW_PAL={S:'#12240c'};
     function shadowSvg(opt){ return pxSvg(M_SHADOW, SHADOW_PAL, opt); }
     // 알뜰샵·팔레트·격자용 대표 아트(물그릇은 물 채운 파란 그릇으로 구분 표시)
-    function furnMatrix(id){ return {pond:M_POND,cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT,catwheel:M_CATWHEEL,rug:M_RUG,window:M_WINDOW,fishtank:M_FISHTANK,fireplace:M_FIREPLACE,fan:M_FAN,hammock:M_HAMMOCK,teaser:M_TEASER,wallclock:M_WALLCLOCK,hangplant:M_HANGPLANT,mobile:M_MOBILE,chandelier:M_CHANDELIER,jingleball:M_JINGLEBALL,frame:M_FRAME,shelf:M_SHELF,mirror:M_MIRROR,neon:M_NEON,sconce:M_SCONCE,garland:M_GARLAND,poster:M_POSTER,tapestry:M_TAPESTRY,cactus:M_CACTUS,yarnbasket:M_YARNBASKET,floorlamp:M_FLOORLAMP,beanbag:M_BEANBAG,groomstation:M_GROOMSTATION,springtoy:M_SPRINGTOY,tunnel:M_TUNNEL,teepee:M_TEEPEE,bookshelf:M_BOOKSHELF,birdcage:M_BIRDCAGE,lavalamp:M_LAVALAMP,laserpost:M_LASERPOST,waterfountain:M_WATERFOUNTAIN,sofa:M_SOFA,recordplayer:M_RECORDPLAYER,terrarium:M_TERRARIUM,ballpit:M_BALLPIT,grandfaclock:M_GRANDFACLOCK,bunkbed:M_BUNKBED,crystalfountain:M_CRYSTALFOUNTAIN,dartboard:M_DARTBOARD,cuckooclock:M_CUCKOOCLOCK}[id]; }
+    function furnMatrix(id){ return {pond:M_POND,cushion:M_CUSHION,bowl:M_BOWL,waterbowl:M_WATERBOWL_WATER,tower:M_TOWER,scratcher:M_SCRATCHER,litterbox:M_LITTER,pethouse:M_PETHOUSE,plant:M_PLANT,catwheel:M_CATWHEEL,rug:M_RUG,window:M_WINDOW,fishtank:M_FISHTANK,fireplace:M_FIREPLACE,fan:M_FAN,hammock:M_HAMMOCK,teaser:M_TEASER,wallclock:M_WALLCLOCK,hangplant:M_HANGPLANT,mobile:M_MOBILE,chandelier:M_CHANDELIER,jingleball:M_JINGLEBALL,frame:M_FRAME,shelf:M_SHELF,mirror:M_MIRROR,neon:M_NEON,sconce:M_SCONCE,garland:M_GARLAND,poster:M_POSTER,tapestry:M_TAPESTRY,cactus:M_CACTUS,yarnbasket:M_YARNBASKET,floorlamp:M_FLOORLAMP,beanbag:M_BEANBAG,groomstation:M_GROOMSTATION,springtoy:M_SPRINGTOY,tunnel:M_TUNNEL,teepee:M_TEEPEE,bookshelf:M_BOOKSHELF,birdcage:M_BIRDCAGE,lavalamp:M_LAVALAMP,laserpost:M_LASERPOST,waterfountain:M_WATERFOUNTAIN,sofa:M_SOFA,recordplayer:M_RECORDPLAYER,terrarium:M_TERRARIUM,ballpit:M_BALLPIT,grandfaclock:M_GRANDFACLOCK,bunkbed:M_BUNKBED,crystalfountain:M_CRYSTALFOUNTAIN,dartboard:M_DARTBOARD,cuckooclock:M_CUCKOOCLOCK,roundbed:M_ROUNDBED,donutbed:M_DONUTBED,cavebed:M_CAVEBED,canopybed:M_CANOPYBED,throne:M_THRONE,mousetoy:M_MOUSETOY,catnippillow:M_CATNIPPILLOW,puzzlefeeder:M_PUZZLEFEEDER,balltrack:M_BALLTRACK,teetertoy:M_TEETERTOY,bubblemachine:M_BUBBLEMACHINE,bonsai:M_BONSAI,globe:M_GLOBE,snowglobe:M_SNOWGLOBE,campfire:M_CAMPFIRE}[id]; }
     function furnSvg(id, opt){ return pxSvg(furnMatrix(id), FURN_PALS[id], opt); }
     // 캠 전용 연출(움직이는 부분만 오버레이로 분리해 CSS 애니메이션): 같은 매트릭스를 팔레트만 나눠 두 겹으로 그림.
     //  base=움직이는 글자 제외, fx=그 글자만 → 완벽히 겹쳐 정지 배경 + 움직이는 부품(캣휠 트레드 회전·펫알 방울 흔들림·화분 잎 살랑).
@@ -3587,6 +3844,13 @@
       grandfaclock: {type:'swing', move:['O', 'o', 'K'] },
       crystalfountain: {type:'drift', move:['A', 'a', 'H', 'h', 's', 'K', 'C', 'c', 'B'] },
       cuckooclock: {type:'swing', move:['O', 'o', 'Y', 'k', 'K'] },
+      balltrack: {type:'spin', move:['R', 'r', 'Y', 'G'] },
+      teetertoy: {type:'swing', move:['R', 'r', 'B', 'b', 'H'] },
+      bubblemachine: {type:'drift', move:['B', 'b', 'L'] },
+      bonsai: {type:'sway', move:['G', 'L', 'l', 'I', 'f'] },
+      globe: {type:'spin', move:['A', 'a', 'G', 'g', 'L'] },
+      snowglobe: {type:'drift', move:['S', 's', 'H'] },
+      campfire: {type:'flicker', move:['f', 'F', 'r', 'o'] },
     };
     function palPick(pal, keys, keep){ const o={}; Object.keys(pal).forEach(function(k){ const on=keys.indexOf(k)>=0; if(on===keep) o[k]=pal[k]; }); return o; }
     // 연출 있는 가구를 base+fx 겹 SVG로. (연출 없으면 일반 furnSvg 반환)
@@ -3611,7 +3875,7 @@
     // 방(dock·홈)에서의 가구 렌더 높이(px) — 발자국 세로 칸수(footH)에 비례해 키움(캣타워 6칸=제일 큼, 스크래처 1칸=고양이 키만큼, 방석·밥그릇 1칸).
     // 고양이 상호작용(캣타워 3층 올라가기 등)이 맞아떨어지도록 렌더·엔진(fh)이 같은 값을 쓴다. depth(뒤로 갈수록) 작게.
     // 방 렌더 높이 배율(실물감) — 캣타워 제일 큼, 스크래처는 고양이 키만큼, 화장실=낮은 상자, 방석·그릇 작게.
-    const ROOM_H = { pond:2.2, tower:2.5, scratcher:1.4, pethouse:2.8, catwheel:3.0, plant:1.5, litterbox:0.75, cushion:1, bowl:0.5, waterbowl:0.5, rug:2.6, window:1.4, fishtank:1.4, fireplace:1.4, fan:2.7, hammock:1.8, teaser:2.4, wallclock:1.4, hangplant:1.4, mobile:1.4, chandelier:2.2, jingleball:0.7, frame:1.4, shelf:1.4, mirror:1.4, neon:1.4, sconce:1.4, garland:1.4, poster:1.4, tapestry:1.4, cactus:1.5, yarnbasket:1.0, floorlamp:2.6, beanbag:1.15, groomstation:1.5, springtoy:1.3, tunnel:1.2, teepee:2.4, bookshelf:2.6, birdcage:2.2, lavalamp:2.0, laserpost:1.6, waterfountain:1.2, sofa:1.4, recordplayer:1.2, terrarium:1.6, ballpit:1.6, grandfaclock:2.8, bunkbed:2.8, crystalfountain:2.4, dartboard:1.4, cuckooclock:1.4 };   // 1×1 벽 가구=1.4: 벽 1칸에 맞춰 겹침 방지. 샹들리에=2.2(매다는 대형 센터피스, footW2). 가랜드=footW3.
+    const ROOM_H = { pond:2.2, tower:2.5, scratcher:1.4, pethouse:2.8, catwheel:3.0, plant:1.5, litterbox:0.75, cushion:1, bowl:0.5, waterbowl:0.5, rug:2.6, window:1.4, fishtank:1.4, fireplace:1.4, fan:2.7, hammock:1.8, teaser:2.4, wallclock:1.4, hangplant:1.4, mobile:1.4, chandelier:2.2, jingleball:0.7, frame:1.4, shelf:1.4, mirror:1.4, neon:1.4, sconce:1.4, garland:1.4, poster:1.4, tapestry:1.4, cactus:1.5, yarnbasket:1.0, floorlamp:2.6, beanbag:1.15, groomstation:1.5, springtoy:1.3, tunnel:1.2, teepee:2.4, bookshelf:2.6, birdcage:2.2, lavalamp:2.0, laserpost:1.6, waterfountain:1.2, sofa:1.4, recordplayer:1.2, terrarium:1.6, ballpit:1.6, grandfaclock:2.8, bunkbed:2.8, crystalfountain:2.4, dartboard:1.4, cuckooclock:1.4, roundbed:1.0, donutbed:1.0, cavebed:2.2, canopybed:2.8, throne:2.4, mousetoy:0.7, catnippillow:0.9, puzzlefeeder:1.0, balltrack:1.2, teetertoy:1.2, bubblemachine:1.6, bonsai:1.6, globe:1.4, snowglobe:1.5, campfire:1.4 };   // 1×1 벽 가구=1.4: 벽 1칸에 맞춰 겹침 방지. 샹들리에=2.2(매다는 대형 센터피스, footW2). 가랜드=footW3.
     // ---- 배치 격자(12칸) 가로 좌표 공유 헬퍼 ----
     // 에디터(평면 그리드)·드롭프리뷰·썸네일은 gridLeftFrac/gridSpanFrac(칸 좌측 edge·폭)을 그대로 쓴다.
     // 캠(원근)은 camAnchorMode로 발자국을 "가운데 정렬 + 양끝 벽 스냅" 배치해 좌우 벽까지 고르게 채운다.
@@ -3628,7 +3892,7 @@
       if(right===GRID_N && c!==1) return 'right';
       return 'center'; }
     // 가구 그래픽 가로세로비(cols/rows) — 그래픽 폭 = fh*aspect. 캠 중심 x 계산(buildActors)에 사용.
-    const FURN_ASPECT = { pond:1.722, tower:0.64, scratcher:0.842, pethouse:0.895, catwheel:1.0, plant:0.727, litterbox:1.286, cushion:1.2, bowl:1.333, waterbowl:1.333, rug:2.154, window:0.875, fishtank:1.067, fireplace:1.067, fan:0.8, hammock:0.941, teaser:0.842, wallclock:0.889, hangplant:1.0, mobile:1.333, chandelier:1.333, jingleball:1.067, frame:1.077, shelf:1.6, mirror:1.0, neon:1.143, sconce:1.143, garland:3.286, poster:1.0, tapestry:0.923, cactus:0.615, yarnbasket:0.9, floorlamp:0.64, beanbag:1.059, groomstation:0.762, springtoy:0.762, tunnel:1.421, teepee:0.8, bookshelf:0.615, birdcage:0.667, lavalamp:0.696, laserpost:0.762, waterfountain:0.762, sofa:1.688, recordplayer:0.941, terrarium:0.941, ballpit:1.867, grandfaclock:0.571, bunkbed:0.727, crystalfountain:1.368, dartboard:1.0, cuckooclock:0.762 };
+    const FURN_ASPECT = { pond:1.722, tower:0.64, scratcher:0.842, pethouse:0.895, catwheel:1.0, plant:0.727, litterbox:1.286, cushion:1.2, bowl:1.333, waterbowl:1.333, rug:2.154, window:0.875, fishtank:1.067, fireplace:1.067, fan:0.8, hammock:0.941, teaser:0.842, wallclock:0.889, hangplant:1.0, mobile:1.333, chandelier:1.333, jingleball:1.067, frame:1.077, shelf:1.6, mirror:1.0, neon:1.143, sconce:1.143, garland:3.286, poster:1.0, tapestry:0.923, cactus:0.615, yarnbasket:0.9, floorlamp:0.64, beanbag:1.059, groomstation:0.762, springtoy:0.762, tunnel:1.421, teepee:0.8, bookshelf:0.615, birdcage:0.667, lavalamp:0.696, laserpost:0.762, waterfountain:0.762, sofa:1.688, recordplayer:0.941, terrarium:0.941, ballpit:1.867, grandfaclock:0.571, bunkbed:0.727, crystalfountain:1.368, dartboard:1.0, cuckooclock:0.762, roundbed:1.385, donutbed:1.385, cavebed:1.067, canopybed:1.067, throne:1.067, mousetoy:1.333, catnippillow:1.417, puzzlefeeder:1.333, balltrack:2.083, teetertoy:1.143, bubblemachine:1.067, bonsai:0.889, globe:1.0, snowglobe:1.067, campfire:1.067 };
     function furnAspect(id){ return FURN_ASPECT[id]||1; }
     function furnRoomH(id, isDock, depth){
       const mult = ROOM_H[id] || 1;
@@ -5290,7 +5554,7 @@
     //    (구 NO_INTERACT 블랙리스트는 새 배경 가구를 누락하면 default 자리로 '위에 앉는' 버그가 재발해 화이트리스트로 전환.
     //     벽 가구(window·fireplace 등)는 seek 대상(placed)에 안 와 도달 불가 — 여기 넣지 말 것. 러그·연못 같은 바닥 아이템, 배경 가구(화장실·화분)도 제외.)
     //    ⚠️ 새 가구에 furnSpot 케이스를 추가하면 반드시 여기에도 id를 함께 등록한다.
-    const INTERACTIVE_FURN = { tower:1, pethouse:1, cushion:1, bowl:1, waterbowl:1, scratcher:1, catwheel:1, fishtank:1, fan:1, hammock:1, teaser:1, jingleball:1, yarnbasket:1, beanbag:1, groomstation:1, springtoy:1, tunnel:1, teepee:1, laserpost:1, waterfountain:1, sofa:1, ballpit:1, bunkbed:1 };
+    const INTERACTIVE_FURN = { tower:1, pethouse:1, cushion:1, bowl:1, waterbowl:1, scratcher:1, catwheel:1, fishtank:1, fan:1, hammock:1, teaser:1, jingleball:1, yarnbasket:1, beanbag:1, groomstation:1, springtoy:1, tunnel:1, teepee:1, laserpost:1, waterfountain:1, sofa:1, ballpit:1, bunkbed:1, roundbed:1, donutbed:1, cavebed:1, canopybed:1, throne:1, mousetoy:1, catnippillow:1, puzzlefeeder:1, balltrack:1, teetertoy:1 };
     // 가구별 상호작용 자리: 올라갈 높이(lift px)·바라보는 방향(face)·옆 오프셋(dx)·포즈·머무는 시간(ms)
     // 캣타워=3층 중 한 층에 올라가 정면 보며 쉼 / 방석=위에 잠시 / 밥그릇=뒤에서 앉기 / 스크래처=옆에서 잠시
     function furnSpot(a, goal){
@@ -5330,6 +5594,16 @@
       if(it==='sofa') return { lift:Math.round(fh*0.34), face:'south', dx:Math.round(a.sw*0.5)*(Math.random()<0.5?1:-1), pose:'loaf', dur:30000+Math.random()*40000 };
       if(it==='ballpit') return { lift:Math.round(fh*0.16), face:'south', dx:0, pose:'sit', dur:24000+Math.random()*30000 };
       if(it==='bunkbed') return { lift:Math.round(fh*0.5), face:(Math.random()<0.5?'east':'west'), dx:0, pose:'loaf', dur:40000+Math.random()*50000 };
+      if(it==='roundbed') return { lift:Math.round(fh*0.24), face:'south', dx:0, pose:'loaf', dur:28000+Math.random()*36000 };
+      if(it==='donutbed') return { lift:Math.round(fh*0.26), face:'south', dx:0, pose:'loaf', dur:28000+Math.random()*36000 };
+      if(it==='cavebed') return { lift:Math.round(fh*0.1), face:'south', dx:0, pose:'sit', dur:45000+Math.random()*55000 };
+      if(it==='canopybed') return { lift:Math.round(fh*0.42), face:'south', dx:0, pose:'loaf', dur:40000+Math.random()*50000 };
+      if(it==='throne') return { lift:Math.round(fh*0.3), face:'south', dx:0, pose:'sit', dur:35000+Math.random()*45000 };
+      if(it==='mousetoy') return { lift:0, face:(Math.random()<0.5?'east':'west'), dx:Math.round(a.sw*0.4)*(Math.random()<0.5?1:-1), pose:'sit', dur:10000+Math.random()*12000 };
+      if(it==='catnippillow') return { lift:Math.round(fh*0.2), face:'south', dx:0, pose:'loaf', dur:14000+Math.random()*16000 };
+      if(it==='puzzlefeeder') return { lift:0, face:'south', dx:Math.round(a.sw*0.3)*(Math.random()<0.5?1:-1), pose:'sit', dur:12000+Math.random()*14000 };
+      if(it==='balltrack') return { lift:0, face:'south', dx:Math.round(a.sw*0.4)*(Math.random()<0.5?1:-1), pose:'sit', dur:12000+Math.random()*16000 };
+      if(it==='teetertoy') return { lift:0, face:'south', dx:Math.round(a.sw*0.35)*(Math.random()<0.5?1:-1), pose:'sit', dur:10000+Math.random()*12000 };
       return { lift:0, face:'south', dx:0, pose:'loaf', dur:22000+Math.random()*26000 };
     }
     // 🎞️ 가구 → 재생 클립(선택): 밥/물그릇은 '채워진 그릇'일 때만 먹기/마시기(빈 그릇=앉기), 자동급수기는 항상 물.
@@ -6817,7 +7091,7 @@
     // @gen:end
     const ITEM_TIER = { pond:'limited', cushion:'normal', waterbowl:'normal', litterbox:'normal', plant:'normal', bowl:'uncommon', scratcher:'rare', pethouse:'epic', tower:'legend', catwheel:'limited',
       rug:'rare', fishtank:'epic', window:'legend', fireplace:'legend', fan:'legend', hammock:'legend', teaser:'legend', wallclock:'legend', hangplant:'legend', mobile:'legend', chandelier:'limited', jingleball:'legend',
-      frame:'legend', shelf:'legend', mirror:'legend', neon:'legend', sconce:'legend', garland:'legend', poster:'legend', tapestry:'legend', cactus:'rare', yarnbasket:'uncommon', floorlamp:'epic', beanbag:'rare', groomstation:'uncommon', springtoy:'epic', tunnel:'rare', teepee:'rare', bookshelf:'rare', birdcage:'epic', lavalamp:'epic', laserpost:'epic', waterfountain:'epic', sofa:'rare', recordplayer:'epic', terrarium:'epic', ballpit:'legend', grandfaclock:'legend', bunkbed:'rare', crystalfountain:'limited', dartboard:'rare', cuckooclock:'epic' };   // 러그=희귀·어항=특별·창문 등 장식/벽 가구=전설. 특별↑은 아래 isGachaOnlyItem로 자동 랜덤박스 전용
+      frame:'legend', shelf:'legend', mirror:'legend', neon:'legend', sconce:'legend', garland:'legend', poster:'legend', tapestry:'legend', cactus:'rare', yarnbasket:'uncommon', floorlamp:'epic', beanbag:'rare', groomstation:'uncommon', springtoy:'epic', tunnel:'rare', teepee:'rare', bookshelf:'rare', birdcage:'epic', lavalamp:'epic', laserpost:'epic', waterfountain:'epic', sofa:'rare', recordplayer:'epic', terrarium:'epic', ballpit:'legend', grandfaclock:'legend', bunkbed:'rare', crystalfountain:'limited', dartboard:'rare', cuckooclock:'epic', roundbed:'rare', donutbed:'rare', cavebed:'epic', canopybed:'legend', throne:'legend', mousetoy:'uncommon', catnippillow:'rare', puzzlefeeder:'rare', balltrack:'epic', teetertoy:'rare', bubblemachine:'epic', bonsai:'rare', globe:'epic', snowglobe:'epic', campfire:'epic' };   // 러그=희귀·어항=특별·창문 등 장식/벽 가구=전설. 특별↑은 아래 isGachaOnlyItem로 자동 랜덤박스 전용
     // 🪑 비(非)펫 아이템 전역 등급/가격 오버라이드 — 관리자 쓰기·전체 읽기. 미설정은 기본값(_TIER 상수/카탈로그 price).
     //   config/furniture/{id}:{tier,price} = 가구, config/wallpaper/{id} = 벽지, config/floor/{id} = 바닥 스킨.
     let _furnCfg={}, _wallCfg={}, _floorCfg={};

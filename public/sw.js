@@ -1,5 +1,5 @@
 /* 알뜰(Eggarden) 서비스워커 — 오프라인 앱 셸 캐시 */
-const CACHE_VERSION = 'eggarden-v3.489.0';
+const CACHE_VERSION = 'eggarden-v3.490.0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -703,6 +703,15 @@ const APP_SHELL = [
   './assets/pets/cat/cat_leopard/north.png',
   './assets/pets/cat/cat_leopard/east.png',
   './assets/pets/cat/cat_leopard/west.png',
+  './assets/pets/cat/cat_leopard/idle.png',
+  './assets/pets/cat/cat_leopard/sit.png',
+  './assets/pets/cat/cat_leopard/belly.png',
+  './assets/pets/cat/cat_leopard/eat.png',
+  './assets/pets/cat/cat_leopard/drink.png',
+  './assets/pets/cat/cat_leopard/run.png',
+  './assets/pets/cat/cat_leopard/jump.png',
+  './assets/pets/cat/cat_leopard/yawn.png',
+  './assets/pets/cat/cat_leopard/lick.png',
   './assets/pets/cat/cat_blackpanther/walk.png',
   './assets/pets/cat/cat_blackpanther/south.png',
   './assets/pets/cat/cat_blackpanther/north.png',

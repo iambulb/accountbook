@@ -1063,7 +1063,14 @@
     .cr-prop .ffx-sway .px  { animation:ffsway 4.6s ease-in-out infinite; }
     .cr-prop .ffx-drift .px { animation:ffdrift 10s ease-in-out infinite; }   /* 좌우로 천천히 이동(구름·금붕어) */
     .cr-prop .ffx-flicker .px { animation:ffflicker 0.85s ease-in-out infinite; transform-origin:50% 62%; }   /* 불꽃 일렁임(밑동 기준) */
-    .cr-prop .ffx-blink .px { animation:ffdecoblink 2.4s steps(1,end) infinite; }   /* 가랜드/네온 깜빡(밝기 스텝) — 반딧불 ffblink와 별개 키프레임 */
+    .cr-prop .ffx-blink .px { animation:ffdecoblink 2.4s steps(1,end) infinite; }
+    /* D1 신규 아이템 애니 속도 */
+    .cr-prop .ffx-balltrack .px { animation-duration:1.2s; }
+    .cr-prop .ffx-teetertoy .px { animation-duration:1.1s; }
+    .cr-prop .ffx-bubblemachine .px { animation-duration:1.4s; }
+    .cr-prop .ffx-bonsai .px { animation-duration:2.2s; }
+    .cr-prop .ffx-globe .px { animation-duration:2.0s; }
+    .cr-prop .ffx-snowglobe .px { animation-duration:1.6s; }   /* 가랜드/네온 깜빡(밝기 스텝) — 반딧불 ffblink와 별개 키프레임 */
     /* 🎞️ 재디자인 구조물 — 아이템별 애니 속도(더 활발하게) */
     .cr-prop .ffx-yarnbasket .px { animation-duration:2.6s; }
     .cr-prop .ffx-groomstation .px { animation-duration:2.2s; }
