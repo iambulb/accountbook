@@ -7375,8 +7375,8 @@
     function gbSunsetFx(){ return '<span class="gb-sunfx" style="color:#ee7a4a"><span class="gb-rbaura">'+lightLayers({aura:98,rays:118})+'</span>'+fxAuraTwinkles(9)+'</span>'; }
     // 🥚 펫알 배너 = 노을 씬 + 노을 테두리/FX(테마 정합) + 배너 이미지 아래 펫알 이미지·설명·소모재화 + 1뽑/10뽑(소모재화) + 확률 보기.
     function eggBannerHtml(live){
-      // 🎨 v2(개발자 미리보기): 오오라를 뜰알·무지개와 동일한 무지개로 통일 + 알 40% 축소(56→34) (사용자 지침). 라이브(v1)는 노을 오오라·기존 크기 유지.
-      const fx=_pkV2?gbRainbowFx():gbSunsetFx(), cls=_pkV2?'gb-rb gb-eglow':'gb-rb gb-sun', eh=_pkV2?34:56;
+      // 🎨 v2(개발자 미리보기): 오오라를 뜰알·무지개와 동일한 무지개로 통일 + 알 크기=뜰알 배너 메인 아이콘과 동일(52) (사용자 지침). 라이브(v1)는 노을 오오라·기존 크기 유지.
+      const fx=_pkV2?gbRainbowFx():gbSunsetFx(), cls=_pkV2?'gb-rb gb-eglow':'gb-rb gb-sun', eh=_pkV2?52:56;
       return '<div class="gbanner gb-eggbn"><div class="gb-head"><b class="gb-t gb-sunset-t">🌇 펫알 · 노을</b><span class="pk-tag">매일 만나는 새 친구</span></div>'+
         '<div class="gb-scene">'+sunsetSceneHtml()+gbCenterHtml(eggSvg(0,{h:eh}), fx, cls)+'</div>'+
         // 🥚 배너 이미지 아래 — 펫알 이미지·설명·소모재화
@@ -7388,8 +7388,8 @@
     }
     // 🎁 랜덤박스 배너 = 노을 씬 box 변형(연못 대신 선물상자 무더기+트윙클) + 상자 중앙 + 반짝임 — 펫알과 전용 배경 분화.
     function boxBannerHtml(live){
-      // 🎨 v2(개발자 미리보기): 무지개 오오라 + 박스 40% 축소(54→32) (사용자 지침). 라이브(v1)는 노을 오오라·기존 크기 유지.
-      const fx=_pkV2?gbRainbowFx():gbSunsetFx(), cls=_pkV2?'gb-rb gb-eglow':'gb-rb gb-sun', bh=_pkV2?32:54;
+      // 🎨 v2(개발자 미리보기): 무지개 오오라 + 박스 크기=뜰알 배너 메인 아이콘과 동일(52) (사용자 지침). 라이브(v1)는 노을 오오라·기존 크기 유지.
+      const fx=_pkV2?gbRainbowFx():gbSunsetFx(), cls=_pkV2?'gb-rb gb-eglow':'gb-rb gb-sun', bh=_pkV2?52:54;
       return '<div class="gbanner gb-box gb-eggbn"><div class="gb-head"><b class="gb-t gb-sunset-t">🎁 랜덤박스 · 노을</b><span class="pk-tag">방을 꾸미는 가구·바닥·벽지</span></div>'+
         '<div class="gb-scene">'+sunsetSceneHtml('banner','box')+gbCenterHtml(boxSvg({h:bh}), fx, cls)+'</div>'+
         // 🎁 배너 이미지 아래 — 랜덤박스 이미지·설명·소모재화
@@ -8120,6 +8120,10 @@
         [[73,0.30],[85,0.10],[91,0.26]].forEach(function(t,i){ pond+='<span class="pk-tuft" style="left:'+t[0]+'%;bottom:'+(t[1]*70).toFixed(1)+'%;--i:'+(i+5)+'">'+tuftSvg({h:S(11)})+'</span>'; });
         for(let i=0;i<3;i++){ const l=(70+pkRand(i,221)*22).toFixed(1), b=(16+pkRand(i,222)*26).toFixed(1), del=(pkRand(i,223)*3).toFixed(2);
           pond+='<span class="pk-star" style="left:'+l+'%;bottom:'+b+'%;z-index:4;color:#ffd84a;animation-delay:'+del+'s">'+sparkSvg({h:S(7)})+'</span>'; }
+        // 🍁 v2 추가 — 단풍 묘목 + 노을꽃 3 + 풀 1로 우측을 더 풍성하게(박스 자리 다른 요소 채움)
+        pond+='<span class="pk-tree" style="left:96%;bottom:'+(0.52*70).toFixed(1)+'%;z-index:2;--i:9"><span class="pk-canopy">'+mapleSvg({h:S(22)})+'</span><span class="pk-trunk">'+trunkSvg({h:S(10)})+'</span></span>';
+        [[67,0.20,'sw'],[97,0.30,'su'],[83,0.37,'sg']].forEach(function(t,i){ pond+='<span class="pk-flower" style="left:'+t[0]+'%;bottom:'+(t[1]*70).toFixed(1)+'%;--i:'+(i+8)+'">'+flowerSvg(t[2],{h:S(Math.max(9,Math.round(15*(1-t[1]*0.5))))})+'</span>'; });
+        pond+='<span class="pk-tuft" style="left:66%;bottom:'+(0.14*70).toFixed(1)+'%;--i:12">'+tuftSvg({h:S(10)})+'</span>';
         } else {
         // 🎁 (v1) 상자 4개(랜덤박스 2·리본선물 2)를 우측 뜰에 원근 배치(뒤=작게·위쪽) + 반짝이 3점(pk-star 트윙클, 결정적 pkRand).
         const GB=[[71,0.30,1,17],[81,0.14,0,22],[89,0.30,0,14],[76,0.04,1,19]];   // [left%, depth, 1=리본선물, 기준 h]
@@ -8139,8 +8143,9 @@
       if(_pkV2){
         // 🎨 v2: 돌 16개를 물가 실루엣을 따라 촘촘한 링으로(지터 최소·크기 살짝 키움) + 왼쪽에 큰돌 하나(개구리 자리)
         const PSN=16; for(let i=0;i<PSN;i++){ const a=((i+0.5)/PSN)*Math.PI*2, rr=52+pkRand(i,81)*2.5,
-          cl=(50+Math.cos(a)*rr).toFixed(1), ct=(50+Math.sin(a)*(rr-2)).toFixed(1), s=Math.round(9+pkRand(i,82)*4);
-          pstones+='<span class="pk-pstone" style="left:'+cl+'%;top:'+ct+'%;">'+stoneSvg({h:S(s)})+'</span>'; }
+          cl=(50+Math.cos(a)*rr).toFixed(1), ct=(50+Math.sin(a)*(rr-2)).toFixed(1), s=Math.round(7+pkRand(i,82)*12),
+          br=(0.80+pkRand(i,83)*0.40).toFixed(2), sep=(pkRand(i,84)*0.38).toFixed(2), hue=Math.round((pkRand(i,85)-0.5)*72);   // 돌마다 크기(7~19)·톤(밝기·따뜻/차가움) 살짝 다르게
+          pstones+='<span class="pk-pstone" style="left:'+cl+'%;top:'+ct+'%;filter:brightness('+br+') sepia('+sep+') hue-rotate('+hue+'deg);">'+stoneSvg({h:S(s)})+'</span>'; }
         pstones+='<span class="pk-pstone pk-frogrock" style="left:-4%;top:48%;z-index:4;">'+stoneSvg({h:S(19)})+'</span>';
         // 🐸 청개구리 — 큰돌 위 대기 → 다이빙 → 반대편까지 헤엄 → 턴 → 되돌아와 돌 위 복귀·대기 반복(경로 pkfrog + 자세 pkfrogb 2겹)
         pstones+='<span class="pk-frog"><span class="frog-b">'+frogSvg({h:S(10)})+'</span></span>';
