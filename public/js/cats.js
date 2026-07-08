@@ -6568,15 +6568,14 @@
     // 비디오 PiP(canvas→captureStream→video PiP): 유튜브식 창 크롬(호버 시에만 컨트롤). OffscreenCanvas 워커로 백그라운드에서도 계속 그림.
     function vpipSupported(){ try{ return typeof window!=='undefined' && typeof OffscreenCanvas!=='undefined' && !!document.pictureInPictureEnabled
       && !!HTMLCanvasElement.prototype.captureStream && !!HTMLVideoElement.prototype.requestPictureInPicture && typeof Worker!=='undefined'; }catch(e){ return false; } }
-    // 📵 모바일/태블릿 감지 — PiP는 데스크톱 브라우저 전용(사용자 결정): 아이폰=canvas.captureStream 미지원이라 원천 불가(유튜브 PiP는 '진짜 비디오'라 가능),
-    // 안드로이드 Chrome/TWA=API는 전부 있으나 실기기 미검증이라 깨진 버튼 방지 차원에서 숨김(기기 검증 후 개방 여지).
-    function _pipMobileLike(){ try{
-      if(navigator.userAgentData && navigator.userAgentData.mobile) return true;               // Chromium 신뢰 신호(안드로이드 폰·TWA)
-      if(/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'')) return true;        // UA 폴백
+    // 📵 iOS 계열 감지 — 아이폰/아이패드는 canvas.captureStream 자체가 미지원이라 비디오 PiP가 원천 불가(유튜브 PiP는 '진짜 비디오'라 가능),
+    // Document PiP도 없음 → 버튼을 애초에 안 그린다. 안드로이드 Chrome/TWA는 API가 전부 있어 개방(2026-07 사용자 결정 — 기기 검증은 사용자 직접).
+    function _pipIOSLike(){ try{
+      if(/iPhone|iPad|iPod/i.test(navigator.userAgent||'')) return true;
       if(/Mac/i.test(navigator.platform||'') && (navigator.maxTouchPoints||0)>1) return true;  // iPadOS 데스크톱 위장 UA
       return false;
     }catch(e){ return false; } }
-    function pipSupported(){ return !_pipMobileLike() && (docPipSupported() || vpipSupported()); }   // 버튼 노출 기준 — 데스크톱 브라우저 + 둘 중 하나라도 지원(불가 환경은 애초에 안 그림)
+    function pipSupported(){ return !_pipIOSLike() && (docPipSupported() || vpipSupported()); }   // 버튼 노출 기준 — iOS 제외 + 둘 중 하나라도 지원(안드로이드=비디오 PiP·데스크톱=둘 다, 불가 환경은 애초에 안 그림)
     // 열려 있나 + 자가치유: 창이 pagehide 없이 죽는 엣지(브라우저가 이벤트를 못 준 경우)에도 다음 호출(매 프레임 activeStages·onGameChange 등)에서
     // 즉시 정리한다 — 안 하면 닫힌 창의 rAF에 예약된 엔진 체인이 증발한 채 _eng.raf만 남아 "펫 전체 정지"류 버그가 된다.
     function pipOpen(){ if(_pip && (!_pip.win || _pip.win.closed)) _pipClosed(); return !!_pip; }
@@ -6623,7 +6622,9 @@
     // ── PiP 방식 2종: 'video'(기본·유튜브식 — 창 크롬이 호버 시에만 보여 깔끔) / 'doc'(Document PiP — 가구 연출·움직이는 벽지까지 전부, 대신 상단바 상시 표시) ──
     // Document PiP 상단바(주소·X)는 Chrome 보안 UI라 웹에서 숨길 수 없음 → 깔끔함을 원하면 비디오 PiP로(사용자 선택). dock 버튼 길게 누르면 전환.
     function pipMode(){ try{ return localStorage.getItem('pipMode')==='doc'?'doc':'video'; }catch(e){ return 'video'; } }
-    function togglePipMode(){ const m=pipMode()==='doc'?'video':'doc'; try{ localStorage.setItem('pipMode', m); }catch(e){}
+    function togglePipMode(){ const m=pipMode()==='doc'?'video':'doc';
+      if(m==='doc' && !docPipSupported()){ toast('이 기기는 🎬 비디오 방식만 지원해요(창 방식은 데스크톱 크롬·엣지)'); return; }   // 📱 안드로이드 등 — 전환 무의미(폴백으로 어차피 비디오)
+      try{ localStorage.setItem('pipMode', m); }catch(e){}
       if(vpipOpen()) closeVideoPip(); if(pipOpen()){ try{ _pip.win.close(); }catch(e){} }   // 열려 있던 창은 닫고(방식이 다르니) 다시 열게 안내
       toast(m==='video'?'PiP 방식: 🎬 비디오 — 유튜브처럼 컨트롤이 호버 시에만 보여요(가구 연출은 정지). 버튼을 다시 눌러 여세요'
                        :'PiP 방식: 🪟 창 — 가구 연출·움직이는 배경까지 전부 나와요(상단바는 항상 표시). 버튼을 다시 눌러 여세요');
@@ -6635,7 +6636,7 @@
     function pipBtnClick(ev){ if(ev) ev.stopPropagation(); if(_pipLpFired){ _pipLpFired=false; return; } openPipCam(); }
     // 열기 디스패처 — 선택 방식 우선, 미지원이면 반대 방식 폴백
     function openPipCam(){
-      if(_pipMobileLike()){ toast('PiP 미니 캠은 데스크톱 브라우저(크롬·엣지)에서만 쓸 수 있어요', true); return; }   // 📵 버튼이 없어 정상 경로론 못 오지만 콘솔·구버전 캐시 방어
+      if(_pipIOSLike()){ toast('아이폰/아이패드 브라우저는 PiP 미니 캠을 지원하지 않아요', true); return; }   // 📵 버튼이 없어 정상 경로론 못 오지만 콘솔·구버전 캐시 방어
       if(vpipOpen()){ closeVideoPip(); return; }                       // 토글: 재탭=닫기
       if(pipOpen()){ try{ _pip.win.close(); }catch(e){} return; }
       const wantDoc = pipMode()==='doc';
