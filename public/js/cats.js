@@ -4695,6 +4695,10 @@
     const M2_LILYPAD=["...............","....GGGGGG.....","..GGGGGGGGGG...",".GGGGGGGGGGGg..",".GGGGGGGGgg....",".GGGGGGGg......",".GGGGGGGGggg...",".GGGGGGGGGGgg..","..gGGGGGGGgg...","...gggdddd....."];
     const M2_FIRE=["....h....","..hhHhh..",".hHYYYHh.",".hYYHYYh.","hYYHHHYYh",".hYYHYYh.",".hHYYYHh.","..hhHhh..","....h....","...g.....","...gg....","....b...."];
     const M2_HILL=[".............hhhhhh...............",".........hhhHHHHHHHhhh............","......hhHHHHHHHHHHHHHHhh..........","....hhHHHHHHHHHHHHHHHHHHhh........","..hhHHHHHHHHHHHHHHHHHHHHHHhh......",".hHHHHHHHHHHHHHHHHHHHHHHHHHHh.....","hHHHHHHHHHHHHHHHHHHHHHHHHHHHHh....","HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH..","HHHHHHHHHdddHHHHHHHddHHHHHHHHHHHH.","HHHHHHHddddddHHHdddddHHHHHHHHHHHH.","dddddddddddddddddddddddddddddddd.."];
+    // 🐸 청개구리(v2 노을 연못) — 옆모습(오른쪽 보기)·불룩 눈+흰 글린트·밝은 배. 왼쪽 큰돌↔연못 왕복 다이빙 연출(.pk-frog). PIL 라이트/다크/노을물 검수.
+    const M2_FROG=["..............","........XXX...",".......XEHGX..","..XXX..XGGGGX.",".XGGGXXGGGGGX.","XGGGGGGGGGWWX.","XGgGGGGGGWWX..",".XggGGGGgWX...","..XgX..XgX....",".............."];
+    const FROG_PAL={X:'#173a12',G:'#54c84a',g:'#379a34',W:'#eaffd0',E:'#101c0c',H:'#ffffff'};
+    function frogSvg(opt){ return pxSvg(M2_FROG, FROG_PAL, opt); }
     // 🟩 v2 필드 잔디 — 반복 타일은 반드시 canvas→PNG data URI(tileBg) (CLAUDE.md 규칙: SVG data URI 배경 금지). 테마별 캐시.
     const M2_GRASSTILE=["GGGGLGGGGGGDGG","GGDGGGGGLGGGGG","GGGGGGDGGGGHLG","GLGGGGGGGGDGGG","GGGGDGGGLGGGGG","GGGGGGGGGGGGDG","GDGGGHLGGGGGGG","GGGGGGGGGDGGGG","GGLGGDGGGGGGLG","GGGGGGGGGGGGGG","GDGGGGGGLGGDGG","GGGGLGGGGGGGGG","GGGGGGDGGGHLGG","GLGGGGGGGGGDGG"];
     const GRASS2_PALS={ day:{G:'#5fbf6a',L:'#74cf78',D:'#4da75a',H:'#8fdd8a'}, sunset:{G:'#6f9c50',L:'#82b05e',D:'#5d8443',H:'#9cc46e'}, night:{G:'#24402e',L:'#2f5039',D:'#1c3325',H:'#3a614a'} };
@@ -7371,8 +7375,10 @@
     function gbSunsetFx(){ return '<span class="gb-sunfx" style="color:#ee7a4a"><span class="gb-rbaura">'+lightLayers({aura:98,rays:118})+'</span>'+fxAuraTwinkles(9)+'</span>'; }
     // 🥚 펫알 배너 = 노을 씬 + 노을 테두리/FX(테마 정합) + 배너 이미지 아래 펫알 이미지·설명·소모재화 + 1뽑/10뽑(소모재화) + 확률 보기.
     function eggBannerHtml(live){
+      // 🎨 v2(개발자 미리보기): 오오라를 뜰알·무지개와 동일한 무지개로 통일 + 알 40% 축소(56→34) (사용자 지침). 라이브(v1)는 노을 오오라·기존 크기 유지.
+      const fx=_pkV2?gbRainbowFx():gbSunsetFx(), cls=_pkV2?'gb-rb gb-eglow':'gb-rb gb-sun', eh=_pkV2?34:56;
       return '<div class="gbanner gb-eggbn"><div class="gb-head"><b class="gb-t gb-sunset-t">🌇 펫알 · 노을</b><span class="pk-tag">매일 만나는 새 친구</span></div>'+
-        '<div class="gb-scene">'+sunsetSceneHtml()+gbCenterHtml(eggSvg(0,{h:56}), gbSunsetFx(), 'gb-rb gb-sun')+'</div>'+
+        '<div class="gb-scene">'+sunsetSceneHtml()+gbCenterHtml(eggSvg(0,{h:eh}), fx, cls)+'</div>'+
         // 🥚 배너 이미지 아래 — 펫알 이미지·설명·소모재화
         '<div class="gb-item"><div class="gb-item-ic">'+eggSvg(0,{h:52})+'</div>'+
           '<div class="gb-item-meta"><b>펫알</b>'+
@@ -7382,8 +7388,10 @@
     }
     // 🎁 랜덤박스 배너 = 노을 씬 box 변형(연못 대신 선물상자 무더기+트윙클) + 상자 중앙 + 반짝임 — 펫알과 전용 배경 분화.
     function boxBannerHtml(live){
+      // 🎨 v2(개발자 미리보기): 무지개 오오라 + 박스 40% 축소(54→32) (사용자 지침). 라이브(v1)는 노을 오오라·기존 크기 유지.
+      const fx=_pkV2?gbRainbowFx():gbSunsetFx(), cls=_pkV2?'gb-rb gb-eglow':'gb-rb gb-sun', bh=_pkV2?32:54;
       return '<div class="gbanner gb-box gb-eggbn"><div class="gb-head"><b class="gb-t gb-sunset-t">🎁 랜덤박스 · 노을</b><span class="pk-tag">방을 꾸미는 가구·바닥·벽지</span></div>'+
-        '<div class="gb-scene">'+sunsetSceneHtml('banner','box')+gbCenterHtml(boxSvg({h:54}), gbSunsetFx(), 'gb-rb gb-sun')+'</div>'+
+        '<div class="gb-scene">'+sunsetSceneHtml('banner','box')+gbCenterHtml(boxSvg({h:bh}), fx, cls)+'</div>'+
         // 🎁 배너 이미지 아래 — 랜덤박스 이미지·설명·소모재화
         '<div class="gb-item"><div class="gb-item-ic">'+boxSvg({h:52})+'</div>'+
           '<div class="gb-item-meta"><b>랜덤박스</b>'+
@@ -7407,6 +7415,7 @@
     // 배너 버튼 → 미리보기(소모 없음). 1회=강제 전설 단발 연출, 10회=10연차 연출(펫알·랜덤박스·뜰알 모두 지원 — 박스는 devPreview10Box). 실전은 bannerPull/openGachaTen.
     function devBannerPull(kind, ten, theme){
       if(!(typeof isDev==='function'&&isDev())) return;
+      _pkV2=true;   // 🎨 개발자 미리보기 연출(단발 리빌·10연차)도 v2 고해상도 씬 배경으로 — closeFx/closeTenFx에서 해제(라이브 뽑기 경로는 안 거침)
       if(theme==='night'){ _devPickupOverride=DEV_NIGHT_PICKUP;   // 🌙 밤 = 흑표범·카라칼 미리보기(라이브 픽업 안 건드림, FX 닫힐 때 해제)
         if(ten) devPreview10('oneExclusive', kind, theme); else devPreview(kind, 'exclusive', pickupMember()); return; }
       if(ten){ devPreview10('random', kind, theme); }
@@ -8102,12 +8111,23 @@
       // 우측 포인트 — 펫알(기본)=🪷 연못 / 랜덤박스(variant 'box')=🎁 선물상자 무더기(연못 자리에 원근 배치+트윙클). 배너 분화 지점.
       let pond='';
       if(variant==='box'){
-        // 🎁 상자 4개(랜덤박스 2·리본선물 2)를 우측 뜰에 원근 배치(뒤=작게·위쪽) + 반짝이 3점(pk-star 트윙클, 결정적 pkRand).
+        if(_pkV2){
+        // 🎨 v2: 상자 무더기·무색(검정으로 보이던) 트윙클 제거(사용자 지침) → 우측을 노을 뜰 코너로 채움: 이끼바위 + 노을꽃·풀 + 금빛 반짝임(색 명시).
+        pond+='<span class="pk-rock" style="left:81%;bottom:'+(0.34*70).toFixed(1)+'%;z-index:2;">'+rockSvg({h:S(24)})+'</span>';
+        const BF=[[70,0.12,'su'],[88,0.22,'sg'],[77,0.02,'sw'],[94,0.06,'su']];   // [left%, depth, 노을꽃 틴트]
+        for(let i=0;i<BF.length;i++){ const d=BF[i][1], hh=S(Math.max(10,Math.round(16*(1-d*0.5))));
+          pond+='<span class="pk-flower" style="left:'+BF[i][0]+'%;bottom:'+(d*70).toFixed(1)+'%;--i:'+(i+3)+'">'+flowerSvg(BF[i][2],{h:hh})+'</span>'; }
+        [[73,0.30],[85,0.10],[91,0.26]].forEach(function(t,i){ pond+='<span class="pk-tuft" style="left:'+t[0]+'%;bottom:'+(t[1]*70).toFixed(1)+'%;--i:'+(i+5)+'">'+tuftSvg({h:S(11)})+'</span>'; });
+        for(let i=0;i<3;i++){ const l=(70+pkRand(i,221)*22).toFixed(1), b=(16+pkRand(i,222)*26).toFixed(1), del=(pkRand(i,223)*3).toFixed(2);
+          pond+='<span class="pk-star" style="left:'+l+'%;bottom:'+b+'%;z-index:4;color:#ffd84a;animation-delay:'+del+'s">'+sparkSvg({h:S(7)})+'</span>'; }
+        } else {
+        // 🎁 (v1) 상자 4개(랜덤박스 2·리본선물 2)를 우측 뜰에 원근 배치(뒤=작게·위쪽) + 반짝이 3점(pk-star 트윙클, 결정적 pkRand).
         const GB=[[71,0.30,1,17],[81,0.14,0,22],[89,0.30,0,14],[76,0.04,1,19]];   // [left%, depth, 1=리본선물, 기준 h]
         for(let i=0;i<GB.length;i++){ const d=GB[i][1], l=(GB[i][0]+(pkRand(i,211)-0.5)*3).toFixed(1), z=Math.round(2+(1-d)*2), hh=S(Math.max(10,Math.round(GB[i][3]*(1-d*0.45))));
           pond+='<span class="pk-gift" style="left:'+l+'%;bottom:'+(d*70).toFixed(1)+'%;z-index:'+z+';">'+(GB[i][2]?giftSvg({h:hh}):boxSvg({h:hh}))+'</span>'; }
         for(let i=0;i<3;i++){ const l=(70+pkRand(i,221)*20).toFixed(1), b=(10+pkRand(i,222)*26).toFixed(1), del=(pkRand(i,223)*3).toFixed(2);
           pond+='<span class="pk-star" style="left:'+l+'%;bottom:'+b+'%;z-index:4;animation-delay:'+del+'s">'+sparkSvg({h:S(7)})+'</span>'; }
+        }
       } else {
       // 🪷 연못(메인 아이콘 오른쪽에 떨어뜨림) — 타원 물 + 둘레 돌 링 + 잉어 배회 + 연꽃/연잎 부유. 계곡 대체.
       // 🎏 잉어 3마리(가로): 좌·우 2마리는 오른쪽, 중앙 1마리는 왼쪽을 보며 → 오른쪽 갔다 돌아서 왼쪽(가로 핑퐁, 방향전환 시 몸 뒤집힘). ph=시작 위상(0.5≈왼쪽 바라봄)
@@ -8115,9 +8135,20 @@
       let pkoi=''; for(let i=0;i<3;i++){ const sp=KSPOT[i], dur=(8+pkRand(i,74)*3), del=(-sp.ph*dur).toFixed(2),
         sw=(0.9+pkRand(i,76)*0.4).toFixed(2), r=((11+pkRand(i,72)*3)*sz).toFixed(1);
         pkoi+='<span class="pk-pkoi" style="left:'+sp.l+'%;top:'+sp.t+'%;"><span class="koi-sw" style="--r:'+r+'px;--d:'+dur.toFixed(1)+'s;animation-delay:'+del+'s;"><span class="koi-b" style="--sw:'+sw+'s;">'+koiSvg(KC[i],{h:S(11)})+'</span></span></span>'; }
-      let pstones=''; const PSN=11; for(let i=0;i<PSN;i++){ const a=(i/PSN)*Math.PI*2, rr=53+pkRand(i,81)*3,
+      let pstones='';
+      if(_pkV2){
+        // 🎨 v2: 돌 16개를 물가 실루엣을 따라 촘촘한 링으로(지터 최소·크기 살짝 키움) + 왼쪽에 큰돌 하나(개구리 자리)
+        const PSN=16; for(let i=0;i<PSN;i++){ const a=((i+0.5)/PSN)*Math.PI*2, rr=52+pkRand(i,81)*2.5,
+          cl=(50+Math.cos(a)*rr).toFixed(1), ct=(50+Math.sin(a)*(rr-2)).toFixed(1), s=Math.round(9+pkRand(i,82)*4);
+          pstones+='<span class="pk-pstone" style="left:'+cl+'%;top:'+ct+'%;">'+stoneSvg({h:S(s)})+'</span>'; }
+        pstones+='<span class="pk-pstone pk-frogrock" style="left:-4%;top:48%;z-index:4;">'+stoneSvg({h:S(19)})+'</span>';
+        // 🐸 청개구리 — 큰돌 위 대기 → 다이빙 → 반대편까지 헤엄 → 턴 → 되돌아와 돌 위 복귀·대기 반복(경로 pkfrog + 자세 pkfrogb 2겹)
+        pstones+='<span class="pk-frog"><span class="frog-b">'+frogSvg({h:S(10)})+'</span></span>';
+      } else {
+      const PSN=11; for(let i=0;i<PSN;i++){ const a=(i/PSN)*Math.PI*2, rr=53+pkRand(i,81)*3,
         cl=(50+Math.cos(a)*rr).toFixed(1), ct=(50+Math.sin(a)*(rr-3)).toFixed(1), s=Math.round(8+pkRand(i,82)*5);
         pstones+='<span class="pk-pstone" style="left:'+cl+'%;top:'+ct+'%;">'+stoneSvg({h:S(s)})+'</span>'; }
+      }
       const LPOS=[[32,58],[66,42]]; let lilies=''; for(let i=0;i<2;i++){ const dur=(4+pkRand(i,91)*2).toFixed(1), del=(-pkRand(i,92)*4).toFixed(2);
         lilies+='<span class="pk-lily" style="left:'+LPOS[i][0]+'%;top:'+LPOS[i][1]+'%;--d:'+dur+'s;animation-delay:'+del+'s;">'+lilyPadSvg({h:S(14)})+'</span>'; }
       const LOPOS=[[58,64],[38,34]]; let lotuses=''; for(let i=0;i<2;i++){ const dur=(4.6+pkRand(i,93)*2).toFixed(1), del=(-pkRand(i,94)*4).toFixed(2);
@@ -9694,7 +9725,7 @@
         '<div class="fx-confetti">'+(conf?fxConfetti(conf):'')+'</div></div>';
       fx.className='fx on reveal';
     }
-    function closeFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx=null; _devPickupOverride=null; pullEnd(); }
+    function closeFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx=null; _devPickupOverride=null; _pkV2=false; pullEnd(); }   // _pkV2 해제 = 개발자 미리보기 v2 씬 종료(실전 뽑기에선 원래 false라 무해)
 
     // ================= 🥚×10 10연차 뽑기 연출 (개발자 미리보기 전용 · 인벤토리 무소모) =================
     // 단일 뽑기(_fx)와 완전 분리된 _fx10 상태로 구동. 타이머는 전부 _fxT/_fxClear 경유. 배경은 pickupSceneHtml('reveal')(캐시) 재사용.
@@ -9982,7 +10013,7 @@
     // 피날레에서 화면을 탭하면 그때 펫들이 배회 시작(그 전까지는 정지 유지). 1회만. 박스는 배회 없음.
     function tenFinaleTap(){ if(!_fx10 || _fx10.phase!=='finale' || _fx10._roaming) return; _fx10._roaming=true; setTenHint(''); const rm=reducedMotion(); if(!rm && !_fx10.isBox) tenStartRoam();
       const b=document.querySelector('.ten-takebtn'); if(b) _fxT(function(){ b.classList.remove('pending'); }, (rm||_fx10.isBox)?0:520); }   // 펫이 배회 시작한 뒤(≈0.5s) 입양하기 버튼 페이드인
-    function closeTenFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx10=null; _devPickupOverride=null; if(typeof markCatDirty==='function') markCatDirty(); }   // 로밍 무대(#pkRevStage) 제거 → 엔진 그룹 정리
+    function closeTenFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx10=null; _devPickupOverride=null; _pkV2=false; if(typeof markCatDirty==='function') markCatDirty(); }   // 로밍 무대(#pkRevStage) 제거 → 엔진 그룹 정리. _pkV2 해제(개발자 미리보기 v2 씬 종료)
     // 개발자 미리보기: 시나리오별 강제 결과 10개 → 연출만 재생(인벤토리 무소모)
     function devPreview10(scenario, kind, theme){ if(!isDev()) return; kind=kind||'egg';
       if(kind==='box'){ devPreview10Box(scenario, theme); return; }   // 🎁 랜덤박스 10연차(가구/바닥/벽지)

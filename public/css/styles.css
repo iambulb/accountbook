@@ -2037,6 +2037,28 @@
     @keyframes pkwave { 0%,100%{ transform:translateX(-50%) rotate(-5deg) scaleY(.97); } 50%{ transform:translateX(-50%) rotate(5deg) scaleY(1.03); } }
     .pk-v2 .pk-frame { animation-name:pkdance; animation-duration:3.4s; }
     .pk-v2 .pk-wspark { z-index:3; opacity:.9; }   /* 💧 연못 물반짝(pk-star 트윙클 재사용, currentColor) */
+    /* 🐸 v2 청개구리(노을 연못) — 왼쪽 큰돌 대기→다이빙→반대편까지 헤엄→턴→되돌아와 돌 위 복귀 반복. 경로(pkfrog: left/top)+자세(pkfrogb: 기울기·뒤집힘·도약 아크) 2겹 — 단순 왕복 금지 원칙. */
+    .pk-frog { position:absolute; left:-4%; top:30%; z-index:4; line-height:0; pointer-events:none; animation:pkfrog 13s ease-in-out infinite; }
+    .pk-frog .frog-b { display:block; image-rendering:pixelated; transform-origin:center; animation:pkfrogb 13s ease-in-out infinite; }
+    .pk-frog .px { display:block; image-rendering:pixelated; }
+    @keyframes pkfrog {   /* 좌표는 .pk-pond 기준 % — 큰돌(pk-frogrock, left:-4%/top:48%) 위에서 출발 */
+      0%,16%{ left:-4%; top:30%; } 22%{ left:16%; top:54%; } 44%{ left:78%; top:58%; }
+      52%{ left:80%; top:54%; } 72%{ left:16%; top:56%; } 78%,100%{ left:-4%; top:30%; } }
+    @keyframes pkfrogb {
+      0%,15%{ transform:rotate(0deg) scaleX(1) translateY(0); }
+      19%{ transform:rotate(38deg) scaleX(1) translateY(-4px); }    /* 도약 아크 — 코 아래로 입수 */
+      22%{ transform:rotate(8deg) scaleX(1) translateY(0); }
+      30%{ transform:rotate(12deg) scaleX(1) translateY(1px); }     /* 헤엄 킥(몸 갸웃) */
+      38%{ transform:rotate(2deg) scaleX(1) translateY(0); }
+      44%{ transform:rotate(8deg) scaleX(1) translateY(1px); }
+      52%{ transform:rotate(0deg) scaleX(-1) translateY(0); }       /* 반대편에서 턴(몸 뒤집힘) */
+      60%{ transform:rotate(-12deg) scaleX(-1) translateY(1px); }
+      68%{ transform:rotate(-2deg) scaleX(-1) translateY(0); }
+      72%{ transform:rotate(-8deg) scaleX(-1) translateY(0); }
+      76%{ transform:rotate(-36deg) scaleX(-1) translateY(-4px); }  /* 돌 위로 점프 복귀 */
+      78%,100%{ transform:rotate(0deg) scaleX(1) translateY(0); }   /* 착지 후 오른쪽 보며 대기 */
+    }
+    body.lite .pk-frog, body.lite .pk-frog .frog-b { animation:none !important; }   /* 🔋 저사양 정지(오프스크린은 pk-idle이 일시정지) */
     /* 🌈 무지개알 센터피스 오오라/트윙클(찬란한 무지개빛) */
     .gb-rbaura, .gb-rbtw { position:absolute; left:50%; top:50%; width:0; height:0; pointer-events:none; }
     .gb-rbaura { z-index:0; }
@@ -2148,7 +2170,7 @@
     .gb-item-cost { font-size:12.5px; font-weight:800; margin-top:5px; display:inline-flex; align-items:center; gap:3px; }
     .gb-item-cost .ci { display:inline-flex; align-items:center; }
     .gb-pity { text-align:center; padding:0 12px 14px; }
-    @media (prefers-reduced-motion: reduce){ .pk-cloud, .pk-tree .pk-canopy, .pk-flower, .pk-tuft, .pk-frame, .pk-bfly, .pk-bfly .bf-wing, .pk-star, .pk-fire, .pk-fire .ff-core, .pk-pkoi .koi-sw, .pk-pkoi .koi-b, .pk-lily, .pk-lotus, .pk-dfly, .pk-v2 .pk-tree .pk-canopy, .pk-v2 .pk-flower, .pk-v2 .pk-tuft, .pk-v2 .pk-frame { animation:none; } .pk-rainbow { opacity:1; animation:none; } }
+    @media (prefers-reduced-motion: reduce){ .pk-cloud, .pk-tree .pk-canopy, .pk-flower, .pk-tuft, .pk-frame, .pk-bfly, .pk-bfly .bf-wing, .pk-star, .pk-fire, .pk-fire .ff-core, .pk-pkoi .koi-sw, .pk-pkoi .koi-b, .pk-lily, .pk-lotus, .pk-dfly, .pk-v2 .pk-tree .pk-canopy, .pk-v2 .pk-flower, .pk-v2 .pk-tuft, .pk-v2 .pk-frame, .pk-frog, .pk-frog .frog-b { animation:none; } .pk-rainbow { opacity:1; animation:none; } }
     .shopcard .featrib { position:absolute; left:6px; top:6px; display:inline-flex; align-items:center; gap:3px;
       font-size:10px; font-weight:800; color:#7a5200; background:var(--gold, #f2b134); padding:2px 6px; border-radius:999px; z-index:2; }
     .shopcard .featrib svg { color:#7a5200; }
