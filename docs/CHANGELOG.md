@@ -8,6 +8,9 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 변경 — 🔑 로그인 화면 '알뜰' 워드마크 제거
+- 로그인 히어로에서 `.auth-wordmark`('알뜰' 이미지) 제거하고 펫알 픽셀 씬(`.auth-logo`)만 남김. 무지개는 auth-sky.svg에서 위로 올려 정리(index.html·styles.css).
+
 ### 변경 — 🌅 로그인 화면 하늘(auth-sky.svg) 갱신
 - 로그인 배경 하늘 픽셀 SVG 갱신. (APP_SHELL 캐시 대상이라 `CACHE_VERSION`↑ 필요.)
 
