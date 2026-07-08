@@ -4063,15 +4063,16 @@
     const TEN_POS=[[66.3,27.7], [38.5,28.4], [55.2,34.9], [28.1,41.8], [40.5,47.0], [78.9,53.5], [53.1,54.9], [65.5,60.9], [31.3,69.1], [51.6,72.5]];
     // 픽셀 껍질 조각 렌더(A=큰 곡면, B=삼각, C=작은 조각). rainbow면 무지갯빛 껍질.
     // 🌱 뜰알(한정 픽업) — 로그인 메인 아이콘(egg-garden.svg)의 '고양이 얼굴 알' + 뜰(풀밭·흙) 픽셀. 무지개는 rainbowArcSvg 재사용.
-    const M_DDEUL=[   // 🥚 뜰알(24×31) — 둥근 계란형(4톤 명암 I·W·S·D + X외곽). 검은 고양이: 귀는 '위로' 향한 둥근 돔형+안쪽귀 음영 H, 눈은 회색 1px(E, 안쪽으로 붙임), 입은 멍때리며 벌린 4px(윗입술 P·안쪽 어둠 Q·양옆 음영 q). 하단+우측하단은 '실루엣까지' 흙(o/R/r/n 4톤)·이끼(m/G/g 3톤)가 섞여 덮이고, 이끼는 우측을 타고 오름. 알 위 꽃 한 송이(F/f/C·Y·t/T).
+    const M_DDEUL=[   // 🥚 뜰알(24×31) — 둥근 계란형(4톤 명암 I·W·S·D + X외곽). 검은 고양이: 귀는 '위로' 향한 둥근 돔형+안쪽귀 음영 H, 눈은 회색 1px(E, 안쪽으로 붙임), 입은 멍때리며 벌린 4px(윗입술 P·안쪽 어둠 Q·양옆 음영 q). 하단+우측하단은 '실루엣까지' 흙(o/R/r/n 4톤 디더·윗단 하이라이트 o)·이끼(m/G/g 3톤, 좌상단 빛 방향 m 하이라이트)가 섞여 덮이고, 이끼는 우측을 타고 오름. 알 위 꽃 한 송이(F/f/C·Y·t/T).
+      // b=태비 줄무늬·c=머즐(크림) — 뜰알 팔레트에선 몸색과 동일(안 보임), v2 펫알(EGG2_PAL)에서만 치즈태비 무늬로 드러남. 실루엣은 종전과 동일(footprint 검증, scratchpad egg2_v2.py).
       "...........fCf..........","...........CYC..........","...........fCf..........","............t...........","...........tT..........",
       "..........XXXX..........","........XXXXXXXX........",".......XXIIIIWWXX.......","......XIIIIIWWWWWX......",".....XIIIIIWWWWWWSX.....",
       "....XXIIIIWWWWWWSSXX....","....XIIIIWWWWWWSSSSX....","...XIIIIWWWWWWWSSSSSX...","...XIIIIWWWWWWSSSSSSX...","..XIIIBBBWWWWSSBBBSSSX..",
-      "..XIIIBBHBWWSSBHBBSSDX..","..XIIBBBBBBBBBBBBBBDDX..","..XIWBBBBBBBBBBBBBBDDX..",".XIIWHBBBBBBBBBBBBHDDDX.",".XIWWBBBBEBBBBEBBBBDDDX.",
-      "..XWWBBBBBBBBBBBBBBggg..","..XWWBBBBBBBBBBBBBBggg..","..XWWWBBBBqPPqBBBBgggg..","..XWWWBBBBqQQqBBBBgggg..","...XWSSBBBBBBBBBBgggg...",
-      "...XSSSSBBBBBBBBggggg...","....XSSSSSBBBBRRgggg....","....XnRRRRRRRRggRggg....",".....nnRRrrrrrggrgg.....","......nnrrrrrgrrgg......",
-      "........ngnnngnn........"];
-    const DDEUL_PAL={X:'#8d8368',D:'#d8d0bd',S:'#eae3d2',W:'#f7f3ea',I:'#fffef8',B:'#2b2b31',H:'#45454f',E:'#9a9aa4',P:'#f2a0b4',Q:'#7a3a48',q:'#b56576',R:'#9c6a3c',r:'#6f4a25',o:'#b3844e',n:'#523118',G:'#5aa63c',g:'#3f7a2c',m:'#8ed46f',F:'#f9b9d0',f:'#ef8fb4',C:'#ff9ec2',Y:'#ffe06a',t:'#4e9636',T:'#3f7a2c'};
+      "..XIIIBBHBWWSSBHBBSSDX..","..XIIBBBBbBBbBBbBBBDDX..","..XIWBBBBbBBbBBbBBBDDX..",".XIIWHBBBBBBBBBBBBHDDDX.",".XIWWBBBBEBBBBEBBBBDDDX.",
+      "..XWWBbbBBBBBBBBbbBmGg..","..XWWBBbBBBBBBBBbBBGgg..","..XWWWBBBccPPccBBBmGGg..","..XWWWBBBcqQQqcBBBGGgg..","...XWSSBBBccccBBBGmGg...",
+      "...XSSSSBBBBBBBBmGGgg...","....XSSSSSBBBBooGGgg....","....XnRoRRRRoRGgrGgg....",".....nnRorrRrrGgrgg.....","......nnrrnrrGrrgg......",
+      "........nrnnngnn........"];
+    const DDEUL_PAL={X:'#8d8368',D:'#d8d0bd',S:'#eae3d2',W:'#f7f3ea',I:'#fffef8',B:'#2b2b31',H:'#45454f',E:'#9a9aa4',P:'#f2a0b4',Q:'#7a3a48',q:'#b56576',R:'#9c6a3c',r:'#6f4a25',o:'#b3844e',n:'#523118',G:'#5aa63c',g:'#3f7a2c',m:'#8ed46f',F:'#f9b9d0',f:'#ef8fb4',C:'#ff9ec2',Y:'#ffe06a',t:'#4e9636',T:'#3f7a2c',b:'#2b2b31',c:'#2b2b31'};   // b/c=몸색(검정)과 동일 — 뜰알에선 무늬 안 보임
     function ddeulEggSvg(opt, flw){ return pxSvg(M_DDEUL, flw?Object.assign({},DDEUL_PAL,flw):DDEUL_PAL, opt); }   // flw={C,F,f} 주면 꽃잎 색만 교체
     // 🌸 뜰알 FX 분리 렌더 — 오픈 연출에서 '꽃'과 '알 몸통'을 따로 그려, 알이 흔들릴 때 꽃이 줄기에서 더 크게 흔들리게(CSS .fx-ddflower). 몸통=꽃 뺀 알(M_DDEUL 5행부터).
     const M_DDEUL_FLW=[".fCf.",".CYC.",".fCf.","..t..","..T.."];
@@ -4114,8 +4115,8 @@
       "............t...........",
       "...........tT..........."
     ].concat(M_DDEUL_BODY);
-    // 치즈태비(B 몸·H 안쪽귀·E 눈 색만 교체, 형태 유지) + 황토 흙(R/r/o/n) + 연두 이끼(G/g/m) + 초록 새싹(L/V/v)
-    const EGG2_PAL=Object.assign({},DDEUL_PAL,{B:'#ef9f42',H:'#d47f2b',E:'#43290f',R:'#b8863c',r:'#8a5f28',o:'#caa055',n:'#6b4a1e',G:'#7cc94a',g:'#57a134',m:'#a8e072',L:'#a5e26b',V:'#58b840',v:'#3f8a2f'});
+    // 치즈태비(B 몸·H 안쪽귀·E 눈 + b 태비 줄무늬(이마 세로3·볼)·c 머즐/턱 크림 — 형태 유지) + 황토 흙(R/r/o/n) + 연두 이끼(G/g/m) + 초록 새싹(L/V/v)
+    const EGG2_PAL=Object.assign({},DDEUL_PAL,{B:'#ef9f42',H:'#d47f2b',E:'#43290f',b:'#c9701f',c:'#f9d9a0',R:'#b8863c',r:'#8a5f28',o:'#caa055',n:'#6b4a1e',G:'#7cc94a',g:'#57a134',m:'#a8e072',L:'#a5e26b',V:'#58b840',v:'#3f8a2f'});
     function egg2Svg(opt){ return pxSvg(M_EGG2, EGG2_PAL, opt); }
     // 🌈 무지개 새싹(색바퀴) — 왼잎 빨·주+노, 오른잎 초·파+보. 무지개 발동 조건(rbUpgradeChance) 시 새싹이 커지며 이 색으로.
     const M_EGG2_SPR_RB=["AB.DE","ABtDE",".CtF.","..t..","..T.."];
@@ -4126,7 +4127,7 @@
       const spr=sprRb?egg2SprRbSvg():pxSvg(M_EGG2_SPR, EGG2_PAL);
       return '<span class="fx-ddflower fx-ddspr'+(sprRb?' ddflw-rb ddflw-fix':'')+'">'+spr+'</span><span class="fx-ddbody">'+pxSvg(M_DDEUL_BODY, EGG2_PAL)+'</span>'; }
     // ===== 🌈 v2 무지개알(개발자 '배너 관리' 미리보기 전용) — 뜰알 복사: 고양이 검은색→무지개 채색(눈·입 유지)·꽃→커진 무지개 색바퀴 꽃 =====
-    const EGG2_RB_PAL=Object.assign({},DDEUL_PAL,{B:'RAINBOW',H:'RAINBOW'});   // 껍질·흙·이끼·눈·입은 뜰알 그대로
+    const EGG2_RB_PAL=Object.assign({},DDEUL_PAL,{B:'RAINBOW',H:'RAINBOW',b:'RAINBOW',c:'RAINBOW'});   // 껍질·흙·이끼·눈·입은 뜰알 그대로(줄무늬 b·머즐 c도 무지개에 녹임)
     function rbEgg2FxHtml(){ return '<span class="fx-ddflower ddflw-rb ddflw-fix">'+ddeulFlwRbSvg()+'</span><span class="fx-ddbody">'+pxSvg(M_DDEUL_BODY, EGG2_RB_PAL)+'</span>'; }
     // 정적 무지개알 이미지(배너 아이템 등) — 알 뒤 무지개 오오라 + 주변 무지개 트윙클(도트) + 커진 무지개꽃. h=몸통 높이(px).
     function rbEgg2Html(h){ h=h||52; const fh=Math.round(h*0.30);   // 꽃 5행(몸통 대비 19%)×1.55 ≈ 30%
@@ -4282,6 +4283,25 @@
     ];
     const GEAR_PAL={G:'#7c8698',H:'#aeb6c4',S:'#5f6875'};
     function gearSvg(opt){ return pxSvg(M_GEAR, GEAR_PAL, opt); }
+    // 🖥️ PiP(항상 위 미니 창) 아이콘 — 모니터 프레임 + 우하단으로 겹친 밝은 작은 창(16×14, 3~4톤 음영+외곽선). PIL 라이트/다크 검수 완료. dock 캠 PiP 버튼용.
+    const M_PIP = [
+      '................',
+      '.KKKKKKKKKKKKKK.',
+      '.KHHHHHHHHHHHBK.',
+      '.KHBBBBBBBBBBBK.',
+      '.KHBBBBBBBBBBBK.',
+      '.KHBBBBBBBBBBBK.',
+      '.KHBBBBBBBBBBBK.',
+      '.KHBBBKKKKKKKBK.',
+      '.KHBBBKAAAAAWKK.',
+      '.KHBBBKAAAAAWK..',
+      '.KHBBBKAAAAAWK..',
+      '.KSBBBKWWWWWWK..',
+      '.KKKKKKKKKKKKK..',
+      '................'
+    ];
+    const PIP_PAL={K:'#4a5160',B:'#7c8698',H:'#aeb6c4',S:'#5f6875',A:'#e8ecf2',W:'#c3cad6'};
+    function pipSvg(opt){ return pxSvg(M_PIP, PIP_PAL, opt); }
     // 🔔 알림 종(픽셀) — 디테일 종: 링 손잡이(구멍) + 둥근 어깨 + 세로 몸체 + 플레어 림(D) + 클래퍼. 좌상단 하이라이트(H)·우측 그림자(S)로 입체감, 외곽선(K). 세로가 길어 '찌부' 안 됨(15×18). 소식 타일·설정 '알림'·소식 헤딩·푸시 토스트 공용.
     const M_BELL = [
       '......KKK......',
@@ -6299,6 +6319,7 @@
         roomShellBase(currentWall(), currentFloor())+
         '<span class="cr-cam cd-cam" role="button" tabindex="0" aria-label="알뜰홈 열기" onclick="event.stopPropagation();coinTap(this)"><i></i>LIVE · <span class="cd-camtxt" id="cdCamTxt">'+(room().emoji?room().emoji+' ':'')+escapeHtml(room().name||'우리집')+'</span></span>'+
         batchBtnHtml()+
+        pipBtnHtml()+
         '<div class="cr-props" id="cdProps"></div><div class="cr-stage" id="cdStage"></div>'+
         roomOverlay(currentBgfx())+
         '</div>';
