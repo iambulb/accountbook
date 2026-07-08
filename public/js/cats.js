@@ -3716,7 +3716,7 @@
       cat_puma:{ walk:'assets/pets/cat/cat_puma/walk.png', frames:8, stills:true, scale:5 },
       cat_snowleopard:{ walk:'assets/pets/cat/cat_snowleopard/walk.png', frames:8, stills:true, scale:5 },
       cat_caracal:{ walk:'assets/pets/cat/cat_caracal/walk.png', frames:8, stills:true, scale:5 },
-      cat_leopard:{ walk:'assets/pets/cat/cat_leopard/walk.png', frames:8, stills:true, scale:5, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, run:8, jump:6, yawn:6, lick:6 } },
+      cat_leopard:{ walk:'assets/pets/cat/cat_leopard/walk.png', frames:8, stills:true, scale:5, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, run:8, jump:6, yawn:6, angry:4, sleep:4 } },
       cat_blackpanther:{ walk:'assets/pets/cat/cat_blackpanther/walk.png', frames:8, stills:true, scale:5 },
       cat_ocelot:{ walk:'assets/pets/cat/cat_ocelot/walk.png', frames:8, stills:true, scale:4 },
       cat_sandcat:{ walk:'assets/pets/cat/cat_sandcat/walk.png', frames:6, stills:true },
@@ -3737,8 +3737,8 @@
     function petActorPx(id, base, cap){ const raw=base*petScale(id); const lo=Math.round(base*0.55); return Math.max(lo, Math.min(Math.round(raw), cap)); }
     // ── 🎞️ 다중 모션 클립(PixelLab 프리셋) — 클립 레지스트리(단일 소스) ─────────────────────
     // 걷기 시트 1장 → 클립 N장으로 확장하되 재생기는 기존 필름(.csprf, --sheet/--fw/steps)을 그대로 재사용한다.
-    // 클립 시트 = 가로 스트립 1장(방향은 1개만 취득): 이동 계열(run·jump)=east(서쪽은 scaleX(-1) 플립),
-    // 정지/활동 계열(idle·sit·belly·eat·drink·yawn·lick·angry)=south(정면).
+    // 클립 시트 = 가로 스트립 1장(방향은 1개만 취득): 이동·눕기 계열(run·jump·sleep)=east(서쪽은 scaleX(-1) 플립),
+    // 정지/활동 계열(idle·sit·belly·eat·drink·yawn·angry)=south(정면). (lick 그루밍은 폐기 — 2026-07.)
     //  · 정적 펫: 걷기와 같은 폴더의 `<클립키>.png`(예: assets/pets/cat/cat_black/idle.png), 프레임 수는 PET_SPRITES[id].clips[키].
     //  · 런타임 펫: catalogPets/{id}.clips(프레임 메타) + catalogPetArt/{id}.clips(data URL, ensurePetArt 지연 로드).
     // fb=폴백 체인 — 클립이 없으면 순서대로 강등: 'walk'=기존 걷기 필름, 체인 소진(null)=기존 정지 스틸.
@@ -3753,8 +3753,8 @@
       eat:   { dir:'south', fps:8, fb:['sit','idle'] },
       drink: { dir:'south', fps:8, fb:['eat','sit','idle'] },
       yawn:  { dir:'south', fps:7, once:true },
-      lick:  { dir:'south', fps:8, once:true },
-      angry: { dir:'south', fps:8, once:true }
+      angry: { dir:'south', fps:8, once:true },
+      sleep: { dir:'east',  fps:4 }   // 💤 옆으로 엎드려 눈 감고 잠(느린 호흡 loop) — 미보유 펫은 폴백 null=기존 north 스틸
     };
     // 펫이 이 클립 시트를 실제로 갖고 있나 — 정적=clips 메타(파일 존재는 파이프라인이 보장), 런타임=아트(clipUrls)까지 도착해야 true.
     function hasClip(id, clip){ const sp=PET_SPRITES[id]; if(!sp||!sp.clips) return false;
@@ -5807,7 +5807,7 @@
     const ZIP_CLIP_FOLDERS = [
       ['running','run'], ['jump','jump'], ['idle','idle'],
       ['seatedonbellyidle','belly'], ['sittingonbelly','belly'], ['sitting','sit'],
-      ['eating','eat'], ['drinking','drink'], ['licking','lick'], ['yawning','yawn'], ['angry','angry']
+      ['eating','eat'], ['drinking','drink'], ['yawning','yawn'], ['angry','angry'], ['sleeping','sleep'], ['lyingdown','sleep']
     ];
     // 프레임 이미지들 → 가로 스트립 1장(canvas 합성, 최대 12프레임). 걷기·클립 공용.
     function _stripFromFrames(zip, frameNames){
@@ -6637,11 +6637,13 @@
     }
     function enterPose(a, id, pose){ a.mode='pause'; a.pose=pose; a.pause=poseDur(pose); a.cool=1400;
       a.lift=0; applyDepth(a);   // 현재 깊이의 배율/올림/z 반영(그 자리에서 쉼 — 깊이는 유지)
-      const face = pose==='sleep' ? 'north' : 'south';   // 💤 잠은 뒤돌아서(north 스틸 — 전 펫 4방향 스틸 보유), 앉기/식빵은 정면
-      const clip = pose==='sleep' ? null : (pose==='loaf' ? 'belly' : 'sit');   // 🎞️ 유휴 클립 승급(앉기=전환 후 유지·식빵=배깔기) — 미보유 펫은 폴백으로 기존 스틸
-      if(a.spr){ // 멈춰서 쉴 땐 정지 스틸/클립(잠=뒤돈 모습, 그 외=정면). 이미지가 정방향이라 플립 없음(scaleX(1)).
+      // 💤 잠: sleep 클립(옆으로 엎드려 눈 감고 잠) 보유 펫은 east 자세로 클립 재생, 미보유는 기존 north 스틸(뒤돌아 잠).
+      const hasSleep = pose==='sleep' && a.spr && hasClip(id,'sleep');
+      const face = pose==='sleep' ? (hasSleep?'east':'north') : 'south';   // 앉기/식빵은 정면
+      const clip = pose==='sleep' ? (hasSleep?'sleep':null) : (pose==='loaf' ? 'belly' : 'sit');   // 🎞️ 유휴 클립 승급 — 미보유 펫은 폴백으로 기존 스틸
+      if(a.spr){ // 멈춰서 쉴 땐 정지 스틸/클립(잠=엎드림/뒤돈 모습, 그 외=정면). 이미지가 정방향이라 플립 없음(scaleX(1)).
         actorShowStill(a, face, clip); setXform(a, 1); a._pdir=1;
-        if(pose==='sleep') actorOnce(a, 'yawn', 1, function(){ actorShowStill(a, face); setXform(a, 1); a._pdir=1; }); }   // 🥱 잠들기 전 하품(클립 보유 펫만) → 끝나면 north 수면 스틸
+        if(pose==='sleep') actorOnce(a, 'yawn', 1, function(){ actorShowStill(a, face, clip); setXform(a, 1); a._pdir=1; }); }   // 🥱 잠들기 전 하품(클립 보유 펫만) → 끝나면 수면 클립/스틸
       else { a.el.innerHTML=catPose(id, pose, {h:a.hh});
         setXform(a, a.dir); a._pdir=a.dir; }
       if(a.pkey) _petPose[a.pkey]={ until:Date.now()+a.pause, pose:pose, lift:0, face:face, clip:clip, resKey:null, resFloor:null };   // 유휴 포즈도 재빌드에 유지(방향·클립 포함)
@@ -6679,8 +6681,8 @@
         const pr=dt/33;   // ⏱️ 확률 dt 정규화(33ms=30fps 기준) — dock 12fps에서 유휴/전환/가구찾기 빈도가 방 캠의 ~2.5배 낮던 것 보정(무대 무관 동일 리듬)
         // 유휴 제스처(그 자리 앉기/식빵/낮잠) — 쿨다운 후에만. 🌙 밤(KST 21~06시)엔 낮잠 가중(수면 연출)
         if(a.mode==='roam' && a.cool<=0 && Math.random()<a.idle*pr){
-          // 🎞️ 원샷 액센트(하품/그루밍) — 클립 보유 펫만 가끔(22%) 잠깐 멈춰 1회 재생 후 다시 걷기. 미보유면 false → 아래 기존 포즈로
-          if(a.spr && Math.random()<0.22 && actorAccent(a, Math.random()<0.5?'yawn':'lick')) return;
+          // 🎞️ 원샷 액센트(하품, 가끔 하악질) — 클립 보유 펫만 가끔(22%) 잠깐 멈춰 1회 재생 후 다시 걷기. 미보유면 false → 아래 기존 포즈로
+          if(a.spr && Math.random()<0.22 && actorAccent(a, Math.random()<0.75?'yawn':'angry')) return;
           const kh=(new Date(Date.now()+9*3600000)).getUTCHours(), night=(kh>=21||kh<6);
           const pose=(night&&Math.random()<0.6)?'sleep':['loaf','sit','sleep'][Math.floor(Math.random()*3)];
           enterPose(a, id, pose); actorEmote(a, pose==='sleep'?'zz':'idle'); return; }
@@ -7018,7 +7020,7 @@
     function lsGet(k, def){ try{ const v=localStorage.getItem(k); return v==null?def:v; }catch(e){ return def; } }
     function lsSet(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
     let _petSort=lsGet('petSort','recent'), _homeSpecies=lsGet('homeSpecies','all');   // 홈 펫: 정렬 + 종류(species) 탭 (검색 제거, 도감식 종류 구분)
-    const PET_SORTS=[['recent','최신순'],['aff','애정도순'],['tier','등급순']];
+    const PET_SORTS=[['recent','최신순'],['aff','애정도순'],['tier','등급순'],['name','이름순']];
     function setPetSort(v){ _petSort=v||'recent'; lsSet('petSort',_petSort); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     function setHomeSpecies(s){ _homeSpecies=s||'all'; lsSet('homeSpecies',_homeSpecies); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     // 보유 펫 정렬 — recent(최신 획득=boughtAt)·aff(애정도)·tier(등급, 상위 먼저).
@@ -7026,6 +7028,7 @@
       const rank=id=>tierRank(CAT_TIER[id]||'normal'), aff=id=>Number((ownedCatsMap()[id]||{}).affection)||0, bat=id=>((ownedCatsMap()[id]||{}).boughtAt)||'', nm=id=>catName(id)||'';
       if(_petSort==='tier') l.sort((a,b)=> rank(b)-rank(a) || bat(b).localeCompare(bat(a)));
       else if(_petSort==='aff') l.sort((a,b)=> aff(b)-aff(a) || nm(a).localeCompare(nm(b)));
+      else if(_petSort==='name') l.sort((a,b)=> nm(a).localeCompare(nm(b),'ko'));
       else l.sort((a,b)=> bat(b).localeCompare(bat(a)));   // recent
       return l; }
     function petSpeciesOf(id){ const c=PET_CATALOG.find(x=>x.id===id); return (c&&c.species)||'cat'; }
@@ -8591,7 +8594,7 @@
         if(qty-placedAll<=0) return;                                   // 남은 수량 없음(복제 차단, 바닥+벽 합산)
         if(!wallAreaFree(r,c,w,R.wallPlaced,null)) return;             // 겹침
         R.wallPlaced[r+'_'+c]={itemId:sel}; g.home.changedAt=new Date().toISOString(); return g;
-      }).then(()=>{ touchHome(); });
+      }).then(function(res){ touchHome(); if(res&&res.committed) catHaptic(12); });
     }
     // 벽 격자 탭 → 선택한 벽 가구 배치(탭 방식, 롱프레스 드래그 없음).
     function wallPlaceClick(e){
@@ -8636,6 +8639,14 @@
     }
     // 빈 칸(그리드 배경) 탭 → 선택한 가구 배치(2×2는 그만큼 점유·겹침 방지)
     let _justDragged=false;
+    function catHaptic(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms||12); }catch(_){} }
+    // ✨ 배치 성공 시 놓인 칸에 '톡' 링 연출 — 격자 좌표로 절대배치·자동 제거(비동기 재렌더에 잠깐 지워져도 무해).
+    function placePopFx(gridId, r, c, foot){ try{ const g=$(gridId); if(!g) return;
+        const el=document.createElement('div'); el.className='place-pop';
+        el.style.left=(gridLeftFrac(c)*100)+'%'; el.style.top=(gridTopFrac(r)*100)+'%';
+        el.style.width=(gridSpanFrac(foot.w)*100)+'%'; el.style.height=(gridRowSpanFrac(foot.h)*100)+'%';
+        g.appendChild(el); setTimeout(function(){ try{ el.remove(); }catch(_){} }, 480);
+      }catch(_){} }
     // 배치 트랜잭션: 남은 수량·겹침·케어 상한을 트랜잭션 안에서 재검증(비트랜잭션 .set의 복제/겹침 레이스 차단).
     function placeItemTx(sel, r, c, foot){
       if(isWallItem(sel)) return;                                       // 벽 가구는 바닥격자 배치 불가(벽꾸미기 전용)
@@ -8647,7 +8658,7 @@
         if(!areaFree(r,c,foot.w,foot.h,R.placed,null,isFloorItem(sel))) return;         // 겹침(바닥 아이템은 겹침 허용)
         if(CARE_ITEMS.indexOf(sel)>=0){ const cnt=Object.keys(R.placed).filter(k=>R.placed[k]&&R.placed[k].itemId===sel).length; if(cnt>=1) return; }   // 케어 아이템(밥·물·화장실)은 방당 종류별 1개만
         R.placed[r+'_'+c]={itemId:sel}; g.home.changedAt=new Date().toISOString(); return g;
-      }).then(()=>{ touchHome(); });
+      }).then(function(res){ touchHome(); if(res&&res.committed){ placePopFx('placeGrid', r, c, foot); catHaptic(12); } });
     }
     function placeClick(e){
       if(_justDragged) return;                          // 드래그 직후 발생하는 click 무시
@@ -9028,10 +9039,12 @@
           const left=(gridLeftFrac(c)*100).toFixed(3), top=(((r-1)/WALL_ROWS)*100).toFixed(3), ww=(gridSpanFrac(w)*100).toFixed(3), hh=(100/WALL_ROWS).toFixed(3);
           return '<div class="gitem" style="left:'+left+'%;top:'+top+'%;width:'+ww+'%;height:'+hh+'%" onpointerdown="wallGiDown(event,\''+key+'\')" onclick="event.stopPropagation()"><span class="gsc">'+furnSvg(id,{fit:true})+'</span></div>'; }).join('');
         const wgrid='<div class="gridwall" id="wallGrid" onclick="wallPlaceClick(event)">'+witems+(witems?'':emptyGridHint())+'<div class="gdrop" id="wgdrop" hidden></div><div class="wsnap" id="wsnap" hidden></div><div class="wsnaph" id="wsnaph" hidden></div></div>';
-        const wpal=ITEM_CATALOG.filter(it=>isWallItem(it.id) && itemQty(it.id)>0).map(it=>{ const rem=itemRemaining(it.id), sold=rem<=0, ft=itemTierOf(it.id);
-          return '<button class="pitem'+(_selWall===it.id?' on':'')+(sold?' soldout':'')+'"'+(sold?' aria-disabled="true"':'')+' onpointerdown="wallPalDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selWallItem(\''+it.id+'\')"><span class="pic tbring tb-'+ft+'">'+furnSvg(it.id,{h:palPicH(it.id)})+tierBadgeHtml(ft)+'</span><span>'+it.name+'</span><span class="pq">'+(sold?'전부 배치됨':'남은 '+rem)+'</span></button>'; }).join('');
+        const wpal=ITEM_CATALOG.filter(it=>isWallItem(it.id) && itemQty(it.id)>0).map(it=>{ const rem=itemRemaining(it.id), qty=itemQty(it.id), sold=rem<=0, ft=itemTierOf(it.id);
+          return '<button class="pitem'+(_selWall===it.id?' on':'')+(sold?' soldout':'')+'"'+(sold?' aria-disabled="true"':'')+' onpointerdown="wallPalDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selWallItem(\''+it.id+'\')"><span class="pic tbring tb-'+ft+'">'+furnSvg(it.id,{h:palPicH(it.id)})+tierBadgeHtml(ft)+'</span><span>'+it.name+'</span><span class="pq">'+(sold?('보유'+qty+' · 전부 배치됨'):('보유'+qty+' · 남은'+rem))+'</span></button>'; }).join('');
         const wallHint='<div class="hintline" style="margin:8px 0 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16"/></svg>벽 가구를 <b>탭해 선택</b>하거나 <b>꾹 눌러 격자로 끌어</b> 걸어요(위=천장·아래=바닥선). 걸린 항목은 <b>꾹 눌러 드래그로 이동</b>, 짧게 탭하면 회수/판매. <b>특별↑ 벽 가구는 랜덤박스로만</b> 얻어요.</div>';
-        body=wgrid+wallHint+'<div class="palette catinv">'+(wpal||'<div class="palempty">보유한 벽 가구가 없어요<br><span>랜덤박스에서 벽 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>')+'</div>'+skinPickerHtml('wall');
+        const selBannerW=_selWall?('<div class="selbanner">'+furnSvg(_selWall,{h:22})+'<span><b>'+escapeHtml(catFurnName(_selWall))+'</b> 걸기 — 격자를 <b>탭</b>하세요</span><button class="selx" onclick="selWallItem(\''+_selWall+'\')">취소</button></div>'):'';
+        const wshop='<div class="palcatrow" style="justify-content:flex-end;margin:0 0 6px"><button class="palshop" onclick="openShop()" aria-label="알뜰샵 열기">'+coinSvg({h:13})+'알뜰샵</button></div>';
+        body=selBannerW+wgrid+wallHint+wshop+'<div class="palette catinv">'+(wpal||'<div class="palempty">보유한 벽 가구가 없어요<br><span>랜덤박스에서 벽 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>')+'</div>'+skinPickerHtml('wall');
       } else {
         // 바닥 격자(12×8, 가로×깊이) — 기존 방꾸미기(드래그 이동·롱프레스). 벽 가구는 팔레트에서 제외.
         const placed=room().placed||{};
@@ -9048,7 +9061,9 @@
           return '<button class="pitem'+(_selItem===it.id?' on':'')+(sold?' soldout':'')+'"'+(sold?' aria-disabled="true"':'')+' onpointerdown="palDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selItem(\''+it.id+'\')"><span class="pic tbring tb-'+ft+'">'+furnSvg(it.id,{h:palPicH(it.id)})+tierBadgeHtml(ft)+'</span><span>'+it.name+'</span><span class="pq">'+(sold?('보유'+qty+' · 전부 배치됨'):(foot.w+'×'+foot.h+' · 보유'+qty+' · 남은'+rem))+'</span></button>'; }).join('');
         const dragHint='<div class="hintline" style="margin:8px 0 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5V5.5a1.5 1.5 0 0 1 3 0v5"/><path d="M12 10V4.5a1.5 1.5 0 0 1 3 0V10"/><path d="M15 9.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-1a6 6 0 0 1-5.2-3l-2-3.5a1.5 1.5 0 0 1 2.6-1.5L9 14"/></svg><b>꾹 눌러서</b> 끌면 배치·이동돼요(짧게 탭하면 선택·메뉴). 화면 스크롤과 겹치지 않아요.</div>';
         const palBody=pal||'<div class="palempty">이 분류에 보유한 가구가 없어요<br><span>알뜰샵·랜덤박스에서 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>';
-        body=grid+dragHint+catTabs+'<div class="palette catinv">'+palBody+'</div>'+skinPickerHtml('floor')+bgfxPickerHtml();
+        const selBanner=_selItem?('<div class="selbanner">'+furnSvg(_selItem,{h:22})+'<span><b>'+escapeHtml(catFurnName(_selItem))+'</b> 배치 중 — 격자를 <b>탭</b>하세요</span><button class="selx" onclick="selItem(\''+_selItem+'\')">취소</button></div>'):'';   // 탭-투-플레이스 선택 상태 가시화
+        const palRow='<div class="palcatrow">'+catTabs+'<button class="palshop" onclick="openShop()" aria-label="알뜰샵 열기">'+coinSvg({h:13})+'알뜰샵</button></div>';   // 상시 알뜰샵 버튼
+        body=selBanner+grid+dragHint+palRow+'<div class="palette catinv">'+palBody+'</div>'+skinPickerHtml('floor')+bgfxPickerHtml();
       }
       return '<div class="editwrap">'+preview+toggle+placeActionsBar()+body+'</div>';
     }
