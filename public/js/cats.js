@@ -6220,6 +6220,8 @@
     function initDock(){ renderDock(); updatePetcamBtn(); }
     function renderDock(){
       const d=$('catdock'); if(!d) return;
+      // 🏢 근무 모드: 펫캠을 끄면 좌상단 브랜드를 텍스트 '알뜰'로 바꾸고 알림 뱃지도 숨김(CSS body.camoff)
+      document.body.classList.toggle('camoff', dockMode()==='hidden');
       if(dockMode()==='hidden'){ d.className='catdock hidden'; d.innerHTML=''; stopWalk(); return; }
       d.className='catdock';
       // 웹캠 정면 방: 벽지(배경) + 바닥 + 배치 가구(배경) + 걷는 고양이. 방 전체가 카드 안에 비율대로 담김(크롭 아님) — 셸·배지·무대 모두 .cd-room 직속.

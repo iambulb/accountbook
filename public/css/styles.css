@@ -132,6 +132,11 @@
       background:#f04452; color:#fff; font-size:10px; font-weight:900; line-height:1; display:flex; align-items:center; justify-content:center;
       box-shadow:0 0 0 2px var(--card); font-variant-numeric:tabular-nums; }
     .notif-badge[hidden] { display:none; }
+    /* 펫캠 꺼짐(근무 모드) — 브랜드를 정갈한 텍스트 '알뜰'로 대체, 아이콘·알림 뱃지 숨김(body.camoff는 renderDock가 토글) */
+    .brand-txt { display:none; font-size:19px; font-weight:800; letter-spacing:-.02em; color:var(--text); line-height:36px; }
+    body.camoff .brand-ic { display:none; }
+    body.camoff .brand-txt { display:block; }
+    body.camoff .brand .notif-badge, body.camoff .brand .home-badge { display:none; }
     .icon-btn { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:17px; background:var(--soft); color:var(--text2); position:relative; }
     .icon-btn svg { width:18px; height:18px; }
     /* 펫캠 토글: 꺼짐 = 흐리게 + 대각선 슬래시 */
