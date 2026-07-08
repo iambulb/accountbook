@@ -1903,6 +1903,22 @@
     .pk-tag { font-size:12.5px; font-weight:700; color:var(--sub); display:inline-flex; align-items:center; gap:4px; }
     .pk-tag b { color:var(--text); font-weight:800; }
     .pkscene { position:relative; height:156px; overflow:hidden; background:linear-gradient(#bfe6ff 0%, #dcf3ff 60%); }
+    /* 🏆 보물(랜덤박스) 배너 씬 — 무지개빛 금고 */
+    .pkscene.pk-treasure { background:linear-gradient(180deg,#241a3a 0%,#3a2a58 40%,#5a3f68 64%,#7a5540 100%); }
+    :root[data-theme="dark"] .pkscene.pk-treasure { background:linear-gradient(180deg,#160f28 0%,#281c40 40%,#402c4c 64%,#563c2c 100%); }
+    .pk-treasure .pk-tvrays { position:absolute; left:50%; top:42%; transform:translate(-50%,-50%); z-index:0; }
+    .pk-treasure .pk-thill { position:absolute; transform:translateX(-50%); image-rendering:pixelated; line-height:0; z-index:1; }
+    .pk-treasure .pk-tprop { position:absolute; transform:translateX(-50%); image-rendering:pixelated; line-height:0; }
+    .pk-treasure .pk-tgem { position:absolute; transform:translateX(-50%); image-rendering:pixelated; line-height:0; animation:pktgem var(--d,5s) ease-in-out infinite; }
+    .pk-treasure .pk-tbob { animation:pktbob 3s ease-in-out infinite; }
+    .pk-treasure .pk-tsheen { animation:pktsheen 2.4s ease-in-out infinite; }
+    .pk-treasure .pk-tglint { animation:pktglint 1.8s ease-in-out infinite; }
+    @keyframes pktgem { 0%,100%{ transform:translate(-50%,2px); } 50%{ transform:translate(-50%,-6px); } }
+    @keyframes pktbob { 0%,100%{ transform:translate(-50%,0); } 50%{ transform:translate(-50%,-4px); } }
+    @keyframes pktsheen { 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.4); } }
+    @keyframes pktglint { 0%,100%{ filter:brightness(1); } 45%{ filter:brightness(1.6); } }
+    body.lite .pk-treasure .pk-tgem, body.lite .pk-treasure .pk-tbob, body.lite .pk-treasure .pk-tsheen, body.lite .pk-treasure .pk-tglint { animation:none !important; }
+    @media (prefers-reduced-motion: reduce){ .pk-treasure .pk-tgem, .pk-treasure .pk-tbob, .pk-treasure .pk-tsheen, .pk-treasure .pk-tglint { animation:none; } }
     :root[data-theme="dark"] .pkscene { background:linear-gradient(#1f2b44,#26364f); }
     .pkscene .px, .pkscene img { image-rendering:pixelated; }
     /* 🌲 전설·신화·한정 등장 배경 = 픽업 씬 전체화면(리빌, 배회 픽업 펫 #pkRevStage 포함). 펫·텍스트(.fx-reveal.rev-scene z-index:2)는 이 위에. */

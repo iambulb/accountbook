@@ -4659,6 +4659,17 @@
     const M_HILL=[".........hhhhhh.........","......hhHHHHHHHHhh......","...hhHHHHHHHHHHHHHHhh...",".hHHHHHHHHHHHHHHHHHHHHh.","HHHHHHHHHHHHHHHHHHHHHHHH","HHHHHHHHHHHHHHHHHHHHHHHH","HHHHHHHHHHHHHHHHHHHHHHHH"];
     const HILL_DAY={H:'#5ea650',h:'#7ac468',d:'#4c8a40'}, HILL_SUNSET={H:'#7a5678',h:'#a06e8c',d:'#644460'}, HILL_NIGHT={H:'#1e3430',h:'#304a42',d:'#152622'};   // d=v2 밑그늘
     function hillSvg(pal,opt){ return pxSvg(_pkV2?M2_HILL:M_HILL, pal||HILL_DAY, opt); }
+    // 🏆 보물(랜덤박스) 배너 신규 스프라이트 — 금괴·보석(다색)·동전더미 + 금빛 언덕 팔레트. 골드/젬 팔레트 계열 재사용.
+    const HILL_TREASURE={H:'#e0b84a',h:'#F4D06B',d:'#b08a2a'};
+    const M_GOLDBAR=["..HHHHHHHHH..",".HLLLLLLLLLH.","HLMMMMMMMMMLH","DMMMMMMMMMMMD","DDMMMMMMMMMDD",".DDDDDDDDDDD."];
+    const GOLDBAR_PAL={H:'#fff0b8',L:'#F4D06B',M:'#caa23a',D:'#8a6a1e'};
+    function goldBarSvg(opt){ return pxSvg(M_GOLDBAR, GOLDBAR_PAL, opt); }
+    const M_GEM=["...HHH...","..HLLLH..",".HLLLLLH.","MLLLTLLLM","MLLTTTLLM",".MLLTLLM.",".MMLLLMM.","..MMLMM..","...MDM...","....D...."];
+    const GEM_PALS={ blue:{D:'#3f6fc4',M:'#5aa9e6',L:'#8fd0ff',T:'#dff0ff',H:'#eaf7ff'}, purple:{D:'#7d4e94',M:'#a06fd0',L:'#d0a8f0',T:'#f4eaff',H:'#efe0ff'}, pink:{D:'#c94a8a',M:'#ff5d9e',L:'#ff9ec2',T:'#ffe6f2',H:'#ffe0ef'}, green:{D:'#2f8a5e',M:'#3fae7a',L:'#7fe0b0',T:'#e6fff2',H:'#dfffee'}, red:{D:'#b23026',M:'#e0552f',L:'#ff8a6a',T:'#ffe0d4',H:'#ffdccc'}, gold:{D:'#caa23a',M:'#F4D06B',L:'#ffe89a',T:'#fffbe6',H:'#fff6df'} };
+    function gemSvg(color, opt){ return pxSvg(M_GEM, GEM_PALS[color]||GEM_PALS.blue, opt); }
+    const M_COINPILE=["....HH...HH....","..HLLLHHLLLH...",".HLLLLLLLLLLH..","HLLDLLDLLDLLLH.","HLLLLLLLLLLLLLH","DLLDLLDLLDLLDLL","DLLLLLLLLLLLLLD",".DDLLDLLDLLDDD.","..DDDDDDDDDDD.."];
+    const COINPILE_PAL={H:'#fff0b8',L:'#F4D06B',D:'#caa23a'};
+    function coinPileSvg(opt){ return pxSvg(M_COINPILE, COINPILE_PAL, opt); }
     // 🌠 무지개 별똥별(comet) — 대각선 ↘(머리 우하단 4방 별·꼬리 좌상단). 무지개는 RAINBOW 팔레트(움직이는 그라디언트), 코어=흰빛. 10연차 밤(무지개) 하늘 연출.
     const M_SHOOT=["....................","....................","....................","...R................","....R...............",".....R..............","......R.............",".......RR...........",".......RRR..........","........RRR.........",".........RRRR.R.....","..........RRRRR.....","..........RRRRRR....","...........RRRWRR...","..........RRRWWWRRR.","............RRWRR...",".............RRR....","..............R.....","..............R.....","...................."];
     const SHOOT_PAL={R:'RAINBOW',W:'#ffffff'};
@@ -7393,13 +7404,13 @@
       // 🎨 v2(개발자 미리보기): 무지개 오오라 + 박스 크기=뜰알 배너 메인 아이콘과 동일(52) (사용자 지침). 라이브(v1)는 노을 오오라·기존 크기 유지.
       const fx=_pkV2?gbRainbowFx():gbSunsetFx(), cls=_pkV2?'gb-rb gb-eglow':'gb-rb gb-sun', bh=_pkV2?52:54;
       return '<div class="gbanner gb-box gb-eggbn"><div class="gb-head"><b class="gb-t gb-sunset-t">🎁 랜덤박스 · 노을</b><span class="pk-tag">방을 꾸미는 가구·바닥·벽지</span></div>'+
-        '<div class="gb-scene">'+sunsetSceneHtml('banner','box')+gbCenterHtml(boxSvg({h:bh}), fx, cls)+'</div>'+
+        '<div class="gb-scene">'+(_pkV2?treasureSceneHtml('banner'):sunsetSceneHtml('banner','box'))+gbCenterHtml(boxSvg({h:bh}), fx, cls)+'</div>'+
         // 🎁 배너 이미지 아래 — 랜덤박스 이미지·설명·소모재화
         '<div class="gb-item"><div class="gb-item-ic">'+boxSvg({h:52})+'</div>'+
           '<div class="gb-item-meta"><b>랜덤박스</b>'+
           '<div class="gb-item-desc">열면 <b>가구·바닥·벽지</b>가 랜덤으로!<br><b>특별↑</b> 장식도 여기서 · 열 때마다 금화 1개.</div>'+
           '<div class="gb-item-cost">1뽑당 소모 '+gachaCostHtml(GACHA_PRICE,0,1)+'</div></div></div>'+
-        gbPullActions('box', GACHA_PRICE, 0, 'sunset', 'box', live)+gbPityHtml('box')+'</div>';
+        gbPullActions('box', GACHA_PRICE, 0, (_pkV2?'treasure':'sunset'), 'box', live)+gbPityHtml('box')+'</div>';
     }
     // 🌈 무지개 배너 = 밤 씬 + 알뜰 아이콘(야광색) 중앙(둥지 없음) + 찬란한 무지개 오오라·트윙클. 배너 이미지 아래 무지개알·설명·소모재화(금화) + 1뽑/10뽑(밤 연출).
     function rainbowBannerHtml(){
@@ -8084,6 +8095,41 @@
     // 🌇 노을 씬(펫알 배너 전용) — 픽업 씬 틀을 복사하되 무지개→노을: 노을 하늘·구름, 단풍나무, 노을 꽃,
     //    울타리·큰돌 대신 옆에 흐르는 계곡(물고기 헤엄)+줄지은 작은 돌들, 노을빛 뜰, 나비→고추잠자리. 결정적(pkRand)·캐시.
     let _sunsetCache={};   // 키별 캐시(mode|variant) — variant 'box'=랜덤박스 배너(연못 대신 선물상자 무더기)
+    let _treasureCache={};
+    // 🏆 보물 배너 씬 — 금은보화·보석·무지개빛 금고. 중앙(히어로 박스 자리)은 비워 양옆·상하로 트레저 배치. 다층 모션(광선·보석 부유·금괴 반짝·동전 글린트·트윙클).
+    function treasureSceneHtml(mode){
+      mode=mode||'banner'; const ck=(_pkV2?'v2|':'')+mode; if(_treasureCache[ck]) return _treasureCache[ck];
+      const reveal=mode==='reveal', sz=reveal?1.8:1, S=function(h){ return Math.max(1,Math.round(h*sz)); };
+      // ✨ 상단 — 무지개 광선/오오라 + 반짝임 다수 + 떠다니는 보석
+      let sky='<span class="pk-tvrays">'+lightLayers({aura:S(130),rays:S(160),rainbow:true})+'</span>';
+      const TWC=['#ffd84a','#8fd0ff','#ff9ec2','#d0a8f0','#ffffff'];
+      const TW=pkSlots(pkCount(14),710); for(let i=0;i<TW.length;i++){ const o=TW[i], hh=S(Math.round(5+pkRand(i,72)*4)), del=(pkRand(i,73)*2.6).toFixed(2), b=(28+(1-o.yy)*66).toFixed(1);
+        sky+='<span class="pk-star" style="left:'+o.x+'%;bottom:'+b+'%;animation-delay:'+del+'s;color:'+TWC[i%TWC.length]+'">'+sparkSvg({h:hh})+'</span>'; }
+      const GC=['blue','purple','pink','gold','green']; const FG=pkSlots(pkCount(5),720); for(let i=0;i<FG.length;i++){ const o=FG[i], hh=S(Math.round(9+pkRand(i,74)*4)), dur=(4.5+pkRand(i,75)*3).toFixed(1), del=(-pkRand(i,76)*4).toFixed(2), b=(34+(1-o.yy)*52).toFixed(1);
+        sky+='<span class="pk-tgem" style="left:'+o.x+'%;bottom:'+b+'%;--d:'+dur+'s;animation-delay:'+del+'s;">'+gemSvg(GC[i%GC.length],{h:hh})+'</span>'; }
+      // 🏆 하단 보물 더미 — 금빛 언덕 + 양옆 무더기(중앙 비움)
+      let f='<span class="pk-thill" style="left:50%;bottom:-2px;">'+hillSvg(HILL_TREASURE,{h:S(30)})+'</span>';
+      const L=[[8,8,'coinpile',18,''],[19,16,'goldbar',11,'pk-tsheen'],[26,23,'gem:purple',13,'pk-tbob'],[4,20,'crown',15,''],[33,6,'box:#ffd84a',20,''],[14,12,'gem:green',9,'pk-tglint'],[30,10,'gold',9,'pk-tglint']];
+      const R=[[92,8,'coinpile',18,''],[81,15,'goldbar',11,'pk-tsheen'],[74,23,'gem:blue',13,'pk-tbob'],[96,20,'trophy',15,''],[67,6,'box:#8fd0ff',20,''],[86,12,'gem:pink',9,'pk-tglint'],[70,10,'gold',9,'pk-tglint']];
+      function prop(a){ const l=a[0],b=a[1],kind=a[2],h=a[3],cls=a[4]; let ic;
+        if(kind==='coinpile') ic=coinPileSvg({h:S(h)});
+        else if(kind==='goldbar') ic=goldBarSvg({h:S(h)});
+        else if(kind==='crown') ic=crownSvg({h:S(h)});
+        else if(kind==='trophy') ic=trophySvg({h:S(h)});
+        else if(kind==='gold') ic=goldSvg({h:S(h)});
+        else if(kind.indexOf('gem:')===0) ic=gemSvg(kind.slice(4),{h:S(h)});
+        else ic=boxOpenSvg(kind.slice(4),true,{h:S(h)});
+        const z=(kind.indexOf('box:')===0)?2:(kind.indexOf('gem:')===0?4:3);
+        return '<span class="pk-tprop '+cls+'" style="left:'+l+'%;bottom:'+b+'%;z-index:'+z+';">'+ic+'</span>'; }
+      L.forEach(function(a){ f+=prop(a); }); R.forEach(function(a){ f+=prop(a); });
+      [[16,18],[84,18],[50,9],[28,15],[72,15],[42,7],[58,7]].forEach(function(t,i){ f+='<span class="pk-star" style="left:'+t[0]+'%;bottom:'+t[1]+'%;animation-delay:'+(pkRand(i,77)*2).toFixed(2)+'s;color:#fff0b8">'+sparkSvg({h:S(6)})+'</span>'; });
+      // 공중 트윙클(4점 별)
+      let air=''; const AR=pkSlots(pkCount(8),730); for(let i=0;i<AR.length;i++){ const o=AR[i], del=(pkRand(i,78)*2.4).toFixed(2), b=(18+(1-o.yy)*62).toFixed(1);
+        air+='<span class="pk-star" style="left:'+o.x+'%;bottom:'+b+'%;animation-delay:'+del+'s;color:#fff0b8">'+spark4Svg('#fff0b8',{h:S(7)})+'</span>'; }
+      _treasureCache[ck]='<div class="pkscene pk-treasure'+(reveal?' pk-reveal':'')+(_pkV2?' pk-v2':'')+'" aria-hidden="true">'+
+        '<div class="pk-sky">'+sky+'</div><div class="pk-field">'+f+'</div><div class="pk-air">'+air+'</div></div>';
+      return _treasureCache[ck];
+    }
     function sunsetSceneHtml(mode, variant){
       mode=mode||'banner'; const ck=(_pkV2?'v2|':'')+mode+'|'+(variant||''); if(_sunsetCache[ck]) return _sunsetCache[ck];   // v2 캐시 키 분리
       const reveal=mode==='reveal', sz=reveal?1.8:1, S=function(h){ return Math.max(1,Math.round(h*sz)); };   // reveal(10뽑 전체화면)은 스프라이트를 크게
