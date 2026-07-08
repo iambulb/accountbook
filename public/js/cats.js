@@ -10116,18 +10116,17 @@
       // 🌈 무지개 — 화면 안에서 양옆까지 감싸는 둥근(반원) 아치가 왼→오로 펼쳐진다
       st.insertAdjacentHTML('afterbegin','<div class="fx-ddrainbow" aria-hidden="true">'+authRainbowSvg()+'</div>');
       // 🦋/🍁/🌸 알 주변 — 뜰알=나비, 🌈 무지개알·무지개박스(승급 포함, rainbow)=**찬란한 무지개 색바퀴 꽃 6개**(사용자 지침 — 낙엽 대체), 그 외 펫알·랜덤박스=낙엽(단풍잎). '섹터'로 고르게 + 매 연출 랜덤 위치·경로.
-      const useRbFlw = !!(_fx && _fx.kind!=='ddeul' && _fx.rainbow);      // 무지개알·무지개박스·무지개 승급=무지개꽃
-      const useLeaf = !!(_fx && _fx.kind!=='ddeul' && !useRbFlw);         // 그 외(v2 펫알 새싹 조건 등)=낙엽
+      const useRbFlw = !!(_fx && _fx.kind!=='ddeul');      // 🌈 펫알·랜덤박스·무지개알·무지개박스 전부=무지개꽃 6개(사용자 지침 — 낙엽 폐지: v2 단풍잎의 진한 외곽선이 '검은 빛'처럼 보이던 문제도 함께 해소). 뜰알=나비.
       const T=['o','b','p','y','o','p','b']; let b=''; const N=useRbFlw?6:7, SH=-28;   // SH=전체 왼쪽 시프트
       for(let i=0;i<N;i++){
         const ang=((i+Math.random()*0.7)/N)*Math.PI*2, rx=118+Math.random()*72, ry=142+Math.random()*72;
         const mx=Math.round(Math.cos(ang)*rx)+SH, my=Math.round(Math.sin(ang)*ry);
         const hh=useRbFlw?(16+Math.round(Math.random()*6)):Math.round((13+Math.round(Math.random()*4))*1.5), dur=(6+Math.random()*5).toFixed(1), fd=(0.32+Math.random()*0.28).toFixed(2), del=(-Math.random()*8).toFixed(2);
         const inner = useRbFlw ? ('<span class="fx-rbflwig" style="--fd:'+(2.0+Math.random()*1.4).toFixed(2)+'s;animation-delay:'+(-Math.random()*2.4).toFixed(2)+'s">'+ddeulFlwRbSvg({h:hh})+'</span>')
-          : useLeaf ? ('<span class="ten-leafwig">'+mapleLeafSvg({h:hh}, randLeafCol())+'</span>') : ('<span class="bf-wing">'+butterflySvg(T[i%T.length],{h:hh})+'</span>');
+          : ('<span class="bf-wing">'+butterflySvg(T[i%T.length],{h:hh})+'</span>');
         b+='<span class="fx-ddbfly" style="margin:'+my+'px 0 0 '+mx+'px;--d:'+dur+'s;--fd:'+fd+'s;animation-delay:'+del+'s;'+bflyDriftVars(Math.random)+'">'+inner+'</span>'; }
       st.insertAdjacentHTML('beforeend','<div class="fx-ddbflies" aria-hidden="true">'+b+'</div>');
-      // 🌅 (제외) 무지개알·무지개박스 오픈의 '해 떠오름'(ten-skysun)은 넣지 않는다(사용자 지침) — 무지개 아치·낙엽만 유지. (이 경로는 rainbow=true인 단일 오픈=무지개알/무지개박스 전용. 펫알·랜덤박스는 10연차 노을에서만 해가 뜨며 그건 유지.)
+      // 🌅 (제외) 무지개알·무지개박스 오픈의 '해 떠오름'(ten-skysun)은 넣지 않는다(사용자 지침) — 무지개 아치·무지개꽃만 유지. (펫알·랜덤박스는 10연차 노을에서만 해가 뜨며 그건 유지.)
       // 🌈 뜰알이면 꽃을 무지개색으로(오픈까지 유지 플래그). 펫알이면 꽃이 없어 no-op.
       if(ddeulFlowerRb(st) && _fx) _fx._flwRb=true;
       const hint=$('fxHint'); if(hint) hint.textContent='🌈 무지개가 펼쳐져요! 한 번 더 탭!'; }
@@ -10438,7 +10437,7 @@
       for(let i=0;i<N;i++){ const ang=((i+Math.random()*0.7)/N)*Math.PI*2, rx=20+Math.random()*16, ry=16+Math.random()*16;
         const mx=Math.round(Math.cos(ang)*rx), my=Math.round(Math.sin(ang)*ry);
         const hh=9+Math.round(Math.random()*3), dur=(5+Math.random()*4).toFixed(1), del=(-Math.random()*6).toFixed(2);
-        let inner; if(th==='night') inner='<span class="ff-core ten-ffcore">'+fireflySvg({h:hh})+'</span>'; else if(th==='sunset') inner='<span class="ten-leafwig">'+mapleLeafSvg({h:hh+2}, randLeafCol())+'</span>'; else inner='<span class="bf-wing">'+butterflySvg(T[i%T.length],{h:hh})+'</span>';
+        let inner; if(th==='night') inner='<span class="ff-core ten-ffcore">'+fireflySvg({h:hh})+'</span>'; else if(th==='sunset') inner='<span class="fx-rbflwig" style="--fd:'+(2.0+Math.random()*1.2).toFixed(2)+'s;animation-delay:'+(-Math.random()*2).toFixed(2)+'s">'+ddeulFlwRbSvg({h:hh+2})+'</span>'; else inner='<span class="bf-wing">'+butterflySvg(T[i%T.length],{h:hh})+'</span>';   // 🌇 sunset(펫알 10뽑)도 낙엽 대신 무지개꽃(사용자 지침 — 1뽑과 통일)
         b+='<span class="fx-ddbfly ten-bfly" style="margin:'+my+'px 0 0 '+mx+'px;--d:'+dur+'s;animation-delay:'+del+'s;'+bflyDriftVars(Math.random)+'">'+inner+'</span>'; }
       const wrap=document.createElement('span'); wrap.className='ten-bflies'; wrap.innerHTML=b; eggEl.appendChild(wrap);
       if(it && it.kind==='ddeul'){ it._flw=DDEUL_FLW_RB; ddeulFlowerRb(eggEl); const fl=eggEl.querySelector('.fx-ddflower'); if(fl) fl.classList.add('ddflw-big'); }   // 🌈 뜰알: 이 알 꽃을 무지개색으로(오픈까지 it._flw로 유지) + 좀 더 크게(ddflw-big)
