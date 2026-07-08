@@ -1528,8 +1528,11 @@
     .ten-cat.fxc-r { --from:calc(54vw + var(--cat));  --to:calc(var(--cat) *  0.60); --poke:calc(var(--cat) * -0.16); }
     .ten-hint { position:absolute; left:0; right:0; top:80%; bottom:auto; z-index:6; text-align:center; color:#fff; font-size:14px; font-weight:800; opacity:.92; animation:fxblink 1s ease-in-out infinite; pointer-events:none; text-shadow:0 1px 3px rgba(0,0,0,.5); }   /* 둥지 '하단'에 간격 두고 배치 */
     .ten-count { position:relative; z-index:4; color:#fff; font-size:13px; font-weight:800; opacity:.82; margin-bottom:2px; letter-spacing:.06em; }
-    .ten-nexthint { position:relative; z-index:2; color:#fff; font-size:13px; font-weight:700; opacity:.78; margin-top:4px; animation:fxblink 1.2s ease-in-out infinite; }
+    .ten-nexthint { position:relative; z-index:2; color:#fff; font-size:13px; font-weight:700; opacity:.78; margin-top:4px; animation:fxblink 1.2s ease-in-out infinite; transition:opacity .25s ease; }
     .ten-card { cursor:pointer; }
+    /* 🆕 NEW·신화·한정 카드 잠금(약 1초) — 잠금 중엔 다음 힌트·SKIP 숨김/비활성, 해제되면 되살아나 '넘길 수 있음' 신호 */
+    .ten-cardholder.ten-lock .ten-nexthint { opacity:0; animation:none; }
+    .ten-cardholder.ten-lock .ten-skip { opacity:.35; pointer-events:none; }
     .ten-fintitle { position:absolute; left:0; right:0; top:26%; z-index:6; text-align:center; }   /* 무지개 밑 하늘, 조금 더 위로 */
     .ten-takebtn { position:absolute; left:50%; bottom:15%; transform:translateX(-50%); z-index:7; width:auto; min-width:0; padding:11px 26px; display:inline-flex; align-items:center; justify-content:center; opacity:1; transition:opacity .45s ease; }   /* 텍스트 길이에 맞춰 줄임 · 위로 올림(bottom 15%) */
     .ten-takebtn.pending { opacity:0; pointer-events:none; }   /* 탭 전(펫 정지)엔 숨김 → 탭해 배회 시작 시 페이드인 */
