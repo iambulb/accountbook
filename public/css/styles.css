@@ -1160,7 +1160,7 @@
     .cr-prop .ffx-pondfish .px  { animation-name:ffpondfish; animation-duration:2.8s; animation-timing-function:ease-in-out; }
     .cr-prop .ffx-pondleaf .px  { animation-name:ffleaf; animation-duration:5.6s; animation-timing-function:ease-in-out; }
     .cr-prop .ffx-pondwater .px { animation-name:ffripple; animation-duration:4.6s; animation-timing-function:ease-in-out; }
-    .cr-prop .ffx-fan .px       { transform-origin:47% 32%; animation-duration:2.6s; }   /* 케이지 정중심에서 날개 회전 */
+    .cr-prop .ffx-fan .px       { transform-origin:40.6% 35%; animation-duration:2.6s; }   /* 케이지 정중심(회전 날개·허브 bbox 중심=col6.5·row7, 16×20)에서 날개 회전 */
     .cr-prop .ffx-hammock .px   { transform-origin:50% 6%; animation-duration:4.6s; }    /* 걸이 매단 지점 */
     .cr-prop .ffx-teaser .px    { transform-origin:81% 3%; animation-duration:2.6s; }    /* 대 끝(줄 매단 지점) */
     .cr-prop .ffx-wallclock .px { transform-origin:50% 52%; animation-duration:2s; }     /* 추 피벗 */
