@@ -2027,6 +2027,10 @@
       { id:'polkadot', name:'물방울', tile:{ m:M_WALL_POLKA, pal:FLOOR_PALS.polkadot, tw:24, th:24 } },
       { id:'woodwall', name:'원목벽', tile:{ m:M_WALL_WOOD, pal:FLOOR_PALS.woodwall, tw:24, th:24 } },
       { id:'damask', name:'다마스크', tile:{ m:M_WALL_DAMASK, pal:FLOOR_PALS.damask, tw:24, th:24 } },
+      // 🌅🌈 움직이는 하늘 벽지(배너씬 기반·신화) — 구름 흐르고 해 뜨고 무지개·별이 반짝. css=하늘 그라디언트(썸네일·배경), scene=씬 종류.
+      { id:'sunset_sky', name:'노을 하늘', scene:'sunset', css:'linear-gradient(180deg,#3d2f66 0%,#7a4880 24%,#c65f6a 50%,#ef9457 74%,#ffc184 100%)' },
+      { id:'rainbow_sky', name:'무지개 하늘', scene:'rainbow', css:'linear-gradient(180deg,#bfe3ff 0%,#e9f5ff 58%,#fff6e0 100%)' },
+      { id:'night_sky', name:'별밤 하늘', scene:'night', css:'linear-gradient(180deg,#141838 0%,#2a2e57 45%,#525891 100%)' },
     ];
     function wallCss(id){ const w=WALLPAPER_CATALOG.find(x=>x.id===id)||WALLPAPER_CATALOG[0]; if(!w.tile) return w.css; if(_tileBgCache['w:'+id]) return _tileBgCache['w:'+id]; return (_tileBgCache['w:'+id]=tileBg(w.tile.m, w.tile.pal, w.tile.tw, w.tile.th)); }
     function ownsWall(id){ return id==='default' || !!(state.game&&state.game.owned.wallpapers[id]); }
@@ -2107,10 +2111,37 @@
       { id:'snow', name:'눈밭', m:M_FLOOR_SNOW, pal:FLOOR_PALS.snow, tw:24, th:24 },
       { id:'lava', name:'용암바닥', m:M_FLOOR_LAVA, pal:FLOOR_PALS.lava, tw:24, th:24 },
       { id:'clouds', name:'구름바닥', m:M_FLOOR_CLOUDS, pal:FLOOR_PALS.clouds, tw:24, th:24 },
+      // 🌅🌈 움직이는 들판 바닥(배너씬 기반·신화) — 풀·꽃이 흔들리고 나비/반딧불이 떠다님. css=들판 그라디언트(썸네일·배경), scene=씬 종류.
+      { id:'sunset_field', name:'노을 들판', scene:'sunset', css:'linear-gradient(180deg,#8a9a5a 0%,#6f9c50 100%)' },
+      { id:'rainbow_field', name:'꽃밭 들판', scene:'rainbow', css:'linear-gradient(180deg,#93c56d 0%,#79b154 100%)' },
+      { id:'night_field', name:'별밤 들판', scene:'night', css:'linear-gradient(180deg,#3a5040 0%,#2a3e34 100%)' },
     ];
-    function floorCss(id){ if(_tileBgCache['f:'+id]) return _tileBgCache['f:'+id]; const f=FLOOR_CATALOG.find(x=>x.id===id)||FLOOR_CATALOG[0]; const v=f.m? tileBg(f.m, f.pal, f.tw, f.th) : 'var(--soft2)'; return (_tileBgCache['f:'+id]=v); }
+    function floorCss(id){ if(_tileBgCache['f:'+id]) return _tileBgCache['f:'+id]; const f=FLOOR_CATALOG.find(x=>x.id===id)||FLOOR_CATALOG[0]; if(f.css) return (_tileBgCache['f:'+id]=f.css); const v=f.m? tileBg(f.m, f.pal, f.tw, f.th) : 'var(--soft2)'; return (_tileBgCache['f:'+id]=v); }
     function currentFloor(){ return room().floor||'default'; }
     function ownsFloor(id){ return id==='default' || !!(state.game&&state.game.owned&&state.game.owned.floors&&state.game.owned.floors[id]); }
+    // 🌅🌈 움직이는 배경(배너씬 기반) 벽지=하늘·바닥=들판 — .cr-wall/.cr-floor 안에 씬 스프라이트를 얹는다(신화). 위치는 결정적(pkRand)이라 재렌더에 안 튐. pk-* 클래스 재사용(모션축소·lite 전역 정지).
+    function wallSceneHtml(id){ const w=WALLPAPER_CATALOG.find(x=>x.id===id); if(!w||!w.scene) return ''; const t=w.scene; let s='';
+      const cn=pkCount(t==='night'?7:11);
+      for(let i=0;i<cn;i++){ const y=(3+pkRand(i,1)*32).toFixed(1), hh=Math.round(9+pkRand(i,2)*13), wc=Math.floor(pkRand(i,3)*3), dur=(28+pkRand(i,5)*44).toFixed(1);
+        const tn=(t==='sunset')?['so','sp','sv'][Math.floor(pkRand(i,4)*3)]:['w','b'][Math.floor(pkRand(i,4)*2)];
+        s+='<span class="pk-cloud" style="top:'+y+'%;--d:'+dur+'s;--i:'+i+'">'+cloudSvg(wc,tn,{h:hh})+'</span>'; }
+      if(t==='sunset') s+='<span class="pk-risesun">'+sunSvg({h:52})+'</span>';
+      else if(t==='rainbow') s+='<span class="pk-rainbow">'+authRainbowSvg({h:60})+'</span>';
+      else if(t==='night'){ s+='<span class="pk-moon">'+moonSvg({h:30})+'</span>'; for(let i=0;i<pkCount(14);i++){ const l=(4+pkRand(i,11)*92).toFixed(1), tp=(4+pkRand(i,12)*38).toFixed(1), hh=Math.round(3+pkRand(i,13)*4); s+='<span class="pk-star" style="left:'+l+'%;top:'+tp+'%;--i:'+i+'">'+nightStarSvg({h:hh})+'</span>'; } }
+      const HX=[18,50,82], HH=[18,16,20], hp=(t==='sunset')?HILL_SUNSET:(t==='night'?HILL_NIGHT:HILL_DAY);
+      for(let i=0;i<3;i++) s+='<span class="pk-hill" style="left:'+HX[i]+'%;bottom:calc(var(--cam-floor) - 3px);z-index:0;">'+hillSvg(hp,{h:HH[i]})+'</span>';
+      return s; }
+    function floorSceneHtml(id){ const f=FLOOR_CATALOG.find(x=>x.id===id); if(!f||!f.scene) return ''; const t=f.scene; let s='';
+      const nt=pkCount(16); for(let i=0;i<nt;i++){ const d=pkRand(i,31)*0.85, l=(2+(i+0.5)/nt*94+(pkRand(i,32)-0.5)*3.5).toFixed(1), sc=1-d*0.4, bot=(4+d*72).toFixed(1);
+        s+='<span class="pk-tuft" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+tuftSvg({h:Math.max(6,Math.round(13*sc))})+'</span>'; }
+      const fc=(t==='sunset')?['su','sg','sw']:['r','y','p'];
+      for(let i=0;i<14;i++){ const d=pkRand(i,21)*0.62, l=(5+(i+0.5)/14*90+(pkRand(i,22)-0.5)*3.5).toFixed(1), sc=1-d*0.4, bot=(4+d*68).toFixed(1);
+        s+='<span class="pk-flower" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+flowerSvg(fc[Math.floor(pkRand(i,23)*3)],{h:Math.max(8,Math.round(15*sc))})+'</span>'; }
+      if(t==='night'){ for(let i=0;i<pkCount(6);i++){ const l=(6+pkRand(i,61)*88).toFixed(1), b=(10+pkRand(i,62)*50).toFixed(1), hh=Math.round(8+pkRand(i,63)*3), dur=(5+pkRand(i,64)*4).toFixed(1), bd=(1+pkRand(i,65)*1.2).toFixed(2), del=(-pkRand(i,66)*6).toFixed(2); let _s=70; const rnd=()=>pkRand(i,_s++);
+        s+='<span class="pk-fire" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;--bd:'+bd+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="ff-core">'+fireflySvg({h:hh})+'</span></span>'; } }
+      else { const BFT=['o','b','p','y']; for(let i=0;i<pkCount(4);i++){ const l=(10+pkRand(i,71)*80).toFixed(1), b=(20+pkRand(i,72)*40).toFixed(1), hh=Math.round(9+pkRand(i,73)*4), dur=(6.5+pkRand(i,74)*5).toFixed(1), del=(-pkRand(i,75)*8).toFixed(2), fd=(0.32+pkRand(i,76)*0.24).toFixed(2); let _s=90; const rnd=()=>pkRand(i,_s++);
+        s+='<span class="pk-bfly" style="left:'+l+'%;bottom:'+b+'%;--d:'+dur+'s;--fd:'+fd+'s;animation-delay:'+del+'s;'+bflyDriftVars(rnd)+'"><span class="bf-wing">'+butterflySvg(BFT[i%4],{h:hh})+'</span></span>'; } }
+      return s; }
     // 🌸 벚꽃잎(배경효과 sakura용) — 낙엽처럼 떨어지는 분홍 꽃잎.
     const M_PETAL=[ "pH.Hp","PPHPP","PPPPP","PPPPP","pPPPp",".pPp.","..p.." ];
     const PETAL_PAL={ P:'#ffb3d1', p:'#ee88b0', H:'#ffe0ec' };
@@ -3653,8 +3684,8 @@
     function _onGameChangeNow(){
       updateNewsBadge();
       if(dockMode()!=='hidden'){   // 🔋 dock 숨김이면 dock DOM 갱신 불필요(보일 때만)
-        const dw=$('catdock'); const wall=dw&&dw.querySelector('.cr-wall'); if(wall) wall.style.background=wallCss(currentWall());
-        const fl=dw&&dw.querySelector('.cr-floor'); if(fl) fl.style.background=floorCss(currentFloor());   // 바닥 적용도 dock 캠에 라이브 반영(벽지처럼) — 없으면 메인 캠에서 바닥이 안 바뀌던 버그
+        const dw=$('catdock'); const wall=dw&&dw.querySelector('.cr-wall'); if(wall){ wall.style.background=wallCss(currentWall()); wall.innerHTML=wallSceneHtml(currentWall()); }   // 움직이는 하늘 벽지 씬도 라이브 반영
+        const fl=dw&&dw.querySelector('.cr-floor'); if(fl){ fl.style.background=floorCss(currentFloor()); fl.innerHTML=floorSceneHtml(currentFloor()); }   // 바닥 적용도 dock 캠에 라이브 반영(벽지처럼) + 움직이는 들판 씬
         const ov=dw&&dw.querySelector('.cr-overlay'); if(ov) ov.innerHTML=bgfxOverlayHtml(currentBgfx());   // 배경효과 오버레이도 방 변경 시 dock 라이브 반영
         const rn=$('cdCamTxt'); if(rn){ rn.textContent=(room().emoji?room().emoji+' ':'')+(room().name||'우리집'); }   // dock LIVE 배지의 현재 방 이름(항상 표시)
         const tr=dw&&dw.querySelector('.cr-topright'); if(tr) tr.outerHTML=batchBtnHtml();   // dock 하트(행복도)·수확칩도 라이브 반영 — renderDock에서만 만들어져 0%로 굳던 버그(지갑은 _walletDisp/syncWalletText라 재렌더 안전)
@@ -4717,7 +4748,7 @@
       renderDockProps(); renderDockCats();
     }
     // 🧱 방 셸 공통 앞부분(벽·바닥·경계선) — dock·알뜰홈·친구방·미리보기 4무대가 공유(수기 복붙으로 구조가 갈라지던 것 방지). 벽/바닥은 인라인 배경(onGameChange가 라이브 패치).
-    function roomShellBase(wallId, floorId){ return '<div class="cr-wall" style="background:'+wallCss(wallId)+'"></div><div class="cr-floor" style="background:'+floorCss(floorId)+'"></div><div class="cr-base"></div>'; }
+    function roomShellBase(wallId, floorId){ return '<div class="cr-wall" style="background:'+wallCss(wallId)+'">'+wallSceneHtml(wallId)+'</div><div class="cr-floor" style="background:'+floorCss(floorId)+'">'+floorSceneHtml(floorId)+'</div><div class="cr-base"></div>'; }
     // 은화 배지 탭 → 눌리는 액션(press) 후 알뜰홈 열기. 캠 빈 곳 탭은 아무 동작 안 함(펫만 조작). (소식은 좌상단 브랜드 아이콘)
     function coinTap(el){ const c=el||($('cdCoins')&&$('cdCoins').closest('.cd-coin')); if(c){ c.classList.remove('tap'); void c.offsetWidth; c.classList.add('tap'); } setTimeout(openCatHouse, 170); }
     // 방/dock 공용: 똥을 화장실들에 라운드로빈 분배(각 화장실 객체에 _poops 슬롯 배열 부여, 최대 5개)
@@ -6607,8 +6638,8 @@
     // 🪑 비(非)펫 아이템 전역 등급/가격 오버라이드 — 관리자 쓰기·전체 읽기. 미설정은 기본값(_TIER 상수/카탈로그 price).
     //   config/furniture/{id}:{tier,price} = 가구, config/wallpaper/{id} = 벽지, config/floor/{id} = 바닥 스킨.
     let _furnCfg={}, _wallCfg={}, _floorCfg={};
-    const FLOOR_TIER = { wood:'epic', checker:'epic', grass:'legend', ondol:'epic', starry:'epic', sand:'legend', tatami:'epic', brickpath:'epic', carpetgray:'normal', plankwhite:'normal', pinktile:'rare', herringbone:'rare', marble:'epic', galaxy:'legend', autumn:'epic', snow:'epic', lava:'legend', clouds:'epic' };   // 바닥 스킨 등급(랜덤박스 전용). 모래사장·잔디정원=전설, 나머지=특별.
-    const WALL_TIER = { brick:'epic', stripes:'epic', polkadot:'epic', woodwall:'epic', damask:'legend' };   // 벽지 등급 — 특별↑만 지정(랜덤박스 전용). 미지정 벽지는 normal(알뜰샵 구매). 새 특별↑ 벽지는 여기에 등급만 추가하면 자동 가챠 전용+박스풀 편입.
+    const FLOOR_TIER = { wood:'epic', checker:'epic', grass:'legend', ondol:'epic', starry:'epic', sand:'legend', tatami:'epic', brickpath:'epic', carpetgray:'normal', plankwhite:'normal', pinktile:'rare', herringbone:'rare', marble:'epic', galaxy:'legend', autumn:'epic', snow:'epic', lava:'legend', clouds:'epic', sunset_field:'limited', rainbow_field:'limited', night_field:'limited' };   // 움직이는 들판 바닥=신화   // 바닥 스킨 등급(랜덤박스 전용). 모래사장·잔디정원=전설, 나머지=특별.
+    const WALL_TIER = { brick:'epic', stripes:'epic', polkadot:'epic', woodwall:'epic', damask:'legend', sunset_sky:'limited', rainbow_sky:'limited', night_sky:'limited' };   // 움직이는 하늘 벽지=신화   // 벽지 등급 — 특별↑만 지정(랜덤박스 전용). 미지정 벽지는 normal(알뜰샵 구매). 새 특별↑ 벽지는 여기에 등급만 추가하면 자동 가챠 전용+박스풀 편입.
     // 🏭 비(非)펫 자산(가구/벽지/바닥) 등급·가격·가챠전용 통합 팩토리 — 3자산이 거의 같은 로직이라 테이블 1개로 묶음. 기존 함수명(effItemTier/wallBuyPrice/isGachaOnlyFloor…)은 얇은 별칭으로 유지(호출부 변경 0).
     //   cfg=전역 오버라이드(런타임 재대입되므로 게터), tierMap=기본 등급, hasDefault=무료 'default' 스킨(벽지/바닥만), devKey=devOn 로컬 오버레이 키(가구만).
     const ASSET_TYPES = {

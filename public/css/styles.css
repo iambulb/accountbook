@@ -707,12 +707,14 @@
     body.sheet-open .catdock .cspr.idle,
     body.lite .cspr.idle,
     body.sheet-open .catdock .ffx .px,
-    body.sheet-open .catdock .cr-overlay * { animation: none !important; }   /* 배경효과 오버레이도 dock가 시트에 가리면 정지 */
+    body.sheet-open .catdock .cr-overlay *,
+    body.sheet-open .catdock .cr-wall *, body.sheet-open .catdock .cr-floor * { animation: none !important; }   /* 배경효과 오버레이·움직이는 하늘/들판 씬도 dock가 시트에 가리면 정지 */
     body.sheet-open .catdock .cd-actor, body.sheet-open .catdock .csprf { will-change: auto !important; }
     /* 🔋 백그라운드/화면잠금(document.hidden·pagehide) — 앱 전면 CSS/SMIL 데코 정지. 걷기 엔진은 catLoop이 자체 정지. */
     body.apphidden .csprf,
     body.apphidden .ffx .px,
     body.apphidden .cr-overlay *,
+    body.apphidden .cr-wall *, body.apphidden .cr-floor *,
     body.apphidden .pkscene * { animation: none !important; }
     body.apphidden .cd-actor, body.apphidden .csprf, body.apphidden .pk-bfly, body.apphidden .pk-dfly, body.apphidden .pk-fire { will-change: auto !important; }
     #perfHud { position:fixed; top:0; left:6px; z-index:99999; background:rgba(0,0,0,.72); color:#3f6; font:600 11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; padding:2px 7px; border-radius:0 0 8px 8px; pointer-events:none; white-space:nowrap; letter-spacing:.02em; }
