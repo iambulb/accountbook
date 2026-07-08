@@ -1254,12 +1254,11 @@
       if(mode){ state.mode=(mode==='todo'?'todo':'ledger'); try{ localStorage.setItem('mode',state.mode); }catch(e){} renderTabBar(); updateModeToggle(); }
       go(tab || (state.mode==='todo'?'todo':'calendar'));
     }
-    // 오늘 미처리 배지 — 순회 부담을 줄임. 결정은 순수 헬퍼(homeBadgeShow), DOM 쓰기는 여기서. rerender/renderTabBar에서 호출(자동 갱신).
-    //  · 상단 로고 점: 모드 화면에서 오늘 미처리(total>0)일 때(홈/0이면 숨김).
+    // 오늘 미처리 배지 — 순회 부담을 줄임. rerender/renderTabBar에서 호출(자동 갱신).
     //  · 할일 탭 점: 오늘/지난 미완료 할일(todos>0)이 있을 때(할일 모드에서만 그 탭이 존재).
+    //  · (변경) 상단 로고의 미처리 초록 점은 제거 — 브랜드 아이콘 알림은 소식 빨간 점 하나(updateNewsBadge)로 통합(사용자 지침). applyHomeBadge(util)는 미연결 레거시로 남김(jsdom 테스트 유지).
     function updateHomeBadge(){
       var pend = (typeof todayPendingNow==='function') ? todayPendingNow() : { total:0, todos:0 };
-      if(typeof applyHomeBadge==='function') applyHomeBadge(document, state.view, pend.total);   // 로고 점(util, jsdom 테스트됨)
       if(typeof applyTodoTabDot==='function') applyTodoTabDot(document, pend.todos);              // 할일 탭 점(util, jsdom 테스트됨)
     }
     let _rerenderRAF=0, _rrReasons=null;

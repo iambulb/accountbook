@@ -124,13 +124,12 @@
     .brand { display:flex; align-items:center; gap:8px; position:relative; }
     .brand-ic { width:36px; height:36px; border-radius:9px; display:block; image-rendering:pixelated; }
     .brand-wm { height:19px; width:auto; display:block; image-rendering:pixelated; }
-    /* 오늘 미처리 있을 때 로고 위 작은 점(숫자 없음). 빨강 회피 → --income 톤, 카드색 링으로 분리 */
+    /* (레거시·미연결) 오늘 미처리 로고 점 — 브랜드 알림은 아래 .notif-badge 빨간 점 하나로 통합됨(applyHomeBadge는 core에서 호출 제거, util·테스트만 잔존) */
     .home-badge { position:absolute; top:-2px; left:20px; width:7px; height:7px; border-radius:50%; background:var(--income); box-shadow:0 0 0 2px var(--card); }
     .home-badge[hidden] { display:none; }
-    /* 좌상단 브랜드(소식) 아이콘 알림 뱃지 — 안 받은 선물+안 본 공지 수 */
-    .notif-badge { position:absolute; top:-6px; left:15px; min-width:16px; height:16px; padding:0 4px; border-radius:999px;
-      background:#f04452; color:#fff; font-size:10px; font-weight:900; line-height:1; display:flex; align-items:center; justify-content:center;
-      box-shadow:0 0 0 2px var(--card); font-variant-numeric:tabular-nums; }
+    /* 좌상단 브랜드(소식) 아이콘 알림 — 빨간 점 하나(아이콘 우측 상단, 숫자 없음). 안 받은 선물·안 쓴 쿠폰·안 본 공지(새 업데이트) 있으면 표시(updateNewsBadge) */
+    .notif-badge { position:absolute; top:-3px; left:31px; width:8px; height:8px; border-radius:50%;
+      background:#f04452; box-shadow:0 0 0 2px var(--card); }
     .notif-badge[hidden] { display:none; }
     /* 펫캠 꺼짐(근무 모드) — 브랜드를 정갈한 텍스트 '알뜰'로 대체, 아이콘·알림 뱃지 숨김(body.camoff는 renderDock가 토글) */
     .brand-txt { display:none; font-size:19px; font-weight:800; letter-spacing:-.02em; color:var(--text); line-height:36px; }
