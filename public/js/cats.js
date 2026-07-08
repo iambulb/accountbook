@@ -6670,10 +6670,15 @@
     }
     // ================= 🎬 비디오 PiP(기본) — canvas→captureStream→video.requestPictureInPicture =================
     // 유튜브 PiP와 동일한 창: 평소엔 화면만 보이고 마우스를 올려야 컨트롤(탭 복귀·X)이 나타남(사용자 요청 — Document PiP 상단바는 숨길 수 없어 방식 자체를 전환).
-    // 구성: ① 방 정적 레이어(벽지·바닥·가구·벽가구·똥·그릇 채움) = 기존 마크업(propMarkup 등 인라인 좌표)을 foreignObject SVG로 감싸 1회 래스터(ImageBitmap)
+    // 구성: ① 방 정적 레이어 2장 = back(벽지·바닥·씬 정적조각) + furn(가구·벽가구·똥·그릇 채움, 투명) — 캔버스 직접 페인트
     //      ② 펫 = 걷기 시트/정지 스틸 ImageBitmap을 워커로 넘겨 워커가 자체 미니 배회 심(걷기 필름·정면 멈춤·깊이 원근)으로 매 프레임 드로잉
-    //      ③ OffscreenCanvas + 워커 setInterval(33ms) — 워커 타이머는 탭 숨김 스로틀을 안 받아 "다른 창에서 작업 중"에도 계속 움직임(메인 rAF 불필요)
-    // 한계(수용): 가구 캠 연출(FURN_ANIM)·움직이는 벽지 씬·배경효과 오버레이는 정지(정적 래스터). 펫 걷기·배치·똥·테마는 유지.
+    //      ③ 🎡 가구 연출(FURN_ANIM) = furnLiveSvg처럼 base/fx 팔레트 분리 — base는 furn 비트맵에, fx 레이어는 별도 비트맵으로 워커가
+    //         styles.css `.ffx-*` 전사 테이블(_VPIP_FX_*)의 keyframe·속도·중심으로 매 프레임 트랜스폼(회전·이동·일렁·깜빡) 드로잉
+    //      ④ 🌌 배경효과(bgfx)·움직이는 벽지/바닥 씬 = bgfxOverlayHtml/wallSceneHtml/floorSceneHtml 배치 수식을 미러한 파티클
+    //         (나비 flit+flap·낙엽 fall+sway·잠자리 tilt·반딧불 blink·구름 흐름·별 깜빡·풀꽃 bend)을 워커가 드로잉
+    //      ⑤ OffscreenCanvas + 워커 setInterval(33ms) — 워커 타이머는 탭 숨김 스로틀을 안 받아 "다른 창에서 작업 중"에도 계속 움직임(메인 rAF 불필요)
+    // 워커 draw 순서: back → 씬 파티클(back층: 구름·별·풀꽃 — 가구 뒤) → furn → 가구 fx+펫(깊이 z-소트 통합) → bgfx 파티클(over층 — 오버레이).
+    // reduced-motion·가벼운 모드: frozen 플래그로 전부 정지 표시(DOM 정책과 동일 — lite는 연출 정지·걷기 유지).
     // 정리: leavepictureinpicture(X·토글)에서 워커 종료·스트림 정지·DOM 제거(누수 방지). 방/가구/펫 변경은 서명 가드로 비트맵만 재전송.
     let _vpip=null;   // { video, canvas, worker, stream, sigProps, sigCats } — 떠 있는 동안만
     function vpipOpen(){ return !!_vpip; }
@@ -6686,7 +6691,16 @@
       return String(s||'').replace(/var\((--[a-z0-9-]+)(?:\s*,[^)]*)?\)/gi, function(m,n){ const v=cs.getPropertyValue(n).trim(); return v||m; });
     }catch(e){ return s; } }
     function _vpipImgLoad(u){ return new Promise(function(res,rej){ const im=new Image(); im.onload=function(){ res(im); }; im.onerror=rej; im.src=u; }); }
-    function _vpipBmp(url){ return _vpipImgLoad(url).then(function(im){ return createImageBitmap(im); }); }
+    // Image → ImageBitmap. ⚠️ pxSvg 산출 SVG는 height만 있어 createImageBitmap(img)이 "intrinsic dimensions" 오류로 실패(실측 —
+    // fx/파티클이 조용히 전부 걸러지던 버그) → 캔버스 경유 2배 래스터 폴백(도트 유지, 워커에서 smoothing off로 1:1 환산).
+    function _vpipBmp(url){ return _vpipImgLoad(url).then(function(im){
+      return createImageBitmap(im).catch(function(){
+        const w=Math.max(1,Math.round((im.naturalWidth||im.width||1)*_VPIP_SC)), h=Math.max(1,Math.round((im.naturalHeight||im.height||1)*_VPIP_SC));
+        const c=document.createElement('canvas'); c.width=w; c.height=h;
+        const x=c.getContext('2d'); x.imageSmoothingEnabled=false; x.drawImage(im,0,0,w,h);
+        return createImageBitmap(c);
+      });
+    }); }
     function _svgUri(s){ return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(_vpipResolveCss(String(s||'').replace(/<svg /g,'<svg xmlns="http://www.w3.org/2000/svg" '))); }
     // 벽지/바닥 CSS 배경 → 캔버스 드로어(타일 url=패턴, 그라디언트=세로 근사, 단색=fill). 로드 후 fn(ctx)를 돌려 painter 순서 보장.
     function _vpipBgFill(css, x, y, w, h){
@@ -6706,19 +6720,56 @@
         else ctx.fillStyle=(cols&&cols[0])||'#ece7dc';
         ctx.fillRect(x,y,w,h); });
     }
-    // 배치물 페인트 목록 — dock 캠과 동일한 painter 순서(바닥아이템 → 벽가구 → 일반 뒤→앞)·앵커·원근
-    function _vpipPaintList(){
+    // 🎡 가구 연출 파라미터 — styles.css `.ffx-*` 규칙의 JS 전사(워커는 CSS를 못 읽음). kf=keyframe 종류, dur=초, org=회전/변형 중심(비율).
+    // ⚠️ styles.css에 새 아이템별 오버라이드(duration·transform-origin·전용 keyframe)를 추가하면 여기에도 짝 맞춰 넣을 것(CLAUDE.md 체크리스트).
+    const _VPIP_FX_TYPE={ spin:{kf:'spin',dur:7}, swing:{kf:'swing',dur:3.4}, sway:{kf:'sway',dur:4.6}, drift:{kf:'drift',dur:10},
+      flicker:{kf:'flicker',dur:0.85,org:[0.5,0.62]}, blink:{kf:'decoblink',dur:2.4}, sheen:{kf:'sheen',dur:3.8} };
+    const _VPIP_FX_ID={
+      // 속도 오버라이드(styles.css .ffx-<id> .px { animation-duration })
+      catgrass:{dur:1.7}, groomarch:{dur:1.6}, heatpad:{dur:1.0}, tetherpole:{dur:1.2}, windmilltoy:{dur:1.8}, crinklebag:{dur:1.8},
+      koipond:{dur:1.6}, woodstove:{dur:0.5}, mushroomlamp:{dur:0.9}, crystaltree:{dur:1.6},
+      gramophone:{dur:1.6}, arcademachine:{dur:0.7}, jukebox:{dur:0.8}, crystalcluster:{dur:1.6}, hourglass:{dur:1.4},
+      wallvines:{dur:1.8}, pennant:{dur:1.6}, stringlights:{dur:0.9}, wallsun:{dur:3.0},
+      balltrack:{dur:1.2}, teetertoy:{dur:1.1}, bubblemachine:{dur:1.4}, bonsai:{dur:2.2}, globe:{dur:2.0}, snowglobe:{dur:1.6},
+      yarnbasket:{dur:2.6}, groomstation:{dur:2.2}, springtoy:{dur:1.1}, birdcage:{dur:1.3}, lavalamp:{dur:2.4}, laserpost:{dur:0.8},
+      waterfountain:{dur:1.6}, recordplayer:{dur:1.4}, terrarium:{dur:2.0}, ballpit:{dur:1.5}, grandfaclock:{dur:1.0},
+      crystalfountain:{dur:1.4}, cuckooclock:{dur:0.9},
+      // 중심·전용 keyframe 오버라이드(styles.css .ffx-<id>)
+      catwheel:{org:[0.479,0.4375]}, tower:{org:[0.84,0.20]}, scratcher:{org:[0.75,0.13]}, plant:{org:[0.5,0.57]},
+      window:{dur:16}, fishtank:{kf:'fish',dur:3.4}, pondfish:{kf:'pondfish',dur:2.8}, pondleaf:{kf:'leaf',dur:5.6}, pondwater:{kf:'ripple',dur:4.6},
+      fan:{org:[0.406,0.35],dur:2.6}, hammock:{org:[0.5,0.06],dur:4.6}, teaser:{org:[0.81,0.03],dur:2.6},
+      wallclock:{org:[0.5,0.52],dur:2}, hangplant:{org:[0.5,0.04],dur:5}, mobile:{org:[0.5,0.06],dur:6}, chandelier:{org:[0.5,0.03],dur:4.2},
+      jingleball:{org:[0.5,0.94],dur:1.6}, neon:{kf:'neon',dur:1.9}, sconce:{kf:'flame',dur:0.62,org:[0.5,0.34]}, mirror:{kf:'sheen',dur:3.8}
+    };
+    function _vpipFxMeta(type, key){ const t=_VPIP_FX_TYPE[type]||{kf:type,dur:4}; const o=_VPIP_FX_ID[key]||{};
+      return { kf:o.kf||t.kf, dur:o.dur||t.dur, org:o.org||t.org||[0.5,0.5] }; }
+    // fxflit 경로 6값(±22px) — bflyDriftVars와 동일한 난수 스트림 소비(픽셀 경로 동일)
+    function _vpipFlitPts(rnd){ const p=function(){ return Math.round((rnd()*2-1)*22); }; return { x1:p(), y1:p(), x2:p(), y2:p(), x3:p(), y3:p() }; }
+    // 배치물 페인트 목록 — dock 캠과 동일한 painter 순서(바닥아이템 → 벽가구 → 일반 뒤→앞)·앵커·원근.
+    // 반환 {paint, fx}: 연출 가구(FURN_ANIM)는 base(정지 픽셀만)를 paint에, 움직이는 레이어(fx)를 별도 목록에(furnLiveSvg의 palPick 분리와 동일).
+    function _vpipPaintList(frozen){
       const W=_VPIP_W, H=_VPIP_H;
       function anchorX(c, footW, gw){ const md=camAnchorMode(c, footW);
         const ax = md==='left'?0 : md==='right'?W : (gridLeftFrac(c)+gridSpanFrac(footW)/2)*W;
         return ax + gw*(md==='left'?0 : md==='right'?-1 : -0.5); }
       const list=placedList().sort((a,b)=>a.r-b.r); distributePoops(list);
-      const flo=[], oth=[], wall=[];
+      const flo=[], oth=[], wall=[], fx=[];
+      // 연출 가구면 base(정지)만 정지 비트맵에 남기고 움직이는 레이어를 fx로 분리 — furnLiveSvg의 palPick 분리와 동일 규칙. frozen(모션축소·lite)이면 통짜 정적.
+      function baseSvg(id, fh, xx, yy, gw, flip, fr){
+        const a=(!frozen)&&FURN_ANIM[id];
+        if(!a) return furnSvg(id,{h:fh});
+        const M=furnMatrix(id), pal=FURN_PALS[id], layers=Array.isArray(a)?a:[a];
+        let all=[]; layers.forEach(function(l){ all=all.concat(l.move); });
+        layers.forEach(function(l){ const meta=_vpipFxMeta(l.type, l.cls||id);
+          fx.push({ url:_svgUri(pxSvg(M, palPick(pal, l.move, true), {h:fh})), x:xx, y:yy, w:gw, h:fh, flip:!!flip, fr:fr,
+            kf:meta.kf, dur:meta.dur, ox:meta.org[0], oy:meta.org[1], ph:Math.random() }); });
+        return pxSvg(M, palPick(pal, all, false), {h:fh});
+      }
       list.forEach(function(p){ const foot=itemFoot(p.itemId), fr=p.r+foot.h-1, depth=camDepth(fr);
         const fh=furnRoomH(p.itemId,true,depth), gw=fh*furnAspect(p.itemId);
         const x=anchorX(p.c, foot.w, gw), yB=H*(1-camFurnBottom(depth)/100);
         const tap=(p.itemId==='bowl'||p.itemId==='waterbowl');
-        const it={ url:_svgUri(tap? furnRoomSvg(p.itemId,p.key,{h:fh}) : furnSvg(p.itemId,{h:fh})), x:x, y:yB-fh, w:gw, h:fh, flip:!!p.flip, fr:fr };
+        const it={ url:_svgUri(tap? furnRoomSvg(p.itemId,p.key,{h:fh}) : baseSvg(p.itemId, fh, x, yB-fh, gw, p.flip, fr)), x:x, y:yB-fh, w:gw, h:fh, flip:!!p.flip, fr:fr };
         (isFloorItem(p.itemId)?flo:oth).push(it);
         if(p.itemId==='litterbox'){ const ph=Math.max(6,Math.round(fh*0.32));   // propMarkup의 똥 슬롯 %와 동일
           (p._poops||[]).forEach(function(s){ oth.push({ url:_svgUri(poopSvg({h:ph})), x:x+gw*(20+(s%3)*26)/100, y:(yB-fh)+fh*(30+((s/3|0)*20))/100, w:ph, h:ph, flip:false, fr:fr+0.01 }); }); }
@@ -6728,33 +6779,108 @@
         if(anchor==='floor'){ fh=furnRoomH(p.itemId,true,1); y=H*(1-camFurnBottom(1)/100)-fh; }                                 // 바닥형: 맨 뒤 바닥선
         else if(anchor==='hang'){ fh=furnWallH(p.itemId,true); y=H*(((p.r-1)/WALL_ROWS)*46)/100; }                              // 매다는형: 천장 top 앵커
         else { fh=furnWallH(p.itemId,true); y=H*(1-(WALL_MOUNT_BASE+(WALL_ROWS-p.r)*WALL_MOUNT_STEP)/100)-fh; }                 // 거는형: 벽 밴드 bottom
-        const gw=fh*furnAspect(p.itemId);
-        wall.push({ url:_svgUri(furnSvg(p.itemId,{h:fh})), x:anchorX(p.c, foot.w, gw), y:y, w:gw, h:fh, flip:false, fr:0 });
+        const gw=fh*furnAspect(p.itemId), xx=anchorX(p.c, foot.w, gw);
+        wall.push({ url:_svgUri(baseSvg(p.itemId, fh, xx, y, gw, false, 0)), x:xx, y:y, w:gw, h:fh, flip:false, fr:0 });
       });
       oth.sort(function(a,b){ return a.fr-b.fr; });
-      return flo.concat(wall).concat(oth);
+      return { paint: flo.concat(wall).concat(oth), fx: fx };
     }
-    function _vpipBuildScene(){
+    // 🌅 씬(움직이는 벽지/바닥)·🌌 배경효과 조각 — wallSceneHtml/floorSceneHtml/bgfxOverlayHtml의 배치 수식을 미러.
+    // statics=정지 조각(back 비트맵에 베이크: 언덕·해·무지개·달), parts=워커가 매 프레임 그리는 파티클(구름·별·풀꽃·나비·낙엽·잠자리·반딧불).
+    function _vpipScenePieces(statics, parts, frozen){
+      const W=_VPIP_W, H=_VPIP_H;
+      const wp=WALLPAPER_CATALOG.find(x=>x.id===currentWall());
+      if(wp&&wp.scene){ const t=wp.scene;
+        const cn=pkCount(t==='night'?7:11);   // 구름 — pkcloud: translateX(-64px→600px) linear, delay -i*9s
+        for(let i=0;i<cn;i++){ const y=H*((3+pkRand(i,1)*32)/100), hh=Math.round(9+pkRand(i,2)*13), wc=Math.floor(pkRand(i,3)*3), dur=28+pkRand(i,5)*44;
+          const tn=(t==='sunset')?['so','sp','sv'][Math.floor(pkRand(i,4)*3)]:['w','b'][Math.floor(pkRand(i,4)*2)];
+          parts.push({ k:'cloud', url:_svgUri(cloudSvg(wc,tn,{h:hh})), y:y, h:hh, d:dur, del:-i*9, layer:'back', frozen:frozen }); }
+        if(t==='sunset') statics.push({ url:_svgUri(sunSvg({h:52})), cx:W*0.5, y:H*0.32-26, h:52 });                       // pkrisesun 종료 상태(top 32% 중앙)
+        else if(t==='rainbow') statics.push({ url:_svgUri(authRainbowSvg({h:60})), cx:W*0.5, yb:H*0.46, h:60, alpha:0.8 }); // bottom 54%(=바닥선)
+        else if(t==='night'){ statics.push({ url:_svgUri(moonSvg({h:30})), x:W*0.70, y:H*0.05, h:30 });
+          for(let i=0;i<pkCount(14);i++){ const l=W*((4+pkRand(i,11)*92)/100), tp=H*((4+pkRand(i,12)*38)/100), hh=Math.round(3+pkRand(i,13)*4);
+            parts.push({ k:'star', url:_svgUri(nightStarSvg({h:hh})), x:l, y:tp, h:hh, layer:'back', frozen:frozen }); } }
+        const HX=[18,50,82], HHT=[18,16,20], hp=(t==='sunset')?HILL_SUNSET:(t==='night'?HILL_NIGHT:HILL_DAY);
+        for(let i=0;i<3;i++) statics.push({ url:_svgUri(hillSvg(hp,{h:HHT[i]})), cx:W*HX[i]/100, yb:H*0.46+3, h:HHT[i] });   // 바닥선 3px 아래(바닥 fill이 덮음)
+      }
+      const fp=FLOOR_CATALOG.find(x=>x.id===currentFloor());
+      if(fp&&fp.scene){ const t=fp.scene, bY=H*0.54;   // 바닥 밴드(바닥 컨테이너 bottom=방 bottom, 높이 54%)
+        const nt=pkCount(16);   // 풀포기 — pkbend ±5°(2s), delay -i*0.35s, 중심=center bottom
+        for(let i=0;i<nt;i++){ const d=pkRand(i,31)*0.85, l=2+(i+0.5)/nt*94+(pkRand(i,32)-0.5)*3.5, sc=1-d*0.4, bot=4+d*72, hh=Math.max(6,Math.round(13*sc));
+          parts.push({ k:'bend', url:_svgUri(tuftSvg({h:hh})), x:W*l/100, yb:H-bY*bot/100, h:hh, deg:5, d:2.0, del:-i*0.35, layer:'back', frozen:frozen }); }
+        const fc=(t==='sunset')?['su','sg','sw']:['r','y','p'];   // 꽃 — pkbend 2.6s
+        for(let i=0;i<14;i++){ const d=pkRand(i,21)*0.62, l=5+(i+0.5)/14*90+(pkRand(i,22)-0.5)*3.5, sc=1-d*0.4, bot=4+d*68, hh=Math.max(8,Math.round(15*sc));
+          parts.push({ k:'bend', url:_svgUri(flowerSvg(fc[Math.floor(pkRand(i,23)*3)],{h:hh})), x:W*l/100, yb:H-bY*bot/100, h:hh, deg:5, d:2.6, del:-i*0.35, layer:'back', frozen:frozen }); }
+        if(t==='night'){ for(let i=0;i<pkCount(6);i++){ const l=6+pkRand(i,61)*88, b=10+pkRand(i,62)*50, hh=Math.round(8+pkRand(i,63)*3), dur=5+pkRand(i,64)*4, bd=1+pkRand(i,65)*1.2, del=-pkRand(i,66)*6; let _s=70; const rnd=function(){ return pkRand(i,_s++); };
+          parts.push(Object.assign({ k:'flit', url:_svgUri(fireflySvg({h:hh})), x:W*l/100, y:(H-bY*b/100)-hh, h:hh, d:dur, del:del, bd:bd, layer:'back', frozen:frozen }, _vpipFlitPts(rnd))); } }
+        else { const BFT=['o','b','p','y']; for(let i=0;i<pkCount(4);i++){ const l=10+pkRand(i,71)*80, b=20+pkRand(i,72)*40, hh=Math.round(9+pkRand(i,73)*4), dur=6.5+pkRand(i,74)*5, del=-pkRand(i,75)*8, fd=0.32+pkRand(i,76)*0.24; let _s=90; const rnd=function(){ return pkRand(i,_s++); };
+          parts.push(Object.assign({ k:'flit', url:_svgUri(butterflySvg(BFT[i%4],{h:hh})), x:W*l/100, y:(H-bY*b/100)-hh, h:hh, d:dur, del:del, fd:fd, layer:'back', frozen:frozen }, _vpipFlitPts(rnd))); } }
+      }
+      // 🌌 배경효과(방 전체 오버레이, over층 — 펫 위) — bgfxOverlayHtml과 동일 슬롯·원근·난수 스트림(위치·경로 픽셀 동일)
+      const gid=currentBgfx();
+      if(gid){ const lite=liteMode(); const Nc=function(k){ return Math.max(3,Math.round(k*(lite?0.6:1))); };
+        const persB=function(yy){ return 13+(1-yy)*72; }, persS=function(yy){ return 0.66+yy*0.62; };
+        const bfly=function(n,tints){ const P=pkSlots(n,110); for(let i=0;i<n;i++){ const o=P[i], hh=Math.round((12+pkRand(i,13)*5)*persS(o.yy)), dur=6+pkRand(i,14)*5, fd=0.30+pkRand(i,15)*0.26, del=-pkRand(i,16)*8; let _s=20; const rnd=function(){ return pkRand(i,_s++); };
+          parts.push(Object.assign({ k:'flit', url:_svgUri(butterflySvg(tints[i%tints.length],{h:hh})), x:W*o.x/100, y:H-(H*persB(o.yy)/100)-hh, h:hh, d:dur, del:del, fd:fd, layer:'over', frozen:frozen }, _vpipFlitPts(rnd))); } };
+        const leaf=function(n,colf){ for(let i=0;i<n;i++){ const x=(i+0.5)/n*94+3+(pkRand(i,31)-0.5)*(84/n), d=pkRand(i,37), hh=Math.round((10+pkRand(i,35)*5)*(0.72+(1-d)*0.5)), dur=6.5+d*6, del=-pkRand(i,33)*10, sw=2.2+pkRand(i,34)*1.6, dir=(pkRand(i,36)<0.5?-1:1);
+          parts.push({ k:'fall', url:_svgUri(colf(i,hh)), x:W*x/100, y0:-0.09*H, y1:1.06*H, h:hh, d:dur, del:del, sw:sw, dir:dir, layer:'over', frozen:frozen }); } };
+        const dfly=function(n){ const P=pkSlots(n,140); for(let i=0;i<n;i++){ const o=P[i], hh=Math.round((11+pkRand(i,43)*5)*persS(o.yy)), dur=6+pkRand(i,44)*5, del=-pkRand(i,45)*8; let _s=50; const rnd=function(){ return pkRand(i,_s++); };
+          parts.push(Object.assign({ k:'flit', url:_svgUri(dragonflySvg({h:hh})), x:W*o.x/100, y:H-(H*persB(o.yy)/100)-hh, h:hh, d:dur, del:del, tilt:1, layer:'over', frozen:frozen }, _vpipFlitPts(rnd))); } };
+        const fire=function(n){ const P=pkSlots(n,170); for(let i=0;i<n;i++){ const o=P[i], hh=Math.round((9+pkRand(i,63)*4)*persS(o.yy)), dur=5+pkRand(i,64)*5, bd=1+pkRand(i,65)*1.4, del=-pkRand(i,66)*6; let _s=70; const rnd=function(){ return pkRand(i,_s++); };
+          parts.push(Object.assign({ k:'flit', url:_svgUri(fireflySvg({h:hh})), x:W*o.x/100, y:H-(H*persB(o.yy)/100)-hh, h:hh, d:dur, del:del, bd:bd, layer:'over', frozen:frozen }, _vpipFlitPts(rnd))); } };
+        if(gid==='butterflies') bfly(Nc(7),['o','b','p','y']);
+        else if(gid==='rainbowflutter') bfly(Nc(10),['o','b','p','y','o','p']);
+        else if(gid==='mapleleaves') leaf(Nc(10),function(i,hh){ return mapleLeafSvg({h:hh}, LEAF_COLS[Math.floor(pkRand(i,207)*LEAF_COLS.length)]); });
+        else if(gid==='sakura') leaf(Nc(10),function(i,hh){ return petalSvg({h:hh}); });
+        else if(gid==='dragonflies') dfly(Nc(5));
+        else if(gid==='fireflies') fire(Nc(8));
+      }
+    }
+    // 씬 키트 = { back(벽·바닥·씬 정적), furn(가구·똥, 투명), fx(가구 연출 레이어+bmp), parts(파티클+bmp) } — 전부 origin-clean 비트맵.
+    function _vpipSceneKit(){
       const W=_VPIP_W, H=_VPIP_H;
       try{
-        const paint=_vpipPaintList();
-        const cv=document.createElement('canvas'); cv.width=W*_VPIP_SC; cv.height=H*_VPIP_SC;
-        const ctx=cv.getContext('2d');
-        return Promise.all([
+        const frozen=(reducedMotion()||liteMode());   // DOM 정책 미러: 모션축소·가벼운 모드 = 연출·파티클 정지 표시
+        const pl=_vpipPaintList(frozen);
+        const statics=[], parts=[];
+        _vpipScenePieces(statics, parts, frozen);
+        const backCv=document.createElement('canvas'); backCv.width=W*_VPIP_SC; backCv.height=H*_VPIP_SC;
+        const furnCv=document.createElement('canvas'); furnCv.width=W*_VPIP_SC; furnCv.height=H*_VPIP_SC;
+        const loads=[
           _vpipBgFill(_vpipResolveCss(wallCss(currentWall())), 0, 0, W, H*0.462),
           _vpipBgFill(_vpipResolveCss(floorCss(currentFloor())), 0, H*0.455, W, H*0.545)
-        ].concat(paint.map(function(it){ return _vpipImgLoad(it.url).catch(function(){ return null; }); })))
-        .then(function(res){
-          ctx.setTransform(_VPIP_SC,0,0,_VPIP_SC,0,0); ctx.imageSmoothingEnabled=false;
-          res[0](ctx); res[1](ctx);   // 벽 → 바닥(경계 덮음)
-          for(let i=0;i<paint.length;i++){ const im=res[2+i]; if(!im) continue; const it=paint[i];
-            ctx.save();
-            if(it.flip){ ctx.translate(it.x+it.w/2,0); ctx.scale(-1,1); ctx.translate(-(it.x+it.w/2),0); }   // transform-origin center와 동일한 좌우 반전
-            try{ ctx.drawImage(im, it.x, it.y, it.w, it.h); }catch(e){}
-            ctx.restore(); }
-          return createImageBitmap(cv);
-        }).catch(function(){ return null; });
-      }catch(e){ return Promise.resolve(null); }   // 씬 실패해도 펫만으로 진행
+        ]
+        .concat(statics.map(function(s){ return _vpipImgLoad(s.url).catch(function(){ return null; }); }))
+        .concat(pl.paint.map(function(it){ return _vpipImgLoad(it.url).catch(function(){ return null; }); }))
+        .concat(pl.fx.map(function(f){ return _vpipBmp(f.url).catch(function(){ return null; }); }))
+        .concat(parts.map(function(p){ return _vpipBmp(p.url).catch(function(){ return null; }); }));
+        return Promise.all(loads).then(function(res){
+          let k=0; const wallFill=res[k++], floorFill=res[k++];
+          const sImgs=statics.map(function(){ return res[k++]; });
+          const pImgs=pl.paint.map(function(){ return res[k++]; });
+          const fBmps=pl.fx.map(function(){ return res[k++]; });
+          const ptBmps=parts.map(function(){ return res[k++]; });
+          // back: 벽 → 씬 정적 조각(언덕·해·무지개·달 — 바닥 fill이 언덕 밑단 3px을 덮게 바닥보다 먼저) → 바닥
+          const bctx=backCv.getContext('2d'); bctx.setTransform(_VPIP_SC,0,0,_VPIP_SC,0,0); bctx.imageSmoothingEnabled=false;
+          wallFill(bctx);
+          statics.forEach(function(s,i){ const im=sImgs[i]; if(!im) return; const w=im.width/im.height*s.h;
+            const x=(s.cx!=null)?(s.cx-w/2):s.x, y=(s.yb!=null)?(s.yb-s.h):s.y;
+            bctx.save(); if(s.alpha!=null) bctx.globalAlpha=s.alpha; try{ bctx.drawImage(im, x, y, w, s.h); }catch(e){} bctx.restore(); });
+          floorFill(bctx);
+          // furn: 가구·벽가구·똥(투명 배경 — 워커가 back → 씬 파티클 → furn 순서로 겹침)
+          const fctx=furnCv.getContext('2d'); fctx.setTransform(_VPIP_SC,0,0,_VPIP_SC,0,0); fctx.imageSmoothingEnabled=false;
+          pl.paint.forEach(function(it,i){ const im=pImgs[i]; if(!im) return;
+            fctx.save();
+            if(it.flip){ fctx.translate(it.x+it.w/2,0); fctx.scale(-1,1); fctx.translate(-(it.x+it.w/2),0); }   // transform-origin center와 동일한 좌우 반전
+            try{ fctx.drawImage(im, it.x, it.y, it.w, it.h); }catch(e){}
+            fctx.restore(); });
+          const fx=[]; pl.fx.forEach(function(f,i){ if(fBmps[i]){ f.bmp=fBmps[i]; delete f.url; f.frozen=frozen; fx.push(f); } });
+          const pts=[]; parts.forEach(function(p,i){ if(ptBmps[i]){ p.bmp=ptBmps[i]; delete p.url; pts.push(p); } });
+          return Promise.all([createImageBitmap(backCv), createImageBitmap(furnCv)]).then(function(bs){
+            return { back:bs[0], furn:bs[1], fx:fx, parts:pts };
+          });
+        }).catch(function(){ return { back:null, furn:null, fx:[], parts:[] }; });
+      }catch(e){ return Promise.resolve({ back:null, furn:null, fx:[], parts:[] }); }   // 씬 실패해도 펫만으로 진행
     }
     // 활성 펫 에셋(ImageBitmap): 스프라이트=걷기 시트+south(+frontWalk면 east 스틸) / SVG 매트릭스 펫=정면 스틸(제자리 — 정면 이동 금지 불변식)
     function _vpipPetAssets(){ const list=activeCats().slice(0,slotCount()); ensurePetArtMany(list);
@@ -6773,7 +6899,51 @@
     let _vpipWURL=null;
     function _vpipWorkerUrl(){ if(_vpipWURL) return _vpipWURL;
       const src=[
-        "var W=360,H=200,SC=2,ctx=null,bg=null,pets=[],rm=false,last=0,timer=0;",
+        "var W=360,H=200,SC=2,ctx=null,back=null,furn=null,fx=[],parts=[],pets=[],rm=false,last=0,timer=0;",
+        "function eio(u){ return u<0.5?2*u*u:1-Math.pow(-2*u+2,2)/2; }",
+        "function tri(u){ return u<0.5?eio(u*2):eio((1-u)*2); }",
+        "function ph(t,d,del){ var u=((t-(del||0))/d)%1; return u<0?u+1:u; }",
+        "function seg(st,va,u){ for(var i=1;i<st.length;i++){ if(u<=st[i]){ var p=(u-st[i-1])/((st[i]-st[i-1])||1); p=eio(p); return va[i-1]+(va[i]-va[i-1])*p; } } return va[va.length-1]; }",
+        "function fxT(f,t){ var u=ph(t, f.dur, -f.ph*f.dur); var r={rot:0,tx:0,ty:0,sx:1,sy:1,a:1};",
+        "  switch(f.kf){",
+        "   case 'spin': r.rot=u*360; break;",
+        "   case 'swing': r.rot=-6+12*tri(u); break;",
+        "   case 'sway': r.rot=-4.5+9*tri(u); break;",
+        "   case 'drift': r.tx=(-4+8*tri(u))/100; break;",
+        "   case 'fish': r.tx=seg([0,.22,.46,.6,.8,1],[-6,4,13,20,7,-6],u)/100; r.ty=seg([0,.22,.46,.6,.8,1],[2,-3,1,-2,3,2],u)/100; break;",
+        "   case 'pondfish': r.tx=seg([0,.25,.5,.72,1],[-5,-1,5,1.5,-5],u)/100; r.ty=seg([0,.25,.5,.72,1],[1,-2.5,1,-1.5,1],u)/100; break;",
+        "   case 'leaf': r.tx=(-1.2+2.4*tri(u))/100; r.ty=(0.6-1.2*tri(u))/100; break;",
+        "   case 'ripple': r.tx=(-1+2.2*tri(u))/100; break;",
+        "   case 'flicker': r.sy=seg([0,.3,.55,.8,1],[1,1.08,.94,1.05,1],u); r.tx=seg([0,.3,.55,.8,1],[0,-4,3,-2,0],u)/100; break;",
+        "   case 'flame': r.sy=seg([0,.2,.45,.7,.88,1],[1,1.2,.86,1.13,.95,1],u); r.tx=seg([0,.2,.45,.7,.88,1],[0,-7,6,-4,3,0],u)/100; break;",
+        "   case 'decoblink': r.a=(u<.76?1:u<.84?.32:u<.88?.9:u<.96?.4:1); break;",
+        "   case 'neon': r.a=(u<.59?1:u<.65?.3:u<.78?1:u<.84?.5:u<.92?1:u<.95?.28:1); break;",
+        "   case 'sheen': if(u<.45){ var p2=eio(u/.45); r.tx=(-5+10*p2)/100; r.ty=r.tx; r.a=.2+.8*p2; } else if(u<.58){ r.tx=.05; r.ty=.05; r.a=1-((u-.45)/.13)*.8; } else { var q=(u-.58)/.42; r.tx=(5-10*q)/100; r.ty=r.tx; r.a=.2; }",
+        "  } return r; }",
+        "function drawFx(f,t){ var r=f.frozen?{rot:0,tx:0,ty:0,sx:1,sy:1,a:1}:fxT(f,t);",
+        "  ctx.save(); ctx.globalAlpha=r.a;",
+        "  if(f.flip){ ctx.translate(f.x+f.w/2,0); ctx.scale(-1,1); ctx.translate(-(f.x+f.w/2),0); }",
+        "  ctx.translate(f.x+f.ox*f.w+r.tx*f.w, f.y+f.oy*f.h+r.ty*f.h);",
+        "  if(r.rot) ctx.rotate(r.rot*Math.PI/180);",
+        "  if(r.sx!==1||r.sy!==1) ctx.scale(r.sx,r.sy);",
+        "  try{ ctx.drawImage(f.bmp, -f.ox*f.w, -f.oy*f.h, f.w, f.h); }catch(e){}",
+        "  ctx.restore(); }",
+        "function drawPart(p,t){ ctx.save(); try{ var w=p.bmp.width/p.bmp.height*p.h;",
+        "  if(p.k==='cloud'){ var u=p.frozen?0.3:ph(t,p.d,p.del); ctx.drawImage(p.bmp, -64+664*u, p.y, w, p.h); }",
+        "  else if(p.k==='star'){ ctx.globalAlpha=p.frozen?1:(.45+.55*tri(ph(t,3,0))); ctx.drawImage(p.bmp, p.x, p.y, w, p.h); }",
+        "  else if(p.k==='bend'){ var rot=p.frozen?0:(-p.deg+2*p.deg*tri(ph(t,p.d,p.del)));",
+        "    ctx.translate(p.x, p.yb); ctx.rotate(rot*Math.PI/180); ctx.drawImage(p.bmp, -w/2, -p.h, w, p.h); }",
+        "  else if(p.k==='fall'){ var u3=p.frozen?0.35:ph(t,p.d,p.del); var y=p.y0+(p.y1-p.y0)*u3;",
+        "    var v=p.frozen?0.5:tri(ph(t,p.sw,0)); var sx=p.dir*(-8+16*v), rot2=p.dir*(-42+84*v);",
+        "    ctx.translate(p.x+sx, y+p.h/2); ctx.rotate(rot2*Math.PI/180); ctx.drawImage(p.bmp, -w/2, -p.h/2, w, p.h); }",
+        "  else if(p.k==='flit'){ var u2=p.frozen?0:ph(t,p.d,p.del);",
+        "    var dx=seg([0,.25,.5,.75,1],[0,p.x1,p.x2,p.x3,0],u2), dy=seg([0,.25,.5,.75,1],[0,p.y1,p.y2,p.y3,0],u2);",
+        "    ctx.translate(p.x+dx+w/2, p.y+dy+p.h/2);",
+        "    if(p.fd&&!p.frozen){ ctx.scale(1-0.5*tri(ph(t,p.fd,0)),1); }",
+        "    if(p.tilt&&!p.frozen){ ctx.rotate((-8+16*tri(ph(t,1.1,0)))*Math.PI/180); }",
+        "    if(p.bd){ ctx.globalAlpha=p.frozen?1:(.3+.7*tri(ph(t,p.bd,0))); }",
+        "    ctx.drawImage(p.bmp, -w/2, -p.h/2, w, p.h); }",
+        "  }catch(e){} ctx.restore(); }",
         "function setPets(list){ pets=(list||[]).map(function(p,i){ var e={}; for(var k in p) e[k]=p[k];",
         "  e.x=16+Math.random()*(W-e.hh-32); e.dir=Math.random()<0.5?-1:1; e.v=0.018+Math.random()*0.02;",
         "  e.depth=Math.random(); e.vz=(Math.random()*2-1)*0.00004;",
@@ -6785,45 +6955,60 @@
         "  a.depth=Math.max(0,Math.min(1,a.depth+a.vz*dt)); if(Math.random()<0.004) a.vz=(Math.random()*2-1)*0.00004;",
         "  if(Math.random()<0.0022){ a.mode='pause'; a.pt=2200+Math.random()*3800; }",
         "} }",
-        "function draw(now){ if(!ctx) return; ctx.setTransform(SC,0,0,SC,0,0); ctx.imageSmoothingEnabled=false;",
-        "  ctx.clearRect(0,0,W,H); if(bg) ctx.drawImage(bg,0,0,W,H);",
-        "  var ord=pets.slice().sort(function(a,b){ return b.depth-a.depth; });",   // 멀리(depth1)부터 → 가까운 펫이 위에
-        "  for(var i=0;i<ord.length;i++){ var a=ord[i]; var ds=1.5-(1.5-0.86)*a.depth, h=a.hh*ds, w=h;",
-        "    var y=H-(a.depth*0.53*H)-h+h*0.16;",   // rise + 발밑 투명여백(0.16) 상쇄
-        "    var moving=(a.mode==='roam'&&!a.stationary), flip=(moving&&a.dir<0);",
-        "    ctx.save(); if(flip){ ctx.translate(a.x+w,0); ctx.scale(-1,1); } else { ctx.translate(a.x,0); }",
-        "    try{",
-        "      if(moving&&a.sheet&&!a.frontWalk){ var sw=a.sheet.width/a.frames, fr=Math.floor(now/110)%a.frames; ctx.drawImage(a.sheet, fr*sw,0,sw,a.sheet.height, 0,y,w,h); }",
-        "      else if(moving&&a.frontWalk&&a.east){ ctx.drawImage(a.east,0,y,w,h); }",
-        "      else if(a.south){ ctx.drawImage(a.south,0,y,w,h); }",
-        "    }catch(e){}",
-        "    ctx.restore(); }",
+        "function drawPet(a,now){ var ds=1.5-(1.5-0.86)*a.depth, h=a.hh*ds, w=h;",
+        "  var y=H-(a.depth*0.53*H)-h+h*0.16;",
+        "  var moving=(a.mode==='roam'&&!a.stationary), flip=(moving&&a.dir<0);",
+        "  ctx.save(); if(flip){ ctx.translate(a.x+w,0); ctx.scale(-1,1); } else { ctx.translate(a.x,0); }",
+        "  try{",
+        "    if(moving&&a.sheet&&!a.frontWalk){ var sw=a.sheet.width/a.frames, fr=Math.floor(now/110)%a.frames; ctx.drawImage(a.sheet, fr*sw,0,sw,a.sheet.height, 0,y,w,h); }",
+        "    else if(moving&&a.frontWalk&&a.east){ ctx.drawImage(a.east,0,y,w,h); }",
+        "    else if(a.south){ ctx.drawImage(a.south,0,y,w,h); }",
+        "  }catch(e){}",
+        "  ctx.restore(); }",
+        "function draw(now){ if(!ctx) return; var t=now/1000; ctx.setTransform(SC,0,0,SC,0,0); ctx.imageSmoothingEnabled=false;",
+        "  ctx.clearRect(0,0,W,H); if(back) ctx.drawImage(back,0,0,W,H);",
+        "  for(var i=0;i<parts.length;i++){ if(parts[i].layer!=='over') drawPart(parts[i],t); }",
+        "  if(furn) ctx.drawImage(furn,0,0,W,H);",
+        "  var ds2=[]; for(var j=0;j<fx.length;j++) ds2.push({z:fx[j].fr, f:fx[j]});",
+        "  for(var j2=0;j2<pets.length;j2++) ds2.push({z:8-pets[j2].depth*7, p:pets[j2]});",
+        "  ds2.sort(function(a,b){ return a.z-b.z; });",
+        "  for(var m=0;m<ds2.length;m++){ if(ds2[m].f) drawFx(ds2[m].f,t); else drawPet(ds2[m].p,now); }",
+        "  for(var n2=0;n2<parts.length;n2++){ if(parts[n2].layer==='over') drawPart(parts[n2],t); }",
         "}",
-        "function tick(){ var now=Date.now(), dt=Math.min(90, last?now-last:33); last=now; step(dt); draw(now); }",
+        "var ticks=0;",
+        "function tick(){ ticks++; var now=Date.now(), dt=Math.min(90, last?now-last:33); last=now; step(dt); draw(now); }",
+        "function setScene(d){ back=d.back||null; furn=d.furn||null; fx=d.fx||[]; parts=d.parts||[]; }",
         "onmessage=function(ev){ var d=ev.data||{};",
-        "  if(d.t==='init'){ var cv=d.canvas; ctx=cv.getContext('2d'); SC=d.sc||2; W=d.W||360; H=d.H||200; bg=d.bg||null; rm=!!d.rm; setPets(d.pets); last=0; clearInterval(timer); timer=setInterval(tick,33); }",
-        "  else if(d.t==='bg'){ bg=d.bg||null; }",
+        "  if(d.t==='init'){ var cv=d.canvas; ctx=cv.getContext('2d'); SC=d.sc||2; W=d.W||360; H=d.H||200; rm=!!d.rm; setScene(d); setPets(d.pets); last=0; clearInterval(timer); timer=setInterval(tick,33); }",
+        "  else if(d.t==='scene'){ setScene(d); }",
         "  else if(d.t==='pets'){ setPets(d.pets); }",
+        "  else if(d.t==='ping'){ postMessage({t:'pong', ticks:ticks, fx:fx.length, parts:parts.length, pets:pets.length, back:!!back, furn:!!furn}); }",
         "};"
       ].join('\n');
       _vpipWURL=URL.createObjectURL(new Blob([src],{type:'text/javascript'})); return _vpipWURL; }
+    // 씬 키트(전송용) — 비트맵 Transferable 수집 헬퍼
+    function _vpipKitXfer(kit){ const xf=[]; if(kit.back) xf.push(kit.back); if(kit.furn) xf.push(kit.furn);
+      (kit.fx||[]).forEach(function(f){ if(f.bmp) xf.push(f.bmp); }); (kit.parts||[]).forEach(function(p){ if(p.bmp) xf.push(p.bmp); }); return xf; }
+    function _vpipPropsSig(){ const r=room();
+      return 'p:'+curRoomId()+'|'+JSON.stringify(r.placed||{})+'|'+JSON.stringify(r.wallPlaced||{})+'|'+(Number(r.poops)||0)
+        +'|'+currentWall()+'|'+currentFloor()+'|'+currentBgfx()+(liteMode()?'|L':'')+(reducedMotion()?'|R':'');   // 배경효과·lite·모션축소도 씬 재빌드 트리거
+    }
     function openVideoPip(){
-      const rId=curRoomId();
-      Promise.all([_vpipBuildScene(), _vpipPetAssets()]).then(function(res){
+      Promise.all([_vpipSceneKit(), _vpipPetAssets()]).then(function(res){
         if(vpipOpen()||pipOpen()) return;   // 로딩 사이 중복 열림 방지
-        const bg=res[0], pets=res[1];
+        const kit=res[0], pets=res[1];
         const cv=document.createElement('canvas'); cv.width=_VPIP_W*_VPIP_SC; cv.height=_VPIP_H*_VPIP_SC;
         cv.style.cssText='position:fixed;left:-99999px;top:0;'; document.body.appendChild(cv);
         const stream=cv.captureStream(30);
         const off=cv.transferControlToOffscreen();
         const worker=new Worker(_vpipWorkerUrl());
-        const xf=[off]; if(bg) xf.push(bg); pets.forEach(function(p){ ['sheet','south','east'].forEach(function(k){ if(p[k]) xf.push(p[k]); }); });
-        worker.postMessage({t:'init', canvas:off, sc:_VPIP_SC, W:_VPIP_W, H:_VPIP_H, bg:bg, rm:reducedMotion(), pets:pets}, xf);
+        worker.onerror=function(e){ try{ console.warn('비디오 PiP 워커 오류', (e&&e.message)||e); }catch(_e){} };   // 워커 스크립트 오류 가시화(조용한 정지 방지)
+        const xf=[off].concat(_vpipKitXfer(kit)); pets.forEach(function(p){ ['sheet','south','east'].forEach(function(k){ if(p[k]) xf.push(p[k]); }); });
+        worker.postMessage({t:'init', canvas:off, sc:_VPIP_SC, W:_VPIP_W, H:_VPIP_H, back:kit.back, furn:kit.furn, fx:kit.fx, parts:kit.parts, rm:reducedMotion(), pets:pets}, xf);
         const v=document.createElement('video'); v.muted=true; v.playsInline=true; v.autoplay=true;
         v.style.cssText='position:fixed;left:-99999px;top:0;width:'+_VPIP_W+'px;'; v.srcObject=stream; document.body.appendChild(v);
-        const r=room();
         _vpip={ video:v, canvas:cv, worker:worker, stream:stream,
-          sigProps:'p:'+rId+'|'+JSON.stringify(r.placed||{})+'|'+JSON.stringify(r.wallPlaced||{})+'|'+(Number(r.poops)||0)+'|'+currentWall()+'|'+currentFloor(),
+          sigProps:_vpipPropsSig(),
           sigCats:'c:'+activeCats().slice(0,slotCount()).join(',') };
         v.addEventListener('leavepictureinpicture', _vpipClosed, {once:true});   // X·토글·다른 PiP로 대체 등 모든 닫힘 경로
         return v.play().then(function(){ return v.requestPictureInPicture(); }).then(function(){ _pipBtnSync(); });
@@ -6845,10 +7030,10 @@
       _pipBtnSync(); }
     // 방·가구·펫 변경 라이브 반영 — 서명 가드로 바뀐 쪽 비트맵만 재생성·전송(onGameChange에서 호출)
     function _vpipSync(){ if(!vpipOpen()) return;
-      const r=room();
-      const ps='p:'+curRoomId()+'|'+JSON.stringify(r.placed||{})+'|'+JSON.stringify(r.wallPlaced||{})+'|'+(Number(r.poops)||0)+'|'+currentWall()+'|'+currentFloor();
+      const ps=_vpipPropsSig();
       if(_vpip.sigProps!==ps){ _vpip.sigProps=ps;
-        _vpipBuildScene().then(function(bg){ if(vpipOpen()&&bg) _vpip.worker.postMessage({t:'bg', bg:bg}, [bg]); }); }
+        _vpipSceneKit().then(function(kit){ if(!vpipOpen()) return;
+          _vpip.worker.postMessage({t:'scene', back:kit.back, furn:kit.furn, fx:kit.fx, parts:kit.parts}, _vpipKitXfer(kit)); }); }
       const cs='c:'+activeCats().slice(0,slotCount()).join(',');
       if(_vpip.sigCats!==cs){ _vpip.sigCats=cs;
         _vpipPetAssets().then(function(pets){ if(!vpipOpen()) return;
@@ -6867,6 +7052,7 @@
     function invalidateSceneCaches(){ _pkSceneCache={}; _sunsetCache={}; _nightCache={}; }   // 씬 HTML에 무지개 애니 여부가 구워지므로 토글 시 무효화
     function setLiteMode(on){ try{ localStorage.setItem('liteMode', on?'1':'0'); }catch(e){} applyLiteMode();
       if(typeof pipOpen==='function' && pipOpen()){ try{ _pip.doc.body.classList.toggle('lite', !!on); }catch(e){} }   // 🖥️ PiP 창 body.lite 동기화
+      if(typeof vpipOpen==='function' && vpipOpen()){ try{ _vpipSync(); }catch(e){} }   // 🎬 비디오 PiP: lite 토글 → 연출 frozen 재빌드(서명에 |L 포함)
       refreshRbStatic(); invalidateSceneCaches();   // 🔋 무지개 정적화·씬 개수 변화 즉시 반영
       if(typeof markCatDirty==='function') markCatDirty(); if(typeof startCatLoop==='function') startCatLoop();   // 엔진 fps 예산 재평가·정지스틸 재빌드
       if(typeof rerender==='function') rerender();

@@ -117,6 +117,7 @@
   5. **등급·가격·가챠전용**: 은화 구매가는 **등급가 `TIER_PRICE[tier]`**(카탈로그 `price` 아님, 위 "등급·가격" 규칙). 구매가는 항상 `itemBuyPrice`/`wallBuyPrice`/`floorBuyPrice`로 읽는다. **특별(epic)↑ 등급은 기본 랜덤박스 전용**이라 등급만 지정하면 판매 숨김+박스풀 편입이 함께 되지만, **관리 화면의 가챠전용 토글(`config/*/{id}.gacha`)로 개별 오버라이드** 가능하다(위 "등급·가격" 규칙). 가챠전용이면 알뜰샵 판매 목록에서 **숨김**(예전처럼 '전용' 표기로 보이지 않음), 가챠 풀엔 항상 포함.
   6. **분류 필드**: 새 **가구엔 `cat`(care/rest/play/decor)** 을 반드시 지정(배치 인벤토리 탭). 벽 가구는 `wall:true`, 바닥에 까는 건 `floor:true`.
   7. **일관성(매트릭스 안 바꿨으면 `FURN_ASPECT` 유지)**·**인라인 z-index 고정 금지**(깊이 순서 깨짐)·**펫 정면(south) 이미지로 이동 금지**(엔진 불변식)도 함께 지킨다.
+  8. **비디오 PiP 연출 테이블 짝 맞춤**: 새 `FURN_ANIM` 아이템에 styles.css `.ffx-<id>` 오버라이드(animation-duration·transform-origin·전용 keyframe)를 주면 **cats.js `_VPIP_FX_ID`(비디오 PiP 워커용 전사 테이블)에도 같은 값을 추가**한다 — 빠지면 PiP 미니 창에서 그 가구만 type 기본 속도/중심으로 움직여 dock와 어긋난다.
 - **배치 UI = 꾹 눌러서(롱프레스) 드래그**: 그리드/팔레트 항목은 **`beginLongPress()` 게이트를 거쳐 약 250ms 꾹 누른 뒤에만** 드래그가 시작된다(짧게 탭=그리드는 메뉴/팔레트는 선택 토글). 대기 중엔 스크롤을 막지 않고(임계치 이상 움직이면 취소→화면 스크롤), arm 시 `lockDragScroll()`(body.dragging + `touchmove` preventDefault)로 네이티브 스크롤을 잠근다. `.gitem`은 `touch-action:pan-y` 라 세로 스와이프가 시트 스크롤로 통과한다 — **화면 드래그와 겹치지 않게** 하려는 규칙이니 즉시 드래그로 되돌리지 말 것.
 - **문서·캐시**: 가구는 코드로만 그려서 `sw.js` `APP_SHELL` 에 새 파일이 생기진 않지만, `cats.js`/`styles.css` 를 고쳤으면 **`CACHE_VERSION` 을 올린다**. [docs/features.md](docs/features.md)·[docs/CHANGELOG.md](docs/CHANGELOG.md) 갱신, 함수/구조가 늘면 [docs/code-structure.md](docs/code-structure.md) 도 갱신.
 
