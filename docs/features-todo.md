@@ -13,7 +13,7 @@
 | 탭 | 화면 | 함수 |
 |---|---|---|
 | 할일 | 개인 프로필=[내 할일\|친구들](친구들=`renderFriendsFeed`), 그룹=그룹 할일 | `renderTodoList` |
-| 캘린더 | 스코프별 마감일 월 그리드(점/개수) + 그날 할일 | `renderTodoCalendar` |
+| 캘린더 | 스코프별 월 그리드(카테고리 색 점 — 미완료=마감일·완료=완료한 날) + 그날 할일 | `renderTodoCalendar` |
 | ＋ | 할일 추가/수정 시트 | `openTodoEdit` |
 | 완료 | 스코프별 완료 이력(최신순) | `renderTodoDone` |
 | 더보기 | 할일 전용 메뉴(공유·리포트·반복·목적별) + 공용 알뜰홈·설정 | `renderMore`(모드 분기) |
@@ -21,7 +21,7 @@
 ## 개인 할일 (user-global)
 
 - 프로필별 **내 할일**. **`users/{uid}/todos/{id}`** 에 저장돼 **워크스페이스와 무관하게 항상 동일**(개인↔그룹 가계부를 오가도 그대로). 상시 리스너 `initUserGraph`→`state.myTodos`(워크스페이스 전환에도 유지).
-- 추가/수정 시트(`openTodoEdit`)는 개인 스코프에선 **담당자 없이** 제목·마감일·반복·목적별·메모만. 저장 경로는 `saveTodo`가 개인=`users/{uid}/todos`, 그룹=`ws/{wsId}/todos`로 분기(`todoDbRef`).
+- 추가/수정 시트(`openTodoEdit`)는 개인 스코프에선 **담당자 없이** 제목·마감일·반복·목적별·우선순위·태그·카테고리·메모·하위작업. 저장 경로는 `saveTodo`가 개인=`users/{uid}/todos`, 그룹=`ws/{wsId}/todos`로 분기(`todoDbRef`).
 - 목록은 `scopedTodos()`가 개인=`state.myTodos`(내 것) 또는 `state.friendTodos`(친구 열람)로. 미완료 마감 임박순·완료 하단.
 - 필터 칩: **전체 / 오늘 / 이번주**. 마감일은 **D-day/지남 배지**(`todoDueBadge`, `dueDiffDays`). '오늘/이번주' 필터는 **마감일 없는(언제든) 할일도 포함**(빈 상태 오인 방지). 오늘/마감 판정 기준일은 **은화 일일상한과 같은 KST**(`todayKst`).
 - 기존 `ws`의 개인(scope=personal) 할일은 최초 진입 시 `migratePersonalTodos()`로 user로 1회 이전.
@@ -47,7 +47,8 @@
 - **마감일 배지**: 오늘/내일/D-N/N일 지남을 색으로(`todoDueBadge`). 미완료는 마감 임박순 정렬. **완료된 항목은 마감 경과 대신 완료일을 중립색 "M/D 완료"로 표시**(`doneAt` 기준, 없으면 배지 생략) — 완료 섹션이 "N일 지남"으로 빨갛게 물들지 않게.
 - **날짜 옮기기(리스케줄)**: **미완료 할일의 마감일 배지를 탭**하면 '날짜 옮기기' 미니 시트(`openTodoReschedule`) — 빠른 칩(오늘·내일·모레·다음 주, `addDays` 기반) + 날짜 직접 선택(`<input type=date>`). 이동은 `rescheduleTodo`가 **`dueDate`만 갱신**(`todoDbRef(t).update`, 노드 경로·키 불변, 반복 `repeat` 유지). 마감일 없는 미완료 할일은 배지 자리에 **`날짜`** 칩이 떠 같은 시트로 지정. 완료·친구 열람(읽기전용) 행은 배지 비활성.
 - **지난 미완료 일괄 오늘로**: 리스트 상단 **'🕘 지난 미완료 N개 → 오늘로'** 배너(`carryOverdueToToday`) — 현재 스코프의 지난 미완료(`overdueTodoIds`, 순수헬퍼)를 확인 후 **다중경로 fan-out `update()`** 로 한 번에 오늘로. 친구 열람 뷰에선 숨김.
-- **캘린더 탭**(`renderTodoCalendar`): 가계부 달력 그리드를 재사용해 **현재 스코프의 마감일**을 점/개수로 표시, 날짜 탭 시 그날 할일. 월 이동 `todoMoveMonth`.
+- **🎨 카테고리(색)**: 할일마다 카테고리(업무·공부·집안일·건강·약속·쇼핑·기타)를 붙여 **색으로 구분**한다 — 추가/수정 시트의 **색 점 칩 줄**(`pickTodoCat`, 같은 칩 다시 탭=해제)로 선택, 필드 `category`(''=없음). 카테고리는 **할일 전용 고정 세트 `TODO_CATS`**(views.js, id·이름·색) — 가계부 카테고리는 ws 종속이라 개인 할일(user-global)과 스코프가 안 맞아 별도 상수(어느 컨텍스트에서도 같은 색). 목록의 모든 행(`todoRow`)에 제목 앞 **카테고리 색 점**(`.tdcat`)이 붙고, 캘린더 점도 이 색을 따른다.
+- **캘린더 탭**(`renderTodoCalendar`): 가계부 달력 그리드를 재사용해 **카테고리 색 점**(색당 1점·중복 제거, 미지정=`--primary`)으로 표시 — **미완료=마감일 기준(진한 점)**, **완료=완료한 날 기준 옅은 점**(`todoDoneDay` — `doneAt`, 반복은 `lastDoneAt`, `todayKst`와 같은 KST 경계 · `.dotrow i.dn`), 한 칸 최대 4점(미완료 우선). 날짜 탭 시 **그날 마감 + 그날 완료한** 할일 목록. 월 이동 `todoMoveMonth`.
 - **완료 탭**(`renderTodoDone`): 현재 스코프의 완료 할일을 완료 시각 최신순으로. 각 행 체크를 눌러 되돌리기.
 
 ## 반복 할일

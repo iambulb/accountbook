@@ -564,6 +564,7 @@
     .tdprio { flex:none; font-size:9px; line-height:1; margin-right:5px; vertical-align:middle; }
     .tdprio.high { color:var(--expense); }
     .tdprio.low { color:var(--sub); opacity:.65; }
+    .tdcat { flex:none; width:9px; height:9px; border-radius:50%; }   /* 할일 카테고리 색 점(TODO_CATS) — 목록에서 색 구분 */
     .tdtag { font-size:10px; background:var(--soft2); color:var(--sub); padding:1px 6px; border-radius:6px; margin-left:4px; font-weight:600; white-space:nowrap; }
     .pill.tdsub { cursor:pointer; }
     .pill.tdsub.all { color:var(--income); }
@@ -652,6 +653,7 @@
     /* 달력 셀 카테고리 색 점 */
     .dotrow { display:flex; gap:3px; justify-content:center; height:6px; margin-top:4px; }
     .dotrow i { width:5px; height:5px; border-radius:50%; display:block; }
+    .dotrow i.dn { opacity:.38; }   /* 할일 달력: 완료한 날 점(옅게) — 미완료(마감) 점과 구분 */
 
     /* ===== 🐱 고양이집 (은화 경제 + 도트 아트) ===== */
     .px { image-rendering:pixelated; display:block; }

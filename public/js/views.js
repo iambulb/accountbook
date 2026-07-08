@@ -626,6 +626,18 @@
     // ===== 할일(투두) 모드 화면 =====
     let _todoFilter='all', _todoSel=null;
     function setTodoFilter(f){ _todoFilter=f; renderTodoList(); }
+    // 🎨 할일 카테고리 — 할일 전용 고정 세트(id·이름·색). 가계부 카테고리는 ws 종속이라 개인 할일(user-global)과 스코프가 안 맞아 별도 상수(어느 컨텍스트에서도 같은 색 매핑).
+    const TODO_CATS=[['work','업무','#5B8DEF'],['study','공부','#9B7BF3'],['home','집안일','#F09B3C'],['health','건강','#3FBF77'],['promise','약속','#FF7BA9'],['shopping','쇼핑','#29B6C5'],['etc','기타','#8B95A1']];
+    function todoCat(id){ if(!id) return null; for(let i=0;i<TODO_CATS.length;i++) if(TODO_CATS[i][0]===id) return TODO_CATS[i]; return null; }
+    function todoCatColor(t){ const c=todoCat(t&&t.category); return c?c[2]:''; }
+    // 완료한 날(KST) — 일반 완료=doneAt, 반복 완료=lastDoneAt(마지막 회차만 기록됨). todayKst와 같은 UTC+9 경계.
+    function todoDoneDay(t){ const s=(t&&(t.doneAt||t.lastDoneAt))||''; if(!s) return '';
+      const d=new Date(s); if(isNaN(d.getTime())) return String(s).slice(0,10);
+      return new Date(d.getTime()+9*3600000).toISOString().slice(0,10); }
+    // 할일 편집 시트의 카테고리 칩(같은 칩 다시 탭=해제 → 카테고리 없음)
+    let _tdCat='';
+    function pickTodoCat(id){ _tdCat=(_tdCat===id)?'':id;
+      const w=$('tdCatChips'); if(w) Array.prototype.forEach.call(w.querySelectorAll('.chip'),function(b){ b.classList.toggle('on',(b.getAttribute('data-c')||'')===_tdCat); }); }
     // 개인(user-global)+그룹(ws) 할일 합본 — 조회/편집 대상 찾기용
     function allTodos(){ return (state.myTodos||[]).concat(state.todos||[]); }
     // 할일 쓰기 경로: 개인=users/{uid}/todos, 그룹=ws/{wsId}/todos
@@ -942,6 +954,7 @@
       const _rep=t.repeat&&t.repeat!=='none'; const _dc=Number(t.doneCount)||0;
       const repPill=_rep?(' <span class="pill">🔁'+(_dc>0?' '+_dc+'회':'')+'</span>'):'';   // 반복 완료 횟수(있으면) — 반복 완료 이력 가시화
       const prioDot=(t.priority==='high')?'<span class="tdprio high" title="높음" aria-label="우선순위 높음">●</span>':((t.priority==='low')?'<span class="tdprio low" title="낮음" aria-label="우선순위 낮음">●</span>':'');
+      const _tc=todoCat(t.category); const catDot=_tc?'<span class="tdcat" style="background:'+_tc[2]+'" title="'+_tc[1]+'" aria-label="카테고리 '+_tc[1]+'"></span>':'';   // 카테고리 색 점(TODO_CATS)
       const tagHtml=(t.tags&&t.tags.length)?' '+t.tags.slice(0,3).map(function(g){ return '<span class="tdtag">'+escapeHtml(g)+'</span>'; }).join(''):'';
       const _sub=Array.isArray(t.subtasks)?t.subtasks:[], _sdone=_sub.filter(function(s){ return s.done; }).length;
       const subBadge=_sub.length?(ro?(' <span class="pill tdsub'+(_sdone>=_sub.length?' all':'')+'">☑ '+_sdone+'/'+_sub.length+'</span>')
@@ -953,7 +966,7 @@
       const titleTag=ro
         ? '<span class="tdtitle'+(t.done?' done':'')+'">'
         : '<span class="tdtitle'+(t.done?' done':'')+'" onclick="openTodoEdit(\''+t.id+'\')">';
-      return '<div class="tdrow">'+chk+prioDot+
+      return '<div class="tdrow">'+chk+prioDot+catDot+
         titleTag+escapeHtml(t.title||'')+repPill+subBadge+tagHtml+(t.purposeBookId?' <span class="pill">📍</span>':'')+'</span>'+
         todoDueBadge(t, ro)+who+'</div>';
     }
@@ -1041,20 +1054,25 @@
     function renderTodoCalendar(){
       const m=state.month, parts=m.split('-'), y=+parts[0], mo=+parts[1];
       const base=scopedTodos();
-      const byDay={}; base.forEach(t=>{ if(!t.done && t.dueDate && t.dueDate.slice(0,7)===m) byDay[t.dueDate]=(byDay[t.dueDate]||0)+1; });
+      // 일별 점 버킷 — 미완료=마감일 기준(카테고리 색), 완료=완료한 날(doneAt/lastDoneAt·KST) 기준(같은 색·옅게). 가계부 달력처럼 색 중복 제거·색당 1점.
+      const byDay={}; const _bk=function(ds){ return byDay[ds]=byDay[ds]||{o:[],dn:[]}; };
+      base.forEach(t=>{ const col=todoCatColor(t)||'var(--primary)';
+        if(!t.done && t.dueDate && t.dueDate.slice(0,7)===m){ const b=_bk(t.dueDate); if(b.o.indexOf(col)<0 && b.o.length<3) b.o.push(col); }
+        const dd=todoDoneDay(t); if(dd && dd.slice(0,7)===m){ const b=_bk(dd); if(b.dn.indexOf(col)<0 && b.dn.length<3) b.dn.push(col); } });
       const HEAD=['월','화','수','목','금','토','일']; const first=(new Date(y,mo-1,1).getDay()+6)%7; const days=new Date(y,mo,0).getDate(); const todayS=todayKst(); const sel=_todoSel||todayS;
       let h=todoScopeSeg();
       h+='<div class="monthlbl"><button onclick="todoMoveMonth(-1)" aria-label="이전 달">‹</button><b>'+y+'년 '+mo+'월</b><button onclick="todoMoveMonth(1)" aria-label="다음 달">›</button></div>';
       h+='<div class="calwrap"><div class="cal-head">'+HEAD.map(function(w,i){ return '<div class="'+(i===5?'sat':i===6?'sun':'')+'">'+w+'</div>'; }).join('')+'</div><div class="cal-grid">';
       for(let i=0;i<first;i++) h+='<div class="cal-cell dim"></div>';
       for(let d=1;d<=days;d++){ const ds=y+'-'+pad2(mo)+'-'+pad2(d); const wd=new Date(y,mo-1,d).getDay(); const dcls='d'+(wd===0?' sun':(wd===6?' sat':''));
-        const n=byDay[ds]||0; const cls='cal-cell'+(ds===todayS?' today':'')+(ds===sel?' sel':'');
-        const dot=n?'<span class="dotrow"><i style="background:var(--primary)"></i>'+(n>1?'<span style="font-size:9px;font-weight:800;color:var(--primary);margin-left:2px;">'+n+'</span>':'')+'</span>':'';
+        const b=byDay[ds]; const cls='cal-cell'+(ds===todayS?' today':'')+(ds===sel?' sel':'');
+        let dot=''; if(b && (b.o.length||b.dn.length)){ const dn=b.dn.slice(0, Math.max(0,4-b.o.length));   // 한 칸 최대 4점(미완료 우선, 완료 점은 남는 자리에)
+          dot='<span class="dotrow">'+b.o.map(c=>'<i style="background:'+c+'"></i>').join('')+dn.map(c=>'<i class="dn" style="background:'+c+'"></i>').join('')+'</span>'; }
         h+='<div class="'+cls+'" onclick="todoSelDay(\''+ds+'\')"><div class="'+dcls+'">'+d+'</div>'+dot+'</div>';
       }
       h+='</div></div>';
       const ro=todoReadOnly();
-      const dayT=base.filter(t=>t.dueDate===sel).sort((a,b)=>(a.done?1:0)-(b.done?1:0));
+      const dayT=base.filter(t=>t.dueDate===sel || todoDoneDay(t)===sel).sort((a,b)=>(a.done?1:0)-(b.done?1:0));   // 그날 마감 + 그날 완료한 할일(완료 점과 목록 일치)
       h+='<div class="sech"><span class="l">'+(+sel.split('-')[1])+'월 '+(+sel.split('-')[2])+'일</span><span class="s">'+dayT.length+'개</span></div>';
       h+='<div class="card" style="padding:4px 12px;">'+(dayT.length?dayT.map(t=>todoRow(t,ro)).join(''):'<div class="empty" style="padding:22px 6px;">이 날 할일이 없어요</div>')+'</div>';
       $('content').innerHTML=h;
@@ -1133,6 +1151,8 @@
       h+='<p class="muted" style="font-size:11.5px;margin:-4px 2px 10px;">매일 하는 습관은 <b>미션 탭 · 내 미션</b>에서 스트릭으로 관리해요.</p>';
       h+='<div class="form-2"><div class="field"><label>우선순위</label><select class="input" id="tdPrio">'+[['high','🔴 높음'],['normal','보통'],['low','🔵 낮음']].map(function(o){ return '<option value="'+o[0]+'"'+(prio===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
         '<div class="field"><label>태그 (선택)</label><input class="input" id="tdTags" value="'+escapeHtml(tdtags)+'" placeholder="쉼표로 구분: 집안일, 급함"></div></div>';
+      _tdCat=t?(todoCat(t.category)?t.category:''):'';   // 편집=기존 값, 신규=없음. 알 수 없는 id는 없음 취급.
+      h+='<div class="field"><label>카테고리 (선택 — 캘린더·목록에 색으로 구분)</label><div class="chip-row" id="tdCatChips" style="margin:2px 0 0;">'+TODO_CATS.map(function(c){ return '<button type="button" class="chip'+(_tdCat===c[0]?' on':'')+'" data-c="'+c[0]+'" onclick="pickTodoCat(\''+c[0]+'\')"><span class="catdot" style="background:'+c[2]+'"></span>'+c[1]+'</button>'; }).join('')+'</div></div>';
       h+='<div class="field"><label>메모 (선택)</label><input class="input" id="tdNote" value="'+escapeHtml(t?(t.note||''):'')+'" placeholder="메모"></div>';
       h+='<div class="field"><label>하위 작업 (선택, 한 줄에 하나)</label><textarea class="input" id="tdSub" rows="3" placeholder="예: 우유 사기">'+escapeHtml(subText)+'</textarea></div>';
       h+='<button class="btn" onclick="saveTodo('+(id?'\''+id+'\'':'null')+')">'+(t?'수정':'추가')+'</button>';
@@ -1167,7 +1187,7 @@
         scope:scope, ownerUid:ownerUid,
         assignedUid:assignedUid, assignedName:assignedName,
         repeat:($('tdRepeat')?val('tdRepeat'):'none')||'none', purposeBookId:($('tdPb')?val('tdPb'):'')||'',
-        priority:_prio, tags:_tags, subtasks:_subs,
+        priority:_prio, category:(todoCat(_tdCat)?_tdCat:''), tags:_tags, subtasks:_subs,
         createdByUid:t?(t.createdByUid||state.uid||''):(state.uid||''), createdAt:t?(t.createdAt||now):now, updatedAt:now,
         sortOrder:t?(t.sortOrder!=null?t.sortOrder:Date.now()):Date.now() };
       const ref=scope==='personal'?db.ref('users/'+state.uid+'/todos/'+key):db.ref(wp('todos/'+key));
