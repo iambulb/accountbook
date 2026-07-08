@@ -9892,14 +9892,16 @@
       st.insertAdjacentHTML('afterbegin','<div class="fx-ddclouds" aria-hidden="true">'+c+'</div>');
       // 🌈 무지개 — 화면 안에서 양옆까지 감싸는 둥근(반원) 아치가 왼→오로 펼쳐진다
       st.insertAdjacentHTML('afterbegin','<div class="fx-ddrainbow" aria-hidden="true">'+authRainbowSvg()+'</div>');
-      // 🦋/🍁 알 주변 7 — 뜰알=나비, 펫알·랜덤박스=낙엽(단풍잎). 조건 동일(무지개 승급 시). '섹터'로 고르게 + 매 연출 랜덤 위치·경로.
-      const useLeaf = !!(_fx && _fx.kind!=='ddeul');   // 펫알·랜덤박스=낙엽, 뜰알=나비
-      const T=['o','b','p','y','o','p','b']; let b=''; const N=7, SH=-28;   // SH=전체 왼쪽 시프트
+      // 🦋/🍁/🌸 알 주변 — 뜰알=나비, 🌈 무지개알·무지개박스(승급 포함, rainbow)=**찬란한 무지개 색바퀴 꽃 6개**(사용자 지침 — 낙엽 대체), 그 외 펫알·랜덤박스=낙엽(단풍잎). '섹터'로 고르게 + 매 연출 랜덤 위치·경로.
+      const useRbFlw = !!(_fx && _fx.kind!=='ddeul' && _fx.rainbow);      // 무지개알·무지개박스·무지개 승급=무지개꽃
+      const useLeaf = !!(_fx && _fx.kind!=='ddeul' && !useRbFlw);         // 그 외(v2 펫알 새싹 조건 등)=낙엽
+      const T=['o','b','p','y','o','p','b']; let b=''; const N=useRbFlw?6:7, SH=-28;   // SH=전체 왼쪽 시프트
       for(let i=0;i<N;i++){
         const ang=((i+Math.random()*0.7)/N)*Math.PI*2, rx=118+Math.random()*72, ry=142+Math.random()*72;
         const mx=Math.round(Math.cos(ang)*rx)+SH, my=Math.round(Math.sin(ang)*ry);
-        const hh=Math.round((13+Math.round(Math.random()*4))*1.5), dur=(6+Math.random()*5).toFixed(1), fd=(0.32+Math.random()*0.28).toFixed(2), del=(-Math.random()*8).toFixed(2);
-        const inner = useLeaf ? ('<span class="ten-leafwig">'+mapleLeafSvg({h:hh}, randLeafCol())+'</span>') : ('<span class="bf-wing">'+butterflySvg(T[i%T.length],{h:hh})+'</span>');
+        const hh=useRbFlw?(16+Math.round(Math.random()*6)):Math.round((13+Math.round(Math.random()*4))*1.5), dur=(6+Math.random()*5).toFixed(1), fd=(0.32+Math.random()*0.28).toFixed(2), del=(-Math.random()*8).toFixed(2);
+        const inner = useRbFlw ? ('<span class="fx-rbflwig" style="--fd:'+(2.0+Math.random()*1.4).toFixed(2)+'s;animation-delay:'+(-Math.random()*2.4).toFixed(2)+'s">'+ddeulFlwRbSvg({h:hh})+'</span>')
+          : useLeaf ? ('<span class="ten-leafwig">'+mapleLeafSvg({h:hh}, randLeafCol())+'</span>') : ('<span class="bf-wing">'+butterflySvg(T[i%T.length],{h:hh})+'</span>');
         b+='<span class="fx-ddbfly" style="margin:'+my+'px 0 0 '+mx+'px;--d:'+dur+'s;--fd:'+fd+'s;animation-delay:'+del+'s;'+bflyDriftVars(Math.random)+'">'+inner+'</span>'; }
       st.insertAdjacentHTML('beforeend','<div class="fx-ddbflies" aria-hidden="true">'+b+'</div>');
       // 🌅 (제외) 무지개알·무지개박스 오픈의 '해 떠오름'(ten-skysun)은 넣지 않는다(사용자 지침) — 무지개 아치·낙엽만 유지. (이 경로는 rainbow=true인 단일 오픈=무지개알/무지개박스 전용. 펫알·랜덤박스는 10연차 노을에서만 해가 뜨며 그건 유지.)
