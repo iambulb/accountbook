@@ -3444,7 +3444,7 @@
       { id:'sakura',        name:'벚꽃잎',      desc:'분홍 벚꽃잎이 바람에 흩날려요.' },
       { id:'rainbowflutter',name:'무지개 나비', desc:'무지개빛 나비 떼가 화려하게 날아다녀요.' },
     ];
-    function bgfxTierMap(){ const m={}; BGFX_CATALOG.forEach(x=>{ m[x.id]='limited'; }); return m; }   // 전부 신화
+    function bgfxTierMap(){ const m={}; BGFX_CATALOG.forEach(x=>{ m[x.id]='exclusive'; }); return m; }   // 전부 한정(exclusive) — 지금은 랜덤/무지개박스 미출현(boxPool에서 제외)
     function currentBgfx(){ return (room()&&room().bgfx)||''; }
     function ownsBgfx(id){ return !!(state.game&&state.game.owned&&state.game.owned.bgfx&&state.game.owned.bgfx[id]); }
     function bgfxCat(id){ return BGFX_CATALOG.find(x=>x.id===id); }
@@ -7137,7 +7137,7 @@
       markCatDirty();
     }
     let _shopSub='event';   // 알뜰샵 진입 시 기본=가챠 탭(맨 왼쪽)
-    function setShopSub(s){ _shopSub=s; _shopSelCat=null; renderCatHouse(); }
+    function setShopSub(s){ if(s!=='event'&&s!=='consum') s='event'; _shopSub=s; _shopSelCat=null; renderCatHouse(); }   // 🚧 은화 구매 탭 제거 중 — 가챠/소비만 허용(그 외는 가챠로 폴백)
     // 가챠 탭 내부 서브탭(뜰알/펫알/랜덤박스/무지개) — 종류별로 나눠 뽑기. 탭별 전용 배너: 이벤트(뜰알)=픽업 낮 씬·펫알=노을(연못)·랜덤박스=노을(선물상자)·무지개=밤.
     let _gachaTab=lsGet('gachaTab','ddeul');
     const GACHA_TABS=[['ddeul','이벤트'],['normal','일반'],['rainbow','무지개']];   // 뜰알=이벤트, 펫알+랜덤박스=일반(합침), 무지개=그대로
@@ -7436,7 +7436,9 @@
     function selectShopCat(id){ _shopSelCat=(_shopSelCat===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     // 알뜰샵 서브탭(펫/가구/소비/벽지/가챠) — cathead(sticky) 안에 넣어 스크롤해도 상단 고정. '펫'=구 '고양이'(호랑이·사자 등 포함이라 펫으로 통일). ('가챠' 탭 키는 내부적으로 'event' 유지)
     function shopSubsegHtml(){
-      const tabs=[['event','가챠'],['cats','펫'],['furn','가구'],['consum','소비'],['wall','벽지'],['floor','바닥']];
+      // 🚧 은화 구매 탭(펫·가구·벽지·바닥)은 잠시 제거 — 펫·기구물은 가챠(랜덤박스)로만, 소비만 은화 판매. (추후 금화 로테이션 판매로 재도입 예정)
+      const tabs=[['event','가챠'],['consum','소비']];
+      if(_shopSub!=='event'&&_shopSub!=='consum') _shopSub='event';   // 제거된 탭 상태면 가챠로 폴백
       return '<div class="subseg">'+tabs.map(function(t){ return '<button class="'+(_shopSub===t[0]?'on':'')+'" onclick="setShopSub(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
     }
     // 🧱 벽지·바닥 알뜰샵 스킨 그리드(공통) — ASSET_TYPES 기반, 카탈로그·현재적용·css·구매fn·라벨만 다름. wall/floor 분기의 거의 동일하던 마크업을 1곳으로.
@@ -8131,8 +8133,8 @@
     // 🪑 비(非)펫 아이템 전역 등급/가격 오버라이드 — 관리자 쓰기·전체 읽기. 미설정은 기본값(_TIER 상수/카탈로그 price).
     //   config/furniture/{id}:{tier,price} = 가구, config/wallpaper/{id} = 벽지, config/floor/{id} = 바닥 스킨.
     let _furnCfg={}, _wallCfg={}, _floorCfg={};
-    const FLOOR_TIER = { wood:'epic', checker:'epic', grass:'legend', ondol:'epic', starry:'epic', sand:'legend', tatami:'epic', brickpath:'epic', carpetgray:'normal', plankwhite:'normal', pinktile:'rare', herringbone:'rare', marble:'epic', galaxy:'legend', autumn:'epic', snow:'epic', lava:'legend', clouds:'epic', sunset_field:'limited', rainbow_field:'limited', night_field:'limited' };   // 움직이는 들판 바닥=신화   // 바닥 스킨 등급(랜덤박스 전용). 모래사장·잔디정원=전설, 나머지=특별.
-    const WALL_TIER = { brick:'epic', stripes:'epic', polkadot:'epic', woodwall:'epic', damask:'legend', sunset_sky:'limited', rainbow_sky:'limited', night_sky:'limited' };   // 움직이는 하늘 벽지=신화   // 벽지 등급 — 특별↑만 지정(랜덤박스 전용). 미지정 벽지는 normal(알뜰샵 구매). 새 특별↑ 벽지는 여기에 등급만 추가하면 자동 가챠 전용+박스풀 편입.
+    const FLOOR_TIER = { wood:'epic', checker:'epic', grass:'legend', ondol:'epic', starry:'epic', sand:'legend', tatami:'epic', brickpath:'epic', carpetgray:'normal', plankwhite:'normal', pinktile:'rare', herringbone:'rare', marble:'epic', galaxy:'legend', autumn:'epic', snow:'epic', lava:'legend', clouds:'epic', sunset_field:'exclusive', rainbow_field:'exclusive', night_field:'exclusive' };   // 움직이는 들판 바닥=한정(exclusive) → 지금은 랜덤/무지개박스 미출현(boxPool이 exclusive 제외)   // 바닥 스킨 등급(랜덤박스 전용). 모래사장·잔디정원=전설, 나머지=특별.
+    const WALL_TIER = { brick:'epic', stripes:'epic', polkadot:'epic', woodwall:'epic', damask:'legend', sunset_sky:'exclusive', rainbow_sky:'exclusive', night_sky:'exclusive' };   // 움직이는 하늘 벽지=한정(exclusive) → 지금은 랜덤/무지개박스 미출현(boxPool이 exclusive 제외)   // 벽지 등급 — 특별↑만 지정(랜덤박스 전용). 미지정 벽지는 normal(알뜰샵 구매). 새 특별↑ 벽지는 여기에 등급만 추가하면 자동 가챠 전용+박스풀 편입.
     // 🏭 비(非)펫 자산(가구/벽지/바닥) 등급·가격·가챠전용 통합 팩토리 — 3자산이 거의 같은 로직이라 테이블 1개로 묶음. 기존 함수명(effItemTier/wallBuyPrice/isGachaOnlyFloor…)은 얇은 별칭으로 유지(호출부 변경 0).
     //   cfg=전역 오버라이드(런타임 재대입되므로 게터), tierMap=기본 등급, hasDefault=무료 'default' 스킨(벽지/바닥만), devKey=devOn 로컬 오버레이 키(가구만).
     const ASSET_TYPES = {
@@ -8162,7 +8164,7 @@
       Object.keys(it).forEach(k=>{ if(it[k]!=='exclusive') m['it:'+k]=it[k]; });   // 한정 아이템은 랜덤박스에서 제외(현재 한정 가구·바닥·벽지 없음, 안전 가드)
       Object.keys(fl).forEach(k=>{ if(fl[k]!=='exclusive') m['fl:'+k]=fl[k]; });
       Object.keys(wl).forEach(k=>{ if(wl[k]!=='exclusive') m['wl:'+k]=wl[k]; });
-      Object.keys(bg).forEach(k=>{ m['bg:'+k]=bg[k]; }); return m; }   // 배경효과=전부 신화(limited)
+      Object.keys(bg).forEach(k=>{ if(bg[k]!=='exclusive') m['bg:'+k]=bg[k]; }); return m; }   // 배경효과=전부 한정(exclusive) → 랜덤/무지개박스에서 제외(뜰알 등 별도 획득 대기)
     function rollBoxReward(tiers, forced){ const raw = forced ? pickTierMember(boxPool(), forced) : rollFromPool(boxPool(), tiers); if(!raw) return null; const p=raw.id.split(':');
       return { id:p.slice(1).join(':'), tier:raw.tier, type:(p[0]==='fl'?'floor':(p[0]==='wl'?'wall':(p[0]==='bg'?'bgfx':'item'))) }; }
     function grantBoxReward(g, res){   // 지급 + (바닥/벽지 중복이면) 환급 은화 반환
