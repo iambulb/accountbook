@@ -2976,35 +2976,37 @@
     // 열린 랜덤박스(오픈 연출): 뚜껑이 위로 튕겨오르고 열린 틈으로 등급색 픽셀 빛(Z)이 쏟아진다. Z=빛(렌더 시 등급색).
     const M_BOX_OPEN = [
       "........................",
-      ".....CCCCCCCccccccccc...",
-      "....CCCCCCCCcccccccccc..",
-      "......ZZZZZZZZZZZZ......",
-      ".....ZZZZZZZZZZZZZZ.....",
-      ".....ZZZZZZZZZZZZZZ.....",
-      "....ZZZZZZZZZZZZZZZZ....",
-      "....ZZZZZZZZZZZZZZZZ....",
-      "...ZZZZZZZZZZZZZZZZZZ...",
-      "..XZZZZZZZZZZZZZZZZZZX..",
+      ".......CCCCCCCCCC.......",
+      "......CccccccccccccC....",
+      ".....CccccccccccccccC...",
+      ".....Cccccccccccccccc...",
+      "......Z..ZZ..ZZ..Z......",
+      "....GZZZZZZZZZZZZZZG....",
+      "...ZOoeEuUvVpPeuvoeOZ...",
+      "...ZoOoevuvpeuvpoeoOZ...",
+      "..XZoeOouvpevuvpoeOoZX..",
+      ".XmmmmOmmmmmmmmmmOmmmmX.",
       "..XMWWWWWWWnWWWWSSSSMX..",
-      "..XmWWWWWWWWWWWSSSSSnX..",
-      "..XMWWWWWWQQQQSSSSSSnX..",
-      "..XmWWWWWQQSSQQSSSSSnX..",
-      "..XMWWWWWWWSQQSSSSSSnX..",
-      "..XmWWWWWWSQQSSSSSSSnX..",
-      "..XMWWWWWSSQQSSSSSSSnX..",
-      "..XmWWWWSSSSSSSSSSSDnX..",
-      "..XMWWWSSSSQQSSSSDDDnX..",
-      "..XMWWSSSSSSSSSSDDDDMX..",
+      "..XmWWWWWWWWWWWWSSSSnX..",
+      "..XMWWWWWWWWWWSSSSSSnX..",
+      "..XmWWWWWWWWWSSSSSSSnX..",
+      "..XMWWWWWWWWSSSSSSSSnX..",
+      "..XmWWWWWWWSSSSSSSSSnX..",
+      "..XMWWWWWWSSSSSSSSSSnX..",
+      "..XmWWWWWSSSSSSSSSDDnX..",
+      "..XMWWWWSSSSSSSSDDDDnX..",
+      "..XMWWWSSSSSSSSDDDDDMX..",
       "..XXXXXXXXXXXXXXXXXXXX..",
+      "........................",
       "........................"
     ];
     // 펫알(크림): 4톤 명암 I·W·S·D + k 잔점, X 외곽. Q=무지개 물음표. L=균열 틈새 빛(C2=따뜻한 흰빛 기본, 오픈 때 eggCrackSvg가 등급색으로 덮음).
     const EGG_PAL={X:'#8d8368',I:'#fffef8',W:'#f7f3ea',S:'#e6dfce',D:'#d3cbb6',k:'#ddd6c4',Q:'RAINBOW',L:'#fff3c8'};
     // 랜덤박스(파스텔+금장): 돔뚜껑 C/c, 몸체 W·S·D, 금장 m/M/n, X 외곽. Q=무지개 물음표. Z=오픈 빛(등급색으로 덮임).
-    const BOX_PAL={X:'#6f7688',C:'#eef1f7',c:'#d0d7e4',W:'#dbe1ec',S:'#bcc4d4',D:'#9aa5b9',m:'#f4dd8f',M:'#f8ecc0',n:'#b48a2f',Q:'RAINBOW',Z:'#fff3c8'};
+    const BOX_PAL={X:'#6f7688',C:'#eef1f7',c:'#d0d7e4',W:'#dbe1ec',S:'#bcc4d4',D:'#9aa5b9',m:'#f4dd8f',M:'#f8ecc0',n:'#b48a2f',Q:'RAINBOW',Z:'#fff3c8',o:'#F4D06B',O:'#fff0b8',e:'#ff5d6c',E:'#ffc0c6',u:'#5aa9e6',U:'#cfeaff',v:'#5bbf7a',V:'#c6f5d8',p:'#c77dff',P:'#eccfff',G:'#ffffff'};
     // 무지개알/무지개박스: 껍질·몸체·뚜껑을 통째로 RAINBOW(움직이는 세로 무지개), 물음표(Q)는 흰색 대비, 금장(m/M/n)은 유지, 외곽(X)은 중립.
     const EGG_PAL_RB={X:'#8d8368',I:'RAINBOW',W:'RAINBOW',S:'RAINBOW',D:'RAINBOW',k:'RAINBOW',Q:'#FBFBFD',L:'#FBFBFD'};
-    const BOX_PAL_RB={X:'#6f7688',C:'RAINBOW',c:'RAINBOW',W:'RAINBOW',S:'RAINBOW',D:'RAINBOW',m:'#f4dd8f',M:'#f8ecc0',n:'#b48a2f',Q:'#FBFBFD',Z:'#FBFBFD'};
+    const BOX_PAL_RB={X:'#6f7688',C:'RAINBOW',c:'RAINBOW',W:'RAINBOW',S:'RAINBOW',D:'RAINBOW',m:'#f4dd8f',M:'#f8ecc0',n:'#b48a2f',Q:'#FBFBFD',Z:'#FBFBFD',o:'#F4D06B',O:'#fff0b8',e:'#ff5d6c',E:'#ffc0c6',u:'#5aa9e6',U:'#cfeaff',v:'#5bbf7a',V:'#c6f5d8',p:'#c77dff',P:'#eccfff',G:'#ffffff'};
 
     // 카탈로그(코드 상수) — 저장은 보유 id만. id는 종·색 구분(예: cat_calico, dog_corgi), species는 분류/필터용.
     // 새 동물(네발 짐승) 처리 규칙은 docs/pet-asset-pipeline.md 참고.
@@ -9787,6 +9789,7 @@
     let _fx10=null;
     const TEN_N=10, TEN_COLS=2;
     const TEN_DROP=900, TEN_WALK=1800, TEN_TAP=160, TEN_HIT=180, TEN_STEP=1600;   // 길이감 튜닝 손잡이
+    const TEN_CARD_LOCK=1000;   // 🆕 NEW·신화·한정 카드 최소 표시 잠금(ms) — 연타로 지나침 방지
     function tenShuffle(n){ const a=Array.from({length:n},(_,i)=>i); for(let i=n-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
     function tenScaleFor(id){ return petActorPx(id, 44, 110); }   // 실제 설정 크기(petScale 비례, 룸/dock·배회와 동일 표기) — 반감 없음
     function tenEggSvg(it, stage){
@@ -10024,7 +10027,7 @@
     function tenRevealNext(){ if(_fx10.busy) return; _fx10.ridx++;
       if(_fx10.ridx>=_fx10.items.length){ tenFinale(); return; } tenShowCard(_fx10.ridx); }
     // ⏭️ SKIP — 신화(limited)·한정(exclusive) 이외 등급 카드는 한 번에 건너뛰고 다음 신화/한정에서 멈춤(없으면 피날레로).
-    function tenSkip(){ if(!_fx10 || _fx10.phase!=='reveal') return; const order=_fx10.order, items=_fx10.items;
+    function tenSkip(){ if(!_fx10 || _fx10.busy || _fx10.phase!=='reveal') return; const order=_fx10.order, items=_fx10.items;   // busy=NEW·신화·한정 잠금 중(SKIP도 대기)
       let next=_fx10.ridx+1;
       while(next<items.length){ const it=items[order[next]]; if(it && (it.tier==='limited'||it.tier==='exclusive'||it.isNew)) break; next++; }   // 신화·한정 + 🆕 처음 얻는 펫/아이템은 스킵 안 함(멈춰서 보여줌)
       if(next>=items.length){ tenFinale(); return; }
@@ -10040,7 +10043,13 @@
         fx.className='fx on reveal ten-reveal';
         holder=fx.querySelector('.ten-cardholder');
       }
-      holder.innerHTML=tenRevealCardHtml(it, n+1, _fx10.items.length); }
+      holder.innerHTML=tenRevealCardHtml(it, n+1, _fx10.items.length);
+      // 🆕 NEW·신화·한정 카드는 잠깐 탭 잠금 — 연타로 지나치지 않게 최소 표시 시간을 강제(SKIP 정지 기준과 동일 대상).
+      //  잠금 중엔 .ten-lock 이 '탭하여 다음' 힌트·SKIP을 숨기고(CSS), 해제되면 힌트가 나타나 넘길 수 있다는 신호가 된다.
+      if(it && (it.isNew || it.tier==='limited' || it.tier==='exclusive')){
+        _fx10.busy=true; holder.classList.add('ten-lock');
+        _fxT(function(){ if(!_fx10) return; _fx10.busy=false; holder.classList.remove('ten-lock'); }, TEN_CARD_LOCK);
+      } else { _fx10.busy=false; holder.classList.remove('ten-lock'); } }
     function tenRevealCardHtml(it, n, total){ const t=tierInfo(it.tier), rank=tierRank(it.tier), ex=it.tier==='exclusive', rb=!!it.rainbow;
       const conf=rb?28:(rank<=0?0:rank<=2?12:20+(rank-2)*8), tw=5+rank*3;
       return '<div class="fx-reveal ten-card rev-scene tier-'+t.id+' rank-'+rank+((rb||ex)?' rev-rb':'')+'">'+
