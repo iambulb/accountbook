@@ -3728,7 +3728,7 @@
       cat_puma:{ walk:'assets/pets/cat/cat_puma/walk.png', frames:8, stills:true, scale:5 },
       cat_snowleopard:{ walk:'assets/pets/cat/cat_snowleopard/walk.png', frames:8, stills:true, scale:5 },
       cat_caracal:{ walk:'assets/pets/cat/cat_caracal/walk.png', frames:8, stills:true, scale:5 },
-      cat_leopard:{ walk:'assets/pets/cat/cat_leopard/walk.png', frames:8, stills:true, scale:5, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, run:8, jump:6, yawn:6, angry:4, sleep:4 } },
+      cat_leopard:{ walk:'assets/pets/cat/cat_leopard/walk.png', frames:8, stills:true, scale:5, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       cat_blackpanther:{ walk:'assets/pets/cat/cat_blackpanther/walk.png', frames:8, stills:true, scale:5 },
       cat_ocelot:{ walk:'assets/pets/cat/cat_ocelot/walk.png', frames:8, stills:true, scale:4 },
       cat_sandcat:{ walk:'assets/pets/cat/cat_sandcat/walk.png', frames:6, stills:true },
@@ -6240,7 +6240,7 @@
     }
     // 배치물 하나의 마크업(그릇=탭 급여·채움 반영, 화장실=똥 수거). isDock이면 dock 크기.
     function propMarkup(p, isDock, plain, live){
-      const foot=itemFoot(p.itemId);
+      const foot=itemFoot(p.itemId); const flip=!!p.flip;   // 좌우 반전(placed[key].flip)
       // 가로 앵커=발자국 "가운데 정렬 + 양끝 벽 스냅"(camAnchorMode). CSS left% + translateX(--crtx)로 픽셀 폭을 몰라도 자동 정렬.
       //  left  : left 0%   / --crtx 0     → 그래픽 좌변이 왼쪽 벽에 밀착
       //  right : left 100% / --crtx -100% → 그래픽 우변이 오른쪽 벽에 밀착
@@ -6260,7 +6260,7 @@
       let inner=tap? furnRoomSvg(p.itemId,p.key,{h:fh}) : (live&&FURN_ANIM[p.itemId] ? furnLiveSvg(p.itemId,{h:fh}) : furnSvg(p.itemId,{h:fh}));
       if(!plain && p.itemId==='litterbox'){ const slots=p._poops||[]; const ph=Math.max(6,Math.round(fh*0.32));
         inner+=slots.map(s=>'<span class="poop" role="button" tabindex="0" onclick="collectPoop(event)" style="left:'+(20+(s%3)*26)+'%;top:'+(30+((s/3|0)*20))+'%;height:'+ph+'px" title="치우기 +'+POOP_REWARD+' 은화">'+poopSvg({h:ph})+'</span>').join(''); }
-      return '<div class="cr-prop'+(tap?' cr-tap':'')+(p.itemId==='litterbox'?' cr-litter':'')+'" style="left:'+x+'%;bottom:'+bottom+'%;z-index:'+z+';--crtx:'+txPct+'%;transform:translateX(var(--crtx));"'+(tap?' role="button" tabindex="0" onclick="event.stopPropagation();feedBowl(\''+p.key+'\')"':'')+'>'+inner+'</div>';
+      return '<div class="cr-prop'+(tap?' cr-tap':'')+(p.itemId==='litterbox'?' cr-litter':'')+'" style="left:'+x+'%;bottom:'+bottom+'%;z-index:'+z+';--crtx:'+txPct+'%;transform:translateX(var(--crtx))'+(flip?' scaleX(-1)':'')+';"'+(tap?' role="button" tabindex="0" onclick="event.stopPropagation();feedBowl(\''+p.key+'\')"':'')+'>'+inner+'</div>';
     }
     // 배치 가구 마크업을 "바닥 아이템(러그·연못) 먼저 → 그 외"로 나눠 반환. 바닥 아이템은 z:0이라 그 외(z≥1)엔 이미 밀리지만,
     // 벽 가구도 z:0(같은 값)이라 DOM 순서가 앞서면 바닥 아이템 위로 그려진다 → 바닥 아이템을 항상 맨 앞(=맨 아래 레이어)에 두어
@@ -7211,7 +7211,7 @@
     // 친구/랭킹 캠은 '대표 방(showRoom)'을 보여준다(사적인 방 노출 방지). showRoom 없으면 current, 레거시는 flat.
     function friendRoom(fg){ const h=(fg&&fg.home)||{}; if(Array.isArray(h.rooms)&&h.rooms.length){ const i=Math.min(h.rooms.length-1, Math.max(0, (h.showRoom!=null?h.showRoom:h.current)|0)); return h.rooms[i]||h.rooms[0]; } return h; }
     function friendActiveCats(fg){ const a=friendRoom(fg).active||[]; const owned=(fg.owned&&fg.owned.cats); return a.filter(id=>(!owned||owned[id]) && PET_CATALOG.some(c=>c.id===id)); }   // homeCam 스냅샷은 owned가 없어 active를 신뢰하되 카탈로그에 있는(렌더 가능한) 펫만 — 삭제된 펫이 친구 캠에 폴백 팔레트 유령으로 뜨지 않게(내 방 activeCats와 동일 기준)
-    function friendPlacedList(fg){ const p=friendRoom(fg).placed||{}; return Object.keys(p).map(k=>({ key:k, r:+k.split('_')[0], c:+k.split('_')[1], itemId:p[k].itemId, filledAt:p[k].filledAt||null })); }   // filledAt=먹기/마시기 클립 판정(furnClip)
+    function friendPlacedList(fg){ const p=friendRoom(fg).placed||{}; return Object.keys(p).map(k=>({ key:k, r:+k.split('_')[0], c:+k.split('_')[1], itemId:p[k].itemId, filledAt:p[k].filledAt||null, flip:!!p[k].flip })); }   // filledAt=먹기/마시기 클립 판정(furnClip)
     // 친구 방 HTML(.catroom + #frStage). name=친구 닉네임.
     function friendRoomHtml(fg, name){
       const wall=friendRoom(fg).wallpaper||'default';
@@ -7488,12 +7488,14 @@
     const BANNER_TABS=[['ddeul','뜰알'],['egg','펫알'],['box','랜덤박스'],['rainbow','무지개']];
     function setBannerTab(t){ _bannerTab=t||'ddeul'; if(state._sheetRefresh) state._sheetRefresh(); }
     function openDevBannerManager(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
-      const build=()=>{
+      const build=()=>{ _pkV2=true;   // 🎨 v2 고해상도 씬은 개발자 미리보기에서만 — 빌드 동안만 켜고 반드시 해제(라이브 배너는 v1 유지)
+        try{
         if(!BANNER_TABS.some(t=>t[0]===_bannerTab)) _bannerTab='ddeul';
-        let h='<div class="note">가챠 배너 미리보기 — 탭별로 확인. <b>펫알</b>=노을 연못·<b>랜덤박스</b>=노을 선물상자(전용 배경 분화). 버튼은 <b>미리보기</b>(1회=강제 전설·10회=연출)로 소모 없음.</div>';
+        let h='<div class="note">가챠 배너 미리보기(🎨 <b>v2 고해상도 씬</b> — 라이브는 아직 v1) — 탭별로 확인. <b>펫알</b>=노을 연못·<b>랜덤박스</b>=노을 선물상자(전용 배경 분화). 버튼은 <b>미리보기</b>(1회=강제 전설·10회=연출)로 소모 없음.</div>';
         h+='<div class="subseg">'+BANNER_TABS.map(t=>'<button class="'+(_bannerTab===t[0]?'on':'')+'" onclick="setBannerTab(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div>';
         h+=(_bannerTab==='ddeul'?ddeulBannerHtml():_bannerTab==='egg'?eggBannerHtml():_bannerTab==='box'?boxBannerHtml():rainbowBannerHtml());
         return h;
+        } finally { _pkV2=false; }
       };
       openSheet('배너 관리', build());
       state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const st=b.scrollTop; b.innerHTML=build(); b.scrollTop=st; if(typeof pkObserveScenes==='function') pkObserveScenes(); };
@@ -7673,7 +7675,7 @@
     }
     // ---- 가구 인벤토리/배치 ----
     function itemQty(id){ const it=state.game&&state.game.owned.items[id]; return it?(Number(it.qty)||0):0; }
-    function placedList(){ const p=room().placed||{}; return Object.keys(p).map(k=>({key:k, r:+k.split('_')[0], c:+k.split('_')[1], itemId:p[k].itemId, filledAt:p[k].filledAt||null, fillMs:p[k].fillMs||null})); }   // filledAt=먹기/마시기 클립 판정(furnClip), fillMs=그릇 채움 지속(고급사료·정수물 6h) 보존용
+    function placedList(){ const p=room().placed||{}; return Object.keys(p).map(k=>({key:k, r:+k.split('_')[0], c:+k.split('_')[1], itemId:p[k].itemId, filledAt:p[k].filledAt||null, fillMs:p[k].fillMs||null, flip:!!p[k].flip})); }   // filledAt=먹기/마시기 클립 판정(furnClip), fillMs=그릇 채움 지속(고급사료·정수물 6h) 보존용
     function itemPlaced(id){ return placedList().filter(x=>x.itemId===id).length; }          // 현재 방 배치 수(케어 아이템 방당 상한용)
     function itemPlacedAll(id){ return sumPlacedItem(homeH().rooms, id); }                    // 전 방 배치 합(전역 인벤토리 소진 — 복제 방지)
     function itemRemaining(id){ return itemQty(id)-itemPlacedAll(id); }                       // 남은 수량 = 보유 - 모든 방 배치
@@ -7995,7 +7997,7 @@
     //  · 깊이 d(0=앞·크게·아래 ~ 1=뒤·작게·위): bottom%=d*범위, 크기=1-d*0.5. 나무는 뒤쪽(d 큼)만 → 펫 안 가림+하늘 안 침범.
     let _pkSceneCache={};   // 픽업 씬 메모 — 씬은 pkRand(결정적 시드)+상수 LIMITED_PICKUP에만 의존해 완전 결정적. (mode,픽업펫)로 1회만 생성하고, RTDB 틱마다 _sheetRefresh가 255KB/~4천 rect를 재생성하던 것을 제거. 픽업펫이 바뀌면 키가 달라져 자동 무효화.
     function pickupSceneHtml(mode){
-      const _pkKey = mode + '|' + LIMITED_PICKUP.map(function(id){ return pickupExists(id)?id:'-'; }).join(',');
+      const _pkKey = (_pkV2?'v2|':'') + mode + '|' + LIMITED_PICKUP.map(function(id){ return pickupExists(id)?id:'-'; }).join(',');   // v2(개발자 미리보기)는 캐시 키 분리 — 라이브 v1 캐시와 안 섞임
       if(_pkSceneCache[_pkKey]) return _pkSceneCache[_pkKey];
       const reveal = mode==='reveal', sz = reveal?1.85:1, S = h=>Math.max(1,Math.round(h*sz));   // 리빌은 전체화면 배경 → 데코 크게
       const p1=LIMITED_PICKUP[0], p2=LIMITED_PICKUP[1], H=92;   // 펫 렌더 기준 높이(원근 앞배율 1.5=~138 → 기본(≈48)의 약 3배)
@@ -8053,11 +8055,11 @@
       // ⛰️ 아이콘 뒤 빈 하늘 채우기 — 지평선 먼 언덕(낮 초록)
       let hills=''; const HX=[18,50,82], HH=[26,24,28]; for(let i=0;i<3;i++){
         hills+='<span class="pk-hill" style="left:'+HX[i]+'%;bottom:-2px;z-index:0;">'+hillSvg(HILL_DAY,{h:S(HH[i])})+'</span>'; }
-      const _pkHtml = '<div class="pkscene'+(mode==='reveal'?' pk-reveal':'')+'" aria-hidden="true">'+
+      const _pkHtml = '<div class="pkscene'+(mode==='reveal'?' pk-reveal':'')+(_pkV2?' pk-v2':'')+'" aria-hidden="true">'+
           '<div class="pk-sky">'+clouds+'</div>'+
           '<div class="pk-rainbow">'+authRainbowSvg({h:S(64)})+'</div>'+
           '<div class="pk-horizon">'+hills+farline+'</div>'+
-          '<div class="pk-field"><div class="pk-grass"></div>'+soil+stones+fence+tufts+flowers+trees+egg+'</div>'+
+          '<div class="pk-field">'+pkGrassDiv('day')+soil+stones+fence+tufts+flowers+trees+egg+'</div>'+
           '<div class="pk-air">'+bflies+'</div>'+stage+
         '</div>';
       _pkSceneCache[_pkKey]=_pkHtml; return _pkHtml; }
@@ -8072,7 +8074,7 @@
     //    울타리·큰돌 대신 옆에 흐르는 계곡(물고기 헤엄)+줄지은 작은 돌들, 노을빛 뜰, 나비→고추잠자리. 결정적(pkRand)·캐시.
     let _sunsetCache={};   // 키별 캐시(mode|variant) — variant 'box'=랜덤박스 배너(연못 대신 선물상자 무더기)
     function sunsetSceneHtml(mode, variant){
-      mode=mode||'banner'; const ck=mode+'|'+(variant||''); if(_sunsetCache[ck]) return _sunsetCache[ck];
+      mode=mode||'banner'; const ck=(_pkV2?'v2|':'')+mode+'|'+(variant||''); if(_sunsetCache[ck]) return _sunsetCache[ck];   // v2 캐시 키 분리
       const reveal=mode==='reveal', sz=reveal?1.8:1, S=function(h){ return Math.max(1,Math.round(h*sz)); };   // reveal(10뽑 전체화면)은 스프라이트를 크게
       // ☁️ 노을에 물든 구름
       let clouds=''; const SC=['so','sp','sv'];
@@ -8120,7 +8122,10 @@
         lilies+='<span class="pk-lily" style="left:'+LPOS[i][0]+'%;top:'+LPOS[i][1]+'%;--d:'+dur+'s;animation-delay:'+del+'s;">'+lilyPadSvg({h:S(14)})+'</span>'; }
       const LOPOS=[[58,64],[38,34]]; let lotuses=''; for(let i=0;i<2;i++){ const dur=(4.6+pkRand(i,93)*2).toFixed(1), del=(-pkRand(i,94)*4).toFixed(2);
         lotuses+='<span class="pk-lotus" style="left:'+LOPOS[i][0]+'%;top:'+LOPOS[i][1]+'%;--d:'+dur+'s;animation-delay:'+del+'s;">'+lotusSvg({h:S(13)})+'</span>'; }
-      pond='<div class="pk-pond"><div class="pk-pwater"></div>'+pkoi+lilies+lotuses+pstones+'</div>';
+      // 💧 v2 물반짝(픽셀 트윙클, currentColor) — 잉어·연꽃 부유에 반짝임 한 겹 더(다층 모션 원칙)
+      let wsparks=''; if(_pkV2){ const WS=[[30,34],[62,50],[44,70]]; for(let i=0;i<3;i++){ const del=(pkRand(i,231)*2.4).toFixed(2);
+        wsparks+='<span class="pk-star pk-wspark" style="left:'+WS[i][0]+'%;top:'+WS[i][1]+'%;animation-delay:'+del+'s;color:#eaf8ff">'+sparkSvg({h:S(7)})+'</span>'; } }
+      pond='<div class="pk-pond"><div class="pk-pwater"></div>'+pkoi+lilies+lotuses+pstones+wsparks+'</div>';
       }
       // ⛰️ 아이콘 뒤 빈 하늘 채우기 — 지평선 먼 언덕(노을 보랏빛). 중앙은 낮게 두어 지는 해가 위로 보이게.
       let hills=''; const HX=[16,50,84], HH=[26,20,24]; for(let i=0;i<3;i++){
@@ -8136,10 +8141,10 @@
         leaves+='<span class="pk-fallleaf" style="left:'+l+'%;--d:'+dur+'s;--sw:'+sw+'s;--dir:'+dir+';animation-delay:'+del+'s;"><span class="fl-in">'+mapleLeafSvg({h:S(hh)}, LEAF_COLS[Math.floor(pkRand(i,207)*LEAF_COLS.length)])+'</span></span>'; }
       // ☀️ 배너에서만 지는 해가 기본으로 떠오름. reveal(10연차)은 '기본 미표시'(사용자 지침) — 무지개 조건일 때만 tenSkyRiseSun으로 띄운다.
       const risesun = reveal ? '' : ('<span class="pk-risesun">'+sunSvg({h:S(64)})+'</span>');
-      _sunsetCache[ck]='<div class="pkscene pk-sunset'+(reveal?' pk-reveal':'')+'" aria-hidden="true">'+
+      _sunsetCache[ck]='<div class="pkscene pk-sunset'+(reveal?' pk-reveal':'')+(_pkV2?' pk-v2':'')+'" aria-hidden="true">'+
         '<div class="pk-sky">'+risesun+clouds+'</div>'+
         '<div class="pk-horizon">'+hills+farline+'</div>'+
-        '<div class="pk-field"><div class="pk-grass"></div>'+soil+tufts+flowers+trees+pond+'</div>'+
+        '<div class="pk-field">'+pkGrassDiv('sunset')+soil+tufts+flowers+trees+pond+'</div>'+
         '<div class="pk-air">'+dflies+leaves+'</div>'+
       '</div>';
       return _sunsetCache[ck];
@@ -8147,7 +8152,7 @@
     // 🌙 무지개 밤 씬 — 픽업 씬 틀 그대로, 밤·달빛으로 재색·재배치(보름달·달빛구름·잔별·밤 뜰·반딧불 가득). 무지개알 센터피스는 배너 빌더에서.
     let _nightCache={};   // mode별 캐시(banner/reveal)
     function nightSceneHtml(mode){
-      mode=mode||'banner'; if(_nightCache[mode]) return _nightCache[mode];
+      mode=mode||'banner'; const nk=(_pkV2?'v2|':'')+mode; if(_nightCache[nk]) return _nightCache[nk];   // v2 캐시 키 분리
       const reveal=mode==='reveal', sz=reveal?1.8:1, S=function(h){ return Math.max(1,Math.round(h*sz)); };   // reveal(10뽑 전체화면)은 스프라이트 크게
       const moon='<span class="pk-moon">'+moonSvg({h:S(62)})+'</span>';   // 🌕 상단 보름달
       let stars=''; for(let i=0;i<pkCount(12);i++){ const l=(4+pkRand(i,101)*92).toFixed(1), t=(3+pkRand(i,102)*30).toFixed(1), s=Math.round(4+pkRand(i,103)*5), del=(pkRand(i,104)*3).toFixed(2);
@@ -8164,7 +8169,7 @@
       let trees=''; for(let i=0;i<5;i++){ const d=TD[i], l=(TL[i]+(pkRand(i,132)-0.5)*5).toFixed(1),
         sc=1-d*0.5, bot=(d*70).toFixed(1), z=Math.round(2+(1-d)*2);
         const canopy=(i%2?nightPineSvg({h:S(Math.max(18,Math.round(50*sc)))}):nightTreeSvg({h:S(Math.max(18,Math.round(50*sc)))}));
-        trees+='<span class="pk-tree" style="left:'+l+'%;bottom:'+bot+'%;z-index:'+z+';--i:'+i+'"><span class="pk-canopy">'+canopy+'</span><span class="pk-trunk">'+pxSvg(M_TRUNK, TREE_NIGHT, {h:S(Math.max(8,Math.round(22*sc)))})+'</span></span>'; }
+        trees+='<span class="pk-tree" style="left:'+l+'%;bottom:'+bot+'%;z-index:'+z+';--i:'+i+'"><span class="pk-canopy">'+canopy+'</span><span class="pk-trunk">'+pxSvg(_pkV2?M2_TRUNK:M_TRUNK, TREE_NIGHT, {h:S(Math.max(8,Math.round(22*sc)))})+'</span></span>'; }
       let flowers=''; for(let i=0;i<16;i++){ const d=pkRand(i,141)*0.6, l=(5+(i+0.5)/16*88+(pkRand(i,142)-0.5)*3.5).toFixed(1), sc=1-d*0.5, bot=(d*76).toFixed(1);
         flowers+='<span class="pk-flower pk-nflower" style="left:'+l+'%;bottom:'+bot+'%;--i:'+i+'">'+nightFlowerSvg(NF[Math.floor(pkRand(i,143)*3)],{h:S(Math.max(9,Math.round(16*sc)))})+'</span>'; }
       const NTf=pkCount(16); let tufts=''; for(let i=0;i<NTf;i++){ const d=pkRand(i,151)*0.8, l=(2+(i+0.5)/NTf*94+(pkRand(i,152)-0.5)*3.5).toFixed(1), sc=1-d*0.5, bot=(d*80).toFixed(1);
@@ -8190,13 +8195,13 @@
           shootBehind+='<span class="pk-shoot pk-shoot-far" style="top:'+top+'%;left:'+left+'%;--d:'+dur+'s;--tx:'+tx+'px;--ty:'+ty+'px;--rot:'+rot+'deg;animation-delay:'+del+'s;">'+shootStarSvg({h:hh})+'</span>';
         } else { const hh=S(Math.round(26+pkRand(i,194)*16)), tx=Math.round((340+pkRand(i,195)*150)*sz), ty=Math.round((220+pkRand(i,196)*110)*sz);   // 전체화면 대각선 코너까지
           shootFront+='<span class="pk-shoot" style="top:'+top+'%;left:'+left+'%;--d:'+dur+'s;--tx:'+tx+'px;--ty:'+ty+'px;animation-delay:'+del+'s;">'+shootStarSvg({h:hh})+'</span>'; } }
-      _nightCache[mode]='<div class="pkscene pk-night'+(reveal?' pk-reveal':'')+'" aria-hidden="true">'+
+      _nightCache[nk]='<div class="pkscene pk-night'+(reveal?' pk-reveal':'')+(_pkV2?' pk-v2':'')+'" aria-hidden="true">'+
         '<div class="pk-sky">'+moon+stars+clouds+shootBehind+'</div>'+
         '<div class="pk-horizon">'+hills+farline+'</div>'+
-        '<div class="pk-field"><div class="pk-grass"></div>'+soil+stones+tufts+flowers+trees+'</div>'+
+        '<div class="pk-field">'+pkGrassDiv('night')+soil+stones+tufts+flowers+trees+'</div>'+
         '<div class="pk-air">'+fires+'</div>'+shootFront+
       '</div>';
-      return _nightCache[mode];
+      return _nightCache[nk];
     }
     // (구 roomBackdropHtml 제거 — 신화·한정 등장만 픽업 배너 씬 배경(전설 제외). 배경은 pickupSceneHtml('reveal').)
     // 등급 '이름' 라벨을 등급 색으로(펫 이름이 아니라 등급명). 한정(exclusive)=무지개(.tier-rainbow), 그 외=인라인 색(신화=#ff5fa2 등). 도감 등급 헤더 등 공용.
@@ -8818,7 +8823,7 @@
       gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoomById(g, rid); const pl=R.placed||{};
         const it=pl[d.key]; if(!it) return;                               // 원본 없음(레이스)
         if(!areaFree(r,c,d.foot.w,d.foot.h,pl,d.key,isFloorItem(it.itemId))) return;             // 겹침(자기 제외, 바닥 아이템은 허용)
-        delete pl[d.key]; pl[newKey]={itemId:it.itemId}; g.home.changedAt=new Date().toISOString(); return g;
+        delete pl[d.key]; pl[newKey]=it; g.home.changedAt=new Date().toISOString(); return g;
       }).then(res=>{ if(res&&res.committed) touchHome(); else if(state._sheetRefresh) state._sheetRefresh(); });   // 실패(레이스) 시 재렌더로 원위치
     }
     // ---- 팔레트 항목을 그리드로 드래그해 새로 배치(꾹 눌러 드래그, 짧게 탭하면 선택 토글) ----
@@ -8936,7 +8941,7 @@
       gameRef().transaction(g=>{ g=normalizeGame(g); const R=gRoomById(g, rid); const pl=R.wallPlaced||{};
         const it=pl[d.key]; if(!it) return;                               // 원본 없음(레이스)
         if(!wallAreaFree(r,c,d.w,pl,d.key)) return;                        // 겹침(자기 제외)
-        delete pl[d.key]; pl[newKey]={itemId:it.itemId}; g.home.changedAt=new Date().toISOString(); return g;
+        delete pl[d.key]; pl[newKey]=it; g.home.changedAt=new Date().toISOString(); return g;
       }).then(res=>{ if(res&&res.committed) touchHome(); else if(state._sheetRefresh) state._sheetRefresh(); });
     }
     // 팔레트 벽 가구를 벽 격자로 드래그해 새로 배치(꾹 눌러 드래그, 짧게 탭=선택 토글)
@@ -8981,12 +8986,15 @@
       wrap.onclick=function(e){ if(e.target===wrap) closeItemMenu(); };
       wrap.innerHTML='<div class="gimenu"><div class="gih">'+furnSvg(p.itemId,{h:34})+'<b>'+escapeHtml(it.name||p.itemId)+'</b></div>'+
         '<div class="pi-meta"><span class="pi-tier">'+tierLabelHtml(ft)+'</span><span class="s">'+(it.desc?escapeHtml(it.desc)+' · ':'')+'크기 '+foot.w+'×'+foot.h+'</span></div>'+   // 등급·설명·크기
+        (!wall?'<button class="gib" onclick="toggleFlip(\''+key+'\')"><b>좌우 반전</b><span>가구를 좌우로 뒤집어요</span></button>':'')+
         '<button class="gib" onclick="retrievePlaced(\''+key+'\','+wf+')"><b>회수</b><span>인벤토리로 되돌려요(보유 유지)</span></button>'+
         '<button class="gib sell" onclick="sellPlaced(\''+key+'\','+wf+')"><b>판매</b><span>+'+ITEM_SELL+' 은화 · 보유에서 제거</span></button>'+
         '<button class="gib ghost" onclick="closeItemMenu()">닫기</button></div>';
       document.body.appendChild(wrap);
     }
     function closeItemMenu(){ const m=$('giMenu'); if(m) m.remove(); }
+    function toggleFlip(key){ const rid=curRoomId(); captureUndo();
+      gameRef().transaction(function(g){ g=normalizeGame(g); const R=gRoomById(g,rid); const M=R.placed||{}; const it=M[key]; if(!it) return; it.flip=!it.flip; return g; }).then(function(){ touchHome(); if(typeof catHaptic==='function') catHaptic(8); }); closeItemMenu(); }
     function retrievePlaced(key, wall){ captureUndo(); roomTx(curRoomId(), roomIdx(), R=>{ const M=wall?(R.wallPlaced=R.wallPlaced||{}):(R.placed=R.placed||{}); delete M[key]; }); closeItemMenu(); toast('회수했어요(인벤토리로)'); }   // roomTx가 changedAt까지 갱신
     // 판매 진입 게이트 — 특별(epic)↑ 등급은 랜덤박스 전용이라 재획득이 어려운데 판매가는 정액(ITEM_SELL)이라, 실수 판매를 확인 시트로 한 번 막는다(회수/판매 버튼이 붙어 있어 오조작 위험).
     function sellPlaced(key, wall){
@@ -9045,7 +9053,7 @@
       if(!fl.length && !wl.length){ toast('정리할 가구가 없어요'); return; }
       confirmSheet('가구 배치를 뒤→앞·크기 순으로 자동 정리할까요?\n(가구만 옮겨요 · 펫·벽지·바닥은 그대로 · 되돌리기 가능)', function(){
         if(curRoomId()!==rid){ toast('방이 바뀌어 정리를 취소했어요', true); return; }   // 확인 대기 중 방이 바뀌었으면 취소(멀티기기 클로버 방지)
-        const cell=function(p){ const o={itemId:p.itemId}; if(p.filledAt) o.filledAt=p.filledAt; if(p.fillMs) o.fillMs=p.fillMs; return o; };   // filledAt·fillMs(밥·물 채움·지속) 보존
+        const cell=function(p){ const o={itemId:p.itemId}; if(p.filledAt) o.filledAt=p.filledAt; if(p.fillMs) o.fillMs=p.fillMs; if(p.flip) o.flip=p.flip; return o; };   // filledAt·fillMs·flip 보존
         // ── 바닥 격자(12×8) ──
         const out={}, leftover=[];
         const floors=fl.filter(function(p){ return isFloorItem(p.itemId); });
@@ -9125,7 +9133,7 @@
           const left=(gridLeftFrac(c)*100).toFixed(3), top=(gridTopFrac(r)*100).toFixed(3), w=(gridSpanFrac(foot.w)*100).toFixed(3), h=(gridRowSpanFrac(foot.h)*100).toFixed(3);
           return '<div class="gitem" style="left:'+left+'%;top:'+top+'%;width:'+w+'%;height:'+h+'%" onpointerdown="giDown(event,\''+key+'\')" onclick="event.stopPropagation()">'+
             '<span class="gsc">'+furnSvg(id,{fit:true})+'</span></div>'; }).join('');
-        const grid='<div class="grid12" id="placeGrid" onclick="placeClick(event)">'+items+(items?'':emptyGridHint())+'<div class="gdrop" id="gdrop" hidden></div><div class="wsnap" id="fsnap" hidden></div><div class="wsnaph" id="fsnaph" hidden></div></div>';
+        const grid='<div class="grid12" id="placeGrid" onclick="placeClick(event)">'+items+(items?'':emptyGridHint())+'<div class="gdrop" id="gdrop" hidden></div><div class="wsnap" id="fsnap" hidden></div><div class="wsnaph" id="fsnaph" hidden></div><span class="gaxis gaxis-b">뒤</span><span class="gaxis gaxis-f">앞</span></div>';
         const owned=ITEM_CATALOG.filter(it=>!isWallItem(it.id) && itemQty(it.id)>0);
         if(!_placeCat || !PLACE_CATS.some(c=>c[0]===_placeCat)) _placeCat=(PLACE_CATS.find(c=>owned.some(it=>placeCatOf(it.id)===c[0]))||PLACE_CATS[0])[0];
         const catTabs='<div class="subseg placecat">'+PLACE_CATS.map(c=>{ const inCat=owned.filter(it=>placeCatOf(it.id)===c[0]), nOwn=inCat.length, nAvail=inCat.filter(it=>itemRemaining(it.id)>0).length;

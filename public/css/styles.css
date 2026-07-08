@@ -1272,6 +1272,9 @@
     .palshop { flex:none; display:inline-flex; align-items:center; gap:4px; padding:6px 11px; border-radius:11px; background:var(--soft); color:var(--text2); font-size:12px; font-weight:800; white-space:nowrap; }
     .palshop:active { transform:scale(.96); }
     .fillrow { display:flex; justify-content:flex-end; margin:4px 0 2px; }
+    .grid12 .gaxis { position:absolute; left:3px; font-size:8.5px; font-weight:800; color:var(--sub); opacity:.5; pointer-events:none; z-index:1; letter-spacing:.5px; }
+    .grid12 .gaxis-b { top:2px; }
+    .grid12 .gaxis-f { bottom:2px; }
     .catchip .cn-fav { position:absolute; top:3px; left:3px; z-index:3; width:19px; height:19px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; color:#ffd24a; background:color-mix(in srgb,var(--card) 70%,transparent); }
     .catchip .cn-fav svg { width:12px; height:12px; }
     .catchip .cn-fav:not(.on) { color:var(--sub); }
@@ -2024,6 +2027,16 @@
     .pk-fire { position:absolute; z-index:4; will-change:transform; animation:fxflit var(--d,9s) ease-in-out infinite; }   /* ✨ 반딧불 팔랑 드리프트 */
     .pk-fire .ff-core { display:block; image-rendering:pixelated; filter:drop-shadow(0 0 3px rgba(210,255,140,.85)); animation:ffblink var(--bd,1.4s) ease-in-out infinite; }
     @keyframes ffblink { 0%,100%{ opacity:.3; } 45%{ opacity:1; } }
+    /* ===== 🎨 픽업 씬 v2(고해상도, 개발자 배너 미리보기 전용 .pk-v2) — 다층 모션: 단순 1축 왕복 대신 굽힘+bob+미세 squash 조합(사용자 지침). 위상은 기존 --i 딜레이 그대로. ===== */
+    .pk-v2 .pk-grass::before { display:none; }   /* v1 줄무늬 대신 잔디 픽셀 타일(tileBg 인라인 배경) */
+    .pk-v2 .pk-tree .pk-canopy { animation-name:pksway2; }
+    @keyframes pksway2 { 0%,100%{ transform:rotate(-2.4deg); } 25%{ transform:rotate(.5deg) translateY(-.6px) scaleY(1.012); } 50%{ transform:rotate(2.4deg); } 75%{ transform:rotate(-.5deg) translateY(.5px) scaleY(.988); } }
+    .pk-v2 .pk-flower { animation-name:pkdance; animation-duration:3.1s; }
+    @keyframes pkdance { 0%,100%{ transform:translateX(-50%) rotate(-6deg); } 28%{ transform:translateX(-50%) rotate(1.5deg) translateY(-.8px); } 52%{ transform:translateX(-50%) rotate(6deg); } 78%{ transform:translateX(-50%) rotate(-1.5deg) translateY(.5px); } }
+    .pk-v2 .pk-tuft { animation-name:pkwave; animation-duration:2.4s; }
+    @keyframes pkwave { 0%,100%{ transform:translateX(-50%) rotate(-5deg) scaleY(.97); } 50%{ transform:translateX(-50%) rotate(5deg) scaleY(1.03); } }
+    .pk-v2 .pk-frame { animation-name:pkdance; animation-duration:3.4s; }
+    .pk-v2 .pk-wspark { z-index:3; opacity:.9; }   /* 💧 연못 물반짝(pk-star 트윙클 재사용, currentColor) */
     /* 🌈 무지개알 센터피스 오오라/트윙클(찬란한 무지개빛) */
     .gb-rbaura, .gb-rbtw { position:absolute; left:50%; top:50%; width:0; height:0; pointer-events:none; }
     .gb-rbaura { z-index:0; }
@@ -2135,7 +2148,7 @@
     .gb-item-cost { font-size:12.5px; font-weight:800; margin-top:5px; display:inline-flex; align-items:center; gap:3px; }
     .gb-item-cost .ci { display:inline-flex; align-items:center; }
     .gb-pity { text-align:center; padding:0 12px 14px; }
-    @media (prefers-reduced-motion: reduce){ .pk-cloud, .pk-tree .pk-canopy, .pk-flower, .pk-tuft, .pk-frame, .pk-bfly, .pk-bfly .bf-wing, .pk-star, .pk-fire, .pk-fire .ff-core, .pk-pkoi .koi-sw, .pk-pkoi .koi-b, .pk-lily, .pk-lotus, .pk-dfly { animation:none; } .pk-rainbow { opacity:1; animation:none; } }
+    @media (prefers-reduced-motion: reduce){ .pk-cloud, .pk-tree .pk-canopy, .pk-flower, .pk-tuft, .pk-frame, .pk-bfly, .pk-bfly .bf-wing, .pk-star, .pk-fire, .pk-fire .ff-core, .pk-pkoi .koi-sw, .pk-pkoi .koi-b, .pk-lily, .pk-lotus, .pk-dfly, .pk-v2 .pk-tree .pk-canopy, .pk-v2 .pk-flower, .pk-v2 .pk-tuft, .pk-v2 .pk-frame { animation:none; } .pk-rainbow { opacity:1; animation:none; } }
     .shopcard .featrib { position:absolute; left:6px; top:6px; display:inline-flex; align-items:center; gap:3px;
       font-size:10px; font-weight:800; color:#7a5200; background:var(--gold, #f2b134); padding:2px 6px; border-radius:999px; z-index:2; }
     .shopcard .featrib svg { color:#7a5200; }
