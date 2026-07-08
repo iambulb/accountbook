@@ -7019,33 +7019,44 @@
     // 브라우징 선택(탭·정렬) 유지 — 프라이빗 모드/차단 시 안전(try). 도감/상점/개발자 탭도 공유.
     function lsGet(k, def){ try{ const v=localStorage.getItem(k); return v==null?def:v; }catch(e){ return def; } }
     function lsSet(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
-    let _petSort=lsGet('petSort','recent'), _homeSpecies=lsGet('homeSpecies','all');   // 홈 펫: 정렬 + 종류(species) 탭 (검색 제거, 도감식 종류 구분)
+    let _petSort=lsGet('petSort','recent'), _homeSpecies=lsGet('homeSpecies','all'), _petTier=lsGet('petTier','all'), _petSearch='';   // 홈/펫 탭: 정렬 + 종류 탭 + 등급 필터 + 이름 검색(세션)
     const PET_SORTS=[['recent','최신순'],['aff','애정도순'],['tier','등급순'],['name','이름순']];
     function setPetSort(v){ _petSort=v||'recent'; lsSet('petSort',_petSort); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     function setHomeSpecies(s){ _homeSpecies=s||'all'; lsSet('homeSpecies',_homeSpecies); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
+    function setPetSearch(v){ _petSearch=(v||'').trim(); renderPetGrid(); }   // 그리드만 갱신 → 검색 입력 포커스 유지(시트 통째 재렌더 안 함)
+    function setPetTier(v){ _petTier=v||'all'; lsSet('petTier',_petTier); renderPetGrid(); }
+    function toggleCatFav(id){ if(!ownsCat(id)) return; gameRef().transaction(function(g){ g=normalizeGame(g); const c=g.owned.cats[id]; if(!c) return; c.fav=!c.fav; return g; }).then(function(r){ if(r&&r.committed){ if(state._sheetRefresh) state._sheetRefresh(); } }); }   // 즐겨찾기 → 상단 고정(정렬 fav-first). owned.cats[id].fav (normalizeGame이 값 보존)
     // 보유 펫 정렬 — recent(최신 획득=boughtAt)·aff(애정도)·tier(등급, 상위 먼저).
     function sortOwnedPets(ids){ const l=ids.slice();
-      const rank=id=>tierRank(CAT_TIER[id]||'normal'), aff=id=>Number((ownedCatsMap()[id]||{}).affection)||0, bat=id=>((ownedCatsMap()[id]||{}).boughtAt)||'', nm=id=>catName(id)||'';
-      if(_petSort==='tier') l.sort((a,b)=> rank(b)-rank(a) || bat(b).localeCompare(bat(a)));
-      else if(_petSort==='aff') l.sort((a,b)=> aff(b)-aff(a) || nm(a).localeCompare(nm(b)));
-      else if(_petSort==='name') l.sort((a,b)=> nm(a).localeCompare(nm(b),'ko'));
-      else l.sort((a,b)=> bat(b).localeCompare(bat(a)));   // recent
+      const fav=id=>((ownedCatsMap()[id]||{}).fav?1:0), rank=id=>tierRank(CAT_TIER[id]||'normal'), aff=id=>Number((ownedCatsMap()[id]||{}).affection)||0, bat=id=>((ownedCatsMap()[id]||{}).boughtAt)||'', nm=id=>catName(id)||'';
+      if(_petSort==='tier') l.sort((a,b)=> fav(b)-fav(a) || rank(b)-rank(a) || bat(b).localeCompare(bat(a)));
+      else if(_petSort==='aff') l.sort((a,b)=> fav(b)-fav(a) || aff(b)-aff(a) || nm(a).localeCompare(nm(b)));
+      else if(_petSort==='name') l.sort((a,b)=> fav(b)-fav(a) || nm(a).localeCompare(nm(b),'ko'));
+      else l.sort((a,b)=> fav(b)-fav(a) || bat(b).localeCompare(bat(a)));   // recent (즐겨찾기 항상 먼저)
       return l; }
     function petSpeciesOf(id){ const c=PET_CATALOG.find(x=>x.id===id); return (c&&c.species)||'cat'; }
-    function homeFilteredPets(){ const o=ownedCatList(); return _homeSpecies==='all'?o:o.filter(id=>petSpeciesOf(id)===_homeSpecies); }
+    function homeFilteredPets(){ let o=ownedCatList();
+      if(_homeSpecies!=='all') o=o.filter(id=>petSpeciesOf(id)===_homeSpecies);
+      if(_petTier!=='all') o=o.filter(id=>(CAT_TIER[id]||'normal')===_petTier);
+      if(_petSearch){ const q=_petSearch.toLowerCase(); o=o.filter(id=>(catName(id)||'').toLowerCase().indexOf(q)>=0); }
+      return o; }
     // 종류 탭(보유 종만 + 개수 배지) — 도감/알뜰샵 종 탭과 같은 방식(SPECIES_LABEL 순).
     function homeSpeciesTabs(){ const owned=ownedCatList(); const cnt={}; owned.forEach(id=>{ const s=petSpeciesOf(id); cnt[s]=(cnt[s]||0)+1; });
       const order=Object.keys(SPECIES_LABEL); const present=Object.keys(cnt).sort((a,b)=>{ const ia=order.indexOf(a),ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); });
       return [['all','전체',owned.length]].concat(present.map(s=>[s,(SPECIES_LABEL[s]||s),cnt[s]])); }
     function petCtlBar(){ const tabs=homeSpeciesTabs(); if(!tabs.some(t=>t[0]===_homeSpecies)) _homeSpecies='all';
       let h=(tabs.length>2)?('<div class="subseg pettabs">'+tabs.map(t=>'<button class="'+(_homeSpecies===t[0]?'on':'')+'" onclick="setHomeSpecies(\''+t[0]+'\')">'+escapeHtml(t[1])+' <b>'+t[2]+'</b></button>').join('')+'</div>'):'';
-      h+='<div class="petctl"><select class="petsort" aria-label="펫 정렬" onchange="setPetSort(this.value)">'+PET_SORTS.map(o=>'<option value="'+o[0]+'"'+(_petSort===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></div>';
+      h+='<div class="petctl">'
+        +'<input class="petsearch" type="search" inputmode="search" placeholder="이름 검색" value="'+escapeHtml(_petSearch)+'" oninput="setPetSearch(this.value)" aria-label="펫 이름 검색">'
+        +'<select class="petsort" aria-label="등급 필터" onchange="setPetTier(this.value)">'+[['all','전체 등급']].concat(TIERS.map(t=>[t.id,t.name])).map(o=>'<option value="'+o[0]+'"'+(_petTier===o[0]?' selected':'')+'>'+escapeHtml(o[1])+'</option>').join('')+'</select>'
+        +'<select class="petsort" aria-label="펫 정렬" onchange="setPetSort(this.value)">'+PET_SORTS.map(o=>'<option value="'+o[0]+'"'+(_petSort===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'
+      +'</div>';
       return h; }
     // ===== 우리집 펫 그리드: 타일 단위 메모이즈(수백 마리 재파싱·이미지 리로드 회피) =====
     // 타일 콘텐츠 시그니처 — 상태(방)·현재방·애정레벨·이름이 바뀐 타일만 다시 그린다.
     function petTileSig(id){ const ro=petRoomIndex(id); const here=ro===roomIdx(); const rooms=homeH().rooms||[];
       const rnm=(ro>=0&&!here)?((rooms[ro]&&rooms[ro].name)||('방 '+(ro+1))):'';   // elsewhere일 때만 방이름 뱃지 표시 → 시그니처에 포함(방 전환/이름변경 시 필요한 타일만 갱신)
-      const lv=affectionLevel((ownedCatsMap()[id]||{}).affection).level; return (here?'H':ro)+'|'+rnm+'|'+lv+'|'+catName(id)+'|'+(CAT_TIER[id]||'normal'); }   // tier 포함(이름색·등급 연출은 등급에 의존 → applyCatalog로 등급만 바뀌어도 갱신)
+      const lv=affectionLevel((ownedCatsMap()[id]||{}).affection).level; return (here?'H':ro)+'|'+rnm+'|'+lv+'|'+catName(id)+'|'+(CAT_TIER[id]||'normal')+'|'+((ownedCatsMap()[id]||{}).fav?'F':''); }   // tier 포함(이름색·등급 연출은 등급에 의존 → applyCatalog로 등급만 바뀌어도 갱신)
     // 등급 배지(색약 접근성): 색이 아니라 '글자'로 등급 식별. 한정=무지개, 일반은 생략(기본), 그 외 등급색.
     function tierBadgeHtml(tier){ if(!tier || tier==='normal') return '';
       const ti=tierInfo(tier); const nm=escapeHtml(ti.name);
@@ -7054,9 +7065,10 @@
     function petTileHtml(id){
       const rooms=homeH().rooms||[]; const roomOf=petRoomIndex(id), here=roomOf===roomIdx();
       const roomNm=roomOf>=0?((rooms[roomOf]&&rooms[roomOf].name)||('방 '+(roomOf+1))):'';
-      const lv=affectionLevel((ownedCatsMap()[id]||{}).affection).level; const tier=CAT_TIER[id]||'normal';
+      const lv=affectionLevel((ownedCatsMap()[id]||{}).affection).level; const tier=CAT_TIER[id]||'normal'; const fav=!!(ownedCatsMap()[id]||{}).fav;
       const stt=here?'이 방':(roomOf>=0?roomNm:'대기');
       return '<div class="catchip'+(here?' on':(roomOf>=0?' elsewhere':''))+'" data-id="'+id+'" data-tsig="'+escapeHtml(petTileSig(id))+'" data-name="'+escapeHtml(catName(id))+'" role="button" tabindex="0" aria-pressed="'+here+'" onclick="toggleActiveCat(\''+id+'\')" title="'+escapeHtml(catName(id))+' · '+escapeHtml(tierInfo(tier).name)+' · '+escapeHtml(stt)+' · Lv.'+lv+'">'+
+        '<button class="cn-fav'+(fav?' on':'')+'" aria-label="'+(fav?'즐겨찾기 해제':'즐겨찾기')+'" onclick="event.stopPropagation();toggleCatFav(\''+id+'\')">'+starSvg({h:12,off:!fav})+'</button>'+
         '<div class="cpic tbring tb-'+tier+'">'+catFace(id,{h:44})+tierBadgeHtml(tier)+
           '<button class="cn-info" aria-label="펫 정보" onclick="event.stopPropagation();openPetInfo(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button></div>'+   // 등급 테두리 + 등급명 배지(좌하단) + ⓘ(우하단)
         (roomOf>=0&&!here?'<span class="croom">'+escapeHtml(roomNm)+'</span>':'')+
@@ -7071,7 +7083,7 @@
       const el=$('petGrid'); if(!el) return;
       const ids=sortOwnedPets(homeFilteredPets());   // 종류 탭으로 걸러 정렬
       if(!ids.length){ el.removeAttribute('data-order'); el.style.maxHeight=''; el.classList.remove('scroll4');
-        el.innerHTML='<div class="empty pgempty">이 종류의 펫이 없어요 🐾 <button class="btn ghost" onclick="setCatTab(\'shop\')">알뜰샵</button></div>'; return; }
+        const flt=(_petSearch||_petTier!=='all'); el.innerHTML='<div class="empty pgempty">'+(flt?'검색·필터 결과가 없어요 🔍':'이 종류의 펫이 없어요 🐾 <button class="btn ghost" onclick="setCatTab(\'shop\')">알뜰샵</button>')+'</div>'; return; }
       const orderSig=_petSort+'|'+_homeSpecies+'|'+ids.join(',');
       if(el.getAttribute('data-order')===orderSig && el.childElementCount===ids.length){
         const kids=el.children;
@@ -8586,6 +8598,9 @@
     }
     let _selWall=null;
     function selWallItem(id){ if(itemRemaining(id)<=0){ toast(catFurnName(id)+' 전부 배치됨 — 회수하거나 더 얻어야 걸 수 있어요', true); return; } _selWall=(_selWall===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
+    let _wallCat=lsGet('wallCat','all');   // 벽 팔레트 분류 — 새 taxonomy 없이 기존 WALL_ANCHOR(세움/걸이/매닮) 재사용
+    const WALL_PAL_CATS=[['all','전체'],['floor','세움'],['mount','걸이'],['hang','매닮']];
+    function setWallCat(v){ _wallCat=v||'all'; lsSet('wallCat',_wallCat); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     // 벽 배치 트랜잭션(전역 인벤토리 재검증·겹침 재검증). placed와 별개 wallPlaced에 기록.
     function wallPlaceItemTx(sel, r, c){ const w=wallFoot(sel).w, rid=curRoomId();
       captureUndo();
@@ -9044,12 +9059,15 @@
           const left=(gridLeftFrac(c)*100).toFixed(3), top=(((r-1)/WALL_ROWS)*100).toFixed(3), ww=(gridSpanFrac(w)*100).toFixed(3), hh=(100/WALL_ROWS).toFixed(3);
           return '<div class="gitem" style="left:'+left+'%;top:'+top+'%;width:'+ww+'%;height:'+hh+'%" onpointerdown="wallGiDown(event,\''+key+'\')" onclick="event.stopPropagation()"><span class="gsc">'+furnSvg(id,{fit:true})+'</span></div>'; }).join('');
         const wgrid='<div class="gridwall" id="wallGrid" onclick="wallPlaceClick(event)">'+witems+(witems?'':emptyGridHint())+'<div class="gdrop" id="wgdrop" hidden></div><div class="wsnap" id="wsnap" hidden></div><div class="wsnaph" id="wsnaph" hidden></div></div>';
-        const wpal=ITEM_CATALOG.filter(it=>isWallItem(it.id) && itemQty(it.id)>0).map(it=>{ const rem=itemRemaining(it.id), qty=itemQty(it.id), sold=rem<=0, ft=itemTierOf(it.id);
+        if(!WALL_PAL_CATS.some(c=>c[0]===_wallCat)) _wallCat='all';
+        const wpal=ITEM_CATALOG.filter(it=>isWallItem(it.id) && itemQty(it.id)>0 && (_wallCat==='all'||wallAnchorOf(it.id)===_wallCat)).map(it=>{ const rem=itemRemaining(it.id), qty=itemQty(it.id), sold=rem<=0, ft=itemTierOf(it.id);
           return '<button class="pitem'+(_selWall===it.id?' on':'')+(sold?' soldout':'')+'"'+(sold?' aria-disabled="true"':'')+' onpointerdown="wallPalDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selWallItem(\''+it.id+'\')"><span class="pic tbring tb-'+ft+'">'+furnSvg(it.id,{h:palPicH(it.id)})+tierBadgeHtml(ft)+'</span><span>'+it.name+'</span><span class="pq">'+(sold?('보유'+qty+' · 전부 배치됨'):('보유'+qty+' · 남은'+rem))+'</span></button>'; }).join('');
         const wallHint='<div class="hintline" style="margin:8px 0 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16"/></svg>벽 가구를 <b>탭해 선택</b>하거나 <b>꾹 눌러 격자로 끌어</b> 걸어요(위=천장·아래=바닥선). 걸린 항목은 <b>꾹 눌러 드래그로 이동</b>, 짧게 탭하면 회수/판매. <b>특별↑ 벽 가구는 랜덤박스로만</b> 얻어요.</div>';
         const selBannerW=_selWall?('<div class="selbanner">'+furnSvg(_selWall,{h:22})+'<span><b>'+escapeHtml(catFurnName(_selWall))+'</b> 걸기 — 격자를 <b>탭</b>하세요</span><button class="selx" onclick="selWallItem(\''+_selWall+'\')">취소</button></div>'):'';
-        const wshop='<div class="palcatrow" style="justify-content:flex-end;margin:0 0 6px"><button class="palshop" onclick="openShop()" aria-label="알뜰샵 열기">'+coinSvg({h:13})+'알뜰샵</button></div>';
-        body=selBannerW+wgrid+wallHint+wshop+'<div class="palette catinv">'+(wpal||'<div class="palempty">보유한 벽 가구가 없어요<br><span>랜덤박스에서 벽 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>')+'</div>'+skinPickerHtml('wall');
+        const wcatTabs='<div class="subseg placecat">'+WALL_PAL_CATS.map(c=>{ const n=ITEM_CATALOG.filter(it=>isWallItem(it.id)&&itemQty(it.id)>0&&(c[0]==='all'||wallAnchorOf(it.id)===c[0])).length;
+          return '<button class="'+(_wallCat===c[0]?'on':'')+(n?'':' dim')+'"'+(n?'':' aria-disabled="true"')+' onclick="setWallCat(\''+c[0]+'\')">'+c[1]+(n?' <b>'+n+'</b>':'')+'</button>'; }).join('')+'</div>';
+        const wpalRow='<div class="palcatrow">'+wcatTabs+'<button class="palshop" onclick="openShop()" aria-label="알뜰샵 열기">'+coinSvg({h:13})+'알뜰샵</button></div>';
+        body=selBannerW+wgrid+wallHint+wpalRow+'<div class="palette catinv">'+(wpal||'<div class="palempty">보유한 벽 가구가 없어요<br><span>랜덤박스에서 벽 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>')+'</div>'+skinPickerHtml('wall');
       } else {
         // 바닥 격자(12×8, 가로×깊이) — 기존 방꾸미기(드래그 이동·롱프레스). 벽 가구는 팔레트에서 제외.
         const placed=room().placed||{};

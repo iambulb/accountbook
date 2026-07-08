@@ -949,7 +949,9 @@
     .slot.locked .lockic { width:16px; height:16px; }
     .slot.locked .slotgold { display:inline-flex; align-items:center; gap:2px; font-size:10px; font-weight:800; color:var(--text); }
     /* 우리집 펫 정렬·검색 바(수백 마리 관리) */
-    .petctl { display:flex; gap:8px; margin:2px 0 8px; }
+    .petctl { display:flex; flex-wrap:wrap; gap:8px; margin:2px 0 8px; }
+    .petctl .petsearch { flex:1; min-width:90px; border:1.5px solid var(--bd); background:var(--card); color:var(--text); border-radius:10px; padding:7px 10px; font-size:16px; font-weight:600; }
+    .petctl .petsearch:focus { outline:none; border-color:var(--primary); }
     /* font-size는 반드시 16px 이상 — iOS Safari는 16px 미만 입력에 포커스 시 화면을 확대(줌)해 스크롤이 생김. 16px면 줌이 발생하지 않음(핀치줌은 유지). */
     .petctl .petsort { flex:none; border:1.5px solid var(--bd); background:var(--card); color:var(--text); border-radius:10px; padding:7px 10px; font-size:16px; font-weight:700; }
     .petctl .petsort:focus { outline:none; border-color:var(--primary); }
@@ -1269,6 +1271,11 @@
     .palcatrow .placecat { flex:1; min-width:0; }
     .palshop { flex:none; display:inline-flex; align-items:center; gap:4px; padding:6px 11px; border-radius:11px; background:var(--soft); color:var(--text2); font-size:12px; font-weight:800; white-space:nowrap; }
     .palshop:active { transform:scale(.96); }
+    .catchip .cn-fav { position:absolute; top:3px; left:3px; z-index:3; width:19px; height:19px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; color:#ffd24a; background:color-mix(in srgb,var(--card) 70%,transparent); }
+    .catchip .cn-fav svg { width:12px; height:12px; }
+    .catchip .cn-fav:not(.on) { color:var(--sub); }
+    .catchip .cn-fav::before { content:''; position:absolute; inset:-7px; }
+    .catchip .cn-fav:active { transform:scale(.86); }
     .dexcell .dexqty { font-size:8.5px; font-weight:800; color:var(--sub); margin-top:1px; line-height:1.1; }
     /* 빈 격자 첫 사용 안내(오버레이) */
     .pe-empty { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; pointer-events:none; color:var(--sub); font-size:12px; font-weight:700; text-align:center; padding:12px; }
