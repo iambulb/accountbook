@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 펫 모션 클립 시트 제작 v2 — 기존 스프라이트(walk 8f + 4방향 스틸)에서
-idle·sit·belly·eat·drink·run·jump·yawn·angry·sleep 클립 시트(가로 스트립 PNG)를 만든다.
+idle·sit·belly·eat·drink·yawn·angry 클립 시트(가로 스트립 PNG, 적용 7종)를 만든다.
 규칙은 docs/pet-motion-guide.md. 표범(cat_leopard)이 첫 사례.
-(lick 그루밍은 정면 기반 림 재드로잉이 무리라 폐기 — 2026-07.)
+(lick·run·jump·sleep 은 폐기·보류 — 2026-07, BUILDERS 주석 참고.)
 
 v1(사각 박스 cut/shift)의 구멍·흰 띠 버그를 폐기하고 v2 기법으로 전면 교체:
   1) 아코디언(행 삽입/삭제) — 몸통 밴드에서 행을 균등 삽입/제거해 스쿼시&스트레치.
@@ -182,16 +182,18 @@ M_TONGUE_CURL = [   # x54, y49  혀 말아 올림(drink)
  'PPP',
 ]
 
-# ── angry: 하악질 — 귀 눕힘(플랫) + 눈 가늘게 + 송곳니 보이는 개구 + 몸 낮춤 ──
-# 귀 눕힘: 뾰족 귀 끝(y30~32)을 지우고 옆으로 접힌 귀(음영 처리)로 재드로잉. x0=42, y0=30.
+# ── angry: 하악질 — 귀 눕힘(플랫) + 눈 가늘게(브로우 프레스) + 송곳니 개구 + 몸 낮춤 ──
+# 귀 눕힘: 실루엣이 바뀌는 재드로잉이라 **영향 행 전체를 명시 치환**(남길 돔 픽셀도 다시 적음).
+# 지울 곳(X)과 남길 곳(.)을 섞은 부분 패치는 잔재 픽셀·경계 흰 점을 남긴다(실사례 — 규칙 §3-2).
+# x0=42, y0=30. 접힌 귀 = 머리 위 모서리에서 옆-아래로 뻗은 음영 웨지(안쪽 크림은 접혀서 안 보임).
 M_EARS_FLAT = [
- 'XXXXXXX..............XXXXXX.',   # y30  귀 끝 소거
- 'XXXXXXXXX...........XXXXXXX.',   # y31  (머리 위 외곽선 x53~58 유지)
- 'XXXXXXXXX...........XXXXXXX.',   # y32  돔 중앙(x51~60)만 유지
- '....XXOsb............sOXXX..',   # y33  접힌 귀 시작(음영 폴드)
- '...XOssB............BssOXX..',   # y34  옆으로 눕힌 귀(어두운 뒷면)
- '....OsB..............sOX....',   # y35
- '....KsB..............s......',   # y36  폴드 밑단
+ 'XXXXXXXXXXXXXXXXXXXXXXXXXXXX',   # y30  뾰족 귀 끝 소거
+ 'XXXXXXXXXXXOOOOOOXXXXXXXXXXX',   # y31  돔 위 외곽선(x53~58)만
+ 'XXXXXXXXXXObBBbbBKOXXXXXXXXX',   # y32  돔(x52~60)
+ 'XXOssbBbBbmBssBsBBBBBbssOXXX',   # y33  접힌 귀 웨지 시작(크림→음영) + 머리
+ 'XOsSsBBBBSbBsBBBsBBbsSsOXXXX',   # y34  웨지 최대폭(양옆 1px 돌출)
+ 'XXKsBBBBSsbBBBssBBbBsKXXXXXX',   # y35  웨지→머리 옆으로 흡수
+ '.....sB..............s......',   # y36  안쪽 크림 잔여만 음영으로(부분 패치 — 소거 없음)
 ]
 M_MOUTH_HISS = [    # x53, y48  하악 개구 — 윗니 송곳니(크림) 2점
  'OddddO',
@@ -269,20 +271,19 @@ def m_yawn(frames, stills, fw):
 
 def m_angry(frames, stills, fw):
     """하악질(once): 귀 눕힘·눈 가늘게(전조) → 하악(개구+송곳니·몸 낮춤, 2f hold) → 중립.
-    once라 마지막 프레임=중립(hold 대상)."""
-    s = stills['south']; out=[]
-    def base_angry(f):
+    once라 마지막 프레임=중립(hold 대상).
+    ⚠️ 패치는 원본 스틸에 먼저 찍고 변형(아코디언)은 나중 — 순서를 바꾸면 1px 어긋난다(규칙 §3-2)."""
+    s = stills['south']
+    def base_angry():
+        f = s.copy()
         stamp(f, 42,30, M_EARS_FLAT)
-        outline_repair(f, (42,29,70,39))
-        for x in (50,51,52,59,60): stamp(f, x,41, ['B'])   # 눈 가늘게(윗줄 감김)
+        outline_repair(f, (42,29,70,40))
+        for x in (50,51,52,59,60): stamp(f, x,41, ['K'])   # 눈 가늘게 = 브로우 프레스(눈썹이 눈 위를 누름) — 몸색 눈꺼풀 끼움 금지
         return f
-    f0 = base_angry(s.copy())                              # 전조: 귀 눕힘+눈 가늘게
-    def hiss():
-        f = base_angry(accordion(s, CHEST[0], CHEST[1], -1))   # 몸 1px 낮춤(웅크림)
-        stamp(f, 53,48, M_MOUTH_HISS, dy=1)
-        return f
-    out=[snap(f0), snap(hiss()), snap(hiss()), snap(s.copy())]
-    return out
+    calm = base_angry()                                    # 전조: 귀 눕힘+눈 가늘게
+    hiss = base_angry(); stamp(hiss, 53,48, M_MOUTH_HISS)  # 하악 개구(패치 먼저)
+    hiss = accordion(hiss, CHEST[0], CHEST[1], -1)         # 몸 1px 낮춤(변형은 나중 — 패치가 함께 내려감)
+    return [snap(calm), snap(hiss), snap(hiss.copy()), snap(s.copy())]
 
 def m_sleep(frames, stills, fw):
     """잠(east, loop): 다리 접어 엎드림(대압축) + 머리 숙임(시어) + 눈 감김 + 느린 호흡 ±1.
@@ -322,9 +323,12 @@ def m_jump(frames, stills, fw):
     f5 = e.copy()                                                   # 기준(hold 대상)
     return [snap(f) for f in (f0,f1,f2,f3,f4,f5)]
 
+# ⚠️ run·jump·sleep 은 폐기(2026-07, 퀄리티 기준 미달 — 사용자 판정): BUILDERS 에서 제외해
+#    --write 로 재생성되지 않는다. 함수(m_run/m_jump/m_sleep)는 추후 퀄리티 개선 시 참고용으로 보존.
+#    엔진(PET_CLIPS)의 run·jump·sleep 키는 폴백(run→걷기 필름·jump→생략·sleep→north 스틸)으로 안전.
 BUILDERS = {'idle':m_idle,'sit':m_sit,'belly':m_belly,'eat':m_eat,'drink':m_drink,
-            'run':m_run,'jump':m_jump,'yawn':m_yawn,'angry':m_angry,'sleep':m_sleep}
-CLIP_FRAMES = {'idle':4,'sit':4,'belly':4,'eat':6,'drink':4,'run':8,'jump':6,'yawn':6,'angry':4,'sleep':4}
+            'yawn':m_yawn,'angry':m_angry}
+CLIP_FRAMES = {'idle':4,'sit':4,'belly':4,'eat':6,'drink':4,'yawn':6,'angry':4}
 
 def strip(frames):
     fw = frames[0].size[0]

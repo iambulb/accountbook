@@ -155,7 +155,7 @@
     { "id": "cat_puma", "species": "cat", "name": "퓨마", "tier": "exclusive", "scale": 5, "desc": "아메리카 산악의 은둔 사냥꾼. 유연한 근육의 대형 고양이.", "zip": "", "frontWalk": false, "frames": 8 },
     { "id": "cat_snowleopard", "species": "cat", "name": "눈표범", "tier": "exclusive", "scale": 5, "desc": "히말라야 설산의 유령. 두꺼운 털과 긴 꼬리의 은빛 표범.", "zip": "", "frontWalk": false, "frames": 8 },
     { "id": "cat_caracal", "species": "cat", "name": "카라칼", "tier": "exclusive", "scale": 5, "desc": "긴 붓귀의 사막 점프왕. 새도 뛰어올라 낚아채요.", "zip": "", "frontWalk": false, "frames": 8 },
-    { "id": "cat_leopard", "species": "cat", "name": "표범", "tier": "exclusive", "scale": 5, "desc": "나무 위의 은밀한 사냥꾼. 우아한 로제트 무늬.", "zip": "", "frontWalk": false, "frames": 8, "clips": { "idle": 4, "sit": 4, "belly": 4, "eat": 6, "drink": 4, "run": 8, "jump": 6, "yawn": 6, "angry": 4, "sleep": 4 } },
+    { "id": "cat_leopard", "species": "cat", "name": "표범", "tier": "exclusive", "scale": 5, "desc": "나무 위의 은밀한 사냥꾼. 우아한 로제트 무늬.", "zip": "", "frontWalk": false, "frames": 8, "clips": { "idle": 4, "sit": 4, "belly": 4, "eat": 6, "drink": 4, "yawn": 6, "angry": 4 } },
     { "id": "cat_blackpanther", "species": "cat", "name": "흑표범", "tier": "exclusive", "scale": 5, "desc": "칠흑빛 멜라닌 표범. 어둠 속을 소리 없이 활보.", "zip": "", "frontWalk": false, "frames": 8 },
     { "id": "cat_ocelot", "species": "cat", "name": "오셀롯", "tier": "exclusive", "scale": 4, "desc": "보석 같은 반점의 밤의 사냥꾼. 작지만 강인한 야생.", "zip": "", "frontWalk": false, "frames": 8 },
     { "id": "cat_sandcat", "species": "cat", "name": "모래고양이", "tier": "epic", "scale": 1, "desc": "사막의 작은 요정. 큰 귀로 모래 밑 소리도 들어요.", "zip": "", "frontWalk": false, "frames": 6 },
