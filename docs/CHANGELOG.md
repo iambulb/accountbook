@@ -17,6 +17,7 @@
 ### 변경 — 📱 안드로이드(Chrome·TWA)에서 펫캠 PiP 개방
 - PiP 버튼 숨김 게이트를 모바일 전체 → **iOS 계열만**(`_pipIOSLike`)으로 좁힘 — 안드로이드는 필요한 API(captureStream·OffscreenCanvas·video PiP)가 전부 있어 🎬 비디오 PiP를 사용 가능(기기 검증은 운영자 직접). 아이폰/아이패드는 `canvas.captureStream` 미지원이라 계속 숨김.
 - 안드로이드에서 길게 눌러 '창 방식' 전환 시도 시 "이 기기는 비디오 방식만 지원" 안내(창 PiP는 데스크톱 전용). `sw.js` 캐시 버전 범프.
+- **백그라운드 정지 보완**: 비디오 PiP 프레임 공급을 `canvas.captureStream`(컴포지터 pull — 모바일에서 앱을 백그라운드로 보내면 캡처가 멈춰 PiP가 얼던 원인, 사용자 실기기 확인) → **워커가 VideoFrame을 직접 밀어 넣는 push 방식**(`MediaStreamTrackGenerator`+WebCodecs, Chromium)으로 전환. PiP 재생 중 페이지는 Chrome 백그라운드 동결 예외라 다른 앱 사용 중에도 계속 움직인다(미지원 브라우저는 captureStream 폴백).
 
 ### 변경 — 🖥️ 펫캠 PiP 버튼을 "사용 가능한 환경(데스크톱 브라우저)"에서만 노출
 - 모바일·태블릿·TWA에선 PiP 버튼을 애초에 그리지 않음(`_pipMobileLike` 감지 게이트) — 아이폰 Safari는 `canvas.captureStream` 자체가 미지원이라 원천 불가(유튜브 PiP는 '진짜 비디오 파일'이라 가능한 것), 안드로이드는 API는 있으나 실기기 미검증이라 보류(검증 후 개방 여지). 콘솔·구버전 캐시 경유 호출도 안내 토스트로 방어. `sw.js` 캐시 버전 범프.

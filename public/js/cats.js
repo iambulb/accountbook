@@ -6909,7 +6909,7 @@
     let _vpipWURL=null;
     function _vpipWorkerUrl(){ if(_vpipWURL) return _vpipWURL;
       const src=[
-        "var W=360,H=200,SC=2,ctx=null,back=null,furn=null,fx=[],parts=[],pets=[],rm=false,last=0,timer=0;",
+        "var W=360,H=200,SC=2,ctx=null,cvs=null,writer=null,back=null,furn=null,fx=[],parts=[],pets=[],rm=false,last=0,timer=0;",
         "function eio(u){ return u<0.5?2*u*u:1-Math.pow(-2*u+2,2)/2; }",
         "function tri(u){ return u<0.5?eio(u*2):eio((1-u)*2); }",
         "function ph(t,d,del){ var u=((t-(del||0))/d)%1; return u<0?u+1:u; }",
@@ -6986,10 +6986,15 @@
         "  for(var n2=0;n2<parts.length;n2++){ if(parts[n2].layer==='over') drawPart(parts[n2],t); }",
         "}",
         "var ticks=0;",
-        "function tick(){ ticks++; var now=Date.now(), dt=Math.min(90, last?now-last:33); last=now; step(dt); draw(now); }",
+        "function tick(){ ticks++; var now=Date.now(), dt=Math.min(90, last?now-last:33); last=now; step(dt); draw(now);",
+        "  if(writer){ try{ if(writer.desiredSize>0){ var vf=new VideoFrame(cvs, {timestamp: now*1000}); writer.write(vf); } }catch(e){} }",
+        "}",
         "function setScene(d){ back=d.back||null; furn=d.furn||null; fx=d.fx||[]; parts=d.parts||[]; }",
         "onmessage=function(ev){ var d=ev.data||{};",
-        "  if(d.t==='init'){ var cv=d.canvas; ctx=cv.getContext('2d'); SC=d.sc||2; W=d.W||360; H=d.H||200; rm=!!d.rm; setScene(d); setPets(d.pets); last=0; clearInterval(timer); timer=setInterval(tick,33); }",
+        "  if(d.t==='init'){ SC=d.sc||2; W=d.W||360; H=d.H||200;",
+        "    if(d.sink){ cvs=new OffscreenCanvas(W*SC, H*SC); writer=d.sink.getWriter(); }",
+        "    else { cvs=d.canvas; }",
+        "    ctx=cvs.getContext('2d'); rm=!!d.rm; setScene(d); setPets(d.pets); last=0; clearInterval(timer); timer=setInterval(tick,33); }",
         "  else if(d.t==='scene'){ setScene(d); }",
         "  else if(d.t==='pets'){ setPets(d.pets); }",
         "  else if(d.t==='ping'){ postMessage({t:'pong', ticks:ticks, fx:fx.length, parts:parts.length, pets:pets.length, back:!!back, furn:!!furn}); }",
@@ -7003,18 +7008,28 @@
       return 'p:'+curRoomId()+'|'+JSON.stringify(r.placed||{})+'|'+JSON.stringify(r.wallPlaced||{})+'|'+(Number(r.poops)||0)
         +'|'+currentWall()+'|'+currentFloor()+'|'+currentBgfx()+(liteMode()?'|L':'')+(reducedMotion()?'|R':'');   // 배경효과·lite·모션축소도 씬 재빌드 트리거
     }
+    // 🔌 프레임 공급 경로 2종 — ① push(기본, Chromium): MediaStreamTrackGenerator의 writable을 워커로 넘겨 워커가 VideoFrame을 직접 밀어 넣음.
+    //    canvas.captureStream은 컴포지터가 캔버스를 합성할 때 프레임을 뽑는 pull 구조라 **모바일에서 앱을 백그라운드로 보내면 캡처가 멈춰 PiP가 얼어붙는다**(사용자 실기기 확인).
+    //    push는 컴포지터 비의존 — PiP 재생 중 페이지는 Chrome 백그라운드 동결 예외라 워커가 계속 돌며 프레임이 흐른다. ② captureStream 폴백(생성기 미지원 브라우저).
+    function _vpipPushSupported(){ try{ return typeof MediaStreamTrackGenerator!=='undefined' && typeof VideoFrame!=='undefined'; }catch(e){ return false; } }
     function openVideoPip(){
       Promise.all([_vpipSceneKit(), _vpipPetAssets()]).then(function(res){
         if(vpipOpen()||pipOpen()) return;   // 로딩 사이 중복 열림 방지
         const kit=res[0], pets=res[1];
-        const cv=document.createElement('canvas'); cv.width=_VPIP_W*_VPIP_SC; cv.height=_VPIP_H*_VPIP_SC;
-        cv.style.cssText='position:fixed;left:-99999px;top:0;'; document.body.appendChild(cv);
-        const stream=cv.captureStream(30);
-        const off=cv.transferControlToOffscreen();
+        let stream, cv=null, off=null, sink=null;
+        if(_vpipPushSupported()){
+          const gen=new MediaStreamTrackGenerator({ kind:'video' });
+          stream=new MediaStream([gen]); sink=gen.writable;   // 워커가 이 writable에 VideoFrame을 push(워커 안 OffscreenCanvas 자체 생성 — 플레이스홀더 캔버스 불필요)
+        } else {
+          cv=document.createElement('canvas'); cv.width=_VPIP_W*_VPIP_SC; cv.height=_VPIP_H*_VPIP_SC;
+          cv.style.cssText='position:fixed;left:-99999px;top:0;'; document.body.appendChild(cv);
+          stream=cv.captureStream(30);
+          off=cv.transferControlToOffscreen();
+        }
         const worker=new Worker(_vpipWorkerUrl());
         worker.onerror=function(e){ try{ console.warn('비디오 PiP 워커 오류', (e&&e.message)||e); }catch(_e){} };   // 워커 스크립트 오류 가시화(조용한 정지 방지)
-        const xf=[off].concat(_vpipKitXfer(kit)); pets.forEach(function(p){ ['sheet','south','east'].forEach(function(k){ if(p[k]) xf.push(p[k]); }); });
-        worker.postMessage({t:'init', canvas:off, sc:_VPIP_SC, W:_VPIP_W, H:_VPIP_H, back:kit.back, furn:kit.furn, fx:kit.fx, parts:kit.parts, rm:reducedMotion(), pets:pets}, xf);
+        const xf=(off?[off]:[]).concat(sink?[sink]:[]).concat(_vpipKitXfer(kit)); pets.forEach(function(p){ ['sheet','south','east'].forEach(function(k){ if(p[k]) xf.push(p[k]); }); });
+        worker.postMessage({t:'init', canvas:off, sink:sink, sc:_VPIP_SC, W:_VPIP_W, H:_VPIP_H, back:kit.back, furn:kit.furn, fx:kit.fx, parts:kit.parts, rm:reducedMotion(), pets:pets}, xf);
         const v=document.createElement('video'); v.muted=true; v.playsInline=true; v.autoplay=true;
         v.style.cssText='position:fixed;left:-99999px;top:0;width:'+_VPIP_W+'px;'; v.srcObject=stream; document.body.appendChild(v);
         _vpip={ video:v, canvas:cv, worker:worker, stream:stream,
