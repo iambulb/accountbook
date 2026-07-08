@@ -8924,10 +8924,54 @@
     function captureUndo(){ try{ const r=room(); _undoSnap={ roomId:curRoomId(), placed:Object.assign({},r.placed||{}), wallPlaced:Object.assign({},r.wallPlaced||{}), wallpaper:r.wallpaper||'default', floor:r.floor||'default' }; }catch(e){ _undoSnap=null; } }   // 벽지·바닥도 스냅샷(변경 undo 지원)
     function undoPlace(){ if(!_undoSnap || _undoSnap.roomId!==curRoomId()){ _undoSnap=null; return; } const s=_undoSnap; _undoSnap=null;
       roomTx(s.roomId, roomIdx(), R=>{ R.placed=s.placed; R.wallPlaced=s.wallPlaced; if(s.wallpaper!=null) R.wallpaper=s.wallpaper; if(s.floor!=null) R.floor=s.floor; }, ()=>{ if(state._sheetRefresh) state._sheetRefresh(); toast('되돌렸어요'); }); }
+    // ✨ 가구 자동 정리 — 현재 방 배치를 뒤→앞·발자국 큰 것부터·등급순으로 격자에 다시 채운다(펫은 자율이라 미변경, 벽지·바닥·똥·펫 그대로).
+    //    기존 배치 헬퍼만 재사용(areaFree/occupiedCells/isFloorItem/CARE_ITEMS/wallAreaFree/captureUndo/roomTx). filledAt(그릇 채움) 보존. 지오메트리(camDepth/camZ/splitProps)는 렌더타임 그대로.
+    function autoArrangeRoom(){
+      const fl=placedList(), wl=wallPlacedList();
+      if(!fl.length && !wl.length){ toast('정리할 가구가 없어요'); return; }
+      confirmSheet('가구 배치를 뒤→앞·크기 순으로 자동 정리할까요?\n(가구만 옮겨요 · 펫·벽지·바닥은 그대로 · 되돌리기 가능)', function(){
+        const cell=function(p){ const o={itemId:p.itemId}; if(p.filledAt) o.filledAt=p.filledAt; return o; };   // filledAt(밥·물 채움) 보존
+        // ── 바닥 격자(12×8) ──
+        const out={}, leftover=[];
+        const floors=fl.filter(function(p){ return isFloorItem(p.itemId); });
+        const regs=fl.filter(function(p){ return !isFloorItem(p.itemId); });
+        // 바닥 아이템(러그·연못): 겹침 허용 → 서로 다른 키로 뒤쪽부터 깔기(z:0 베이스)
+        floors.forEach(function(p){ const f=itemFoot(p.itemId); let done=false;
+          for(let r=1;r+f.h-1<=GRID_ROWS && !done;r++) for(let c=1;c+f.w-1<=GRID_N && !done;c++){ const k=r+'_'+c; if(!out[k] && areaFree(r,c,f.w,f.h,out,null,true)){ out[k]=cell(p); done=true; } }
+          if(!done) leftover.push(p); });
+        // 큰 가구(발자국≥2)는 뒷줄부터, 작은 1×1은 앞줄부터 채워 방 전체에 깊이감 있게 펼침 — 큰 쇼피스=뒤, 작은 소품·케어(밥·물·화장실 1×1)=앞(펫이 닿기 쉬움).
+        const big=regs.filter(function(p){ const f=itemFoot(p.itemId); return f.w*f.h>=2; });
+        const small=regs.filter(function(p){ const f=itemFoot(p.itemId); return f.w*f.h<2; });
+        big.sort(function(a,b){ const fa=itemFoot(a.itemId),fb=itemFoot(b.itemId); return (fb.w*fb.h)-(fa.w*fa.h) || (tierRank(itemTierOf(b.itemId))-tierRank(itemTierOf(a.itemId))) || (a.itemId<b.itemId?-1:1); });
+        small.sort(function(a,b){ return (tierRank(itemTierOf(b.itemId))-tierRank(itemTierOf(a.itemId))) || (a.itemId<b.itemId?-1:1); });
+        big.forEach(function(p){ const f=itemFoot(p.itemId); let done=false;
+          for(let r=1;r+f.h-1<=GRID_ROWS && !done;r++) for(let c=1;c+f.w-1<=GRID_N && !done;c++){ const k=r+'_'+c; if(!out[k] && areaFree(r,c,f.w,f.h,out,null,false)){ out[k]=cell(p); done=true; } }
+          if(!done) leftover.push(p); });   // 뒤→앞 first-fit
+        small.forEach(function(p){ let done=false;
+          for(let r=GRID_ROWS;r>=1 && !done;r--) for(let c=1;c<=GRID_N && !done;c++){ const k=r+'_'+c; if(!out[k] && areaFree(r,c,1,1,out,null,false)){ out[k]=cell(p); done=true; } }
+          if(!done) leftover.push(p); });   // 앞→뒤 first-fit(1×1)
+        // ── 벽 격자(12×4) ── 앵커별 선호 행(바닥형=맨 아래·매다는형=천장쪽·거는형=중간)에 좌→우로 채움
+        const wout={}, wleft=[];
+        wl.slice().sort(function(a,b){ return wallFoot(b.itemId).w-wallFoot(a.itemId).w; }).forEach(function(p){
+          const w=wallFoot(p.itemId).w, anchor=wallAnchorOf(p.itemId);
+          const rows = anchor==='floor'?[WALL_ROWS] : (anchor==='hang'?[1,2] : [2,3,1,4]);
+          let done=false;
+          for(let ri=0;ri<rows.length && !done;ri++){ const r=rows[ri];
+            for(let c=1;c+w-1<=WALL_COLS && !done;c++){ const k=r+'_'+c; if(!wout[k] && wallAreaFree(r,c,w,wout,null)){ wout[k]=cell(p); done=true; } } }
+          if(!done) wleft.push(p); });
+        // ── 커밋(단일 roomTx, captureUndo로 한 번에 되돌리기) ──
+        captureUndo();
+        roomTx(curRoomId(), roomIdx(), function(R){ R.placed=out; R.wallPlaced=wout; }, function(){
+          if(state._sheetRefresh) state._sheetRefresh();
+          const nleft=leftover.length+wleft.length;
+          toast(nleft?('가구를 정리했어요 ✨ · 자리가 부족한 '+nleft+'개는 대기(인벤토리로)'):'가구를 정리했어요 ✨'); });
+      });
+    }
     function placeActionsBar(){ const r=room(); const hasAny=Object.keys(r.placed||{}).length||Object.keys(r.wallPlaced||{}).length;
       const canUndo=!!(_undoSnap && _undoSnap.roomId===curRoomId());
       if(!hasAny && !canUndo) return '';
       return '<div class="placeacts">'+
+        (hasAny?'<button class="pa-btn" onclick="autoArrangeRoom()" aria-label="가구 자동 정리(뒤→앞·크기순)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>자동 정리</button>':'')+
         (canUndo?'<button class="pa-btn" onclick="undoPlace()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>되돌리기</button>':'')+
         (hasAny?'<button class="pa-btn danger" onclick="captureUndo();clearRoom(curRoomId(),roomIdx())"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>이 방 비우기</button>':'')+
       '</div>'; }
