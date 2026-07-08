@@ -1394,9 +1394,12 @@
     @keyframes rbflwig { 0%,100%{ transform:rotate(-16deg) scale(.96); } 50%{ transform:rotate(16deg) scale(1.06); } }
     @keyframes rbflglint { 0%,100%{ filter:brightness(1); } 45%{ filter:brightness(1.55); } }
     body.lite .fx-rbflwig { animation:none !important; }   /* 🔋 저사양: 글린트 filter 애니 컷(궤도 이동은 fx-ddbfly 쪽 규칙을 따름) */
+    .fx-rbcoin { display:block; image-rendering:pixelated; transform-origin:center; animation:rbcoinspin var(--fd,2s) ease-in-out infinite, rbflglint 1.6s ease-in-out infinite; }   /* 🪙 무지개 동전: 제자리 코인 회전(scaleX)+글린트, 궤도 이동은 부모 .fx-ddbfly(fxflit) */
+    @keyframes rbcoinspin { 0%,100%{ transform:scaleX(1); } 50%{ transform:scaleX(.3); } }
+    body.lite .fx-rbcoin { animation:none !important; }
     /* 나비 제각각 이동 — 각 나비의 --x1..--y3(인라인)로 서로 다른 방향·거리로 흩날림(같은 방향 세트 이동 금지) */
     @keyframes fxflit { 0%,100%{transform:translate(0,0)} 25%{transform:translate(var(--x1,10px),var(--y1,-10px))} 50%{transform:translate(var(--x2,22px),var(--y2,5px))} 75%{transform:translate(var(--x3,8px),var(--y3,14px))} }
-    @media (prefers-reduced-motion: reduce){ .fx-ddbfly, .fx-ddbfly .bf-wing, .fx-ddbfly .ten-leafwig, .fx-ddbfly .fx-rbflwig, .fx-ddrainbow, .fx-ddcloud { animation:none; } .fx-ddrainbow { opacity:1; clip-path:none; } }
+    @media (prefers-reduced-motion: reduce){ .fx-ddbfly, .fx-ddbfly .bf-wing, .fx-ddbfly .ten-leafwig, .fx-ddbfly .fx-rbflwig, .fx-ddbfly .fx-rbcoin, .fx-ddrainbow, .fx-ddcloud { animation:none; } .fx-ddrainbow { opacity:1; clip-path:none; } }
     .shopcard.ddeul-card .thumb .px { height:84px; width:auto; }   /* 샵 카드에서 알이 작아 보이지 않게 썸네일 꽉 채움 */
     .fx-egg.pop { animation:fxpop .4s cubic-bezier(.2,1.4,.4,1), fxfloat 2.2s ease-in-out .4s infinite; }
     .fx-box.pop { animation:fxpop .4s cubic-bezier(.2,1.4,.4,1); }

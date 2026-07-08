@@ -3889,6 +3889,9 @@
     function coinSvg(opt){ return pxSvg(M_COIN, COIN_PAL, opt); }
     function cheeseCatSvg(opt){ return pxSvg(M_CHEESECAT, CHEESECAT_PAL, opt); }   // 🧀 치즈냥이 얼굴(거래 카테고리 아이콘 선택지)
     function goldSvg(opt){ return pxSvg(M_COIN, GOLD_PAL, opt); }
+    // 🌈 무지개 동전(금화와 동형, 색만 무지개) — 테두리 강한 무지개(S/D)+안쪽 은은한 무지개(A), 눈·코는 유지. 랜덤박스 뽑기 연출에서 알 주변에 둥둥.
+    const RBCOIN_PAL={X:'#4a3a6a',S:'RAINBOW',D:'RAINBOW',A:'RAINBOW2',E:'#2a2036',P:'#ff9ec2'};
+    function rainbowCoinSvg(opt){ return pxSvg(M_COIN, RBCOIN_PAL, opt); }
     // 🏪 알뜰샵 아이콘 — 은화(코인) 팔레트 기반 상점(스토어프론트): 줄무늬 차양(R/W) + 은색 몸체(S/A/D) + 은화 속 동물얼굴(E 눈·P 코)을 간판으로 유지. 더보기 '알뜰샵' 타일용.
     const M_SHOP = [
       '..KKKKKKKKKK..',
@@ -4667,7 +4670,7 @@
     function tuftSvg(opt){ return pxSvg(_pkV2?M2_TUFT:M_TUFT, TUFT_PAL, opt); }
     // 🦋 나비(9×7) — 큰 윗날개+좁아지는 아랫날개+어두운 몸통. 색은 tint별(주황/파랑/분홍/노랑). 배너에서 살랑살랑 날아다님(.pk-bfly).
     const M_BFLY=[".WWW.WWW.","WWWWBWWWW","WWWHBHWWW",".WWHBHWW.","..WHBHW..","..WWBWW..","...W.W..."];
-    const BFLY_PALS={o:{W:'#ff9d3c',H:'#ffd27a',B:'#3a2a18',w:'#d97a24'},b:{W:'#5aa9ff',H:'#a9d4ff',B:'#22314a',w:'#3d84d6'},p:{W:'#ff7fbf',H:'#ffc3e0',B:'#4a2238',w:'#e05a9c'},y:{W:'#ffd84a',H:'#fff0a8',B:'#4a3a12',w:'#e0b422'}};   // w=v2 날개 테두리 그늘
+    const BFLY_PALS={o:{W:'#ff9d3c',H:'#ffd27a',B:'#8a5a2c',w:'#d97a24'},b:{W:'#5aa9ff',H:'#a9d4ff',B:'#3f5a84',w:'#3d84d6'},p:{W:'#ff7fbf',H:'#ffc3e0',B:'#8a4462',w:'#e05a9c'},y:{W:'#ffd84a',H:'#fff0a8',B:'#8a6a24',w:'#e0b422'}};   // w=v2 날개 테두리 그늘
     function butterflySvg(tint,opt){ return pxSvg(_pkV2?M2_BFLY:M_BFLY, BFLY_PALS[tint||'o'], opt); }
     // 🦋 나비별 '제각각' 이동 경로 CSS 변수(fxflit 키프레임이 읽음) — 나비마다 다른 방향/거리로 흩날리게. rnd()=0~1 난수 함수(FX=Math.random 랜덤, 배너=pkRand 결정적).
     function bflyDriftVars(rnd){ const p=function(){ return Math.round((rnd()*2-1)*22); }; return '--x1:'+p()+'px;--y1:'+p()+'px;--x2:'+p()+'px;--y2:'+p()+'px;--x3:'+p()+'px;--y3:'+p()+'px'; }
@@ -4881,7 +4884,7 @@
     const M2_PINE=["...............",".......H.......","......HLD......","......HLD......",".....HLLlD.....",".....HLLlD.....","....HLLLllD....","....HLLLllD....","...HLLLLlllD...","..HLLLLLllllD..","....HLLLllD....","...HLLLLlllD...","...HLLLLlllD...","..HLLLLLllllD..",".HLLLLLLlllllD.","....HLLLllD....","...HLLLLlllD...","..HLLLLLllllD..",".HLLLLLLlllllD.","HLLLLLLLllllllD","......TTt......","......TTt......","......TTt......",".....TTTtt.....","..............."];
     const M2_FLOWER=["...........","...P.P.P...","..PPdPdPP..","..PPPCPPP..",".PPdCCCdPP.","..PPPCPPP..","..PPdPdPP..","...P.P.P...","....dPd....",".....S.....","..SS.S.....",".SSS.S.SS..",".....S.SSS."];
     const M2_TUFT=[".............",".H...H...H...",".G.H.G.H.G...",".G.G.GG.G.H..",".gG.GgG.GG.G.",".gGGgGGgGGgG.","..gGgGgGgGg..","..ggggggggg..","............."];
-    const M2_BFLY=["..B.......B..","...B.....B...",".wWWw.B.wWWw.","wWHWWwBwWWHWw","wWWWWwBwWWWWw",".wWWWwBwWWWw.","..wWWwBwWWw..","..wWHwBwHWw..","...wWw.wWw...","....w...w...."];
+    const M2_BFLY=[".wWWw.B.wWWw.","wWHWWwBwWWHWw","wWWWWwBwWWWWw",".wWWWwBwWWWw.","..wWWwBwWWw..","..wWHwBwHWw..","...wWw.wWw...","....w...w...."];
     const M2_STONE=[".............","...XXXXXXX...","..XLIILLLMX..",".XLILLLMMMDX.",".XLLLMMMDDDX.","..XMMDDDDDX..","...XXXXXXX..."];
     const M2_ROCK=[".......gGGg........",".....gGGGGGg.......","....XXXXXXXXX......","...XLLILLLMMMX.....","..XLLILLLLMMMMX....",".XLLLLLLLMMMMMDX...",".XLLLLLLMMMMMDDX...","XLLLLLMMMMMMDDDDX..","XLLLMMMMMMMDDDDDX..","XLMMMMMMMDDDDDDDX..","XMMMMMMDDDDDDDDDX..",".XMMMDDDDDDDDDDX...","..XMMDDDDDDDDDX....","...XXXXXXXXXXX....."];
     const M2_FENCE=["..T....T....T....T...",".TWw..TWw..TWw..TWw..",".TWwT.TWwT.TWwT.TWwT.",".TWwT.TWwT.TWwT.TWwT.","RRRRRRRRRRRRRRRRRRRRR","RwwwwwwwwwwwwwwwwwwwR",".TWwT.TWwT.TWwT.TWwT.",".TWwT.TWwT.TWwT.TWwT.","RRRRRRRRRRRRRRRRRRRRR","RwwwwwwwwwwwwwwwwwwwR",".TWwT.TWwT.TWwT.TWwT.",".TWwT.TWwT.TWwT.TWwT.","....................."];
@@ -10116,13 +10119,15 @@
       // 🌈 무지개 — 화면 안에서 양옆까지 감싸는 둥근(반원) 아치가 왼→오로 펼쳐진다
       st.insertAdjacentHTML('afterbegin','<div class="fx-ddrainbow" aria-hidden="true">'+authRainbowSvg()+'</div>');
       // 🦋/🍁/🌸 알 주변 — 뜰알=나비, 🌈 무지개알·무지개박스(승급 포함, rainbow)=**찬란한 무지개 색바퀴 꽃 6개**(사용자 지침 — 낙엽 대체), 그 외 펫알·랜덤박스=낙엽(단풍잎). '섹터'로 고르게 + 매 연출 랜덤 위치·경로.
-      const useRbFlw = !!(_fx && _fx.kind!=='ddeul');      // 🌈 펫알·랜덤박스·무지개알·무지개박스 전부=무지개꽃 6개(사용자 지침 — 낙엽 폐지: v2 단풍잎의 진한 외곽선이 '검은 빛'처럼 보이던 문제도 함께 해소). 뜰알=나비.
-      const T=['o','b','p','y','o','p','b']; let b=''; const N=useRbFlw?6:7, SH=-28;   // SH=전체 왼쪽 시프트
+      const useCoin = !!(_fx && _fx.kind==='box');         // 🌈🪙 랜덤박스=무지개 동전 6개(사용자 지침)
+      const useRbFlw = !!(_fx && _fx.kind!=='ddeul' && !useCoin);   // 🌈 펫알·무지개알=무지개꽃 6개. 뜰알=나비.
+      const T=['o','b','p','y','o','p','b']; let b=''; const N=(useCoin||useRbFlw)?6:7, SH=-28;   // SH=전체 왼쪽 시프트
       for(let i=0;i<N;i++){
         const ang=((i+Math.random()*0.7)/N)*Math.PI*2, rx=118+Math.random()*72, ry=142+Math.random()*72;
         const mx=Math.round(Math.cos(ang)*rx)+SH, my=Math.round(Math.sin(ang)*ry);
-        const hh=useRbFlw?(16+Math.round(Math.random()*6)):Math.round((13+Math.round(Math.random()*4))*1.5), dur=(6+Math.random()*5).toFixed(1), fd=(0.32+Math.random()*0.28).toFixed(2), del=(-Math.random()*8).toFixed(2);
-        const inner = useRbFlw ? ('<span class="fx-rbflwig" style="--fd:'+(2.0+Math.random()*1.4).toFixed(2)+'s;animation-delay:'+(-Math.random()*2.4).toFixed(2)+'s">'+ddeulFlwRbSvg({h:hh})+'</span>')
+        const hh=useCoin?(16+Math.round(Math.random()*7)):useRbFlw?(16+Math.round(Math.random()*6)):Math.round((13+Math.round(Math.random()*4))*1.5), dur=(6+Math.random()*5).toFixed(1), fd=(0.32+Math.random()*0.28).toFixed(2), del=(-Math.random()*8).toFixed(2);
+        const inner = useCoin ? ('<span class="fx-rbcoin" style="--fd:'+(1.5+Math.random()*1.1).toFixed(2)+'s;animation-delay:'+(-Math.random()*2).toFixed(2)+'s">'+rainbowCoinSvg({h:hh})+'</span>')
+          : useRbFlw ? ('<span class="fx-rbflwig" style="--fd:'+(2.0+Math.random()*1.4).toFixed(2)+'s;animation-delay:'+(-Math.random()*2.4).toFixed(2)+'s">'+ddeulFlwRbSvg({h:hh})+'</span>')
           : ('<span class="bf-wing">'+butterflySvg(T[i%T.length],{h:hh})+'</span>');
         b+='<span class="fx-ddbfly" style="margin:'+my+'px 0 0 '+mx+'px;--d:'+dur+'s;--fd:'+fd+'s;animation-delay:'+del+'s;'+bflyDriftVars(Math.random)+'">'+inner+'</span>'; }
       st.insertAdjacentHTML('beforeend','<div class="fx-ddbflies" aria-hidden="true">'+b+'</div>');
@@ -10437,7 +10442,7 @@
       for(let i=0;i<N;i++){ const ang=((i+Math.random()*0.7)/N)*Math.PI*2, rx=20+Math.random()*16, ry=16+Math.random()*16;
         const mx=Math.round(Math.cos(ang)*rx), my=Math.round(Math.sin(ang)*ry);
         const hh=9+Math.round(Math.random()*3), dur=(5+Math.random()*4).toFixed(1), del=(-Math.random()*6).toFixed(2);
-        let inner; if(th==='night') inner='<span class="ff-core ten-ffcore">'+fireflySvg({h:hh})+'</span>'; else if(th==='sunset') inner='<span class="fx-rbflwig" style="--fd:'+(2.0+Math.random()*1.2).toFixed(2)+'s;animation-delay:'+(-Math.random()*2).toFixed(2)+'s">'+ddeulFlwRbSvg({h:hh+2})+'</span>'; else inner='<span class="bf-wing">'+butterflySvg(T[i%T.length],{h:hh})+'</span>';   // 🌇 sunset(펫알 10뽑)도 낙엽 대신 무지개꽃(사용자 지침 — 1뽑과 통일)
+        let inner; if(th==='night') inner='<span class="ff-core ten-ffcore">'+fireflySvg({h:hh})+'</span>'; else if(th==='sunset') inner='<span class="fx-rbflwig" style="--fd:'+(2.0+Math.random()*1.2).toFixed(2)+'s;animation-delay:'+(-Math.random()*2).toFixed(2)+'s">'+ddeulFlwRbSvg({h:hh+2})+'</span>'; else if(th==='treasure') inner='<span class="fx-rbcoin" style="--fd:'+(1.5+Math.random()*1.0).toFixed(2)+'s;animation-delay:'+(-Math.random()*2).toFixed(2)+'s">'+rainbowCoinSvg({h:hh+2})+'</span>'; else inner='<span class="bf-wing">'+butterflySvg(T[i%T.length],{h:hh})+'</span>';   // 🌇 sunset(펫알)=무지개꽃 · 💎 treasure(랜덤박스)=무지개 동전(사용자 지침) · 그 외=나비
         b+='<span class="fx-ddbfly ten-bfly" style="margin:'+my+'px 0 0 '+mx+'px;--d:'+dur+'s;animation-delay:'+del+'s;'+bflyDriftVars(Math.random)+'">'+inner+'</span>'; }
       const wrap=document.createElement('span'); wrap.className='ten-bflies'; wrap.innerHTML=b; eggEl.appendChild(wrap);
       if(it && it.kind==='ddeul'){ it._flw=DDEUL_FLW_RB; ddeulFlowerRb(eggEl); const fl=eggEl.querySelector('.fx-ddflower'); if(fl) fl.classList.add('ddflw-big'); }   // 🌈 뜰알: 이 알 꽃을 무지개색으로(오픈까지 it._flw로 유지) + 좀 더 크게(ddflw-big)
