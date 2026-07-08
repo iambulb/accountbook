@@ -9760,8 +9760,9 @@
       const art=isEggKind(_fx.kind)?catFace(_fx.res.id,{h:118,eager:true}):rewardBoxArt(_fx.res);   // eager: 등장 즉시 표시(lazy면 ~1초 늦게 뜸)
       // 🌲 전설·신화·한정 펫 등장 = 픽업 배너 씬 전체를 배경으로(픽업 펫 2마리도 씬에서 배회). 그 외 등급은 기본 연출.
       const sceneBg = isEggKind(_fx.kind) && (_fx.res.tier==='limited' || _fx.res.tier==='exclusive');   // 픽업 씬 배경 = 신화(limited)·한정(exclusive)만(전설 제외)
-      const skyLayer = sceneBg ? pickupSceneHtml('reveal') : '';   // 배너 씬(pickupSceneHtml) 재사용 — 배경 + 배회 픽업 펫(알·헤더 없음)
-      fx.innerHTML='<div class="fx-scrim"></div>'+skyLayer+'<div class="fx-reveal tier-'+t.id+' rank-'+rank+((rb||ex)?' rev-rb':'')+(sceneBg?' rev-scene':'')+'">'+   // 한정도 rev-rb(무지개 프레임=박스)
+      const boxScene = (_fx.kind==='box') && _pkV2;   // 💎 개발자(v2) 랜덤박스 오픈은 보물 금고 씬 배경
+      const skyLayer = sceneBg ? pickupSceneHtml('reveal') : (boxScene ? treasureSceneHtml('reveal') : '');   // 배너 씬 재사용 — 배경 + 배회 픽업 펫(알·헤더 없음)
+      fx.innerHTML='<div class="fx-scrim"></div>'+skyLayer+'<div class="fx-reveal tier-'+t.id+' rank-'+rank+((rb||ex)?' rev-rb':'')+((sceneBg||boxScene)?' rev-scene':'')+'">'+   // 한정도 rev-rb(무지개 프레임=박스)
         '<div class="fx-art pop">'+
           '<span class="fx-aurawrap">'+lightLayers({aura:210, rays:250, rainbow:ex})+'</span>'+   // 펫 뒤 픽셀 오오라(한정=무지개 빛). 특별↑은 발산 광선까지 CSS로 표시
           '<span class="fx-ring"></span>'+                                            // 전설↑/무지개: 픽셀 링 충격파(CSS)
@@ -9825,7 +9826,7 @@
     // 하늘 연출 라우터(테마별): sunset=해 떠오름 · night=무지개 별똥별 · 그 외(뜰알 meadow)=무지개.
     function tenSkyFx(wrap){ if(!_fx10) return; const th=_fx10.theme;
       // 🌇 sunset·🌙 night 은 이제 씬(sunsetSceneHtml/nightSceneHtml reveal)에 pk-risesun·pk-shoot이 상시 들어가므로 탭 연출은 무지개(뜰알)만.
-      if(th!=='sunset' && th!=='night') tenSkyRainbow(wrap); }
+      if(th!=='sunset' && th!=='night' && th!=='treasure') tenSkyRainbow(wrap); }
     // 🌿 하단 초원 채우기 — 세로 긴 화면의 빈 초록을 꽃·풀·나무·나비로. pkRand로 결정적 배치.
     function tenMeadowHtml(){
       const lite=liteMode(); const FT=['r','y','p'], BT=['o','b','p','y']; let h='';   // 초록 공백 채우기 — 필드(bottom 0~56%, sky seam 60% 밑) 전반에 촘촘히(꽃·풀·돌·흙)
@@ -9903,14 +9904,14 @@
     function tenOpenEgg(it){ const el=$('tenEgg'+it.i); if(!el||it._open) return; it._open=true;
       const t=tierInfo(it.tier), ex=it.tier==='exclusive';
       el.classList.add('open'); el.style.color=ex?'':(t.color||'#fff');
-      el.innerHTML=(it.kind==='box'?'<span class="ten-boxegg">'+((it.rainbow&&it._rbShown)?rainbowBoxSvg({h:54}):boxSvg({h:54}))+'</span>':it.kind==='ddeul'?ddeulEggSvg({h:52}, it._flw):eggCrackSvg(t.color, !!(it.rainbow&&it._rbShown), {h:52}))+
+      el.innerHTML=(it.kind==='box'?'<span class="ten-boxegg">'+boxOpenSvg(t.color, !!(it.rainbow&&it._rbShown), {h:54})+'</span>':it.kind==='ddeul'?ddeulEggSvg({h:52}, it._flw):eggCrackSvg(t.color, !!(it.rainbow&&it._rbShown), {h:52}))+
         '<span class="ten-crlight">'+lightLayers({aura:64, rays:82, rainbow:ex})+'</span>';
       el.classList.remove('shake','tremble'); void el.offsetWidth; el.classList.add('hit');
       if(!liteMode()){ const s=document.createElement('span'); s.className='ten-eggfx'; s.innerHTML=fxSparkles(5); el.appendChild(s); }
     }
     // 진입점 — items=[{id,tier,kind,rainbow,dup,refund,isNew}]×10
     // 10뽑 배경 씬(테마별) — sunset(펫알)=노을·night(무지개)=밤 리빌 씬, 그 외=픽업 리빌 씬. sunset/night은 자체 데코라 초록 meadow 생략.
-    function tenSceneBg(){ const th=_fx10&&_fx10.theme; return th==='sunset'?sunsetSceneHtml('reveal'):th==='night'?nightSceneHtml('reveal'):pickupSceneHtml('reveal'); }
+    function tenSceneBg(){ const th=_fx10&&_fx10.theme; return th==='treasure'?treasureSceneHtml('reveal'):th==='sunset'?sunsetSceneHtml('reveal'):th==='night'?nightSceneHtml('reveal'):pickupSceneHtml('reveal'); }
     // 🌇🌙 테마별 채움 메도(노을/밤) — 리빌 배경 씬 위·펫 뒤에 꽃·풀·나무·돌·날아다니는 요소를 촘촘히 얹어 '펫 배회구역~벽지' 빈 공간을 컨셉에 맞게 메운다.
     function tenMeadowThemed(theme){
       const lite=liteMode(), night=(theme==='night'); let h='';
@@ -9945,7 +9946,7 @@
         h+='<span class="pk-fallleaf" style="left:'+l+'%;--d:'+dur+'s;--sw:'+sw+'s;--dir:'+dir+';animation-delay:'+del+'s;"><span class="fl-in">'+mapleLeafSvg({h:sp}, LEAF_COLS[Math.floor(pkRand(i,87)*LEAF_COLS.length)])+'</span></span>'; }
       return '<div class="ten-meadow'+(night?' ten-mnight':'')+'" aria-hidden="true">'+h+'</div>';
     }
-    function tenMeadowBg(){ const th=_fx10&&_fx10.theme; return (th==='sunset'||th==='night')?tenMeadowThemed(th):tenMeadowHtml(); }
+    function tenMeadowBg(){ const th=_fx10&&_fx10.theme; if(th==='treasure') return ''; return (th==='sunset'||th==='night')?tenMeadowThemed(th):tenMeadowHtml(); }
     function runTenGachaFx(list, opts){ opts=opts||{}; _fxClear(); _fx=null;
       // side = 알의 '실제 화면 위치'(TEN_POS 흩뿌림 x) 기준 좌/우 → 카메오가 가까운 쪽에서 걸어와 알을 지나치지 않게(격자 i%2는 흩뿌림과 안 맞아 반대편서 걸어와 다른 알을 지나쳐 치던 버그).
       const items=(list||[]).slice(0,TEN_N).map(function(it,i){ return Object.assign({ kind:'egg' }, it, { i:i, col:i%TEN_COLS, row:(i/TEN_COLS|0), side:((TEN_POS[i]&&TEN_POS[i][0]<50)?'l':'r') }); });
