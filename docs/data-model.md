@@ -39,7 +39,7 @@ users/{uid}            : { name, email, photo(프로필 사진 base64 data URL),
                              petDay:{ day, n },                 // ⏱️ 쓰다듬기 은화 하루 카운트(≤3, 애정은 무제한, §3-C)
                              qualityDay:{ day, n },             // ⏱️ 성실 기록(카테고리+메모) 보너스 하루 카운트(≤3, §3-A)
                              gachaGold:{ day, n },              // 🥇 가챠 부산물 금화 하루 카운트(≤2뽑, 은화→금화 세탁 차단 §5). (harvestGold는 레거시·미사용)
-                             treatDay:{ day, n },               // 🍡 츄르(간식) 구매 하루 카운트(≤3, dailyBuy). day 바뀌면 자연 리셋
+                             buyDay:{ day, n:{ treat, tonic } },  // 🛒 하루 구매 카운트(품목별 dailyBuy: 츄르≤3·영양제 무료≤1). day 바뀌면 자연 리셋
                              boost:{ until, mult }              // 💊 수확 수익 부스트 버프: until(ms)>now면 mult(×1.5)를 유효 수익배율에 곱함. 영양제 사용 시 until 연장(activeBoostMult/effYieldMult)
                            } }
 workspaces/{wsId}      : { name, photo(가계부 사진 base64 data URL, 선택), type:'personal'|'group', code(그룹), ownerUid, createdAt,
