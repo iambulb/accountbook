@@ -765,6 +765,7 @@
     let attachedRefs=[];
     function attach(path, cb){ const r=db.ref(wp(path)); r.on('value', cb); attachedRefs.push(r); }
     function detachListeners(){ attachedRefs.forEach(r=>r.off()); attachedRefs=[]; listenersAttached=false; }
+    // 🔌 데이터 리스너 → 렌더 트리거는 App.store.emit(reason) 경유(Model→View 분리 시작). emit(r)은 현재 rerender(r) 그대로 호출(동작 동일) + 구독자 통지 훅. reason 태그는 기존과 동일하게 유지(하위호환).
     function setupListeners(){
       if(listenersAttached) return;
       listenersAttached=true;
@@ -773,70 +774,70 @@
         if(!s.exists() && !seededAcc){ seededAcc=true; db.ref(wp('accounts')).set(buildDefaultAccounts()); return; }
         const o=s.val()||{}; state.accounts=Object.keys(o).map(k=>Object.assign({id:k},o[k])).sort((a,b)=>(a.order||0)-(b.order||0));
         migrateAccounts(); normalizeAccountOwners();   // 레거시 uid owner → 이름(멱등)
-        recv.acc=true; rerender(); maybeBoot();
+        recv.acc=true; App.store.emit(); maybeBoot();
       });
       attach('creditCards', s=>{
-        const o=s.val()||{}; state.creditCards=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender();
+        const o=s.val()||{}; state.creditCards=Object.keys(o).map(k=>Object.assign({id:k},o[k])); App.store.emit();
       });
       attach('categories', s=>{
         if(!s.exists() && !seededCat){ seededCat=true; db.ref(wp('categories')).set(buildDefaultCategories()); return; }
         const o=s.val()||{};
         migrateCategories(o);
         state.categories=Object.keys(o).map(k=>Object.assign({name:k},o[k])).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
-        recv.cat=true; rerender();
+        recv.cat=true; App.store.emit();
       });
       attach('budgets', s=>{
         const v=s.val();
         if(v && (v.monthlyTotal!==undefined || v.byCategory!==undefined)){ migrateBudgets(v); return; } // 구버전 단일 객체
         const o=v||{}; state.budgets=Object.keys(o).filter(k=>o[k] && typeof o[k]==='object').map(k=>Object.assign({id:k},o[k]));
-        rerender();
+        App.store.emit();
       });
       attach('transactions', s=>{
         const arr=[]; s.forEach(us=>{ us.forEach(ts=>{ arr.push(Object.assign({ownerUid:us.key,id:ts.key},ts.val())); }); });
-        state.transactions=arr; recv.tx=true; rerender(); maybeBoot();
+        state.transactions=arr; recv.tx=true; App.store.emit(); maybeBoot();
       });
       attach('savings', s=>{
         const arr=[]; s.forEach(us=>{ us.forEach(vs=>{ arr.push(Object.assign({ownerUid:us.key,id:vs.key},vs.val())); }); });
-        state.savings=arr; rerender();
+        state.savings=arr; App.store.emit();
       });
       attach('recurring', s=>{
         const arr=[]; s.forEach(us=>{ us.forEach(rs=>{ arr.push(Object.assign({ownerUid:us.key,id:rs.key},rs.val())); }); });
-        state.recurring=arr; migrateRecurring(); recv.rec=true; rerender(); maybeBoot();
+        state.recurring=arr; migrateRecurring(); recv.rec=true; App.store.emit(); maybeBoot();
       });
       attach('recurringLogs', s=>{
         const set=new Set(); s.forEach(us=>{ us.forEach(ls=>{ set.add(ls.key); }); });
         recurringLogKeys=set; recv.log=true; maybeBoot();
       });
       attach('subscriptions', s=>{
-        const o=s.val()||{}; state.subscriptions=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender();
+        const o=s.val()||{}; state.subscriptions=Object.keys(o).map(k=>Object.assign({id:k},o[k])); App.store.emit();
       });
       attach('purposeBooks', s=>{
-        const o=s.val()||{}; state.purposeBooks=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender();
+        const o=s.val()||{}; state.purposeBooks=Object.keys(o).map(k=>Object.assign({id:k},o[k])); App.store.emit();
       });
       attach('todos', s=>{
-        const o=s.val()||{}; state.todos=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender('todo');
+        const o=s.val()||{}; state.todos=Object.keys(o).map(k=>Object.assign({id:k},o[k])); App.store.emit('todo');
       });
-      attach('todoShare', s=>{ state.todoShare=s.val()||{}; rerender('todo'); });   // 멤버별 개인 할일 공유 on/off
+      attach('todoShare', s=>{ state.todoShare=s.val()||{}; App.store.emit('todo'); });   // 멤버별 개인 할일 공유 on/off
       attach('people', s=>{
-        const o=s.val()||{}; state.people=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender();
+        const o=s.val()||{}; state.people=Object.keys(o).map(k=>Object.assign({id:k},o[k])); App.store.emit();
       });
       attach('giftEvents', s=>{
-        const o=s.val()||{}; state.giftEvents=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender();
+        const o=s.val()||{}; state.giftEvents=Object.keys(o).map(k=>Object.assign({id:k},o[k])); App.store.emit();
       });
       attach('plannedGiftEvents', s=>{
-        const o=s.val()||{}; state.plannedGiftEvents=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender();
+        const o=s.val()||{}; state.plannedGiftEvents=Object.keys(o).map(k=>Object.assign({id:k},o[k])); App.store.emit();
       });
       attach('settlementPayments', s=>{   // 정산 송금 기록(per-uid: {uid}/{id})
         const arr=[]; s.forEach(us=>{ us.forEach(ps=>{ arr.push(Object.assign({ownerUid:us.key,id:ps.key},ps.val())); }); });
-        state.settlementPayments=arr; rerender();
+        state.settlementPayments=arr; App.store.emit();
       });
       attach('loans', s=>{
-        const o=s.val()||{}; state.loans=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender();
+        const o=s.val()||{}; state.loans=Object.keys(o).map(k=>Object.assign({id:k},o[k])); App.store.emit();
       });
       attach('loanPayments', s=>{
-        const o=s.val()||{}; state.loanPayments=Object.keys(o).map(k=>Object.assign({id:k},o[k])); rerender();
+        const o=s.val()||{}; state.loanPayments=Object.keys(o).map(k=>Object.assign({id:k},o[k])); App.store.emit();
       });
-      attach('settings', s=>{ state.wsSettings=s.val()||{}; rerender(); });
+      attach('settings', s=>{ state.wsSettings=s.val()||{}; App.store.emit(); });
 
       migrateFixed();
     }
@@ -1049,43 +1050,7 @@
     function isActual(t){ return t.isActualExpense!==undefined ? !!t.isActualExpense : !!ACTUAL_DEFAULT[t.type]; }
     function actualSpend(list){ return list.filter(isActual).reduce((s,t)=>s+(Number(t.amount)||0),0); }
 
-    // ===== 정산 계산 (Step 9) — 순수 함수, RTDB/DOM 미접근 =====
-    // 거래 1건의 분담 결과: { payer, participants:[이름], amounts:{이름:금액} }. 합계 = |amount| 보정.
-    function settlementSplit(t){
-      const amount=Math.abs(Number(t.amount)||0);
-      const payer=t.payer||t.user||'';
-      let parts=Array.isArray(t.splitParticipants)&&t.splitParticipants.length?t.splitParticipants.slice():[];
-      const type=t.splitType||'none';
-      if(type==='payer_only'){
-        const amounts={}; if(payer) amounts[payer]=amount; if(!parts.length&&payer) parts=[payer];
-        return { payer, participants:parts.length?parts:(payer?[payer]:[]), amounts };
-      }
-      if(type==='custom' && t.splitAmounts && typeof t.splitAmounts==='object'){
-        const amounts={}; let names=parts.length?parts:Object.keys(t.splitAmounts);
-        names.forEach(n=>{ amounts[n]=Math.round(Number(t.splitAmounts[n])||0); });
-        return { payer, participants:names, amounts };
-      }
-      // equal(기본): 균등 분배 후 나머지를 마지막 사람에게 더해 합계 보정
-      if(!parts.length) parts = payer?[payer]:[];
-      const n=parts.length||1, base=Math.floor(amount/n), amounts={};
-      parts.forEach((nm,i)=>{ amounts[nm]=base; });
-      if(parts.length){ amounts[parts[parts.length-1]] += amount - base*n; }
-      return { payer, participants:parts, amounts };
-    }
-    // balance>0 = 받을 사람, balance<0 = 보낼 사람. 단순 최소 송금 매칭(0 될 때까지 순차).
-    function greedySettle(balanceMap){
-      const cred=[], debt=[];
-      Object.keys(balanceMap).forEach(n=>{ const v=Math.round(balanceMap[n]); if(v>0) cred.push({n,v}); else if(v<0) debt.push({n,v:-v}); });
-      cred.sort((a,b)=>b.v-a.v); debt.sort((a,b)=>b.v-a.v);
-      const out=[]; let i=0,j=0;
-      while(i<debt.length && j<cred.length){
-        const pay=Math.min(debt[i].v, cred[j].v);
-        if(pay>0) out.push({ from:debt[i].n, to:cred[j].n, amount:pay });
-        debt[i].v-=pay; cred[j].v-=pay;
-        if(debt[i].v<=0) i++; if(cred[j].v<=0) j++;
-      }
-      return out;
-    }
+    // ===== 정산 계산 (Step 9) — 순수 함수 settlementSplit·greedySettle 은 public/js/ledger-calc.js 로 추출됨(테스트 대상, 전역으로 노출돼 아래에서 그대로 호출). =====
     // 목적별 가계부 정산 요약. settlementIncluded 거래 + 기록된 송금(paid)을 반영.
     // 상태 기준: neededAmount=정산에 필요한 총 송금액(=greedy 제안 합), settledAmount=완료(paid)된 송금 합.
     //   needed==0 → none / settled>=needed → settled / 0<settled<needed → partially_settled / settled==0 → unsettled
