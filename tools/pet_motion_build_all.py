@@ -83,6 +83,13 @@ CFG = {
  'cat_ocelot':     dict(species='cat', cls='L', style='cat', foot=77,
     eyeL=(51,43,53,44), eyeR=(58,43,60,44), mcx=55, small_y=48, wide_y=47,
     neck=(51,57), chest=(52,59), chest_hi=(53,60), tail=None),
+ # ── 🐾 신화 미만(저해상도 48~68px) 파일럿 — 스프라이트 ASCII 실측 앵커(2026-07-10) ──
+ 'cat_mackerel':   dict(species='cat', cls='XS', style='cat', foot=32,
+    eyeL=(20,16,21,17), eyeR=(26,16,27,17), mcx=23, small_y=20, wide_y=20,
+    neck=(21,25), chest=(24,29), chest_hi=(23,28), tail=None),
+ 'cat_cheese':     dict(species='cat', cls='XS', style='cat', foot=32,
+    eyeL=(20,16,21,17), eyeR=(25,16,26,17), mcx=23, small_y=20, wide_y=20,
+    neck=(21,25), chest=(24,29), chest_hi=(23,28), tail=(33,16,38,25), tailmode='v'),
 }
 
 # ── 입 패치(크기클래스별, 표범 v2 형태를 스케일) — O외곽 d암부 D심부 P혀 C이빨 K턱선 ──
@@ -119,7 +126,11 @@ AMT = {
  'M': dict(belly=(-3,-4,-3,-2), eat=(-1,-2,-2,-2,-2,-1), drink=(-2,-3,-3,-3), sit=(2,1,-1,0)),
  'L': dict(belly=(-4,-5,-4,-3), eat=(-1,-2,-2,-2,-2,-1), drink=(-2,-3,-3,-3), sit=(2,1,-1,0)),
  'XL':dict(belly=(-5,-6,-5,-4), eat=(-2,-3,-3,-3,-3,-2), drink=(-2,-3,-3,-3), sit=(3,2,-1,0)),
+ # 🐾 XS = 저해상도(48~68px, 신화 미만) 전용 — 몸이 작아 아코디언 변형량을 완만하게(1px 오차가 비율상 크므로).
+ #    입 형태는 S(4px)를 재사용하되(작은 머즐 6px엔 2/3), 머리 bob·loaf 압축은 1~2행만 써 뭉개짐/발 baseline 흔들림 방지.
+ 'XS':dict(belly=(-1,-2,-2,-1), eat=(-1,-1,-2,-2,-1,-1), drink=(-1,-2,-2,-1), sit=(1,1,-1,0)),
 }
+MOUTHS['XS'] = MOUTHS['S']   # 저해상도 입 = S 형태 재사용(머즐 폭 실측으로 mcls 조정)
 DOG_EAT = (-1,-3,-3,-3,-3,-1)   # 진돗개: 머리 bob 크게(개 차이, 가이드 §1)
 
 # ═════════════════════════════════════════════════════════════════════════
