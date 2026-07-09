@@ -863,8 +863,8 @@
       const cur=rooms[(g.home&&g.home.current)|0];
       if(cur&&(cur.active||[]).length>0) return cur;
       return rooms.find(R=>R&&(R.active||[]).length>0)||null; }
-    // 🎁 드랍 스폰 롤 — 10분(DROP_ROLL_MS)마다 HARVEST_ROLL/6 × 행복도 계수(dropMoodFactor) × 💊 영양제 부스트(activeBoostMult) 확률로 대상 방(1곳) 바닥에 드랍(펫알·랜덤박스·뜰알·금화)을 놓는다.
-    //   시계 g.dropRollAt은 소비한 롤만큼만 전진: 대상 방이 만석이면 롤을 멈추고 시간을 보존(당첨 기회 유실 없음, 24h 캡이 소급 제한).
+    // 🎁 드랍 스폰 롤 — 1분(DROP_ROLL_MS)마다 HARVEST_ROLL/60 × 행복도 계수(dropMoodFactor) × 💊 영양제 부스트(activeBoostMult) 확률로 대상 방(1곳) 바닥에 드랍(펫알·랜덤박스·뜰알·무지개)을 놓는다. 💰 금화는 바닥 드랍이 아니라 즉시 지갑 적립(캠 표시·5개 상한 없음).
+    //   시계 g.dropRollAt은 소비한 롤만큼 전진. 활성 펫이 있으면 방 만석이어도 롤은 계속 돈다(금화는 매 롤 적립) — 그 외 드랍만 만석 시 그 롤 유실. 활성 펫 없으면 시간 보존(24h 캡이 소급 제한).
     //   다기기 동시 실행은 RTDB 트랜잭션 CAS로 안전 — 후발은 갱신된 시계 기준 n≤0 → abort(중복 스폰 없음).
     function reconcileDrops(){
       const g=state.game; if(!g||!g.home) return;
@@ -880,12 +880,13 @@
         const boost=activeBoostMult(gg);   // 💊 영양제 부스트(1.5× 등)를 드랍 확률에도 적용 — 은화 수확(effYieldMult)과 동일하게 드랍템에도 부스트 반영(사용자 지침).
         for(let i=0;i<n;i++){
           const R=dropTargetRoom(gg);
-          if(!R||(R.drops||[]).length>=DROP_MAX_ROOM) break;   // 대상 방 만석/펫 없음 → 시간 보존(자리 나면 다음 reconcile이 이어서 롤)
+          if(!R) break;   // 활성 펫/방 없음 → 롤 중단(시간 보존). ⚠️ 만석이어도 계속 돈다 — 금화는 바닥 슬롯과 무관하게 매 롤 즉시 적립(아래).
           used++;
           // 💗 행복도→드랍률 보너스 배수(기본 확률에 행복도만큼 더해줌, 100=×2.0·66=×1.6·10미만=×1.0) × 💊 영양제 부스트 — reconcileDrops 롤에 곱한다.
           const mf=dropMoodFactor(roomMood(roomMoodInputs(gg, R)));
           Object.keys(HARVEST_ROLL).forEach(k=>{ if(Math.random()>=HARVEST_ROLL[k]/DROP_ROLL_DIV*mf*boost) return;
-            if((R.drops||[]).length>=DROP_MAX_ROOM) return;   // 같은 롤 안에서 찼을 수 있음
+            if(k==='gold'){ creditDropKind(gg,'gold'); return; }   // 💰 금화 = 바닥 드랍·캠 표시 없이 즉시 지갑 적립(5개 상한에 미포함·방 만석과 무관, 사용자 지침)
+            if((R.drops||[]).length>=DROP_MAX_ROOM) return;   // 그 외 드랍(펫알·랜덤박스·뜰알·무지개)만 방 5개 상한 — 만석이면 그 드랍만 이번 롤 유실(금화는 위에서 이미 적립)
             const at=t+used*DROP_ROLL_MS, p=spawnDropCell(R);
             R.drops=R.drops||[]; R.drops.push({ id:'d'+at.toString(36)+Math.floor(Math.random()*1679616).toString(36), kind:k, at:at, r:p.r, c:p.c }); });
         }
