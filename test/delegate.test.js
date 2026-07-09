@@ -48,6 +48,19 @@ test('buildActionAttrs — {v,t} 명시 타입', () => {
   assert.strictEqual(buildActionAttrs('f', [{ v: 'true', t: 'b' }]), 'data-action="f" data-a0="true" data-t0="b"');
 });
 
+test('buildActionAttrs — null/undefined은 t=j(실제 null 복원)', () => {
+  assert.strictEqual(buildActionAttrs('openTxSheet', [null, null, '2026-07-09']),
+    'data-action="openTxSheet" data-a0="null" data-t0="j" data-a1="null" data-t1="j" data-a2="2026-07-09"');
+});
+
+test('round-trip — null 인자 복원(문자열 아님)', () => {
+  const attrs = {};
+  buildActionAttrs('f', [null, 'x']).replace(/([\w-]+)="([^"]*)"/g, (_, k, v) => { attrs[k] = v; return _; });
+  const args = readActionArgs(n => attrs[n], n => Object.prototype.hasOwnProperty.call(attrs, n));
+  assert.strictEqual(args[0], null);       // 문자열 'null' 아님
+  assert.strictEqual(args[1], 'x');
+});
+
 test('buildActionAttrs — esc 주입(따옴표/꺾쇠 이스케이프 round-trip)', () => {
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   const out = buildActionAttrs('f', ['a"b<c'], esc);

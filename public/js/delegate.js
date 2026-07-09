@@ -28,6 +28,7 @@
       if (a && typeof a === 'object' && 'v' in a) { v = a.v; t = a.t || ''; }
       else if (typeof a === 'number') { t = 'n'; }
       else if (typeof a === 'boolean') { t = 'b'; }
+      else if (a === null || a === undefined) { v = 'null'; t = 'j'; }   // null/undefined → JSON 파싱으로 실제 null 복원(문자열 'null'로 새는 것 방지)
       s += ' data-a' + idx + '="' + esc(String(v)) + '"' + (t ? (' data-t' + idx + '="' + t + '"') : '');
     });
     return s;

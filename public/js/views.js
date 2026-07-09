@@ -28,11 +28,11 @@
           '<div class="tx-sub" style="margin-top:6px;">'+won(u.used)+' / '+won(u.amount)+'</div></div>';
       }
 
-      html+='<div class="seg"><button class="'+(state.homeView==='calendar'?'on':'')+'" onclick="setHomeView(\'calendar\')">달력</button>'+
-        '<button class="'+(state.homeView==='list'?'on':'')+'" onclick="setHomeView(\'list\')">목록</button></div>';
+      html+='<div class="seg"><button class="'+(state.homeView==='calendar'?'on':'')+'" '+App.view.act('setHomeView','calendar')+'>달력</button>'+
+        '<button class="'+(state.homeView==='list'?'on':'')+'" '+App.view.act('setHomeView','list')+'>목록</button></div>';
 
       if(state.homeView==='calendar'){
-        html+='<div class="monthlbl"><button onclick="moveMonth(-1)">‹</button><b>'+y+'년 '+mo+'월</b><button onclick="moveMonth(1)">›</button></div>';
+        html+='<div class="monthlbl"><button '+App.view.act('moveMonth',-1)+'>‹</button><b>'+y+'년 '+mo+'월</b><button '+App.view.act('moveMonth',1)+'>›</button></div>';
         html+=calendarGridHtml(y,mo,list);
         html+=selectedDayHtml(list);
       } else {
@@ -75,9 +75,9 @@
       if(uids.length<2) return '';
       const cur=state.memberFilter;
       let h='<div class="mrow">';
-      h+='<button class="mchip'+(cur===''?' on':'')+'" onclick="clearMemberFilter()"><span class="avatar" style="width:24px;height:24px;background:'+avatarGrad('all')+';"></span>전체</button>';
+      h+='<button class="mchip'+(cur===''?' on':'')+'" '+App.view.act('clearMemberFilter')+'><span class="avatar" style="width:24px;height:24px;background:'+avatarGrad('all')+';"></span>전체</button>';
       uids.forEach(uid=>{ const nm=members[uid].name||'멤버';
-        h+='<button class="mchip'+(cur===uid&&cur?' on':'')+'" onclick="setMemberFilterByUid(\''+uid+'\')">'+avatarHtml(uid, nm, 24)+escapeHtml(nm)+'</button>'; });
+        h+='<button class="mchip'+(cur===uid&&cur?' on':'')+'" '+App.view.act('setMemberFilterByUid',uid)+'>'+avatarHtml(uid, nm, 24)+escapeHtml(nm)+'</button>'; });
       h+='</div>';
       return h;
     }
@@ -108,7 +108,7 @@
         const b=buckets[ds];
         const cls='cal-cell'+(ds===todayS?' today':'')+(ds===state.selectedDate?' sel':'');
         const dots=(b&&b.colors.length)?'<span class="dotrow">'+b.colors.map(c=>'<i style="background:'+c+'"></i>').join('')+'</span>':'';
-        h+='<div class="'+cls+'" onclick="selectDay(\''+ds+'\')"><div class="'+dcls+'">'+d+'</div>'+dots+'</div>';
+        h+='<div class="'+cls+'" '+App.view.act('selectDay',ds)+'><div class="'+dcls+'">'+d+'</div>'+dots+'</div>';
       }
       h+='</div></div>';
       return h;
@@ -119,8 +119,8 @@
       // 필터 칩
       let h='<div class="chip-row">';
       const types=[['','전체'],['expense','지출'],['income','수입'],['transfer','이체']];
-      h+=types.map(t=>'<button class="chip '+(state.filter.type===t[0]?'on':'')+'" onclick="setFilter(\'type\',\''+t[0]+'\')">'+t[1]+'</button>').join('');
-      h+='<button class="chip srch" onclick="openTxSearch()" aria-label="거래 검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>검색</button>';
+      h+=types.map(t=>'<button class="chip '+(state.filter.type===t[0]?'on':'')+'" '+App.view.act('setFilter','type',t[0])+'>'+t[1]+'</button>').join('');
+      h+='<button class="chip srch" '+App.view.act('openTxSearch')+' aria-label="거래 검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>검색</button>';
       h+='</div>';
       const f=state.filter;
       let rows=list.filter(t=>{
@@ -195,7 +195,7 @@
       const loanPill=t.loanId?'<span class="pill">🏦 대출</span>':'';
       const schedPill=((t.date||'').slice(0,10) > todayStr())?'<span class="pill" style="color:var(--primary);border-color:var(--primary);">📅 예정</span>':'';   // 미래 날짜 = 예정(현재 잔액 미반영)
       const amtNum=Math.abs(Number(t.amount)||0).toLocaleString();
-      return '<div class="tx'+(schedPill?' tx-sched':'')+'" onclick="openTxSheet(\''+t.ownerUid+'\',\''+t.id+'\')">'+
+      return '<div class="tx'+(schedPill?' tx-sched':'')+'" '+App.view.act('openTxSheet',t.ownerUid,t.id)+'>'+
         '<div class="tx-ic" style="'+tileStyle+'">'+tileInner+'</div>'+
         '<div class="tx-main"><div class="tx-title">'+escapeHtml(t.desc||'')+schedPill+rec+cardPill+pbPill+giftPill+loanPill+'</div><div class="tx-sub">'+sub+'</div></div>'+
         '<div class="tx-amt '+cls+'">'+sign+'₩'+amtNum+((t.currency&&t.currency!=='KRW')?'<span class="tx-fx">'+escapeHtml(fmtForeign(t.foreignAmount,t.currency))+'</span>':'')+'</div></div>';
@@ -227,7 +227,7 @@
       let h='<div class="row" style="margin-bottom:14px;"><div class="muted">'+dt.getFullYear()+'.'+pad2(dt.getMonth()+1)+'.'+pad2(dt.getDate())+' ('+WEEK[dt.getDay()]+')</div>'+
         '<div>'+(ge?'<span class="red" style="font-weight:700;">-'+ge.toLocaleString()+'</span> ':'')+(gi?'<span class="green" style="font-weight:700;">+'+gi.toLocaleString()+'</span>':'')+'</div></div>';
       h+='<div class="card" style="padding:6px 10px;">'+(rows.length?rows.map(txRowHtml).join(''):'<div class="empty">이 날 거래가 없습니다</div>')+'</div>';
-      h+='<button class="btn" onclick="openTxSheet(null,null,\''+ds+'\')">+ 이 날짜에 추가</button>';
+      h+='<button class="btn" '+App.view.act('openTxSheet',null,null,ds)+'>+ 이 날짜에 추가</button>';
       openSheet(pad2(dt.getMonth()+1)+'월 '+pad2(dt.getDate())+'일', h);
     }
 
