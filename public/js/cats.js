@@ -2961,8 +2961,83 @@
       C('brown','브라운','브라운',-8,1.4,0.8);    C('choco','초코','브라운',-12,1.3,0.62);    C('darkchoco','다크초코','브라운',-14,1.2,0.46);
       A('white','화이트',1.5);  C('ivory','아이보리','무채',6,0.35,1.38);  A('silver','실버',1.18);
       A('gray','그레이',0.95);  A('charcoal','차콜',0.68);                 A('black','블랙',0.4);
+      // ── ✨ 무채·다크·뮤트 확장 55색 (2026-07 사용자 지침: 기존 밝은 색은 그대로 두고 형광 회피·무채/어두운 톤·인기 게임 염색 레퍼런스 대량 추가 → 총 100색) ──
+      //   회색 램프에 CSS 필터 체인을 파이썬으로 재현해 실색 검수(무채=밝기만, 유채=저채도·저명도로 뮤트/다크). 채도(s)↓=무채감, 명도(b)↓=어둡게.
+      // 무채·중성(16)
+      A('jetblack','제트블랙',0.13);   A('ink','먹색',0.26);            A('soot','수트',0.52);
+      C('gunmetal','건메탈','무채',200,0.18,0.5);  C('slate','슬레이트','무채',210,0.18,0.72);  C('ash','애쉬','무채',205,0.15,0.85);
+      C('stone','스톤','무채',25,0.2,0.85);        A('pewter','퓨터',0.8);                     C('fog','포그','무채',195,0.2,1.05);
+      A('pearl','펄',1.32);            A('snow','스노우',2.0);          C('bone','본화이트','무채',14,0.3,1.32);
+      C('warmgray','웜그레이','무채',8,0.16,0.92); C('coolgray','쿨그레이','무채',195,0.16,0.92);
+      C('greige','그레이지','무채',10,0.3,1.02);   C('taupe','토프','무채',6,0.42,0.74);
+      // 다크(19)
+      C('oxblood','옥스블러드','레드',-48,1.9,0.48); C('burgundy','버건디','레드',-52,1.7,0.46); C('maroon','마룬','레드',-46,1.7,0.55);
+      C('brick','벽돌','오렌지',-28,1.7,0.66);     C('rust','러스트','오렌지',-18,1.9,0.68);     C('umber','엄버','브라운',-6,1.3,0.42);
+      C('espresso','에스프레소','브라운',-12,1.1,0.32); C('deepbrown','딥브라운','브라운',-8,1.4,0.5); C('darkolive','다크올리브','그린',38,1.3,0.52);
+      C('hunter','헌터그린','그린',96,1.6,0.48);   C('pine','파인그린','그린',105,1.4,0.42);     C('darkteal','딥틸','민트',140,1.5,0.52);
+      C('petrol','페트롤','민트',152,1.4,0.5);     C('midnight','미드나잇','블루',196,2.0,0.38); C('indigo','인디고','블루',208,1.8,0.5);
+      C('eggplant','가지','퍼플',258,1.5,0.48);    C('deepplum','딥플럼','퍼플',262,1.4,0.55);   C('darkmauve','다크모브','퍼플',272,0.9,0.58);
+      C('blackcherry','블랙체리','레드',-50,1.4,0.4);
+      // 뮤트·더스티(20)
+      C('dustyrose','더스티로즈','핑크',-44,0.9,0.98); C('mauve','모브','핑크',282,0.7,0.9);      C('blush','블러쉬','핑크',-66,0.7,1.12);
+      C('rosegold','로즈골드','오렌지',-24,0.8,1.12); C('terracotta','테라코타','오렌지',-20,1.3,0.9); C('clay','클레이','오렌지',-10,1.0,0.82);
+      C('camel','카멜','브라운',-2,0.9,0.95);      C('ochre','오커','옐로우',12,1.4,0.82);       C('khaki','카키','옐로우',25,0.9,0.85);
+      C('sage','세이지','그린',70,0.7,0.95);       C('moss','모스','그린',55,0.95,0.72);         C('seafoam','씨폼','민트',120,0.6,1.05);
+      C('dustyteal','더스티틸','민트',138,0.8,0.85); C('dustyblue','더스티블루','블루',175,0.8,0.92); C('denim','데님','블루',186,1.0,0.74);
+      C('steelblue','스틸블루','블루',182,0.7,0.82); C('slateblue','슬레이트블루','퍼플',206,0.7,0.78); C('dustylavender','더스티라벤더','퍼플',230,0.6,1.02);
+      C('dustypurple','더스티퍼플','퍼플',250,0.8,0.76); C('champagne','샴페인','옐로우',10,0.5,1.2);
+      // ── ✨ 중간톤(everyday) 100색 — 밝은 원색과 세련 무채/다크의 "사이" 평범색(파스텔·연·은은·차분·짙은 × 20색상환). 등급 가중치에서 흔함(common)으로 자주 나옴 → 세련/프리미엄이 특별해지는 대비 (2026-07 사용자 지침·귀한 소모품 뽑기감) ──
+      C('m_rose_p','파스텔 로즈','레드',-45,0.62,1.16); C('m_rose_l','연 로즈','레드',-45,0.85,1.06); C('m_rose_m','은은한 로즈','레드',-45,1.15,0.96);
+      C('m_rose_d','차분한 로즈','레드',-45,1.25,0.86); C('m_rose_k','짙은 로즈','레드',-45,1.35,0.77); C('m_coral_p','파스텔 코랄','오렌지',-22,0.62,1.16);
+      C('m_coral_l','연 코랄','오렌지',-22,0.85,1.06); C('m_coral_m','은은한 코랄','오렌지',-22,1.15,0.96); C('m_coral_d','차분한 코랄','오렌지',-22,1.25,0.86);
+      C('m_coral_k','짙은 코랄','오렌지',-22,1.35,0.77); C('m_orange_p','파스텔 주황','오렌지',-8,0.62,1.16); C('m_orange_l','연 주황','오렌지',-8,0.85,1.06);
+      C('m_orange_m','은은한 주황','오렌지',-8,1.15,0.96); C('m_orange_d','차분한 주황','오렌지',-8,1.25,0.86); C('m_orange_k','짙은 주황','오렌지',-8,1.35,0.77);
+      C('m_amber_p','파스텔 호박','브라운',2,0.62,1.16); C('m_amber_l','연 호박','브라운',2,0.85,1.06); C('m_amber_m','은은한 호박','브라운',2,1.15,0.96);
+      C('m_amber_d','차분한 호박','브라운',2,1.25,0.86); C('m_amber_k','짙은 호박','브라운',2,1.35,0.77); C('m_lemon_p','파스텔 레몬','옐로우',13,0.62,1.16);
+      C('m_lemon_l','연 레몬','옐로우',13,0.85,1.06); C('m_lemon_m','은은한 레몬','옐로우',13,1.15,0.96); C('m_lemon_d','차분한 레몬','옐로우',13,1.25,0.86);
+      C('m_lemon_k','짙은 레몬','옐로우',13,1.35,0.77); C('m_yg_p','파스텔 연두','그린',34,0.62,1.16); C('m_yg_l','연 연두','그린',34,0.85,1.06);
+      C('m_yg_m','은은한 연두','그린',34,1.15,0.96); C('m_yg_d','차분한 연두','그린',34,1.25,0.86); C('m_yg_k','짙은 연두','그린',34,1.35,0.77);
+      C('m_grass_p','파스텔 풀빛','그린',58,0.62,1.16); C('m_grass_l','연 풀빛','그린',58,0.85,1.06); C('m_grass_m','은은한 풀빛','그린',58,1.15,0.96);
+      C('m_grass_d','차분한 풀빛','그린',58,1.25,0.86); C('m_grass_k','짙은 풀빛','그린',58,1.35,0.77); C('m_green_p','파스텔 초록','그린',82,0.62,1.16);
+      C('m_green_l','연 초록','그린',82,0.85,1.06); C('m_green_m','은은한 초록','그린',82,1.15,0.96); C('m_green_d','차분한 초록','그린',82,1.25,0.86);
+      C('m_green_k','짙은 초록','그린',82,1.35,0.77); C('m_tealg_p','파스텔 청록','민트',108,0.62,1.16); C('m_tealg_l','연 청록','민트',108,0.85,1.06);
+      C('m_tealg_m','은은한 청록','민트',108,1.15,0.96); C('m_tealg_d','차분한 청록','민트',108,1.25,0.86); C('m_tealg_k','짙은 청록','민트',108,1.35,0.77);
+      C('m_jade_p','파스텔 비취','민트',126,0.62,1.16); C('m_jade_l','연 비취','민트',126,0.85,1.06); C('m_jade_m','은은한 비취','민트',126,1.15,0.96);
+      C('m_jade_d','차분한 비취','민트',126,1.25,0.86); C('m_jade_k','짙은 비취','민트',126,1.35,0.77); C('m_aqua_p','파스텔 물빛','민트',148,0.62,1.16);
+      C('m_aqua_l','연 물빛','민트',148,0.85,1.06); C('m_aqua_m','은은한 물빛','민트',148,1.15,0.96); C('m_aqua_d','차분한 물빛','민트',148,1.25,0.86);
+      C('m_aqua_k','짙은 물빛','민트',148,1.35,0.77); C('m_skyb_p','파스텔 하늘빛','블루',168,0.62,1.16); C('m_skyb_l','연 하늘빛','블루',168,0.85,1.06);
+      C('m_skyb_m','은은한 하늘빛','블루',168,1.15,0.96); C('m_skyb_d','차분한 하늘빛','블루',168,1.25,0.86); C('m_skyb_k','짙은 하늘빛','블루',168,1.35,0.77);
+      C('m_blueb_p','파스텔 파랑','블루',186,0.62,1.16); C('m_blueb_l','연 파랑','블루',186,0.85,1.06); C('m_blueb_m','은은한 파랑','블루',186,1.15,0.96);
+      C('m_blueb_d','차분한 파랑','블루',186,1.25,0.86); C('m_blueb_k','짙은 파랑','블루',186,1.35,0.77); C('m_indigoo_p','파스텔 쪽빛','블루',206,0.62,1.16);
+      C('m_indigoo_l','연 쪽빛','블루',206,0.85,1.06); C('m_indigoo_m','은은한 쪽빛','블루',206,1.15,0.96); C('m_indigoo_d','차분한 쪽빛','블루',206,1.25,0.86);
+      C('m_indigoo_k','짙은 쪽빛','블루',206,1.35,0.77); C('m_indblue_p','파스텔 남보라','퍼플',226,0.62,1.16); C('m_indblue_l','연 남보라','퍼플',226,0.85,1.06);
+      C('m_indblue_m','은은한 남보라','퍼플',226,1.15,0.96); C('m_indblue_d','차분한 남보라','퍼플',226,1.25,0.86); C('m_indblue_k','짙은 남보라','퍼플',226,1.35,0.77);
+      C('m_violetb_p','파스텔 보라','퍼플',246,0.62,1.16); C('m_violetb_l','연 보라','퍼플',246,0.85,1.06); C('m_violetb_m','은은한 보라','퍼플',246,1.15,0.96);
+      C('m_violetb_d','차분한 보라','퍼플',246,1.25,0.86); C('m_violetb_k','짙은 보라','퍼플',246,1.35,0.77); C('m_pansy_p','파스텔 제비꽃','퍼플',262,0.62,1.16);
+      C('m_pansy_l','연 제비꽃','퍼플',262,0.85,1.06); C('m_pansy_m','은은한 제비꽃','퍼플',262,1.15,0.96); C('m_pansy_d','차분한 제비꽃','퍼플',262,1.25,0.86);
+      C('m_pansy_k','짙은 제비꽃','퍼플',262,1.35,0.77); C('m_fuchsia_p','파스텔 자주','핑크',280,0.62,1.16); C('m_fuchsia_l','연 자주','핑크',280,0.85,1.06);
+      C('m_fuchsia_m','은은한 자주','핑크',280,1.15,0.96); C('m_fuchsia_d','차분한 자주','핑크',280,1.25,0.86); C('m_fuchsia_k','짙은 자주','핑크',280,1.35,0.77);
+      C('m_pinkb_p','파스텔 분홍','핑크',-72,0.62,1.16); C('m_pinkb_l','연 분홍','핑크',-72,0.85,1.06); C('m_pinkb_m','은은한 분홍','핑크',-72,1.15,0.96);
+      C('m_pinkb_d','차분한 분홍','핑크',-72,1.25,0.86); C('m_pinkb_k','짙은 분홍','핑크',-72,1.35,0.77); C('m_salmon_p','파스텔 산호','오렌지',-60,0.62,1.16);
+      C('m_salmon_l','연 산호','오렌지',-60,0.85,1.06); C('m_salmon_m','은은한 산호','오렌지',-60,1.15,0.96); C('m_salmon_d','차분한 산호','오렌지',-60,1.25,0.86);
+      C('m_salmon_k','짙은 산호','오렌지',-60,1.35,0.77);
       return out; })();
     const DYE_MAP={}; DYE_CATALOG.forEach(function(d){ DYE_MAP[d.id]=d; });
+    // 🏷️ 염색 등급(뽑기 가중치) — 귀한 소모품답게 "미니 뽑기"감. common=밝은 원색+중간톤(자주=평범/꽝), uncommon=세련(무채·다크·뮤트), rare=프리미엄(올블랙·퓨어화이트·보석톤·메탈릭). applyDye가 그룹 확률로 선택.
+    const DYE_REFINED=new Set(['jetblack', 'ink', 'soot', 'gunmetal', 'slate', 'ash', 'stone', 'pewter', 'fog', 'pearl', 'snow', 'bone', 'warmgray', 'coolgray', 'greige', 'taupe', 'oxblood', 'burgundy', 'maroon', 'brick', 'rust', 'umber', 'espresso', 'deepbrown', 'darkolive', 'hunter', 'pine', 'darkteal', 'petrol', 'midnight', 'indigo', 'eggplant', 'deepplum', 'darkmauve', 'blackcherry', 'dustyrose', 'mauve', 'blush', 'rosegold', 'terracotta', 'clay', 'camel', 'ochre', 'khaki', 'sage', 'moss', 'seafoam', 'dustyteal', 'dustyblue', 'denim', 'steelblue', 'slateblue', 'dustylavender', 'dustypurple', 'champagne']);
+    const DYE_RARE=new Set(['jetblack', 'snow', 'pearl', 'gold', 'emerald', 'cobalt', 'indigo', 'oxblood', 'eggplant', 'midnight', 'burgundy', 'rosegold']);   // rare 우선(REFINED와 겹치면 rare)
+    DYE_CATALOG.forEach(function(d){ d.t = DYE_RARE.has(d.id) ? 'rare' : (DYE_REFINED.has(d.id) ? 'uncommon' : 'common'); });
+    const DYE_TIER_P={ rare:0.03, uncommon:0.29, common:0.68 };   // 그룹 확률(합1) — 대부분 평범, 가끔 세련, 드물게 프리미엄. 튜닝은 이 3값만.
+    // 🎲 염색 뽑기 — 등급 그룹 확률로 tier 선택 후 그 tier 색 중 균등(현재 색 제외). 빈 tier면 전체 폴백. applyDye가 사용.
+    function rollDye(cur){
+      const avail=DYE_CATALOG.filter(function(d){ return d.id!==cur; });
+      const byT={ common:[], uncommon:[], rare:[] };
+      avail.forEach(function(d){ (byT[d.t]||byT.common).push(d); });
+      const r=Math.random();
+      const tier = r < DYE_TIER_P.rare ? 'rare' : (r < DYE_TIER_P.rare+DYE_TIER_P.uncommon ? 'uncommon' : 'common');
+      const arr=(byT[tier]&&byT[tier].length)?byT[tier]:avail;
+      return arr[Math.floor(Math.random()*arr.length)];
+    }
     // 염색값 → CSS filter 문자열(단일 소스 — catActorHTML·catFace·비디오 PiP 워커·친구 캠이 공유). 무효값=''(미염색).
     function dyeFilterCss(v){ if(!v) return '';
       if(typeof v==='string' && DYE_MAP[v]) return DYE_MAP[v].css;
@@ -3004,13 +3079,13 @@
       openSheet(M.title, build());
       state._sheetRefresh=()=>{ const b=$('sheetBody'); if(b) b.innerHTML=build(); };
     }
-    // 🎨 염색약: 펫 그리드에서 탭 → DYE_CATALOG 45색 중 랜덤(현재 색 제외) 배정, 시트 유지로 결과 확인.
+    // 🎨 염색약: 펫 그리드에서 탭 → DYE_CATALOG 200색 중 등급 가중 랜덤(rollDye, 현재 색 제외) 배정, 시트 유지로 결과 확인.
     function useDye(){ openPetUseSheet('dye'); }
     function applyDye(id){
       if(!id||!ownsCat(id)){ toast('펫을 찾을 수 없어요', true); return; }
       if(consumQty('dye')<=0){ toast('염색약이 없어요', true); return; }
-      const cur=petDyeOf(id), pool=DYE_CATALOG.filter(d=>d.id!==cur);
-      const pick=pool[Math.floor(Math.random()*pool.length)];   // 랜덤 색(현재 색 제외 — 같은 결과 방지)
+      const cur=petDyeOf(id);
+      const pick=rollDye(cur);   // 🎲 등급 가중 랜덤(현재 색 제외) — 대부분 평범(common), 가끔 세련, 드물게 프리미엄
       gameRef().transaction(g=>{ g=normalizeGame(g);
         if((Number(g.consum.dye)||0)<1) return;
         const c=g.owned.cats[id]; if(!c) return;
