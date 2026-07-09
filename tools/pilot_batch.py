@@ -10,16 +10,53 @@ import pet_motion_build_all as T
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EASY = ['idle','sit','belly','eat','drink']
 
+# ── 🐾 머리(head) 성분 기준 눈 자동 검출(yawn/angry 용) ──────────────────────
+#   bbox 중심은 옆꼬리·비대칭 몸에 밀리므로, 눈 밴드 각 행의 "중심에 가장 가까운 실루엣 런"(=머리)의
+#   중앙을 head_cx로 쓴다(꼬리 제외). 눈 x = head_cx ± 머리폭×0.26, y = y0+0.30h, 그 근방 가장 어둡/채도 높은
+#   픽셀로 스냅(동공/홍채). 저해상도(눈 2~3px)라 1px 오차는 눈 감김/브로우가 여전히 눈 영역을 덮어 자연스럽다.
+def _head_cx(px, x0, x1, y, gap=2):
+    xs = [x for x in range(x0,x1) if px[x,y][3] >= 128]
+    if not xs: return None
+    runs=[]; s=xs[0]; p=xs[0]
+    for x in xs[1:]:
+        if x-p>gap: runs.append((s,p)); s=x
+        p=x
+    runs.append((s,p))
+    c0=(x0+x1-1)/2.0
+    r=min(runs, key=lambda rr:abs((rr[0]+rr[1])/2.0-c0))
+    return (r[0]+r[1])/2.0, r[0], r[1]
+
+def detect_eyes(src):
+    bb=src.getbbox(); x0,y0,x1,y1=bb; h=y1-y0; px=src.load()
+    eyrow=int(y0+0.30*h)
+    hc=[_head_cx(px,x0,x1,y) for y in range(int(y0+0.22*h), int(y0+0.40*h))]
+    hc=[c for c in hc if c]
+    if not hc: return None,None
+    cx=sorted(c[0] for c in hc)[len(hc)//2]
+    hw=sorted((c[2]-c[1]) for c in hc)[len(hc)//2]
+    off=max(2,int(round(hw*0.26)))
+    def snap(xg):
+        best=None
+        for ey in range(eyrow-1,eyrow+2):
+            for ex in range(xg-1,xg+2):
+                if not(x0<=ex<x1 and y0<=ey<y1) or px[ex,ey][3]<128: continue
+                r,g,b,a=px[ex,ey]; sc=(230-(r+g+b))+(max(r,g,b)-min(r,g,b))*2*(max(r,g,b)>90)
+                if best is None or sc>best[0]: best=(sc,ex,ey)
+        return (best[1],best[2]) if best else (xg,eyrow)
+    xl,yl=snap(int(round(cx-off))); xr,yr=snap(int(round(cx+off)))
+    return (xl,yl-1,xl,yl),(xr,yr-1,xr,yr)
+
 def auto_cfg(pid, species, src):
     bb = src.getbbox(); x0,y0,x1,y1 = bb
     h = y1 - y0
     cx = round((x0 + x1 - 1) / 2)
     R = lambda f: int(round(y0 + f*h))
+    eL,eR = detect_eyes(src)
+    if not eL: eL,eR = (cx-3,R(0.27),cx-2,R(0.30)),(cx+2,R(0.27),cx+3,R(0.30))
     return dict(species=species, cls='XS',
         style=('dog' if species=='dog' else 'cat'),
         foot=y1-1, mcx=cx, small_y=R(0.42), wide_y=R(0.42),
-        # 눈 박스는 easy-5(idle/sit/belly/eat/drink)에서 미사용 — yawn/angry 확장 시 실측 교체
-        eyeL=(cx-3,R(0.27),cx-2,R(0.32)), eyeR=(cx+2,R(0.27),cx+3,R(0.32)),
+        eyeL=eL, eyeR=eR,
         neck=(R(0.45),R(0.64)), chest=(R(0.59),R(0.82)), chest_hi=(R(0.55),R(0.77)),
         tail=None)
 
