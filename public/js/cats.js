@@ -8163,11 +8163,10 @@
     function goRainbowShop(){ _gachaTab='rainbow'; lsSet('gachaTab','rainbow'); goGachaShop(); }   // 🌈 소식 배너 → 알뜰샵 가챠 무지개 탭
     // 🌈 소식(공지) 이벤트 섹션의 무지개알 배너 — 라이브 무지개 배너의 밤 씬+센터피스를 재사용(뽑기 버튼 없음, 탭하면 무지개 탭으로 이동). 확률·천장 문구는 상수 참조(단일 소스).
     function rainbowNewsBanner(){ try{
-      const pL=(RAINBOW_TIERS.find(function(t){ return t.id==='limited'; })||{}).p||0, pE=(RAINBOW_TIERS.find(function(t){ return t.id==='exclusive'; })||{}).p||0;
       const fx='<span class="gb-rbaura">'+lightLayers({aura:98,rays:118,rainbow:true})+'</span>'+fxAuraTwinkles(9,true);
       const center=(typeof rbEgg2Html==='function')?rbEgg2Html(52):rainbowEggSvg({h:52});
       return '<div class="pickbanner pk-rbn" role="button" tabindex="0" onclick="goRainbowShop()" aria-label="무지개알 뽑으러 가기">'+
-        '<div class="pk-head"><span class="pk-title tier-rainbow">🌈 무지개알 · 밤</span><span class="pk-tag"><b class="tier-limited">신화 '+pL+'%</b></span><span class="pk-tag"><b class="tier-rainbow">한정 '+pE+'%</b></span><span class="pk-tag">'+RB_PITY_N+'뽑 안에 한정 확정</span></div>'+
+        '<div class="pk-head"><span class="pk-title tier-rainbow">🌈 무지개알 · 밤</span><span class="pk-tag"><b class="tier-rainbow">✦ 별빛 너머에서 찾아온 친구</b></span></div>'+
         '<div class="gb-scene">'+nightSceneHtml()+gbCenterHtml(center, fx, 'gb-rb gb-glow')+'</div>'+
         '<div class="pk-go"><span class="ci">'+rainbowCoinSvg({h:13})+'</span>무지개동전 '+RAINBOW_PRICE_RBC+'개로 1뽑 · <b>미공개 한정</b>도 전부 — 탭해서 뽑으러 가기 →</div></div>';
     }catch(e){ return ''; } }
@@ -8441,7 +8440,7 @@
     function setShopSub(s){ if(['event','egg','box','rainbow','consum'].indexOf(s)<0) s='event'; _shopSub=s; _shopSelCat=null; renderCatHouse(); }   // 🚧 은화 구매 탭 제거 중 — 이벤트/펫알/랜덤박스/무지개/소비만 허용
     // 가챠 탭 내부 서브탭(뜰알/펫알/랜덤박스/무지개) — 종류별로 나눠 뽑기. 탭별 전용 배너: 이벤트(뜰알)=픽업 낮 씬·펫알=노을(연못)·랜덤박스=노을(선물상자)·무지개=밤.
     let _gachaTab=lsGet('gachaTab','ddeul');
-    const GACHA_TABS=[['ddeul','이벤트'],['normal','일반'],['rainbow','무지개']];   // 뜰알=이벤트, 펫알+랜덤박스=일반(합침), 무지개=그대로
+    const GACHA_TABS=[['ddeul','픽업'],['normal','일반'],['rainbow','무지개']];   // 뜰알=픽업(구 '이벤트'), 펫알+랜덤박스=일반(합침), 무지개=그대로
     function setGachaTab(t){ _gachaTab=t||'ddeul'; lsSet('gachaTab',_gachaTab); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     let _normalSub=lsGet('normalSub','egg');   // '일반' 탭 안 서브구분: 펫알(egg)/랜덤박스(box)
     function setNormalSub(s){ _normalSub=(s==='box'?'box':'egg'); lsSet('normalSub',_normalSub); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
@@ -8468,7 +8467,7 @@
     }
     // 가챠 서브탭별 콘텐츠. (배너 고도화는 탭별로 이 함수 안에서 확장)
     function gachaTabHtml(tab){
-      let h='<div class="fxfastrow"><button class="fxfast'+(fxFastOn()?' on':'')+'" onclick="toggleFxFast()" role="switch" aria-checked="'+(fxFastOn()?'true':'false')+'" title="켜면 탭 연출 없이 바로 결과">'+sparkSvg({h:11})+' 빠른 연출</button></div>';   // ⚡ 모든 가챠 탭 공통(이 기기)
+      let h='';   // (⚡ 빠른 연출 칩은 사용자 지침으로 배너 위에서 제거 — fxFastOn 로직은 잔존, 추후 설정에서 재노출 가능)
       if(tab==='ddeul'){
         h+=ddeulBannerHtml(true);   // 🌱 실제 뜰알 배너(재화 소모·펫 지급 실전 연결) — 쇼케이스+씬+아이템+1뽑/10뽑+확률
       } else if(tab==='normal'){   // 🥚📦 일반 = 펫알/랜덤박스 서브탭(각 실제 배너)
@@ -8477,7 +8476,6 @@
         h+=(_normalSub==='egg'?eggBannerHtml(true):boxBannerHtml(true));   // 펫알=노을 배너(펫 지급)·랜덤박스=랜덤박스 배너(가구/바닥/벽지 지급)
       } else if(tab==='rainbow'){   // 🌈 무지개 = 알/박스 서브탭(각 라이브 밤 배너 — 개발자 밤 배너 기반, 펫 2마리 제외) + 무지개동전 잔액
         if(_rbSub!=='egg'&&_rbSub!=='box') _rbSub='egg';
-        h+='<div class="rb-hh"><span class="tier-rainbow">✨ 무지개</span> · 신화80%·한정20% — '+RB_PITY_N+'뽑 안에 한정 확정</div>';   // 잔액은 시트 헤더(은화·금화·무지개동전)에 표시 — 보유 갯수·중복+1 문구 삭제(사용자 지침)
         h+='<div class="subseg normalsub">'+[['egg','무지개알'],['box','무지개박스']].map(function(t){ return '<button class="'+(_rbSub===t[0]?'on':'')+'" onclick="setRbSub(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
         h+=rainbowLiveBannerHtml(_rbSub);
       }
@@ -8782,7 +8780,7 @@
     let _shopSelCat=null;
     function selectShopCat(id){ _shopSelCat=(_shopSelCat===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     // 알뜰샵 서브탭(펫/가구/소비/벽지/가챠) — cathead(sticky) 안에 넣어 스크롤해도 상단 고정. '펫'=구 '고양이'(호랑이·사자 등 포함이라 펫으로 통일). ('가챠' 탭 키는 내부적으로 'event' 유지)
-    const SHOP_SUBS=[['event','이벤트'],['egg','펫알'],['box','랜덤박스'],['rainbow','무지개'],['consum','소비']];   // 🚧 은화 구매 탭(펫·가구·벽지·바닥)은 잠시 제거 — 가챠(이벤트·펫알·랜덤박스·무지개) + 소비만. (추후 금화 로테이션 판매로 재도입 예정)
+    const SHOP_SUBS=[['event','픽업'],['egg','펫알'],['box','랜덤박스'],['rainbow','무지개'],['consum','소비']];   // 🚧 은화 구매 탭(펫·가구·벽지·바닥)은 잠시 제거 — 가챠(이벤트·펫알·랜덤박스·무지개) + 소비만. (추후 금화 로테이션 판매로 재도입 예정)
     const SHOP_LEGACY_BUYTABS=false;   // 🚧 휴면(레거시) 은화 매수탭 게이트 — catShopHtml의 floor/wall/cats/가구 분기를 하드 펜스(SHOP_SUBS에서도 빠져 도달 불가). buyCat/buyItem/buyFloor/buyWall·surfaceShopGrid·필터/정렬 헬퍼가 이 블록 전용이라 삭제하지 않고 보존 — 재도입(금화 로테이션 판매) 시 true + SHOP_SUBS 복원.
     function shopSubsegHtml(){
       if(!SHOP_SUBS.some(function(t){ return t[0]===_shopSub; })) _shopSub='event';   // 제거된 탭 상태면 이벤트로 폴백

@@ -1746,11 +1746,6 @@
     /* 🔮 가챠 천장 칩 — 카드마다 그 종류의 신화↑ 확정까지 남은 뽑기 */
     .pity-chip { display:inline-flex; align-items:center; gap:3px; padding:2px 7px; border-radius:9px; background:color-mix(in srgb,#9B6FC8 14%,var(--card)); color:#9B6FC8; font-size:10.5px; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
     .pity-chip .px { color:#9B6FC8; }
-    /* ⚡ 빠른 연출 토글(가챠 탭 공통, 이 기기 localStorage) */
-    .fxfastrow { display:flex; justify-content:flex-end; margin:0 2px 6px; }
-    .fxfast { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--sub); font-size:11px; font-weight:800; }
-    .fxfast.on { border-color:color-mix(in srgb,#E0A43C 55%,var(--line)); background:color-mix(in srgb,#E0A43C 14%,var(--card)); color:#E0A43C; }
-    .fxfast .px { color:currentColor; }
     .rb-hh { margin:14px 2px 8px; font-size:12.5px; font-weight:800; color:var(--sub); }
     .rb-card { position:relative; overflow:hidden; }
     .rb-card::before { content:""; position:absolute; inset:0; z-index:0; pointer-events:none; opacity:.10;
@@ -2017,6 +2012,7 @@
     .pk-title { font-size:13.5px; font-weight:900; letter-spacing:.02em; }
     .pk-tag { font-size:12.5px; font-weight:700; color:var(--sub); display:inline-flex; align-items:center; gap:4px; }
     .pk-tag b { color:var(--text); font-weight:800; }
+    .pk-tag b.tier-rainbow, .pk-tag b.tier-exclusive { color:transparent; }   /* 🌈 '별빛 너머에서 찾아온 친구' 등 무지개 그라디언트 텍스트 — .pk-tag b 색 덮어쓰기 복구 */
     /* 🌈 소식 이벤트 섹션 무지개알 배너 — 픽업 배너 아래 간격, 탭=무지개 탭 이동 */
     .pk-rbn { margin-top:12px; cursor:pointer; border-color:color-mix(in srgb,#ff5fa2 35%,var(--line)); }
     .pk-rbn .gb-scene { height:190px; }   /* 소식용은 라이브 배너(256px)보다 컴팩트 */
