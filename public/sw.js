@@ -1,5 +1,5 @@
 /* 알뜰(Eggarden) 서비스워커 — 오프라인 앱 셸 캐시 */
-const CACHE_VERSION = 'eggarden-v3.586.0';
+const CACHE_VERSION = 'eggarden-v3.587.0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -15,6 +15,9 @@ const APP_SHELL = [
   './js/views.js',
   './js/cats.assets.js',
   './js/cats.js',
+  './js/cats.engine.js',
+  './js/cats.house.js',
+  './js/cats.gacha.js',
   './js/cats.fx.js',
   './js/push.js',
   './js/main.js',

@@ -26,6 +26,7 @@ REG_PATH   = P("tools", "pets.json")
 ZIP_DIR    = P("public", "assets", "pets", "_zips")
 PETS_DIR   = P("public", "assets", "pets")
 CATS_JS    = P("public", "js", "cats.js")
+CATS_GACHA_JS = P("public", "js", "cats.gacha.js")   # @gen:pet-tier 마커(cats.js 6분할 Phase 5 후 이 파일로 이동). catalog·sprites 는 cats.js.
 SW_JS      = P("public", "sw.js")
 DOC_PIPE   = P("docs", "pet-asset-pipeline.md")
 DOC_FEAT   = P("docs", "features.md")
@@ -241,8 +242,11 @@ def main():
     cats = read(CATS_JS)
     cats = replace_between(cats, "pet-catalog", gen_catalog(reg))
     cats = replace_between(cats, "pet-sprites", gen_sprites(reg))
-    cats = replace_between(cats, "pet-tier",    gen_tier(reg))
     targets[CATS_JS] = cats
+    # @gen:pet-tier 는 cats.js 6분할(Phase 5) 후 cats.gacha.js 로 이동
+    gacha = read(CATS_GACHA_JS)
+    gacha = replace_between(gacha, "pet-tier", gen_tier(reg))
+    targets[CATS_GACHA_JS] = gacha
 
     sw = read(SW_JS)
     sw = replace_between(sw, "pet-shell", gen_sw_shell(reg))
