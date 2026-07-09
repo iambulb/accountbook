@@ -2111,8 +2111,8 @@
       db.ref(wsRoot()).update(upd);
     }
     function toggleCatActive(name){ const c=getCat(name); if(!c) return; db.ref(wp('categories/'+name+'/isActive')).set(c.isActive===false); }
-    function pickCatColor(el){ window._catColor=el.dataset.color; document.querySelectorAll('#catColors .swatch').forEach(b=>b.classList.remove('on')); el.classList.add('on'); }
-    function pickCatIcon(el){ window._catIcon=el.dataset.key; document.querySelectorAll('#catIcons .icon-tile').forEach(b=>b.classList.remove('on')); el.classList.add('on'); }
+    function pickCatColor(el){ el=el||this; window._catColor=el.dataset.color; document.querySelectorAll('#catColors .swatch').forEach(b=>b.classList.remove('on')); el.classList.add('on'); }
+    function pickCatIcon(el){ el=el||this; window._catIcon=el.dataset.key; document.querySelectorAll('#catIcons .icon-tile').forEach(b=>b.classList.remove('on')); el.classList.add('on'); }
     function openCatEdit(name){
       const c=name?getCat(name):null;
       const usedCount=name? state.transactions.filter(t=>t.category===name).length : 0;
@@ -2123,8 +2123,8 @@
       if(c && !canRename) h+='<div class="field"><label>이름</label><input class="input" value="'+escapeHtml(c.name)+'" disabled><div class="tx-sub" style="margin-top:4px;">거래에 사용 중이라 이름 변경 불가(비활성화 권장)</div></div>';
       else h+='<div class="field"><label>이름</label><input class="input" id="catName" value="'+escapeHtml(c?c.name:'')+'" placeholder="예: 반려동물"></div>';
       h+='<div class="field"><label>유형</label><select class="input" id="catType">'+CAT_TYPES.map(p=>'<option value="'+p[0]+'"'+(((c&&c.type===p[0])||(!c&&p[0]==='expense'))?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div>';
-      h+='<label style="font-size:13px;font-weight:600;color:var(--sub);">아이콘</label><div class="icon-grid" id="catIcons">'+Object.keys(CAT_SVG).concat(CAT_PIX_ICONS).map(k=>'<button type="button" class="icon-tile'+(k===window._catIcon?' on':'')+'" data-key="'+k+'" onclick="pickCatIcon(this)">'+catIconMarkup(k)+'</button>').join('')+'</div>';
-      h+='<label style="font-size:13px;font-weight:600;color:var(--sub);">색상</label><div class="swatch-grid" id="catColors">'+CAT_PALETTE.map(p=>'<button type="button" class="swatch'+(p===window._catColor?' on':'')+'" data-color="'+p+'" style="background:'+p+';" onclick="pickCatColor(this)"></button>').join('')+'</div>';
+      h+='<label style="font-size:13px;font-weight:600;color:var(--sub);">아이콘</label><div class="icon-grid" id="catIcons">'+Object.keys(CAT_SVG).concat(CAT_PIX_ICONS).map(k=>'<button type="button" class="icon-tile'+(k===window._catIcon?' on':'')+'" data-key="'+k+'" '+App.view.act('pickCatIcon')+'>'+catIconMarkup(k)+'</button>').join('')+'</div>';
+      h+='<label style="font-size:13px;font-weight:600;color:var(--sub);">색상</label><div class="swatch-grid" id="catColors">'+CAT_PALETTE.map(p=>'<button type="button" class="swatch'+(p===window._catColor?' on':'')+'" data-color="'+p+'" style="background:'+p+';" '+App.view.act('pickCatColor')+'></button>').join('')+'</div>';
       h+='<div class="form-2"><div class="field"><label>공개 범위</label><select class="input" id="catVis">'+VISIBILITY.map(p=>'<option value="'+p[0]+'"'+(((c&&c.visibility===p[0])||(!c&&p[0]===defaultVisibility()))?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div>'+
         '<div class="field"><label>활성</label><select class="input" id="catActive"><option value="1"'+((!c||c.isActive!==false)?' selected':'')+'>활성</option><option value="0"'+((c&&c.isActive===false)?' selected':'')+'>비활성</option></select></div></div>';
       h+='<div class="field"><label>메모 (선택)</label><input class="input" id="catMemo" value="'+escapeHtml(c?(c.memo||''):'')+'" placeholder="메모"></div>';
@@ -2622,7 +2622,7 @@
     }
     function setPbStatus(id,st){ db.ref(wp('purposeBooks/'+id)).update({status:st, updatedAt:new Date().toISOString()}); toast(PB_STATUS_LABEL[st]); openPbDetail(id); }
     function onPbTypeChange(){ const w=$('pbCustomWrap'); if(w) w.style.display=(val('pbType')==='custom')?'':'none'; }
-    function pickPbColor(el){ window._pbColor=el.dataset.color; document.querySelectorAll('#pbColors button').forEach(b=>b.style.border='2px solid transparent'); el.style.border='2px solid var(--text)'; }
+    function pickPbColor(el){ el=el||this; window._pbColor=el.dataset.color; document.querySelectorAll('#pbColors button').forEach(b=>b.style.border='2px solid transparent'); el.style.border='2px solid var(--text)'; }
     function openPbEdit(id){
       const p=id?state.purposeBooks.find(x=>x.id===id):null;
       window._pbColor=p?(p.themeColor||'#3182f6'):'#3182f6';
@@ -2635,7 +2635,7 @@
       h+='<div class="form-2"><div class="field"><label>시작일</label><input type="date" class="input" id="pbStart" value="'+(p&&p.startDate?p.startDate:todayStr())+'"></div>'+
         '<div class="field"><label>종료일(선택)</label><input type="date" class="input" id="pbEnd" value="'+(p&&p.endDate?p.endDate:'')+'"></div></div>';
       h+='<details class="adv"><summary>상세 설정</summary>';
-      h+='<label style="font-size:13px;font-weight:600;color:var(--sub);">테마 색상</label><div class="chip-row" id="pbColors" style="margin:8px 0 12px;">'+CAT_PALETTE.map(c=>'<button class="chip" style="background:'+c+';width:32px;height:32px;border-radius:50%;border:2px solid '+(c===window._pbColor?'var(--text)':'transparent')+';" data-color="'+c+'" onclick="pickPbColor(this)"></button>').join('')+'</div>';
+      h+='<label style="font-size:13px;font-weight:600;color:var(--sub);">테마 색상</label><div class="chip-row" id="pbColors" style="margin:8px 0 12px;">'+CAT_PALETTE.map(c=>'<button class="chip" style="background:'+c+';width:32px;height:32px;border-radius:50%;border:2px solid '+(c===window._pbColor?'var(--text)':'transparent')+';" data-color="'+c+'" '+App.view.act('pickPbColor')+'></button>').join('')+'</div>';
       h+='<div class="form-2"><div class="field"><label>기준 통화</label><select class="input" id="pbCurrency">'+curOptions(p?(p.baseCurrency||'KRW'):'KRW')+'</select></div>'+
         '<div class="field"><label>커버 이미지 URL</label><input class="input" id="pbCover" value="'+escapeHtml(p?(p.coverImageUrl||''):'')+'" placeholder="https://"></div></div>';
       h+='<div class="menu-item" style="padding:8px 2px;"><span>정산 사용</span><div class="switch '+((p&&p.settlementEnabled)?'on':'')+'" id="pbSettle" '+App.view.act('toggleSwitch')+'><i></i></div></div>';
