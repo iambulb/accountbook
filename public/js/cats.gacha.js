@@ -480,6 +480,10 @@
     // 🌈 한정 등급 중복 = 은화 대신 무지개동전 +1(무지개알/박스 5개=1뽑 재화). 트랜잭션 안에서 호출.
     function grantRbcoin(g, n){ n=Math.max(1, Math.floor(Number(n)||1)); g.rbcoin=clampRbcoin((Number(g.rbcoin)||0)+n);
       g.rbcoinTotal=Math.max(0, Math.floor(Number(g.rbcoinTotal)||0))+n; }   // 누적 획득 카운터(획득 이력 최소 추적)
+    // 🌈🛟 무지개동전 소비 — 반드시 이 함수로만 차감한다(잔액↓ + 누적소비 rbcoinSpent↑ 동시). normalizeGame 자가복구 바닥(잔액=누적획득−누적소비)의 정합을 유지하는 단일 소비 접점.
+    //   ⚠️ 여기를 거치지 않고 g.rbcoin을 직접 빼면(누적소비 미반영) 자가복구가 그 소비를 "유실"로 오인해 되돌려 준다 → 무한 재화 버그. rbcoin 차감은 언제나 spendRbcoin.
+    function spendRbcoin(g, n){ n=Math.max(0, Math.floor(Number(n)||0)); g.rbcoin=clampRbcoin((Number(g.rbcoin)||0)-n);
+      g.rbcoinSpent=Math.max(0, Math.floor(Number(g.rbcoinSpent)||0))+n; }
     function grantBoxReward(g, res){ const rb0=Number(g.rbcoin)||0; const rf=_grantBoxRewardRf(g, res); return { rf:(rf||0), rbc:Math.max(0,(Number(g.rbcoin)||0)-rb0) }; }   // {rf:환급 은화(가산은 호출자), rbc:한정 중복 무지개동전} — 표기용 rbc를 함께 반환(2026-07)
     function _grantBoxRewardRf(g, res){   // 지급 + 중복/초과 보상: 한정=무지개동전 +1(은화 반환 0) · 그 외=환급 은화 반환
       const dupPay=()=>{ if(res.tier==='exclusive'){ grantRbcoin(g,1); return 0; } return dupRefundOf(res.tier); };
@@ -819,7 +823,7 @@
       pullBegin(kind, true);   // 🔒 잠금 + 즉시 '준비' 오버레이(무지개)
       gameRef().transaction(g=>{ g=normalizeGame(g);
         if((Number(g.rbcoin)||0)<RAINBOW_PRICE_RBC) return;
-        g.rbcoin-=RAINBOW_PRICE_RBC; g.pity[rk]=pityNext(g.pity[rk]||0, hit);
+        spendRbcoin(g, RAINBOW_PRICE_RBC); g.pity[rk]=pityNext(g.pity[rk]||0, hit);
         if(kind==='egg'){
           if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
           else { grantPetDup(g, res.id); }   // 💗 중복 펫=애정(+한정이면 🌈코인)

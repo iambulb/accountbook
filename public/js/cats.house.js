@@ -558,7 +558,7 @@
       }
       _pullBusy=true;   // 🔒 트랜잭션 동안 중복탭 방지(10연차 FX가 뜨면 화면을 덮음 → 커밋 후 해제)
       gameRef().transaction(function(g){ g=normalizeGame(g);
-        if(isRb){ if((Number(g.rbcoin)||0)<RAINBOW_PRICE_RBC*N) return; g.rbcoin-=RAINBOW_PRICE_RBC*N; }   // 🌈 무지개 10연=코인 50
+        if(isRb){ if((Number(g.rbcoin)||0)<RAINBOW_PRICE_RBC*N) return; spendRbcoin(g, RAINBOW_PRICE_RBC*N); }   // 🌈 무지개 10연=코인 50(소비는 반드시 spendRbcoin — 자가복구 정합)
         else {
           if((Number(g.consum[heldKey])||0)<held) return;                       // 보유 재검증
           if(buyN>0){ if((g.coins||0)<buyN*silverEach) return; if(goldEach && (g.gold||0)<buyN*goldEach) return; }
