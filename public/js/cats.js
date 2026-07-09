@@ -8643,7 +8643,7 @@
         });
         return g;
       }).then(function(r){ _pullBusy=false;
-        if(r&&r.committed){ const theme=(kind==='ddeul'||isRb)?'rainbow':(kind==='box'?'treasure':'sunset'); runTenGachaFx(list, { kind:rollKind, theme:theme }); if(state._sheetRefresh) setTimeout(function(){ if(state._sheetRefresh) state._sheetRefresh(); }, 50); }   // 🎉 v2 정식: 무지개 10뽑=밤(무지개) 씬
+        if(r&&r.committed){ const theme=isRb?'night':(kind==='ddeul'?'rainbow':(kind==='box'?'treasure':'sunset')); runTenGachaFx(list, { kind:rollKind, theme:theme, rb:isRb }); if(state._sheetRefresh) setTimeout(function(){ if(state._sheetRefresh) state._sheetRefresh(); }, 50); }   // 🎉 v2 정식: 무지개 10뽑=밤(무지개) 씬
         else toast('처리 중이에요 — 잠시 후 다시 시도해 주세요', true);
       }).catch(function(){ _pullBusy=false; });
     }
@@ -11066,8 +11066,13 @@
       st.appendChild(el);
     }
     // 가챠 연출 고양이 시퀀스를 _fxT 타이머로 예약(1번 왼쪽 → 끝나면 2번 오른쪽, 순차). 알 무대(st)·아이템(it)에 동작하고 '마지막 고양이가 톡 치는 시각(=알 오픈 타이밍)'을 ms로 반환. fxClimax(실전)·devPreviewGachaFx(미리보기) 공용.
-    // 가챠 연출에 걸어나올 펫 2마리 선정. 한정(exclusive) 뽑기 → 개발자 지정(config/gachaFx a/b). 그 외 → 전설·신화 등급 펫 중 랜덤 2마리(스프라이트 보유).
+    // 🌈 무지개 연출 카메오 풀 = 한정(exclusive) 펫 전체(스프라이트 보유) — 무지개알/무지개박스 연출(승급 포함)엔 무조건 한정 펫이 랜덤으로 걸어나와 툭 친다(사용자 지침).
+    function exCameoPool(){ const tm=(typeof effCatTier==='function')?effCatTier():CAT_TIER;
+      return PET_CATALOG.filter(function(c){ return (tm[c.id]||CAT_TIER[c.id]||'normal')==='exclusive' && typeof hasSprite==='function' && hasSprite(c.id); }).map(function(c){ return c.id; }); }
+    // 가챠 연출에 걸어나올 펫 2마리 선정. 🌈 무지개(알/박스·승급) → 한정 펫 랜덤 2마리(무조건). 한정(뜰알) 뽑기 → 개발자 지정(config/gachaFx a/b). 그 외 → 전설·신화 등급 펫 중 랜덤 2마리(스프라이트 보유).
     function fxCatPickIds(){
+      if(_fx && _fx.rainbow){ const ex=exCameoPool(); if(ex.length){ const a=ex[Math.floor(Math.random()*ex.length)]; let b=ex[Math.floor(Math.random()*ex.length)];
+        if(ex.length>1){ let g=0; while(b===a && g<6){ b=ex[Math.floor(Math.random()*ex.length)]; g++; } } return { a:a, b:b }; } }
       if(_fx && _fx.res && _fx.res.tier==='exclusive') return { a:(_gachaFx&&_gachaFx.a)||null, b:(_gachaFx&&_gachaFx.b)||null };
       const pool=PET_CATALOG.filter(function(c){ const t=CAT_TIER[c.id]; return (t==='legend'||t==='limited') && typeof hasSprite==='function' && hasSprite(c.id); }).map(function(c){ return c.id; });
       if(!pool.length) return { a:null, b:null };
@@ -11095,7 +11100,7 @@
       const fx=$('catFx'), st=fx&&fx.querySelector('.fx-stage'), it=$('fxItem'); if(!st||!it) return;
       const t=tierInfo(_fx.res.tier), epic=['epic','legend','limited'].indexOf(_fx.res.tier)>=0, lim=_fx.res.tier==='limited', exL=_fx.res.tier==='exclusive';   // exL=한정 → 빛을 무지개로
       // 검은 고양이 앞발 연출 = 고등급 티저. 등급별 확률: 특별(epic) 10%·전설 90%·한정 100% (그 미만 0%). 등장 자체가 '뭔가 좋은 게 나온다'는 힌트.
-      const catShow = Math.random() < (({ epic:0.10, legend:0.90, limited:1.0, exclusive:1.0 })[_fx.res.tier] || 0);   // 한정도 100% 연출 펫 등장(개발자 지정 펫)
+      const catShow = !!_fx.rainbow || Math.random() < (({ epic:0.10, legend:0.90, limited:1.0, exclusive:1.0 })[_fx.res.tier] || 0);   // 🌈 무지개(알/박스·승급)=무조건 한정 펫 등장 · 그 외 등급별 확률(뜰알 한정 100%=개발자 지정 펫)
       const rank=Math.max(0, TIER_ORDER.indexOf(_fx.res.tier));   // 0(일반)~5(신화)~6(한정)
       const lk=(1+rank*0.15).toFixed(2);                          // 등급 높을수록 빛이 크고 밝게
       const isEgg=isEggKind(_fx.kind);
@@ -11299,8 +11304,10 @@
       else if(it && _fx10 && _fx10.v2 && it.kind==='egg' && _fx10.theme!=='night'){ it._sprRb=true;   // 🌱 v2 펫알: 새싹이 커지며 무지개색(뜰알 꽃과 동일 조건·타이밍, 오픈까지 it._sprRb로 유지). 밤(무지개알)은 이미 무지개 꽃이라 제외.
         const fl=eggEl.querySelector('.fx-ddflower'); if(fl){ fl.innerHTML=egg2SprRbSvg(); fl.classList.add('ddflw-rb','ddflw-big'); } }
     }
-    // 카메오 펫 선정: 한정=픽업 펫(삵·표범), 그 외 전설↑=전설/신화 스프라이트 랜덤
-    function tenCameoPet(it){ if(it.tier==='exclusive'){ const pk=pickupMember(); if(pk) return pk; }
+    // 카메오 펫 선정: 🌈 무지개 10연(rb·미리보기 night 테마)=한정 펫 랜덤(무조건), 한정(뜰알)=픽업 펫(삵·표범), 그 외 전설↑=전설/신화 스프라이트 랜덤
+    function tenCameoPet(it){
+      if(_fx10 && (_fx10.rb || _fx10.theme==='night')){ const ex=exCameoPool(); if(ex.length) return ex[Math.floor(Math.random()*ex.length)]; }
+      if(it.tier==='exclusive'){ const pk=pickupMember(); if(pk) return pk; }
       const pool=PET_CATALOG.filter(function(c){ const t=CAT_TIER[c.id]; return (t==='legend'||t==='limited') && hasSprite(c.id); }).map(function(c){ return c.id; });
       return pool.length?pool[Math.floor(Math.random()*pool.length)]:it.id; }
     // 카메오 1마리 생성 — fxSpawnCat 클론이되 '그 알'의 가로중심(left%)·바닥(--floor)에 정합
@@ -11378,7 +11385,7 @@
       // side = 알의 '실제 화면 위치'(TEN_POS 흩뿌림 x) 기준 좌/우 → 카메오가 가까운 쪽에서 걸어와 알을 지나치지 않게(격자 i%2는 흩뿌림과 안 맞아 반대편서 걸어와 다른 알을 지나쳐 치던 버그).
       const items=(list||[]).slice(0,TEN_N).map(function(it,i){ return Object.assign({ kind:'egg' }, it, { i:i, col:i%TEN_COLS, row:(i/TEN_COLS|0), side:((TEN_POS[i]&&TEN_POS[i][0]<50)?'l':'r') }); });
       const isBox = opts.kind==='box' || (items[0]&&items[0].kind==='box');   // 🎁 랜덤박스 10연차: 카메오·로밍 없음(가구는 못 걸어다님) → 정적 리빌/피날레
-      _fx10={ items:items, order:tenShuffle(items.length), stage:0, busy:true, phase:'nest', ridx:0, preview:!!opts.preview, isBox:isBox, v2:_pkV2,   // v2=배너관리 미리보기(신규 펫알/무지개알 아트·뜰알식 연출)
+      _fx10={ items:items, order:tenShuffle(items.length), stage:0, busy:true, phase:'nest', ridx:0, preview:!!opts.preview, isBox:isBox, rb:!!opts.rb, v2:_pkV2,   // rb=무지개 10연(한정 카메오 무조건) · v2=배너관리 미리보기(신규 펫알/무지개알 아트·뜰알식 연출)
         theme: opts.theme||(isBox?'':'rainbow'),   // 🌇 sunset=노을(펫알): 배경 노을 씬 + 무지개 하늘 연출 생략. 박스=기본 초원.
         skyRainbow: !isBox && items.some(function(x){ return x.tier==='limited'||x.tier==='exclusive'; }) };
       items.forEach(function(x){ if(hasSprite(x.id)) ensurePetArt(x.id); });
