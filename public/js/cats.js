@@ -6987,8 +6987,9 @@
       return Promise.all(list.map(function(id){ const hh=petActorPx(id,32,200);
         if(hasSprite(id)){ const spr=PET_SPRITES[id]; if(spr.runtime&&!spr.urls) return Promise.resolve(null);   // 아트 로딩 전 — 도착 시 _petArtRerenderNow가 재동기화
           const fw=!!spr.frontWalk;
-          return Promise.all([_vpipBmp(sprWalkUrl(spr)), _vpipBmp(sprStill(id,'south')), fw?_vpipBmp(sprStill(id,'east')):Promise.resolve(null)])
-            .then(function(bs){ return { hh:hh, frames:spr.frames||6, frontWalk:fw, sheet:bs[0], south:bs[1], east:bs[2]||null }; })
+          const footP=new Promise(function(res){ try{ measureFootPad(id,res); }catch(e){ res(null); } });   // 🐾 발밑 여백 실측 — 워커 고정 0.16 가정은 신화·한정(실측 ~0.30)에서 발이 떠 벽지를 걷는 버그
+          return Promise.all([_vpipBmp(sprWalkUrl(spr)), _vpipBmp(sprStill(id,'south')), fw?_vpipBmp(sprStill(id,'east')):Promise.resolve(null), footP])
+            .then(function(bs){ return { hh:hh, frames:spr.frames||6, frontWalk:fw, sheet:bs[0], south:bs[1], east:bs[2]||null, fp:(bs[3]==null?0.16:bs[3]) }; })
             .catch(function(){ return null; });
         }
         return _vpipBmp('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(catFace(id,{h:hh})))
@@ -7060,7 +7061,7 @@
         "  if(Math.random()<0.0022){ a.mode='pause'; a.pt=2200+Math.random()*3800; }",
         "} }",
         "function drawPet(a,now){ var ds=1.5-(1.5-0.86)*a.depth, h=a.hh*ds, w=h;",
-        "  var y=H-(a.depth*0.53*H)-h+h*0.16;",
+        "  var y=H-(a.depth*0.53*H)-h+h*(a.fp!=null?a.fp:0.16);",   // 발밑 여백 = 펫별 실측(fp) — dock의 measureFootPad와 동일(고정 0.16은 신화·한정에서 발이 ~14% 떠 벽지 걷기)
         "  var moving=(a.mode==='roam'&&!a.stationary), flip=(moving&&a.dir<0);",
         "  ctx.save(); if(flip){ ctx.translate(a.x+w,0); ctx.scale(-1,1); } else { ctx.translate(a.x,0); }",
         "  try{",
@@ -7264,20 +7265,29 @@
     //  · actorShowStill : 그 자리에 멈춰 face(south/east/west/north) 정지스틸(쉼·포즈·가구 상호작용). 이동 아님.
     //    🎞️ 클립 승급: 펫이 클립(PET_CLIPS)을 보유하면 정지 스틸 대신 그 클립을 재생(먹기·앉기·유휴 등) — 없으면 기존 스틸(폴백).
     // 물리 레이어(내부 전용 — 밖에선 부르지 말 것): _csprClip=클립 필름 장착, _csprStill=정지 스틸.
+    // once 클립 홀드 프리즈 해제 — 원샷 종료 시 건 인라인(animation:none + transform)을 걷어내 다음 필름이 정상 재생되게. 모든 상태 전환이 거친다.
+    function _csprUnfreeze(f){ if(!f) return; f.onanimationend=null; if(f.style.animation) f.style.animation=''; if(f.style.transform) f.style.transform=''; }
     function _csprClip(s, a, r){
       const cell=parseFloat(s.style.width)||Math.round(a.hh)||48;   // .cspr 창=1칸 정사각(catActorHTML이 width=렌더높이로 생성)
       s.style.setProperty('--sheet','url('+r.url+')');
       s.style.setProperty('--fw',(cell*r.frames)+'px');
       s.style.setProperty('--wdur', r.dur.toFixed(2)+'s');
       const f=s.querySelector('.csprf');
-      if(f){ f.style.animation='none'; void f.offsetWidth; f.style.animation='';   // 필름 재시작(원샷·프레임0부터) — 쇼트핸드가 타이밍펑션도 지우므로 아래서 재지정
-        f.style.animationTimingFunction='steps('+r.frames+')'; }
+      if(f){ _csprUnfreeze(f); f.style.animation='none'; void f.offsetWidth; f.style.animation='';   // 필름 재시작(원샷·프레임0부터) — 쇼트핸드가 타이밍펑션도 지우므로 아래서 재지정
+        f.style.animationTimingFunction='steps('+r.frames+')';
+        // 🐛 once 홀드 = "마지막 프레임"에 고정. CSS fill-mode:forwards만으론 종료 상태가 to(-fw) —
+        //   필름이 창 밖으로 완전히 밀려나 펫이 투명해졌다(sit 클립 1회 재생 후 휴식 내내 '갑자기 사라지던' 신화·한정 버그).
+        //   animationend에서 마지막 프레임 오프셋으로 프리즈하고, 다음 상태 전환(_csprUnfreeze)이 해제한다.
+        if(r.once){ const hx=-(cell*(Math.max(1,r.frames)-1));
+          f.onanimationend=function(){ f.style.animation='none'; f.style.transform='translateX('+hx+'px)'; }; }
+      }
       s.classList.toggle('once', !!r.once); s.classList.remove('idle');
       a._clip=r.key;
     }
-    function _csprStill(s, a, face){ s.style.setProperty('--idle','url('+sprStill(a.id,face)+')'); s.classList.remove('once'); s.classList.add('idle'); a._clip=null; }
+    function _csprStill(s, a, face){ _csprUnfreeze(s.querySelector('.csprf')); s.style.setProperty('--idle','url('+sprStill(a.id,face)+')'); s.classList.remove('once'); s.classList.add('idle'); a._clip=null; }
     function actorShowMoving(a){ if(!a.spr) return; const s=a.el.querySelector('.cspr'); if(!s) return;
       a._clip=null; s.classList.remove('once');
+      _csprUnfreeze(s.querySelector('.csprf'));   // once 홀드 프리즈 해제 — 안 하면 인라인 animation:none이 걷기 필름을 막아 정지 이미지로 미끄러진다
       if(a.frontWalk){ s.style.setProperty('--idle','url('+sprStill(a.id,'east')+')'); s.classList.add('idle'); return; }   // east 걷기 없음 → 옆 정지스틸(정면 금지)
       // 클립 재생이 --sheet/--fw/steps를 바꿨을 수 있어 걷기 시트로 '무조건' 복원(재빌드 DOM 재사용 잔재 포함 — 안 하면 먹기 시트로 걷는 버그)
       const sp=PET_SPRITES[a.id]||{}, cell=parseFloat(s.style.width)||Math.round(a.hh)||48, nf=sp.frames||6;
@@ -7408,7 +7418,8 @@
         mode:'roam', pause:0, goal:null, pose:null, resKey:null, resFloor:null,
         // 유휴(그 자리에 멈춰 정면 보기) — 자주·오래 서서 정면을 보도록(poseDur에서 시간 늘림)
         idle:0.0032+Math.random()*0.005, turn:0.004+Math.random()*0.010, seek:0.008+Math.random()*0.012, cool:0 };   // seek↑(0.005→0.008 기준) — 캣휠·해먹 등 가구 상호작용을 더 자주(PiP 볼거리)
-        a.footPad=(typeof _footPad!=='undefined'&&_footPad[id+':south']!=null?_footPad[id+':south']:null); if(spr) measureFootPad(id,function(fp){ a.footPad=fp; setXform(a); });
+        // 발밑 여백: 세션 캐시 → 없으면 대형(scale≥2) 스프라이트는 0.29 추정(실측 평균 — 기본 0.16을 쓰면 측정 콜백 전까지 발이 ~14% 떠 '벽지를 걷는' 과도기), 그 외 null(기본 PET_FOOT_PAD). 실측 도착 시 정밀값으로 교체.
+        a.footPad=(typeof _footPad!=='undefined'&&_footPad[id+':south']!=null)?_footPad[id+':south']:((spr&&(PET_SPRITES[id].scale||1)>=2)?0.29:null); if(spr) measureFootPad(id,function(fp){ a.footPad=fp; setXform(a); });
         el._eggActor=a;   // 원샷 클립(actorOnce)의 지연 복귀가 재빌드된 새 액터를 덮어쓰지 않도록 현재 소유 액터를 표시
         a.x=Math.max(2, Math.min(a.x, Math.max(2, W-a.sw)));   // 지속된 x를 현재 무대 폭에 클램프(리사이즈/회전·무대전환 시 화면 밖 방지)
         setWalkDur(a); el.style.left='0px'; applyDepth(a); setXform(a); a._pdir=a.dir;   // 위치·올림·깊이·방향 전부 transform(합성). left는 0 고정 → 걷는 동안 메인스레드 페인트 0
