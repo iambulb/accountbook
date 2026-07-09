@@ -69,7 +69,7 @@ sheet.save("walk.png")   # rotations 4장은 그대로 복사
 | Sleeping / Lying Down | `sleep` | east | 옆으로 엎드려 잠(loop) |
 | Angry | `angry` | south | (예약 — 트리거 UX 확정 전 미사용) |
 
-- **📐 모션 제작 규칙**: 프레임 수·키포즈·픽셀 변형은 [pet-motion-guide.md](pet-motion-guide.md)가 단일 소스(외부 애니 자료 종합, 고양이/개 두 계통). 새 시트는 `tools/pet_motion_build.py`로 기존 프레임을 픽셀 서저리(cut/shift/redraw)해 만들고 라이트/다크 확대 렌더로 검수한다. 표범(cat_leopard)이 첫 적용 사례(9종).
+- **📐 모션 제작 규칙**: 프레임 수·키포즈·픽셀 변형은 [pet-motion-guide.md](pet-motion-guide.md)가 단일 소스(외부 애니 자료 종합, 고양이/개 두 계통). 새 시트는 `tools/pet_motion_build.py`(표범 전용 v2) 또는 **`tools/pet_motion_build_all.py`(v3 일반화 — 펫별 실측 앵커 CFG)** 로 v2 4연산(아코디언·패치 재드로잉·마스크 이동 — 사각 cut/shift 금지)만 써서 만들고 라이트/다크 확대 렌더로 검수한다. 표범(cat_leopard)이 첫 사례, **2026-07 신화·한정 15종 일괄 추가로 신화·한정 전 16종이 적용 7종 클립 보유**.
 - **취득 우선순위**(순차 취득 계획): 적용 7종 = `idle`·`sit`·`belly`·`eat`·`drink`·`yawn`·`angry`. `run`·`jump`·`sleep`·`lick`은 폐기·보류(2026-07, 퀄리티 기준 미달 — 엔진 키·폴백은 유지, 재도전 시 시트만 다시 공급).
 - **방향은 표의 1개만** 취득한다(west는 `scaleX(-1)` 플립, 옆을 보는 자리(스크래처 등)는 클립 없이 기존 스틸). Walking은 기존 `walk.png`가 담당하므로 재취득 불필요.
 - **dev zip 업로드**: zip 안에 프리셋 애니 폴더(`Eating/south/frame_*.png` 등)가 있으면 `_processPetZip`이 자동 인식·합성해 **`catalogPets/{id}.clips`**(클립키→프레임 수) + **`catalogPetArt/{id}.clips`**(시트 data URL)로 저장한다. 폴더명은 대소문자·공백·하이픈 무관(`Seated on Belly Idle`≒`seated-on-belly-idle`), 프레임 2장 이상만 인식, 클립당 최대 12프레임. zip 재업로드 시 클립도 통째로 교체(없으면 소거).
