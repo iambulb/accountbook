@@ -16,13 +16,13 @@ users/{uid}/{friends,friendReqs} : 친구 관계·요청   // 당사자 두 명�
 ```
 - **개인 가계부** = `type:'personal'` 워크스페이스(멤버 1명).
 - **그룹 가계부** = `type:'group'`, 6자리 `code` 를 아는 사람이 즉시 멤버로 합류.
-- **친구** = 별도(그룹과 무관). `friendCode`로 요청→수락하면 상호 친구. 개인 할일(`users/{uid}/todos`)은 user-global이라 그룹을 바꿔도 동일하며, `todoPublic`을 켠 친구의 할일을 읽기전용으로 열람.
+- **친구** = 별도(그룹과 무관). `friendCode`로 요청→수락하면 상호 친구. 개인 할일(`users/{uid}/todos`)은 user-global이라 그룹을 바꿔도 동일하며, **친구별 공유 토글**(`todoShare/{fuid}`, 미설정=기본값 `todoPublic`)이 **양쪽 다 ON**인 친구의 할일을 읽기전용으로 열람.
 
 ## 접근 규칙 요약
 | 경로 | read | write |
 |---|---|---|
 | `users/{uid}` (전체 노드, **`game` 포함**) | **본인만**(`auth.uid === $uid`) **+ 개발자 이메일**(`users`레벨 read — 개발자 '사용자 현황' 전체 열람) | 본인 uid 만 |
-| `users/{uid}/{profilePublic,photo,todos,todoPublic}` | 로그인(전역) — 공개/친구용 | 본인 uid 만 |
+| `users/{uid}/{profilePublic,photo,todos,todoPublic,todoShare}` | 로그인(전역) — 공개/친구용 | 본인 uid 만 |
 | `users/{uid}/friends/{fid}`·`friendReqs/{fid}` | 로그인 | **당사자 두 명만**(`$uid` 또는 `$fid`) |
 | `users/{uid}/homeLikes/{visitor}` | 로그인 | **방문자 자신만**(`auth.uid === $visitor`) — 남의 집에 좋아요를 남기되 자기 항목만 |
 | `users/{uid}/mailbox/{sender}/{gid}` | **수령자(본인)만**(부모 owner-read) | **수령자 본인 또는 친구인 발신자만** — 친구 검증(`friends/{auth.uid}` 존재) + 엔트리 `.validate`로 상한(coins≤10·consum≤3·key∈{egg,water,food}·from=auth.uid). **금화(gold) 선물은 규칙상 차단**(크로스유저 통화 민팅 방지) |
@@ -40,7 +40,7 @@ users/{uid}/{friends,friendReqs} : 친구 관계·요청   // 당사자 두 명�
 - **격리 단위는 워크스페이스**. 멤버가 아니면 `ws/{wsId}` 를 읽거나 쓸 수 없다 → 다른 그룹/개인 가계부는 완전 분리.
 - **그룹 내부는 공동 권한**: 같은 그룹 멤버끼리는 서로의 거래까지 읽고 쓸 수 있다(가계부 공유 목적). 멤버 간 세분화된 쓰기 격리는 하지 않는다.
 - `private` 등 `visibility` 표시 제한은 **앱 UI**가 담당(리스트 read 시 자식별 필터 불가).
-- **`users/{uid}` 전체 노드 read는 소유자만**(예외: **개발자 이메일**은 `users` 레벨 read로 전체 열람 — '사용자 현황' 대시보드용). 친구가 크로스유저로 읽는 건 **명시적 공개 서브패스**(`profilePublic`·`photo`·`todos`·`todoPublic`·`friends`·`friendReqs`·`homeLikes`)에 한정한다. 그래서 개인 할일(`todos`)·`todoPublic`은 친구가 읽지만, **`users/{uid}/game`(알뜰홈 모든 방)은 소유자만** 읽는다 → 대표 방 외 다른 방은 규칙 레벨로 비공개.
+- **`users/{uid}` 전체 노드 read는 소유자만**(예외: **개발자 이메일**은 `users` 레벨 read로 전체 열람 — '사용자 현황' 대시보드용). 친구가 크로스유저로 읽는 건 **명시적 공개 서브패스**(`profilePublic`·`photo`·`todos`·`todoPublic`·`todoShare`·`friends`·`friendReqs`·`homeLikes`)에 한정한다. 그래서 개인 할일(`todos`)·`todoPublic`은 친구가 읽지만, **`users/{uid}/game`(알뜰홈 모든 방)은 소유자만** 읽는다 → 대표 방 외 다른 방은 규칙 레벨로 비공개.
 - **알뜰홈 프라이버시**: 친구·랭킹 캠은 별도 공개 노드 **`homeCam/{uid}`(대표 방만)** 를 읽는다(`writeHomeCam`이 소유자 game 변경 시 갱신). 즉 사적인 방은 앱·DB 어디서도 노출되지 않는다.
 
 ## 구버전 데이터 이전(자동, 1회)

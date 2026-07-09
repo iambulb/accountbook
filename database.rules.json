@@ -9,6 +9,7 @@
         "photo":         { ".read": "auth != null" },
         "todos":         { ".read": "auth != null" },
         "todoPublic":    { ".read": "auth != null" },
+        "todoShare":     { ".read": "auth != null" },
         "friends":    { ".read": "auth != null", "$fid": { ".write": "auth != null && (auth.uid === $uid || auth.uid === $fid)" } },
         "friendReqs": { ".read": "auth != null", "$fid": { ".write": "auth != null && (auth.uid === $uid || auth.uid === $fid)" } },
         "homeLikes":  { ".read": "auth != null", "$visitor": { ".write": "auth != null && auth.uid === $visitor" } },

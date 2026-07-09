@@ -12,7 +12,8 @@ users/{uid}            : { name, email, photo(프로필 사진 base64 data URL),
                            push:{ token, at, ua },                 // 🔔 웹 푸시(FCM) 토큰 — 본인만 쓰기·발송기(admin)만 읽음. 알림 끄면 삭제. tools/send_reminders.mjs가 사용
                            pushMeta:{ lastGiftNotify },            // 🎁 친구선물 푸시 중복방지 워터마크(발송기 admin이 쓰기) — 이 시각 이후 선물만 알림. gift-notify 크론이 사용
                            todosMigrated: true,                    // 개인 할일 ws→user 1회 이전 완료 플래그
-                           todoPublic: true|false,                 // 내 개인 할일을 친구에게 공개할지(친구 스트립·열람 대상)
+                           todoPublic: true|false,                 // 할일 공유 '기본값'(친구별 todoShare 미설정 친구에게 적용)
+                           todoShare:{ {friendUid}: true|false },  // 🔐 친구별 할일 공유 토글 — 명시값이 todoPublic보다 우선. OFF면 그 친구와 서로의 할일이 안 보임(양방향, UI 게이트)
                            friendCode: "ABC123",                   // 내 친구 코드(friendCodes 인덱스와 짝)
                            friends:{ {friendUid}:{ name, at } },   // 상호 친구(수락 시 양쪽 기록)
                            friendReqs:{ {fromUid}:{ name, at } },  // 받은 친구 요청(수락 시 삭제)
@@ -147,7 +148,8 @@ erDiagram
 ### 친구 (users/{uid}/friends · friendReqs · friendCode · todoPublic · friendCodes)
 - **friendCode**(6자) + 인덱스 **`friendCodes/{CODE}=uid`**: 코드로 상대를 찾음(`ensureFriendCode` 백필).
 - **친구 요청**: 요청자가 `users/{targetUid}/friendReqs/{fromUid}={name,at}` 기록 → 대상이 수락 시 **양쪽** `users/{uid}/friends/{otherUid}={name,at}` 기록 + 요청 삭제(`acceptFriend`). 규칙상 `friends`/`friendReqs`의 `$fid`는 **당사자 두 명만** 쓰기.
-- **todoPublic**(bool): 내 개인 할일 공개 여부. 개인 탭 상단 친구 스트립엔 `todoPublic`인 친구만 뜨고, 탭하면 그 친구 `users/{uid}/todos`를 **읽기전용**으로 열람(`viewFriendTodos`, 임시 리스너). 공개는 **UI 레벨 필터**(읽기 규칙은 전역).
+- **todoShare**(`{friendUid: bool}`): **친구별 할일 공유 토글**(2026-07) — 명시값이 todoPublic(기본값)보다 우선. 서로 보이려면 **양쪽 모두 ON**(`todoMutual` = 상대의 `todoShare[나]` 해석값 AND 내 `myShareTo(상대)`), 한쪽이라도 OFF면 피드·스토리·친구 집 할일이 양방향 모두 숨김. 읽기 규칙 `users/$uid/todoShare .read auth!=null`(todoPublic과 동일 — 규칙 미배포 환경은 todoPublic 폴백으로 종전 동작).
+- **todoPublic**(bool): 할일 공유 **기본값**(todoShare 미설정 친구에게 적용). 개인 탭 상단 친구 스트립엔 `todoPublic`인 친구만 뜨고, 탭하면 그 친구 `users/{uid}/todos`를 **읽기전용**으로 열람(`viewFriendTodos`, 임시 리스너). 공개는 **UI 레벨 필터**(읽기 규칙은 전역).
 - (레거시) `ws/{wsId}/todoShare/{uid}` 는 그룹 단위 공유 플래그였으나 친구 시스템으로 대체됨.
 
 ### categories/{name}
