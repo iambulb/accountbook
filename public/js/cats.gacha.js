@@ -406,7 +406,7 @@
         '<div class="pi-aff"><div class="pi-afftop"><span class="clv-h">'+heartSvg({h:11})+'</span>애정 Lv.'+al.level+'<span class="s">'+(al.next!=null?aff+' / '+al.next:'만렙 ★')+'</span></div><div class="bar"><i style="width:'+al.pct+'%"></i></div></div>'+
         (((tier==='limited'||tier==='exclusive')&&PET_SPRITES[id]&&PET_SPRITES[id].clips)?'<div class="pi-cd">모션 해금 — Lv1 기본(유휴·먹기·마시기)'+(al.level>=1?'(해금)':'(잠김)')+' · Lv2 식빵·하품'+(al.level>=2?'(해금)':'(잠김)')+' · Lv4 하악질'+(al.level>=4?'(해금)':'(잠김)')+'</div>':'')+   // 💗 신화+ 애정 모션 해금 안내(Lv1/2/4)
         (hasSprite(id)?cosmRowHtml(id,'buddy',BUDDY_CATALOG,al.level)+cosmRowHtml(id,'hat',HAT_CATALOG,al.level):'')+   // 💗 코스메틱(동행 Lv3·모자 Lv5) — 스프라이트 펫만
-        (petDyeOf(id)?'<div class="pi-cosm"><span class="s">염색</span><span class="chip on">'+consumSvg('dye',{h:12})+' '+escapeHtml(dyeNameOf(petDyeOf(id)))+'</span>'+(consumQty('dye_remover')>0?'<button class="chip" '+App.view.act('applyDyeRemover',id)+'>'+consumSvg('dye_remover',{h:12})+' 리무버로 지우기</button>':'<span class="s" style="min-width:0">리무버(이벤트·쿠폰)로 제거 가능</span>')+'</div>':'')+   // 🎨 염색 상태 — 제거는 리무버 소모(무료 지우기 없음)
+        (petDyeOf(id)?'<div class="pi-cosm"><span class="s">염색</span><span class="chip on">'+consumSvg('dye',{h:12})+' '+escapeHtml(dyeNameOf(petDyeOf(id)))+'</span>'+(consumQty('dye_remover')>0?'<button class="chip" '+App.view.act('applyDyeRemover',id)+'>'+consumSvg('dye_remover',{h:12})+' 리무버로 지우기</button>':'<span class="s" style="min-width:0">리무버(알뜰샵 소비 탭·이벤트)로 제거 가능</span>')+'</div>':'')+   // 🎨 염색 상태 — 제거는 리무버 소모(무료 지우기 없음)
         // 🧺 소비템 바로 사용(2026-07 사용자 지시) — 가방을 거치지 않고 펫 정보에서 이 펫에게 바로 사용. 보유한 펫 대상 소비템만 노출(적용 후 openPetInfo 재렌더로 결과 즉시 반영).
         ((consumQty('treat')>0||consumQty('dye')>0)?('<div class="pi-cosm"><span class="s">소비템</span>'+
           (consumQty('treat')>0?'<button class="chip" '+App.view.act('applyTreat',id)+'>'+consumSvg('treat',{h:12})+' 츄르 주기 · '+consumQty('treat').toLocaleString()+'</button>':'')+
@@ -758,7 +758,7 @@
         else { if(g.coins<GACHA_PRICE) return;
         g.coins-=GACHA_PRICE; grantGachaGold(g,1); g.pity[kind]=pityNext(g.pity[kind]||0, hit); }   // 부산물 금화 하루 2뽑 캡
         if(kind==='egg'){
-          if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; }   // 🚫 가챠 획득 펫은 방에 자동 배치하지 않음(가방에만 — 배치는 홈에서 직접, 사용자 지침)
+          if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
           else { grantPetDup(g, res.id); }   // 💗 중복 펫=애정 경험치(만렙만 은화 10% 폴백)
         } else { const gr=grantBoxReward(g,res); if(gr.rf) g.coins=clampCoins((g.coins||0)+gr.rf); }
         return g;
@@ -786,7 +786,7 @@
         if(free){ if(g.freePull.ddeul===day) return; g.freePull.ddeul=day; g.pity.ddeul=pityNext(g.pity.ddeul||0, hit); }   // 🎁 무료: 재화 무소모, 오늘 마커만(재검증)
         else { if(g.coins<DDEUL_PRICE || (g.gold||0)<DDEUL_GOLD) return;
         g.coins-=DDEUL_PRICE; g.gold=(g.gold||0)-DDEUL_GOLD; g.pity.ddeul=pityNext(g.pity.ddeul||0, hit); }   // 은화 100 + 금화 1 소모(금화 보상 없음)
-        if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; }   // 🚫 가챠 획득 펫은 방에 자동 배치하지 않음(가방에만 — 배치는 홈에서 직접, 사용자 지침)
+        if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
         else { grantPetDup(g, res.id); }   // 💗 중복 펫=애정 경험치(만렙만 은화 10% 폴백)
         return g;
       }).then(r=>{ if(r&&r.committed) runGachaFx('ddeul', res, dup, refund, false, isNew, dp); else { closeFx(); toast('처리 중이에요 — 잠시 후 다시 시도해 주세요', true); } })   // C4
@@ -826,7 +826,7 @@
         if((Number(g.rbcoin)||0)<RAINBOW_PRICE_RBC) return;
         spendRbcoin(g, RAINBOW_PRICE_RBC); g.pity[rk]=pityNext(g.pity[rk]||0, hit);
         if(kind==='egg'){
-          if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; }   // 🚫 가챠 획득 펫은 방에 자동 배치하지 않음(가방에만 — 배치는 홈에서 직접, 사용자 지침)
+          if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
           else { grantPetDup(g, res.id); }   // 💗 중복 펫=애정(+한정이면 🌈코인)
         } else { const gr=grantBoxReward(g,res); if(gr.rf) g.coins=clampCoins((g.coins||0)+gr.rf); }
         return g;

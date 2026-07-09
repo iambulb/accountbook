@@ -569,7 +569,7 @@
         { let p=Number(g.pity[kind])||0; list.forEach(function(it){ p=pityNext(p, isRb?(it.tier==='exclusive'):isTopTier(it.tier)); }); g.pity[kind]=p; }   // pity 10회 누적 — 서버값 기점 재계산(다기기 동시 10연 시 소실 방지, 강제등급 판정은 롤 시점 값 수용)
         list.forEach(function(it){
           if(it.kind==='box'){ const gr=grantBoxReward(g, { id:it.id, tier:it.tier, type:it.type }); if(gr.rf) g.coins=clampCoins((g.coins||0)+gr.rf); }
-          else if(!g.owned.cats[it.id]){ g.owned.cats[it.id]={boughtAt:new Date().toISOString()}; }   // 🚫 가챠(10연) 획득 펫도 방에 자동 배치하지 않음(가방에만)
+          else if(!g.owned.cats[it.id]){ g.owned.cats[it.id]={boughtAt:new Date().toISOString()}; const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(it.id)<0) R.active.push(it.id); }
           else { grantPetDup(g, it.id); }   // 💗 중복 펫=애정(+한정 🌈코인) — 순차 지급이라 배치 내 반복도 정확
         });
         return g;
@@ -669,7 +669,7 @@
             priceHtml+'</div>'+
             '<div class="act">'+act+'<span class="qty">보유 '+consumQty(c.id).toLocaleString()+(consumQty(c.id)>=MAX_CONSUM?maxChip():'')+(c.dailyBuy?' · 오늘 '+boughtToday+'/'+c.dailyBuy:'')+'</span></div></div>';
         }).join('');
-        h+='<div class="note"><b>소비 아이템</b>은 배치할 수 없어요. <b>사료·물·고급사료·정수물</b>은 홈에서 밥·물 그릇을 탭(또는 수확)해 채우고, <b>츄르</b>는 가방에서 펫을 골라 애정을, <b>영양제</b>는 가방에서 6시간 수익 부스트에 써요.</div>';
+        h+='<div class="note"><b>소비 아이템</b>은 배치할 수 없어요. <b>사료·물·고급사료·정수물</b>은 홈에서 밥·물 그릇을 탭(또는 수확)해 채우고, <b>츄르</b>는 가방에서 펫을 골라 애정을, <b>영양제</b>는 가방에서 6시간 수익 부스트에, <b>염색약·리무버</b>는 가방·펫 정보에서 펫을 골라 톤 변경·복원에 써요.</div>';
         return h;
       }
       if(_shopSub==='event'){   // 🌱 이벤트(한정 픽업 뜰알)

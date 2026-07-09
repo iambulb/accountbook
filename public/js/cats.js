@@ -274,8 +274,10 @@
       { id:'water',      name:'물',     price:1,  M:'M_WATER',     effect:{fill:'water', ms:6*60*60*1000}, desc:'물그릇을 탭해 채울 때 1개 소모(6시간 유지).' },
       { id:'food_plus',  name:'고급사료', price:2,  M:'M_FOODPLUS',  effect:{fill:'food',  ms:12*60*60*1000}, desc:'밥그릇을 12시간 유지하는 고급 사료. 자주 안 채워도 행복도가 오래 유지돼요.' },
       { id:'water_plus', name:'정수물', price:2,  M:'M_WATERPLUS', effect:{fill:'water', ms:12*60*60*1000}, desc:'물그릇을 12시간 유지하는 정수된 물.' },
-      { id:'treat',      name:'츄르',   price:20, M:'M_TREAT',     effect:{affection:1}, dailyBuy:3, desc:'펫에게 주면 애정 +1 (쓰다듬기 쿨다운 무시). 하루 3개까지 구매.' },
-      { id:'tonic',      name:'영양제', price:0,  M:'M_TONIC',     effect:{boost:1.5, ms:6*60*60*1000}, dailyBuy:1, desc:'무료로 하루 1개 받아요. 사용하면 6시간 동안 수확 수익과 드랍 확률이 ×1.5.' }
+      { id:'treat',      name:'츄르',   price:10, cur:'gold', M:'M_TREAT', effect:{affection:1}, dailyBuy:5, desc:'펫에게 주면 애정 +1 (쓰다듬기 쿨다운 무시). 금화 10, 하루 5개까지 구매.' },
+      { id:'tonic',      name:'영양제', price:0,  M:'M_TONIC',     effect:{boost:1.5, ms:6*60*60*1000}, dailyBuy:1, desc:'무료로 하루 1개 받아요. 사용하면 6시간 동안 수확 수익과 드랍 확률이 ×1.5.' },
+      { id:'dye',        name:'염색약', price:100, cur:'gold', M:'M_DYE', desc:'가방에서 펫을 골라 톤을 랜덤 변경(45색 중 하나). 금화로 구매.' },
+      { id:'dye_remover',name:'염색 리무버', price:200, cur:'gold', M:'M_DYE', desc:'염색된 펫을 골라 1개 소모해 원래 톤으로 복원. 금화로 구매.' }
     ];
     const FILL_MS = 6*60*60*1000;   // 그릇이 채워진 뒤 비워지기까지(6시간 — 기본 사료·물 기준)
     const MOOD_CARE_MS = 24*60*60*1000;   // ❤️ 수확(caredAt) 후 행복도 보너스가 0으로 빠지는 시간(24h)
@@ -292,10 +294,10 @@
     const RB_EGG_BOX_RBC = 5;        // 🌈 무지개알·무지개박스 드랍 1개 = 무지개동전 5개(=1뽑 분량)
     // 🎁 실시간 드랍 스폰 상수 — PiP·캠 힐끔 요소. 시계(g.dropRollAt)는 소비한 롤만큼만 전진(만석이면 시간 보존), 24h 캡이 무한 누적 방지.
     //   스폰 대상은 "한 방"뿐(dropTargetRoom — 현재 방 우선) — 방이 5개라고 ×5로 쏟아지지 않고, 대기 상한도 그 방 5개가 전부.
-    const DROP_ROLL_MS = 10*60000;   // 롤 단위(10분)
-    const DROP_ROLL_DIV = 6;         // 롤당 확률 = HARVEST_ROLL/6 (10분×6회 = 시간당 기대값 보존)
+    const DROP_ROLL_MS = 1*60000;    // 롤 단위(1분) — 스폰이 1분마다 촘촘하게(2026-07 사용자 지침). 씬 서명 가드로 잦은 스폰의 렌더 부담을 줄임.
+    const DROP_ROLL_DIV = 60;        // 롤당 확률 = HARVEST_ROLL/60 (1분×60회 = 시간당 기대값 보존 — 총량 인플레 없이 롤 주기만 촘촘)
     const DROP_MAX_ROOM = 5;         // 대기 드랍 상한(util.js normRoom의 5개 절단과 짝) — 단일 대상 방이라 사실상 전체 상한
-    const DROP_ROLL_CAP = 144;       // 소급 롤 상한 = 24h × 6 (기존 rollH 24h 캡과 동일 회계)
+    const DROP_ROLL_CAP = 1440;      // 소급 롤 상한 = 24h × 60 (기존 24h 캡과 동일 회계)
     // 벽지(방 배경) — 구매 후 적용. default는 기본 제공.
     const WALLPAPER_CATALOG = [
       // price는 두지 않는다 — 구매가는 wallBuyPrice(등급가 TIER_PRICE[tier], default=0)가 산정. brick만 WALL_TIER=epic(랜덤박스 전용), 나머지는 normal(알뜰샵).
@@ -2120,7 +2122,7 @@
     }
     function poopSvg(opt){ return pxSvg(M_POOP, POOP_PAL, opt); }
     // 🎨 랜덤 염색약 — 코르크+유리병+무지개 3단 액체(PIL 라이트/다크 검수 통과, scratchpad dye.py).
-    //    사용하면 펫 전체 톤을 랜덤 변경(owned.cats[id].dye = hue-rotate 각도). 상점 비매 — 이벤트·쿠폰·선물 지급 전용(경제 보수 정책).
+    //    사용하면 펫 전체 톤을 랜덤 변경(owned.cats[id].dye). 알뜰샵 소비 탭 판매(염색약 금화100·리무버 금화200) + 이벤트·쿠폰·선물 지급 병행(2026-07 사용자 지침).
     const M_DYE=[
       '....kkk....',
       '....kkk....',
@@ -2303,7 +2305,7 @@
       petDay: (g.petDay && typeof g.petDay==='object') ? g.petDay : {},            // 쓰다듬기 은화 하루 카운트(≤PET_DAILY_CAP; 애정은 무제한)
       qualityDay: (g.qualityDay && typeof g.qualityDay==='object') ? g.qualityDay : {},   // 성실 기록 보너스 하루 카운트(≤QUALITY_DAILY_CAP)
       gachaGold: (g.gachaGold && typeof g.gachaGold==='object') ? g.gachaGold : {},  // 가챠 부산물 금화 하루 카운트(≤GACHA_GOLD_CAP 뽑)
-      buyDay: (g.buyDay && typeof g.buyDay==='object') ? g.buyDay : {},      // 🛒 하루 구매 카운트(품목별) {day, n:{id:count}} — 츄르(3)·영양제(무료 1) 등 dailyBuy 소비템
+      buyDay: (g.buyDay && typeof g.buyDay==='object') ? g.buyDay : {},      // 🛒 하루 구매 카운트(품목별) {day, n:{id:count}} — 츄르(5)·영양제(무료 1) 등 dailyBuy 소비템
       boost: (g.boost && typeof g.boost==='object') ? { until:Math.max(0,Math.floor(Number(g.boost.until)||0)), mult:Math.max(1,Number(g.boost.mult)||1) } : { until:0, mult:1 },   // 💊 수확 수익 부스트 버프 {until(ms), mult}
       dropRollAt: Math.max(0, Math.floor(Number(g.dropRollAt)||0)),   // 🎁 드랍 스폰 롤 시계(ms, 전역 1개) — reconcileDrops가 10분 단위로 소비
       affV: Math.max(0, Math.floor(Number(g.affV)||0)),   // 💗 애정 계단 개편 마이그레이션 마커(2=완료, migrateAffRwIfNeeded) — normalizeGame이 객체를 재생성하므로 반드시 여기 유지
@@ -2430,9 +2432,12 @@
         if(prev && ids.some(id=>prev.indexOf(id)<0) && typeof dropSpawnGemFx==='function') dropSpawnGemFx();
       }catch(e){}
       if(dockMode()!=='hidden'){   // 🔋 dock 숨김이면 dock DOM 갱신 불필요(보일 때만)
-        const dw=$('catdock'); const wall=dw&&dw.querySelector('.cr-wall'); if(wall){ wall.style.background=wallCss(currentWall()); wall.innerHTML=wallSceneHtml(currentWall()); }   // 움직이는 하늘 벽지 씬도 라이브 반영
-        const fl=dw&&dw.querySelector('.cr-floor'); if(fl){ fl.style.background=floorCss(currentFloor()); fl.innerHTML=floorSceneHtml(currentFloor()); }   // 바닥 적용도 dock 캠에 라이브 반영(벽지처럼) + 움직이는 들판 씬
-        const ov=dw&&dw.querySelector('.cr-overlay'); if(ov) ov.innerHTML=bgfxOverlayHtml(currentBgfx());   // 배경효과 오버레이도 방 변경 시 dock 라이브 반영
+        // ⚡ 씬 서명 가드 — 벽지/바닥/배경효과 id가 실제로 바뀔 때만 innerHTML 재생성한다(요소별 dataset.scenesig).
+        //    안 그러면 드랍 스폰 같은 무관한 game 틱마다 움직이는 하늘/들판 SVG를 통째로 재파싱해 발열·마이크로 스터터를 유발(1분 드랍 대비 최적화).
+        const dw=$('catdock');
+        const wall=dw&&dw.querySelector('.cr-wall'), ws=currentWall(); if(wall && wall.dataset.scenesig!==ws){ wall.style.background=wallCss(ws); wall.innerHTML=wallSceneHtml(ws); wall.dataset.scenesig=ws; }   // 움직이는 하늘 벽지 씬 — id 변경 시에만
+        const fl=dw&&dw.querySelector('.cr-floor'), fs=currentFloor(); if(fl && fl.dataset.scenesig!==fs){ fl.style.background=floorCss(fs); fl.innerHTML=floorSceneHtml(fs); fl.dataset.scenesig=fs; }   // 움직이는 들판 바닥 씬 — id 변경 시에만
+        const ov=dw&&dw.querySelector('.cr-overlay'), os=currentBgfx(); if(ov && ov.dataset.scenesig!==os){ ov.innerHTML=bgfxOverlayHtml(os); ov.dataset.scenesig=os; }   // 배경효과 오버레이 — id 변경 시에만
         const rn=$('cdCamTxt'); if(rn){ rn.textContent=(room().emoji?room().emoji+' ':'')+(room().name||'우리집'); }   // dock LIVE 배지의 현재 방 이름(항상 표시)
         const tr=dw&&dw.querySelector('.cr-topright'); if(tr) tr.outerHTML=batchBtnHtml();   // dock 하트(행복도)·수확칩도 라이브 반영 — renderDock에서만 만들어져 0%로 굳던 버그(지갑은 _walletDisp/syncWalletText라 재렌더 안전)
         renderDockProps();
@@ -2440,9 +2445,9 @@
       }
       if(typeof pipOpen==='function' && pipOpen()){   // 🖥️ PiP 미니 캠도 dock와 동일하게 라이브 패치(벽·바닥·오버레이·방이름·가구·펫)
         try{
-          const pw=_pip.room.querySelector('.cr-wall'); if(pw){ pw.style.background=wallCss(currentWall()); pw.innerHTML=wallSceneHtml(currentWall()); }
-          const pf=_pip.room.querySelector('.cr-floor'); if(pf){ pf.style.background=floorCss(currentFloor()); pf.innerHTML=floorSceneHtml(currentFloor()); }
-          const po=_pip.room.querySelector('.cr-overlay'); if(po) po.innerHTML=bgfxOverlayHtml(currentBgfx());
+          const pw=_pip.room.querySelector('.cr-wall'), pws=currentWall(); if(pw && pw.dataset.scenesig!==pws){ pw.style.background=wallCss(pws); pw.innerHTML=wallSceneHtml(pws); pw.dataset.scenesig=pws; }   // ⚡ 씬 서명 가드(dock와 동일)
+          const pf=_pip.room.querySelector('.cr-floor'), pfs=currentFloor(); if(pf && pf.dataset.scenesig!==pfs){ pf.style.background=floorCss(pfs); pf.innerHTML=floorSceneHtml(pfs); pf.dataset.scenesig=pfs; }
+          const po=_pip.room.querySelector('.cr-overlay'), pos=currentBgfx(); if(po && po.dataset.scenesig!==pos){ po.innerHTML=bgfxOverlayHtml(pos); po.dataset.scenesig=pos; }
           _pipSetCamTxt(); renderPipProps(); renderPipCats(); _pipBatchSync();
         }catch(e){}
       }
@@ -2701,8 +2706,8 @@
       rainbow_egg:{ name:'무지개알',  icon:o=>rainbowEggImg((o&&o.h)||52) },  // (레거시 표시용 — 2026-07 소비 인벤토리 폐지·회수, 무지개 탭에서 무지개동전으로 직접 뽑기)
       rainbow_box:{ name:'무지개박스',icon:o=>rainbowBoxSvg(o) },
       ddeul:     { name:'뜰알',       icon:o=>ddeulEggSvg(o),     use:'ddeul' },   // 🌱 한정 픽업(뜰알) — 보유 1개 소모해 열면 DDEUL_TIERS 확률(개발자 선물/지급 전용, 상점 비매)
-      dye:       { name:'염색약',     icon:o=>consumSvg('dye',o), use:'dye'  },   // 🎨 랜덤 염색약 — 가방에서 펫 선택, 톤 랜덤 변경(이벤트·쿠폰·선물 지급 전용, 상점 비매)
-      dye_remover:{ name:'염색 리무버', icon:o=>consumSvg('dye_remover',o), use:'dye_remover' }   // 🧴 염색 제거 — 염색된 펫 선택해 원래 톤 복원(이벤트·쿠폰·선물 지급 전용, 상점 비매)
+      dye:       { name:'염색약',     icon:o=>consumSvg('dye',o), use:'dye'  },   // 🎨 랜덤 염색약 — 가방에서 펫 선택, 톤 랜덤 변경(알뜰샵 소비 탭 금화100 판매 + 이벤트·쿠폰·선물)
+      dye_remover:{ name:'염색 리무버', icon:o=>consumSvg('dye_remover',o), use:'dye_remover' }   // 🧴 염색 제거 — 염색된 펫 선택해 원래 톤 복원(알뜰샵 소비 탭 금화200 판매 + 이벤트·쿠폰·선물)
     };
     // 선물 1건의 출처/사유 텍스트(어떤 행위·보상으로 받았는지). 메시지(운영·축하)가 있으면 우선, 없으면 코드/유형에서 파생.
     function giftSource(gf){ if(gf.msg) return gf.msg; if(gf.bc) return '운영자 선물'; if(gf.code) return '코드 '+String(gf.code).toUpperCase(); if(gf.welcome) return '회원가입 축하'; return ''; }
@@ -2804,7 +2809,7 @@
       const type=val('bc_type'), qty=Math.floor(Number(val('bc_qty'))||0), msg=(val('bc_msg')||'').trim(), to=(val('bc_to')||'').trim().toUpperCase();
       if(!type){ toast('종류를 선택하세요', true); return; }
       if(qty<=0){ toast('수량을 1 이상 입력하세요', true); return; }
-      const consumKeys=['egg','box','ddeul','dye','dye_remover'];   // 🎨 염색약·리무버 — 상점 비매(이벤트·선물 지급 전용)라 선물로만 뿌린다
+      const consumKeys=['egg','box','ddeul','dye','dye_remover'];   // 🎨 염색약·리무버 — 알뜰샵 판매(금화) + 선물 지급 병행
       const gift = (consumKeys.indexOf(type)>=0) ? { type:'consum', key:type, qty:qty } : { type:type, qty:qty };   // coins/gold는 그대로
       if(msg) gift.msg=msg.slice(0,200);
       gift.at=new Date().toISOString();
@@ -3012,7 +3017,7 @@
         g.consum.dye-=1; c.dye=pick.id; return g;
       }).then(r=>{ if(r&&r.committed){ toast('🎨 '+catName(id)+' → '+pick.name+' 염색!'); if(state._sheetRefresh) state._sheetRefresh(); if($('petInfo')) openPetInfo(id); } });
     }
-    // 🧴 염색 리무버: 염색된 펫만 그리드에 표시 → 1개 소모해 원래 톤 복원(무료 지우기 없음 — 이벤트·쿠폰·선물 지급 전용, 사용자 지침).
+    // 🧴 염색 리무버: 염색된 펫만 그리드에 표시 → 1개 소모해 원래 톤 복원(무료 지우기 없음 — 알뜰샵 소비 탭 금화200 판매 + 이벤트·쿠폰·선물).
     function useDyeRemover(){ openPetUseSheet('dye_remover'); }
     function applyDyeRemover(id){
       if(!id||!ownsCat(id)||!petDyeOf(id)){ toast('염색된 펫이 아니에요', true); return; }
@@ -3089,7 +3094,7 @@
         if((Number(g.consum[key])||0)<1) return;
         g.consum[key]-=1; grantGachaGold(g,1); g.pity[kind]=pityNext(g.pity[kind]||0, hit);   // 부산물 금화 하루 2뽑 캡
         if(kind==='egg'){
-          if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; }   // 🚫 가챠 획득 펫은 방에 자동 배치하지 않음(가방에만 — 배치는 홈에서 직접, 사용자 지침)
+          if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
           else { grantPetDup(g, res.id); }   // 💗 중복 펫=애정 경험치(만렙만 은화 10% 폴백)
         } else {
           const gr=grantBoxReward(g, res);   // 캡 초과/중복 보상(중앙 헬퍼 — 한정=무지개동전, 타입 보존 지급)
@@ -3112,7 +3117,7 @@
       gameRef().transaction(g=>{ g=normalizeGame(g);
         if((Number(g.consum.ddeul)||0)<1) return;
         g.consum.ddeul-=1; g.pity.ddeul=pityNext(g.pity.ddeul||0, hit);
-        if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; }   // 🚫 가챠 획득 펫은 방에 자동 배치하지 않음(가방에만 — 배치는 홈에서 직접, 사용자 지침)
+        if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
         else { grantPetDup(g, res.id); }   // 💗 중복 펫=애정 경험치(만렙만 은화 10% 폴백)
         return g;
       }).then(r=>{ if(r&&r.committed){ runGachaFx('ddeul', res, dup, refund, false, isNew, dp); if(state._sheetRefresh) setTimeout(()=>{ if(state._sheetRefresh) state._sheetRefresh(); }, 50); } else { closeFx(); toast('처리 중이에요 — 잠시 후 다시 시도해 주세요', true); } })
