@@ -517,70 +517,55 @@
           if(diff){ const anchor=(parts.indexOf(payer)>=0?payer:parts[parts.length-1]); amounts[anchor]=(Number(amounts[anchor])||0)+diff; } } }
       return { inc:true, payer, splitType:type, participants:parts, amounts, memo: $('sStMemo')?val('sStMemo'):(sh._stMemo||'') };
     }
-    function saveTx(){
-      const curCode=sheetCur(), foreign=sheetAmt();
-      if(!foreign){ toast('금액을 입력하세요', true); return; }
-      if(curCode!=='KRW' && !(sheetRate()>0)){ toast('환율을 입력하세요', true); return; }
-      const rawAmount=sheetKRWAmount();
-      if(!rawAmount){ toast('환산 금액이 0이에요', true); return; }
+    // 거래 시트(폼) DOM·state 읽기 → 원시 입력 bag. 순수 조립·검증은 buildTx(ledger-calc.js), 쓰기·보상은 saveTx.
+    function readTxForm(){
+      const curCode=sheetCur(), foreign=sheetAmt(), rate=sheetRate(), rawAmount=sheetKRWAmount();
       const date=val('sDate')||todayStr();
-      const desc=val('sDesc').trim();
-      const memo=val('sMemo').trim();
-      const iso=isoAtNoon(date);
       const e=TX_EFFECT[sheetType]||{};
       const hasCat=catTypeFor(sheetType)!==null;
+      const cat=sheetCat;
       // 소비 대상(누구의 소비) — 지출/선불결제/포인트사용에서만 선택, 그 외엔 본인
       const _csel = $('sConsumer') ? (val('sConsumer')||defaultOwnerUid()) : defaultOwnerUid();
       const _cmem = (state.wsMeta&&state.wsMeta.members)||{};
-      const consumer = resolveOwnerName(_csel);   // 소비대상을 이름으로 정규화(계좌·정기와 동일 헬퍼로 일원화)
-      const tx={ type:sheetType, date:iso, user:consumer, amount:rawAmount,
-        desc: desc||(hasCat?(sheetCat||TYPE_LABEL[sheetType]):TYPE_LABEL[sheetType]),
-        isActualExpense: !!ACTUAL_DEFAULT[sheetType] };
-      if(_cmem[_csel] || _csel===state.uid) tx.userUid=_csel;   // 멤버 소비대상은 uid 병행 저장(동명이인/개명 견고)
-      if(curCode!=='KRW'){ tx.currency=curCode; tx.foreignAmount=foreign; tx.fxRate=sheetRate(); tx.fxSource=($('sheet')._fxSource||'manual'); tx.fxDate=date; }
-      if(memo) tx.memo=memo;
-      if(sheetType==='balance_adjustment'){ tx.to=val('sTo'); if(val('sAdjSign')==='-') tx.amount=-rawAmount; }
-      else { if(e.debit) tx.from=val('sFrom'); if(e.credit) tx.to=val('sTo'); }
-      if(hasCat) tx.category=sheetCat||'기타';
-      if((sheetType==='transfer'||sheetType==='prepaid_charge') && tx.from===tx.to){ toast('출금/입금 계정이 같습니다', true); return; }
-      // 카드 실적
-      const card=getCard(tx.from);
+      const from=val('sFrom'), to=val('sTo');
+      const effFrom=(sheetType!=='balance_adjustment' && e.debit)?from:undefined;   // tx.from이 실제로 가질 값(카드 조회 기준과 일치)
+      const card=getCard(effFrom);
+      let cardIncluded=false, cardPerfAmount=0, cardPerfReason='';
       if(card && (sheetType==='expense'||sheetType==='prepaid_charge')){
-        const inc=$('sCpi')?$('sCpi').classList.contains('on'):defaultCardIncluded(card,sheetType,tx.category);
-        tx.cardPerformanceIncluded=inc;
-        tx.cardPerformanceAmount= inc ? (parseAmount(val('sCpa'))||rawAmount) : 0;
-        tx.cardPerformanceExcludedReason= inc ? '' : (val('sCpr')||'');
+        cardIncluded=$('sCpi')?$('sCpi').classList.contains('on'):defaultCardIncluded(card,sheetType,hasCat?(cat||'기타'):undefined);
+        cardPerfAmount=parseAmount(val('sCpa'));
+        cardPerfReason=val('sCpr')||'';
       }
       // 목적별 가계부 연결 + 정산(Step 9). 정산 필드는 collectSettle()로 수집.
-      const pbSel = $('sPb')?val('sPb'):'';
-      if(pbSel){
-        const pbo=state.purposeBooks.find(x=>x.id===pbSel);
-        tx.purposeBookId=pbSel;
-        tx.purposeBookName=pbo?pbo.name:(sheetTx&&state.transactions.find(x=>x.ownerUid===sheetTx.ownerUid&&x.id===sheetTx.id)||{}).purposeBookName||'';
-        const stl=(pbo&&pbo.settlementEnabled)?collectSettle():{inc:false};
-        if(stl.inc){
-          tx.settlementIncluded=true;
-          tx.payer=stl.payer||tx.user;
-          tx.splitType=stl.splitType;
-          tx.splitParticipants=stl.participants;
-          tx.splitAmounts=stl.amounts;
-          tx.settlementStatus='unsettled';
-          if(stl.memo) tx.settlementMemo=stl.memo;
-        } else {
-          tx.settlementIncluded=false;
-          tx.payer=tx.user;
-          tx.splitType='none';
-          tx.settlementStatus='none';
-        }
+      const pb = $('sPb')?val('sPb'):'';
+      let pbName='', settle=null;
+      if(pb){
+        const pbo=state.purposeBooks.find(x=>x.id===pb);
+        pbName=pbo?pbo.name:((sheetTx&&state.transactions.find(x=>x.ownerUid===sheetTx.ownerUid&&x.id===sheetTx.id))||{}).purposeBookName||'';
+        settle=(pbo&&pbo.settlementEnabled)?collectSettle():{inc:false};
       }
+      const oldTx=sheetTx?(state.transactions.find(x=>x.ownerUid===sheetTx.ownerUid&&x.id===sheetTx.id)||null):null;
+      return {
+        type:sheetType, curCode:curCode, foreign:foreign, rate:rate, rawAmount:rawAmount,
+        date:date, iso:isoAtNoon(date), desc:val('sDesc').trim(), memo:val('sMemo').trim(),
+        effect:e, hasCat:hasCat, cat:cat, typeLabel:TYPE_LABEL[sheetType], isActualDefault:ACTUAL_DEFAULT[sheetType],
+        consumer:resolveOwnerName(_csel), consumerUid:_csel, consumerIsMember:!!(_cmem[_csel]||_csel===state.uid),
+        fxSource:($('sheet')._fxSource||'manual'),
+        from:from, to:to, adjSign:val('sAdjSign'),
+        hasCard:!!card, cardIncluded:cardIncluded, cardPerfAmount:cardPerfAmount, cardPerfReason:cardPerfReason,
+        pb:pb, pbName:pbName, settle:settle, oldTx:oldTx
+      };
+    }
+    function saveTx(){
+      const res=buildTx(readTxForm());   // 순수 조립·검증(ledger-calc.js)
+      if(res.error){ toast(res.error, true); return; }
+      const tx=res.tx;
       if(sheetTx){
-        const old=state.transactions.find(x=>x.ownerUid===sheetTx.ownerUid&&x.id===sheetTx.id);
-        if(old&&old.recurringId) tx.recurringId=old.recurringId;
-        // 🔗 편집이 재구성하지 않는 백링크(경조사·대출·연결 거래) 보존 — 안 지키면 편집 시 선물/대출 연결이 끊겨 pill·정산이 깨짐
-        if(old) ['giftEventId','loanId','linkedTransactionId'].forEach(k=>{ if(old[k]!=null && old[k]!=='') tx[k]=old[k]; });
         db.ref(wp('transactions/'+sheetTx.ownerUid+'/'+sheetTx.id)).set(tx).catch(_saveErr); toast('수정되었습니다');
-      } else { db.ref(wp('transactions/'+state.uid+'/'+Date.now())).set(tx).catch(_saveErr); toast('저장되었습니다'); budgetPreWarn(tx);
-        if(tx.category && tx.memo && typeof grantQualityBonus==='function') grantQualityBonus(); }   // ✍️ 카테고리+메모 채운 새 거래 → 성실 기록 보너스(하루 3건 캡)
+      } else {
+        db.ref(wp('transactions/'+state.uid+'/'+Date.now())).set(tx).catch(_saveErr); toast('저장되었습니다'); budgetPreWarn(tx);
+        if(tx.category && tx.memo && typeof grantQualityBonus==='function') grantQualityBonus();   // ✍️ 카테고리+메모 채운 새 거래 → 성실 기록 보너스(하루 3건 캡)
+      }
       closeSheet();
     }
     // 예산 사전 경고: 이 지출로 관련 예산이 임계(alertThreshold) 또는 100%를 처음 넘으면 비차단 토스트(저장은 그대로).

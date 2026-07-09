@@ -11,7 +11,7 @@
 | `index.html` | ~95 | 앱 셸 — 로그인 화면, 상단바(**모드 토글**·워크스페이스 칩·펫캠·테마), 탭바, 시트/오버레이 컨테이너, SDK·모듈 로드 |
 | `js/firebase.js` | ~17 | `firebaseConfig` + Firebase 초기화(`auth`, `db`). SDK 미로드 시 폴백 화면 |
 | `js/constants.js` | ~54 | 라벨/아이콘 맵, 거래효과 테이블(`TX_EFFECT`), 계좌·제공사·구독·목적별 타입, 기본 카테고리(`buildDefaultCategories`) |
-| `js/ledger-calc.js` | ~50 | **가계부 순수 계산**(정산 분담·최소 송금 매칭) — `settlementSplit`·`greedySettle`. `core.js`에서 이동한 단일 소스(브라우저 전역 + Node 듀얼 익스포트 → `test/ledger-calc.test.js`). 로드는 `core.js` 앞. |
+| `js/ledger-calc.js` | ~100 | **가계부 순수 계산** — 정산 분담·최소 송금 매칭 `settlementSplit`·`greedySettle`(`core.js`에서 이동) + **거래 조립/검증 `buildTx`**(폼 입력 bag → 거래객체 `{tx}`/검증에러 `{error}`, `views.js` `saveTx`에서 추출). 브라우저 전역 + Node 듀얼 익스포트 → `test/ledger-calc.test.js`. 로드는 `core.js` 앞. |
 | `js/app.js` | ~56 | **MVC 뼈대 — `window.App` 네임스페이스**(Phase 0). `App.store`(전역 `state` 래핑·`subscribe`/`emit`/`patch`)·`App.controller.router`(go/goto/setMode 지연바인딩 별칭)·`App.view.define`(컴포넌트 레지스트리)·`App.model`/`App.engine` 슬롯. 런타임 무동작(별칭). |
 | `js/model.js` | ~53 | **Model 계층**(Phase 1) — `App.model.ledgerRepo`(wp/attach/setupListeners/CRUD)·`wsRepo`(워크스페이스 lifecycle)·`authService`·`ledgerCalc`. 전역 함수 지연바인딩 파사드(현행 동작 위임). |
 | `js/delegate.js` | ~67 | **이벤트 위임 브리지**(Phase 2) — 순수 `coerceArg`/`readActionArgs`/`buildActionAttrs`(듀얼 익스포트 → `test/delegate.test.js`·`delegate.dom.test.js`) + `App.controller.delegate`(document click/change 위임: `closest('[data-action]')`→등록 액션 또는 동명 전역 폴백, `data-a0..`/`data-t0`(n·b·j) 인자강제)·`App.view.act(name,...args)`(템플릿 헬퍼). **가산적** — 인라인 `onclick`과 공존. |
@@ -65,7 +65,7 @@ firebase.js → constants.js → util.js → ledger-calc.js → core.js → app.
 | 그룹 | 함수 |
 |---|---|
 | 달력/거래 | `renderCalendar`(msum)·`calendarGridHtml`(월요일·색점)·`selectedDayHtml`/`selectDay`·`memberChipRow`·`setMemberFilterByUid`/`clearMemberFilter`·`openDaySheet` |
-| 거래 입력 시트 | `openTxSheet`(시안 골격: `.amtbig`+키패드+칩+상세설정)·`renderTxDyn`·`catChipsHtml`/`pickCat`(칩)·`acctField`(계좌/이체 행)·`consumerField`(**소비 대상** — 출금 수단과 분리, 멤버+공동)·`kpPress`/`kpDel`(키패드)·`renderCardPerfBlock`·`saveTx` |
+| 거래 입력 시트 | `openTxSheet`(시안 골격: `.amtbig`+키패드+칩+상세설정)·`renderTxDyn`·`catChipsHtml`/`pickCat`(칩)·`acctField`(계좌/이체 행)·`consumerField`(**소비 대상** — 출금 수단과 분리, 멤버+공동)·`kpPress`/`kpDel`(키패드)·`renderCardPerfBlock`·**`saveTx`**(untangle: DOM·state 읽기 `readTxForm` → 순수 조립·검증 `buildTx`(ledger-calc.js) → RTDB 쓰기 + 보상 `budgetPreWarn`/`grantQualityBonus`) |
 | 리포트 | `renderStats`(시안: 월네비+총지출+CSS도넛+6개월막대+**개인별/공동 지출 분리 바**(`t.user` 집계, `공동`은 별도 섹션), 예산·목적별·선불 카드 유지)·`statsMonth`(월 이동)·`shortAmt`/`signComma`(표시 헬퍼). *Chart.js 제거 — 순수 CSS 차트* |
 | 자산 | `renderAssets`(핸드오프 v2: 순자산 **흰 카드**(`.assethero`, 카드대금 빨강)+`.sech`/`.addbtn` 섹션+**중립 회색** 유형 SVG 계좌행+`.perfrow` 카드실적+`.bgrow` 적금)·`acctIcon`(유형별 라인 SVG)·`acctRowHtml`·`sechHtml`/`PLUS_SVG`(섹션 헤더 헬퍼)·`openAcctSheet`·`openCardList`·`openSavingsSheet` |
 | **카테고리 색/아이콘** (core.js) | `CAT_META`(기본 카테고리→솔리드 색+아이콘 키)·`CAT_SVG`(라인 SVG 라이브러리 46종)·`CAT_FALLBACK`(중복 없는 팔레트)·`catColor`(팔레트 오버라이드+hex검증+해시폴백)·`catSvgIcon`(**카테고리 `iconKey` 우선** → 이름 매핑 → tag)·`catTileStyle`/`catTileMini`(13% tint 타일)·`hexA`/`svgWrap`. 거래행은 `txRowHtml`+`TX_SVG_KEY`로 카테고리=tint 타일/그 외=중립 타일 |
