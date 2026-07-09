@@ -652,8 +652,8 @@
         const pf=harvestPref('food'), pw=harvestPref('water');
         // 🌾 수확·그릇 급여 자동채움 선호(기본 ↔ 고급) — pickFill이 읽음
         h+='<div class="hpref"><div class="hpref-t">🌾 수확·그릇 급여에 쓸 사료·물</div>'
-          +'<div class="hpref-row"><span class="hpref-l">사료</span><div class="subseg hpref-seg"><button class="'+(pf==='food'?'on':'')+'" onclick="setHarvestPref(\'food\',\'food\')">기본 사료</button><button class="'+(pf==='food_plus'?'on':'')+'" onclick="setHarvestPref(\'food\',\'food_plus\')">고급사료</button></div></div>'
-          +'<div class="hpref-row"><span class="hpref-l">물</span><div class="subseg hpref-seg"><button class="'+(pw==='water'?'on':'')+'" onclick="setHarvestPref(\'water\',\'water\')">기본 물</button><button class="'+(pw==='water_plus'?'on':'')+'" onclick="setHarvestPref(\'water\',\'water_plus\')">정수물</button></div></div>'
+          +'<div class="hpref-row"><span class="hpref-l">사료</span><div class="subseg hpref-seg"><button class="'+(pf==='food'?'on':'')+'" '+App.view.act('setHarvestPref','food','food')+'>기본 사료</button><button class="'+(pf==='food_plus'?'on':'')+'" '+App.view.act('setHarvestPref','food','food_plus')+'>고급사료</button></div></div>'
+          +'<div class="hpref-row"><span class="hpref-l">물</span><div class="subseg hpref-seg"><button class="'+(pw==='water'?'on':'')+'" '+App.view.act('setHarvestPref','water','water')+'>기본 물</button><button class="'+(pw==='water_plus'?'on':'')+'" '+App.view.act('setHarvestPref','water','water_plus')+'>정수물</button></div></div>'
           +'<div class="note" style="margin:6px 0 0;">선택한 사료·물이 떨어지면 자동으로 기본 사료·물로 채워요.</div></div>';
         h+=CONSUM_CATALOG.map(c=>{
           const gcur=(c.cur==='gold'), have=gcur?gold():coins();

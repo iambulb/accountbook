@@ -674,24 +674,24 @@
       h+='<div class="sec-title">연출 테스트(무료)</div>';
       // 한정(exclusive)은 기본 펫알/박스엔 없고 '뜰알'에서만 나옴 → 펫알·박스 행에선 제외하고, 아래 뜰알 행에서 한정 연출을 미리본다.
       const previewTiers=TIERS.filter(t=>t.id!=='exclusive');
-      h+='<div class="tx-sub" style="margin:0 2px 6px;">펫알</div><div class="chip-row">'+previewTiers.map(t=>'<button class="chip" onclick="devPreview(\'egg\',\''+t.id+'\')"><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
-      h+='<div class="tx-sub" style="margin:8px 2px 6px;">랜덤박스</div><div class="chip-row">'+previewTiers.map(t=>'<button class="chip" onclick="devPreview(\'box\',\''+t.id+'\')"><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
+      h+='<div class="tx-sub" style="margin:0 2px 6px;">펫알</div><div class="chip-row">'+previewTiers.map(t=>'<button class="chip" '+App.view.act('devPreview','egg',t.id)+'><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
+      h+='<div class="tx-sub" style="margin:8px 2px 6px;">랜덤박스</div><div class="chip-row">'+previewTiers.map(t=>'<button class="chip" '+App.view.act('devPreview','box',t.id)+'><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
       // 🌱 뜰알(한정 픽업) — 뜰알 기준 연출 미리보기. 한정은 뜰알에서만 나오므로 '한정' 연출은 여기서 확인(뜰+하늘+무지개, 픽업 펫=삵·표범).
-      h+='<div class="tx-sub" style="margin:8px 2px 6px;">🌱 뜰알(한정 픽업)</div><div class="chip-row">'+TIERS.map(t=>'<button class="chip" onclick="devPreview(\'ddeul\',\''+t.id+'\')"><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
+      h+='<div class="tx-sub" style="margin:8px 2px 6px;">🌱 뜰알(한정 픽업)</div><div class="chip-row">'+TIERS.map(t=>'<button class="chip" '+App.view.act('devPreview','ddeul',t.id)+'><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
       // 🥚×10 10연차 연출 확인(개발자 미리보기 전용) — 시나리오별 강제 결과로 연출만 재생. 한정(exclusive)은 뜰알에서만.
       h+='<div class="tx-sub" style="margin:12px 2px 6px;">🥚×10 10연차(펫알)</div><div class="chip-row">'+
-        '<button class="chip" onclick="devPreview10(\'random\',\'egg\')">랜덤</button>'+
-        '<button class="chip" onclick="devPreview10(\'legendUp\',\'egg\')">전부 전설↑</button>'+
-        '<button class="chip" onclick="devPreview10(\'oneLimited\',\'egg\')">신화 1개</button></div>';
+        '<button class="chip" '+App.view.act('devPreview10','random','egg')+'>랜덤</button>'+
+        '<button class="chip" '+App.view.act('devPreview10','legendUp','egg')+'>전부 전설↑</button>'+
+        '<button class="chip" '+App.view.act('devPreview10','oneLimited','egg')+'>신화 1개</button></div>';
       h+='<div class="tx-sub" style="margin:8px 2px 6px;">🌱×10 10연차(뜰알)</div><div class="chip-row">'+
-        '<button class="chip" onclick="devPreview10(\'random\',\'ddeul\')">랜덤</button>'+
-        '<button class="chip" onclick="devPreview10(\'legendUp\',\'ddeul\')">전부 전설↑</button>'+
-        '<button class="chip" onclick="devPreview10(\'oneLimited\',\'ddeul\')">신화 1개</button>'+
-        '<button class="chip" onclick="devPreview10(\'oneExclusive\',\'ddeul\')">한정 포함</button></div>';
+        '<button class="chip" '+App.view.act('devPreview10','random','ddeul')+'>랜덤</button>'+
+        '<button class="chip" '+App.view.act('devPreview10','legendUp','ddeul')+'>전부 전설↑</button>'+
+        '<button class="chip" '+App.view.act('devPreview10','oneLimited','ddeul')+'>신화 1개</button>'+
+        '<button class="chip" '+App.view.act('devPreview10','oneExclusive','ddeul')+'>한정 포함</button></div>';
       h+='<div class="tx-sub" style="margin:8px 2px 6px;">🎁×10 10연차(랜덤박스)</div><div class="chip-row">'+
-        '<button class="chip" onclick="devPreview10(\'random\',\'box\')">랜덤</button>'+
-        '<button class="chip" onclick="devPreview10(\'legendUp\',\'box\')">전부 전설↑</button>'+
-        '<button class="chip" onclick="devPreview10(\'oneLimited\',\'box\')">신화 1개</button></div>';
+        '<button class="chip" '+App.view.act('devPreview10','random','box')+'>랜덤</button>'+
+        '<button class="chip" '+App.view.act('devPreview10','legendUp','box')+'>전부 전설↑</button>'+
+        '<button class="chip" '+App.view.act('devPreview10','oneLimited','box')+'>신화 1개</button></div>';
       h+='<div class="sec-title" style="margin-top:18px;">다마고치 테스트(즉시)</div>';
       h+='<div class="note" style="margin-bottom:8px;">3시간을 기다리지 않고 급여·배변·수거를 바로 확인. 순서: <b>사료·물 +10</b> → 홈에서 그릇 채우기(또는 <b>그릇 다 채우기</b>) → <b>그릇 만료→똥</b> → 똥 탭/일괄 돌보기.</div>';
       h+='<div class="chip-row"><button class="chip" '+App.view.act('devGiveConsum')+'>사료·물 +10</button><button class="chip" '+App.view.act('devFillAll')+'>그릇 다 채우기</button><button class="chip" '+App.view.act('devExpireBowls')+'>그릇 만료→똥</button><button class="chip" '+App.view.act('devAddPoop')+'>똥 +3</button></div>';
@@ -703,8 +703,8 @@
       h+='<button class="btn" style="margin-top:12px;" '+App.view.act('devGrantCurrency')+'>지급</button>';
       // 🧢✨ 코스메틱(own-once·전부 한정) 보유 토글 — 모자 3종·펫효과 3종(나비·반딧불·무지개꽃)
       h+='<div class="note" style="margin-top:14px;">코스메틱 보유 토글(누르면 지급↔회수 · 전부 한정 등급)</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
-      Object.keys(HAT_CATALOG).forEach(k=>{ h+='<button class="chip'+(ownsHat(k)?' on':'')+'" onclick="devGrantCosm(\'hat\',\''+k+'\')">'+hatSvg(k,{h:13})+' '+HAT_CATALOG[k]+'</button>'; });
-      Object.keys(BUDDY_CATALOG).forEach(k=>{ h+='<button class="chip'+(ownsPetfx(k)?' on':'')+'" onclick="devGrantCosm(\'petfx\',\''+k+'\')">'+buddySvgOf(k,{h:12})+' '+BUDDY_CATALOG[k]+'</button>'; });
+      Object.keys(HAT_CATALOG).forEach(k=>{ h+='<button class="chip'+(ownsHat(k)?' on':'')+'" '+App.view.act('devGrantCosm','hat',k)+'>'+hatSvg(k,{h:13})+' '+HAT_CATALOG[k]+'</button>'; });
+      Object.keys(BUDDY_CATALOG).forEach(k=>{ h+='<button class="chip'+(ownsPetfx(k)?' on':'')+'" '+App.view.act('devGrantCosm','petfx',k)+'>'+buddySvgOf(k,{h:12})+' '+BUDDY_CATALOG[k]+'</button>'; });
       h+='</div>';
       // 🏅 신화·한정 지급 — 펫(보유 토글)·기구물/벽지/바닥/배경효과(가구=+1개, 스킨=보유 토글)를 리스트에서 골라 지급
       { const tm=(typeof effCatTier==='function')?effCatTier():CAT_TIER;

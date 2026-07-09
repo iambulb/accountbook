@@ -2690,7 +2690,7 @@
           h+='<div class="hintline" style="margin:2px 0 10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>받으면 은화·금화는 잔액으로, 아이템은 <b>가방</b>으로 들어가요.</div>';
           if(mail.length){
             h+='<div class="sech"><span class="l">친구가 보낸 선물</span><span class="s">'+mail.length+'개</span></div>';
-            h+=mail.map(x=>{ const v=giftView(x.gf); return '<div class="giftrow"><span class="gfic">'+v.icon+'</span><span class="gftx"><b class="gfnm">'+escapeHtml(v.name)+'</b><span class="gfmsg">'+escapeHtml((x.gf.fromName||'친구')+'님이 보냄')+'</span></span><button class="buy" onclick="claimMailGift(\''+x.sender+'\',\''+x.gid+'\')">받기</button></div>'; }).join('');
+            h+=mail.map(x=>{ const v=giftView(x.gf); return '<div class="giftrow"><span class="gfic">'+v.icon+'</span><span class="gftx"><b class="gfnm">'+escapeHtml(v.name)+'</b><span class="gfmsg">'+escapeHtml((x.gf.fromName||'친구')+'님이 보냄')+'</span></span><button class="buy" '+App.view.act('claimMailGift',x.sender,x.gid)+'>받기</button></div>'; }).join('');
             h+='<button class="btn ghost" style="margin:8px 0 4px;" '+App.view.act('claimAllMail')+'>친구 선물 모두 받기</button>';
           }
           if(gifts.length){
@@ -3511,8 +3511,8 @@
       if(!p.deleted){
         const sa=gachaFxSlotOf(p.id);   // 'a'|'b'|null (현재 이 펫이 배정된 슬롯)
         h+='<div class="petmg-btns">'+
-           '<button class="btn'+(sa==='a'?'':' ghost')+'" aria-pressed="'+(sa==='a'?'true':'false')+'" onclick="setGachaFxSlot(\'a\',\''+p.id+'\')">연출 1번(왼쪽)'+(sa==='a'?' ✓':'')+'</button>'+
-           '<button class="btn'+(sa==='b'?'':' ghost')+'" aria-pressed="'+(sa==='b'?'true':'false')+'" onclick="setGachaFxSlot(\'b\',\''+p.id+'\')">연출 2번(오른쪽)'+(sa==='b'?' ✓':'')+'</button></div>';
+           '<button class="btn'+(sa==='a'?'':' ghost')+'" aria-pressed="'+(sa==='a'?'true':'false')+'" '+App.view.act('setGachaFxSlot','a',p.id)+'>연출 1번(왼쪽)'+(sa==='a'?' ✓':'')+'</button>'+
+           '<button class="btn'+(sa==='b'?'':' ghost')+'" aria-pressed="'+(sa==='b'?'true':'false')+'" '+App.view.act('setGachaFxSlot','b',p.id)+'>연출 2번(오른쪽)'+(sa==='b'?' ✓':'')+'</button></div>';
       } else {
         h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:6px 2px 0;">삭제(숨김)된 펫은 연출에 지정할 수 없어요. <b>복구</b> 후 지정하세요.</p>';
       }
