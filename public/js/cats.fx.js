@@ -50,7 +50,7 @@
       // v2egg=신규 펫알/무지개알 아트(뜰알식 연출, 라이브 정식) — 무지개알 '아이템 사용(1뽑)'도 v2 연출(큰 무지개꽃 흔들림·전설↑ 꽃 뚝+무지개 꽃 흩날림)로 통일(2026-07-09 사용자 지침).
       if(isEggKind(kind) && typeof hasSprite==='function' && hasSprite(res.id)){ try{ const _pi=new Image(); _pi.src=sprStill(res.id,'south'); if(_pi.decode) _pi.decode().catch(function(){}); }catch(e){} }   // 등장 스프라이트 미리 로드·디코드(펫알·뜰알 공통) → 마지막에 바로 표시
       if(typeof prewarmGachaFxPads==='function') prewarmGachaFxPads();   // 연출 고양이 발끝 여백 미리 측정(탭하는 동안 캐시 완료 → 첫 등장 세로 점프 방지)
-      if(reducedMotion()||fxFastOn()){ fxReveal(); return; }   // 모션 최소화·빠른 연출: 바로 결과
+      if(reducedMotion()){ fxReveal(); return; }   // 모션 최소화만 즉시 결과(옛 '빠른 연출' 스킵은 폐기 — fxFast 잔재로 1뽑이 스킵되던 버그)
       const isDdeul = kind==='ddeul';
       const hint = isDdeul? '뜰알을 탭해서 깨보세요! (3번)' : (isEggKind(kind)? '알을 탭해서 깨보세요! (3번)' : '상자를 탭해서 흔들어 열어요! (3번)');
       // 🔧 '뽑는 중…' 대기 오버레이(gachaPending)가 이미 같은 알/상자를 띄워놨으면 DOM을 재생성하지 않고 "제자리 승격"만 한다
@@ -516,7 +516,7 @@
       if(typeof prewarmGachaFxPads==='function') prewarmGachaFxPads();
       const fx=$('catFx'); if(!fx) return;
       if(!fx._tenTapBound){ fx._tenTapBound=true; fx.addEventListener('pointerup', tenTapDelegate); }   // 🍏 iOS: div 인라인 onclick(자식→부모 위임)이 안 먹는 문제 → 포인터업으로 위임(한 번만 바인딩)
-      const rm=reducedMotion()||fxFastOn();   // ⚡ 빠른 연출도 즉시 결과 경로
+      const rm=reducedMotion();   // 모션 최소화만 즉시 결과(옛 '빠른 연출' 스킵 폐기)
       fx.innerHTML='<div class="fx-scrim"></div><div class="ten-wrap" id="tenWrap" role="button" tabindex="0">'+
         tenSceneBg()+tenMeadowBg()+tenNestHtml(items, 'eggs')+
         '<div class="ten-hint" id="tenHint">'+pixelTextHtml(rm?'탭하여 결과 보기':'둥지를 탭하세요', '#ffffff', {h:16})+'</div></div>';

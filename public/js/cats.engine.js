@@ -747,11 +747,7 @@
     //   ⚠️ OS 'prefers-reduced-motion'(접근성=전면 정적)과는 분리 — 라이트는 걷기·탭 같은 '기능성' 모션은 유지한다.
     function liteMode(){ try{ return localStorage.getItem('liteMode')==='1'; }catch(e){ return false; } }
     function reducedMotion(){ try{ return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } }
-    // ⚡ 빠른 연출(이 기기) — 켜면 뽑기 탭 단계를 건너뛰고 바로 결과(reducedMotion과 같은 경로). 가챠 탭 우상단 칩으로 토글.
-    function fxFastOn(){ try{ return localStorage.getItem('fxFast')==='1'; }catch(e){ return false; } }
-    function toggleFxFast(){ try{ localStorage.setItem('fxFast', fxFastOn()?'0':'1'); }catch(e){}
-      toast(fxFastOn()?'⚡ 빠른 연출 ON — 탭 없이 바로 결과를 보여줘요':'🎬 풀 연출 ON — 탭해서 여는 연출로 보여줘요');
-      if(state._sheetRefresh) state._sheetRefresh(); }
+    // ⚡ (폐기) '빠른 연출' 토글 — 배너 칩 제거(사용자 지침) 후에도 남은 localStorage('fxFast=1')가 1뽑/10뽑 연출을 즉시 스킵시키던 버그 → 기능 완전 제거(연출 스킵은 접근성 reducedMotion만).
     function applyLiteMode(){ try{ if(document&&document.body) document.body.classList.toggle('lite', liteMode()); }catch(e){} }
     function refreshRbStatic(){ _rbStatic = liteMode() || reducedMotion(); }   // 무지개 SMIL 정적화 여부 재평가
     function pkCount(n){ return liteMode()?Math.max(1,Math.round(n*0.55)):n; }   // 🔋 저사양 씬 데코 개수 감축(약 55%) — 씬 캐시는 setLiteMode에서 무효화
