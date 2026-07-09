@@ -3083,7 +3083,7 @@
     // 카탈로그(코드 상수) — 저장은 보유 id만. id는 종·색 구분(예: cat_calico, dog_corgi), species는 분류/필터용.
     // 새 동물(네발 짐승) 처리 규칙은 docs/pet-asset-pipeline.md 참고.
     // 가격(은화)은 등급·확률에 맞춰 재산정 — 등급이 오를수록 대략 2배씩(TIER_PRICE 참고).
-    // 알(펫알) 100은화로 열면 금화+1·중복은 그 펫 가격의 20% 환급이라, 흔한 등급은 알보다 싸게·희귀는 알보다 비싸게 잡아
+    // 알(펫알) 100은화로 열면 금화+1·중복은 그 펫 가격의 10% 환급(DUP_REFUND_RATE)이라, 흔한 등급은 알보다 싸게·희귀는 알보다 비싸게 잡아
     // "직접 구매 vs 뽑기" 선택지가 성립하도록 함. 가격은 CAT_TIER→TIER_PRICE로 산정(normalizePrices).
     // @gen:pet-catalog — 자동생성(tools/build_pets.py). 직접 수정 말고 tools/pets.json 편집 후 재실행.
     const PET_CATALOG = [
@@ -5860,8 +5860,8 @@
       const map = kind==='egg'?gachaCatTierMap():effItemTier();
       const forced=pityForcedTierFor(kind);   // 🔮 종류별 천장(보유 펫알/랜덤박스도 같은 종류 카운터 공유)
       const res = forced ? pickTierMember(map, forced) : rollFromPool(map); if(!res) return;   // 일반 확률표(effTiers). 펫알=활성 한정만 포함(gachaCatTierMap)
-      const dup=kind==='egg' && ownsCat(res.id);
-      const refund=dup?petDupRefund(res.id):0;
+      const dup = kind==='egg' ? ownsCat(res.id) : (itemQty(res.id)>=ITEM_MAX_QTY);   // 🧰 가구는 종당 12개 캡 초과=환급 리빌
+      const refund = dup ? (kind==='egg'?petDupRefund(res.id):dupRefundOf(res.tier)) : 0;
       const isNew=gachaNew(kind,res);   // 지급 전 판정(NEW 배지)
       const hit=isTopTier(res.tier);
       pullBegin(kind, false);   // 🔒 잠금 + 즉시 '준비' 오버레이
@@ -5872,8 +5872,8 @@
           if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
           else { g.coins+=refund; }
         } else {
-          g.owned.items[res.id]=g.owned.items[res.id]||{qty:0,boughtAt:new Date().toISOString()};
-          g.owned.items[res.id].qty=(Number(g.owned.items[res.id].qty)||0)+1;
+          const rf=grantBoxReward(g, { id:res.id, tier:res.tier, type:'item' });   // 캡 초과면 환급(중앙 헬퍼 일괄)
+          if(rf) g.coins=clampCoins((g.coins||0)+rf);
         }
         return g;
       }).then(r=>{ if(r&&r.committed){ runGachaFx(kind, res, dup, refund, false, isNew); if(state._sheetRefresh) setTimeout(()=>{ if(state._sheetRefresh) state._sheetRefresh(); }, 50); } else { closeFx(); toast('처리 중이에요 — 잠시 후 다시 시도해 주세요', true); } })
@@ -8286,7 +8286,7 @@
       // ── 10개 결과 롤(배치 내 중복·pity 반영) → 리빌용 list(지급 정보 포함)
       const map=gachaCatTierMap(), ddeulTiers=(kind==='ddeul')?DDEUL_TIERS:null;
       let pity=pityGet(kind);
-      const seenCat={}, seenItem={}, seenFloor={}, seenWall={}, seenBgfx={}, list=[];
+      const seenCat={}, seenItem={}, seenFloor={}, seenWall={}, seenBgfx={}, cntItem={}, list=[];   // cntItem=배치 내 가구 지급 누적(12개 캡 판정이 트랜잭션 지급 순서와 일치하게)
       for(let i=0;i<N;i++){
         const forced = pityForced(pity) ? (kind==='ddeul'?(Math.random()<0.5?'limited':'exclusive'):'limited') : null;
         if(kind==='box'){
@@ -8298,8 +8298,12 @@
           else if(res.type==='bgfx') owned=ownsBgfx(res.id)||!!seenBgfx[res.id];
           else owned=((typeof itemQty==='function'?itemQty(res.id):0)>0)||!!seenItem[res.id];
           if(res.type==='floor') seenFloor[res.id]=true; else if(res.type==='wall') seenWall[res.id]=true; else if(res.type==='bgfx') seenBgfx[res.id]=true; else seenItem[res.id]=true;
-          const isSkin=(res.type==='floor'||res.type==='wall'||res.type==='bgfx');   // 스킨(바닥/벽지/배경효과)만 own-once 중복 환급 — 가구는 수량 누적이라 중복/환급 없음
-          list.push({ id:res.id, tier:res.tier, type:res.type, kind:'box', rainbow:(Math.random()<rbUpgradeChance(res.tier)), dup:isSkin&&owned, refund:(isSkin&&owned)?Math.round((TIER_PRICE[res.tier]||0)*0.2):0, isNew:!owned });
+          const isSkin=(res.type==='floor'||res.type==='wall'||res.type==='bgfx');   // 스킨(바닥/벽지/배경효과)=own-once 중복 환급 · 가구=12개 캡 초과 환급(둘 다 10%)
+          const isFurn=(res.type==='item');
+          const capped=isFurn && ((typeof itemQty==='function'?itemQty(res.id):0)+(cntItem[res.id]||0))>=ITEM_MAX_QTY;   // 배치 내 앞서 지급된 수량 포함(트랜잭션 지급 순서와 동일 판정)
+          if(isFurn && !capped) cntItem[res.id]=(cntItem[res.id]||0)+1;
+          const dupIt=(isSkin&&owned)||capped;
+          list.push({ id:res.id, tier:res.tier, type:res.type, kind:'box', rainbow:(Math.random()<rbUpgradeChance(res.tier)), dup:dupIt, refund:dupIt?dupRefundOf(res.tier):0, isNew:!owned });
           pity=pityNext(pity, isTopTier(res.tier));
         } else {
           let res = forced ? pickTierMember(map, forced) : (ddeulTiers?rollFromPool(map, ddeulTiers):rollFromPool(map));
@@ -8526,12 +8530,14 @@
     function buyItem(id){
       const it=ITEM_CATALOG.find(x=>x.id===id); if(!it) return;
       if(isGachaOnlyItem(id)){ toast('이 등급은 랜덤박스(가챠)로만 얻을 수 있어요'); setShopSub('event'); return; }
+      if(itemQty(id)>=ITEM_MAX_QTY){ toast(it.name+' 최대 보유량이에요(종당 '+ITEM_MAX_QTY+'개)', true); return; }   // 🧰 가구 캡 — 구매는 차단(은화 낭비 방지)
       const price=itemBuyPrice(id);
       if(coins()<price){ toast((price-coins())+' 은화 부족', true); return; }
       gameRef().transaction(g=>{ g=normalizeGame(g); if(g.coins<price) return;
+        if((Number((g.owned.items[id]||{}).qty)||0)>=ITEM_MAX_QTY) return;   // 캡 재검증(다기기 경합 → abort)
         g.coins-=price; g.owned.items[id]=g.owned.items[id]||{qty:0,boughtAt:new Date().toISOString()};
         g.owned.items[id].qty=(Number(g.owned.items[id].qty)||0)+1; return g;
-      }).then(res=>{ if(res.committed) toast(it.name+' 구매! 배치 탭에서 놓아보세요'); });
+      }).then(res=>{ if(res.committed) toast(it.name+' 구매! 배치 탭에서 놓아보세요'); else if(itemQty(id)>=ITEM_MAX_QTY) toast(it.name+' 최대 보유량이에요(종당 '+ITEM_MAX_QTY+'개)', true); });
     }
     // ===== 🍚💧 다마고치: 사료·물 소비 / 급여 / 배변 / 똥 수거 =====
     function consumQty(id){ return clampConsum((state.game&&state.game.consum&&state.game.consum[id]))||0; }
@@ -9334,12 +9340,19 @@
       Object.keys(bg).forEach(k=>{ if(bg[k]!=='exclusive') m['bg:'+k]=bg[k]; }); return m; }   // 배경효과=전부 한정(exclusive) → 랜덤/무지개박스에서 제외(뜰알 등 별도 획득 대기)
     function rollBoxReward(tiers, forced){ const raw = forced ? pickTierMember(boxPool(), forced) : rollFromPool(boxPool(), tiers); if(!raw) return null; const p=raw.id.split(':');
       return { id:p.slice(1).join(':'), tier:raw.tier, type:(p[0]==='fl'?'floor':(p[0]==='wl'?'wall':(p[0]==='bg'?'bgfx':'item'))) }; }
-    function grantBoxReward(g, res){   // 지급 + (바닥/벽지 중복이면) 환급 은화 반환
-      if(res.type==='floor'){ g.owned.floors=g.owned.floors||{}; if(g.owned.floors[res.id]) return Math.round((TIER_PRICE[res.tier]||0)*0.2); g.owned.floors[res.id]={boughtAt:new Date().toISOString()}; return 0; }
-      if(res.type==='wall'){ if(g.owned.wallpapers[res.id]) return Math.round((TIER_PRICE[res.tier]||0)*0.2); g.owned.wallpapers[res.id]={boughtAt:new Date().toISOString()}; return 0; }
-      if(res.type==='bgfx'){ g.owned.bgfx=g.owned.bgfx||{}; if(g.owned.bgfx[res.id]) return Math.round((TIER_PRICE[res.tier]||0)*0.2); g.owned.bgfx[res.id]={boughtAt:new Date().toISOString()}; return 0; }   // 배경효과=own-once(중복 환급)
-      // 가구(item)는 상점 구매처럼 수량 누적 — 이미 보유해도 qty+1(여러 방에 같은 가구 배치 가능). 바닥/벽지 같은 스킨(own-once)만 중복 환급.
-      const it=g.owned.items[res.id]; if(it&&(Number(it.qty)||0)>0){ it.qty=(Number(it.qty)||0)+1; return 0; }
+    // ♻️ 중복/초과 환급 정책(2026-07 사용자 지침): 펫 중복·스킨(바닥/벽지/배경효과) 중복·가구 캡 초과 전부 등급가의 10% 은화 환급(구 20%).
+    // 🧰 가구는 종당 최대 ITEM_MAX_QTY(12)개 — 초과 획득(가챠·10연차·드랍 박스)은 환급, 알뜰샵 구매는 캡에서 차단(buyItem).
+    const ITEM_MAX_QTY=12;
+    const DUP_REFUND_RATE=0.1;
+    function dupRefundOf(tier){ return Math.max(1, Math.round((TIER_PRICE[tier]||0)*DUP_REFUND_RATE)); }
+    function grantBoxReward(g, res){   // 지급 + (스킨 중복·가구 캡 초과면) 환급 은화 반환
+      if(res.type==='floor'){ g.owned.floors=g.owned.floors||{}; if(g.owned.floors[res.id]) return dupRefundOf(res.tier); g.owned.floors[res.id]={boughtAt:new Date().toISOString()}; return 0; }
+      if(res.type==='wall'){ if(g.owned.wallpapers[res.id]) return dupRefundOf(res.tier); g.owned.wallpapers[res.id]={boughtAt:new Date().toISOString()}; return 0; }
+      if(res.type==='bgfx'){ g.owned.bgfx=g.owned.bgfx||{}; if(g.owned.bgfx[res.id]) return dupRefundOf(res.tier); g.owned.bgfx[res.id]={boughtAt:new Date().toISOString()}; return 0; }   // 배경효과=own-once(중복 환급)
+      // 가구(item)는 수량 누적하되 종당 ITEM_MAX_QTY 캡 — 초과분은 환급. 모든 박스류 지급이 이 헬퍼를 거쳐 일괄 적용(단일 가챠·10연차·캠 드랍 개봉).
+      const it=g.owned.items[res.id];
+      if(it&&(Number(it.qty)||0)>=ITEM_MAX_QTY) return dupRefundOf(res.tier);
+      if(it&&(Number(it.qty)||0)>0){ it.qty=(Number(it.qty)||0)+1; return 0; }
       g.owned.items[res.id]={qty:1,boughtAt:new Date().toISOString()}; return 0; }
     // 가챠전용 판정: 전역 오버라이드(config/*.gacha, 개발자 토글)가 있으면 그 값, 없으면 등급 기반 기본값(특별↑=가챠전용).
     //   가챠전용=true → 알뜰샵 판매목록에서 숨김. false → 등급 무관 은화 판매. 어느 쪽이든 가챠(펫알/랜덤박스) 풀에는 항상 포함.
@@ -9362,7 +9375,7 @@
       if(res.type==='bgfx') return ((bgfxCat(res.id)||{}).name||res.id)+' 배경효과';
       return itemName('box', res.id); }
     // 등급별 알뜰샵 가격(은화) — 확률(60/20/15/3.8/1/0.2%)에 맞춰 등급이 오를수록 약 2배씩.
-    // 알 100은화(+금화1·중복은 그 펫 가격의 20% 환급) 대비, 흔한 등급은 알보다 싸게·희귀 등급은 비싸게 → 직접구매 vs 뽑기 선택 성립.
+    // 알 100은화(+금화1·중복은 그 펫 가격의 10% 환급) 대비, 흔한 등급은 알보다 싸게·희귀 등급은 비싸게 → 직접구매 vs 뽑기 선택 성립.
     // CAT_TIER를 단일 소스로 삼아 PET_CATALOG.price를 산정(새 고양이도 등급만 지정하면 자동 가격).
     const TIER_PRICE = { normal:50, uncommon:100, rare:200, epic:400, legend:800, limited:1500, exclusive:3000 };   // 한정(exclusive)=비매지만 환급·표시용 값
     PET_CATALOG.forEach(c=>{ const t=CAT_TIER[c.id]; if(t&&TIER_PRICE[t]!=null) c.price=TIER_PRICE[t]; });
@@ -9528,7 +9541,7 @@
     function pityChip(key){ const N=(typeof PITY_N!=='undefined'?PITY_N:100); return '<span class="pity-chip" title="이 종류를 '+N+'번 안에 신화 이상 확정">'+sparkSvg({h:10})+'신화확정 '+pityRemain(pityGet(key),N)+'뽑</span>'; }
     const GACHA_PRICE=100;
     // 중복 펫 환급 = 해당 펫 가격의 20%(등급가 기준). 가구(박스)는 중복 개념 없이 수량 누적(환급 없음).
-    function petDupRefund(id){ const c=PET_CATALOG.find(x=>x.id===id); return c?Math.round((c.price||0)*0.2):0; }
+    function petDupRefund(id){ const c=PET_CATALOG.find(x=>x.id===id); return c?Math.max(1,Math.round((c.price||0)*DUP_REFUND_RATE)):0; }   // ♻️ 중복 펫 = 가격의 10% 환급(스킨·가구 초과와 동률)
     // 🌈 처음 획득 판정 — 뽑기 결과를 지급하기 "전" 보유 여부로 판단(등장 시 NEW 배지). 반드시 트랜잭션 커밋 전에 호출한다(커밋 후엔 리스너로 보유가 반영돼 오판).
     function isEggKind(k){ return k==='egg'||k==='ddeul'; }   // 뜰알(ddeul)은 펫알과 동일 취급(펫 지급·연출)
     function gachaNew(kind, res){ if(!res) return false;
@@ -9547,10 +9560,11 @@
       let res, dup=false, refund=0;
       if(kind==='egg'){ res = forced ? pickTierMember(gachaCatTierMap(), forced) : rollFromPool(gachaCatTierMap()); if(!res) return; dup=ownsCat(res.id); refund=dup?petDupRefund(res.id):0; }
       else { res=rollBoxReward(null, forced); if(!res) return;
-        if(res.type==='floor'){ dup=ownsFloor(res.id)&&res.id!=='default'; refund=dup?Math.round((TIER_PRICE[res.tier]||0)*0.2):0; }
-        else if(res.type==='wall'){ dup=ownsWall(res.id)&&res.id!=='default'; refund=dup?Math.round((TIER_PRICE[res.tier]||0)*0.2):0; }
-        else if(res.type==='bgfx'){ dup=ownsBgfx(res.id); refund=dup?Math.round((TIER_PRICE[res.tier]||0)*0.2):0; }   // 배경효과=own-once
-        else { dup=false; refund=0; }   // 가구는 수량 누적(상점 구매와 동일) — 중복이어도 환급 아닌 qty+1이라 '새로 하나 더' 리빌(환급 표기 없음)
+        if(res.type==='floor'){ dup=ownsFloor(res.id)&&res.id!=='default'; }
+        else if(res.type==='wall'){ dup=ownsWall(res.id)&&res.id!=='default'; }
+        else if(res.type==='bgfx'){ dup=ownsBgfx(res.id); }   // 배경효과=own-once
+        else { dup=itemQty(res.id)>=ITEM_MAX_QTY; }   // 🧰 가구: 12개 미만이면 수량 누적(환급 없음), 캡이면 환급 리빌
+        refund=dup?dupRefundOf(res.tier):0;
       }
       const isNew=gachaNew(kind,res);   // 지급 전 판정(NEW 배지)
       const hit=isTopTier(res.tier);    // 🔮 신화↑면 천장 리셋
@@ -9624,8 +9638,8 @@
         if(res.type==='floor') dup=ownsFloor(res.id)&&res.id!=='default';
         else if(res.type==='wall') dup=ownsWall(res.id)&&res.id!=='default';
         else if(res.type==='bgfx') dup=ownsBgfx(res.id);
-        else dup=(typeof itemQty==='function'?itemQty(res.id):0)>0;   // 가구 중복(qty>0)도 환급 표시(C5)
-        refund=dup?Math.round((TIER_PRICE[res.tier]||0)*0.2):0; }
+        else dup=itemQty(res.id)>=ITEM_MAX_QTY;   // 🧰 가구: 12개 캡 초과일 때만 환급(트랜잭션 grantBoxReward와 동일 판정 — 예전 표시·지급 불일치 해소)
+        refund=dup?dupRefundOf(res.tier):0; }
       const isNew=gachaNew(kind,res);   // 지급 전 판정(NEW 배지)
       const hit=isTopTier(res.tier);
       pullBegin(kind, true);   // 🔒 잠금 + 즉시 '준비' 오버레이(무지개)
@@ -11087,7 +11101,7 @@
       let raw=[];
       if(scenario==='legendUp'){ const tiers=['legend','limited']; for(let i=0;i<10;i++) raw.push(rollB(tiers[Math.floor(Math.random()*tiers.length)])); }
       else { for(let i=0;i<10;i++) raw.push(rollB()); if(scenario==='oneLimited') raw[Math.floor(Math.random()*10)]=rollB('limited'); }
-      const list=raw.map(function(r){ const isSkin=(r.type==='floor'||r.type==='wall'||r.type==='bgfx'), dup=isSkin&&boxOwned(r); return { id:r.id, tier:r.tier, type:r.type, kind:'box', rainbow:(Math.random()<rbUpgradeChance(r.tier)), dup:dup, refund:dup?Math.round((TIER_PRICE[r.tier]||0)*0.2):0, isNew:!boxOwned(r) }; });   // 가구는 수량 누적(중복/환급 없음)
+      const list=raw.map(function(r){ const isSkin=(r.type==='floor'||r.type==='wall'||r.type==='bgfx'), dup=(isSkin&&boxOwned(r))||(r.type==='item'&&itemQty(r.id)>=ITEM_MAX_QTY); return { id:r.id, tier:r.tier, type:r.type, kind:'box', rainbow:(Math.random()<rbUpgradeChance(r.tier)), dup:dup, refund:dup?dupRefundOf(r.tier):0, isNew:!boxOwned(r) }; });   // 실지급 정책 미러: 스킨 중복·가구 12개 캡=10% 환급
       closeSheet(); _fx=null; runTenGachaFx(list, { preview:true, kind:'box', theme:theme||'' });
     }
 
