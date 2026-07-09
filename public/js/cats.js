@@ -5380,10 +5380,9 @@
       }).then(r=>{ if(r&&r.committed&&add>0) toast('❤ 받은 좋아요 '+hit+'개 달성! 금화 +'+add); }).catch(()=>{}); }
     // 📖 도감 마일스톤 — 전체 25/50/75%(은화+금화) + 종별 완성(금화, 종 규모 비례). 100%는 업적(ach_dexall)이 담당. game.dexClaims에 멱등 마커.
     const DEX_MILESTONES=[{pct:25,c:50,g:2},{pct:50,c:120,g:5},{pct:75,c:250,g:10}];
-    // 📖 도감 대상 = '획득 가능한' 펫만. 휴면 한정펫(exclusive & 가챠 비활성 = 미출시 예약 콘텐츠)은 분모·종완성·그리드 어디에도 넣지 않는다
-    //  → 100%/ach_dexall/종 완성이 영구 잠기던 문제 해소 + '노출 금지' 준수(활성화 아님, 단순 제외). 삭제펫은 이미 PET_CATALOG에 없음. 이미 보유한 예외 펫이 있으면 포함(보유는 카운트).
-    function dexCatalog(){ const tm=(typeof effCatTier==='function')?effCatTier():CAT_TIER, own=(state.game&&state.game.owned&&state.game.owned.cats)||{};
-      return PET_CATALOG.filter(function(c){ const t=tm[c.id]||CAT_TIER[c.id]||'normal'; return own[c.id] || !(t==='exclusive' && !isExGachaActive(c.id)); }); }
+    // 📖 도감 대상 = 전체 펫(2026-07 무지개 개편·사용자 지침): 한정 전 펫이 무지개알(rainbowCatTierMap=effCatTier)에서 출현하므로
+    //    구 '휴면 한정 제외' 필터 폐지 — 분모·종완성·그리드에 한정 포함(전부 획득 가능 콘텐츠). isExGachaActive는 펫알(gachaCatTierMap) 풀에만 계속 사용.
+    function dexCatalog(){ return PET_CATALOG.slice(); }
     function dexCatIds(){ return dexCatalog().map(function(c){ return c.id; }); }
     function _dexSpecies(owned){ const bs={}; dexCatalog().forEach(c=>{ const b=bs[c.species]=bs[c.species]||{t:0,o:0}; b.t++; if(owned[c.id]) b.o++; }); return bs; }
     function _dexUnclaimed(g){ const own=(g.owned&&g.owned.cats)||{}, cl=g.dexClaims||{}, ids=dexCatIds();
