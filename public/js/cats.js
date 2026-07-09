@@ -6827,7 +6827,7 @@
       const mtxt='수익 x'+mult.toFixed(2)+' (애정·도감·기록)'+(boost?' · 🍀오늘 기록 부스트':' · 오늘 기록하면 +부스트')+(bmult>1?' · 💊영양제 ×'+bmult+' '+fmtDur(brem):'');
       const hasItemDrop=!!(g && (g.home.rooms||[]).some(R=>((R&&R.drops)||[]).some(d=>d&&d.kind!=='gold')));   // 🌈 알·박스류 드랍 대기 → 수확 버튼 은은한 무지개(금화만은 제외, 사용자 확정)
       return '<div class="cr-topright">'+
-        (bmult>1?'<span class="cr-boost" title="영양제 부스트 · 수확 수익 ×'+bmult+' · '+fmtDur(brem)+' 남음">💊×'+bmult+'</span>':'')+
+        (bmult>1?'<span class="cr-boost" title="영양제 부스트 · 수확 수익 ×'+bmult+' · '+fmtDur(brem)+' 남음">'+consumSvg('tonic',{h:12})+'×'+bmult+'</span>':'')+   // 💊 부스트 배지 아이콘 = 픽셀 약병(M_TONIC — 이모지 금지 규칙)
         '<span class="cr-mood" title="행복도 '+mood+'% — 밥·물 챙기고 🌾수확하면 올라가요(똥은 감점) · 행복할수록 자동 은화↑">'+heartSvg({h:13,off:mood<45})+'<b>'+mood+'%</b></span>'+
         '<button class="cr-batch'+(pend>0?' has-yield':'')+(boost||bmult>1?' boosted':'')+(hasItemDrop?' rb-wait':'')+'" onclick="event.stopPropagation();batchCare(this)" title="'+mtxt+'" aria-label="전체 수확: 행복도 기반 자동 은화 받고 밥·물 채우고 똥 정리 ('+mtxt+')">수확'+(pend>0?'<span class="yield-chip">+'+pend+'</span>':'')+'</button>'+walletHtml()+'</div>'; }
     // 배치 가구를 무대 바닥에 배경으로(가로=열, 앞뒤 깊이=행)
@@ -7014,7 +7014,16 @@
     function _vpipImgLoad(u){ return new Promise(function(res,rej){ const im=new Image(); im.onload=function(){ res(im); }; im.onerror=rej; im.src=u; }); }
     // Image → ImageBitmap. ⚠️ pxSvg 산출 SVG는 height만 있어 createImageBitmap(img)이 "intrinsic dimensions" 오류로 실패(실측 —
     // fx/파티클이 조용히 전부 걸러지던 버그) → 캔버스 경유 2배 래스터 폴백(도트 유지, 워커에서 smoothing off로 1:1 환산).
-    function _vpipBmp(url){ return _vpipImgLoad(url).then(function(im){
+    // filt(선택)=CSS filter 문자열(염색) — 🎨 메인스레드 캔버스에서 비트맵에 '미리 베이크'해 전송한다.
+    //  워커 ctx.filter는 환경(GPU 가속 캔버스·모바일)에 따라 무시되거나 출력이 비는 사례가 있어(염색 펫이 비디오 PiP에서 안 보이던 버그)
+    //  dock과 같은 문서 컨텍스트에서 입힌다. 필터 미지원/실패 시 미염색 원본 폴백(펫은 항상 보임).
+    function _vpipBmp(url, filt){ return _vpipImgLoad(url).then(function(im){
+      if(filt){ try{
+        const w=Math.max(1,Math.round((im.naturalWidth||im.width||1)*_VPIP_SC)), h=Math.max(1,Math.round((im.naturalHeight||im.height||1)*_VPIP_SC));
+        const c=document.createElement('canvas'); c.width=w; c.height=h;
+        const x=c.getContext('2d'); x.imageSmoothingEnabled=false; x.filter=filt;
+        if(x.filter && x.filter!=='none'){ x.drawImage(im,0,0,w,h); return createImageBitmap(c); }
+      }catch(e){} }
       return createImageBitmap(im).catch(function(){
         const w=Math.max(1,Math.round((im.naturalWidth||im.width||1)*_VPIP_SC)), h=Math.max(1,Math.round((im.naturalHeight||im.height||1)*_VPIP_SC));
         const c=document.createElement('canvas'); c.width=w; c.height=h;
@@ -7074,7 +7083,7 @@
         const ax = md==='left'?0 : md==='right'?W : (gridLeftFrac(c)+gridSpanFrac(footW)/2)*W;
         return ax + gw*(md==='left'?0 : md==='right'?-1 : -0.5); }
       const list=placedList().sort((a,b)=>a.r-b.r); distributePoops(list);
-      const flo=[], oth=[], wall=[], fx=[];
+      const flo=[], oth=[], wall=[], fx=[], spots=[];
       // 연출 가구면 base(정지)만 정지 비트맵에 남기고 움직이는 레이어를 fx로 분리 — furnLiveSvg의 palPick 분리와 동일 규칙. frozen(모션축소·lite)이면 통짜 정적.
       function baseSvg(id, fh, xx, yy, gw, flip, fr){
         const a=(!frozen)&&FURN_ANIM[id];
@@ -7092,6 +7101,8 @@
         const tap=(p.itemId==='bowl'||p.itemId==='waterbowl');
         const it={ url:_svgUri(tap? furnRoomSvg(p.itemId,p.key,{h:fh}) : baseSvg(p.itemId, fh, x, yB-fh, gw, p.flip, fr)), x:x, y:yB-fh, w:gw, h:fh, flip:!!p.flip, fr:fr };
         (isFloorItem(p.itemId)?flo:oth).push(it);
+        if(INTERACTIVE_FURN[p.itemId] && !isFloorItem(p.itemId)){ const sp=furnSpot({hh:40,sw:40},{itemId:p.itemId, fh:fh});   // 🪑 워커 미니 배회용 상호작용 스팟(중앙x·깊이·올림px·머무는 시간) — dock furnSpot 재사용(캠 좌표계)
+          spots.push({ x:Math.round((x+gw/2)*10)/10, depth:Math.round(depth*1000)/1000, lift:Math.round(sp.lift||0), dur:Math.round(sp.dur||20000) }); }
         if(p.itemId==='litterbox'){ const ph=Math.max(6,Math.round(fh*0.32));   // propMarkup의 똥 슬롯 %와 동일
           (p._poops||[]).forEach(function(s){ oth.push({ url:_svgUri(poopSvg({h:ph})), x:x+gw*(20+(s%3)*26)/100, y:(yB-fh)+fh*(30+((s/3|0)*20))/100, w:ph, h:ph, flip:false, fr:fr+0.01 }); }); }
       });
@@ -7120,7 +7131,7 @@
             kf:'droptw', dur:0.9, ox:0.5, oy:0.5, ph:Math.random() }); }
       });
       oth.sort(function(a,b){ return a.fr-b.fr; });
-      return { paint: flo.concat(wall).concat(oth), fx: fx };
+      return { paint: flo.concat(wall).concat(oth), fx: fx, spots: spots };
     }
     // 🌅 씬(움직이는 벽지/바닥)·🌌 배경효과 조각 — wallSceneHtml/floorSceneHtml/bgfxOverlayHtml의 배치 수식을 미러.
     // statics=정지 조각(back 비트맵에 베이크: 언덕·해·무지개·달), parts=워커가 매 프레임 그리는 파티클(구름·별·풀꽃·나비·낙엽·잠자리·반딧불).
@@ -7214,10 +7225,10 @@
           const fx=[]; pl.fx.forEach(function(f,i){ if(fBmps[i]){ f.bmp=fBmps[i]; delete f.url; f.frozen=frozen; fx.push(f); } });
           const pts=[]; parts.forEach(function(p,i){ if(ptBmps[i]){ p.bmp=ptBmps[i]; delete p.url; pts.push(p); } });
           return Promise.all([createImageBitmap(backCv), createImageBitmap(furnCv)]).then(function(bs){
-            return { back:bs[0], furn:bs[1], fx:fx, parts:pts };
+            return { back:bs[0], furn:bs[1], fx:fx, parts:pts, spots:pl.spots||[] };
           });
-        }).catch(function(){ return { back:null, furn:null, fx:[], parts:[] }; });
-      }catch(e){ return Promise.resolve({ back:null, furn:null, fx:[], parts:[] }); }   // 씬 실패해도 펫만으로 진행
+        }).catch(function(){ return { back:null, furn:null, fx:[], parts:[], spots:[] }; });
+      }catch(e){ return Promise.resolve({ back:null, furn:null, fx:[], parts:[], spots:[] }); }   // 씬 실패해도 펫만으로 진행
     }
     // 활성 펫 에셋(ImageBitmap): 스프라이트=걷기 시트+south(+frontWalk면 east 스틸) / SVG 매트릭스 펫=정면 스틸(제자리 — 정면 이동 금지 불변식)
     function _vpipPetAssets(){ const list=activeCats().slice(0,slotCount()); ensurePetArtMany(list);
@@ -7225,12 +7236,13 @@
         if(hasSprite(id)){ const spr=PET_SPRITES[id]; if(spr.runtime&&!spr.urls) return Promise.resolve(null);   // 아트 로딩 전 — 도착 시 _petArtRerenderNow가 재동기화
           const fw=!!spr.frontWalk;
           const cosm=petCosm(id);   // 💗 코스메틱(모자·버디)도 워커에 전사 — dock와 동일하게 보이게(가구 연출 _VPIP_FX_* 선례)
-          const hatP=(cosm.hat&&HAT_M[cosm.hat])?_vpipBmp('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(hatSvg(cosm.hat,{h:60}))):Promise.resolve(null);
-          const budP=BUDDY_CATALOG[cosm.buddy]?_vpipBmp('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(buddySvgOf(cosm.buddy,{h:30}))):Promise.resolve(null);
+          const dyeF=dyeFilterCss(petDyeOf(id));   // 🎨 염색은 시트/스틸 비트맵에 베이크(_vpipBmp filt — 워커 ctx.filter 미의존). 모자·버디는 미염색(dock 동일).
+          const hatP=(cosm.hat&&HAT_M[cosm.hat])?_vpipBmp('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(hatSvg(cosm.hat,{h:60}))).catch(function(){ return null; }):Promise.resolve(null);
+          const budP=BUDDY_CATALOG[cosm.buddy]?_vpipBmp('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(buddySvgOf(cosm.buddy,{h:30}))).catch(function(){ return null; }):Promise.resolve(null);   // 코스메틱 로드 실패가 펫 본체를 드랍시키지 않게 개별 폴백
           const headP=new Promise(function(res){ try{ measureHeadPad(id,res); }catch(e){ res(0.2); } });
           const footP=new Promise(function(res){ try{ measureFootPad(id,res); }catch(e){ res(null); } });   // 🐾 발밑 여백 실측 — 워커 고정 0.16 가정은 신화·한정(실측 ~0.30)에서 발이 떠 벽지를 걷는 버그
-          return Promise.all([_vpipBmp(sprWalkUrl(spr)), _vpipBmp(sprStill(id,'south')), fw?_vpipBmp(sprStill(id,'east')):Promise.resolve(null), hatP, budP, headP, footP])
-            .then(function(bs){ return { hh:hh, frames:spr.frames||6, frontWalk:fw, sheet:bs[0], south:bs[1], east:bs[2]||null, hat:bs[3]||null, buddy:bs[4]||null, btype:cosm.buddy||'', headF:(bs[5]==null?0.2:bs[5]), fp:(bs[6]==null?0.16:bs[6]), dyeF:dyeFilterCss(petDyeOf(id)) }; })
+          return Promise.all([_vpipBmp(sprWalkUrl(spr), dyeF), _vpipBmp(sprStill(id,'south'), dyeF), fw?_vpipBmp(sprStill(id,'east'), dyeF):Promise.resolve(null), hatP, budP, headP, footP])
+            .then(function(bs){ return { hh:hh, frames:spr.frames||6, frontWalk:fw, sheet:bs[0], south:bs[1], east:bs[2]||null, hat:bs[3]||null, buddy:bs[4]||null, btype:cosm.buddy||'', headF:(bs[5]==null?0.2:bs[5]), fp:(bs[6]==null?0.16:bs[6]) }; })
             .catch(function(){ return null; });
         }
         return _vpipBmp('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(catFace(id,{h:hh})))
@@ -7241,7 +7253,7 @@
     let _vpipWURL=null;
     function _vpipWorkerUrl(){ if(_vpipWURL) return _vpipWURL;
       const src=[
-        "var W=360,H=200,SC=2,ctx=null,cvs=null,writer=null,back=null,furn=null,fx=[],parts=[],pets=[],rm=false,last=0,timer=0;",
+        "var W=360,H=200,SC=2,ctx=null,cvs=null,writer=null,back=null,furn=null,fx=[],parts=[],pets=[],spots=[],occ={},rm=false,last=0,timer=0;",
         "function eio(u){ return u<0.5?2*u*u:1-Math.pow(-2*u+2,2)/2; }",
         "function tri(u){ return u<0.5?eio(u*2):eio((1-u)*2); }",
         "function ph(t,d,del){ var u=((t-(del||0))/d)%1; return u<0?u+1:u; }",
@@ -7289,30 +7301,43 @@
         "    if(p.bd){ ctx.globalAlpha=p.frozen?1:(.3+.7*tri(ph(t,p.bd,0))); }",
         "    ctx.drawImage(p.bmp, -w/2, -p.h/2, w, p.h); }",
         "  }catch(e){} ctx.restore(); }",
-        "function setPets(list){ pets=(list||[]).map(function(p,i){ var e={}; for(var k in p) e[k]=p[k];",
+        "function setPets(list){ occ={}; pets=(list||[]).map(function(p,i){ var e={}; for(var k in p) e[k]=p[k]; e.lift=0; e.spot=null; e.tz=null;",
         "  e.x=16+Math.random()*(W-e.hh-32); e.dir=Math.random()<0.5?-1:1; e.v=0.0084+Math.random()*0.0108;",   // 🐾 dock 엔진 미러: 0.14~0.32 × 0.06 = 0.0084~0.0192 px/ms(예전 0.018~0.038은 ~2배 빨라 PiP에서 펫이 급해 보임)
         "  e.wd=Math.max(450,Math.min(1500,(0.42*e.hh)/(e.v*0.966)));",   // 걷기 필름 한 사이클(ms) — 메인 walkDur(stride/속도, 0.45~1.5s) 미러(발 미끄러짐 방지)
         "  e.depth=Math.random(); e.vz=(Math.random()*2-1)*0.000008;",   // 앞뒤(깊이) 배회도 dock와 동일(±0.000008/ms — 예전 0.00004는 5배)
         "  e.seed=Math.random()*6.28;",   // 💗 버디(동행) 경로 위상 — 펫마다 어긋나게
         "  e.mode=(rm||e.stationary)?'pause':'roam'; e.pt=1e9; if(!rm&&!e.stationary) e.pt=0; return e; }); }",
+        "function relSpot(a){ if(a.spot!=null){ delete occ[a.spot]; a.spot=null; } a.lift=0; }",
         "function step(dt){ if(rm) return; for(var i=0;i<pets.length;i++){ var a=pets[i]; if(a.stationary) continue;",
-        "  if(a.mode==='pause'){ a.pt-=dt; if(a.pt<=0){ a.mode='roam'; a.dir=Math.random()<0.5?-1:1; } continue; }",
+        "  if(a.mode==='pause'){ a.pt-=dt; if(a.pt<=0){ a.mode='roam'; relSpot(a); a.dir=Math.random()<0.5?-1:1; } continue; }",
         "  var ds=1.5-(1.5-0.86)*a.depth, w=a.hh*ds;",
+        // 🪑 가구로 대각선 걷기 — dock stepActors goal 수식 미러(x 진척 비례 깊이 수렴·도착 스냅·자리 올라앉기 lift)
+        "  if(a.mode==='goal'){ var g=spots[a.spot];",
+        "    if(!g){ a.mode='roam'; relSpot(a); continue; }",
+        "    var cx=a.x+w/2, dxr=g.x-cx, adx=Math.abs(dxr), nearX=adx<6;",
+        "    if(!nearX){ a.dir=(dxr>0)?1:-1; a.x+=a.dir*a.v*dt; }",
+        "    var dd=g.depth-a.depth, add=Math.abs(dd);",
+        "    var stp=nearX?Math.min(add,0.00008*dt):Math.min(add, add*((a.v*dt)/Math.max(adx,1))+0.00003*dt);",
+        "    a.depth+=(dd>0?1:-1)*stp;",
+        "    if(nearX){ a.x=Math.max(2,Math.min(W-w,g.x-w/2)); if(add<0.03){ a.mode='pause'; a.pt=g.dur*(0.45+Math.random()*0.55); a.lift=g.lift||0; } }",
+        "    continue; }",
         "  a.x+=a.dir*a.v*dt; if(a.x<2){ a.x=2; a.dir=1; } if(a.x>W-w){ a.x=Math.max(2,W-w); a.dir=-1; }",
-        "  a.depth=Math.max(0,Math.min(1,a.depth+a.vz*dt)); if(Math.random()<0.004) a.vz=(Math.random()*2-1)*0.000008;",
+        // 🚶 앞뒤 산책(tz=목표 깊이) — '처음 배치된 가로선에서만 왔다갔다' 버그 수정: 목표 깊이로 걸으며 대각선 이동(전체 범위 ~20초)
+        "  if(a.tz!=null){ var dz=a.tz-a.depth, sz=Math.min(Math.abs(dz),0.00005*dt); a.depth+=(dz>0?1:-1)*sz; if(Math.abs(dz)<0.012) a.tz=null; }",
+        "  else { a.depth=Math.max(0,Math.min(1,a.depth+a.vz*dt)); if(Math.random()<0.004) a.vz=(Math.random()*2-1)*0.000008; if(Math.random()<0.0016) a.tz=Math.random(); }",
+        "  if(spots.length && Math.random()<0.004){ var free=[]; for(var s2=0;s2<spots.length;s2++){ if(occ[s2]==null) free.push(s2); }",
+        "    if(free.length){ var si=free[Math.floor(Math.random()*free.length)]; occ[si]=i; a.spot=si; a.mode='goal'; continue; } }",
         "  if(Math.random()<0.0022){ a.mode='pause'; a.pt=2200+Math.random()*3800; }",
         "} }",
         "function drawPet(a,now){ var ds=1.5-(1.5-0.86)*a.depth, h=a.hh*ds, w=h;",
-        "  var y=H-(a.depth*0.53*H)-h+h*(a.fp!=null?a.fp:0.16);",   // 발밑 여백 = 펫별 실측(fp) — dock의 measureFootPad와 동일(고정 0.16은 신화·한정에서 발이 ~14% 떠 벽지 걷기)
+        "  var y=H-(a.depth*0.53*H)-h+h*(a.fp!=null?a.fp:0.16)-(a.lift||0);",   // 발밑 여백 = 펫별 실측(fp) — dock의 measureFootPad와 동일(고정 0.16은 신화·한정에서 발이 ~14% 떠 벽지 걷기)
         "  var moving=(a.mode==='roam'&&!a.stationary), flip=(moving&&a.dir<0);",
         "  ctx.save(); if(flip){ ctx.translate(a.x+w,0); ctx.scale(-1,1); } else { ctx.translate(a.x,0); }",
         "  try{",
-        "    if(a.dyeF){ try{ ctx.filter=a.dyeF; }catch(e0){} }",   // 🎨 염색 필터 전사(dock dyeFilterCss와 동일 문자열 — 절대색 체인 포함) — 모자는 아래서 필터 해제 후 그림
-        "    if(moving&&a.sheet&&!a.frontWalk){ var sw=a.sheet.width/a.frames, fr=Math.floor(now/((a.wd||660)/a.frames))%a.frames; ctx.drawImage(a.sheet, fr*sw,0,sw,a.sheet.height, 0,y,w,h); }",   // 프레임 간격 = 사이클(wd)/프레임수 — 속도 연동(예전 고정 110ms는 발놀림이 빨랐음)
+                "    if(moving&&a.sheet&&!a.frontWalk){ var sw=a.sheet.width/a.frames, fr=Math.floor(now/((a.wd||660)/a.frames))%a.frames; ctx.drawImage(a.sheet, fr*sw,0,sw,a.sheet.height, 0,y,w,h); }",   // 프레임 간격 = 사이클(wd)/프레임수 — 속도 연동(예전 고정 110ms는 발놀림이 빨랐음)
         "    else if(moving&&a.frontWalk&&a.east){ ctx.drawImage(a.east,0,y,w,h); }",
         "    else if(a.south){ ctx.drawImage(a.south,0,y,w,h); }",
-        "    if(a.dyeF){ try{ ctx.filter='none'; }catch(e1){} }",
-        "    if(a.hat){ var hw2=w*0.30*(a.hat.width/a.hat.height), hh3=w*0.30; ctx.drawImage(a.hat, w/2-hw2/2, y+h*(a.headF||0.2)-hh3*0.82, hw2, hh3); }",   // 💗 모자 — dock .cd-hat(top:--hp, -82%) 전사(펫 transform 안이라 flip·깊이 동행)
+                "    if(a.hat){ var hw2=w*0.30*(a.hat.width/a.hat.height), hh3=w*0.30; ctx.drawImage(a.hat, w/2-hw2/2, y+h*(a.headF||0.2)-hh3*0.82, hw2, hh3); }",   // 💗 모자 — dock .cd-hat(top:--hp, -82%) 전사(펫 transform 안이라 flip·깊이 동행)
         "  }catch(e){}",
         "  ctx.restore();",
         "  if(a.buddy){ try{ var t2=now/1000, bw=w*(a.btype==='firefly'?0.15:0.20), bh2=bw*(a.buddy.height/a.buddy.width);",   // 💗 동행 버디 — 경로(느린 궤도)+날갯짓/발광 다층(dock cbpath+cbbob/cbglow 전사)
@@ -7337,7 +7362,8 @@
         "function tick(){ ticks++; var now=Date.now(), dt=Math.min(90, last?now-last:33); last=now; step(dt); draw(now);",
         "  if(writer){ try{ if(writer.desiredSize>0){ var vf=new VideoFrame(cvs, {timestamp: now*1000}); writer.write(vf); } }catch(e){} }",
         "}",
-        "function setScene(d){ back=d.back||null; furn=d.furn||null; fx=d.fx||[]; parts=d.parts||[]; }",
+        "function setScene(d){ back=d.back||null; furn=d.furn||null; fx=d.fx||[]; parts=d.parts||[]; spots=d.spots||[]; occ={};",
+        "  for(var i3=0;i3<pets.length;i3++){ var p3=pets[i3]; p3.spot=null; p3.lift=0; if(p3.mode==='goal') p3.mode='roam'; } }",
         "onmessage=function(ev){ var d=ev.data||{};",
         "  if(d.t==='init'){ SC=d.sc||2; W=d.W||360; H=d.H||200;",
         "    if(d.sink){ cvs=new OffscreenCanvas(W*SC, H*SC); writer=d.sink.getWriter(); }",
@@ -7345,7 +7371,7 @@
         "    ctx=cvs.getContext('2d'); rm=!!d.rm; setScene(d); setPets(d.pets); last=0; clearInterval(timer); timer=setInterval(tick,33); }",
         "  else if(d.t==='scene'){ setScene(d); }",
         "  else if(d.t==='pets'){ setPets(d.pets); }",
-        "  else if(d.t==='ping'){ postMessage({t:'pong', ticks:ticks, fx:fx.length, parts:parts.length, pets:pets.length, back:!!back, furn:!!furn}); }",
+        "  else if(d.t==='ping'){ postMessage({t:'pong', ticks:ticks, fx:fx.length, parts:parts.length, pets:pets.length, spots:spots.length, back:!!back, furn:!!furn}); }",
         "};"
       ].join('\n');
       _vpipWURL=URL.createObjectURL(new Blob([src],{type:'text/javascript'})); return _vpipWURL; }
@@ -7377,7 +7403,7 @@
         const worker=new Worker(_vpipWorkerUrl());
         worker.onerror=function(e){ try{ console.warn('비디오 PiP 워커 오류', (e&&e.message)||e); }catch(_e){} };   // 워커 스크립트 오류 가시화(조용한 정지 방지)
         const xf=(off?[off]:[]).concat(sink?[sink]:[]).concat(_vpipKitXfer(kit)); pets.forEach(function(p){ ['sheet','south','east','hat','buddy'].forEach(function(k){ if(p[k]) xf.push(p[k]); }); });
-        worker.postMessage({t:'init', canvas:off, sink:sink, sc:_VPIP_SC, W:_VPIP_W, H:_VPIP_H, back:kit.back, furn:kit.furn, fx:kit.fx, parts:kit.parts, rm:reducedMotion(), pets:pets}, xf);
+        worker.postMessage({t:'init', canvas:off, sink:sink, sc:_VPIP_SC, W:_VPIP_W, H:_VPIP_H, back:kit.back, furn:kit.furn, fx:kit.fx, parts:kit.parts, spots:kit.spots||[], rm:reducedMotion(), pets:pets}, xf);
         const v=document.createElement('video'); v.muted=true; v.playsInline=true; v.autoplay=true;
         v.style.cssText='position:fixed;left:-99999px;top:0;width:'+_VPIP_W+'px;'; v.srcObject=stream; document.body.appendChild(v);
         _vpip={ video:v, canvas:cv, worker:worker, stream:stream,
@@ -7406,7 +7432,7 @@
       const ps=_vpipPropsSig();
       if(_vpip.sigProps!==ps){ _vpip.sigProps=ps;
         _vpipSceneKit().then(function(kit){ if(!vpipOpen()) return;
-          _vpip.worker.postMessage({t:'scene', back:kit.back, furn:kit.furn, fx:kit.fx, parts:kit.parts}, _vpipKitXfer(kit)); }); }
+          _vpip.worker.postMessage({t:'scene', back:kit.back, furn:kit.furn, fx:kit.fx, parts:kit.parts, spots:kit.spots||[]}, _vpipKitXfer(kit)); }); }
       const cs='c:'+activeCats().slice(0,slotCount()).map(id=>id+'~'+cosmSig(id)).join(',');   // 💗 코스메틱 변경도 재동기화
       if(_vpip.sigCats!==cs){ _vpip.sigCats=cs;
         _vpipPetAssets().then(function(pets){ if(!vpipOpen()) return;
@@ -10612,7 +10638,7 @@
         const selBannerW=_selWall?('<div class="selbanner">'+furnSvg(_selWall,{h:22})+'<span><b>'+escapeHtml(catFurnName(_selWall))+'</b> 걸기 — 격자를 <b>탭</b>하세요</span><button class="selx" onclick="selWallItem(\''+_selWall+'\')">취소</button></div>'):'';
         const wcatTabs='<div class="subseg placecat">'+WALL_PAL_CATS.map(c=>{ const n=ITEM_CATALOG.filter(it=>isWallItem(it.id)&&itemQty(it.id)>0&&(c[0]==='all'||wallAnchorOf(it.id)===c[0])).length;
           return '<button class="'+(_wallCat===c[0]?'on':'')+(n?'':' dim')+'"'+(n?'':' aria-disabled="true"')+' onclick="setWallCat(\''+c[0]+'\')">'+c[1]+(n?' <b>'+n+'</b>':'')+'</button>'; }).join('')+'</div>';
-        const wpalRow='<div class="palcatrow">'+wcatTabs+'<button class="palshop" onclick="openShop()" aria-label="알뜰샵 열기">'+coinSvg({h:13})+'알뜰샵</button></div>';
+        const wpalRow='<div class="palcatrow">'+wcatTabs+'</div>';   // 알뜰샵 바로가기 버튼 제거(사용자 지시 — 배치화면엔 미노출)
         body=selBannerW+wgrid+wallHint+wpalRow+'<div class="palette catinv">'+(wpal||'<div class="palempty">보유한 벽 가구가 없어요<br><span>랜덤박스에서 벽 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>')+'</div>'+skinPickerHtml('wall');
       } else {
         // 바닥 격자(12×8, 가로×깊이) — 기존 방꾸미기(드래그 이동·롱프레스). 벽 가구는 팔레트에서 제외.
@@ -10631,7 +10657,7 @@
         const dragHint='<div class="hintline" style="margin:8px 0 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5V5.5a1.5 1.5 0 0 1 3 0v5"/><path d="M12 10V4.5a1.5 1.5 0 0 1 3 0V10"/><path d="M15 9.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-1a6 6 0 0 1-5.2-3l-2-3.5a1.5 1.5 0 0 1 2.6-1.5L9 14"/></svg><b>꾹 눌러서</b> 끌면 배치·이동돼요(짧게 탭하면 선택·메뉴). 화면 스크롤과 겹치지 않아요.</div>';
         const palBody=pal||'<div class="palempty">이 분류에 보유한 가구가 없어요<br><span>알뜰샵·랜덤박스에서 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>';
         const selBanner=_selItem?('<div class="selbanner">'+furnSvg(_selItem,{h:22})+'<span><b>'+escapeHtml(catFurnName(_selItem))+'</b> 배치 중 — 격자를 <b>탭</b>하세요</span><button class="selx" onclick="selItem(\''+_selItem+'\')">취소</button></div>'):'';   // 탭-투-플레이스 선택 상태 가시화
-        const palRow='<div class="palcatrow">'+catTabs+'<button class="palshop" onclick="openShop()" aria-label="알뜰샵 열기">'+coinSvg({h:13})+'알뜰샵</button></div>';   // 상시 알뜰샵 버튼
+        const palRow='<div class="palcatrow">'+catTabs+'</div>';   // 알뜰샵 바로가기 버튼 제거(사용자 지시 — 배치화면엔 미노출)
         body=selBanner+grid+dragHint+palRow+'<div class="palette catinv">'+palBody+'</div>'+skinPickerHtml('floor')+bgfxPickerHtml();
       }
       return '<div class="editwrap">'+preview+toggle+placeActionsBar()+body+'</div>';
