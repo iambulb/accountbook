@@ -2756,7 +2756,7 @@
       const type=val('bc_type'), qty=Math.floor(Number(val('bc_qty'))||0), msg=(val('bc_msg')||'').trim(), to=(val('bc_to')||'').trim().toUpperCase();
       if(!type){ toast('종류를 선택하세요', true); return; }
       if(qty<=0){ toast('수량을 1 이상 입력하세요', true); return; }
-      const consumKeys=['egg','box','ddeul'];
+      const consumKeys=['egg','box','ddeul','dye','dye_remover'];   // 🎨 염색약·리무버 — 상점 비매(이벤트·선물 지급 전용)라 선물로만 뿌린다
       const gift = (consumKeys.indexOf(type)>=0) ? { type:'consum', key:type, qty:qty } : { type:type, qty:qty };   // coins/gold는 그대로
       if(msg) gift.msg=msg.slice(0,200);
       gift.at=new Date().toISOString();
@@ -2772,7 +2772,7 @@
       db.ref('config/broadcast').push(gift).then(function(){ toast('📣 전체 선물을 보냈어요 — 각 사용자가 접속 시 받습니다'); if(typeof openDevBroadcast==='function') openDevBroadcast(); }).catch(_cfgWriteErr);
     }
     function openDevBroadcast(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용', true); return; }
-      const opts=[['coins','은화'],['gold','금화'],['rbcoin','무지개동전'],['egg','펫알'],['box','랜덤박스'],['ddeul','뜰알']];   // 🌈 무지개알/박스 소비템은 폐지(수령분은 동전 환산) — 동전으로 직접 지급
+      const opts=[['coins','은화'],['gold','금화'],['rbcoin','무지개동전'],['egg','펫알'],['box','랜덤박스'],['ddeul','뜰알'],['dye','염색약'],['dye_remover','염색 리무버']];   // 🌈 무지개알/박스 소비템은 폐지(수령분은 동전 환산) — 동전으로 직접 지급. 🎨 염색약·리무버=지급 전용 소비템
       let h='<div class="note">선물함에 아이템+<b>메시지</b>를 넣어 보내요(예: 오류로 인한 사과의 선물). <b>받는 사람</b>을 <b>비우면 전체</b>(공개 config/broadcast), <b>친구코드</b>를 넣으면 <b>그 사용자에게만 비공개</b>로 갑니다. 각 사용자는 접속 시 1회 수령.</div>';
       h+='<div class="field"><label for="bc_to">받는 사람(친구코드)</label><input class="input" id="bc_to" maxlength="6" autocapitalize="characters" spellcheck="false" placeholder="비우면 전체 · 예: ABC123" style="text-transform:uppercase;"></div>';
       h+='<div class="field"><label for="bc_type">종류</label><select class="input" id="bc_type">'+opts.map(function(o){ return '<option value="'+o[0]+'">'+o[1]+'</option>'; }).join('')+'</select></div>';
