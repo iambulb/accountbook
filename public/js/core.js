@@ -21,6 +21,7 @@
       todos:[], todoShare:{},   // 그룹 할일 목록(ws/{wsId}/todos) / (레거시) 멤버별 공유 플래그
       myTodos:[],   // 내 개인 할일(user-global: users/{uid}/todos) — 워크스페이스 무관
       friends:{}, friendReqs:{}, todoPublic:false, friendCode:'', friendPub:{},   // 친구 관계·받은 요청·내 공개 플래그·내 코드·친구별 공개여부(users/{uid}/…)
+      todoShare:{},   // 🔐 친구별 할일 공유 토글(users/{uid}/todoShare/{fuid}=true|false) — 미설정 친구는 todoPublic(기본값) 폴백. OFF면 그 친구와 서로의 할일이 안 보임
       friendLikes:{}, friendHomeChangedByUid:{}, myLikeCount:0, _friendCam:null,   // 친구별 집 좋아요수·집 변경시각 / 내 받은 좋아요 / 방문 중 친구 캠 컨텍스트
       profilePublic:true,   // 내 프로필 공개 여부(비공개면 랭킹·비친구에게 은화+'알뜰' 익명)
       friendTodosByUid:{},   // 공개 친구별 개인 할일(피드)
@@ -424,14 +425,23 @@
       add('todos', s=>{ const o=s.val()||{}; state.myTodos=Object.keys(o).map(k=>Object.assign({id:k,scope:'personal',ownerUid:state.uid},o[k])); rerender('todo'); });
       add('friends', s=>{ state.friends=s.val()||{}; loadFriendPublics(); rerender('social'); });
       add('friendReqs', s=>{ state.friendReqs=s.val()||{}; rerender('social'); });
-      add('todoPublic', s=>{ state.todoPublic=!!s.val(); rerender('todo'); });
+      add('todoPublic', s=>{ state.todoPublic=!!s.val(); syncFriendTodoWatch(); rerender('todo'); });   // 기본값 변경도 워치 게이트(myShareTo 폴백)에 반영
+      add('todoShare', s=>{ state.todoShare=s.val()||{}; syncFriendTodoWatch(); rerender('social'); rerender('todo'); });   // 🔐 친구별 공유 토글 실시간 반영
       add('mailbox', s=>{ state.mailbox=s.val()||{}; if(typeof updateNewsBadge==='function') updateNewsBadge(); rerender('social'); });   // 🎁 친구가 보낸 선물함 — 소식(브랜드) 알림 뱃지도 갱신
     }
-    // 친구별 '할일 공개' 여부를 읽어 캐시(친구 목록 변경 시 갱신). 공개 친구만 피드에 노출.
+    // 🔐 내가 이 친구와 할일을 공유 중인가 — 친구별 토글(todoShare) 우선, 미설정이면 전체 기본값(todoPublic) 폴백.
+    function myShareTo(uid){ const v=state.todoShare&&state.todoShare[uid]; return (v!=null)?!!v:!!state.todoPublic; }
+    // 서로 보이는가 — 상대가 나와 공유 중(friendPub, 상대 토글 해석값) AND 내가 상대와 공유 중(내 토글). 한쪽이라도 OFF면 양방향 모두 숨김(사용자 지침).
+    function todoMutual(uid){ return !!(state.friendPub&&state.friendPub[uid]===true) && myShareTo(uid); }
+    // 친구별 '할일 공유' 여부를 읽어 캐시(친구 목록 변경 시 갱신) — 상대의 todoShare/{나} 우선, 미설정·규칙 미배포면 todoPublic 폴백.
     function loadFriendPublics(){
       const fr=Object.keys(state.friends||{}); state.friendPub=state.friendPub||{};
       Object.keys(state.friendPub).forEach(uid=>{ if(fr.indexOf(uid)<0){ delete state.friendPub[uid]; delete state.friendLikes[uid]; delete state.friendHomeChangedByUid[uid]; } });   // 삭제된 친구 정리
-      fr.forEach(uid=>{ db.ref('users/'+uid+'/todoPublic').once('value').then(s=>{ state.friendPub[uid]=!!s.val(); syncFriendTodoWatch(); rerender('social'); }).catch(()=>{});
+      const setPub=(uid,v)=>{ state.friendPub[uid]=!!v; syncFriendTodoWatch(); rerender('social'); };
+      const fallbackPub=uid=>{ db.ref('users/'+uid+'/todoPublic').once('value').then(s=>setPub(uid,!!s.val())).catch(()=>{}); };
+      fr.forEach(uid=>{ db.ref('users/'+uid+'/todoShare/'+state.uid).once('value')
+          .then(s=>{ const v=s.val(); if(v!=null) setPub(uid,!!v); else fallbackPub(uid); })
+          .catch(()=>fallbackPub(uid));   // todoShare 읽기 권한 없음(규칙 미배포 구환경) → 종전 todoPublic 동작 유지
         // 친구 목록/스토리용: 집 좋아요수 + 집 변경시각(무지개 링)
         db.ref('users/'+uid+'/homeLikes').once('value').then(s=>{ state.friendLikes[uid]=(typeof homeLikeCount==='function'?homeLikeCount(s.val()):0); rerender('social'); }).catch(()=>{});
         db.ref('homeCam/'+uid+'/changedAt').once('value').then(s=>{ state.friendHomeChangedByUid[uid]=s.val()||''; rerender('social'); }).catch(()=>{});   // 대표 방 공개 스냅샷의 변경시각(users/game은 비공개)
@@ -441,7 +451,7 @@
     // 공개 친구별 개인 할일(users/{uid}/todos) 실시간 리스너 동기화 → state.friendTodosByUid. 비공개/삭제 친구는 해제.
     let _friendTodoRefs={};
     function syncFriendTodoWatch(){
-      const want=Object.keys(state.friends||{}).filter(uid=>state.friendPub && state.friendPub[uid]===true);
+      const want=Object.keys(state.friends||{}).filter(uid=>todoMutual(uid));   // 🔐 양방향 공유(상대 토글 AND 내 토글)일 때만 구독
       // 더 이상 대상 아닌 친구 리스너 해제
       Object.keys(_friendTodoRefs).forEach(uid=>{ if(want.indexOf(uid)<0){ try{ _friendTodoRefs[uid].off(); }catch(e){} delete _friendTodoRefs[uid]; delete state.friendTodosByUid[uid]; } });
       // 새 공개 친구 리스너 부착

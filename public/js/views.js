@@ -651,15 +651,30 @@
     function friendDisplayName(uid){ if(uid===state.uid) return state.userName||'나'; const f=(state.friends&&state.friends[uid]); if(f&&f.name) return f.name; const m=(state.wsMeta&&state.wsMeta.members)||{}; return (m[uid]&&m[uid].name)||'친구'; }
     function todoMemberName(uid){ return friendDisplayName(uid); }
     // 내 개인 할일 공개 on/off(user-global) — 친구 스트립·열람 대상.
-    function toggleTodoPublic(){ if(!state.uid) return; const on=!!state.todoPublic; db.ref('users/'+state.uid+'/todoPublic').set(!on); toast(!on?'개인 할일을 친구에게 공개합니다':'공개를 껐습니다'); }
+    function toggleTodoPublic(){ if(!state.uid) return; const on=!!state.todoPublic; db.ref('users/'+state.uid+'/todoPublic').set(!on); toast(!on?'할일 공유 기본값을 켰어요(친구별 스위치가 우선)':'할일 공유 기본값을 껐어요(친구별 스위치가 우선)'); }
+    // 🔐 할일 공유 설정 시트 — 기본값 토글 + '친구별' ON/OFF 스위치(프라이버시: 골라서 공유). OFF면 그 친구와 서로의 할일이 안 보임(양방향 차단).
     function openTodoShareSheet(){
       const on=!!state.todoPublic;
-      let h='<p class="muted" style="margin:2px 2px 14px;line-height:1.55;">개인 할일을 <b>친구</b>에게 공개할지 정해요. 켜면 친구의 <b>할일 · 개인</b> 화면 상단 스트립에 내 프로필이 뜨고, 친구가 내 개인 할일을 읽기전용으로 볼 수 있어요.</p>';
-      h+='<div class="lst">'+lrow(MORE_ICON.share,'내 할일 공개','toggleTodoPublic();openTodoShareSheet()', on?'켜짐':'꺼짐')+'</div>';
+      let h='<p class="muted" style="margin:2px 2px 14px;line-height:1.55;">할일을 공유할 친구를 <b>친구별로</b> 고를 수 있어요. <b>ON</b>이면 서로의 할일이 보이고(상대도 나를 ON했을 때), <b>OFF</b>면 그 친구와 <b>서로의 할일이 보이지 않아요</b>.</p>';
+      h+='<div class="lst">'+lrow(MORE_ICON.share,'공유 기본값(스위치 안 만진 친구)','toggleTodoPublic();openTodoShareSheet()', on?'켜짐':'꺼짐')+'</div>';
+      const fr=Object.keys(state.friends||{});
+      h+='<div class="sech"><span class="l">친구별 공유</span><span class="s">'+fr.length+'</span></div><div class="card" style="padding:4px 12px;">'+
+        (fr.length?fr.map(function(u){ const f=state.friends[u]||{};
+          const shareOn=(typeof myShareTo==='function')?myShareTo(u):on;
+          const back=(state.friendPub&&state.friendPub[u]===true);   // 상대→나 공유 여부(참고 표기)
+          const sub=shareOn?(back?'서로 공유 중':'상대가 아직 공유 안 함'):'공유 꺼짐';
+          return '<div class="tdrow"><span class="tdwho">'+avatarHtml(u,f.name||'',28)+'</span>'+
+            '<b class="tdtitle">'+escapeHtml(f.name||'친구')+'<small style="display:block;font-weight:600;color:var(--sub);font-size:11px;">'+sub+'</small></b>'+
+            '<span class="fshare" role="switch" aria-checked="'+(shareOn?'true':'false')+'" aria-label="'+escapeHtml(f.name||'친구')+'와 할일 공유" onclick="toggleTodoShare(\''+u+'\')"><span class="switch'+(shareOn?' on':'')+'"><i></i></span></span></div>'; }).join('')
+        :'<div class="empty" style="padding:22px 6px;">아직 친구가 없어요 · 더보기 → 친구에서 추가하세요</div>')+'</div>';
       openSheet('할일 공유', h);
     }
-    function toggleTodoShare(){ const uid=state.uid; if(!uid) return; const on=!!(state.todoShare&&state.todoShare[uid]);
-      db.ref(wp('todoShare/'+uid)).set(!on); toast(!on?'할일을 공유합니다':'공유를 껐습니다'); openTodoShareSheet(); }
+    // 🔐 친구별 할일 공유 토글 — users/{me}/todoShare/{fuid}=true|false(미설정=기본값 todoPublic). OFF=양방향 숨김.
+    function toggleTodoShare(uid){ if(!state.uid||!uid) return; const cur=(typeof myShareTo==='function')?myShareTo(uid):!!state.todoPublic;
+      db.ref('users/'+state.uid+'/todoShare/'+uid).set(!cur)
+        .then(function(){ toast(!cur?'이 친구와 할일을 공유해요':'이 친구와 할일 공유를 껐어요 — 서로의 할일이 보이지 않아요'); if($('sheet')&&$('sheet').classList.contains('on')) openTodoShareSheet(); })
+        .catch(function(){ toast('설정을 저장하지 못했어요', true); });
+    }
     // ===== 친구(별도 추가) — 친구 코드로 요청→수락, 상호 친구(users/{uid}/friends·friendReqs) =====
     function copyFriendCode(){ const c=state.friendCode||''; if(!c) return; try{ navigator.clipboard.writeText(c); }catch(e){} toast('친구 코드: '+c+' (복사됨)'); }
     function addFriendByCode(){
@@ -691,7 +706,8 @@
     function openFriendsSheet(){
       const build=function(){
         const on=!!state.todoPublic;
-        let h='<div class="lst">'+lrow(MORE_ICON.share,'내 할일 공개','toggleTodoPublic()', on?'켜짐':'꺼짐')+'</div>';
+        let h='<div class="lst">'+lrow(MORE_ICON.share,'할일 공유 설정','openTodoShareSheet()', on?'기본 켜짐':'기본 꺼짐')+'</div>'+
+          '<p class="muted" style="font-size:12px;margin:6px 2px 0;">할일을 공유할 친구를 <b>친구별로</b> 고를 수 있어요 — OFF하면 그 친구와 서로의 할일이 보이지 않아요.</p>';
         h+='<div class="card" style="padding:14px;margin-top:12px;"><div class="sec-title">내 친구 코드</div>'+
           '<div class="row" style="gap:8px;align-items:center;margin-top:6px;"><b style="font-size:20px;letter-spacing:3px;flex:1;">'+escapeHtml(state.friendCode||'—')+'</b>'+
           '<button class="btn sm" style="flex:none;" onclick="copyFriendCode()">복사</button></div>'+
@@ -739,10 +755,12 @@
         db.ref('users/'+uid+'/homeLikes').once('value'),
         db.ref('users/'+uid+'/todos').once('value'),
         db.ref('users/'+uid+'/profilePublic').once('value'),
-        db.ref('users/'+uid+'/friendReqs/'+state.uid).once('value')
+        db.ref('users/'+uid+'/friendReqs/'+state.uid).once('value'),
+        db.ref('users/'+uid+'/todoShare/'+state.uid).once('value').catch(function(){ return { val:function(){ return null; } }; })   // 🔐 상대의 친구별 토글(규칙 미배포·미설정=null→todoPublic 폴백)
       ]).then(function(res){
         if(!($('sheet')&&$('sheet').classList.contains('on'))) return;   // 그새 닫혔으면 중단
-        const fg={ home:(res[0].val()||{}) }, pub=!!res[1].val(), likes=res[2].val();   // homeCam 스냅샷을 flat home으로(friendRoom이 그대로 사용)
+        const fg={ home:(res[0].val()||{}) }, likes=res[2].val();
+        const shv=res[6]&&res[6].val(); const pub=(shv!=null)?!!shv:!!res[1].val();   // 🔐 상대→나 공유: 친구별 토글 우선, 미설정=todoPublic 기본값   // homeCam 스냅샷을 flat home으로(friendRoom이 그대로 사용)
         const priv=(res[4].val()===false);
         const sentReq=!!res[5].val(), incomingReq=!!(state.friendReqs&&state.friendReqs[uid]);   // 내가 보낸 요청 / 상대가 나에게 보낸 요청
         const anon=priv && !isFriend;                       // 비공개 + 비친구 → 익명(은화+알뜰)
@@ -756,7 +774,7 @@
            '<span class="likehint">'+(liked?'오늘 좋아요 완료 · 내일 또 눌러주세요':'하루 한 번 좋아요를 눌러줄 수 있어요')+'</span></div>';
         if(isFriend) h+=friendGiftBar(uid);   // 🎁 선물 보내기(친구에게만)
         const todosObj=res[3].val()||{};
-        if(isFriend && pub){   // 할일은 친구 사이 + 상대가 공개했을 때만
+        if(isFriend && pub && ((typeof myShareTo!=='function')||myShareTo(uid))){   // 🔐 친구 + 상대가 나와 공유 + 나도 상대와 공유(양방향)일 때만
           const undone=Object.keys(todosObj).map(function(k){ return Object.assign({id:k}, todosObj[k]); }).filter(function(t){ return !t.done; })
             .sort(function(a,b){ const ad=a.dueDate||'9999-99', bd=b.dueDate||'9999-99'; return ad<bd?-1:(ad>bd?1:0); });
           h+='<div class="sech"><span class="l">오늘의 할일</span><span class="s">'+undone.length+'</span></div>';
@@ -856,7 +874,7 @@
         '<span class="tdfrnm">'+(opts.me?'내 스토리':escapeHtml(nm))+'</span></button>'; }
     function renderFriendsFeed(){
       let h=todoScopeSeg();
-      const pubUids=Object.keys(state.friends||{}).filter(function(u){ return state.friendPub && state.friendPub[u]; });
+      const pubUids=Object.keys(state.friends||{}).filter(function(u){ return (typeof todoMutual==='function')?todoMutual(u):(state.friendPub&&state.friendPub[u]); });   // 🔐 양방향 공유만
       const today=todayKst(); const seen=storySeenMap();
       const order=friendFeedOrder(state.friendTodosByUid, pubUids, today);
       // 스토리 줄: 내 스토리(맨 왼쪽) + 공개 친구(최근 등록순)
@@ -889,7 +907,7 @@
     function ensureStoryEl(){ let el=$('storyView'); if(!el){ el=document.createElement('div'); el.id='storyView'; el.className='storyview'; el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true'); document.body.appendChild(el); } return el; }
     function openMyStory(){ if(typeof openCatHouse==='function') openCatHouse('home'); }   // 내 스토리 = 내 알뜰홈 홈(라이브 캠)
     function openFriendStory(uid){
-      const pub=Object.keys(state.friends||{}).filter(function(u){ return state.friendPub && state.friendPub[u]; });
+      const pub=Object.keys(state.friends||{}).filter(function(u){ return (typeof todoMutual==='function')?todoMutual(u):(state.friendPub&&state.friendPub[u]); });   // 🔐 양방향 공유만
       const order=friendFeedOrder(state.friendTodosByUid, pub, todayKst()).map(function(r){ return r.uid; }).filter(function(u){ return storyTodos(u).length; });
       const i=order.indexOf(uid); if(i<0){ toast('아직 등록한 할일이 없어요'); return; }
       _openStory(order, i); }

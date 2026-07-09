@@ -3364,17 +3364,7 @@
     const POOP_REWARD = 4;          // 똥 하나 치우면 얻는 은화
     const CARE_ITEMS = ['bowl','waterbowl','litterbox'];   // 케어 아이템(밥·물·화장실)
     function careCap(){ return Math.max(1, Math.min(3, activeCats().length)); }   // 방당 상한 = 이 방 활성 펫 수(최대 3, 다묘 대응). enrichTypeCount가 케어를 제외하므로 개수는 행복도·enrichment에 영향 없음(순수 배치 편의).
-    // 🐾 빈 활성 슬롯을 대기(어느 방에도 없는) 보유 펫으로 자동 채움 — 즐겨찾기·최근 순. 한 번에.
-    function autoFillSlots(){ const sc=slotCount(); if(activeCats().length>=sc){ toast('이 방 슬롯이 이미 가득 찼어요'); return; }
-      const rid=curRoomId(); let added=0;
-      gameRef().transaction(function(g){ g=normalizeGame(g); const R=gRoomById(g,rid); R.active=R.active||[]; added=0;
-        const cats=g.owned.cats||{}, inRoom={}; (g.home.rooms||[]).forEach(function(r){ (r.active||[]).forEach(function(id){ inRoom[id]=1; }); });
-        const waiting=Object.keys(cats).filter(function(id){ return !inRoom[id] && PET_CATALOG.some(function(x){ return x.id===id; }); });
-        waiting.sort(function(a,b){ return ((cats[b]||{}).fav?1:0)-((cats[a]||{}).fav?1:0) || String((cats[b]||{}).boughtAt||'').localeCompare(String((cats[a]||{}).boughtAt||'')); });
-        let need=sc-(R.active.filter(function(id){ return cats[id]; }).length);
-        for(let i=0;i<waiting.length && need>0;i++){ R.active.push(waiting[i]); added++; need--; }
-        if(!added) return; g.home.changedAt=new Date().toISOString(); return g;
-      }).then(function(r){ if(r&&r.committed&&added) toast('빈 슬롯을 '+added+'마리로 채웠어요 🐾'); else toast('데려올 대기 펫이 없어요'); }); }
+    // (구 "빈 슬롯 자동 채우기(autoFillSlots)"는 제거 — 2026-07 사용자 지침: 펫 배치는 배치모드에서 직접 선택)
     // 🪙 수확 드롭 확률(경제 정책 §3-C): 시간당 금화 10% + 랜덤박스 15%·펫알 8%·뜰알 2%. 활성 펫 있을 때만.
     //   ⚠️ 획득 경로는 '수확 순간 일괄 롤'에서 실시간 스폰(reconcileDrops, 10분 단위 p/6 롤)으로 대체 — 기대값 동일, 방 바닥에 드랍이 놓여 클릭/수확으로 수령.
     //   랜덤박스 드랍은 수령 순간 실제 박스 확률(rollBoxReward)로 열어 아이템으로 지급(알 종류는 봉인 상태 그대로 인벤토리).
@@ -8204,18 +8194,23 @@
       const ti=tierInfo(tier); const nm=escapeHtml(ti.name);
       if(tier==='exclusive') return '<span class="ptier tier-rainbow">'+nm+'</span>';
       return '<span class="ptier" style="color:'+ti.color+'">'+nm+'</span>'; }
+    // 🖐 펫 인벤토리 배치모드(기본 OFF, 사용자 지침) — OFF: 탭=펫 정보(오탭으로 펫이 방에 들어가는 것 방지) / ON: 탭=이 방으로/대기 토글(기존 동작)
+    let _petPlaceMode=false;
+    function petTileTap(id){ if(_petPlaceMode) toggleActiveCat(id); else openPetInfo(id); }
+    function togglePetPlaceMode(){ _petPlaceMode=!_petPlaceMode;
+      toast(_petPlaceMode?'배치모드 ON — 펫을 탭하면 이 방으로 데려오거나 대기시켜요':'배치모드 OFF — 펫을 탭하면 정보를 볼 수 있어요');
+      if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     function petTileHtml(id){
       const rooms=homeH().rooms||[]; const roomOf=petRoomIndex(id), here=roomOf===roomIdx();
       const roomNm=roomOf>=0?((rooms[roomOf]&&rooms[roomOf].name)||('방 '+(roomOf+1))):'';
       const tier=CAT_TIER[id]||'normal'; const lv=affectionLevel((ownedCatsMap()[id]||{}).affection, tier).level; const fav=!!(ownedCatsMap()[id]||{}).fav;
       const stt=here?'이 방':(roomOf>=0?roomNm:'대기');
-      return '<div class="catchip'+(here?' on':(roomOf>=0?' elsewhere':''))+'" data-id="'+id+'" data-tsig="'+escapeHtml(petTileSig(id))+'" data-name="'+escapeHtml(catName(id))+'" role="button" tabindex="0" aria-pressed="'+here+'" onclick="toggleActiveCat(\''+id+'\')" title="'+escapeHtml(catName(id))+' · '+escapeHtml(tierInfo(tier).name)+' · '+escapeHtml(stt)+' · Lv.'+lv+'">'+
+      // 🖐 탭 동작은 배치모드에 따라 분기(petTileTap): OFF(기본)=펫 정보 열람, ON=이 방으로/대기 토글. ✎이름변경·ⓘ정보 아이콘 제거(사용자 지침 — 이름변경은 펫 정보 시트 안 pi-rename)
+      return '<div class="catchip'+(here?' on':(roomOf>=0?' elsewhere':''))+'" data-id="'+id+'" data-tsig="'+escapeHtml(petTileSig(id))+'" data-name="'+escapeHtml(catName(id))+'" role="button" tabindex="0" aria-pressed="'+here+'" onclick="petTileTap(\''+id+'\')" title="'+escapeHtml(catName(id))+' · '+escapeHtml(tierInfo(tier).name)+' · '+escapeHtml(stt)+' · Lv.'+lv+'">'+
         '<button class="cn-fav'+(fav?' on':'')+'" aria-label="'+(fav?'즐겨찾기 해제':'즐겨찾기')+'" onclick="event.stopPropagation();toggleCatFav(\''+id+'\')">'+starSvg({h:12,off:!fav})+'</button>'+
-        '<div class="cpic tbring tb-'+tier+'">'+catFace(id,{h:44})+tierBadgeHtml(tier)+
-          '<button class="cn-info" aria-label="펫 정보" onclick="event.stopPropagation();openPetInfo(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button></div>'+   // 등급 테두리 + 등급명 배지(좌하단) + ⓘ(우하단)
+        '<div class="cpic tbring tb-'+tier+'">'+catFace(id,{h:44})+tierBadgeHtml(tier)+'</div>'+   // 등급 테두리 + 등급명 배지(좌하단)
         (roomOf>=0&&!here?'<span class="croom">'+escapeHtml(roomNm)+'</span>':'')+
         (here?'<span class="csel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>':'')+
-        '<button class="cn-edit" aria-label="이름 짓기" onclick="event.stopPropagation();openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
         '<div class="cn">'+catNameSpan(id,catName(id))+'</div>'+
         '<div class="clv'+(lv>=5?' lv5':'')+'" aria-label="애정 레벨 '+lv+(lv>=5?' 만렙':'')+'"><span class="clv-h">'+heartSvg({h:9})+'</span>Lv.'+lv+(lv>=5?'<span class="clv-max">★</span>':'')+'</div>'+
       '</div>';
@@ -8271,8 +8266,6 @@
       if(sc<MAX_SLOTS) slotRow+='<button class="slot locked" onclick="buySlot()" aria-label="고양이 슬롯 확장(금화 '+SLOT_PRICE+')"><svg class="lockic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span class="slotgold">'+goldSvg({h:13})+SLOT_PRICE+'</span></button>';
       slotRow+='</div>';
       h+=slotRow;
-      const _emptySlots=sc-cats.length, _waiting=ownedCatList().filter(id=>petRoomIndex(id)<0).length;
-      if(_emptySlots>0 && _waiting>0) h+='<div class="fillrow"><button class="pa-btn" onclick="autoFillSlots()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>빈 슬롯 자동 채우기 <b>'+Math.min(_emptySlots,_waiting)+'</b></button></div>';
       // 펫 컬렉션 관리(수백 마리 그리드)는 '펫' 탭으로 분리 — 홈은 이 방의 활성 펫·돌봄만(홈 과부하 해소).
       if(!owned.length) h+='<div class="empty" style="padding:16px 20px;">아직 펫이 없어요. 알뜰샵에서 입양해 보세요 🐾 <button class="btn ghost" onclick="setCatTab(\'shop\')">알뜰샵</button></div>';
       else h+='<div class="hintline" style="margin-top:8px;align-items:center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span style="flex:1"><b>펫</b> 탭에서 이 방으로 데려오거나 관리해요.'+(sc<MAX_SLOTS?' 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장.':'')+'</span><button class="btn ghost" style="flex:none" onclick="setCatTab(\'pet\')">펫 관리 →</button></div>';
@@ -8282,11 +8275,16 @@
     function catPetHtml(){
       const owned=ownedCatList(), sc=slotCount();
       if(!owned.length) return '<div class="empty" style="padding:20px;">아직 펫이 없어요. 알뜰샵에서 입양해 보세요 🐾 <button class="btn ghost" onclick="setCatTab(\'shop\')">알뜰샵</button></div>';
-      let h='<div class="sech"><span class="l">우리집 펫</span><span class="s">'+owned.length+'마리</span></div>';
+      let h='<div class="sech"><span class="l">우리집 펫</span><span class="s">'+owned.length+'마리</span>'+
+        '<span class="pmode" role="switch" aria-checked="'+(_petPlaceMode?'true':'false')+'" onclick="togglePetPlaceMode()" title="배치모드 — ON이면 탭해서 방에 배치, OFF면 탭해서 펫 정보">'+
+        '<b>배치모드</b><span class="switch'+(_petPlaceMode?' on':'')+'"><i></i></span></span></div>';
       if(owned.length>=2) h+=petCtlBar();   // 종류 탭 + 정렬(2마리↑부터)
       // 수집형 인벤토리 그리드(5열·세로, 4행까지 보이고 초과 시 내부 스크롤). renderPetGrid가 채우고 타일 단위 메모이즈(수백 마리 재파싱 회피).
       h+='<div class="catchips" id="petGrid"></div>';
-      h+='<div class="hintline" style="margin-top:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>펫을 탭하면 <b>이 방</b>으로 옮겨져요(한 펫은 한 방에만, 방당 최대 '+sc+'마리). 다시 탭하면 대기.'+(sc<MAX_SLOTS?' 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장.':'')+'</div>';
+      h+='<div class="hintline" style="margin-top:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>'+
+        (_petPlaceMode
+          ?'배치모드 ON — 펫을 탭하면 <b>이 방</b>으로 옮겨져요(한 펫은 한 방에만, 방당 최대 '+sc+'마리). 다시 탭하면 대기.'+(sc<MAX_SLOTS?' 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장.':'')
+          :'펫을 탭하면 <b>정보</b>(애정도·코스메틱·이름변경)를 볼 수 있어요. 방에 배치하려면 위 <b>배치모드</b>를 켜세요.')+'</div>';
       return h;
     }
     function mountRoomWalk(){
