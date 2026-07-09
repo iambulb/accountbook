@@ -632,8 +632,8 @@
                 "    if(a.hat){ var hh3=w*0.20, hw2=hh3*(a.hat.width/a.hat.height), hdx=(moving?0.13*w:0); ctx.drawImage(a.hat, w/2-hw2/2+hdx, y+h*(a.headF||0.2)-hh3*0.55, hw2, hh3); }",   // 💗 모자 — dock .cd-hat(0.20·-55%·옆모습 hatdx) 전사. moving=옆모습(east 로컬 머리 오른쪽 → +hdx), flip이 west 반전. 정지=south 정면(hdx0)
         "  }catch(e){}",
         "  ctx.restore();",
-        "  if(a.buddy){ try{ var t2=now/1000, bw=w*(a.btype==='firefly'?0.15:0.20), bh2=bw*(a.buddy.height/a.buddy.width);",   // 💗 동행 버디 — 경로(느린 궤도)+날갯짓/발광 다층(dock cbpath+cbbob/cbglow 전사)
-        "    var bx=a.x+w/2+Math.sin(t2*0.84+a.seed)*w*0.40+Math.sin(t2*0.31+a.seed*2)*w*0.10;",
+        "  if(a.buddy){ try{ var t2=now/1000, bw=(a.btype==='firefly'?7:8)*ds, bh2=bw*(a.buddy.height/a.buddy.width);",   // 💗 동행 버디 — 경로(느린 궤도)+날갯짓/발광 다층. ✨ 크기 고정(firefly7·기타8×ds 깊이원근만, 펫 스케일 무관 — DOM actorCosmHtml과 동일)
+        "    var bx=a.x+w/2+Math.sin(t2*0.84+a.seed)*bw*2+Math.sin(t2*0.31+a.seed*2)*bw*0.5;",   // 중심=펫중앙(w/2), 궤도 진폭은 버디 크기 기준(펫 스케일 무관, DOM cbpath ~0.5×ref 대응)
         "    var by=y+h*(a.headF||0.2)+Math.cos(t2*1.17+a.seed)*7-6;",
         "    ctx.save(); ctx.translate(bx,by);",
         "    if(a.btype==='firefly'){ ctx.globalAlpha=0.4+0.6*(0.5+0.5*Math.sin(t2*2.7+a.seed)); }",
