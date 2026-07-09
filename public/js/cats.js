@@ -6064,6 +6064,7 @@
         if(dSilver>0||dGold>0) rewardFly(x,y,dSilver,dGold,beforeCoins,beforeGold);
         if(lvUp){ affLevelFx(x,y); toast('❤ '+catName(id)+' 애정 레벨 '+lvUp.level+(lvUp.gold?' · 만렙! 금화 +'+lvUp.gold:'')+(dSilver>0?' · 은화 +'+dSilver:'')); _affLevelUp=null; }
         else toast('🍡 '+catName(id)+'에게 츄르 · 애정 +'+(eff.affection||1));
+        if($('petInfo')) openPetInfo(id);   // 펫 정보에서 바로 사용 시 애정 게이지·수량 즉시 반영
         if(state._sheetRefresh) state._sheetRefresh();   // 수량 0이어도 시트 유지(결과 확인, 셀은 비활성)
       });
     }
@@ -9660,6 +9661,11 @@
         (((tier==='limited'||tier==='exclusive')&&PET_SPRITES[id]&&PET_SPRITES[id].clips)?'<div class="pi-cd">모션 해금 — Lv1 기본(유휴·먹기·마시기)'+(al.level>=1?'(해금)':'(잠김)')+' · Lv2 식빵·하품'+(al.level>=2?'(해금)':'(잠김)')+' · Lv4 하악질'+(al.level>=4?'(해금)':'(잠김)')+'</div>':'')+   // 💗 신화+ 애정 모션 해금 안내(Lv1/2/4)
         (hasSprite(id)?cosmRowHtml(id,'buddy',BUDDY_CATALOG,al.level)+cosmRowHtml(id,'hat',HAT_CATALOG,al.level):'')+   // 💗 코스메틱(동행 Lv3·모자 Lv5) — 스프라이트 펫만
         (petDyeOf(id)?'<div class="pi-cosm"><span class="s">염색</span><span class="chip on">'+consumSvg('dye',{h:12})+' '+escapeHtml(dyeNameOf(petDyeOf(id)))+'</span>'+(consumQty('dye_remover')>0?'<button class="chip" onclick="applyDyeRemover(\''+id+'\')">'+consumSvg('dye_remover',{h:12})+' 리무버로 지우기</button>':'<span class="s" style="min-width:0">리무버(이벤트·쿠폰)로 제거 가능</span>')+'</div>':'')+   // 🎨 염색 상태 — 제거는 리무버 소모(무료 지우기 없음)
+        // 🧺 소비템 바로 사용(2026-07 사용자 지시) — 가방을 거치지 않고 펫 정보에서 이 펫에게 바로 사용. 보유한 펫 대상 소비템만 노출(적용 후 openPetInfo 재렌더로 결과 즉시 반영).
+        ((consumQty('treat')>0||consumQty('dye')>0)?('<div class="pi-cosm"><span class="s">소비템</span>'+
+          (consumQty('treat')>0?'<button class="chip" onclick="applyTreat(\''+id+'\')">'+consumSvg('treat',{h:12})+' 츄르 주기 · '+consumQty('treat').toLocaleString()+'</button>':'')+
+          (consumQty('dye')>0?'<button class="chip" onclick="applyDye(\''+id+'\')">'+consumSvg('dye',{h:12})+' 염색약(랜덤 '+DYE_CATALOG.length+'색) · '+consumQty('dye').toLocaleString()+'</button>':'')+
+        '</div>'):'')+
         (canPet?'<button class="gib sell" onclick="petFromInfo(\''+id+'\',event)">'+heartSvg({h:13})+' 쓰다듬기 · 애정+1 · 은화+'+PET_PET_REWARD+'</button>'
                :'<div class="pi-cd">오늘 쓰다듬기 완료 · 약 '+hh+'시간 후 가능</div>')+
         '<button class="gib" onclick="roomFromInfo(\''+id+'\')">'+(here?'이 방에서 대기시키기':'이 방으로 데려오기')+'</button>'+
