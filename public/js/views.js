@@ -657,7 +657,7 @@
     function todoScopeSeg(){
       if(!isPersonalWs() || state.tab!=='todo') return '';   // 개인 프로필의 할일 리스트 탭에서만 [내 할일|친구들](친구 피드는 이 탭에서만 렌더). 그룹 컨텍스트·캘린더/완료엔 세그먼트 없음
       const f=!!state._todoFeed || (!!state._todoFriend && state._todoFriend!==state.uid);
-      return '<div class="seg todoseg"><button class="'+(f?'':'on')+'" onclick="setTodoFeed(false)">내 할일</button><button class="'+(f?'on':'')+'" onclick="setTodoFeed(true)">친구들</button></div>'; }
+      return '<div class="seg todoseg"><button class="'+(f?'':'on')+'" '+App.view.act('setTodoFeed',false)+'>내 할일</button><button class="'+(f?'on':'')+'" '+App.view.act('setTodoFeed',true)+'>친구들</button></div>'; }
     // 개인 프로필에서 친구를 보고 있는지 = 읽기전용
     function todoReadOnly(){ return isPersonalWs() && !!state._todoFriend && state._todoFriend!==state.uid; }
     // 현재 열람 중인 친구 할일 리스너 해제 + 내 목록 복귀
@@ -938,12 +938,12 @@
     function todoDueBadge(t, ro){ const editable=!ro && !t.done;   // 미완료·편집가능 행은 배지를 탭해 '날짜 옮기기'
       if(t.done){ const d=t.doneAt?ymd(new Date(t.doneAt)):'';   // 완료 항목=마감 경과("N일 지남") 대신 완료일(중립색) — doneAt(ISO)을 로컬 날짜로 변환
         return d?'<span class="tdue">'+(+d.slice(5,7))+'/'+(+d.slice(8,10))+' 완료</span>':''; }
-      if(!t.dueDate){ return editable ? '<button class="tdue tap none" onclick="event.stopPropagation();openTodoReschedule(\''+t.id+'\')" aria-label="날짜 지정">날짜</button>' : ''; }
+      if(!t.dueDate){ return editable ? '<button class="tdue tap none" '+App.view.act('openTodoReschedule',t.id)+' aria-label="날짜 지정">날짜</button>' : ''; }
       const today=todayKst();
       const diff=dueDiffDays(t.dueDate, today);
       let txt,cls; if(diff<0){ txt=(-diff)+'일 지남'; cls='over'; } else if(diff===0){ txt='오늘'; cls='today'; } else if(diff===1){ txt='내일'; cls='soon'; } else { txt='D-'+diff; cls=diff<=3?'soon':''; }
       return editable
-        ? '<button class="tdue tap '+cls+'" onclick="event.stopPropagation();openTodoReschedule(\''+t.id+'\')" aria-label="날짜 옮기기">'+txt+'</button>'
+        ? '<button class="tdue tap '+cls+'" '+App.view.act('openTodoReschedule',t.id)+' aria-label="날짜 옮기기">'+txt+'</button>'
         : '<span class="tdue '+cls+'">'+txt+'</span>'; }
     function todoRow(t, ro){
       // 담당자 표시: 현재 멤버면 최신 이름(개명 반영)+아바타, 탈퇴 등 미상이면 저장된 이름 텍스트(uid 노출 방지)
@@ -958,14 +958,14 @@
       const tagHtml=(t.tags&&t.tags.length)?' '+t.tags.slice(0,3).map(function(g){ return '<span class="tdtag">'+escapeHtml(g)+'</span>'; }).join(''):'';
       const _sub=Array.isArray(t.subtasks)?t.subtasks:[], _sdone=_sub.filter(function(s){ return s.done; }).length;
       const subBadge=_sub.length?(ro?(' <span class="pill tdsub'+(_sdone>=_sub.length?' all':'')+'">☑ '+_sdone+'/'+_sub.length+'</span>')
-        :(' <span class="pill tdsub'+(_sdone>=_sub.length?' all':'')+'" role="button" tabindex="0" onclick="event.stopPropagation();openTodoSubtasks(\''+t.id+'\')" aria-label="하위 작업">☑ '+_sdone+'/'+_sub.length+'</span>')):'';
+        :(' <span class="pill tdsub'+(_sdone>=_sub.length?' all':'')+'" role="button" tabindex="0" '+App.view.act('openTodoSubtasks',t.id)+' aria-label="하위 작업">☑ '+_sdone+'/'+_sub.length+'</span>')):'';
       const chkSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>';
       const chk=ro
         ? '<span class="tdchk'+(t.done?' on':'')+'" aria-hidden="true">'+chkSvg+'</span>'
-        : '<button class="tdchk'+(t.done?' on':'')+'" onclick="event.stopPropagation();toggleTodo(\''+t.id+'\')" aria-label="'+(t.done?'완료 취소':'완료 처리')+'">'+chkSvg+'</button>';
+        : '<button class="tdchk'+(t.done?' on':'')+'" '+App.view.act('toggleTodo',t.id)+' aria-label="'+(t.done?'완료 취소':'완료 처리')+'">'+chkSvg+'</button>';
       const titleTag=ro
         ? '<span class="tdtitle'+(t.done?' done':'')+'">'
-        : '<span class="tdtitle'+(t.done?' done':'')+'" onclick="openTodoEdit(\''+t.id+'\')">';
+        : '<span class="tdtitle'+(t.done?' done':'')+'" '+App.view.act('openTodoEdit',t.id)+'>';
       return '<div class="tdrow">'+chk+prioDot+catDot+
         titleTag+escapeHtml(t.title||'')+repPill+subBadge+tagHtml+(t.purposeBookId?' <span class="pill">📍</span>':'')+'</span>'+
         todoDueBadge(t, ro)+who+'</div>';
@@ -1027,6 +1027,10 @@
     function renderTodoList(){
       // 개인 프로필의 '친구들' = 친구 피드(아바타 정렬·오늘 무지개·친구 할일 목록). 단, 특정 친구를 열람 중이면 그 친구 목록을 보여줌(아래로 진행).
       if(isPersonalWs() && state._todoFeed && !(state._todoFriend && state._todoFriend!==state.uid)) return renderFriendsFeed();
+      $('content').innerHTML=todoListHtml();
+    }
+    // 할일 목록 화면 프로듀서(순수 HTML) — App.view.components.todoList 로 등록(Phase 3 컴포넌트 계약)
+    function todoListHtml(){
       const meUid=state.uid; const today=todayKst();   // 은화 일일상한(KST)과 같은 날 경계로 마감 판정
       const weekEnd=addDays(today,7);
       const isGroup=!isPersonalWs();
@@ -1041,17 +1045,19 @@
       const done=base.filter(t=>t.done).sort((a,b)=>(b.doneAt||'').localeCompare(a.doneAt||''));
       const chips=isGroup?[['all','전체'],['mine','내 담당'],['today','오늘'],['week','이번주']]:[['all','전체'],['today','오늘'],['week','이번주']];
       let h=todoScopeSeg();   // 개인 탭 = 내 할일만(친구는 '친구들' 탭 피드로 일원화)
-      h+='<div class="chip-row" style="margin:6px 0 12px;">'+chips.map(c=>'<button class="chip'+(_todoFilter===c[0]?' on':'')+'" onclick="setTodoFilter(\''+c[0]+'\')">'+c[1]+'</button>').join('')+'<button class="chip srch" onclick="openTodoSearch()" aria-label="할일 검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>검색</button></div>';
+      h+='<div class="chip-row" style="margin:6px 0 12px;">'+chips.map(c=>'<button class="chip'+(_todoFilter===c[0]?' on':'')+'" '+App.view.act('setTodoFilter',c[0])+'>'+c[1]+'</button>').join('')+'<button class="chip srch" '+App.view.act('openTodoSearch')+' aria-label="할일 검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>검색</button></div>';
       const roList=!!(state._todoFriend && state._todoFriend!==state.uid);   // 친구 열람=읽기전용(배지 탭·일괄 이동 숨김)
-      if(!roList){ const odIds=overdueTodoIds(base, today); if(odIds.length) h+='<button class="td-carry" onclick="carryOverdueToToday()">🕘 지난 미완료 '+odIds.length+'개 → 오늘로</button>'; }
+      if(!roList){ const odIds=overdueTodoIds(base, today); if(odIds.length) h+='<button class="td-carry" '+App.view.act('carryOverdueToToday')+'>🕘 지난 미완료 '+odIds.length+'개 → 오늘로</button>'; }
       const emptyMsg=isGroup?'그룹 할일이 없어요 — 아래 ＋ 로 담당을 나눠보세요':'개인 할일이 없어요 — 아래 ＋ 로 추가하세요';
       h+='<div class="card" style="padding:4px 12px;">'+(open.length?open.map(t=>todoRow(t, roList)).join(''):'<div class="empty" style="padding:26px 6px;">'+emptyMsg+'</div>')+'</div>';
       if(done.length){ const _dc=done.slice(0,20); const _dl=done.length>_dc.length?('최근 '+_dc.length+' · 총 '+done.length+'개'):(done.length+'개'); h+='<div class="sech"><span class="l">완료</span><span class="s">'+_dl+'</span></div><div class="card" style="padding:4px 12px;">'+_dc.map(t=>todoRow(t, roList)).join('')+'</div>'; }
-      $('content').innerHTML=h;
+      return h;
     }
     function todoMoveMonth(d){ state.month=shiftMonth(state.month,d); renderTodoCalendar(); }
     function todoSelDay(ds){ _todoSel=ds; renderTodoCalendar(); }
-    function renderTodoCalendar(){
+    function renderTodoCalendar(){ $('content').innerHTML=todoCalendarHtml(); }
+    // 할일 캘린더 화면 프로듀서 — App.view.components.todoCalendar
+    function todoCalendarHtml(){
       const m=state.month, parts=m.split('-'), y=+parts[0], mo=+parts[1];
       const base=scopedTodos();
       // 일별 점 버킷 — 미완료=마감일 기준(카테고리 색), 완료=완료한 날(doneAt/lastDoneAt·KST) 기준(같은 색·옅게). 가계부 달력처럼 색 중복 제거·색당 1점.
@@ -1061,27 +1067,34 @@
         const dd=todoDoneDay(t); if(dd && dd.slice(0,7)===m){ const b=_bk(dd); if(b.dn.indexOf(col)<0 && b.dn.length<3) b.dn.push(col); } });
       const HEAD=['월','화','수','목','금','토','일']; const first=(new Date(y,mo-1,1).getDay()+6)%7; const days=new Date(y,mo,0).getDate(); const todayS=todayKst(); const sel=_todoSel||todayS;
       let h=todoScopeSeg();
-      h+='<div class="monthlbl"><button onclick="todoMoveMonth(-1)" aria-label="이전 달">‹</button><b>'+y+'년 '+mo+'월</b><button onclick="todoMoveMonth(1)" aria-label="다음 달">›</button></div>';
+      h+='<div class="monthlbl"><button '+App.view.act('todoMoveMonth',-1)+' aria-label="이전 달">‹</button><b>'+y+'년 '+mo+'월</b><button '+App.view.act('todoMoveMonth',1)+' aria-label="다음 달">›</button></div>';
       h+='<div class="calwrap"><div class="cal-head">'+HEAD.map(function(w,i){ return '<div class="'+(i===5?'sat':i===6?'sun':'')+'">'+w+'</div>'; }).join('')+'</div><div class="cal-grid">';
       for(let i=0;i<first;i++) h+='<div class="cal-cell dim"></div>';
       for(let d=1;d<=days;d++){ const ds=y+'-'+pad2(mo)+'-'+pad2(d); const wd=new Date(y,mo-1,d).getDay(); const dcls='d'+(wd===0?' sun':(wd===6?' sat':''));
         const b=byDay[ds]; const cls='cal-cell'+(ds===todayS?' today':'')+(ds===sel?' sel':'');
         let dot=''; if(b && (b.o.length||b.dn.length)){ const dn=b.dn.slice(0, Math.max(0,4-b.o.length));   // 한 칸 최대 4점(미완료 우선, 완료 점은 남는 자리에)
           dot='<span class="dotrow">'+b.o.map(c=>'<i style="background:'+c+'"></i>').join('')+dn.map(c=>'<i class="dn" style="background:'+c+'"></i>').join('')+'</span>'; }
-        h+='<div class="'+cls+'" onclick="todoSelDay(\''+ds+'\')"><div class="'+dcls+'">'+d+'</div>'+dot+'</div>';
+        h+='<div class="'+cls+'" '+App.view.act('todoSelDay',ds)+'><div class="'+dcls+'">'+d+'</div>'+dot+'</div>';
       }
       h+='</div></div>';
       const ro=todoReadOnly();
       const dayT=base.filter(t=>t.dueDate===sel || todoDoneDay(t)===sel).sort((a,b)=>(a.done?1:0)-(b.done?1:0));   // 그날 마감 + 그날 완료한 할일(완료 점과 목록 일치)
       h+='<div class="sech"><span class="l">'+(+sel.split('-')[1])+'월 '+(+sel.split('-')[2])+'일</span><span class="s">'+dayT.length+'개</span></div>';
       h+='<div class="card" style="padding:4px 12px;">'+(dayT.length?dayT.map(t=>todoRow(t,ro)).join(''):'<div class="empty" style="padding:22px 6px;">이 날 할일이 없어요</div>')+'</div>';
-      $('content').innerHTML=h;
+      return h;
     }
-    function renderTodoDone(){ const ro=todoReadOnly(); const done=scopedTodos().filter(t=>t.done).sort((a,b)=>(b.doneAt||'').localeCompare(a.doneAt||''));
+    function renderTodoDone(){ $('content').innerHTML=todoDoneHtml(); }
+    // 할일 완료 화면 프로듀서 — App.view.components.todoDone
+    function todoDoneHtml(){ const ro=todoReadOnly(); const done=scopedTodos().filter(t=>t.done).sort((a,b)=>(b.doneAt||'').localeCompare(a.doneAt||''));
       let h=todoScopeSeg();
       h+='<div class="sech"><span class="l">완료</span><span class="s">'+done.length+'개</span></div>';
       h+='<div class="card" style="padding:4px 12px;">'+(done.length?done.map(t=>todoRow(t,ro)).join(''):'<div class="empty" style="padding:26px 6px;">완료한 할일이 아직 없어요</div>')+'</div>';
-      $('content').innerHTML=h; }
+      return h; }
+    // Phase 3: 할일 화면 컴포넌트 등록(레지스트리). render(props)→HTML. 프로듀서는 기존 클로저 헬퍼를 그대로 사용(닫힌 스코프 접근 유지).
+    App.view.define('todoRow', { render:function(p){ return todoRow(p&&p.t, p&&p.ro); } });
+    App.view.define('todoList', { render:function(){ return todoListHtml(); } });
+    App.view.define('todoCalendar', { render:function(){ return todoCalendarHtml(); } });
+    App.view.define('todoDone', { render:function(){ return todoDoneHtml(); } });
     function toggleTodo(id){ const t=allTodos().find(x=>x.id===id); if(!t) return; const now=new Date().toISOString();
       const ref=todoDbRef(t);
       const firstReward=!t.rewardClaimed;   // 할일당 은화 1회(멱등)
