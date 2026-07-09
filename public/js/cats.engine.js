@@ -855,6 +855,32 @@
     // 지정된 연출 펫·기본 고양이의 발끝 여백을 미리 측정·캐시 → 연출 시작 전에 값이 준비돼 첫 등장에서 세로 점프가 없다(펫/크기 달라도 동일 정합).
     function prewarmGachaFxPads(){ try{ measureFxFoot(null, function(){});
       ['a','b'].forEach(function(k){ const id=_gachaFx&&_gachaFx[k]; if(id && typeof hasSprite==='function' && hasSprite(id)) measureFxFoot(id, function(){}); }); }catch(e){} }
+    // 🖼️ 펫 시트 프리워밍 + 로드 상태 추적 — 스폰 시엔 walk/south만 로드되므로, 방향 스틸(east/west/north)·모션 클립을
+    //   처음 재생하는 순간 미로드 PNG로 --sheet/--idle을 갈아끼우면 디코드까지 .cspr가 투명해진다(캠에서 펫이 '움직이다 간헐적으로 잠깐 사라지던' 버그).
+    //   ① 스폰(buildActors) 직후 유휴 시간에 펫별 1회 전 시트를 백그라운드 로드
+    //   ② 로드 완료 집합(_sheetWarm)을 _csprClip/_csprStill의 디코드 가드가 공유 — 아직 안 된 시트는 이전 비주얼을 유지한 채 로드 후 스왑.
+    //   data URL(런타임 아트)은 즉시 디코드라 항상 ready 취급.
+    const _sheetWarm={};    // url → 1(로드 완료 — 즉시 스왑 가능)
+    const _sheetPend={};    // url → [cb…](로드 중 — 중복 Image 생성 방지, 완료 시 콜백 일괄 실행)
+    const _sheetWarmed={};  // 펫 id → 1(프리워밍 예약/완료 — 중복 방지)
+    function _sheetReady(u){ return !u || u.slice(0,5)==='data:' || !!_sheetWarm[u]; }
+    function _warmUrl(u, cb){
+      if(_sheetReady(u)){ if(cb) cb(); return; }
+      if(_sheetPend[u]){ if(cb) _sheetPend[u].push(cb); return; }
+      _sheetPend[u]=cb?[cb]:[];
+      const im=new Image();
+      im.onload=function(){ _sheetWarm[u]=1; const cbs=_sheetPend[u]||[]; delete _sheetPend[u]; cbs.forEach(function(f){ try{ f(); }catch(e){} }); };
+      im.onerror=function(){ delete _sheetPend[u]; };   // 실패 시 콜백을 버려 깨진 URL로 스왑하지 않음(이전 비주얼 유지 — 빈칸보다 낫다)
+      im.src=u;
+    }
+    function prewarmPetSheets(id){ if(_sheetWarmed[id]) return; _sheetWarmed[id]=1;
+      const run=function(){ try{
+        const sp=PET_SPRITES[id]; if(!sp) return;
+        if(sp.runtime && !sp.urls){ _sheetWarmed[id]=0; return; }   // 아트 도착 전 — 도착 후 재빌드(_petArtRerender→buildActors)에서 다시 예약
+        ['south','east','west','north'].forEach(function(f){ _warmUrl(sprStill(id,f)); });
+        Object.keys(PET_CLIPS).forEach(function(k){ const r=resolveClip(id,k,true); if(r && r.key!=='walk') _warmUrl(r.url); });   // 애정 게이트 무시(해금 순간 대비) — 폴백 해석 결과만 로드해 중복 없음
+      }catch(e){} };
+      if(typeof requestIdleCallback==='function') requestIdleCallback(run,{timeout:2500}); else setTimeout(run,350); }
     // ⚠️ 핵심 불변식(INVARIANT): "정면(south) 이미지로 이동 금지".
     // 스프라이트 액터의 이동/정지 비주얼(.cspr)은 반드시 아래 두 함수로만 바꾼다 — 모든 상태 전환(roam·pause)과
     // 재빌드(buildActors)가 이 두 함수를 거치게 해, DOM 재사용으로 남은 정지스틸(.idle)이 이동 중에 보이는 버그를 원천 차단.
@@ -865,6 +891,18 @@
     // once 클립 홀드 프리즈 해제 — 원샷 종료 시 건 인라인(animation:none + transform)을 걷어내 다음 필름이 정상 재생되게. 모든 상태 전환이 거친다.
     function _csprUnfreeze(f){ if(!f) return; f.onanimationend=null; if(f.style.animation) f.style.animation=''; if(f.style.transform) f.style.transform=''; }
     function _csprClip(s, a, r){
+      // 🖼️ 디코드 가드: 미로드 클립 시트를 즉시 장착하면 디코드까지 펫이 투명(once 클립은 재생 전체가 빈칸 — '간헐적 사라짐').
+      //   이전 비주얼(걷기 필름/스틸)을 유지한 채 로드 후 장착. 그 사이 다른 전환(_swapTok 증가·소유 액터 교체)이 오면 낡은 장착을 버린다.
+      const tok=a._swapTok=(a._swapTok||0)+1;
+      if(!_sheetReady(r.url)){
+        a._clip=r.key;   // 상태 마킹은 즉시 — actorOnce의 복귀 검사(a._clip)·중복 장착 방지와 일치
+        _warmUrl(r.url, function(){ if(a._swapTok!==tok || a._clip!==r.key || !s.isConnected) return;
+          if(a.el && a.el._eggActor && a.el._eggActor!==a) return;   // 재빌드로 액터 교체 → 낡은 장착 금지
+          _csprClipMount(s, a, r); });
+        return; }
+      _csprClipMount(s, a, r);
+    }
+    function _csprClipMount(s, a, r){
       const cell=parseFloat(s.style.width)||Math.round(a.hh)||48;   // .cspr 창=1칸 정사각(catActorHTML이 width=렌더높이로 생성)
       s.style.setProperty('--sheet','url('+r.url+')');
       s.style.setProperty('--fw',(cell*r.frames)+'px');
@@ -881,11 +919,25 @@
       s.classList.toggle('once', !!r.once); s.classList.remove('idle');
       a._clip=r.key;
     }
-    function _csprStill(s, a, face){ _csprUnfreeze(s.querySelector('.csprf')); s.style.setProperty('--idle','url('+sprStill(a.id,face)+')'); s.classList.remove('once'); s.classList.add('idle'); a._clip=null; }
+    function _csprStill(s, a, face){ _csprUnfreeze(s.querySelector('.csprf'));
+      const tok=a._swapTok=(a._swapTok||0)+1, u=sprStill(a.id,face);
+      s.classList.remove('once'); s.classList.add('idle'); a._clip=null;
+      if(_sheetReady(u)){ s.style.setProperty('--idle','url('+u+')'); return; }
+      // 🖼️ 디코드 가드: 미로드 방향 스틸(첫 east/west/north)은 이전 --idle(스폰 south 등 로드된 것)을 유지한 채 로드 후 교체 — 투명 빈칸 방지
+      _warmUrl(u, function(){ if(a._swapTok!==tok || !s.isConnected) return;
+        if(a.el && a.el._eggActor && a.el._eggActor!==a) return;
+        s.style.setProperty('--idle','url('+u+')'); }); }
     function actorShowMoving(a){ if(!a.spr) return; const s=a.el.querySelector('.cspr'); if(!s) return;
       a._clip=null; s.classList.remove('once');
+      const tok=a._swapTok=(a._swapTok||0)+1;   // 🖼️ 진행 중이던 지연 시트 스왑 무효화 — 걷기로 전환된 뒤 늦게 도착한 클립/스틸이 덮어쓰는 것 방지
       _csprUnfreeze(s.querySelector('.csprf'));   // once 홀드 프리즈 해제 — 안 하면 인라인 animation:none이 걷기 필름을 막아 정지 이미지로 미끄러진다
-      if(a.frontWalk){ s.style.setProperty('--idle','url('+sprStill(a.id,'east')+')'); s.classList.add('idle'); return; }   // east 걷기 없음 → 옆 정지스틸(정면 금지)
+      if(a.frontWalk){ const u=sprStill(a.id,'east');   // east 걷기 없음 → 옆 정지스틸(정면 금지)
+        s.classList.add('idle');
+        if(_sheetReady(u)) s.style.setProperty('--idle','url('+u+')');
+        else _warmUrl(u, function(){ if(a._swapTok!==tok || !s.isConnected) return;
+          if(a.el && a.el._eggActor && a.el._eggActor!==a) return;
+          s.style.setProperty('--idle','url('+u+')'); });   // 🖼️ 미로드 east 스틸 — 이전 --idle 유지 후 로드 시 교체(투명 이동 방지)
+        return; }
       // 클립 재생이 --sheet/--fw/steps를 바꿨을 수 있어 걷기 시트로 '무조건' 복원(재빌드 DOM 재사용 잔재 포함 — 안 하면 먹기 시트로 걷는 버그)
       const sp=PET_SPRITES[a.id]||{}, cell=parseFloat(s.style.width)||Math.round(a.hh)||48, nf=sp.frames||6;
       s.style.setProperty('--sheet','url('+sprWalkUrl(sp)+')'); s.style.setProperty('--fw',(cell*nf)+'px');
@@ -897,7 +949,15 @@
       // 모션축소·가벼운 모드(body.lite)는 항상 스틸 — 쉬는 펫이 늘 필름을 돌리면 lite의 절전 취지가 깨짐(걷기 필름은 기능 모션이라 유지).
       if(!reducedMotion() && !liteMode()){ const want = clip || (face==='south' ? 'idle' : null);
         const r = want ? resolveClip(a.id, want) : null;
-        if(r && r.key!=='walk'){ _csprClip(s, a, r); return; } }
+        if(r && r.key!=='walk'){
+          if(_sheetReady(r.url)){ _csprClip(s, a, r); return; }
+          // 🖼️ 클립 시트 미로드 — 우선 방향 스틸(로드된 것)로 멈춰 보이게 하고, 로드 완료 시 클립으로 승급(투명 빈칸 방지)
+          _csprStill(s, a, face);
+          const tok=a._swapTok;   // _csprStill이 방금 올린 토큰 — 그 사이 다른 전환이 오면 낡은 승급을 버림
+          _warmUrl(r.url, function(){ if(a._swapTok!==tok || !s.isConnected) return;
+            if(a.el && a.el._eggActor && a.el._eggActor!==a) return;
+            _csprClip(s, a, r); });
+          return; } }
       _csprStill(s, a, face); }
     // 🏃 캣휠 달리기: run 클립이 있으면 진짜 달리기 시트(제자리), 없으면 기존대로 걷기 필름을 빠르게 재생.
     //  이동 아님이지만 필름을 쓰므로 반드시 actorShowMoving/_csprClip 경유(정면 이미지 금지 불변식 준수). face=east/west는 setXform flip으로 처리(호출부).
@@ -1019,6 +1079,7 @@
         a.footPad=(typeof _footPad!=='undefined'&&_footPad[id+':south']!=null)?_footPad[id+':south']:((spr&&(PET_SPRITES[id].scale||1)>=2)?0.29:null); if(spr) measureFootPad(id,function(fp){ a.footPad=fp; setXform(a); });
         if(spr && el.querySelector('.cd-hat, .cd-buddy')) measureHeadPad(id, function(f){ el.style.setProperty('--hp',(f*100).toFixed(1)+'%'); });   // 💗 코스메틱 머리 앵커(실측 상단 여백 %)
         el._eggActor=a;   // 원샷 클립(actorOnce)의 지연 복귀가 재빌드된 새 액터를 덮어쓰지 않도록 현재 소유 액터를 표시
+        if(spr) prewarmPetSheets(id);   // 🖼️ 방향 스틸·클립 시트 프리워밍(유휴 시간) — 첫 모션/방향 전환 때 투명 빈칸(간헐적 사라짐) 방지
         a.x=Math.max(2, Math.min(a.x, Math.max(2, W-a.sw)));   // 지속된 x를 현재 무대 폭에 클램프(리사이즈/회전·무대전환 시 화면 밖 방지)
         setWalkDur(a); el.style.left='0px'; applyDepth(a); setXform(a); a._pdir=a.dir;   // 위치·올림·깊이·방향 전부 transform(합성). left는 0 고정 → 걷는 동안 메인스레드 페인트 0
         // 액터는 항상 'roam'(이동)으로 시작. DOM 재사용(markCatDirty·무대 재부착)으로 남아있던 정지스틸(.idle)을
