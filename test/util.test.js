@@ -339,7 +339,26 @@ test('normalizeHome: 빈 입력 → 기본 방 1개', () => {
   assert.strictEqual(h.rooms.length, 1);
   assert.strictEqual(h.roomSlots, 1);
   assert.strictEqual(h.slots, 3);
-  assert.deepStrictEqual(h.rooms[0], { id: '', name: '방 1', emoji: '', wallpaper: 'default', placed: {}, wallPlaced: {}, active: [], poops: 0, floor: 'default', bgfx: '', harvestAt: 0, caredAt: 0 });
+  assert.deepStrictEqual(h.rooms[0], { id: '', name: '방 1', emoji: '', wallpaper: 'default', placed: {}, wallPlaced: {}, active: [], poops: 0, floor: 'default', bgfx: '', harvestAt: 0, caredAt: 0, drops: [] });
+});
+
+// 🎁 대기 드랍(실시간 스폰) 정규화 — 유효 kind만, 격자 클램프(r 1..8·c 1..12), 방당 3개 절단, RTDB 객체형 복원
+test('normalizeHome: drops 정규화(kind 필터·클램프·3개 절단·객체 복원)', () => {
+  const h = U.normalizeHome({ rooms: [{ drops: [
+    { id: 'd1', kind: 'egg', at: 5, r: 99, c: 0 },      // r·c 클램프
+    { id: 'd2', kind: 'gold', at: 1, r: 3, c: 7 },
+    { id: '', kind: 'egg', r: 1, c: 1 },                 // id 없음 → 제거
+    { id: 'd3', kind: 'bad', r: 1, c: 1 },               // 무효 kind → 제거
+    { id: 'd4', kind: 'box', r: 2, c: 2 },
+    { id: 'd5', kind: 'ddeul', r: 2, c: 3 }              // 4번째 유효 항목 → 3개 절단
+  ] }] });
+  assert.deepStrictEqual(h.rooms[0].drops, [
+    { id: 'd1', kind: 'egg', at: 5, r: 8, c: 1 },
+    { id: 'd2', kind: 'gold', at: 1, r: 3, c: 7 },
+    { id: 'd4', kind: 'box', at: 0, r: 2, c: 2 }
+  ]);
+  const h2 = U.normalizeHome({ rooms: [{ drops: { k1: { id: 'x1', kind: 'egg', r: 4, c: 4 } } }] });   // RTDB 객체형
+  assert.deepStrictEqual(h2.rooms[0].drops, [{ id: 'x1', kind: 'egg', at: 0, r: 4, c: 4 }]);
 });
 
 // 🚨 RTDB rooms 형태 견고화(멀티룸 배치 소실 회귀 방지) — Firebase가 배열을 객체/null구멍으로 바꿔 내려도 방을 잃지 않아야 함

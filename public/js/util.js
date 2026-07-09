@@ -249,8 +249,22 @@
         floor: r.floor || 'default',
         bgfx: (typeof r.bgfx === 'string') ? r.bgfx : '',   // 배경효과(앰비언트 오버레이) id — 없으면 ''
         harvestAt: Number(r.harvestAt) || 0,   // 🌾 방별 마지막 수확 시각(ms). 유휴 가구수익 누적 기준(0=미시작 → cats.js가 now로 초기화)
-        caredAt: Number(r.caredAt) || 0   // ❤️ 마지막 '실제 수확(버튼)' 시각(ms). 행복도 수확신선도 기준(0=아직 안 함 → 수확 보너스 없음)
+        caredAt: Number(r.caredAt) || 0,   // ❤️ 마지막 '실제 수확(버튼)' 시각(ms). 행복도 수확신선도 기준(0=아직 안 함 → 수확 보너스 없음)
+        drops: normDrops(r.drops)   // 🎁 방 바닥 대기 드랍(실시간 스폰) — [{id,kind,at,r,c}] 최대 3개
       };
+    }
+    // 대기 드랍 정규화: 유효 kind만, 격자 클램프, 방당 3개 절단. RTDB 어떤 형태(배열/객체)든 안전 복원.
+    function normDrops(d) {
+      var KINDS = { egg: 1, box: 1, ddeul: 1, gold: 1 };
+      var arr = Array.isArray(d) ? d : (d && typeof d === 'object' ? Object.keys(d).map(function (k) { return d[k]; }) : []);
+      var out = [];
+      arr.forEach(function (x) {
+        if (!x || typeof x.id !== 'string' || !x.id || !KINDS[x.kind]) return;
+        if (out.length >= 3) return;
+        out.push({ id: x.id, kind: x.kind, at: Number(x.at) || 0,
+          r: clamp(x.r, 1, CAM.ROWS), c: clamp(x.c, 1, 12) });
+      });
+      return out;
     }
     var roomsArr = toRoomsArray(h.rooms);   // 배열/객체/null구멍 어떤 RTDB 형태든 안전 복원(붕괴·유령방 방지)
     var rooms = (roomsArr && roomsArr.length)
