@@ -173,7 +173,7 @@
     // 가챠 오픈 연출 고양이 1마리 생성. side='l'(왼쪽 등장·오른쪽 봄)/'r'(오른쪽 등장·왼쪽 봄). id=지정 펫(스프라이트 자립 걷기·크기=배율) 또는 null(기본 검은고양이 배경 스프라이트 480).
     function fxSpawnCat(st, side, id){
       const isPet=!!(id && typeof hasSprite==='function' && hasSprite(id));
-      const size=isPet ? Math.max(140, Math.min(560, Math.round(200*petScale(id)))) : 480;
+      const size=isPet ? Math.max(140, Math.min(560, Math.round(200*effPetScale(id)))) : 480;   // 🐘 등장 크기도 압축·등급차등 반영(캠과 동일 표시 크기)
       const el=document.createElement('div');
       el.className='fx-cat walkin fxc-'+side+(isPet?' fxc-pet':' fxc-gc');
       el.style.setProperty('--cat', size+'px');
@@ -438,7 +438,7 @@
     function tenSpawnCameo(wrap, it, side, id){
       const eggEl=$('tenEgg'+it.i); if(!eggEl||!wrap) return;
       const isPet=!!(id && hasSprite(id));
-      const size=isPet?Math.max(90, Math.min(230, Math.round(120*petScale(id)))):150;
+      const size=isPet?Math.max(90, Math.min(230, Math.round(120*effPetScale(id)))):150;   // 🐘 10연 등장도 압축·등급차등 반영
       const el=document.createElement('div');
       el.className='fx-cat ten-cat walkin fxc-'+side+(isPet?' fxc-pet':' fxc-gc');
       el.setAttribute('data-i', it.i); el.style.setProperty('--cat', size+'px');

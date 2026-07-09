@@ -421,6 +421,22 @@
         g.rbMigV=1; return g;
       }).catch(()=>{}).then(()=>{ state._rbMigrating=false; });
     }
+    // 🌈🛟 무지개동전 소비카운터 시드(1회) — 자가복구(normalizeGame 바닥)가 안전하게 켜지도록 rbcoinSpent를 "현재 잔액 보존값"으로 초기화한다.
+    //   시드 후: 잔액 = 누적획득 − 누적소비 = 현재 잔액(변화 0, over-grant 없음). 이후 버그로 잔액이 유실되면 이 축으로 복원되고, 정상 소비는 spendRbcoin이 축을 유지.
+    //   구데이터(시드 전)는 잔액을 손대지 않으므로 안전(마커 rbcoinSpentV=1로 멱등·race-safe).
+    function migrateRbcoinSpentIfNeeded(raw){
+      if(!state.uid) return;
+      if(!raw || Number(raw.rbcoinSpentV)>=1) return;
+      if(state._rbcSeedMig) return; state._rbcSeedMig=true;
+      gameRef().transaction(g=>{
+        if(!g) return;   // 콜드캐시 null 첫 패스엔 제안 금지
+        if(Number(g.rbcoinSpentV)>=1) return;
+        const total=Math.max(0, Math.floor(Number(g.rbcoinTotal)||0));
+        const bal=Math.max(0, Math.floor(Number(g.rbcoin)||0));
+        g.rbcoinSpent=Math.max(0, total-bal);   // 시드 시점 잔액을 (획득−소비)로 정확히 재현 → 잔액 불변
+        g.rbcoinSpentV=1; return g;
+      }).catch(()=>{}).then(()=>{ state._rbcSeedMig=false; });
+    }
     function currentWall(){ return room().wallpaper||'default'; }
     // 바닥 스킨(픽셀 타일) - 벽지처럼 방마다 적용. .cr-floor 배경에 반복 타일(SVG data URI). default=단색.
     const _tileBgCache={};
@@ -815,10 +831,29 @@
     };
     // @gen:end
     function hasSprite(id){ return !!PET_SPRITES[id]; }
-    // 펫별 크기 배율(고양이=1.0 기준). PET_SPRITES[id].scale 로 생성(tools/pets.json 의 scale). 예: 호랑이 5, 곰 4, 강아지 1.5, 토끼 0.8.
+    // 펫별 '원본' 크기 배율(고양이=1.0 기준). PET_SPRITES[id].scale 로 생성(tools/pets.json 의 scale). 예: 호랑이 4, 강아지 1.5.
+    //  ⚠️ 원본(raw)은 스프라이트 자산 판정(발밑 여백 추정 등)용으로만 유지 — 화면 표시 크기는 반드시 effPetScale/petActorPx 경유.
     function petScale(id){ const sp=PET_SPRITES[id]; const s=sp&&Number(sp.scale); return (s&&s>0)?s:1; }
+    // 🐘 표시 크기 압축 — 현실 배율이 클수록 캠에서 덩치가 과해 보여, "클수록 점진적으로 더" 줄인다(작을수록 적게, 임계 없이 전 구간 연속).
+    //  + 같은 크기라도 등급이 낮을수록 더 작게 — 초과분(raw-1)에 등급계수 tf(일반 하한~한정 1.0)를 곱해 '큰 펫에 차이가 집중'되게 한다.
+    //  공식: e=raw-1(1.0 최소가 기준점), 압축초과=e/(1+e·BEND)(e가 클수록 감소폭↑=작을수록 적게), disp=1+압축초과×tf. raw≤1은 그대로.
+    //  단일 소스: 캠 3무대·10연·뽑기 등장·PiP 어디서나 petActorPx(및 fx 등장 크기)가 이 함수를 탄다. 수치만 바꾸면 전역 반영.
+    const PET_SIZE_BEND = 0.24;    // 압축 강도(↑=큰 펫이 더 작아짐). 현재 '약하게'(호랑이 4.0→약2.7, -32%)
+    const PET_SIZE_TFMIN = 0.85;   // 등급계수 하한(일반). 상한 1.0(한정). ↓=저등급이 더 작아짐(완만)
+    function effPetScale(id){
+      const raw = petScale(id);
+      if(!(raw > 1)) return raw;   // 최소 크기(≤1.0)=기준점, 그대로
+      const tm = (typeof effCatTier==='function') ? effCatTier() : ((typeof CAT_TIER!=='undefined') ? CAT_TIER : {});
+      const tier = (tm && tm[id]) || 'normal';
+      const N = (typeof TIER_ORDER!=='undefined' && TIER_ORDER.length) ? TIER_ORDER.length : 7;   // 7등급(일반~한정)
+      const rank = (typeof tierRank==='function') ? tierRank(tier) : 0;
+      const tf = PET_SIZE_TFMIN + (1 - PET_SIZE_TFMIN) * (rank / Math.max(1, N - 1));
+      const e = raw - 1;
+      return 1 + (e / (1 + e * PET_SIZE_BEND)) * tf;
+    }
     // 걷는 무대(dock 방·홈 방)에서 실제 렌더 높이(px). base=고양이 기준, cap=무대에 맞춘 상한(큰 동물도 방 밖으로 안 나가게), floor=최소.
-    function petActorPx(id, base, cap){ const raw=base*petScale(id); const lo=Math.round(base*0.55); return Math.max(lo, Math.min(Math.round(raw), cap)); }
+    //  표시 배율은 effPetScale(압축·등급차등) 사용 — 원본 petScale 아님.
+    function petActorPx(id, base, cap){ const raw=base*effPetScale(id); const lo=Math.round(base*0.55); return Math.max(lo, Math.min(Math.round(raw), cap)); }
     // ── 🎞️ 다중 모션 클립(PixelLab 프리셋) — 클립 레지스트리(단일 소스) ─────────────────────
     // 걷기 시트 1장 → 클립 N장으로 확장하되 재생기는 기존 필름(.csprf, --sheet/--fw/steps)을 그대로 재사용한다.
     // 클립 시트 = 가로 스트립 1장(방향은 1개만 취득): 이동·눕기 계열(run·jump·sleep)=east(서쪽은 scaleX(-1) 플립),
@@ -2272,8 +2307,14 @@
       boost: (g.boost && typeof g.boost==='object') ? { until:Math.max(0,Math.floor(Number(g.boost.until)||0)), mult:Math.max(1,Number(g.boost.mult)||1) } : { until:0, mult:1 },   // 💊 수확 수익 부스트 버프 {until(ms), mult}
       dropRollAt: Math.max(0, Math.floor(Number(g.dropRollAt)||0)),   // 🎁 드랍 스폰 롤 시계(ms, 전역 1개) — reconcileDrops가 10분 단위로 소비
       affV: Math.max(0, Math.floor(Number(g.affV)||0)),   // 💗 애정 계단 개편 마이그레이션 마커(2=완료, migrateAffRwIfNeeded) — normalizeGame이 객체를 재생성하므로 반드시 여기 유지
-      rbcoin: clampRbcoin(g.rbcoin),   // 🌈 무지개동전 — 한정 등급 중복 획득 시 +1, 무지개알/박스(5개) 소비
-      rbcoinTotal: Math.max(0, Math.floor(Number(g.rbcoinTotal)||0)),   // 🌈 누적 획득(CS·어뷰즈 추적용 — 소비해도 안 줄어듦)
+      // 🌈 무지개동전 — 🛟 자가복구 바닥: 시드 완료(rbcoinSpentV≥1) 후엔 잔액이 (누적획득−누적소비) 아래로 "유실"되면 그 값으로 복원(치명 유실 방지).
+      //   over-grant 방지: 정상 소비는 spendRbcoin이 rbcoinSpent를 함께 올려 바닥=실제잔액 유지 → max()가 아무 것도 안 올림. 시드 전(구데이터)엔 원값 그대로.
+      rbcoin: (Math.floor(Number(g.rbcoinSpentV)||0)>=1)
+        ? Math.max(clampRbcoin(g.rbcoin), clampRbcoin((Number(g.rbcoinTotal)||0)-(Number(g.rbcoinSpent)||0)))
+        : clampRbcoin(g.rbcoin),   // 🌈 무지개동전 잔액 — 한정 중복 +1, 무지개알/박스 5개 소비
+      rbcoinTotal: Math.max(0, Math.floor(Number(g.rbcoinTotal)||0)),   // 🌈 누적 획득(감소 없음 — grantRbcoin만 올림)
+      rbcoinSpent: Math.max(0, Math.floor(Number(g.rbcoinSpent)||0)),   // 🌈 누적 소비(감소 없음 — spendRbcoin만 올림). 잔액=획득−소비 재구성 축
+      rbcoinSpentV: Math.max(0, Math.floor(Number(g.rbcoinSpentV)||0)),   // 🌈 소비카운터 시드 마커(1=시드 완료 → 자가복구 활성)
       rbMigV: Math.max(0, Math.floor(Number(g.rbMigV)||0))   // 🌈 무지개 경제 개편 마이그레이션 마커(1=완료, migrateRbEconomyIfNeeded)
     }); }
     // 선물함 목록을 항상 배열로 정규화(RTDB가 객체로 돌려줄 수 있어 방어)
