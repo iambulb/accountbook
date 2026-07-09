@@ -5684,7 +5684,14 @@
     // 프로모/치트 코드 — 보상은 곧바로 주지 않고 "선물함"으로 들어감(더보기 → 선물함에서 받기).
     // 규칙: 일반 사용자는 코드당 1회만, 개발자 계정(isDev)은 무제한. type=coins(은화) / consum(소비 아이템).
     // 🎟️ 2026-07 쿠폰 전량 삭제(사용자 지침) — @무제한 규칙도 폐지. 새 이벤트 코드는 운영 시점에 여기 추가(일반=코드당 1회 멱등, g.codes 마커).
-    const PROMO_CODES = {};
+    const PROMO_CODES = {
+      // 2026-07-09 쿠폰 4종(사용자 지시 재등록). 중복 사용 차단 = redeemCode의 g.codes 마커 + 트랜잭션 재검증(코드당 1회, 다기기 동시 사용 안전).
+      // 🌈 무지개알/박스는 2026-07 개편으로 소비 인벤토리가 폐지(무지개동전 5개=1뽑)라 동전 5개로 지급(type:'rbcoin').
+      rainbowegg:   { type:'rbcoin', qty:5,  label:'무지개동전 5개 (무지개알 1뽑)' },   // 첫 키 = 쿠폰 목록·소식 최상단
+      rainbowbox:   { type:'rbcoin', qty:5,  label:'무지개동전 5개 (무지개박스 1뽑)' },
+      eggardenbox:  { type:'consum', key:'box',   qty:10, label:'랜덤박스 10개' },
+      eggarden0709: { type:'consum', key:'ddeul', qty:10, label:'뜰알 10개' }
+    };
     function redeemCode(code){
       let key=(code||'').trim().toLowerCase();
       const def=PROMO_CODES[key];
@@ -5727,6 +5734,7 @@
     function giftView(gf){ let icon, name;
       if(gf.type==='coins'){ icon=coinSvg({h:30}); name=(gf.qty||0).toLocaleString()+' 은화'; }
       else if(gf.type==='gold'){ icon=goldSvg({h:30}); name=(gf.qty||1).toLocaleString()+' 금화'; }
+      else if(gf.type==='rbcoin'){ icon=rainbowCoinSvg({h:28}); name='무지개동전 '+(gf.qty||1).toLocaleString()+'개'; }   // 🌈 무지개알/박스 1뽑=5개
       else if(gf.type==='hat'){ icon=hatSvg(gf.key,{h:26}); name=(HAT_CATALOG[gf.key]||gf.key); }   // 🧢 모자(own-once)
       else if(gf.type==='petfx'){ icon=buddySvgOf(gf.key,{h:24}); name=(BUDDY_CATALOG[gf.key]||gf.key)+' 펫효과'; }   // ✨ 펫효과(own-once)
       else { const m=CONSUM_META[gf.key]||{name:gf.key,icon:()=>''}; icon=m.icon({h:34}); name=m.name+' '+(gf.qty||1)+'개'; }
@@ -5770,6 +5778,7 @@
     }
     function applyGiftToGame(g, gf){ if(gf.type==='coins') g.coins=(g.coins||0)+(Number(gf.qty)||0);
       else if(gf.type==='gold') g.gold=clampGold((g.gold||0)+(Number(gf.qty)||1));
+      else if(gf.type==='rbcoin') g.rbcoin=Math.min(999999, Math.max(0, Math.floor(Number(g.rbcoin)||0))+(Number(gf.qty)||1));   // 🌈 무지개동전(쿠폰·이벤트 지급 — 5개=무지개알/박스 1뽑)
       else if(gf.type==='consum' && gf.key) g.consum[gf.key]=(Number(g.consum[gf.key])||0)+(Number(gf.qty)||1);
       else if(gf.type==='hat' && gf.key && HAT_CATALOG[gf.key]){ g.owned.hats=g.owned.hats||{}; if(!g.owned.hats[gf.key]) g.owned.hats[gf.key]={boughtAt:new Date().toISOString()}; }   // 🧢 모자(own-once) — 이벤트·쿠폰·선물 지급
       else if(gf.type==='petfx' && gf.key && BUDDY_CATALOG[gf.key]){ g.owned.petfx=g.owned.petfx||{}; if(!g.owned.petfx[gf.key]) g.owned.petfx[gf.key]={boughtAt:new Date().toISOString()}; } }   // ✨ 펫효과(own-once)
@@ -10702,7 +10711,8 @@
     // 업데이트 내역 기본값(요약) — 최신순. RTDB config/notices가 있으면 그걸로 덮어씀. 시즌·친구선물 홍보는 이벤트·알림 섹션에 이미 나오므로 여기(업데이트 내역)엔 넣지 않는다.
     // 🔒 여기(및 config/notices)는 일반 사용자에게 그대로 노출된다. 개발자 모드·치트·내부 도구 등 비공개 변경은 절대 넣지 말 것(운영 유출 크리티컬). 방어로 isDevNotice가 한 번 더 거른다.
     let NOTICES = [
-      // (2026-07-09 사용자 지시: 쿠폰 전량 삭제 — '새 쿠폰 4종' 안내도 함께 제거. 새 쿠폰은 운영 시점에 config/notices로 공지)
+      // (2026-07-09 사용자 재지시: 새 쿠폰 4종 등록 + 안내 — 무지개알/박스 보상은 무지개동전 개편에 맞춰 동전 5개로 지급)
+      { date:'2026-07-10', t:'새 쿠폰 4종 도착 🎟️', s:'RAINBOWEGG·RAINBOWBOX(각 무지개동전 5개 = 무지개 1뽑) · EGGARDENBOX(랜덤박스 10개) · EGGARDEN0709(뜰알 10개) — 더보기 → 설정 → 코드 입력에서 사용하세요(계정당 1회)' },
       { date:'2026-07-10', t:'선물함·공지 개편', s:'선물 출처 표시, 운영자 선물, 공지사항에 운영자 공지와 업데이트 내역을 함께 정리했어요' }
     ];
     // RTDB config/notices(공개 읽기·관리자 쓰기)에서 공지를 읽어 NOTICES를 갱신. 없으면 위 기본값 유지.
@@ -10803,7 +10813,7 @@
     // game/localStorage가 바뀌어도(선물 받기·쿠폰 사용·공지 확인) 더보기 화면이 다시 안 그려지면 뱃지가 남으므로, 더보기 탭이 떠 있으면 즉시 재렌더해 알림을 지운다.
     function refreshMoreBadges(){ if(state.view==='mode' && state.tab==='more' && typeof renderMore==='function') renderMore(); }
     // 쿠폰 보상 픽셀 아이콘(PROMO_CODES 타입별) — 이모지 대신 도트 아이콘 재사용.
-    function couponIcon(d){ if(d.type==='coins') return coinSvg({h:15}); if(d.key==='ddeul') return ddeulEggSvg({h:16}); if(d.key==='rainbow_egg') return rainbowEggImg(16); if(d.key==='rainbow_box') return rainbowBoxSvg({h:16}); if(d.key==='egg') return eggSvg(0,{h:16}); if(d.key==='box') return boxSvg({h:16}); return coinSvg({h:15}); }
+    function couponIcon(d){ if(d.type==='coins') return coinSvg({h:15}); if(d.type==='rbcoin') return rainbowCoinSvg({h:15}); if(d.key==='ddeul') return ddeulEggSvg({h:16}); if(d.key==='rainbow_egg') return rainbowEggImg(16); if(d.key==='rainbow_box') return rainbowBoxSvg({h:16}); if(d.key==='egg') return eggSvg(0,{h:16}); if(d.key==='box') return boxSvg({h:16}); return coinSvg({h:15}); }
     // 🎟️ 쿠폰번호 탭 → 클립보드 복사 + 눌림 연출 + 토스트. (인라인 onclick=copyCouponCode(this))
     function copyCouponCode(el){ if(!el) return; const code=(el.textContent||'').trim(); if(!code) return;
       const flash=function(){ el.classList.remove('copied'); void el.offsetWidth; el.classList.add('copied'); toast('쿠폰번호가 복사되었어요 📋'); };
