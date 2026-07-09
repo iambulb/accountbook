@@ -826,10 +826,18 @@
     .hpref-row { display:flex; align-items:center; gap:10px; margin-top:6px; }
     .hpref-l { flex:none; width:34px; font-size:12px; font-weight:800; color:var(--sub); }
     .hpref-seg { flex:1; }
-    /* 🍡 츄르 펫 선택 행(버튼형 bagrow) */
+    /* 🍡 츄르 펫 선택 행(버튼형 bagrow) — (레거시, 개별 행형. 현행 사용 시트는 아래 .puGrid) */
     .treatpick { width:100%; text-align:left; cursor:pointer; font:inherit; color:inherit; }
     .treatpick .bgnm { flex:1; }
     .treatpick .tp-treat { flex:none; opacity:.9; }
+    /* 🧺 펫 대상 소비템 사용 시트(openPetUseSheet) — 펫 인벤토리 그리드: 펫 탭 즉시 적용, 시트 유지로 결과(염색 색 등) 확인 */
+    .puGrid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+    .puCell { display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 6px 8px; border:1.5px solid var(--bd); border-radius:12px; background:var(--card); cursor:pointer; font:inherit; color:inherit; }
+    .puCell:active { transform:scale(.96); }
+    .puCell .catpx, .puCell .px { image-rendering:pixelated; }
+    .puCell b { font-size:12px; font-weight:800; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .puCell .pu-chip { font-size:10.5px; font-weight:700; color:var(--sub); max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .puCell.dis { opacity:.45; pointer-events:none; }
     /* 지갑 카운터(은화·금화) — 👛 트랜지언트: 평소엔 숨겨 LIVE 배지를 안 가리고, 재화 획득 연출(walletShow) 순간에만 .show로 표시.
        .in(등장 팝인)은 walletShow가 잠깐 붙였다 떼는 원샷 — .bump 토글로 animation-name이 되돌아가도 팝인이 재생되지 않게 분리 */
     .cd-wallet { flex:none; display:none; align-items:center; gap:8px; padding:4px 10px; border-radius:20px; background:var(--card); border:1px solid var(--bd); font-size:11.5px; font-weight:800; color:var(--text); box-shadow:0 2px 8px rgba(0,0,0,.12); }

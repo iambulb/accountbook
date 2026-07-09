@@ -3947,14 +3947,14 @@
     // reduced-motion이면 처음부터 정지 이미지(south=앞)로 고정.
     function catActorHTML(id, h, dye){
       const sp=PET_SPRITES[id];
-      const dy=(dye!=null)?(Number(dye)||0):petDyeOf(id);   // 🎨 염색 톤(hue-rotate) — 친구 캠은 스냅샷 dye를 명시 전달(내 소유와 무관)
+      const df=dyeFilterCss((dye!=null)?dye:petDyeOf(id));   // 🎨 염색 필터(카탈로그 id·legacy 숫자 공용) — 친구 캠은 스냅샷 dye를 명시 전달(내 소유와 무관, 0=미염색 유지)
       if(sp){ ensurePetArt(id); if(sp.runtime && !sp.urls) return _petPlaceholder(Math.round(h));   // 아트 지연 로딩 중이면 도트 알
         const s=Math.round(h); const rm=reducedMotion(); const fw=sp.frontWalk;
         // frontWalk 고양이는 walk.png가 정면이라 걷기 시트를 애니메이션하지 않고 항상 정지 스틸(.idle)로 둔다.
         //  - 이동 중엔 east(옆) 스틸을 보여주고 scaleX로 방향을 뒤집음, 정지/reduced-motion이면 south(정면).
         const idleOn = rm || fw;
         const face = (fw && !rm) ? 'east' : 'south';
-        return '<div class="cspr'+(idleOn?' idle':'')+'" style="width:'+s+'px;height:'+s+'px;--sheet:url('+sprWalkUrl(sp)+');--idle:url('+sprStill(id,face)+');--fw:'+(s*sp.frames)+'px;'+(dy?'filter:hue-rotate('+dy+'deg);':'')+'"><i class="csprf" style="animation-timing-function:steps('+(sp.frames||6)+')"></i></div>'; }
+        return '<div class="cspr'+(idleOn?' idle':'')+'" style="width:'+s+'px;height:'+s+'px;--sheet:url('+sprWalkUrl(sp)+');--idle:url('+sprStill(id,face)+');--fw:'+(s*sp.frames)+'px;'+(df?'filter:'+df+';':'')+'"><i class="csprf" style="animation-timing-function:steps('+(sp.frames||6)+')"></i></div>'; }
       return catSide(id, 0, {h:h});
     }
     // 정면 썸네일(걷지 않는 표시용: 알뜰샵 카드·보유 칩·뽑기 결과 등).
@@ -3964,8 +3964,8 @@
       if(hasSprite(id)){ const sp=PET_SPRITES[id]; ensurePetArt(id); const s=Math.round(h);
         if(sp.runtime && !sp.urls) return _petPlaceholder(s);   // 아트 지연 로딩 중이면 도트 알
         // opt.eager=즉시 로딩(뽑기 등장처럼 '바로 보여야' 하는 곳). 기본은 lazy(카드·그리드 성능). lazy면 갓 삽입된 이미지를 브라우저가 늦게 불러 등장이 ~1초 지연됨.
-        const dy=petDyeOf(id);   // 🎨 염색 톤 — 썸네일(펫 그리드·도감·리빌)에도 동일 반영
-        return '<img class="catpx" src="'+sprStill(id,'south')+'" alt="" width="'+s+'" height="'+s+'"'+(dy?' style="filter:hue-rotate('+dy+'deg)"':'')+(opt.eager?' decoding="sync"':' loading="lazy"')+'>'; }
+        const df=dyeFilterCss(petDyeOf(id));   // 🎨 염색 필터 — 썸네일(펫 그리드·도감·리빌)에도 동일 반영
+        return '<img class="catpx" src="'+sprStill(id,'south')+'" alt="" width="'+s+'" height="'+s+'"'+(df?' style="filter:'+df+'"':'')+(opt.eager?' decoding="sync"':' loading="lazy"')+'>'; }
       return catFront(id, opt); }
     const POSE_M = { sit:M_CAT_SIT, loaf:M_CAT_LOAF, sleep:M_CAT_SLEEP };
     function catPose(id, pose, opt){ return pxSvg(POSE_M[pose]||M_CAT_SIDE_A, catPal(id), opt); }
@@ -5951,55 +5951,91 @@
       else if(use==='dye_remover') useDyeRemover(); }
     // ⏱️ ms→"Nh Mm"/"Mm" 간단 표기(부스트 남은시간·소비템)
     function fmtDur(ms){ ms=Math.max(0,Number(ms)||0); const mm=Math.round(ms/60000), h=Math.floor(mm/60), m=mm%60; return h>0?(h+'시간'+(m?' '+m+'분':'')):(m+'분'); }
-    // 🎨 랜덤 염색약: 펫 선택 시트 → applyDye(id)로 톤 랜덤 변경(owned.cats[id].dye = hue-rotate 각도).
-    //    프리셋 8톤에서 현재 톤을 제외하고 랜덤 — hue-rotate라 픽셀·외곽선은 그대로(도트 유지, dye.py 검수).
-    const DYE_HUES=[40,80,120,160,200,240,280,320];
-    function petDyeOf(id){ const d=Number((ownedCatsMap()[id]||{}).dye)||0; return DYE_HUES.indexOf(d)>=0?d:0; }
-    function useDye(){
-      if(consumQty('dye')<=0){ toast('염색약이 없어요 · 이벤트·쿠폰으로 받을 수 있어요', true); return; }
-      const own=ownedCatsMap(), ids=Object.keys(own).filter(id=>PET_CATALOG.some(c=>c.id===id));
-      if(!ids.length){ toast('먼저 펫을 데려오세요'); return; }
+    // 🎨 염색 색상 카탈로그(2026-07 대확장) — 절대색(전신 틴트) 45색: 어떤 펫이든 지정 색으로 일관 염색(이름 표기 가능, 흑·백·회·브라운 포함).
+    //    유채·브라운 = grayscale(1) sepia(1) saturate(S) hue-rotate(Hdeg) brightness(B) — sepia 기준색(≈골드브라운)에서 회전, 명암·외곽선(루미넌스) 보존.
+    //    무채 = grayscale(1) brightness(B). 파라미터는 CSS 필터 행렬을 파이썬으로 재현한 스와치 시트로 검수 후 확정(2026-07-09).
+    //    ⚠️ legacy 하위호환: 구 저장값(숫자 hue 40~320)은 dyeFilterCss가 hue-rotate로 계속 해석(LEGACY_DYE_HUES 화이트리스트).
+    const LEGACY_DYE_HUES=[40,80,120,160,200,240,280,320];
+    const DYE_CATALOG=(function(){ const out=[];
+      const C=function(id,name,g,h,s,b){ out.push({ id:id, name:name, g:g, css:'grayscale(1) sepia(1) saturate('+s+') hue-rotate('+h+'deg) brightness('+b+')' }); };
+      const A=function(id,name,b){ out.push({ id:id, name:name, g:'무채', css:'grayscale(1) brightness('+b+')' }); };
+      C('cherry','체리','레드',-40,2.6,0.9);      C('scarlet','스칼렛','레드',-30,2.4,1.0);   C('crimson','크림슨','레드',-45,2.0,0.82);
+      C('wine','와인','레드',-55,1.6,0.66);       C('rose','로즈','레드',-50,1.4,1.05);
+      C('babypink','베이비핑크','핑크',-70,1.0,1.28); C('pink','핑크','핑크',-75,1.5,1.12);   C('hotpink','핫핑크','핑크',290,2.4,1.05);
+      C('magenta','마젠타','핑크',275,2.4,0.95);  C('lilacpink','연보라핑크','핑크',-95,1.1,1.15);
+      C('apricot','살구','오렌지',-12,1.1,1.2);   C('coral','코랄','오렌지',-25,1.6,1.1);     C('orange','오렌지','오렌지',-15,2.2,1.02);
+      C('tangerine','탠저린','오렌지',-8,2.6,1.0);
+      C('cream','크림','옐로우',8,0.8,1.28);      C('lemon','레몬','옐로우',15,1.8,1.22);     C('gold','골드','옐로우',5,2.2,1.05);
+      C('mustard','머스터드','옐로우',10,1.6,0.88);
+      C('lime','라임','그린',45,1.8,1.12);        C('green','그린','그린',80,1.8,0.95);       C('forest','포레스트','그린',90,1.6,0.72);
+      C('olive','올리브','그린',35,1.3,0.82);
+      C('mint','민트','민트',115,1.2,1.18);       C('emerald','에메랄드','민트',105,1.9,0.9); C('teal','틸','민트',135,1.6,0.85);
+      C('sky','하늘','블루',155,1.3,1.18);        C('blue','파랑','블루',180,2.0,0.95);       C('cobalt','코발트','블루',185,2.4,0.8);
+      C('navy','네이비','블루',190,2.2,0.55);
+      C('lavender','라벤더','퍼플',225,1.0,1.2);  C('violet','바이올렛','퍼플',235,1.7,0.98); C('purple','퍼플','퍼플',245,1.9,0.8);
+      C('plum','플럼','퍼플',262,1.5,0.72);
+      C('beige','베이지','브라운',2,0.7,1.18);    C('sand','샌드','브라운',4,0.95,1.06);      C('caramel','카라멜','브라운',-4,1.5,0.98);
+      C('brown','브라운','브라운',-8,1.4,0.8);    C('choco','초코','브라운',-12,1.3,0.62);    C('darkchoco','다크초코','브라운',-14,1.2,0.46);
+      A('white','화이트',1.5);  C('ivory','아이보리','무채',6,0.35,1.38);  A('silver','실버',1.18);
+      A('gray','그레이',0.95);  A('charcoal','차콜',0.68);                 A('black','블랙',0.4);
+      return out; })();
+    const DYE_MAP={}; DYE_CATALOG.forEach(function(d){ DYE_MAP[d.id]=d; });
+    // 염색값 → CSS filter 문자열(단일 소스 — catActorHTML·catFace·비디오 PiP 워커·친구 캠이 공유). 무효값=''(미염색).
+    function dyeFilterCss(v){ if(!v) return '';
+      if(typeof v==='string' && DYE_MAP[v]) return DYE_MAP[v].css;
+      const n=Number(v)||0; return LEGACY_DYE_HUES.indexOf(n)>=0?('hue-rotate('+n+'deg)'):''; }
+    function dyeNameOf(v){ return (typeof v==='string' && DYE_MAP[v])?DYE_MAP[v].name:(v?'커스텀 톤':''); }
+    // 펫의 유효 염색값(카탈로그 id 문자열 | legacy 숫자 | 0=미염색) — 진리값 판정은 !!petDyeOf(id) (문자열 id는 >0 비교 불가)
+    function petDyeOf(id){ const d=(ownedCatsMap()[id]||{}).dye; if(d==null) return 0;
+      if(typeof d==='string') return DYE_MAP[d]?d:0;
+      const n=Number(d)||0; return LEGACY_DYE_HUES.indexOf(n)>=0?n:0; }
+    // 🧺 펫 대상 소비템 공용 사용 시트(2026-07 개편, 사용자 확정 UX) — 가방 '사용' → 펫 인벤토리 그리드 → 펫 탭 즉시 적용.
+    //    적용 후에도 시트를 유지한 채 그 펫 썸네일(catFace, dye 반영)이 결과로 갱신돼 바로 확인. 수량 0이 돼도 결과 확인용으로 시트 유지(셀만 비활성).
+    const PET_USE_META={
+      dye:{ title:'염색약 사용', item:'dye', apply:'applyDye',
+        note:function(){ return '염색할 펫을 탭하세요 — <b>'+DYE_CATALOG.length+'가지 색</b> 중 랜덤!'; },
+        chip:function(id){ const v=petDyeOf(id); return v?('🎨 '+dyeNameOf(v)):'기본 톤'; } },
+      dye_remover:{ title:'염색 리무버', item:'dye_remover', apply:'applyDyeRemover',
+        note:function(){ return '염색을 지울 펫을 탭하세요 — 원래 톤으로 복원돼요'; },
+        only:function(id){ return !!petDyeOf(id); }, empty:'염색된 펫이 없어요',
+        chip:function(id){ return '🎨 '+dyeNameOf(petDyeOf(id)); } },
+      treat:{ title:'츄르 주기', item:'treat', apply:'applyTreat',
+        note:function(){ return '츄르를 줄 펫을 탭하세요 — 애정 +1'; },
+        chip:function(id){ return '애정 Lv.'+affectionLevel((ownedCatsMap()[id]||{}).affection||0, CAT_TIER[id]||'normal').level; } }
+    };
+    function openPetUseSheet(kind){
+      const M=PET_USE_META[kind]; if(!M) return;
+      if(consumQty(M.item)<=0){ toast(CONSUM_META[M.item].name+'이(가) 없어요', true); return; }
       const build=()=>{
-        let h='<div class="bag"><div class="note" style="margin-bottom:10px;">염색할 펫을 선택하세요 · 보유 <b>'+consumQty('dye')+'</b>개 — 어떤 톤이 나올지는 랜덤!</div>';
-        h+=ids.map(id=>{ const dy=petDyeOf(id);
-          return '<button class="bagrow treatpick" onclick="applyDye(\''+id+'\')" aria-label="'+escapeHtml(catName(id))+' 염색하기">'
-            +'<span class="bgic">'+catFace(id,{h:34})+'</span><b class="bgnm">'+escapeHtml(catName(id))+'</b>'
-            +'<span class="qty">'+(dy?'염색됨':'기본 톤')+'</span><span class="bgic tp-treat">'+consumSvg('dye',{h:24})+'</span></button>'; }).join('');
-        h+='</div>';
+        const own=ownedCatsMap();
+        let ids=Object.keys(own).filter(id=>PET_CATALOG.some(c=>c.id===id));
+        if(M.only) ids=ids.filter(M.only);
+        const q=consumQty(M.item), dis=q<=0;
+        let h='<div class="note" style="margin-bottom:10px;display:flex;align-items:center;gap:8px;"><span style="display:inline-flex;flex:none;">'+CONSUM_META[M.item].icon({h:22})+'</span><span style="flex:1;">'+M.note()+'</span><b style="flex:none;">보유 '+q.toLocaleString()+'</b></div>';
+        if(!ids.length) h+='<div class="empty" style="padding:26px 10px;">'+(M.empty||'먼저 펫을 데려오세요')+'</div>';
+        else h+='<div class="puGrid">'+ids.map(id=>
+          '<button class="puCell'+(dis?' dis':'')+'" onclick="'+M.apply+'(\''+id+'\')" aria-label="'+escapeHtml(catName(id))+'에게 '+CONSUM_META[M.item].name+' 사용">'
+          +catFace(id,{h:42})+'<b>'+escapeHtml(catName(id))+'</b><span class="pu-chip">'+M.chip(id)+'</span></button>').join('')+'</div>';
         return h;
       };
-      openSheet('염색약 사용', build());
+      openSheet(M.title, build());
       state._sheetRefresh=()=>{ const b=$('sheetBody'); if(b) b.innerHTML=build(); };
     }
+    // 🎨 염색약: 펫 그리드에서 탭 → DYE_CATALOG 45색 중 랜덤(현재 색 제외) 배정, 시트 유지로 결과 확인.
+    function useDye(){ openPetUseSheet('dye'); }
     function applyDye(id){
       if(!id||!ownsCat(id)){ toast('펫을 찾을 수 없어요', true); return; }
       if(consumQty('dye')<=0){ toast('염색약이 없어요', true); return; }
-      const cur=petDyeOf(id), pool=DYE_HUES.filter(d=>d!==cur);
-      const hue=pool[Math.floor(Math.random()*pool.length)];   // 랜덤 톤(현재 톤 제외 — 같은 결과 방지)
+      const cur=petDyeOf(id), pool=DYE_CATALOG.filter(d=>d.id!==cur);
+      const pick=pool[Math.floor(Math.random()*pool.length)];   // 랜덤 색(현재 색 제외 — 같은 결과 방지)
       gameRef().transaction(g=>{ g=normalizeGame(g);
         if((Number(g.consum.dye)||0)<1) return;
         const c=g.owned.cats[id]; if(!c) return;
-        g.consum.dye-=1; c.dye=hue; return g;
-      }).then(r=>{ if(r&&r.committed){ toast(catName(id)+' 염색 완료 — 새로운 톤!'); if(state._sheetRefresh) state._sheetRefresh(); if($('petInfo')) openPetInfo(id); } });
+        g.consum.dye-=1; c.dye=pick.id; return g;
+      }).then(r=>{ if(r&&r.committed){ toast('🎨 '+catName(id)+' → '+pick.name+' 염색!'); if(state._sheetRefresh) state._sheetRefresh(); if($('petInfo')) openPetInfo(id); } });
     }
-    // 🧴 염색 리무버: 염색된 펫 선택 → 1개 소모해 원래 톤 복원(무료 지우기 없음 — 리무버도 이벤트·쿠폰·선물 지급 전용, 사용자 지침).
-    function useDyeRemover(){
-      if(consumQty('dye_remover')<=0){ toast('염색 리무버가 없어요 · 이벤트·쿠폰으로 받을 수 있어요', true); return; }
-      const own=ownedCatsMap(), ids=Object.keys(own).filter(id=>petDyeOf(id)>0);
-      if(!ids.length){ toast('염색된 펫이 없어요'); return; }
-      const build=()=>{
-        const cur=Object.keys(ownedCatsMap()).filter(id=>petDyeOf(id)>0);
-        let h='<div class="bag"><div class="note" style="margin-bottom:10px;">염색을 지울 펫을 선택하세요 · 보유 <b>'+consumQty('dye_remover')+'</b>개 — 원래 톤으로 복원돼요</div>';
-        h+=(cur.length?cur.map(id=>'<button class="bagrow treatpick" onclick="applyDyeRemover(\''+id+'\')" aria-label="'+escapeHtml(catName(id))+' 염색 지우기">'
-            +'<span class="bgic">'+catFace(id,{h:34})+'</span><b class="bgnm">'+escapeHtml(catName(id))+'</b>'
-            +'<span class="qty">염색됨</span><span class="bgic tp-treat">'+consumSvg('dye_remover',{h:24})+'</span></button>').join('')
-          :'<div class="empty" style="padding:20px 10px;">염색된 펫이 없어요</div>');
-        h+='</div>';
-        return h;
-      };
-      openSheet('염색 리무버 사용', build());
-      state._sheetRefresh=()=>{ const b=$('sheetBody'); if(b) b.innerHTML=build(); };
-    }
+    // 🧴 염색 리무버: 염색된 펫만 그리드에 표시 → 1개 소모해 원래 톤 복원(무료 지우기 없음 — 이벤트·쿠폰·선물 지급 전용, 사용자 지침).
+    function useDyeRemover(){ openPetUseSheet('dye_remover'); }
     function applyDyeRemover(id){
       if(!id||!ownsCat(id)||!petDyeOf(id)){ toast('염색된 펫이 아니에요', true); return; }
       if(consumQty('dye_remover')<=0){ toast('염색 리무버가 없어요', true); return; }
@@ -6009,23 +6045,8 @@
         g.consum.dye_remover-=1; delete c.dye; return g;
       }).then(r=>{ if(r&&r.committed){ toast(catName(id)+' 염색을 지웠어요 — 원래 톤으로'); if(state._sheetRefresh) state._sheetRefresh(); if($('petInfo')) openPetInfo(id); } });
     }
-    // 🍡 츄르: 펫 선택 시트 → applyTreat(id)로 애정 상승(쿨다운 무시)
-    function useTreat(){
-      if(consumQty('treat')<=0){ toast('츄르가 없어요 · 알뜰샵 소비 탭에서 구매', true); return; }
-      const own=ownedCatsMap(), ids=Object.keys(own);
-      if(!ids.length){ toast('먼저 펫을 데려오세요'); return; }
-      const build=()=>{
-        let h='<div class="bag"><div class="note" style="margin-bottom:10px;">츄르를 줄 펫을 선택하세요 · 보유 <b>'+consumQty('treat')+'</b>개</div>';
-        h+=ids.map(id=>{ const lv=affectionLevel((own[id]||{}).affection||0, CAT_TIER[id]||'normal').level;
-          return '<button class="bagrow treatpick" onclick="applyTreat(\''+id+'\')" aria-label="'+escapeHtml(catName(id))+'에게 츄르 주기">'
-            +'<span class="bgic">'+catFace(id,{h:34})+'</span><b class="bgnm">'+escapeHtml(catName(id))+'</b>'
-            +'<span class="qty">애정 Lv.'+lv+'</span><span class="bgic tp-treat">'+consumSvg('treat',{h:24})+'</span></button>'; }).join('');
-        h+='</div>';
-        return h;
-      };
-      openSheet('츄르 주기', build());
-      state._sheetRefresh=()=>{ const b=$('sheetBody'); if(b) b.innerHTML=build(); };
-    }
+    // 🍡 츄르: 펫 그리드에서 탭 → applyTreat(id)로 애정 상승(쿨다운 무시)
+    function useTreat(){ openPetUseSheet('treat'); }
     function applyTreat(id){
       if(!id||!ownsCat(id)){ toast('펫을 찾을 수 없어요', true); return; }
       if(consumQty('treat')<=0){ toast('츄르가 없어요', true); return; }
@@ -6043,7 +6064,7 @@
         if(dSilver>0||dGold>0) rewardFly(x,y,dSilver,dGold,beforeCoins,beforeGold);
         if(lvUp){ affLevelFx(x,y); toast('❤ '+catName(id)+' 애정 레벨 '+lvUp.level+(lvUp.gold?' · 만렙! 금화 +'+lvUp.gold:'')+(dSilver>0?' · 은화 +'+dSilver:'')); _affLevelUp=null; }
         else toast('🍡 '+catName(id)+'에게 츄르 · 애정 +'+(eff.affection||1));
-        if(consumQty('treat')<=0){ closeSheet(); } else if(state._sheetRefresh) state._sheetRefresh();
+        if(state._sheetRefresh) state._sheetRefresh();   // 수량 0이어도 시트 유지(결과 확인, 셀은 비활성)
       });
     }
     // 💊 영양제: 사용하면 수확 수익 부스트 활성(활성 중이면 남은시간에 지속 가산)
@@ -7208,7 +7229,7 @@
           const headP=new Promise(function(res){ try{ measureHeadPad(id,res); }catch(e){ res(0.2); } });
           const footP=new Promise(function(res){ try{ measureFootPad(id,res); }catch(e){ res(null); } });   // 🐾 발밑 여백 실측 — 워커 고정 0.16 가정은 신화·한정(실측 ~0.30)에서 발이 떠 벽지를 걷는 버그
           return Promise.all([_vpipBmp(sprWalkUrl(spr)), _vpipBmp(sprStill(id,'south')), fw?_vpipBmp(sprStill(id,'east')):Promise.resolve(null), hatP, budP, headP, footP])
-            .then(function(bs){ return { hh:hh, frames:spr.frames||6, frontWalk:fw, sheet:bs[0], south:bs[1], east:bs[2]||null, hat:bs[3]||null, buddy:bs[4]||null, btype:cosm.buddy||'', headF:(bs[5]==null?0.2:bs[5]), fp:(bs[6]==null?0.16:bs[6]), dye:petDyeOf(id) }; })
+            .then(function(bs){ return { hh:hh, frames:spr.frames||6, frontWalk:fw, sheet:bs[0], south:bs[1], east:bs[2]||null, hat:bs[3]||null, buddy:bs[4]||null, btype:cosm.buddy||'', headF:(bs[5]==null?0.2:bs[5]), fp:(bs[6]==null?0.16:bs[6]), dyeF:dyeFilterCss(petDyeOf(id)) }; })
             .catch(function(){ return null; });
         }
         return _vpipBmp('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(catFace(id,{h:hh})))
@@ -7285,11 +7306,11 @@
         "  var moving=(a.mode==='roam'&&!a.stationary), flip=(moving&&a.dir<0);",
         "  ctx.save(); if(flip){ ctx.translate(a.x+w,0); ctx.scale(-1,1); } else { ctx.translate(a.x,0); }",
         "  try{",
-        "    if(a.dye){ try{ ctx.filter='hue-rotate('+a.dye+'deg)'; }catch(e0){} }",   // 🎨 염색 톤 전사(dock filter:hue-rotate 미러) — 모자는 아래서 필터 해제 후 그림
+        "    if(a.dyeF){ try{ ctx.filter=a.dyeF; }catch(e0){} }",   // 🎨 염색 필터 전사(dock dyeFilterCss와 동일 문자열 — 절대색 체인 포함) — 모자는 아래서 필터 해제 후 그림
         "    if(moving&&a.sheet&&!a.frontWalk){ var sw=a.sheet.width/a.frames, fr=Math.floor(now/((a.wd||660)/a.frames))%a.frames; ctx.drawImage(a.sheet, fr*sw,0,sw,a.sheet.height, 0,y,w,h); }",   // 프레임 간격 = 사이클(wd)/프레임수 — 속도 연동(예전 고정 110ms는 발놀림이 빨랐음)
         "    else if(moving&&a.frontWalk&&a.east){ ctx.drawImage(a.east,0,y,w,h); }",
         "    else if(a.south){ ctx.drawImage(a.south,0,y,w,h); }",
-        "    if(a.dye){ try{ ctx.filter='none'; }catch(e1){} }",
+        "    if(a.dyeF){ try{ ctx.filter='none'; }catch(e1){} }",
         "    if(a.hat){ var hw2=w*0.30*(a.hat.width/a.hat.height), hh3=w*0.30; ctx.drawImage(a.hat, w/2-hw2/2, y+h*(a.headF||0.2)-hh3*0.82, hw2, hh3); }",   // 💗 모자 — dock .cd-hat(top:--hp, -82%) 전사(펫 transform 안이라 flip·깊이 동행)
         "  }catch(e){}",
         "  ctx.restore();",
@@ -8348,7 +8369,7 @@
       ensurePetArtMany(list);
       stage.dataset.hh=64;
       const pm=(fg&&fg.petsMeta&&typeof fg.petsMeta==='object')?fg.petsMeta:{};   // 💗 homeCam 스냅샷의 펫 메타(애정 레벨·코스메틱·염색) — 친구 캠 과시 요소
-      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); const meta=pm[id]||{lv:0}; return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+(hasSprite(id)?'<span class="cd-shadow">'+shadowSvg({h:Math.max(6,Math.round(s*0.16))})+'</span>'+actorCosmHtml(id,s,meta):'')+catActorHTML(id,s,Number(meta.dye)||0)+'</div>'; }).join('');
+      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); const meta=pm[id]||{lv:0}; return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+(hasSprite(id)?'<span class="cd-shadow">'+shadowSvg({h:Math.max(6,Math.round(s*0.16))})+'</span>'+actorCosmHtml(id,s,meta):'')+catActorHTML(id,s,(meta.dye!=null?meta.dye:0))+'</div>'; }).join('');
       markCatDirty();
     }
     let _shopSub='event';   // 알뜰샵 진입 시 기본=가챠 탭(맨 왼쪽)
@@ -9638,7 +9659,7 @@
         '<div class="pi-aff"><div class="pi-afftop"><span class="clv-h">'+heartSvg({h:11})+'</span>애정 Lv.'+al.level+'<span class="s">'+(al.next!=null?aff+' / '+al.next:'만렙 ★')+'</span></div><div class="bar"><i style="width:'+al.pct+'%"></i></div></div>'+
         (((tier==='limited'||tier==='exclusive')&&PET_SPRITES[id]&&PET_SPRITES[id].clips)?'<div class="pi-cd">모션 해금 — Lv1 기본(유휴·먹기·마시기)'+(al.level>=1?'(해금)':'(잠김)')+' · Lv2 식빵·하품'+(al.level>=2?'(해금)':'(잠김)')+' · Lv4 하악질'+(al.level>=4?'(해금)':'(잠김)')+'</div>':'')+   // 💗 신화+ 애정 모션 해금 안내(Lv1/2/4)
         (hasSprite(id)?cosmRowHtml(id,'buddy',BUDDY_CATALOG,al.level)+cosmRowHtml(id,'hat',HAT_CATALOG,al.level):'')+   // 💗 코스메틱(동행 Lv3·모자 Lv5) — 스프라이트 펫만
-        (petDyeOf(id)?'<div class="pi-cosm"><span class="s">염색</span><span class="chip on">'+consumSvg('dye',{h:12})+' 염색됨</span>'+(consumQty('dye_remover')>0?'<button class="chip" onclick="applyDyeRemover(\''+id+'\')">'+consumSvg('dye_remover',{h:12})+' 리무버로 지우기</button>':'<span class="s" style="min-width:0">리무버(이벤트·쿠폰)로 제거 가능</span>')+'</div>':'')+   // 🎨 염색 상태 — 제거는 리무버 소모(무료 지우기 없음)
+        (petDyeOf(id)?'<div class="pi-cosm"><span class="s">염색</span><span class="chip on">'+consumSvg('dye',{h:12})+' '+escapeHtml(dyeNameOf(petDyeOf(id)))+'</span>'+(consumQty('dye_remover')>0?'<button class="chip" onclick="applyDyeRemover(\''+id+'\')">'+consumSvg('dye_remover',{h:12})+' 리무버로 지우기</button>':'<span class="s" style="min-width:0">리무버(이벤트·쿠폰)로 제거 가능</span>')+'</div>':'')+   // 🎨 염색 상태 — 제거는 리무버 소모(무료 지우기 없음)
         (canPet?'<button class="gib sell" onclick="petFromInfo(\''+id+'\',event)">'+heartSvg({h:13})+' 쓰다듬기 · 애정+1 · 은화+'+PET_PET_REWARD+'</button>'
                :'<div class="pi-cd">오늘 쓰다듬기 완료 · 약 '+hh+'시간 후 가능</div>')+
         '<button class="gib" onclick="roomFromInfo(\''+id+'\')">'+(here?'이 방에서 대기시키기':'이 방으로 데려오기')+'</button>'+
