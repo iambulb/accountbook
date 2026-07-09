@@ -559,7 +559,7 @@
     // 배경효과 선택기(방꾸미기 하단) — 보유한 것만 + '없음'. 미보유면 숨김(랜덤박스로만 획득).
     function bgfxPickerHtml(){ const owned=BGFX_CATALOG.filter(x=>ownsBgfx(x.id)); if(!owned.length) return ''; const cur=currentBgfx();
       const CK='<i class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></i>';
-      const none='<button class="skinsw'+(!cur?' on':'')+'" onclick="applyBgfx(\'\')" aria-label="배경효과 없음"><span class="sw sw-none">✕</span><span class="nm">없음</span>'+(!cur?CK:'')+'</button>';
+      const none='<button class="skinsw'+(!cur?' on':'')+'" '+App.view.act('applyBgfx','')+' aria-label="배경효과 없음"><span class="sw sw-none">✕</span><span class="nm">없음</span>'+(!cur?CK:'')+'</button>';
       const sw=owned.map(x=>{ const on=cur===x.id; return '<button class="skinsw'+(on?' on':'')+'" '+App.view.act('applyBgfx',x.id)+' aria-label="'+escapeHtml(x.name)+(on?' 적용됨':' 적용')+'"><span class="sw sw-bgfx">'+bgfxThumb(x.id,26)+'</span><span class="nm">'+escapeHtml(x.name)+'</span>'+(on?CK:'')+'</button>'; }).join('');
       return '<div class="skinsel"><div class="skinlab">배경효과 <span class="sc">보유 '+owned.length+'</span></div><div class="skinrow">'+none+sw+'</div><div class="skinhint">방 전체에 나비·낙엽 같은 효과를 적용해요. 랜덤박스(신화)에서 얻어요.</div></div>'; }
     // 미션 정의(일일). reward=은화. check(ctx)=완료 여부(현재 워크스페이스 활동 읽어 판정). 경제 정책(economy-policy) 반영: 접속 보장 번들(출석·첫 기록) 크게, 나머지는 상한.
@@ -2487,8 +2487,8 @@
              :'<button class="btn ghost" '+App.view.act('setShowRoom',idx)+'>이 방을 대표 방으로 지정 ★</button>');
       // 순서 변경
       if(rc>1){ body+='<div class="sech" style="margin-top:14px;"><span class="l">순서 변경</span></div>'+
-        '<div class="row" style="gap:8px;"><button class="btn ghost" style="flex:1;"'+(idx<=0?' disabled':'')+' onclick="moveRoom('+idx+',-1)">← 앞으로</button>'+
-        '<button class="btn ghost" style="flex:1;"'+(idx>=rc-1?' disabled':'')+' onclick="moveRoom('+idx+',1)">뒤로 →</button></div>'; }
+        '<div class="row" style="gap:8px;"><button class="btn ghost" style="flex:1;"'+(idx<=0?' disabled':'')+' '+App.view.act('moveRoom',idx,-1)+'>← 앞으로</button>'+
+        '<button class="btn ghost" style="flex:1;"'+(idx>=rc-1?' disabled':'')+' '+App.view.act('moveRoom',idx,1)+'>뒤로 →</button></div>'; }
       const others=[]; for(let i=0;i<rc;i++){ if(i!==idx) others.push(i); }
       if(others.length){ body+='<div class="sech" style="margin-top:14px;"><span class="l">벽지 가져오기</span></div>'+
         '<div class="row" style="flex-wrap:wrap;gap:8px;">'+others.map(i=>{ const nm=(h.rooms[i].name)||('방 '+(i+1)), sid=h.rooms[i].id||''; return '<button class="btn ghost" onclick="copyRoomWall(\''+sid+'\',\''+rid+'\','+i+','+idx+')"><span class="wsw" style="background:'+wallCss(h.rooms[i].wallpaper||'default')+'"></span>'+escapeHtml(nm)+'</button>'; }).join('')+'</div>'; }

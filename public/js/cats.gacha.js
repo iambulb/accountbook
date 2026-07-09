@@ -385,9 +385,9 @@
       const art=k=> slot==='hat'?hatSvg(k,{h:14}):buddySvgOf(k,{h:12});
       const anyOwned=Object.keys(list).some(k=>cosmOwns(slot,k));
       return '<div class="pi-cosm'+(un?'':' lock')+'"><span class="s">'+(slot==='hat'?'모자':'펫효과')+' · Lv'+cosmNeedLv(slot)+(un?'':' 슬롯 잠김')+'</span>'+
-        '<button class="chip'+(!cosm[slot]?' on':'')+'"'+(un?' onclick="setPetCosm(\''+id+'\',\''+slot+'\',null)"':' disabled')+'>없음</button>'+
+        '<button class="chip'+(!cosm[slot]?' on':'')+'"'+(un?' '+App.view.act('setPetCosm',id,slot,null)+'':' disabled')+'>없음</button>'+
         Object.keys(list).map(k=>{ const has=cosmOwns(slot,k);
-          return '<button class="chip'+(cosm[slot]===k?' on':'')+(has?'':' none')+'"'+((un&&has)?' onclick="setPetCosm(\''+id+'\',\''+slot+'\',\''+k+'\')"':' disabled')+(has?'':' style="opacity:.45"')+'>'+art(k)+' '+list[k]+(has?'':' (미보유)')+'</button>'; }).join('')+
+          return '<button class="chip'+(cosm[slot]===k?' on':'')+(has?'':' none')+'"'+((un&&has)?' '+App.view.act('setPetCosm',id,slot,k)+'':' disabled')+(has?'':' style="opacity:.45"')+'>'+art(k)+' '+list[k]+(has?'':' (미보유)')+'</button>'; }).join('')+
         ((un&&!anyOwned)?'<span class="s" style="min-width:0">무지개박스·이벤트로 획득(한정)</span>':'')+
       '</div>';
     }

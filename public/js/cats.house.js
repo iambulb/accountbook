@@ -345,7 +345,7 @@
     // ===== 🎰 가챠 배너(세로 확장·둥지형) — 실전은 가챠 탭(gachaTabHtml live=true → bannerPull/openGachaTen), 개발자 '배너 관리'는 무소모 미리보기. 탭별 전용 배너 분화 완료(뜰알=픽업·펫알=노을연못·랜덤박스=노을상자·무지개=밤). =====
     // 공통 조각(둥지+알·1/10 버튼·천장 안내). 각 배너 함수는 독립 인스턴스라 나중에 개별 수정 가능.
     function gbNestHtml(eggHtml){ return '<div class="gb-nest"><div class="gb-nestback">'+nestSvg({})+'</div><div class="gb-egg">'+eggHtml+'</div><div class="gb-nestfront">'+nestFrontSvg({})+'</div></div>'; }
-    function gbActionsHtml(kind){ return '<div class="gb-actions"><button class="gb-btn" onclick="devBannerPull(\''+kind+'\',false)">1회 뽑기</button><button class="gb-btn gb-btn10" onclick="devBannerPull(\''+kind+'\',true)">10회 연속</button></div>'; }
+    function gbActionsHtml(kind){ return '<div class="gb-actions"><button class="gb-btn" '+App.view.act('devBannerPull',kind,false)+'>1회 뽑기</button><button class="gb-btn gb-btn10" '+App.view.act('devBannerPull',kind,true)+'>10회 연속</button></div>'; }
     // 🌈 무지개 전용 천장 칩 — 5뽑 안에 한정 확정, 남은 뽑수 실시간
     function rbPityChipHtml(kind){ const left=pityRemain(pityGet(kind), RB_PITY_N);
       return '<div class="gb-pity"><span class="pity-chip">'+sparkSvg({h:11})+RB_PITY_N+'뽑 안에 <b>한정 확정</b> · 남은 <b>'+left+'뽑</b></span></div>'; }
