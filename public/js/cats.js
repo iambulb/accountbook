@@ -8102,8 +8102,9 @@
       document.querySelectorAll('.pkscene:not(.pk-reveal)').forEach(function(el){ _pkIO.observe(el); });   // 리빌(전체화면)은 항상 보이니 제외
     }catch(e){} }
     // 💰 알뜰샵 잔액 위젯 — 시트 제목(.sheet-head) 오른쪽에 금화·은화 표기(기존 상단 coinbar 대체).
-    function shopHeadWalletHtml(){ return '<span class="shophw-c" title="금화">'+goldSvg({h:15})+'<b>'+gold().toLocaleString()+'</b>'+(atMaxGold()?maxChip():'')+'</span>'+
-      '<span class="shophw-c" title="은화">'+coinSvg({h:15})+'<b>'+coins().toLocaleString()+'</b>'+(atMaxCoins()?maxChip():'')+'</span>'; }
+    function shopHeadWalletHtml(){ return '<span class="shophw-c" title="은화">'+coinSvg({h:15})+'<b>'+coins().toLocaleString()+'</b>'+(atMaxCoins()?maxChip():'')+'</span>'+
+      '<span class="shophw-c" title="금화">'+goldSvg({h:15})+'<b>'+gold().toLocaleString()+'</b>'+(atMaxGold()?maxChip():'')+'</span>'+
+      '<span class="shophw-c" title="무지개동전">'+rainbowCoinSvg({h:15})+'<b>'+((typeof rbcoins==='function')?rbcoins():0).toLocaleString()+'</b></span>'; }   // 은화·금화·무지개동전 순(사용자 지침)
     function updateShopHeadWallet(){ if(typeof document==='undefined') return; const head=document.querySelector('#sheet .sheet-head'); if(!head) return;
       let el=head.querySelector('.shophw');
       if(_catTab!=='shop'){ if(el) el.remove(); return; }   // 알뜰샵 탭에서만 표기
@@ -8391,7 +8392,7 @@
         h+=(_normalSub==='egg'?eggBannerHtml(true):boxBannerHtml(true));   // 펫알=노을 배너(펫 지급)·랜덤박스=랜덤박스 배너(가구/바닥/벽지 지급)
       } else if(tab==='rainbow'){   // 🌈 무지개 = 알/박스 서브탭(각 라이브 밤 배너 — 개발자 밤 배너 기반, 펫 2마리 제외) + 무지개동전 잔액
         if(_rbSub!=='egg'&&_rbSub!=='box') _rbSub='egg';
-        h+='<div class="rb-hh"><span class="tier-rainbow">✨ 무지개</span> · '+rainbowCoinSvg({h:15})+' <b>'+rbcoins().toLocaleString()+'</b>개 보유 · 신화50%·한정50% 확정 — 한정 <b>중복 획득</b>마다 무지개동전 +1</div>';
+        h+='<div class="rb-hh"><span class="tier-rainbow">✨ 무지개</span> · 신화50%·한정50% 확정</div>';   // 잔액은 시트 헤더(은화·금화·무지개동전)에 표시 — 보유 갯수·중복+1 문구 삭제(사용자 지침)
         h+='<div class="subseg normalsub">'+[['egg','무지개알'],['box','무지개박스']].map(function(t){ return '<button class="'+(_rbSub===t[0]?'on':'')+'" onclick="setRbSub(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
         h+=rainbowLiveBannerHtml(_rbSub);
       }
@@ -8406,7 +8407,7 @@
       const nm=isEgg?'무지개알':'무지개박스';
       const desc=isEgg?'<b class="tier-limited">신화 50%</b> · <b class="tier-rainbow">한정 50%</b> 확정!<br><b>미공개 한정 펫</b>도 전부 여기서 나와요.'
                       :'<b class="tier-limited">신화 50%</b> · <b class="tier-rainbow">한정 50%</b> 확정!<br><b>미공개 한정 아이템</b>(가구·스킨·펫효과·모자)도 전부.';
-      return '<div class="gbanner gb-rainbow"><div class="gb-head"><b class="gb-t tier-rainbow">🌈 '+nm+' · 밤</b><span class="pk-tag">한정 중복이 모이는 곳</span></div>'+
+      return '<div class="gbanner gb-rainbow"><div class="gb-head"><b class="gb-t tier-rainbow">🌈 '+nm+' · 밤</b><span class="pk-tag"><b class="tier-rainbow">✦ 별빛 너머에서 찾아온 친구</b></span></div>'+
         '<div class="gb-scene">'+nightSceneHtml()+gbCenterHtml(center, fx, 'gb-rb gb-glow')+'</div>'+
         '<div class="gb-item"><div class="gb-item-ic">'+(isEgg?(_pkV2?rbEgg2Html(52):rainbowEggSvg({h:52})):rainbowBoxSvg({h:52}))+'</div>'+
           '<div class="gb-item-meta"><b class="tier-rainbow">'+nm+' <span class="tagmini tier-rainbow">밤</span></b>'+
@@ -9840,9 +9841,9 @@
     function monthLabelKo(){ const n=parseInt(kstMonthKey().slice(6),10)||0; return n+'월'; }
     // 가챠 구분별 짧은 설명(뜰알/펫알/랜덤박스/무지개) — 해당 탭에 맞는 한 줄.
     function gachaNoteFor(tab){
-      if(tab==='ddeul')   return '🌱 <b class="tier-rainbow">한정 펫</b>은 오직 뜰알에서만! 살 때 <b>금화 1개를 소모</b>해요(펫알과 달리 금화 보상 없음, 중복 펫은 20% 은화 환급).';
-      if(tab==='rainbow') return '✨ <b class="tier-rainbow">무지개</b>는 <b>금화</b>로 사서 <b>특별↑을 확정</b>으로 뽑아요(금화 보상 없음).';
-      return '🥚 <b>펫알</b>은 열면 <b>펫</b>이, 🎁 <b>랜덤박스</b>는 <b>가구·바닥·벽지</b>가 랜덤으로 — <b>특별↑</b>도 여기서. 열 때마다 <b>금화 1개</b>(중복 펫은 20% 은화 환급).';   // normal(egg+box)
+      if(tab==='ddeul')   return '🌱 <b class="tier-rainbow">한정 펫</b>은 오직 뜰알에서만! 살 때 <b>금화 1개를 소모</b>해요(펫알과 달리 금화 보상 없음 · 중복 펫은 10% 은화 환급, <b>한정 중복은 무지개동전 +1</b>).';
+      if(tab==='rainbow') return '✨ <b class="tier-rainbow">무지개</b>는 <b>무지개동전 '+RAINBOW_PRICE_RBC+'개</b>로 1뽑 — <b class="tier-limited">신화 50%</b>·<b class="tier-rainbow">한정 50%</b> 확정! 무지개동전은 <b>한정 등급 중복</b>을 얻을 때마다 1개씩 쌓여요.';
+      return '🥚 <b>펫알</b>은 열면 <b>펫</b>이, 🎁 <b>랜덤박스</b>는 <b>가구·바닥·벽지</b>가 랜덤으로 — <b>특별↑</b>도 여기서. 열 때마다 <b>금화 1개</b>(중복 펫은 10% 은화 환급).';   // normal(egg+box)
     }
     // 가챠 탭 하단: 선택한 구분의 등급별 확률만 접이식으로 표시.
     function gachaInfoHtml(tab){
