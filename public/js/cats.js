@@ -3517,6 +3517,11 @@
       else db.ref('catalogPetArt/'+id).once('value').then(s=>doExport(s.val())).catch(e=>toast('불러오기 실패: '+((e&&e.message)||e), true)); }
     // 개발자 펫 관리(알뜰홈 인벤토리 방식): 상단 스테이지(선택 펫 미리보기+관리 기능) + 아래 종류 탭·펫 그리드(.palette.catinv).
     // 그리드 셀을 탭하면 상단 스테이지(#pmStage)만 다시 그리고 셀 .on 만 토글(devSelectPet) → 그리드 스크롤 유지·재빌드 비용 절감. 스테이지는 sticky라 스크롤해도 선택 펫이 계속 보임.
+    // 🛡️ 펫 그리기 방어 — 한 펫의 스프라이트/카탈로그 데이터가 깨져도(예: 최근 스케일·프레임 변경) 펫 관리 전체가 죽지 않게 개별 폴백.
+    //   ⚠️ 근본 원인(그 펫의 아트가 catActorHTML/catFace에서 예외)은 별도로 고쳐야 하지만, 여기서 잡아 "안 들어가짐"을 막고 어떤 펫이 문제인지 드러낸다.
+    function safePetArt(id, h){ try{ return catActorHTML(id, h); }catch(e){ try{ return catFace(id,{h:h}); }catch(_){ try{ return _petPlaceholder(Math.round(h)); }catch(__){ return ''; } } } }
+    function safePetCell(p, sel){ try{ return devPetCellHtml(p, sel); }catch(e){ try{ console.error('펫 셀 렌더 오류', p&&p.id, e); }catch(_){}
+      return '<button class="pitem pmcell" data-pid="'+escapeHtml((p&&p.id)||'?')+'" title="이 펫 렌더 오류: '+escapeHtml((e&&e.message)||String(e))+'"><span class="pic">⚠️</span><span class="pmnm">'+escapeHtml((p&&(p.name||p.id))||'?')+'</span><span class="pq" style="color:var(--danger,#e5484d)">렌더 오류</span></button>'; } }
     function devPetCellHtml(p, sel){ const on=p.id===sel; const tag=(SPECIES_LABEL[p.species]||p.species);
       const gacha=isGachaOnlyCat(p.id), ft=p.tier||'normal';
       return '<button class="pitem pmcell'+(on?' on':'')+(p.deleted?' del':'')+(gacha?' gacha':'')+'" data-pid="'+p.id+'" '+App.view.act('devSelectPet',p.id)+' aria-label="'+escapeHtml(p.name||p.id)+' 선택" aria-pressed="'+(on?'true':'false')+'">'+
@@ -3527,7 +3532,7 @@
     // 상단 스테이지(선택 상태에 따라 바뀌는 부분) — 부분 갱신 대상(#pmStage). 미선택이면 안내 플레이스홀더 + [새 펫 추가].
     function devPetStageHtml(){ const list=allPetsForDev(), sel=state._devPetSel, p=sel?list.find(x=>x.id===sel):null;
       if(!p){ return '<div class="pm-stage empty">'+
-          '<div class="pm-pv-art ph">'+catFace('cat_mackerel',{h:60})+'</div>'+
+          '<div class="pm-pv-art ph">'+safePetArt('cat_mackerel',60)+'</div>'+
           '<div class="pm-ph-tx">아래에서 펫을 선택하면 여기에서<br><b>등급·가챠전용·수정·삭제·연출</b>을 관리해요.</div>'+
           '<div class="petmg-btns"><button class="btn ghost" '+App.view.act('openDevPetAdd')+'>+ 새 펫 추가</button></div>'+
         '</div>'; }
@@ -3544,7 +3549,7 @@
         : '<button class="btn danger" '+App.view.act('deletePetSoft',p.id)+'>삭제</button>';
       let h='<div class="pm-stage sel">'+
         '<div class="pm-preview">'+
-          '<div class="pm-pv-art tbring tb-'+ft+(p.deleted?' del':'')+'">'+catActorHTML(p.id,84)+'</div>'+
+          '<div class="pm-pv-art tbring tb-'+ft+(p.deleted?' del':'')+'">'+safePetArt(p.id,84)+'</div>'+
           '<div class="pm-pv-info">'+
             '<div class="pm-pv-nm">'+catNameSpan(p.id, p.name||p.id)+'</div>'+
             '<div class="pm-pv-meta">'+escapeHtml(tag)+(p.runtime?' · 런타임':'')+(p.deleted?' · 삭제됨':'')+'</div>'+
@@ -3586,9 +3591,9 @@
         const active=list.filter(p=>!p.deleted), del=list.filter(p=>p.deleted); let body='';
         TIER_ORDER.forEach(function(tid){ const grp=active.filter(p=>p.tier===tid); if(!grp.length) return;
           body+='<div class="dexgh pmgh"><span class="dexgt">'+tierLabelHtml(tid)+'</span><span class="dexgn">'+grp.length+'</span></div>';
-          body+='<div class="palette catinv pmgrid">'+grp.map(p=>devPetCellHtml(p, sel)).join('')+'</div>'; });
+          body+='<div class="palette catinv pmgrid">'+grp.map(p=>safePetCell(p, sel)).join('')+'</div>'; });
         if(del.length){ body+='<div class="dexgh pmgh"><span class="dexgt" style="color:var(--sub)">삭제됨</span><span class="dexgn">'+del.length+'</span></div>';
-          body+='<div class="palette catinv pmgrid">'+del.map(p=>devPetCellHtml(p, sel)).join('')+'</div>'; }
+          body+='<div class="palette catinv pmgrid">'+del.map(p=>safePetCell(p, sel)).join('')+'</div>'; }
         h+=body || '<div class="empty" style="padding:16px;">이 종류의 펫이 없어요</div>';
         return h; };
       // 🛡️ 렌더가 어떤 이유로든 예외를 던져도 시트는 반드시 열리게(예외 시 '안 들어가짐'처럼 보이던 문제 방어) — 오류 내용을 화면에 표기.
