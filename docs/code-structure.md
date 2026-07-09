@@ -33,7 +33,8 @@
 `index.html` 하단 script 태그 순서:
 
 ```
-firebase.js → constants.js → util.js → ledger-calc.js → core.js → app.js → model.js → delegate.js → views.js → cats.assets.js → cats.js → cats.fx.js → push.js → main.js
+firebase.js → constants.js → util.js → ledger-calc.js → core.js → app.js → model.js → delegate.js → views.js
+  → cats.assets.js → cats.js → cats.engine.js → cats.house.js → cats.gacha.js → cats.fx.js → push.js → main.js
 ```
 
 - **모듈 시스템 없음**: 모든 함수·상수가 전역(window) 스코프를 공유합니다. `views.js` 가 `core.js` 의 `state`·헬퍼를 직접 참조하고, HTML `onclick="openTxSheet()"` 처럼 전역 함수를 직접 호출합니다.

@@ -14,7 +14,7 @@
 | [economy-policy.md](economy-policy.md) | 💠 **재화·경제·미션 정책** — 은화/금화 가치·획득(도배 억제)·미션 체계 재설계·가격·밸런스 (경제 정책의 단일 기준) |
 | [cat-feature-plan.md](cat-feature-plan.md) | **알뜰샵(고양이) 기획** — 게임화 UI/연출·가챠·가구 설계 (경제 수치·정책은 economy-policy.md) |
 | [animal-pixel-style-guide.md](animal-pixel-style-guide.md) | **동물 픽셀 스타일 가이드** — 도트/스프라이트 아트 규칙 |
-| [architecture.md](architecture.md) | **시스템 구성도** — 컴포넌트/배포 다이어그램, 로그인·부트 시퀀스, 서비스워커 캐시 전략 (Mermaid) |
+| [architecture.md](architecture.md) | **시스템 구성도** — 컴포넌트/배포 다이어그램, **무빌드 MVC 계층(App 네임스페이스·이벤트 위임)**, 로그인·부트 시퀀스, 서비스워커 캐시 전략 (Mermaid) |
 | [data-model.md](data-model.md) | **데이터 모델** — Firebase RTDB 트리, ERD, 엔티티 필드표, 보안규칙, 거래 잔액효과표 (Mermaid) |
 | [code-structure.md](code-structure.md) | **코드 구조** — 파일별 책임, 주요 함수 맵, 로드 순서·전역 의존 |
 | [development.md](development.md) | **개발환경 / 배포** — 로컬 실행, Firebase·Netlify·APK 배포 절차 링크, 체크리스트 |

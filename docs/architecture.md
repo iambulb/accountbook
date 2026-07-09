@@ -8,14 +8,14 @@
 graph TB
     subgraph Client["📱 브라우저 / TWA 앱"]
         SW["Service Worker<br/>(sw.js · 앱셸 캐시)"]
-        subgraph Shell["앱 셸 (index.html)"]
-            FB["firebase.js<br/>초기화"]
-            CONST["constants.js<br/>라벨·기본값·TX_EFFECT"]
-            UTIL["util.js<br/>순수 계산 유틸(테스트)"]
-            CORE["core.js<br/>상태·인증·워크스페이스·리스너"]
-            VIEWS["views.js<br/>화면·시트 렌더(가계부/할일)"]
-            CATS["cats.js<br/>알뜰샵·펫·은화 경제"]
-            MAIN["main.js<br/>PWA 부트·접근성"]
+        subgraph Shell["앱 셸 (index.html) — 무빌드 전역 스크립트 · App 네임스페이스로 계층화(MVC)"]
+            FB["firebase.js · constants.js<br/>초기화 · 라벨/기본값/TX_EFFECT"]
+            CALC["util.js · ledger-calc.js<br/>순수 계산(통화·정산·buildTx) · 단위테스트"]
+            CORE["core.js<br/>state · 인증 · 워크스페이스 · RTDB 리스너"]
+            MVC["app.js · model.js · delegate.js<br/>App.store · App.model(repo) · 이벤트 위임 브리지"]
+            VIEWS["views.js<br/>가계부/할일 화면·시트(App.view 컴포넌트·data-action 위임)"]
+            CATS["cats.assets·cats·cats.engine<br/>cats.house·cats.gacha·cats.fx (6분할)<br/>알뜰홈 펫게임: 도트아트·걷기엔진·가챠·FX"]
+            MAIN["push.js · main.js<br/>FCM · PWA 부트 · SW 갱신감지 · 접근성"]
         end
     end
 
@@ -37,9 +37,40 @@ graph TB
     class AUTH,RTDB fb
 ```
 
-- **모듈 로드 순서**(`index.html` script 태그): `firebase.js → constants.js → util.js → core.js → views.js → cats.js → main.js`. 모든 함수는 전역(window) 스코프를 공유하며, HTML `onclick` 속성에서 직접 호출합니다. 자세한 내용은 [code-structure.md](code-structure.md).
+- **모듈 로드 순서**(`index.html` script 태그): `firebase → constants → util → ledger-calc → core → app → model → delegate → views → cats.assets → cats → cats.engine → cats.house → cats.gacha → cats.fx → push → main`. 모든 함수는 전역(window) 스코프를 공유하며, HTML `onclick`/`data-action` 에서 호출합니다. 자세한 내용은 [code-structure.md](code-structure.md).
 - **두 모드**: 상단 모드 토글(`setMode`)로 **가계부**([features-ledger.md](features-ledger.md))와 **할일**([features-todo.md](features-todo.md)) 화면을 오갑니다 — 하단 탭바(`renderTabBar`)와 본문(`rerender`)이 모드별로 전환되고, 데이터는 같은 `ws/{wsId}` 아래에 공존합니다.
 - **compat SDK 필수**: `firebase-*-compat.js` 빌드를 사용합니다(모듈형 아님).
+
+## 🧩 MVC 무빌드 계층 (App 네임스페이스)
+
+번들러·ES 모듈 없이 **단일 전역 `window.App` 네임스페이스**로 MVC 계층을 만든다(각 파일이 `App` 슬라이스를 붙임). 전환기에는 **가산적 브리지**로 인라인 `onclick` 과 위임(`data-action`)이 공존한다.
+
+```mermaid
+graph LR
+    subgraph V["View (views.js · cats.*.js)"]
+      T["템플릿 문자열<br/>App.view.act(name,…args)<br/>→ data-action / data-change"]
+    end
+    subgraph C["Controller (delegate.js)"]
+      D["document click/change 위임<br/>closest([data-action]) → 액션 or 전역 폴백<br/>인자강제(n·b·j·e=event)"]
+    end
+    subgraph M["Model (model.js · ledger-calc.js)"]
+      R["App.model.ledgerRepo/wsRepo/authService<br/>순수: settlementSplit·greedySettle·buildTx"]
+    end
+    subgraph S["Store (app.js)"]
+      ST["App.store: 전역 state 래핑<br/>subscribe / emit / patch"]
+    end
+    T -->|클릭·변경| D
+    D -->|액션 호출| R
+    R -->|RTDB 쓰기·state 갱신| ST
+    ST -->|emit → rerender| V
+```
+
+- **`App.store`**(app.js): 기존 전역 `state` 를 같은 참조로 감싼 관찰 스토어(`subscribe`/`emit`/`patch`). RTDB 리스너가 `App.store.emit(reason)` 으로 통지 → 단방향 렌더.
+- **`App.model`**(model.js): `ledgerRepo`(wp/attach/CRUD)·`wsRepo`(워크스페이스 lifecycle)·`authService`. 순수 계산은 `ledger-calc.js`(`settlementSplit`·`greedySettle`·`buildTx`)로 분리·단위테스트.
+- **`App.view`**(delegate.js·views.js): `define`(컴포넌트 레지스트리)·`act`/`chg`/`ev`(템플릿 헬퍼: 클릭·변경·이벤트 인자). `saveTx` 는 `readTxForm`(DOM) → `buildTx`(순수) → 쓰기·보상으로 분리.
+- **`App.controller.delegate`**(delegate.js): document 레벨 **이벤트 위임** — `click`=`data-action`, `change`=`data-change`, 공용 `toggleSwitch` 액션, `data-t="e"` 로 실제 이벤트 주입. 미등록 액션은 동명 전역 함수로 폴백(점진 이관).
+- **cats.js 6분할**: 11.7k줄 단일 파일을 **순서보존 위치분할**(연결 blob이 원본과 바이트 동일)로 `cats.assets`(도트 데이터)·`cats`(카탈로그·게임·`@gen` 마커)·`cats.engine`(dock·PiP·걷기엔진)·`cats.house`(홈시트·펫그리드)·`cats.gacha`(가챠·벽꾸미기·소식)·`cats.fx`(뽑기 연출)로 나눔.
+- **테스트**: `npm test`(node --test) — 순수 계산(util·ledger-calc·buildTx)·위임 디스패치(delegate, jsdom)·배지 DOM = 100+ 케이스.
 
 ## 배포 다이어그램
 

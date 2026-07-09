@@ -19,11 +19,21 @@ python -m http.server 8000 -d public   # http://localhost:8000
 
 ## 테스트
 
-순수 계산 로직(`public/js/util.js` — 돈/통화/정산)은 Node 내장 러너로 단위 테스트합니다(의존성·빌드 없음).
+빌드·의존성 없이 **Node 내장 러너**(`node --test`)로 단위/DOM 테스트를 돌립니다. 핵심 순수 로직은 `dual-export` 패턴(브라우저 전역 + Node `module.exports`)이라 그대로 `require` 해서 검증합니다. DOM 테스트는 `jsdom`(devDependency) 하나만 씁니다.
 
 ```bash
 npm test        # node --test (test/*.test.js)
 ```
+
+| 테스트 파일 | 대상 |
+|---|---|
+| `util.test.js` | 통화·날짜·경제 순수 헬퍼(`public/js/util.js`) |
+| `ledger-calc.test.js` | 정산(`settlementSplit`·`greedySettle`)·`buildTx`(거래 폼→객체 순수 변환) |
+| `delegate.test.js` | 이벤트 위임 인자 강제/속성 빌드(`coerceArg`·`buildActionAttrs`) |
+| `delegate.dom.test.js` | jsdom — `data-action` 클릭·`data-change` 변경 디스패치·`toggleSwitch` |
+| `badge.dom.test.js` | jsdom — 탭바 미확인 배지 DOM |
+
+> 화면을 컴포넌트로 이관할 때는 그 화면이 쓰는 **순수 로직을 먼저 `dual-export`로 추출해 테스트**한 뒤 이관합니다(검증된 상태로 리팩토링).
 
 - VS Code를 쓴다면 **Live Server** 확장으로 `public/index.html` 을 열어도 됩니다.
 - 로컬에서도 **실제 Firebase**(`money-bb658`)에 붙습니다. `localhost` 는 Firebase 승인 도메인에 기본 포함됩니다.
@@ -31,7 +41,8 @@ npm test        # node --test (test/*.test.js)
 
 ## 코드 수정 시 주의
 
-- 모듈 시스템이 없으므로 함수는 전역으로 공유됩니다. 추가 위치·로드 순서는 [code-structure.md](code-structure.md) 참고.
+- 모듈 시스템이 없으므로 함수는 전역으로 공유됩니다. 추가 위치·로드 순서는 [code-structure.md](code-structure.md) 참고. 계층은 **단일 전역 `App` 네임스페이스**(`App.store`/`App.model`/`App.view`/`App.controller`)로 정리되어 있습니다([architecture.md](architecture.md#-mvc-무빌드-계층-app-네임스페이스)).
+- **새 UI 핸들러는 이벤트 위임**을 권장합니다: 템플릿에서 `App.view.act('함수명', ...인자)`(클릭) / `App.view.chg(...)`(변경)로 `data-action`/`data-change` 속성을 만들면 `delegate.js` 디스패처가 `closest()`로 잡아 호출합니다(미등록 액션은 동명 전역 함수 폴백). 기존 인라인 `onclick` 과 공존합니다.
 - RTDB 접근은 항상 `wp('...')` 경로 헬퍼로 현재 워크스페이스(`ws/{wsId}`)에 네임스페이스를 겁니다.
 - **앱 셸에 새 정적 파일(JS/CSS/아이콘)을 추가하면** `sw.js` 의 `APP_SHELL` 배열에 넣고 `CACHE_VERSION` 을 올려야 사용자에게 즉시 반영됩니다.
 

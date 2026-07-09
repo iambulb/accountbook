@@ -14,7 +14,9 @@
 - 👥 **개인 / 그룹 워크스페이스** — 6자리 초대코드로 합류, 그룹은 공동 가계부 공유
 - 💳 **거래 9종 타입** — 수입·지출·이체·충전·선불결제·환불·포인트적립/사용·잔액조정
 - 🏦 **자산 / 카드 실적** — 다양한 결제수단, 신용카드 월 실적 추적, 선불·포인트 잔액
-- 💵 **예산 · 정기결제 · 구독 · 목적별 가계부 · 적금 목표**
+- 💵 **예산 · 정기결제 · 구독 · 목적별 가계부 · 적금 목표 · 대출/이자 · 경조사비**
+- ✅ **할일(투두) 모드** — 상단 토글로 전환, 개인/그룹 공유·반복·하위작업·캘린더·친구 공유
+- 🐱 **알뜰홈(펫 게임)** — 기록으로 모은 은화·금화로 펫 입양·방 꾸미기·가챠(펫알/랜덤박스), 픽셀 아트 도트 스프라이트·걷기 엔진·펫캠(PiP), 친구 집 방문·좋아요
 - 🌙 **다크모드**, 📤 **CSV 내보내기**, 📲 **PWA 설치 / 안드로이드 APK(TWA)**
 
 전체 기능은 → **[docs/features.md](docs/features.md)**
@@ -33,12 +35,26 @@
 ```bash
 # 1) 로컬 실행 — 웹 앱은 public/ 폴더에 있습니다
 npx serve public       # http://localhost:3000 (아무 정적 서버나 가능)
+
+# 2) 단위/DOM 테스트 (빌드 불필요 · node --test)
+npm test               # 순수 계산(정산·buildTx·통화)·이벤트 위임 디스패치(jsdom)·배지 DOM
 ```
 
 - `file://` 로 직접 열면 안 되고 **정적 서버**로 띄워야 합니다(서비스워커·fetch).
 - 로컬에서도 실제 Firebase(`money-bb658`)에 붙습니다. 로그인이 되려면 콘솔에서 **이메일/비밀번호 로그인 활성화**가 필요합니다.
 
 자세한 개발·배포 절차 → **[docs/development.md](docs/development.md)**
+
+## 🧩 아키텍처 한눈에 (무빌드 MVC)
+
+번들러·프레임워크 없이 **단일 전역 `window.App` 네임스페이스**로 MVC 계층을 만듭니다:
+
+- **Store** `app.js` — 전역 `state` 를 감싼 관찰 스토어(`subscribe`/`emit`/`patch`), RTDB→렌더 단방향.
+- **Model** `model.js`·`ledger-calc.js` — RTDB repo(`ledgerRepo`/`wsRepo`) + 순수 계산(`settlementSplit`·`buildTx`, 단위테스트).
+- **View** `views.js`·`cats.*.js` — 템플릿 헬퍼 `App.view.act()`·컴포넌트 레지스트리 `App.view.define()`.
+- **Controller** `delegate.js` — document 레벨 **이벤트 위임**(`data-action` 클릭·`data-change` 변경), 미등록 액션은 전역 함수 폴백(가산적 브리지).
+
+다이어그램·데이터 흐름 → **[docs/architecture.md](docs/architecture.md)**
 
 ## 📁 폴더 구조
 
@@ -51,9 +67,18 @@ eggarden/
 │   ├── .well-known/assetlinks.json   # TWA(APK) 도메인 검증
 │   ├── css/styles.css
 │   ├── icons/                # icon.svg · icon-192/512 · maskable
-│   └── js/                   # firebase·constants·core·views·main
+│   ├── assets/pets/          # 펫 스프라이트(도트) — tools/build_pets.py 파이프라인
+│   └── js/                   # 무빌드 전역 스크립트(App 네임스페이스 · MVC 계층)
+│       ├── firebase·constants·util·ledger-calc·core   # 초기화·순수계산·상태
+│       ├── app·model·delegate                          # App.store·Model repo·이벤트 위임 브리지
+│       ├── views                                       # 가계부/할일 화면·시트
+│       ├── cats.{assets,·,engine,house,gacha,fx}       # 알뜰홈 펫게임(11.7k줄 6분할)
+│       └── push·main                                   # FCM·PWA 부트·접근성
+├── test/                     # node --test 단위/DOM 테스트(util·ledger-calc·delegate)
+├── tools/                    # build_pets.py·pet_maint.mjs (펫 에셋 파이프라인) + pets.json
 ├── docs/                     # 기술 문서 (아래 문서 목차)
 │   └── deploy/               # firebase·netlify·apk·rules 가이드
+├── package.json              # devDeps(jsdom) · "test": node --test
 ├── database.rules.json · firebase.json · .firebaserc · netlify.toml   # 배포 설정
 ├── README.md                 # 이 파일
 └── CLAUDE.md                 # Claude 작업 지침 + 문서 최신화 규칙
