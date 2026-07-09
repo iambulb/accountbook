@@ -1012,6 +1012,8 @@
     .catchip .clv { display:inline-flex; align-items:center; justify-content:center; gap:2px; margin-top:1px; font-size:9.5px; font-weight:800; color:#e0567a; }
     .catchip .clv .clv-h { display:inline-flex; width:9px; height:9px; }
     .catchip .clv .clv-h .px { display:block; }
+    .catchip .clv.lv5 { color:#c98a12; }   /* 💗 애정 만렙(Lv5) = 골드(명품 마크) */
+    .catchip .clv.lv5 .clv-max { color:#e8b23a; margin-left:1px; }
     /* 수집형 인벤토리 — 5열 그리드(세로로 길게 나열, 시트가 세로 스크롤). 축소 타일: 초상 + 이름 + 애정레벨, 상태는 테두리+뱃지. */
     .catchips { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:7px; padding-bottom:2px; align-items:start; }
     /* 4행 초과 시 내부 스크롤(높이는 JS가 정확히 4행으로 설정). overflow-x:hidden 필수 — overflow-y만 주면 스펙상 overflow-x가 auto로 계산돼 좌우로 드리프트한다. touch-action/overscroll로 바깥 시트 스크롤과 안 싸우게. */
@@ -1061,6 +1063,12 @@
     .petinfo .pi-afftop .clv-h { display:inline-flex; width:11px; height:11px; }
     .petinfo .pi-aff .bar { margin-top:7px; }
     .petinfo .pi-cd { text-align:center; font-size:12px; color:var(--sub); padding:9px; background:var(--soft); border-radius:10px; }
+    /* 💗 코스메틱 장착 행(동행 Lv3·모자 Lv5) — 칩 나열, 미해금은 흐리게 */
+    .petinfo .pi-cosm { display:flex; align-items:center; flex-wrap:wrap; gap:5px; }
+    .petinfo .pi-cosm > .s { font-size:11px; color:var(--sub); font-weight:800; margin-right:2px; min-width:62px; }
+    .petinfo .pi-cosm .chip { display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:3px 8px; }
+    .petinfo .pi-cosm .chip svg, .petinfo .pi-cosm .chip .px { display:block; image-rendering:pixelated; }
+    .petinfo .pi-cosm.lock { opacity:.55; }
     .petinfo .gib { flex-direction:row; align-items:center; justify-content:center; gap:6px; font-weight:800; }
     .petinfo .gib svg { flex:none; }
     .catchip .cn-edit::before { content:''; position:absolute; inset:-7px; }   /* 히트영역 확장(시각 18px 유지, 터치 타깃 ≈32px) — 오탭 방지 */
@@ -1870,6 +1878,7 @@
     .rk-nm { font-size:12.5px; font-weight:800; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .rk-likes { display:inline-flex; align-items:center; gap:3px; font-size:11.5px; font-weight:800; color:var(--sub); }
     .rk-likes .px { display:block; }
+    .rk-aff { display:inline-flex; align-items:center; margin-left:6px; font-size:10px; font-weight:800; color:#e0567a; background:rgba(224,86,122,.12); border-radius:7px; padding:1px 6px; white-space:nowrap; }   /* 💗 펫 애정레벨 합(과시) */
     .rk-list { display:flex; flex-direction:column; gap:4px; margin-top:8px; }
     .rk-row { display:flex; align-items:center; gap:11px; width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:8px 12px; cursor:pointer; }
     .rk-num { flex:none; width:22px; text-align:center; font-size:14px; font-weight:800; color:var(--sub); }
@@ -2075,6 +2084,30 @@
     .cd-shadow { display:none; }
     /* 🌑 발밑 접지 그림자 — 펫이 바닥에 붙어 보이게(부유감 제거). 액터(.cd-actor) 안에 있어 depthScale로 앞=크게·뒤=작게 자동, bottom:var(--pad)로 스프라이트 실제 발끝선에 정렬. */
     .pkstage .cd-shadow, .cd-room .cd-shadow, .catroom .cd-shadow { display:block; position:absolute; left:50%; bottom:var(--pad,0px); transform:translateX(-50%); z-index:0; opacity:.2; pointer-events:none; }
+    /* 💗 펫 코스메틱(애정 해금) — 모자(Lv5)·동행 버디(Lv3). --hp=머리 위 여백 %(measureHeadPad 실측 주입, 기본 20%).
+       .cd-actor 안이라 depthScale·좌우 flip을 그대로 상속(뒤로 가면 작아지고 방향 따라 뒤집힘). 픽셀 유지(pixelated). */
+    .cd-hat, .cd-buddy { display:none; }
+    .pkstage .cd-hat, .cd-room .cd-hat, .catroom .cd-hat { display:block; position:absolute; left:50%; top:var(--hp,20%); transform:translate(-50%,-82%); z-index:3; pointer-events:none; image-rendering:pixelated; }
+    .pkstage .cd-buddy, .cd-room .cd-buddy, .catroom .cd-buddy { display:block; position:absolute; left:50%; top:var(--hp,20%); width:0; height:0; z-index:4; pointer-events:none; }
+    /* 버디 = 다층 모션(경로 배회 cbpath + 날갯짓/부양 cbbob·발광 cbglow) — 단순 1축 왕복 금지 규칙 준수 */
+    .cd-buddy .cb-path { position:absolute; left:0; top:0; animation:cbpath 7.5s ease-in-out infinite; }
+    .cd-buddy .cb-bob { display:block; animation:cbbob 1.15s ease-in-out infinite; image-rendering:pixelated; }
+    .cd-buddy.cb-firefly .cb-path { animation-duration:9.5s; animation-delay:-3s; }
+    .cd-buddy.cb-firefly .cb-bob { animation:cbglow 2.3s ease-in-out infinite; }
+    .cd-buddy.cb-rainbowflower .cb-path { animation-duration:11s; animation-delay:-5s; }   /* 🌈 무지개꽃: 느긋한 경로 + 빙글 트월 */
+    .cd-buddy.cb-rainbowflower .cb-bob { animation:cbtwirl 3.2s ease-in-out infinite; }
+    @keyframes cbpath { 0%{transform:translate(-14px,-4px)} 18%{transform:translate(9px,-13px)} 38%{transform:translate(17px,3px)} 58%{transform:translate(0px,9px)} 78%{transform:translate(-19px,5px)} 100%{transform:translate(-14px,-4px)} }
+    @keyframes cbbob { 0%,100%{transform:translateY(0) scaleX(1)} 25%{transform:translateY(-2px) scaleX(.7)} 50%{transform:translateY(-1px) scaleX(1)} 75%{transform:translateY(-3px) scaleX(.7)} }
+    @keyframes cbglow { 0%,100%{opacity:.35; transform:translateY(0)} 45%{opacity:1; transform:translateY(-3px)} 70%{opacity:.7; transform:translateY(-1px)} }
+    @keyframes cbtwirl { 0%,100%{transform:translateY(0) rotate(-10deg)} 25%{transform:translateY(-2px) rotate(4deg)} 50%{transform:translateY(-3px) rotate(12deg)} 75%{transform:translateY(-1px) rotate(2deg)} }
+    /* 💗 친구 캠 애정 하트 배지(Lv3+ 과시) — 액터 머리 위 작은 칩 */
+    .cd-afflv { display:none; }
+    .cd-room .cd-afflv, .catroom .cd-afflv { display:inline-flex; align-items:center; gap:2px; position:absolute; left:50%; top:var(--hp,20%); transform:translate(-50%,-160%); z-index:5; font-size:8.5px; font-weight:800; color:#fff; background:rgba(30,24,40,.62); border-radius:7px; padding:1px 5px; pointer-events:none; white-space:nowrap; }
+    .cd-afflv .px { display:block; }
+    /* 🔋 절전: 접근성 전면 정적 + 가벼운 모드 + 시트가 dock를 가릴 땐 버디 모션 정지(장식 애니) */
+    @media (prefers-reduced-motion: reduce){ .cd-buddy .cb-path, .cd-buddy .cb-bob { animation:none; } }
+    body.lite .cd-buddy .cb-path, body.lite .cd-buddy .cb-bob { animation:none; }
+    body.sheet-open .catdock .cd-buddy .cb-path, body.sheet-open .catdock .cd-buddy .cb-bob { animation-play-state:paused; }
     /* 로그인 알(egg-garden) — 뜰 가운데(앞쪽 말고 중앙으로) */
     .pk-egg { position:absolute; left:50%; bottom:30%; transform:translateX(-50%); z-index:3; }
     .pk-egg img { display:block; height:50px; width:auto; filter:drop-shadow(0 3px 0 rgba(0,0,0,.14)); }

@@ -423,15 +423,36 @@ test('dexProgress: 보유/전체/퍼센트', () => {
   assert.deepStrictEqual(U.dexProgress(null, ['a']), { owned: 0, total: 1, pct: 0 });
 });
 
-test('affectionLevel: 임계 1/3/7/14/21 레벨·다음·진행%(첫 쓰다듬기에 Lv.1, 최대 5)', () => {
-  assert.deepStrictEqual(U.affectionLevel(0), { level: 0, next: 1, pct: 0 });
-  assert.deepStrictEqual(U.affectionLevel(1), { level: 1, next: 3, pct: 0 });
-  assert.deepStrictEqual(U.affectionLevel(2), { level: 1, next: 3, pct: 50 });
-  assert.deepStrictEqual(U.affectionLevel(3), { level: 2, next: 7, pct: 0 });
-  assert.deepStrictEqual(U.affectionLevel(7), { level: 3, next: 14, pct: 0 });
-  assert.deepStrictEqual(U.affectionLevel(14), { level: 4, next: 21, pct: 0 });
-  assert.deepStrictEqual(U.affectionLevel(21), { level: 5, next: null, pct: 100 });
-  assert.deepStrictEqual(U.affectionLevel(9999), { level: 5, next: null, pct: 100 });
+test('affectionLevel: 등급별 계단(2026-07 개편) — normal 임계 2/5/12/24/40, tier 미전달=normal', () => {
+  assert.deepStrictEqual(U.affectionLevel(0), { level: 0, next: 2, pct: 0, max: 40 });
+  assert.deepStrictEqual(U.affectionLevel(2), { level: 1, next: 5, pct: 0, max: 40 });
+  assert.deepStrictEqual(U.affectionLevel(5), { level: 2, next: 12, pct: 0, max: 40 });
+  assert.deepStrictEqual(U.affectionLevel(12), { level: 3, next: 24, pct: 0, max: 40 });
+  assert.deepStrictEqual(U.affectionLevel(24), { level: 4, next: 40, pct: 0, max: 40 });
+  assert.deepStrictEqual(U.affectionLevel(40), { level: 5, next: null, pct: 100, max: 40 });
+  assert.deepStrictEqual(U.affectionLevel(9999), { level: 5, next: null, pct: 100, max: 40 });
+  // tier 명시 = normal과 동일 값(하위호환)
+  assert.strictEqual(U.affectionLevel(12, 'normal').level, 3);
+});
+
+test('affectionLevel: 등급 배수 — 한정(×4) 임계 8/20/48/96/160, 신화(×3) 6/15/36/72/120', () => {
+  assert.deepStrictEqual(U.affTiers('exclusive'), [8, 20, 48, 96, 160]);
+  assert.deepStrictEqual(U.affTiers('limited'), [6, 15, 36, 72, 120]);
+  assert.deepStrictEqual(U.affTiers('uncommon'), [3, 7, 15, 30, 50]);   // ceil(2.5)=3, ceil(6.25)=7
+  assert.strictEqual(U.affectionLevel(159, 'exclusive').level, 4);   // 만렙 경계
+  assert.strictEqual(U.affectionLevel(160, 'exclusive').level, 5);
+  assert.strictEqual(U.affectionLevel(21, 'exclusive').level, 2);    // 구 만렙치도 한정에선 Lv2 — 레벨 재해석
+  assert.strictEqual(U.affectionLevel(35, 'limited').level, 2);
+  assert.strictEqual(U.affectionLevel(36, 'limited').level, 3);      // 신화 모션 Lv3 해금 경계
+});
+
+test('dupAffOf: 중복 획득 애정 경험치(등급 높을수록 큼, 미지정=normal)', () => {
+  assert.strictEqual(U.dupAffOf('normal'), 2);
+  assert.strictEqual(U.dupAffOf('rare'), 4);
+  assert.strictEqual(U.dupAffOf('legend'), 8);
+  assert.strictEqual(U.dupAffOf('limited'), 12);
+  assert.strictEqual(U.dupAffOf('exclusive'), 16);
+  assert.strictEqual(U.dupAffOf('unknown-tier'), 2);
 });
 
 test('rollFreeGift: 가중 누적 경계에서 올바른 보상(food35/water35/coins30, 금화 없음)', () => {
@@ -622,11 +643,13 @@ test('yieldMultiplier: 애정+도감+앱사용 3축(1.0~2.0)', () => {
   assert.ok(Math.abs(U.yieldMultiplier(50, 0, 0, false) - 1.175) < 1e-9);            // 도감 50% → +0.175
 });
 
-test('totalAffectionLv: 소유 펫 애정레벨 합', () => {
+test('totalAffectionLv: 소유 펫 애정레벨 합(tierOf 미전달=normal)', () => {
   assert.strictEqual(U.totalAffectionLv({}), 0);
   assert.strictEqual(U.totalAffectionLv(null), 0);
-  // affection 21→Lv5, 7→Lv3, 0→Lv0 (thresholds [1,3,7,14,21])
-  assert.strictEqual(U.totalAffectionLv({ a: { affection: 21 }, b: { affection: 7 }, c: { affection: 0 } }), 8);
+  // normal 임계 [2,5,12,24,40]: 40→Lv5, 12→Lv3, 0→Lv0
+  assert.strictEqual(U.totalAffectionLv({ a: { affection: 40 }, b: { affection: 12 }, c: { affection: 0 } }), 8);
+  // tierOf 반영: 같은 40이라도 한정이면 Lv2(임계 20)…
+  assert.strictEqual(U.totalAffectionLv({ a: { affection: 40 } }, () => 'exclusive'), 2);
 });
 
 test('affLevelReward: 레벨별 소보상 은화(×10)', () => {

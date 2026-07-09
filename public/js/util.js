@@ -334,14 +334,27 @@
     ids.forEach(function (id) { if (owned && owned[id]) o++; });
     return { owned: o, total: ids.length, pct: ids.length ? Math.round(o / ids.length * 100) : 0 };
   }
-  // 펫 애정도 레벨(임계 1/3/7/14/21 — 최대 5레벨). 하루 1번 쓰다듬기 +1 → 첫 쓰다듬기에 바로 Lv.1, 이후 3·7·14·21일 누적. {level(0~5), next(다음 임계 or null), pct(다음까지 %)}.
-  function affectionLevel(aff) {
+  // ===== 💗 펫 애정도(프레스티지 — 2026-07 개편: 등급별 계단) =====
+  // 애정도는 "명품백"처럼 어렵게 관리되는 과시재 — 등급이 높을수록 레벨 필요 경험치가 크다(경제 정책 §3-C).
+  // 획득: 쓰다듬기 +1/일 · 츄르 +1 · 중복 획득 dupAffOf(tier). 보상은 레벨업 소보상(affLevelReward)만 "적당히".
+  var AFF_TH_BASE = [2, 5, 12, 24, 40];   // normal 기준 임계(Lv1~5)
+  var AFF_TIER_MULT = { normal: 1, uncommon: 1.25, rare: 1.5, epic: 2, legend: 2.5, limited: 3, exclusive: 4 };
+  function affTiers(tier) {
+    var m = AFF_TIER_MULT[tier] || 1, out = [];
+    for (var i = 0; i < AFF_TH_BASE.length; i++) out.push(Math.ceil(AFF_TH_BASE[i] * m));
+    return out;
+  }
+  // 펫 애정도 레벨(등급별 임계 — 최대 5레벨). tier 미전달=normal(하위호환). {level(0~5), next(다음 임계 or null), pct(다음까지 %), max(만렙 임계)}.
+  function affectionLevel(aff, tier) {
     aff = Math.max(0, Math.floor(Number(aff) || 0));
-    var TH = [1, 3, 7, 14, 21], level = 0;
+    var TH = affTiers(tier), level = 0;
     for (var i = 0; i < TH.length; i++) { if (aff >= TH[i]) level = i + 1; }
     var prev = level > 0 ? TH[level - 1] : 0, next = level < TH.length ? TH[level] : null;
-    return { level: level, next: next, pct: next != null ? Math.round((aff - prev) / (next - prev) * 100) : 100 };
+    return { level: level, next: next, pct: next != null ? Math.round((aff - prev) / (next - prev) * 100) : 100, max: TH[TH.length - 1] };
   }
+  // 🥚 중복 획득 애정 경험치(등급별 — 트랙 대비 5~10%, 보수적. 만렙 펫은 호출측이 은화 10% 폴백).
+  var DUP_AFF = { normal: 2, uncommon: 3, rare: 4, epic: 6, legend: 8, limited: 12, exclusive: 16 };
+  function dupAffOf(tier) { return DUP_AFF[tier] || DUP_AFF.normal; }
   // ===== 가챠 천장(pity·순수) — '가챠 종류마다' 독립 카운터 =====
   // pity = 그 종류의 마지막 신화↑(limited/exclusive) 이후 누적 뽑기 수. N회째(기본 100) 뽑기까지 신화↑가 안 나오면 그 뽑기를 강제 확정.
   // 강제 여부만 판정(true) — 강제 등급은 호출측(cats.js)이 결정: 뜰알=신화50%·한정50%, 그 외=신화(limited).
@@ -377,10 +390,10 @@
     var m = (mult == null) ? 1 : Math.max(0, Number(mult) || 0);
     return Math.floor(perHr * happyFactor * m * hrs);
   }
-  // 🌱 소유 펫 전체 애정레벨 합(0~5 각). 수익배율(총 애정 축)·성장 지표용. catsMap = owned.cats.
-  function totalAffectionLv(catsMap) {
+  // 🌱 소유 펫 전체 애정레벨 합(0~5 각). 수익배율(총 애정 축)·성장 지표용. catsMap = owned.cats, tierOf=id→등급(미전달=normal).
+  function totalAffectionLv(catsMap, tierOf) {
     catsMap = catsMap || {}; var s = 0;
-    for (var k in catsMap) { if (Object.prototype.hasOwnProperty.call(catsMap, k)) s += affectionLevel((catsMap[k] || {}).affection || 0).level; }
+    for (var k in catsMap) { if (Object.prototype.hasOwnProperty.call(catsMap, k)) s += affectionLevel((catsMap[k] || {}).affection || 0, tierOf ? tierOf(k) : null).level; }
     return s;
   }
   // 🔺 자동 은화 수익배율(1.0~2.0) — 애정 총량 + 도감 수집률 + 실제 앱 사용(가계부·할일 기록). 게임 성장과 실사용을 동시에 권장.
@@ -492,7 +505,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CAM: CAM, camDepth: camDepth, camFurnBottom: camFurnBottom, camZ: camZ, CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, fmtCommaSigned: fmtCommaSigned, parseAmount: parseAmount, parseAmountSigned: parseAmountSigned, todayKst: todayKst, isoAtNoon: isoAtNoon, jsAttr: jsAttr, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, clampYmd: clampYmd, effNextBilling: effNextBilling, todoScope: todoScope, overdueTodoIds: overdueTodoIds, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift };
+  var api = { CAM: CAM, camDepth: camDepth, camFurnBottom: camFurnBottom, camZ: camZ, CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, fmtCommaSigned: fmtCommaSigned, parseAmount: parseAmount, parseAmountSigned: parseAmountSigned, todayKst: todayKst, isoAtNoon: isoAtNoon, jsAttr: jsAttr, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, clampYmd: clampYmd, effNextBilling: effNextBilling, todoScope: todoScope, overdueTodoIds: overdueTodoIds, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, affTiers: affTiers, dupAffOf: dupAffOf, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);
