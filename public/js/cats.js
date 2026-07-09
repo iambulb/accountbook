@@ -7048,14 +7048,15 @@
         "    ctx.drawImage(p.bmp, -w/2, -p.h/2, w, p.h); }",
         "  }catch(e){} ctx.restore(); }",
         "function setPets(list){ pets=(list||[]).map(function(p,i){ var e={}; for(var k in p) e[k]=p[k];",
-        "  e.x=16+Math.random()*(W-e.hh-32); e.dir=Math.random()<0.5?-1:1; e.v=0.018+Math.random()*0.02;",
-        "  e.depth=Math.random(); e.vz=(Math.random()*2-1)*0.00004;",
+        "  e.x=16+Math.random()*(W-e.hh-32); e.dir=Math.random()<0.5?-1:1; e.v=0.0084+Math.random()*0.0108;",   // 🐾 dock 엔진 미러: 0.14~0.32 × 0.06 = 0.0084~0.0192 px/ms(예전 0.018~0.038은 ~2배 빨라 PiP에서 펫이 급해 보임)
+        "  e.wd=Math.max(450,Math.min(1500,(0.42*e.hh)/(e.v*0.966)));",   // 걷기 필름 한 사이클(ms) — 메인 walkDur(stride/속도, 0.45~1.5s) 미러(발 미끄러짐 방지)
+        "  e.depth=Math.random(); e.vz=(Math.random()*2-1)*0.000008;",   // 앞뒤(깊이) 배회도 dock와 동일(±0.000008/ms — 예전 0.00004는 5배)
         "  e.mode=(rm||e.stationary)?'pause':'roam'; e.pt=1e9; if(!rm&&!e.stationary) e.pt=0; return e; }); }",
         "function step(dt){ if(rm) return; for(var i=0;i<pets.length;i++){ var a=pets[i]; if(a.stationary) continue;",
         "  if(a.mode==='pause'){ a.pt-=dt; if(a.pt<=0){ a.mode='roam'; a.dir=Math.random()<0.5?-1:1; } continue; }",
         "  var ds=1.5-(1.5-0.86)*a.depth, w=a.hh*ds;",
         "  a.x+=a.dir*a.v*dt; if(a.x<2){ a.x=2; a.dir=1; } if(a.x>W-w){ a.x=Math.max(2,W-w); a.dir=-1; }",
-        "  a.depth=Math.max(0,Math.min(1,a.depth+a.vz*dt)); if(Math.random()<0.004) a.vz=(Math.random()*2-1)*0.00004;",
+        "  a.depth=Math.max(0,Math.min(1,a.depth+a.vz*dt)); if(Math.random()<0.004) a.vz=(Math.random()*2-1)*0.000008;",
         "  if(Math.random()<0.0022){ a.mode='pause'; a.pt=2200+Math.random()*3800; }",
         "} }",
         "function drawPet(a,now){ var ds=1.5-(1.5-0.86)*a.depth, h=a.hh*ds, w=h;",
@@ -7063,7 +7064,7 @@
         "  var moving=(a.mode==='roam'&&!a.stationary), flip=(moving&&a.dir<0);",
         "  ctx.save(); if(flip){ ctx.translate(a.x+w,0); ctx.scale(-1,1); } else { ctx.translate(a.x,0); }",
         "  try{",
-        "    if(moving&&a.sheet&&!a.frontWalk){ var sw=a.sheet.width/a.frames, fr=Math.floor(now/110)%a.frames; ctx.drawImage(a.sheet, fr*sw,0,sw,a.sheet.height, 0,y,w,h); }",
+        "    if(moving&&a.sheet&&!a.frontWalk){ var sw=a.sheet.width/a.frames, fr=Math.floor(now/((a.wd||660)/a.frames))%a.frames; ctx.drawImage(a.sheet, fr*sw,0,sw,a.sheet.height, 0,y,w,h); }",   // 프레임 간격 = 사이클(wd)/프레임수 — 속도 연동(예전 고정 110ms는 발놀림이 빨랐음)
         "    else if(moving&&a.frontWalk&&a.east){ ctx.drawImage(a.east,0,y,w,h); }",
         "    else if(a.south){ ctx.drawImage(a.south,0,y,w,h); }",
         "  }catch(e){}",
