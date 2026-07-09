@@ -6613,37 +6613,32 @@
       stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+(hasSprite(id)?'<span class="cd-shadow">'+shadowSvg({h:Math.max(6,Math.round(s*0.16))})+'</span>':'')+catActorHTML(id,s)+'</div>'; }).join('');
       markCatDirty(); }
     // dock 캠 우하단 PiP 버튼(지원 브라우저에서만 렌더 — 모바일에선 마크업 자체가 없음)
-    function _pipBtnTitle(on){ return on?'PiP 미니 창 닫기':'펫캠 PiP 미니 창 · 길게 누르면 방식 전환('+(pipMode()==='doc'?'현재: 🪟 창':'현재: 🎬 비디오')+')'; }
+    function _pipBtnTitle(on){ return on?'PiP 미니 창 닫기':'펫캠을 항상 위 미니 창(PiP)으로'; }
     function pipBtnHtml(){ if(!pipSupported()) return '';
       const on=pipOpen()||vpipOpen();
-      return '<button class="cd-pip'+(on?' on':'')+'" onclick="pipBtnClick(event)" onpointerdown="pipBtnDown()" onpointerup="pipBtnUp()" onpointerleave="pipBtnUp()" aria-pressed="'+(on?'true':'false')+'" title="'+_pipBtnTitle(on)+'" aria-label="펫캠 PiP 미니 창 열기/닫기 (길게: 방식 전환)">'+pipSvg({h:13})+'</button>'; }
+      return '<button class="cd-pip'+(on?' on':'')+'" onclick="event.stopPropagation();openPipCam()" aria-pressed="'+(on?'true':'false')+'" title="'+_pipBtnTitle(on)+'" aria-label="펫캠 PiP 미니 창 열기/닫기">'+pipSvg({h:13})+'</button>'; }
     function _pipBtnSync(){ const b=document.querySelector('.catdock .cd-pip'); if(!b) return; const on=pipOpen()||vpipOpen();
       b.classList.toggle('on', on); b.setAttribute('aria-pressed', on?'true':'false'); b.title=_pipBtnTitle(on); }
-    // ── PiP 방식 2종: 'video'(기본·유튜브식 — 창 크롬이 호버 시에만 보여 깔끔) / 'doc'(Document PiP — 가구 연출·움직이는 벽지까지 전부, 대신 상단바 상시 표시) ──
-    // Document PiP 상단바(주소·X)는 Chrome 보안 UI라 웹에서 숨길 수 없음 → 깔끔함을 원하면 비디오 PiP로(사용자 선택). dock 버튼 길게 누르면 전환.
-    function pipMode(){ try{ return localStorage.getItem('pipMode')==='doc'?'doc':'video'; }catch(e){ return 'video'; } }
-    function togglePipMode(){ const m=pipMode()==='doc'?'video':'doc';
-      if(m==='doc' && !docPipSupported()){ toast('이 기기는 🎬 비디오 방식만 지원해요(창 방식은 데스크톱 크롬·엣지)'); return; }   // 📱 안드로이드 등 — 전환 무의미(폴백으로 어차피 비디오)
+    // ── PiP 방식 설정(설정 시트에서 선택 — 2026-07 사용자 지침: 버튼 롱프레스 토글 대신 설정 항목으로) ──
+    // 기본=🎬 비디오 PiP(주소창 없는 유튜브식·연출 전부 재현). 🪟 창(Document PiP)=DOM 완전 미러(펫 상호작용까지 100%, 상단바 표시).
+    // 설정 행은 pipSupported()일 때만 노출(iOS 등 미지원 환경엔 안 보임 — views.js openSettingsSheet/openPipModeSheet).
+    function pipMode(){ try{ return localStorage.getItem('pipMode')==='doc'?'doc':'video'; }catch(e){ return 'video'; } }   // 디폴트=비디오
+    function pipModeLabel(){ return pipMode()==='doc'?'🪟 창':'🎬 비디오'; }
+    function setPipModeChoice(m){
+      if(m==='doc' && !docPipSupported()){ toast('이 브라우저는 창 방식을 지원하지 않아요(데스크톱 크롬·엣지)', true); return; }
+      if(m==='video' && !vpipSupported()){ toast('이 브라우저는 비디오 방식을 지원하지 않아요', true); return; }
+      if(pipMode()===m) return;
       try{ localStorage.setItem('pipMode', m); }catch(e){}
-      if(vpipOpen()) closeVideoPip(); if(pipOpen()){ try{ _pip.win.close(); }catch(e){} }   // 열려 있던 창은 닫고(방식이 다르니) 다시 열게 안내
-      toast(m==='video'?'PiP 방식: 🎬 비디오 — 유튜브처럼 컨트롤이 호버 시에만 보여요(가구 연출은 정지). 버튼을 다시 눌러 여세요'
-                       :'PiP 방식: 🪟 창 — 가구 연출·움직이는 배경까지 전부 나와요(상단바는 항상 표시). 버튼을 다시 눌러 여세요');
-      _pipBtnSync(); }
-    // 버튼 탭=열기/닫기, 길게(0.55s)=방식 전환
-    let _pipLpT=0, _pipLpFired=false;
-    function pipBtnDown(){ _pipLpFired=false; clearTimeout(_pipLpT); _pipLpT=setTimeout(function(){ _pipLpFired=true; togglePipMode(); }, 550); }
-    function pipBtnUp(){ clearTimeout(_pipLpT); }
-    function pipBtnClick(ev){ if(ev) ev.stopPropagation(); if(_pipLpFired){ _pipLpFired=false; return; } openPipCam(); }
-    // 열기 디스패처 — 선택 방식 우선, 미지원이면 반대 방식 폴백
+      if(vpipOpen()) closeVideoPip(); if(pipOpen()){ try{ _pip.win.close(); }catch(e){} }   // 방식이 바뀌면 열린 미니 창은 닫음(다시 열면 새 방식)
+      toast(m==='doc'?'PiP 방식: 🪟 창 — 방 화면 그대로(상단바 표시)':'PiP 방식: 🎬 비디오 — 유튜브식(호버 시에만 컨트롤)');
+    }
     function openPipCam(){
       if(_pipIOSLike()){ toast('아이폰/아이패드 브라우저는 PiP 미니 캠을 지원하지 않아요', true); return; }   // 📵 버튼이 없어 정상 경로론 못 오지만 콘솔·구버전 캐시 방어
       if(vpipOpen()){ closeVideoPip(); return; }                       // 토글: 재탭=닫기
       if(pipOpen()){ try{ _pip.win.close(); }catch(e){} return; }
-      const wantDoc = pipMode()==='doc';
-      if(wantDoc && docPipSupported()) return openDocPip();
-      if(!wantDoc && vpipSupported()) return openVideoPip();
-      if(docPipSupported()) return openDocPip();
+      if(pipMode()==='doc' && docPipSupported()) return openDocPip(); // 설정에서 창 방식을 고른 경우
       if(vpipSupported()) return openVideoPip();
+      if(docPipSupported()) return openDocPip();                       // Firefox 등 비디오 PiP 불가 브라우저 폴백
       toast('이 브라우저는 PiP 미니 캠을 지원하지 않아요(데스크톱 크롬·엣지)', true);
     }
     function openDocPip(){

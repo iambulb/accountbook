@@ -1883,6 +1883,9 @@
       h+=lrow(MORE_ICON.download,'CSV 내보내기','exportCSV()');
       h+=lrowToggle(MORE_ICON.moon,'다크 모드','toggleTheme();openSettingsSheet()', state.theme==='dark');
       h+=lrowToggle(MORE_ICON.cam,'펫캠','toggleDockHidden();openSettingsSheet()', (typeof dockMode==='function'&&dockMode()!=='hidden'));
+      // 🖥️ 펫캠 PiP 방식(비디오/창) — 지원 브라우저에서만 노출(iOS·미지원 환경엔 행 자체가 없음), 기본=비디오
+      if(typeof pipSupported==='function' && pipSupported())
+        h+=lrow((typeof pipSvg==='function'?pipSvg({h:22}):MORE_ICON.cam),'펫캠 PiP 방식','openPipModeSheet()', (typeof pipModeLabel==='function'?pipModeLabel():''));
       h+=lrowToggle('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="16" height="10" rx="2"/><path d="M18 10.5v3"/><path d="M22 10.5v3"/></svg>','가벼운 모드','setLiteMode(!(typeof liteMode===\'function\'&&liteMode()));openSettingsSheet()', (typeof liteMode==='function'&&liteMode()), '저사양 폰 · 애니메이션 최소화(배터리·발열 절약)');
       if(typeof pushState==='function' && pushState()!=='unsupported'){   // 🔔 알림(FCM 설정된 지원 기기에서만 노출)
         const _ps=pushState();   // 차단/미지원 상태는 스위치 옆에 사유 텍스트로 안내
@@ -1898,6 +1901,19 @@
       openSheet('설정', h);
     }
     function submitPromoCode(){ const el=$('promoCode'); if(!el) return; redeemCode(el.value); el.value=''; }
+    // 🖥️ 펫캠 PiP 방식 선택 시트 — 🎬 비디오(기본·유튜브식 깔끔) / 🪟 창(DOM 완전 미러·상단바 표시). 미지원 방식은 흐리게 + 선택 시 setPipModeChoice가 토스트로 안내.
+    function openPipModeSheet(){
+      const cur=(typeof pipMode==='function')?pipMode():'video';
+      const canVid=(typeof vpipSupported==='function')&&vpipSupported(), canDoc=(typeof docPipSupported==='function')&&docPipSupported();
+      let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 12px;">펫캠 미니 창(PiP)을 어떤 방식으로 띄울지 선택해요.</p>';
+      h+='<div class="who-select" style="grid-template-columns:1fr;">';
+      h+='<button class="who-btn'+(cur==='video'?' on':'')+'" style="text-align:left;'+(canVid?'':'opacity:.45;')+'" onclick="setPipModeChoice(\'video\');openPipModeSheet()">🎬 비디오 방식 <b style="font-weight:800;">'+(cur==='video'?'· 사용 중':'')+'</b>'+
+        '<span class="muted" style="display:block;font-size:12px;font-weight:600;margin-top:4px;line-height:1.5;">유튜브처럼 깔끔 — 평소엔 화면만 보이고 마우스를 올려야 컨트롤이 나타나요'+(canVid?'':' · 이 브라우저 미지원')+'</span></button>';
+      h+='<button class="who-btn'+(cur==='doc'?' on':'')+'" style="text-align:left;'+(canDoc?'':'opacity:.45;')+'" onclick="setPipModeChoice(\'doc\');openPipModeSheet()">🪟 창 방식 <b style="font-weight:800;">'+(cur==='doc'?'· 사용 중':'')+'</b>'+
+        '<span class="muted" style="display:block;font-size:12px;font-weight:600;margin-top:4px;line-height:1.5;">방 화면을 그대로 미러(펫이 가구에 앉는 상호작용까지 100%) — 창 상단에 주소·닫기 바가 항상 보여요'+(canDoc?'':' · 이 브라우저 미지원')+'</span></button>';
+      h+='</div><button class="btn ghost" onclick="openSettingsSheet()" style="margin-top:14px;">설정으로 돌아가기</button>';
+      openSheet('펫캠 PiP 방식', h);
+    }
     // 개발자 모드 시트 — 더보기 그리드의 무지개알 타일에서 진입(개발자 이메일 전용). 토글 + 하위 기능.
     function openDevModeSheet(){
       if(!(typeof isDev==='function' && isDev())){ toast('개발자 전용'); return; }
