@@ -629,7 +629,7 @@
                 "    if(moving&&a.sheet&&!a.frontWalk){ var sw=a.sheet.width/a.frames, fr=Math.floor(now/((a.wd||660)/a.frames))%a.frames; ctx.drawImage(a.sheet, fr*sw,0,sw,a.sheet.height, 0,y,w,h); }",   // 프레임 간격 = 사이클(wd)/프레임수 — 속도 연동(예전 고정 110ms는 발놀림이 빨랐음)
         "    else if(moving&&a.frontWalk&&a.east){ ctx.drawImage(a.east,0,y,w,h); }",
         "    else if(a.south){ ctx.drawImage(a.south,0,y,w,h); }",
-                "    if(a.hat){ var hw2=w*0.30*(a.hat.width/a.hat.height), hh3=w*0.30; ctx.drawImage(a.hat, w/2-hw2/2, y+h*(a.headF||0.2)-hh3*0.82, hw2, hh3); }",   // 💗 모자 — dock .cd-hat(top:--hp, -82%) 전사(펫 transform 안이라 flip·깊이 동행)
+                "    if(a.hat){ var hh3=w*0.20, hw2=hh3*(a.hat.width/a.hat.height), hdx=(moving?0.13*w:0); ctx.drawImage(a.hat, w/2-hw2/2+hdx, y+h*(a.headF||0.2)-hh3*0.55, hw2, hh3); }",   // 💗 모자 — dock .cd-hat(0.20·-55%·옆모습 hatdx) 전사. moving=옆모습(east 로컬 머리 오른쪽 → +hdx), flip이 west 반전. 정지=south 정면(hdx0)
         "  }catch(e){}",
         "  ctx.restore();",
         "  if(a.buddy){ try{ var t2=now/1000, bw=w*(a.btype==='firefly'?0.15:0.20), bh2=bw*(a.buddy.height/a.buddy.width);",   // 💗 동행 버디 — 경로(느린 궤도)+날갯짓/발광 다층(dock cbpath+cbbob/cbglow 전사)
@@ -927,8 +927,13 @@
       _warmUrl(u, function(){ if(a._swapTok!==tok || !s.isConnected) return;
         if(a.el && a.el._eggActor && a.el._eggActor!==a) return;
         s.style.setProperty('--idle','url('+u+')'); }); }
+    // 🎩 모자 가로 앵커(--hatdx) — 옆모습일 때 머리가 앞쪽(로컬 east=+)이라 모자를 앞으로 민다(정면=0). 액터 scaleX(-1)가 west를 자동 반전.
+    //   east 스틸/걷기는 로컬 +(머리 오른쪽)라 부호 +, west 스틸(west.png, 액터 미flip)은 로컬 -(머리 왼쪽). measureHeadPad와 짝(세로=--hp, 가로=--hatdx).
+    const HAT_SIDE_DX=0.13;   // 옆모습 앞쪽 이동량(펫 렌더높이 대비 — 실측 정수리 오프셋 +0.07~+0.14의 중앙값)
+    function setHatDx(a, off){ if(a._hasHat) a.el.style.setProperty('--hatdx', (a.hh*off).toFixed(1)+'px'); }
     function actorShowMoving(a){ if(!a.spr) return; const s=a.el.querySelector('.cspr'); if(!s) return;
       a._clip=null; s.classList.remove('once');
+      setHatDx(a, HAT_SIDE_DX);   // 이동=옆모습(east 시트/east 정지스틸, 로컬 머리 오른쪽) → 앞으로. west는 액터 flip이 반전
       const tok=a._swapTok=(a._swapTok||0)+1;   // 🖼️ 진행 중이던 지연 시트 스왑 무효화 — 걷기로 전환된 뒤 늦게 도착한 클립/스틸이 덮어쓰는 것 방지
       _csprUnfreeze(s.querySelector('.csprf'));   // once 홀드 프리즈 해제 — 안 하면 인라인 animation:none이 걷기 필름을 막아 정지 이미지로 미끄러진다
       if(a.frontWalk){ const u=sprStill(a.id,'east');   // east 걷기 없음 → 옆 정지스틸(정면 금지)
@@ -944,6 +949,7 @@
       const f=s.querySelector('.csprf'); if(f) f.style.animationTimingFunction='steps('+nf+')';
       s.classList.remove('idle'); }   // .idle 제거 → CSS 걷기 필름(csprFilm) 재생
     function actorShowStill(a, face, clip){ if(!a.spr) return; const s=a.el.querySelector('.cspr'); if(!s) return;
+      setHatDx(a, face==='east'?HAT_SIDE_DX:(face==='west'?-HAT_SIDE_DX:0));   // 정면/뒤=중앙, 옆모습 스틸=머리쪽(east.png 오른쪽 +, west.png 왼쪽 -, 둘 다 액터 미flip)
       // 🎞️ 클립 승급 — 지정 클립(가구 eat/drink/sit/belly 등) 또는 정면 휴식이면 idle 클립.
       // 클립 시트는 south 전용 정책이라 정면이 아닌 경우(잠=north·인사/스크래처=east/west)는 기존 방향 스틸 유지.
       // 모션축소·가벼운 모드(body.lite)는 항상 스틸 — 쉬는 펫이 늘 필름을 돌리면 lite의 절전 취지가 깨짐(걷기 필름은 기능 모션이라 유지).
@@ -1077,7 +1083,8 @@
         idle:0.0032+Math.random()*0.005, turn:0.004+Math.random()*0.010, seek:0.008+Math.random()*0.012, cool:0 };   // seek↑(0.005→0.008 기준) — 캣휠·해먹 등 가구 상호작용을 더 자주(PiP 볼거리)
         // 발밑 여백: 세션 캐시 → 없으면 대형(scale≥2) 스프라이트는 0.29 추정(실측 평균 — 기본 0.16을 쓰면 측정 콜백 전까지 발이 ~14% 떠 '벽지를 걷는' 과도기), 그 외 null(기본 PET_FOOT_PAD). 실측 도착 시 정밀값으로 교체.
         a.footPad=(typeof _footPad!=='undefined'&&_footPad[id+':south']!=null)?_footPad[id+':south']:((spr&&(PET_SPRITES[id].scale||1)>=2)?0.29:null); if(spr) measureFootPad(id,function(fp){ a.footPad=fp; setXform(a); });
-        if(spr && el.querySelector('.cd-hat, .cd-buddy')) measureHeadPad(id, function(f){ el.style.setProperty('--hp',(f*100).toFixed(1)+'%'); });   // 💗 코스메틱 머리 앵커(실측 상단 여백 %)
+        a._hasHat = spr && !!el.querySelector('.cd-hat');   // 🎩 모자 장착 여부(가로 앵커 --hatdx 갱신 게이트 — 매 전환마다 querySelector 안 하려 캐시)
+        if(spr && (a._hasHat || el.querySelector('.cd-buddy'))) measureHeadPad(id, function(f){ el.style.setProperty('--hp',(f*100).toFixed(1)+'%'); });   // 💗 코스메틱 머리 앵커(실측 상단 여백 %)
         el._eggActor=a;   // 원샷 클립(actorOnce)의 지연 복귀가 재빌드된 새 액터를 덮어쓰지 않도록 현재 소유 액터를 표시
         if(spr) prewarmPetSheets(id);   // 🖼️ 방향 스틸·클립 시트 프리워밍(유휴 시간) — 첫 모션/방향 전환 때 투명 빈칸(간헐적 사라짐) 방지
         a.x=Math.max(2, Math.min(a.x, Math.max(2, W-a.sw)));   // 지속된 x를 현재 무대 폭에 클램프(리사이즈/회전·무대전환 시 화면 밖 방지)

@@ -1363,7 +1363,7 @@
     function actorCosmHtml(id, s, meta){
       const cosm=meta?((meta.cosm&&typeof meta.cosm==='object')?meta.cosm:{}):petCosm(id);
       let h='';
-      if(cosm.hat&&HAT_M[cosm.hat]) h+='<span class="cd-hat">'+hatSvg(cosm.hat,{h:Math.max(8,Math.round(s*0.30))})+'</span>';
+      if(cosm.hat&&HAT_M[cosm.hat]) h+='<span class="cd-hat">'+hatSvg(cosm.hat,{h:Math.max(6,Math.round(s*0.20))})+'</span>';   // 🎩 모자 크기 = 펫 렌더높이×0.20(펫 크기 비례, 버디 수준으로 축소 — 기존 0.30은 과대)
       if(BUDDY_CATALOG[cosm.buddy]) h+='<span class="cd-buddy cb-'+cosm.buddy+'"><i class="cb-path"><i class="cb-bob">'+buddySvgOf(cosm.buddy,{h:Math.max(7,Math.round(s*(cosm.buddy==='firefly'?0.15:0.20)))})+'</i></i></span>';
       if(meta&&Number(meta.lv)>=3) h+='<span class="cd-afflv">'+heartSvg({h:8})+'Lv'+Number(meta.lv)+'</span>';   // 친구 캠: Lv3+ 애정 과시 배지
       return h;
