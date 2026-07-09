@@ -2137,7 +2137,16 @@
     /* 💗 펫 코스메틱(애정 해금) — 모자(Lv5)·동행 버디(Lv3). --hp=머리 위 여백 %(measureHeadPad 실측 주입, 기본 20%).
        .cd-actor 안이라 depthScale·좌우 flip을 그대로 상속(뒤로 가면 작아지고 방향 따라 뒤집힘). 픽셀 유지(pixelated). */
     .cd-hat, .cd-buddy { display:none; }
-    .pkstage .cd-hat, .cd-room .cd-hat, .catroom .cd-hat { display:block; position:absolute; left:50%; top:var(--hp,20%); transform:translate(calc(-50% + var(--hatdx,0px)),-55%); z-index:3; pointer-events:none; image-rendering:pixelated; }   /* 🎩 세로 -55%=머리에 얹힘(기존 -82%는 붕뜸), 가로 --hatdx=옆모습 머리쪽 이동(actorShowMoving/Still 주입) */
+    .pkstage .cd-hat, .cd-room .cd-hat, .catroom .cd-hat { display:block; position:absolute; left:50%; top:var(--hp,20%); transform:translate(calc(-50% + var(--hatdx,0px)),-48%); z-index:3; pointer-events:none; image-rendering:pixelated; }   /* 🎩 세로 -48%=정수리에 살짝 내려 얹힘(기존 -55%보다 아래), 가로 --hatdx=옆모습 머리쪽 이동(actorShowMoving/Still 주입) */
+    .cd-hat .hatbob { display:block; image-rendering:pixelated; }
+    /* 🎩🫁 숨쉬기 동조: 쉬는 펫(.cspr.idle)이 csprBreath로 발밑 기준 눌릴 때 정수리가 살짝 내려가므로, 모자도 같은 3.4s 타이밍으로 위아래 따라감.
+       :has로 .cspr.idle이 붙는 같은 순간 hatBreath 시작 → 위상 일치. 이동(.idle 없음)·모션축소·lite·시트가림일 땐 정지(csprBreath와 동일 조건). translateY 25%=모자높이 기준 ≈ 정수리 하강량(0.035×(1-hp)s). */
+    .cd-room .cd-actor:has(.cspr.idle) .cd-hat .hatbob,
+    .catroom .cd-actor:has(.cspr.idle) .cd-hat .hatbob,
+    .pkstage .cd-actor:has(.cspr.idle) .cd-hat .hatbob { animation:hatBreath 3.4s ease-in-out infinite; }
+    @keyframes hatBreath { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(25%); } }
+    @media (prefers-reduced-motion: reduce){ .cd-hat .hatbob { animation:none !important; } }
+    body.lite .cd-hat .hatbob, body.sheet-open .catdock .cd-hat .hatbob { animation:none !important; }
     .pkstage .cd-buddy, .cd-room .cd-buddy, .catroom .cd-buddy { display:block; position:absolute; left:50%; top:var(--hp,20%); width:0; height:0; z-index:4; pointer-events:none; }
     /* 버디 = 다층 모션(경로 배회 cbpath + 날갯짓/부양 cbbob·발광 cbglow) — 단순 1축 왕복 금지 규칙 준수 */
     .cd-buddy .cb-path { position:absolute; left:0; top:0; animation:cbpath 7.5s ease-in-out infinite; }

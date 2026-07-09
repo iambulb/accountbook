@@ -640,7 +640,7 @@
                 "    if(moving&&a.sheet&&!a.frontWalk){ var sw=a.sheet.width/a.frames, fr=Math.floor(now/((a.wd||660)/a.frames))%a.frames; ctx.drawImage(a.sheet, fr*sw,0,sw,a.sheet.height, 0,y,w,h); }",   // 프레임 간격 = 사이클(wd)/프레임수 — 속도 연동(예전 고정 110ms는 발놀림이 빨랐음)
         "    else if(moving&&a.frontWalk&&a.east){ ctx.drawImage(a.east,0,y,w,h); }",
         "    else if(a.south){ ctx.drawImage(a.south,0,y,w,h); }",
-                "    if(a.hat){ var hh3=w*0.13, hw2=hh3*(a.hat.width/a.hat.height), hdx=(moving?0.13*w:0); ctx.drawImage(a.hat, w/2-hw2/2+hdx, y+h*(a.headF||0.2)-hh3*0.55, hw2, hh3); }",   // 💗 모자 — dock .cd-hat(0.13 크기·-55%·옆모습 hatdx=0.13w) 전사. moving=옆모습(east 로컬 머리 오른쪽 → +hdx), flip이 west 반전. 정지=south 정면(hdx0)
+                "    if(a.hat){ var hh3=w*0.11, hw2=hh3*(a.hat.width/a.hat.height), hdx=(moving?0.13*w:0); ctx.drawImage(a.hat, w/2-hw2/2+hdx, y+h*(a.headF||0.2)-hh3*0.48, hw2, hh3); }",   // 💗 모자 — dock .cd-hat(0.11 크기·-48%·옆모습 hatdx=0.13w) 전사. moving=옆모습(east 로컬 머리 오른쪽 → +hdx), flip이 west 반전. 정지=south 정면(hdx0)
         "  }catch(e){}",
         "  ctx.restore();",
         "  if(a.buddy){ try{ var t2=now/1000, bw=(a.btype==='firefly'?7:8)*ds, bh2=bw*(a.buddy.height/a.buddy.width);",   // 💗 동행 버디 — 경로(느린 궤도)+날갯짓/발광 다층. ✨ 크기 고정(firefly7·기타8×ds 깊이원근만, 펫 스케일 무관 — DOM actorCosmHtml과 동일)
