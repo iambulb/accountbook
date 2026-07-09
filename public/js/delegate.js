@@ -19,10 +19,10 @@
     while (hasAttr('data-a' + i)) { out.push(coerceArg(getAttr('data-a' + i), getAttr('data-t' + i))); i++; }
     return out;
   }
-  // ── 순수: 템플릿용 속성 문자열 생성. args=[값 또는 {v,t}], esc=이스케이프 함수(기본 String). ──
-  function buildActionAttrs(name, args, esc) {
+  // ── 순수: 템플릿용 속성 문자열 생성. args=[값 또는 {v,t}], esc=이스케이프 함수(기본 String), attr=속성 종류('action' 클릭·'change' 변경). ──
+  function buildActionAttrs(name, args, esc, attr) {
     esc = esc || function (x) { return String(x); };
-    var s = 'data-action="' + esc(name) + '"';
+    var s = 'data-' + (attr || 'action') + '="' + esc(name) + '"';
     (args || []).forEach(function (a, idx) {
       var v = a, t = '';
       if (a && typeof a === 'object' && 'v' in a) { v = a.v; t = a.t || ''; }
@@ -46,12 +46,15 @@
     App.controller.delegate = {
       // 액션 이름 → 함수: 등록된 액션 우선, 없으면 동명 전역 함수 폴백(점진 이관 다리)
       resolve: function (name) { return App.controller.actions[name] || (typeof window[name] === 'function' ? window[name] : null); },
-      handle: function (e) {
+      // 공통 디스패치: 지정 속성(data-action/data-change)에서 가장 가까운 요소를 찾아 인자강제 후 호출
+      dispatch: function (attr, e) {
         var tg = e.target; if (!tg || !tg.closest) return;
-        var el = tg.closest('[data-action]'); if (!el) return;
-        var fn = App.controller.delegate.resolve(el.getAttribute('data-action')); if (!fn) return;
+        var el = tg.closest('[' + attr + ']'); if (!el) return;
+        var fn = App.controller.delegate.resolve(el.getAttribute(attr)); if (!fn) return;
         return fn.apply(el, readActionArgs(function (n) { return el.getAttribute(n); }, function (n) { return el.hasAttribute(n); }));
-      }
+      },
+      handle: function (e) { return App.controller.delegate.dispatch('data-action', e); },          // click 전용
+      handleChange: function (e) { return App.controller.delegate.dispatch('data-change', e); }     // change 전용(셀렉트·날짜·체크 — click 오발화 방지)
     };
     // 템플릿 헬퍼: App.view.act('setMode','todo') → 'data-action="setMode" data-a0="todo"'. escapeHtml 지연바인딩.
     App.view = App.view || {};
@@ -59,10 +62,15 @@
       var esc = (typeof escapeHtml === 'function') ? escapeHtml : function (x) { return String(x); };
       return buildActionAttrs(name, Array.prototype.slice.call(arguments, 1), esc);
     };
-    // 위임 리스너 1개(문서 전체). click/change 만 — pointerdown 드래그는 엔진 전용 addEventListener 유지.
+    // 변경 핸들러 헬퍼: App.view.chg('onCurChange') → 'data-change="onCurChange"'. 셀렉트/날짜/체크 onchange 이관용(change에서만 발화).
+    App.view.chg = function (name) {
+      var esc = (typeof escapeHtml === 'function') ? escapeHtml : function (x) { return String(x); };
+      return buildActionAttrs(name, Array.prototype.slice.call(arguments, 1), esc, 'change');
+    };
+    // 위임 리스너(문서 전체): click=data-action, change=data-change 로 분리 — 셀렉트가 click에도 발화하던 문제 방지. pointerdown 드래그는 엔진 전용 유지.
     if (typeof document !== 'undefined') {
       document.addEventListener('click', App.controller.delegate.handle, false);
-      document.addEventListener('change', App.controller.delegate.handle, false);
+      document.addEventListener('change', App.controller.delegate.handleChange, false);
     }
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);

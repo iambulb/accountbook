@@ -61,6 +61,11 @@ test('round-trip — null 인자 복원(문자열 아님)', () => {
   assert.strictEqual(args[1], 'x');
 });
 
+test('buildActionAttrs — attr=change 는 data-change (onchange 이관용)', () => {
+  assert.strictEqual(buildActionAttrs('onCurChange', [], undefined, 'change'), 'data-change="onCurChange"');
+  assert.strictEqual(buildActionAttrs('setX', ['a'], undefined, 'change'), 'data-change="setX" data-a0="a"');
+});
+
 test('buildActionAttrs — esc 주입(따옴표/꺾쇠 이스케이프 round-trip)', () => {
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   const out = buildActionAttrs('f', ['a"b<c'], esc);

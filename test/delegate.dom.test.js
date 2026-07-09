@@ -50,6 +50,25 @@ test('위임: 미등록·미존재 액션은 조용히 무시(throw 없음)', ()
   assert.doesNotThrow(() => root.children[0].click());
 });
 
+test('위임: data-change는 change에서만·data-action은 click에서만 (셀렉트 click 오발화 방지)', () => {
+  const dom = loadDelegate();
+  const w = dom.window, d = w.document, root = d.getElementById('root');
+  const log = [];
+  w.onCurChange = function () { log.push('change'); };
+  w.clickFn = function () { log.push('click'); };
+  root.innerHTML = '<select ' + w.App.view.chg('onCurChange') + '><option>a</option></select>' +
+                   '<button ' + w.App.view.act('clickFn') + '>b</button>';
+  const sel = root.querySelector('select'), btn = root.querySelector('button');
+  sel.dispatchEvent(new w.Event('click', { bubbles: true }));    // 셀렉트 클릭 → 발화 안 함
+  assert.deepStrictEqual(log, []);
+  sel.dispatchEvent(new w.Event('change', { bubbles: true }));   // 셀렉트 변경 → onCurChange
+  assert.deepStrictEqual(log, ['change']);
+  btn.dispatchEvent(new w.Event('click', { bubbles: true }));    // 버튼 클릭 → clickFn
+  assert.deepStrictEqual(log, ['change', 'click']);
+  btn.dispatchEvent(new w.Event('change', { bubbles: true }));   // 버튼 change → 발화 안 함(data-action은 change 미처리)
+  assert.deepStrictEqual(log, ['change', 'click']);
+});
+
 test('위임: closest로 "가장 가까운 액션"만 — 중첩 시 자식 우선(stopPropagation 대체)', () => {
   const dom = loadDelegate();
   const w = dom.window, d = w.document, root = d.getElementById('root');

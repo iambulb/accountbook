@@ -254,11 +254,11 @@
         '<button data-tp="__ext__" '+App.view.act('setSheetType','__ext__')+'>선불·포인트</button></div>';
       // 시안: 큰 금액 + 키패드 입력
       // 금액: 모바일은 화면 키패드(OS 키보드 안 뜨게 readonly+inputmode none), 데스크톱은 물리 키보드로 직접 입력(keydown 라우팅).
-      h+='<div class="amtbig"><select id="sCur" class="amt-cur" onchange="onCurChange()">'+curOptions(t&&t.currency?t.currency:'KRW')+'</select><input id="sAmount" class="amtbig-in" readonly inputmode="none" aria-label="금액" placeholder="0" onkeydown="kpKey(event)" onpaste="kpPaste(event)" value="'+((t&&t.currency&&t.currency!=='KRW')?fmtAmt(String(t.foreignAmount||'')):(amount?Number(amount).toLocaleString():''))+'"></div>';
+      h+='<div class="amtbig"><select id="sCur" class="amt-cur" '+App.view.chg('onCurChange')+'>'+curOptions(t&&t.currency?t.currency:'KRW')+'</select><input id="sAmount" class="amtbig-in" readonly inputmode="none" aria-label="금액" placeholder="0" onkeydown="kpKey(event)" onpaste="kpPaste(event)" value="'+((t&&t.currency&&t.currency!=='KRW')?fmtAmt(String(t.foreignAmount||'')):(amount?Number(amount).toLocaleString():''))+'"></div>';
       h+='<div id="sFx" class="fxrow" style="display:none;"></div>';
       h+='<div id="sCatChips"></div>';   // 카테고리 칩(유형별)
       h+='<div id="sDyn"></div>';        // 계좌/이체 행
-      h+='<div class="txfield"><span class="k">날짜</span><input type="date" class="txin" id="sDate" value="'+date+'" onchange="onDateChange()"></div>';
+      h+='<div class="txfield"><span class="k">날짜</span><input type="date" class="txin" id="sDate" value="'+date+'" '+App.view.chg('onDateChange')+'></div>';
       h+='<div class="txfield"><span class="k">설명</span><input type="text" class="txin" id="sDesc" placeholder="내용" value="'+escapeHtml(desc)+'"></div>';
       // 숫자 키패드
       h+='<div class="kp">'+
@@ -266,7 +266,7 @@
         '<button '+App.view.act('kpPress','.')+' aria-label="소수점">.</button><button '+App.view.act('kpPress','0')+'>0</button><button '+App.view.act('kpDel')+' aria-label="지우기">⌫</button></div>';
       // 우리 고유 기능 → 상세 설정 접기
       h+='<details class="adv" id="sAdv"'+((pbId||settleInc)?' open':'')+'><summary>상세 설정</summary>';
-      h+='<div class="txfield"><span class="k">목적별 가계부</span><select class="txsel" id="sPb" onchange="onPbChange()">'+
+      h+='<div class="txfield"><span class="k">목적별 가계부</span><select class="txsel" id="sPb" '+App.view.chg('onPbChange')+'>'+
         '<option value="">연결 안 함</option>'+
         activePbs.map(p=>'<option value="'+p.id+'"'+(p.id===pbId?' selected':'')+'>'+(p.icon||'📒')+' '+escapeHtml(p.name)+'</option>').join('')+
         ((pbId && !activePbs.some(p=>p.id===pbId))?('<option value="'+pbId+'" selected>'+escapeHtml((t&&t.purposeBookName)||pbId)+' (비활성)</option>'):'')+
@@ -311,7 +311,7 @@
       });
     }
     function acctOptsHtml(sel){ return state.accounts.map(a=>'<option value="'+a.id+'"'+(a.id===sel?' selected':'')+'>'+escapeHtml(a.name)+' ('+(ACCT_TYPE_LABEL[a.type]||a.type)+')</option>').join(''); }
-    function acctField(label,id,sel){ return '<div class="txfield"><span class="k">'+label+'</span><select class="txsel" id="'+id+'" onchange="renderCardPerfBlock()">'+acctOptsHtml(sel)+'</select></div>'; }
+    function acctField(label,id,sel){ return '<div class="txfield"><span class="k">'+label+'</span><select class="txsel" id="'+id+'" '+App.view.chg('renderCardPerfBlock')+'>'+acctOptsHtml(sel)+'</select></div>'; }
     // 소비 대상(누구의 소비인가) — 출금 수단과 분리. 멤버 + '공동'(집세 등 공동 비용) 선택.
     function consumerField(sel){ return '<div class="txfield"><span class="k">소비 대상</span><select class="txsel" id="sConsumer">'+ownerOptions(sel||'공동')+'</select></div>'; }
     // 시안: 카테고리 가로 칩(이름 + 카테고리 색 점)
@@ -1426,7 +1426,7 @@
       const card=id?getCard(id):null;
       const curType=a?a.type:(presetType||'bank');
       let h='<div class="field"><label>이름</label><input class="input" id="aName" value="'+escapeHtml(a?a.name:'')+'" placeholder="예: 쿠팡캐시, 신한카드"></div>';
-      h+='<div class="form-2"><div class="field"><label>유형</label><select class="input" id="aType" onchange="onAcctTypeChange()">'+ACCT_TYPES.map(p=>'<option value="'+p[0]+'"'+(curType===p[0]?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div>'+
+      h+='<div class="form-2"><div class="field"><label>유형</label><select class="input" id="aType" '+App.view.chg('onAcctTypeChange')+'>'+ACCT_TYPES.map(p=>'<option value="'+p[0]+'"'+(curType===p[0]?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div>'+
         '<div class="field"><label>제공처</label><select class="input" id="aProvider">'+PROVIDERS.map(p=>'<option value="'+p[0]+'"'+(((a&&a.provider===p[0])||(!a&&p[0]==='manual'))?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div></div>';
       h+='<div class="form-2"><div class="field"><label>소유자</label><select class="input" id="aOwner">'+ownerOptions(a?a.owner:defaultOwnerName())+'</select></div>'+
         '<div class="field"><label>공개 범위</label><select class="input" id="aVis">'+VISIBILITY.map(p=>'<option value="'+p[0]+'"'+(((a&&a.visibility===p[0])||(!a&&p[0]===defaultVisibility()))?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div></div>';
@@ -1441,7 +1441,7 @@
       return '<div class="card" style="padding:14px;margin:4px 0 14px;"><div class="sec-title" style="margin:0 0 10px;">💳 카드 실적 설정</div>'+
         '<div class="field"><label>카드사</label><input class="input" id="cCompany" value="'+escapeHtml(card?(card.cardCompany||''):'')+'" placeholder="예: 신한"></div>'+
         '<div class="field"><label>월 실적 기준 금액</label><input class="input" id="cTarget" inputmode="numeric" value="'+(card&&card.monthlyPerformanceTarget?Number(card.monthlyPerformanceTarget).toLocaleString():'')+'" placeholder="예: 300,000" oninput="this.value=fmtComma(this.value)"></div>'+
-        '<div class="form-2"><div class="field"><label>실적 기간</label><select class="input" id="cPeriod" onchange="onCardPeriodChange()"><option value="calendar_month"'+(!card||card.performancePeriodType!=='custom'?' selected':'')+'>매월 1일~말일</option><option value="custom"'+(card&&card.performancePeriodType==='custom'?' selected':'')+'>사용자 지정</option></select></div>'+
+        '<div class="form-2"><div class="field"><label>실적 기간</label><select class="input" id="cPeriod" '+App.view.chg('onCardPeriodChange')+'><option value="calendar_month"'+(!card||card.performancePeriodType!=='custom'?' selected':'')+'>매월 1일~말일</option><option value="custom"'+(card&&card.performancePeriodType==='custom'?' selected':'')+'>사용자 지정</option></select></div>'+
         '<div class="field" id="cStartWrap" style="'+(card&&card.performancePeriodType==='custom'?'':'display:none;')+'"><label>시작일</label><input class="input" id="cStartDay" inputmode="numeric" value="'+(card&&card.performanceStartDay?card.performanceStartDay:'')+'" placeholder="예: 15"></div></div>'+
         '<div class="menu-item" style="padding:6px 0;"><span>선불충전 실적 포함</span><div class="switch '+(card&&card.includePrepaidCharge?'on':'')+'" id="cIncPrepaid" onclick="this.classList.toggle(\'on\')"><i></i></div></div>'+
         '<div class="field"><label>실적 제외 카테고리 (쉼표 구분)</label><input class="input" id="cExclCats" value="'+escapeHtml(card&&card.excludedCategories?card.excludedCategories.join(', '):'')+'" placeholder="예: 교통, 보험"></div></div>';
@@ -2034,7 +2034,7 @@
       let h='<div class="field"><label>대상</label><select class="input" id="bgCat"><option value="">총예산(전체 지출)</option>'+
         expCats.map(c=>'<option value="'+escapeHtml(c.name)+'"'+((b&&b.categoryName===c.name)?' selected':'')+'>'+escapeHtml(c.name)+'</option>').join('')+'</select></div>';
       h+='<div class="field"><label>예산 금액</label><input class="input" id="bgAmount" inputmode="numeric" value="'+(b?Number(b.amount).toLocaleString():'')+'" placeholder="0" oninput="this.value=fmtComma(this.value)"></div>';
-      h+='<div class="form-2"><div class="field"><label>기간</label><select class="input" id="bgPeriod" onchange="onBudgetPeriodChange()">'+
+      h+='<div class="form-2"><div class="field"><label>기간</label><select class="input" id="bgPeriod" '+App.view.chg('onBudgetPeriodChange')+'>'+
         ['weekly','monthly','yearly','custom'].map(p=>'<option value="'+p+'"'+(((b&&b.periodType===p)||(!b&&p==='monthly'))?' selected':'')+'>'+PERIOD_LABEL[p]+'</option>').join('')+'</select></div>'+
         '<div class="field"><label>범위</label><select class="input" id="bgScope">'+
         [['group','그룹'],['personal','개인']].map(p=>'<option value="'+p[0]+'"'+(((b&&b.scope===p[0])||(!b&&p[0]==='group'))?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div></div>';
@@ -2210,12 +2210,12 @@
       const tp=r?r.type:'expense';
       let h='';
       if(r && !isOwn) h+='<div class="install-banner">다른 사용자의 정기거래라 보기만 가능합니다</div>';
-      h+='<div class="field"><label>유형</label><select class="input" id="rType" onchange="onRecTypeChange()">'+
+      h+='<div class="field"><label>유형</label><select class="input" id="rType" '+App.view.chg('onRecTypeChange')+'>'+
         ['expense','income','transfer','prepaid_charge','prepaid_spend','refund','point_earn','point_spend','balance_adjustment'].map(t=>'<option value="'+t+'"'+(tp===t?' selected':'')+'>'+TYPE_LABEL[t]+'</option>').join('')+'</select></div>';
       h+='<div class="field"><label>제목</label><input class="input" id="rDesc" value="'+escapeHtml(r?(r.desc||''):'')+'" placeholder="예: 넷플릭스, 월세"></div>';
       h+='<div class="field"><label>금액</label><input class="input" id="rAmount" inputmode="numeric" value="'+(r?Number(r.amount).toLocaleString():'')+'" oninput="this.value=fmtComma(this.value)"></div>';
       h+='<div id="rAccts"></div>';
-      h+='<div class="form-2"><div class="field"><label>주기</label><select class="input" id="rFreq" onchange="toggleRFreq()">'+
+      h+='<div class="form-2"><div class="field"><label>주기</label><select class="input" id="rFreq" '+App.view.chg('toggleRFreq')+'>'+
         [['daily','매일'],['weekly','매주'],['monthly','매월'],['yearly','매년'],['custom','사용자지정']].map(f=>'<option value="'+f[0]+'"'+(((r&&r.freq===f[0])||(!r&&f[0]==='monthly'))?' selected':'')+'>'+f[1]+'</option>').join('')+'</select></div>'+
         '<div class="field"><label>간격</label><input class="input" id="rInterval" inputmode="numeric" value="'+(r&&r.interval?r.interval:1)+'"></div></div>';
       h+='<div class="field" id="rDayWrap"></div>';
@@ -2233,11 +2233,11 @@
       renderRecAccts(); toggleRFreq();
     }
     function onRecTypeChange(){ renderRecAccts(); }
-    function recAcctField(label,id,sel){ return '<div class="field"><label>'+label+'</label><select class="input" id="'+id+'" onchange="renderRecCardPerf()">'+acctOptsHtml(sel)+'</select></div>'; }
+    function recAcctField(label,id,sel){ return '<div class="field"><label>'+label+'</label><select class="input" id="'+id+'" '+App.view.chg('renderRecCardPerf')+'>'+acctOptsHtml(sel)+'</select></div>'; }
     function recConsumerField(sel){ return '<div class="field"><label>소비 대상</label><select class="input" id="rConsumer">'+ownerOptions(sel||'공동')+'</select></div>'; }
     function recCatField(wantType, sel){
       const cats=state.categories.filter(c=>c.isActive!==false && (c.type===wantType||c.type==='other')).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
-      return '<div class="field"><label>카테고리</label><select class="input" id="rCat" onchange="renderRecCardPerf()">'+cats.map(c=>'<option value="'+escapeHtml(c.name)+'"'+(c.name===sel?' selected':'')+'>'+escapeHtml(c.name)+'</option>').join('')+'</select></div>';
+      return '<div class="field"><label>카테고리</label><select class="input" id="rCat" '+App.view.chg('renderRecCardPerf')+'>'+cats.map(c=>'<option value="'+escapeHtml(c.name)+'"'+(c.name===sel?' selected':'')+'>'+escapeHtml(c.name)+'</option>').join('')+'</select></div>';
     }
     function renderRecAccts(){
       const r=window._recEdit, t=val('rType');
@@ -2387,7 +2387,7 @@
       h+='<div class="menu-item" style="padding:8px 2px;"><span>자동 갱신</span><div class="switch '+((!s||s.autoRenew!==false)?'on':'')+'" id="subRenew" onclick="this.classList.toggle(\'on\')"><i></i></div></div>';
       h+='<div class="menu-item" style="padding:8px 2px;"><span>무료체험 중</span><div class="switch '+((s&&s.isTrial)?'on':'')+'" id="subTrial" onclick="this.classList.toggle(\'on\');document.getElementById(\'subTrialEndWrap\').style.display=this.classList.contains(\'on\')?\'\':\'none\';"><i></i></div></div>';
       h+='<div class="field" id="subTrialEndWrap" style="'+((s&&s.isTrial)?'':'display:none;')+'"><label>무료체험 종료일</label><input type="date" class="input" id="subTrialEnd" value="'+(s&&s.trialEndDate?s.trialEndDate:'')+'"></div>';
-      h+='<div class="field"><label>정기결제 연결</label><select class="input" id="subRecMode" onchange="onSubRecModeChange()">'+
+      h+='<div class="field"><label>정기결제 연결</label><select class="input" id="subRecMode" '+App.view.chg('onSubRecModeChange')+'>'+
          '<option value="auto"'+((!s||!s.recurringId)?' selected':'')+'>정기결제 자동 생성</option>'+
          '<option value="none"'+((s&&!s.recurringId&&s._noRec)?' ':'')+'>연결 안 함</option>'+
          '<option value="existing"'+((s&&s.recurringId)?' selected':'')+'>기존 정기거래 연결</option></select></div>';
@@ -2627,7 +2627,7 @@
       const p=id?state.purposeBooks.find(x=>x.id===id):null;
       window._pbColor=p?(p.themeColor||'#3182f6'):'#3182f6';
       let h='<div class="field"><label>이름</label><input class="input" id="pbName" value="'+escapeHtml(p?p.name:'')+'" placeholder="예: 일본여행, 친구 계모임"></div>';
-      h+='<div class="field"><label>유형</label><select class="input" id="pbType" onchange="onPbTypeChange()">'+PB_TYPES.map(t=>'<option value="'+t[0]+'"'+(((p&&p.type===t[0])||(!p&&t[0]==='travel'))?' selected':'')+'>'+t[1]+'</option>').join('')+'</select></div>';
+      h+='<div class="field"><label>유형</label><select class="input" id="pbType" '+App.view.chg('onPbTypeChange')+'>'+PB_TYPES.map(t=>'<option value="'+t[0]+'"'+(((p&&p.type===t[0])||(!p&&t[0]==='travel'))?' selected':'')+'>'+t[1]+'</option>').join('')+'</select></div>';
       h+='<div class="field" id="pbCustomWrap" style="'+((p&&p.type==='custom')?'':'display:none;')+'"><label>유형명 직접 입력</label><input class="input" id="pbCustomName" value="'+escapeHtml(p?(p.customTypeName||''):'')+'" placeholder="예: 제주살이"></div>';
       h+='<div class="field"><label>참여자 (쉼표로 구분)</label><input class="input" id="pbParticipants" value="'+escapeHtml(p&&p.participants?p.participants.join(', '):state.userName)+'" placeholder="예: 나, 친구1, 친구2"></div>';
       h+='<div class="form-2"><div class="field"><label>예산(선택)</label><input class="input" id="pbBudget" inputmode="numeric" value="'+(p&&p.budgetAmount?Number(p.budgetAmount).toLocaleString():'')+'" placeholder="0" oninput="this.value=fmtComma(this.value)"></div>'+
