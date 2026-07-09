@@ -130,7 +130,7 @@
       const mtxt='수익 x'+mult.toFixed(2)+' (애정·도감·기록)'+(boost?' · 🍀오늘 기록 부스트':' · 오늘 기록하면 +부스트')+(bmult>1?' · 💊영양제 ×'+bmult+' '+fmtDur(brem):'');
       const hasItemDrop=!!(g && (g.home.rooms||[]).some(R=>((R&&R.drops)||[]).some(d=>d&&d.kind!=='gold')));   // 🌈 알·박스류 드랍 대기 → 수확 버튼 은은한 무지개(금화만은 제외, 사용자 확정)
       return '<div class="cr-topright">'+
-        (bmult>1?'<span class="cr-boost" title="영양제 부스트 · 수확 수익 ×'+bmult+' · '+fmtDur(brem)+' 남음">'+consumSvg('tonic',{h:12})+'×'+bmult+'</span>':'')+   // 💊 부스트 배지 아이콘 = 픽셀 약병(M_TONIC — 이모지 금지 규칙)
+        (bmult>1?'<span class="cr-boost" title="영양제 부스트 · 수확 수익·드랍 ×'+bmult+' · '+fmtDur(brem)+' 남음">'+consumSvg('tonic',{h:12})+'×'+bmult+'</span>':'')+   // 💊 부스트 배지 아이콘 = 픽셀 약병(M_TONIC — 이모지 금지 규칙)
         '<span class="cr-mood" title="행복도 '+mood+'% — 밥·물 챙기고 🌾수확하면 올라가요(똥은 감점) · 행복할수록 자동 은화↑">'+heartSvg({h:13,off:mood<45})+'<b>'+mood+'%</b></span>'+
         '<button class="cr-batch'+(pend>0?' has-yield':'')+(boost||bmult>1?' boosted':'')+(hasItemDrop?' rb-wait':'')+'" onclick="event.stopPropagation();batchCare(this)" title="'+mtxt+'" aria-label="전체 수확: 행복도 기반 자동 은화 받고 밥·물 채우고 똥 정리 ('+mtxt+')">수확'+(pend>0?'<span class="yield-chip">+'+pend+'</span>':'')+'</button>'+walletHtml()+'</div>'; }
     // 배치 가구를 무대 바닥에 배경으로(가로=열, 앞뒤 깊이=행)

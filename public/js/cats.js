@@ -275,7 +275,7 @@
       { id:'food_plus',  name:'고급사료', price:2,  M:'M_FOODPLUS',  effect:{fill:'food',  ms:12*60*60*1000}, desc:'밥그릇을 12시간 유지하는 고급 사료. 자주 안 채워도 행복도가 오래 유지돼요.' },
       { id:'water_plus', name:'정수물', price:2,  M:'M_WATERPLUS', effect:{fill:'water', ms:12*60*60*1000}, desc:'물그릇을 12시간 유지하는 정수된 물.' },
       { id:'treat',      name:'츄르',   price:20, M:'M_TREAT',     effect:{affection:1}, dailyBuy:3, desc:'펫에게 주면 애정 +1 (쓰다듬기 쿨다운 무시). 하루 3개까지 구매.' },
-      { id:'tonic',      name:'영양제', price:0,  M:'M_TONIC',     effect:{boost:1.5, ms:6*60*60*1000}, dailyBuy:1, desc:'무료로 하루 1개 받아요. 사용하면 6시간 동안 수확 수익이 ×1.5.' }
+      { id:'tonic',      name:'영양제', price:0,  M:'M_TONIC',     effect:{boost:1.5, ms:6*60*60*1000}, dailyBuy:1, desc:'무료로 하루 1개 받아요. 사용하면 6시간 동안 수확 수익과 드랍 확률이 ×1.5.' }
     ];
     const FILL_MS = 6*60*60*1000;   // 그릇이 채워진 뒤 비워지기까지(6시간 — 기본 사료·물 기준)
     const MOOD_CARE_MS = 24*60*60*1000;   // ❤️ 수확(caredAt) 후 행복도 보너스가 0으로 빠지는 시간(24h)
