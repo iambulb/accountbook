@@ -1350,7 +1350,7 @@
         const witems=Object.keys(wp).map(key=>{ const pr=key.split('_'), r=+pr[0], c=+pr[1], id=wp[key].itemId, w=wallFoot(id).w;
           const left=(gridLeftFrac(c)*100).toFixed(3), top=(((r-1)/WALL_ROWS)*100).toFixed(3), ww=(gridSpanFrac(w)*100).toFixed(3), hh=(100/WALL_ROWS).toFixed(3);
           return '<div class="gitem" style="left:'+left+'%;top:'+top+'%;width:'+ww+'%;height:'+hh+'%" onpointerdown="wallGiDown(event,\''+key+'\')" onclick="event.stopPropagation()"><span class="gsc">'+furnSvg(id,{fit:true})+'</span></div>'; }).join('');
-        const wgrid='<div class="gridwall" id="wallGrid" onclick="wallPlaceClick(event)">'+witems+(witems?'':emptyGridHint())+'<div class="gdrop" id="wgdrop" hidden></div><div class="wsnap" id="wsnap" hidden></div><div class="wsnaph" id="wsnaph" hidden></div></div>';
+        const wgrid='<div class="gridwall" id="wallGrid" '+App.view.act('wallPlaceClick',App.view.ev)+'>'+witems+(witems?'':emptyGridHint())+'<div class="gdrop" id="wgdrop" hidden></div><div class="wsnap" id="wsnap" hidden></div><div class="wsnaph" id="wsnaph" hidden></div></div>';
         if(!WALL_PAL_CATS.some(c=>c[0]===_wallCat)) _wallCat='all';
         const wpal=ITEM_CATALOG.filter(it=>isWallItem(it.id) && itemQty(it.id)>0 && (_wallCat==='all'||wallAnchorOf(it.id)===_wallCat)).map(it=>{ const rem=itemRemaining(it.id), qty=itemQty(it.id), sold=rem<=0, ft=itemTierOf(it.id);
           return '<button class="pitem'+(_selWall===it.id?' on':'')+(sold?' soldout':'')+'"'+(sold?' aria-disabled="true"':'')+' onpointerdown="wallPalDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selWallItem(\''+it.id+'\')"><span class="pic tbring tb-'+ft+'">'+furnSvg(it.id,{h:palPicH(it.id)})+tierBadgeHtml(ft)+'</span><span>'+it.name+'</span><span class="pq">'+(sold?('보유'+qty+' · 전부 배치됨'):('보유'+qty+' · 남은'+rem))+'</span></button>'; }).join('');
@@ -1367,7 +1367,7 @@
           const left=(gridLeftFrac(c)*100).toFixed(3), top=(gridTopFrac(r)*100).toFixed(3), w=(gridSpanFrac(foot.w)*100).toFixed(3), h=(gridRowSpanFrac(foot.h)*100).toFixed(3);
           return '<div class="gitem" style="left:'+left+'%;top:'+top+'%;width:'+w+'%;height:'+h+'%" onpointerdown="giDown(event,\''+key+'\')" onclick="event.stopPropagation()">'+
             '<span class="gsc">'+furnSvg(id,{fit:true})+'</span></div>'; }).join('');
-        const grid='<div class="grid12" id="placeGrid" onclick="placeClick(event)">'+items+(items?'':emptyGridHint())+'<div class="gdrop" id="gdrop" hidden></div><div class="wsnap" id="fsnap" hidden></div><div class="wsnaph" id="fsnaph" hidden></div><span class="gaxis gaxis-b">뒤</span><span class="gaxis gaxis-f">앞</span></div>';
+        const grid='<div class="grid12" id="placeGrid" '+App.view.act('placeClick',App.view.ev)+'>'+items+(items?'':emptyGridHint())+'<div class="gdrop" id="gdrop" hidden></div><div class="wsnap" id="fsnap" hidden></div><div class="wsnaph" id="fsnaph" hidden></div><span class="gaxis gaxis-b">뒤</span><span class="gaxis gaxis-f">앞</span></div>';
         const owned=ITEM_CATALOG.filter(it=>!isWallItem(it.id) && itemQty(it.id)>0);
         if(!_placeCat || !PLACE_CATS.some(c=>c[0]===_placeCat)) _placeCat=(PLACE_CATS.find(c=>owned.some(it=>placeCatOf(it.id)===c[0]))||PLACE_CATS[0])[0];
         const catTabs='<div class="subseg placecat">'+PLACE_CATS.map(c=>{ const inCat=owned.filter(it=>placeCatOf(it.id)===c[0]), nOwn=inCat.length, nAvail=inCat.filter(it=>itemRemaining(it.id)>0).length;

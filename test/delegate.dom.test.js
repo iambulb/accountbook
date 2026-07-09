@@ -69,6 +69,18 @@ test('위임: data-change는 change에서만·data-action은 click에서만 (셀
   assert.deepStrictEqual(log, ['change', 'click']);
 });
 
+test('위임: data-t=e 인자에 실제 event 주입(App.view.ev)', () => {
+  const dom = loadDelegate();
+  const w = dom.window, d = w.document, root = d.getElementById('root');
+  let got;
+  w.collectDrop = function (ev, rid, did) { got = { isEvent: ev instanceof w.Event, rid: rid, did: did }; };
+  root.innerHTML = '<button ' + w.App.view.act('collectDrop', w.App.view.ev, 'r1', 'd2') + '>x</button>';
+  root.children[0].click();
+  assert.ok(got.isEvent, '0번 인자 = 실제 event 객체');
+  assert.strictEqual(got.rid, 'r1');
+  assert.strictEqual(got.did, 'd2');
+});
+
 test('위임: toggleSwitch 등록액션 — this 스위치 클래스 토글 + 후속 전역함수 호출', () => {
   const dom = loadDelegate();
   const w = dom.window, d = w.document, root = d.getElementById('root');

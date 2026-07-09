@@ -11,6 +11,7 @@
     if (t === 'n') return Number(v);
     if (t === 'b') return (v === 'true' || v === '1');
     if (t === 'j') { try { return JSON.parse(v); } catch (e) { return v; } }
+    if (t === 'e') return null;   // event 자리표시자 — dispatch가 실제 이벤트 객체로 치환(순수부는 null)
     return v;
   }
   // ── 순수: data-a0.. 순서대로 읽어 인자 배열로(접근자 주입 → DOM 없이 테스트 가능) ──
@@ -58,7 +59,9 @@
         var tg = e.target; if (!tg || !tg.closest) return;
         var el = tg.closest('[' + attr + ']'); if (!el) return;
         var fn = App.controller.delegate.resolve(el.getAttribute(attr)); if (!fn) return;
-        return fn.apply(el, readActionArgs(function (n) { return el.getAttribute(n); }, function (n) { return el.hasAttribute(n); }));
+        var args = readActionArgs(function (n) { return el.getAttribute(n); }, function (n) { return el.hasAttribute(n); });
+        for (var i = 0; el.hasAttribute('data-a' + i); i++) { if (el.getAttribute('data-t' + i) === 'e') args[i] = e; }   // event 인자(data-t=e) 위치에 실제 이벤트 주입
+        return fn.apply(el, args);
       },
       handle: function (e) { return App.controller.delegate.dispatch('data-action', e); },          // click 전용
       handleChange: function (e) { return App.controller.delegate.dispatch('data-change', e); }     // change 전용(셀렉트·날짜·체크 — click 오발화 방지)
@@ -69,6 +72,8 @@
       var esc = (typeof escapeHtml === 'function') ? escapeHtml : function (x) { return String(x); };
       return buildActionAttrs(name, Array.prototype.slice.call(arguments, 1), esc);
     };
+    // event 인자 센티넬: App.view.act('collectDrop', App.view.ev, rid, did) → 위임 dispatch가 그 자리에 실제 이벤트를 넣어 호출(fn(event,rid,did)).
+    App.view.ev = { v: '', t: 'e' };
     // 변경 핸들러 헬퍼: App.view.chg('onCurChange') → 'data-change="onCurChange"'. 셀렉트/날짜/체크 onchange 이관용(change에서만 발화).
     App.view.chg = function (name) {
       var esc = (typeof escapeHtml === 'function') ? escapeHtml : function (x) { return String(x); };
