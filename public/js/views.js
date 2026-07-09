@@ -248,10 +248,10 @@
 
       let h='';
       h+='<div class="type-seg" id="sTypeSeg">'+
-        '<button data-tp="expense" onclick="setSheetType(\'expense\')">지출</button>'+
-        '<button data-tp="income" onclick="setSheetType(\'income\')">수입</button>'+
-        '<button data-tp="transfer" onclick="setSheetType(\'transfer\')">이체</button>'+
-        '<button data-tp="__ext__" onclick="setSheetType(\'__ext__\')">선불·포인트</button></div>';
+        '<button data-tp="expense" '+App.view.act('setSheetType','expense')+'>지출</button>'+
+        '<button data-tp="income" '+App.view.act('setSheetType','income')+'>수입</button>'+
+        '<button data-tp="transfer" '+App.view.act('setSheetType','transfer')+'>이체</button>'+
+        '<button data-tp="__ext__" '+App.view.act('setSheetType','__ext__')+'>선불·포인트</button></div>';
       // 시안: 큰 금액 + 키패드 입력
       // 금액: 모바일은 화면 키패드(OS 키보드 안 뜨게 readonly+inputmode none), 데스크톱은 물리 키보드로 직접 입력(keydown 라우팅).
       h+='<div class="amtbig"><select id="sCur" class="amt-cur" onchange="onCurChange()">'+curOptions(t&&t.currency?t.currency:'KRW')+'</select><input id="sAmount" class="amtbig-in" readonly inputmode="none" aria-label="금액" placeholder="0" onkeydown="kpKey(event)" onpaste="kpPaste(event)" value="'+((t&&t.currency&&t.currency!=='KRW')?fmtAmt(String(t.foreignAmount||'')):(amount?Number(amount).toLocaleString():''))+'"></div>';
@@ -262,8 +262,8 @@
       h+='<div class="txfield"><span class="k">설명</span><input type="text" class="txin" id="sDesc" placeholder="내용" value="'+escapeHtml(desc)+'"></div>';
       // 숫자 키패드
       h+='<div class="kp">'+
-        [1,2,3,4,5,6,7,8,9].map(n=>'<button onclick="kpPress(\''+n+'\')">'+n+'</button>').join('')+
-        '<button onclick="kpPress(\'.\')" aria-label="소수점">.</button><button onclick="kpPress(\'0\')">0</button><button onclick="kpDel()" aria-label="지우기">⌫</button></div>';
+        [1,2,3,4,5,6,7,8,9].map(n=>'<button '+App.view.act('kpPress',String(n))+'>'+n+'</button>').join('')+
+        '<button '+App.view.act('kpPress','.')+' aria-label="소수점">.</button><button '+App.view.act('kpPress','0')+'>0</button><button '+App.view.act('kpDel')+' aria-label="지우기">⌫</button></div>';
       // 우리 고유 기능 → 상세 설정 접기
       h+='<details class="adv" id="sAdv"'+((pbId||settleInc)?' open':'')+'><summary>상세 설정</summary>';
       h+='<div class="txfield"><span class="k">목적별 가계부</span><select class="txsel" id="sPb" onchange="onPbChange()">'+
@@ -275,8 +275,8 @@
       h+='<div id="sCardPerf"></div>';   // 카드 실적 포함
       h+='<div class="txfield"><span class="k">메모</span><input type="text" class="txin" id="sMemo" placeholder="메모" value="'+escapeHtml(memo)+'"></div>';
       h+='</details>';
-      h+='<button class="btn" onclick="saveTx()">'+(t?'수정':'저장')+'</button>';
-      if(t) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteTx()">삭제</button>';
+      h+='<button class="btn" '+App.view.act('saveTx')+'>'+(t?'수정':'저장')+'</button>';
+      if(t) h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deleteTx')+'>삭제</button>';
 
       openSheet(t?'거래 수정':'거래 입력', h);
       const sh=$('sheet');
@@ -319,7 +319,7 @@
       let cats=pickableCats(catTypeFor(sheetType));
       if(sheetCat && !cats.some(c=>c.name===sheetCat)){ const cur=getCat(sheetCat)||{name:sheetCat,color:'#8b95a1'}; cats=[cur,...cats]; }
       else if(!sheetCat && cats[0]) sheetCat=cats[0].name;
-      return '<div class="chips">'+cats.map(c=>'<button class="chip'+(c.name===sheetCat?' on':'')+'" onclick="pickCat(\''+jsAttr(c.name)+'\')"><span class="catdot" style="background:'+(c.color||'#8b95a1')+'"></span>'+escapeHtml(c.name)+'</button>').join('')+'</div>';
+      return '<div class="chips">'+cats.map(c=>'<button class="chip'+(c.name===sheetCat?' on':'')+'" '+App.view.act('pickCat',c.name)+'><span class="catdot" style="background:'+(c.color||'#8b95a1')+'"></span>'+escapeHtml(c.name)+'</button>').join('')+'</div>';
     }
     // ===== 금액 입력(통화 인식) — 외화 선택 시 소수점 허용·원화 환산 =====
     function curOptions(sel){ return CURRENCIES.map(c=>'<option value="'+c.code+'"'+(c.code===sel?' selected':'')+'>'+c.sym+' '+c.code+'</option>').join(''); }
@@ -362,7 +362,7 @@
         +'<span class="fxk">1 '+c+' =</span>'
         +'<input class="fxrate" id="sFxRate" inputmode="decimal" value="'+(rate||'')+'" placeholder="환율" oninput="markManualRate();updateFxPreview()">'
         +'<span class="fxk">₩</span>'
-        +'<button type="button" class="fxrefresh" id="sFxBtn" onclick="autoFetchRate()" aria-label="실시간 환율 조회" title="실시간 환율 조회">'
+        +'<button type="button" class="fxrefresh" id="sFxBtn" '+App.view.act('autoFetchRate')+' aria-label="실시간 환율 조회" title="실시간 환율 조회">'
           +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3.5V9h-5.5"/></svg>'
         +'</button>'
         +'</div>'
@@ -395,7 +395,7 @@
       // 계좌/이체 행 + ext 서브칩 + 안내 → #sDyn
       let h='';
       if(EXT_TYPES.includes(sheetType)){
-        h+='<div class="chips" style="margin:2px 0 6px;">'+EXT_TYPES.map(tp=>'<button class="chip '+(tp===sheetType?'on':'')+'" onclick="setExtType(\''+tp+'\')">'+TYPE_LABEL[tp]+'</button>').join('')+'</div>';
+        h+='<div class="chips" style="margin:2px 0 6px;">'+EXT_TYPES.map(tp=>'<button class="chip '+(tp===sheetType?'on':'')+'" '+App.view.act('setExtType',tp)+'>'+TYPE_LABEL[tp]+'</button>').join('')+'</div>';
       }
       if(sheetType==='prepaid_charge') h+=guideNote(false,'충전은 자산 이동이라 실제 소비에 포함되지 않습니다.');
       else if(sheetType==='prepaid_spend'||sheetType==='point_spend') h+=guideNote(true,'이 거래는 실제 소비에 포함됩니다.');
@@ -480,10 +480,10 @@
         (all.includes(payer)?'':'<option selected>'+escapeHtml(payer)+'</option>')+'</select></div>';
       h+='<label style="font-size:13px;font-weight:600;color:var(--sub);">분담 방식</label>'+
         '<div class="type-seg" id="sStType" style="margin:6px 0 10px;">'+
-        [['equal','균등'],['custom','직접'],['payer_only','결제자부담']].map(o=>'<button class="'+(type===o[0]?'on':'')+'" onclick="setSplitType(\''+o[0]+'\')">'+o[1]+'</button>').join('')+'</div>';
+        [['equal','균등'],['custom','직접'],['payer_only','결제자부담']].map(o=>'<button class="'+(type===o[0]?'on':'')+'" '+App.view.act('setSplitType',o[0])+'>'+o[1]+'</button>').join('')+'</div>';
       if(type!=='payer_only'){
         h+='<label style="font-size:13px;font-weight:600;color:var(--sub);">참여자</label><div class="chip-row" style="margin:6px 0 8px;">'+
-          all.map((n,i)=>'<button class="chip '+(parts.includes(n)?'on':'')+'" onclick="toggleSettleParticipant('+i+')">'+escapeHtml(n)+'</button>').join('')+'</div>';
+          all.map((n,i)=>'<button class="chip '+(parts.includes(n)?'on':'')+'" '+App.view.act('toggleSettleParticipant',i)+'>'+escapeHtml(n)+'</button>').join('')+'</div>';
         const amt=sheetKRWAmount();
         const split=computeSettleAmounts(type, parts, amt, sh._stCustom);
         h+='<div id="sStAmts">'+parts.map(n=>'<div class="field" style="margin-top:6px;"><label>'+escapeHtml(n)+' 부담</label>'+
