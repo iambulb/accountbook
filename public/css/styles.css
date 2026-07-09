@@ -1083,9 +1083,11 @@
     .shopcard .thumb .ptier { font-size:10px; left:3px; bottom:3px; }
     /* 펫 상세 시트 */
     .gimenu.petinfo { width:min(320px,88vw); gap:9px; }
-    .petinfo .pi-h b { flex:1; min-width:0; }
-    .petinfo .pi-rename { position:static; width:26px; height:26px; margin-left:auto; background:var(--soft); border-radius:8px; flex:none; }
+    .petinfo .pi-h b { flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }   /* 🏷️ 이름은 내용 폭(길면 말줄임) — 연필이 이름 바로 오른쪽에 붙게 */
+    .petinfo .pi-rename { position:static; width:26px; height:26px; margin-left:0; background:var(--soft); border-radius:8px; flex:none; }   /* 이름 바로 오른쪽 */
     .petinfo .pi-rename svg { width:15px; height:15px; }
+    .petinfo .pi-close { position:static; width:26px; height:26px; margin-left:auto; background:var(--soft); border-radius:8px; flex:none; color:var(--sub); }   /* ✕ 닫기 = 우측 끝(연필의 옛 자리) */
+    .petinfo .pi-close svg { width:15px; height:15px; }
     .petinfo .pi-meta { display:flex; flex-direction:column; gap:2px; font-size:12px; }
     .petinfo .pi-meta .pi-tier { font-weight:900; font-size:13.5px; }
     .petinfo .pi-meta .s { color:var(--sub); }
@@ -2140,7 +2142,7 @@
     /* 💗 펫 코스메틱(애정 해금) — 모자(Lv5)·동행 버디(Lv3). --hp=머리 위 여백 %(measureHeadPad 실측 주입, 기본 20%).
        .cd-actor 안이라 depthScale·좌우 flip을 그대로 상속(뒤로 가면 작아지고 방향 따라 뒤집힘). 픽셀 유지(pixelated). */
     .cd-hat, .cd-buddy { display:none; }
-    .pkstage .cd-hat, .cd-room .cd-hat, .catroom .cd-hat { display:block; position:absolute; left:50%; top:var(--hp,20%); transform:translate(calc(-50% + var(--hatdx,0px)),-48%); z-index:3; pointer-events:none; image-rendering:pixelated; }   /* 🎩 세로 -48%=정수리에 살짝 내려 얹힘(기존 -55%보다 아래), 가로 --hatdx=옆모습 머리쪽 이동(actorShowMoving/Still 주입) */
+    .pkstage .cd-hat, .cd-room .cd-hat, .catroom .cd-hat { display:block; position:absolute; left:50%; top:var(--hp,20%); transform:translate(calc(-50% + var(--hatdx,0px)),calc(-40% + var(--hatdy,0px))); z-index:3; pointer-events:none; image-rendering:pixelated; }   /* 🎩 세로 -40%=정수리에 더 내려 얹힘(기존 -48%보다 아래), 옆모습은 --hatdy로 추가 하강, 가로 --hatdx=옆모습 머리쪽 이동(actorShowMoving/Still 주입) */
     .cd-hat .hatbob { display:block; image-rendering:pixelated; }
     /* 🎩🫁 숨쉬기 동조: 쉬는 펫(.cspr.idle)이 csprBreath로 발밑 기준 눌릴 때 정수리가 살짝 내려가므로, 모자도 같은 3.4s 타이밍으로 위아래 따라감.
        :has로 .cspr.idle이 붙는 같은 순간 hatBreath 시작 → 위상 일치. 이동(.idle 없음)·모션축소·lite·시트가림일 땐 정지(csprBreath와 동일 조건). translateY 25%=모자높이 기준 ≈ 정수리 하강량(0.035×(1-hp)s). */

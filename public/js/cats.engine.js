@@ -640,7 +640,7 @@
                 "    if(moving&&a.sheet&&!a.frontWalk){ var sw=a.sheet.width/a.frames, fr=Math.floor(now/((a.wd||660)/a.frames))%a.frames; ctx.drawImage(a.sheet, fr*sw,0,sw,a.sheet.height, 0,y,w,h); }",   // 프레임 간격 = 사이클(wd)/프레임수 — 속도 연동(예전 고정 110ms는 발놀림이 빨랐음)
         "    else if(moving&&a.frontWalk&&a.east){ ctx.drawImage(a.east,0,y,w,h); }",
         "    else if(a.south){ ctx.drawImage(a.south,0,y,w,h); }",
-                "    if(a.hat){ var hh3=w*0.11, hw2=hh3*(a.hat.width/a.hat.height), hdx=(moving?0.13*w:0); ctx.drawImage(a.hat, w/2-hw2/2+hdx, y+h*(a.headF||0.2)-hh3*0.48, hw2, hh3); }",   // 💗 모자 — dock .cd-hat(0.11 크기·-48%·옆모습 hatdx=0.13w) 전사. moving=옆모습(east 로컬 머리 오른쪽 → +hdx), flip이 west 반전. 정지=south 정면(hdx0)
+                "    if(a.hat){ var hh3=w*0.11, hw2=hh3*(a.hat.width/a.hat.height), hdx=(moving?0.13*w:0), hdy=(moving?0.09*h:0); ctx.drawImage(a.hat, w/2-hw2/2+hdx, y+h*(a.headF||0.2)-hh3*0.40+hdy, hw2, hh3); }",   // 💗 모자 — dock .cd-hat(0.11 크기·-40%·옆모습 hatdx=0.13w·hatdy=0.09h) 전사. moving=옆모습(east 로컬 머리 오른쪽 → +hdx, 추가 하강 +hdy), flip이 west 반전. 정지=south 정면(hdx/hdy 0)
         "  }catch(e){}",
         "  ctx.restore();",
         "  if(a.buddy){ try{ var t2=now/1000, bw=(a.btype==='firefly'?7:8)*ds, bh2=bw*(a.buddy.height/a.buddy.width);",   // 💗 동행 버디 — 경로(느린 궤도)+날갯짓/발광 다층. ✨ 크기 고정(firefly7·기타8×ds 깊이원근만, 펫 스케일 무관 — DOM actorCosmHtml과 동일)
@@ -941,7 +941,9 @@
     // 🎩 모자 가로 앵커(--hatdx) — 옆모습일 때 머리가 앞쪽(로컬 east=+)이라 모자를 앞으로 민다(정면=0). 액터 scaleX(-1)가 west를 자동 반전.
     //   east 스틸/걷기는 로컬 +(머리 오른쪽)라 부호 +, west 스틸(west.png, 액터 미flip)은 로컬 -(머리 왼쪽). measureHeadPad와 짝(세로=--hp, 가로=--hatdx).
     const HAT_SIDE_DX=0.13;   // 옆모습 앞쪽 이동량(펫 렌더높이 대비 — 실측 정수리 오프셋 +0.07~+0.14의 중앙값)
-    function setHatDx(a, off){ if(a._hasHat) a.el.style.setProperty('--hatdx', (a.hh*off).toFixed(1)+'px'); }
+    const HAT_SIDE_DY=0.09;   // 🎩 옆모습에서 모자 추가 하강량(펫 렌더높이 대비) — 옆에서 정수리 위로 붕 뜨던 것 더 눌러 앉힘(사용자 지침)
+    function setHatDx(a, off){ if(!a._hasHat) return; a.el.style.setProperty('--hatdx', (a.hh*off).toFixed(1)+'px');
+      a.el.style.setProperty('--hatdy', (off? (a.hh*HAT_SIDE_DY).toFixed(1) : '0')+'px'); }   // 🎩 옆모습(off≠0)만 추가 하강, 정면/뒤=0
     function actorShowMoving(a){ if(!a.spr) return; const s=a.el.querySelector('.cspr'); if(!s) return;
       a._clip=null; s.classList.remove('once');
       setHatDx(a, HAT_SIDE_DX);   // 이동=옆모습(east 시트/east 정지스틸, 로컬 머리 오른쪽) → 앞으로. west는 액터 flip이 반전
