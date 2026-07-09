@@ -827,12 +827,12 @@
         h+='<button class="rk-col'+(rank===1?' rk-first':'')+(me?' me':'')+'" onclick="openFriendHome(\''+r.uid+'\')">'+
           '<span class="rk-av medal-'+medal+'"><span class="rk-rankn">'+rankn+'</span>'+rankAvatar(r,sz)+spk+'</span>'+
           '<span class="rk-nm">'+escapeHtml(r.show)+(me?'<span class="rk-me">나</span>':'')+'</span>'+
-          '<span class="rk-likes">'+(typeof heartSvg==='function'?heartSvg({h:12}):'❤')+' '+r.likes+'</span></button>';
+          '<span class="rk-likes">'+(typeof heartSvg==='function'?heartSvg({h:12}):'❤')+' '+r.likes+(r.aff?'<span class="rk-aff" title="펫 애정레벨 합">애정 '+r.aff+'</span>':'')+'</span></button>';
       });
       h+='</div>';
       if(rest.length){ h+='<div class="rk-list">'+rest.map(function(r,i){ const rank=i+4, me=(r.uid===state.uid);
         return '<button class="rk-row'+(me?' me':'')+'" onclick="openFriendHome(\''+r.uid+'\')"><span class="rk-num">'+rank+'</span>'+rankAvatar(r,40)+
-          '<b class="rk-rowname">'+escapeHtml(r.show)+(me?'<span class="rk-me">나</span>':'')+'</b><span class="likemini">'+(typeof heartSvg==='function'?heartSvg({h:13}):'❤')+' '+r.likes+'</span></button>'; }).join('')+'</div>'; }
+          '<b class="rk-rowname">'+escapeHtml(r.show)+(me?'<span class="rk-me">나</span>':'')+'</b>'+(r.aff?'<span class="rk-aff" title="펫 애정레벨 합">애정 '+r.aff+'</span>':'')+'<span class="likemini">'+(typeof heartSvg==='function'?heartSvg({h:13}):'❤')+' '+r.likes+'</span></button>'; }).join('')+'</div>'; }
       h+='<p class="muted" style="font-size:12px;margin-top:14px;text-align:center;">집(펫캠) <b>좋아요 수</b> 기준 · 눌러서 방문해 보세요</p>';
       b.innerHTML=h;
     }
@@ -841,7 +841,7 @@
       db.ref('rankings').once('value').then(function(s){
         if(!($('sheet')&&$('sheet').classList.contains('on'))) return;
         const o=s.val()||{};
-        let rows=Object.keys(o).map(function(uid){ const e=o[uid]||{}; return { uid:uid, name:e.name||'', likes:Number(e.likes)||0, priv:!!e.private }; });
+        let rows=Object.keys(o).map(function(uid){ const e=o[uid]||{}; return { uid:uid, name:e.name||'', likes:Number(e.likes)||0, aff:Number(e.aff)||0, priv:!!e.private }; });   // 💗 aff=펫 애정레벨 합(과시 표기)
         // 후보 선정: 저장 좋아요 기준 상위 CAP명(라이브 읽기 수 제한)
         rows.sort(function(a,b){ return (b.likes-a.likes) || String(a.name).localeCompare(String(b.name)); });
         const CAP=80, cand=rows.slice(0,CAP);
