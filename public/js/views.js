@@ -601,7 +601,7 @@
       h+=step(coin,'거래·할일 기록','가운데 ＋ 로 오늘 지출이나 할일을 기록해요.','기록','finishOnboard();fabAdd()');
       h+=step(ppl,'친구 추가','친구 코드로 친구를 맺고 서로의 집·할일을 구경해요.','친구','finishOnboard();openFriendsSheet()');
       h+=step(cat,'알뜰홈','활동으로 은화를 모아 고양이를 입양하고 방을 꾸며요.','알뜰홈','finishOnboard();openCatHouse(\'home\')');
-      h+='<button class="btn" style="margin-top:10px;" onclick="finishOnboard()">시작하기</button>';
+      h+='<button class="btn" style="margin-top:10px;" '+App.view.act('finishOnboard')+'>시작하기</button>';
       openSheet('시작하기', h);
     }
     // ===== 통계 =====
@@ -665,7 +665,7 @@
           const sub=shareOn?(back?'서로 공유 중':'상대가 아직 공유 안 함'):'공유 꺼짐';
           return '<div class="tdrow"><span class="tdwho">'+avatarHtml(u,f.name||'',28)+'</span>'+
             '<b class="tdtitle">'+escapeHtml(f.name||'친구')+'<small style="display:block;font-weight:600;color:var(--sub);font-size:11px;">'+sub+'</small></b>'+
-            '<span class="fshare" role="switch" aria-checked="'+(shareOn?'true':'false')+'" aria-label="'+escapeHtml(f.name||'친구')+'와 할일 공유" onclick="toggleTodoShare(\''+u+'\')"><span class="switch'+(shareOn?' on':'')+'"><i></i></span></span></div>'; }).join('')
+            '<span class="fshare" role="switch" aria-checked="'+(shareOn?'true':'false')+'" aria-label="'+escapeHtml(f.name||'친구')+'와 할일 공유" '+App.view.act('toggleTodoShare',u)+'><span class="switch'+(shareOn?' on':'')+'"><i></i></span></span></div>'; }).join('')
         :'<div class="empty" style="padding:22px 6px;">아직 친구가 없어요 · 더보기 → 친구에서 추가하세요</div>')+'</div>';
       openSheet('할일 공유', h);
     }
@@ -710,17 +710,17 @@
           '<p class="muted" style="font-size:12px;margin:6px 2px 0;">할일을 공유할 친구를 <b>친구별로</b> 고를 수 있어요 — OFF하면 그 친구와 서로의 할일이 보이지 않아요.</p>';
         h+='<div class="card" style="padding:14px;margin-top:12px;"><div class="sec-title">내 친구 코드</div>'+
           '<div class="row" style="gap:8px;align-items:center;margin-top:6px;"><b style="font-size:20px;letter-spacing:3px;flex:1;">'+escapeHtml(state.friendCode||'—')+'</b>'+
-          '<button class="btn sm" style="flex:none;" onclick="copyFriendCode()">복사</button></div>'+
-          '<div class="row" style="gap:8px;margin-top:10px;"><input class="input" id="friendCodeIn" placeholder="친구 코드 입력" autocapitalize="characters" spellcheck="false" style="flex:1;text-transform:uppercase;"><button class="btn sm" style="flex:none;" onclick="addFriendByCode()">추가</button></div></div>';
+          '<button class="btn sm" style="flex:none;" '+App.view.act('copyFriendCode')+'>복사</button></div>'+
+          '<div class="row" style="gap:8px;margin-top:10px;"><input class="input" id="friendCodeIn" placeholder="친구 코드 입력" autocapitalize="characters" spellcheck="false" style="flex:1;text-transform:uppercase;"><button class="btn sm" style="flex:none;" '+App.view.act('addFriendByCode')+'>추가</button></div></div>';
         const reqs=Object.keys(state.friendReqs||{});
         if(reqs.length){ h+='<div class="sech"><span class="l">받은 요청</span><span class="s">'+reqs.length+'</span></div><div class="card" style="padding:4px 12px;">'+
-          reqs.map(function(u){ const r=state.friendReqs[u]||{}; return '<div class="tdrow"><span class="tdwho">'+avatarHtml(u,r.name||'',28)+'</span><b class="tdtitle">'+escapeHtml(r.name||'사용자')+'</b><button class="buy" onclick="acceptFriend(\''+u+'\')">수락</button><button class="buy dis" onclick="declineFriend(\''+u+'\')">거절</button></div>'; }).join('')+'</div>'; }
+          reqs.map(function(u){ const r=state.friendReqs[u]||{}; return '<div class="tdrow"><span class="tdwho">'+avatarHtml(u,r.name||'',28)+'</span><b class="tdtitle">'+escapeHtml(r.name||'사용자')+'</b><button class="buy" '+App.view.act('acceptFriend',u)+'>수락</button><button class="buy dis" '+App.view.act('declineFriend',u)+'>거절</button></div>'; }).join('')+'</div>'; }
         const fr=Object.keys(state.friends||{});
         h+='<div class="sech"><span class="l">친구</span><span class="s">'+fr.length+'</span></div><div class="card" style="padding:4px 12px;">'+
           (fr.length?fr.map(function(u){ const f=state.friends[u]||{};
             const likes=(state.friendLikes&&state.friendLikes[u])||0; const changed=friendChangedToday(u);
             const av='<span class="tdwho'+(changed?' avring':'')+'">'+avatarHtml(u,f.name||'',28)+'</span>';
-            return '<div class="tdrow friendrow" role="button" tabindex="0" onclick="openFriendHome(\''+u+'\')">'+av+'<b class="tdtitle">'+escapeHtml(f.name||'친구')+'</b>'+
+            return '<div class="tdrow friendrow" role="button" tabindex="0" '+App.view.act('openFriendHome',u)+'>'+av+'<b class="tdtitle">'+escapeHtml(f.name||'친구')+'</b>'+
               '<span class="likemini">'+heartSvg({h:13})+' '+likes+'</span>'+
               '<button class="buy dis" onclick="event.stopPropagation();removeFriend(\''+u+'\')">삭제</button></div>'; }).join(''):'<div class="empty" style="padding:22px 6px;">아직 친구가 없어요 · 위 코드로 추가하세요</div>')+'</div>';
         h+='<p class="muted" style="font-size:12px;margin-top:10px;">친구를 탭하면 <b>집(펫캠)</b>을 방문해 좋아요를 누를 수 있어요. 등록한 할일은 <b>할일 → 친구들</b>에서도 볼 수 있어요.</p>';
@@ -741,8 +741,8 @@
       const gift=(typeof giftSvg==='function')?giftSvg({h:20}):'🎁';
       const freeHint=freeDone ? '오늘 이 친구에게 보냄 · 내일 또 보낼 수 있어요'
                               : '물·사료·은화 랜덤 · 이 친구 하루 1번 · 오늘 전체 '+freeLeft+'회 남음';
-      return '<button class="giftsend" onclick="sendPetEggGift(\''+uid+'\')"'+((eggLeft<=0||!canAfford)?' disabled':'')+'><span class="gsic">'+egg+'</span><span class="gstx"><b>펫알 선물</b><small>은화 100 · 남은 '+eggLeft+'회'+(!canAfford?' · 은화 부족':'')+'</small></span></button>'+
-             '<button class="giftsend free" onclick="sendFreeGift(\''+uid+'\')"'+((freeDone||freeLeft<=0)?' disabled':'')+'><span class="gsic">'+gift+'</span><span class="gstx"><b>무료 응원 선물</b><small>'+freeHint+'</small></span></button>';
+      return '<button class="giftsend" '+App.view.act('sendPetEggGift',uid)+''+((eggLeft<=0||!canAfford)?' disabled':'')+'><span class="gsic">'+egg+'</span><span class="gstx"><b>펫알 선물</b><small>은화 100 · 남은 '+eggLeft+'회'+(!canAfford?' · 은화 부족':'')+'</small></span></button>'+
+             '<button class="giftsend free" '+App.view.act('sendFreeGift',uid)+''+((freeDone||freeLeft<=0)?' disabled':'')+'><span class="gsic">'+gift+'</span><span class="gstx"><b>무료 응원 선물</b><small>'+freeHint+'</small></span></button>';
     }
     function friendGiftBar(uid){ return '<div class="sech"><span class="l">선물 보내기</span></div><div id="fhGiftBar" class="fhgift">'+friendGiftBarInner(uid)+'</div>'; }
     function openFriendHome(uid){
@@ -770,7 +770,7 @@
         try{ markStorySeen(uid, new Date().toISOString()); }catch(e){}   // 방문 = 스토리 열람 → 무지개 링 해제
         const cnt=homeLikeCount(likes), liked=likedTodayBy(likes, state.uid);
         let h=friendRoomHtml(fg, showName);
-        h+='<div class="likebar"><button class="likebtn'+(liked?' on':'')+'" onclick="likeFriendHome(\''+uid+'\')"'+(liked?' disabled':'')+' aria-label="좋아요">'+heartSvg({h:20,off:!liked})+'<b id="fhLikeN">'+cnt+'</b></button>'+
+        h+='<div class="likebar"><button class="likebtn'+(liked?' on':'')+'" '+App.view.act('likeFriendHome',uid)+''+(liked?' disabled':'')+' aria-label="좋아요">'+heartSvg({h:20,off:!liked})+'<b id="fhLikeN">'+cnt+'</b></button>'+
            '<span class="likehint">'+(liked?'오늘 좋아요 완료 · 내일 또 눌러주세요':'하루 한 번 좋아요를 눌러줄 수 있어요')+'</span></div>';
         if(isFriend) h+=friendGiftBar(uid);   // 🎁 선물 보내기(친구에게만)
         const todosObj=res[3].val()||{};
@@ -785,7 +785,7 @@
           h+='<p class="muted" style="font-size:12px;margin-top:14px;text-align:center;">친구가 되면 할일도 볼 수 있어요</p>';
           if(incomingReq) h+='<div class="row" style="gap:8px;margin-top:6px;"><button class="btn" style="flex:1;" onclick="acceptFriend(\''+uid+'\');closeSheet()">친구 수락</button><button class="btn ghost" style="flex:1;" onclick="declineFriend(\''+uid+'\');closeSheet()">거절</button></div>';
           else if(sentReq) h+='<button class="btn ghost" disabled style="margin-top:6px;width:100%;">친구 요청됨</button>';
-          else h+='<button class="btn" id="fhAddBtn" style="margin-top:6px;width:100%;" onclick="sendFriendRequest(\''+uid+'\')">＋ 친구 추가</button>';
+          else h+='<button class="btn" id="fhAddBtn" style="margin-top:6px;width:100%;" '+App.view.act('sendFriendRequest',uid)+'>＋ 친구 추가</button>';
         }
         const b=$('sheetBody'); if(b) b.innerHTML=h;
         // 선물 후 남은 횟수만 갱신(전체 재조회 없이)
@@ -824,14 +824,14 @@
         const medal=['','gold','silver','bronze'][rank], sz=(rank===1?90:72), me=(r.uid===state.uid);
         const rankn=(typeof numSvg==='function'?numSvg(rank,'currentColor',{h:12}):String(rank));
         const spk=(typeof sparkSvg==='function')?'<span class="rk-spk"><i class="tw t1">'+sparkSvg({h:11})+'</i><i class="tw t2">'+sparkSvg({h:8})+'</i><i class="tw t3">'+sparkSvg({h:6})+'</i></span>':'';
-        h+='<button class="rk-col'+(rank===1?' rk-first':'')+(me?' me':'')+'" onclick="openFriendHome(\''+r.uid+'\')">'+
+        h+='<button class="rk-col'+(rank===1?' rk-first':'')+(me?' me':'')+'" '+App.view.act('openFriendHome',r.uid)+'>'+
           '<span class="rk-av medal-'+medal+'"><span class="rk-rankn">'+rankn+'</span>'+rankAvatar(r,sz)+spk+'</span>'+
           '<span class="rk-nm">'+escapeHtml(r.show)+(me?'<span class="rk-me">나</span>':'')+'</span>'+
           '<span class="rk-likes">'+(typeof heartSvg==='function'?heartSvg({h:12}):'❤')+' '+r.likes+'</span></button>';
       });
       h+='</div>';
       if(rest.length){ h+='<div class="rk-list">'+rest.map(function(r,i){ const rank=i+4, me=(r.uid===state.uid);
-        return '<button class="rk-row'+(me?' me':'')+'" onclick="openFriendHome(\''+r.uid+'\')"><span class="rk-num">'+rank+'</span>'+rankAvatar(r,40)+
+        return '<button class="rk-row'+(me?' me':'')+'" '+App.view.act('openFriendHome',r.uid)+'><span class="rk-num">'+rank+'</span>'+rankAvatar(r,40)+
           '<b class="rk-rowname">'+escapeHtml(r.show)+(me?'<span class="rk-me">나</span>':'')+'</b>'+'<span class="likemini">'+(typeof heartSvg==='function'?heartSvg({h:13}):'❤')+' '+r.likes+'</span></button>'; }).join('')+'</div>'; }
       h+='<p class="muted" style="font-size:12px;margin-top:14px;text-align:center;">집(펫캠) <b>좋아요 수</b> 기준 · 눌러서 방문해 보세요</p>';
       b.innerHTML=h;
@@ -982,7 +982,7 @@
         let h='<div class="sech"><span class="l">하위 작업</span><span class="s">'+done+' / '+subs.length+'</span></div>';
         h+='<div class="card" style="padding:4px 12px;">'+(subs.length?subs.map(function(s,i){
           const chk=ro?('<span class="tdchk'+(s.done?' on':'')+'" aria-hidden="true">'+chkSvg+'</span>')
-            :('<button class="tdchk'+(s.done?' on':'')+'" onclick="toggleSubtask(\''+id+'\','+i+')" aria-label="'+(s.done?'완료 취소':'완료')+'">'+chkSvg+'</button>');
+            :('<button class="tdchk'+(s.done?' on':'')+'" '+App.view.act('toggleSubtask',id,i)+' aria-label="'+(s.done?'완료 취소':'완료')+'">'+chkSvg+'</button>');
           return '<div class="tdrow">'+chk+'<span class="tdtitle'+(s.done?' done':'')+'">'+escapeHtml(s.text||'')+'</span></div>';
         }).join(''):'<div class="empty" style="padding:20px 6px;">하위 작업이 없어요 — 할일 수정에서 추가해요</div>')+'</div>';
         if(subs.length) h+='<p class="muted" style="font-size:11.5px;margin:8px 2px;">항목 추가·삭제·수정은 <b>할일 수정</b>에서 해요.</p>';
@@ -1022,7 +1022,7 @@
     function openTodoSearch(){
       const st=state._todoSearch||(state._todoSearch={});
       let h='<div class="field"><label for="tdsKw">키워드(제목·메모·태그)</label><input class="input" id="tdsKw" value="'+escapeHtml(st.keyword||'')+'" oninput="todoSearchSet(\'keyword\',this.value)" placeholder="예: 장보기, 급함"></div>'+
-        '<div class="chip-row" id="tdsSeg">'+[['','전체'],['high','🔴 높음'],['normal','보통'],['low','🔵 낮음']].map(function(p){ return '<button class="chip '+((st.priority||'')===p[0]?'on':'')+'" data-p="'+p[0]+'" onclick="todoSearchSet(\'priority\',\''+p[0]+'\')">'+p[1]+'</button>'; }).join('')+'</div>'+
+        '<div class="chip-row" id="tdsSeg">'+[['','전체'],['high','🔴 높음'],['normal','보통'],['low','🔵 낮음']].map(function(p){ return '<button class="chip '+((st.priority||'')===p[0]?'on':'')+'" data-p="'+p[0]+'" '+App.view.act('todoSearchSet','priority',p[0])+'>'+p[1]+'</button>'; }).join('')+'</div>'+
         '<label style="display:flex;align-items:center;gap:8px;margin:6px 2px 10px;font-size:13px;color:var(--sub);"><input type="checkbox" '+(st.includeDone?'checked':'')+' onchange="todoSearchSet(\'includeDone\',this.checked)"> 완료 포함</label>'+
         '<div id="tdsResults">'+todoSearchResults()+'</div>';
       openSheet('할일 검색', h);
@@ -1121,7 +1121,7 @@
       let h='';
       if(t.dueDate) h+='<p class="muted" style="font-size:12.5px;margin:2px 2px 12px;">현재 마감일 <b>'+t.dueDate+'</b></p>';
       else h+='<p class="muted" style="font-size:12.5px;margin:2px 2px 12px;">마감일이 없어요 — 날짜를 지정해 보세요.</p>';
-      h+='<div class="chip-row" style="margin-bottom:14px;">'+quick.map(function(q){ const ds=addDays(today,q[1]); return '<button class="chip" onclick="rescheduleTodo(\''+id+'\',\''+ds+'\')">'+q[0]+'</button>'; }).join('')+'</div>';
+      h+='<div class="chip-row" style="margin-bottom:14px;">'+quick.map(function(q){ const ds=addDays(today,q[1]); return '<button class="chip" '+App.view.act('rescheduleTodo',id,ds)+'>'+q[0]+'</button>'; }).join('')+'</div>';
       h+='<div class="field"><label>날짜 직접 선택</label><input type="date" class="input" id="tdMoveDate" value="'+(t.dueDate||today)+'"></div>';
       h+='<button class="btn" onclick="rescheduleTodo(\''+id+'\', val(\'tdMoveDate\'))">이 날짜로 옮기기</button>';
       openSheet('날짜 옮기기', h);
@@ -1168,11 +1168,11 @@
       h+='<div class="form-2"><div class="field"><label>우선순위</label><select class="input" id="tdPrio">'+[['high','🔴 높음'],['normal','보통'],['low','🔵 낮음']].map(function(o){ return '<option value="'+o[0]+'"'+(prio===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
         '<div class="field"><label>태그 (선택)</label><input class="input" id="tdTags" value="'+escapeHtml(tdtags)+'" placeholder="쉼표로 구분: 집안일, 급함"></div></div>';
       _tdCat=t?(todoCat(t.category)?t.category:''):'';   // 편집=기존 값, 신규=없음. 알 수 없는 id는 없음 취급.
-      h+='<div class="field"><label>카테고리 (선택 — 캘린더·목록에 색으로 구분)</label><div class="chip-row" id="tdCatChips" style="margin:2px 0 0;">'+TODO_CATS.map(function(c){ return '<button type="button" class="chip'+(_tdCat===c[0]?' on':'')+'" data-c="'+c[0]+'" onclick="pickTodoCat(\''+c[0]+'\')"><span class="catdot" style="background:'+c[2]+'"></span>'+c[1]+'</button>'; }).join('')+'</div></div>';
+      h+='<div class="field"><label>카테고리 (선택 — 캘린더·목록에 색으로 구분)</label><div class="chip-row" id="tdCatChips" style="margin:2px 0 0;">'+TODO_CATS.map(function(c){ return '<button type="button" class="chip'+(_tdCat===c[0]?' on':'')+'" data-c="'+c[0]+'" '+App.view.act('pickTodoCat',c[0])+'><span class="catdot" style="background:'+c[2]+'"></span>'+c[1]+'</button>'; }).join('')+'</div></div>';
       h+='<div class="field"><label>메모 (선택)</label><input class="input" id="tdNote" value="'+escapeHtml(t?(t.note||''):'')+'" placeholder="메모"></div>';
       h+='<div class="field"><label>하위 작업 (선택, 한 줄에 하나)</label><textarea class="input" id="tdSub" rows="3" placeholder="예: 우유 사기">'+escapeHtml(subText)+'</textarea></div>';
       h+='<button class="btn" '+App.view.act('saveTodo', id?id:null)+'>'+(t?'수정':'추가')+'</button>';
-      if(t) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteTodo(\''+id+'\')">삭제</button>';
+      if(t) h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deleteTodo',id)+'>삭제</button>';
       openSheet(t?'할일 수정':'할일 추가', h);
     }
     function saveTodo(id){
@@ -1636,7 +1636,7 @@
       Object.keys(members).forEach(uid=>{
         const m=members[uid], self=uid===state.uid, isMemOwner=m.role==='owner';
         const crown=isMemOwner?' <span class="owncrown">'+(typeof crownSvg==='function'?crownSvg({h:12}):'👑')+'</span>':'';
-        h+='<div class="tx" role="button" tabindex="0" style="cursor:pointer;" onclick="openFriendHome(\''+uid+'\')">'+avatarHtml(uid, m.name, 38)+
+        h+='<div class="tx" role="button" tabindex="0" style="cursor:pointer;" '+App.view.act('openFriendHome',uid)+'>'+avatarHtml(uid, m.name, 38)+
           '<div class="tx-main"><div class="tx-title">'+escapeHtml(m.name||'멤버')+crown+(self?' (나)':'')+'</div><div class="tx-sub">'+(isMemOwner?'소유자':'멤버')+' · 눌러서 방문</div></div>';
         if(isOwner && !self && !isMemOwner){
           h+='<span style="display:flex;gap:6px;" onclick="event.stopPropagation()"><button class="chip" onclick="event.stopPropagation();doTransferOwner(\''+wsId+'\',\''+uid+'\')">소유자 지정</button>'+
@@ -1646,7 +1646,7 @@
       });
       h+='</div>';
       if(isOwner) h+='<div class="tx-sub" style="margin:2px 2px 8px;">소유자만 이름 변경·멤버 내보내기·소유자 지정을 할 수 있어요(앱 내 제한).</div>';
-      h+='<button class="btn danger" style="margin-top:12px;" onclick="confirmLeave(\''+wsId+'\')">그룹 나가기</button>';
+      h+='<button class="btn danger" style="margin-top:12px;" '+App.view.act('confirmLeave',wsId)+'>그룹 나가기</button>';
       openSheet('그룹 관리', h);
     }
     function memberName(wsId, uid){ const w=(state.memberships||[]).find(x=>x.id===wsId); return (w&&w.members&&w.members[uid]&&w.members[uid].name)||'멤버'; }
@@ -1699,7 +1699,7 @@
       if(!uids.length) h+='<div class="empty" style="padding:20px 6px;">멤버가 없어요</div>';
       else h+=uids.map(function(uid){ const m=members[uid], self=uid===state.uid, isOwner=m.role==='owner';
         const crown=isOwner?' <span class="owncrown">'+(typeof crownSvg==='function'?crownSvg({h:12}):'👑')+'</span>':'';
-        return '<div class="tx" role="button" tabindex="0" style="cursor:pointer;" onclick="openFriendHome(\''+uid+'\')">'+avatarHtml(uid, m.name, 38)+
+        return '<div class="tx" role="button" tabindex="0" style="cursor:pointer;" '+App.view.act('openFriendHome',uid)+'>'+avatarHtml(uid, m.name, 38)+
           '<div class="tx-main"><div class="tx-title">'+escapeHtml(m.name||'멤버')+crown+(self?' (나)':'')+'</div><div class="tx-sub">'+(isOwner?'소유자':'멤버')+'</div></div>'+
           '<span class="chev">'+MORE_ICON.chev+'</span></div>'; }).join('');
       h+='</div>';
@@ -1718,7 +1718,7 @@
       h+='<div class="menu-item" style="padding:8px 2px;"><span>프로필 공개</span><div class="switch '+(state.profilePublic!==false?'on':'')+'" id="profPublic" '+App.view.act('toggleSwitch')+'><i></i></div></div>';
       h+='<div class="tx-sub" style="margin:2px 2px 14px;">사진은 256px로 줄여 저장돼요. <b>비공개</b>로 하면 랭킹·비친구에게 <b>은화 아이콘 + \'알뜰\'</b>로만 보여요(친구·좋아요·캠은 그대로).</div>';
       h+='<button class="btn" '+App.view.act('onSaveProfile')+'>저장</button>';
-      h+='<button class="btn ghost" style="margin-top:8px;" onclick="openPasswordChangeSheet()">비밀번호 변경</button>';
+      h+='<button class="btn ghost" style="margin-top:8px;" '+App.view.act('openPasswordChangeSheet')+'>비밀번호 변경</button>';
       openSheet('내 프로필', h);
     }
     function pickProfilePhoto(){
@@ -1888,7 +1888,7 @@
           '<li><span class="inst-ic">'+check+'</span>설치를 확인하면 끝!</li></ol>';
       }
       const h='<div class="inst-hero"><img src="icons/icon-192.png" alt="" width="60" height="60" class="inst-app-ic"><div><div class="inst-title">알뜰을 홈 화면에</div><div class="inst-sub">앱처럼 전체화면으로 더 빠르게 실행돼요</div></div></div>'+
-        steps+'<button class="btn" onclick="closeSheet()" style="margin-top:16px;">확인</button>';
+        steps+'<button class="btn" '+App.view.act('closeSheet')+' style="margin-top:16px;">확인</button>';
       openSheet('앱 설치', h);
     }
     // 설정 시트 — 더보기 하단 설정 항목 모음 + 코드 입력
@@ -2502,7 +2502,7 @@
       const period=(p.startDate||'')+(p.endDate?(' ~ '+p.endDate):'');
       const stBadge=st!=='active'?'<span class="pill">'+PB_STATUS_LABEL[st]+'</span>':'';
       const setBadge=pbSettleBadge(p);
-      return '<div class="card" onclick="openPbDetail(\''+p.id+'\')"><div class="row"><b><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:'+(p.themeColor||'#3182f6')+';margin-right:6px;"></span>'+(p.icon||'📒')+' '+escapeHtml(p.name)+' '+stBadge+'</b><span class="pill">'+pbTypeText(p)+'</span></div>'+
+      return '<div class="card" '+App.view.act('openPbDetail',p.id)+'><div class="row"><b><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:'+(p.themeColor||'#3182f6')+';margin-right:6px;"></span>'+(p.icon||'📒')+' '+escapeHtml(p.name)+' '+stBadge+'</b><span class="pill">'+pbTypeText(p)+'</span></div>'+
         '<div class="tx-sub" style="margin-top:6px;">'+period+(p.participants&&p.participants.length?(' · 참여 '+p.participants.length+'명'):'')+(setBadge?(' '+setBadge):'')+'</div>'+
         (p.budgetAmount?('<div class="bar" style="margin-top:8px;"><i style="width:'+Math.min(u.pct,100)+'%;background:'+c+'"></i></div><div class="row" style="margin-top:6px;"><span class="tx-sub">'+won(u.used)+' / '+won(u.amount)+'</span><span class="tx-sub" style="color:'+c+'">'+u.pct+'%</span></div>'):('<div class="tx-sub" style="margin-top:8px;">사용 '+won(u.used)+'</div>'))+'</div>';
     }
