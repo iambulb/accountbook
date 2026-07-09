@@ -1988,13 +1988,13 @@
     function budgetTile(b){ return b.categoryName? catTileMini(b.categoryName) : '<span class="mtile" style="background:var(--soft);color:var(--text);">'+svgWrap(CAT_SVG.wallet)+'</span>'; }
     function openBudgetSheet(){
       const list=visibleBudgets().slice().sort((a,b)=>(a.categoryName?1:0)-(b.categoryName?1:0));
-      let h='<button class="btn" onclick="openBudgetEdit()">+ 예산 추가</button><div style="margin-top:12px;">';
+      let h='<button class="btn" '+App.view.act('openBudgetEdit')+'>+ 예산 추가</button><div style="margin-top:12px;">';
       if(!list.length) h+='<div class="empty">설정된 예산이 없습니다</div>';
       list.forEach(b=>{ const u=budgetUsage(b), c=budgetColor(u.pct);
-        h+='<div class="card"><div class="row" onclick="openBudgetEdit(\''+b.id+'\')"><div style="display:flex;align-items:center;gap:11px;flex:1;min-width:0;">'+budgetTile(b)+'<b style="min-width:0;">'+budgetTitle(b)+' <span class="pill">'+(PERIOD_LABEL[b.periodType]||b.periodType)+'</span>'+(b.scope==='personal'?'<span class="pill">개인</span>':'')+'</b></div><span style="color:'+c+';font-weight:800;flex:none;">'+u.pct+'%'+(u.pct>=100?' 초과':'')+'</span></div>'+
+        h+='<div class="card"><div class="row" '+App.view.act('openBudgetEdit',b.id)+'><div style="display:flex;align-items:center;gap:11px;flex:1;min-width:0;">'+budgetTile(b)+'<b style="min-width:0;">'+budgetTitle(b)+' <span class="pill">'+(PERIOD_LABEL[b.periodType]||b.periodType)+'</span>'+(b.scope==='personal'?'<span class="pill">개인</span>':'')+'</b></div><span style="color:'+c+';font-weight:800;flex:none;">'+u.pct+'%'+(u.pct>=100?' 초과':'')+'</span></div>'+
           '<div class="bar"><i style="width:'+Math.min(u.pct,100)+'%;background:'+c+'"></i></div>'+
           '<div class="row" style="margin-top:8px;"><span class="tx-sub">'+won(u.used)+' / '+won(u.amount)+(u.carry>0?' <span style="color:var(--income)">(이월 +'+won(u.carry)+')</span>':'')+'</span><span class="tx-sub">남음 '+won(u.remain)+'</span></div>'+
-          '<div class="link" style="margin-top:8px;font-size:13px;" onclick="openBudgetDetail(\''+b.id+'\')">포함된 거래 보기 ›</div></div>';
+          '<div class="link" style="margin-top:8px;font-size:13px;" '+App.view.act('openBudgetDetail',b.id)+'>포함된 거래 보기 ›</div></div>';
       });
       h+='</div>';
       openSheet('예산', h);
@@ -2026,8 +2026,8 @@
         [80,90,100].map(n=>'<option value="'+n+'"'+(((b&&b.alertThreshold===n)||(!b&&n===80))?' selected':'')+'>'+n+'%</option>').join('')+'</select></div>'+
         '<div class="field"><label>공개 범위</label><select class="input" id="bgVis">'+VISIBILITY.map(p=>'<option value="'+p[0]+'"'+(((b&&b.visibility===p[0])||(!b&&p[0]===defaultVisibility()))?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div></div>';
       h+='<label style="display:flex;align-items:center;gap:8px;margin:2px 2px 12px;font-size:13px;color:var(--sub);"><input type="checkbox" id="bgRollover" '+(b&&b.rollover?'checked':'')+'> 남은 예산 <b>이월</b> — 지난 기간에 안 쓴 만큼 이번 예산에 더해요</label>';
-      h+='<button class="btn" onclick="saveBudget('+(id?'\''+id+'\'':'null')+')">'+(b?'수정':'추가')+'</button>';
-      if(b) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteBudget(\''+id+'\')">삭제</button>';
+      h+='<button class="btn" '+App.view.act('saveBudget', id?id:null)+'>'+(b?'수정':'추가')+'</button>';
+      if(b) h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deleteBudget',id)+'>삭제</button>';
       openSheet(b?'예산 수정':'예산 추가', h);
     }
     function onBudgetPeriodChange(){ const w=$('bgCustom'); if(w) w.style.display=(val('bgPeriod')==='custom')?'':'none'; }
@@ -2150,7 +2150,7 @@
       return f;
     }
     function openRecurringList(){
-      let h='<button class="btn" onclick="openRecurringEdit()">+ 정기거래 추가</button>';
+      let h='<button class="btn" '+App.view.act('openRecurringEdit')+'>+ 정기거래 추가</button>';
       const rules=state.recurring.filter(canSee).slice().sort((a,b)=>{ const na=nextRunOf(a),nb=nextRunOf(b); return (na?na.getTime():9e15)-(nb?nb.getTime():9e15); });
       if(!rules.length) h+='<div class="empty">등록된 정기거래가 없습니다</div>';
       rules.forEach(r=>{
@@ -2158,15 +2158,15 @@
         const stBadge = st==='active'?'':'<span class="pill">'+(st==='paused'?'일시정지':'종료')+'</span>';
         const cls = (r.type==='income'||r.type==='refund'||r.type==='point_earn')?'green':(r.type==='prepaid_charge'?'blue':'red');
         const rTile = r.category? catTileMini(r.category) : '<span class="mtile" style="background:var(--soft);color:var(--text);">'+svgWrap(CAT_SVG[TX_SVG_KEY[r.type]||'sub'])+'</span>';
-        h+='<div class="card" style="opacity:'+(st==='active'?'1':'.6')+';"><div class="row" onclick="openRecurringEdit(\''+r.ownerUid+'\',\''+r.id+'\')"><div style="display:flex;align-items:center;gap:11px;flex:1;min-width:0;">'+rTile+'<b style="min-width:0;">'+escapeHtml(r.desc||'정기')+stBadge+'</b></div><span class="'+cls+'" style="font-weight:800;flex:none;">'+won(r.amount)+'</span></div>'+
+        h+='<div class="card" style="opacity:'+(st==='active'?'1':'.6')+';"><div class="row" '+App.view.act('openRecurringEdit',r.ownerUid,r.id)+'><div style="display:flex;align-items:center;gap:11px;flex:1;min-width:0;">'+rTile+'<b style="min-width:0;">'+escapeHtml(r.desc||'정기')+stBadge+'</b></div><span class="'+cls+'" style="font-weight:800;flex:none;">'+won(r.amount)+'</span></div>'+
           '<div class="tx-sub" style="margin-top:6px;">'+TYPE_LABEL[r.type]+' · '+freqText(r)+(r.category?(' · '+escapeHtml(r.category)):'')+' · '+escapeHtml(acctName(r.from||r.to))+(nr&&st==='active'?(' · 다음 '+ymd(nr)):'')+'</div>';
         if(r.ownerUid===state.uid){
           h+='<div class="chip-row" style="margin-top:10px;">';
-          if(st==='active') h+='<button class="chip" onclick="pauseRecurring(\''+r.ownerUid+'\',\''+r.id+'\')">일시정지</button>';
-          else if(st==='paused') h+='<button class="chip" onclick="resumeRecurring(\''+r.ownerUid+'\',\''+r.id+'\')">재개</button>';
-          if(st!=='ended') h+='<button class="chip" onclick="endRecurring(\''+r.ownerUid+'\',\''+r.id+'\')">종료</button>';
-          h+='<button class="chip" onclick="generateRecurringNow(\''+r.ownerUid+'\',\''+r.id+'\')">즉시 생성</button>';
-          h+='<button class="chip" onclick="viewRecurringTxs(\''+r.id+'\')">생성된 거래</button></div>';
+          if(st==='active') h+='<button class="chip" '+App.view.act('pauseRecurring',r.ownerUid,r.id)+'>일시정지</button>';
+          else if(st==='paused') h+='<button class="chip" '+App.view.act('resumeRecurring',r.ownerUid,r.id)+'>재개</button>';
+          if(st!=='ended') h+='<button class="chip" '+App.view.act('endRecurring',r.ownerUid,r.id)+'>종료</button>';
+          h+='<button class="chip" '+App.view.act('generateRecurringNow',r.ownerUid,r.id)+'>즉시 생성</button>';
+          h+='<button class="chip" '+App.view.act('viewRecurringTxs',r.id)+'>생성된 거래</button></div>';
         }
         h+='</div>';
       });
@@ -2208,8 +2208,8 @@
       h+='<div class="field"><label>공개 범위</label><select class="input" id="rVis">'+VISIBILITY.map(p=>'<option value="'+p[0]+'"'+(((r&&r.visibility===p[0])||(!r&&p[0]===defaultVisibility()))?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div>';
       h+='<div class="field"><label>메모(선택)</label><input class="input" id="rMemo" value="'+escapeHtml(r?(r.memo||''):'')+'" placeholder="메모"></div>';
       if(isOwn){
-        h+='<button class="btn" onclick="saveRecurring('+(r?'\''+ownerUid+'\',\''+id+'\'':'null,null')+')">'+(r?'수정':'추가')+'</button>';
-        if(r) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteRecurring(\''+ownerUid+'\',\''+id+'\')">삭제</button>';
+        h+='<button class="btn" '+App.view.act('saveRecurring', r?ownerUid:null, r?id:null)+'>'+(r?'수정':'추가')+'</button>';
+        if(r) h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deleteRecurring',ownerUid,id)+'>삭제</button>';
       }
       openSheet(r?'정기거래 수정':'정기거래 추가', h);
       renderRecAccts(); toggleRFreq();
@@ -2314,8 +2314,8 @@
           '<span class="muted">결제임박 <b class="blue">'+soon+'</b></span>'+
           '<span class="muted">만료임박 <b class="red">'+expSoon+'</b></span></div></div>';
       const tabs=[['all','전체'],['month','이번달'],['soon','7일 이내'],['trial','무료체험'],['ended','취소/만료']];
-      h+='<div class="chip-row">'+tabs.map(t=>'<button class="chip '+(subTab===t[0]?'on':'')+'" onclick="setSubTab(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div>';
-      h+='<button class="btn" onclick="openSubEdit()">+ 구독 추가</button>';
+      h+='<div class="chip-row">'+tabs.map(t=>'<button class="chip '+(subTab===t[0]?'on':'')+'" '+App.view.act('setSubTab',t[0])+'>'+t[1]+'</button>').join('')+'</div>';
+      h+='<button class="btn" '+App.view.act('openSubEdit')+'>+ 구독 추가</button>';
       let list=subs.slice();
       if(subTab==='month') list=list.filter(x=>{ const nb=subNextBilling(x); return subActive(x)&&nb&&nb.startsWith(cm); });
       else if(subTab==='soon') list=list.filter(x=>{ const d=daysUntil(subNextBilling(x)); return subActive(x)&&d!=null&&d>=0&&d<=7; });
@@ -2328,7 +2328,7 @@
     function subCard(s){
       const badges=subBadges(s).map(b=>'<span class="pill" style="background:'+b[1]+'22;color:'+b[1]+'">'+b[0]+'</span>').join('');
       const linked=s.recurringId?'<span class="pill">정기연결</span>':'';
-      return '<div class="card" onclick="openSubDetail(\''+s.id+'\')"><div class="row"><b>'+escapeHtml(s.name||'구독')+' '+linked+'</b><span style="font-weight:800;">'+won(s.amount)+'</span></div>'+
+      return '<div class="card" '+App.view.act('openSubDetail',s.id)+'><div class="row"><b>'+escapeHtml(s.name||'구독')+' '+linked+'</b><span style="font-weight:800;">'+won(s.amount)+'</span></div>'+
         '<div class="tx-sub" style="margin-top:6px;">'+(BILLING_LABEL[s.billingCycle]||s.billingCycle)+(s.nextBillingDate?(' · 다음 '+subNextBilling(s)):'')+(s.paymentAccountId?(' · '+escapeHtml(acctName(s.paymentAccountId))):'')+'</div>'+
         (badges?('<div style="margin-top:8px;">'+badges+'</div>'):'')+'</div>';
     }
@@ -2344,11 +2344,11 @@
         (s.isTrial?row('무료체험 종료',s.trialEndDate||'-'):'')+row('자동 갱신',s.autoRenew!==false?'예':'아니오')+
         row('결제수단',escapeHtml(acctName(s.paymentAccountId)))+row('카테고리',escapeHtml(s.categoryName||'-'))+
         row('월 환산',me!=null?won(Math.round(me)):'환산 불가')+(s.memo?('<div class="tx-sub" style="margin-top:6px;">'+escapeHtml(s.memo)+'</div>'):'')+'</div>';
-      h+='<div class="chip-row">'+['active','paused','cancelled','expired'].map(st=>'<button class="chip '+((s.status||'active')===st?'on':'')+'" onclick="setSubStatus(\''+s.id+'\',\''+st+'\')">'+SUB_STATUS_LABEL[st]+'</button>').join('')+'</div>';
+      h+='<div class="chip-row">'+['active','paused','cancelled','expired'].map(st=>'<button class="chip '+((s.status||'active')===st?'on':'')+'" '+App.view.act('setSubStatus',s.id,st)+'>'+SUB_STATUS_LABEL[st]+'</button>').join('')+'</div>';
       h+='<div class="sec-title" style="margin-left:2px;">연결된 결제 내역 ('+txs.length+')</div>';
       h+='<div class="card" style="padding:6px 10px;">'+(txs.length?txs.map(txRowHtml).join(''):'<div class="empty">연결된 거래 없음</div>')+'</div>';
-      h+='<button class="btn ghost" onclick="openSubEdit(\''+s.id+'\')">수정</button>';
-      h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteSub(\''+s.id+'\')">삭제</button>';
+      h+='<button class="btn ghost" '+App.view.act('openSubEdit',s.id)+'>수정</button>';
+      h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deleteSub',s.id)+'>삭제</button>';
       openSheet(s.name||'구독', h);
     }
     function setSubStatus(id,st){ db.ref(wp('subscriptions/'+id)).update({status:st, updatedAt:new Date().toISOString()}); toast('상태: '+SUB_STATUS_LABEL[st]); openSubDetail(id); }
@@ -2377,7 +2377,7 @@
       h+='<div class="field"><label>공개 범위</label><select class="input" id="subVis">'+VISIBILITY.map(p=>'<option value="'+p[0]+'"'+(((s&&s.visibility===p[0])||(!s&&p[0]===defaultVisibility()))?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div>';
       h+='<div class="field"><label>메모</label><input class="input" id="subMemo" value="'+escapeHtml(s?(s.memo||''):'')+'" placeholder="메모"></div>';
       h+='</details>';
-      h+='<button class="btn" onclick="saveSub('+(id?'\''+id+'\'':'null')+')">'+(s?'수정':'추가')+'</button>';
+      h+='<button class="btn" '+App.view.act('saveSub', id?id:null)+'>'+(s?'수정':'추가')+'</button>';
       openSheet(s?'구독 수정':'구독 추가', h);
     }
     function onSubRecModeChange(){ const w=$('subRecExistingWrap'); if(w) w.style.display=(val('subRecMode')==='existing')?'':'none'; }
