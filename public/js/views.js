@@ -722,7 +722,7 @@
             const av='<span class="tdwho'+(changed?' avring':'')+'">'+avatarHtml(u,f.name||'',28)+'</span>';
             return '<div class="tdrow friendrow" role="button" tabindex="0" '+App.view.act('openFriendHome',u)+'>'+av+'<b class="tdtitle">'+escapeHtml(f.name||'친구')+'</b>'+
               '<span class="likemini">'+heartSvg({h:13})+' '+likes+'</span>'+
-              '<button class="buy dis" onclick="event.stopPropagation();removeFriend(\''+u+'\')">삭제</button></div>'; }).join(''):'<div class="empty" style="padding:22px 6px;">아직 친구가 없어요 · 위 코드로 추가하세요</div>')+'</div>';
+              '<button class="buy dis" '+App.view.act('removeFriend',u)+'>삭제</button></div>'; }).join(''):'<div class="empty" style="padding:22px 6px;">아직 친구가 없어요 · 위 코드로 추가하세요</div>')+'</div>';
         h+='<p class="muted" style="font-size:12px;margin-top:10px;">친구를 탭하면 <b>집(펫캠)</b>을 방문해 좋아요를 누를 수 있어요. 등록한 할일은 <b>할일 → 친구들</b>에서도 볼 수 있어요.</p>';
         return h;
       };
@@ -1217,7 +1217,7 @@
       const doneN=list.filter(t=>t.done).length;
       let h='<div class="sech"><span class="l">할일</span><span class="s">'+(list.length?(doneN+' / '+list.length+' 완료'):'')+'</span></div>';
       h+='<div class="card" style="padding:4px 12px;">'+(list.length?list.slice().sort((a,b)=>(a.done?1:0)-(b.done?1:0)).map(todoRow).join(''):'<div class="empty" style="padding:18px 6px;">연결된 할일이 없어요</div>')+'</div>';
-      h+='<button class="btn ghost" style="margin-top:8px;" onclick="openTodoEdit(null,\''+pbId+'\')">＋ 이 여행에 할일 추가</button>';
+      h+='<button class="btn ghost" style="margin-top:8px;" '+App.view.act('openTodoEdit',null,pbId)+'>＋ 이 여행에 할일 추가</button>';
       return h; }
     // 완료 리포트(할일 모드 더보기) — 전체 완료율 + 스코프별 + 멤버별 완료 기여
     function openTodoReport(){
@@ -1808,7 +1808,7 @@
       let h='<div class="more-wrap">';
       // 상단: 내 프로필 — 아바타 44 + 이름(flex) + 받은 좋아요 + (개인이면 전환 버튼) + 편집 chevron(우측)
       // 개인 사용자는 프로필=워크스페이스라 아래 컨텍스트 행이 얼굴 아바타를 중복 표시했다 → 전환 버튼만 이 행으로 올리고 둘째 줄은 생략(그룹만 별도 행). 버튼은 행 전체 openProfileSheet와 안 겹치게 stopPropagation.
-      const switchBtn = isGroup ? '' : '<button class="cnt" onclick="event.stopPropagation();openWorkspaceSheet()">전환</button>';
+      const switchBtn = isGroup ? '' : '<button class="cnt" '+App.view.act('openWorkspaceSheet')+'>전환</button>';
       h+='<div class="prow" '+App.view.act('openProfileSheet')+'>'+
          avatarHtml(state.uid, state.userName, 44)+
          '<div class="pnm"><b>'+escapeHtml(state.userName||'사용자')+'</b><span>내 프로필</span></div>'+
@@ -1822,7 +1822,7 @@
            wsAvatarHtml(ws.name, ws.photo, 44)+
            '<div class="gnm"><b>'+escapeHtml(ws.name||'가계부')+'</b><span>'+('그룹 · 멤버 '+memCount+'명')+'</span></div>'+
            memberAvatarStack(ws, 26)+
-           '<button class="cnt" onclick="event.stopPropagation();openWorkspaceSheet()">전환</button></div>';
+           '<button class="cnt" '+App.view.act('openWorkspaceSheet')+'>전환</button></div>';
       }
       // 4열 기능 그리드 — 할일 모드면 할일 전용, 아니면 가계부 전용(알뜰홈·설정은 공용)
       h+='<div class="grid4">';
