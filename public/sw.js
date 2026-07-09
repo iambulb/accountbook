@@ -1,5 +1,5 @@
 /* 알뜰(Eggarden) 서비스워커 — 오프라인 앱 셸 캐시 */
-const CACHE_VERSION = 'eggarden-v3.569.1';
+const CACHE_VERSION = 'eggarden-v3.570.0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -884,6 +884,15 @@ const EXTRA_SHELL = APP_SHELL.filter(u =>  u.includes('/assets/'));
 // CDN(라이브러리)은 cache-first 로 따로 보관
 const CDN_HOSTS = ['www.gstatic.com', 'cdn.jsdelivr.net'];
 
+// 🔁 이번 버전에서 '같은 경로로 내용이 바뀐' 부가 자산 — install의 옛 캐시 복사를 건너뛰고 네트워크에서 강제 재수급.
+// 에셋 파일을 수정(리워크)하면 여기 경로를 추가하고 CACHE_VERSION을 올린다(다음 릴리스에서 목록 비워도 됨 — 복사원이 이미 새 사본).
+const REFRESH_ASSETS = [
+  // 2026-07 입 리워크(고랑이 입 확대·사자 입 중앙 정렬·블랙팬서 입 상향)
+  './assets/pets/tiger/tiger_orange/eat.png', './assets/pets/tiger/tiger_orange/drink.png', './assets/pets/tiger/tiger_orange/yawn.png', './assets/pets/tiger/tiger_orange/angry.png',
+  './assets/pets/lion/lion_mane/eat.png', './assets/pets/lion/lion_mane/drink.png', './assets/pets/lion/lion_mane/yawn.png', './assets/pets/lion/lion_mane/angry.png',
+  './assets/pets/cat/cat_blackpanther/eat.png', './assets/pets/cat/cat_blackpanther/drink.png', './assets/pets/cat/cat_blackpanther/yawn.png', './assets/pets/cat/cat_blackpanther/angry.png',
+];
+
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_VERSION).then(async cache => {
@@ -893,13 +902,16 @@ self.addEventListener('install', event => {
       catch (e) { await cache.addAll(CORE_SHELL); }
       // 부가 자산(펫 스프라이트 등) — ⚡ 이전 버전 캐시에 있으면 '복사'하고 없는 것만 네트워크 fetch(best-effort).
       // 예전엔 버전 업마다 수백 장을 재다운로드해 install이 수십 초~분 단위 → 완료 전에 앱을 닫으면 설치가 무효가 되어
-      // "껐다 켜도 업데이트가 안 됨" 증상의 주범이었다. 스프라이트는 경로 고정·내용 사실상 불변이라 복사가 안전
-      // (에셋 내용을 교체할 땐 파일 경로를 바꾸거나 EXTRA에서 CORE로 옮겨 새로 받게 할 것 — 트레이드오프 명시).
+      // "껐다 켜도 업데이트가 안 됨" 증상의 주범이었다. 스프라이트는 경로 고정·내용 사실상 불변이라 복사가 안전.
+      // ⚠️ 같은 경로로 '내용을 교체'한 에셋은 복사 경로가 옛 사본을 되살리므로 반드시 아래 REFRESH_ASSETS에 넣어 강제 재수급한다.
       const oldKeys = (await caches.keys()).filter(k => k !== CACHE_VERSION);
       const olds = await Promise.all(oldKeys.map(k => caches.open(k)));
+      const refresh = new Set(REFRESH_ASSETS);
       await Promise.allSettled(EXTRA_SHELL.map(async u => {
-        for (const oc of olds) { const hit = await oc.match(u); if (hit) return cache.put(u, hit.clone()); }
-        const r = await fetch(u); if (r && r.ok) return cache.put(u, r);
+        if (!refresh.has(u)) {
+          for (const oc of olds) { const hit = await oc.match(u); if (hit) return cache.put(u, hit.clone()); }
+        }
+        const r = await fetch(u, { cache: 'no-cache' }); if (r && r.ok) return cache.put(u, r);
       }));
     }).then(() => self.skipWaiting())
   );

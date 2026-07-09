@@ -37,11 +37,11 @@ KIT = { 'd':(82,17,3), 'D':(90,40,8), 'P':(224,112,102), 'C':(243,220,196) }
 # cls=크기클래스(S=80·M=92·L=112·XL=136), style=cat|bigcat|lion|dog,
 # tufts=귀 술(눕혀도 끝 유지), tailmode=v(상하 스윙)|in(안쪽 플릭)|top(머리 위 끄덕)
 CFG = {
- 'tiger_orange':   dict(species='tiger', cls='M', style='bigcat', foot=64,
-    eyeL=(39,33,42,34), eyeR=(49,33,52,34), mcx=45, small_y=38, wide_y=38,
+ 'tiger_orange':   dict(species='tiger', cls='M', style='bigcat', foot=64, mcls='L',   # 머즐 폭 ~12px — M입(4px)이 과소해 L입으로 상향(㉧)
+    eyeL=(39,33,42,34), eyeR=(49,33,52,34), mcx=45, small_y=38, wide_y=37,
     neck=(42,47), chest=(43,49), chest_hi=(44,50), tail=(59,49,66,62), tailmode='v'),
  'lion_mane':      dict(species='lion', cls='XL', style='lion', foot=94,
-    eyeL=(61,51,64,52), eyeR=(71,51,74,52), mcx=68, small_y=59, wide_y=58,
+    eyeL=(61,51,64,52), eyeR=(71,51,74,52), mcx=67, small_y=59, wide_y=58,   # mcx=눈 실측 중점 (61+74)/2=67.5 — 68은 짝수폭 +1 바이어스와 겹쳐 우측 치우침(㉧)
     neck=(68,76), chest=(70,81), chest_hi=(71,82), tail=(90,73,101,85), tailmode='v'),
  'tiger_white':    dict(species='tiger', cls='L', style='bigcat', foot=78,
     eyeL=(49,40,52,42), eyeR=(59,40,62,42), mcx=55, small_y=48, wide_y=47,
@@ -78,7 +78,7 @@ CFG = {
     eyeL=(52,42,53,43), eyeR=(59,42,60,43), mcx=55, small_y=48, wide_y=48,
     neck=(51,57), chest=(52,59), chest_hi=(53,60), tail=None, earback=(40,34,34)),
  'cat_blackpanther':dict(species='cat', cls='L', style='bigcat', foot=77,
-    eyeL=(52,42,53,42), eyeR=(58,42,59,42), mcx=55, small_y=47, wide_y=47,
+    eyeL=(52,42,53,42), eyeR=(58,42,59,42), mcx=55, small_y=45, wide_y=44,   # 머리가 짧아(턱선 y≈47) 47은 턱 위치 — 실루엣 재판정으로 코 아래(눈+3)로 상향(㉧)
     neck=(50,56), chest=(51,58), chest_hi=(52,59), tail=(66,67,72,75), tailmode='v'),
  'cat_ocelot':     dict(species='cat', cls='L', style='cat', foot=77,
     eyeL=(51,43,53,44), eyeR=(58,43,60,44), mcx=55, small_y=48, wide_y=47,
@@ -217,20 +217,25 @@ def stamp(im, x0, y0, rows, cmap, dy=0):
 # 얼굴 부위 헬퍼(패치 먼저, 변형 나중 — 가이드 §3-2)
 # ═════════════════════════════════════════════════════════════════════════
 
+def MROWS(cfg):
+    # 입 패치 클래스 — 기본 cls, 얼굴(머즐)이 시트 크기 대비 큰 펫은 mcls로 상향(예: tiger_orange M시트+L입).
+    # ㉧ 재발 방지: 입 크기는 '시트 크기(cls)'가 아니라 '실제 머즐 폭'(가로 ≤ 2/3) 기준으로 고른다.
+    return MOUTHS[cfg.get('mcls', cfg['cls'])]
+
 def mouth_cmap(P):
     return { 'O':P.outline, 'K':P.outline, 'd':KIT['d'], 'D':KIT['D'], 'P':KIT['P'], 'C':KIT['C'] }
 
 def mouth_x(cfg, w): return cfg['mcx'] - w//2 + 1
 
 def stamp_mouth(f, cfg, P, kind, dy=0):
-    rows = MOUTHS[cfg['cls']][kind]
+    rows = MROWS(cfg)[kind]
     y = cfg['wide_y'] if kind.startswith(('wide','mid')) else cfg['small_y']
     if kind=='hiss': y = cfg['small_y']
     stamp(f, mouth_x(cfg, len(rows[0])), y, rows, mouth_cmap(P), dy)
     return f
 
 def stamp_tongue(f, cfg, P, kind, dy=0):
-    rows = MOUTHS[cfg['cls']][kind]
+    rows = MROWS(cfg)[kind]
     y = cfg['small_y'] + (2 if cfg['cls'] in ('L','XL') else 1)
     stamp(f, cfg['mcx'] - len(rows[0])//2 + 1, y, rows, mouth_cmap(P), dy)
     return f
@@ -449,7 +454,7 @@ def m_drink(src, cfg, P):
 def m_yawn(src, cfg, P):
     """소→대(정점 2f: 눈 감김·머리 젖힘)→중→기준. 대형 고양잇과는 송곳니 노출."""
     big = cfg['style'] in ('bigcat','lion')
-    wide = 'wide_fang' if big and ('wide_fang' in MOUTHS[cfg['cls']]) else 'wide'
+    wide = 'wide_fang' if big and ('wide_fang' in MROWS(cfg)) else 'wide'
     plan = [(0,None,False),(0,'small',False),(1,wide,False),(1,wide,True),(0,'mid',False),(0,None,False)]
     out = []
     for dd,mo,ec in plan:
