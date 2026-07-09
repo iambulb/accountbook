@@ -5687,8 +5687,8 @@
     const PROMO_CODES = {
       // 2026-07-09 쿠폰 4종(사용자 지시 재등록). 중복 사용 차단 = redeemCode의 g.codes 마커 + 트랜잭션 재검증(코드당 1회, 다기기 동시 사용 안전).
       // 🌈 무지개알/박스는 2026-07 개편으로 소비 인벤토리가 폐지(무지개동전 5개=1뽑)라 동전 5개로 지급(type:'rbcoin').
-      rainbowegg:   { type:'rbcoin', qty:5,  label:'무지개동전 5개 (무지개알 1뽑)' },   // 첫 키 = 쿠폰 목록·소식 최상단
-      rainbowbox:   { type:'rbcoin', qty:5,  label:'무지개동전 5개 (무지개박스 1뽑)' },
+      rainbowegg:   { type:'rbcoin', qty:5,  label:'무지개동전 5개' },   // 첫 키 = 쿠폰 목록·소식 최상단
+      rainbowbox:   { type:'rbcoin', qty:5,  label:'무지개동전 5개' },
       eggardenbox:  { type:'consum', key:'box',   qty:10, label:'랜덤박스 10개' },
       eggarden0709: { type:'consum', key:'ddeul', qty:10, label:'뜰알 10개' }
     };
@@ -10713,7 +10713,7 @@
     // 🔒 여기(및 config/notices)는 일반 사용자에게 그대로 노출된다. 개발자 모드·치트·내부 도구 등 비공개 변경은 절대 넣지 말 것(운영 유출 크리티컬). 방어로 isDevNotice가 한 번 더 거른다.
     let NOTICES = [
       // (2026-07-09 사용자 재지시: 새 쿠폰 4종 등록 + 안내 — 무지개알/박스 보상은 무지개동전 개편에 맞춰 동전 5개로 지급)
-      { date:'2026-07-10', t:'새 쿠폰 4종 도착 🎟️', s:'RAINBOWEGG·RAINBOWBOX(각 무지개동전 5개 = 무지개 1뽑) · EGGARDENBOX(랜덤박스 10개) · EGGARDEN0709(뜰알 10개) — 더보기 → 설정 → 코드 입력에서 사용하세요(계정당 1회)' },
+      { date:'2026-07-10', t:'새 쿠폰 4종 도착 🎟️', s:'RAINBOWEGG·RAINBOWBOX(각 무지개동전 5개) · EGGARDENBOX(랜덤박스 10개) · EGGARDEN0709(뜰알 10개) — 더보기 → 설정 → 코드 입력에서 사용하세요(계정당 1회)' },
       { date:'2026-07-10', t:'선물함·공지 개편', s:'선물 출처 표시, 운영자 선물, 공지사항에 운영자 공지와 업데이트 내역을 함께 정리했어요' }
     ];
     // RTDB config/notices(공개 읽기·관리자 쓰기)에서 공지를 읽어 NOTICES를 갱신. 없으면 위 기본값 유지.
