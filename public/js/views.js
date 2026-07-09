@@ -1245,7 +1245,7 @@
       const _curM=(typeof todayStr==='function'?todayStr():'').slice(0,7);
       const budgetRef=(m===_curM)?new Date():new Date(+yy,+mo-1,15);   // 📅 예산 기준일=보는 달(이번 달이면 오늘 → 주간예산=이번주 유지, 과거/미래 달이면 그 달)
       // 월 네비
-      let h='<div class="monthlbl" style="padding-top:6px"><button onclick="statsMonth(-1)" aria-label="이전 달">‹</button><b>'+yy+'년 '+(+mo)+'월</b><button onclick="statsMonth(1)" aria-label="다음 달">›</button></div>';
+      let h='<div class="monthlbl" style="padding-top:6px"><button '+App.view.act('statsMonth',-1)+' aria-label="이전 달">‹</button><b>'+yy+'년 '+(+mo)+'월</b><button '+App.view.act('statsMonth',1)+' aria-label="다음 달">›</button></div>';
       // 총지출 카드 + 수입/잔액/전월 대비
       const pActual=actualSpend(monthTx(shiftMonth(m,-1)));
       let momHtml;
@@ -1263,7 +1263,7 @@
       const cd={}; list.filter(t=>isActual(t)&&t.category).forEach(t=>{ cd[t.category]=(cd[t.category]||0)+(Number(t.amount)||0); });
       let cats=Object.keys(cd).map(k=>({name:k,val:cd[k]})).sort((a,b)=>b.val-a.val);
       const totCat=cats.reduce((s,c)=>s+c.val,0);
-      h+='<div class="sech"><span class="l">카테고리별</span><span style="display:flex;align-items:center;gap:8px;">'+(totCat>0?'<span class="repvalseg"><button class="'+(!state._repShowAmt?'on':'')+'" onclick="setRepVal(0)" aria-label="비율(%)로 보기">%</button><button class="'+(state._repShowAmt?'on':'')+'" onclick="setRepVal(1)" aria-label="금액으로 보기">금액</button></span>':'')+'<span class="s">'+(+mo)+'월</span></span></div>';
+      h+='<div class="sech"><span class="l">카테고리별</span><span style="display:flex;align-items:center;gap:8px;">'+(totCat>0?'<span class="repvalseg"><button class="'+(!state._repShowAmt?'on':'')+'" '+App.view.act('setRepVal',0)+' aria-label="비율(%)로 보기">%</button><button class="'+(state._repShowAmt?'on':'')+'" '+App.view.act('setRepVal',1)+' aria-label="금액으로 보기">금액</button></span>':'')+'<span class="s">'+(+mo)+'월</span></span></div>';
       if(totCat>0){
         let segs = cats.length>6 ? cats.slice(0,5).concat([{name:'기타',val:cats.slice(5).reduce((s,c)=>s+c.val,0),etc:true}]) : cats;
         let acc=0; const stops=segs.map(s=>{ const p0=acc/totCat*100, p1=(acc+s.val)/totCat*100; const col=s.etc?'var(--soft2)':catColor(s.name); acc+=s.val; return col+' '+p0.toFixed(2)+'% '+p1.toFixed(2)+'%'; });
@@ -1305,13 +1305,13 @@
       }
       const bgs=visibleBudgets();
       if(bgs.length){
-        h+='<div class="card"><div class="row" style="margin-bottom:4px;"><div class="sec-title" style="margin:0;">예산</div><button class="link" onclick="openBudgetSheet()">관리</button></div>'+
+        h+='<div class="card"><div class="row" style="margin-bottom:4px;"><div class="sec-title" style="margin:0;">예산</div><button class="link" '+App.view.act('openBudgetSheet')+'>관리</button></div>'+
           bgs.map(b=>{ const u=budgetUsage(b, budgetRef), c=budgetColor(u.pct); return '<div style="margin:10px 0;"><div class="row" style="font-size:13px;"><span>'+(b.categoryName?'<span class="catdot" style="background:'+catColor(b.categoryName)+'"></span>':'')+budgetTitle(b)+'</span><span style="color:'+c+';font-weight:700;">'+u.pct+'%'+(u.pct>=100?' 초과':(b.alertEnabled!==false&&u.pct>=(b.alertThreshold||80)?' ⚠️':''))+'</span></div><div class="bar"><i style="width:'+Math.min(u.pct,100)+'%;background:'+c+'"></i></div><div class="tx-sub" style="margin-top:4px;">'+won(u.used)+' / '+won(u.amount)+'</div></div>'; }).join('')+'</div>';
       }
       const pbsR=visiblePBs().filter(p=>(p.status||'active')==='active');
       if(pbsR.length){
         const ranked=pbsR.map(p=>({p,u:pbUsage(p)})).sort((a,b)=>b.u.used-a.u.used).slice(0,3);
-        h+='<div class="card"><div class="row" style="margin-bottom:4px;"><div class="sec-title" style="margin:0;">목적별 가계부</div><button class="link" onclick="openPurposeBooks()">전체</button></div>'+
+        h+='<div class="card"><div class="row" style="margin-bottom:4px;"><div class="sec-title" style="margin:0;">목적별 가계부</div><button class="link" '+App.view.act('openPurposeBooks')+'>전체</button></div>'+
           ranked.map(r=>{ const c=budgetColor(r.u.pct); return '<div style="margin:10px 0;"><div class="row" style="font-size:13px;"><span>'+(r.p.icon||'📒')+' '+escapeHtml(r.p.name)+'</span><span>'+won(r.u.used)+(r.p.budgetAmount?(' / '+won(r.u.amount)):'')+'</span></div>'+(r.p.budgetAmount?('<div class="bar"><i style="width:'+Math.min(r.u.pct,100)+'%;background:'+c+'"></i></div>'):'')+'</div>'; }).join('')+'</div>';
       }
       const pa=prepaidAccounts().filter(canSee);
@@ -1352,7 +1352,7 @@
         h+=sechHtml('카드 실적', null, (new Date().getMonth()+1)+'월');
         cards.forEach(c=>{
           const pf=cardPerformance(c), col=pf.pct>=100?'var(--income)':'var(--primary)';
-          h+='<div class="perfrow" onclick="openAcctSheet(\''+c.id+'\')"><div class="perftop"><b>'+escapeHtml(c.cardName||acctName(c.id))+'</b>'+
+          h+='<div class="perfrow" '+App.view.act('openAcctSheet',c.id)+'><div class="perftop"><b>'+escapeHtml(c.cardName||acctName(c.id))+'</b>'+
             '<span class="pct" style="color:'+col+'">'+(pf.target?pf.pct+'%':'목표 미설정')+'</span></div>'+
             (pf.target?'<div class="prog"><div class="f" style="width:'+Math.min(pf.pct,100)+'%;background:'+col+'"></div></div>'+
               '<div class="perfsub">'+won(pf.sum)+' / '+won(pf.target)+(pf.remain>0?' · '+won(pf.remain)+' 더 쓰면 실적 달성':' · 이번 달 실적 충족')+'</div>':'')+'</div>';
@@ -1370,7 +1370,7 @@
       h+= state.savings.length? state.savings.map((sv,i)=>{
         const p=sv.goal?Math.min(Math.round(sv.current/sv.goal*100),999):0, col=SVC[i%SVC.length];
         const ch=escapeHtml((sv.name||'·').charAt(0));
-        return '<div class="bgrow" onclick="openSavingsSheet(\''+sv.ownerUid+'\',\''+sv.id+'\')"><div class="bgtop"><span class="ci" style="background:'+col+'">'+ch+'</span>'+
+        return '<div class="bgrow" '+App.view.act('openSavingsSheet',sv.ownerUid,sv.id)+'><div class="bgtop"><span class="ci" style="background:'+col+'">'+ch+'</span>'+
           '<span class="bn">'+escapeHtml(sv.name)+'</span><span class="ba">'+p+'%</span></div>'+
           '<div class="bgtrack"><div class="bgfill" style="width:'+Math.min(p,100)+'%;background:'+col+'"></div></div>'+
           '<div class="perfsub" style="margin-top:6px">'+won(sv.current)+' / '+won(sv.goal)+'</div></div>';
@@ -1398,7 +1398,7 @@
       const prov=(a.provider&&a.provider!=='manual')?'<span class="pill">'+(PROVIDER_LABEL[a.provider]||a.provider)+'</span>':'';
       const vis=(a.visibility&&a.visibility!=='full')?'<span class="pill">'+(a.visibility==='private'?'개인':'잔액만')+'</span>':'';
       const sub=(ACCT_TYPE_LABEL[a.type]||a.type)+(a.owner?' · '+escapeHtml(ownerName(a.owner)):'');   // owner는 멤버 uid로 저장될 수 있어 반드시 ownerName으로 이름 해석(uid 그대로 노출 방지)
-      return '<div class="acct" onclick="openAcctSheet(\''+a.id+'\')"><div class="acct-dot">'+acctIcon(a.type)+'</div>'+
+      return '<div class="acct" '+App.view.act('openAcctSheet',a.id)+'><div class="acct-dot">'+acctIcon(a.type)+'</div>'+
         '<div style="min-width:0;" class="acct-nm"><b>'+escapeHtml(a.name)+prov+vis+'</b><span>'+sub+'</span></div>'+
         '<div class="acct-bal '+(bal<0?'red':'')+'">'+won(bal)+'</div></div>';
     }
@@ -1458,11 +1458,11 @@
     }
     // ===== 카드 실적 화면 =====
     function openCardList(){
-      let h='<button class="btn" onclick="openAcctSheet(null,\'credit_card\')">+ 신용카드 추가</button>';
+      let h='<button class="btn" '+App.view.act('openAcctSheet',null,'credit_card')+'>+ 신용카드 추가</button>';
       const cards=state.creditCards.filter(c=>canSee(getAcct(c.id)||{owner:''}));
       if(!cards.length) h+='<div class="empty">등록된 신용카드가 없습니다.<br>결제수단을 \'신용카드\' 유형으로 추가하세요.</div>';
       cards.forEach(c=>{ const pf=cardPerformance(c), col=pf.pct>=100?'var(--income)':(pf.pct>=70?'var(--primary)':'#f5a623');
-        h+='<div class="card"><div class="row" onclick="openAcctSheet(\''+c.id+'\')"><b>'+escapeHtml(c.cardName||acctName(c.id))+(c.cardCompany?' <span class="pill">'+escapeHtml(c.cardCompany)+'</span>':'')+'</b><span style="color:'+col+';font-weight:800;">'+(pf.target?pf.pct+'%':'목표X')+'</span></div>';
+        h+='<div class="card"><div class="row" '+App.view.act('openAcctSheet',c.id)+'><b>'+escapeHtml(c.cardName||acctName(c.id))+(c.cardCompany?' <span class="pill">'+escapeHtml(c.cardCompany)+'</span>':'')+'</b><span style="color:'+col+';font-weight:800;">'+(pf.target?pf.pct+'%':'목표X')+'</span></div>';
         if(pf.target) h+='<div class="bar"><i style="width:'+Math.min(pf.pct,100)+'%;background:'+col+'"></i></div><div class="tx-sub" style="margin-top:8px;">'+won(pf.sum)+' / '+won(pf.target)+(pf.remain>0?' · 남은 실적 '+won(pf.remain):' · 달성 ✅')+'<br>기간 '+ymd(pf.start)+' ~ '+ymd(pf.end)+'</div>';
         if(pf.excluded.length) h+='<div class="tx-sub" style="margin-top:10px;font-weight:700;color:var(--sub);">🚫 실적 제외 '+pf.excluded.length+'건</div><div class="card" style="padding:2px 8px;margin-top:6px;box-shadow:none;border:1px solid var(--line);">'+pf.excluded.slice(0,8).map(txRowHtml).join('')+'</div>';
         h+='</div>';
@@ -1529,13 +1529,13 @@
         const celebrate=(typeof shouldCelebrateOnce==='function'&&shouldCelebrateOnce());
         h+='<div class="card homedone'+(celebrate?' celebrate':'')+'">'+art+'<div class="hd-tit">오늘도 알뜰한 하루 보내셨나요!</div>'+
           '<div class="hd-sub">고양이도 만족스러워해요. 내일 또 만나요!</div>'+
-          '<button class="btn ghost" onclick="openCatHouse()">알뜰홈 둘러보기</button></div>';
+          '<button class="btn ghost" '+App.view.act('openCatHouse')+'>알뜰홈 둘러보기</button></div>';
       } else if(kind==='empty'){
         h+='<div class="card homedone empty"><div class="hd-emoji">🌙</div><div class="hd-tit">오늘은 예정된 게 없어요</div>'+
           '<div class="hd-sub">미션이나 할일을 추가해 은화를 모아보세요.</div></div>';
       } else {
         if(dueTop.length){
-          h+='<div class="card"><div class="sech" style="margin-top:0;"><span class="l">오늘·임박 할일</span><button class="link" onclick="goto(\'todo\')">전체 보기</button></div>'+
+          h+='<div class="card"><div class="sech" style="margin-top:0;"><span class="l">오늘·임박 할일</span><button class="link" '+App.view.act('goto','todo')+'>전체 보기</button></div>'+
             dueTop.map(function(t){ return todoRow(t,false); }).join('')+'</div>';
         }
       }
@@ -1552,7 +1552,7 @@
       h+='<div class="menu-group-title">개인</div>';
       h+='<div class="ws-item'+(onP?' on':'')+'">'+
           '<span class="ws-ic">'+avatarHtml(state.uid, state.userName||'', 44)+'</span>'+
-          '<div style="flex:1;min-width:0;" onclick="chooseWorkspace(\''+personalId+'\')">'+
+          '<div style="flex:1;min-width:0;" '+App.view.act('chooseWorkspace',personalId)+'>'+
             '<div class="ws-name"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">개인 프로필</span></div>'+
             '<div class="ws-meta">나만 보는 가계부 · 할일</div>'+
           '</div>'+
@@ -1566,17 +1566,17 @@
         const on=w.id===cur, memCount=Object.keys(w.members||{}).length;
         h+='<div class="ws-item'+(on?' on':'')+'">'+
             '<span class="ws-ic">'+wsAvatarHtml(w.name, w.photo, 44)+'</span>'+
-            '<div style="flex:1;min-width:0;" onclick="chooseWorkspace(\''+w.id+'\')">'+
+            '<div style="flex:1;min-width:0;" '+App.view.act('chooseWorkspace',w.id)+'>'+
               '<div class="ws-name" style="display:flex;align-items:center;gap:8px;"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(w.name||'가계부')+'</span>'+memberAvatarStack(w,20)+'</div>'+
               '<div class="ws-meta">그룹 · 멤버 '+memCount+'명</div>'+
             '</div>'+
-            '<button class="btn sm ghost" onclick="openGroupManageSheet(\''+w.id+'\')">관리</button>'+
+            '<button class="btn sm ghost" '+App.view.act('openGroupManageSheet',w.id)+'>관리</button>'+
             (on?'<span class="ws-ck">'+svgWrap(CAT_SVG.check)+'</span>':'')+
           '</div>';
       });
       h+='<div class="form-2" style="margin-top:14px;">'+
-          '<button class="btn" onclick="openCreateGroupSheet()">+ 그룹 만들기</button>'+
-          '<button class="btn ghost" onclick="openJoinGroupSheet()">코드로 참여</button>'+
+          '<button class="btn" '+App.view.act('openCreateGroupSheet')+'>+ 그룹 만들기</button>'+
+          '<button class="btn ghost" '+App.view.act('openJoinGroupSheet')+'>코드로 참여</button>'+
          '</div>';
       openSheet('그룹 전환', h);
     }
@@ -1791,7 +1791,7 @@
       // 상단: 내 프로필 — 아바타 44 + 이름(flex) + 받은 좋아요 + (개인이면 전환 버튼) + 편집 chevron(우측)
       // 개인 사용자는 프로필=워크스페이스라 아래 컨텍스트 행이 얼굴 아바타를 중복 표시했다 → 전환 버튼만 이 행으로 올리고 둘째 줄은 생략(그룹만 별도 행). 버튼은 행 전체 openProfileSheet와 안 겹치게 stopPropagation.
       const switchBtn = isGroup ? '' : '<button class="cnt" onclick="event.stopPropagation();openWorkspaceSheet()">전환</button>';
-      h+='<div class="prow" onclick="openProfileSheet()">'+
+      h+='<div class="prow" '+App.view.act('openProfileSheet')+'>'+
          avatarHtml(state.uid, state.userName, 44)+
          '<div class="pnm"><b>'+escapeHtml(state.userName||'사용자')+'</b><span>내 프로필</span></div>'+
          '<span class="likemini" title="받은 좋아요">'+(typeof heartSvg==='function'?heartSvg({h:14}):'❤')+' '+(state.myLikeCount||0)+'</span>'+
@@ -1800,7 +1800,7 @@
       // 그 아래: 현재 컨텍스트 — 그룹일 때만(그룹 사진·이름·멤버, 소유자만 편집). 개인은 위 프로필 행에 전환 버튼만.
       if(isGroup){
         const canEditWs = isWsOwner();
-        h+='<div class="grow"'+(canEditWs?' onclick="openWsProfileSheet()"':'')+'>'+
+        h+='<div class="grow"'+(canEditWs?' '+App.view.act('openWsProfileSheet'):'')+'>'+
            wsAvatarHtml(ws.name, ws.photo, 44)+
            '<div class="gnm"><b>'+escapeHtml(ws.name||'가계부')+'</b><span>'+('그룹 · 멤버 '+memCount+'명')+'</span></div>'+
            memberAvatarStack(ws, 26)+
@@ -1843,9 +1843,9 @@
       h+='</div>';
       // 하단 고정: 로그아웃(가운데) → 홈 화면 설치 링크 → 버전
       h+='<div class="more-foot">';
-      h+='<button class="btn ghost sm" onclick="logout()">로그아웃</button>';
+      h+='<button class="btn ghost sm" '+App.view.act('logout')+'>로그아웃</button>';
       // 설치 안 됐으면 항상 노출(iOS 사파리 포함) — 탭 시 크롬=네이티브 프롬프트, iOS/그외=수동 안내 시트
-      if(canInstallApp()) h+='<button class="install-cta" onclick="installApp()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M5 21h14"/></svg>홈 화면에 앱 설치</button>';
+      if(canInstallApp()) h+='<button class="install-cta" '+App.view.act('installApp')+'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M5 21h14"/></svg>홈 화면에 앱 설치</button>';
       h+='<p class="muted" style="font-size:12px;margin-top:10px;">알뜰 v3</p>';
       h+='</div></div>';   // .more-foot / .more-wrap
       $('content').innerHTML=h;
@@ -1898,7 +1898,7 @@
       h+='<div class="sec-title" style="margin-top:22px;">코드 입력</div>';
       h+='<div class="card" style="padding:14px;"><div class="row" style="gap:8px;">'+
          '<input class="input" id="promoCode" placeholder="코드를 입력하세요" autocomplete="off" autocapitalize="off" spellcheck="false" style="flex:1;" onkeydown="if(event.key===\'Enter\'){event.preventDefault();submitPromoCode();}">'+
-         '<button class="btn sm" style="flex:none;" onclick="submitPromoCode()">확인</button></div></div>';
+         '<button class="btn sm" style="flex:none;" '+App.view.act('submitPromoCode')+'>확인</button></div></div>';
       openSheet('설정', h);
     }
     function submitPromoCode(){ const el=$('promoCode'); if(!el) return; redeemCode(el.value); el.value=''; }
@@ -1912,7 +1912,7 @@
         '<span class="muted" style="display:block;font-size:12px;font-weight:600;margin-top:4px;line-height:1.5;">유튜브처럼 깔끔 — 평소엔 화면만 보이고 마우스를 올려야 컨트롤이 나타나요'+(canVid?'':' · 이 브라우저 미지원')+'</span></button>';
       h+='<button class="who-btn'+(cur==='doc'?' on':'')+'" style="text-align:left;'+(canDoc?'':'opacity:.45;')+'" onclick="setPipModeChoice(\'doc\');openPipModeSheet()">🪟 창 방식 <b style="font-weight:800;">'+(cur==='doc'?'· 사용 중':'')+'</b>'+
         '<span class="muted" style="display:block;font-size:12px;font-weight:600;margin-top:4px;line-height:1.5;">방 화면을 그대로 미러(펫이 가구에 앉는 상호작용까지 100%) — 창 상단에 주소·닫기 바가 항상 보여요'+(canDoc?'':' · 이 브라우저 미지원')+'</span></button>';
-      h+='</div><button class="btn ghost" onclick="openSettingsSheet()" style="margin-top:14px;">설정으로 돌아가기</button>';
+      h+='</div><button class="btn ghost" '+App.view.act('openSettingsSheet')+' style="margin-top:14px;">설정으로 돌아가기</button>';
       openSheet('펫캠 PiP 방식', h);
     }
     // 개발자 모드 시트 — 더보기 그리드의 무지개알 타일에서 진입(개발자 이메일 전용). 토글 + 하위 기능.
@@ -1974,9 +1974,9 @@
             (on?'<span class="usr-dot">접속중</span>':'')+'</div>'; }).join('')
         : '<div class="empty">사용자가 없어요</div>';
       h+='</div>';
-      h+='<div class="usr-nav"><button class="btn ghost sm"'+(pg<=0?' disabled':'')+' onclick="devUsersPage(-1)">‹ 이전</button>'+
+      h+='<div class="usr-nav"><button class="btn ghost sm"'+(pg<=0?' disabled':'')+' '+App.view.act('devUsersPage',-1)+'>‹ 이전</button>'+
          '<span class="usr-pg">'+(pg+1)+' / '+pages+'</span>'+
-         '<button class="btn ghost sm"'+(pg>=pages-1?' disabled':'')+' onclick="devUsersPage(1)">다음 ›</button></div>';
+         '<button class="btn ghost sm"'+(pg>=pages-1?' disabled':'')+' '+App.view.act('devUsersPage',1)+'>다음 ›</button></div>';
       h+='<div class="usr-sum"><b class="on">'+online+'</b>명 접속중 · 오늘 <b>'+todayN+'</b>명 접속 · 총 <b>'+total+'</b>명 가입</div>';
       openSheet('사용자 현황', h);
     }
