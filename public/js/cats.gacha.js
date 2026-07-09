@@ -341,8 +341,8 @@
       wrap.onclick=function(e){ if(e.target===wrap) closeRename(); };
       wrap.innerHTML='<div class="gimenu"><div class="gih">'+catFace(id,{h:34})+'<b>이름 짓기</b></div>'+
         '<input class="input" id="renameInput" maxlength="12" value="'+escapeHtml(catName(id))+'" placeholder="고양이 이름(최대 12자)" style="width:100%;box-sizing:border-box;margin-bottom:4px;">'+
-        '<button class="gib sell" onclick="saveRenameCat(\''+id+'\')"><b>저장</b></button>'+
-        '<button class="gib ghost" onclick="closeRename()">취소</button></div>';
+        '<button class="gib sell" '+App.view.act('saveRenameCat',id)+'><b>저장</b></button>'+
+        '<button class="gib ghost" '+App.view.act('closeRename')+'>취소</button></div>';
       document.body.appendChild(wrap);
       setTimeout(function(){ const i=$('renameInput'); if(i){ i.focus(); i.select(); } }, 40);
     }
@@ -400,21 +400,21 @@
       const now=Date.now(), last=Number(c.pettedAt)||0, rem=PET_COOLDOWN_MS-(now-last), canPet=rem<=0, hh=Math.ceil(Math.max(0,rem)/3600000);
       const got=c.boughtAt?fmtDate(c.boughtAt):'';
       return '<div class="gih pi-h">'+catFace(id,{h:40})+'<b>'+catNameSpan(id,catName(id))+'</b>'+
-          '<button class="cn-edit pi-rename" aria-label="이름 짓기" onclick="openRenameCat(\''+id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></div>'+
+          '<button class="cn-edit pi-rename" aria-label="이름 짓기" '+App.view.act('openRenameCat',id)+'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></div>'+
         '<div class="pi-meta"><span class="pi-tier">'+tierLabelHtml(tier)+'</span><span class="s">'+escapeHtml(speciesLabel(id))+(got?' · 획득 '+got:'')+' · '+escapeHtml(roomTxt)+'</span></div>'+
         '<div class="pi-aff"><div class="pi-afftop"><span class="clv-h">'+heartSvg({h:11})+'</span>애정 Lv.'+al.level+'<span class="s">'+(al.next!=null?aff+' / '+al.next:'만렙 ★')+'</span></div><div class="bar"><i style="width:'+al.pct+'%"></i></div></div>'+
         (((tier==='limited'||tier==='exclusive')&&PET_SPRITES[id]&&PET_SPRITES[id].clips)?'<div class="pi-cd">모션 해금 — Lv1 기본(유휴·먹기·마시기)'+(al.level>=1?'(해금)':'(잠김)')+' · Lv2 식빵·하품'+(al.level>=2?'(해금)':'(잠김)')+' · Lv4 하악질'+(al.level>=4?'(해금)':'(잠김)')+'</div>':'')+   // 💗 신화+ 애정 모션 해금 안내(Lv1/2/4)
         (hasSprite(id)?cosmRowHtml(id,'buddy',BUDDY_CATALOG,al.level)+cosmRowHtml(id,'hat',HAT_CATALOG,al.level):'')+   // 💗 코스메틱(동행 Lv3·모자 Lv5) — 스프라이트 펫만
-        (petDyeOf(id)?'<div class="pi-cosm"><span class="s">염색</span><span class="chip on">'+consumSvg('dye',{h:12})+' '+escapeHtml(dyeNameOf(petDyeOf(id)))+'</span>'+(consumQty('dye_remover')>0?'<button class="chip" onclick="applyDyeRemover(\''+id+'\')">'+consumSvg('dye_remover',{h:12})+' 리무버로 지우기</button>':'<span class="s" style="min-width:0">리무버(이벤트·쿠폰)로 제거 가능</span>')+'</div>':'')+   // 🎨 염색 상태 — 제거는 리무버 소모(무료 지우기 없음)
+        (petDyeOf(id)?'<div class="pi-cosm"><span class="s">염색</span><span class="chip on">'+consumSvg('dye',{h:12})+' '+escapeHtml(dyeNameOf(petDyeOf(id)))+'</span>'+(consumQty('dye_remover')>0?'<button class="chip" '+App.view.act('applyDyeRemover',id)+'>'+consumSvg('dye_remover',{h:12})+' 리무버로 지우기</button>':'<span class="s" style="min-width:0">리무버(이벤트·쿠폰)로 제거 가능</span>')+'</div>':'')+   // 🎨 염색 상태 — 제거는 리무버 소모(무료 지우기 없음)
         // 🧺 소비템 바로 사용(2026-07 사용자 지시) — 가방을 거치지 않고 펫 정보에서 이 펫에게 바로 사용. 보유한 펫 대상 소비템만 노출(적용 후 openPetInfo 재렌더로 결과 즉시 반영).
         ((consumQty('treat')>0||consumQty('dye')>0)?('<div class="pi-cosm"><span class="s">소비템</span>'+
-          (consumQty('treat')>0?'<button class="chip" onclick="applyTreat(\''+id+'\')">'+consumSvg('treat',{h:12})+' 츄르 주기 · '+consumQty('treat').toLocaleString()+'</button>':'')+
-          (consumQty('dye')>0?'<button class="chip" onclick="applyDye(\''+id+'\')">'+consumSvg('dye',{h:12})+' 염색약(랜덤 '+DYE_CATALOG.length+'색) · '+consumQty('dye').toLocaleString()+'</button>':'')+
+          (consumQty('treat')>0?'<button class="chip" '+App.view.act('applyTreat',id)+'>'+consumSvg('treat',{h:12})+' 츄르 주기 · '+consumQty('treat').toLocaleString()+'</button>':'')+
+          (consumQty('dye')>0?'<button class="chip" '+App.view.act('applyDye',id)+'>'+consumSvg('dye',{h:12})+' 염색약(랜덤 '+DYE_CATALOG.length+'색) · '+consumQty('dye').toLocaleString()+'</button>':'')+
         '</div>'):'')+
         (canPet?'<button class="gib sell" onclick="petFromInfo(\''+id+'\',event)">'+heartSvg({h:13})+' 쓰다듬기 · 애정+1 · 은화+'+PET_PET_REWARD+'</button>'
                :'<div class="pi-cd">오늘 쓰다듬기 완료 · 약 '+hh+'시간 후 가능</div>')+
-        '<button class="gib" onclick="roomFromInfo(\''+id+'\')">'+(here?'이 방에서 대기시키기':'이 방으로 데려오기')+'</button>'+
-        '<button class="gib ghost" onclick="closePetInfo()">닫기</button>';
+        '<button class="gib" '+App.view.act('roomFromInfo',id)+'>'+(here?'이 방에서 대기시키기':'이 방으로 데려오기')+'</button>'+
+        '<button class="gib ghost" '+App.view.act('closePetInfo')+'>닫기</button>';
     }
     function petFromInfo(id, ev){ const t=ev&&ev.currentTarget, b=t&&t.getBoundingClientRect?t.getBoundingClientRect():null;
       const x=b?b.left+b.width/2:innerWidth/2, y=b?b.top:innerHeight/2;
@@ -608,8 +608,8 @@
     function openDevFeatured(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
       const mk=kstMonthKey(), cur=featuredCatId(), manual=!!(_featuredMap&&_featuredMap[mk]), ids=featuredEligibleIds();
       let h='<div class="note">'+monthLabelKo()+' <b>이달의 펫</b>을 직접 선정해요. 선정하면 <b>모든 사용자에게 즉시 반영</b>(전역 config, 관리자 계정만 쓰기). 선정하지 않으면 월키 해시로 자동 선정되며, 펫을 추가/삭제하면 자동 선정 펫이 바뀔 수 있어요.</div>';
-      h+='<div class="row" style="justify-content:space-between;align-items:center;margin:6px 2px 10px;"><span>현재: <b>'+catNameSpan(cur,catName(cur))+'</b> <span class="pill">'+(manual?'수동 선정':'자동(해시)')+'</span></span>'+(manual?'<button class="chip" onclick="clearFeaturedPet()">자동으로 되돌리기</button>':'')+'</div>';
-      h+='<div class="dexgrid">'+ids.map(function(id){ const on=id===cur; return '<div class="dexcell" role="button" tabindex="0" onclick="setFeaturedPet(\''+id+'\')" style="cursor:pointer;'+(on?'outline:2px solid var(--primary);outline-offset:1px;border-radius:12px;':'')+'"><div class="dexpic">'+catFace(id,{h:48})+'</div><div class="dexnm">'+catNameSpan(id,catName(id))+(on?' ✓':'')+'</div></div>'; }).join('')+'</div>';
+      h+='<div class="row" style="justify-content:space-between;align-items:center;margin:6px 2px 10px;"><span>현재: <b>'+catNameSpan(cur,catName(cur))+'</b> <span class="pill">'+(manual?'수동 선정':'자동(해시)')+'</span></span>'+(manual?'<button class="chip" '+App.view.act('clearFeaturedPet')+'>자동으로 되돌리기</button>':'')+'</div>';
+      h+='<div class="dexgrid">'+ids.map(function(id){ const on=id===cur; return '<div class="dexcell" role="button" tabindex="0" '+App.view.act('setFeaturedPet',id)+' style="cursor:pointer;'+(on?'outline:2px solid var(--primary);outline-offset:1px;border-radius:12px;':'')+'"><div class="dexpic">'+catFace(id,{h:48})+'</div><div class="dexnm">'+catNameSpan(id,catName(id))+(on?' ✓':'')+'</div></div>'; }).join('')+'</div>';
       openSheet('이달의 펫 선정', h); }
     function isFeaturedCat(id){ return !!id && id===featuredCatId(); }
     function catBuyPrice(id){ const c=PET_CATALOG.find(x=>x.id===id); if(!c) return 0; return isFeaturedCat(id)?Math.max(1,Math.round((c.price||0)*(1-FEATURED_DISCOUNT))):(c.price||0); }
@@ -651,7 +651,7 @@
     function openProbInfoSheet(){
       const h='<div class="note">모든 뽑기의 등급별 확률입니다. 등급·구성이 바뀌면 자동으로 갱신돼요.</div>'+
         '<div class="card" style="padding:4px 0;"><div class="gi-body">'+gachaInfoHtml('normal')+gachaInfoHtml('ddeul')+gachaInfoHtml('rainbow')+'</div></div>'+
-        '<button class="btn" onclick="closeSheet()" style="margin-top:14px;">확인</button>';
+        '<button class="btn" '+App.view.act('closeSheet')+' style="margin-top:14px;">확인</button>';
       openSheet('확률 안내', h);
     }
 
@@ -1208,10 +1208,10 @@
       wrap.onclick=function(e){ if(e.target===wrap) closeItemMenu(); };
       wrap.innerHTML='<div class="gimenu"><div class="gih">'+furnSvg(p.itemId,{h:34})+'<b>'+escapeHtml(it.name||p.itemId)+'</b></div>'+
         '<div class="pi-meta"><span class="pi-tier">'+tierLabelHtml(ft)+'</span><span class="s">'+(it.desc?escapeHtml(it.desc)+' · ':'')+'크기 '+foot.w+'×'+foot.h+'</span></div>'+   // 등급·설명·크기
-        (!wall?'<button class="gib" onclick="toggleFlip(\''+key+'\')"><b>좌우 반전</b><span>가구를 좌우로 뒤집어요</span></button>':'')+
+        (!wall?'<button class="gib" '+App.view.act('toggleFlip',key)+'><b>좌우 반전</b><span>가구를 좌우로 뒤집어요</span></button>':'')+
         '<button class="gib" onclick="retrievePlaced(\''+key+'\','+wf+')"><b>회수</b><span>인벤토리로 되돌려요(보유 유지)</span></button>'+
         '<button class="gib sell" onclick="sellPlaced(\''+key+'\','+wf+')"><b>판매</b><span>+'+ITEM_SELL+' 은화 · 보유에서 제거</span></button>'+
-        '<button class="gib ghost" onclick="closeItemMenu()">닫기</button></div>';
+        '<button class="gib ghost" '+App.view.act('closeItemMenu')+'>닫기</button></div>';
       document.body.appendChild(wrap);
     }
     function closeItemMenu(){ const m=$('giMenu'); if(m) m.remove(); }
@@ -1328,16 +1328,16 @@
       const canUndo=undoCount()>0;
       if(!hasAny && !canUndo) return '';
       return '<div class="placeacts">'+
-        (hasAny?'<button class="pa-btn" onclick="autoArrangeRoom()" aria-label="가구 자동 정리(뒤→앞·크기순)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>자동 정리</button>':'')+
-        (canUndo?'<button class="pa-btn" onclick="undoPlace()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>되돌리기'+(undoCount()>1?' <b>'+undoCount()+'</b>':'')+'</button>':'')+
+        (hasAny?'<button class="pa-btn" '+App.view.act('autoArrangeRoom')+' aria-label="가구 자동 정리(뒤→앞·크기순)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>자동 정리</button>':'')+
+        (canUndo?'<button class="pa-btn" '+App.view.act('undoPlace')+'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>되돌리기'+(undoCount()>1?' <b>'+undoCount()+'</b>':'')+'</button>':'')+
         (hasAny?'<button class="pa-btn danger" onclick="captureUndo();clearRoom(curRoomId(),roomIdx())"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>이 방 비우기</button>':'')+
       '</div>'; }
     function catPlaceHtml(){
       const wallMode=_placeMode==='wall';
       const _fc=Object.keys(room().placed||{}).length, _wc=Object.keys(room().wallPlaced||{}).length;   // 📦 이 방 배치 요약
       const toggle='<div class="subseg placemode">'+
-        '<button class="'+(!wallMode?'on':'')+'" onclick="setPlaceMode(\'floor\')">방꾸미기</button>'+
-        '<button class="'+(wallMode?'on':'')+'" onclick="setPlaceMode(\'wall\')">벽꾸미기</button></div>'+
+        '<button class="'+(!wallMode?'on':'')+'" '+App.view.act('setPlaceMode','floor')+'>방꾸미기</button>'+
+        '<button class="'+(wallMode?'on':'')+'" '+App.view.act('setPlaceMode','wall')+'>벽꾸미기</button></div>'+
         '<div class="place-meter">이 방 배치 <b>'+(_fc+_wc)+'</b>개 — 바닥 '+_fc+' · 벽 '+_wc+'</div>';
       // ---- 미니 웹캠 프리뷰: 바닥+벽 배치를 함께 보여줌(표시 전용) ----
       const plist=placedList().sort((a,b)=>a.r-b.r); distributePoops(plist);
@@ -1355,11 +1355,11 @@
         const wpal=ITEM_CATALOG.filter(it=>isWallItem(it.id) && itemQty(it.id)>0 && (_wallCat==='all'||wallAnchorOf(it.id)===_wallCat)).map(it=>{ const rem=itemRemaining(it.id), qty=itemQty(it.id), sold=rem<=0, ft=itemTierOf(it.id);
           return '<button class="pitem'+(_selWall===it.id?' on':'')+(sold?' soldout':'')+'"'+(sold?' aria-disabled="true"':'')+' onpointerdown="wallPalDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selWallItem(\''+it.id+'\')"><span class="pic tbring tb-'+ft+'">'+furnSvg(it.id,{h:palPicH(it.id)})+tierBadgeHtml(ft)+'</span><span>'+it.name+'</span><span class="pq">'+(sold?('보유'+qty+' · 전부 배치됨'):('보유'+qty+' · 남은'+rem))+'</span></button>'; }).join('');
         const wallHint='<div class="hintline" style="margin:8px 0 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16"/></svg>벽 가구를 <b>탭해 선택</b>하거나 <b>꾹 눌러 격자로 끌어</b> 걸어요(위=천장·아래=바닥선). 걸린 항목은 <b>꾹 눌러 드래그로 이동</b>, 짧게 탭하면 회수/판매. <b>특별↑ 벽 가구는 랜덤박스로만</b> 얻어요.</div>';
-        const selBannerW=_selWall?('<div class="selbanner">'+furnSvg(_selWall,{h:22})+'<span><b>'+escapeHtml(catFurnName(_selWall))+'</b> 걸기 — 격자를 <b>탭</b>하세요</span><button class="selx" onclick="selWallItem(\''+_selWall+'\')">취소</button></div>'):'';
+        const selBannerW=_selWall?('<div class="selbanner">'+furnSvg(_selWall,{h:22})+'<span><b>'+escapeHtml(catFurnName(_selWall))+'</b> 걸기 — 격자를 <b>탭</b>하세요</span><button class="selx" '+App.view.act('selWallItem',_selWall)+'>취소</button></div>'):'';
         const wcatTabs='<div class="subseg placecat">'+WALL_PAL_CATS.map(c=>{ const n=ITEM_CATALOG.filter(it=>isWallItem(it.id)&&itemQty(it.id)>0&&(c[0]==='all'||wallAnchorOf(it.id)===c[0])).length;
-          return '<button class="'+(_wallCat===c[0]?'on':'')+(n?'':' dim')+'"'+(n?'':' aria-disabled="true"')+' onclick="setWallCat(\''+c[0]+'\')">'+c[1]+(n?' <b>'+n+'</b>':'')+'</button>'; }).join('')+'</div>';
+          return '<button class="'+(_wallCat===c[0]?'on':'')+(n?'':' dim')+'"'+(n?'':' aria-disabled="true"')+' '+App.view.act('setWallCat',c[0])+'>'+c[1]+(n?' <b>'+n+'</b>':'')+'</button>'; }).join('')+'</div>';
         const wpalRow='<div class="palcatrow">'+wcatTabs+'</div>';   // 알뜰샵 바로가기 버튼 제거(사용자 지시 — 배치화면엔 미노출)
-        body=selBannerW+wgrid+wallHint+wpalRow+'<div class="palette catinv">'+(wpal||'<div class="palempty">보유한 벽 가구가 없어요<br><span>랜덤박스에서 벽 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>')+'</div>'+skinPickerHtml('wall');
+        body=selBannerW+wgrid+wallHint+wpalRow+'<div class="palette catinv">'+(wpal||'<div class="palempty">보유한 벽 가구가 없어요<br><span>랜덤박스에서 벽 가구를 모아보세요</span><button class="palcta" '+App.view.act('openShop')+'>알뜰샵 가기</button></div>')+'</div>'+skinPickerHtml('wall');
       } else {
         // 바닥 격자(12×8, 가로×깊이) — 기존 방꾸미기(드래그 이동·롱프레스). 벽 가구는 팔레트에서 제외.
         const placed=room().placed||{};
@@ -1371,12 +1371,12 @@
         const owned=ITEM_CATALOG.filter(it=>!isWallItem(it.id) && itemQty(it.id)>0);
         if(!_placeCat || !PLACE_CATS.some(c=>c[0]===_placeCat)) _placeCat=(PLACE_CATS.find(c=>owned.some(it=>placeCatOf(it.id)===c[0]))||PLACE_CATS[0])[0];
         const catTabs='<div class="subseg placecat">'+PLACE_CATS.map(c=>{ const inCat=owned.filter(it=>placeCatOf(it.id)===c[0]), nOwn=inCat.length, nAvail=inCat.filter(it=>itemRemaining(it.id)>0).length;
-          return '<button class="'+(_placeCat===c[0]?'on':'')+(nOwn?'':' dim')+'"'+(nOwn?'':' aria-disabled="true"')+' onclick="setPlaceCat(\''+c[0]+'\')">'+c[1]+(nAvail?' <b>'+nAvail+'</b>':'')+'</button>'; }).join('')+'</div>';
+          return '<button class="'+(_placeCat===c[0]?'on':'')+(nOwn?'':' dim')+'"'+(nOwn?'':' aria-disabled="true"')+' '+App.view.act('setPlaceCat',c[0])+'>'+c[1]+(nAvail?' <b>'+nAvail+'</b>':'')+'</button>'; }).join('')+'</div>';
         const pal=owned.filter(it=>placeCatOf(it.id)===_placeCat).map(it=>{ const foot=itemFoot(it.id), rem=itemRemaining(it.id), qty=itemQty(it.id), sold=rem<=0, ft=itemTierOf(it.id);
           return '<button class="pitem'+(_selItem===it.id?' on':'')+(sold?' soldout':'')+'"'+(sold?' aria-disabled="true"':'')+' onpointerdown="palDown(event,\''+it.id+'\')" onclick="if(event.detail===0)selItem(\''+it.id+'\')"><span class="pic tbring tb-'+ft+'">'+furnSvg(it.id,{h:palPicH(it.id)})+tierBadgeHtml(ft)+'</span><span>'+it.name+'</span><span class="pq">'+(sold?('보유'+qty+' · 전부 배치됨'):(foot.w+'×'+foot.h+' · 보유'+qty+' · 남은'+rem))+'</span></button>'; }).join('');
         const dragHint='<div class="hintline" style="margin:8px 0 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5V5.5a1.5 1.5 0 0 1 3 0v5"/><path d="M12 10V4.5a1.5 1.5 0 0 1 3 0V10"/><path d="M15 9.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-1a6 6 0 0 1-5.2-3l-2-3.5a1.5 1.5 0 0 1 2.6-1.5L9 14"/></svg><b>꾹 눌러서</b> 끌면 배치·이동돼요(짧게 탭하면 선택·메뉴). 화면 스크롤과 겹치지 않아요.</div>';
-        const palBody=pal||'<div class="palempty">이 분류에 보유한 가구가 없어요<br><span>알뜰샵·랜덤박스에서 가구를 모아보세요</span><button class="palcta" onclick="openShop()">알뜰샵 가기</button></div>';
-        const selBanner=_selItem?('<div class="selbanner">'+furnSvg(_selItem,{h:22})+'<span><b>'+escapeHtml(catFurnName(_selItem))+'</b> 배치 중 — 격자를 <b>탭</b>하세요</span><button class="selx" onclick="selItem(\''+_selItem+'\')">취소</button></div>'):'';   // 탭-투-플레이스 선택 상태 가시화
+        const palBody=pal||'<div class="palempty">이 분류에 보유한 가구가 없어요<br><span>알뜰샵·랜덤박스에서 가구를 모아보세요</span><button class="palcta" '+App.view.act('openShop')+'>알뜰샵 가기</button></div>';
+        const selBanner=_selItem?('<div class="selbanner">'+furnSvg(_selItem,{h:22})+'<span><b>'+escapeHtml(catFurnName(_selItem))+'</b> 배치 중 — 격자를 <b>탭</b>하세요</span><button class="selx" '+App.view.act('selItem',_selItem)+'>취소</button></div>'):'';   // 탭-투-플레이스 선택 상태 가시화
         const palRow='<div class="palcatrow">'+catTabs+'</div>';   // 알뜰샵 바로가기 버튼 제거(사용자 지시 — 배치화면엔 미노출)
         body=selBanner+grid+dragHint+palRow+'<div class="palette catinv">'+palBody+'</div>'+skinPickerHtml('floor')+bgfxPickerHtml();
       }
@@ -1386,7 +1386,7 @@
       const claimed=missionClaimed(m), ok=m.check();
       let right;
       if(claimed) right='<span class="mdone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>수령완료</span>';
-      else if(ok) right='<button class="claim" onclick="claimMission(\''+m.id+'\')">수령</button>';
+      else if(ok) right='<button class="claim" '+App.view.act('claimMission',m.id)+'>수령</button>';
       else right='<span class="prog-pill">'+(m.prog?m.prog():'진행 중')+'</span>';
       return '<div class="cmrow"><span class="cmi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+m.icon+'</svg></span>'+
         '<div class="cmm"><b>'+m.name+'</b><span class="rw"><span class="ci">'+coinSvg({h:14})+'</span>+'+m.reward+(m.gold?' <span class="ci">'+goldSvg({h:13})+'</span>+'+m.gold:'')+(claimed?' · 수령완료':(ok?' · 완료':(m.prog?' · '+m.prog():'')))+'</span></div>'+right+'</div>';
@@ -1398,7 +1398,7 @@
       const dots=(typeof weekDotsData==='function'?weekDotsData(dates, kstDayKey()):[]).map(d=>'<i class="cmdot'+(d.filled?' on':'')+'"></i>').join('');
       return '<div class="cmrow custom">'+
         '<button class="tdchk'+(done?' on':'')+'" onclick="event.stopPropagation();toggleCustomMissionToday(\''+cm.id+'\')" aria-label="'+(done?'오늘 완료 취소':'오늘 완료')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></button>'+
-        '<div class="cmm" onclick="openCustomMissionEdit(\''+cm.id+'\')"><b>'+escapeHtml(cm.title||'')+'</b>'+
+        '<div class="cmm" '+App.view.act('openCustomMissionEdit',cm.id)+'><b>'+escapeHtml(cm.title||'')+'</b>'+
           '<span class="rw">'+(st.current>0?'<span style="display:inline-flex;vertical-align:-2px">'+flameSvg({h:12})+'</span> '+st.current+'일 · ':'')+'다음 보상 '+((typeof customMissionMilestone==='function')?customMissionMilestone(st.current, CUSTOM_STREAK_N).toNext:CUSTOM_STREAK_N)+'일 <span class="ci">'+coinSvg({h:14})+'</span>+'+CUSTOM_STREAK_BONUS+'</span></div>'+
         '<span class="cmdots" aria-hidden="true">'+dots+'</span></div>';
     }
@@ -1438,7 +1438,7 @@
       const owN=pool.filter(function(it){ return it.has; }).length, tot=pool.length, pct=tot?Math.round(owN/tot*100):0;
       let h='<div class="dexhead"><div class="row" style="justify-content:space-between;"><b>아이템 수집</b><span class="s">'+owN+' / '+tot+' ('+pct+'%)</span></div><div class="bar"><i style="width:'+pct+'%"></i></div></div>';
       h+='<div class="subseg dextabs">'+DEX_ITEM_CATS.map(function(t){ const id=t[0], n=all.filter(function(it){ return id==='all'||it.kind===id; }).length;
-        return '<button class="'+(_dexItemCat===id?'on':'')+'" onclick="setDexItemCat(\''+id+'\')">'+t[1]+' <b>'+n+'</b></button>'; }).join('')+'</div>';
+        return '<button class="'+(_dexItemCat===id?'on':'')+'" '+App.view.act('setDexItemCat',id)+'>'+t[1]+' <b>'+n+'</b></button>'; }).join('')+'</div>';
       const cell=function(it){ const cnt=(it.has&&it.kind==='furn')?('<div class="dexqty">보유 '+it.qty+(it.placed?' · 배치 '+it.placed:'')+'</div>'):''; return '<div class="dexcell'+(it.has?' tbring tb-'+(it.tier||'normal'):' locked')+'" title="'+escapeHtml(it.has?it.name:'미보유')+'">'+
         '<div class="dexpic">'+dexItemThumb(it)+'</div>'+
         '<div class="dexnm">'+(it.has?escapeHtml(it.name):'<span class="q">???</span>')+'</div>'+cnt+'</div>'; };
@@ -1458,7 +1458,7 @@
       return _dexKind+'|'+_dexTab+'|'+_dexItemCat+'|'+Object.keys(o).sort().map(function(id){ return id+':'+((o[id]&&o[id].affection)||0); }).join(',')+'|'+ik; }
     function openPetDex(){
       const build=()=>{
-        const kindTabs='<div class="subseg dexkind"><button class="'+(_dexKind==='pet'?'on':'')+'" onclick="setDexKind(\'pet\')">펫</button><button class="'+(_dexKind==='item'?'on':'')+'" onclick="setDexKind(\'item\')">아이템</button></div>';
+        const kindTabs='<div class="subseg dexkind"><button class="'+(_dexKind==='pet'?'on':'')+'" '+App.view.act('setDexKind','pet')+'>펫</button><button class="'+(_dexKind==='item'?'on':'')+'" '+App.view.act('setDexKind','item')+'>아이템</button></div>';
         if(_dexKind==='item') return kindTabs+buildItemDex();   // 🗂️ 아이템 도감
         const owned=ownedCatsMap(), species=dexSpeciesList();
         if(_dexTab!=='all' && species.indexOf(_dexTab)<0) _dexTab='all';   // 사라진 종 방어
@@ -1468,7 +1468,7 @@
         // 종별 탭(전체 + 종). 옆으로 스크롤(.subseg).
         const tabs=[['all','전체']].concat(species.map(s=>[s,(SPECIES_LABEL[s]||s)]));
         h+='<div class="subseg dextabs">'+tabs.map(function(t){ const id=t[0], nm=t[1], n=dexCatalog().filter(c=>id==='all'||(c.species||'cat')===id).length;
-          return '<button class="'+(_dexTab===id?'on':'')+'" onclick="setDexTab(\''+id+'\')">'+escapeHtml(nm)+' <b>'+n+'</b></button>'; }).join('')+'</div>';
+          return '<button class="'+(_dexTab===id?'on':'')+'" '+App.view.act('setDexTab',id)+'>'+escapeHtml(nm)+' <b>'+n+'</b></button>'; }).join('')+'</div>';
         const cell=function(c){ const has=!!owned[c.id], lv=has?affectionLevel(owned[c.id].affection, CAT_TIER[c.id]||'normal').level:0;
           return '<div class="dexcell'+(has?' tbring tb-'+(CAT_TIER[c.id]||'normal'):' locked')+'" title="'+escapeHtml(has?catName(c.id):'미보유')+'">'+   // 소유 셀은 등급색을 바깥 라운드 카드 테두리에(미소유는 스포일러 방지로 중립)
             '<div class="dexpic">'+catFace(c.id,{h:54})+'</div>'+
@@ -1546,10 +1546,10 @@
       if(editing) h+='<div class="note" style="border-left:3px solid var(--primary);">✏️ <b>공지 수정 중</b> — 저장하면 이 공지가 바뀝니다(등록 순서·날짜 유지).</div>';
       h+='<div class="field"><label for="an_title">제목</label><input class="input" id="an_title" maxlength="80" placeholder="예: 서버 점검 안내" value="'+escapeHtml(et)+'"></div>';
       h+='<div class="field"><label for="an_body">내용</label><textarea class="input" id="an_body" rows="3" maxlength="500" placeholder="예: 7/12 02:00~04:00 점검이 있어요">'+escapeHtml(eb)+'</textarea></div>';
-      h+='<div class="row" style="gap:8px;margin-top:4px;"><button class="btn" style="flex:1;" onclick="sendAnnounce()">'+(editing?'수정 저장':'공지 등록')+'</button>'+(editing?'<button class="btn ghost" style="flex:none;" onclick="cancelAnnounceEdit()">취소</button>':'')+'</div>';
+      h+='<div class="row" style="gap:8px;margin-top:4px;"><button class="btn" style="flex:1;" '+App.view.act('sendAnnounce')+'>'+(editing?'수정 저장':'공지 등록')+'</button>'+(editing?'<button class="btn ghost" style="flex:none;" '+App.view.act('cancelAnnounceEdit')+'>취소</button>':'')+'</div>';
       const list=announceList();
       h+='<div class="sech" style="margin-top:18px;"><span class="l">등록된 공지</span><span class="s">'+list.length+'개</span></div>';
-      h+= list.length ? list.map(function(a){ return '<div class="giftrow'+(_annEditId===a.id?' on':'')+'"><span class="gftx"><b class="gfnm">'+escapeHtml(a.title||'')+'</b>'+(a.body?'<span class="gfmsg">'+escapeHtml(a.body)+'</span>':'')+'</span><span style="display:flex;gap:6px;flex:none;"><button class="chip" onclick="editAnnounce(\''+a.id+'\')">수정</button><button class="chip" onclick="deleteAnnounce(\''+a.id+'\')">삭제</button></span></div>'; }).join('') : '<div class="note" style="margin:6px 2px;">등록된 공지가 없어요.</div>';
+      h+= list.length ? list.map(function(a){ return '<div class="giftrow'+(_annEditId===a.id?' on':'')+'"><span class="gftx"><b class="gfnm">'+escapeHtml(a.title||'')+'</b>'+(a.body?'<span class="gfmsg">'+escapeHtml(a.body)+'</span>':'')+'</span><span style="display:flex;gap:6px;flex:none;"><button class="chip" '+App.view.act('editAnnounce',a.id)+'>수정</button><button class="chip" '+App.view.act('deleteAnnounce',a.id)+'>삭제</button></span></div>'; }).join('') : '<div class="note" style="margin:6px 2px;">등록된 공지가 없어요.</div>';
 
       // ── 업데이트 내역(config/notices) 관리 ──────────────────────────
       const nEditing=_noticeEditId?NOTICES.filter(function(n){ return n.id===_noticeEditId; })[0]:null; if(_noticeEditId && !nEditing) _noticeEditId=null;
@@ -1560,10 +1560,10 @@
       h+='<div class="field"><label for="nt_date">날짜</label><input class="input" id="nt_date" maxlength="10" placeholder="2026-07-05" value="'+escapeHtml(nd)+'"></div>';
       h+='<div class="field"><label for="nt_title">제목</label><input class="input" id="nt_title" maxlength="80" placeholder="예: 알뜰샵 개편" value="'+escapeHtml(nt)+'"></div>';
       h+='<div class="field"><label for="nt_body">요약</label><textarea class="input" id="nt_body" rows="2" maxlength="300" placeholder="예: 가챠 탭을 앞으로 옮기고 한정 픽업 배너를 추가했어요">'+escapeHtml(ns)+'</textarea></div>';
-      h+='<div class="row" style="gap:8px;margin-top:4px;"><button class="btn" style="flex:1;" onclick="saveNotice()">'+(nEditing?'수정 저장':'내역 등록')+'</button>'+(nEditing?'<button class="btn ghost" style="flex:none;" onclick="cancelNoticeEdit()">취소</button>':'')+'</div>';
+      h+='<div class="row" style="gap:8px;margin-top:4px;"><button class="btn" style="flex:1;" '+App.view.act('saveNotice')+'>'+(nEditing?'수정 저장':'내역 등록')+'</button>'+(nEditing?'<button class="btn ghost" style="flex:none;" '+App.view.act('cancelNoticeEdit')+'>취소</button>':'')+'</div>';
       const nlist=NOTICES.slice().sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
       h+='<div class="sech" style="margin-top:14px;"><span class="l">등록된 내역</span><span class="s">'+nlist.length+'개</span></div>';
-      h+= nlist.length ? nlist.map(function(n){ const dev=isDevNotice(n)||isPromoNotice(n); return '<div class="giftrow'+(_noticeEditId===n.id?' on':'')+'"><span class="gftx"><b class="gfnm">'+escapeHtml(n.date||'')+' · '+escapeHtml(noticeTitle(n))+(dev?' <span style="color:var(--expense);font-size:11px;">(비노출)</span>':'')+'</b>'+(n.s?'<span class="gfmsg">'+escapeHtml(n.s)+'</span>':'')+'</span>'+(n.id!=null?'<span style="display:flex;gap:6px;flex:none;"><button class="chip" onclick="editNotice(\''+n.id+'\')">수정</button><button class="chip" onclick="deleteNotice(\''+n.id+'\')">삭제</button></span>':'<span class="chip" style="flex:none;opacity:.6;">기본값</span>')+'</div>'; }).join('') : '<div class="note" style="margin:6px 2px;">등록된 내역이 없어요.</div>';
+      h+= nlist.length ? nlist.map(function(n){ const dev=isDevNotice(n)||isPromoNotice(n); return '<div class="giftrow'+(_noticeEditId===n.id?' on':'')+'"><span class="gftx"><b class="gfnm">'+escapeHtml(n.date||'')+' · '+escapeHtml(noticeTitle(n))+(dev?' <span style="color:var(--expense);font-size:11px;">(비노출)</span>':'')+'</b>'+(n.s?'<span class="gfmsg">'+escapeHtml(n.s)+'</span>':'')+'</span>'+(n.id!=null?'<span style="display:flex;gap:6px;flex:none;"><button class="chip" '+App.view.act('editNotice',n.id)+'>수정</button><button class="chip" '+App.view.act('deleteNotice',n.id)+'>삭제</button></span>':'<span class="chip" style="flex:none;opacity:.6;">기본값</span>')+'</div>'; }).join('') : '<div class="note" style="margin:6px 2px;">등록된 내역이 없어요.</div>';
       openSheet('공지사항 관리', h); }
     // 안 본 공지 기준일 — 계정(RTDB game.newsSeenAt)과 기기(localStorage) 중 더 최신 사용(기기 간 동기화).
     function newsSeenAt(){ let g=(state.game&&state.game.newsSeenAt)||''; let l=''; try{ l=localStorage.getItem('newsSeenAt')||''; }catch(e){} return g>l?g:l; }
@@ -1610,7 +1610,7 @@
       let h='';
       const gc=giftUnread();
       h+='<div class="sech"><span class="l"><span class="sech-ic">'+bellSvg({h:15})+'</span> 알림</span></div>';
-      if(gc>0){ h+='<div class="newsalert" role="button" tabindex="0" onclick="openGiftbox()"><span class="nai">'+giftSvg({h:30})+'</span><div class="nat"><b>선물 '+gc+'개가 도착했어요</b><span>탭해서 선물함에서 받으세요</span></div><span class="buy">받기</span></div>'; }
+      if(gc>0){ h+='<div class="newsalert" role="button" tabindex="0" '+App.view.act('openGiftbox')+'><span class="nai">'+giftSvg({h:30})+'</span><div class="nat"><b>선물 '+gc+'개가 도착했어요</b><span>탭해서 선물함에서 받으세요</span></div><span class="buy">받기</span></div>'; }
       else { h+='<div class="note" style="margin:2px 0 6px;">받을 선물이 없어요. 친구 집에서 응원 선물을 주고받거나 코드를 입력해 보세요.</div>'; }
       h+='<div class="sech" style="margin-top:16px;"><span class="l"><span class="sech-ic" style="color:var(--gold,#e0a43c);">'+sparkSvg({h:15})+'</span> 이벤트</span></div>';
       const _lp=limitedPickupBanner();   // 🌈 한정 픽업 배너(있을 때만)
@@ -1643,7 +1643,7 @@
         h+='<div class="streakbar"><span class="fire" style="display:inline-flex;align-items:center">'+flameSvg({h:18})+'</span><b>'+c+'일 연속 출석</b><span class="s">다음 보상까지 '+(nx-c)+'일 (+금화)</span></div>'; }
       h+='<div class="sech"><span class="l">일일 미션</span><span class="s">자정 초기화</span></div>';
       h+=dailyMissionsToday().map(missionRow).join('');
-      const _cmN=customMissionList().length; h+='<div class="sech"><span class="l">내 미션</span>'+(_cmN>=5?'<span class="s">최대 5개</span>':'<button class="link" onclick="openCustomMissionEdit()">+ 추가</button>')+'</div>';
+      const _cmN=customMissionList().length; h+='<div class="sech"><span class="l">내 미션</span>'+(_cmN>=5?'<span class="s">최대 5개</span>':'<button class="link" '+App.view.act('openCustomMissionEdit')+'>+ 추가</button>')+'</div>';
       const mine=customMissionList();
       h+= mine.length ? mine.map(customMissionRow).join('') : '<div class="note" style="margin:2px 0 4px;">매일 체크할 나만의 습관을 추가해요(최대 5개). 7일 연속마다 은화 보상.</div>';
       h+='<div class="sech"><span class="l">주간 미션</span><span class="s">월요일 초기화</span></div>';

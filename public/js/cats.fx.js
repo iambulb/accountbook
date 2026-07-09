@@ -72,7 +72,7 @@
                           : (isDdeul? ddeulFxHtml() : (isEggKind(kind)? (v2e?egg2FxHtml():eggSvg(0,{h:150})) : boxSvg({h:150})));
       fx.innerHTML='<div class="fx-scrim"></div>'+fxSceneBg(kind, rainbow)+'<div class="fx-stage'+(rainbow?' fx-rb':'')+(isDdeul?' fx-ddeul':'')+'">'+
         (rainbow?fxSparkles(16):'')+
-        '<div class="fx-item pop '+(isEggKind(kind)?'fx-egg':'fx-box')+((isDdeul||v2e)?' fx-ddeulegg':'')+(rainbow?' fx-rainbow':'')+'" id="fxItem" role="button" aria-label="'+hint+'" onclick="fxTap()">'+art+'</div>'+
+        '<div class="fx-item pop '+(isEggKind(kind)?'fx-egg':'fx-box')+((isDdeul||v2e)?' fx-ddeulegg':'')+(rainbow?' fx-rainbow':'')+'" id="fxItem" role="button" aria-label="'+hint+'" '+App.view.act('fxTap')+'>'+art+'</div>'+
         '<div class="fx-hint" id="fxHint">'+hint+'</div></div>';
       fx.className='fx on';
     }
@@ -316,7 +316,7 @@
             :(_fx.dupRbc
               ?'<span class="rw"><span class="ci">'+rainbowCoinSvg({h:18})+'</span>+'+_fx.dupRbc+' 무지개동전 (중복)</span>'
               :'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>+'+_fx.refund+' 은화 (중복)</span>')):'')+'</div>'+
-        '<button class="btn" onclick="closeFx()">확인</button>'+
+        '<button class="btn" '+App.view.act('closeFx')+'>확인</button>'+
         '<div class="fx-confetti">'+(conf?fxConfetti(conf):'')+'</div></div>';
       if(boxScene && rb){ const sc=fx.querySelector('.pkscene'); if(sc) tenSkyRiseDia(sc); }   // 💎 1뽑: 무지개 승급일 때만(노을 해와 동일 조건) 다이아 스르르
       fx.className='fx on reveal';
@@ -694,13 +694,13 @@
         '<button class="chip" onclick="devPreview10(\'oneLimited\',\'box\')">신화 1개</button></div>';
       h+='<div class="sec-title" style="margin-top:18px;">다마고치 테스트(즉시)</div>';
       h+='<div class="note" style="margin-bottom:8px;">3시간을 기다리지 않고 급여·배변·수거를 바로 확인. 순서: <b>사료·물 +10</b> → 홈에서 그릇 채우기(또는 <b>그릇 다 채우기</b>) → <b>그릇 만료→똥</b> → 똥 탭/일괄 돌보기.</div>';
-      h+='<div class="chip-row"><button class="chip" onclick="devGiveConsum()">사료·물 +10</button><button class="chip" onclick="devFillAll()">그릇 다 채우기</button><button class="chip" onclick="devExpireBowls()">그릇 만료→똥</button><button class="chip" onclick="devAddPoop()">똥 +3</button></div>';
+      h+='<div class="chip-row"><button class="chip" '+App.view.act('devGiveConsum')+'>사료·물 +10</button><button class="chip" '+App.view.act('devFillAll')+'>그릇 다 채우기</button><button class="chip" '+App.view.act('devExpireBowls')+'>그릇 만료→똥</button><button class="chip" '+App.view.act('devAddPoop')+'>똥 +3</button></div>';
       // 재화 추가(지급) — 은화·금화·펫알·랜덤박스·무지개알·무지개박스를 입력 수량만큼 내 계정에 지급
       h+='<div class="sec-title" style="margin-top:18px;">재화 추가(지급)</div>';
       h+='<div class="note" style="margin-bottom:8px;">입력한 수량만큼 <b>내 계정</b>에 지급해요(비우면 건너뜀, 음수면 차감·0 미만은 안 됨).</div>';
       { const cur6=[['coins','은화',coinSvg({h:18})],['gold','금화',goldSvg({h:18})],['egg','펫알',eggSvg(0,{h:18})],['box','랜덤박스',boxSvg({h:18})],['ddeul','뜰알',ddeulEggSvg({h:18})],['dye','염색약',consumSvg('dye',{h:18})],['dye_remover','염색 리무버',consumSvg('dye_remover',{h:18})],['rbcoin','무지개동전',rainbowCoinSvg({h:18})]];
         h+=cur6.map(function(c){ return '<div class="row" style="padding:5px 2px;align-items:center;"><span style="display:flex;align-items:center;gap:8px;min-width:0;"><span style="display:inline-flex;flex:none;">'+c[2]+'</span>'+c[1]+'</span><input class="input" style="width:120px;text-align:right;" inputmode="numeric" id="dv_'+c[0]+'" placeholder="0"></div>'; }).join(''); }
-      h+='<button class="btn" style="margin-top:12px;" onclick="devGrantCurrency()">지급</button>';
+      h+='<button class="btn" style="margin-top:12px;" '+App.view.act('devGrantCurrency')+'>지급</button>';
       // 🧢✨ 코스메틱(own-once·전부 한정) 보유 토글 — 모자 3종·펫효과 3종(나비·반딧불·무지개꽃)
       h+='<div class="note" style="margin-top:14px;">코스메틱 보유 토글(누르면 지급↔회수 · 전부 한정 등급)</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
       Object.keys(HAT_CATALOG).forEach(k=>{ h+='<button class="chip'+(ownsHat(k)?' on':'')+'" onclick="devGrantCosm(\'hat\',\''+k+'\')">'+hatSvg(k,{h:13})+' '+HAT_CATALOG[k]+'</button>'; });
@@ -712,14 +712,14 @@
         h+='<div class="note" style="margin-top:14px;">신화·한정 지급 — 펫(토글) / 기구물·스킨(가구 +1개·스킨 토글)</div>';
         h+='<div class="row" style="gap:6px;align-items:center;padding:4px 0;"><select class="input" id="dv_hipet" style="flex:1;min-width:0;">'
           +hi.map(c=>'<option value="'+c.id+'">'+escapeHtml(c.name)+' · '+tierInfo(tm[c.id]||'normal').name+(ownsCat(c.id)?' (보유)':'')+'</option>').join('')
-          +'</select><button class="buy sm" onclick="devGrantPet()">토글</button></div>';
+          +'</select><button class="buy sm" '+App.view.act('devGrantPet')+'>토글</button></div>';
         const opts=[]; const it=effItemTier(), wl=effWallTier(), fl=effFloorTier(), bg=bgfxTierMap();
         const add=(pfx,id,nm,t,has)=>{ if(t==='limited'||t==='exclusive') opts.push('<option value="'+pfx+':'+id+'">'+escapeHtml(nm)+' · '+tierInfo(t).name+(has?' (보유)':'')+'</option>'); };
         ITEM_CATALOG.forEach(x=>add('it',x.id,'[가구] '+x.name, it[x.id]||'normal', (typeof itemQty==='function'?itemQty(x.id):0)>0));
         WALLPAPER_CATALOG.forEach(x=>{ if(x.id!=='default') add('wl',x.id,'[벽지] '+x.name, wl[x.id]||'normal', ownsWall(x.id)); });
         FLOOR_CATALOG.forEach(x=>{ if(x.id!=='default') add('fl',x.id,'[바닥] '+x.name, fl[x.id]||'normal', ownsFloor(x.id)); });
         (typeof BGFX_CATALOG!=='undefined'?BGFX_CATALOG:[]).forEach(x=>add('bg',x.id,'[배경효과] '+x.name, bg[x.id]||'exclusive', ownsBgfx(x.id)));
-        h+='<div class="row" style="gap:6px;align-items:center;padding:4px 0;"><select class="input" id="dv_hiasset" style="flex:1;min-width:0;">'+opts.join('')+'</select><button class="buy sm" onclick="devGrantHiAsset()">지급</button></div>'; }
+        h+='<div class="row" style="gap:6px;align-items:center;padding:4px 0;"><select class="input" id="dv_hiasset" style="flex:1;min-width:0;">'+opts.join('')+'</select><button class="buy sm" '+App.view.act('devGrantHiAsset')+'>지급</button></div>'; }
       openSheet('개발자 · 재화관리', h);
     }
     function saveDevGacha(){

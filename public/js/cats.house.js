@@ -9,7 +9,7 @@
     function rainbowNewsBanner(){ try{
       const fx='<span class="gb-rbaura">'+lightLayers({aura:98,rays:118,rainbow:true})+'</span>'+fxAuraTwinkles(9,true);
       const center=(typeof rbEgg2Html==='function')?rbEgg2Html(52):rainbowEggSvg({h:52});
-      return '<div class="pickbanner pk-rbn" role="button" tabindex="0" onclick="goRainbowShop()" aria-label="무지개알 뽑으러 가기">'+
+      return '<div class="pickbanner pk-rbn" role="button" tabindex="0" '+App.view.act('goRainbowShop')+' aria-label="무지개알 뽑으러 가기">'+
         '<div class="pk-head"><span class="pk-title tier-rainbow">🌈 무지개알 · 밤</span><span class="pk-tag"><b class="tier-rainbow">✦ 별빛 너머에서 찾아온 친구</b></span></div>'+
         '<div class="gb-scene">'+nightSceneHtml()+gbCenterHtml(center, fx, 'gb-rb gb-glow')+'</div>'+
         '<div class="pk-go"><span class="ci">'+rainbowCoinSvg({h:13})+'</span>무지개동전 '+RAINBOW_PRICE_RBC+'개로 1뽑 · <b>미공개 한정</b>도 전부 — 탭해서 뽑으러 가기 →</div></div>';
@@ -44,7 +44,7 @@
         const isShop=_catTab==='shop';
         let h='<div class="cathead">';
         // 💰 알뜰샵 잔액(금화·은화)은 시트 제목 오른쪽(updateShopHeadWallet)으로 이동 — 여기선 홈/배치 탭 세그만.
-        if(!isShop){ h+='<div class="catseg">'+[['home','홈'],['pet','펫'],['place','배치']].map(function(t){ return '<button class="'+(_catTab===t[0]?'on':'')+'" onclick="setCatTab(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>'; }
+        if(!isShop){ h+='<div class="catseg">'+[['home','홈'],['pet','펫'],['place','배치']].map(function(t){ return '<button class="'+(_catTab===t[0]?'on':'')+'" '+App.view.act('setCatTab',t[0])+'>'+t[1]+'</button>'; }).join('')+'</div>'; }
         if(isShop) h+=shopSubsegHtml();   // 알뜰샵 서브탭(sticky 헤더 안)
         h+='</div>';   // .cathead 닫기(여기까지 sticky)
         if(!isShop) h+=roomStripHtml();   // 🏠 룸 스위처 1회 렌더(홈·펫·배치 공용) — 이전엔 홈/배치가 각자 그려 중복(펫 탭엔 없었음). 헤더 바로 아래·본문 위.
@@ -93,7 +93,7 @@
       const rooms=homeH().rooms||[], rc=roomCount();
       let h='<div class="sech"><span class="l">내 방</span><span class="s">'+rc+' / '+MAX_ROOMS+'</span></div><div class="rmstrip">';
       for(let i=0;i<rc;i++) h+=roomThumb(rooms[i]||{},i);
-      if(rc<MAX_ROOMS) h+='<button class="rmthumb locked" onclick="buyRoom()" aria-label="방 확장(금화 '+ROOM_PRICE+')"><span class="rmlock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span class="rmgold">'+goldSvg({h:12})+ROOM_PRICE+'</span></button>';
+      if(rc<MAX_ROOMS) h+='<button class="rmthumb locked" '+App.view.act('buyRoom')+' aria-label="방 확장(금화 '+ROOM_PRICE+')"><span class="rmlock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span class="rmgold">'+goldSvg({h:12})+ROOM_PRICE+'</span></button>';
       h+='</div>';
       // 범례: '지금 보는 방(파란 테두리)'과 '친구에게 보이는 대표 방(★)'을 구분해 혼동 방지(#4). 별을 눌러 대표 방 지정.
       h+='<p class="rmhint muted">지금 보는 방 <span class="rmhint-cur"></span> · 친구·랭킹이 보는 <b>대표 방</b> <span class="rmhint-star">'+starSvg({h:11})+'</span> <span class="rmhint-x">— 별을 눌러 지정</span></p>';
@@ -133,7 +133,7 @@
       const order=Object.keys(SPECIES_LABEL); const present=Object.keys(cnt).sort((a,b)=>{ const ia=order.indexOf(a),ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); });
       return [['all','전체',owned.length]].concat(present.map(s=>[s,(SPECIES_LABEL[s]||s),cnt[s]])); }
     function petCtlBar(){ const tabs=homeSpeciesTabs(); if(!tabs.some(t=>t[0]===_homeSpecies)) _homeSpecies='all';
-      let h=(tabs.length>2)?('<div class="subseg pettabs">'+tabs.map(t=>'<button class="'+(_homeSpecies===t[0]?'on':'')+'" onclick="setHomeSpecies(\''+t[0]+'\')">'+escapeHtml(t[1])+' <b>'+t[2]+'</b></button>').join('')+'</div>'):'';
+      let h=(tabs.length>2)?('<div class="subseg pettabs">'+tabs.map(t=>'<button class="'+(_homeSpecies===t[0]?'on':'')+'" '+App.view.act('setHomeSpecies',t[0])+'>'+escapeHtml(t[1])+' <b>'+t[2]+'</b></button>').join('')+'</div>'):'';
       h+='<div class="petctl">'
         +'<input class="petsearch" type="search" inputmode="search" placeholder="이름 검색" value="'+escapeHtml(_petSearch)+'" oninput="setPetSearch(this.value)" aria-label="펫 이름 검색">'
         +'<select class="petsort" aria-label="등급 필터" onchange="setPetTier(this.value)">'+[['all','전체 등급']].concat(TIERS.map(t=>[t.id,t.name])).map(o=>'<option value="'+o[0]+'"'+(_petTier===o[0]?' selected':'')+'>'+escapeHtml(o[1])+'</option>').join('')+'</select>'
@@ -162,7 +162,7 @@
       const tier=CAT_TIER[id]||'normal'; const lv=affectionLevel((ownedCatsMap()[id]||{}).affection, tier).level; const fav=!!(ownedCatsMap()[id]||{}).fav;
       const stt=here?'이 방':(roomOf>=0?roomNm:'대기');
       // 🖐 탭 동작은 배치모드에 따라 분기(petTileTap): OFF(기본)=펫 정보 열람, ON=이 방으로/대기 토글. ✎이름변경·ⓘ정보 아이콘 제거(사용자 지침 — 이름변경은 펫 정보 시트 안 pi-rename)
-      return '<div class="catchip'+(here?' on':(roomOf>=0?' elsewhere':''))+'" data-id="'+id+'" data-tsig="'+escapeHtml(petTileSig(id))+'" data-name="'+escapeHtml(catName(id))+'" role="button" tabindex="0" aria-pressed="'+here+'" onclick="petTileTap(\''+id+'\')" title="'+escapeHtml(catName(id))+' · '+escapeHtml(tierInfo(tier).name)+' · '+escapeHtml(stt)+' · Lv.'+lv+'">'+
+      return '<div class="catchip'+(here?' on':(roomOf>=0?' elsewhere':''))+'" data-id="'+id+'" data-tsig="'+escapeHtml(petTileSig(id))+'" data-name="'+escapeHtml(catName(id))+'" role="button" tabindex="0" aria-pressed="'+here+'" '+App.view.act('petTileTap',id)+' title="'+escapeHtml(catName(id))+' · '+escapeHtml(tierInfo(tier).name)+' · '+escapeHtml(stt)+' · Lv.'+lv+'">'+
         '<button class="cn-fav'+(fav?' on':'')+'" aria-label="'+(fav?'즐겨찾기 해제':'즐겨찾기')+'" onclick="event.stopPropagation();toggleCatFav(\''+id+'\')">'+starSvg({h:12,off:!fav})+'</button>'+
         '<div class="cpic tbring tb-'+tier+'">'+catFace(id,{h:44})+tierBadgeHtml(tier)+'</div>'+   // 등급 테두리 + 등급명 배지(좌하단)
         (roomOf>=0&&!here?'<span class="croom">'+escapeHtml(roomNm)+'</span>':'')+
@@ -176,7 +176,7 @@
       const el=$('petGrid'); if(!el) return;
       const ids=sortOwnedPets(homeFilteredPets());   // 종류 탭으로 걸러 정렬
       if(!ids.length){ el.removeAttribute('data-order'); el.style.maxHeight=''; el.classList.remove('scroll4');
-        const flt=(_petSearch||_petTier!=='all'); el.innerHTML='<div class="empty pgempty">'+(flt?'검색·필터 결과가 없어요 🔍':'이 종류의 펫이 없어요 🐾 <button class="btn ghost" onclick="setCatTab(\'shop\')">알뜰샵</button>')+'</div>'; return; }
+        const flt=(_petSearch||_petTier!=='all'); el.innerHTML='<div class="empty pgempty">'+(flt?'검색·필터 결과가 없어요 🔍':'이 종류의 펫이 없어요 🐾 <button class="btn ghost" '+App.view.act('setCatTab','shop')+'>알뜰샵</button>')+'</div>'; return; }
       const orderSig=_petSort+'|'+_homeSpecies+'|'+ids.join(',');
       if(el.getAttribute('data-order')===orderSig && el.childElementCount===ids.length){
         const kids=el.children;
@@ -219,20 +219,20 @@
       // 활성 슬롯 표시: 채워진 슬롯 + (미확장 시) 오른쪽에 잠금 슬롯 — 탭하면 금화 SLOT_PRICE로 확장
       let slotRow='<div class="slotrow">';
       for(let i=0;i<sc;i++){ const cid=cats[i]; slotRow+='<div class="slot'+(cid?' filled':'')+'">'+(cid?catFace(cid,{h:38}):'')+'</div>'; }
-      if(sc<MAX_SLOTS) slotRow+='<button class="slot locked" onclick="buySlot()" aria-label="고양이 슬롯 확장(금화 '+SLOT_PRICE+')"><svg class="lockic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span class="slotgold">'+goldSvg({h:13})+SLOT_PRICE+'</span></button>';
+      if(sc<MAX_SLOTS) slotRow+='<button class="slot locked" '+App.view.act('buySlot')+' aria-label="고양이 슬롯 확장(금화 '+SLOT_PRICE+')"><svg class="lockic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span class="slotgold">'+goldSvg({h:13})+SLOT_PRICE+'</span></button>';
       slotRow+='</div>';
       h+=slotRow;
       // 펫 컬렉션 관리(수백 마리 그리드)는 '펫' 탭으로 분리 — 홈은 이 방의 활성 펫·돌봄만(홈 과부하 해소).
-      if(!owned.length) h+='<div class="empty" style="padding:16px 20px;">아직 펫이 없어요. 알뜰샵에서 입양해 보세요 🐾 <button class="btn ghost" onclick="setCatTab(\'shop\')">알뜰샵</button></div>';
-      else h+='<div class="hintline" style="margin-top:8px;align-items:center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span style="flex:1"><b>펫</b> 탭에서 <b>배치모드</b>를 켜고 탭하면 이 방으로 데려와요.'+(sc<MAX_SLOTS?' 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장.':'')+'</span><button class="btn ghost" style="flex:none" onclick="setCatTab(\'pet\')">펫 관리 →</button></div>';
+      if(!owned.length) h+='<div class="empty" style="padding:16px 20px;">아직 펫이 없어요. 알뜰샵에서 입양해 보세요 🐾 <button class="btn ghost" '+App.view.act('setCatTab','shop')+'>알뜰샵</button></div>';
+      else h+='<div class="hintline" style="margin-top:8px;align-items:center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span style="flex:1"><b>펫</b> 탭에서 <b>배치모드</b>를 켜고 탭하면 이 방으로 데려와요.'+(sc<MAX_SLOTS?' 잠금 슬롯은 금화 '+SLOT_PRICE+'로 확장.':'')+'</span><button class="btn ghost" style="flex:none" '+App.view.act('setCatTab','pet')+'>펫 관리 →</button></div>';
       return h;
     }
     // 🐾 '펫' 탭 — 우리집 펫 컬렉션 관리(홈에서 분리). 종류 탭+정렬+수백 마리 그리드. 탭=이 방으로 데려오기/대기.
     function catPetHtml(){
       const owned=ownedCatList(), sc=slotCount();
-      if(!owned.length) return '<div class="empty" style="padding:20px;">아직 펫이 없어요. 알뜰샵에서 입양해 보세요 🐾 <button class="btn ghost" onclick="setCatTab(\'shop\')">알뜰샵</button></div>';
+      if(!owned.length) return '<div class="empty" style="padding:20px;">아직 펫이 없어요. 알뜰샵에서 입양해 보세요 🐾 <button class="btn ghost" '+App.view.act('setCatTab','shop')+'>알뜰샵</button></div>';
       let h='<div class="sech"><span class="l">우리집 펫</span><span class="s">'+owned.length+'마리</span>'+
-        '<span class="pmode" role="switch" aria-checked="'+(_petPlaceMode?'true':'false')+'" onclick="togglePetPlaceMode()" title="배치모드 — ON이면 탭해서 방에 배치, OFF면 탭해서 펫 정보">'+
+        '<span class="pmode" role="switch" aria-checked="'+(_petPlaceMode?'true':'false')+'" '+App.view.act('togglePetPlaceMode')+' title="배치모드 — ON이면 탭해서 방에 배치, OFF면 탭해서 펫 정보">'+
         '<b>배치모드</b><span class="switch'+(_petPlaceMode?' on':'')+'" role="presentation" aria-hidden="true"><i></i></span></span></div>';   // 바깥 .pmode가 스위치 역할 — 안쪽은 장식(a11yDecorate 이중 포커스 방지)
       if(owned.length>=2) h+=petCtlBar();   // 종류 탭 + 정렬(2마리↑부터)
       // 수집형 인벤토리 그리드(5열·세로, 4행까지 보이고 초과 시 내부 스크롤). renderPetGrid가 채우고 타일 단위 메모이즈(수백 마리 재파싱 회피).
@@ -303,7 +303,7 @@
     // 🥚/📦 펫알·랜덤박스 구매 카드 1장(은화 100) — '일반' 탭에서 둘 다 씀.
     function gachaBuyCard(k){
       const nm=k==='egg'?'펫알':'랜덤박스', desc=k==='egg'?'알을 열면 펫이 랜덤으로!<br>등급이 높을수록 귀해요.':'상자를 열면 가구·구조물이 랜덤으로 나와요.', art=k==='egg'?eggSvg(0,{h:66}):boxSvg({h:56});
-      const act=(coins()>=GACHA_PRICE)?'<button class="buy" aria-label="'+nm+' 구매('+GACHA_PRICE+' 은화)" onclick="openGacha(\''+k+'\')">구매</button>':'<button class="buy dis" disabled>'+(GACHA_PRICE-coins())+' 부족</button>';
+      const act=(coins()>=GACHA_PRICE)?'<button class="buy" aria-label="'+nm+' 구매('+GACHA_PRICE+' 은화)" '+App.view.act('openGacha',k)+'>구매</button>':'<button class="buy dis" disabled>'+(GACHA_PRICE-coins())+' 부족</button>';
       return '<div class="shopcard"><div class="thumb">'+art+'</div>'+
         '<div class="meta"><b>'+nm+'</b><div class="desc">'+desc+'</div>'+
         '<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+GACHA_PRICE+'</span></div>'+
@@ -316,11 +316,11 @@
         h+=ddeulBannerHtml(true);   // 🌱 실제 뜰알 배너(재화 소모·펫 지급 실전 연결) — 쇼케이스+씬+아이템+1뽑/10뽑+확률
       } else if(tab==='normal'){   // 🥚📦 일반 = 펫알/랜덤박스 서브탭(각 실제 배너)
         if(_normalSub!=='egg'&&_normalSub!=='box') _normalSub='egg';
-        h+='<div class="subseg normalsub">'+[['egg','펫알'],['box','랜덤박스']].map(function(t){ return '<button class="'+(_normalSub===t[0]?'on':'')+'" onclick="setNormalSub(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
+        h+='<div class="subseg normalsub">'+[['egg','펫알'],['box','랜덤박스']].map(function(t){ return '<button class="'+(_normalSub===t[0]?'on':'')+'" '+App.view.act('setNormalSub',t[0])+'>'+t[1]+'</button>'; }).join('')+'</div>';
         h+=(_normalSub==='egg'?eggBannerHtml(true):boxBannerHtml(true));   // 펫알=노을 배너(펫 지급)·랜덤박스=랜덤박스 배너(가구/바닥/벽지 지급)
       } else if(tab==='rainbow'){   // 🌈 무지개 = 알/박스 서브탭(각 라이브 밤 배너 — 개발자 밤 배너 기반, 펫 2마리 제외) + 무지개동전 잔액
         if(_rbSub!=='egg'&&_rbSub!=='box') _rbSub='egg';
-        h+='<div class="subseg normalsub">'+[['egg','무지개알'],['box','무지개박스']].map(function(t){ return '<button class="'+(_rbSub===t[0]?'on':'')+'" onclick="setRbSub(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
+        h+='<div class="subseg normalsub">'+[['egg','무지개알'],['box','무지개박스']].map(function(t){ return '<button class="'+(_rbSub===t[0]?'on':'')+'" '+App.view.act('setRbSub',t[0])+'>'+t[1]+'</button>'; }).join('')+'</div>';
         h+=rainbowLiveBannerHtml(_rbSub);
       }
       return h;
@@ -363,7 +363,7 @@
     function ddeulExPct(){ const t=(typeof DDEUL_TIERS!=='undefined')?DDEUL_TIERS.find(function(x){ return x.id==='exclusive'; }):null; return t?t.p:0.5; }
     function ddeulPickupShowcase(){
       const pets=LIMITED_PICKUP.filter(pickupExists);
-      const spot=(id)=> id ? '<div class="gb-spot" role="button" tabindex="0" aria-label="'+escapeHtml(catName(id))+' 미리보기" onclick="openPickupPeek(\''+id+'\')">'+
+      const spot=(id)=> id ? '<div class="gb-spot" role="button" tabindex="0" aria-label="'+escapeHtml(catName(id))+' 미리보기" '+App.view.act('openPickupPeek',id)+'>'+
           '<span class="gb-spot-beam"></span>'+                                                       // 🔦 무대 조명 빔(위→아래)
           '<span class="gb-spot-badge">'+starSvg({h:14})+'</span>'+
           // 🌈 후광 FX는 카드 "안"(배경 위·펫 뒤 z0)에 둔다 — 카드가 불투명이라 밖(뒤)에 두면 스프라이트 폭에 따라 통째로 가려짐(우측 표범 오오라 안 보이던 버그)
@@ -388,7 +388,7 @@
         '<div class="pkpeek-name">'+catNameSpan(id,catName(id))+'</div>'+
         '<div class="pkpeek-tier">'+tierLabelHtml(t)+'</div>'+
         '<div class="pkpeek-desc">오직 뜰알에서만 만날 수 있어요!</div>'+
-        '<button class="gib ghost" onclick="closePickupPeek()">닫기</button></div>';
+        '<button class="gib ghost" '+App.view.act('closePickupPeek')+'>닫기</button></div>';
       document.body.appendChild(wrap);
     }
     function closePickupPeek(){ const m=$('pkPeek'); if(m) m.remove(); }
@@ -586,7 +586,7 @@
       const build=()=>{   // 🎉 v2 정식 반영 이후 _pkV2 상시 true — 뜰알/펫알/랜덤박스는 라이브와 동일, 무지개 밤 배너만 여기 전용(추후 다른 픽업용 대기)
         if(!BANNER_TABS.some(t=>t[0]===_bannerTab)) _bannerTab='ddeul';
         let h='<div class="note">가챠 배너 미리보기 — 뜰알·펫알·랜덤박스는 <b>라이브와 동일(v2 정식 반영)</b>, <b>무지개(밤 배너)</b>는 추후 픽업용으로 여기서만 확인. 버튼은 <b>미리보기</b>(1회=강제 전설·10회=연출)로 소모 없음.</div>';
-        h+='<div class="subseg">'+BANNER_TABS.map(t=>'<button class="'+(_bannerTab===t[0]?'on':'')+'" onclick="setBannerTab(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div>';
+        h+='<div class="subseg">'+BANNER_TABS.map(t=>'<button class="'+(_bannerTab===t[0]?'on':'')+'" '+App.view.act('setBannerTab',t[0])+'>'+t[1]+'</button>').join('')+'</div>';
         h+=(_bannerTab==='ddeul'?ddeulBannerHtml():_bannerTab==='egg'?eggBannerHtml():_bannerTab==='box'?boxBannerHtml():rainbowBannerHtml());
         return h;
       };
@@ -628,7 +628,7 @@
     const SHOP_LEGACY_BUYTABS=false;   // 🚧 휴면(레거시) 은화 매수탭 게이트 — catShopHtml의 floor/wall/cats/가구 분기를 하드 펜스(SHOP_SUBS에서도 빠져 도달 불가). buyCat/buyItem/buyFloor/buyWall·surfaceShopGrid·필터/정렬 헬퍼가 이 블록 전용이라 삭제하지 않고 보존 — 재도입(금화 로테이션 판매) 시 true + SHOP_SUBS 복원.
     function shopSubsegHtml(){
       if(!SHOP_SUBS.some(function(t){ return t[0]===_shopSub; })) _shopSub='event';   // 제거된 탭 상태면 이벤트로 폴백
-      return '<div class="subseg">'+SHOP_SUBS.map(function(t){ return '<button class="'+(_shopSub===t[0]?'on':'')+'" onclick="setShopSub(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
+      return '<div class="subseg">'+SHOP_SUBS.map(function(t){ return '<button class="'+(_shopSub===t[0]?'on':'')+'" '+App.view.act('setShopSub',t[0])+'>'+t[1]+'</button>'; }).join('')+'</div>';
     }
     // 🧱 벽지·바닥 알뜰샵 스킨 그리드(공통) — ASSET_TYPES 기반, 카탈로그·현재적용·css·구매fn·라벨만 다름. wall/floor 분기의 거의 동일하던 마크업을 1곳으로.
     function surfaceShopGrid(type){
@@ -660,7 +660,7 @@
           const bd=(state.game&&state.game.buyDay)||{}, boughtToday=(c.dailyBuy&&bd.day===kstDayKey()&&bd.n)?(Number(bd.n[c.id])||0):0, capHit=(c.dailyBuy&&boughtToday>=c.dailyBuy);
           const free=(c.price<=0), enough=(free||have>=c.price) && !capHit;
           const curIcon=gcur?goldSvg({h:16}):coinSvg({h:16});
-          const act=enough?'<button class="buy" aria-label="'+c.name+(free?' 받기':' 구매('+c.price+(gcur?' 금화':' 은화')+')')+'" onclick="buyConsum(\''+c.id+'\')">'+(free?'받기':'구매')+'</button>'
+          const act=enough?'<button class="buy" aria-label="'+c.name+(free?' 받기':' 구매('+c.price+(gcur?' 금화':' 은화')+')')+'" '+App.view.act('buyConsum',c.id)+'>'+(free?'받기':'구매')+'</button>'
                           :(capHit?'<button class="buy dis" disabled>오늘 완료</button>':'<button class="buy dis" disabled>부족</button>');
           const tag=(c.effect&&c.effect.affection)?'애정':((c.effect&&c.effect.boost)?'부스트':((c.effect&&c.effect.fill)?'채움':'소비'));
           const priceHtml=free?'<span class="price"><b>무료</b></span>':'<span class="price"><span class="ci">'+curIcon+'</span>'+c.price+'</span>';
@@ -707,7 +707,7 @@
         const PSHOP_TABS=shopPetSpeciesTabs();
         if(!PSHOP_TABS.some(t=>t[0]===_shopPetSpecies)) _shopPetSpecies='all';
         h+='<div class="shoptabrow">'+
-          (PSHOP_TABS.length>2?'<div class="subseg shopfurncat">'+PSHOP_TABS.map(t=>'<button class="'+(_shopPetSpecies===t[0]?'on':'')+'" onclick="setShopPetSpecies(\''+t[0]+'\')">'+escapeHtml(t[1])+'</button>').join('')+'</div>':'<span style="flex:1"></span>')+
+          (PSHOP_TABS.length>2?'<div class="subseg shopfurncat">'+PSHOP_TABS.map(t=>'<button class="'+(_shopPetSpecies===t[0]?'on':'')+'" '+App.view.act('setShopPetSpecies',t[0])+'>'+escapeHtml(t[1])+'</button>').join('')+'</div>':'<span style="flex:1"></span>')+
           '<select class="petsort furnsort" aria-label="펫 정렬" onchange="setPetShopSort(this.value)">'+PETSHOP_SORTS.map(o=>'<option value="'+o[0]+'"'+(_petShopSort===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></div>';
         // 정렬은 사용자 선택(sortShopCats, 기본 등급↑). 특별(epic) 이상은 알뜰샵 직접 구매 불가 → 펫알(가챠) 전용 표기. 선택 종만 필터.
         const cats=sortShopCats(PET_CATALOG.filter(c=>!isGachaOnlyCat(c.id) && (_shopPetSpecies==='all'||c.species===_shopPetSpecies)));   // 가챠전용 펫은 판매목록에서 숨김(가챠 풀엔 그대로 있음)
@@ -730,7 +730,7 @@
           }
           // 선택하면 우리집 펫 카드처럼 옆으로 걷는 스프라이트로, 아니면 정면 정지 썸네일. 선택 시 체크 배지.
           const art=sel?catActorHTML(c.id,72):catFace(c.id,{h:72});
-          return '<div class="shopcard petpick'+(sel?' sel':'')+(feat?' feat':'')+'" role="button" tabindex="0" aria-pressed="'+sel+'" onclick="selectShopCat(\''+c.id+'\')"><div class="thumb tbring tb-'+petTierOf(c.id)+'"><div class="fl"></div>'+art+
+          return '<div class="shopcard petpick'+(sel?' sel':'')+(feat?' feat':'')+'" role="button" tabindex="0" aria-pressed="'+sel+'" '+App.view.act('selectShopCat',c.id)+'><div class="thumb tbring tb-'+petTierOf(c.id)+'"><div class="fl"></div>'+art+
             (feat?'<span class="featrib">'+sparkSvg({h:12})+' 이달의 펫</span>':'')+
             (sel?'<span class="psel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></span>':'')+'</div>'+
             '<div class="meta"><b>'+catNameSpan(c.id,c.name)+' <span class="tagmini">'+speciesLabel(c.id)+'</span></b><div class="desc">'+c.desc+'</div>'+
@@ -742,7 +742,7 @@
         // 등급 낮은 것부터. 특별(epic) 이상 가구는 알뜰샵 직접 구매 불가 → 랜덤박스(가챠) 전용 표기.
         const FSHOP_CATS=[['all','전체']].concat(PLACE_CATS);
         if(!FSHOP_CATS.some(c=>c[0]===_shopFurnCat)) _shopFurnCat='all';
-        h+='<div class="shoptabrow"><div class="subseg shopfurncat">'+FSHOP_CATS.map(c=>'<button class="'+(_shopFurnCat===c[0]?'on':'')+'" onclick="setShopFurnCat(\''+c[0]+'\')">'+c[1]+'</button>').join('')+'</div>'+
+        h+='<div class="shoptabrow"><div class="subseg shopfurncat">'+FSHOP_CATS.map(c=>'<button class="'+(_shopFurnCat===c[0]?'on':'')+'" '+App.view.act('setShopFurnCat',c[0])+'>'+c[1]+'</button>').join('')+'</div>'+
           '<select class="petsort furnsort" aria-label="가구 정렬" onchange="setFurnSort(this.value)">'+FURN_SORTS.map(o=>'<option value="'+o[0]+'"'+(_furnSort===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></div>';
         const items=sortFurnItems(ITEM_CATALOG.filter(it=>!isGachaOnlyItem(it.id) && (_shopFurnCat==='all'||placeCatOf(it.id)===_shopFurnCat)));   // 가챠전용 가구는 판매목록에서 숨김(랜덤박스 풀엔 그대로)
         h+=items.map(it=>{
@@ -750,10 +750,10 @@
           let act, priceHtml;
           if(gachaOnly){
             priceHtml='<span class="price gachaonly">'+boxSvg({h:16})+'<b class="tier-rainbow">랜덤박스 전용</b></span>';
-            act='<button class="buy ghost" aria-label="'+it.name+'은 랜덤박스에서 뽑기" onclick="setShopSub(\'event\')">랜덤박스 뽑기</button>';
+            act='<button class="buy ghost" aria-label="'+it.name+'은 랜덤박스에서 뽑기" '+App.view.act('setShopSub','event')+'>랜덤박스 뽑기</button>';
           } else {
             priceHtml='<span class="price"><span class="ci">'+coinSvg({h:16})+'</span>'+price+'</span>';
-            act=enough?'<button class="buy" aria-label="'+it.name+' 구매('+price+' 은화)" onclick="buyItem(\''+it.id+'\')">구매</button>':'<button class="buy dis" disabled>'+(price-coins())+' 부족</button>';
+            act=enough?'<button class="buy" aria-label="'+it.name+' 구매('+price+' 은화)" '+App.view.act('buyItem',it.id)+'>구매</button>':'<button class="buy dis" disabled>'+(price-coins())+' 부족</button>';
           }
           const ft=itemTierOf(it.id);
           return '<div class="shopcard"><div class="thumb tbring tb-'+ft+'"><span class="furnfit">'+furnSvg(it.id,{fit:true})+'</span>'+tierBadgeHtml(ft)+'</div>'+

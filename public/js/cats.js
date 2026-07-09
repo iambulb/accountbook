@@ -560,7 +560,7 @@
     function bgfxPickerHtml(){ const owned=BGFX_CATALOG.filter(x=>ownsBgfx(x.id)); if(!owned.length) return ''; const cur=currentBgfx();
       const CK='<i class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg></i>';
       const none='<button class="skinsw'+(!cur?' on':'')+'" onclick="applyBgfx(\'\')" aria-label="배경효과 없음"><span class="sw sw-none">✕</span><span class="nm">없음</span>'+(!cur?CK:'')+'</button>';
-      const sw=owned.map(x=>{ const on=cur===x.id; return '<button class="skinsw'+(on?' on':'')+'" onclick="applyBgfx(\''+x.id+'\')" aria-label="'+escapeHtml(x.name)+(on?' 적용됨':' 적용')+'"><span class="sw sw-bgfx">'+bgfxThumb(x.id,26)+'</span><span class="nm">'+escapeHtml(x.name)+'</span>'+(on?CK:'')+'</button>'; }).join('');
+      const sw=owned.map(x=>{ const on=cur===x.id; return '<button class="skinsw'+(on?' on':'')+'" '+App.view.act('applyBgfx',x.id)+' aria-label="'+escapeHtml(x.name)+(on?' 적용됨':' 적용')+'"><span class="sw sw-bgfx">'+bgfxThumb(x.id,26)+'</span><span class="nm">'+escapeHtml(x.name)+'</span>'+(on?CK:'')+'</button>'; }).join('');
       return '<div class="skinsel"><div class="skinlab">배경효과 <span class="sc">보유 '+owned.length+'</span></div><div class="skinrow">'+none+sw+'</div><div class="skinhint">방 전체에 나비·낙엽 같은 효과를 적용해요. 랜덤박스(신화)에서 얻어요.</div></div>'; }
     // 미션 정의(일일). reward=은화. check(ctx)=완료 여부(현재 워크스페이스 활동 읽어 판정). 경제 정책(economy-policy) 반영: 접속 보장 번들(출석·첫 기록) 크게, 나머지는 상한.
     const DAILY_MISSIONS = [
@@ -2207,7 +2207,7 @@
       h+='<p class="muted" style="font-size:12px;margin:2px 2px 12px;">매일 체크로 습관을 이어가고, <b>'+CUSTOM_STREAK_N+'일 연속마다 +'+CUSTOM_STREAK_BONUS+' 은화</b>. 오늘 홈·미션 탭에서 체크(최대 5개).</p>';
       h+='<p class="muted" style="font-size:11.5px;margin:-6px 2px 12px;">정해진 날짜에 반복되는 일은 <b>할일 → 반복(매주·매월)</b>으로 관리해요.</p>';
       h+='<button class="btn" onclick="saveCustomMission('+(id?("'"+id+"'"):'')+')">'+(id?'저장':'추가')+'</button>';
-      if(id) h+='<button class="btn ghost" style="margin-top:8px;" onclick="deleteCustomMission(\''+id+'\')">삭제</button>';
+      if(id) h+='<button class="btn ghost" style="margin-top:8px;" '+App.view.act('deleteCustomMission',id)+'>삭제</button>';
       openSheet(id?'내 미션 수정':'내 미션 추가', h);
     }
     function saveCustomMission(id){
@@ -2500,7 +2500,7 @@
         '<p class="muted" style="font-size:12px;margin:0 0 8px;line-height:1.5;">비우기=가구·펫만 초기화(방은 유지). 삭제=방 자체를 제거(환불 없음). 둘 다 가구는 인벤토리로 돌아가요.</p>'+
         '<button class="btn danger ghost" onclick="clearRoom(\''+rid+'\','+idx+')">이 방 비우기</button>'+
         (rc>BASE_ROOMS?'<button class="btn danger ghost" style="margin-top:6px;" onclick="deleteRoom(\''+rid+'\','+idx+')">이 방 삭제 (환불 없음)</button>':'')+
-        '<button class="btn ghost" style="margin-top:6px;" onclick="closeRoomMenu()">닫기</button>';
+        '<button class="btn ghost" style="margin-top:6px;" '+App.view.act('closeRoomMenu')+'>닫기</button>';
       const wrap=document.createElement('div'); wrap.id='roomMenu'; wrap.className='gimenu-scrim';
       wrap.onclick=function(e){ if(e.target===wrap) closeRoomMenu(); };
       wrap.innerHTML='<div class="gimenu" style="max-height:82vh;overflow-y:auto;">'+body+'</div>';
@@ -2691,12 +2691,12 @@
           if(mail.length){
             h+='<div class="sech"><span class="l">친구가 보낸 선물</span><span class="s">'+mail.length+'개</span></div>';
             h+=mail.map(x=>{ const v=giftView(x.gf); return '<div class="giftrow"><span class="gfic">'+v.icon+'</span><span class="gftx"><b class="gfnm">'+escapeHtml(v.name)+'</b><span class="gfmsg">'+escapeHtml((x.gf.fromName||'친구')+'님이 보냄')+'</span></span><button class="buy" onclick="claimMailGift(\''+x.sender+'\',\''+x.gid+'\')">받기</button></div>'; }).join('');
-            h+='<button class="btn ghost" style="margin:8px 0 4px;" onclick="claimAllMail()">친구 선물 모두 받기</button>';
+            h+='<button class="btn ghost" style="margin:8px 0 4px;" '+App.view.act('claimAllMail')+'>친구 선물 모두 받기</button>';
           }
           if(gifts.length){
             if(mail.length) h+='<div class="sech"><span class="l">코드 보상</span><span class="s">'+gifts.length+'개</span></div>';
             h+=gifts.map((gf,i)=>{ const v=giftView(gf); return '<div class="giftrow"><span class="gfic">'+v.icon+'</span><span class="gftx"><b class="gfnm">'+escapeHtml(v.name)+'</b>'+(v.sub?'<span class="gfmsg">'+escapeHtml(v.sub)+'</span>':'')+'</span><button class="buy" onclick="claimGift('+i+')">받기</button></div>'; }).join('');
-            h+='<button class="btn" style="margin-top:12px;" onclick="claimAllGifts()">모두 받기</button>';
+            h+='<button class="btn" style="margin-top:12px;" '+App.view.act('claimAllGifts')+'>모두 받기</button>';
           }
         }
         h+='</div>'; return h;
@@ -2778,7 +2778,7 @@
       h+='<div class="field"><label for="bc_type">종류</label><select class="input" id="bc_type">'+opts.map(function(o){ return '<option value="'+o[0]+'">'+o[1]+'</option>'; }).join('')+'</select></div>';
       h+='<div class="field"><label for="bc_qty">수량</label><input class="input" id="bc_qty" inputmode="numeric" placeholder="예: 100" value="1"></div>';
       h+='<div class="field"><label for="bc_msg">메시지(선택)</label><input class="input" id="bc_msg" maxlength="200" placeholder="예: 오류로 인한 사과의 선물입니다"></div>';
-      h+='<button class="btn" style="margin-top:6px;" onclick="sendBroadcast()">보내기</button>';
+      h+='<button class="btn" style="margin-top:6px;" '+App.view.act('sendBroadcast')+'>보내기</button>';
       const cnt=Object.keys(_broadcasts||{}).length; h+='<div class="note" style="margin-top:12px;">전체 선물(공개)로 전파 중: <b>'+cnt+'</b>개. 오래된 전체 선물은 콘솔 <code>config/broadcast</code>에서 삭제하면 신규 전파가 멈춰요(특정 유저 선물은 그 유저가 받으면 자동 삭제).</div>';
       openSheet('선물 보내기', h);
     }
@@ -2861,8 +2861,8 @@
         else h+=rows.map(k=>{ const m=CONSUM_META[k], q=consumQty(k);
           // 가방 사용 3갈래: 간식·영양제·염색약=바로 사용 / 알·박스류=가챠샵 이동 / 사료·물류=홈 그릇 탭 안내.
           const bagUse=(m.use==='treat'||m.use==='tonic'||m.use==='dye'||m.use==='dye_remover');
-          const useBtn = bagUse ? '<button class="buy sm" onclick="useBagItem(\''+k+'\')" aria-label="'+m.name+' 사용">사용</button>'
-                       : (m.use ? '<button class="buy ghost sm" onclick="goGachaShop()" aria-label="'+m.name+' 가챠샵에서 열기">가챠샵에서 열기</button>'
+          const useBtn = bagUse ? '<button class="buy sm" '+App.view.act('useBagItem',k)+' aria-label="'+m.name+' 사용">사용</button>'
+                       : (m.use ? '<button class="buy ghost sm" '+App.view.act('goGachaShop')+' aria-label="'+m.name+' 가챠샵에서 열기">가챠샵에서 열기</button>'
                                 : '<span class="qty" style="font-size:11px;color:var(--sub)">홈에서 그릇 탭</span>');
           const sub=(k==='tonic'&&boostOn)?' <span class="tagmini">사용중 '+fmtDur(boostRemain(g))+'</span>':'';
           return '<div class="bagrow"><span class="bgic">'+m.icon({h:34})+'</span><b class="bgnm'+((k==='rainbow_egg'||k==='rainbow_box'||k==='ddeul')?' tier-rainbow':'')+'">'+m.name+sub+'</b><span class="qty">보유 '+q.toLocaleString()+(q>=MAX_CONSUM?maxChip():'')+'</span>'+useBtn+'</div>'; }).join('');
@@ -3273,7 +3273,7 @@
       h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">';
       order.forEach(k=>{ const has=!!clips[k];
         const req=(typeof CLIP_AFF_REQ!=='undefined')&&CLIP_AFF_REQ[k], gated=has&&req&&((CAT_TIER[id]||'normal')==='limited'||(CAT_TIER[id]||'normal')==='exclusive');   // 💗 신화+ 애정 해금 표기(재생은 우회)
-        h+='<button class="chip'+(k===clip?' on':'')+'"'+(has?'':' disabled')+' style="'+(has?'':'opacity:.4;')+'"'+(has?(' onclick="devPickMotion(\''+k+'\')"'):'')+'>'+k+(has?' ·'+clips[k]:'')+(gated?' <span style="opacity:.7">(Lv'+req+' 해금)</span>':'')+'</button>'; });
+        h+='<button class="chip'+(k===clip?' on':'')+'"'+(has?'':' disabled')+' style="'+(has?'':'opacity:.4;')+'"'+(has?(' '+App.view.act('devPickMotion',k)+''):'')+'>'+k+(has?' ·'+clips[k]:'')+(gated?' <span style="opacity:.7">(Lv'+req+' 해금)</span>':'')+'</button>'; });
       h+='</div>';
       // 원본 시트 이미지(가로 스트립)
       const sheetUrl=(typeof sprClipUrl==='function')?sprClipUrl(id, clip):'';
@@ -3375,11 +3375,11 @@
       return { id, name:c.name, species:c.species, speciesLabel:(SPECIES_LABEL[c.species]||''), tier:CAT_TIER[id]||'normal', scale:sp.scale||1, gachaOnly:isGachaOnlyCat(id) }; }
     function openDevPetAdd(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; } _devPetTarget=null;
       let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 12px;line-height:1.5;">PixelLab export <b>zip</b>을 올리고 이름·분류·등급·크기만 정하면 추가됩니다. 앱에서 바로 처리(옆걷기 시트+4방향 생성)해 <b>모든 사용자</b>에게 반영돼요. zip에 프리셋 애니 폴더(Idle·Eating·Drinking·Running·Sitting 등)가 있으면 <b>모션 클립</b>으로 자동 인식돼 먹기·앉기·유휴 연출이 살아나요.</p>';
-      h+=_petFormHtml({})+'<button class="btn" id="dpBtn" onclick="submitDevPet()">추가</button>';
+      h+=_petFormHtml({})+'<button class="btn" id="dpBtn" '+App.view.act('submitDevPet')+'>추가</button>';
       openSheet('펫 추가', h); }
     function openDevPetEdit(id){ if(!(typeof isDev==='function'&&isDev())) return; const p=devPetInfo(id); if(!p){ toast('펫을 찾을 수 없어요',true); return; } _devPetTarget=id;
       let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 12px;line-height:1.5;">이름·분류·등급·크기를 바꾸고, <b>zip을 다시 올리면 디자인</b>도 교체돼요. (정적 펫도 앱에서 오버라이드됩니다)</p>';
-      h+=_petFormHtml(p)+'<button class="btn" id="dpBtn" onclick="submitDevPet()">저장</button>';
+      h+=_petFormHtml(p)+'<button class="btn" id="dpBtn" '+App.view.act('submitDevPet')+'>저장</button>';
       openSheet('펫 수정 · '+escapeHtml(p.name||id), h); }
     function submitDevPet(){
       const name=(val('dpName')||'').trim(); if(!name){ toast('이름을 입력하세요', true); return; }
@@ -3471,7 +3471,7 @@
     // 그리드 셀을 탭하면 상단 스테이지(#pmStage)만 다시 그리고 셀 .on 만 토글(devSelectPet) → 그리드 스크롤 유지·재빌드 비용 절감. 스테이지는 sticky라 스크롤해도 선택 펫이 계속 보임.
     function devPetCellHtml(p, sel){ const on=p.id===sel; const tag=(SPECIES_LABEL[p.species]||p.species);
       const gacha=isGachaOnlyCat(p.id), ft=p.tier||'normal';
-      return '<button class="pitem pmcell'+(on?' on':'')+(p.deleted?' del':'')+(gacha?' gacha':'')+'" data-pid="'+p.id+'" onclick="devSelectPet(\''+p.id+'\')" aria-label="'+escapeHtml(p.name||p.id)+' 선택" aria-pressed="'+(on?'true':'false')+'">'+
+      return '<button class="pitem pmcell'+(on?' on':'')+(p.deleted?' del':'')+(gacha?' gacha':'')+'" data-pid="'+p.id+'" '+App.view.act('devSelectPet',p.id)+' aria-label="'+escapeHtml(p.name||p.id)+' 선택" aria-pressed="'+(on?'true':'false')+'">'+
         '<span class="pic tbring tb-'+ft+'">'+catFace(p.id,{h:38})+tierBadgeHtml(ft)+(gacha?'<span class="pm-gc">'+boxSvg({h:12})+'</span>':'')+'</span>'+
         '<span class="pmnm">'+catNameSpan(p.id, p.name||p.id)+'</span>'+
         '<span class="pq">'+escapeHtml(tag)+(p.runtime?' · 런타임':'')+(p.deleted?' · 삭제됨':'')+'</span>'+
@@ -3481,19 +3481,19 @@
       if(!p){ return '<div class="pm-stage empty">'+
           '<div class="pm-pv-art ph">'+catFace('cat_mackerel',{h:60})+'</div>'+
           '<div class="pm-ph-tx">아래에서 펫을 선택하면 여기에서<br><b>등급·가챠전용·수정·삭제·연출</b>을 관리해요.</div>'+
-          '<div class="petmg-btns"><button class="btn ghost" onclick="openDevPetAdd()">+ 새 펫 추가</button></div>'+
+          '<div class="petmg-btns"><button class="btn ghost" '+App.view.act('openDevPetAdd')+'>+ 새 펫 추가</button></div>'+
         '</div>'; }
       const ft=p.tier||'normal', tag=(SPECIES_LABEL[p.species]||p.species), gacha=isGachaOnlyCat(p.id);
       // 🐾 기구물 관리처럼 스테이지에서 바로 등급·가챠전용 변경(전역 catalogPets/{id} 오버라이드 — 모든 사용자 반영)
       const tierSel='<select class="input fm-tier" onchange="setPetTier(\''+p.id+'\',this.value)" aria-label="'+escapeHtml(p.name||p.id)+' 등급">'+
         TIERS.map(function(t){ return '<option value="'+t.id+'"'+(t.id===ft?' selected':'')+'>'+t.name+'</option>'; }).join('')+'</select>';
-      const gachaTog='<label class="fm-gacha"><span>가챠전용</span><span class="switch'+(gacha?' on':'')+'" role="switch" aria-checked="'+gacha+'" tabindex="0" onclick="setPetGacha(\''+p.id+'\')" aria-label="'+escapeHtml(p.name||p.id)+' 가챠전용"><i></i></span></label>';
+      const gachaTog='<label class="fm-gacha"><span>가챠전용</span><span class="switch'+(gacha?' on':'')+'" role="switch" aria-checked="'+gacha+'" tabindex="0" '+App.view.act('setPetGacha',p.id)+' aria-label="'+escapeHtml(p.name||p.id)+' 가챠전용"><i></i></span></label>';
       // 한정(exclusive) 등급 펫만: '가챠 등장' 토글(ON=가챠 한정 리스트·확률에 포함). 다른 등급엔 표시 안 함.
       const exOn=isExGachaActive(p.id);
-      const exTog=(ft==='exclusive')?'<label class="fm-gacha"><span>가챠 등장</span><span class="switch'+(exOn?' on':'')+'" role="switch" aria-checked="'+exOn+'" tabindex="0" onclick="setPetExActive(\''+p.id+'\')" aria-label="'+escapeHtml(p.name||p.id)+' 가챠 등장"><i></i></span></label>':'';
+      const exTog=(ft==='exclusive')?'<label class="fm-gacha"><span>가챠 등장</span><span class="switch'+(exOn?' on':'')+'" role="switch" aria-checked="'+exOn+'" tabindex="0" '+App.view.act('setPetExActive',p.id)+' aria-label="'+escapeHtml(p.name||p.id)+' 가챠 등장"><i></i></span></label>':'';
       const badge=gacha?'<div class="pm-pv-badge"><span class="fm-badge tier-rainbow">'+boxSvg({h:13})+' 랜덤박스 전용</span></div>':'';
-      const dr = p.deleted ? '<button class="btn" onclick="restorePet(\''+p.id+'\')">복구</button>'
-        : '<button class="btn danger" onclick="deletePetSoft(\''+p.id+'\')">삭제</button>';
+      const dr = p.deleted ? '<button class="btn" '+App.view.act('restorePet',p.id)+'>복구</button>'
+        : '<button class="btn danger" '+App.view.act('deletePetSoft',p.id)+'>삭제</button>';
       let h='<div class="pm-stage sel">'+
         '<div class="pm-preview">'+
           '<div class="pm-pv-art tbring tb-'+ft+(p.deleted?' del':'')+'">'+catActorHTML(p.id,84)+'</div>'+
@@ -3504,8 +3504,8 @@
             '<div class="pm-cfgctl">'+tierSel+gachaTog+exTog+'</div>'+
           '</div>'+
         '</div>'+
-        '<div class="petmg-btns"><button class="btn ghost" onclick="openDevPetAdd()">추가</button>'+
-          '<button class="btn" onclick="openDevPetEdit(\''+p.id+'\')">수정</button>'+dr+'</div>';
+        '<div class="petmg-btns"><button class="btn ghost" '+App.view.act('openDevPetAdd')+'>추가</button>'+
+          '<button class="btn" '+App.view.act('openDevPetEdit',p.id)+'>수정</button>'+dr+'</div>';
       // 🎬 가챠 오픈 연출 펫 지정(전역 config/gachaFx — 모든 사용자에게 즉시 적용). 선택 펫을 연출 1번(왼쪽)/2번(오른쪽)에 배정(다시 누르면 해제).
       h+='<div class="sec-title" style="margin-top:14px;">가챠 오픈 연출 펫 <span class="pill">한정 뽑기 전용</span></div>';
       if(!p.deleted){
@@ -3517,7 +3517,7 @@
         h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:6px 2px 0;">삭제(숨김)된 펫은 연출에 지정할 수 없어요. <b>복구</b> 후 지정하세요.</p>';
       }
       h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:8px 2px 0;">여기 지정한 펫은 <b>한정(무지개) 등급을 뽑을 때만</b> 연출에 등장해요. <b>그 외 등급</b>(특별·전설·신화)은 <b>전설·신화 펫 중 랜덤 2마리</b>가 걸어나와 톡 칩니다. <b>1번</b>=왼쪽, <b>2번</b>=오른쪽(둘 다면 <b>1번 끝난 뒤 2번</b> 순차, 크기는 펫 배율만큼). 현재 1번=<b>'+escapeHtml(gachaFxSlotDesc('a'))+'</b> · 2번=<b>'+escapeHtml(gachaFxSlotDesc('b'))+'</b>.</p>';
-      h+='<div class="petmg-btns" style="margin-top:8px;"><button class="btn ghost" onclick="devPreviewGachaFx()">▶︎ 연출 미리보기</button></div>';
+      h+='<div class="petmg-btns" style="margin-top:8px;"><button class="btn ghost" '+App.view.act('devPreviewGachaFx')+'>▶︎ 연출 미리보기</button></div>';
       h+='</div>';
       return h; }
     let _devPetSpecies=lsGet('devPetSpecies','all');   // 개발자 펫 관리 종류 탭
@@ -3533,7 +3533,7 @@
         // 상단 스테이지(선택 펫 미리보기+관리) — sticky. 아래는 종류 탭 + 등급별 펫 그리드(알뜰홈 인벤토리 방식).
         let h='<div id="pmStage" class="pm-stage-wrap">'+devPetStageHtml()+'</div>';
         h+='<p class="muted" style="font-size:12.5px;margin:2px 2px 10px;line-height:1.5;">아래에서 펫을 골라 위 스테이지에서 <b>등급·가챠전용·수정/삭제·연출</b>을 관리해요. 삭제=앱에서 숨김(이미지 보존)이라 <b>복구</b> 가능. 변경은 <span class="pill">전역 · 모든 사용자</span> 반영(기구물 관리와 동일).</p>';
-        h+='<div class="subseg pettabs">'+tabs.map(t=>'<button class="'+(_devPetSpecies===t[0]?'on':'')+'" onclick="setDevPetSpecies(\''+t[0]+'\')">'+escapeHtml(t[1])+' <b>'+t[2]+'</b></button>').join('')+'</div>';
+        h+='<div class="subseg pettabs">'+tabs.map(t=>'<button class="'+(_devPetSpecies===t[0]?'on':'')+'" '+App.view.act('setDevPetSpecies',t[0])+'>'+escapeHtml(t[1])+' <b>'+t[2]+'</b></button>').join('')+'</div>';
         // 등급별 섹션(도감식) — 활성 펫은 등급 그룹 그리드, 삭제됨은 맨 끝 섹션
         const active=list.filter(p=>!p.deleted), del=list.filter(p=>p.deleted); let body='';
         TIER_ORDER.forEach(function(tid){ const grp=active.filter(p=>p.tier===tid); if(!grp.length) return;
@@ -3558,7 +3558,7 @@
     function setFurnSub(s){ _furnSub=s; if(state._sheetRefresh) state._sheetRefresh(); }
     function furnMgrHtml(){
       let h='<div class="note"><span class="pill">전역 · 모든 사용자</span> 변경은 <b>즉시 저장·전 사용자 반영</b>돼요(관리자 계정만 쓰기 가능). <b>특별 등급 이상</b>은 기본적으로 <b>랜덤박스 전용</b>이며, <b>가챠전용</b> 토글로 개별 지정할 수 있어요(켜면 알뜰샵 판매목록에서 숨김 · 어느 쪽이든 랜덤박스 풀엔 포함).</div>';
-      h+='<div class="subseg">'+FURN_TYPES.map(function(c){ return '<button class="'+(_furnSub===c[0]?'on':'')+'" onclick="setFurnSub(\''+c[0]+'\')">'+c[1]+'</button>'; }).join('')+'</div>';
+      h+='<div class="subseg">'+FURN_TYPES.map(function(c){ return '<button class="'+(_furnSub===c[0]?'on':'')+'" '+App.view.act('setFurnSub',c[0])+'>'+c[1]+'</button>'; }).join('')+'</div>';
       let entries, rowFn, tierOf;
       if(_furnSub==='wall'){ entries=WALLPAPER_CATALOG.filter(w=>w.id!=='default'); rowFn=wallRowHtml; tierOf=wallTierOf; }
       else if(_furnSub==='floor'){ entries=FLOOR_CATALOG.filter(f=>f.id!=='default'); rowFn=floorRowHtml; tierOf=floorTierOf; }
@@ -3634,13 +3634,13 @@
       if(runtimes.length){
         h+='<div class="petmg-list">'+runtimes.map(p=>{
           const tag=(SPECIES_LABEL[p.species]||p.species), tn=((typeof TIERS!=='undefined'&&TIERS.find(t=>t.id===p.tier))||{}).name||p.tier;
-          return '<button class="petmg-row" onclick="exportPetStatic(\''+p.id+'\')">'+
+          return '<button class="petmg-row" '+App.view.act('exportPetStatic',p.id)+'>'+
             '<span class="pm-thumb">'+catFace(p.id,{h:52})+'</span>'+
             '<span class="pm-txt"><span class="pm-nm">'+catNameSpan(p.id, p.name||p.id)+'</span>'+
             '<span class="pm-meta">'+escapeHtml(tag)+' · '+tierLabelHtml(p.tier)+' · 런타임</span></span></button>'; }).join('')+'</div>';
       } else { h+='<p class="muted" style="font-size:12px;margin:2px;">승격할 런타임 펫이 없어요.</p>'; }
       h+='</div>';
-      h+='<div class="petmg-btns" style="margin-top:10px;"><button class="btn ghost" onclick="migrateCatalogArtOnce()">이미지 분리 이전(1회)</button></div>';
+      h+='<div class="petmg-btns" style="margin-top:10px;"><button class="btn ghost" '+App.view.act('migrateCatalogArtOnce')+'>이미지 분리 이전(1회)</button></div>';
       h+='<p class="muted" style="font-size:11.5px;line-height:1.5;margin:8px 2px 0;">승격=런타임 펫을 파일 에셋으로 옮겨 RTDB 부담을 줄임(<code>tools/pets.json</code>+<code>build_pets.py</code>). 분리 이전=예전 인라인 아트를 <code>catalogPetArt</code>로 옮기는 1회 작업.</p>';
       openSheet('데이터 정리', h); }
 
