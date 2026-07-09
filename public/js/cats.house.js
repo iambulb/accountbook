@@ -569,7 +569,7 @@
         { let p=Number(g.pity[kind])||0; list.forEach(function(it){ p=pityNext(p, isRb?(it.tier==='exclusive'):isTopTier(it.tier)); }); g.pity[kind]=p; }   // pity 10회 누적 — 서버값 기점 재계산(다기기 동시 10연 시 소실 방지, 강제등급 판정은 롤 시점 값 수용)
         list.forEach(function(it){
           if(it.kind==='box'){ const gr=grantBoxReward(g, { id:it.id, tier:it.tier, type:it.type }); if(gr.rf) g.coins=clampCoins((g.coins||0)+gr.rf); }
-          else if(!g.owned.cats[it.id]){ g.owned.cats[it.id]={boughtAt:new Date().toISOString()}; const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(it.id)<0) R.active.push(it.id); }
+          else if(!g.owned.cats[it.id]){ g.owned.cats[it.id]={boughtAt:new Date().toISOString()}; }   // 🚫 가챠(10연) 획득 펫도 방에 자동 배치하지 않음(가방에만)
           else { grantPetDup(g, it.id); }   // 💗 중복 펫=애정(+한정 🌈코인) — 순차 지급이라 배치 내 반복도 정확
         });
         return g;
