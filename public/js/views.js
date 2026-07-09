@@ -163,7 +163,7 @@
         '<div class="field" style="flex:1;"><label>종료일</label><input class="input" type="date" value="'+(st.dateTo||'')+'" onchange="txSearchSet(\'dateTo\',this.value)"></div></div>'+
         '<div class="row" style="gap:8px;"><div class="field" style="flex:1;"><label>최소 금액</label><input class="input" inputmode="numeric" value="'+(st.amountMin||'')+'" oninput="txSearchSet(\'amountMin\',this.value.replace(/[^0-9]/g,\'\'))"></div>'+
         '<div class="field" style="flex:1;"><label>최대 금액</label><input class="input" inputmode="numeric" value="'+(st.amountMax||'')+'" oninput="txSearchSet(\'amountMax\',this.value.replace(/[^0-9]/g,\'\'))"></div></div>'+
-        '<div class="chip-row" id="txsSeg">'+[['','전체'],['expense','지출'],['income','수입'],['transfer','이체']].map(t=>'<button class="chip '+((st.type||'')===t[0]?'on':'')+'" data-t="'+t[0]+'" onclick="txSearchSet(\'type\',\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div>'+
+        '<div class="chip-row" id="txsSeg">'+[['','전체'],['expense','지출'],['income','수입'],['transfer','이체']].map(t=>'<button class="chip '+((st.type||'')===t[0]?'on':'')+'" data-t="'+t[0]+'" '+App.view.act('txSearchSet','type',t[0])+'>'+t[1]+'</button>').join('')+'</div>'+
         '<div id="txsResults">'+txSearchResults()+'</div>';
       openSheet('거래 검색', h);
     }
