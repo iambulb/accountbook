@@ -909,11 +909,11 @@
       const bars=list.map(function(_,i){ return '<span class="sv-bar'+(i<_story.ti?' done':'')+(i===_story.ti?' cur':'')+'"><i></i></span>'; }).join('');
       const rt=(typeof relTime==='function')?relTime(t.createdAt, Date.now()):'';
       let h='<div class="sv-top"><div class="sv-bars">'+bars+'</div>'+
-        '<div class="sv-head">'+avatarHtml(uid,nm,32)+'<b>'+(me?'내 스토리':escapeHtml(nm))+'</b><span class="sv-time">'+rt+'</span><button class="sv-x" onclick="closeStory()" aria-label="닫기">✕</button></div></div>';
+        '<div class="sv-head">'+avatarHtml(uid,nm,32)+'<b>'+(me?'내 스토리':escapeHtml(nm))+'</b><span class="sv-time">'+rt+'</span><button class="sv-x" '+App.view.act('closeStory')+' aria-label="닫기">✕</button></div></div>';
       h+='<div class="sv-body"><div class="sv-card"><div class="sv-title'+(t.done?' done':'')+'">'+escapeHtml(t.title||'(제목 없음)')+'</div>'+
         (t.dueDate?'<div class="sv-due">'+todoDueBadge(t,true)+'</div>':'')+(t.note?'<div class="sv-note">'+escapeHtml(t.note)+'</div>':'')+(t.done?'<div class="sv-doneflag">✓ 완료</div>':'')+'</div>'+
         (me?'<button class="btn" style="margin-top:14px;" onclick="closeStory();openTodoEdit()">＋ 할일 추가</button>':'')+'</div>';
-      h+='<button class="sv-zone left" onclick="storyPrev()" aria-label="이전"></button><button class="sv-zone right" onclick="storyNext()" aria-label="다음"></button>';
+      h+='<button class="sv-zone left" '+App.view.act('storyPrev')+' aria-label="이전"></button><button class="sv-zone right" '+App.view.act('storyNext')+' aria-label="다음"></button>';
       el.innerHTML=h; el.classList.add('on');
       if(_storyTimer){ clearTimeout(_storyTimer); _storyTimer=0; }
       const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1153,7 +1153,7 @@
       h+='<div class="field"><label>카테고리 (선택 — 캘린더·목록에 색으로 구분)</label><div class="chip-row" id="tdCatChips" style="margin:2px 0 0;">'+TODO_CATS.map(function(c){ return '<button type="button" class="chip'+(_tdCat===c[0]?' on':'')+'" data-c="'+c[0]+'" onclick="pickTodoCat(\''+c[0]+'\')"><span class="catdot" style="background:'+c[2]+'"></span>'+c[1]+'</button>'; }).join('')+'</div></div>';
       h+='<div class="field"><label>메모 (선택)</label><input class="input" id="tdNote" value="'+escapeHtml(t?(t.note||''):'')+'" placeholder="메모"></div>';
       h+='<div class="field"><label>하위 작업 (선택, 한 줄에 하나)</label><textarea class="input" id="tdSub" rows="3" placeholder="예: 우유 사기">'+escapeHtml(subText)+'</textarea></div>';
-      h+='<button class="btn" onclick="saveTodo('+(id?'\''+id+'\'':'null')+')">'+(t?'수정':'추가')+'</button>';
+      h+='<button class="btn" '+App.view.act('saveTodo', id?id:null)+'>'+(t?'수정':'추가')+'</button>';
       if(t) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteTodo(\''+id+'\')">삭제</button>';
       openSheet(t?'할일 수정':'할일 추가', h);
     }
@@ -1585,7 +1585,7 @@
       openSheet('그룹 만들기',
         '<div class="field"><label>그룹 이름</label><input class="input" id="grpName" placeholder="예: 우리집 가계부"></div>'+
         '<p class="muted" style="font-size:13px;margin:0 2px 12px;">만들면 6자리 초대 코드가 생겨요. 코드를 공유한 사람만 이 그룹에 들어올 수 있어요.</p>'+
-        '<button class="btn" onclick="doCreateGroup()">만들기</button>');
+        '<button class="btn" '+App.view.act('doCreateGroup')+'>만들기</button>');
     }
     async function doCreateGroup(){
       try{
@@ -1594,14 +1594,14 @@
         await loadMyWorkspaces();
         openSheet('그룹 생성 완료',
           '<p style="font-size:14px;margin:2px 2px 8px;">"'+escapeHtml(name)+'" 그룹을 만들었어요. 아래 코드를 친구에게 공유하세요.</p>'+
-          '<div class="code-box"><span>'+r.code+'</span><button class="btn sm" onclick="copyText(\''+r.code+'\')">복사</button></div>'+
-          '<button class="btn" onclick="chooseWorkspace(\''+r.wsId+'\')">이 그룹으로 전환</button>');
+          '<div class="code-box"><span>'+r.code+'</span><button class="btn sm" '+App.view.act('copyText',r.code)+'>복사</button></div>'+
+          '<button class="btn" '+App.view.act('chooseWorkspace',r.wsId)+'>이 그룹으로 전환</button>');
       }catch(e){ toast(e.message||'그룹 생성 실패', true); }
     }
     function openJoinGroupSheet(){
       openSheet('코드로 그룹 참여',
         '<div class="field"><label>그룹 코드 6자리</label><input class="input" id="joinCode" placeholder="ABC123" maxlength="6" style="text-transform:uppercase;letter-spacing:3px;font-weight:800;"></div>'+
-        '<button class="btn" onclick="doJoin()">참여하기</button>');
+        '<button class="btn" '+App.view.act('doJoin')+'>참여하기</button>');
     }
     async function doJoin(){ try{ const ok=await joinByCode(val('joinCode')); if(ok) closeSheet(); }catch(e){ toast(e.message||'참여 실패', true); } }
     function openGroupManageSheet(wsId){
@@ -1609,10 +1609,10 @@
       const members=w.members||{}, isOwner=w.ownerUid===state.uid;
       // 그룹 이름 (소유자는 수정 가능)
       let h = isOwner
-        ? '<div class="field"><label>그룹 이름</label><div style="display:flex;gap:8px;"><input class="input" id="grpRename" value="'+escapeHtml(w.name||'')+'"><button class="btn sm" onclick="doRenameWs(\''+wsId+'\')">저장</button></div></div>'
+        ? '<div class="field"><label>그룹 이름</label><div style="display:flex;gap:8px;"><input class="input" id="grpRename" value="'+escapeHtml(w.name||'')+'"><button class="btn sm" '+App.view.act('doRenameWs',wsId)+'>저장</button></div></div>'
         : '<div class="field"><label>그룹 이름</label><div style="font-weight:700;font-size:16px;padding:4px 2px;">'+escapeHtml(w.name||'')+'</div></div>';
       h+='<label style="font-size:13px;font-weight:700;color:var(--sub);">초대 코드</label>';
-      h+='<div class="code-box"><span>'+(w.code||'------')+'</span><button class="btn sm" onclick="copyText(\''+(w.code||'')+'\')">복사</button></div>';
+      h+='<div class="code-box"><span>'+(w.code||'------')+'</span><button class="btn sm" '+App.view.act('copyText',w.code||'')+'>복사</button></div>';
       h+='<label style="font-size:13px;font-weight:700;color:var(--sub);">멤버 '+Object.keys(members).length+'명</label>';
       h+='<div class="card" style="padding:6px 10px;margin:8px 0 4px;">';
       Object.keys(members).forEach(uid=>{
@@ -1692,14 +1692,14 @@
       let h='<div style="text-align:center;margin:6px 0 16px;">'+
         '<div id="profAvatar" style="display:inline-flex;">'+avatarHtml(state.uid, state.userName, 96)+'</div>'+
         '<div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">'+
-          '<button class="btn sm" onclick="pickProfilePhoto()">사진 변경</button>'+
-          '<button class="btn sm ghost" onclick="removeProfilePhoto()">사진 삭제</button></div>'+
+          '<button class="btn sm" '+App.view.act('pickProfilePhoto')+'>사진 변경</button>'+
+          '<button class="btn sm ghost" '+App.view.act('removeProfilePhoto')+'>사진 삭제</button></div>'+
         '<div class="likemini" style="justify-content:center;margin-top:10px;font-size:14px;gap:6px;" title="친구들에게 받은 좋아요">'+(typeof heartSvg==='function'?heartSvg({h:16}):'❤')+(state.myLikeCount||0)+'</div></div>';
       h+='<div class="field"><label>별명(이름)</label><input class="input" id="profName" value="'+escapeHtml(state.userName)+'" placeholder="가계부에 표시될 이름"></div>';
       h+='<div class="field"><label>계정 이메일(아이디)</label><input class="input" value="'+escapeHtml(state.userEmail||'')+'" disabled></div>';
       h+='<div class="menu-item" style="padding:8px 2px;"><span>프로필 공개</span><div class="switch '+(state.profilePublic!==false?'on':'')+'" id="profPublic" onclick="this.classList.toggle(\'on\')"><i></i></div></div>';
       h+='<div class="tx-sub" style="margin:2px 2px 14px;">사진은 256px로 줄여 저장돼요. <b>비공개</b>로 하면 랭킹·비친구에게 <b>은화 아이콘 + \'알뜰\'</b>로만 보여요(친구·좋아요·캠은 그대로).</div>';
-      h+='<button class="btn" onclick="onSaveProfile()">저장</button>';
+      h+='<button class="btn" '+App.view.act('onSaveProfile')+'>저장</button>';
       h+='<button class="btn ghost" style="margin-top:8px;" onclick="openPasswordChangeSheet()">비밀번호 변경</button>';
       openSheet('내 프로필', h);
     }
@@ -1718,7 +1718,7 @@
       let h='<div class="field"><label>현재 비밀번호</label><input class="input" id="pwCur" type="password" autocomplete="current-password" placeholder="현재 비밀번호"></div>';
       h+='<div class="field"><label>새 비밀번호</label><input class="input" id="pwNew" type="password" autocomplete="new-password" placeholder="6자 이상"></div>';
       h+='<div class="field"><label>새 비밀번호 확인</label><input class="input" id="pwNew2" type="password" autocomplete="new-password" placeholder="다시 입력"></div>';
-      h+='<button class="btn" onclick="changePassword()">변경</button>';
+      h+='<button class="btn" '+App.view.act('changePassword')+'>변경</button>';
       openSheet('비밀번호 변경', h);
     }
 
@@ -1737,11 +1737,11 @@
       let h='<div style="text-align:center;margin:6px 0 16px;">'+
         '<div id="wsAvatar" style="display:inline-flex;">'+wsAvatarHtml(ws.name, ws.photo, 96)+'</div>'+
         '<div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">'+
-          '<button class="btn sm" onclick="pickWsPhoto()">사진 변경</button>'+
-          '<button class="btn sm ghost" onclick="removeWsPhoto()">사진 삭제</button></div></div>';
+          '<button class="btn sm" '+App.view.act('pickWsPhoto')+'>사진 변경</button>'+
+          '<button class="btn sm ghost" '+App.view.act('removeWsPhoto')+'>사진 삭제</button></div></div>';
       h+='<div class="field"><label>가계부 이름</label><input class="input" id="wsName" value="'+escapeHtml(ws.name||'')+'" placeholder="예: 우리집 가계부"></div>';
       h+='<div class="tx-sub" style="margin:2px 2px 14px;">사진은 256px로 줄여 저장돼요.'+(isGroup?' 그룹 멤버 모두에게 보입니다.':'')+'</div>';
-      h+='<button class="btn" onclick="onSaveWsProfile()">저장</button>';
+      h+='<button class="btn" '+App.view.act('onSaveWsProfile')+'>저장</button>';
       openSheet('가계부 프로필', h);
     }
     function pickWsPhoto(){
@@ -2062,8 +2062,8 @@
     function renderCatManage(){
       const build=()=>{
         const filters=[['all','전체'],['expense','지출'],['income','수입'],['other','기타']];
-        let h='<div class="chip-row" style="margin-bottom:12px;">'+filters.map(f=>'<button class="chip '+(catFilter===f[0]?'on':'')+'" onclick="setCatFilter(\''+f[0]+'\')">'+f[1]+'</button>').join('')+'</div>';
-        h+='<button class="btn" onclick="openCatEdit()">+ 카테고리 추가</button>';
+        let h='<div class="chip-row" style="margin-bottom:12px;">'+filters.map(f=>'<button class="chip '+(catFilter===f[0]?'on':'')+'" '+App.view.act('setCatFilter',f[0])+'>'+f[1]+'</button>').join('')+'</div>';
+        h+='<button class="btn" '+App.view.act('openCatEdit')+'>+ 카테고리 추가</button>';
         const cats=state.categories.filter(canSee).filter(c=> catFilter==='all'?true:(catFilter==='other'?!['expense','income'].includes(c.type):c.type===catFilter)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
         h+='<div class="card" style="margin-top:12px;padding:6px 8px;">'+(cats.length?cats.map(catManageRow).join(''):'<div class="empty">카테고리가 없습니다</div>')+'</div>';
         return h;
@@ -2076,11 +2076,11 @@
       const inactive=c.isActive===false;
       return '<div class="acct" style="opacity:'+(inactive?'.5':'1')+';">'+
         '<div class="acct-dot" style="'+catTileStyle(c.name)+'">'+catSvgIcon(c.name)+'</div>'+
-        '<div style="flex:1;min-width:0;" onclick="openCatEdit(\''+jsAttr(c.name)+'\')"><div class="acct-name">'+escapeHtml(c.name)+'<span class="pill">'+(CAT_TYPE_LABEL[c.type]||c.type||'')+'</span>'+(c.isDefault?'<span class="pill">기본</span>':'')+(c.visibility==='private'?'<span class="pill">개인</span>':'')+'</div></div>'+
+        '<div style="flex:1;min-width:0;" '+App.view.act('openCatEdit',c.name)+'><div class="acct-name">'+escapeHtml(c.name)+'<span class="pill">'+(CAT_TYPE_LABEL[c.type]||c.type||'')+'</span>'+(c.isDefault?'<span class="pill">기본</span>':'')+(c.visibility==='private'?'<span class="pill">개인</span>':'')+'</div></div>'+
         '<div style="display:flex;align-items:center;gap:2px;">'+
-          '<button class="icon-btn" style="width:30px;height:30px;font-size:13px;box-shadow:none;background:var(--line-soft);" onclick="moveCat(\''+jsAttr(c.name)+'\',-1)">▲</button>'+
-          '<button class="icon-btn" style="width:30px;height:30px;font-size:13px;box-shadow:none;background:var(--line-soft);" onclick="moveCat(\''+jsAttr(c.name)+'\',1)">▼</button>'+
-          '<div class="switch '+(inactive?'':'on')+'" onclick="toggleCatActive(\''+jsAttr(c.name)+'\')"><i></i></div>'+
+          '<button class="icon-btn" style="width:30px;height:30px;font-size:13px;box-shadow:none;background:var(--line-soft);" '+App.view.act('moveCat',c.name,-1)+'>▲</button>'+
+          '<button class="icon-btn" style="width:30px;height:30px;font-size:13px;box-shadow:none;background:var(--line-soft);" '+App.view.act('moveCat',c.name,1)+'>▼</button>'+
+          '<div class="switch '+(inactive?'':'on')+'" '+App.view.act('toggleCatActive',c.name)+'><i></i></div>'+
         '</div></div>';
     }
     function moveCat(name,dir){
@@ -2110,8 +2110,8 @@
       h+='<div class="form-2"><div class="field"><label>공개 범위</label><select class="input" id="catVis">'+VISIBILITY.map(p=>'<option value="'+p[0]+'"'+(((c&&c.visibility===p[0])||(!c&&p[0]===defaultVisibility()))?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div>'+
         '<div class="field"><label>활성</label><select class="input" id="catActive"><option value="1"'+((!c||c.isActive!==false)?' selected':'')+'>활성</option><option value="0"'+((c&&c.isActive===false)?' selected':'')+'>비활성</option></select></div></div>';
       h+='<div class="field"><label>메모 (선택)</label><input class="input" id="catMemo" value="'+escapeHtml(c?(c.memo||''):'')+'" placeholder="메모"></div>';
-      h+='<button class="btn" onclick="saveCat('+(name?'\''+escapeHtml(name)+'\'':'null')+','+canRename+')">'+(c?'수정':'추가')+'</button>';
-      if(c) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteCat(\''+jsAttr(name)+'\')">삭제</button>';
+      h+='<button class="btn" '+App.view.act('saveCat', name?name:null, canRename)+'>'+(c?'수정':'추가')+'</button>';
+      if(c) h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deleteCat',name)+'>삭제</button>';
       openSheet(c?'카테고리 수정':'카테고리 추가', h);
     }
     function saveCat(origName, canRename){
@@ -2445,7 +2445,7 @@
       h+='<div class="card"><div class="summary">'+
         '<div><div class="s-label">정산 가계부</div><div class="s-val">'+pbs.length+'</div></div>'+
         '<div><div class="s-label">미정산 합계</div><div class="s-val">'+won(totalUnsettled)+'</div></div></div></div>';
-      h+=rows.map(({p,s})=>'<div class="card" onclick="openPbDetail(\''+p.id+'\',\'settle\')"><div class="row"><b>'+(p.icon||'📒')+' '+escapeHtml(p.name)+'</b>'+pbSettleBadge(p)+'</div>'+
+      h+=rows.map(({p,s})=>'<div class="card" '+App.view.act('openPbDetail',p.id,'settle')+'><div class="row"><b>'+(p.icon||'📒')+' '+escapeHtml(p.name)+'</b>'+pbSettleBadge(p)+'</div>'+
         '<div class="tx-sub" style="margin-top:6px;">대상 '+s.txCount+'건 · 완료율 '+s.settledPct+'%'+(s.unsettledAmount>0?(' · 미정산 '+won(s.unsettledAmount)):'')+'</div></div>').join('');
       openSheet('정산', h);
     }
