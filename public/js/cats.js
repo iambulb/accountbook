@@ -9167,13 +9167,19 @@
         return g;
       }).then(r=>{ if(!r||!r.committed) return;
         const nowCoins=(r.snapshot&&r.snapshot.val()&&r.snapshot.val().coins)||before, gained=nowCoins-before;
-        let x=innerWidth/2, y=200; if(btnEl&&btnEl.getBoundingClientRect){ const b=btnEl.getBoundingClientRect(); x=b.left; y=b.bottom+100; }   // 캠 안쪽(버튼 아래)에서 지갑으로 올라오게
+        // 🎯 연출 앵커 = 수확한 캠 방(.cd-room/.catroom) 내부의 상단부(높이 32%) — 캠 중앙보다 살짝 위에서 보이게(사용자 지침, 버튼 기준은 화면 위로 벗어나 보였음)
+        let x=innerWidth/2, y=200;
+        if(btnEl&&btnEl.getBoundingClientRect){
+          const room=(btnEl.closest&&(btnEl.closest('.cd-room')||btnEl.closest('.catroom')))||null;
+          if(room){ const rr=room.getBoundingClientRect(); x=rr.left+rr.width/2; y=rr.top+rr.height*0.32; }
+          else { const b=btnEl.getBoundingClientRect(); x=b.left; y=b.bottom+100; }
+        }
         const short=(shortFood&&shortWater)?'사료·물':(shortFood?'사료':(shortWater?'물':''));
         const dropped=(dropEgg>0||dropBox>0||dropDdeul>0||boxRewards.length>0);
         if(gained>0 || filledN>0 || goldBonus>0 || dropped){ if(gained>0||goldBonus>0){ rewardFly(x,y, gained, goldBonus, before, beforeGold);
-            if(typeof yieldFloatFx==='function') yieldFloatFx(x, y-80, gained, goldBonus); }   // 🌾 획득량 "+N" 플로팅(버튼 근처, 지갑은 트랜지언트라 즉시 표기)
-          if((dropEgg>0||dropBox>0||dropDdeul>0) && typeof harvestDropFx==='function') harvestDropFx(x, y, { egg:dropEgg, box:dropBox, ddeul:dropDdeul });   // 🎁 드롭 원샷 픽셀 연출(뜰알=선버스트)
-          if(boxRewards.length && typeof boxRewardFx==='function') boxRewardFx(x, y-40, boxRewards);   // 📦 박스 개봉 결과 — 실제 획득 아이템 아트로 표시(랜덤박스 아이콘이 아니라)
+            if(typeof yieldFloatFx==='function') yieldFloatFx(x, y-22, gained, goldBonus); }   // 🌾 획득량 "+N" 플로팅 — 캠 상단부 안(지갑은 트랜지언트라 즉시 표기)
+          if((dropEgg>0||dropBox>0||dropDdeul>0) && typeof harvestDropFx==='function') harvestDropFx(x, y+16, { egg:dropEgg, box:dropBox, ddeul:dropDdeul });   // 🎁 드롭 원샷 픽셀 연출(플로팅 바로 아래 층)
+          if(boxRewards.length && typeof boxRewardFx==='function') boxRewardFx(x, y+52, boxRewards);   // 📦 박스 개봉 결과 — 드롭 아래 층(겹침 방지, rise 애니로 상단부로 떠오름)
           if(goldBonus>0 || dropped || filledN>0 || short){   // 은화만 얻은 평범한 수확은 토스트 생략(플로팅+지갑 카운트업이 대신) — 부가 정보 있을 때만
             const boxMsg=boxRewards.length?(' · 📦 '+boxRewards.slice(0,3).map(rewardName).join(', ')+(boxRewards.length>3?' 외 '+(boxRewards.length-3)+'개':'')+(boxRefund>0?' (중복 환급 +'+boxRefund+' 은화)':'')):'';
             const dropMsg=(dropEgg>0?' · 🥚펫알 +'+dropEgg:'')+(dropBox>0?' · 📦랜덤박스 +'+dropBox:'')+(dropDdeul>0?' · 🌱뜰알 +'+dropDdeul:'')+boxMsg;
