@@ -2460,8 +2460,8 @@
         '<div><div class="s-label">사용</div><div class="s-val">'+won(totalUsed)+'</div></div></div>'+
         '<div class="row" style="margin-top:12px;font-size:12px;border-top:1px solid var(--line-soft);padding-top:12px;"><span class="muted">남음 <b>'+won(totalBudget-totalUsed)+'</b></span><span class="muted">정산 사용 <b>'+settleCount+'</b></span></div></div>';
       const tabs=[['all','전체'],['active','진행중'],['completed','완료'],['archived','보관'],['travel','여행'],['gathering','모임/계'],['etc','기타']];
-      h+='<div class="chip-row">'+tabs.map(t=>'<button class="chip '+(pbTab===t[0]?'on':'')+'" onclick="setPbTab(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div>';
-      h+='<button class="btn" onclick="openPbEdit()">+ 목적별 가계부 추가</button>';
+      h+='<div class="chip-row">'+tabs.map(t=>'<button class="chip '+(pbTab===t[0]?'on':'')+'" '+App.view.act('setPbTab',t[0])+'>'+t[1]+'</button>').join('')+'</div>';
+      h+='<button class="btn" '+App.view.act('openPbEdit')+'>+ 목적별 가계부 추가</button>';
       let list=pbs.slice();
       if(['active','completed','archived'].includes(pbTab)) list=list.filter(p=>(p.status||'active')===pbTab);
       else if(pbTab==='travel') list=list.filter(p=>p.type==='travel');
@@ -2499,11 +2499,11 @@
         '<div class="tx-sub" style="margin-top:6px;">'+((p.startDate||'')+(p.endDate?(' ~ '+p.endDate):''))+(p.participants&&p.participants.length?(' · '+escapeHtml(p.participants.join(', '))):'')+'</div>'+
         (p.budgetAmount?('<div class="bar" style="margin-top:10px;"><i style="width:'+Math.min(u.pct,100)+'%;background:'+c+'"></i></div><div class="row" style="margin-top:6px;"><span class="tx-sub">'+won(u.used)+' / '+won(u.amount)+'</span><span class="tx-sub" style="color:'+c+'">남음 '+won(u.remain)+'</span></div>'):('<div class="tx-sub" style="margin-top:8px;">사용 '+won(u.used)+'</div>'))+'</div>';
       if(settleOn){
-        h+='<div class="chip-row">'+[['tx','거래'],['settle','정산']].map(o=>'<button class="chip '+(pbDetailTab===o[0]?'on':'')+'" onclick="setPbDetailTab(\''+p.id+'\',\''+o[0]+'\')">'+o[1]+'</button>').join('')+'</div>';
+        h+='<div class="chip-row">'+[['tx','거래'],['settle','정산']].map(o=>'<button class="chip '+(pbDetailTab===o[0]?'on':'')+'" '+App.view.act('setPbDetailTab',p.id,o[0])+'>'+o[1]+'</button>').join('')+'</div>';
       }
       h+= (settleOn && pbDetailTab==='settle') ? renderPbSettleTab(p) : renderPbTxTab(p,u);
       if(pbDetailTab!=='settle') h+=pbTodoSummaryHtml(p.id);   // 연결된 할일(여행 준비물 등)
-      h+='<button class="btn ghost" onclick="openPbEdit(\''+p.id+'\')">설정 수정</button>';
+      h+='<button class="btn ghost" '+App.view.act('openPbEdit',p.id)+'>설정 수정</button>';
       openSheet(p.name, h);
     }
     function setPbDetailTab(id,tab){ pbDetailTab=tab; openPbDetail(id,tab); }
@@ -2521,8 +2521,8 @@
       const catKeys=Object.keys(byCat).sort((a,b)=>byCat[b]-byCat[a]);
       let h=currencySummaryHtml(u.txs);
       if(catKeys.length) h+='<div class="card"><div class="sec-title" style="margin:0 0 8px;">카테고리별</div>'+catKeys.map(k=>'<div class="row" style="padding:5px 0;"><span>'+catIcon(k)+' '+escapeHtml(k)+'</span><b>'+won(byCat[k])+'</b></div>').join('')+'</div>';
-      h+='<div class="chip-row">'+['active','completed','archived'].map(st=>'<button class="chip '+((p.status||'active')===st?'on':'')+'" onclick="setPbStatus(\''+p.id+'\',\''+st+'\')">'+PB_STATUS_LABEL[st]+'</button>').join('')+'</div>';
-      h+='<button class="btn" onclick="openTxSheet(null,null,null,\''+p.id+'\')">+ 이 가계부에 지출 추가</button>';
+      h+='<div class="chip-row">'+['active','completed','archived'].map(st=>'<button class="chip '+((p.status||'active')===st?'on':'')+'" '+App.view.act('setPbStatus',p.id,st)+'>'+PB_STATUS_LABEL[st]+'</button>').join('')+'</div>';
+      h+='<button class="btn" '+App.view.act('openTxSheet',null,null,null,p.id)+'>+ 이 가계부에 지출 추가</button>';
       h+='<div class="sec-title" style="margin-left:2px;">거래 ('+allTx.length+')</div>';
       h+='<div class="card" style="padding:6px 10px;">'+(allTx.length?allTx.map(txRowHtml).join(''):'<div class="empty">연결된 거래 없음</div>')+'</div>';
       return h;
@@ -2546,7 +2546,7 @@
       if(s.suggestions.length){
         h+='<div class="card" style="padding:6px 10px;">'+s.suggestions.map((g,i)=>
           '<div class="row" style="padding:8px 2px;"><span><b>'+escapeHtml(g.from)+'</b> → <b>'+escapeHtml(g.to)+'</b></span>'+
-          '<span style="display:flex;align-items:center;gap:8px;"><b>'+won(g.amount)+'</b><button class="chip" onclick="openSettlePay(\''+p.id+'\','+i+')">완료</button></span></div>').join('')+'</div>';
+          '<span style="display:flex;align-items:center;gap:8px;"><b>'+won(g.amount)+'</b><button class="chip" '+App.view.act('openSettlePay',p.id,i)+'>완료</button></span></div>').join('')+'</div>';
       } else {
         h+='<div class="card"><div class="empty">'+(s.neededAmount>0?'모든 정산이 완료되었습니다 🎉':'정산할 송금이 없습니다')+'</div></div>';
       }
@@ -2554,11 +2554,11 @@
         h+='<div class="sec-title" style="margin-left:2px;">완료 내역</div>';
         h+='<div class="card" style="padding:6px 10px;">'+s.payments.slice().sort((a,b)=>(b.paymentDate||'').localeCompare(a.paymentDate||'')).map(x=>
           '<div class="row" style="padding:8px 2px;"><span>'+escapeHtml(x.fromPerson)+' → '+escapeHtml(x.toPerson)+' <span class="tx-sub">'+(x.paymentDate||'')+(x.memo?(' · '+escapeHtml(x.memo)):'')+'</span></span>'+
-          '<span style="display:flex;align-items:center;gap:8px;"><b>'+won(x.amount)+'</b><button class="chip" onclick="cancelSettlementPayment(\''+x.ownerUid+'\',\''+x.id+'\',\''+p.id+'\')">취소</button></span></div>').join('')+'</div>';
+          '<span style="display:flex;align-items:center;gap:8px;"><b>'+won(x.amount)+'</b><button class="chip" '+App.view.act('cancelSettlementPayment',x.ownerUid,x.id,p.id)+'>취소</button></span></div>').join('')+'</div>';
       }
       h+='<div class="sec-title" style="margin-left:2px;">정산 대상 거래 ('+s.txCount+')</div>';
       h+='<div class="card" style="padding:6px 10px;">'+(s.txs.length?s.txs.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).map(txRowHtml).join(''):'<div class="empty">정산 포함 거래 없음</div>')+'</div>';
-      h+='<button class="btn" onclick="openTxSheet(null,null,null,\''+p.id+'\')">+ 이 가계부에 지출 추가</button>';
+      h+='<button class="btn" '+App.view.act('openTxSheet',null,null,null,p.id)+'>+ 이 가계부에 지출 추가</button>';
       return h;
     }
     // 송금 완료 입력 시트
@@ -2575,7 +2575,7 @@
         '<div class="field"><label>받는 계좌</label><select class="input" id="sStpTo">'+accts.map(a=>'<option value="'+a.id+'">'+escapeHtml(a.name)+'</option>').join('')+'</select></div></div>'+
         '<div class="tx-sub">정산 송금을 이체 거래로 기록합니다(실제소비에는 미포함).</div>'
       ):'<div class="tx-sub">계좌가 없어 이체 거래를 만들 수 없습니다.</div>')+'</div>';
-      h+='<button class="btn" onclick="saveSettlementPayment()">완료 처리</button>';
+      h+='<button class="btn" '+App.view.act('saveSettlementPayment')+'>완료 처리</button>';
       openSheet('정산 송금 완료', h);
     }
     function saveSettlementPayment(){
@@ -2624,8 +2624,8 @@
       h+='<div class="field"><label>공개 범위</label><select class="input" id="pbVis">'+VISIBILITY.map(v=>'<option value="'+v[0]+'"'+(((p&&p.visibility===v[0])||(!p&&v[0]===defaultVisibility()))?' selected':'')+'>'+v[1]+'</option>').join('')+'</select></div>';
       h+='<div class="field"><label>메모</label><input class="input" id="pbMemo" value="'+escapeHtml(p?(p.memo||''):'')+'" placeholder="메모"></div>';
       h+='</details>';
-      h+='<button class="btn" onclick="savePb('+(id?'\''+id+'\'':'null')+')">'+(p?'수정':'추가')+'</button>';
-      if(p) h+='<button class="btn danger" style="margin-top:8px;" onclick="deletePb(\''+id+'\')">삭제</button>';
+      h+='<button class="btn" '+App.view.act('savePb', id?id:null)+'>'+(p?'수정':'추가')+'</button>';
+      if(p) h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deletePb',id)+'>삭제</button>';
       openSheet(p?'목적별 가계부 수정':'목적별 가계부 추가', h);
     }
     function savePb(id){
@@ -2664,13 +2664,13 @@
         '<div><div class="s-label">보냄</div><div class="s-val red">'+won(s.given)+'</div></div>'+
         '<div><div class="s-label">받음</div><div class="s-val green">'+won(s.received)+'</div></div>'+
         '<div><div class="s-label">순</div><div class="s-val">'+won(s.received-s.given)+'</div></div></div></div>';
-      h+='<div class="chip-row">'+[['log','기록'],['planned','예정'],['people','인맥']].map(o=>'<button class="chip '+(giftTab===o[0]?'on':'')+'" onclick="setGiftTab(\''+o[0]+'\')">'+o[1]+'</button>').join('')+'</div>';
+      h+='<div class="chip-row">'+[['log','기록'],['planned','예정'],['people','인맥']].map(o=>'<button class="chip '+(giftTab===o[0]?'on':'')+'" '+App.view.act('setGiftTab',o[0])+'>'+o[1]+'</button>').join('')+'</div>';
       h+= giftTab==='planned'?renderGiftPlanned() : (giftTab==='people'?renderGiftPeople() : renderGiftLog());
       openSheet('경조사비', h);
     }
     function giftRow(g){
       const given=g.direction!=='received', sign=given?'-':'+', cls=given?'red':'green';
-      return '<div class="tx" onclick="openGiftEdit(\''+g.id+'\')">'+
+      return '<div class="tx" '+App.view.act('openGiftEdit',g.id)+'>'+
         '<div class="tx-ic">'+giftSvgIcon(g.eventType)+'</div>'+
         '<div class="tx-main"><div class="tx-title">'+escapeHtml(g.personName||'')+' <span class="pill">'+(GIFT_EVENT_LABEL[g.eventType]||g.eventType||'')+'</span>'+(g.linkedTransactionId?'<span class="pill">🧾</span>':'')+'</div>'+
         '<div class="tx-sub">'+(g.date||'')+' · '+(GIFT_DIR_LABEL[g.direction]||'')+(g.relation?(' · '+(REL_LABEL[g.relation]||g.relation)):'')+'</div></div>'+
@@ -2678,30 +2678,30 @@
     }
     function renderGiftLog(){
       const list=visibleGifts().slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-      let h='<button class="btn" onclick="openGiftEdit()">+ 경조사비 기록 추가</button>';
+      let h='<button class="btn" '+App.view.act('openGiftEdit')+'>+ 경조사비 기록 추가</button>';
       h+='<div class="card" style="padding:6px 10px;">'+(list.length?list.map(giftRow).join(''):'<div class="empty">기록이 없습니다</div>')+'</div>';
       return h;
     }
     function renderGiftPlanned(){
       const list=state.plannedGiftEvents.filter(canSee).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
-      let h='<button class="btn" onclick="openPlannedEdit()">+ 경조사 예정 추가</button>';
+      let h='<button class="btn" '+App.view.act('openPlannedEdit')+'>+ 경조사 예정 추가</button>';
       if(!list.length) return h+'<div class="card"><div class="empty">예정된 경조사가 없습니다</div></div>';
       h+='<div class="card" style="padding:6px 10px;">'+list.map(pl=>{
         const st=pl.status||'planned';
         return '<div class="tx"><div class="tx-ic">'+giftSvgIcon(pl.eventType)+'</div>'+
-          '<div class="tx-main" onclick="openPlannedEdit(\''+pl.id+'\')"><div class="tx-title">'+escapeHtml(pl.personName||'')+' <span class="pill">'+(GIFT_EVENT_LABEL[pl.eventType]||pl.eventType||'')+'</span> <span class="pill">'+(PLANNED_STATUS_LABEL[st]||st)+'</span></div>'+
+          '<div class="tx-main" '+App.view.act('openPlannedEdit',pl.id)+'><div class="tx-title">'+escapeHtml(pl.personName||'')+' <span class="pill">'+(GIFT_EVENT_LABEL[pl.eventType]||pl.eventType||'')+'</span> <span class="pill">'+(PLANNED_STATUS_LABEL[st]||st)+'</span></div>'+
           '<div class="tx-sub">'+(pl.date||'')+(pl.expectedAmount?(' · 예상 '+won(pl.expectedAmount)):'')+'</div></div>'+
-          (st==='planned'?'<button class="chip" onclick="completePlanned(\''+pl.id+'\')">완료</button>':'')+'</div>';
+          (st==='planned'?'<button class="chip" '+App.view.act('completePlanned',pl.id)+'>완료</button>':'')+'</div>';
       }).join('')+'</div>';
       return h;
     }
     function renderGiftPeople(){
       const list=state.people.filter(canSee).slice().sort((a,b)=>(a.name||'').localeCompare(b.name||''));
-      let h='<button class="btn" onclick="openPersonEdit()">+ 인맥 추가</button>';
+      let h='<button class="btn" '+App.view.act('openPersonEdit')+'>+ 인맥 추가</button>';
       if(!list.length) return h+'<div class="card"><div class="empty">등록된 인맥이 없습니다</div></div>';
       h+='<div class="card" style="padding:6px 10px;">'+list.map(p=>{
         const t=personGiftTotals(p.id,p.name);
-        return '<div class="tx" onclick="openPersonEdit(\''+p.id+'\')"><div class="tx-ic">'+svgWrap(CAT_SVG.user)+'</div>'+
+        return '<div class="tx" '+App.view.act('openPersonEdit',p.id)+'><div class="tx-ic">'+svgWrap(CAT_SVG.user)+'</div>'+
           '<div class="tx-main"><div class="tx-title">'+escapeHtml(p.name||'')+(p.relation?' <span class="pill">'+(REL_LABEL[p.relation]||p.relation)+'</span>':'')+'</div>'+
           '<div class="tx-sub">보냄 '+won(t.given)+' · 받음 '+won(t.received)+'</div></div></div>';
       }).join('')+'</div>';
@@ -2718,7 +2718,7 @@
       const pname=g?g.personName:(pf?pf.personName:'');
       const etype=g?g.eventType:(pf?pf.eventType:'wedding');
       let h='<div class="type-seg" id="gDirSeg" style="margin-bottom:12px;">'+
-        [['given','줌(지출)'],['received','받음(수입)']].map(o=>'<button class="'+(dir===o[0]?'on':'')+'" onclick="setGiftDir(\''+o[0]+'\')">'+o[1]+'</button>').join('')+'</div>';
+        [['given','줌(지출)'],['received','받음(수입)']].map(o=>'<button class="'+(dir===o[0]?'on':'')+'" '+App.view.act('setGiftDir',o[0])+'>'+o[1]+'</button>').join('')+'</div>';
       h+='<div class="amount-wrap"><span class="cur">₩</span><input class="amount-input" id="gAmount" inputmode="numeric" placeholder="0" value="'+(amount?Number(amount).toLocaleString():'')+'" oninput="this.value=fmtComma(this.value)"></div>';
       h+='<div class="field"><label>상대(이름)</label><input class="input" id="gPerson" list="gPeopleList" value="'+escapeHtml(pname)+'" placeholder="예: 홍길동"><datalist id="gPeopleList">'+names.map(n=>'<option value="'+escapeHtml(n)+'"></option>').join('')+'</datalist></div>';
       h+='<div class="form-2"><div class="field"><label>관계</label><select class="input" id="gRel">'+REL_TYPES.map(r=>'<option value="'+r[0]+'"'+((g&&g.relation===r[0])?' selected':'')+'>'+r[1]+'</option>').join('')+'</select></div>'+
@@ -2731,8 +2731,8 @@
       h+='<div class="field"><label>메모</label><input class="input" id="gMemo" value="'+escapeHtml(g?(g.memo||''):'')+'" placeholder="메모"></div>';
       h+='<div class="field"><label>공개 범위</label><select class="input" id="gVis">'+VISIBILITY.map(v=>'<option value="'+v[0]+'"'+(((g&&g.visibility===v[0])||(!g&&v[0]===defaultVisibility()))?' selected':'')+'>'+v[1]+'</option>').join('')+'</select></div>';
       h+='</details>';
-      h+='<button class="btn" onclick="saveGiftEvent('+(id?'\''+id+'\'':'null')+')">'+(g?'수정':'저장')+'</button>';
-      if(g) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteGiftEvent(\''+id+'\')">삭제</button>';
+      h+='<button class="btn" '+App.view.act('saveGiftEvent', id?id:null)+'>'+(g?'수정':'저장')+'</button>';
+      if(g) h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deleteGiftEvent',id)+'>삭제</button>';
       openSheet(g?'경조사비 수정':'경조사비 기록', h);
     }
     function setGiftDir(d){ window._gDir=d; const seg=$('gDirSeg'); if(seg){ [...seg.children].forEach((b,i)=>b.classList.toggle('on', (d==='given'?0:1)===i)); } }
@@ -2789,8 +2789,8 @@
       h+='<div class="field"><label>날짜</label><input type="date" class="input" id="plDate" value="'+(pl&&pl.date?pl.date:todayStr())+'"></div>';
       h+='<div class="field"><label>메모</label><input class="input" id="plMemo" value="'+escapeHtml(pl?(pl.memo||''):'')+'" placeholder="메모"></div>';
       if(pl) h+='<div class="field"><label>상태</label><select class="input" id="plStatus">'+Object.keys(PLANNED_STATUS_LABEL).map(st=>'<option value="'+st+'"'+(((pl.status||'planned')===st)?' selected':'')+'>'+PLANNED_STATUS_LABEL[st]+'</option>').join('')+'</select></div>';
-      h+='<button class="btn" onclick="savePlanned('+(id?'\''+id+'\'':'null')+')">'+(pl?'수정':'추가')+'</button>';
-      if(pl) h+='<button class="btn danger" style="margin-top:8px;" onclick="deletePlanned(\''+id+'\')">삭제</button>';
+      h+='<button class="btn" '+App.view.act('savePlanned', id?id:null)+'>'+(pl?'수정':'추가')+'</button>';
+      if(pl) h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deletePlanned',id)+'>삭제</button>';
       openSheet(pl?'경조사 예정 수정':'경조사 예정 추가', h);
     }
     function savePlanned(id){
@@ -2817,8 +2817,8 @@
       h+='<div class="field"><label>관계</label><select class="input" id="perRel">'+REL_TYPES.map(r=>'<option value="'+r[0]+'"'+((p&&p.relation===r[0])?' selected':'')+'>'+r[1]+'</option>').join('')+'</select></div>';
       h+='<div class="field"><label>메모</label><input class="input" id="perMemo" value="'+escapeHtml(p?(p.memo||''):'')+'" placeholder="메모"></div>';
       if(p){ const t=personGiftTotals(p.id,p.name); h+='<div class="card" style="margin:4px 0;"><div class="row" style="padding:4px 0;"><span class="tx-sub">보냄 합계</span><b class="red">'+won(t.given)+'</b></div><div class="row" style="padding:4px 0;"><span class="tx-sub">받음 합계</span><b class="green">'+won(t.received)+'</b></div></div>'; }
-      h+='<button class="btn" onclick="savePerson('+(id?'\''+id+'\'':'null')+')">'+(p?'수정':'추가')+'</button>';
-      if(p) h+='<button class="btn danger" style="margin-top:8px;" onclick="deletePerson(\''+id+'\')">삭제</button>';
+      h+='<button class="btn" '+App.view.act('savePerson', id?id:null)+'>'+(p?'수정':'추가')+'</button>';
+      if(p) h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deletePerson',id)+'>삭제</button>';
       openSheet(p?'인맥 수정':'인맥 추가', h);
     }
     function savePerson(id){
@@ -2841,7 +2841,7 @@
         '<div><div class="s-label">빌린 잔액</div><div class="s-val red">'+won(s.borrowedBal)+'</div></div>'+
         '<div><div class="s-label">빌려준 잔액</div><div class="s-val green">'+won(s.lentBal)+'</div></div>'+
         '<div><div class="s-label">누적 이자</div><div class="s-val">'+won(s.interest)+'</div></div></div></div>';
-      h+='<button class="btn" onclick="openLoanEdit()">+ 대출 추가</button>';
+      h+='<button class="btn" '+App.view.act('openLoanEdit')+'>+ 대출 추가</button>';
       h+='<div style="margin-top:12px;">'+(list.length?list.map(loanCard).join(''):'<div class="empty">등록된 대출이 없습니다</div>')+'</div>';
       openSheet('대출 / 이자', h);
     }
@@ -2850,7 +2850,7 @@
       const dirBadge='<span class="pill">'+(LOAN_DIR_LABEL[l.direction]||l.direction)+'</span>';
       const stBadge=c.status!=='active'?'<span class="pill">'+(LOAN_STATUS_LABEL[c.status]||c.status)+'</span>':'';
       const col=l.direction==='lent'?'var(--income)':'var(--expense)';
-      return '<div class="card" onclick="openLoanDetail(\''+l.id+'\')"><div class="row"><b>🏦 '+escapeHtml(l.name||'대출')+' '+stBadge+'</b>'+dirBadge+'</div>'+
+      return '<div class="card" '+App.view.act('openLoanDetail',l.id)+'><div class="row"><b>🏦 '+escapeHtml(l.name||'대출')+' '+stBadge+'</b>'+dirBadge+'</div>'+
         '<div class="tx-sub" style="margin-top:6px;">'+escapeHtml(l.counterparty||'')+(l.interestRate?(' · 연 '+l.interestRate+'%'):'')+(l.dueDate?(' · 만기 '+l.dueDate):'')+'</div>'+
         '<div class="bar" style="margin-top:8px;"><i style="width:'+pct+'%;background:'+col+'"></i></div>'+
         '<div class="row" style="margin-top:6px;"><span class="tx-sub">잔액 '+won(c.balance)+' / '+won(c.principal)+'</span><span class="tx-sub" style="color:'+col+'">'+pct+'% 상환</span></div></div>';
@@ -2865,17 +2865,17 @@
           '<div><div class="s-label">원금</div><div class="s-val">'+won(c.principal)+'</div></div>'+
           '<div><div class="s-label">누적 이자</div><div class="s-val">'+won(c.paidInterest)+'</div></div></div>'+
         (l.interestRate?('<div class="tx-sub" style="margin-top:8px;">연 '+l.interestRate+'% · 월 예상 이자 약 '+won(c.monthlyInterest)+' (잔액 기준 단리)</div>'):'')+'</div>';
-      h+='<div class="chip-row">'+['active','paid','overdue'].map(st=>'<button class="chip '+((l.status||'active')===st?'on':'')+'" onclick="setLoanStatus(\''+l.id+'\',\''+st+'\')">'+LOAN_STATUS_LABEL[st]+'</button>').join('')+'</div>';
-      h+='<button class="btn" onclick="openLoanPayment(\''+l.id+'\')">+ 상환 기록</button>';
+      h+='<div class="chip-row">'+['active','paid','overdue'].map(st=>'<button class="chip '+((l.status||'active')===st?'on':'')+'" '+App.view.act('setLoanStatus',l.id,st)+'>'+LOAN_STATUS_LABEL[st]+'</button>').join('')+'</div>';
+      h+='<button class="btn" '+App.view.act('openLoanPayment',l.id)+'>+ 상환 기록</button>';
       h+='<div class="sec-title" style="margin-left:2px;">상환 내역 ('+c.payments.length+')</div>';
       const ps=c.payments.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
       h+='<div class="card" style="padding:6px 10px;">'+(ps.length?ps.map(p=>loanPaymentRow(l,p)).join(''):'<div class="empty">상환 기록 없음</div>')+'</div>';
-      h+='<button class="btn ghost" onclick="openLoanEdit(\''+l.id+'\')">설정 수정</button>';
+      h+='<button class="btn ghost" '+App.view.act('openLoanEdit',l.id)+'>설정 수정</button>';
       openSheet(l.name||'대출', h);
     }
     function loanPaymentRow(l,p){
       const tot=(Number(p.principalAmount)||0)+(Number(p.interestAmount)||0);
-      return '<div class="tx" onclick="openLoanPayment(\''+l.id+'\',\''+p.id+'\')"><div class="tx-ic">'+svgWrap(CAT_SVG.coin)+'</div>'+
+      return '<div class="tx" '+App.view.act('openLoanPayment',l.id,p.id)+'><div class="tx-ic">'+svgWrap(CAT_SVG.coin)+'</div>'+
         '<div class="tx-main"><div class="tx-title">'+(p.date||'')+(p.linkedTransactionId?' <span class="pill">🧾</span>':'')+'</div>'+
         '<div class="tx-sub">원금 '+won(Number(p.principalAmount)||0)+' · 이자 '+won(Number(p.interestAmount)||0)+'</div></div>'+
         '<div class="tx-amt">'+won(tot)+'</div></div>';
@@ -2886,7 +2886,7 @@
       const dir=l?(l.direction||'borrowed'):'borrowed';
       window._loanDir=dir;
       let h='<div class="type-seg" id="lDirSeg" style="margin-bottom:12px;">'+
-        [['borrowed','빌림(대출)'],['lent','빌려줌']].map(o=>'<button class="'+(dir===o[0]?'on':'')+'" onclick="setLoanDir(\''+o[0]+'\')">'+o[1]+'</button>').join('')+'</div>';
+        [['borrowed','빌림(대출)'],['lent','빌려줌']].map(o=>'<button class="'+(dir===o[0]?'on':'')+'" '+App.view.act('setLoanDir',o[0])+'>'+o[1]+'</button>').join('')+'</div>';
       h+='<div class="field"><label>이름</label><input class="input" id="lName" value="'+escapeHtml(l?l.name:'')+'" placeholder="예: 주택담보대출, 친구 빌려줌"></div>';
       h+='<div class="field"><label>상대/기관</label><input class="input" id="lParty" value="'+escapeHtml(l?(l.counterparty||''):'')+'" placeholder="예: ○○은행, 홍길동"></div>';
       h+='<div class="form-2"><div class="field"><label>원금</label><input class="input" id="lPrincipal" inputmode="numeric" value="'+(l&&l.principal?Number(l.principal).toLocaleString():'')+'" placeholder="0" oninput="this.value=fmtComma(this.value)"></div>'+
@@ -2900,8 +2900,8 @@
       h+='<div class="field"><label>메모</label><input class="input" id="lMemo" value="'+escapeHtml(l?(l.memo||''):'')+'" placeholder="메모"></div>';
       h+='<div class="field"><label>공개 범위</label><select class="input" id="lVis">'+VISIBILITY.map(v=>'<option value="'+v[0]+'"'+(((l&&l.visibility===v[0])||(!l&&v[0]===defaultVisibility()))?' selected':'')+'>'+v[1]+'</option>').join('')+'</select></div>';
       h+='</details>';
-      h+='<button class="btn" onclick="saveLoan('+(id?'\''+id+'\'':'null')+')">'+(l?'수정':'추가')+'</button>';
-      if(l) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteLoan(\''+id+'\')">삭제</button>';
+      h+='<button class="btn" '+App.view.act('saveLoan', id?id:null)+'>'+(l?'수정':'추가')+'</button>';
+      if(l) h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deleteLoan',id)+'>삭제</button>';
       openSheet(l?'대출 수정':'대출 추가', h);
     }
     function setLoanDir(d){ window._loanDir=d; const seg=$('lDirSeg'); if(seg){ [...seg.children].forEach((b,i)=>b.classList.toggle('on', (d==='borrowed'?0:1)===i)); } }
@@ -2947,8 +2947,8 @@
       h+='<div id="lpAcctWrap" style="'+(txOn?'':'display:none;')+'"><div class="field"><label>계좌</label><select class="input" id="lpAcct">'+acctOptsHtml((p&&p.account)||l.account||(state.accounts[0]?state.accounts[0].id:''))+'</select></div>'+
         '<div class="tx-sub" style="margin-bottom:6px;">'+(l.direction==='lent'?'원금·이자가 선택한 계좌로 함께 입금돼요':'원금·이자가 선택한 계좌에서 함께 차감돼요')+' (원금은 실지출 통계엔 포함되지 않아요).</div></div>';
       h+='<div class="field"><label>메모</label><input class="input" id="lpMemo" value="'+escapeHtml(p?(p.memo||''):'')+'" placeholder="메모"></div>';
-      h+='<button class="btn" onclick="saveLoanPayment(\''+loanId+'\','+(id?'\''+id+'\'':'null')+')">'+(p?'수정':'기록')+'</button>';
-      if(p) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteLoanPayment(\''+loanId+'\',\''+id+'\')">삭제</button>';
+      h+='<button class="btn" '+App.view.act('saveLoanPayment', loanId, id?id:null)+'>'+(p?'수정':'기록')+'</button>';
+      if(p) h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deleteLoanPayment',loanId,id)+'>삭제</button>';
       openSheet(p?'상환 수정':'상환 기록', h);
     }
     function toggleLoanPayAcct(){ const on=$('lpTx')&&$('lpTx').classList.contains('on'); const w=$('lpAcctWrap'); if(w) w.style.display=on?'':'none'; }
