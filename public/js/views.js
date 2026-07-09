@@ -439,7 +439,7 @@
       const inc = sh._cpi!==undefined ? !!sh._cpi : defInc;
       const amt = sh._cpa!=null ? sh._cpa : sheetKRWAmount();
       box.innerHTML='<div class="card" style="padding:14px;margin:4px 0 14px;">'+
-        '<div class="menu-item" style="padding:4px 0;"><span>💳 '+escapeHtml(card.cardName||acctName(card.id))+' 실적 포함</span><div class="switch '+(inc?'on':'')+'" id="sCpi" onclick="this.classList.toggle(\'on\');toggleCpiFields()"><i></i></div></div>'+
+        '<div class="menu-item" style="padding:4px 0;"><span>💳 '+escapeHtml(card.cardName||acctName(card.id))+' 실적 포함</span><div class="switch '+(inc?'on':'')+'" id="sCpi" '+App.view.act('toggleSwitch','toggleCpiFields')+'><i></i></div></div>'+
         '<div id="sCpiFields" style="'+(inc?'':'display:none;')+'"><div class="field" style="margin-top:8px;"><label>실적 인정 금액</label><input class="input" id="sCpa" inputmode="numeric" value="'+(amt?Number(amt).toLocaleString():'')+'" oninput="this.value=fmtComma(this.value)"></div></div>'+
         '<div id="sCprWrap" style="'+(inc?'display:none;':'')+'"><div class="field" style="margin-top:8px;"><label>실적 제외 사유</label><input class="input" id="sCpr" value="'+escapeHtml(sh._cpr||'')+'" placeholder="예: 선불충전 제외"></div></div>'+
         '<div class="tx-sub" style="margin-top:6px;">기본값: '+(defInc?'포함':'제외')+' · 직접 수정 가능</div></div>';
@@ -467,7 +467,7 @@
       }
       sh._stAll = all;
       box.innerHTML='<div class="card" style="padding:14px;margin:4px 0 14px;">'+
-        '<div class="menu-item" style="padding:4px 0;"><span>🤝 정산 포함</span><div class="switch '+(sh._stOn?'on':'')+'" id="sSettle" onclick="toggleSettleOn()"><i></i></div></div>'+
+        '<div class="menu-item" style="padding:4px 0;"><span>🤝 정산 포함</span><div class="switch '+(sh._stOn?'on':'')+'" id="sSettle" '+App.view.act('toggleSettleOn')+'><i></i></div></div>'+
         '<div id="sSettleFields" style="'+(sh._stOn?'':'display:none;')+'"></div></div>';
       renderSettleFields();
     }
@@ -1443,7 +1443,7 @@
         '<div class="field"><label>월 실적 기준 금액</label><input class="input" id="cTarget" inputmode="numeric" value="'+(card&&card.monthlyPerformanceTarget?Number(card.monthlyPerformanceTarget).toLocaleString():'')+'" placeholder="예: 300,000" oninput="this.value=fmtComma(this.value)"></div>'+
         '<div class="form-2"><div class="field"><label>실적 기간</label><select class="input" id="cPeriod" '+App.view.chg('onCardPeriodChange')+'><option value="calendar_month"'+(!card||card.performancePeriodType!=='custom'?' selected':'')+'>매월 1일~말일</option><option value="custom"'+(card&&card.performancePeriodType==='custom'?' selected':'')+'>사용자 지정</option></select></div>'+
         '<div class="field" id="cStartWrap" style="'+(card&&card.performancePeriodType==='custom'?'':'display:none;')+'"><label>시작일</label><input class="input" id="cStartDay" inputmode="numeric" value="'+(card&&card.performanceStartDay?card.performanceStartDay:'')+'" placeholder="예: 15"></div></div>'+
-        '<div class="menu-item" style="padding:6px 0;"><span>선불충전 실적 포함</span><div class="switch '+(card&&card.includePrepaidCharge?'on':'')+'" id="cIncPrepaid" onclick="this.classList.toggle(\'on\')"><i></i></div></div>'+
+        '<div class="menu-item" style="padding:6px 0;"><span>선불충전 실적 포함</span><div class="switch '+(card&&card.includePrepaidCharge?'on':'')+'" id="cIncPrepaid" '+App.view.act('toggleSwitch')+'><i></i></div></div>'+
         '<div class="field"><label>실적 제외 카테고리 (쉼표 구분)</label><input class="input" id="cExclCats" value="'+escapeHtml(card&&card.excludedCategories?card.excludedCategories.join(', '):'')+'" placeholder="예: 교통, 보험"></div></div>';
     }
     function onAcctTypeChange(){ const t=val('aType'); const box=$('aCardCfg'); if(!box) return; if(t==='credit_card'){ box.style.display=''; if(!box.innerHTML.trim()) box.innerHTML=cardCfgHtml(null); } else box.style.display='none'; }
@@ -1715,7 +1715,7 @@
         '<div class="likemini" style="justify-content:center;margin-top:10px;font-size:14px;gap:6px;" title="친구들에게 받은 좋아요">'+(typeof heartSvg==='function'?heartSvg({h:16}):'❤')+(state.myLikeCount||0)+'</div></div>';
       h+='<div class="field"><label>별명(이름)</label><input class="input" id="profName" value="'+escapeHtml(state.userName)+'" placeholder="가계부에 표시될 이름"></div>';
       h+='<div class="field"><label>계정 이메일(아이디)</label><input class="input" value="'+escapeHtml(state.userEmail||'')+'" disabled></div>';
-      h+='<div class="menu-item" style="padding:8px 2px;"><span>프로필 공개</span><div class="switch '+(state.profilePublic!==false?'on':'')+'" id="profPublic" onclick="this.classList.toggle(\'on\')"><i></i></div></div>';
+      h+='<div class="menu-item" style="padding:8px 2px;"><span>프로필 공개</span><div class="switch '+(state.profilePublic!==false?'on':'')+'" id="profPublic" '+App.view.act('toggleSwitch')+'><i></i></div></div>';
       h+='<div class="tx-sub" style="margin:2px 2px 14px;">사진은 256px로 줄여 저장돼요. <b>비공개</b>로 하면 랭킹·비친구에게 <b>은화 아이콘 + \'알뜰\'</b>로만 보여요(친구·좋아요·캠은 그대로).</div>';
       h+='<button class="btn" '+App.view.act('onSaveProfile')+'>저장</button>';
       h+='<button class="btn ghost" style="margin-top:8px;" onclick="openPasswordChangeSheet()">비밀번호 변경</button>';
@@ -2222,7 +2222,7 @@
       h+='<div class="form-2"><div class="field"><label>시작일</label><input type="date" class="input" id="rStart" value="'+(r&&r.startDate?r.startDate:todayStr())+'"></div>'+
         '<div class="field"><label>종료일(선택)</label><input type="date" class="input" id="rEnd" value="'+(r&&r.endDate?r.endDate:'')+'"></div></div>';
       h+='<div id="rCardPerf"></div>';
-      h+='<div class="menu-item" style="padding:8px 2px;"><span>자동 생성</span><div class="switch '+((!r||r.autoCreate!==false)?'on':'')+'" id="rAuto" onclick="this.classList.toggle(\'on\')"><i></i></div></div>';
+      h+='<div class="menu-item" style="padding:8px 2px;"><span>자동 생성</span><div class="switch '+((!r||r.autoCreate!==false)?'on':'')+'" id="rAuto" '+App.view.act('toggleSwitch')+'><i></i></div></div>';
       h+='<div class="field"><label>공개 범위</label><select class="input" id="rVis">'+VISIBILITY.map(p=>'<option value="'+p[0]+'"'+(((r&&r.visibility===p[0])||(!r&&p[0]===defaultVisibility()))?' selected':'')+'>'+p[1]+'</option>').join('')+'</select></div>';
       h+='<div class="field"><label>메모(선택)</label><input class="input" id="rMemo" value="'+escapeHtml(r?(r.memo||''):'')+'" placeholder="메모"></div>';
       if(isOwn){
@@ -2262,7 +2262,7 @@
       const defInc=defaultCardIncluded(card,t,cat);
       const inc=(r&&r.cardPerformanceIncluded!==undefined)?!!r.cardPerformanceIncluded:defInc;
       const amt=(r&&r.cardPerformanceAmount!=null)?r.cardPerformanceAmount:parseAmount(val('rAmount'));
-      box.innerHTML='<div class="card" style="padding:14px;margin:4px 0 14px;"><div class="menu-item" style="padding:4px 0;"><span>💳 '+escapeHtml(card.cardName||acctName(card.id))+' 실적 포함</span><div class="switch '+(inc?'on':'')+'" id="rCpi" onclick="this.classList.toggle(\'on\');toggleRCpi()"><i></i></div></div>'+
+      box.innerHTML='<div class="card" style="padding:14px;margin:4px 0 14px;"><div class="menu-item" style="padding:4px 0;"><span>💳 '+escapeHtml(card.cardName||acctName(card.id))+' 실적 포함</span><div class="switch '+(inc?'on':'')+'" id="rCpi" '+App.view.act('toggleSwitch','toggleRCpi')+'><i></i></div></div>'+
         '<div id="rCpiF" style="'+(inc?'':'display:none;')+'"><div class="field" style="margin-top:8px;"><label>실적 인정 금액</label><input class="input" id="rCpa" inputmode="numeric" value="'+(amt?Number(amt).toLocaleString():'')+'" oninput="this.value=fmtComma(this.value)"></div></div>'+
         '<div id="rCprW" style="'+(inc?'display:none;':'')+'"><div class="field" style="margin-top:8px;"><label>실적 제외 사유</label><input class="input" id="rCpr" value="'+escapeHtml(r?(r.cardPerformanceExcludedReason||''):'')+'" placeholder="예: 선불충전 제외"></div></div>'+
         '<div class="tx-sub" style="margin-top:6px;">기본값: '+(defInc?'포함':'제외')+'</div></div>';
@@ -2384,7 +2384,7 @@
       h+='<div class="form-2"><div class="field"><label>서비스 유형</label><select class="input" id="subType">'+SUB_TYPES.map(t=>'<option value="'+t[0]+'"'+(((s&&s.subscriptionType===t[0])||(!s&&t[0]==='video'))?' selected':'')+'>'+t[1]+'</option>').join('')+'</select></div>'+
         '<div class="field"><label>결제 간격</label><input class="input" id="subInterval" inputmode="numeric" value="'+(s&&s.billingInterval?s.billingInterval:1)+'"></div></div>';
       h+='<div class="field"><label>만료일(선택)</label><input type="date" class="input" id="subExp" value="'+(s&&s.expirationDate?s.expirationDate:'')+'"></div>';
-      h+='<div class="menu-item" style="padding:8px 2px;"><span>자동 갱신</span><div class="switch '+((!s||s.autoRenew!==false)?'on':'')+'" id="subRenew" onclick="this.classList.toggle(\'on\')"><i></i></div></div>';
+      h+='<div class="menu-item" style="padding:8px 2px;"><span>자동 갱신</span><div class="switch '+((!s||s.autoRenew!==false)?'on':'')+'" id="subRenew" '+App.view.act('toggleSwitch')+'><i></i></div></div>';
       h+='<div class="menu-item" style="padding:8px 2px;"><span>무료체험 중</span><div class="switch '+((s&&s.isTrial)?'on':'')+'" id="subTrial" onclick="this.classList.toggle(\'on\');document.getElementById(\'subTrialEndWrap\').style.display=this.classList.contains(\'on\')?\'\':\'none\';"><i></i></div></div>';
       h+='<div class="field" id="subTrialEndWrap" style="'+((s&&s.isTrial)?'':'display:none;')+'"><label>무료체험 종료일</label><input type="date" class="input" id="subTrialEnd" value="'+(s&&s.trialEndDate?s.trialEndDate:'')+'"></div>';
       h+='<div class="field"><label>정기결제 연결</label><select class="input" id="subRecMode" '+App.view.chg('onSubRecModeChange')+'>'+
@@ -2638,7 +2638,7 @@
       h+='<label style="font-size:13px;font-weight:600;color:var(--sub);">테마 색상</label><div class="chip-row" id="pbColors" style="margin:8px 0 12px;">'+CAT_PALETTE.map(c=>'<button class="chip" style="background:'+c+';width:32px;height:32px;border-radius:50%;border:2px solid '+(c===window._pbColor?'var(--text)':'transparent')+';" data-color="'+c+'" onclick="pickPbColor(this)"></button>').join('')+'</div>';
       h+='<div class="form-2"><div class="field"><label>기준 통화</label><select class="input" id="pbCurrency">'+curOptions(p?(p.baseCurrency||'KRW'):'KRW')+'</select></div>'+
         '<div class="field"><label>커버 이미지 URL</label><input class="input" id="pbCover" value="'+escapeHtml(p?(p.coverImageUrl||''):'')+'" placeholder="https://"></div></div>';
-      h+='<div class="menu-item" style="padding:8px 2px;"><span>정산 사용</span><div class="switch '+((p&&p.settlementEnabled)?'on':'')+'" id="pbSettle" onclick="this.classList.toggle(\'on\')"><i></i></div></div>';
+      h+='<div class="menu-item" style="padding:8px 2px;"><span>정산 사용</span><div class="switch '+((p&&p.settlementEnabled)?'on':'')+'" id="pbSettle" '+App.view.act('toggleSwitch')+'><i></i></div></div>';
       h+='<div class="field"><label>공개 범위</label><select class="input" id="pbVis">'+VISIBILITY.map(v=>'<option value="'+v[0]+'"'+(((p&&p.visibility===v[0])||(!p&&v[0]===defaultVisibility()))?' selected':'')+'>'+v[1]+'</option>').join('')+'</select></div>';
       h+='<div class="field"><label>메모</label><input class="input" id="pbMemo" value="'+escapeHtml(p?(p.memo||''):'')+'" placeholder="메모"></div>';
       h+='</details>';
@@ -2743,7 +2743,7 @@
         '<div class="field"><label>경조사 유형</label><select class="input" id="gType">'+GIFT_EVENT_TYPES.map(e=>'<option value="'+e[0]+'"'+((etype===e[0])?' selected':'')+'>'+e[1]+'</option>').join('')+'</select></div></div>';
       h+='<div class="field"><label>날짜</label><input type="date" class="input" id="gDate" value="'+(g&&g.date?g.date:(pf&&pf.date?pf.date:todayStr()))+'"></div>';
       const txOn = g? !!g.linkedTransactionId : true;
-      h+='<div class="menu-item" style="padding:8px 2px;"><span>🧾 가계부 거래로도 기록</span><div class="switch '+(txOn?'on':'')+'" id="gTx" onclick="this.classList.toggle(\'on\');toggleGiftAcct()"><i></i></div></div>';
+      h+='<div class="menu-item" style="padding:8px 2px;"><span>🧾 가계부 거래로도 기록</span><div class="switch '+(txOn?'on':'')+'" id="gTx" '+App.view.act('toggleSwitch','toggleGiftAcct')+'><i></i></div></div>';
       h+='<div id="gAcctWrap" style="'+(txOn?'':'display:none;')+'"><div class="field"><label>계좌(거래 기록 시)</label><select class="input" id="gAcct">'+acctOptsHtml((g&&g.linkedAccount)||(state.accounts[0]?state.accounts[0].id:''))+'</select></div></div>';
       h+='<details class="adv"><summary>상세 설정</summary>';
       h+='<div class="field"><label>메모</label><input class="input" id="gMemo" value="'+escapeHtml(g?(g.memo||''):'')+'" placeholder="메모"></div>';
@@ -2914,7 +2914,7 @@
       h+='<details class="adv"><summary>상세 설정</summary>';
       h+='<div class="field"><label>기본 상환 계좌</label><select class="input" id="lAcct">'+acctOptsHtml((l&&l.account)||(state.accounts[0]?state.accounts[0].id:''))+'</select></div>';
       // 원금을 계좌 잔액에 반영(신규 대출만) — 빌림=입금·빌려줌=출금 거래를 만들어 잔액이 실제와 맞게. 실소비 통계엔 제외(isActualExpense:false).
-      if(!l) h+='<div class="menu-item" style="padding:6px 0;"><span>원금을 계좌 잔액에 반영 <span class="muted" style="font-size:11px">('+(dir==='lent'?'출금':'입금')+' 거래 생성)</span></span><div class="switch" id="lPrincipalTx" onclick="this.classList.toggle(\'on\')"><i></i></div></div>';
+      if(!l) h+='<div class="menu-item" style="padding:6px 0;"><span>원금을 계좌 잔액에 반영 <span class="muted" style="font-size:11px">('+(dir==='lent'?'출금':'입금')+' 거래 생성)</span></span><div class="switch" id="lPrincipalTx" '+App.view.act('toggleSwitch')+'><i></i></div></div>';
       h+='<div class="field"><label>메모</label><input class="input" id="lMemo" value="'+escapeHtml(l?(l.memo||''):'')+'" placeholder="메모"></div>';
       h+='<div class="field"><label>공개 범위</label><select class="input" id="lVis">'+VISIBILITY.map(v=>'<option value="'+v[0]+'"'+(((l&&l.visibility===v[0])||(!l&&v[0]===defaultVisibility()))?' selected':'')+'>'+v[1]+'</option>').join('')+'</select></div>';
       h+='</details>';
@@ -2961,7 +2961,7 @@
       h+='<div class="form-2"><div class="field"><label>원금 상환</label><input class="input" id="lpPrincipal" inputmode="numeric" value="'+(p&&p.principalAmount?Number(p.principalAmount).toLocaleString():'')+'" placeholder="0" oninput="this.value=fmtComma(this.value)"></div>'+
         '<div class="field"><label>'+interestLabel+'</label><input class="input" id="lpInterest" inputmode="numeric" value="'+(p&&p.interestAmount?Number(p.interestAmount).toLocaleString():(c.monthlyInterest?c.monthlyInterest.toLocaleString():''))+'" placeholder="0" oninput="this.value=fmtComma(this.value)"></div></div>';
       h+='<div class="field"><label>날짜</label><input type="date" class="input" id="lpDate" value="'+(p&&p.date?p.date:todayStr())+'"></div>';
-      h+='<div class="menu-item" style="padding:8px 2px;"><span>🧾 원금·이자를 가계부 거래로 기록</span><div class="switch '+(txOn?'on':'')+'" id="lpTx" onclick="this.classList.toggle(\'on\');toggleLoanPayAcct()"><i></i></div></div>';
+      h+='<div class="menu-item" style="padding:8px 2px;"><span>🧾 원금·이자를 가계부 거래로 기록</span><div class="switch '+(txOn?'on':'')+'" id="lpTx" '+App.view.act('toggleSwitch','toggleLoanPayAcct')+'><i></i></div></div>';
       h+='<div id="lpAcctWrap" style="'+(txOn?'':'display:none;')+'"><div class="field"><label>계좌</label><select class="input" id="lpAcct">'+acctOptsHtml((p&&p.account)||l.account||(state.accounts[0]?state.accounts[0].id:''))+'</select></div>'+
         '<div class="tx-sub" style="margin-bottom:6px;">'+(l.direction==='lent'?'원금·이자가 선택한 계좌로 함께 입금돼요':'원금·이자가 선택한 계좌에서 함께 차감돼요')+' (원금은 실지출 통계엔 포함되지 않아요).</div></div>';
       h+='<div class="field"><label>메모</label><input class="input" id="lpMemo" value="'+escapeHtml(p?(p.memo||''):'')+'" placeholder="메모"></div>';

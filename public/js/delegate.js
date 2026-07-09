@@ -43,6 +43,13 @@
     App.controller = App.controller || {};
     App.controller.actions = App.controller.actions || {};
     App.controller.registerActions = function (map) { for (var k in map) { if (Object.prototype.hasOwnProperty.call(map, k)) App.controller.actions[k] = map[k]; } };
+    // 공용 UI 액션: 토글 스위치(.switch) — 인라인 onclick="this.classList.toggle('on')" 대체. this=클릭된 스위치, follow=토글 후 호출할 전역 함수명(선택).
+    App.controller.registerActions({
+      toggleSwitch: function (follow) {
+        if (this && this.classList) this.classList.toggle('on');
+        if (follow && typeof window[follow] === 'function') window[follow]();
+      }
+    });
     App.controller.delegate = {
       // 액션 이름 → 함수: 등록된 액션 우선, 없으면 동명 전역 함수 폴백(점진 이관 다리)
       resolve: function (name) { return App.controller.actions[name] || (typeof window[name] === 'function' ? window[name] : null); },

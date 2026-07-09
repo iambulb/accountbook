@@ -69,6 +69,19 @@ test('위임: data-change는 change에서만·data-action은 click에서만 (셀
   assert.deepStrictEqual(log, ['change', 'click']);
 });
 
+test('위임: toggleSwitch 등록액션 — this 스위치 클래스 토글 + 후속 전역함수 호출', () => {
+  const dom = loadDelegate();
+  const w = dom.window, d = w.document, root = d.getElementById('root');
+  let followed = 0;
+  w.afterToggle = function () { followed++; };
+  root.innerHTML = '<div class="switch" ' + w.App.view.act('toggleSwitch') + '></div>' +
+                   '<div class="switch" ' + w.App.view.act('toggleSwitch', 'afterToggle') + '></div>';
+  const s1 = root.children[0], s2 = root.children[1];
+  s1.click(); assert.ok(s1.classList.contains('on'), '토글 on');
+  s1.click(); assert.ok(!s1.classList.contains('on'), '다시 off');
+  s2.click(); assert.ok(s2.classList.contains('on') && followed === 1, '토글 + 후속 호출');
+});
+
 test('위임: closest로 "가장 가까운 액션"만 — 중첩 시 자식 우선(stopPropagation 대체)', () => {
   const dom = loadDelegate();
   const w = dom.window, d = w.document, root = d.getElementById('root');
