@@ -82,7 +82,7 @@
         return '<i class="rmf rmfw" style="left:'+(gridLeftFrac(cc)*100).toFixed(1)+'%;top:1.5%;width:'+(gridSpanFrac(w)*100).toFixed(1)+'%;height:9%"></i>'; }).join('');
       const pets=(r.active||[]).filter(ownsCat).length;
       const rep=idx===(homeH().showRoom|0);   // 대표 방(친구·랭킹 노출)
-      return '<div class="rmthumb'+(on?' on':'')+'" role="button" tabindex="0" aria-pressed="'+on+'" onpointerdown="rmDown(event,'+idx+')" onclick="rmTap('+idx+')" title="'+escapeHtml(r.name||('방 '+(idx+1)))+(rep?' · 대표 방':'')+'">'+
+      return '<div class="rmthumb'+(on?' on':'')+'" role="button" tabindex="0" aria-pressed="'+on+'" onpointerdown="rmDown(event,'+idx+')" '+App.view.act('rmTap',idx)+' title="'+escapeHtml(r.name||('방 '+(idx+1)))+(rep?' · 대표 방':'')+'">'+
         '<span class="rmscene" style="background:'+wallCss(r.wallpaper||'default')+'"><i class="rmfloorb" style="background:'+floorCss(r.floor||'default')+'"></i>'+wdots+dots+'</span>'+
         '<button class="rmfav'+(rep?' on':'')+'" aria-pressed="'+rep+'" aria-label="'+(rep?'대표 방(친구에게 보임)':'이 방을 대표 방으로 지정')+'" title="'+(rep?'대표 방 · 친구에게 보임':'대표 방으로 지정 ★')+'" onclick="event.stopPropagation();favRoom('+idx+',event)">'+starSvg({h:14,off:!rep})+'</button>'+
         '<span class="rmbar"><span class="rmname">'+(r.emoji?r.emoji+' ':'')+escapeHtml(r.name||('방 '+(idx+1)))+'</span><span class="rmpets">🐾'+pets+'</span></span>'+

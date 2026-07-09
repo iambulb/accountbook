@@ -1209,8 +1209,8 @@
       wrap.innerHTML='<div class="gimenu"><div class="gih">'+furnSvg(p.itemId,{h:34})+'<b>'+escapeHtml(it.name||p.itemId)+'</b></div>'+
         '<div class="pi-meta"><span class="pi-tier">'+tierLabelHtml(ft)+'</span><span class="s">'+(it.desc?escapeHtml(it.desc)+' · ':'')+'크기 '+foot.w+'×'+foot.h+'</span></div>'+   // 등급·설명·크기
         (!wall?'<button class="gib" '+App.view.act('toggleFlip',key)+'><b>좌우 반전</b><span>가구를 좌우로 뒤집어요</span></button>':'')+
-        '<button class="gib" onclick="retrievePlaced(\''+key+'\','+wf+')"><b>회수</b><span>인벤토리로 되돌려요(보유 유지)</span></button>'+
-        '<button class="gib sell" onclick="sellPlaced(\''+key+'\','+wf+')"><b>판매</b><span>+'+ITEM_SELL+' 은화 · 보유에서 제거</span></button>'+
+        '<button class="gib" '+App.view.act('retrievePlaced',key,wf)+'><b>회수</b><span>인벤토리로 되돌려요(보유 유지)</span></button>'+
+        '<button class="gib sell" '+App.view.act('sellPlaced',key,wf)+'><b>판매</b><span>+'+ITEM_SELL+' 은화 · 보유에서 제거</span></button>'+
         '<button class="gib ghost" '+App.view.act('closeItemMenu')+'>닫기</button></div>';
       document.body.appendChild(wrap);
     }

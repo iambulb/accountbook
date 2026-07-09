@@ -2475,7 +2475,7 @@
       const h=homeH(); const r=(h.rooms&&h.rooms[idx])||{}; const cur=r.name||('방 '+(idx+1)); const rc=roomCount(); const rid=r.id||'';   // 방 안정 id(재정렬 경합에도 정확히 이 방을 수정)
       let body='<div class="gih"><b>방 관리 · '+escapeHtml(cur)+'</b></div>'+
         '<div class="field"><label for="roomNameIn">방 이름</label><input class="input" id="roomNameIn" maxlength="8" value="'+escapeHtml(cur)+'" placeholder="예: 고양이방" style="width:100%;box-sizing:border-box;"></div>'+
-        '<button class="btn" onclick="saveRoomName(\''+rid+'\','+idx+')">이름 저장</button>';
+        '<button class="btn" '+App.view.act('saveRoomName',rid,idx)+'>이름 저장</button>';
       // 방 이모지(선택) — 썸네일·dock 이름 앞에 표시
       const EMO=['','🐱','🐯','🦁','🐶','🌙','☀️','🌸','🎋','🛋️','🌊','⭐'];
       body+='<div class="sech" style="margin-top:14px;"><span class="l">이모지</span></div>'+
@@ -2484,7 +2484,7 @@
       const isRep=idx===(h.showRoom|0);
       body+='<div class="sech" style="margin-top:14px;"><span class="l">대표 방</span><span class="s">친구·랭킹에 보임</span></div>'+
         (isRep?'<p class="muted" style="font-size:12px;margin:0;">★ 이 방이 대표 방이에요. 친구가 내 집을 볼 때 이 방을 봅니다.</p>'
-             :'<button class="btn ghost" onclick="setShowRoom('+idx+')">이 방을 대표 방으로 지정 ★</button>');
+             :'<button class="btn ghost" '+App.view.act('setShowRoom',idx)+'>이 방을 대표 방으로 지정 ★</button>');
       // 순서 변경
       if(rc>1){ body+='<div class="sech" style="margin-top:14px;"><span class="l">순서 변경</span></div>'+
         '<div class="row" style="gap:8px;"><button class="btn ghost" style="flex:1;"'+(idx<=0?' disabled':'')+' onclick="moveRoom('+idx+',-1)">← 앞으로</button>'+
@@ -2495,11 +2495,11 @@
       // 방 복제(가구·벽지 통째 복사) — 방이 남았을 때만
       if(rc<MAX_ROOMS){ body+='<div class="sech" style="margin-top:14px;"><span class="l">방 복제</span><span class="s">가구·벽지 복사</span></div>'+
         '<p class="muted" style="font-size:12px;margin:0 0 8px;line-height:1.5;">벽지·이모지와 배치 가구를 새 방으로 복사해요(보유가 부족한 가구는 제외, 펫은 복사 안 함).</p>'+
-        '<button class="btn ghost" onclick="duplicateRoom(\''+rid+'\','+idx+')">이 방 복제 📑</button>'; }
+        '<button class="btn ghost" '+App.view.act('duplicateRoom',rid,idx)+'>이 방 복제 📑</button>'; }
       body+='<div class="sech" style="margin-top:14px;"><span class="l">방 비우기 · 삭제</span></div>'+
         '<p class="muted" style="font-size:12px;margin:0 0 8px;line-height:1.5;">비우기=가구·펫만 초기화(방은 유지). 삭제=방 자체를 제거(환불 없음). 둘 다 가구는 인벤토리로 돌아가요.</p>'+
-        '<button class="btn danger ghost" onclick="clearRoom(\''+rid+'\','+idx+')">이 방 비우기</button>'+
-        (rc>BASE_ROOMS?'<button class="btn danger ghost" style="margin-top:6px;" onclick="deleteRoom(\''+rid+'\','+idx+')">이 방 삭제 (환불 없음)</button>':'')+
+        '<button class="btn danger ghost" '+App.view.act('clearRoom',rid,idx)+'>이 방 비우기</button>'+
+        (rc>BASE_ROOMS?'<button class="btn danger ghost" style="margin-top:6px;" '+App.view.act('deleteRoom',rid,idx)+'>이 방 삭제 (환불 없음)</button>':'')+
         '<button class="btn ghost" style="margin-top:6px;" '+App.view.act('closeRoomMenu')+'>닫기</button>';
       const wrap=document.createElement('div'); wrap.id='roomMenu'; wrap.className='gimenu-scrim';
       wrap.onclick=function(e){ if(e.target===wrap) closeRoomMenu(); };
@@ -2695,7 +2695,7 @@
           }
           if(gifts.length){
             if(mail.length) h+='<div class="sech"><span class="l">코드 보상</span><span class="s">'+gifts.length+'개</span></div>';
-            h+=gifts.map((gf,i)=>{ const v=giftView(gf); return '<div class="giftrow"><span class="gfic">'+v.icon+'</span><span class="gftx"><b class="gfnm">'+escapeHtml(v.name)+'</b>'+(v.sub?'<span class="gfmsg">'+escapeHtml(v.sub)+'</span>':'')+'</span><button class="buy" onclick="claimGift('+i+')">받기</button></div>'; }).join('');
+            h+=gifts.map((gf,i)=>{ const v=giftView(gf); return '<div class="giftrow"><span class="gfic">'+v.icon+'</span><span class="gftx"><b class="gfnm">'+escapeHtml(v.name)+'</b>'+(v.sub?'<span class="gfmsg">'+escapeHtml(v.sub)+'</span>':'')+'</span><button class="buy" '+App.view.act('claimGift',i)+'>받기</button></div>'; }).join('');
             h+='<button class="btn" style="margin-top:12px;" '+App.view.act('claimAllGifts')+'>모두 받기</button>';
           }
         }
