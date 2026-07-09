@@ -3473,6 +3473,31 @@
         g.affV=2; return g;
       }).catch(()=>{}).then(()=>{ state._affMigrating=false; });
     }
+    // 🌈 무지개 경제 개편(2026-07) 1회 마이그레이션 — ① 구 무지개알/무지개박스 소비 인벤토리 전량 회수(무지개동전 직접 뽑기로 대체)
+    //    ② 기구물 보유 상한 개편(케어 5개·그 외 1개) 초과분 회수: qty를 상한으로 클램프하고, 배치 수가 새 상한을 넘으면 초과 배치도 제거(인벤토리 정합).
+    //    마커 g.rbMigV=1(멱등·race-safe 트랜잭션).
+    function migrateRbEconomyIfNeeded(raw){
+      if(!state.uid) return;
+      if(!raw || Number(raw.rbMigV)===1) return;
+      if(state._rbMigrating) return; state._rbMigrating=true;
+      gameRef().transaction(g=>{
+        if(!g) return;   // 콜드캐시 null 첫 패스엔 제안 금지
+        if(Number(g.rbMigV)===1) return;
+        g.consum=g.consum||{}; g.consum.rainbow_egg=0; g.consum.rainbow_box=0;   // ① 구 무지개알·박스 회수
+        const items=(g.owned&&g.owned.items)||{};
+        Object.keys(items).forEach(id=>{ const cap=itemCapOf(id), it=items[id]; if(!it) return;
+          const q=Math.max(0, Math.min(cap, Number(it.qty)||0)); it.qty=q;   // ② 상한 클램프(케어5·기타1)
+          // 배치 초과 제거 — 모든 방(바닥+벽)에서 이 아이템 배치를 세고, q개를 넘는 뒤쪽 배치는 삭제
+          let left=q;
+          const rooms=(g.home&&g.home.rooms)||[];
+          (Array.isArray(rooms)?rooms:Object.values(rooms)).forEach(R=>{ if(!R) return;
+            ['placed','wallPlaced'].forEach(fld=>{ const P=R[fld]||{};
+              Object.keys(P).forEach(k=>{ const e=P[k]; if(!e||e.itemId!==id) return;
+                if(left>0) left--; else delete P[k]; }); }); });
+        });
+        g.rbMigV=1; return g;
+      }).catch(()=>{}).then(()=>{ state._rbMigrating=false; });
+    }
     function currentWall(){ return room().wallpaper||'default'; }
     // 바닥 스킨(픽셀 타일) - 벽지처럼 방마다 적용. .cr-floor 배경에 반복 타일(SVG data URI). default=단색.
     const _tileBgCache={};
@@ -5312,7 +5337,9 @@
       buyDay: (g.buyDay && typeof g.buyDay==='object') ? g.buyDay : {},      // 🛒 하루 구매 카운트(품목별) {day, n:{id:count}} — 츄르(3)·영양제(무료 1) 등 dailyBuy 소비템
       boost: (g.boost && typeof g.boost==='object') ? { until:Math.max(0,Math.floor(Number(g.boost.until)||0)), mult:Math.max(1,Number(g.boost.mult)||1) } : { until:0, mult:1 },   // 💊 수확 수익 부스트 버프 {until(ms), mult}
       dropRollAt: Math.max(0, Math.floor(Number(g.dropRollAt)||0)),   // 🎁 드랍 스폰 롤 시계(ms, 전역 1개) — reconcileDrops가 10분 단위로 소비
-      affV: Math.max(0, Math.floor(Number(g.affV)||0))   // 💗 애정 계단 개편 마이그레이션 마커(2=완료, migrateAffRwIfNeeded) — normalizeGame이 객체를 재생성하므로 반드시 여기 유지
+      affV: Math.max(0, Math.floor(Number(g.affV)||0)),   // 💗 애정 계단 개편 마이그레이션 마커(2=완료, migrateAffRwIfNeeded) — normalizeGame이 객체를 재생성하므로 반드시 여기 유지
+      rbcoin: Math.min(999999, Math.max(0, Math.floor(Number(g.rbcoin)||0))),   // 🌈 무지개동전 — 한정 등급 중복 획득 시 +1, 무지개알/박스(5개) 소비
+      rbMigV: Math.max(0, Math.floor(Number(g.rbMigV)||0))   // 🌈 무지개 경제 개편 마이그레이션 마커(1=완료, migrateRbEconomyIfNeeded)
     }); }
     // 선물함 목록을 항상 배열로 정규화(RTDB가 객체로 돌려줄 수 있어 방어)
     function normalizeGifts(x){ if(Array.isArray(x)) return x.filter(Boolean); if(x&&typeof x==='object') return Object.keys(x).map(k=>x[k]).filter(Boolean); return []; }
@@ -5387,7 +5414,7 @@
       if(!state.uid) return;
       if(state._gameRef){ try{ state._gameRef.off(); }catch(e){} }
       state._gameRef=gameRef();
-      state._gameRef.on('value', s=>{ const raw=s.val(); state.game=normalizeGame(raw); migrateHomeRoomsIfNeeded(raw); migrateAffRwIfNeeded(raw); ensureRoomIds(); ensureHarvestClocks(); onGameChange(); reconcilePets(); reconcileDrops(); checkDexMilestones(); });
+      state._gameRef.on('value', s=>{ const raw=s.val(); state.game=normalizeGame(raw); migrateHomeRoomsIfNeeded(raw); migrateAffRwIfNeeded(raw); migrateRbEconomyIfNeeded(raw); ensureRoomIds(); ensureHarvestClocks(); onGameChange(); reconcilePets(); reconcileDrops(); checkDexMilestones(); });
       watchCatalogPets();   // 런타임 펫(전역 catalogPets) 병합 리스너
       watchMyLikes();       // 내가 받은 집 좋아요 총합
       // 전역 config/* 구독(모든 사용자 공통·per-user 부작용 없음)은 세션당 1회만 — 반복 로그인 시 리스너 누적 방지.
@@ -5656,19 +5683,13 @@
     }
     // 프로모/치트 코드 — 보상은 곧바로 주지 않고 "선물함"으로 들어감(더보기 → 선물함에서 받기).
     // 규칙: 일반 사용자는 코드당 1회만, 개발자 계정(isDev)은 무제한. type=coins(은화) / consum(소비 아이템).
-    const PROMO_CODES = {
-      eggardeneggarden: { type:'consum', key:'ddeul', qty:10, label:'뜰알 10개' },   // 🌱 상단 배치(첫 키 = 쿠폰 목록·소식 최상단)
-      showmethemoney: { type:'coins',  qty:999,  label:'999 은화' },
-      helloeggarden:  { type:'consum', key:'rainbow_egg', qty:1,  label:'무지개알 1개' },
-      eggmoneyna:     { type:'consum', key:'egg',  qty:10, label:'펫알 10개' }
-    };
+    // 🎟️ 2026-07 쿠폰 전량 삭제(사용자 지침) — @무제한 규칙도 폐지. 새 이벤트 코드는 운영 시점에 여기 추가(일반=코드당 1회 멱등, g.codes 마커).
+    const PROMO_CODES = {};
     function redeemCode(code){
       let key=(code||'').trim().toLowerCase();
-      let atUnlimited=false;
-      if(key.charAt(0)==='@'){ key=key.slice(1); atUnlimited=true; }   // 코드 앞 @ = 무제한 사용(각 코드의 @버전)
       const def=PROMO_CODES[key];
       if(!def){ toast('올바르지 않은 코드예요', true); return; }
-      const dev=(typeof isDev==='function' && isDev()) || atUnlimited;   // 개발자 또는 @코드 = 무제한, 일반은 1회
+      const dev=(typeof isDev==='function' && isDev());   // 개발자=무제한, 일반은 코드당 1회(@무제한 폐지)
       let already=false;
       gameRef().transaction(g=>{
         g=normalizeGame(g);
@@ -5694,8 +5715,8 @@
       tonic:     { name:'영양제',     icon:o=>consumSvg('tonic',o),  use:'tonic' },   // 💊 가방에서 사용(수확 부스트 3h)
       egg:       { name:'펫알',       icon:o=>eggSvg(0,o),        use:'egg'  },   // 일반 확률 오픈
       box:       { name:'랜덤박스',   icon:o=>boxSvg(o),          use:'box'  },
-      rainbow_egg:{ name:'무지개알',  icon:o=>rainbowEggImg((o&&o.h)||52),   use:'rb_egg' },  // 특별↑ 확률 오픈 — 아이템 이미지=새 무지개알(뜰알 기반)
-      rainbow_box:{ name:'무지개박스',icon:o=>rainbowBoxSvg(o),   use:'rb_box' },
+      rainbow_egg:{ name:'무지개알',  icon:o=>rainbowEggImg((o&&o.h)||52) },  // (레거시 표시용 — 2026-07 소비 인벤토리 폐지·회수, 무지개 탭에서 무지개동전으로 직접 뽑기)
+      rainbow_box:{ name:'무지개박스',icon:o=>rainbowBoxSvg(o) },
       ddeul:     { name:'뜰알',       icon:o=>ddeulEggSvg(o),     use:'ddeul' },   // 🌱 한정 픽업(뜰알) — 보유 1개 소모해 열면 DDEUL_TIERS 확률(개발자 선물/지급 전용, 상점 비매)
       dye:       { name:'염색약',     icon:o=>consumSvg('dye',o), use:'dye'  },   // 🎨 랜덤 염색약 — 가방에서 펫 선택, 톤 랜덤 변경(이벤트·쿠폰·선물 지급 전용, 상점 비매)
       dye_remover:{ name:'염색 리무버', icon:o=>consumSvg('dye_remover',o), use:'dye_remover' }   // 🧴 염색 제거 — 염색된 펫 선택해 원래 톤 복원(이벤트·쿠폰·선물 지급 전용, 상점 비매)
@@ -5894,7 +5915,7 @@
     // 🎒 가방 — 보유한 소비 아이템(사료·물·펫알·랜덤박스·무지개알·무지개박스)을 보고 사용.
     function openBag(){
       const build=()=>{
-        const order=['egg','box','ddeul','rainbow_egg','rainbow_box','treat','tonic','dye','dye_remover','food','water','food_plus','water_plus'];
+        const order=['egg','box','ddeul','treat','tonic','dye','dye_remover','food','water','food_plus','water_plus'];   // (무지개알·박스는 소비 인벤토리 폐지 — 무지개 탭 직접 뽑기)
         const rows=order.filter(k=>consumQty(k)>0);
         const g=state.game, boostOn=activeBoostMult(g)>1;
         let h='<div class="bag">';
@@ -5915,8 +5936,6 @@
     }
     function useBagItem(k){ const use=(CONSUM_META[k]||{}).use;
       if(use==='egg'||use==='box') useHeldGacha(use);
-      else if(use==='rb_egg') useRainbow('egg');
-      else if(use==='rb_box') useRainbow('box');
       else if(use==='ddeul') useHeldDdeul();
       else if(use==='treat') useTreat();
       else if(use==='tonic') useTonic();
@@ -6046,7 +6065,7 @@
       const map = kind==='egg'?gachaCatTierMap():effItemTier();
       const forced=pityForcedTierFor(kind);   // 🔮 종류별 천장(보유 펫알/랜덤박스도 같은 종류 카운터 공유)
       const res = forced ? pickTierMember(map, forced) : rollFromPool(map); if(!res) return;   // 일반 확률표(effTiers). 펫알=활성 한정만 포함(gachaCatTierMap)
-      const dup = kind==='egg' ? ownsCat(res.id) : (itemQty(res.id)>=ITEM_MAX_QTY);   // 🧰 가구는 종당 12개 캡 초과=환급 리빌
+      const dup = kind==='egg' ? ownsCat(res.id) : (itemQty(res.id)>=itemCapOf(res.id));   // 🧰 가구는 상한(케어5·기타1) 초과=중복 리빌
       const dp = (dup&&kind==='egg') ? petDupPreview(res.id) : null;   // 💗 중복 펫=애정 경험치(만렙만 은화 폴백) 표기 미러
       const refund = dup ? (kind==='egg'?(dp.max?dp.refund:0):dupRefundOf(res.tier)) : 0;
       const isNew=gachaNew(kind,res);   // 지급 전 판정(NEW 배지)
@@ -8331,6 +8350,8 @@
     function setGachaTab(t){ _gachaTab=t||'ddeul'; lsSet('gachaTab',_gachaTab); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     let _normalSub=lsGet('normalSub','egg');   // '일반' 탭 안 서브구분: 펫알(egg)/랜덤박스(box)
     function setNormalSub(s){ _normalSub=(s==='box'?'box':'egg'); lsSet('normalSub',_normalSub); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
+    let _rbSub=lsGet('rbSub','egg');   // 🌈 무지개 탭 안 서브구분: 무지개알(egg)/무지개박스(box)
+    function setRbSub(s){ _rbSub=(s==='box'?'box':'egg'); lsSet('rbSub',_rbSub); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     // 보유한 알/박스/뜰알 1종 열기 카드(선물·쿠폰·개발자 지급분, qty>0일 때만) — 각 가챠 서브탭 하단.
     function heldOpenCard(kind){
       const q=consumQty(kind); if(q<=0) return '';
@@ -8359,19 +8380,30 @@
         if(_normalSub!=='egg'&&_normalSub!=='box') _normalSub='egg';
         h+='<div class="subseg normalsub">'+[['egg','펫알'],['box','랜덤박스']].map(function(t){ return '<button class="'+(_normalSub===t[0]?'on':'')+'" onclick="setNormalSub(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
         h+=(_normalSub==='egg'?eggBannerHtml(true):boxBannerHtml(true));   // 펫알=노을 배너(펫 지급)·랜덤박스=랜덤박스 배너(가구/바닥/벽지 지급)
-      } else if(tab==='rainbow'){
-        const rb=[['egg','무지개알','열면 특별90 · 전설8 · 신화2%. 특별↑ 고양이만!', rainbowEggImg(66)],
-                  ['box','무지개박스','열면 특별90 · 전설8 · 신화2%. 특별↑ 가구만!', rainbowBoxSvg({h:56,cls:'rb-thumb'})]];
-        h+='<div class="rb-hh"><span class="tier-rainbow">✨ 무지개</span> · 금화 전용 · 특별↑ 확정</div>';
-        h+=rb.map(([k,nm,desc,art])=>{ const key=rainbowKey(k), qty=consumQty(key), price=rbPriceGold(k), canBuy=gold()>=price;
-          const buy=canBuy?'<button class="buy" aria-label="'+nm+' 구매(금화 '+price+')" onclick="buyRainbow(\''+k+'\')">구매</button>':'<button class="buy dis" disabled>금화 '+(price-gold())+' 부족</button>';
-          const use=qty>0?'<button class="buy rb-use" aria-label="'+nm+' 사용" onclick="useRainbow(\''+k+'\')">사용</button>':'';
-          return '<div class="shopcard rb-card"><div class="thumb rb-thumb-wrap">'+art+'</div>'+
-            '<div class="meta"><b class="tier-rainbow">'+nm+'</b><div class="desc">'+desc+'</div>'+
-            '<span class="price"><span class="ci">'+goldSvg({h:16})+'</span>'+price+'</span></div>'+
-            '<div class="act">'+buy+use+'<span class="qty">보유 '+qty.toLocaleString()+(qty>=MAX_CONSUM?maxChip():'')+'</span>'+pityChip(key)+'</div></div>'; }).join('');
+      } else if(tab==='rainbow'){   // 🌈 무지개 = 알/박스 서브탭(각 라이브 밤 배너 — 개발자 밤 배너 기반, 펫 2마리 제외) + 무지개동전 잔액
+        if(_rbSub!=='egg'&&_rbSub!=='box') _rbSub='egg';
+        h+='<div class="rb-hh"><span class="tier-rainbow">✨ 무지개</span> · '+rainbowCoinSvg({h:15})+' <b>'+rbcoins().toLocaleString()+'</b>개 보유 · 신화50%·한정50% 확정 — 한정 <b>중복 획득</b>마다 무지개동전 +1</div>';
+        h+='<div class="subseg normalsub">'+[['egg','무지개알'],['box','무지개박스']].map(function(t){ return '<button class="'+(_rbSub===t[0]?'on':'')+'" onclick="setRbSub(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
+        h+=rainbowLiveBannerHtml(_rbSub);
       }
       return h;
+    }
+    // 🌈 무지개알/무지개박스 라이브 배너(밤 씬) — 개발자 '밤 배너'(rainbowBannerHtml) 기반, 픽업 펫 2마리(devPickupStageHtml)만 제외하고 동일(사용자 지침).
+    //    1뽑=무지개동전 5 · 10뽑=50, 미공개 한정 펫·아이템 전부 출현(rainbowCatTierMap / boxPool 한정 포함).
+    function rainbowLiveBannerHtml(sub){
+      const isEgg=(sub!=='box'), kind=isEgg?'rainbow_egg':'rainbow_box';
+      const fx='<span class="gb-rbaura">'+lightLayers({aura:98,rays:118,rainbow:true})+'</span>'+fxAuraTwinkles(9,true);
+      const center=isEgg?(_pkV2?rbEgg2Html(52):rainbowEggSvg({h:52})):rainbowBoxSvg({h:52});
+      const nm=isEgg?'무지개알':'무지개박스';
+      const desc=isEgg?'<b class="tier-limited">신화 50%</b> · <b class="tier-rainbow">한정 50%</b> 확정!<br><b>미공개 한정 펫</b>도 전부 여기서 나와요.'
+                      :'<b class="tier-limited">신화 50%</b> · <b class="tier-rainbow">한정 50%</b> 확정!<br><b>미공개 한정 아이템</b>(가구·스킨·펫효과·모자)도 전부.';
+      return '<div class="gbanner gb-rainbow"><div class="gb-head"><b class="gb-t tier-rainbow">🌈 '+nm+' · 밤</b><span class="pk-tag">한정 중복이 모이는 곳</span></div>'+
+        '<div class="gb-scene">'+nightSceneHtml()+gbCenterHtml(center, fx, 'gb-rb gb-glow')+'</div>'+
+        '<div class="gb-item"><div class="gb-item-ic">'+(isEgg?(_pkV2?rbEgg2Html(52):rainbowEggSvg({h:52})):rainbowBoxSvg({h:52}))+'</div>'+
+          '<div class="gb-item-meta"><b class="tier-rainbow">'+nm+' <span class="tagmini tier-rainbow">밤</span></b>'+
+          '<div class="gb-item-desc">'+desc+'</div>'+
+          '<div class="gb-item-cost">1뽑당 소모 <span class="ci">'+rainbowCoinSvg({h:14})+'</span>'+RAINBOW_PRICE_RBC+' · 보유 '+rainbowCoinSvg({h:12})+' <b>'+rbcoins().toLocaleString()+'</b></div></div></div>'+
+        gbPullActions(kind, 0, 0, 'night', null, true, RAINBOW_PRICE_RBC)+gbPityHtml(kind)+'</div>';
     }
     // ===== 🎰 가챠 배너(세로 확장·둥지형) — 실전은 가챠 탭(gachaTabHtml live=true → bannerPull/openGachaTen), 개발자 '배너 관리'는 무소모 미리보기. 탭별 전용 배너 분화 완료(뜰알=픽업·펫알=노을연못·랜덤박스=노을상자·무지개=밤). =====
     // 공통 조각(둥지+알·1/10 버튼·천장 안내). 각 배너 함수는 독립 인스턴스라 나중에 개별 수정 가능.
@@ -8440,7 +8472,8 @@
     // 보유 알/박스류 픽셀 아이콘(소비 인벤토리 키별).
     function heldItemIcon(key, h){ h=h||13; if(key==='ddeul') return ddeulEggSvg({h:h}); if(key==='rainbow_egg') return rainbowEggImg(h); if(key==='rainbow_box') return rainbowBoxSvg({h:h}); if(key==='box') return boxSvg({h:h}); return eggSvg(0,{h:h}); }
     // 🧾 뽑기 소모 표기 — 보유 알/박스를 먼저 쓰고(개수), 부족분만 재화로 구매. "🥚×3 + 🪙700" 식(수집형 게임 관례).
-    function gbPullCostHtml(heldKey, silver, gold, n){
+    function gbPullCostHtml(heldKey, silver, gold, n, rbc){
+      if(rbc) return '<span class="gb-buy"><span class="ci">'+rainbowCoinSvg({h:13})+'</span>'+(rbc*n)+'</span>';   // 🌈 무지개동전 소모(무지개알/박스)
       const held=heldKey?consumQty(heldKey):0, useHeld=Math.min(n, held), buyN=n-useHeld; const parts=[];
       if(useHeld>0) parts.push('<span class="gb-held"><span class="ci">'+heldItemIcon(heldKey,13)+'</span>×'+useHeld+'</span>');   // 보유 소모
       if(buyN>0)   parts.push('<span class="gb-buy">'+gachaCostHtml(silver,gold,buyN,13)+'</span>');                                // 부족분 구매
@@ -8448,7 +8481,7 @@
       return parts.join('<span class="gb-plus">+</span>');
     }
     // 소모 표기가 있는 1뽑/10뽑 버튼(개발자 미리보기 = devBannerPull). silver/gold=1뽑당 소모, theme=10뽑 연출 테마, heldKey=보유 소비 인벤토리 키.
-    function gbPullActions(kind, silver, gold, theme, heldKey, live){ const t=theme?",'"+theme+"'":'';
+    function gbPullActions(kind, silver, gold, theme, heldKey, live, rbc){ const t=theme?",'"+theme+"'":'';
       const held=heldKey?consumQty(heldKey):0, htxt=heldKey?'<div class="gb-heldnote">보유 <b>'+held+'</b>개 — 뽑기 시 먼저 소모(부족분만 재화 구매)</div>':'';
       // 🎁 일일 무료 1뽑(실전 배너만) — 남았으면 1뽑 버튼이 '오늘 무료!'로, 안내줄에 사용 여부·밤 12시 초기화 표기
       const free1 = !!live && (typeof freePullAvail==='function') && freePullAvail(kind);
@@ -8457,8 +8490,8 @@
       const on1 = live ? 'bannerPull(\''+kind+'\',false)' : 'devBannerPull(\''+kind+'\',false'+t+')';    // live=실전(재화 소모·지급) · 그 외=개발자 미리보기(무소모)
       const on10 = live ? 'bannerPull(\''+kind+'\',true)' : 'devBannerPull(\''+kind+'\',true'+t+')';
       return htxt+fnote+'<div class="gb-actions">'+
-        '<button class="gb-btn'+(free1?' gb-freebtn':'')+'" onclick="'+on1+'"><span>1뽑</span><span class="gb-cost">'+(free1?'<b class="gb-free">오늘 무료!</b>':gbPullCostHtml(heldKey,silver,gold,1))+'</span></button>'+
-        '<button class="gb-btn gb-btn10" onclick="'+on10+'"><span>10뽑</span><span class="gb-cost">'+gbPullCostHtml(heldKey,silver,gold,10)+'</span></button></div>';
+        '<button class="gb-btn'+(free1?' gb-freebtn':'')+'" onclick="'+on1+'"><span>1뽑</span><span class="gb-cost">'+(free1?'<b class="gb-free">오늘 무료!</b>':gbPullCostHtml(heldKey,silver,gold,1,rbc))+'</span></button>'+
+        '<button class="gb-btn gb-btn10" onclick="'+on10+'"><span>10뽑</span><span class="gb-cost">'+gbPullCostHtml(heldKey,silver,gold,10,rbc)+'</span></button></div>';
     }
     // 🌇 노을색 센터 연출 — 무지개 대신 노을 주황 오오라·광선·트윙클(currentColor 상속)로 펫알 테마 정합.
     function gbSunsetFx(){ return '<span class="gb-sunfx" style="color:#ee7a4a"><span class="gb-rbaura">'+lightLayers({aura:98,rays:118})+'</span>'+fxAuraTwinkles(9)+'</span>'; }
@@ -8521,6 +8554,7 @@
     // 1뽑: 오늘 무료 1뽑이 남았으면 최우선(무소모) → 보유 소비분(펫알/랜덤박스/뜰알) → 재화로 구매(기존 단발 함수 재사용). 10뽑=openGachaTen.
     function bannerPull(kind, ten){
       if(_pullBusy) return;
+      if(kind==='rainbow_egg'||kind==='rainbow_box'){ if(ten){ openGachaTen(kind); } else openRainbow(kind==='rainbow_egg'?'egg':'box'); return; }   // 🌈 무지개=코인 직접 뽑기(무료·보유분 없음)
       if(ten){ openGachaTen(kind); return; }
       const free=freePullAvail(kind);   // 🎁 오늘 무료 1뽑 남음 — 보유분·재화 안 쓰고 무료로
       if(kind==='ddeul'){ if(free) openDdeul(true); else if(consumQty('ddeul')>0) useHeldDdeul(); else openDdeul(); }
@@ -8530,66 +8564,77 @@
     //   펫알/랜덤박스=뽑을 때마다 금화+1 · 뜰알=금화 소모(보상 없음). 중복은 은화 환급(배치 내 중복도 반영). pity(신화확정)는 10회 누적.
     function openGachaTen(kind){
       if(_pullBusy) return;
-      const N=10, heldKey=kind;                                       // 소비 인벤토리 키 = 종류키(egg/box/ddeul)
-      const held=Math.min(N, consumQty(heldKey)), buyN=N-held;
-      const silverEach=100, goldEach=(kind==='ddeul')?DDEUL_GOLD:0;    // 은화 100 공통 · 뜰알만 금화 소모
-      if(buyN>0){
+      // 🌈 무지개 10연차(rainbow_egg/rainbow_box) — 무지개동전 50개(5×10), 보유 소비분·은화·금화·부산물 없음. 확률=RAINBOW_TIERS(신화50·한정50).
+      const isRb=(kind==='rainbow_egg'||kind==='rainbow_box');
+      const rbKindEgg=(kind==='rainbow_egg');
+      const N=10, heldKey=isRb?null:kind;                             // 소비 인벤토리 키 = 종류키(egg/box/ddeul) · 무지개=없음
+      const held=heldKey?Math.min(N, consumQty(heldKey)):0, buyN=N-held;
+      const silverEach=isRb?0:100, goldEach=(kind==='ddeul')?DDEUL_GOLD:0;    // 은화 100 공통 · 뜰알만 금화 소모 · 무지개=코인만
+      if(isRb){ if(rbcoins()<RAINBOW_PRICE_RBC*N){ toast('무지개동전 '+(RAINBOW_PRICE_RBC*N-rbcoins())+'개 부족 — 한정 중복 획득으로 모아요', true); return; } }
+      else if(buyN>0){
         if(coins()<buyN*silverEach){ toast((buyN*silverEach-coins())+' 은화 부족', true); return; }
         if(goldEach && gold()<buyN*goldEach){ toast('금화 '+(buyN*goldEach-gold())+' 부족', true); return; }
       }
       // ── 10개 결과 롤(배치 내 중복·pity 반영) → 리빌용 list(지급 정보 포함)
-      const map=gachaCatTierMap(), ddeulTiers=(kind==='ddeul')?DDEUL_TIERS:null;
+      const map=isRb?rainbowCatTierMap():gachaCatTierMap(), ddeulTiers=(kind==='ddeul')?DDEUL_TIERS:(isRb?RAINBOW_TIERS:null);
+      const rollKind=isRb?(rbKindEgg?'egg':'box'):kind;   // 롤·지급 분기용(egg 계열/box 계열)
       let pity=pityGet(kind);
       const seenCat={}, seenItem={}, seenFloor={}, seenWall={}, seenBgfx={}, cntItem={}, affAcc={}, list=[];   // cntItem=배치 내 가구 지급 누적(12개 캡 판정이 트랜잭션 지급 순서와 일치하게) · affAcc=배치 내 같은 펫 중복 애정 누적(만렙 폴백 판정 순서 일치)
       for(let i=0;i<N;i++){
-        const forced = pityForced(pity) ? (kind==='ddeul'?(Math.random()<0.5?'limited':'exclusive'):'limited') : null;
-        if(kind==='box'){
-          let res = forced ? rollBoxReward(null, forced) : rollBoxReward();
+        const forced = pityForced(pity) ? ((kind==='ddeul'||isRb)?(Math.random()<0.5?'limited':'exclusive'):'limited') : null;
+        if(rollKind==='box'){
+          let res = forced ? rollBoxReward(isRb?RAINBOW_TIERS:null, forced) : rollBoxReward(isRb?RAINBOW_TIERS:null);
           if(!res) res={ id:'cushion', tier:'normal', type:'item' };
           let owned;
           if(res.type==='floor') owned=(ownsFloor(res.id)&&res.id!=='default')||!!seenFloor[res.id];
           else if(res.type==='wall') owned=(ownsWall(res.id)&&res.id!=='default')||!!seenWall[res.id];
           else if(res.type==='bgfx') owned=ownsBgfx(res.id)||!!seenBgfx[res.id];
           else if(res.type==='petfx') owned=ownsPetfx(res.id)||!!seenBgfx['fx:'+res.id];   // ✨ 펫효과=own-once(배치 내 중복도 판정 — seenBgfx 맵 재사용, 키 충돌 방지 접두사)
+          else if(res.type==='hat') owned=ownsHat(res.id)||!!seenBgfx['ht:'+res.id];   // 🧢 모자=own-once
           else owned=((typeof itemQty==='function'?itemQty(res.id):0)>0)||!!seenItem[res.id];
-          if(res.type==='floor') seenFloor[res.id]=true; else if(res.type==='wall') seenWall[res.id]=true; else if(res.type==='bgfx') seenBgfx[res.id]=true; else if(res.type==='petfx') seenBgfx['fx:'+res.id]=true; else seenItem[res.id]=true;
-          const isSkin=(res.type==='floor'||res.type==='wall'||res.type==='bgfx'||res.type==='petfx');   // 스킨(바닥/벽지/배경효과/펫효과)=own-once 중복 환급 · 가구=12개 캡 초과 환급(둘 다 10%)
+          if(res.type==='floor') seenFloor[res.id]=true; else if(res.type==='wall') seenWall[res.id]=true; else if(res.type==='bgfx') seenBgfx[res.id]=true; else if(res.type==='petfx') seenBgfx['fx:'+res.id]=true; else if(res.type==='hat') seenBgfx['ht:'+res.id]=true; else seenItem[res.id]=true;
+          const isSkin=(res.type==='floor'||res.type==='wall'||res.type==='bgfx'||res.type==='petfx'||res.type==='hat');   // own-once 중복 · 가구=상한(케어5·기타1) 초과
           const isFurn=(res.type==='item');
-          const capped=isFurn && ((typeof itemQty==='function'?itemQty(res.id):0)+(cntItem[res.id]||0))>=ITEM_MAX_QTY;   // 배치 내 앞서 지급된 수량 포함(트랜잭션 지급 순서와 동일 판정)
+          const capped=isFurn && ((typeof itemQty==='function'?itemQty(res.id):0)+(cntItem[res.id]||0))>=itemCapOf(res.id);   // 배치 내 앞서 지급된 수량 포함(트랜잭션 지급 순서와 동일 판정, 케어5·기타1)
           if(isFurn && !capped) cntItem[res.id]=(cntItem[res.id]||0)+1;
           const dupIt=(isSkin&&owned)||capped;
-          list.push({ id:res.id, tier:res.tier, type:res.type, kind:'box', rainbow:(Math.random()<rbUpgradeChance(res.tier)), dup:dupIt, refund:dupIt?dupRefundOf(res.tier):0, isNew:!owned });
+          const rbcIt=(dupIt&&res.tier==='exclusive')?1:0;   // 🌈 한정 중복=무지개동전 표기(실지급은 grantBoxReward)
+          list.push({ id:res.id, tier:res.tier, type:res.type, kind:'box', rainbow:(Math.random()<rbUpgradeChance(res.tier)), dup:dupIt, refund:(dupIt&&!rbcIt)?dupRefundOf(res.tier):0, rbc:rbcIt, isNew:!owned });
           pity=pityNext(pity, isTopTier(res.tier));
         } else {
           let res = forced ? pickTierMember(map, forced) : (ddeulTiers?rollFromPool(map, ddeulTiers):rollFromPool(map));
           if(!res) res={ id:(Object.keys(map)[0]||'cat_mackerel'), tier:'normal' };
           const owned=ownsCat(res.id)||!!seenCat[res.id]; seenCat[res.id]=true;
-          // 💗 중복 펫=애정 경험치(만렙만 은화 폴백) — 표기 미러. 배치 내 같은 펫 반복은 affAcc로 누적해 트랜잭션 지급 순서와 판정 일치.
-          let rfd=0, dupAff=0;
+          // 💗 중복 펫=애정 경험치(만렙만 은화 폴백·한정=🌈코인) — 표기 미러. 배치 내 같은 펫 반복은 affAcc로 누적해 트랜잭션 지급 순서와 판정 일치.
+          let rfd=0, dupAff=0, rbcP=0;
           if(owned){ const tr=CAT_TIER[res.id]||'normal', base=(Number((ownedCatsMap()[res.id]||{}).affection)||0)+(affAcc[res.id]||0);
-            if(affectionLevel(base, tr).level>=5){ rfd=petDupRefund(res.id); }
+            if(tr==='exclusive') rbcP=1;   // 🌈 한정 중복 = 무지개동전 1(은화 폴백 없음)
+            if(affectionLevel(base, tr).level>=5){ if(tr!=='exclusive') rfd=petDupRefund(res.id); }
             else { dupAff=dupAffOf(tr); affAcc[res.id]=(affAcc[res.id]||0)+dupAff; } }
-          list.push({ id:res.id, tier:res.tier, kind:kind, rainbow:(kind==='egg' && Math.random()<rbUpgradeChance(res.tier)), dup:owned, refund:rfd, dupAff:dupAff, isNew:!owned });
+          list.push({ id:res.id, tier:res.tier, kind:rollKind, rainbow:(rollKind==='egg' && Math.random()<rbUpgradeChance(res.tier)), dup:owned, refund:rfd, dupAff:dupAff, rbc:rbcP, isNew:!owned });
           pity=pityNext(pity, isTopTier(res.tier));
         }
       }
       const finalPity=pity;
       _pullBusy=true;   // 🔒 트랜잭션 동안 중복탭 방지(10연차 FX가 뜨면 화면을 덮음 → 커밋 후 해제)
       gameRef().transaction(function(g){ g=normalizeGame(g);
-        if((Number(g.consum[heldKey])||0)<held) return;                       // 보유 재검증
-        if(buyN>0){ if((g.coins||0)<buyN*silverEach) return; if(goldEach && (g.gold||0)<buyN*goldEach) return; }
-        g.consum[heldKey]=(Number(g.consum[heldKey])||0)-held;                 // 보유분 소모
-        if(buyN>0){ g.coins-=buyN*silverEach; if(goldEach) g.gold=clampGold((g.gold||0)-buyN*goldEach); }   // 구매분 재화 소모
-        if(kind!=='ddeul') grantGachaGold(g,N);                                // 펫알/박스=10뽑 부산물 금화(뜰알 제외) · 하루 2뽑 캡 적용
-        g.pity[kind]=finalPity;                                                // pity 10회 누적 반영
+        if(isRb){ if((Number(g.rbcoin)||0)<RAINBOW_PRICE_RBC*N) return; g.rbcoin-=RAINBOW_PRICE_RBC*N; }   // 🌈 무지개 10연=코인 50
+        else {
+          if((Number(g.consum[heldKey])||0)<held) return;                       // 보유 재검증
+          if(buyN>0){ if((g.coins||0)<buyN*silverEach) return; if(goldEach && (g.gold||0)<buyN*goldEach) return; }
+          g.consum[heldKey]=(Number(g.consum[heldKey])||0)-held;                 // 보유분 소모
+          if(buyN>0){ g.coins-=buyN*silverEach; if(goldEach) g.gold=clampGold((g.gold||0)-buyN*goldEach); }   // 구매분 재화 소모
+          if(kind!=='ddeul') grantGachaGold(g,N);                                // 펫알/박스=10뽑 부산물 금화(뜰알 제외) · 하루 2뽑 캡 적용
+        }
+        g.pity[kind]=finalPity;                                                // pity 10회 누적 반영(무지개는 종류별 키)
         list.forEach(function(it){
-          if(kind==='box'){ const rf=grantBoxReward(g, { id:it.id, tier:it.tier, type:it.type }); if(rf) g.coins=clampCoins((g.coins||0)+rf); }
+          if(it.kind==='box'){ const rf=grantBoxReward(g, { id:it.id, tier:it.tier, type:it.type }); if(rf) g.coins=clampCoins((g.coins||0)+rf); }
           else if(!g.owned.cats[it.id]){ g.owned.cats[it.id]={boughtAt:new Date().toISOString()}; const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(it.id)<0) R.active.push(it.id); }
-          else { grantPetDup(g, it.id); }   // 💗 중복 펫=애정 경험치(만렙만 은화 10% 폴백) — 순차 지급이라 배치 내 반복도 정확
+          else { grantPetDup(g, it.id); }   // 💗 중복 펫=애정(+한정 🌈코인) — 순차 지급이라 배치 내 반복도 정확
         });
         return g;
       }).then(function(r){ _pullBusy=false;
-        if(r&&r.committed){ const theme=(kind==='ddeul')?'rainbow':(kind==='box'?'treasure':'sunset'); runTenGachaFx(list, { kind:kind, theme:theme }); if(state._sheetRefresh) setTimeout(function(){ if(state._sheetRefresh) state._sheetRefresh(); }, 50); }   // 🎉 v2 정식: 랜덤박스 10뽑=보물 금고 씬(개발자 미리보기와 동일)
+        if(r&&r.committed){ const theme=(kind==='ddeul'||isRb)?'rainbow':(kind==='box'?'treasure':'sunset'); runTenGachaFx(list, { kind:rollKind, theme:theme }); if(state._sheetRefresh) setTimeout(function(){ if(state._sheetRefresh) state._sheetRefresh(); }, 50); }   // 🎉 v2 정식: 무지개 10뽑=밤(무지개) 씬
         else toast('처리 중이에요 — 잠시 후 다시 시도해 주세요', true);
       }).catch(function(){ _pullBusy=false; });
     }
@@ -8790,14 +8835,14 @@
     function buyItem(id){
       const it=ITEM_CATALOG.find(x=>x.id===id); if(!it) return;
       if(isGachaOnlyItem(id)){ toast('이 등급은 랜덤박스(가챠)로만 얻을 수 있어요'); setShopSub('event'); return; }
-      if(itemQty(id)>=ITEM_MAX_QTY){ toast(it.name+' 최대 보유량이에요(종당 '+ITEM_MAX_QTY+'개)', true); return; }   // 🧰 가구 캡 — 구매는 차단(은화 낭비 방지)
+      if(itemQty(id)>=itemCapOf(id)){ toast(it.name+' 최대 보유량이에요(종당 '+itemCapOf(id)+'개)', true); return; }   // 🧰 가구 캡(케어5·기타1) — 구매는 차단(은화 낭비 방지)
       const price=itemBuyPrice(id);
       if(coins()<price){ toast((price-coins())+' 은화 부족', true); return; }
       gameRef().transaction(g=>{ g=normalizeGame(g); if(g.coins<price) return;
-        if((Number((g.owned.items[id]||{}).qty)||0)>=ITEM_MAX_QTY) return;   // 캡 재검증(다기기 경합 → abort)
+        if((Number((g.owned.items[id]||{}).qty)||0)>=itemCapOf(id)) return;   // 캡 재검증(다기기 경합 → abort)
         g.coins-=price; g.owned.items[id]=g.owned.items[id]||{qty:0,boughtAt:new Date().toISOString()};
         g.owned.items[id].qty=(Number(g.owned.items[id].qty)||0)+1; return g;
-      }).then(res=>{ if(res.committed) toast(it.name+' 구매! 배치 탭에서 놓아보세요'); else if(itemQty(id)>=ITEM_MAX_QTY) toast(it.name+' 최대 보유량이에요(종당 '+ITEM_MAX_QTY+'개)', true); });
+      }).then(res=>{ if(res.committed) toast(it.name+' 구매! 배치 탭에서 놓아보세요'); else if(itemQty(id)>=itemCapOf(id)) toast(it.name+' 최대 보유량이에요(종당 '+itemCapOf(id)+'개)', true); });
     }
     // ===== 🍚💧 다마고치: 사료·물 소비 / 급여 / 배변 / 똥 수거 =====
     function consumQty(id){ return clampConsum((state.game&&state.game.consum&&state.game.consum[id]))||0; }
@@ -9179,8 +9224,8 @@
       { id:'rare',     name:'희귀', p:15,  color:'#3182F6' },
       { id:'epic',     name:'특별', p:6,   color:'#9B6FC8' },
       { id:'legend',   name:'전설', p:3,   color:'#E0A43C' },
-      { id:'limited',  name:'신화', p:1,   color:'#ff5fa2' },   // 신화(구 '한정') — 핑크 텍스트·연출. id는 하위호환 위해 'limited' 유지
-      { id:'exclusive',name:'한정', p:0,   color:'#F2C84B' }    // 한정(최상위·무지개) — 기본 펫알/무지개알엔 0(안 나옴). 오직 '뜰알'(한정 픽업)에서만 DDEUL_TIERS로 0.5% 등장
+      { id:'limited',  name:'신화', p:0.8, color:'#ff5fa2' },   // 신화(구 '한정') — 핑크 텍스트·연출. id는 하위호환 위해 'limited' 유지. 2026-07: 1→0.8
+      { id:'exclusive',name:'한정', p:0.2, color:'#F2C84B' }    // 한정(최상위·무지개) — 2026-07: 펫알·랜덤박스에도 0.2%(펫=활성 한정만·아이템=한정 포함 boxPool). 미공개 한정 전체는 무지개알/박스(신화50·한정50)에서
     ];
     // 🌱 뜰알(한정 픽업 뽑기) 전용 확률표 — 기본과 같지만 신화 1→0.5, 한정 0.5 추가(활성 한정 펫=삵·표범만 풀에). 합 100.
     const DDEUL_TIERS=[{id:'normal',p:45},{id:'uncommon',p:30},{id:'rare',p:15},{id:'epic',p:6},{id:'legend',p:3},{id:'limited',p:0.5},{id:'exclusive',p:0.5}];
@@ -9626,28 +9671,37 @@
     function wallBuyPrice(id){ return assetBuyPrice('wallpaper',id); }
     // 🎁 랜덤박스 통합 풀: 가구(it:)는 전 등급이 풀에 들어가 낮은 등급 롤도 채운다. 바닥(fl:)·벽지(wl:)는 목록 자체가 특별↑(가챠 전용). 타입 프리픽스로 지급 대상 구분.
     //  · 판매 제외(가챠 전용) 판정은 등급 기반(isGachaOnlyItem/Floor/Wall = tier≥epic) — 등급만 지정하면 "특별↑=박스에서만"이 자동 적용된다.
+    // 📦 박스 풀(2026-07 개편) — 한정 포함: 가구·바닥·벽지 + 배경효과·펫효과·모자(전부 한정). 랜덤박스는 TIERS(한정 0.2%)로,
+    //    무지개박스는 RAINBOW_TIERS(신화50·한정50)로 이 같은 풀에서 뽑는다 → 미공개 한정 아이템도 전부 출현.
     function boxPool(){ const m={}; const it=effItemTier(), fl=effFloorTier(), wl=effWallTier(), bg=bgfxTierMap();
-      Object.keys(it).forEach(k=>{ if(it[k]!=='exclusive') m['it:'+k]=it[k]; });   // 한정 아이템은 랜덤박스에서 제외(현재 한정 가구·바닥·벽지 없음, 안전 가드)
-      Object.keys(fl).forEach(k=>{ if(fl[k]!=='exclusive') m['fl:'+k]=fl[k]; });
-      Object.keys(wl).forEach(k=>{ if(wl[k]!=='exclusive') m['wl:'+k]=wl[k]; });
-      Object.keys(bg).forEach(k=>{ if(bg[k]!=='exclusive') m['bg:'+k]=bg[k]; });   // 배경효과=전부 한정(exclusive) → 랜덤/무지개박스에서 제외(뜰알 등 별도 획득 대기)
-      Object.keys(PETFX_TIER).forEach(k=>{ if(PETFX_TIER[k]!=='exclusive') m['fx:'+k]=PETFX_TIER[k]; });   // ✨ 펫효과 — 현재 전부 한정(exclusive)이라 랜덤박스 제외(지급 전용). 비한정 등급을 주면 자동 편입.
+      Object.keys(it).forEach(k=>{ m['it:'+k]=it[k]; });
+      Object.keys(fl).forEach(k=>{ m['fl:'+k]=fl[k]; });
+      Object.keys(wl).forEach(k=>{ m['wl:'+k]=wl[k]; });
+      Object.keys(bg).forEach(k=>{ m['bg:'+k]=bg[k]; });   // 배경효과(전부 한정)
+      Object.keys(PETFX_TIER).forEach(k=>{ m['fx:'+k]=PETFX_TIER[k]; });   // ✨ 펫효과(전부 한정)
+      Object.keys(HAT_TIER).forEach(k=>{ m['ht:'+k]=HAT_TIER[k]; });   // 🧢 모자(전부 한정)
       return m; }
     function rollBoxReward(tiers, forced){ const raw = forced ? pickTierMember(boxPool(), forced) : rollFromPool(boxPool(), tiers); if(!raw) return null; const p=raw.id.split(':');
-      return { id:p.slice(1).join(':'), tier:raw.tier, type:(p[0]==='fl'?'floor':(p[0]==='wl'?'wall':(p[0]==='bg'?'bgfx':(p[0]==='fx'?'petfx':'item')))) }; }
+      return { id:p.slice(1).join(':'), tier:raw.tier, type:(p[0]==='fl'?'floor':(p[0]==='wl'?'wall':(p[0]==='bg'?'bgfx':(p[0]==='fx'?'petfx':(p[0]==='ht'?'hat':'item'))))) }; }
     // ♻️ 중복/초과 환급 정책(2026-07 사용자 지침): 펫 중복·스킨(바닥/벽지/배경효과) 중복·가구 캡 초과 전부 등급가의 10% 은화 환급(구 20%).
-    // 🧰 가구는 종당 최대 ITEM_MAX_QTY(12)개 — 초과 획득(가챠·10연차·드랍 박스)은 환급, 알뜰샵 구매는 캡에서 차단(buyItem).
-    const ITEM_MAX_QTY=12;
+    // 🧰 가구 보유 상한 = itemCapOf(케어 5·그 외 1, 2026-07 개편) — 초과 획득(가챠·10연차·드랍 박스)은 중복 보상, 알뜰샵 구매는 캡에서 차단(buyItem).
+    // 🧰 기구물 보유 상한(2026-07 개편): 케어 아이템(밥·물그릇·화장실)=5개 · 그 외 전부 1개(구 종당 12개).
+    const ITEM_MAX_QTY=12;   // (레거시 상수 — 판정은 전부 itemCapOf(id) 사용)
+    function itemCapOf(id){ return (typeof CARE_ITEMS!=='undefined'&&CARE_ITEMS.indexOf(id)>=0)?5:1; }
     const DUP_REFUND_RATE=0.1;
     function dupRefundOf(tier){ return Math.max(1, Math.round((TIER_PRICE[tier]||0)*DUP_REFUND_RATE)); }
-    function grantBoxReward(g, res){   // 지급 + (스킨 중복·가구 캡 초과면) 환급 은화 반환
-      if(res.type==='floor'){ g.owned.floors=g.owned.floors||{}; if(g.owned.floors[res.id]) return dupRefundOf(res.tier); g.owned.floors[res.id]={boughtAt:new Date().toISOString()}; return 0; }
-      if(res.type==='wall'){ if(g.owned.wallpapers[res.id]) return dupRefundOf(res.tier); g.owned.wallpapers[res.id]={boughtAt:new Date().toISOString()}; return 0; }
-      if(res.type==='bgfx'){ g.owned.bgfx=g.owned.bgfx||{}; if(g.owned.bgfx[res.id]) return dupRefundOf(res.tier); g.owned.bgfx[res.id]={boughtAt:new Date().toISOString()}; return 0; }   // 배경효과=own-once(중복 환급)
-      if(res.type==='petfx'){ g.owned.petfx=g.owned.petfx||{}; if(g.owned.petfx[res.id]) return dupRefundOf(res.tier); g.owned.petfx[res.id]={boughtAt:new Date().toISOString()}; return 0; }   // ✨ 펫효과=own-once(중복 환급) — 장착은 애정 Lv3 슬롯
-      // 가구(item)는 수량 누적하되 종당 ITEM_MAX_QTY 캡 — 초과분은 환급. 모든 박스류 지급이 이 헬퍼를 거쳐 일괄 적용(단일 가챠·10연차·캠 드랍 개봉).
+    // 🌈 한정 등급 중복 = 은화 대신 무지개동전 +1(무지개알/박스 5개=1뽑 재화). 트랜잭션 안에서 호출.
+    function grantRbcoin(g, n){ g.rbcoin=Math.min(999999, Math.max(0,(Number(g.rbcoin)||0)+(n||1))); }
+    function grantBoxReward(g, res){   // 지급 + 중복/초과 보상: 한정=무지개동전 +1(은화 반환 0) · 그 외=환급 은화 반환
+      const dupPay=()=>{ if(res.tier==='exclusive'){ grantRbcoin(g,1); return 0; } return dupRefundOf(res.tier); };
+      if(res.type==='floor'){ g.owned.floors=g.owned.floors||{}; if(g.owned.floors[res.id]) return dupPay(); g.owned.floors[res.id]={boughtAt:new Date().toISOString()}; return 0; }
+      if(res.type==='wall'){ if(g.owned.wallpapers[res.id]) return dupPay(); g.owned.wallpapers[res.id]={boughtAt:new Date().toISOString()}; return 0; }
+      if(res.type==='bgfx'){ g.owned.bgfx=g.owned.bgfx||{}; if(g.owned.bgfx[res.id]) return dupPay(); g.owned.bgfx[res.id]={boughtAt:new Date().toISOString()}; return 0; }   // 배경효과=own-once
+      if(res.type==='petfx'){ g.owned.petfx=g.owned.petfx||{}; if(g.owned.petfx[res.id]) return dupPay(); g.owned.petfx[res.id]={boughtAt:new Date().toISOString()}; return 0; }   // ✨ 펫효과=own-once — 장착은 애정 Lv3 슬롯
+      if(res.type==='hat'){ g.owned.hats=g.owned.hats||{}; if(g.owned.hats[res.id]) return dupPay(); g.owned.hats[res.id]={boughtAt:new Date().toISOString()}; return 0; }   // 🧢 모자=own-once — 장착은 애정 Lv5 슬롯
+      // 가구(item)는 수량 누적하되 종당 itemCapOf(케어5·기타1) 캡 — 초과분은 중복 보상. 모든 박스류 지급이 이 헬퍼를 거쳐 일괄 적용(단일 가챠·10연차·캠 드랍 개봉).
       const it=g.owned.items[res.id];
-      if(it&&(Number(it.qty)||0)>=ITEM_MAX_QTY) return dupRefundOf(res.tier);
+      if(it&&(Number(it.qty)||0)>=itemCapOf(res.id)) return dupPay();
       if(it&&(Number(it.qty)||0)>0){ it.qty=(Number(it.qty)||0)+1; return 0; }
       g.owned.items[res.id]={qty:1,boughtAt:new Date().toISOString()}; return 0; }
     // 가챠전용 판정: 전역 오버라이드(config/*.gacha, 개발자 토글)가 있으면 그 값, 없으면 등급 기반 기본값(특별↑=가챠전용).
@@ -9777,12 +9831,13 @@
     }
     // 가챠 탭 하단: 선택한 구분의 등급별 확률만 접이식으로 표시.
     function gachaInfoHtml(tab){
-      const tiers=effTiers().filter(function(t){ return t.id!=='exclusive'; }), catBy=effCatTier(), itemBy=effItemTier();   // 한정은 기본 펫알/박스엔 없음(뜰알에서만)
+      const tiers=effTiers().filter(function(t){ return (Number(t.p)||0)>0; }), catBy=effCatTier(), itemBy=effItemTier();   // 확률 0 등급만 제외(2026-07: 한정도 0.2%로 노출)
       const row=(t)=> '<div class="gi-row"><b class="tier-'+t.id+'">'+t.name+'</b><span class="gi-p">'+t.p+'%</span></div>';
       const sec=(head,rows)=> '<div class="gi-sec"><div class="gi-h">'+head+'</div>'+rows+'</div>';
       const eggSec=()=> sec('🥚 펫알 · 고양이', tiers.filter(t=>PET_CATALOG.some(x=>catBy[x.id]===t.id)).map(row).join(''));
-      const boxSec=()=>{ const boxHas=tid=> ITEM_CATALOG.some(x=>itemBy[x.id]===tid) || FLOOR_CATALOG.some(f=>FLOOR_TIER[f.id]===tid) || WALLPAPER_CATALOG.some(w=>WALL_TIER[w.id]===tid);
-        return sec('🎁 랜덤박스 · 가구·바닥·벽지', tiers.filter(t=>boxHas(t.id)).map(row).join('')); };
+      const boxSec=()=>{ const boxHas=tid=> ITEM_CATALOG.some(x=>itemBy[x.id]===tid) || FLOOR_CATALOG.some(f=>FLOOR_TIER[f.id]===tid) || WALLPAPER_CATALOG.some(w=>WALL_TIER[w.id]===tid)
+          || Object.keys(PETFX_TIER).some(k=>PETFX_TIER[k]===tid) || Object.keys(HAT_TIER).some(k=>HAT_TIER[k]===tid) || (typeof BGFX_CATALOG!=='undefined'&&tid==='exclusive'&&BGFX_CATALOG.length>0);   // 한정=배경효과·펫효과·모자 포함
+        return sec('🎁 랜덤박스 · 가구·스킨·펫효과·모자', tiers.filter(t=>boxHas(t.id)).map(row).join('')); };
       let body='';
       if(tab==='normal'){   // 🥚📦 일반 = 펫알 + 랜덤박스 확률 둘 다
         body=eggSec()+boxSec();
@@ -9792,10 +9847,10 @@
         const rows=DDEUL_TIERS.map(dt=>{ if(dt.id==='exclusive' && !LIMITED_PICKUP.some(pickupExists)) return ''; const ti=tierInfo(dt.id);
           return '<div class="gi-row"><b class="tier-'+dt.id+'">'+ti.name+'</b><span class="gi-p">'+dt.p+'%</span></div>'; }).join('');
         body=sec('🌱 뜰알 · 한정 픽업', rows);
-      } else if(tab==='rainbow'){   // ✨ 무지개 — RAINBOW_TIERS(특별90·전설8·신화2)
+      } else if(tab==='rainbow'){   // 🌈 무지개 — RAINBOW_TIERS(신화50·한정50), 무지개동전 5개/뽑(한정 중복 획득마다 +1)
         const rows=RAINBOW_TIERS.map(rt=>{ const ti=tierInfo(rt.id);
           return '<div class="gi-row"><b class="tier-'+rt.id+'">'+ti.name+'</b><span class="gi-p">'+rt.p+'%</span></div>'; }).join('');
-        body=sec('✨ 무지개 · 특별↑ 확정', rows);
+        body=sec('🌈 무지개알·무지개박스 · 신화/한정 확정 (무지개동전 '+RAINBOW_PRICE_RBC+'개 — 한정 중복 획득마다 +1)', rows);
       } else {   // egg
         body=eggSec();
       }
@@ -9846,6 +9901,11 @@
     function grantPetDup(g, id){
       const tier=CAT_TIER[id]||'normal';
       const c=g.owned.cats[id]; if(!c) return { refund:0 };
+      if(tier==='exclusive'){   // 🌈 한정 펫 중복 = 무지개동전 +1(은화 폴백 없음). 애정 경험치도 함께(프레스티지 축 유지, 만렙이면 코인만).
+        grantRbcoin(g,1);
+        if(affectionLevel(c.affection, tier).level>=5) return { rbc:1 };
+        return { rbc:1, aff: dupAffOf(tier), gain: applyAffectionGain(g, id, dupAffOf(tier)) };
+      }
       if(affectionLevel(c.affection, tier).level>=5){ const rf=petDupRefund(id); g.coins=clampCoins((g.coins||0)+rf); return { refund:rf }; }
       return { aff: dupAffOf(tier), gain: applyAffectionGain(g, id, dupAffOf(tier)) };
     }
@@ -9853,11 +9913,12 @@
     function petDupPreview(id){
       const tier=CAT_TIER[id]||'normal', c=ownedCatsMap()[id]||{};
       const aff=Number(c.affection)||0, al=affectionLevel(aff, tier);
-      if(al.level>=5) return { max:true, refund:petDupRefund(id) };
+      const rbc=(tier==='exclusive')?1:0;   // 🌈 한정 중복 = 무지개동전 +1
+      if(al.level>=5) return rbc?{ max:true, refund:0, rbc:rbc }:{ max:true, refund:petDupRefund(id) };
       const gain=dupAffOf(tier), after=affectionLevel(aff+gain, tier).level;
       const rw=Math.max(0, Math.floor(Number(c.affRw)||0)); let silver=0, gd=0;
       for(let L=al.level+1; L<=after; L++){ if(L>rw){ silver+=affLevelReward(L); if(L>=5) gd+=5; } }
-      return { max:false, aff:gain, lvFrom:al.level, lvTo:after, silver, gold:gd };
+      return { max:false, aff:gain, lvFrom:al.level, lvTo:after, silver, gold:gd, rbc:rbc };
     }
     // 🌈 처음 획득 판정 — 뽑기 결과를 지급하기 "전" 보유 여부로 판단(등장 시 NEW 배지). 반드시 트랜잭션 커밋 전에 호출한다(커밋 후엔 리스너로 보유가 반영돼 오판).
     function isEggKind(k){ return k==='egg'||k==='ddeul'; }   // 뜰알(ddeul)은 펫알과 동일 취급(펫 지급·연출)
@@ -9867,6 +9928,7 @@
       if(res.type==='wall') return !ownsWall(res.id);
       if(res.type==='bgfx') return !ownsBgfx(res.id);
       if(res.type==='petfx') return !ownsPetfx(res.id);   // ✨ 펫효과
+      if(res.type==='hat') return !ownsHat(res.id);   // 🧢 모자
       return ((typeof itemQty==='function'?itemQty(res.id):0)===0); }   // 가구: 처음 보유(수량 0)면 NEW
     // 구매+롤(원자적): 은화-100, 금화+1, 지급(신규 고양이/가구 or 중복 펫 환급). 성공 시 연출.
     // free=true → 🎁 일일 무료 1뽑: 재화 무소모·금화 부산물 없음, game.freePull[kind]=오늘(kstDayKey) 마커로 멱등(다른 기기 이중 사용 방지). pity는 동일 누적.
@@ -9882,7 +9944,7 @@
         else if(res.type==='wall'){ dup=ownsWall(res.id)&&res.id!=='default'; }
         else if(res.type==='bgfx'){ dup=ownsBgfx(res.id); }   // 배경효과=own-once
         else if(res.type==='petfx'){ dup=ownsPetfx(res.id); }   // ✨ 펫효과=own-once
-        else { dup=itemQty(res.id)>=ITEM_MAX_QTY; }   // 🧰 가구: 12개 미만이면 수량 누적(환급 없음), 캡이면 환급 리빌
+        else { dup=itemQty(res.id)>=itemCapOf(res.id); }   // 🧰 가구: 상한(케어5·기타1) 미만이면 수량 누적, 캡이면 중복 리빌
         refund=dup?dupRefundOf(res.tier):0;
       }
       const isNew=gachaNew(kind,res);   // 지급 전 판정(NEW 배지)
@@ -9929,51 +9991,47 @@
       }).then(r=>{ if(r&&r.committed) runGachaFx('ddeul', res, dup, refund, false, isNew, dp); else { closeFx(); toast('처리 중이에요 — 잠시 후 다시 시도해 주세요', true); } })   // C4
         .catch(function(){ closeFx(); });
     }
-    // ===== ✨ 무지개알/무지개박스: 금화로 구매하는 소비템 → 사용 시 특별90·전설8·한정2% 가챠 =====
-    const RAINBOW_TIERS=[{id:'epic',p:90},{id:'legend',p:8},{id:'limited',p:2}];   // limited=신화. 한정(exclusive)은 무지개알엔 없음 — 오직 뜰알에서만. 콘텐츠 없으면 rollFromPool이 한 단계 아래로 폴백
-    const RAINBOW_PRICE_GOLD={ egg:10, box:10 };   // 무지개알·무지개박스 모두 금화10
-    function rbPriceGold(kind){ return RAINBOW_PRICE_GOLD[kind==='egg'?'egg':'box']; }
+    // ===== ✨ 무지개알/무지개박스(2026-07 개편): 🌈 무지개동전 5개로 바로 뽑기 — 신화50%·한정50% 확정 =====
+    //    무지개동전(game.rbcoin)은 "한정 등급 중복 획득" 시 1개씩 적립(가챠 전 경로). 미공개 한정 펫·아이템 전부 여기서 나온다.
+    const RAINBOW_TIERS=[{id:'limited',p:50},{id:'exclusive',p:50}];   // 신화50·한정50 확정(구 특별90·전설8·신화2 폐기)
+    const RAINBOW_PRICE_RBC=5;   // 1뽑당 무지개동전 5개(10뽑=50)
+    function rbPriceGold(kind){ return RAINBOW_PRICE_RBC; }   // (구 금화가 함수 시그니처 유지 — 이제 무지개동전 단가)
     function rainbowKey(kind){ return kind==='egg'?'rainbow_egg':'rainbow_box'; }
     function rainbowName(kind){ return kind==='egg'?'무지개알':'무지개박스'; }
-    // 구매(금화): 금화 -5, 소비 인벤토리 +1
-    function buyRainbow(kind){
-      const key=rainbowKey(kind);
-      const price=rbPriceGold(kind);
-      if(consumQty(key)>=MAX_CONSUM){ toast(rainbowName(kind)+' 최대 보유량이에요('+MAX_CONSUM.toLocaleString()+'개)', true); return; }
-      if(gold()<price){ toast('금화 '+(price-gold())+' 부족', true); return; }
-      gameRef().transaction(g=>{ g=normalizeGame(g); if((g.gold||0)<price || (Number(g.consum[key])||0)>=MAX_CONSUM) return;
-        g.gold-=price; g.consum[key]=(Number(g.consum[key])||0)+1; return g;
-      }).then(r=>{ if(r&&r.committed) toast(rainbowName(kind)+' +1 ✨'); });
-    }
-    // 사용(소비): 인벤토리 -1, 특별↑ 확률표로 롤 → 지급. 금화 보상 없음(금화로 산 프리미엄), 중복 펫은 은화 환급.
-    function useRainbow(kind){
+    function rbcoins(){ return (state.game&&Number(state.game.rbcoin))||0; }   // 🌈 무지개동전 잔액
+    // 🌈 무지개알 전용 펫 풀 — "미공개 한정 포함 전체"(exActive 무관). 일반 펫알(gachaCatTierMap)은 활성 한정만.
+    function rainbowCatTierMap(){ return effCatTier(); }
+    // ✨ 무지개알/무지개박스(2026-07 개편): 무지개동전 5개로 바로 뽑기 — 신화50%·한정50%, 미공개 한정 펫·아이템 전부 출현.
+    //    (구) 금화 구매→소비 인벤토리 사용 흐름은 폐기 — 기존 보유분은 migrateRbEconomyIfNeeded가 회수.
+    function openRainbow(kind){
       if(_pullBusy) return;   // 🔒 진행 중 재탭 무시
-      const key=rainbowKey(kind);
-      if(consumQty(key)<1){ toast(rainbowName(kind)+'이 없어요', true); return; }
-      const rk=kind==='egg'?'rainbow_egg':'rainbow_box'; const forced=pityForcedTierFor(rk);   // 🔮 무지개 종류별 천장
+      if(rbcoins()<RAINBOW_PRICE_RBC){ toast('무지개동전 '+(RAINBOW_PRICE_RBC-rbcoins())+'개 부족 — 한정 중복 획득으로 모아요', true); return; }
+      const rk=rainbowKey(kind); const forced=pityForcedTierFor(rk);   // 🔮 무지개 종류별 천장(신화↑ 확정이라 사실상 항상 리셋)
       let res, dup=false, refund=0, dp=null;
-      if(kind==='egg'){ res = forced ? pickTierMember(gachaCatTierMap(), forced) : rollFromPool(gachaCatTierMap(), RAINBOW_TIERS); if(!res) return; dup=ownsCat(res.id); dp=dup?petDupPreview(res.id):null; refund=(dp&&dp.max)?dp.refund:0; }   // 💗 중복 펫=애정(만렙만 은화)
+      if(kind==='egg'){ res = forced ? pickTierMember(rainbowCatTierMap(), forced) : rollFromPool(rainbowCatTierMap(), RAINBOW_TIERS); if(!res) return; dup=ownsCat(res.id); dp=dup?petDupPreview(res.id):null; refund=(dp&&dp.max)?dp.refund:0; }   // 💗 중복 펫=애정+🌈코인(한정)
       else { res=rollBoxReward(RAINBOW_TIERS, forced); if(!res) return;
         if(res.type==='floor') dup=ownsFloor(res.id)&&res.id!=='default';
         else if(res.type==='wall') dup=ownsWall(res.id)&&res.id!=='default';
         else if(res.type==='bgfx') dup=ownsBgfx(res.id);
-        else if(res.type==='petfx') dup=ownsPetfx(res.id);   // ✨ 펫효과=own-once
-        else dup=itemQty(res.id)>=ITEM_MAX_QTY;   // 🧰 가구: 12개 캡 초과일 때만 환급(트랜잭션 grantBoxReward와 동일 판정 — 예전 표시·지급 불일치 해소)
-        refund=dup?dupRefundOf(res.tier):0; }
+        else if(res.type==='petfx') dup=ownsPetfx(res.id);
+        else if(res.type==='hat') dup=ownsHat(res.id);   // 🧢 모자=own-once
+        else dup=itemQty(res.id)>=itemCapOf(res.id);
+        refund=(dup&&res.tier!=='exclusive')?dupRefundOf(res.tier):0; }   // 한정 중복=무지개동전(dupRbc 표기)
       const isNew=gachaNew(kind,res);   // 지급 전 판정(NEW 배지)
       const hit=isTopTier(res.tier);
       pullBegin(kind, true);   // 🔒 잠금 + 즉시 '준비' 오버레이(무지개)
       gameRef().transaction(g=>{ g=normalizeGame(g);
-        if((Number(g.consum[key])||0)<1) return;
-        g.consum[key]-=1; g.pity[rk]=pityNext(g.pity[rk]||0, hit);
+        if((Number(g.rbcoin)||0)<RAINBOW_PRICE_RBC) return;
+        g.rbcoin-=RAINBOW_PRICE_RBC; g.pity[rk]=pityNext(g.pity[rk]||0, hit);
         if(kind==='egg'){
           if(!g.owned.cats[res.id]){ g.owned.cats[res.id]={boughtAt:new Date().toISOString()}; { const R=gRoom(g); if(R.active.length<(g.home.slots||BASE_SLOTS) && R.active.indexOf(res.id)<0) R.active.push(res.id); } }
-          else { grantPetDup(g, res.id); }   // 💗 중복 펫=애정 경험치(만렙만 은화 10% 폴백)
+          else { grantPetDup(g, res.id); }   // 💗 중복 펫=애정(+한정이면 🌈코인)
         } else { const rf=grantBoxReward(g,res); if(rf) g.coins+=rf; }
         return g;
       }).then(r=>{ if(r&&r.committed) runGachaFx(kind, res, dup, refund, true, isNew, dp); else { closeFx(); toast('처리 중이에요 — 잠시 후 다시 시도해 주세요', true); } })   // C4
         .catch(function(){ closeFx(); });
     }
+    function useRainbow(kind){ openRainbow(kind); }   // (하위호환 별칭 — 구 사용 흐름 호출부 안전)
     let _selItem=null;
     function selItem(id){ if(itemRemaining(id)<=0){ toast(catFurnName(id)+' 전부 배치됨 — 회수하거나 더 얻어야 놓을 수 있어요', true); return; } _selItem=(_selItem===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }   // 남은 0(전부 배치)은 선택 불가·안내. _sheetRefresh=팔레트·펫칩 위치 보존(선택 시 처음으로 안 튐)
     const ITEM_SELL = 10;   // 기구물 판매가(은화)
@@ -10638,6 +10696,7 @@
     // 업데이트 내역 기본값(요약) — 최신순. RTDB config/notices가 있으면 그걸로 덮어씀. 시즌·친구선물 홍보는 이벤트·알림 섹션에 이미 나오므로 여기(업데이트 내역)엔 넣지 않는다.
     // 🔒 여기(및 config/notices)는 일반 사용자에게 그대로 노출된다. 개발자 모드·치트·내부 도구 등 비공개 변경은 절대 넣지 말 것(운영 유출 크리티컬). 방어로 isDevNotice가 한 번 더 거른다.
     let NOTICES = [
+      // (2026-07-09 사용자 지시: 쿠폰 전량 삭제 — '새 쿠폰 4종' 안내도 함께 제거. 새 쿠폰은 운영 시점에 config/notices로 공지)
       { date:'2026-07-10', t:'선물함·공지 개편', s:'선물 출처 표시, 운영자 선물, 공지사항에 운영자 공지와 업데이트 내역을 함께 정리했어요' }
     ];
     // RTDB config/notices(공개 읽기·관리자 쓰기)에서 공지를 읽어 NOTICES를 갱신. 없으면 위 기본값 유지.
@@ -10772,8 +10831,10 @@
       h+='<div class="cnote"><b><span style="display:inline-flex;vertical-align:-2px">'+ticketSvg({h:14})+'</span> 쿠폰</b> — 더보기 → 코드 입력에서 사용하세요</div>';
       const _codes=(state.game&&state.game.codes)||{};
       // 코드는 대문자로 안내(입력은 redeemCode가 소문자로 정규화해 대소문자 무관). used 판정은 저장 키(소문자 code) 그대로.
-      h+=Object.keys(PROMO_CODES).map(function(code){ const d=PROMO_CODES[code]; const used=!!_codes[code]; const cu=escapeHtml(code.toUpperCase());
-        return '<div class="cpn'+(used?' used':'')+'"><code class="cpncode" role="button" tabindex="0" aria-label="쿠폰번호 '+cu+' 복사" title="탭하면 쿠폰번호 복사" onclick="copyCouponCode(this)">'+cu+'</code><span class="rw"><span class="ci">'+couponIcon(d)+'</span>'+d.label+(used?'<span class="cused">사용완료</span>':'')+'</span></div>'; }).join('');
+      h+=Object.keys(PROMO_CODES).length
+        ? Object.keys(PROMO_CODES).map(function(code){ const d=PROMO_CODES[code]; const used=!!_codes[code]; const cu=escapeHtml(code.toUpperCase());
+            return '<div class="cpn'+(used?' used':'')+'"><code class="cpncode" role="button" tabindex="0" aria-label="쿠폰번호 '+cu+' 복사" title="탭하면 쿠폰번호 복사" onclick="copyCouponCode(this)">'+cu+'</code><span class="rw"><span class="ci">'+couponIcon(d)+'</span>'+d.label+(used?'<span class="cused">사용완료</span>':'')+'</span></div>'; }).join('')
+        : '<div class="note" style="margin:8px 2px;">진행 중인 쿠폰이 없어요.</div>';
       return h;
     }
     function catMissionHtml(){
@@ -10814,7 +10875,7 @@
       const egg=isEggKind(kind), v2e=(kind==='egg');   // 라이브 펫알/무지개알=v2 뜰알식 알(runGachaFx의 v2egg와 동일 판정 — 대기→본연출 제자리 승격 정합)
       const art = rainbow ? (egg?(v2e?rbEgg2FxHtml():rainbowEggSvg({h:150})):rainbowBoxSvg({h:150}))
                           : (kind==='ddeul'?ddeulFxHtml():(egg?(v2e?egg2FxHtml():eggSvg(0,{h:150})):boxSvg({h:150})));
-      fx.innerHTML='<div class="fx-scrim"></div><div class="fx-stage'+(rainbow?' fx-rb':'')+(kind==='ddeul'?' fx-ddeul':'')+'">'+
+      fx.innerHTML='<div class="fx-scrim"></div>'+fxSceneBg(kind, rainbow)+'<div class="fx-stage'+(rainbow?' fx-rb':'')+(kind==='ddeul'?' fx-ddeul':'')+'">'+
         '<div class="fx-item pop '+(egg?'fx-egg':'fx-box')+((kind==='ddeul'||v2e)?' fx-ddeulegg':'')+(rainbow?' fx-rainbow':'')+'">'+art+'</div>'+
         '<div class="fx-hint fx-hint-wait">뽑는 중…</div></div>';
       fx.className='fx on'; }
@@ -10825,10 +10886,27 @@
       for(let i=0;i<n;i++){ const x=Math.round(Math.random()*100), r=(Math.round(Math.random()*4)*90), del=(Math.random()*0.7).toFixed(2), dur=(1.1+Math.random()*0.9).toFixed(2), sw=(Math.random()*50-25).toFixed(0), sh=i%3;
         s+='<span class="fx-conf s'+sh+'" style="left:'+x+'%;color:'+cols[i%6]+';--r:'+r+'deg;--sw:'+sw+'px;animation-delay:'+del+'s;animation-duration:'+dur+'s"></span>'; }
       return s; }
+    // 🌆 1뽑 탭 단계 배너 기반 배경(2026-07) — 메인 화면이 비치지 않게 kind별 배너 씬을 불투명 레이어로 깐다(펫 배회 없는 씬만).
+    //    egg=노을 · box=보물 금고 · ddeul=픽업 낮 · 무지개(rainbow)=밤. 절전(lite)·reduced-motion은 씬 내부 규칙이 처리.
+    function fxSceneBg(kind, rainbow){ try{
+        let sc='';
+        if(rainbow) sc=nightSceneHtml();
+        else if(kind==='ddeul') sc=sunsetSceneHtml();
+        else if(kind==='box') sc=(typeof treasureSceneHtml==='function')?treasureSceneHtml('banner'):sunsetSceneHtml('banner','box');
+        else sc=sunsetSceneHtml();
+        return sc?'<div class="fx-scenebg" aria-hidden="true">'+sc+'</div>':'';
+      }catch(e){ return ''; } }
+    // 💗 가챠 중복 펫 애정 레벨업 연출 — 리빌 펫 위로 픽셀 하트 6개가 부채꼴로 '뿅뿅' + UP! 배지(affLevelFx 톤).
+    function fxAffLvUpHtml(){
+      let hearts='';
+      for(let i=0;i<6;i++){ const ang=(-90+(i-2.5)*26)*Math.PI/180, d=42+((i*37)%22);
+        hearts+='<span class="fx-hpop" style="--tx:'+(Math.cos(ang)*d).toFixed(0)+'px;--ty:'+(Math.sin(ang)*d).toFixed(0)+'px;animation-delay:'+(i*0.09).toFixed(2)+'s">'+heartSvg({h:13})+'</span>'; }
+      return '<span class="fx-lvup-wrap">'+hearts+'<span class="fx-lvup-up">'+upSvg({h:20})+'</span></span>';
+    }
     function runGachaFx(kind, res, dup, refund, rainbow, isNew, dupAff){
       const fx=$('catFx'); if(!fx){ toast((kind==='egg'?'펫알':'랜덤박스')+' 획득!'); pullEnd(); return; }
       _fxClear();   // 이전 FX 잔여 타이머 취소(빠른 재오픈 교차 방지)
-      _fx={ kind, res, dup, refund:refund||0, stage:0, rainbow:!!rainbow, gold: (rainbow||kind==='ddeul')?0:1, isNew:!!isNew, v2egg:(kind==='egg'), dupAff:(dupAff&&!dupAff.max)?dupAff:null };   // 무지개·뜰알은 금화 보상 없음(뜰알은 금화 소모). isNew=처음 획득(NEW 배지). dupAff=💗 중복 펫 애정 표기(petDupPreview 미러, 만렙 폴백이면 null→은화 표기).
+      _fx={ kind, res, dup, refund:refund||0, stage:0, rainbow:!!rainbow, gold: (rainbow||kind==='ddeul')?0:1, isNew:!!isNew, v2egg:(kind==='egg'), dupAff:(dupAff&&!dupAff.max)?dupAff:null, dupRbc:(dupAff&&dupAff.max&&dupAff.rbc)?dupAff.rbc:(dup&&res&&res.tier==='exclusive'&&!isEggKind(kind)?1:0) };   // 무지개·뜰알은 금화 보상 없음(뜰알은 금화 소모). isNew=NEW 배지. dupAff=💗 중복 펫 애정 표기. dupRbc=🌈 한정 중복 무지개동전 표기(만렙 한정 펫·한정 아이템 중복).
       // v2egg=신규 펫알/무지개알 아트(뜰알식 연출, 라이브 정식) — 무지개알 '아이템 사용(1뽑)'도 v2 연출(큰 무지개꽃 흔들림·전설↑ 꽃 뚝+무지개 꽃 흩날림)로 통일(2026-07-09 사용자 지침).
       if(isEggKind(kind) && typeof hasSprite==='function' && hasSprite(res.id)){ try{ const _pi=new Image(); _pi.src=sprStill(res.id,'south'); if(_pi.decode) _pi.decode().catch(function(){}); }catch(e){} }   // 등장 스프라이트 미리 로드·디코드(펫알·뜰알 공통) → 마지막에 바로 표시
       if(typeof prewarmGachaFxPads==='function') prewarmGachaFxPads();   // 연출 고양이 발끝 여백 미리 측정(탭하는 동안 캐시 완료 → 첫 등장 세로 점프 방지)
@@ -10852,7 +10930,7 @@
       const v2e=_fx.v2egg;   // 🎨 v2 펫알: 뜰알식 분리 렌더(새싹+몸통) — 크기·흔들림 CSS는 .fx-ddeulegg 공유. 무지개알/무지개박스 '사용'은 기존(v1) 아트.
       const art = rainbow ? (isEggKind(kind)? (v2e?rbEgg2FxHtml():rainbowEggSvg({h:150})) : rainbowBoxSvg({h:150}))
                           : (isDdeul? ddeulFxHtml() : (isEggKind(kind)? (v2e?egg2FxHtml():eggSvg(0,{h:150})) : boxSvg({h:150})));
-      fx.innerHTML='<div class="fx-scrim"></div><div class="fx-stage'+(rainbow?' fx-rb':'')+(isDdeul?' fx-ddeul':'')+'">'+
+      fx.innerHTML='<div class="fx-scrim"></div>'+fxSceneBg(kind, rainbow)+'<div class="fx-stage'+(rainbow?' fx-rb':'')+(isDdeul?' fx-ddeul':'')+'">'+
         (rainbow?fxSparkles(16):'')+
         '<div class="fx-item pop '+(isEggKind(kind)?'fx-egg':'fx-box')+((isDdeul||v2e)?' fx-ddeulegg':'')+(rainbow?' fx-rainbow':'')+'" id="fxItem" role="button" aria-label="'+hint+'" onclick="fxTap()">'+art+'</div>'+
         '<div class="fx-hint" id="fxHint">'+hint+'</div></div>';
@@ -11072,7 +11150,9 @@
       // 🌲 전설·신화·한정 펫 등장 = 픽업 배너 씬 전체를 배경으로(픽업 펫 2마리도 씬에서 배회). 그 외 등급은 기본 연출.
       const sceneBg = isEggKind(_fx.kind) && (_fx.res.tier==='limited' || _fx.res.tier==='exclusive');   // 픽업 씬 배경 = 신화(limited)·한정(exclusive)만(전설 제외)
       const boxScene = (_fx.kind==='box');   // 💎 랜덤박스·무지개박스 오픈=보물 금고 씬 배경(v2 정식)
-      const skyLayer = sceneBg ? pickupSceneHtml('reveal') : (boxScene ? treasureSceneHtml('reveal') : '');   // 배너 씬 재사용 — 배경 + 배회 픽업 펫(알·헤더 없음)
+      const skyLayer = rb ? '<div class="fx-scenebg" aria-hidden="true">'+nightSceneHtml()+'</div>'   // 🌈 무지개(승급·무지개알/박스)=밤 씬
+        : (sceneBg ? pickupSceneHtml('reveal') : (boxScene ? treasureSceneHtml('reveal')
+        : '<div class="fx-scenebg" aria-hidden="true">'+sunsetSceneHtml()+'</div>'));   // 일반 등급 리빌도 배너 기반 배경(메인 비침 방지)
       fx.innerHTML='<div class="fx-scrim"></div>'+skyLayer+'<div class="fx-reveal tier-'+t.id+' rank-'+rank+((rb||ex)?' rev-rb':'')+((sceneBg||boxScene)?' rev-scene':'')+'">'+   // 한정도 rev-rb(무지개 프레임=박스)
         '<div class="fx-art pop">'+
           '<span class="fx-aurawrap">'+lightLayers({aura:210, rays:250, rainbow:ex})+'</span>'+   // 펫 뒤 픽셀 오오라(한정=무지개 빛). 특별↑은 발산 광선까지 CSS로 표시
@@ -11080,14 +11160,17 @@
           '<span class="fx-twinkles">'+fxAuraTwinkles(tw, ex)+'</span>'+                // 펫 둘레 트윙클 도트(한정=무지개)
           '<span class="fx-frame"></span>'+
           '<span class="fx-artimg">'+art+'</span>'+
+          ((_fx.dupAff&&_fx.dupAff.lvTo>_fx.dupAff.lvFrom)?fxAffLvUpHtml():'')+        // 💗 중복 펫 애정 레벨업 — 하트 뿅뿅 + UP!
           (_fx.isNew?newBadgeSvg({h:30}):'')+                                          // 🌈 처음 획득: 무지개 픽셀 "NEW" 배지(펫/아이템 위에서 물결)
         '</div>'+
         '<div class="fx-tier">'+pixelTextHtml(t.name, (t.id==='exclusive'?'RAINBOW':(t.color||'#ffffff')), {h:40, base:13, cls:'fx-pxtier'})+'</div>'+
         '<div class="fx-name">'+pixelTextHtml((isEggKind(_fx.kind)?catName(_fx.res.id):rewardName(_fx.res)), (_fx.res.tier==='exclusive'?'RAINBOW':(t.color||'#ffffff')), {h:30, base:14, cls:'fx-pxname'})+'</div>'+
         '<div class="fx-reward">'+(_fx.gold?'<span class="rw"><span class="ci">'+goldSvg({h:18})+'</span>+1 금화</span>':'')+
           (_fx.dup?(_fx.dupAff
-            ?'<span class="rw"><span class="ci">'+heartSvg({h:18})+'</span>+'+_fx.dupAff.aff+' 애정 (중복)'+(_fx.dupAff.silver?' · '+coinSvg({h:14})+'+'+_fx.dupAff.silver+' Lv'+_fx.dupAff.lvTo+'!':'')+(_fx.dupAff.gold?' · +'+_fx.dupAff.gold+' 금화':'')+'</span>'
-            :'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>+'+_fx.refund+' 은화 (중복)</span>'):'')+'</div>'+
+            ?'<span class="rw"><span class="ci">'+heartSvg({h:18})+'</span>+'+_fx.dupAff.aff+' 애정 (중복)'+(_fx.dupAff.silver?' · '+coinSvg({h:14})+'+'+_fx.dupAff.silver+' Lv'+_fx.dupAff.lvTo+'!':'')+(_fx.dupAff.gold?' · +'+_fx.dupAff.gold+' 금화':'')+(_fx.dupAff.rbc?' · '+rainbowCoinSvg({h:14})+'+'+_fx.dupAff.rbc:'')+'</span>'
+            :(_fx.dupRbc
+              ?'<span class="rw"><span class="ci">'+rainbowCoinSvg({h:18})+'</span>+'+_fx.dupRbc+' 무지개동전 (중복)</span>'
+              :'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>+'+_fx.refund+' 은화 (중복)</span>')):'')+'</div>'+
         '<button class="btn" onclick="closeFx()">확인</button>'+
         '<div class="fx-confetti">'+(conf?fxConfetti(conf):'')+'</div></div>';
       if(boxScene && rb){ const sc=fx.querySelector('.pkscene'); if(sc) tenSkyRiseDia(sc); }   // 💎 1뽑: 무지개 승급일 때만(노을 해와 동일 조건) 다이아 스르르
@@ -11388,8 +11471,10 @@
         '<div class="fx-tier">'+pixelTextHtml(t.name, (ex?'RAINBOW':(t.color||'#ffffff')), {h:38, base:11})+'</div>'+
         '<div class="fx-name">'+pixelTextHtml((it.kind==='box'?rewardName(it):catName(it.id)), (ex?'RAINBOW':(t.color||'#ffffff')), {h:28, base:12})+'</div>'+
         '<div class="fx-reward">'+(it.dup?(it.dupAff
-          ?'<span class="rw"><span class="ci">'+heartSvg({h:18})+'</span>'+pixelTextHtml('+'+it.dupAff+' 애정 (중복)', '#ffffff', {h:16})+'</span>'
-          :'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>'+pixelTextHtml('+'+it.refund+' 은화 (중복)', '#ffffff', {h:16})+'</span>'):'')+'</div>'+
+          ?'<span class="rw"><span class="ci">'+heartSvg({h:18})+'</span>'+pixelTextHtml('+'+it.dupAff+' 애정'+(it.rbc?' ·🌈+'+it.rbc:'')+' (중복)', '#ffffff', {h:16})+'</span>'
+          :(it.rbc
+            ?'<span class="rw"><span class="ci">'+rainbowCoinSvg({h:18})+'</span>'+pixelTextHtml('+'+it.rbc+' 무지개동전 (중복)', '#ffffff', {h:16})+'</span>'
+            :'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>'+pixelTextHtml('+'+it.refund+' 은화 (중복)', '#ffffff', {h:16})+'</span>')):'')+'</div>'+
         '<div class="ten-nexthint">'+pixelTextHtml(n<total?'탭하여 다음 ('+n+'/'+total+')':'탭하여 마무리', '#ffffff', {h:15})+'</div>'+
         '<div class="fx-confetti">'+(conf?fxConfetti(conf):'')+'</div></div>'; }
     function tenFinale(){ _fx10.phase='finale'; _fx10.busy=false; _fx10._roaming=false; const fx=$('catFx'); if(!fx) return;
@@ -11431,7 +11516,7 @@
       let raw=[];
       if(scenario==='legendUp'){ const tiers=['legend','limited']; for(let i=0;i<10;i++) raw.push(rollB(tiers[Math.floor(Math.random()*tiers.length)])); }
       else { for(let i=0;i<10;i++) raw.push(rollB()); if(scenario==='oneLimited') raw[Math.floor(Math.random()*10)]=rollB('limited'); }
-      const list=raw.map(function(r){ const isSkin=(r.type==='floor'||r.type==='wall'||r.type==='bgfx'), dup=(isSkin&&boxOwned(r))||(r.type==='item'&&itemQty(r.id)>=ITEM_MAX_QTY); return { id:r.id, tier:r.tier, type:r.type, kind:'box', rainbow:(Math.random()<rbUpgradeChance(r.tier)), dup:dup, refund:dup?dupRefundOf(r.tier):0, isNew:!boxOwned(r) }; });   // 실지급 정책 미러: 스킨 중복·가구 12개 캡=10% 환급
+      const list=raw.map(function(r){ const isSkin=(r.type==='floor'||r.type==='wall'||r.type==='bgfx'), dup=(isSkin&&boxOwned(r))||(r.type==='item'&&itemQty(r.id)>=itemCapOf(r.id)); return { id:r.id, tier:r.tier, type:r.type, kind:'box', rainbow:(Math.random()<rbUpgradeChance(r.tier)), dup:dup, refund:dup?dupRefundOf(r.tier):0, isNew:!boxOwned(r) }; });   // 실지급 정책 미러: 스킨 중복·가구 12개 캡=10% 환급
       closeSheet(); _fx=null; runTenGachaFx(list, { preview:true, kind:'box', theme:theme||'' });
     }
 
@@ -11466,7 +11551,7 @@
       // 재화 추가(지급) — 은화·금화·펫알·랜덤박스·무지개알·무지개박스를 입력 수량만큼 내 계정에 지급
       h+='<div class="sec-title" style="margin-top:18px;">재화 추가(지급)</div>';
       h+='<div class="note" style="margin-bottom:8px;">입력한 수량만큼 <b>내 계정</b>에 지급해요(비우면 건너뜀, 음수면 차감·0 미만은 안 됨).</div>';
-      { const cur6=[['coins','은화',coinSvg({h:18})],['gold','금화',goldSvg({h:18})],['egg','펫알',eggSvg(0,{h:18})],['box','랜덤박스',boxSvg({h:18})],['rainbow_egg','무지개알',rainbowEggImg(18)],['rainbow_box','무지개박스',rainbowBoxSvg({h:18})],['ddeul','뜰알',ddeulEggSvg({h:18})],['dye','염색약',consumSvg('dye',{h:18})],['dye_remover','염색 리무버',consumSvg('dye_remover',{h:18})]];
+      { const cur6=[['coins','은화',coinSvg({h:18})],['gold','금화',goldSvg({h:18})],['egg','펫알',eggSvg(0,{h:18})],['box','랜덤박스',boxSvg({h:18})],['rainbow_egg','무지개알',rainbowEggImg(18)],['rainbow_box','무지개박스',rainbowBoxSvg({h:18})],['ddeul','뜰알',ddeulEggSvg({h:18})],['dye','염색약',consumSvg('dye',{h:18})],['dye_remover','염색 리무버',consumSvg('dye_remover',{h:18})],['rbcoin','무지개동전',rainbowCoinSvg({h:18})]];
         h+=cur6.map(function(c){ return '<div class="row" style="padding:5px 2px;align-items:center;"><span style="display:flex;align-items:center;gap:8px;min-width:0;"><span style="display:inline-flex;flex:none;">'+c[2]+'</span>'+c[1]+'</span><input class="input" style="width:120px;text-align:right;" inputmode="numeric" id="dv_'+c[0]+'" placeholder="0"></div>'; }).join(''); }
       h+='<button class="btn" style="margin-top:12px;" onclick="devGrantCurrency()">지급</button>';
       // 🧢✨ 코스메틱(own-once·전부 한정) 보유 토글 — 모자 3종·펫효과 3종(나비·반딧불·무지개꽃)
@@ -11515,8 +11600,8 @@
     // 재화 지급(개발자): dv_* 입력값을 읽어 은화·금화·소비템(펫알/박스/무지개알/무지개박스)을 한 트랜잭션에 지급.
     function devGrantCurrency(){ if(!isDev())return;
       const rd=id=>{ const v=parseInt(val('dv_'+id),10); return isNaN(v)?0:v; };
-      const c=rd('coins'), gd=rd('gold'), eg=rd('egg'), bx=rd('box'), re=rd('rainbow_egg'), rb=rd('rainbow_box'), dd=rd('ddeul'), dy=rd('dye'), dr=rd('dye_remover');
-      if(!(c||gd||eg||bx||re||rb||dd||dy||dr)){ toast('수량을 입력하세요', true); return; }
+      const c=rd('coins'), gd=rd('gold'), eg=rd('egg'), bx=rd('box'), re=rd('rainbow_egg'), rb=rd('rainbow_box'), dd=rd('ddeul'), dy=rd('dye'), dr=rd('dye_remover'), rc=rd('rbcoin');
+      if(!(c||gd||eg||bx||re||rb||dd||dy||dr||rc)){ toast('수량을 입력하세요', true); return; }
       gameRef().transaction(g=>{ g=normalizeGame(g);
         if(c)  g.coins=clampCoins((g.coins||0)+c);
         if(gd) g.gold=clampGold((g.gold||0)+gd);
@@ -11527,6 +11612,7 @@
         if(dd) g.consum.ddeul=clampConsum((g.consum.ddeul||0)+dd);
         if(dy) g.consum.dye=clampConsum((g.consum.dye||0)+dy);
         if(dr) g.consum.dye_remover=clampConsum((g.consum.dye_remover||0)+dr);
+        if(rc) grantRbcoin(g, rc);   // 🌈 무지개동전
         return g; }).then(r=>{ if(r&&r.committed){ toast('재화 지급 완료 🎁'); if(state._sheetRefresh) state._sheetRefresh(); } });
     }
     // 🏅 개발자: 신화·한정 펫 보유 토글(지급↔회수) — dv_hipet 선택값. 회수해도 방 active 잔여는 activeCats의 ownsCat 필터가 걸러 유령 없음.
@@ -11541,7 +11627,7 @@
       const el=$('dv_hiasset'); const v=el&&el.value; if(!v) return;
       const p=v.split(':'), kind=p[0], id=p.slice(1).join(':');
       gameRef().transaction(g=>{ g=normalizeGame(g);
-        if(kind==='it'){ const cur=g.owned.items[id]; const q=Math.min(ITEM_MAX_QTY,(Number(cur&&cur.qty)||0)+1); g.owned.items[id]=Object.assign({boughtAt:new Date().toISOString()}, cur||{}, {qty:q}); }
+        if(kind==='it'){ const cur=g.owned.items[id]; const q=Math.min(itemCapOf(id),(Number(cur&&cur.qty)||0)+1); g.owned.items[id]=Object.assign({boughtAt:new Date().toISOString()}, cur||{}, {qty:q}); }
         else if(kind==='wl'){ if(g.owned.wallpapers[id]) delete g.owned.wallpapers[id]; else g.owned.wallpapers[id]={boughtAt:new Date().toISOString()}; }
         else if(kind==='fl'){ g.owned.floors=g.owned.floors||{}; if(g.owned.floors[id]) delete g.owned.floors[id]; else g.owned.floors[id]={boughtAt:new Date().toISOString()}; }
         else if(kind==='bg'){ g.owned.bgfx=g.owned.bgfx||{}; if(g.owned.bgfx[id]) delete g.owned.bgfx[id]; else g.owned.bgfx[id]={boughtAt:new Date().toISOString()}; }
