@@ -2086,7 +2086,7 @@
     /* 나무(캐노피만 바람에 살랑) */
     .pk-tree { position:absolute; display:flex; flex-direction:column; align-items:center; transform:translateX(-50%); }
     .pk-tree .pk-canopy { display:block; transform-origin:center bottom; animation:pksway 3.4s ease-in-out infinite; animation-delay:calc(var(--i) * -.6s); }
-    .pk-tree .pk-trunk { display:block; margin-top:-2px; }
+    .pk-tree .pk-trunk { display:block; margin-top:-4px; }   /* 🩹 잎(canopy)이 흔들려도 줄기와 안 떨어지게 겹침 2px↑(구 -2px) — 공중부양 방지 */
     .pk-tree.pk-pine .pk-canopy { animation-duration:4.2s; }
     @keyframes pksway { 0%,100%{ transform:rotate(-2.5deg);} 50%{ transform:rotate(2.5deg);} }
     /* 꽃·풀(바람에 흔들) */
@@ -2215,7 +2215,8 @@
     /* ===== 🎨 픽업 씬 v2(고해상도, 개발자 배너 미리보기 전용 .pk-v2) — 다층 모션: 단순 1축 왕복 대신 굽힘+bob+미세 squash 조합(사용자 지침). 위상은 기존 --i 딜레이 그대로. ===== */
     .pk-v2 .pk-grass::before { display:none; }   /* v1 줄무늬 대신 잔디 픽셀 타일(tileBg 인라인 배경) */
     .pk-v2 .pk-tree .pk-canopy { animation-name:pksway2; }
-    @keyframes pksway2 { 0%,100%{ transform:rotate(-2.4deg); } 25%{ transform:rotate(.5deg) translateY(-.6px) scaleY(1.012); } 50%{ transform:rotate(2.4deg); } 75%{ transform:rotate(-.5deg) translateY(.5px) scaleY(.988); } }
+    /* 🩹 canopy를 위로 띄우던 translateY(-.6px) 제거 — 잎이 줄기에서 떠오르며 공중부양하던 원인. scaleY(원점=center bottom)로 밑동 고정한 채 위로만 미세 신축(이음새 안 벌어짐) */
+    @keyframes pksway2 { 0%,100%{ transform:rotate(-2.4deg); } 25%{ transform:rotate(.5deg) scaleY(1.012); } 50%{ transform:rotate(2.4deg); } 75%{ transform:rotate(-.5deg) translateY(.5px) scaleY(.988); } }
     .pk-v2 .pk-flower { animation-name:pkdance; animation-duration:3.1s; }
     @keyframes pkdance { 0%,100%{ transform:translateX(-50%) rotate(-6deg); } 28%{ transform:translateX(-50%) rotate(1.5deg) translateY(-.8px); } 52%{ transform:translateX(-50%) rotate(6deg); } 78%{ transform:translateX(-50%) rotate(-1.5deg) translateY(.5px); } }
     .pk-v2 .pk-tuft { animation-name:pkwave; animation-duration:2.4s; }

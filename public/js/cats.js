@@ -2063,11 +2063,15 @@
     function palPick(pal, keys, keep){ const o={}; Object.keys(pal).forEach(function(k){ const on=keys.indexOf(k)>=0; if(on===keep) o[k]=pal[k]; }); return o; }
     // 연출 있는 가구를 base+fx 겹 SVG로. (연출 없으면 일반 furnSvg 반환)
     // FURN_ANIM[id]는 단일 {type,move} 또는 여러 모션 레이어 배열 [{type,move,cls?}, …](연못=물고기·잎·물 각기 다르게). base=어느 레이어에도 안 든 글자(정지).
+    // 🩹 sway(잔잔한 회전) 레이어의 글자는 base에도 "정지 언더레이"로 남긴다 — fx가 살짝 기울 때 비워진 이음새를
+    //    투명(공백)이 아니라 자기 색(정지 실루엣)으로 메워 '공중부양/구멍'을 막는다. 회전각이 작아(±4.5°) 잔상 대신
+    //    '밑동이 도톰해 보이는' 자연스러운 채움이 된다. spin(제자리 전회전)·drift(옆이동)는 정지 언더레이가
+    //    잔상(고스트)으로 보이므로 종전대로 base에서 제외한다.
     function furnLiveSvg(id, opt){ const a=FURN_ANIM[id]; if(!a) return furnSvg(id, opt);
       const M=furnMatrix(id), pal=FURN_PALS[id];
       const layers = Array.isArray(a) ? a : [a];
-      let allMove=[]; layers.forEach(function(l){ allMove=allMove.concat(l.move); });
-      const base=pxSvg(M, palPick(pal, allMove, false), opt);          // 움직이는 글자 전부 제외(정지 배경)
+      let excludeMove=[]; layers.forEach(function(l){ if(l.type!=='sway') excludeMove=excludeMove.concat(l.move); });   // sway 글자는 base에 유지(언더레이), 그 외만 제외
+      const base=pxSvg(M, palPick(pal, excludeMove, false), opt);
       let fx=''; layers.forEach(function(l){ fx += '<span class="ffx ffx-'+l.type+' ffx-'+(l.cls||id)+'">'+pxSvg(M, palPick(pal, l.move, true), {fit:true})+'</span>'; });
       return '<span class="fwrap">'+base+fx+'</span>'; }
     // 방(홈·dock)용 — 채움 상태 반영: 밥그릇=빈/사료, 물그릇=빈(회색)/물.

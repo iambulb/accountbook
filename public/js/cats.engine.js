@@ -381,11 +381,11 @@
         const a=(!frozen)&&FURN_ANIM[id];
         if(!a) return furnSvg(id,{h:fh});
         const M=furnMatrix(id), pal=FURN_PALS[id], layers=Array.isArray(a)?a:[a];
-        let all=[]; layers.forEach(function(l){ all=all.concat(l.move); });
+        let excl=[]; layers.forEach(function(l){ if(l.type!=='sway') excl=excl.concat(l.move); });   // 🩹 dock furnLiveSvg와 동일: sway 글자는 base 정지 언더레이로 유지(이음새 공백 메움), 그 외만 제외
         layers.forEach(function(l){ const meta=_vpipFxMeta(l.type, l.cls||id);
           fx.push({ url:_svgUri(pxSvg(M, palPick(pal, l.move, true), {h:fh})), x:xx, y:yy, w:gw, h:fh, flip:!!flip, fr:fr,
             kf:meta.kf, dur:meta.dur, ox:meta.org[0], oy:meta.org[1], ph:Math.random() }); });
-        return pxSvg(M, palPick(pal, all, false), {h:fh});
+        return pxSvg(M, palPick(pal, excl, false), {h:fh});
       }
       list.forEach(function(p){ const foot=itemFoot(p.itemId), fr=p.r+foot.h-1, depth=camDepth(fr);
         const fh=furnRoomH(p.itemId,true,depth), gw=fh*furnAspect(p.itemId);
