@@ -1959,10 +1959,10 @@
     function openDevUsers(){
       if(!(typeof isDev==='function' && isDev())){ toast('개발자 전용'); return; }
       openSheet('사용자 현황', '<div class="note">불러오는 중…</div>');
-      Promise.all([ db.ref('users').once('value'), db.ref('presence').once('value') ]).then(function(res){
-        const usersSnap=res[0].val()||{}, pres=res[1].val()||{};
-        const list=Object.keys(usersSnap).map(function(uid){ const u=usersSnap[uid]||{};
-          return { uid:uid, name:(u.name||''), code:(u.friendCode||''), photo:(u.photo||''), at:(u.createdAt||''), lastSeen:(u.lastSeen||0) }; });
+      Promise.all([ db.ref('users').once('value'), db.ref('presence').once('value'), db.ref('rankings').once('value') ]).then(function(res){
+        const usersSnap=res[0].val()||{}, pres=res[1].val()||{}, ranks=res[2].val()||{};   // 💗 rankings.aff = 각 유저 총 애정레벨 합(공개 읽기)
+        const list=Object.keys(usersSnap).map(function(uid){ const u=usersSnap[uid]||{}; const rk=ranks[uid]||{};
+          return { uid:uid, name:(u.name||''), code:(u.friendCode||''), photo:(u.photo||''), at:(u.createdAt||''), lastSeen:(u.lastSeen||0), aff:(Number(rk.aff)||0) }; });
         list.sort(function(a,b){ return String(a.at).localeCompare(String(b.at)); });   // 가입 순서(createdAt ISO 오름차순)
         state._devUsers={ list:list, online:pres||{}, page:0 };
         renderDevUsers();
@@ -1984,11 +1984,14 @@
       const start=pg*DEV_USERS_PER, rows=s.list.slice(start, start+DEV_USERS_PER);
       let h='<div class="usrlist">';
       h+= rows.length ? rows.map(function(u, i){ const on=!!(s.online&&s.online[u.uid]); const num=start+i+1;
+          const affN=Number(u.aff)||0;
           return '<div class="usrrow'+(on?' usr-online':'')+'">'+
             '<span class="usr-rank">'+num+'</span>'+
-            '<span class="usr-av">'+avatarHtml(u.uid, u.name, 40, u.photo||'')+'</span>'+
+            // 🖼️ 프로필 사진 탭 → 그 사용자 프로필(친구집) 화면(openFriendHome — 내 uid면 내 홈으로 안전 처리)
+            '<span class="usr-av" role="button" tabindex="0" '+App.view.act('openFriendHome',u.uid)+' aria-label="'+escapeHtml(u.name||'사용자')+' 프로필 보기" title="프로필 보기">'+avatarHtml(u.uid, u.name, 40, u.photo||'')+'</span>'+
             '<span class="usr-info"><span class="usr-nm">'+escapeHtml(u.name||'(이름없음)')+'</span>'+
               '<span class="usr-code">'+escapeHtml(u.code||'—')+'</span></span>'+
+            '<span class="usr-aff" title="총 애정레벨 합">'+(typeof heartSvg==='function'?heartSvg({h:12}):'♥')+'<b>'+affN+'</b></span>'+
             (on?'<span class="usr-dot">접속중</span>':'')+'</div>'; }).join('')
         : '<div class="empty">사용자가 없어요</div>';
       h+='</div>';

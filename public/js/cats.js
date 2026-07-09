@@ -3550,9 +3550,12 @@
           body+='<div class="palette catinv pmgrid">'+del.map(p=>devPetCellHtml(p, sel)).join('')+'</div>'; }
         h+=body || '<div class="empty" style="padding:16px;">이 종류의 펫이 없어요</div>';
         return h; };
-      openSheet('펫 관리', build());
+      // 🛡️ 렌더가 어떤 이유로든 예외를 던져도 시트는 반드시 열리게(예외 시 '안 들어가짐'처럼 보이던 문제 방어) — 오류 내용을 화면에 표기.
+      const safeBuild=()=>{ try{ return build(); }catch(e){ try{ console.error('펫 관리 렌더 오류', e); }catch(_){}
+        return '<div class="note" style="color:var(--danger,#e5484d);">펫 관리 화면을 그리는 중 오류가 났어요.<br><b>'+escapeHtml((e&&e.message)||String(e))+'</b><br><span style="color:var(--sub)">앱을 최신으로 업데이트(설정 → 앱 업데이트 확인) 후 다시 시도해 주세요.</span></div>'; } };
+      openSheet('펫 관리', safeBuild());
       // 등급·가챠전용 변경(catalogPets 리스너) 시 목록 갱신 — 스크롤·선택 유지
-      state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const st=b.scrollTop; b.innerHTML=build(); b.scrollTop=st; }; }
+      state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const st=b.scrollTop; b.innerHTML=safeBuild(); b.scrollTop=st; }; }
 
     // ===== 🪑 기구물 관리(개발자·전역) — 타입 탭(가구·벽지·바닥)으로 펫이 아닌 모든 아이템의 이미지·등급·은화가 편집. 특별↑ 등급은 자동 랜덤박스 전용 =====
     const FURN_TYPES = [['item','가구'],['wall','벽지'],['floor','바닥']];
