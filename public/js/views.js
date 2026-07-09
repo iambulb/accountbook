@@ -1415,8 +1415,8 @@
       h+='<div class="field"><label>현재(초기) 잔액</label><input class="input" id="aInit" inputmode="text" value="'+(a?Number(a.initialBalance||0).toLocaleString():'')+'" placeholder="0 (부채는 -100,000)" oninput="this.value=fmtCommaSigned(this.value)"></div>';
       h+='<div class="field"><label>메모 (선택)</label><input class="input" id="aMemo" value="'+escapeHtml(a?(a.memo||''):'')+'" placeholder="메모"></div>';
       h+='<div id="aCardCfg" style="'+(curType==='credit_card'?'':'display:none;')+'">'+(curType==='credit_card'?cardCfgHtml(card):'')+'</div>';
-      h+='<button class="btn" onclick="saveAcct('+(id?'\''+id+'\'':'null')+')">'+(a?'수정':'추가')+'</button>';
-      if(a) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteAcct(\''+id+'\')">삭제</button>';
+      h+='<button class="btn" '+App.view.act('saveAcct', id?id:null)+'>'+(a?'수정':'추가')+'</button>';
+      if(a) h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deleteAcct',id)+'>삭제</button>';
       openSheet(a?'결제수단 수정':'결제수단 추가', h);
     }
     function cardCfgHtml(card){
@@ -1475,8 +1475,8 @@
       let h='<div class="field"><label>목표명</label><input class="input" id="vName" value="'+escapeHtml(sv?sv.name:'')+'" placeholder="예: 여행 자금"></div>';
       h+='<div class="form-2"><div class="field"><label>목표액</label><input class="input" id="vGoal" inputmode="numeric" value="'+(sv?Number(sv.goal).toLocaleString():'')+'" oninput="this.value=fmtComma(this.value)"></div>'+
         '<div class="field"><label>현재액</label><input class="input" id="vCur" inputmode="numeric" value="'+(sv?Number(sv.current).toLocaleString():'')+'" oninput="this.value=fmtComma(this.value)"></div></div>';
-      h+='<button class="btn" onclick="saveSavings('+(sv?'\''+ownerUid+'\',\''+id+'\'':'null,null')+')">'+(sv?'수정':'추가')+'</button>';
-      if(sv) h+='<button class="btn danger" style="margin-top:8px;" onclick="deleteSavings(\''+ownerUid+'\',\''+id+'\')">삭제</button>';
+      h+='<button class="btn" '+App.view.act('saveSavings', sv?ownerUid:null, sv?id:null)+'>'+(sv?'수정':'추가')+'</button>';
+      if(sv) h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deleteSavings',ownerUid,id)+'>삭제</button>';
       openSheet(sv?'적금 수정':'적금 추가', h);
     }
     function saveSavings(ownerUid,id){
