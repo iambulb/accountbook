@@ -380,17 +380,57 @@
         c.cosm=m; return g;
       }).then(r=>{ if(r&&r.committed){ if($('petInfo')) openPetInfo(id); if(state._sheetRefresh) state._sheetRefresh(); } });   // 캠 반영은 game 리스너(cosmSig 서명)가 리빌드
     }
-    function cosmRowHtml(id, slot, list, lv){
-      const un=lv>=cosmNeedLv(slot), cosm=petCosm(id);
-      const art=k=> slot==='hat'?hatSvg(k,{h:14}):buddySvgOf(k,{h:12});
-      const anyOwned=Object.keys(list).some(k=>cosmOwns(slot,k));
-      return '<div class="pi-cosm'+(un?'':' lock')+'"><span class="s">'+(slot==='hat'?'모자':'펫효과')+' · Lv'+cosmNeedLv(slot)+(un?'':' 슬롯 잠김')+'</span>'+
-        '<button class="chip'+(!cosm[slot]?' on':'')+'"'+(un?' '+App.view.act('setPetCosm',id,slot,null)+'':' disabled')+'>없음</button>'+
-        Object.keys(list).map(k=>{ const has=cosmOwns(slot,k);
-          return '<button class="chip'+(cosm[slot]===k?' on':'')+(has?'':' none')+'"'+((un&&has)?' '+App.view.act('setPetCosm',id,slot,k)+'':' disabled')+(has?'':' style="opacity:.45"')+'>'+art(k)+' '+list[k]+(has?'':' (미보유)')+'</button>'; }).join('')+
-        ((un&&!anyOwned)?'<span class="s" style="min-width:0">무지개박스·이벤트로 획득(한정)</span>':'')+
-      '</div>';
+    // 🔒 라인 자물쇠·해제 아이콘(기능 아이콘=라인 규칙)
+    function piLockSvg(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>'; }
+    function piNoneSvg(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M7 17L17 7"/></svg>'; }
+    function piCaretSvg(){ return '<svg class="pi-car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>'; }
+    // 💗 펫장비(모자)·펫효과(버디) 슬롯 버튼 — 애정 레벨로 잠금/해제. 해제 시 탭하면 보유 인벤토리 피커(openPetPicker)를 열어 장착.
+    function piCosmBtn(id, slot, lv){
+      const need=cosmNeedLv(slot), un=lv>=need, cosm=petCosm(id), cur=cosm[slot];
+      const label=slot==='hat'?'펫장비':'펫효과';
+      const CAT=slot==='hat'?HAT_CATALOG:BUDDY_CATALOG;
+      const artIc = cur ? (slot==='hat'?hatSvg(cur,{h:16}):buddySvgOf(cur,{h:15})) : '';
+      if(!un) return '<button class="pi-slot lock" disabled><span class="pi-sl-ic">'+piLockSvg()+'</span>'+
+        '<span class="pi-sl-tx"><b>'+label+'</b><span class="s">애정 Lv'+need+'에 열려요</span></span></button>';
+      return '<button class="pi-slot" onclick="openPetPicker(\''+id+'\',\''+slot+'\')"><span class="pi-sl-ic'+(cur?' has':'')+'">'+(cur?artIc:piNoneSvg())+'</span>'+
+        '<span class="pi-sl-tx"><b>'+label+'</b><span class="s">'+(cur?escapeHtml(CAT[cur]||cur):'없음 · 탭해서 장착')+'</span></span>'+piCaretSvg()+'</button>';
     }
+    // 🧺 소비템 슬롯 버튼 — 탭하면 이 펫에게 쓸 수 있는 보유 소비템 인벤토리(츄르·염색약·리무버)를 열어 사용.
+    function piConsumBtn(id){
+      const t=consumQty('treat'), dy=consumQty('dye'), rm=(petDyeOf(id)?consumQty('dye_remover'):0);
+      const parts=[]; if(t>0) parts.push('츄르 '+t); if(dy>0) parts.push('염색약 '+dy); if(rm>0) parts.push('리무버 '+rm);
+      const sub = parts.length ? parts.join(' · ') : '보유 소비템 없음';
+      return '<button class="pi-slot" onclick="openPetPicker(\''+id+'\',\'consum\')"><span class="pi-sl-ic">'+consumSvg('treat',{h:16})+'</span>'+
+        '<span class="pi-sl-tx"><b>소비템</b><span class="s">'+sub+'</span></span>'+piCaretSvg()+'</button>';
+    }
+    // 🎒 보유 아이템 인벤토리 피커(펫 정보 위에 스택) — 보유한 것만 노출, 탭해서 장착/사용. kind='hat'|'buddy'|'consum'.
+    function openPetPicker(id, kind){ if(!ownsCat(id)) return;
+      let w=$('petPicker'); if(!w){ w=document.createElement('div'); w.id='petPicker'; w.className='gimenu-scrim pp-scrim';
+        w.onclick=function(e){ if(e.target===w) closePetPicker(); }; document.body.appendChild(w); }
+      w.innerHTML='<div class="gimenu petpick">'+petPickerBody(id,kind)+'</div>'; }
+    function closePetPicker(){ const m=$('petPicker'); if(m) m.remove(); }
+    function petPickerBody(id, kind){
+      const closeBtn='<button class="cn-edit pi-close" aria-label="닫기" onclick="closePetPicker()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
+      if(kind==='consum'){
+        const items=[];
+        if(consumQty('treat')>0) items.push({k:'treat',n:'츄르',d:'애정 +1',q:consumQty('treat')});
+        if(consumQty('dye')>0)   items.push({k:'dye',n:'염색약',d:'랜덤 '+DYE_CATALOG.length+'색',q:consumQty('dye')});
+        if(petDyeOf(id)&&consumQty('dye_remover')>0) items.push({k:'dye_remover',n:'염색 리무버',d:'원래 톤 복원',q:consumQty('dye_remover')});
+        const cells=items.map(function(it){ return '<button class="pp-cell" onclick="pickConsum(\''+id+'\',\''+it.k+'\')"><span class="pp-art">'+consumSvg(it.k,{h:26})+'</span><span class="pp-nm">'+it.n+'</span><span class="pp-sub">'+it.d+'</span><span class="pp-qty">보유 '+it.q.toLocaleString()+'</span></button>'; }).join('');
+        const empty = items.length?'':'<div class="pp-empty">이 펫에게 쓸 소비템이 없어요<br><span>츄르·염색약을 알뜰샵·이벤트로 얻어요</span></div>';
+        return '<div class="gih pp-h"><b>소비템 사용</b>'+closeBtn+'</div><div class="pp-grid">'+cells+'</div>'+empty;
+      }
+      const slot=kind, CAT=slot==='hat'?HAT_CATALOG:BUDDY_CATALOG, cosm=petCosm(id), cur=cosm[slot];
+      const owns=function(k){ return cosmOwns(slot,k); };
+      const art=function(k){ return slot==='hat'?hatSvg(k,{h:26}):buddySvgOf(k,{h:24}); };
+      const ownedKeys=Object.keys(CAT).filter(owns);
+      const noneCell='<button class="pp-cell'+(!cur?' on':'')+'" onclick="pickCosm(\''+id+'\',\''+slot+'\',\'\')"><span class="pp-art pp-none">'+piNoneSvg()+'</span><span class="pp-nm">없음</span></button>';
+      const cells=noneCell+ownedKeys.map(function(k){ return '<button class="pp-cell'+(cur===k?' on':'')+'" onclick="pickCosm(\''+id+'\',\''+slot+'\',\''+k+'\')"><span class="pp-art">'+art(k)+'</span><span class="pp-nm">'+escapeHtml(CAT[k])+'</span></button>'; }).join('');
+      const empty=ownedKeys.length?'':'<div class="pp-empty">보유한 '+(slot==='hat'?'펫장비':'펫효과')+'가 없어요<br><span>무지개박스·이벤트·쿠폰으로 얻어요(한정)</span></div>';
+      return '<div class="gih pp-h"><b>'+(slot==='hat'?'펫장비 선택':'펫효과 선택')+'</b>'+closeBtn+'</div><div class="pp-grid">'+cells+'</div>'+empty;
+    }
+    function pickCosm(id, slot, val){ closePetPicker(); setPetCosm(id, slot, val||null); }   // setPetCosm이 커밋 후 openPetInfo 재렌더
+    function pickConsum(id, item){ closePetPicker(); if(item==='treat') applyTreat(id); else if(item==='dye') applyDye(id); else if(item==='dye_remover') applyDyeRemover(id); }
     function petInfoBody(id){
       const c=ownedCatsMap()[id]||{}, tier=CAT_TIER[id]||'normal';
       const aff=Number(c.affection)||0, al=affectionLevel(aff, tier);   // 💗 등급별 애정 계단(높은 등급=임계 큼)
@@ -405,13 +445,10 @@
         '<div class="pi-meta"><span class="pi-tier">'+tierLabelHtml(tier)+'</span><span class="s">'+escapeHtml(speciesLabel(id))+(got?' · 획득 '+got:'')+' · '+escapeHtml(roomTxt)+'</span></div>'+
         '<div class="pi-aff"><div class="pi-afftop"><span class="clv-h">'+heartSvg({h:11})+'</span>애정 Lv.'+al.level+'<span class="s">'+(al.next!=null?aff+' / '+al.next:'만렙 ★')+'</span></div><div class="bar"><i style="width:'+al.pct+'%"></i></div></div>'+
         (((tier==='limited'||tier==='exclusive')&&PET_SPRITES[id]&&PET_SPRITES[id].clips)?'<div class="pi-cd">모션 해금 — Lv1 기본(유휴·먹기·마시기)'+(al.level>=1?'(해금)':'(잠김)')+' · Lv2 식빵·하품'+(al.level>=2?'(해금)':'(잠김)')+' · Lv4 하악질'+(al.level>=4?'(해금)':'(잠김)')+'</div>':'')+   // 💗 신화+ 애정 모션 해금 안내(Lv1/2/4)
-        (hasSprite(id)?cosmRowHtml(id,'buddy',BUDDY_CATALOG,al.level)+cosmRowHtml(id,'hat',HAT_CATALOG,al.level):'')+   // 💗 코스메틱(동행 Lv3·모자 Lv5) — 스프라이트 펫만
+        (hasSprite(id)?piCosmBtn(id,'hat',al.level)+piCosmBtn(id,'buddy',al.level):'')+   // 💗 펫장비(모자 Lv5)·펫효과(버디 Lv3) — 스프라이트 펫만. 잠금/해제는 애정 레벨, 탭하면 보유 인벤토리 피커
         (petDyeOf(id)?'<div class="pi-cosm"><span class="s">염색</span><span class="chip on">'+consumSvg('dye',{h:12})+' '+escapeHtml(dyeNameOf(petDyeOf(id)))+'</span>'+(consumQty('dye_remover')>0?'<button class="chip" '+App.view.act('applyDyeRemover',id)+'>'+consumSvg('dye_remover',{h:12})+' 리무버로 지우기</button>':'<span class="s" style="min-width:0">리무버(알뜰샵 소비 탭·이벤트)로 제거 가능</span>')+'</div>':'')+   // 🎨 염색 상태 — 제거는 리무버 소모(무료 지우기 없음)
-        // 🧺 소비템 바로 사용(2026-07 사용자 지시) — 가방을 거치지 않고 펫 정보에서 이 펫에게 바로 사용. 보유한 펫 대상 소비템만 노출(적용 후 openPetInfo 재렌더로 결과 즉시 반영).
-        ((consumQty('treat')>0||consumQty('dye')>0)?('<div class="pi-cosm"><span class="s">소비템</span>'+
-          (consumQty('treat')>0?'<button class="chip" '+App.view.act('applyTreat',id)+'>'+consumSvg('treat',{h:12})+' 츄르 주기 · '+consumQty('treat').toLocaleString()+'</button>':'')+
-          (consumQty('dye')>0?'<button class="chip" '+App.view.act('applyDye',id)+'>'+consumSvg('dye',{h:12})+' 염색약(랜덤 '+DYE_CATALOG.length+'색) · '+consumQty('dye').toLocaleString()+'</button>':'')+
-        '</div>'):'')+
+        // 🧺 소비템 — 탭하면 보유 소비템 인벤토리 피커(츄르·염색약·리무버)를 열어 이 펫에게 사용(2026-07 사용자 지시로 인벤토리 방식 개편).
+        piConsumBtn(id)+
         (canPet?'<button class="gib sell" onclick="petFromInfo(\''+id+'\',event)">'+heartSvg({h:13})+' 쓰다듬기 · 애정+1 · 은화+'+PET_PET_REWARD+'</button>'
                :'<div class="pi-cd">오늘 쓰다듬기 완료 · 약 '+hh+'시간 후 가능</div>')+
         '<button class="gib" '+App.view.act('roomFromInfo',id)+'>'+(here?'이 방에서 대기시키기':'이 방으로 데려오기')+'</button>'+
