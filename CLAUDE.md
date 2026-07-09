@@ -48,7 +48,8 @@
 ## 아키텍처 / 코딩 규칙
 
 - **워크스페이스 격리가 핵심**: 모든 가계부 데이터는 `ws/{wsId}/` 아래에 저장됩니다. RTDB에 접근할 땐 **항상 경로 헬퍼 `wp('...')`** 를 써서 현재 워크스페이스에 네임스페이스를 거세요(예: `wp('transactions')` → `ws/{wsId}/transactions`). 비멤버는 `ws/{wsId}` 를 read/write할 수 없습니다.
-- **모듈 시스템 없음 — 전역 함수 패턴**: 번들러가 없고, 모든 함수·상수가 전역(window) 스코프를 공유합니다. HTML `onclick` 에서 전역 함수를 직접 호출하므로, **새 함수는 호출되는 곳보다 먼저(위 파일에) 정의**하고 이름 충돌을 피하세요. 로드 순서: `firebase.js → constants.js → core.js → views.js → main.js`.
+- **모듈 시스템 없음 — 전역 함수 패턴**: 번들러가 없고, 모든 함수·상수가 전역(window) 스코프를 공유합니다. HTML `onclick` 에서 전역 함수를 직접 호출하므로, **새 함수는 호출되는 곳보다 먼저(위 파일에) 정의**하고 이름 충돌을 피하세요. 로드 순서(`sw.js` APP_SHELL·index.html script 순): `firebase → constants → util → ledger-calc → core → app → model → delegate → views → cats.assets → cats.js → cats.engine → cats.house → cats.gacha → cats.fx → push → main`.
+- **🚨 모듈 로드시점(top-level)에서 "뒤에 로드되는 파일"의 함수를 호출 금지 (실제 발생한 치명 버그)**: 함수 선언은 스크립트 실행 시 훅스팅되지만 **그 스크립트가 실제로 로드·실행되기 전엔 정의되지 않는다.** 따라서 **먼저 로드되는 파일의 top-level 실행 문장**(예: `let X = fn()` 같은 `let/const` 초기화나 즉시 실행 코드)에서 **나중에 로드되는 파일의 함수**(예: `cats.js` 에서 `cats.house.js` 의 `lsGet`)를 호출하면 **`ReferenceError` 로 그 파일 로드가 그 줄에서 중단**되고, **이후 선언되는 모든 `let/const` 가 영구 TDZ**가 되어(`cannot access '…' before initialization`) 관련 화면이 통째로 안 열린다(6분할 후 `lsGet`가 `cats.house.js`로 이동하며 `cats.js` top-level `let _devPetSpecies=lsGet(...)`가 이 버그를 냈다). **top-level 초기화는 같은 파일이나 먼저 로드되는 파일의 함수만** 쓰고, 뒤 파일 함수가 필요하면 **런타임(사용자 상호작용·이벤트 시점)에 지연 호출**하거나 `typeof fn==='function'` 가드 + 안전 기본값을 쓴다. (함수 정의 안에서의 호출은 런타임이라 안전 — 문제는 오직 "로드시점에 실행되는 top-level 문장".)
 - **Firebase compat SDK 필수**: `firebase-*-compat.js` 빌드를 사용합니다(모듈형 SDK 아님).
 - **RTDB 규칙은 순수 JSON**: `database.rules.json` 에는 주석·추가 키를 넣지 마세요. 멤버십(`workspaces` 쓰기)이 먼저 커밋된 뒤에야 `ws` 쓰기가 통과하므로, 합류·생성은 2단계로 처리합니다.
 - **단방향 렌더**: RTDB 리스너가 데이터를 받을 때마다 `rerender()` 로 현재 화면을 다시 그립니다. 상태는 전역 `state` 객체에 모읍니다.

@@ -8,6 +8,14 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 변경 — 🍡 츄르 가격·구매 상한 조정(금화 10 · 하루 5개)
+- 츄르를 **은화 20 → 금화 10**, **하루 3개 → 하루 5개** 구매로 변경(`CONSUM_CATALOG` price/cur/dailyBuy). 상점 소비 탭에 금화 아이콘·가격으로 노출, `buyConsum`이 금화 차감·품목별 일일 상한(buyDay) 처리. `CACHE_VERSION` v3.614.0
+
+### 수정 — 🚨 개발자 펫 관리 크래시(`_devPetSpecies before initialization`) 근본 원인 해결
+- **원인**: `cats.js`의 top-level `let _devPetSpecies=lsGet('devPetSpecies','all')`가 **모듈 로드시점에 `lsGet`을 호출**하는데, 6분할 후 `lsGet`은 **뒤에 로드되는 `cats.house.js`**에 있어 그 시점엔 미정의 → **`ReferenceError`로 `cats.js` 로드가 그 줄에서 중단** → 이후 `let/const`가 전부 TDZ가 되어 펫 관리 `build()`가 `cannot access '_devPetSpecies' before initialization`으로 크래시(앱 나머지는 그 줄이 끝부분이라 정상).
+- **수정**: 로드시점엔 안전한 기본값(`'all'`)만 넣고 **저장값은 `openDevPetManager` 실행 시점에 지연 로드**(`dpSpeciesLoad`, `typeof lsGet` 가드). 펫 관리가 정상적으로 열린다.
+- **규칙화(CLAUDE.md)**: "모듈 로드시점 top-level 문장에서 뒤에 로드되는 파일의 함수 호출 금지 — ReferenceError로 로드 중단 → 이후 let/const TDZ" 불변식 추가 + 실제 로드 순서 최신화. `CACHE_VERSION` v3.613.0.
+
 ### 수정 — 🎩 펫 모자 옆모습 위치 조금 올림
 - 옆모습(걷기·east/west)에서 모자가 얼굴까지 내려오던 것 → 추가 하강량 `HAT_SIDE_DY` **0.09 → 0.05**로 줄여 정수리에 얹히게(정면·비디오 PiP 동기). `CACHE_VERSION` v3.612.0.
 

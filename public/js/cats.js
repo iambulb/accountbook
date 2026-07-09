@@ -3573,9 +3573,15 @@
       h+='<div class="petmg-btns" style="margin-top:8px;"><button class="btn ghost" '+App.view.act('devPreviewGachaFx')+'>▶︎ 연출 미리보기</button></div>';
       h+='</div>';
       return h; }
-    let _devPetSpecies=lsGet('devPetSpecies','all');   // 개발자 펫 관리 종류 탭
-    function setDevPetSpecies(s){ _devPetSpecies=s||'all'; lsSet('devPetSpecies',_devPetSpecies); if(state._sheetRefresh) state._sheetRefresh(); }
+    // 🚨 lsGet/lsSet 은 cats.house.js(cats.js 뒤에 로드)에 있어 모듈 로드시점엔 미정의 → 여기서 직접 호출하면 ReferenceError 로 cats.js 로드가 이 줄에서 중단되고,
+    //    이후 선언되는 let/const 가 전부 TDZ가 되어(예: 펫관리 build()가 "_devPetSpecies before initialization" 오류) 화면이 안 열리던 치명 버그였다.
+    //    → 모듈 로드시점엔 안전한 기본값('all')만 넣고, 저장값은 첫 사용(openDevPetManager 실행 시점, 그땐 lsGet 정의됨)에 지연 로드한다.
+    let _devPetSpecies='all';   // 개발자 펫 관리 종류 탭(기본값 — 저장값은 dpSpeciesLoad()가 지연 로드)
+    let _dpSpLoaded=false;
+    function dpSpeciesLoad(){ if(_dpSpLoaded) return; _dpSpLoaded=true; try{ if(typeof lsGet==='function') _devPetSpecies=lsGet('devPetSpecies','all')||'all'; }catch(_){} }
+    function setDevPetSpecies(s){ _dpSpLoaded=true; _devPetSpecies=s||'all'; try{ if(typeof lsSet==='function') lsSet('devPetSpecies',_devPetSpecies); }catch(_){} if(state._sheetRefresh) state._sheetRefresh(); }
     function openDevPetManager(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }
+      dpSpeciesLoad();   // 저장된 탭 지연 로드(lsGet은 이 시점엔 정의됨)
       const build=()=>{ const all=allPetsForDev(), sel=state._devPetSel;
         // 종류 탭(삭제·런타임 포함 존재하는 종, SPECIES_LABEL 순 + 개수 배지)
         const cnt={}; all.forEach(p=>{ const s=p.species||'cat'; cnt[s]=(cnt[s]||0)+1; });
