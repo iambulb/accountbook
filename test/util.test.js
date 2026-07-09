@@ -343,19 +343,23 @@ test('normalizeHome: 빈 입력 → 기본 방 1개', () => {
 });
 
 // 🎁 대기 드랍(실시간 스폰) 정규화 — 유효 kind만, 격자 클램프(r 1..8·c 1..12), 방당 3개 절단, RTDB 객체형 복원
-test('normalizeHome: drops 정규화(kind 필터·클램프·3개 절단·객체 복원)', () => {
+test('normalizeHome: drops 정규화(kind 필터·클램프·5개 절단·🌈무지개 kind·객체 복원)', () => {
   const h = U.normalizeHome({ rooms: [{ drops: [
     { id: 'd1', kind: 'egg', at: 5, r: 99, c: 0 },      // r·c 클램프
     { id: 'd2', kind: 'gold', at: 1, r: 3, c: 7 },
     { id: '', kind: 'egg', r: 1, c: 1 },                 // id 없음 → 제거
     { id: 'd3', kind: 'bad', r: 1, c: 1 },               // 무효 kind → 제거
     { id: 'd4', kind: 'box', r: 2, c: 2 },
-    { id: 'd5', kind: 'ddeul', r: 2, c: 3 }              // 4번째 유효 항목 → 3개 절단
+    { id: 'd5', kind: 'rbcoin', r: 2, c: 3 },            // 🌈 무지개동전
+    { id: 'd6', kind: 'rainbow_egg', r: 2, c: 4 },       // 🌈 무지개알
+    { id: 'd7', kind: 'rainbow_box', r: 2, c: 5 }        // 6번째 유효 항목 → 5개 절단
   ] }] });
   assert.deepStrictEqual(h.rooms[0].drops, [
     { id: 'd1', kind: 'egg', at: 5, r: 8, c: 1 },
     { id: 'd2', kind: 'gold', at: 1, r: 3, c: 7 },
-    { id: 'd4', kind: 'box', at: 0, r: 2, c: 2 }
+    { id: 'd4', kind: 'box', at: 0, r: 2, c: 2 },
+    { id: 'd5', kind: 'rbcoin', at: 0, r: 2, c: 3 },
+    { id: 'd6', kind: 'rainbow_egg', at: 0, r: 2, c: 4 }
   ]);
   const h2 = U.normalizeHome({ rooms: [{ drops: { k1: { id: 'x1', kind: 'egg', r: 4, c: 4 } } }] });   // RTDB 객체형
   assert.deepStrictEqual(h2.rooms[0].drops, [{ id: 'x1', kind: 'egg', at: 0, r: 4, c: 4 }]);
@@ -633,6 +637,17 @@ test('roomMood: 돌봄·애정·enrichment 종류로 상승(도배 무의미)', 
   assert.strictEqual(U.roomMood({ pets: 2, furn: 2, feedFrac: 1, avgAff: 5, caredFresh: 1 }), 100); // +수확 → 100
   assert.strictEqual(U.roomMood({ pets: 2, furn: 2, feedFrac: 1, avgAff: 5, caredFresh: 0 }), 88);  // 수확 안 하면 100 불가
   assert.strictEqual(U.roomMood({ pets: 2, furn: 2, poops: 3 }), 26);               // 44 − 18
+});
+
+test('dropMoodFactor: 행복도→드랍률 보너스 배수(기본에 행복도만큼 더함, ×1.0~2.0)', () => {
+  assert.strictEqual(U.dropMoodFactor(100), 2);      // 만점 → +100% (×2.0)
+  assert.strictEqual(U.dropMoodFactor(80), 1.8);     // +80%
+  assert.strictEqual(U.dropMoodFactor(66), 1.6);     // +60% (10% 단위 내림)
+  assert.strictEqual(U.dropMoodFactor(9), 1);        // 10 미만 → 기본(×1.0)
+  assert.strictEqual(U.dropMoodFactor(0), 1);
+  assert.strictEqual(U.dropMoodFactor(-5), 1);       // 클램프
+  assert.strictEqual(U.dropMoodFactor(999), 2);      // 클램프
+  assert.strictEqual(U.dropMoodFactor(undefined), 1);
 });
 
 test('yieldMultiplier: 애정+도감+앱사용 3축(1.0~2.0)', () => {

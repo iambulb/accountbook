@@ -250,17 +250,18 @@
         bgfx: (typeof r.bgfx === 'string') ? r.bgfx : '',   // 배경효과(앰비언트 오버레이) id — 없으면 ''
         harvestAt: Number(r.harvestAt) || 0,   // 🌾 방별 마지막 수확 시각(ms). 유휴 가구수익 누적 기준(0=미시작 → cats.js가 now로 초기화)
         caredAt: Number(r.caredAt) || 0,   // ❤️ 마지막 '실제 수확(버튼)' 시각(ms). 행복도 수확신선도 기준(0=아직 안 함 → 수확 보너스 없음)
-        drops: normDrops(r.drops)   // 🎁 방 바닥 대기 드랍(실시간 스폰) — [{id,kind,at,r,c}] 최대 3개
+        drops: normDrops(r.drops)   // 🎁 방 바닥 대기 드랍(실시간 스폰) — [{id,kind,at,r,c}] 최대 5개
       };
     }
-    // 대기 드랍 정규화: 유효 kind만, 격자 클램프, 방당 3개 절단. RTDB 어떤 형태(배열/객체)든 안전 복원.
+    // 대기 드랍 정규화: 유효 kind만, 격자 클램프, 방당 5개 절단. RTDB 어떤 형태(배열/객체)든 안전 복원.
+    //   🌈 rbcoin·rainbow_egg·rainbow_box=무지개 드랍(2026-07 추가). DROP_MAX_ROOM(cats.js)=5와 짝.
     function normDrops(d) {
-      var KINDS = { egg: 1, box: 1, ddeul: 1, gold: 1 };
+      var KINDS = { egg: 1, box: 1, ddeul: 1, gold: 1, rbcoin: 1, rainbow_egg: 1, rainbow_box: 1 };
       var arr = Array.isArray(d) ? d : (d && typeof d === 'object' ? Object.keys(d).map(function (k) { return d[k]; }) : []);
       var out = [];
       arr.forEach(function (x) {
         if (!x || typeof x.id !== 'string' || !x.id || !KINDS[x.kind]) return;
-        if (out.length >= 3) return;
+        if (out.length >= 5) return;
         out.push({ id: x.id, kind: x.kind, at: Number(x.at) || 0,
           r: clamp(x.r, 1, CAM.ROWS), c: clamp(x.c, 1, 12) });
       });
@@ -408,7 +409,7 @@
   // 방 행복도(0~100, 표시용·순수·별도 저장 없음). 입력 객체:
   //   pets=활성 펫 수(0이면 0), furn=enrichment 가구 '종류' 수(도배 방지: 2종에서 포화), feedFrac=밥·물 신선도(0~1),
   //   avgAff=활성 펫 평균 애정레벨(0~5), caredFresh=수확 신선도(0~1, 수확 직후 1→24h 후 0), poops=똥 수.
-  // 설계: 돌봄(밥물·수확신선)+사랑(애정)+가벼운 enrichment(가구 1~2종이면 충분)로 100. 가구 도배는 무의미. 방치하면 밥물(3h)·수확(24h) 신선도가 빠져 하강.
+  // 설계: 돌봄(밥물·수확신선)+사랑(애정)+가벼운 enrichment(가구 1~2종이면 충분)로 100. 가구 도배는 무의미. 방치하면 밥물(그릇 지속 6h·고급 12h)·수확(24h) 신선도가 빠져 하강.
   function roomMood(inp) {
     inp = inp || {};
     var pets = Math.max(0, Math.floor(Number(inp.pets) || 0)); if (!pets) return 0;
@@ -424,6 +425,11 @@
           + 12 * caredFresh;              // 수확 신선도(들러 수확해야 유지)
     m -= Math.min(30, poops * 6);         // 똥 감점
     return Math.max(0, Math.min(100, Math.round(m)));
+  }
+  // 🎁 행복도→드랍률 보너스 배수(1.0~2.0, 10% 단위 내림) — 기본 확률에 행복도만큼 "더해준다".
+  //   행복도 100=+100%(×2.0), 80=+80%(×1.8), 66=+60%(×1.6), 10 미만=+0%(×1.0=기본). reconcileDrops가 HARVEST_ROLL 확률에 곱한다.
+  function dropMoodFactor(mood) {
+    return 1 + Math.floor(Math.max(0, Math.min(100, Number(mood) || 0)) / 10) / 10;
   }
   // 애정 레벨업 소보상(은화). 레벨 1~5 = 20·30·50·80·100. (금화 만렙 보상은 별도 유지)
   function affLevelReward(level) {
@@ -505,7 +511,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CAM: CAM, camDepth: camDepth, camFurnBottom: camFurnBottom, camZ: camZ, CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, fmtCommaSigned: fmtCommaSigned, parseAmount: parseAmount, parseAmountSigned: parseAmountSigned, todayKst: todayKst, isoAtNoon: isoAtNoon, jsAttr: jsAttr, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, clampYmd: clampYmd, effNextBilling: effNextBilling, todoScope: todoScope, overdueTodoIds: overdueTodoIds, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, affTiers: affTiers, dupAffOf: dupAffOf, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift };
+  var api = { CAM: CAM, camDepth: camDepth, camFurnBottom: camFurnBottom, camZ: camZ, CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, fmtCommaSigned: fmtCommaSigned, parseAmount: parseAmount, parseAmountSigned: parseAmountSigned, todayKst: todayKst, isoAtNoon: isoAtNoon, jsAttr: jsAttr, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, clampYmd: clampYmd, effNextBilling: effNextBilling, todoScope: todoScope, overdueTodoIds: overdueTodoIds, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, affTiers: affTiers, dupAffOf: dupAffOf, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, dropMoodFactor: dropMoodFactor, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);

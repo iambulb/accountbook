@@ -64,9 +64,20 @@
     // 벽 가구도 z:0(같은 값)이라 DOM 순서가 앞서면 바닥 아이템 위로 그려진다 → 바닥 아이템을 항상 맨 앞(=맨 아래 레이어)에 두어
     // 러그가 벽 가구·일반 가구·펫 무엇보다도 아래로 보이게 한다(사용자 지침).
     function splitProps(list, mapFn){ let floor='', other=''; list.forEach(function(p){ if(isFloorItem(p.itemId)) floor+=mapFn(p); else other+=mapFn(p); }); return { floor:floor, other:other }; }
-    // 🎁 방 바닥 대기 드랍 마크업 — 캠 표현 3종(사용자 확정): 박스=무지개박스·알류(펫알·뜰알)=무지개알·금화=반짝이는 금화(은화는 표현 없음).
-    //   좌표·깊이·가림은 propMarkup과 동일 수식(camAnchorMode·camDepth·camFurnBottom·z=행) → 캠 3무대 원근 자동 정합. 인라인 z 고정 아님(행 척도).
-    //   data-rid/data-drop은 Document PiP 위임 클릭용(_pipStatic이 onclick은 벗기지만 data 속성은 남김).
+    // 🎁 드랍 캠 아트 — 종류별로 보상과 일치하는 픽셀 그림(사용자 확정, 2026-07): 펫알=일반 알·랜덤박스=일반 박스·금화=반짝 금화·뜰알=꽃알,
+    //   🌈 무지개동전=무지개 동전·무지개알=무지개 알·무지개박스=무지개 박스(무지개 드랍은 화려하게). 은화는 드랍 표현 없음. dropMarkup·비디오 PiP가 공유.
+    function dropArt(kind, fh){
+      if(kind==='gold') return goldSvg({h:Math.max(9,Math.round(fh*0.85))});
+      if(kind==='rbcoin') return rainbowCoinSvg({h:fh});
+      if(kind==='rainbow_egg') return rainbowEggSvg({h:fh});
+      if(kind==='rainbow_box') return rainbowBoxSvg({h:fh});
+      if(kind==='ddeul') return (typeof ddeulEggSvg==='function')?ddeulEggSvg({h:fh}):rainbowEggSvg({h:fh});
+      if(kind==='box') return boxSvg({h:fh});
+      return eggSvg(0,{h:fh});   // egg(펫알)
+    }
+    function isRbDropKind(kind){ return kind==='rbcoin'||kind==='rainbow_egg'||kind==='rainbow_box'; }
+    // 🎁 방 바닥 대기 드랍 마크업 — 좌표·깊이·가림은 propMarkup과 동일 수식(camAnchorMode·camDepth·camFurnBottom·z=행) → 캠 3무대 원근 자동 정합. 인라인 z 고정 아님(행 척도).
+    //   data-rid/data-drop은 Document PiP 위임 클릭용(_pipStatic이 onclick은 벗기지만 data 속성은 남김). 무지개 드랍은 .cr-drop-rb로 무지개 글린트.
     function dropMarkup(d, rid){
       const mode=camAnchorMode(d.c, 1);
       const leftPct=mode==='left'?0 : mode==='right'?100 : (gridLeftFrac(d.c)+gridSpanFrac(1)/2)*100;
@@ -74,9 +85,9 @@
       const depth=camDepth(d.r), bottom=camFurnBottom(depth).toFixed(1);
       const fh=Math.max(10, Math.round((16-depth*3)*1.15));   // 그릇급 소품 크기(원근 축소 완만)
       const z=Math.max(1, Math.round(d.r));
-      const art=d.kind==='box'?rainbowBoxSvg({h:fh}) : d.kind==='gold'?goldSvg({h:Math.max(9,Math.round(fh*0.85))}) : rainbowEggSvg({h:fh});
+      const art=dropArt(d.kind, fh);
       const tw=(typeof sparkSvg==='function')?('<span class="drop-tw">'+sparkSvg({h:Math.max(8,Math.round(fh*0.55))})+'</span>'):'';
-      return '<div class="cr-drop cr-drop-'+d.kind+'" role="button" tabindex="0" data-rid="'+rid+'" data-drop="'+d.id+'"'+
+      return '<div class="cr-drop cr-drop-'+d.kind+(isRbDropKind(d.kind)?' cr-drop-rb':'')+'" role="button" tabindex="0" data-rid="'+rid+'" data-drop="'+d.id+'"'+
         ' onclick="collectDrop(event,\''+rid+'\',\''+d.id+'\')" aria-label="떨어진 아이템 줍기"'+
         ' style="left:'+leftPct.toFixed(2)+'%;bottom:'+bottom+'%;z-index:'+z+';--crtx:'+txPct+'%;">'+
         '<span class="drop-ic">'+art+'</span>'+tw+'</div>';
@@ -125,7 +136,7 @@
     // 배치 가구를 무대 바닥에 배경으로(가로=열, 앞뒤 깊이=행)
     function renderDockProps(){
       const box=$('cdProps'); if(!box) return;
-      reconcilePets();   // 캠 화면에서도 3시간 만료→똥 정산
+      reconcilePets();   // 캠 화면에서도 그릇 만료→똥 정산
       // ⚡ 배치 서명 가드(renderDockCats 패턴) — game 틱(코인·애정 등)마다 가구 SVG DOM 전체 재생성으로 가구 CSS 연출(창문 구름·어항 금붕어 등)이 리셋되던 것 방지. 배치·그릇 채움·똥 수가 그대로면 스킵.
       const r=room(); const sig='p:'+curRoomId()+'|'+JSON.stringify(r.placed||{})+'|'+JSON.stringify(r.wallPlaced||{})+'|'+(Number(r.poops)||0)+'|d:'+dropsSig(r);   // 드랍 서명 포함 — 스폰/수집이 dock에 라이브 반영(빼먹으면 "홈엔 뜨는데 dock엔 안 뜸" 재발 유형)
       if(box.dataset.sig===sig) return;
@@ -413,7 +424,7 @@
       ((room().drops)||[]).forEach(function(d){ const depth=camDepth(d.r), fr=Math.max(1,Math.round(d.r));
         const fh=Math.max(10, Math.round((16-depth*3)*1.15));
         const isG=d.kind==='gold', h2=isG?Math.max(9,Math.round(fh*0.85)):fh;
-        const art=d.kind==='box'?rainbowBoxSvg({h:h2}) : (isG?goldSvg({h:h2}) : rainbowEggSvg({h:h2}));
+        const art=dropArt(d.kind, fh);
         const gw=h2*svgAspect(art), x=anchorX(d.c, 1, gw), y=H*(1-camFurnBottom(depth)/100)-h2;
         if(frozen){ oth.push({ url:_svgUri(art), x:x, y:y, w:gw, h:h2, flip:false, fr:fr }); return; }
         fx.push({ url:_svgUri(art), x:x, y:y, w:gw, h:h2, flip:false, fr:fr,

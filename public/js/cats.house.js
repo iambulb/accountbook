@@ -199,7 +199,7 @@
       const ch=first.offsetHeight; if(ch>0) el.style.maxHeight=(ch*rows4+gap*(rows4-1)+padY+2)+'px';
     }
     function catHomeHtml(){
-      reconcilePets();   // 3시간 지난 그릇 비우고 똥 정산(멱등)
+      reconcilePets();   // 지속시간 지난 그릇 비우고 똥 정산(멱등)
       const cats=activeCats();
       // 배치된 가구를 방 바닥에 매핑. 그릇=탭 급여·채움 반영, 화장실=똥 수거(공용 헬퍼).
       const list=placedList().sort((a,b)=>a.r-b.r); distributePoops(list);
@@ -212,7 +212,7 @@
       if(!list.length && !cats.length) h+='<div class="hintline" style="margin:8px 0 0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>새 방이에요! <b>펫</b> 탭에서 <b>펫을 이 방으로 데려오고</b>, <b>배치</b> 탭에서 가구를 놓아보세요. (다른 방과 따로 저장돼요)</div>';
       // 안내: 그릇 채우기 / 똥 수거 — 완전 빈 새 방(가구·펫 없음)에선 위 '새 방' 안내만 두고 생략(힌트 3장 적층 방지, 채울 그릇도 없음)
       const poops=room().poops||0;
-      if(list.length || cats.length) h+='<div class="hintline" style="margin:8px 0 0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>밥·물 그릇을 탭해 채우고(3시간 뒤 비워짐), 쌓인 <b>똥을 탭해 치우면 +'+POOP_REWARD+' 은화</b>'+(poops&&!litters.length?' · 화장실을 놓아야 똥을 치울 수 있어요':'')+'.</div>';
+      if(list.length || cats.length) h+='<div class="hintline" style="margin:8px 0 0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>밥·물 그릇을 탭해 채우고(6시간 뒤 비워짐), 쌓인 <b>똥을 탭해 치우면 +'+POOP_REWARD+' 은화</b>'+(poops&&!litters.length?' · 화장실을 놓아야 똥을 치울 수 있어요':'')+'.</div>';
       const owned=ownedCatList();
       const sc=slotCount();
       h+='<div class="sech"><span class="l">이 방 펫</span><span class="s">'+cats.length+' / '+sc+' 활성</span></div>';
@@ -669,7 +669,7 @@
             priceHtml+'</div>'+
             '<div class="act">'+act+'<span class="qty">보유 '+consumQty(c.id).toLocaleString()+(consumQty(c.id)>=MAX_CONSUM?maxChip():'')+(c.dailyBuy?' · 오늘 '+boughtToday+'/'+c.dailyBuy:'')+'</span></div></div>';
         }).join('');
-        h+='<div class="note"><b>소비 아이템</b>은 배치할 수 없어요. <b>사료·물·고급사료·정수물</b>은 홈에서 밥·물 그릇을 탭(또는 수확)해 채우고, <b>츄르</b>는 가방에서 펫을 골라 애정을, <b>영양제</b>는 가방에서 3시간 수익 부스트에 써요.</div>';
+        h+='<div class="note"><b>소비 아이템</b>은 배치할 수 없어요. <b>사료·물·고급사료·정수물</b>은 홈에서 밥·물 그릇을 탭(또는 수확)해 채우고, <b>츄르</b>는 가방에서 펫을 골라 애정을, <b>영양제</b>는 가방에서 6시간 수익 부스트에 써요.</div>';
         return h;
       }
       if(_shopSub==='event'){   // 🌱 이벤트(한정 픽업 뜰알)
@@ -768,7 +768,7 @@
     }
     // ---- 가구 인벤토리/배치 ----
     function itemQty(id){ const it=state.game&&state.game.owned.items[id]; return it?(Number(it.qty)||0):0; }
-    function placedList(){ const p=room().placed||{}; return Object.keys(p).map(k=>({key:k, r:+k.split('_')[0], c:+k.split('_')[1], itemId:p[k].itemId, filledAt:p[k].filledAt||null, fillMs:p[k].fillMs||null, flip:!!p[k].flip})); }   // filledAt=먹기/마시기 클립 판정(furnClip), fillMs=그릇 채움 지속(고급사료·정수물 6h) 보존용
+    function placedList(){ const p=room().placed||{}; return Object.keys(p).map(k=>({key:k, r:+k.split('_')[0], c:+k.split('_')[1], itemId:p[k].itemId, filledAt:p[k].filledAt||null, fillMs:p[k].fillMs||null, flip:!!p[k].flip})); }   // filledAt=먹기/마시기 클립 판정(furnClip), fillMs=그릇 채움 지속(고급사료·정수물 12h) 보존용
     function itemPlaced(id){ return placedList().filter(x=>x.itemId===id).length; }          // 현재 방 배치 수(케어 아이템 방당 상한용)
     function itemPlacedAll(id){ return sumPlacedItem(homeH().rooms, id); }                    // 전 방 배치 합(전역 인벤토리 소진 — 복제 방지)
     function itemRemaining(id){ return itemQty(id)-itemPlacedAll(id); }                       // 남은 수량 = 보유 - 모든 방 배치
@@ -804,9 +804,9 @@
         g.consum[id]=(Number(g.consum[id])||0)+1; return g;
       }).then(res=>{ if(res.committed) toast(c.name+' +1'); });
     }
-    // 소비템의 채움 지속시간(ms) — 고급사료·정수물=6h, 기본=3h(FILL_MS)
+    // 소비템의 채움 지속시간(ms) — 고급사료·정수물=12h, 기본=6h(FILL_MS)
     function consumFillMs(id){ const c=CONSUM_CATALOG.find(x=>x.id===id); return (c&&c.effect&&c.effect.ms)||FILL_MS; }
-    // 배치된 그릇의 채움 지속(그 그릇을 채운 소비템 기준으로 저장된 fillMs, 없으면 3h)
+    // 배치된 그릇의 채움 지속(그 그릇을 채운 소비템 기준으로 저장된 fillMs, 없으면 FILL_MS)
     function fillDurOf(p){ return (p&&Number(p.fillMs)>0)?Number(p.fillMs):FILL_MS; }
     // 🌾 수확·급여 자동채움 선호(localStorage) — 기본 사료 ↔ 고급사료 / 물 ↔ 정수물. 보유 없으면 자동 폴백.
     function harvestPref(kind){ const def=(kind==='water')?'water':'food', v=lsGet(kind==='water'?'harvestWater':'harvestFood', def);
@@ -833,12 +833,12 @@
         g.consum[pick.key]-=1; R.placed[key].filledAt=Date.now(); R.placed[key].fillMs=pick.ms; return g;
       }).then(r=>{ if(r&&r.committed) toast(id==='bowl'?'밥을 채웠어요 🍚':'물을 채웠어요 💧'); });
     }
-    // 채워진 지 3시간 지난 그릇을 비우고, 비운 개수만큼 똥을 쌓는다(멱등: filledAt 지우면 재발동 안 함)
+    // 채워진 지 지속시간(fillDurOf) 지난 그릇을 비우고, 비운 개수만큼 똥을 쌓는다(멱등: filledAt 지우면 재발동 안 함)
     let _lastRecon=0;
     function reconcilePets(){
       const g=state.game; if(!g||!g.home) return;
-      const now=Date.now();   // 모든 방의 그릇을 점검(안 보는 방도 3h 뒤 비워지며 그 방 똥 누적)
-      if(now-_lastRecon<3000) return; _lastRecon=now;   // 렌더 경로에서 매 렌더 호출돼도 3초 스로틀(3시간 만료 기준이라 지장 없음, 중복 트랜잭션 방지)
+      const now=Date.now();   // 모든 방의 그릇을 점검(안 보는 방도 지속시간 뒤 비워지며 그 방 똥 누적)
+      if(now-_lastRecon<3000) return; _lastRecon=now;   // 렌더 경로에서 매 렌더 호출돼도 3초 스로틀(시간 단위 만료 기준이라 지장 없음, 중복 트랜잭션 방지)
       let expired=0; (g.home.rooms||[]).forEach(r=>{ const pl=(r&&r.placed)||{}; Object.keys(pl).forEach(k=>{ const e=pl[k]; if(e&&e.filledAt&&(now-e.filledAt)>=fillDurOf(e)) expired++; }); });
       if(!expired) return;
       gameRef().transaction(gg=>{ if(gg==null) return;   // 자동 발동(사용자 조작 없음) → null 첫 패스에 기본 홈을 제안하지 않음(재접속 clobber 방지)
@@ -863,7 +863,7 @@
       const cur=rooms[(g.home&&g.home.current)|0];
       if(cur&&(cur.active||[]).length>0) return cur;
       return rooms.find(R=>R&&(R.active||[]).length>0)||null; }
-    // 🎁 드랍 스폰 롤 — 10분(DROP_ROLL_MS)마다 HARVEST_ROLL/6 확률로 대상 방(1곳) 바닥에 드랍(펫알·랜덤박스·뜰알·금화)을 놓는다.
+    // 🎁 드랍 스폰 롤 — 10분(DROP_ROLL_MS)마다 HARVEST_ROLL/6 × 행복도 계수(dropMoodFactor) 확률로 대상 방(1곳) 바닥에 드랍(펫알·랜덤박스·뜰알·금화)을 놓는다.
     //   시계 g.dropRollAt은 소비한 롤만큼만 전진: 대상 방이 만석이면 롤을 멈추고 시간을 보존(당첨 기회 유실 없음, 24h 캡이 소급 제한).
     //   다기기 동시 실행은 RTDB 트랜잭션 CAS로 안전 — 후발은 갱신된 시계 기준 n≤0 → abort(중복 스폰 없음).
     function reconcileDrops(){
@@ -881,7 +881,9 @@
           const R=dropTargetRoom(gg);
           if(!R||(R.drops||[]).length>=DROP_MAX_ROOM) break;   // 대상 방 만석/펫 없음 → 시간 보존(자리 나면 다음 reconcile이 이어서 롤)
           used++;
-          Object.keys(HARVEST_ROLL).forEach(k=>{ if(Math.random()>=HARVEST_ROLL[k]/DROP_ROLL_DIV) return;
+          // 💗 행복도→드랍률 보너스 배수(기본 확률에 행복도만큼 더해줌, 100=×2.0·66=×1.6·10미만=×1.0) — reconcileDrops 롤에 곱한다.
+          const mf=dropMoodFactor(roomMood(roomMoodInputs(gg, R)));
+          Object.keys(HARVEST_ROLL).forEach(k=>{ if(Math.random()>=HARVEST_ROLL[k]/DROP_ROLL_DIV*mf) return;
             if((R.drops||[]).length>=DROP_MAX_ROOM) return;   // 같은 롤 안에서 찼을 수 있음
             const at=t+used*DROP_ROLL_MS, p=spawnDropCell(R);
             R.drops=R.drops||[]; R.drops.push({ id:'d'+at.toString(36)+Math.floor(Math.random()*1679616).toString(36), kind:k, at:at, r:p.r, c:p.c }); });
@@ -906,10 +908,26 @@
         const el=(h.ownerDocument||document).createElement('div'); el.className='cr-dropgem'; el.innerHTML=tDiaLayersHtml(0.55);
         h.appendChild(el); setTimeout(function(){ try{ el.remove(); }catch(e){} }, 3400); });
     }
-    // 🎁 드랍 적립(트랜잭션 내부 전용) — 실제 적립량 반환(금화/소비템 상한 캡 절단 감지). 클릭 수집·수확 일괄이 공용.
+    // 🎁 드랍 적립(트랜잭션 내부 전용) — 실제 적립량 반환(금화/소비템/무지개동전 상한 캡 절단 감지). 클릭 수집·수확 일괄이 공용.
+    //   🌈 무지개동전=g.rbcoin +1 · 무지개알/무지개박스=g.rbcoin +RB_EGG_BOX_RBC(5, 1뽑 분량) · 랜덤박스=봉인 그대로 consum.box(2026-07: 즉석 개봉 폐지).
     function creditDropKind(g, kind){
       if(kind==='gold'){ const b=g.gold||0; g.gold=clampGold(b+1); return g.gold-b; }
-      const b=Number(g.consum[kind])||0, q=clampConsum(b+1); g.consum[kind]=q; return q-b;
+      if(kind==='rbcoin'){ const b=Number(g.rbcoin)||0; grantRbcoin(g,1); return (Number(g.rbcoin)||0)-b; }
+      if(kind==='rainbow_egg'||kind==='rainbow_box'){ const b=Number(g.rbcoin)||0; grantRbcoin(g,RB_EGG_BOX_RBC); return (Number(g.rbcoin)||0)-b; }
+      const b=Number(g.consum[kind])||0, q=clampConsum(b+1); g.consum[kind]=q; return q-b;   // egg/box/ddeul 봉인 소비템
+    }
+    // 🎁 드랍 종류 → 표시 정보(아이콘·이름). 수확 결과 팝업·토스트 공용. rbc=무지개동전 지급량(무지개알/박스=5·동전=1).
+    function dropDisplay(kind){
+      switch(kind){
+        case 'gold':        return { ic:goldSvg({h:16}),          nm:'금화',       rb:false };
+        case 'egg':         return { ic:eggSvg(0,{h:16}),         nm:'펫알',       rb:false };
+        case 'box':         return { ic:boxSvg({h:16}),           nm:'랜덤박스',   rb:false };
+        case 'ddeul':       return { ic:(typeof ddeulEggSvg==='function'?ddeulEggSvg({h:16}):eggSvg(0,{h:16})), nm:'뜰알', rb:false };
+        case 'rbcoin':      return { ic:rainbowCoinSvg({h:16}),   nm:'무지개동전', rb:true };
+        case 'rainbow_egg': return { ic:rainbowEggSvg({h:16}),    nm:'무지개알',   rb:true };
+        case 'rainbow_box': return { ic:rainbowBoxSvg({h:16}),    nm:'무지개박스', rb:true };
+      }
+      return { ic:'', nm:kind, rb:false };
     }
     // 🎁 박스 개봉 결과 원샷 연출 — 획득 아이템 아트(가구=도트 SVG·벽지/바닥=스와치)가 떠오르며 트윙클(.dropfx 재사용, 최대 3개)
     function boxRewardFx(x, y, list){ if(!list||!list.length) return;
@@ -924,33 +942,25 @@
       });
     }
     // 🎁 드랍 클릭 수집 — 캠(dock·홈)·Document PiP 공용. id로 찾아 제거하므로 다기기 중복 수집 안전(없으면 abort).
-    //   랜덤박스 드랍은 수령 순간 실제 박스 확률(rollBoxReward)로 즉석 개봉해 아이템으로 지급(사용자 확정 — 알 종류는 봉인 그대로).
-    //   박스 결과는 트랜잭션 밖에서 미리 롤(재시도에도 동일 결과 유지) — pity·부산물 금화는 뽑기가 아니라 미적용.
+    //   📦 랜덤박스 드랍은 즉석 개봉하지 않고 봉인 그대로 가방(consum.box)에 넣는다(2026-07 변경 — 이후 가챠 배너에서 열기). 🌈 무지개동전·무지개알/박스는 g.rbcoin 적립.
     function collectDrop(ev, rid, dropId){
       if(ev){ ev.stopPropagation(); }
       const fromPip=!!(ev&&ev.view&&ev.view!==window);   // PiP 창 클릭 — 메인 문서 좌표계가 아니라 위치 연출 생략(토스트만)
       const x=ev?ev.clientX:innerWidth/2, y=ev?ev.clientY:innerHeight/2;
-      const lr=state.game?gRoomById(state.game, rid):null, ld=lr?(lr.drops||[]).find(d=>d&&d.id===dropId):null;
-      const boxRes=(ld&&ld.kind==='box')?rollBoxReward():null;   // 로컬 상태로 kind 판별(드랍 id의 kind는 불변)
       const before=coins(), beforeGold=gold(); let got=null;
       gameRef().transaction(g=>{ g=normalizeGame(g); got=null;   // 재시도마다 리셋 → 커밋된 실행값만 남음
         const R=gRoomById(g, rid); if(!R) return;
         const i=(R.drops||[]).findIndex(d=>d&&d.id===dropId); if(i<0) return;   // 이미 수집됨(다른 기기/중복 탭) → abort
         const d=R.drops[i]; R.drops.splice(i,1);
-        if(d.kind==='box' && boxRes){ const gr=grantBoxReward(g, boxRes); if(gr.rf) g.coins=clampCoins((g.coins||0)+gr.rf);
-          got={ kind:'box', res:boxRes, rf:gr.rf, rbc:gr.rbc, n:1 }; return g; }
         got={ kind:d.kind, n:creditDropKind(g, d.kind) }; return g;
       }).then(r=>{ if(!(r&&r.committed&&got)) return;
-        if(got.kind==='box' && got.res){
-          const msg='📦 랜덤박스 → '+rewardName(got.res)+(got.rbc?' (중복 · 🌈무지개동전 +'+got.rbc+')':(got.rf?' (중복 · 은화 +'+got.rf+' 환급)':''));
-          toast(msg); if(!fromPip) boxRewardFx(x, y, [got.res]);
-          if(state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh();   // 배치 인벤토리 등 즉시 반영
-          return; }
-        const label={egg:'🥚 펫알 +1', ddeul:'🌱 뜰알 +1', gold:'🥇 금화 +1'}[got.kind]||'';
-        if(got.n<=0){ toast('보관 한도가 가득해요', true); return; }   // MAX_CONSUM/MAX_GOLD 캡 절단
+        if(got.n<=0){ toast('보관 한도가 가득해요', true); return; }   // MAX_CONSUM/MAX_GOLD/MAX_RBCOIN 캡 절단
+        const disp=dropDisplay(got.kind), rbBoxEgg=(got.kind==='rainbow_egg'||got.kind==='rainbow_box');
+        const label=(disp.rb?'🌈 ':'')+disp.nm+' +'+(rbBoxEgg?1:got.n)+(rbBoxEgg?' · 무지개동전 +'+got.n:'');
         if(fromPip){ toast(label); return; }
-        if(got.kind==='gold'){ rewardFly(x,y,0,1,before,beforeGold); }
-        else { const d={}; d[got.kind]=1; harvestDropFx(x,y,d); toast(label); }
+        if(got.kind==='gold'){ rewardFly(x,y,0,1,before,beforeGold); toast(label); }
+        else { const d={}; d[got.kind]=1; harvestDropFx(x,y,d); toast(label);
+          if(got.kind==='box' && state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh(); }   // 가방 인벤토리 즉시 반영
       });
     }
     // 똥 수거 → 은화 +2, 작은 획득 연출
@@ -1044,21 +1054,29 @@
       gameRef().transaction(gg=>{ if(gg==null) return; gg=normalizeGame(gg); const now=Date.now();
         (gg.home.rooms||[]).forEach(R=>{ if(!(Number(R.harvestAt)||0)) R.harvestAt=now; }); return gg; }); }
     // 🌾 수확(구 돌보기): 유휴 가구수익을 받고 + 편의로 빈 그릇 채우기·똥 치우기까지 한 번에. harvestAt=now로 리셋.
-    // 🎁 수확 드롭 원샷 연출 — 주운 펫알/랜덤박스/뜰알 픽셀 아이콘이 살짝 떠오르며 트윙클(도트·원샷). 뜰알은 별 버스트 추가(가장 화려). 모션축소면 생략.
+    // 🎁 수확 드롭 원샷 연출 — 주운 펫알/랜덤박스/뜰알/🌈무지개 아이콘이 살짝 떠오르며 트윙클(도트·원샷). 뜰알·무지개는 별 버스트 추가(가장 화려). 모션축소면 생략.
+    function dropFxArt(k){
+      if(k==='box') return boxSvg({h:26});
+      if(k==='ddeul') return ddeulEggSvg({h:28});
+      if(k==='rbcoin') return rainbowCoinSvg({h:26});
+      if(k==='rainbow_egg') return rainbowEggSvg({h:26});
+      if(k==='rainbow_box') return rainbowBoxSvg({h:26});
+      return eggSvg(0,{h:26});   // egg
+    }
     function harvestDropFx(x, y, d){ if(!d) return;
       try{ if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return; }catch(e){}
-      const items=[]; for(let i=0;i<(Number(d.egg)||0);i++) items.push('egg'); for(let i=0;i<(Number(d.box)||0);i++) items.push('box'); for(let i=0;i<(Number(d.ddeul)||0);i++) items.push('ddeul');
+      const items=[]; ['egg','box','ddeul','rbcoin','rainbow_egg','rainbow_box'].forEach(k=>{ for(let i=0;i<(Number(d[k])||0);i++) items.push(k); });
       if(!items.length) return;
       const cx=(x||innerWidth/2), cy=(y||innerHeight/2), show=items.slice(0,6);   // 최대 6개만 표시(도배 방지)
       show.forEach((k,i)=>{
-        const el=document.createElement('div'); el.className='dropfx'+(k==='ddeul'?' dropfx-ddeul':'');
-        const art = k==='egg'?eggSvg(0,{h:26}) : (k==='box'?boxSvg({h:26}) : ddeulEggSvg({h:28}));
+        const rb=(k==='rbcoin'||k==='rainbow_egg'||k==='rainbow_box');
+        const el=document.createElement('div'); el.className='dropfx'+((k==='ddeul'||rb)?' dropfx-ddeul':'');
         const spark = (typeof sparkSvg==='function')?('<span class="dropfx-tw">'+sparkSvg({h:14})+'</span>'):'';
-        el.innerHTML=art+spark;
+        el.innerHTML=dropFxArt(k)+spark;
         const off=(i-(show.length-1)/2)*28;
         el.style.left=(cx+off)+'px'; el.style.top=cy+'px'; el.style.animationDelay=(i*70)+'ms';
         document.body.appendChild(el); setTimeout(()=>el.remove(), 1350+i*70);
-        if(k==='ddeul' && typeof starBurst==='function') starBurst(cx+off, cy);   // 뜰알(한정 픽업)은 별 버스트 추가
+        if((k==='ddeul'||rb) && typeof starBurst==='function') starBurst(cx+off, cy);   // 뜰알·무지개는 별 버스트 추가(가장 화려)
       });
     }
     // 🌾 수확 획득량 플로팅 — 수확 버튼 근처에서 은화(+금화) 픽셀 아이콘과 "+N"이 떠오르며 페이드(도트·원샷).
@@ -1073,12 +1091,31 @@
       document.body.appendChild(el); setTimeout(()=>el.remove(), 1250);
     }
     function allRoomsIdleYield(g){ if(!g||!g.home||!Array.isArray(g.home.rooms)) return 0; const mult=effYieldMult(g); let s=0; g.home.rooms.forEach(R=>{ s+=roomIdleYield(g,R,mult); }); return s; }   // 배율 1회 계산 후 공유(부스트 포함)
+    // 🎁 수확 결과 팝업 호스트 = 수확한 캠 방(.cd-room/.catroom). btnEl 없으면(예: PiP 소형 버튼) dock/홈 방으로 폴백.
+    function harvestPopHost(btnEl){
+      if(btnEl&&btnEl.closest){ const r=btnEl.closest('.cd-room')||btnEl.closest('.catroom'); if(r) return r; }
+      return document.querySelector('#catRoom .catroom') || document.querySelector('#catdock .cd-room');
+    }
+    // 🎁 수확 결과 "작은 창" — 캠 안에 이번에 주운 아이템·재화를 요약해 띄우고 [줍기] 버튼으로 닫는다(사용자 지침). 아이템 드랍이 있을 때만.
+    //   무지개(동전·무지개알·무지개박스)가 섞이면 rb 클래스로 무지개 테두리(무지개빛 수확).
+    function showHarvestPopup(host, rows, hasRb, foot){
+      if(!host||!rows||!rows.length) return;
+      host.querySelectorAll('.cr-harvest-pop').forEach(e=>{ try{ e.remove(); }catch(_){} });   // 연속 수확 중복 제거
+      const doc=host.ownerDocument||document;
+      const el=doc.createElement('div'); el.className='cr-harvest-pop'+(hasRb?' rb':'');
+      const list=rows.map(r=>'<div class="chp-row"><span class="chp-ic">'+r.ic+'</span><span class="chp-nm">'+r.nm+'</span><b class="chp-n">+'+r.n+'</b>'+(r.note?'<span class="chp-note">'+r.note+'</span>':'')+'</div>').join('');
+      el.innerHTML='<div class="chp-title">'+(hasRb?'🌈 ':'🌾 ')+'수확했어요</div><div class="chp-list">'+list+'</div>'+(foot?'<div class="chp-foot">'+foot+'</div>':'')+'<button class="chp-btn" type="button">줍기</button>';
+      const close=()=>{ try{ el.remove(); }catch(_){} };
+      const btn=el.querySelector('.chp-btn'); if(btn) btn.addEventListener('click', function(ev){ ev.stopPropagation(); close(); });
+      host.appendChild(el);
+      setTimeout(close, 12000);   // 안전 자동 닫힘
+    }
     // 🌾 수확: 모든 방을 한 번에 — 유휴 가구수익 + 빈 밥/물그릇 채움 + 똥 치움(현재 방 먼저 채워 소모품 부족 시 보이는 방 우선).
     function batchCare(btnEl){
       if(!state.game){ return; }
-      const before=coins(), beforeGold=gold(); let filledN=0, shortFood=false, shortWater=false, goldBonus=0, dropEgg=0, dropBox=0, dropDdeul=0, boxRewards=[], boxRefund=0, boxRbc=0;
+      const before=coins(), beforeGold=gold(); let filledN=0, shortFood=false, shortWater=false, goldBonus=0, dropCounts={};
       gameRef().transaction(g=>{ g=normalizeGame(g); const now=Date.now(); const rooms=g.home.rooms||[], cur=g.home.current|0;
-        filledN=0; shortFood=false; shortWater=false; goldBonus=0; dropEgg=0; dropBox=0; dropDdeul=0; boxRewards=[]; boxRefund=0; boxRbc=0;   // 재실행(Firebase 재시도)마다 리셋 → 커밋된 마지막 실행값이 남음
+        filledN=0; shortFood=false; shortWater=false; goldBonus=0; dropCounts={};   // 재실행(Firebase 재시도)마다 리셋 → 커밋된 마지막 실행값이 남음
         const order=[]; if(rooms[cur]) order.push(cur); rooms.forEach((_,i)=>{ if(i!==cur) order.push(i); });   // 현재 방 우선(소모품 부족 시)
         const mult=effYieldMult(g);   // 유효 수익배율(애정·도감·앱사용 × 부스트) 1회 스냅샷 — 방마다 재계산 방지·재시도 시 동일 g에서 동일값
         order.forEach(i=>{ const R=rooms[i]; if(!R) return; const pl=R.placed||{};
@@ -1091,16 +1128,10 @@
           const poops=Number(R.poops)||0; if(poops>0){ g.coins=clampCoins(g.coins+poops*POOP_REWARD); R.poops=0; }
         });
         // 🎁 대기 드랍 일괄 수령 — 실시간 스폰(reconcileDrops)으로 방 바닥에 놓인 드랍을 수확이 싹쓸이. (구 '수확 순간 시간당 롤'은 실시간 스폰으로 대체 — 이중 회계 금지)
-        //   랜덤박스 드랍은 여기서 실제 박스 확률(rollBoxReward)로 즉석 개봉해 아이템 지급(사용자 확정 — 어떤 템인지 결과에 표시).
-        //   Math.random이 재시도마다 달라도 boxRewards가 함께 리셋되므로 커밋된 실행 결과만 남음(pity·부산물 금화는 뽑기가 아니라 미적용).
+        //   📦 랜덤박스는 봉인 그대로 가방(consum.box) · 🌈 무지개동전/무지개알/무지개박스는 g.rbcoin 적립(2026-07: 박스 즉석 개봉 폐지). creditDropKind가 종류별 적립.
         { const g0=g.gold||0;
           rooms.forEach(R=>{ if(!R||!(R.drops||[]).length) return;
-            R.drops.forEach(d=>{ if(!d) return;
-              if(d.kind==='box'){ const res=rollBoxReward();
-                if(res){ const gr=grantBoxReward(g, res); if(gr.rf){ g.coins=clampCoins((g.coins||0)+gr.rf); boxRefund+=gr.rf; } boxRbc+=gr.rbc; boxRewards.push(res); return; }
-                dropBox+=creditDropKind(g,'box'); return; }   // 풀이 비는 예외 → 봉인 박스로 폴백
-              const dn=creditDropKind(g, d.kind);
-              if(d.kind==='egg') dropEgg+=dn; else if(d.kind==='ddeul') dropDdeul+=dn; });
+            R.drops.forEach(d=>{ if(!d) return; creditDropKind(g, d.kind); dropCounts[d.kind]=(dropCounts[d.kind]||0)+1; });
             R.drops=[]; });
           goldBonus=(g.gold||0)-g0;
         }
@@ -1115,15 +1146,25 @@
           else { const b=btnEl.getBoundingClientRect(); x=b.left; y=b.bottom+100; }
         }
         const short=(shortFood&&shortWater)?'사료·물':(shortFood?'사료':(shortWater?'물':''));
-        const dropped=(dropEgg>0||dropBox>0||dropDdeul>0||boxRewards.length>0);
-        if(gained>0 || filledN>0 || goldBonus>0 || dropped){ if(gained>0||goldBonus>0){ rewardFly(x,y, gained, goldBonus, before, beforeGold);
-            if(typeof yieldFloatFx==='function') yieldFloatFx(x, y-22, gained, goldBonus); }   // 🌾 획득량 "+N" 플로팅 — 캠 상단부 안(지갑은 트랜지언트라 즉시 표기)
-          if((dropEgg>0||dropBox>0||dropDdeul>0) && typeof harvestDropFx==='function') harvestDropFx(x, y+16, { egg:dropEgg, box:dropBox, ddeul:dropDdeul });   // 🎁 드롭 원샷 픽셀 연출(플로팅 바로 아래 층)
-          if(boxRewards.length && typeof boxRewardFx==='function') boxRewardFx(x, y+52, boxRewards);   // 📦 박스 개봉 결과 — 드롭 아래 층(겹침 방지, rise 애니로 상단부로 떠오름)
-          if(goldBonus>0 || dropped || filledN>0 || short){   // 은화만 얻은 평범한 수확은 토스트 생략(플로팅+지갑 카운트업이 대신) — 부가 정보 있을 때만
-            const boxMsg=boxRewards.length?(' · 📦 '+boxRewards.slice(0,3).map(rewardName).join(', ')+(boxRewards.length>3?' 외 '+(boxRewards.length-3)+'개':'')+(boxRefund>0?' (중복 환급 +'+boxRefund+' 은화)':'')+(boxRbc>0?' (중복 · 🌈무지개동전 +'+boxRbc+')':'')):'';
-            const dropMsg=(dropEgg>0?' · 🥚펫알 +'+dropEgg:'')+(dropBox>0?' · 📦랜덤박스 +'+dropBox:'')+(dropDdeul>0?' · 🌱뜰알 +'+dropDdeul:'')+boxMsg;
-            let msg='🌾 전체 수확 완료'+(gained>0?' · +'+gained+' 은화 🪙':'')+(goldBonus>0?' · +'+goldBonus+' 금화 🥇':'')+dropMsg+(filledN>0?' · 밥/물 '+filledN+'칸':'')+(short?' · '+short+' 부족(일부 미충전)':'');
+        const DROP_ORDER=['egg','box','ddeul','rbcoin','rainbow_egg','rainbow_box'];
+        const anyItemDrop=DROP_ORDER.some(k=>dropCounts[k]>0);
+        const hasRb=!!(dropCounts.rbcoin||dropCounts.rainbow_egg||dropCounts.rainbow_box);
+        // 재화 플로팅(은화·금화가 지갑으로 날아가 카운트업) — 아이템 유무와 무관하게 juice 유지
+        if(gained>0||goldBonus>0){ rewardFly(x,y, gained, goldBonus, before, beforeGold);
+          if(typeof yieldFloatFx==='function') yieldFloatFx(x, y-22, gained, goldBonus); }
+        if(anyItemDrop){
+          // 🎁 작은 창 요약(줍기 버튼) — 어떤 템을 수확했고 재화를 얼마나 받았는지
+          const rows=[];
+          if(gained>0)    rows.push({ ic:coinSvg({h:16}), nm:'은화', n:gained });
+          if(goldBonus>0) rows.push({ ic:goldSvg({h:16}), nm:'금화', n:goldBonus });
+          DROP_ORDER.forEach(k=>{ const c=dropCounts[k]||0; if(c<=0) return; const disp=dropDisplay(k);
+            rows.push({ ic:disp.ic, nm:disp.nm, n:c, note:(k==='rainbow_egg'||k==='rainbow_box')?('🌈동전 +'+(c*RB_EGG_BOX_RBC)):'' }); });
+          const foot=(filledN>0?'밥·물 '+filledN+'칸 채움':'')+((filledN>0&&short)?' · ':'')+(short?short+' 부족(일부 미충전)':'');
+          showHarvestPopup(harvestPopHost(btnEl), rows, hasRb, foot);
+        }
+        else if(gained>0 || filledN>0 || goldBonus>0){
+          if(goldBonus>0 || filledN>0 || short){   // 은화만 얻은 평범한 수확은 토스트 생략(플로팅+지갑 카운트업이 대신) — 부가 정보 있을 때만
+            let msg='🌾 전체 수확 완료'+(gained>0?' · +'+gained+' 은화 🪙':'')+(goldBonus>0?' · +'+goldBonus+' 금화 🥇':'')+(filledN>0?' · 밥/물 '+filledN+'칸':'')+(short?' · '+short+' 부족(일부 미충전)':'');
             toast(msg); } }
         else if(short) toast('🌾 '+short+'이 없어요 · 알뜰샵 소비 탭에서 구매', true);
         else toast('🌾 아직 모인 게 없어요 (상호작용 가구를 놓아보세요)');

@@ -693,7 +693,7 @@
         '<button class="chip" '+App.view.act('devPreview10','legendUp','box')+'>전부 전설↑</button>'+
         '<button class="chip" '+App.view.act('devPreview10','oneLimited','box')+'>신화 1개</button></div>';
       h+='<div class="sec-title" style="margin-top:18px;">다마고치 테스트(즉시)</div>';
-      h+='<div class="note" style="margin-bottom:8px;">3시간을 기다리지 않고 급여·배변·수거를 바로 확인. 순서: <b>사료·물 +10</b> → 홈에서 그릇 채우기(또는 <b>그릇 다 채우기</b>) → <b>그릇 만료→똥</b> → 똥 탭/일괄 돌보기.</div>';
+      h+='<div class="note" style="margin-bottom:8px;">6시간을 기다리지 않고 급여·배변·수거를 바로 확인. 순서: <b>사료·물 +10</b> → 홈에서 그릇 채우기(또는 <b>그릇 다 채우기</b>) → <b>그릇 만료→똥</b> → 똥 탭/일괄 돌보기.</div>';
       h+='<div class="chip-row"><button class="chip" '+App.view.act('devGiveConsum')+'>사료·물 +10</button><button class="chip" '+App.view.act('devFillAll')+'>그릇 다 채우기</button><button class="chip" '+App.view.act('devExpireBowls')+'>그릇 만료→똥</button><button class="chip" '+App.view.act('devAddPoop')+'>똥 +3</button></div>';
       // 재화 추가(지급) — 은화·금화·펫알·랜덤박스·무지개알·무지개박스를 입력 수량만큼 내 계정에 지급
       h+='<div class="sec-title" style="margin-top:18px;">재화 추가(지급)</div>';

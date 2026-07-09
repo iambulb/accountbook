@@ -165,8 +165,8 @@
     const ITEM_CATALOG = [
       { id:'pond', cat:'rest',     name:'연못',   price:70, size:2.6, footW:3, footH:2, floor:true, desc:'수련·잉어가 사는 작은 연못. 물 위에 다른 가구를 올릴 수 있어요.' },
       { id:'cushion', cat:'rest', name:'방석',   price:15, size:0.6,  footW:1, footH:1, desc:'고양이가 위에 잠시 올라가 쉬어요.' },
-      { id:'bowl', cat:'care',    name:'밥그릇', price:20, size:0.45, footW:1, footH:1, desc:'홈에서 탭해 사료를 채워요(3시간 뒤 비워짐).' },
-      { id:'waterbowl', cat:'care', name:'물그릇', price:20, size:0.45, footW:1, footH:1, desc:'홈에서 탭해 물을 채워요(3시간 뒤 비워짐).' },
+      { id:'bowl', cat:'care',    name:'밥그릇', price:20, size:0.45, footW:1, footH:1, desc:'홈에서 탭해 사료를 채워요(6시간 뒤 비워짐).' },
+      { id:'waterbowl', cat:'care', name:'물그릇', price:20, size:0.45, footW:1, footH:1, desc:'홈에서 탭해 물을 채워요(6시간 뒤 비워짐).' },
       { id:'tower', cat:'rest',   name:'캣타워', price:35, size:2,    footW:1, footH:2, desc:'3층 발판 — 한 층에 올라가 쉬어요.' },
       { id:'scratcher', cat:'play', name:'스크래처', price:18, size:2, footW:1, footH:1, desc:'옆에서 잠시 머물며 발톱을 갈아요.' },
       { id:'litterbox', cat:'care', name:'배변패드', price:25, size:1, footW:1, footH:1, desc:'비운 그릇 수만큼 똥이 쌓여요. 탭해 치우면 은화!' },
@@ -270,28 +270,31 @@
     //   effect.fill=그릇 채움(target food/water, ms=지속). effect.affection=애정 상승(펫 선택 사용). effect.boost=수확 수익배율(ms=지속).
     //   cur='gold'면 금화 구매. dailyBuy=하루 구매 상한(간식). 채움계열 소비템은 pickFill 선호(수확 자동채움 선택)에 따라 소모.
     const CONSUM_CATALOG = [
-      { id:'food',       name:'사료',   price:1,  M:'M_FOOD',      effect:{fill:'food',  ms:3*60*60*1000}, desc:'밥그릇을 탭해 채울 때 1개 소모(3시간 유지).' },
-      { id:'water',      name:'물',     price:1,  M:'M_WATER',     effect:{fill:'water', ms:3*60*60*1000}, desc:'물그릇을 탭해 채울 때 1개 소모(3시간 유지).' },
-      { id:'food_plus',  name:'고급사료', price:3,  M:'M_FOODPLUS',  effect:{fill:'food',  ms:6*60*60*1000}, desc:'밥그릇을 6시간 유지하는 고급 사료. 자주 안 채워도 행복도가 오래 유지돼요.' },
-      { id:'water_plus', name:'정수물', price:3,  M:'M_WATERPLUS', effect:{fill:'water', ms:6*60*60*1000}, desc:'물그릇을 6시간 유지하는 정수된 물.' },
+      { id:'food',       name:'사료',   price:1,  M:'M_FOOD',      effect:{fill:'food',  ms:6*60*60*1000}, desc:'밥그릇을 탭해 채울 때 1개 소모(6시간 유지).' },
+      { id:'water',      name:'물',     price:1,  M:'M_WATER',     effect:{fill:'water', ms:6*60*60*1000}, desc:'물그릇을 탭해 채울 때 1개 소모(6시간 유지).' },
+      { id:'food_plus',  name:'고급사료', price:2,  M:'M_FOODPLUS',  effect:{fill:'food',  ms:12*60*60*1000}, desc:'밥그릇을 12시간 유지하는 고급 사료. 자주 안 채워도 행복도가 오래 유지돼요.' },
+      { id:'water_plus', name:'정수물', price:2,  M:'M_WATERPLUS', effect:{fill:'water', ms:12*60*60*1000}, desc:'물그릇을 12시간 유지하는 정수된 물.' },
       { id:'treat',      name:'츄르',   price:20, M:'M_TREAT',     effect:{affection:1}, dailyBuy:3, desc:'펫에게 주면 애정 +1 (쓰다듬기 쿨다운 무시). 하루 3개까지 구매.' },
       { id:'tonic',      name:'영양제', price:0,  M:'M_TONIC',     effect:{boost:1.5, ms:6*60*60*1000}, dailyBuy:1, desc:'무료로 하루 1개 받아요. 사용하면 6시간 동안 수확 수익이 ×1.5.' }
     ];
-    const FILL_MS = 3*60*60*1000;   // 그릇이 채워진 뒤 비워지기까지(3시간)
+    const FILL_MS = 6*60*60*1000;   // 그릇이 채워진 뒤 비워지기까지(6시간 — 기본 사료·물 기준)
     const MOOD_CARE_MS = 24*60*60*1000;   // ❤️ 수확(caredAt) 후 행복도 보너스가 0으로 빠지는 시간(24h)
     const POOP_REWARD = 4;          // 똥 하나 치우면 얻는 은화
     const CARE_ITEMS = ['bowl','waterbowl','litterbox'];   // 케어 아이템(밥·물·화장실)
     function careCap(){ return Math.max(1, Math.min(3, activeCats().length)); }   // 방당 상한 = 이 방 활성 펫 수(최대 3, 다묘 대응). enrichTypeCount가 케어를 제외하므로 개수는 행복도·enrichment에 영향 없음(순수 배치 편의).
     // (구 "빈 슬롯 자동 채우기(autoFillSlots)"는 제거 — 2026-07 사용자 지침: 펫 배치는 배치모드에서 직접 선택)
-    // 🪙 수확 드롭 확률(경제 정책 §3-C): 시간당 금화 10% + 랜덤박스 15%·펫알 8%·뜰알 2%. 활성 펫 있을 때만.
+    // 🪙 수확 드롭 확률(경제 정책 §3-C): 시간당 금화 20% + 랜덤박스 30%·펫알 16%·뜰알 4% + 🌈무지개동전 1%·무지개알 0.2%·무지개박스 0.2%. 활성 펫 있을 때만.
+    //   💗 여기에 방 행복도 보너스 배수(util.dropMoodFactor, 10% 단위 내림 1.0~2.0)가 곱해진다 — 기본 확률에 행복도만큼 더해줌: 100=+100%(×2.0), 66=+60%(×1.6), 10 미만=기본(×1.0).
     //   ⚠️ 획득 경로는 '수확 순간 일괄 롤'에서 실시간 스폰(reconcileDrops, 10분 단위 p/6 롤)으로 대체 — 기대값 동일, 방 바닥에 드랍이 놓여 클릭/수확으로 수령.
-    //   랜덤박스 드랍은 수령 순간 실제 박스 확률(rollBoxReward)로 열어 아이템으로 지급(알 종류는 봉인 상태 그대로 인벤토리).
-    const HARVEST_ROLL = { gold:0.10, egg:0.08, box:0.15, ddeul:0.02 };
+    //   📦 랜덤박스 드랍은 수령 시 즉석 개봉하지 않고 봉인 랜덤박스(consum.box) 그대로 가방에 넣는다(2026-07 변경 — 이후 가챠 배너에서 열기). 알 종류(펫알·뜰알)도 봉인 상태 인벤토리.
+    //   🌈 무지개동전=g.rbcoin +1 · 무지개알/무지개박스=g.rbcoin +5(1뽑 분량, 캠엔 무지개 알/박스 아트로 화려하게 뜨고 보상은 동전).
+    const HARVEST_ROLL = { gold:0.20, egg:0.16, box:0.30, ddeul:0.04, rbcoin:0.01, rainbow_egg:0.002, rainbow_box:0.002 };
+    const RB_EGG_BOX_RBC = 5;        // 🌈 무지개알·무지개박스 드랍 1개 = 무지개동전 5개(=1뽑 분량)
     // 🎁 실시간 드랍 스폰 상수 — PiP·캠 힐끔 요소. 시계(g.dropRollAt)는 소비한 롤만큼만 전진(만석이면 시간 보존), 24h 캡이 무한 누적 방지.
-    //   스폰 대상은 "한 방"뿐(dropTargetRoom — 현재 방 우선) — 방이 5개라고 ×5로 쏟아지지 않고, 대기 상한도 그 방 3개가 전부.
+    //   스폰 대상은 "한 방"뿐(dropTargetRoom — 현재 방 우선) — 방이 5개라고 ×5로 쏟아지지 않고, 대기 상한도 그 방 5개가 전부.
     const DROP_ROLL_MS = 10*60000;   // 롤 단위(10분)
     const DROP_ROLL_DIV = 6;         // 롤당 확률 = HARVEST_ROLL/6 (10분×6회 = 시간당 기대값 보존)
-    const DROP_MAX_ROOM = 3;         // 대기 드랍 상한(util.js normRoom의 3개 절단과 짝) — 단일 대상 방이라 사실상 전체 상한
+    const DROP_MAX_ROOM = 5;         // 대기 드랍 상한(util.js normRoom의 5개 절단과 짝) — 단일 대상 방이라 사실상 전체 상한
     const DROP_ROLL_CAP = 144;       // 소급 롤 상한 = 24h × 6 (기존 rollH 24h 캡과 동일 회계)
     // 벽지(방 배경) — 구매 후 적용. default는 기본 제공.
     const WALLPAPER_CATALOG = [
@@ -2365,7 +2368,7 @@
       applyLiteMode();  // 🔋 저장된 가벼운 모드(body.lite) 반영
       refreshRbStatic();   // 🌈🔋 무지개 SMIL 정적화 여부 초기 평가(저사양·모션축소)
       startCatLoop();   // 통합 걷기 엔진(단일 rAF, 보이는 무대만 애니메이션)
-      // 앱을 켜둔 동안에도 그릇 3시간 만료→똥 정산 + 드랍 스폰 롤이 돌도록 주기 점검(다마고치)
+      // 앱을 켜둔 동안에도 그릇 만료→똥 정산 + 드랍 스폰 롤이 돌도록 주기 점검(다마고치)
       if(state._petTimer) clearInterval(state._petTimer);
       state._petTimer=setInterval(function(){ reconcilePets(); reconcileDrops(); }, 60000);
       // 🦋 희귀 손님 체크(90초, 낮은 확률 방문) — 로컬 장식이라 game 트랜잭션 없음
@@ -2870,7 +2873,7 @@
                                 : '<span class="qty" style="font-size:11px;color:var(--sub)">홈에서 그릇 탭</span>');
           const sub=(k==='tonic'&&boostOn)?' <span class="tagmini">사용중 '+fmtDur(boostRemain(g))+'</span>':'';
           return '<div class="bagrow"><span class="bgic">'+m.icon({h:34})+'</span><b class="bgnm'+((k==='rainbow_egg'||k==='rainbow_box'||k==='ddeul')?' tier-rainbow':'')+'">'+m.name+sub+'</b><span class="qty">보유 '+q.toLocaleString()+(q>=MAX_CONSUM?maxChip():'')+'</span>'+useBtn+'</div>'; }).join('');
-        h+='<div class="note" style="margin-top:12px;">사료·물·고급사료·정수물은 홈에서 <b>밥·물 그릇을 탭</b>(또는 수확)해 써요. <b>츄르</b>는 펫을 골라 애정을, <b>영양제</b>는 3시간 수익 부스트에 써요. 펫알·랜덤박스·무지개는 <b>가챠샵</b>에서 열어요.</div></div>';
+        h+='<div class="note" style="margin-top:12px;">사료·물·고급사료·정수물은 홈에서 <b>밥·물 그릇을 탭</b>(또는 수확)해 써요. <b>츄르</b>는 펫을 골라 애정을, <b>영양제</b>는 6시간 수익 부스트에 써요. 펫알·랜덤박스·무지개는 <b>가챠샵</b>에서 열어요.</div></div>';
         return h;
       };
       openSheet('가방', build());
