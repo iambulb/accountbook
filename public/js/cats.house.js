@@ -885,7 +885,7 @@
           // 💗 행복도→드랍률 보너스 배수(기본 확률에 행복도만큼 더해줌, 100=×2.0·66=×1.6·10미만=×1.0) × 💊 영양제 부스트 — reconcileDrops 롤에 곱한다.
           const mf=dropMoodFactor(roomMood(roomMoodInputs(gg, R)));
           Object.keys(HARVEST_ROLL).forEach(k=>{ if(Math.random()>=HARVEST_ROLL[k]/DROP_ROLL_DIV*mf*boost) return;
-            if(k==='gold'){ creditDropKind(gg,'gold'); return; }   // 💰 금화 = 바닥 드랍·캠 표시 없이 즉시 지갑 적립(5개 상한에 미포함·방 만석과 무관, 사용자 지침)
+            if(k==='gold'){ gg.pendingGold=Math.min(999999,(Number(gg.pendingGold)||0)+1); return; }   // 💰 금화 = 수확 대기 버킷에 누적(수확 눌러야 지갑에 들어오고 팝업에 표기 — 은화 유휴수확과 동일). 바닥 드랍·캠·5개 상한 없음.
             if((R.drops||[]).length>=DROP_MAX_ROOM) return;   // 그 외 드랍(펫알·랜덤박스·뜰알·무지개)만 방 5개 상한 — 만석이면 그 드랍만 이번 롤 유실(금화는 위에서 이미 적립)
             const at=t+used*DROP_ROLL_MS, p=spawnDropCell(R);
             R.drops=R.drops||[]; R.drops.push({ id:'d'+at.toString(36)+Math.floor(Math.random()*1679616).toString(36), kind:k, at:at, r:p.r, c:p.c }); });
@@ -1135,6 +1135,8 @@
           rooms.forEach(R=>{ if(!R||!(R.drops||[]).length) return;
             R.drops.forEach(d=>{ if(!d) return; creditDropKind(g, d.kind); dropCounts[d.kind]=(dropCounts[d.kind]||0)+1; });
             R.drops=[]; });
+          const pg=Math.max(0, Math.floor(Number(g.pendingGold)||0));   // 💰 그동안 모인 금화(reconcileDrops 누적)를 수확 시 지갑으로 → goldBonus에 포함돼 팝업·토스트에 '금화 +N' 표기
+          if(pg>0){ g.gold=clampGold((g.gold||0)+pg); g.pendingGold=0; }
           goldBonus=(g.gold||0)-g0;
         }
         return g;
@@ -1154,7 +1156,7 @@
         // 재화 플로팅(은화·금화가 지갑으로 날아가 카운트업) — 아이템 유무와 무관하게 juice 유지
         if(gained>0||goldBonus>0){ rewardFly(x,y, gained, goldBonus, before, beforeGold);
           if(typeof yieldFloatFx==='function') yieldFloatFx(x, y-22, gained, goldBonus); }
-        if(anyItemDrop){
+        if(anyItemDrop || goldBonus>0){   // 💰 금화 수확이 있으면(아이템 없어도) 요약 팝업으로 은화·금화·아이템을 함께 보여준다(사용자 지침)
           // 🎁 작은 창 요약(줍기 버튼) — 어떤 템을 수확했고 재화를 얼마나 받았는지
           const rows=[];
           if(gained>0)    rows.push({ ic:coinSvg({h:16}), nm:'은화', n:gained });
@@ -1164,7 +1166,7 @@
           const foot=(filledN>0?'밥·물 '+filledN+'칸 채움':'')+((filledN>0&&short)?' · ':'')+(short?short+' 부족(일부 미충전)':'');
           showHarvestPopup(harvestPopHost(btnEl), rows, hasRb, foot);
         }
-        else if(gained>0 || filledN>0 || goldBonus>0){
+        else if(gained>0 || filledN>0){
           if(goldBonus>0 || filledN>0 || short){   // 은화만 얻은 평범한 수확은 토스트 생략(플로팅+지갑 카운트업이 대신) — 부가 정보 있을 때만
             let msg='🌾 전체 수확 완료'+(gained>0?' · +'+gained+' 은화 🪙':'')+(goldBonus>0?' · +'+goldBonus+' 금화 🥇':'')+(filledN>0?' · 밥/물 '+filledN+'칸':'')+(short?' · '+short+' 부족(일부 미충전)':'');
             toast(msg); } }
