@@ -1,5 +1,5 @@
 /* 알뜰(Eggarden) 서비스워커 — 오프라인 앱 셸 캐시 */
-const CACHE_VERSION = 'eggarden-v3.566.0';
+const CACHE_VERSION = 'eggarden-v3.568.0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -7,7 +7,11 @@ const APP_SHELL = [
   './js/firebase.js',
   './js/constants.js',
   './js/util.js',
+  './js/ledger-calc.js',
   './js/core.js',
+  './js/app.js',
+  './js/model.js',
+  './js/delegate.js',
   './js/views.js',
   './js/cats.js',
   './js/push.js',
@@ -883,8 +887,20 @@ const CDN_HOSTS = ['www.gstatic.com', 'cdn.jsdelivr.net'];
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_VERSION).then(async cache => {
-      await cache.addAll(CORE_SHELL);   // 필수 셸 — 실패 시 install 실패(원자성)
-      await Promise.allSettled(EXTRA_SHELL.map(u => cache.add(u)));   // 부가 자산 — 실패해도 진행
+      // 필수 셸 — 실패 시 install 실패(원자성). cache:'no-cache'로 HTTP 캐시를 재검증해 항상 최신 바이트(중간 캐시로 옛 JS가 담기는 것 방지).
+      // 구형 브라우저가 Request cache 옵션을 거부하면 기본 addAll로 1회 폴백(그마저 실패하면 install 실패 = 기존과 동일).
+      try { await cache.addAll(CORE_SHELL.map(u => new Request(u, { cache: 'no-cache' }))); }
+      catch (e) { await cache.addAll(CORE_SHELL); }
+      // 부가 자산(펫 스프라이트 등) — ⚡ 이전 버전 캐시에 있으면 '복사'하고 없는 것만 네트워크 fetch(best-effort).
+      // 예전엔 버전 업마다 수백 장을 재다운로드해 install이 수십 초~분 단위 → 완료 전에 앱을 닫으면 설치가 무효가 되어
+      // "껐다 켜도 업데이트가 안 됨" 증상의 주범이었다. 스프라이트는 경로 고정·내용 사실상 불변이라 복사가 안전
+      // (에셋 내용을 교체할 땐 파일 경로를 바꾸거나 EXTRA에서 CORE로 옮겨 새로 받게 할 것 — 트레이드오프 명시).
+      const oldKeys = (await caches.keys()).filter(k => k !== CACHE_VERSION);
+      const olds = await Promise.all(oldKeys.map(k => caches.open(k)));
+      await Promise.allSettled(EXTRA_SHELL.map(async u => {
+        for (const oc of olds) { const hit = await oc.match(u); if (hit) return cache.put(u, hit.clone()); }
+        const r = await fetch(u); if (r && r.ok) return cache.put(u, r);
+      }));
     }).then(() => self.skipWaiting())
   );
 });

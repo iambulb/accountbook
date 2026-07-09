@@ -19,9 +19,39 @@
       // 최신 코드/에셋을 즉시 반영(구 cats.js가 옮겨진 assets 경로를 404로 물어 고양이가 안 보이던 문제 방지).
       // 최초 설치(이전 controller 없음)에선 새로고침하지 않음(불필요한 리로드 방지).
       const _hadController = !!navigator.serviceWorker.controller;
-      let _swRefreshing=false;
-      navigator.serviceWorker.addEventListener('controllerchange', ()=>{ if(_swRefreshing || !_hadController) return; _swRefreshing=true; location.reload(); });
-      window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+      let _swRefreshing=false, _swReloadPending=false;
+      function _swApplyReload(){ if(_swRefreshing) return; _swRefreshing=true; location.reload(); }
+      navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+        if(_swRefreshing || !_hadController) return;
+        // ✍️ 시트(작성 중일 수 있음)가 열려 있으면 즉시 리로드하지 않고 보류 — 입력 유실 방지. 시트 닫힘/탭 복귀 때 적용.
+        if(document.body && document.body.classList.contains('sheet-open')){
+          _swReloadPending=true;
+          try{ if(typeof toast==='function') toast('새 버전이 준비됐어요 — 창을 닫으면 적용돼요'); }catch(e){}
+          return;
+        }
+        _swApplyReload();
+      });
+      // 보류된 리로드: 시트가 닫히는 순간(body.sheet-open 제거) 적용
+      if(window.MutationObserver){ new MutationObserver(()=>{ if(_swReloadPending && !document.body.classList.contains('sheet-open')) _swApplyReload(); }).observe(document.body, {attributes:true, attributeFilter:['class']}); }
+      // 🔄 갱신 감지 강화 — register 1회만으론 설치형 PWA/오래 켜둔 탭이 브라우저 자동 체크(스로틀)만 기다리다 옛 버전에 갇힘.
+      //   ① 등록 직후(register 자체가 1회 체크) ② 탭 복귀(visible, 5분 스로틀) ③ 60분 주기로 registration.update() 명시 호출.
+      let _swReg=null, _swLastCheck=0;
+      function _swCheck(force){ const now=Date.now(); if(!_swReg || (!force && now-_swLastCheck<5*60000)) return Promise.resolve();
+        _swLastCheck=now; return _swReg.update().catch(()=>{}); }
+      window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').then(reg=>{ _swReg=reg; _swLastCheck=Date.now(); }).catch(()=>{}));
+      document.addEventListener('visibilitychange', ()=>{ if(document.hidden) return;
+        if(_swReloadPending && !(document.body && document.body.classList.contains('sheet-open'))){ _swApplyReload(); return; }
+        _swCheck(); });
+      setInterval(_swCheck, 60*60000);
+      // 🧯 수동 탈출구(설정 → 앱 업데이트 확인) — 자동 경로가 어긋났을 때 브라우저 캐시 삭제 대신 이 버튼으로 갱신.
+      window.checkAppUpdate=function(){
+        if(!_swReg){ try{ if(typeof toast==='function') toast('이 환경에선 업데이트 확인을 지원하지 않아요', true); }catch(e){} return; }
+        try{ if(typeof toast==='function') toast('업데이트 확인 중…'); }catch(e){}
+        _swCheck(true).then(()=>{ setTimeout(()=>{ try{ if(typeof toast!=='function') return;
+          if(_swReg.installing || _swReg.waiting) toast('새 버전 설치 중 — 곧 자동으로 적용돼요');
+          else toast('지금이 최신 버전이에요 ✅');
+        }catch(e){} }, 1200); });
+      };
     }
 
     // ===== 접근성(A11y) 레이어 =====
@@ -38,8 +68,8 @@
         if(el.getAttribute('role')==='tab') return;   // role=tab은 aria-selected 사용(중복 방지)
         el.setAttribute('aria-pressed', el.classList.contains('on')?'true':'false');
       });
-      // 2) onclick 이 달린 비(非)버튼 요소(div/span 등): role=button + 포커스 가능. 🔋 이미 처리한 노드는 data-ab로 스킵 — 작은 DOM 삽입(FX·뱃지)마다 옵저버가 컨테이너 전체를 재스캔하던 비용 제거(1회성 데코라 재처리 불필요).
-      root.querySelectorAll('[onclick]:not([data-ab])').forEach(el=>{
+      // 2) onclick·data-action 이 달린 비(非)버튼 요소(div/span 등): role=button + 포커스 가능. 🔋 이미 처리한 노드는 data-ab로 스킵 — 작은 DOM 삽입(FX·뱃지)마다 옵저버가 컨테이너 전체를 재스캔하던 비용 제거(1회성 데코라 재처리 불필요). (data-action=이벤트 위임(delegate.js)으로 옮긴 요소도 동일 처리)
+      root.querySelectorAll('[onclick]:not([data-ab]),[data-action]:not([data-ab])').forEach(el=>{
         el.setAttribute('data-ab','');
         if(el.id==='overlay' || el.classList.contains('switch')) return;
         const tag=el.tagName;

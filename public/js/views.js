@@ -1892,6 +1892,9 @@
         h+=lrowToggle((typeof bellSvg==='function'?bellSvg({h:22}):'🔔'),'알림','togglePush()', _ps==='on', _ps==='denied'?'차단됨(브라우저 설정)':''); }
       // 📊 확률 안내 — 모든 뽑기(펫알·랜덤박스·뜰알·무지개) 등급별 확률 고지(배너에선 미표기, 여기서 일괄 공시)
       h+=lrow('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5L5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>','확률 안내','closeSheet();openProbInfoSheet()');
+      // 🔄 앱 업데이트 확인 — 자동 갱신이 어긋났을 때의 수동 탈출구(브라우저 캐시 삭제 대체). 새 버전 있으면 설치→자동 새로고침(main.js checkAppUpdate).
+      if(typeof checkAppUpdate==='function')
+        h+=lrow('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/></svg>','앱 업데이트 확인','checkAppUpdate()');
       h+='</div>';
       // 코드 입력(프로모/치트 코드)
       h+='<div class="sec-title" style="margin-top:22px;">코드 입력</div>';
