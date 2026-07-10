@@ -382,7 +382,7 @@
       dpfall:{dur:0.8}, dpled:{dur:1.4},
       bfbird1:{kf:'fish',dur:2.6}, bfbird2:{kf:'pondfish',dur:2.2},
       hcwheel:{org:[0.5,0.29],dur:0.9}, hcham:{org:[0.3,0.62],dur:0.55}, hcbottle:{org:[0.22,0.27],dur:2.2},
-      mtkey:{org:[0.5,0.28],dur:1.0}, mttail:{org:[0.65,0.84],dur:1.6}, cnleaf:{dur:2.6}, shelf:{dur:2.6}, wallbutterfly:{dur:1.8}, cushion:{dur:2.8}, canopybed:{dur:5.2}, cavebed:{dur:3.2}, tapestry:{org:[0.5,0.06],dur:2.2}, barometer:{org:[0.5,0.5],dur:2.4}, cornershelf:{dur:2.4}, floorvase:{org:[0.5,0.4],dur:2.6}
+      mtkey:{org:[0.5,0.28],dur:1.0}, mttail:{org:[0.65,0.84],dur:1.6}, cnleaf:{dur:2.6}, shelf:{dur:2.6}, wallbutterfly:{dur:1.8}, cushion:{dur:2.8}, canopybed:{dur:5.2}, cavebed:{dur:3.2}, tapestry:{org:[0.5,0.06],dur:2.2}, barometer:{org:[0.5,0.5],dur:2.4}, cornershelf:{dur:2.4}, floorvase:{org:[0.5,0.4],dur:2.6}, teacart:{dur:2.6}
     };
     function _vpipFxMeta(type, key){ const t=_VPIP_FX_TYPE[type]||{kf:type,dur:4}; const o=_VPIP_FX_ID[key]||{};
       return { kf:o.kf||t.kf, dur:o.dur||t.dur, org:o.org||t.org||[0.5,0.5] }; }
@@ -1201,8 +1201,8 @@
       if(it==='sofa') return { lift:Math.round(fh*0.44), face:'south', dx:Math.round(a.sw*0.5)*(Math.random()<0.5?1:-1), pose:'loaf', dur:30000+Math.random()*40000 };
       if(it==='ballpit') return { lift:Math.round(fh*0.16), face:'south', dx:0, pose:'sit', dur:24000+Math.random()*30000 };
       if(it==='bunkbed') return { lift:Math.round(fh*0.45), face:(Math.random()<0.5?'east':'west'), dx:0, pose:'loaf', dur:40000+Math.random()*50000 };
-      if(it==='roundbed') return { lift:Math.round(fh*0.24), face:'south', dx:0, pose:'loaf', dur:28000+Math.random()*36000 };
-      if(it==='donutbed') return { lift:Math.round(fh*0.26), face:'south', dx:0, pose:'loaf', dur:28000+Math.random()*36000 };
+      if(it==='roundbed') return { lift:Math.round(fh*0.45), face:'south', dx:0, pose:'loaf', dur:28000+Math.random()*36000 };
+      if(it==='donutbed') return { lift:Math.round(fh*0.45), face:'south', dx:0, pose:'loaf', dur:28000+Math.random()*36000 };
       if(it==='cavebed') return { lift:Math.round(fh*0.22), face:'south', dx:0, pose:'sit', dur:45000+Math.random()*55000 };
       if(it==='canopybed') return { lift:Math.round(fh*0.47), face:'south', dx:0, pose:'loaf', dur:40000+Math.random()*50000 };
       if(it==='throne') return { lift:Math.round(fh*0.40), face:'south', dx:0, pose:'sit', dur:35000+Math.random()*45000 };

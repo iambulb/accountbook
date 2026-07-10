@@ -1302,6 +1302,7 @@
     .cr-prop .ffx-barometer .px { transform-origin:50% 50%; animation-duration:2.4s; }
     .cr-prop .ffx-cornershelf .px { animation-duration:2.4s; }
     .cr-prop .ffx-floorvase .px { transform-origin:50% 40%; animation-duration:2.6s; }
+    .cr-prop .ffx-teacart .px { animation-duration:2.6s; }
     .cr-prop .ffx-catwheel .px  { transform-origin:47.9% 43.75%; }   /* 휠 축(정중심) → 링 전체가 제자리 회전(옆으로 흔들림 방지) */
     .cr-prop .ffx-tower .px     { transform-origin:84% 20%; }   /* 끈 매단 지점 */
     .cr-prop .ffx-scratcher .px { transform-origin:75% 13%; }   /* 끈 매단 지점 */
