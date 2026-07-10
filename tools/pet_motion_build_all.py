@@ -606,7 +606,9 @@ def m_eyetrack(src, cfg, P, tips):
 # ── east(옆모습) 앵커·연산 ──────────────────────────────────────────────
 
 def east_anchor(east, cfg):
-    """east.png(머리=오른쪽) 자동 앵커: 바닥 런의 맨 오른쪽=앞다리·맨 왼쪽=뒷다리, legtop 기본 0.60h(CFG e_legtop 오버라이드)."""
+    """east.png(머리=오른쪽) 자동 앵커: 바닥 런의 맨 오른쪽=앞다리·맨 왼쪽=뒷다리, legtop 기본 0.60h(CFG e_legtop 오버라이드).
+    ⚠️ legtop 자동 실측을 시도했으나(2026-07 검증) 0.60h 추정이 이미 손튜닝값과 일치(cat_leopard 59 vs 손 60)하고, 옆모습 다리/몸통 경계가
+    모호해 실루엣 폭/런 기반 측정이 일부 펫(cheetah·leopardcat·lynx)을 5~6px 악화시킴 → 추정 유지가 최선. 다리 비율 특이 펫만 e_legtop로 손 고정."""
     bb=east.getbbox(); x0,y0,x1,y1=bb; h=y1-y0; w=x1-x0; foot=y1-1; px=east.load()
     xs=[x for x in range(x0,x1) if px[x,foot][3]>=128]
     runs=[]; s=xs[0]; p=xs[0]
