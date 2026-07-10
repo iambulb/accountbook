@@ -107,8 +107,9 @@
     // 브라우징 선택(탭·정렬) 유지 — 프라이빗 모드/차단 시 안전(try). 도감/상점/개발자 탭도 공유.
     function lsGet(k, def){ try{ const v=localStorage.getItem(k); return v==null?def:v; }catch(e){ return def; } }
     function lsSet(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
-    let _petSort=lsGet('petSort','recent'), _homeSpecies=lsGet('homeSpecies','all'), _petTier=lsGet('petTier','all'), _petSearch='';   // 홈/펫 탭: 정렬 + 종류 탭 + 등급 필터 + 이름 검색(세션)
-    const PET_SORTS=[['recent','최신순'],['aff','애정도순'],['tier','등급순'],['name','이름순']];
+    let _petSort=lsGet('petSort','placed'), _homeSpecies=lsGet('homeSpecies','all'), _petTier=lsGet('petTier','all'), _petSearch='';   // 홈/펫 탭: 정렬(기본=이 방 배치 우선) + 종류 탭 + 등급 필터 + 이름 검색(세션)
+    try{ if(localStorage.getItem('petSortV')!=='1'){ if(_petSort==='recent') _petSort='placed'; localStorage.setItem('petSort',_petSort); localStorage.setItem('petSortV','1'); } }catch(e){}   // 🔀 '이 방 배치 우선' 기본값 도입(2026-07) — 구 기본값 recent 쓰던 기기 1회 전환
+    const PET_SORTS=[['placed','이 방 우선'],['recent','최신순'],['aff','애정도순'],['tier','등급순'],['name','이름순']];   // 🏠 기본=이 방 배치 우선(정렬 고르면 순수 정렬로 풀림)
     function setPetSort(v){ _petSort=v||'recent'; lsSet('petSort',_petSort); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     function setHomeSpecies(s){ _homeSpecies=s||'all'; lsSet('homeSpecies',_homeSpecies); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }
     function setPetSearch(v){ _petSearch=(v||'').trim(); renderPetGrid(); }   // 그리드만 갱신 → 검색 입력 포커스 유지(시트 통째 재렌더 안 함)
@@ -116,8 +117,10 @@
     function toggleCatFav(id){ if(!ownsCat(id)) return; gameRef().transaction(function(g){ g=normalizeGame(g); const c=g.owned.cats[id]; if(!c) return; c.fav=!c.fav; return g; }).then(function(r){ if(r&&r.committed){ if(state._sheetRefresh) state._sheetRefresh(); } }); }   // 즐겨찾기 → 상단 고정(정렬 fav-first). owned.cats[id].fav (normalizeGame이 값 보존)
     // 보유 펫 정렬 — recent(최신 획득=boughtAt)·aff(애정도)·tier(등급, 상위 먼저).
     function sortOwnedPets(ids){ const l=ids.slice();
-      const fav=id=>((ownedCatsMap()[id]||{}).fav?1:0), rank=id=>tierRank(CAT_TIER[id]||'normal'), aff=id=>Number((ownedCatsMap()[id]||{}).affection)||0, bat=id=>((ownedCatsMap()[id]||{}).boughtAt)||'', nm=id=>catName(id)||'';
-      if(_petSort==='tier') l.sort((a,b)=> fav(b)-fav(a) || rank(b)-rank(a) || bat(b).localeCompare(bat(a)));
+      const curAct=(((homeH().rooms||[])[roomIdx()]||{}).active)||[]; const inRoom={}; curAct.forEach(id=>{ inRoom[id]=1; });   // 🏠 현재 보고 있는 방에 배치된 펫(O(1) 조회)
+      const fav=id=>((ownedCatsMap()[id]||{}).fav?1:0), rank=id=>tierRank(CAT_TIER[id]||'normal'), aff=id=>Number((ownedCatsMap()[id]||{}).affection)||0, bat=id=>((ownedCatsMap()[id]||{}).boughtAt)||'', nm=id=>catName(id)||'', here=id=>(inRoom[id]?1:0);
+      if(_petSort==='placed') l.sort((a,b)=> here(b)-here(a) || fav(b)-fav(a) || bat(b).localeCompare(bat(a)));   // 🏠 이 방 배치 우선(최상단) → 즐겨찾기 → 최신. 정렬을 고르면 이 모드가 풀리고 아래 순수 조건 정렬.
+      else if(_petSort==='tier') l.sort((a,b)=> fav(b)-fav(a) || rank(b)-rank(a) || bat(b).localeCompare(bat(a)));
       else if(_petSort==='aff') l.sort((a,b)=> fav(b)-fav(a) || aff(b)-aff(a) || nm(a).localeCompare(nm(b)));
       else if(_petSort==='name') l.sort((a,b)=> fav(b)-fav(a) || nm(a).localeCompare(nm(b),'ko'));
       else l.sort((a,b)=> fav(b)-fav(a) || bat(b).localeCompare(bat(a)));   // recent (즐겨찾기 항상 먼저)
