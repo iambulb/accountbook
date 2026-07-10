@@ -18,6 +18,8 @@
 코드젠은 파일 안의 @gen 마커 사이만 교체한다(그 밖은 손대지 않음).
 """
 import io, json, os, re, sys, zipfile
+try: sys.stdout.reconfigure(encoding="utf-8", errors="replace")   # Windows cp949 콘솔에서 이모지 print 크래시 방지
+except Exception: pass
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def P(*a): return os.path.join(ROOT, *a)
@@ -54,7 +56,7 @@ def load_reg():
 def save_reg(reg):
     # pets 배열은 한 항목 한 줄로 보기 좋게 직렬화
     def petline(p):
-        keys = ["id","species","name","tier","scale","desc","zip","frontWalk","frames"]
+        keys = ["id","species","name","tier","scale","desc","zip","frontWalk","frames","clips","clipDirs"]
         parts = [f'"{k}": {json.dumps(p.get(k), ensure_ascii=False)}' for k in keys if k in p]
         return "    { " + ", ".join(parts) + " }"
     body = ",\n".join(petline(p) for p in reg["pets"])
@@ -75,6 +77,83 @@ def zip_frames(zf, subpath):
 
 def has_east(zf):
     return len(zip_frames(zf, "/Walk/east/frame_")) >= 6
+
+# ---------- 🎞️ 가변 모션 인제스트(2026-07-10) — zip의 animations/<모션>/<방향>/frame_*.png 를 클립 시트로 ----------
+# 펫마다 담겨 오는 모션이 제각각(개과=idle·walk·bark, 고양이과=idle·jump·run·belly_idle·walk …)이라
+# 폴더명을 정규화해 앱 클립 키로 매핑하고, 방향은 PET_CLIPS 기대 방향(CLIP_DIR_DEFAULT) 우선·없으면 있는 방향을 쓰되
+# 기본과 다르면 pets.json clipDirs 에 오버라이드를 기록한다(엔진 clipDir(id,k)가 읽음).
+# Walk 는 기존 걷기 시트 경로(gen_assets)로 처리하므로 여기서 제외.
+MOTION_MAP = {  # 정규화된 폴더명(소문자, 공백/하이픈→_) → 클립 키
+    "idle":"idle", "sit":"sit", "seated_idle":"sit", "sitting":"sit",
+    "seated_on_belly_idle":"belly", "belly_idle":"belly", "lying":"belly", "lie_down":"belly", "loaf":"belly",
+    "run":"run", "running":"run", "jump":"jump", "hop":"jump",
+    "bark":"bark", "barking":"bark", "howl":"bark",
+    "sleep":"sleep", "sleeping":"sleep",
+    "eat":"eat", "eating":"eat", "drink":"drink", "drinking":"drink",
+    "yawn":"yawn", "angry":"angry", "hiss":"angry", "growl":"angry",
+    "stretch":"stretch", "scratch":"scratch", "wiggle":"wiggle",
+    "knead":"knead", "paw":"paw", "attack":"paw",
+}
+CLIP_DIR_DEFAULT = {  # cats.js PET_CLIPS 의 dir 과 반드시 일치(단일 소스는 코드 — 어긋나면 furn-assets류 정합 깨짐)
+    "idle":"south","sit":"south","belly":"south","eat":"south","drink":"south","yawn":"south","angry":"south",
+    "knead":"south","paw":"south","eyetrack":"south","bark":"south",
+    "run":"east","jump":"east","sleep":"east","stretch":"east","scratch":"east","wiggle":"east",
+}
+def _norm_motion(name):
+    return re.sub(r"[^a-z_]", "", name.strip().lower().replace(" ", "_").replace("-", "_"))
+def _sprite_outlined_img(im):
+    """실루엣 경계 픽셀의 45%+가 어두우면 외곽선 스타일 — 모션과 rotations 의 스타일 일치 검사용(불일치=혼입 방지)."""
+    px = im.load(); w, h = im.size; edge = 0; dark = 0
+    for y in range(h):
+        for x in range(w):
+            c = px[x, y]
+            if c[3] < 128: continue
+            if any(not (0 <= x+dx < w and 0 <= y+dy < h) or px[x+dx, y+dy][3] < 128 for dx, dy in ((1,0),(-1,0),(0,1),(0,-1))):
+                edge += 1
+                if sum(c[:3]) < 230: dark += 1
+    return edge > 0 and dark / edge >= 0.45
+def gen_motion_clips(pet, zf, out):
+    """zip animations/* → <clip>.png 가로 스트립 + pet['clips'/'clipDirs'] 기록. 반환: 채택/스킵 로그."""
+    from PIL import Image
+    # zip 안 모션 인벤토리: {정규화모션: {방향: [프레임…]}}
+    inv = {}
+    for n in zf.namelist():
+        m = re.search(r"animations/([^/]+)/([a-z]+)/frame_\d+\.png$", n)
+        if not m: continue
+        mot, d = _norm_motion(m.group(1)), m.group(2)
+        inv.setdefault(mot, {}).setdefault(d, []).append(n)
+    if not inv: return
+    # 기준 스타일 = rotations/south(정면 스틸)
+    base_out = None
+    try:
+        south = [n for n in zf.namelist() if n.endswith("/rotations/south.png")]
+        if south: base_out = _sprite_outlined_img(Image.open(io.BytesIO(zf.read(south[0]))).convert("RGBA"))
+    except Exception: pass
+    pet.setdefault("clips", {}); pet.setdefault("clipDirs", {})
+    for mot, dirs in sorted(inv.items()):
+        if mot in ("walk", "walking"): continue   # 걷기는 gen_assets 가 처리(필수 시트)
+        clip = MOTION_MAP.get(mot)
+        if not clip:
+            print(f"  ⚠ {pet['id']}: 미지의 모션 '{mot}' — MOTION_MAP 에 매핑 추가 필요(이번엔 스킵)"); continue
+        want = CLIP_DIR_DEFAULT.get(clip, "south")
+        d = want if want in dirs else (sorted(dirs)[0])
+        frames = sorted(dirs[d], key=_frame_no)[:12]
+        if len(frames) < 2:
+            print(f"  ⚠ {pet['id']}: {mot}/{d} 프레임 부족({len(frames)}) — 스킵"); continue
+        f0 = Image.open(io.BytesIO(zf.read(frames[0]))).convert("RGBA")
+        if base_out is not None and _sprite_outlined_img(f0) != base_out:
+            print(f"  ⚠ {pet['id']}: '{mot}' 스타일 불일치(외곽선 {'있음' if base_out is False else '없음'}쪽과 다름) — 스킵(규칙 생성으로 대체 권장)"); continue
+        W, H = f0.size
+        sheet = Image.new("RGBA", (W*len(frames), H), (0,0,0,0))
+        for i, n in enumerate(frames):
+            sheet.paste(Image.open(io.BytesIO(zf.read(n))).convert("RGBA"), (i*W, 0))
+        sheet.save(os.path.join(out, clip + ".png"))
+        pet["clips"][clip] = len(frames)
+        if d != want: pet["clipDirs"][clip] = d
+        else: pet["clipDirs"].pop(clip, None)
+        print(f"  🎞️ {pet['id']}: {mot}/{d} → {clip}.png ({len(frames)}f{'' if d==want else ' · dir오버라이드 '+d})")
+    if not pet["clipDirs"]: pet.pop("clipDirs", None)
+    if not pet["clips"]: pet.pop("clips", None)
 
 def gen_assets(pet):
     """zip에서 walk.png(288×48)+4방향 생성. east 없으면 south로 walk 구성 후 frontWalk 표시."""
@@ -111,6 +190,7 @@ def gen_assets(pet):
         else: print(f"  ! {pet['id']}: rotations/{d}.png 없음")
     pet["frontWalk"] = frontwalk
     pet["frames"] = nf   # 걷기 프레임 수 기록(gen_sprites·pets.json 반영). 없으면 코드젠에서 6 기본.
+    gen_motion_clips(pet, zf, out)   # 🎞️ 가변 모션 인제스트 — zip animations/* → <clip>.png + clips/clipDirs
     return True
 
 def slugify(zipname):
@@ -166,7 +246,14 @@ def gen_sprites(reg):
         if clips:
             inner = ", ".join(f"{k}:{int(v)}" for k,v in clips.items())
             clipsStr = f", clips:{{ {inner} }}"
-        lines.append(f"      {p['id']}:{{ walk:'assets/pets/{p['species']}/{p['id']}/walk.png', frames:{p.get('frames',6)}, stills:true{scStr}{fw}{clipsStr} }}{comma}")
+        # 🧭 펫별 클립 방향 오버라이드(선택) — zip 이 기본 방향(CLIP_DIR_DEFAULT)과 다른 방향으로 준 모션(예: 구미호 belly=east).
+        #   엔진 clipDir(id,k) = PET_SPRITES[id].clipDirs?.[k] || PET_CLIPS[k].dir.
+        cds = p.get("clipDirs")
+        cdStr = ""
+        if cds:
+            inner = ", ".join(f"{k}:'{v}'" for k,v in cds.items())
+            cdStr = f", clipDirs:{{ {inner} }}"
+        lines.append(f"      {p['id']}:{{ walk:'assets/pets/{p['species']}/{p['id']}/walk.png', frames:{p.get('frames',6)}, stills:true{scStr}{fw}{clipsStr}{cdStr} }}{comma}")
     return "    const PET_SPRITES = {\n" + "\n".join(lines) + "\n    };"
 
 def gen_tier(reg):

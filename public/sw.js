@@ -1,5 +1,5 @@
 /* 알뜰(Eggarden) 서비스워커 — 오프라인 앱 셸 캐시 */
-const CACHE_VERSION = 'eggarden-v3.645.0';
+const CACHE_VERSION = 'eggarden-v3.646.2';
 const APP_SHELL = [
   './',
   './index.html',
@@ -1891,6 +1891,26 @@ const APP_SHELL = [
   './assets/pets/cat/cat_ragamuffin/drink.png',
   './assets/pets/cat/cat_ragamuffin/yawn.png',
   './assets/pets/cat/cat_ragamuffin/angry.png',
+  './assets/pets/fox/fox_nine/walk.png',
+  './assets/pets/fox/fox_nine/south.png',
+  './assets/pets/fox/fox_nine/north.png',
+  './assets/pets/fox/fox_nine/east.png',
+  './assets/pets/fox/fox_nine/west.png',
+  './assets/pets/fox/fox_nine/jump.png',
+  './assets/pets/fox/fox_nine/run.png',
+  './assets/pets/fox/fox_nine/belly.png',
+  './assets/pets/fox/fox_nine/idle.png',
+  './assets/pets/fox/fox_nine/sit.png',
+  './assets/pets/fox/fox_nine/eat.png',
+  './assets/pets/fox/fox_nine/drink.png',
+  './assets/pets/fox/fox_nine/yawn.png',
+  './assets/pets/fox/fox_nine/angry.png',
+  './assets/pets/fox/fox_nine/knead.png',
+  './assets/pets/fox/fox_nine/paw.png',
+  './assets/pets/fox/fox_nine/eyetrack.png',
+  './assets/pets/fox/fox_nine/stretch.png',
+  './assets/pets/fox/fox_nine/scratch.png',
+  './assets/pets/fox/fox_nine/wiggle.png',
   // @gen:end
 ];
 

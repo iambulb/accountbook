@@ -151,7 +151,8 @@
       { id:'cat_toyger', species:'cat', name:'토이거', price:1500, desc:'미니 호랑이를 닮은 줄무늬. 집 안의 작은 맹수.' },
       { id:'cat_singapura', species:'cat', name:'싱가푸라', price:400, desc:'세상에서 가장 작은 품종. 큰 눈망울의 요정 고양이.' },
       { id:'cat_havanabrown', species:'cat', name:'하바나브라운', price:400, desc:'초콜릿빛 윤기나는 갈색 털에 초록 눈. 다정한 껌딱지.' },
-      { id:'cat_ragamuffin', species:'cat', name:'라가머핀', price:800, desc:'안으면 축 늘어지는 복슬 장모. 순둥순둥 인형 고양이.' }
+      { id:'cat_ragamuffin', species:'cat', name:'라가머핀', price:800, desc:'안으면 축 늘어지는 복슬 장모. 순둥순둥 인형 고양이.' },
+      { id:'fox_nine', species:'fox', name:'구미호', price:50, desc:'아홉 개의 꼬리가 탐스러운 새하얀 구미호. 달빛 아래서 신비롭게 노닌다.' }
     ];
     // @gen:end
     // 종(species) → 알뜰샵 분류 라벨. 품종(샴·벵갈 등)은 표시하지 않고 종만 노출.
@@ -840,7 +841,8 @@
       cat_toyger:{ walk:'assets/pets/cat/cat_toyger/walk.png', frames:6, stills:true, scale:1.2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4, knead:4, paw:4, eyetrack:6, stretch:6, scratch:4, wiggle:4 } },
       cat_singapura:{ walk:'assets/pets/cat/cat_singapura/walk.png', frames:6, stills:true, scale:1.1, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       cat_havanabrown:{ walk:'assets/pets/cat/cat_havanabrown/walk.png', frames:6, stills:true, scale:1.2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
-      cat_ragamuffin:{ walk:'assets/pets/cat/cat_ragamuffin/walk.png', frames:6, stills:true, scale:1.3, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } }
+      cat_ragamuffin:{ walk:'assets/pets/cat/cat_ragamuffin/walk.png', frames:6, stills:true, scale:1.3, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
+      fox_nine:{ walk:'assets/pets/fox/fox_nine/walk.png', frames:8, stills:true, scale:2.5, clips:{ jump:8, run:8, belly:10, idle:4, sit:4, eat:6, drink:4, yawn:6, angry:4, knead:4, paw:4, eyetrack:6, stretch:6, scratch:4, wiggle:4 }, clipDirs:{ belly:'east' } }
     };
     // @gen:end
     function hasSprite(id){ return !!PET_SPRITES[id]; }
@@ -894,15 +896,33 @@
       eyetrack:{ dir:'south', fps:4, fb:['sit','idle'] },           // 👀 물끄러미 — 어항·움직이는 것 응시(동공 좌우)
       stretch: { dir:'east',  fps:7, once:true },                   // 🙆 기지개(플레이보우) — 그루밍아치 도착 1회
       scratch: { dir:'east',  fps:8 },                              // 🪵 스크래칭 — 스크래처(앞다리 교대 스트로크)
-      wiggle:  { dir:'east',  fps:8 }                               // 🍑 실룩 — 터널(도약 준비 웅크림+엉덩이)
+      wiggle:  { dir:'east',  fps:8 },                              // 🍑 실룩 — 터널(도약 준비 웅크림+엉덩이)
+      bark:    { dir:'south', fps:9, once:true }                    // 🐶 멍멍(짖기) — 개과 유휴 액센트(yawn/angry와 로테이션). PixelLab zip 제공 시 활성(2026-07-10 가변 모션)
     };
+    // 🧭 펫별 클립 방향 — zip이 기본 방향(PET_CLIPS.dir)과 다른 방향으로 준 모션은 PET_SPRITES[id].clipDirs 오버라이드(예: 구미호 belly=east).
+    //    소비처: furnClip(clipDirOk)·clipFlipDir(west 플립)·actorShowStill(idle 승격) — 방향을 읽는 곳은 반드시 이 함수 경유(PET_CLIPS.dir 직접 참조 금지).
+    function clipDir(id, clip){ const sp=PET_SPRITES[id];
+      if(sp&&sp.clipDirs&&sp.clipDirs[clip]) return sp.clipDirs[clip];
+      const d=PET_CLIPS[clip]; return (d&&d.dir)||'south'; }
     // 펫이 이 클립 시트를 실제로 갖고 있나 — 정적=clips 메타(파일 존재는 파이프라인이 보장), 런타임=아트(clipUrls)까지 도착해야 true.
     // 💗 모션 애정 해금(프레스티지, 2026-07 레벨 재배치) — 🐾 전 등급 적용(2026-07 사용자 지침, 신화 미만도 동일):
     //    Lv1=기본 모션(idle·sit·eat·drink — 첫 애정에 생동감이 켜짐) · Lv2=belly·yawn(식빵·하품) · **Lv3=톡톡·물끄러미** · **Lv4=하악질·실룩** · **Lv5=꾹꾹이·스크래칭·기지개**(만렙 보상 — 2026-07 사용자 배분).
     //    Lv0(애정 없음)은 클립 없이 기존 스틸/걷기만. (등급별 임계는 affTiers라 낮은 등급이 더 빨리 Lv1에 도달 — 신화보다 관대.)
     //    친구 방 등 "내가 소유하지 않은" 펫은 애정 정보가 없어 잠금으로 취급(비소유자가 더 많이 보는 역전 방지).
-    const CLIP_AFF_REQ={ idle:1, sit:1, eat:1, drink:1, belly:2, yawn:2, paw:3, eyetrack:3, angry:4, wiggle:4, knead:5, scratch:5, stretch:5 };
-    function clipAffLocked(id, clip){ const req=CLIP_AFF_REQ[clip]; if(!req) return false;
+    const CLIP_AFF_REQ={ idle:1, sit:1, eat:1, drink:1, belly:2, yawn:2, run:2, bark:2, sleep:2, paw:3, eyetrack:3, jump:3, angry:4, wiggle:4, knead:5, scratch:5, stretch:5 };
+    // 💗 펫별 동적 해금 사다리(2026-07-10 가변 모션) — 펫마다 보유 클립이 제각각이라, 기본 레벨(CLIP_AFF_REQ)을 그 펫의
+    //    보유 클립에만 적용하되 **Lv1이 비면 전체를 아래로 당겨**(최저 보유 레벨→1) 어떤 펫이든 첫 애정에 뭔가 열리게 한다.
+    //    예: 개과(idle·walk·bark)는 idle=1·bark=2 그대로, 만약 knead(5)·scratch(5)만 가진 펫이면 둘 다 Lv1. 결정론·메모이즈.
+    function petClipAff(id){   // 메모이즈 없음 — 런타임 펫 clips가 늦게 도착(catalogPets 병합)해도 항상 현재 상태 기준(계산 사소)
+      const sp=PET_SPRITES[id], out={};
+      const clips=(sp&&sp.clips)?Object.keys(sp.clips).filter(k=>CLIP_AFF_REQ[k]&&Number(sp.clips[k])>=2):[];
+      if(!clips.length) return out;
+      const minLv=Math.min.apply(null, clips.map(k=>CLIP_AFF_REQ[k]));
+      const shift=minLv-1;   // Lv1 보장 시프트(대부분 0 — idle/sit/eat/drink 보유 펫)
+      clips.forEach(k=>{ out[k]=Math.max(1, CLIP_AFF_REQ[k]-shift); });
+      return out; }
+    function clipAffReq(id, clip){ const m=petClipAff(id); return m[clip]||0; }   // 0=게이트 없음(비대상 클립)
+    function clipAffLocked(id, clip){ const req=clipAffReq(id, clip); if(!req) return false;
       const t=CAT_TIER[id]||'normal';   // 💗 전 등급 게이트 — 예전엔 신화/한정만 잠갔으나 사용자 지침으로 전 등급 애정 해금
       // 💗 친구 방(#frStage 열림)에선 친구 스냅샷의 애정 레벨로 판정 — 친구의 Lv4 펫은 하악질까지, Lv0 펫은 내 보유와 무관하게 잠금.
       //    (한계: 친구 시트가 열린 동안엔 뒤 dock의 같은 id 펫도 친구 기준을 따름 — 시트가 화면을 덮어 실해 없음. 시트 닫히면 frStage 미노출로 자동 복귀.)
@@ -3462,7 +3482,7 @@
       h+='<div class="note" style="margin:6px 0;">모션을 눌러 실제 재생을 확인하세요. 원샷 모션은 미리보기에선 반복 재생됩니다(실제 앱에선 1회).</div>';
       h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">';
       order.forEach(k=>{ const has=!!clips[k];
-        const req=(typeof CLIP_AFF_REQ!=='undefined')&&CLIP_AFF_REQ[k], gated=has&&req;   // 💗 전 등급 애정 해금 표기(재생은 devPickMotion이 ignoreAffGate로 우회)
+        const req=(typeof clipAffReq==='function')?clipAffReq(id,k):((typeof CLIP_AFF_REQ!=='undefined')&&CLIP_AFF_REQ[k]), gated=has&&req;   // 💗 펫별 동적 해금 레벨 표기(재생은 devPickMotion이 ignoreAffGate로 우회)
         h+='<button class="chip'+(k===clip?' on':'')+'"'+(has?'':' disabled')+' style="'+(has?'':'opacity:.4;')+'"'+(has?(' '+App.view.act('devPickMotion',k)+''):'')+'>'+k+(has?' ·'+clips[k]:'')+(gated?' <span style="opacity:.7">(Lv'+req+' 해금)</span>':'')+'</button>'; });
       h+='</div>';
       // 원본 시트 이미지(가로 스트립)

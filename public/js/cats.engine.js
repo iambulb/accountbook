@@ -989,10 +989,12 @@
       s.classList.remove('idle'); }   // .idle 제거 → CSS 걷기 필름(csprFilm) 재생
     function actorShowStill(a, face, clip){ if(!a.spr) return; const s=a.el.querySelector('.cspr'); if(!s) return;
       setHatDx(a, face==='east'?HAT_SIDE_DX:(face==='west'?-HAT_SIDE_DX:0));   // 정면/뒤=중앙, 옆모습 스틸=머리쪽(east.png 오른쪽 +, west.png 왼쪽 -, 둘 다 액터 미flip)
-      // 🎞️ 클립 승급 — 지정 클립(가구 eat/drink/sit/belly·east 상호작용 scratch/stretch/wiggle 등) 또는 정면 휴식이면 idle 클립.
-      // 명시 clip이 없으면 south만 idle 승급(north/east/west 휴식은 방향 스틸). east 클립의 west 자리 flip은 호출부(enterInteract·복원)가 clipFlipDir로 처리.
+      // 🎞️ 클립 승급 — 지정 클립(가구 eat/drink/sit/belly·east 상호작용 scratch/stretch/wiggle 등) 또는 휴식이면 idle 클립.
+      // 명시 clip이 없으면: south 휴식=idle(방향이 south인 펫만) · east 휴식=idle(방향이 east인 펫만 — 가변 모션, west는 flip 판단이 호출부라 승급 안 함) · north=스틸.
       // 모션축소·가벼운 모드(body.lite)는 항상 스틸 — 쉬는 펫이 늘 필름을 돌리면 lite의 절전 취지가 깨짐(걷기 필름은 기능 모션이라 유지).
-      if(!reducedMotion() && !liteMode()){ const want = clip || (face==='south' ? 'idle' : null);
+      if(!reducedMotion() && !liteMode()){
+        const idleOkHere = (typeof clipDir==='function') && ((face==='south' && clipDir(a.id,'idle')==='south') || (face==='east' && clipDir(a.id,'idle')==='east'));
+        const want = clip || (idleOkHere ? 'idle' : null);
         const r = want ? resolveClip(a.id, want) : null;
         if(r && r.key!=='walk'){
           if(_sheetReady(r.url)){ _csprClip(s, a, r); return; }
@@ -1231,7 +1233,7 @@
     // 그 외엔 포즈 기본(sit→sit 클립, loaf→belly 클립). 클립이 없는 펫은 resolveClip 폴백으로 기존 스틸 그대로 — 여기서 걸러줄 필요 없음.
     // 🛋️ 상호작용 6종(2026-07): 침대류→knead(꾹꾹이)·장난감→paw(톡톡)·어항류→eyetrack(물끄러미)은 south,
     //   scratch(스크래칭)·stretch(기지개)·wiggle(실룩)은 east 클립 — 방향 호환은 clipDirOk가 판정(east 클립은 east/west 자리에서 재생, west는 액터 flip).
-    function clipDirOk(clip, face){ const d=(typeof PET_CLIPS!=='undefined'&&PET_CLIPS[clip]&&PET_CLIPS[clip].dir)||'south';
+    function clipDirOk(id, clip, face){ const d=(typeof clipDir==='function')?clipDir(id, clip):(((PET_CLIPS||{})[clip]||{}).dir||'south');   // 🧭 펫별 clipDirs 오버라이드 반영(가변 모션 — 예: 구미호 belly=east)
       if(d==='south') return face==='south';
       return face==='east'||face==='west'; }   // east 시트는 west 자리에서 scaleX(-1) 재생(걷기 필름과 동일 규칙)
     const FURN_CLIP_MAP={
@@ -1243,17 +1245,20 @@
       tunnel:'wiggle',   // 🍑 실룩(east)
       cucumber:'angry', birdfeeder:'eyetrack', hamstercage:'eyetrack'   // 🥒 화들짝·🐦🐹 물끄러미 관람(액티브 10종)
     };
-    function furnClip(goal, s){
+    function furnClip(id, goal, s){
       const it=goal.itemId, filled=!!(goal.fill && (Date.now()-goal.fill)<FILL_MS);
-      if(it==='bowl') return clipDirOk('eat',s.face)?(filled?'eat':'sit'):null;
-      if(it==='waterbowl') return clipDirOk('drink',s.face)?(filled?'drink':'sit'):null;
-      if(it==='waterfountain') return clipDirOk('drink',s.face)?'drink':null;
-      if(it==='treatjar'||it==='catgrass') return clipDirOk('eat',s.face)?'eat':null;   // 🍪 간식단지·🌱 캣그라스=먹기
-      if(it==='milkbar') return clipDirOk('drink',s.face)?'drink':null;   // 🥛 우유 홀짝
-      if(it==='dispenser') return clipDirOk('eat',s.face)?'eat':null;   // 🍪 간식 오독
+      if(it==='bowl') return clipDirOk(id,'eat',s.face)?(filled?'eat':'sit'):null;
+      if(it==='waterbowl') return clipDirOk(id,'drink',s.face)?(filled?'drink':'sit'):null;
+      if(it==='waterfountain') return clipDirOk(id,'drink',s.face)?'drink':null;
+      if(it==='treatjar'||it==='catgrass') return clipDirOk(id,'eat',s.face)?'eat':null;   // 🍪 간식단지·🌱 캣그라스=먹기
+      if(it==='milkbar') return clipDirOk(id,'drink',s.face)?'drink':null;   // 🥛 우유 홀짝
+      if(it==='dispenser') return clipDirOk(id,'eat',s.face)?'eat':null;   // 🍪 간식 오독
       const m=FURN_CLIP_MAP[it];
-      if(m && clipDirOk(m,s.face)) return m;   // 방향 불일치(예: tower 위층=south인데 scratch=east)면 아래 포즈 기본으로
-      if(s.face!=='south') return null;   // 옆을 보는 자리 + 매핑 없음 → 기존 방향 스틸
+      if(m && clipDirOk(id,m,s.face)) return m;   // 방향 불일치(예: tower 위층=south인데 scratch=east)면 아래 포즈 기본으로
+      if(s.face!=='south'){   // 🧭 옆을 보는 자리 + 매핑 없음 — east 방향 클립을 가진 펫(가변 모션)은 belly/idle로 옆모습 생동감(구미호 belly=east 등)
+        if(s.pose==='loaf' && clipDirOk(id,'belly',s.face)) return 'belly';
+        if(clipDirOk(id,'idle',s.face)) return 'idle';
+        return null; }   // 그 외 → 기존 방향 스틸
       return s.pose==='loaf'?'belly':(s.pose==='sit'?'sit':null);
     }
     // 🧭 east 클립을 west 자리에서 재생할 때만 scaleX(-1) flip이 필요하다(east.png 시트를 거울 재생 — 걷기 필름과 동일 규칙).
@@ -1261,7 +1266,7 @@
     function clipFlipDir(id, face, clip){
       if(face!=='west' || !clip) return 1;
       const r=resolveClip(id, clip);
-      return (r && r.key!=='walk' && PET_CLIPS[r.key] && PET_CLIPS[r.key].dir==='east') ? -1 : 1; }
+      return (r && r.key!=='walk' && clipDir(id, r.key)==='east') ? -1 : 1; }   // 🧭 펫별 clipDirs 반영(가변 모션)
     // 가구에 도착 → 자리 잡고 머무름(랜덤 시간). 스프라이트는 해당 방향 정지(클립 보유 시 먹기/앉기 등 클립), SVG는 포즈. lift로 발판/방석 위로 올림.
     function enterInteract(a, id, goal){
       const s=furnSpot(a, goal);
@@ -1270,7 +1275,7 @@
       a.x=Math.max(2, Math.min(a.W-a.sw, goal.x - a.sw/2 + (s.dx||0)));
       if(goal.depth!=null) a.depth=goal.depth; applyDepth(a);   // 가구와 같은 깊이에 서서 크기·앞뒤 가림이 맞물리게
       const runW = !!(s.run && a.spr);   // 🏃 캣휠 달리기(스프라이트만) — run 클립 또는 걷기 필름 제자리 재생
-      const clip = runW ? null : furnClip(goal, s);   // 🎞️ 가구별 클립(먹기·마시기·꾹꾹이·톡톡·스크래칭 등) — 미보유 펫은 폴백으로 기존 스틸
+      const clip = runW ? null : furnClip(id, goal, s);   // 🎞️ 가구별 클립(먹기·마시기·꾹꾹이·톡톡·스크래칭 등) — 미보유 펫은 폴백으로 기존 스틸
       const dir = runW ? (s.face==='west'?-1:1) : (a.spr?clipFlipDir(id, s.face, clip):a.dir);
       if(runW) showWheelRun(a);            // 달리기(actorShowMoving/_csprClip 경유) — face는 아래 setXform flip
       else if(a.spr) actorShowStill(a, s.face, clip);
@@ -1283,7 +1288,8 @@
       // 💤 잠: sleep 클립(옆으로 엎드려 눈 감고 잠) 보유 펫은 east 자세로 클립 재생, 미보유는 기존 north 스틸(뒤돌아 잠).
       const hasSleep = pose==='sleep' && a.spr && hasClip(id,'sleep');
       const face = pose==='sleep' ? (hasSleep?'east':'north') : 'south';   // 앉기/식빵은 정면
-      const clip = pose==='sleep' ? (hasSleep?'sleep':null) : (pose==='loaf' ? 'belly' : 'sit');   // 🎞️ 유휴 클립 승급 — 미보유 펫은 폴백으로 기존 스틸
+      const want = pose==='loaf' ? 'belly' : 'sit';
+      const clip = pose==='sleep' ? (hasSleep?'sleep':null) : (clipDirOk(id, want, 'south') ? want : null);   // 🎞️ 유휴 클립 승급 — 방향 불일치(예: 구미호 belly=east)면 스틸(east 시트를 정면 휴식에 재생 금지)
       if(a.spr){ // 멈춰서 쉴 땐 정지 스틸/클립(잠=엎드림/뒤돈 모습, 그 외=정면). 이미지가 정방향이라 플립 없음(scaleX(1)).
         actorShowStill(a, face, clip); setXform(a, 1); a._pdir=1;
         if(pose==='sleep') actorOnce(a, 'yawn', 1, function(){ actorShowStill(a, face, clip); setXform(a, 1); a._pdir=1; }); }   // 🥱 잠들기 전 하품(클립 보유 펫만) → 끝나면 수면 클립/스틸
@@ -1325,7 +1331,8 @@
         // 유휴 제스처(그 자리 앉기/식빵/낮잠) — 쿨다운 후에만. 🌙 밤(KST 21~06시)엔 낮잠 가중(수면 연출)
         if(a.mode==='roam' && a.cool<=0 && Math.random()<a.idle*pr){
           // 🎞️ 원샷 액센트(하품, 가끔 하악질) — 클립 보유 펫만 가끔(32%·볼거리 강화) 잠깐 멈춰 1회 재생 후 다시 걷기. 미보유면 false → 아래 기존 포즈로
-          if(a.spr && Math.random()<0.32 && actorAccent(a, Math.random()<0.75?'yawn':'angry')) return;
+          if(a.spr && Math.random()<0.32){ const r=Math.random();   // 🥱 유휴 원샷 액센트 풀 — 하품 60%·하악 20%·멍멍 20%(bark는 보유 펫만 — actorAccent가 미보유면 false로 다음 후보/통과, 가변 모션)
+            if(actorAccent(a, r<0.6?'yawn':(r<0.8?'angry':'bark')) || actorAccent(a,'yawn')) return; }
           const kh=(new Date(Date.now()+9*3600000)).getUTCHours(), night=(kh>=21||kh<6);
           const pose=(night&&Math.random()<0.6)?'sleep':['loaf','sit','sit','loaf','sleep'][Math.floor(Math.random()*5)];   // 낮엔 sleep 가중 하향(1/5) — 앉기/식빵 위주로 생동감
           enterPose(a, id, pose); actorEmote(a, pose==='sleep'?'zz':'idle'); return; }

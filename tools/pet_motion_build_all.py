@@ -87,6 +87,10 @@ CFG = {
  'cat_leopard':    dict(species='cat', cls='L', style='bigcat', foot=77,
     eyeL=(50,41,52,42), eyeR=(59,41,60,42), mcx=55, small_y=48, wide_y=47,
     neck=(52,58), chest=(53,60), chest_hi=(54,61), tail=(69,60,78,74), tailmode='v', e_legtop=60),
+ # 🦊 구미호(한정·112px·소프트 스타일) — 2026-07-10 실측. belly/jump/run 은 zip 제공(belly=east dir오버라이드)이라 여기선 나머지 12클립만 생성.
+ 'fox_nine':       dict(species='fox', cls='L', mcls='M', style='dog', foot=77,
+    eyeL=(52,42,53,43), eyeR=(58,42,59,43), mcx=55, small_y=48, wide_y=47,
+    neck=(50,58), chest=(54,63), chest_hi=(55,64), tail=None),
  # ── 🐾 신화 미만(저해상도 48~68px) 파일럿 — 스프라이트 ASCII 실측 앵커(2026-07-10) ──
  'cat_mackerel':   dict(species='cat', cls='XS', style='cat', foot=32,
     eyeL=(20,16,21,17), eyeR=(26,16,27,17), mcx=23, small_y=20, wide_y=20,
@@ -386,7 +390,7 @@ def flatten_ears(f, src, cfg, P):
             d[x+dx, y] = body+(255,)   # 아래 절반은 제자리(돔에 부착 유지)
         xs = [p[0] for p in comp]
         box = (min(xs)-2, ys[0]-1, max(xs)+3, ys[-1]+2)
-        outline_repair(f, box, P)
+        rep(f, box, P)
         # 카라칼·스라소니: 술 끝은 눕혀도 보이게(종 정체성) — 눌린 귀 바깥 위로 세로 2px
         if cfg.get('tufts') and nub_xs:
             tx = min(nub_xs) if side=='L' else max(nub_xs)
@@ -415,24 +419,24 @@ def tail_sway(f, cfg, P, phase):
     mode = cfg.get('tailmode')
     if tb and mode=='v':
         move_mask(f, tb, 0, 1 if phase>0 else -1)
-        outline_repair(f, (tb[0]-2,tb[1]-2,tb[2]+1,tb[3]+2), P)
+        rep(f, (tb[0]-2,tb[1]-2,tb[2]+1,tb[3]+2), P)
     elif tb and mode=='in':
         # 바닥에 닿는 꼬리: 안쪽 플릭(발 baseline 불변·이음새 안 벌어짐)
         if phase>0:
             dx = 1 if (tb[0]+tb[2])/2 < 46 else -1   # 안쪽 방향
             move_mask(f, tb, dx, 0)
-            outline_repair(f, (tb[0]-2,tb[1]-2,tb[2]+2,tb[3]+1), P)
+            rep(f, (tb[0]-2,tb[1]-2,tb[2]+2,tb[3]+1), P)
     elif tb and mode=='top':
         # 재규어: 머리 위로 말린 꼬리 끄덕(아래로만 — 틈 없음)
         if phase>0:
             move_mask(f, tb, 0, 1)
-            outline_repair(f, (tb[0]-1,tb[1]-1,tb[2]+1,tb[3]+2), P)
+            rep(f, (tb[0]-1,tb[1]-1,tb[2]+1,tb[3]+2), P)
     else:
-        # 꼬리 없음: 귀끝 1px 트윗치(아래로만) — 좌/우 위상 어긋나게
+        # 꼬리 없음: 귀끝 1px 트윗치(아래로만) — 좌/우 위상 어긋나게. 소프트 스타일은 rep가 보수 스킵(구미호 흰털 검은얼룩 재발 방지)
         for side, box in (f._tips if hasattr(f,'_tips') else []):
             if (phase>0) == (side=='L'):
                 move_mask(f, box, 0, 1)
-                outline_repair(f, (box[0]-1,box[1]-1,box[2]+1,box[3]+2), P)
+                rep(f, (box[0]-1,box[1]-1,box[2]+1,box[3]+2), P)
     return f
 
 def m_idle(src, cfg, P, tips):

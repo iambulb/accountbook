@@ -73,8 +73,19 @@ sheet.save("walk.png")   # rotations 4장은 그대로 복사
 - **취득 우선순위**(순차 취득 계획): 적용 7종 = `idle`·`sit`·`belly`·`eat`·`drink`·`yawn`·`angry`. `run`·`jump`·`sleep`·`lick`은 폐기·보류(2026-07, 퀄리티 기준 미달 — 엔진 키·폴백은 유지, 재도전 시 시트만 다시 공급).
 - **방향은 표의 1개만** 취득한다(west는 `scaleX(-1)` 플립, 옆을 보는 자리(스크래처 등)는 클립 없이 기존 스틸). Walking은 기존 `walk.png`가 담당하므로 재취득 불필요.
 - **dev zip 업로드**: zip 안에 프리셋 애니 폴더(`Eating/south/frame_*.png` 등)가 있으면 `_processPetZip`이 자동 인식·합성해 **`catalogPets/{id}.clips`**(클립키→프레임 수) + **`catalogPetArt/{id}.clips`**(시트 data URL)로 저장한다. 폴더명은 대소문자·공백·하이픈 무관(`Seated on Belly Idle`≒`seated-on-belly-idle`), 프레임 2장 이상만 인식, 클립당 최대 12프레임. zip 재업로드 시 클립도 통째로 교체(없으면 소거).
-- **정적 펫**: 걷기와 같은 폴더에 `<클립키>.png`(가로 스트립) + `pets.json` 항목에 `clips:{"idle":6,...}`(클립키→프레임 수)를 기록하면 `PET_SPRITES[id].clips`로 반영된다. "정적 승격" 다운로드가 클립 시트와 `pets.json` 한 줄(clips 포함)을 함께 내어준다. (`build_pets.py`의 clips 자동 처리(zip→클립 시트 생성·코드젠)는 이미지 취득 후 별도 작업 — 그 전까지는 위 수동 규칙으로 충분.)
+- **정적 펫**: 걷기와 같은 폴더에 `<클립키>.png`(가로 스트립) + `pets.json` 항목에 `clips:{"idle":6,...}`(클립키→프레임 수)를 기록하면 `PET_SPRITES[id].clips`로 반영된다. "정적 승격" 다운로드가 클립 시트와 `pets.json` 한 줄(clips 포함)을 함께 내어준다. **zip 동봉 모션은 `build_pets.py`가 자동 인제스트**(아래 '가변 모션' 절).
 - **엔진 규칙(불변식 유지)**: 재생은 반드시 `actorShowStill(a, face, clip)`/`actorShowMoving`/`showWheelRun`/`actorOnce` 경유(내부 `_csprClip`/`_csprStill`을 직접 부르지 말 것). 원샷은 `.cspr.once`(1회 재생+마지막 프레임 유지). 모션축소·가벼운 모드(lite)에선 클립 대신 기존 정지 스틸.
+
+## 🦊 가변 모션 — 펫별 제각각 zip 모션 자동 반영 (구미호로 확립, 2026-07)
+
+앞으로 zip은 **정면(south)+옆걷기(Walk east)만 필수**, 그 외 모션은 종·펫별로 제각각이다(개과=idle·walk·bark / 고양이과=idle·jump·run·seated_on_belly_idle·walk / 곰과·토끼·몬스터 등 자유). `build_pets.py`가 zip을 넣고 실행만 하면 알아서 처리한다.
+
+1. **자동 인제스트** — `gen_motion_clips()`: `animations/<모션명>/<방향>/frame_*.png`를 **`MOTION_MAP`**(파이썬 dict)으로 표준 클립키로 정규화(`seated_on_belly_idle→belly`, `hiss|growl→angry`, `attack→paw` 등) 후 가로 스트립 합성(자연 정렬·최대 12프레임) → `pets.json` `clips`/`clipDirs` 기록 → 코드젠. **폐기·보류였던 run·jump·sleep도 zip이 직접 제공하면 채택**(폐기는 규칙 생성 시트에 한함).
+2. **방향 선택** — `CLIP_DIR_DEFAULT`(cats.js `PET_CLIPS` dir와 일치 필수)를 선호, 없으면 있는 방향을 채택하고 `pets.json`에 **`clipDirs:{"belly":"east"}`** 오버라이드를 남긴다. 엔진은 `clipDir(id,k)`로 읽고 east 클립은 west에서 `scaleX(-1)` 플립, east 유휴/식빵 폴백(`furnClip`/`actorShowStill`)을 탄다.
+3. **스타일 일관성 검사** — 클립 프레임이 `rotations/south`와 외곽선 스타일이 다르면(구미호 Idle만 검은 외곽선이던 실사례) 자동 스킵하고 4번으로 대체.
+4. **누락 표준 모션은 규칙 생성** — `pet_motion_build_all.py`에 펫별 CFG 앵커 실측 등록 후 표준 12종(idle·sit·eat·drink·yawn·angry·knead·paw·eyetrack·stretch·scratch·wiggle) 생성(컨택트시트 검수 → `--write`). **소프트 스타일(외곽선 없음)은 외곽선 보수를 전부 `rep()`(조건부)로** — `outline_repair` 직접 호출 금지(구미호 귀트윅 검은 얼룩 실사례, `tail_sway`).
+5. **신규 모션 키**(bark 등)는 4곳 짝 맞춤: `PET_CLIPS`(dir·fps·once·fb) + `CLIP_KO`(한국어명) + `CLIP_AFF_REQ`(기본 해금레벨) + `MOTION_MAP`(zip 별칭). bark(south·9fps·once)는 개과 대비 선등록됨 — 유휴 액센트 풀(yawn 60%·angry 20%·bark 20%)에서 재생.
+6. **애정 해금 자동** — `petClipAff(id)`가 보유 클립의 기본 레벨을 "최저 보유=Lv1"로 시프트해 펫마다 Lv1~5 사다리를 동적으로 만든다. 펫정보(`petAffLadderHtml`)·개발자 모션 관리(`clipAffReq`) 표기도 자동 — 펫 추가 시 별도 작업 불필요. 예) 구미호 15클립: Lv1 유휴·앉기·먹기·마시기 / Lv2 질주·식빵·하품 / Lv3 점프·톡톡·물끄러미 / Lv4 하악질·실룩 / Lv5 꾹꾹이·기지개·스크래칭.
 
 ## id·이름 매핑 (종·색 구분)
 zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다. id는 **`<species>_<색·품종>`** 형태로 종이 구분되게 짓는다(예: `cat_calico`, `dog_corgi`, `rabbit_lop`). 이 표를 유지한다.
@@ -232,6 +243,7 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 | (정적 승격) | `cat_singapura` | 싱가푸라 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `cat_havanabrown` | 하바나브라운 | Walk/east 옆걷기 정상 |
 | (정적 승격) | `cat_ragamuffin` | 라가머핀 | Walk/east 옆걷기 정상 |
+| simple_pixel_art_nine-tailed_fox_white_fur_nine_fl.zip | `fox_nine` | 구미호 | Walk/east 옆걷기 정상 |
 <!-- @gen:end -->
 
 새 zip이 오면: 사용자가 id를 지정하면 그걸 쓰고, 없으면 종·색에서 합리적 slug(`<species>_<색>`)를 만들어 **이 표에 한 줄 추가**하고, 이름은 위 규칙대로 센스껏 짓는다.
@@ -239,7 +251,7 @@ zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다
 ### ⚠️ 옆걷기(east) 없는 펫 — 이미지 재취득 대상
 `animations/Walk/east`(옆보기 걷기)가 **없는** zip은 `walk.png`가 정면이 되어 `frontWalk:true`로 처리(이동 중 옆 정지스틸만 보이고 걷기 애니 없음). 그런 펫은 옆걷기 포함 zip으로 다시 받아 재생성하고 `frontWalk`를 해제한다.
 
-**현재 재취득 대상: 없음** — <!--@gen:cats-count-->147<!--@gen:end-->종 전부 `Walk/east` 옆걷기 보유. (과거 `cat_white`가 south만 있었으나 east 시트로 재취득 완료.) 새 펫 추가 시 east 유무를 확인해 이 목록을 갱신한다.
+**현재 재취득 대상: 없음** — <!--@gen:cats-count-->148<!--@gen:end-->종 전부 `Walk/east` 옆걷기 보유. (과거 `cat_white`가 south만 있었으나 east 시트로 재취득 완료.) 새 펫 추가 시 east 유무를 확인해 이 목록을 갱신한다.
 
 ## ✅ 펫 추가 체크리스트 (에셋만 넣고 끝내지 말 것 — 코드+문서 함께 반영)
 > **규칙**: 펫을 추가/변경/제거하면 아래 코드 **3곳**과 문서 **3곳**을 같은 커밋에서 모두 갱신한다. 하나라도 빠지면 미완성으로 본다. (이 규칙은 `CLAUDE.md`의 "문서 최신화 규칙" 표 — *기능 추가·변경·제거 → features.md*, *모든 사용자 체감 변경 → CHANGELOG* — 의 펫 전용 상세판이다.)
