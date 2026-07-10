@@ -513,7 +513,7 @@
       const N=10, heldKey=isRb?null:kind;                             // 소비 인벤토리 키 = 종류키(egg/box/ddeul) · 무지개=없음
       const held=heldKey?Math.min(N, consumQty(heldKey)):0, buyN=N-held;
       const silverEach=isRb?0:100, goldEach=(kind==='ddeul')?DDEUL_GOLD:0;    // 은화 100 공통 · 뜰알만 금화 소모 · 무지개=코인만
-      if(isRb){ if(rbcoins()<RAINBOW_PRICE_RBC*N){ toast('무지개동전 '+(RAINBOW_PRICE_RBC*N-rbcoins())+'개 부족 — 한정 중복 획득으로 모아요', true); return; } }
+      if(isRb){ if(rbcoins()<RAINBOW_PRICE_RBC*N){ toast('무지개동전 '+(RAINBOW_PRICE_RBC*N-rbcoins())+'개 부족 — 신화·한정 중복으로 모아요', true); return; } }
       else if(buyN>0){
         if(coins()<buyN*silverEach){ toast((buyN*silverEach-coins())+' 은화 부족', true); return; }
         if(goldEach && gold()<buyN*goldEach){ toast('금화 '+(buyN*goldEach-gold())+' 부족', true); return; }
@@ -542,7 +542,7 @@
           const capped=isFurn && ((typeof itemQty==='function'?itemQty(res.id):0)+(cntItem[res.id]||0))>=itemCapOf(res.id);   // 배치 내 앞서 지급된 수량 포함(트랜잭션 지급 순서와 동일 판정, 케어5·기타1)
           if(isFurn && !capped) cntItem[res.id]=(cntItem[res.id]||0)+1;
           const dupIt=(isSkin&&owned)||capped;
-          const rbcIt=(dupIt&&res.tier==='exclusive')?1:0;   // 🌈 한정 중복=무지개동전 표기(실지급은 grantBoxReward)
+          const rbcIt=dupIt?dupRbcOf(res.tier):0;   // 🌈 신화↑ 중복=무지개동전 표기(한정+2·신화+1, 실지급은 grantBoxReward)
           list.push({ id:res.id, tier:res.tier, type:res.type, kind:'box', rainbow:(Math.random()<rbUpgradeChance(res.tier)), dup:dupIt, refund:(dupIt&&!rbcIt)?dupRefundOf(res.tier):0, rbc:rbcIt, isNew:!owned });
           pity=pityNext(pity, isRb?(res.tier==='exclusive'):isTopTier(res.tier));   // 무지개=한정만 리셋
         } else {
@@ -552,8 +552,8 @@
           // 💗 중복 펫=애정 경험치(만렙만 은화 폴백·한정=🌈코인) — 표기 미러. 배치 내 같은 펫 반복은 affAcc로 누적해 트랜잭션 지급 순서와 판정 일치.
           let rfd=0, dupAff=0, rbcP=0, lvUp=false;
           if(owned){ const tr=CAT_TIER[res.id]||'normal', base=(Number((ownedCatsMap()[res.id]||{}).affection)||0)+(affAcc[res.id]||0);
-            if(tr==='exclusive') rbcP=1;   // 🌈 한정 중복 = 무지개동전 1(은화 폴백 없음)
-            if(affectionLevel(base, tr).level>=5){ if(tr!=='exclusive') rfd=petDupRefund(res.id); }
+            rbcP=dupRbcOf(tr);   // 🌈 신화↑ 중복 = 무지개동전(한정+2·신화+1, 은화 폴백 없음)
+            if(affectionLevel(base, tr).level>=5){ if(!isTopTier(tr)) rfd=petDupRefund(res.id); }
             else { dupAff=dupAffOf(tr); lvUp=affectionLevel(base+dupAff, tr).level>affectionLevel(base, tr).level; affAcc[res.id]=(affAcc[res.id]||0)+dupAff; } }   // 이번 중복으로 레벨 상승 여부(카드 표기)
           list.push({ id:res.id, tier:res.tier, kind:rollKind, rainbow:(rollKind==='egg' && Math.random()<rbUpgradeChance(res.tier)), dup:owned, refund:rfd, dupAff:dupAff, lvUp:lvUp, rbc:rbcP, isNew:!owned });
           pity=pityNext(pity, isRb?(res.tier==='exclusive'):isTopTier(res.tier));   // 무지개=한정만 리셋

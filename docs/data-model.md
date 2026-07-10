@@ -23,7 +23,7 @@ users/{uid}            : { name, email, photo(프로필 사진 base64 data URL),
                            game:{ 🐱 고양이집(개인 전역, 워크스페이스 무관)
                              coins,                                  // 은화 잔액(정수, 최대 9,999,999 — normalizeGame에서 클램프)
                              gold,                                   // 금화(뽑기 오픈 +1 · 주간미션·업적·로그인 스트릭 마일스톤에서도 지급, 최대 999,999)
-                             rbcoin,                                 // 🌈 무지개동전 잔액(2026-07 신설, 최대 999,999 MAX_RBCOIN) — 획득=grantRbcoin(한정 중복 +1 등)·소비=spendRbcoin(무지개알/박스 1뽑 5개·10연 50개). 🛟 normalizeGame이 잔액이 (rbcoinTotal−rbcoinSpent) 아래로 유실되면 자동 복원(치명 유실 방지, rbcoinSpentV 시드 후)
+                             rbcoin,                                 // 🌈 무지개동전 잔액(2026-07 신설, 최대 999,999 MAX_RBCOIN) — 획득=grantRbcoin(신화↑ 중복 — 신화+1·한정+2 등)·소비=spendRbcoin(무지개알/박스 1뽑 5개·10연 50개). 🛟 normalizeGame이 잔액이 (rbcoinTotal−rbcoinSpent) 아래로 유실되면 자동 복원(치명 유실 방지, rbcoinSpentV 시드 후)
                              rbcoinTotal,                            // 🌈 무지개동전 누적 획득(감소 없음 — grantRbcoin만 증가). CS·어뷰즈 추적 + 자가복구 바닥의 상한
                              rbcoinSpent,                            // 🌈 무지개동전 누적 소비(감소 없음 — spendRbcoin만 증가). 잔액=rbcoinTotal−rbcoinSpent 재구성 축(자가복구)
                              rbcoinSpentV,                           // 🌈 소비카운터 시드 마커(1=migrateRbcoinSpentIfNeeded 완료 → 자가복구 활성; 시드 전엔 잔액 원값 유지=over-grant 방지)

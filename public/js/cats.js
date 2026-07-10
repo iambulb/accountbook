@@ -2366,7 +2366,7 @@
       //   over-grant 방지: 정상 소비는 spendRbcoin이 rbcoinSpent를 함께 올려 바닥=실제잔액 유지 → max()가 아무 것도 안 올림. 시드 전(구데이터)엔 원값 그대로.
       rbcoin: (Math.floor(Number(g.rbcoinSpentV)||0)>=1)
         ? Math.max(clampRbcoin(g.rbcoin), clampRbcoin((Number(g.rbcoinTotal)||0)-(Number(g.rbcoinSpent)||0)))
-        : clampRbcoin(g.rbcoin),   // 🌈 무지개동전 잔액 — 한정 중복 +1, 무지개알/박스 5개 소비
+        : clampRbcoin(g.rbcoin),   // 🌈 무지개동전 잔액 — 신화↑ 중복(신화+1·한정+2), 무지개알/박스 5개 소비
       rbcoinTotal: Math.max(0, Math.floor(Number(g.rbcoinTotal)||0)),   // 🌈 누적 획득(감소 없음 — grantRbcoin만 올림)
       rbcoinSpent: Math.max(0, Math.floor(Number(g.rbcoinSpent)||0)),   // 🌈 누적 소비(감소 없음 — spendRbcoin만 올림). 잔액=획득−소비 재구성 축
       rbcoinSpentV: Math.max(0, Math.floor(Number(g.rbcoinSpentV)||0)),   // 🌈 소비카운터 시드 마커(1=시드 완료 → 자가복구 활성)
@@ -3214,7 +3214,7 @@
         else if(res.type==='hat') dup=ownsHat(res.id);
         else dup=itemQty(res.id)>=itemCapOf(res.id); }   // 🧰 가구=상한(케어5·기타1) 초과=중복 리빌
       const dp = (dup&&kind==='egg') ? petDupPreview(res.id) : null;   // 💗 중복 펫=애정 경험치(만렙만 은화 폴백) 표기 미러
-      const refund = dup ? (kind==='egg'?(dp.max?dp.refund:0):((res.tier!=='exclusive')?dupRefundOf(res.tier):0)) : 0;
+      const refund = dup ? (kind==='egg'?(dp.max?dp.refund:0):(!isTopTier(res.tier)?dupRefundOf(res.tier):0)) : 0;
       const isNew=gachaNew(kind,res);   // 지급 전 판정(NEW 배지)
       const hit=isTopTier(res.tier);
       pullBegin(kind, false);   // 🔒 잠금 + 즉시 '준비' 오버레이

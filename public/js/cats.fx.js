@@ -46,7 +46,7 @@
     function runGachaFx(kind, res, dup, refund, rainbow, isNew, dupAff){
       const fx=$('catFx'); if(!fx){ toast((kind==='egg'?'펫알':'랜덤박스')+' 획득!'); pullEnd(); return; }
       _fxClear();   // 이전 FX 잔여 타이머 취소(빠른 재오픈 교차 방지)
-      _fx={ kind, res, dup, refund:refund||0, stage:0, rainbow:!!rainbow, gold: (rainbow||kind==='ddeul')?0:1, isNew:!!isNew, v2egg:(kind==='egg'), dupAff:(dupAff&&!dupAff.max)?dupAff:null, dupRbc:(dupAff&&dupAff.max&&dupAff.rbc)?dupAff.rbc:(dup&&res&&res.tier==='exclusive'&&!isEggKind(kind)?1:0) };   // 무지개·뜰알은 금화 보상 없음(뜰알은 금화 소모). isNew=NEW 배지. dupAff=💗 중복 펫 애정 표기. dupRbc=🌈 한정 중복 무지개동전 표기(만렙 한정 펫·한정 아이템 중복).
+      _fx={ kind, res, dup, refund:refund||0, stage:0, rainbow:!!rainbow, gold: (rainbow||kind==='ddeul')?0:1, isNew:!!isNew, v2egg:(kind==='egg'), dupAff:(dupAff&&!dupAff.max)?dupAff:null, dupRbc:(dupAff&&dupAff.max&&dupAff.rbc)?dupAff.rbc:((dup&&res&&!isEggKind(kind))?dupRbcOf(res.tier):0) };   // 무지개·뜰알은 금화 보상 없음(뜰알은 금화 소모). isNew=NEW 배지. dupAff=💗 중복 펫 애정 표기. dupRbc=🌈 신화↑ 중복 무지개동전 표기(한정+2·신화+1, 만렙 신화↑ 펫·신화↑ 아이템 중복).
       // v2egg=신규 펫알/무지개알 아트(뜰알식 연출, 라이브 정식) — 무지개알 '아이템 사용(1뽑)'도 v2 연출(큰 무지개꽃 흔들림·전설↑ 꽃 뚝+무지개 꽃 흩날림)로 통일(2026-07-09 사용자 지침).
       if(isEggKind(kind) && typeof hasSprite==='function' && hasSprite(res.id)){ try{ const _pi=new Image(); _pi.src=sprStill(res.id,'south'); if(_pi.decode) _pi.decode().catch(function(){}); }catch(e){} }   // 등장 스프라이트 미리 로드·디코드(펫알·뜰알 공통) → 마지막에 바로 표시
       if(typeof prewarmGachaFxPads==='function') prewarmGachaFxPads();   // 연출 고양이 발끝 여백 미리 측정(탭하는 동안 캐시 완료 → 첫 등장 세로 점프 방지)
@@ -663,7 +663,7 @@
       let raw=[];
       if(scenario==='legendUp'){ const tiers=['legend','limited']; for(let i=0;i<10;i++) raw.push(rollB(tiers[Math.floor(Math.random()*tiers.length)])); }
       else { for(let i=0;i<10;i++) raw.push(rollB()); if(scenario==='oneLimited') raw[Math.floor(Math.random()*10)]=rollB('limited'); }
-      const list=raw.map(function(r){ const isSkin=(r.type==='floor'||r.type==='wall'||r.type==='bgfx'||r.type==='petfx'||r.type==='hat'), dup=(isSkin&&boxOwned(r))||(r.type==='item'&&itemQty(r.id)>=itemCapOf(r.id)); const rbc=(dup&&r.tier==='exclusive')?1:0; return { id:r.id, tier:r.tier, type:r.type, kind:'box', rainbow:(Math.random()<rbUpgradeChance(r.tier)), dup:dup, refund:(dup&&!rbc)?dupRefundOf(r.tier):0, rbc:rbc, isNew:!boxOwned(r) }; });   // 실지급 정책 미러: 스킨(펫효과·모자 포함) 중복·가구 캡(케어5·기타1)=10% 환급 · 한정 중복=무지개동전
+      const list=raw.map(function(r){ const isSkin=(r.type==='floor'||r.type==='wall'||r.type==='bgfx'||r.type==='petfx'||r.type==='hat'), dup=(isSkin&&boxOwned(r))||(r.type==='item'&&itemQty(r.id)>=itemCapOf(r.id)); const rbc=dup?dupRbcOf(r.tier):0; return { id:r.id, tier:r.tier, type:r.type, kind:'box', rainbow:(Math.random()<rbUpgradeChance(r.tier)), dup:dup, refund:(dup&&!rbc)?dupRefundOf(r.tier):0, rbc:rbc, isNew:!boxOwned(r) }; });   // 실지급 정책 미러: 스킨(펫효과·모자 포함) 중복·가구 캡(케어5·기타1)=10% 환급 · 신화↑ 중복=무지개동전(신화+1·한정+2)
       closeSheet(); _fx=null; runTenGachaFx(list, { preview:true, kind:'box', theme:theme||'' });
     }
 
