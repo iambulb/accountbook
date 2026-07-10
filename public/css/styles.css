@@ -1263,6 +1263,30 @@
     .cr-prop .ffx-crystalfountain .px { animation-duration:1.4s; }
     .cr-prop .ffx-cuckooclock .px { animation-duration:0.9s; }
     /* 회전/흔들림 중심(부품 위치) — 가구별 */
+    /* 🏃 액티브 플레이 10종 — 부품별 속도·위상·중심(다층·단순왕복 금지). _VPIP_FX_ID와 짝 */
+    .cr-prop .ffx-tmfeather .px { transform-origin:8% 12%; animation-duration:1.1s; }
+    .cr-prop .ffx-tmled .px { animation-duration:1.6s; }
+    .cr-prop .ffx-tmwind .px { animation-duration:1.2s; }
+    .cr-prop .ffx-lbdot .px { animation-name:ffpondfish; animation-duration:1.3s; animation-timing-function:ease-in-out; }
+    .cr-prop .ffx-lbled .px { animation-duration:1.1s; }
+    .cr-prop .ffx-lbant .px { transform-origin:36% 12%; animation-duration:0.9s; }
+    .cr-prop .ffx-rcdart .px { animation-name:fffish; animation-duration:2.0s; animation-timing-function:ease-in-out; }
+    .cr-prop .ffx-rcled .px { animation-duration:0.7s; }
+    .cr-prop .ffx-rcant .px { transform-origin:94% 8%; animation-duration:0.8s; }
+    .cr-prop .ffx-slflagR .px { transform-origin:9% 9%; animation-duration:1.3s; }
+    .cr-prop .ffx-slflagB .px { transform-origin:33% 9%; animation-duration:1.5s; }
+    .cr-prop .ffx-slflagY .px { transform-origin:57% 9%; animation-duration:1.2s; }
+    .cr-prop .ffx-slflagG .px { transform-origin:81% 9%; animation-duration:1.6s; }
+    .cr-prop .ffx-sprinttrack .px { animation-duration:2.0s; }
+    .cr-prop .ffx-cucumber .px { transform-origin:50% 88%; animation-duration:1.4s; }
+    .cr-prop .ffx-milkbar .px { animation-duration:2.6s; }
+    .cr-prop .ffx-dpfall .px { animation-duration:0.8s; }
+    .cr-prop .ffx-dpled .px { animation-duration:1.4s; }
+    .cr-prop .ffx-bfbird1 .px { animation-name:fffish; animation-duration:2.6s; animation-timing-function:ease-in-out; }
+    .cr-prop .ffx-bfbird2 .px { animation-name:ffpondfish; animation-duration:2.2s; animation-timing-function:ease-in-out; }
+    .cr-prop .ffx-hcwheel .px { transform-origin:50% 29%; animation-duration:0.9s; }
+    .cr-prop .ffx-hcham .px { transform-origin:30% 62%; animation-duration:0.55s; }
+    .cr-prop .ffx-hcbottle .px { transform-origin:22% 27%; animation-duration:2.2s; }
     .cr-prop .ffx-catwheel .px  { transform-origin:47.9% 43.75%; }   /* 휠 축(정중심) → 링 전체가 제자리 회전(옆으로 흔들림 방지) */
     .cr-prop .ffx-tower .px     { transform-origin:84% 20%; }   /* 끈 매단 지점 */
     .cr-prop .ffx-scratcher .px { transform-origin:75% 13%; }   /* 끈 매단 지점 */
