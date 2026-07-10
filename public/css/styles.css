@@ -1083,6 +1083,12 @@
     .shopcard .thumb .ptier { font-size:10px; left:3px; bottom:3px; }
     /* 펫 상세 시트 */
     .gimenu.petinfo { width:min(320px,88vw); gap:9px; }
+    .petinfo .pi-h { align-items:center; }
+    /* 🖼️ 히어로 펫 — 투명 여백 크롭(overflow:hidden)해 박스를 꽉 채워 크게. _piFitPet이 img의 width/left/top을 bbox로 덮어씀(측정 전엔 아래 기본=76px 무크롭). */
+    .petinfo .pi-h .pi-pet { flex:none; width:76px; height:76px; position:relative; overflow:hidden; border-radius:14px; background:var(--soft); }
+    .petinfo .pi-h .pi-pet .pi-petimg { position:absolute; left:0; top:0; width:76px; height:76px; image-rendering:pixelated; }
+    .petinfo .pi-h .pi-pet.pi-pet-svg { display:flex; align-items:center; justify-content:center; }
+    .petinfo .pi-h .pi-pet.pi-pet-svg svg, .petinfo .pi-h .pi-pet.pi-pet-svg img, .petinfo .pi-h .pi-pet.pi-pet-svg .catpx { max-width:100%; max-height:100%; image-rendering:pixelated; }
     .petinfo .pi-h b { flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }   /* 🏷️ 이름은 내용 폭(길면 말줄임) — 연필이 이름 바로 오른쪽에 붙게 */
     .petinfo .pi-rename { position:static; width:26px; height:26px; margin-left:0; background:var(--soft); border-radius:8px; flex:none; }   /* 이름 바로 오른쪽 */
     .petinfo .pi-rename svg { width:15px; height:15px; }

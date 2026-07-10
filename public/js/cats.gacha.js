@@ -355,11 +355,51 @@
     }
     // 🐾 펫 상세 시트 — 등급·애정 진행·획득일·종·방 상태를 한곳에. 탭=배치는 유지하고 카드 ⓘ로 진입. 여기서 쓰다듬기도 가능.
     function fmtDate(iso){ try{ const d=new Date(iso); if(isNaN(d)) return ''; return d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate(); }catch(e){ return ''; } }
+    // 🖼️ 펫 south 스프라이트 콘텐츠 bbox(투명 여백 제외) 프래션 측정·캐시 — 펫 정보 히어로에서 여백을 크롭해 크게 보이게.
+    const _petBBox={};
+    function measureBBox(id, cb){
+      if(_petBBox[id]){ cb&&cb(_petBBox[id]); return; }
+      const sp=PET_SPRITES[id]; if(!sp){ cb&&cb(null); return; }
+      if(sp.runtime && sp.needArt && !sp.urls){ cb&&cb(null); return; }   // 아트 로딩 전엔 측정 안 함
+      const img=new Image(); img.crossOrigin='anonymous';
+      img.onload=function(){ try{
+        const w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+        const cv=document.createElement('canvas'); cv.width=w; cv.height=h; const cx=cv.getContext('2d');
+        cx.drawImage(img,0,0); const d=cx.getImageData(0,0,w,h).data;
+        let l=w,r=-1,t=h,b=-1;
+        for(let y=0;y<h;y++){ for(let x=0;x<w;x++){ if(d[(y*w+x)*4+3]>16){ if(x<l)l=x; if(x>r)r=x; if(y<t)t=y; if(y>b)b=y; } } }
+        if(r<0){ cb&&cb(null); return; }
+        const bb={ cw:(r-l+1)/w, ch:(b-t+1)/h, cx:((l+r+1)/2)/w, cy:((t+b+1)/2)/h };
+        _petBBox[id]=bb; cb&&cb(bb);
+      }catch(e){ cb&&cb(null); } };
+      img.onerror=function(){ cb&&cb(null); };
+      img.src=sprStill(id,'south');
+    }
+    const PI_PET_BOX=76;   // 펫 정보 히어로 박스 px(CSS .pi-pet과 동기)
+    // 히어로 펫 마크업 — 스프라이트=원본 img(로드 후 _piFitPet이 bbox 크롭 배치), 런타임 로딩 전·SVG 폴백은 크롭 없이 크게.
+    function piPetHtml(id){
+      const df=dyeFilterCss(petDyeOf(id));
+      if(hasSprite(id)){ const sp=PET_SPRITES[id];
+        if(sp.runtime && !sp.urls) return '<div class="pi-pet pi-pet-svg">'+catFace(id,{h:PI_PET_BOX-10})+'</div>';   // 아트 로딩 전 폴백
+        return '<div class="pi-pet"><img class="pi-petimg" id="piPetImg" src="'+sprStill(id,'south')+'" alt=""'+(df?' style="filter:'+df+'"':'')+'></div>';
+      }
+      return '<div class="pi-pet pi-pet-svg">'+catFace(id,{h:PI_PET_BOX-12})+'</div>';   // SVG 폴백 펫
+    }
+    // 렌더 후: bbox를 박스 94%로 채우고 콘텐츠 중심을 박스 중심에 정렬(여백 크롭). 측정 실패 시 CSS 기본(76px 무크롭) 유지.
+    function _piFitPet(id){
+      if(!hasSprite(id)) return;
+      measureBBox(id, function(bb){ if(!bb) return; const img=document.getElementById('piPetImg'); if(!img) return;
+        const B=PI_PET_BOX, bigger=Math.max(bb.cw, bb.ch)||0.5, N=B*0.94/bigger;
+        img.style.width=N+'px'; img.style.height=N+'px';
+        img.style.left=(B/2 - bb.cx*N)+'px'; img.style.top=(B/2 - bb.cy*N)+'px';
+      });
+    }
     function openPetInfo(id){ if(!ownsCat(id)) return;
       let wrap=$('petInfo');
       if(!wrap){ wrap=document.createElement('div'); wrap.id='petInfo'; wrap.className='gimenu-scrim';
         wrap.onclick=function(e){ if(e.target===wrap) closePetInfo(); }; document.body.appendChild(wrap); }
-      wrap.innerHTML='<div class="gimenu petinfo">'+petInfoBody(id)+'</div>'; }
+      wrap.innerHTML='<div class="gimenu petinfo">'+petInfoBody(id)+'</div>';
+      _piFitPet(id); }   // 🖼️ 히어로 펫 여백 크롭 배치(bbox 측정 후)
     function closePetInfo(){ const m=$('petInfo'); if(m) m.remove(); }
     // 💗 코스메틱 장착/해제 — 펫별 슬롯이 애정 레벨로 열리고(effects=Lv3·hat=Lv5, 레벨 파생 — 별도 저장 없음),
     //    장착하려면 그 아이템을 "보유"해야 한다(owned.hats/petfx — 이벤트·쿠폰·선물함·뽑기 획득). 레벨만으론 아무것도 못 씀(사용자 지침).
@@ -439,7 +479,7 @@
       const roomTxt=here?'이 방':(roomOf>=0?roomNm:'대기 중');
       const now=Date.now(), last=Number(c.pettedAt)||0, rem=PET_COOLDOWN_MS-(now-last), canPet=rem<=0, hh=Math.ceil(Math.max(0,rem)/3600000);
       const got=c.boughtAt?fmtDate(c.boughtAt):'';
-      return '<div class="gih pi-h">'+catFace(id,{h:40})+'<b>'+catNameSpan(id,catName(id))+'</b>'+
+      return '<div class="gih pi-h">'+piPetHtml(id)+'<b>'+catNameSpan(id,catName(id))+'</b>'+
           '<button class="cn-edit pi-rename" aria-label="이름 짓기" '+App.view.act('openRenameCat',id)+'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
           '<button class="cn-edit pi-close" aria-label="닫기" '+App.view.act('closePetInfo')+'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'+
         '<div class="pi-meta"><span class="pi-tier">'+tierLabelHtml(tier)+'</span><span class="s">'+escapeHtml(speciesLabel(id))+(got?' · 획득 '+got:'')+' · '+escapeHtml(roomTxt)+'</span></div>'+
