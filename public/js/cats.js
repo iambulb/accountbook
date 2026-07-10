@@ -878,13 +878,13 @@
       sleep: { dir:'east',  fps:4 }   // 💤 옆으로 엎드려 눈 감고 잠(느린 호흡 loop) — 미보유 펫은 폴백 null=기존 north 스틸
     };
     // 펫이 이 클립 시트를 실제로 갖고 있나 — 정적=clips 메타(파일 존재는 파이프라인이 보장), 런타임=아트(clipUrls)까지 도착해야 true.
-    // 💗 신화(limited)·한정(exclusive) 모션 애정 해금(프레스티지, 2026-07 레벨 재배치):
+    // 💗 모션 애정 해금(프레스티지, 2026-07 레벨 재배치) — 🐾 전 등급 적용(2026-07 사용자 지침, 신화 미만도 동일):
     //    Lv1=기본 모션(idle·sit·eat·drink — 첫 애정에 생동감이 켜짐) · Lv2=belly·yawn(식빵·하품) · Lv4=angry(하악질).
-    //    Lv0(애정 없음)은 클립 없이 기존 스틸/걷기만. 신화 미만 등급은 게이트 없음(전부 개방).
+    //    Lv0(애정 없음)은 클립 없이 기존 스틸/걷기만. (등급별 임계는 affTiers라 낮은 등급이 더 빨리 Lv1에 도달 — 신화보다 관대.)
     //    친구 방 등 "내가 소유하지 않은" 펫은 애정 정보가 없어 잠금으로 취급(비소유자가 더 많이 보는 역전 방지).
     const CLIP_AFF_REQ={ idle:1, sit:1, eat:1, drink:1, belly:2, yawn:2, angry:4 };
     function clipAffLocked(id, clip){ const req=CLIP_AFF_REQ[clip]; if(!req) return false;
-      const t=CAT_TIER[id]||'normal'; if(t!=='limited'&&t!=='exclusive') return false;
+      const t=CAT_TIER[id]||'normal';   // 💗 전 등급 게이트 — 예전엔 신화/한정만 잠갔으나 사용자 지침으로 전 등급 애정 해금
       // 💗 친구 방(#frStage 열림)에선 친구 스냅샷의 애정 레벨로 판정 — 친구의 Lv4 펫은 하악질까지, Lv0 펫은 내 보유와 무관하게 잠금.
       //    (한계: 친구 시트가 열린 동안엔 뒤 dock의 같은 id 펫도 친구 기준을 따름 — 시트가 화면을 덮어 실해 없음. 시트 닫히면 frStage 미노출로 자동 복귀.)
       try{ const fr=state._frPetLv; const sh=$('sheet');
@@ -3401,7 +3401,7 @@
       h+='<div class="note" style="margin:6px 0;">모션을 눌러 실제 재생을 확인하세요. 원샷 모션은 미리보기에선 반복 재생됩니다(실제 앱에선 1회).</div>';
       h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">';
       order.forEach(k=>{ const has=!!clips[k];
-        const req=(typeof CLIP_AFF_REQ!=='undefined')&&CLIP_AFF_REQ[k], gated=has&&req&&((CAT_TIER[id]||'normal')==='limited'||(CAT_TIER[id]||'normal')==='exclusive');   // 💗 신화+ 애정 해금 표기(재생은 우회)
+        const req=(typeof CLIP_AFF_REQ!=='undefined')&&CLIP_AFF_REQ[k], gated=has&&req;   // 💗 전 등급 애정 해금 표기(재생은 devPickMotion이 ignoreAffGate로 우회)
         h+='<button class="chip'+(k===clip?' on':'')+'"'+(has?'':' disabled')+' style="'+(has?'':'opacity:.4;')+'"'+(has?(' '+App.view.act('devPickMotion',k)+''):'')+'>'+k+(has?' ·'+clips[k]:'')+(gated?' <span style="opacity:.7">(Lv'+req+' 해금)</span>':'')+'</button>'; });
       h+='</div>';
       // 원본 시트 이미지(가로 스트립)
