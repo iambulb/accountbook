@@ -712,6 +712,9 @@
     /* 🔋 멈춘 데코의 GPU 레이어(will-change) 회수 — 저사양(animation:none)·화면 밖(pk-idle). 걷기 필름(.csprf)은 기능 모션이라 유지. */
     body.lite .pk-bfly, body.lite .pk-dfly, body.lite .pk-fire, body.lite .fx-ddcloud, body.lite .fx-ddbfly,
     .pkscene.pk-idle .pk-bfly, .pkscene.pk-idle .pk-dfly, .pkscene.pk-idle .pk-fire { will-change: auto !important; }
+    /* 🔋 중간 등급(body.perfmid, 모바일·중간사양) — 정지까진 안 하되 가장 무거운 움직이는 레이어의 GPU will-change 회수 + 반딧불 블러 filter 컷(재래스터화 발열원). 움직임은 유지. */
+    body.perfmid .pk-bfly, body.perfmid .pk-dfly, body.perfmid .pk-fire, body.perfmid .fx-ddcloud, body.perfmid .fx-ddbfly { will-change: auto !important; }
+    body.perfmid .pk-fire .ff-core, body.perfmid .fx-cat { filter: none !important; }
     /* 🔋 시트/오버레이가 하단 dock 펫캠을 가릴 때 — dock 걷기필름·가구 연출 정지 + GPU 레이어 회수(안 보여 지각 변화 0). 시트 속 방(crStage/frStage)은 계속 애니. */
     body.sheet-open .catdock .csprf,
     body.sheet-open .catdock .cspr.idle,

@@ -478,7 +478,7 @@
       }
       // 🌌 배경효과(방 전체 오버레이, over층 — 펫 위) — bgfxOverlayHtml과 동일 슬롯·원근·난수 스트림(위치·경로 픽셀 동일)
       const gid=currentBgfx();
-      if(gid){ const lite=liteMode(); const Nc=function(k){ return Math.max(3,Math.round(k*(lite?0.6:1))); };
+      if(gid){ const Nc=function(k){ return Math.max(3,Math.round(k*perfCountMul())); };   // 🔋 배경효과 개수도 등급별 감축(PiP 워커 미러)
         const persB=function(yy){ return 13+(1-yy)*72; }, persS=function(yy){ return 0.66+yy*0.62; };
         const bfly=function(n,tints){ const P=pkSlots(n,110); for(let i=0;i<n;i++){ const o=P[i], hh=Math.round((12+pkRand(i,13)*5)*persS(o.yy)), dur=6+pkRand(i,14)*5, fd=0.30+pkRand(i,15)*0.26, del=-pkRand(i,16)*8; let _s=20; const rnd=function(){ return pkRand(i,_s++); };
           parts.push(Object.assign({ k:'flit', url:_svgUri(butterflySvg(tints[i%tints.length],{h:hh})), x:W*o.x/100, y:H-(H*persB(o.yy)/100)-hh, h:hh, d:dur, del:del, fd:fd, layer:'over', frozen:frozen }, _vpipFlitPts(rnd))); } };
@@ -756,11 +756,28 @@
     //   ⚠️ OS 'prefers-reduced-motion'(접근성=전면 정적)과는 분리 — 라이트는 걷기·탭 같은 '기능성' 모션은 유지한다.
     function liteMode(){ try{ return localStorage.getItem('liteMode')==='1'; }catch(e){ return false; } }
     function reducedMotion(){ try{ return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } }
+    // 🔋 기기 성능 등급(high/mid/low) — 부팅 1회 산출·메모이즈. 저사양/모바일이면 자동으로 부하를 낮춘다(씬 개수 감축·프레임예산·걷기 duration). localStorage 'perfTier'로 강제 오버라이드(개발/QA).
+    let _perfTier=null;
+    function perfTier(){ if(_perfTier) return _perfTier;
+      try{ const o=localStorage.getItem('perfTier'); if(o==='low'||o==='mid'||o==='high'){ _perfTier=o; return o; } }catch(e){}
+      let t='high';
+      try{ const hc=navigator.hardwareConcurrency||0, dm=navigator.deviceMemory||0, ua=navigator.userAgent||'';
+        let coarse=false; try{ coarse=window.matchMedia('(pointer:coarse)').matches; }catch(_e){}
+        const mobile = coarse || /android|iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua) && (navigator.maxTouchPoints||0)>1);
+        if((hc>0&&hc<=4)||(dm>0&&dm<=4)) t='low';                    // 코어4↓/메모리4GB↓ = 저사양
+        else if(mobile && (hc===0||hc<=6)) t='low';                 // 모바일 중저사양(코어 미보고 포함)
+        else if(mobile || (hc>0&&hc<=6) || (dm>0&&dm<=6)) t='mid';  // 모바일·중간사양
+      }catch(e){ t='mid'; }
+      _perfTier=t; return t; }
+    // 🔋 유효 등급 — OS 모션축소=reduced(전면 정적), 사용자 lite 또는 저사양기기=low, 그 외 mid/high. 사용자 수동 lite 토글은 독립(자동은 제약을 더할 뿐 끄지 않음).
+    function effTier(){ if(reducedMotion()) return 'reduced'; const b=perfTier(); return (liteMode()||b==='low')?'low':b; }
+    // 🔋 씬/파티클 노드 감축 배수(등급별) — 동시 합성 레이어 수를 줄이는 핵심 손잡이. high=1(무감축).
+    function perfCountMul(){ const t=effTier(); return (t==='low'||t==='reduced')?0.45:(t==='mid'?0.7:1); }
     // ⚡ (폐기) '빠른 연출' 토글 — 배너 칩 제거(사용자 지침) 후에도 남은 localStorage('fxFast=1')가 1뽑/10뽑 연출을 즉시 스킵시키던 버그 → 기능 완전 제거(연출 스킵은 접근성 reducedMotion만).
-    function applyLiteMode(){ try{ if(document&&document.body) document.body.classList.toggle('lite', liteMode()); }catch(e){} }
-    function refreshRbStatic(){ _rbStatic = liteMode() || reducedMotion(); }   // 무지개 SMIL 정적화 여부 재평가
-    function pkCount(n){ return liteMode()?Math.max(1,Math.round(n*0.55)):n; }   // 🔋 저사양 씬 데코 개수 감축(약 55%) — 씬 캐시는 setLiteMode에서 무효화
-    function fxCount(n){ return liteMode()?Math.max(1,Math.round(n*0.55)):n; }   // 🔋 저사양 가챠 원샷 파티클 개수 감축(연출은 유지, 노드만 ~55%)
+    function applyLiteMode(){ try{ if(document&&document.body){ const t=effTier(); document.body.classList.toggle('lite', t==='low'); document.body.classList.toggle('perfmid', t==='mid'); } }catch(e){} }   // 🔋 저사양=lite(전면 감축)·중간사양=perfmid(GPU 레이어만 회수). 사용자 수동 lite도 low로 흡수.
+    function refreshRbStatic(){ const t=effTier(); _rbStatic = (t==='low'||t==='reduced'); }   // 무지개 SMIL 정적화 여부 재평가(저사양·모션축소)
+    function pkCount(n){ const m=perfCountMul(); return m>=1?n:Math.max(1,Math.round(n*m)); }   // 🔋 저사양/모바일 씬 데코 개수 감축(등급별, high=무감축) — 씬 캐시는 setLiteMode/부팅에서 무효화
+    function fxCount(n){ const m=perfCountMul(); return m>=1?n:Math.max(1,Math.round(n*m)); }   // 🔋 저사양/모바일 가챠 원샷 파티클 개수 감축(연출은 유지, 노드만)
     function invalidateSceneCaches(){ _pkSceneCache={}; _sunsetCache={}; _nightCache={}; }   // 씬 HTML에 무지개 애니 여부가 구워지므로 토글 시 무효화
     function setLiteMode(on){ try{ localStorage.setItem('liteMode', on?'1':'0'); }catch(e){} applyLiteMode();
       if(typeof pipOpen==='function' && pipOpen()){ try{ _pip.doc.body.classList.toggle('lite', !!on); }catch(e){} }   // 🖥️ PiP 창 body.lite 동기화
@@ -772,6 +789,7 @@
     // 🔋 저사양 기기 1회 안내 — 코어4↓ 또는 메모리4GB↓면 최초 1회만 가벼운 모드 권유(기본 동작은 안 바꿈, 사용자가 선택). liteSuggested로 다시 안 뜸.
     function maybeSuggestLite(){ try{
       if(liteMode()) return;                                       // 이미 켜짐
+      if(effTier()==='low') return;                                // 🔋 저사양은 부팅 시 자동 perf 모드(body.lite) 진입 — 별도 나그 없음(사용자 지침)
       if(localStorage.getItem('liteSuggested')==='1') return;      // 이미 안내함(선택 무관 1회)
       if($('sheet') && $('sheet').classList.contains('on')) return;   // 다른 시트 열려 있으면 다음 기회에
       const hc=navigator.hardwareConcurrency, dm=navigator.deviceMemory;
@@ -783,7 +801,7 @@
         function(){ setLiteMode(true); }, { title:'🔋 가벼운 모드', okLabel:'켜기', danger:false });
     }catch(e){} }
     // 걷기 스프라이트 애니메이션 주기(초): 발 놀림이 실제 이동속도에 맞도록 속도에 반비례 → 미끄러짐(무빙워크) 방지, 자연스러운 걸음.
-    function walkDur(v, hh){ const stride=0.42*(hh||40), px=Math.max(0.001, v*58); return Math.max(0.45, Math.min(1.5, stride/px)).toFixed(2); }
+    function walkDur(v, hh){ const stride=0.42*(hh||40), px=Math.max(0.001, v*58); const t=effTier(); const lo=(t==='low'||t==='reduced')?0.62:(t==='mid'?0.52:0.45); return Math.max(lo, Math.min(1.5, stride/px)).toFixed(2); }   // 🔋 걷기 필름은 steps()라 저사양에서 하한↑(리페인트 빈도↓=발열↓). 이동거리는 dt 기반이라 속도감 유지.
     function setWalkDur(a){ if(a.spr){ const sc=a.el.querySelector('.cspr'); if(sc) sc.style.setProperty('--wdur', walkDur(a.v, a.hh)+'s'); } }
     // 펫 원근(캠/방): 배치칸 행처럼 펫도 앞뒤(깊이 depth 0=앞·가까움 ~ 1=뒤·멂)로 움직인다.
     //  · 가까우면 크게(PET_NEAR_SCALE)·앞으로(z↑), 멀면 작게(PET_FAR_SCALE)·뒤로(z↓) → 가구와 z-index로 상호 가림.
@@ -1385,6 +1403,17 @@
       }
       moved.forEach(a=>{ applyDepth(a); setXform(a); a._pdir=a.dir; });   // 밀린 펫만 트랜스폼 갱신
     }
+    // 🔋 적응형 자동 강등 — 실행 프레임 간격(since)이 목표(budget)보다 지속적으로 크게 늦으면(기기 과부하) fps를 더 낮추고, 회복되면 원복. high 기기는 지연이 없어 발동 안 함(EMA≈1). reduced는 조정 안 함.
+    let _autoBudgetMul=1, _adaptEma=0, _adaptFrames=0;
+    function _adaptTick(since, budget, tier){
+      if(tier==='reduced'){ _autoBudgetMul=1; return; }
+      const ratio=since/Math.max(1,budget);
+      _adaptEma = _adaptEma ? _adaptEma*0.9+ratio*0.1 : ratio;
+      if(++_adaptFrames < 90) return;   // 실행 프레임 ~90개(수 초) 누적 후 판단
+      _adaptFrames=0;
+      if(_adaptEma>1.5 && _autoBudgetMul<1.6) _autoBudgetMul=Math.min(1.6,_autoBudgetMul+0.3);        // 지속 지연 → 강등
+      else if(_adaptEma<1.15 && _autoBudgetMul>1) _autoBudgetMul=Math.max(1,_autoBudgetMul-0.3);      // 회복 → 원복
+    }
     function catLoop(){
       if(document.hidden && !pipOpen()){ _eng.raf=0; _eng.win=null; return; }   // 탭 숨김 → 루프 정지(복귀 시 visibilitychange로 재개, 유휴 배터리 절약). 🖥️ PiP 창이 떠 있으면 계속(그 창은 항상 보임)
       const _w=_engWin(); _eng.win=_w; _eng.raf=_w.requestAnimationFrame(catLoop);   // 다음 프레임 먼저 예약(아래 작업이 예외로 죽어도 루프 유지). 🖥️ PiP가 열려 있으면 PiP 창의 rAF — 메인 탭이 숨겨져도(rAF 정지) 미니 캠은 계속 움직인다.
@@ -1392,10 +1421,15 @@
       const want=activeStages();                    // 값싼 조회(몇 개 getElementById) — 예산 결정에 필요해 게이트 앞에서 1회 계산 후 아래서 재사용
       // 🔋 프레임레이트 캡 — 걷기는 30fps면 충분(저사양 CPU/GPU·배터리 절반↓). 가벼운 모드 22fps. OS 모션최소화 5fps(사실상 정지). dock 스트립만 활성(홈캠·방·친구방·리빌 없음)이면 사용자가 포커스 안 하므로 12fps로.
       const dockOnly = want.length===1 && want[0] && want[0].id==='cdStage';
-      const budget = reducedMotion() ? 200 : (liteMode() ? (dockOnly?90:45) : (dockOnly ? 83 : 33));
+      // 🔋 프레임예산 = 기기 성능 등급별 목표 간격 × 적응형 배수(_autoBudgetMul). 등급: reduced 200 / low dock110·55 / mid dock90·40 / high dock83·33. (예산 상향은 stepActors 걷기 CPU만 절감 — CSS 애니 발열은 개수감축·정지로 처리)
+      const _t=effTier();
+      const _base = _t==='reduced' ? 200 : _t==='low' ? (dockOnly?110:55) : _t==='mid' ? (dockOnly?90:40) : (dockOnly?83:33);
+      const budget = Math.round(_base*_autoBudgetMul);
       const since = _eng.last ? ts-_eng.last : 999;
       if(since < budget) return;                    // 아직 프레임 예산이 안 참 → 이 rAF는 그냥 넘김(무거운 stepActors 스킵)
-      const dt=Math.min(90, since); _eng.last=ts; if(_perfHudEl) _perfHudTick(dt);    // dt 상한 90ms(12fps ~83ms 간격 반영해 이동거리 튐 방지)
+      const dt=Math.min(90, since); _eng.last=ts;
+      _adaptTick(since, budget, _t);                // 🔋 실측 지연으로 자동 강등/회복
+      if(_perfHudEl) _perfHudTick(dt);    // dt 상한 90ms(12fps ~83ms 간격 반영해 이동거리 튐 방지)
       try{
         // 무대 집합이 바뀌었거나 dirty면 그룹 재구성 — 유지되는 무대의 액터는 재사용해 애니메이션 상태 보존, 새 무대만 buildActors.
         const changed=_eng.dirty || _eng.groups.length!==want.length || _eng.groups.some(g=>want.indexOf(g.stage)<0);
@@ -1416,7 +1450,7 @@
       _perfFps=Math.round(_perfFrames*1000/_perfAcc); _perfFrames=0; _perfAcc=0;
       let actors=0; try{ _eng.groups.forEach(function(g){ actors+=g.actors.length; }); }catch(e){}
       const anims=(document.getAnimations?document.getAnimations().filter(function(a){ return a.playState==='running'; }).length:'-');
-      _perfHudEl.textContent='fps '+_perfFps+' · 무대 '+activeStages().length+' · 액터 '+actors+' · 애니 '+anims
+      _perfHudEl.textContent='fps '+_perfFps+' · 무대 '+activeStages().length+' · 액터 '+actors+' · 애니 '+anims+' · '+effTier()+(_autoBudgetMul>1?(' ×'+_autoBudgetMul.toFixed(1)):'')
         +(document.body.classList.contains('sheet-open')?' · SHEET':'')+(document.body.classList.contains('apphidden')?' · HIDDEN':'')+(liteMode()?' · LITE':'');
     }
     if(typeof document!=='undefined') _perfHudSync();   // 새로고침해도 켠 상태 복원

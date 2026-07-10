@@ -534,7 +534,7 @@
       if(id==='fireflies') return fireflySvg({h:h});
       return butterflySvg(id==='rainbowflutter'?'p':'o',{h:h}); }
     // 배경효과 오버레이 스프라이트(픽업씬 조각 재사용: pk-bfly/pk-fallleaf/pk-dfly/pk-fire). 위치는 결정적(pkRand)이라 재렌더에 안 튐.
-    function bgfxOverlayHtml(id){ if(!id) return ''; const lite=liteMode(); const N=k=>Math.max(3,Math.round(k*(lite?0.6:1))); let s='';
+    function bgfxOverlayHtml(id){ if(!id) return ''; const N=k=>Math.max(3,Math.round(k*perfCountMul())); let s='';   // 🔋 배경효과 개수 등급별 감축(perfCountMul)
       // 🧭 균일 분포 + 원근(사용자 지침): 캠 전체를 지터드 그리드로 나눠 한 칸에 하나씩(간격 확보) 배치하고,
       //    세로 밴드로 깊이를 준다 — 뒤(위)일수록 높은 bottom%·작게, 앞(아래)일수록 낮은 bottom%·크게. DOM 순서=뒤→앞이라 앞이 위로 그려짐.
       const slots=(n,seed)=>pkSlots(n,seed);   // 공용 지터드 그리드(pkSlots) 사용
