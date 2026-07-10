@@ -709,14 +709,14 @@
       cat_choco:{ walk:'assets/pets/cat/cat_choco/walk.png', frames:6, stills:true, scale:1.2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       cat_kitten:{ walk:'assets/pets/cat/cat_kitten/walk.png', frames:6, stills:true, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       cat_pink:{ walk:'assets/pets/cat/cat_pink/walk.png', frames:6, stills:true, scale:1.2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
-      tiger_orange:{ walk:'assets/pets/tiger/tiger_orange/walk.png', frames:6, stills:true, scale:4, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
-      lion_mane:{ walk:'assets/pets/lion/lion_mane/walk.png', frames:6, stills:true, scale:4, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
+      tiger_orange:{ walk:'assets/pets/tiger/tiger_orange/walk.png', frames:6, stills:true, scale:4, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4, knead:4, paw:4, eyetrack:6, stretch:6, scratch:4, wiggle:4 } },
+      lion_mane:{ walk:'assets/pets/lion/lion_mane/walk.png', frames:6, stills:true, scale:4, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4, knead:4, paw:4, eyetrack:6, stretch:6, scratch:4, wiggle:4 } },
       cat_persian:{ walk:'assets/pets/cat/cat_persian/walk.png', frames:6, stills:true, scale:1.2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
-      tiger_white:{ walk:'assets/pets/tiger/tiger_white/walk.png', frames:6, stills:true, scale:4, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
+      tiger_white:{ walk:'assets/pets/tiger/tiger_white/walk.png', frames:6, stills:true, scale:4, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4, knead:4, paw:4, eyetrack:6, stretch:6, scratch:4, wiggle:4 } },
       cat_russianblue:{ walk:'assets/pets/cat/cat_russianblue/walk.png', frames:6, stills:true, scale:1.2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       cat_bengal2:{ walk:'assets/pets/cat/cat_bengal2/walk.png', frames:6, stills:true, scale:1.2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       dog_mutt:{ walk:'assets/pets/dog/dog_mutt/walk.png', frames:6, stills:true, scale:2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
-      cat_panther:{ walk:'assets/pets/cat/cat_panther/walk.png', frames:6, stills:true, scale:1.2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
+      cat_panther:{ walk:'assets/pets/cat/cat_panther/walk.png', frames:6, stills:true, scale:1.2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4, knead:4, paw:4, eyetrack:6, stretch:6, scratch:4, wiggle:4 } },
       dog_baekgu:{ walk:'assets/pets/dog/dog_baekgu/walk.png', frames:8, stills:true, scale:2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       dog_shiba:{ walk:'assets/pets/dog/dog_shiba/walk.png', frames:8, stills:true, scale:1.5, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       dog_corgi:{ walk:'assets/pets/dog/dog_corgi/walk.png', frames:6, stills:true, scale:1.5, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
@@ -769,7 +769,7 @@
       dog_oldenglishsheepdog:{ walk:'assets/pets/dog/dog_oldenglishsheepdog/walk.png', frames:6, stills:true, scale:2.5, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       dog_vizsla:{ walk:'assets/pets/dog/dog_vizsla/walk.png', frames:6, stills:true, scale:2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       dog_englishsetter:{ walk:'assets/pets/dog/dog_englishsetter/walk.png', frames:6, stills:true, scale:2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
-      dog_jindo:{ walk:'assets/pets/dog/dog_jindo/walk.png', frames:6, stills:true, scale:2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
+      dog_jindo:{ walk:'assets/pets/dog/dog_jindo/walk.png', frames:6, stills:true, scale:2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4, knead:4, paw:4, eyetrack:6, stretch:6, scratch:4, wiggle:4 } },
       dog_chinesecrested:{ walk:'assets/pets/dog/dog_chinesecrested/walk.png', frames:6, stills:true, scale:1.5, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       dog_scottie:{ walk:'assets/pets/dog/dog_scottie/walk.png', frames:6, stills:true, scale:1.5, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       dog_pomeranian:{ walk:'assets/pets/dog/dog_pomeranian/walk.png', frames:6, stills:true, scale:1.5, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
@@ -822,22 +822,22 @@
       cat_creamtabby:{ walk:'assets/pets/cat/cat_creamtabby/walk.png', frames:6, stills:true, scale:1.2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       cat_lilac:{ walk:'assets/pets/cat/cat_lilac/walk.png', frames:6, stills:true, scale:1.2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       cat_somali:{ walk:'assets/pets/cat/cat_somali/walk.png', frames:6, stills:true, scale:1.2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
-      cat_leopardcat:{ walk:'assets/pets/cat/cat_leopardcat/walk.png', frames:6, stills:true, scale:1.5, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
-      cat_lynx:{ walk:'assets/pets/cat/cat_lynx/walk.png', frames:6, stills:true, scale:2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
-      cat_cheetah:{ walk:'assets/pets/cat/cat_cheetah/walk.png', frames:6, stills:true, scale:3, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
-      cat_jaguar:{ walk:'assets/pets/cat/cat_jaguar/walk.png', frames:8, stills:true, scale:3.4, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
-      cat_puma:{ walk:'assets/pets/cat/cat_puma/walk.png', frames:8, stills:true, scale:3.2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
-      cat_snowleopard:{ walk:'assets/pets/cat/cat_snowleopard/walk.png', frames:8, stills:true, scale:3, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
-      cat_caracal:{ walk:'assets/pets/cat/cat_caracal/walk.png', frames:8, stills:true, scale:2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
-      cat_leopard:{ walk:'assets/pets/cat/cat_leopard/walk.png', frames:8, stills:true, scale:3, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
-      cat_blackpanther:{ walk:'assets/pets/cat/cat_blackpanther/walk.png', frames:8, stills:true, scale:3, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
-      cat_ocelot:{ walk:'assets/pets/cat/cat_ocelot/walk.png', frames:8, stills:true, scale:1.8, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
+      cat_leopardcat:{ walk:'assets/pets/cat/cat_leopardcat/walk.png', frames:6, stills:true, scale:1.5, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4, knead:4, paw:4, eyetrack:6, stretch:6, scratch:4, wiggle:4 } },
+      cat_lynx:{ walk:'assets/pets/cat/cat_lynx/walk.png', frames:6, stills:true, scale:2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4, knead:4, paw:4, eyetrack:6, stretch:6, scratch:4, wiggle:4 } },
+      cat_cheetah:{ walk:'assets/pets/cat/cat_cheetah/walk.png', frames:6, stills:true, scale:3, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4, knead:4, paw:4, eyetrack:6, stretch:6, scratch:4, wiggle:4 } },
+      cat_jaguar:{ walk:'assets/pets/cat/cat_jaguar/walk.png', frames:8, stills:true, scale:3.4, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4, knead:4, paw:4, eyetrack:6, stretch:6, scratch:4, wiggle:4 } },
+      cat_puma:{ walk:'assets/pets/cat/cat_puma/walk.png', frames:8, stills:true, scale:3.2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4, knead:4, paw:4, eyetrack:6, stretch:6, scratch:4, wiggle:4 } },
+      cat_snowleopard:{ walk:'assets/pets/cat/cat_snowleopard/walk.png', frames:8, stills:true, scale:3, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4, knead:4, paw:4, eyetrack:6, stretch:6, scratch:4, wiggle:4 } },
+      cat_caracal:{ walk:'assets/pets/cat/cat_caracal/walk.png', frames:8, stills:true, scale:2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4, knead:4, paw:4, eyetrack:6, stretch:6, scratch:4, wiggle:4 } },
+      cat_leopard:{ walk:'assets/pets/cat/cat_leopard/walk.png', frames:8, stills:true, scale:3, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4, knead:4, paw:4, eyetrack:6, stretch:6, scratch:4, wiggle:4 } },
+      cat_blackpanther:{ walk:'assets/pets/cat/cat_blackpanther/walk.png', frames:8, stills:true, scale:3, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4, knead:4, paw:4, eyetrack:6, stretch:6, scratch:4, wiggle:4 } },
+      cat_ocelot:{ walk:'assets/pets/cat/cat_ocelot/walk.png', frames:8, stills:true, scale:1.8, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4, knead:4, paw:4, eyetrack:6, stretch:6, scratch:4, wiggle:4 } },
       cat_sandcat:{ walk:'assets/pets/cat/cat_sandcat/walk.png', frames:6, stills:true, scale:1.1, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       cat_mainecoonsmoke:{ walk:'assets/pets/cat/cat_mainecoonsmoke/walk.png', frames:6, stills:true, scale:1.4, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       cat_mainecoonred:{ walk:'assets/pets/cat/cat_mainecoonred/walk.png', frames:6, stills:true, scale:1.4, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       cat_bengalsilver:{ walk:'assets/pets/cat/cat_bengalsilver/walk.png', frames:6, stills:true, scale:1.2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       cat_peterbald:{ walk:'assets/pets/cat/cat_peterbald/walk.png', frames:6, stills:true, scale:1.2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
-      cat_toyger:{ walk:'assets/pets/cat/cat_toyger/walk.png', frames:6, stills:true, scale:1.2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
+      cat_toyger:{ walk:'assets/pets/cat/cat_toyger/walk.png', frames:6, stills:true, scale:1.2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4, knead:4, paw:4, eyetrack:6, stretch:6, scratch:4, wiggle:4 } },
       cat_singapura:{ walk:'assets/pets/cat/cat_singapura/walk.png', frames:6, stills:true, scale:1.1, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       cat_havanabrown:{ walk:'assets/pets/cat/cat_havanabrown/walk.png', frames:6, stills:true, scale:1.2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       cat_ragamuffin:{ walk:'assets/pets/cat/cat_ragamuffin/walk.png', frames:6, stills:true, scale:1.3, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } }
@@ -886,14 +886,22 @@
       drink: { dir:'south', fps:8, fb:['eat','sit','idle'] },
       yawn:  { dir:'south', fps:7, once:true },
       angry: { dir:'south', fps:8, once:true },
-      sleep: { dir:'east',  fps:4 }   // 💤 옆으로 엎드려 눈 감고 잠(느린 호흡 loop) — 미보유 펫은 폴백 null=기존 north 스틸
+      sleep: { dir:'east',  fps:4 },   // 💤 옆으로 엎드려 눈 감고 잠(느린 호흡 loop) — 미보유 펫은 폴백 null=기존 north 스틸
+      // 🛋️ 가구 상호작용 6종(2026-07, 레퍼런스: Neko Atsume 상호작용 3계열·상용 팩 표준) — 애정 해금 Lv3=paw·eyetrack / Lv4=wiggle / Lv5=knead·scratch·stretch(CLIP_AFF_REQ).
+      //   knead/paw/eyetrack=south(정면 자리), stretch/scratch/wiggle=east(옆모습 자리 — furnClip·actorShowStill의 east 재생 개방과 짝).
+      knead:   { dir:'south', fps:6, fb:['belly','sit','idle'] },   // 🐾 꾹꾹이 — 쿠션·침대류(앞발 좌우 교대)
+      paw:     { dir:'south', fps:8, fb:['sit','idle'] },           // 🐾 톡톡 — 장난감(앞발 하나 들어 톡)
+      eyetrack:{ dir:'south', fps:4, fb:['sit','idle'] },           // 👀 물끄러미 — 어항·움직이는 것 응시(동공 좌우)
+      stretch: { dir:'east',  fps:7, once:true },                   // 🙆 기지개(플레이보우) — 그루밍아치 도착 1회
+      scratch: { dir:'east',  fps:8 },                              // 🪵 스크래칭 — 스크래처(앞다리 교대 스트로크)
+      wiggle:  { dir:'east',  fps:8 }                               // 🍑 실룩 — 터널(도약 준비 웅크림+엉덩이)
     };
     // 펫이 이 클립 시트를 실제로 갖고 있나 — 정적=clips 메타(파일 존재는 파이프라인이 보장), 런타임=아트(clipUrls)까지 도착해야 true.
     // 💗 모션 애정 해금(프레스티지, 2026-07 레벨 재배치) — 🐾 전 등급 적용(2026-07 사용자 지침, 신화 미만도 동일):
-    //    Lv1=기본 모션(idle·sit·eat·drink — 첫 애정에 생동감이 켜짐) · Lv2=belly·yawn(식빵·하품) · Lv4=angry(하악질).
+    //    Lv1=기본 모션(idle·sit·eat·drink — 첫 애정에 생동감이 켜짐) · Lv2=belly·yawn(식빵·하품) · **Lv3=톡톡·물끄러미** · **Lv4=하악질·실룩** · **Lv5=꾹꾹이·스크래칭·기지개**(만렙 보상 — 2026-07 사용자 배분).
     //    Lv0(애정 없음)은 클립 없이 기존 스틸/걷기만. (등급별 임계는 affTiers라 낮은 등급이 더 빨리 Lv1에 도달 — 신화보다 관대.)
     //    친구 방 등 "내가 소유하지 않은" 펫은 애정 정보가 없어 잠금으로 취급(비소유자가 더 많이 보는 역전 방지).
-    const CLIP_AFF_REQ={ idle:1, sit:1, eat:1, drink:1, belly:2, yawn:2, angry:4 };
+    const CLIP_AFF_REQ={ idle:1, sit:1, eat:1, drink:1, belly:2, yawn:2, paw:3, eyetrack:3, angry:4, wiggle:4, knead:5, scratch:5, stretch:5 };
     function clipAffLocked(id, clip){ const req=CLIP_AFF_REQ[clip]; if(!req) return false;
       const t=CAT_TIER[id]||'normal';   // 💗 전 등급 게이트 — 예전엔 신화/한정만 잠갔으나 사용자 지침으로 전 등급 애정 해금
       // 💗 친구 방(#frStage 열림)에선 친구 스냅샷의 애정 레벨로 판정 — 친구의 Lv4 펫은 하악질까지, Lv0 펫은 내 보유와 무관하게 잠금.

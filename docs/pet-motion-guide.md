@@ -159,6 +159,22 @@
 | 3 | 들숨 — 등 1px 상승(압축 −10) |
 - 엔진: sleep 클립 보유 펫은 유휴 낮잠 포즈에서 east 자세로 이 클립을 재생(`enterPose`), 미보유 펫은 기존 north 스틸(뒤돌아 잠) 폴백. 잠들기 전 yawn 원샷 후 복귀도 clip 인자로 sleep 유지.
 
+### 🛋️ 가구 상호작용 6종 (2026-07 추가 — 신화·한정 16종 완비, `pet_motion_build_all.py` 빌더)
+레퍼런스: Neko Atsume 상호작용 3계열(만지기·응시·몸 맡기기)·상용 팩 표준(paw/crouch/grooming)·고양이 행동학(꾹꾹이=편안, 실룩=도약 준비). 애정 해금 **Lv3=paw·eyetrack / Lv4=wiggle / Lv5=knead·scratch·stretch**. 재생은 `furnClip`의 가구→클립 매핑(`FURN_CLIP_MAP`), **east 클립은 east/west 자리에서 재생**(west=`clipFlipDir`가 액터 flip — 클립 미보유 스틸 폴백이면 flip 금지, west.png가 이미 서쪽).
+
+| 클립 | dir | f | 연출 | 가구 |
+|---|---|---|---|---|
+| knead 꾹꾹이 | south | 4 loop | 앞발 좌/우 교대 1px 들기(`paw_boxes`=눈 x-범위를 바닥 2행에 투영) + 가슴 −1 bob(개=목 밴드, 머리 끄덕 크게) | cushion·beanbag·roundbed·donutbed·canopybed·heatpad·catnippillow·sofa |
+| paw 톡톡 | south | 4 loop | 오른앞발 바깥·위(+1,−1→+2,−2)로 들어 톡 + 목 −1 머리 숙임 | teaser·jingleball·mousetoy·laserpost·balltrack·springtoy·teetertoy·crinklebag·yarnbasket·ballpit·tetherpole |
+| eyetrack 물끄러미 | south | 6 loop | 눈 픽셀 좌(2f)→중→우(2f)→중(`eyes_shift`=박스를 lid색으로 덮고 재드로잉 — 빈자리 원천 차단) + 우측 순간 귀끝 트윗치 | fishtank·peekbox·windmilltoy·bubblemachine |
+| stretch 기지개 | east | 6 once | 플레이보우 `bow()`=머리쪽 열 램프 '아래로'만(겹침만 생김·구멍 불가) + 앞발끝 `smear`(이동 아닌 복제) — 마지막=중립 | groomarch·groomstation |
+| scratch 스크래칭 | east | 4 loop | 앞다리 안/바깥 절반 교대 1px 스트로크 + 어깨 밴드 −1 bob | scratcher |
+| wiggle 실룩 | east | 4 loop | 웅크림 −2/−1 교대 바운스 + 뒷발 절반 교대 1px 힐리프트(x-셔플은 다리 안 세로 빈공간이라 금지) | tunnel |
+
+- **㉠ 빈공간 원칙의 확립 기법**: ① 아래방향 이동/램프=겹침만 생겨 안전 ② 늘리기=`smear_east`(가장자리 복제, 원자리 유지) ③ 눈 이동=`eyes_shift`(덮고 재드로잉) ④ 위로 들기=실루엣 '가장자리'만(바닥 노치=들린 발). **x-이동으로 몸 내부를 비우는 연산 금지.**
+- **소프트 스타일 분기(`sprite_outlined`)**: 진돗개처럼 외곽선 없는 스프라이트에 `outline_repair`를 쓰면 없던 검은 테두리를 그려넣는 아티팩트 → 실루엣 경계의 45%+가 어두울 때만 보수(`rep()` 헬퍼).
+- 표범(cat_leopard)은 v2 앵커를 CFG로 이식해 6종만 이 툴로 제작(기존 7종은 v2 유지).
+
 ---
 
 ## 3. 저해상도 픽셀 기법 (제작 실무) — v2 (2026-07 표범 재제작으로 확립)

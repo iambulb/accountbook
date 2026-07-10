@@ -83,6 +83,10 @@ CFG = {
  'cat_ocelot':     dict(species='cat', cls='L', style='cat', foot=77,
     eyeL=(51,43,53,44), eyeR=(58,43,60,44), mcx=55, small_y=48, wide_y=47,
     neck=(51,57), chest=(52,59), chest_hi=(53,60), tail=None),
+ # 표범(v2 pet_motion_build.py의 실측 앵커 이식 — 기존 7클립은 v2가 빌드, 여기선 상호작용 6종만 사용)
+ 'cat_leopard':    dict(species='cat', cls='L', style='bigcat', foot=77,
+    eyeL=(50,41,52,42), eyeR=(59,41,60,42), mcx=55, small_y=48, wide_y=47,
+    neck=(52,58), chest=(53,60), chest_hi=(54,61), tail=(69,60,78,74), tailmode='v', e_legtop=60),
  # ── 🐾 신화 미만(저해상도 48~68px) 파일럿 — 스프라이트 ASCII 실측 앵커(2026-07-10) ──
  'cat_mackerel':   dict(species='cat', cls='XS', style='cat', foot=32,
     eyeL=(20,16,21,17), eyeR=(26,16,27,17), mcx=23, small_y=20, wide_y=20,
@@ -503,7 +507,195 @@ def m_angry(src, cfg, P):
     hiss = accordion(hiss, cfg['chest'][0], cfg['chest'][1], -1)   # 몸 낮춤(변형 나중)
     return [snap(calm,P), snap(hiss,P), snap(hiss.copy(),P), snap(src.copy(),P)]
 
-CLIP_FRAMES = {'idle':4,'sit':4,'belly':4,'eat':6,'drink':4,'yawn':6,'angry':4}
+CLIP_FRAMES = {'idle':4,'sit':4,'belly':4,'eat':6,'drink':4,'yawn':6,'angry':4,
+               'knead':4,'paw':4,'eyetrack':6,'stretch':6,'scratch':4,'wiggle':4}   # 🛋️ 가구 상호작용 6종(2026-07)
+EAST_CLIPS = {'stretch','scratch','wiggle'}   # east.png(옆모습 스틸) 기반 — 나머지는 south 기반
+
+# ═════════════════════════════════════════════════════════════════════════
+# 🛋️ 가구 상호작용 6종 빌더 (2026-07) — 레퍼런스: Neko Atsume 상호작용 3계열·상용 팩 표준·고양이 행동학
+#   빈공간(㉠) 원칙: 마스크 이동으로 비워진 '내부' 자리는 lid/몸색 재드로잉 또는 아래방향 이동(겹침만 생김)으로 원천 차단.
+#   위로 드는 이동(발 들기)은 실루엣 '가장자리'라 바닥 노치=들린 발로 읽힘(내부 구멍 아님) — verify 임계로 이중 확인.
+# ═════════════════════════════════════════════════════════════════════════
+
+def sprite_outlined(im):
+    """스프라이트가 '어두운 외곽선' 스타일인지(실루엣 경계 픽셀의 45%+가 어두움) — 진돗개처럼 외곽선 없는
+    소프트 스타일에 outline_repair를 쓰면 없던 검은 테두리를 그려넣는 아티팩트가 되므로(㉠ 재발 유형) 스타일별 분기."""
+    px=im.load(); w,h=im.size; edge=0; dark=0
+    for y in range(h):
+        for x in range(w):
+            c=px[x,y]
+            if c[3]<128: continue
+            if any(not(0<=x+dx<w and 0<=y+dy<h) or px[x+dx,y+dy][3]<128 for dx,dy in((1,0),(-1,0),(0,1),(0,-1))):
+                edge+=1
+                if sum(c[:3])<230: dark+=1
+    return edge>0 and dark/edge>=0.45
+
+def rep(f, box, P):
+    """조건부 외곽선 보수 — 외곽선 스타일 스프라이트만(소프트 스타일은 원본 그대로가 정답)."""
+    if getattr(P,'outlined',True): outline_repair(f, box, P)
+    return f
+
+def paw_boxes(src, cfg):
+    """south 앞발 2개 박스 — CFG pawL/pawR 오버라이드 우선, 기본은 눈 x-범위를 바닥 2행에 투영(앞발≈눈 아래).
+    투영 열이 바닥에서 투명하면 실제 발 열로 스냅."""
+    if cfg.get('pawL') and cfg.get('pawR'): return cfg['pawL'], cfg['pawR']
+    bb=src.getbbox(); foot=bb[3]-1; px=src.load()
+    def proj(box):
+        x0b,_,x1b,_=box
+        xs=[x for x in range(max(bb[0],x0b-1), min(bb[2],x1b+2)) if px[x,foot][3]>=128]
+        if not xs: xs=list(range(x0b,x1b+1))
+        return (min(xs), foot-1, max(xs), foot)
+    return proj(cfg['eyeL']), proj(cfg['eyeR'])
+
+def m_knead(src, cfg, P):
+    """🐾 꾹꾹이(south 4f loop): 앞발 좌/우 교대 1px 들기(바닥 노치=들린 발) + 가슴 아코디언 -1 눌림 bob.
+    개(style dog)도 앞발 트레딩은 실제 행동이라 동일 — 단 bob을 목 밴드로(머리 끄덕 크게, 가이드 §1)."""
+    pl,pr = paw_boxes(src, cfg)
+    band = cfg['neck'] if cfg['style']=='dog' else cfg['chest']
+    out=[]
+    for which,dd in (('L',0),(None,-1),('R',0),(None,0)):
+        f=src.copy()
+        b = pl if which=='L' else (pr if which=='R' else None)
+        if b:
+            move_mask(f,(b[0],b[1],b[2]+1,b[3]+1),0,-1)
+            rep(f,(b[0]-1,b[1]-2,b[2]+2,b[3]+2),P)
+        if dd: f=accordion(f, band[0], band[1], dd)
+        out.append(snap(f,P))
+    return out
+
+def m_paw(src, cfg, P):
+    """🐾 톡톡(south 4f loop): 오른앞발을 바깥·위로 들어(실루엣 밖=또렷) 장난감을 톡 — 어깨 연동 + 목 -1 머리 숙임."""
+    pl,pr = paw_boxes(src, cfg)
+    out=[]
+    for dx,dy,nod in ((0,0,0),(1,-1,0),(2,-2,-1),(0,0,0)):
+        f=src.copy()
+        if dx or dy:
+            move_mask(f,(pr[0],pr[1],pr[2]+1,pr[3]+1),dx,dy)
+            rep(f,(pr[0]-2,pr[1]+dy-2,pr[2]+dx+2,pr[3]+2),P)
+        if nod: f=accordion(f, cfg['neck'][0], cfg['neck'][1], nod)
+        out.append(snap(f,P))
+    return out
+
+def eyes_shift(f, src, cfg, P, dx):
+    """👀 눈동자 좌우 이동: 눈 박스를 먼저 lid(눈꺼풀=위 몸색)로 전부 덮고 원본 눈 픽셀을 dx로 옮겨 그림 — 빈자리 원천 차단(㉠)."""
+    d=f.load(); spx=src.load(); w,h=f.size
+    for box in (cfg['eyeL'],cfg['eyeR']):
+        x0,y0,x1,y1=box
+        eyes=[(x,y,spx[x,y]) for y in range(y0,y1+1) for x in range(x0,x1+1) if spx[x,y][3]>=128]
+        for (x,y,_) in eyes:
+            lid=body_above(src,x,y0,P) or P.outline
+            d[x,y]=lid+(255,)
+        for (x,y,c) in eyes:
+            nx=x+dx
+            if 0<=nx<w and d[nx,y][3]>=128: d[nx,y]=c[:3]+(255,)
+    return f
+
+def m_eyetrack(src, cfg, P, tips):
+    """👀 물끄러미(south 6f loop): 시선 좌(2f)→중→우(2f)→중 + 우측 응시 순간 귀끝 트윗치 — 어항·움직이는 것 관찰."""
+    out=[]
+    for dx,ear in ((-1,0),(-1,0),(0,0),(1,1),(1,0),(0,0)):
+        f=src.copy()
+        if dx: eyes_shift(f,src,cfg,P,dx)
+        if ear and tips:
+            for side,box in tips:
+                if side=='R':
+                    move_mask(f,box,0,1); rep(f,(box[0]-1,box[1]-1,box[2]+1,box[3]+2),P)
+        out.append(snap(f,P))
+    return out
+
+# ── east(옆모습) 앵커·연산 ──────────────────────────────────────────────
+
+def east_anchor(east, cfg):
+    """east.png(머리=오른쪽) 자동 앵커: 바닥 런의 맨 오른쪽=앞다리·맨 왼쪽=뒷다리, legtop 기본 0.60h(CFG e_legtop 오버라이드)."""
+    bb=east.getbbox(); x0,y0,x1,y1=bb; h=y1-y0; w=x1-x0; foot=y1-1; px=east.load()
+    xs=[x for x in range(x0,x1) if px[x,foot][3]>=128]
+    runs=[]; s=xs[0]; p=xs[0]
+    for x in xs[1:]:
+        if x-p>1: runs.append((s,p)); s=x
+        p=x
+    runs.append((s,p))
+    legtop=cfg.get('e_legtop') or int(y0+h*0.60)
+    fr=runs[-1]; hr=runs[0]
+    band=(y0+int(h*0.35), y0+int(h*0.55))   # 어깨/몸통 아코디언 밴드(다리 위)
+    return dict(x0=x0,y0=y0,x1=x1,y1=y1,foot=foot,legtop=legtop,band=band,
+                fleg=(fr[0],legtop,fr[1],foot), hleg=(hr[0],legtop,hr[1],foot),
+                mid=x0+int(w*0.45))
+
+def bow(im, A, depth):
+    """🙆 플레이보우 시어: 머리쪽(오른쪽) 열들을 램프(mid→x1: 0→depth)로 '아래로'만 이동 — 다리 위 행만.
+    아래 이동은 겹침만 생기고(몸이 다리 위로 내려앉음) 빈자리는 실루엣 꼭대기(외부)뿐 → 내부 구멍 원천 차단."""
+    d=im.load(); w,h=im.size
+    for x in range(A['mid'], A['x1']):
+        t=(x-A['mid'])/max(1,(A['x1']-1-A['mid']))
+        s=int(round(depth*t))
+        if s<=0: continue
+        col=[d[x,y] for y in range(h)]
+        for y in range(A['legtop']-1, A['y0']-1, -1):
+            c=col[y]
+            ny=y+s
+            if ny<h and c[3]>=128: d[x,ny]=c
+        for y in range(A['y0'], min(A['y0']+s, h)):
+            d[x,y]=(0,0,0,0)
+    return im
+
+def smear_east(im, box, dx, rows_from_bottom=4):
+    """앞발 뻗기 등 '늘리기'를 이동 대신 가장자리 복제로 — 원자리를 비우지 않아 내부 빈공간이 구조적으로 불가(㉠).
+    box의 dx>0이면 오른쪽 가장자리 열을 +1..dx로 복제(아래 rows_from_bottom행만 = 발끝이 앞으로 미끄러지는 읽힘)."""
+    d=im.load(); w,h=im.size
+    x_edge = box[2] if dx>0 else box[0]
+    y0 = max(box[1], box[3]-rows_from_bottom+1)
+    for k in range(1, abs(dx)+1):
+        nx = x_edge + (k if dx>0 else -k)
+        if not (0<=nx<w): continue
+        for y in range(y0, box[3]+1):
+            c=d[x_edge,y]
+            if c[3]>=128 and d[nx,y][3]<128: d[nx,y]=c
+    return im
+
+def m_stretch(east, cfg, P, A):
+    """🙆 기지개(east 6f once): 소→깊은 플레이보우(머리·가슴↓, 뒷몸 상대적↑)+앞발끝 앞으로 뻗기 → 복귀(마지막=중립).
+    발 접지 유지: bow는 다리 위 행만 아래로(겹침만), 앞발 뻗기는 smear(복제)라 빈자리 자체가 없음."""
+    out=[]
+    for dpt,paw in ((0,0),(1,0),(2,1),(3,2),(1,0),(0,0)):
+        f=east.copy()
+        if paw:
+            fb=A['fleg']
+            smear_east(f, fb, paw, rows_from_bottom=4)
+            rep(f,(fb[0]-1,fb[1]-1,fb[2]+paw+2,fb[3]+2),P)
+        if dpt:
+            bow(f,A,dpt)
+            rep(f,(A['mid']-1,A['y0'],A['x1']+1,min(A['legtop']+dpt+1,A['y1'])),P)
+        out.append(snap(f,P))
+    return out
+
+def m_scratch(east, cfg, P, A):
+    """🪵 스크래칭(east 4f loop): 앞다리 안/바깥 절반 교대 1px 스트로크(들림) + 어깨 밴드 -1 bob — 몸은 수평 유지(일어서기 없음)."""
+    fb=A['fleg']; fmid=(fb[0]+fb[2])//2
+    out=[]
+    for ph in (0,1,0,2):
+        f=east.copy()
+        if ph:
+            box=(fb[0],fb[1],fmid+1,fb[3]+1) if ph==1 else (fmid+1,fb[1],fb[2]+1,fb[3]+1)
+            move_mask(f,box,0,-1)
+            rep(f,(box[0]-1,box[1]-2,box[2]+1,box[3]+2),P)
+            f=accordion(f, A['band'][0], A['band'][1], -1)
+        out.append(snap(f,P))
+    return out
+
+def m_wiggle(east, cfg, P, A):
+    """🍑 실룩(east 4f loop): 웅크림 아코디언(-2/-1 교대=바운스) + 뒷발 안/바깥 절반 교대 1px 들기(체중 옮기기 힐리프트).
+    x-이동 셔플은 다리 안쪽에 세로 빈공간을 남겨 금지(㉠) — 위로 들기는 바닥 접점만 비워 '들린 발'로 읽힘."""
+    hb=A['hleg']; hmid=(hb[0]+hb[2])//2
+    out=[]
+    for dd,ph in ((-2,1),(-1,0),(-2,2),(-1,0)):
+        f=east.copy()
+        if ph:
+            box=(hb[0],hb[1],hmid+1,hb[3]+1) if ph==1 else (hmid+1,hb[1],hb[2]+1,hb[3]+1)
+            move_mask(f,box,0,-1)
+            rep(f,(box[0]-1,box[1]-2,box[2]+1,box[3]+2),P)
+        f=accordion(f, A['band'][0], A['band'][1], dd)
+        out.append(snap(f,P))
+    return out
 
 # ═════════════════════════════════════════════════════════════════════════
 # 검증·시트·CLI
@@ -520,14 +712,21 @@ def interior_holes(im):
             if nb >= 3: n += 1
     return n
 
-def verify(pid, cfg, made, src):
+def verify(pid, cfg, made, src, east=None):
+    """클립별 베이스(south/east) 기준으로 발 baseline·내부 구멍 검사 — east 클립은 east.png의 bbox 바닥이 기준."""
     ok = True
-    base_holes = interior_holes(src)
+    holes_s = interior_holes(src)
+    holes_e = interior_holes(east) if east else 0
+    foot_s = cfg['foot']
+    foot_e = (east.getbbox()[3]-1) if east else None
     for clip, frames in made.items():
+        is_e = clip in EAST_CLIPS
+        base_holes = holes_e if is_e else holes_s
+        foot = foot_e if is_e else foot_s
         for i,f in enumerate(frames):
             bb = f.getbbox()
-            if bb and bb[3]-1 != cfg['foot']:
-                print(f'  ⚠ {pid}.{clip}[{i}] baseline {bb[3]-1} != foot {cfg["foot"]}'); ok = False
+            if bb and foot is not None and bb[3]-1 != foot:
+                print(f'  ⚠ {pid}.{clip}[{i}] baseline {bb[3]-1} != foot {foot}'); ok = False
             holes = interior_holes(f)
             if holes > base_holes + 8:
                 print(f'  ⚠ {pid}.{clip}[{i}] 내부 투명 급증 {base_holes}→{holes}(구멍?)'); ok = False
@@ -539,10 +738,10 @@ def strip(frames):
     for i,f in enumerate(frames): cv.alpha_composite(f, (i*fw,0))
     return cv
 
-def contact_sheet(pid, made, src, path, bg, Z=3):
+def contact_sheet(pid, made, src, path, bg, Z=3, east=None):
     fw = src.size[0]
     pad = 6
-    rows = [('south',[src])] + [(k, made[k]) for k in CLIP_FRAMES if k in made]
+    rows = [('south',[src])] + ([('east',[east])] if east else []) + [(k, made[k]) for k in CLIP_FRAMES if k in made]
     maxn = max(len(r[1]) for r in rows)
     W = 70+(fw*Z+pad)*maxn; H = pad+(fw*Z+pad)*len(rows)
     cv = Image.new('RGBA',(W,H),bg); dr = ImageDraw.Draw(cv)
@@ -558,10 +757,19 @@ def build(pid, write=False, only=None, outdir=None, sheets=True):
     d = pet_dir(pid, cfg['species'])
     src = Image.open(os.path.join(d,'south.png')).convert('RGBA')
     P = Pal(src)
+    P.outlined = sprite_outlined(src)   # 소프트 스타일(외곽선 없음, 예: 진돗개)이면 rep()가 outline_repair 생략
     tips = ear_tips(src) if not cfg.get('tail') else []
+    todo = [c for c in CLIP_FRAMES if (not only or c in only)]
+    east = None; Pe = None; A = None
+    if any(c in EAST_CLIPS for c in todo):
+        ep = os.path.join(d,'east.png')
+        if os.path.exists(ep):
+            east = Image.open(ep).convert('RGBA'); Pe = Pal(east); Pe.outlined = sprite_outlined(east); A = east_anchor(east, cfg)
+        else:
+            todo = [c for c in todo if c not in EAST_CLIPS]
+            print(f'  ⚠ {pid} east.png 없음 — east 클립({", ".join(sorted(EAST_CLIPS))}) 생략')
     made = {}
-    for clip in CLIP_FRAMES:
-        if only and clip not in only: continue
+    for clip in todo:
         if clip=='idle': fr = m_idle(src, cfg, P, tips)
         elif clip=='sit': fr = m_sit(src, cfg, P)
         elif clip=='belly': fr = m_belly(src, cfg, P)
@@ -569,12 +777,18 @@ def build(pid, write=False, only=None, outdir=None, sheets=True):
         elif clip=='drink': fr = m_drink(src, cfg, P)
         elif clip=='yawn': fr = m_yawn(src, cfg, P)
         elif clip=='angry': fr = m_angry(src, cfg, P)
+        elif clip=='knead': fr = m_knead(src, cfg, P)
+        elif clip=='paw': fr = m_paw(src, cfg, P)
+        elif clip=='eyetrack': fr = m_eyetrack(src, cfg, P, ear_tips(src))
+        elif clip=='stretch': fr = m_stretch(east, cfg, Pe, A)
+        elif clip=='scratch': fr = m_scratch(east, cfg, Pe, A)
+        elif clip=='wiggle': fr = m_wiggle(east, cfg, Pe, A)
         assert len(fr)==CLIP_FRAMES[clip], (pid, clip, len(fr))
         made[clip] = fr
-    ok = verify(pid, cfg, made, src)
+    ok = verify(pid, cfg, made, src, east)
     if sheets and outdir:
-        contact_sheet(pid, made, src, os.path.join(outdir, f'ms_{pid}_light.png'), (238,238,242,255))
-        contact_sheet(pid, made, src, os.path.join(outdir, f'ms_{pid}_dark.png'), (26,28,34,255))
+        contact_sheet(pid, made, src, os.path.join(outdir, f'ms_{pid}_light.png'), (238,238,242,255), east=east)
+        contact_sheet(pid, made, src, os.path.join(outdir, f'ms_{pid}_dark.png'), (26,28,34,255), east=east)
     if write:
         for clip,fr in made.items():
             strip(fr).save(os.path.join(d, clip+'.png'))

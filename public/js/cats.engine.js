@@ -968,8 +968,8 @@
       s.classList.remove('idle'); }   // .idle 제거 → CSS 걷기 필름(csprFilm) 재생
     function actorShowStill(a, face, clip){ if(!a.spr) return; const s=a.el.querySelector('.cspr'); if(!s) return;
       setHatDx(a, face==='east'?HAT_SIDE_DX:(face==='west'?-HAT_SIDE_DX:0));   // 정면/뒤=중앙, 옆모습 스틸=머리쪽(east.png 오른쪽 +, west.png 왼쪽 -, 둘 다 액터 미flip)
-      // 🎞️ 클립 승급 — 지정 클립(가구 eat/drink/sit/belly 등) 또는 정면 휴식이면 idle 클립.
-      // 클립 시트는 south 전용 정책이라 정면이 아닌 경우(잠=north·인사/스크래처=east/west)는 기존 방향 스틸 유지.
+      // 🎞️ 클립 승급 — 지정 클립(가구 eat/drink/sit/belly·east 상호작용 scratch/stretch/wiggle 등) 또는 정면 휴식이면 idle 클립.
+      // 명시 clip이 없으면 south만 idle 승급(north/east/west 휴식은 방향 스틸). east 클립의 west 자리 flip은 호출부(enterInteract·복원)가 clipFlipDir로 처리.
       // 모션축소·가벼운 모드(body.lite)는 항상 스틸 — 쉬는 펫이 늘 필름을 돌리면 lite의 절전 취지가 깨짐(걷기 필름은 기능 모션이라 유지).
       if(!reducedMotion() && !liteMode()){ const want = clip || (face==='south' ? 'idle' : null);
         const r = want ? resolveClip(a.id, want) : null;
@@ -1117,7 +1117,8 @@
           if(left>400){ a.mode='pause'; a.pose=pp.pose; a.pause=left; a.cool=1400; a.lift=pp.lift||0; a.resKey=pp.resKey||null; a.resFloor=(pp.resFloor!=null?pp.resFloor:null);
             applyDepth(a);
             if(a.spr){ if(pp.run){ const rd=pp.face==='west'?-1:1; showWheelRun(a); setXform(a, rd); a._pdir=rd; }   // 캣휠 달리기 상태 복원
-              else { actorShowStill(a, pp.face||'south', pp.clip); setXform(a, 1); a._pdir=1; } }   // 클립(먹기·앉기 등)도 복원 — 없으면 기존 스틸
+              else { const rd=clipFlipDir(id, pp.face||'south', pp.clip);   // 🧭 east 클립 west 자리 flip도 복원(스틸 폴백이면 1 — west.png 미flip)
+                actorShowStill(a, pp.face||'south', pp.clip); setXform(a, rd); a._pdir=rd; } }   // 클립(먹기·앉기·스크래칭 등)도 복원 — 없으면 기존 스틸
             else { a.el.innerHTML=catPose(id, pp.pose, {h:a.hh}); setXform(a, a.dir); a._pdir=a.dir; } }
           else delete _petPose[pkey]; }
         return a; });
@@ -1248,8 +1249,8 @@
       a.x=Math.max(2, Math.min(a.W-a.sw, goal.x - a.sw/2 + (s.dx||0)));
       if(goal.depth!=null) a.depth=goal.depth; applyDepth(a);   // 가구와 같은 깊이에 서서 크기·앞뒤 가림이 맞물리게
       const runW = !!(s.run && a.spr);   // 🏃 캣휠 달리기(스프라이트만) — run 클립 또는 걷기 필름 제자리 재생
-      const clip = runW ? null : furnClip(goal, s);   // 🎞️ 가구별 클립(먹기·마시기·앉기·배깔기) — 미보유 펫은 폴백으로 기존 스틸
-      const dir = runW ? (s.face==='west'?-1:1) : (a.spr?1:a.dir);
+      const clip = runW ? null : furnClip(goal, s);   // 🎞️ 가구별 클립(먹기·마시기·꾹꾹이·톡톡·스크래칭 등) — 미보유 펫은 폴백으로 기존 스틸
+      const dir = runW ? (s.face==='west'?-1:1) : (a.spr?clipFlipDir(id, s.face, clip):a.dir);
       if(runW) showWheelRun(a);            // 달리기(actorShowMoving/_csprClip 경유) — face는 아래 setXform flip
       else if(a.spr) actorShowStill(a, s.face, clip);
       else a.el.innerHTML=catPose(id, s.pose, {h:a.hh});
