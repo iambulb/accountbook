@@ -31,7 +31,7 @@ def detect_eyes(src):
     eyrow=int(y0+0.30*h)
     hc=[_head_cx(px,x0,x1,y) for y in range(int(y0+0.22*h), int(y0+0.40*h))]
     hc=[c for c in hc if c]
-    if not hc: return None,None
+    if not hc: return None,None,None,None
     cx=sorted(c[0] for c in hc)[len(hc)//2]
     hw=sorted((c[2]-c[1]) for c in hc)[len(hc)//2]
     off=max(2,int(round(hw*0.26)))
@@ -44,18 +44,30 @@ def detect_eyes(src):
                 if best is None or sc>best[0]: best=(sc,ex,ey)
         return (best[1],best[2]) if best else (xg,eyrow)
     xl,yl=snap(int(round(cx-off))); xr,yr=snap(int(round(cx+off)))
-    return (xl,yl-1,xl,yl),(xr,yr-1,xr,yr)
+    return (xl,yl-1,xl,yl),(xr,yr-1,xr,yr), cx, hw   # +머리중심축 cx·머리폭 hw(입 앵커·크기 산출용)
 
 def auto_cfg(pid, species, src):
     bb = src.getbbox(); x0,y0,x1,y1 = bb
-    h = y1 - y0
-    cx = round((x0 + x1 - 1) / 2)
+    h = y1 - y0; w = x1 - x0
+    bcx = round((x0 + x1 - 1) / 2)           # bbox 가로중앙 — 꼬리·비대칭에 밀려 얼굴 중앙과 어긋남(폴백용만)
     R = lambda f: int(round(y0 + f*h))
-    eL,eR = detect_eyes(src)
-    if not eL: eL,eR = (cx-3,R(0.27),cx-2,R(0.30)),(cx+2,R(0.27),cx+3,R(0.30))
-    return dict(species=species, cls='XS',
+    eL,eR,hcx,hw = detect_eyes(src)
+    if not eL:                                # 눈 검출 실패 — 머리 중심축(hcx)이라도 있으면 그걸(bbox 중앙 아님)
+        fcx = int(round(hcx)) if hcx is not None else bcx
+        eL,eR = (fcx-3,R(0.27),fcx-2,R(0.30)),(fcx+2,R(0.27),fcx+3,R(0.30))
+    # 🎯 입 X = 눈 박스 실측 중점(얼굴 중앙, 몸통/프레임 중앙 아님). //2=floor → 짝수폭 스탬프(mcx-w//2+1)의 +1 우측 바이어스 상쇄(㉧)
+    mcx = (eL[0] + eR[2]) // 2
+    # 🎯 입 Y = 눈 아래(코 자리)~턱선 위 실루엣 기반(고정 비율 금지). 눈 박스 아래 + 머리높이 비례 오프셋, 목 상단 위로 클램프
+    eye_b = max(eL[3], eR[3])
+    small_y = min(R(0.45) - 1, eye_b + max(2, int(round(h*0.07))))
+    small_y = max(small_y, eye_b + 1)
+    wide_y = small_y - 1                       # 개구 시 살짝 위(코 유지)
+    # 🎯 입 크기 = XS 고정. 이 131펫은 저해상도(48~68px)라 머즐 폭 ~6px → XS(4px)가 정확히 ≤2/3(MOUTHS['XS'] 설계 근거).
+    #    ⚠️ hw(머리폭·15px)는 머즐 폭이 아니므로 크기 기준으로 쓰면 안 됨(S/M=6~8px 입이 6px 머즐을 초과=과대). 얼굴 특히 큰 개별 펫만 손보정 override.
+    cls = 'XS'
+    return dict(species=species, cls=cls,
         style=('dog' if species=='dog' else 'cat'),
-        foot=y1-1, mcx=cx, small_y=R(0.42), wide_y=R(0.42),
+        foot=y1-1, mcx=mcx, small_y=small_y, wide_y=wide_y,
         eyeL=eL, eyeR=eR,
         neck=(R(0.45),R(0.64)), chest=(R(0.59),R(0.82)), chest_hi=(R(0.55),R(0.77)),
         tail=None)
