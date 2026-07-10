@@ -955,11 +955,9 @@
     function wallAreaFree(r,c,w,wp,ignoreKey){ return wallAreaFreePure(r,c,w,wp,ignoreKey, _wallFootW, WALL_COLS, WALL_ROWS); }
     function wallCellFromPoint(grid, x, y){ const rc=grid.getBoundingClientRect(), cw=rc.width/WALL_COLS, ch=rc.height/WALL_ROWS;
       const c=Math.floor((x-rc.left)/cw)+1, r=Math.floor((y-rc.top)/ch)+1; return { r:Math.min(WALL_ROWS,Math.max(1,r)), c:Math.min(WALL_COLS,Math.max(1,c)) }; }
-    // 벽 가구 캠 렌더 — 가로 앵커는 바닥과 동일(camAnchorMode), 세로는 앵커 종류에 따라(floor/mount/hang), z=0(맨 뒤 벽 평면).
+    // 벽 가구 캠 렌더 — 가로 앵커는 바닥과 동일(가로 앵커 v2: camLeftCss 중앙+벽 클램프), 세로는 앵커 종류에 따라(floor/mount/hang), z=0(맨 뒤 벽 평면).
     function wallPropMarkup(p, isDock, live){
-      const foot=wallFoot(p.itemId), mode=camAnchorMode(p.c, foot.w), anchor=wallAnchorOf(p.itemId);
-      const leftPct = mode==='left'?0 : mode==='right'?100 : (gridLeftFrac(p.c)+gridSpanFrac(foot.w)/2)*100;
-      const txPct = mode==='left'?0 : mode==='right'?-100 : -50, x=leftPct.toFixed(2);
+      const foot=wallFoot(p.itemId), anchor=wallAnchorOf(p.itemId);
       let vpos, fh;
       if(anchor==='floor'){        // 바닥형: 맨 뒤 바닥 가구와 동일한 '바닥선'(3+1*46=49% bottom)에 서므로 크기도 depth1(뒤) 원근으로 — 같은 바닥선의 바닥 가구와 크기 일치(벽난로가 홀로 크게 보이던 문제 해결).
         fh=furnRoomH(p.itemId, isDock, 1); vpos='bottom:'+camFurnBottom(1).toFixed(1)+'%';
@@ -968,8 +966,9 @@
       } else {                     // 거는형(mount): 벽 밴드 안 bottom%(행=높이)
         fh=furnWallH(p.itemId, isDock); vpos='bottom:'+(WALL_MOUNT_BASE + (WALL_ROWS - p.r)*WALL_MOUNT_STEP).toFixed(1)+'%';
       }
+      const x=camLeftCss(p.c, foot.w, fh*furnAspect(p.itemId)/2), txPct=-50;   // 가로 앵커 v2 — 바닥 propMarkup과 동일 수식(12열 간격 균등)
       const inner = live&&FURN_ANIM[p.itemId] ? furnLiveSvg(p.itemId,{h:fh}) : furnSvg(p.itemId,{h:fh});
-      return '<div class="cr-prop cr-wallprop cr-wall-'+anchor+'" style="left:'+x+'%;'+vpos+';z-index:0;--crtx:'+txPct+'%;transform:translateX(var(--crtx));">'+inner+'</div>';
+      return '<div class="cr-prop cr-wallprop cr-wall-'+anchor+'" style="left:'+x+';'+vpos+';z-index:0;--crtx:'+txPct+'%;transform:translateX(var(--crtx));">'+inner+'</div>';
     }
     let _selWall=null;
     function selWallItem(id){ if(itemRemaining(id)<=0){ toast(catFurnName(id)+' 전부 배치됨 — 회수하거나 더 얻어야 걸 수 있어요', true); return; } _selWall=(_selWall===id?null:id); if(state._sheetRefresh) state._sheetRefresh(); else renderCatHouse(); }

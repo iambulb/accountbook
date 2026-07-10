@@ -39,17 +39,12 @@
     // 배치물 하나의 마크업(그릇=탭 급여·채움 반영, 화장실=똥 수거). isDock이면 dock 크기.
     function propMarkup(p, isDock, plain, live){
       const foot=itemFoot(p.itemId); const flip=!!p.flip;   // 좌우 반전(placed[key].flip)
-      // 가로 앵커=발자국 "가운데 정렬 + 양끝 벽 스냅"(camAnchorMode). CSS left% + translateX(--crtx)로 픽셀 폭을 몰라도 자동 정렬.
-      //  left  : left 0%   / --crtx 0     → 그래픽 좌변이 왼쪽 벽에 밀착
-      //  right : left 100% / --crtx -100% → 그래픽 우변이 오른쪽 벽에 밀착
-      //  center: 발자국 중앙% / --crtx -50% → 칸 안에서 가운데(중간 가구가 좌우로 고르게 참)
-      const mode=camAnchorMode(p.c, foot.w);
-      const leftPct = mode==='left'?0 : mode==='right'?100 : (gridLeftFrac(p.c)+gridSpanFrac(foot.w)/2)*100;
-      const txPct   = mode==='left'?0 : mode==='right'?-100 : -50;
-      const x=leftPct.toFixed(2);
       const frontRow=p.r + foot.h - 1;   // 발자국에서 가장 앞(가까운) 줄에 바닥을 둠 → 가구가 위로 뜨지 않음
       // 반전: 격자 윗줄(작은 r)=방 뒤(멀리, 위·작게), 아랫줄(큰 r)=방 앞(가까이, 아래·크게)
       const depth=camDepth(frontRow); const bottom=camFurnBottom(depth).toFixed(1); const fh=furnRoomH(p.itemId,isDock,depth);   // dock·홈 동일 깊이 매핑(CAM 단일 소스, util.js) → 뒤 가구가 펫과 같은 바닥선에 정렬
+      // 가로 앵커 v2=전 칸 "발자국 중앙" + 벽 클램프(camLeftCss·--crtx:-50%) — 구 양끝 벽 스냅은 12열이 홀로 벌어져 보여 폐기(2026-07-10)
+      const x=camLeftCss(p.c, foot.w, fh*furnAspect(p.itemId)/2);
+      const txPct=-50;
       // 원근 가림: 앞(frontRow 큰 값)일수록 z-index를 높여 앞 가구가 뒤 가구를 덮게 한다.
       // (밥·물그릇/화장실의 고정 z-index:2가 이 깊이 순서를 깨뜨리던 문제 → 인라인 z-index로 덮어씀)
       const z=isFloorItem(p.itemId) ? 0 : Math.max(1, Math.round(frontRow));   // 바닥 아이템(러그)=맨 뒤(z:0) → 그 위 가구가 앞에 그려짐
@@ -58,7 +53,7 @@
       let inner=tap? furnRoomSvg(p.itemId,p.key,{h:fh}) : (live&&FURN_ANIM[p.itemId] ? furnLiveSvg(p.itemId,{h:fh}) : furnSvg(p.itemId,{h:fh}));
       if(!plain && p.itemId==='litterbox'){ const slots=p._poops||[]; const ph=Math.max(6,Math.round(fh*0.32));
         inner+=slots.map(s=>'<span class="poop" role="button" tabindex="0" onclick="collectPoop(event)" style="left:'+(20+(s%3)*26)+'%;top:'+(30+((s/3|0)*20))+'%;height:'+ph+'px" title="치우기 +'+POOP_REWARD+' 은화">'+poopSvg({h:ph})+'</span>').join(''); }
-      return '<div class="cr-prop'+(tap?' cr-tap':'')+(p.itemId==='litterbox'?' cr-litter':'')+'" style="left:'+x+'%;bottom:'+bottom+'%;z-index:'+z+';--crtx:'+txPct+'%;transform:translateX(var(--crtx))'+(flip?' scaleX(-1)':'')+';"'+(tap?' role="button" tabindex="0" onclick="event.stopPropagation();feedBowl(\''+p.key+'\')"':'')+'>'+inner+'</div>';
+      return '<div class="cr-prop'+(tap?' cr-tap':'')+(p.itemId==='litterbox'?' cr-litter':'')+'" style="left:'+x+';bottom:'+bottom+'%;z-index:'+z+';--crtx:'+txPct+'%;transform:translateX(var(--crtx))'+(flip?' scaleX(-1)':'')+';"'+(tap?' role="button" tabindex="0" onclick="event.stopPropagation();feedBowl(\''+p.key+'\')"':'')+'>'+inner+'</div>';
     }
     // 배치 가구 마크업을 "바닥 아이템(러그·연못) 먼저 → 그 외"로 나눠 반환. 바닥 아이템은 z:0이라 그 외(z≥1)엔 이미 밀리지만,
     // 벽 가구도 z:0(같은 값)이라 DOM 순서가 앞서면 바닥 아이템 위로 그려진다 → 바닥 아이템을 항상 맨 앞(=맨 아래 레이어)에 두어
@@ -76,20 +71,18 @@
       return eggSvg(0,{h:fh});   // egg(펫알)
     }
     function isRbDropKind(kind){ return kind==='rbcoin'||kind==='rainbow_egg'||kind==='rainbow_box'; }
-    // 🎁 방 바닥 대기 드랍 마크업 — 좌표·깊이·가림은 propMarkup과 동일 수식(camAnchorMode·camDepth·camFurnBottom·z=행) → 캠 3무대 원근 자동 정합. 인라인 z 고정 아님(행 척도).
+    // 🎁 방 바닥 대기 드랍 마크업 — 좌표·깊이·가림은 propMarkup과 동일 수식(camLeftCss·camDepth·camFurnBottom·z=행) → 캠 3무대 원근 자동 정합. 인라인 z 고정 아님(행 척도).
     //   data-rid/data-drop은 Document PiP 위임 클릭용(_pipStatic이 onclick은 벗기지만 data 속성은 남김). 무지개 드랍은 .cr-drop-rb로 무지개 글린트.
     function dropMarkup(d, rid){
-      const mode=camAnchorMode(d.c, 1);
-      const leftPct=mode==='left'?0 : mode==='right'?100 : (gridLeftFrac(d.c)+gridSpanFrac(1)/2)*100;
-      const txPct=mode==='left'?0 : mode==='right'?-100 : -50;
       const depth=camDepth(d.r), bottom=camFurnBottom(depth).toFixed(1);
       const fh=Math.max(10, Math.round((16-depth*3)*1.15));   // 그릇급 소품 크기(원근 축소 완만)
+      const left=camLeftCss(d.c, 1, fh/2), txPct=-50;   // 가로 앵커 v2(중앙+벽 클램프) — propMarkup과 동일 수식
       const z=Math.max(1, Math.round(d.r));
       const art=dropArt(d.kind, fh);
       const tw=(typeof sparkSvg==='function')?('<span class="drop-tw">'+sparkSvg({h:Math.max(8,Math.round(fh*0.55))})+'</span>'):'';
       return '<div class="cr-drop cr-drop-'+d.kind+(isRbDropKind(d.kind)?' cr-drop-rb':'')+'" role="button" tabindex="0" data-rid="'+rid+'" data-drop="'+d.id+'"'+
         ' onclick="collectDrop(event,\''+rid+'\',\''+d.id+'\')" aria-label="떨어진 아이템 줍기"'+
-        ' style="left:'+leftPct.toFixed(2)+'%;bottom:'+bottom+'%;z-index:'+z+';--crtx:'+txPct+'%;">'+
+        ' style="left:'+left+';bottom:'+bottom+'%;z-index:'+z+';--crtx:'+txPct+'%;">'+
         '<span class="drop-ic">'+art+'</span>'+tw+'</div>';
     }
     function dropsHtml(R, rid){ return ((R&&R.drops)||[]).map(d=>dropMarkup(d, rid)).join(''); }
@@ -392,9 +385,7 @@
     // 반환 {paint, fx}: 연출 가구(FURN_ANIM)는 base(정지 픽셀만)를 paint에, 움직이는 레이어(fx)를 별도 목록에(furnLiveSvg의 palPick 분리와 동일).
     function _vpipPaintList(frozen){
       const W=_VPIP_W, H=_VPIP_H;
-      function anchorX(c, footW, gw){ const md=camAnchorMode(c, footW);
-        const ax = md==='left'?0 : md==='right'?W : (gridLeftFrac(c)+gridSpanFrac(footW)/2)*W;
-        return ax + gw*(md==='left'?0 : md==='right'?-1 : -0.5); }
+      function anchorX(c, footW, gw){ return camCenterX(c, footW, gw/2, W) - gw/2; }   // 가로 앵커 v2(중앙+벽 클램프) — propMarkup camLeftCss와 동일 수식(좌변 x 반환)
       const list=placedList().sort((a,b)=>a.r-b.r); distributePoops(list);
       const flo=[], oth=[], wall=[], fx=[], spots=[];
       // 연출 가구면 base(정지)만 정지 비트맵에 남기고 움직이는 레이어를 fx로 분리 — furnLiveSvg의 palPick 분리와 동일 규칙. frozen(모션축소·lite)이면 통짜 정적.
@@ -1094,10 +1085,9 @@
       const plist = (isFriend && state._friendCam) ? state._friendCam.placedList : placedList();   // 친구 방이면 친구 가구로 상호작용
       const props = (hasRoom && !noProps) ? plist.map(p=>{ const foot=itemFoot(p.itemId), depth=camDepth(p.r+foot.h-1);   // propMarkup과 동일(앞줄 기준, CAM 단일 소스)
         const fh=furnRoomH(p.itemId, isDock, depth);   // 렌더 높이와 동일 → 캣타워 층 lift가 실제 높이에 맞음
-        // 그래픽 중앙 x — propMarkup의 camAnchorMode(가운데/양끝 스냅)와 동일하게 계산해 펫이 가구 중앙에 정렬(캣타워 중앙 앉기).
-        // 그래픽 폭 w=fh*aspect. left=w/2, right=W-w/2, center=발자국 중앙*W.
-        const mode=camAnchorMode(p.c, foot.w), w=fh*furnAspect(p.itemId);
-        const cx = mode==='left'? w/2 : mode==='right'? W-w/2 : (gridLeftFrac(p.c)+gridSpanFrac(foot.w)/2)*W;
+        // 그래픽 중앙 x — propMarkup의 camLeftCss(가로 앵커 v2: 중앙+벽 클램프)와 동일하게 계산해 펫이 가구 중앙에 정렬(캣타워 중앙 앉기).
+        const w=fh*furnAspect(p.itemId);
+        const cx = camCenterX(p.c, foot.w, w/2, W);
         return { x: cx, itemId:p.itemId, fh, key:p.key, depth, fill:(p.filledAt||null) }; }) : [];   // fill=그릇 채운 시각(밥/물그릇) — 도착 시 먹기/마시기 클립 판정(furnClip)
       // 고양이마다 성격(속도·유휴빈도·방향전환·가구선호)을 랜덤 부여 → 개별적으로 움직임
       // 스프라이트 고양이는 정사각(폭=높이), SVG 고양이는 가로세로비 ~26/14.

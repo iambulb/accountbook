@@ -2233,19 +2233,27 @@
     const ROOM_H = { pond:2.2, tower:2.5, scratcher:1.4, pethouse:2.8, catwheel:3.6, plant:1.5, treadmill:2.6, laserbot:1.1, rcmouse:1.0, slalom:2.0, sprinttrack:1.2, cucumber:0.95, milkbar:1.7, dispenser:2.6, birdfeeder:2.9, hamstercage:1.7, litterbox:0.75, cushion:1, bowl:0.5, waterbowl:0.5, rug:2.6, window:1.4, fishtank:1.4, fireplace:1.4, fan:2.7, hammock:1.8, teaser:2.4, wallclock:1.4, hangplant:1.4, mobile:1.4, chandelier:2.2, jingleball:0.7, frame:1.4, shelf:1.4, mirror:1.4, neon:1.4, sconce:1.4, garland:1.4, poster:1.4, tapestry:1.4, cactus:1.5, yarnbasket:1.0, floorlamp:2.6, beanbag:1.15, groomstation:1.5, springtoy:1.3, tunnel:1.2, teepee:2.4, bookshelf:2.6, birdcage:2.2, lavalamp:2.0, laserpost:1.6, waterfountain:1.2, sofa:1.4, recordplayer:1.2, terrarium:1.6, ballpit:1.6, grandfaclock:2.8, bunkbed:2.8, crystalfountain:2.4, dartboard:1.4, cuckooclock:1.4, roundbed:1.0, donutbed:1.0, cavebed:2.2, canopybed:2.8, throne:2.4, mousetoy:0.7, catnippillow:0.9, puzzlefeeder:1.0, balltrack:1.2, teetertoy:1.2, bubblemachine:1.6, bonsai:1.6, globe:1.4, snowglobe:1.5, campfire:1.4, gramophone:1.6, arcademachine:2.8, jukebox:2.0, crystalcluster:1.8, easel:2.2, floorvase:2.0, suitofarmor:2.6, hourglass:1.6, telescope:2.2, gumballmachine:1.8, wallvines:1.4, pennant:1.4, wallmask:1.4, barometer:1.4, stringlights:1.4, wallbutterfly:1.4, cornershelf:1.4, wallsun:1.4, treatjar:1.5, catgrass:1.9, groomarch:1.9, heatpad:1.2, peekbox:1.6, tetherpole:2.2, windmilltoy:2.0, crinklebag:1.6, roundrug:1.4, runner:1.2, koipond:1.4, displaycase:2.5, woodstove:2.1, mushroomlamp:1.9, statuecat:2.1, teacart:2.0, crystaltree:2.2 };   // 1×1 벽 가구=1.4: 벽 1칸에 맞춰 겹침 방지. 샹들리에=2.2(매다는 대형 센터피스, footW2). 가랜드=footW3.
     // ---- 배치 격자(12칸) 가로 좌표 공유 헬퍼 ----
     // 에디터(평면 그리드)·드롭프리뷰·썸네일은 gridLeftFrac/gridSpanFrac(칸 좌측 edge·폭)을 그대로 쓴다.
-    // 캠(원근)은 camAnchorMode로 발자국을 "가운데 정렬 + 양끝 벽 스냅" 배치해 좌우 벽까지 고르게 채운다.
-    const GRID_N = 12;              // 가로 칸수(열) — GRID_COLS 별칭. 가로 좌표·camAnchorMode·areaFree 열 경계에 쓴다.
+    // 캠(원근)은 camLeftCss/camCenterX(가로 앵커 v2)로 발자국 중앙에 배치하고 벽 밖으로 나갈 때만 클램프한다(전 칸 간격 균등).
+    const GRID_N = 12;              // 가로 칸수(열) — GRID_COLS 별칭. 가로 좌표·camLeftCss·areaFree 열 경계에 쓴다.
     const GRID_ROWS = CAM.ROWS;     // 세로 칸수(깊이 행) = 8(단일 소스는 util.js CAM.ROWS). 깊이 12→8 축소로 뒤쪽 배치 구분↑.
     function gridLeftFrac(c){ return (c-1)/GRID_N; }       // 열 좌측 edge 비율(0~1)
     function gridSpanFrac(n){ return n/GRID_N; }           // n열 폭 비율
     function gridTopFrac(r){ return (r-1)/GRID_ROWS; }     // 행 상단 edge 비율(0~1) — 에디터/썸네일 평면 세로(깊이) 좌표
     function gridRowSpanFrac(n){ return n/GRID_ROWS; }     // n행 높이 비율(평면)
-    // 캠 가로 앵커 모드: 왼쪽 벽에 닿는 열=left(좌측 밀착), 오른쪽 벽=right(우측 밀착), 그 외=center(발자국 중앙).
-    // (footW 최대 2라 left·right 동시 스냅은 없음 — center 폴백.)
+    // (구) 캠 가로 앵커 모드 — 2026-07-10 폐기: 양끝 벽 스냅이 1·12열 아이템 중심을 벽 쪽으로 쏠리게 해
+    // 이웃 칸과의 간격이 홀로 벌어져 보였다(사용자 버그: 12열이 미리보기 캠에서 더 멀리 떨어져 보임).
+    // 대체 = 아래 camCenterFrac/camLeftCss/camCenterX(전 칸 "발자국 중앙" + 벽 클램프). 참조용으로만 남김.
     function camAnchorMode(c, footW){ const right=c+footW-1;
       if(c===1 && right!==GRID_N) return 'left';
       if(right===GRID_N && c!==1) return 'right';
       return 'center'; }
+    // 캠 가로 앵커 v2(2026-07-10): 전 칸 "발자국 중앙" 정렬을 기본으로 하고, 그래픽 반폭(halfW px)이
+    // 벽 밖으로 나갈 때만 안쪽으로 클램프한다 → 1~12열 간격 균등 + 벽 밖 미탈출.
+    // CSS 렌더(propMarkup·wallPropMarkup·dropMarkup)=camLeftCss(left:clamp(), --crtx:-50%와 짝),
+    // JS px 계산(buildActors 펫 정렬·비디오 PiP anchorX)=camCenterX — 셋이 같은 수식을 공유해야 정렬이 맞는다.
+    function camCenterFrac(c, footW){ return gridLeftFrac(c)+gridSpanFrac(footW)/2; }
+    function camLeftCss(c, footW, halfW){ return 'clamp('+halfW.toFixed(1)+'px, '+(camCenterFrac(c,footW)*100).toFixed(2)+'%, calc(100% - '+halfW.toFixed(1)+'px))'; }
+    function camCenterX(c, footW, halfW, W){ return Math.max(halfW, Math.min(camCenterFrac(c,footW)*W, W-halfW)); }
     // 가구 그래픽 가로세로비(cols/rows) — 그래픽 폭 = fh*aspect. 캠 중심 x 계산(buildActors)에 사용.
     const FURN_ASPECT = { pond:1.722, tower:0.64, scratcher:0.842, pethouse:0.895, catwheel:1.0, plant:0.727, litterbox:1.222, cushion:1.222, bowl:1.375, waterbowl:1.375, rug:2.154, window:0.875, fishtank:1.111, fireplace:1.222, fan:0.8, hammock:0.941, teaser:0.842, wallclock:0.889, hangplant:1.0, mobile:1.0, chandelier:1.0, jingleball:1.0, frame:0.938, shelf:1.571, mirror:0.875, neon:1.0, sconce:0.667, garland:3.333, poster:0.812, tapestry:0.722, cactus:0.615, yarnbasket:0.9, floorlamp:0.64, beanbag:1.059, groomstation:0.762, springtoy:0.762, tunnel:1.421, teepee:0.8, bookshelf:0.615, birdcage:0.667, lavalamp:0.696, laserpost:0.762, waterfountain:0.762, sofa:1.688, recordplayer:0.941, terrarium:0.941, ballpit:1.867, grandfaclock:0.571, bunkbed:0.727, crystalfountain:1.368, dartboard:1.0, cuckooclock:0.762, roundbed:1.467, donutbed:1.467, cavebed:1.111, canopybed:0.947, throne:0.9, mousetoy:1.25, catnippillow:1.25, puzzlefeeder:1.25, balltrack:2.083, teetertoy:1.25, bubblemachine:0.941, bonsai:0.889, globe:1.0, snowglobe:0.889, campfire:1.111, gramophone:1.0, arcademachine:1.0, jukebox:0.8, crystalcluster:1.125, easel:0.9, floorvase:0.7, suitofarmor:1.0, hourglass:0.778, telescope:1.0, gumballmachine:0.778, wallvines:1.0, pennant:1.75, wallmask:0.765, barometer:0.765, stringlights:3.167, wallbutterfly:1.062, cornershelf:1.125, wallsun:1.0, treatjar:0.875, catgrass:0.875, groomarch:1.0, heatpad:1.25, peekbox:1.25, tetherpole:0.778, windmilltoy:0.778, crinklebag:1.125, roundrug:1.583, runner:2.3, koipond:1.75, displaycase:0.889, woodstove:0.947, mushroomlamp:0.824, statuecat:0.737, teacart:1.0, crystaltree:0.889, treadmill:1.286, laserbot:1.444, rcmouse:2.188, slalom:1.417, sprinttrack:3.5, cucumber:1.25, milkbar:0.818, dispenser:0.643, birdfeeder:0.688, hamstercage:0.833 };
     function furnAspect(id){ return FURN_ASPECT[id]||1; }
