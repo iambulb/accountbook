@@ -83,9 +83,9 @@ sheet.save("walk.png")   # rotations 4장은 그대로 복사
 1. **자동 인제스트** — `gen_motion_clips()`: `animations/<모션명>/<방향>/frame_*.png`를 **`MOTION_MAP`**(파이썬 dict)으로 표준 클립키로 정규화(`seated_on_belly_idle→belly`, `hiss|growl→angry`, `attack→paw` 등) 후 가로 스트립 합성(자연 정렬·최대 12프레임) → `pets.json` `clips`/`clipDirs` 기록 → 코드젠. **폐기·보류였던 run·jump·sleep도 zip이 직접 제공하면 채택**(폐기는 규칙 생성 시트에 한함).
 2. **방향 선택** — `CLIP_DIR_DEFAULT`(cats.js `PET_CLIPS` dir와 일치 필수)를 선호, 없으면 있는 방향을 채택하고 `pets.json`에 **`clipDirs:{"belly":"east"}`** 오버라이드를 남긴다. 엔진은 `clipDir(id,k)`로 읽고 east 클립은 west에서 `scaleX(-1)` 플립, east 유휴/식빵 폴백(`furnClip`/`actorShowStill`)을 탄다.
 3. **스타일 일관성 검사** — 클립 프레임이 `rotations/south`와 외곽선 스타일이 다르면(구미호 Idle만 검은 외곽선이던 실사례) 자동 스킵하고 4번으로 대체.
-4. **누락 표준 모션은 규칙 생성** — `pet_motion_build_all.py`에 펫별 CFG 앵커 실측 등록 후 표준 12종(idle·sit·eat·drink·yawn·angry·knead·paw·eyetrack·stretch·scratch·wiggle) 생성(컨택트시트 검수 → `--write`). **소프트 스타일(외곽선 없음)은 외곽선 보수를 전부 `rep()`(조건부)로** — `outline_repair` 직접 호출 금지(구미호 귀트윅 검은 얼룩 실사례, `tail_sway`).
+4. **규칙 생성은 기본 7종 결손 보충에만(2026-07-10 사용자 정정)** — **기본 모션 7종(idle·sit·belly·eat·drink·yawn·angry) 중 zip에 없는 것만** `pet_motion_build_all.py`에 펫별 CFG 앵커 실측 등록 후 생성(컨택트시트 검수 → `--write`). **그 외 모션(knead·paw·eyetrack·stretch·scratch·wiggle·bark 등)은 규칙 생성하지 않는다** — zip 제공 시에만 반영(없으면 없는 대로, 엔진 폴백이 처리). **소프트 스타일(외곽선 없음)은 외곽선 보수를 전부 `rep()`(조건부)로** — `outline_repair` 직접 호출 금지(구미호 귀트윅 검은 얼룩 실사례, `tail_sway`).
 5. **신규 모션 키**(bark 등)는 4곳 짝 맞춤: `PET_CLIPS`(dir·fps·once·fb) + `CLIP_KO`(한국어명) + `CLIP_AFF_REQ`(기본 해금레벨) + `MOTION_MAP`(zip 별칭). bark(south·9fps·once)는 개과 대비 선등록됨 — 유휴 액센트 풀(yawn 60%·angry 20%·bark 20%)에서 재생.
-6. **애정 해금 자동** — `petClipAff(id)`가 보유 클립의 기본 레벨을 "최저 보유=Lv1"로 시프트해 펫마다 Lv1~5 사다리를 동적으로 만든다. 펫정보(`petAffLadderHtml`)·개발자 모션 관리(`clipAffReq`) 표기도 자동 — 펫 추가 시 별도 작업 불필요. 예) 구미호 15클립: Lv1 유휴·앉기·먹기·마시기 / Lv2 질주·식빵·하품 / Lv3 점프·톡톡·물끄러미 / Lv4 하악질·실룩 / Lv5 꾹꾹이·기지개·스크래칭.
+6. **애정 해금 자동** — `petClipAff(id)`가 보유 클립의 기본 레벨을 "최저 보유=Lv1"로 시프트해 펫마다 Lv1~5 사다리를 동적으로 만든다. 펫정보(`petAffLadderHtml`)·개발자 모션 관리(`clipAffReq`) 표기도 자동 — 펫 추가 시 별도 작업 불필요. 예) 구미호 9클립: Lv1 유휴·앉기·먹기·마시기 / Lv2 질주·식빵·하품 / Lv3 점프 / Lv4 하악질.
 
 ## id·이름 매핑 (종·색 구분)
 zip 파일명은 길고 자동생성이므로 짧은 **slug id**를 부여한다. id는 **`<species>_<색·품종>`** 형태로 종이 구분되게 짓는다(예: `cat_calico`, `dog_corgi`, `rabbit_lop`). 이 표를 유지한다.

@@ -4,6 +4,11 @@
 표범(cat_leopard, pet_motion_build.py v2) 기준 7클립(idle·sit·belly·eat·drink·yawn·angry)을
 일괄 생성한다. 규칙은 docs/pet-motion-guide.md §3(v2 4연산·흰 공백 금지·패치 먼저 변형 나중).
 
+⚠️ 규칙 생성 범위(2026-07-10 사용자 지침): 새 펫은 기본 7종(idle·sit·belly·eat·drink·yawn·angry)
+   중 zip에 없는 것만 --only로 지정해 보충한다. 그 외 모션(knead·paw·eyetrack·stretch·scratch·
+   wiggle·bark 등)은 규칙 생성 금지 — zip이 직접 제공할 때만 반영(기존 신화·한정 16종의 가구
+   상호작용 6종은 별도 승인분이라 유지).
+
 v2(표범 하드코딩)와 다른 점 — 펫별 실측 앵커(CFG)로 데이터화:
   · 팔레트: 스프라이트 실측 자동 + 공용 입 키트(d/D/P/C = 표범 입 톤과 동일)
   · 눈 감김/가늘게: 눈 박스 위 픽셀을 샘플링해 눈꺼풀 몸색 자동 결정(줄무늬 대응)

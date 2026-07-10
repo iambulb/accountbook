@@ -842,7 +842,7 @@
       cat_singapura:{ walk:'assets/pets/cat/cat_singapura/walk.png', frames:6, stills:true, scale:1.1, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       cat_havanabrown:{ walk:'assets/pets/cat/cat_havanabrown/walk.png', frames:6, stills:true, scale:1.2, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
       cat_ragamuffin:{ walk:'assets/pets/cat/cat_ragamuffin/walk.png', frames:6, stills:true, scale:1.3, clips:{ idle:4, sit:4, belly:4, eat:6, drink:4, yawn:6, angry:4 } },
-      fox_nine:{ walk:'assets/pets/fox/fox_nine/walk.png', frames:8, stills:true, scale:2.5, clips:{ jump:8, run:8, belly:10, idle:4, sit:4, eat:6, drink:4, yawn:6, angry:4, knead:4, paw:4, eyetrack:6, stretch:6, scratch:4, wiggle:4 }, clipDirs:{ belly:'east' } }
+      fox_nine:{ walk:'assets/pets/fox/fox_nine/walk.png', frames:8, stills:true, scale:2.5, clips:{ jump:8, run:8, belly:10, idle:4, sit:4, eat:6, drink:4, yawn:6, angry:4 }, clipDirs:{ belly:'east' } }
     };
     // @gen:end
     function hasSprite(id){ return !!PET_SPRITES[id]; }

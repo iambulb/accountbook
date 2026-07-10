@@ -1,5 +1,5 @@
 /* 알뜰(Eggarden) 서비스워커 — 오프라인 앱 셸 캐시 */
-const CACHE_VERSION = 'eggarden-v3.646.2';
+const CACHE_VERSION = 'eggarden-v3.646.3';
 const APP_SHELL = [
   './',
   './index.html',
@@ -1905,12 +1905,6 @@ const APP_SHELL = [
   './assets/pets/fox/fox_nine/drink.png',
   './assets/pets/fox/fox_nine/yawn.png',
   './assets/pets/fox/fox_nine/angry.png',
-  './assets/pets/fox/fox_nine/knead.png',
-  './assets/pets/fox/fox_nine/paw.png',
-  './assets/pets/fox/fox_nine/eyetrack.png',
-  './assets/pets/fox/fox_nine/stretch.png',
-  './assets/pets/fox/fox_nine/scratch.png',
-  './assets/pets/fox/fox_nine/wiggle.png',
   // @gen:end
 ];
 
