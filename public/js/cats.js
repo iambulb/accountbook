@@ -2055,27 +2055,27 @@
     //  base=움직이는 글자 제외, fx=그 글자만 → 완벽히 겹쳐 정지 배경 + 움직이는 부품(캣휠 트레드 회전·펫알 방울 흔들림·화분 잎 살랑).
     const FURN_ANIM = {
       // move=오버레이(움직이는)로 뺄 글자, type=애니메이션 종류(spin/swing/sway/drift/flicker). 배열=여러 모션 레이어(각기 다른 속도/움직임).
-      pond:    [ { type:'drift', move:['O','o','X','t'], cls:'pondfish' },   // 물고기 2마리 활발히 헤엄(fffish)
-                 { type:'drift', move:['P','p'], cls:'pondleaf' },          // 수련잎 잔잔히 흔들(ffleaf)
-                 { type:'drift', move:['r','S'], cls:'pondwater' } ],       // 물 하이라이트/반짝임 잔잔히 일렁(ffripple)
+      pond:    [ { type:'drift', move:['O','o','X','t'], cls:'pondfish', bg:'m' },   // 물고기 2마리 활발히 헤엄(fffish)
+                 { type:'drift', move:['P','p'], cls:'pondleaf', bg:'m' },          // 수련잎 잔잔히 흔들(ffleaf)
+                 { type:'drift', move:['r','S'], cls:'pondwater', bg:'m' } ],       // 물 하이라이트/반짝임 잔잔히 일렁(ffripple)
       catwheel:{ type:'spin',  move:['T','t','H'] },   // 링(림·밴드·하이라이트·발판) 전체가 축 중심으로 제자리 회전 — 롤러 R·스탠드 D만 정지
       tower:   { type:'swing', move:['T','O','K'] },   // 매달린 장난감 공(빨강 T·하이라이트 O)+끈(K)
       scratcher:{type:'swing', move:['T','O','H','K'] },   // 매달린 공(O)+하이라이트(H)+끈(T)
       plant:   { type:'sway',  move:['G','L','l','I'] },   // 잎만 살랑(줄기 S·화분 P/p/X는 정지)
-      window:  { type:'drift', move:['C','c'] },           // 구름만 좌우로 천천히 흘러감(하늘 S·해 U/u·틀은 정지)
-      fishtank:{ type:'drift', move:['F','f','b'] },   // 금붕어+기포만 헤엄치듯 좌우로(물 A·수초 P·자갈 R은 정지)
-      fireplace:{type:'flicker',move:['f','F','r'] },  // 불꽃만 일렁임(벽돌·맨틀·장작은 정지)
+      window:  { type:'drift', move:['C','c'], bg:'S' },           // 구름만 좌우로 천천히 흘러감(하늘 S·해 U/u·틀은 정지)
+      fishtank:{ type:'drift', move:['F','f','b'], bg:'A' },   // 금붕어+기포만 헤엄치듯 좌우로(물 A·수초 P·자갈 R은 정지)
+      fireplace:{type:'flicker',move:['f','F','r'], bg:'D' },  // 불꽃만 일렁임(벽돌·맨틀·장작은 정지)
       fan:     { type:'spin',  move:['G','L','D','h'] },   // 케이지 안 날개(G 중간·L 하이라이트·D 그림자 명암)+허브(h)가 함께 회전(림 X·목·받침은 정지). 진한 하늘색 날개(B)는 팔레트에서 빼 투명 처리(뒷배경 비침)
       hammock: { type:'swing', move:['K','C','c','L','l','P','p'] },// 끈+천 요람+베개가 매단 지점에서 살랑(기둥 X/W/w 정지)
       teaser:  { type:'swing', move:['K','F','f','H','T'] },// 줄+깃털 장난감이 대 끝에서 흔들(대 R·받침 정지)
-      wallclock:{type:'swing', move:['K','O','o','D'] },       // 추(봉+놋쇠)만 좌우로(몸통·시계판 정지)
+      wallclock:{type:'swing', move:['K','O','o','E'] },       // 추(봉+놋쇠)만 좌우로(몸통·시계판 정지)
       hangplant:{type:'swing', move:['L','l','I','G','g'] }, // 걸이 아래 전체가 살랑(천장 걸이 X 정지)
       mobile:  { type:'swing', move:['A','a','B','b','C','c','W','K'] }, // 막대+매달린 별·달·하트 전체가 살랑(걸이 X 정지)
       chandelier:{type:'sway', move:['Y','y','W','H','C','c','o','v'] }, // 천장에서 전체가 흔들(매다는형, 상단 피벗) — 더 활발하게(각↑·빠르게)
       jingleball:{type:'swing', move:['X','B','b','L','H','S'] },  // 공 전체가 바닥에서 통통(바닥 접점 중심)
-      neon:    {type:'blink',  move:['N','n','H','C','S'] },   // 네온 하트+글로우+반짝임이 네온처럼 파르르 깜빡(더 활발)
+      neon:    {type:'blink',  move:['N','n','H','C','S'], bg:'k' },   // 네온 하트+글로우+반짝임이 네온처럼 파르르 깜빡(더 활발)
       sconce:  {type:'flicker',move:['F','Y','y'] },   // 벽등 촛불이 활발히 일렁(빠르게·크게)
-      mirror:  {type:'sheen',  move:['h'] },   // 거울 사선 광택이 반짝 스윕(정적→연출 추가)
+      mirror:  {type:'sheen',  move:['h'], bg:'A' },   // 거울 사선 광택이 반짝 스윕(정적→연출 추가)
       garland: {type:'blink',  move:['A','B','C','a','b','c','H'] },  // 가랜드 전구만 깜빡(줄 K 정지)
       cactus: {type:'sway', move:['f', 'F', 'Y'] },
       yarnbasket: {type:'sway', move:['R', 'r', 'G', 'g'] },
@@ -2083,27 +2083,27 @@
       groomstation: {type:'sway', move:['s', 't', 'S'] },
       springtoy: {type:'swing', move:['B', 'b', 'L', 'R', 'W', 'S', 'x'] },
       birdcage: {type:'swing', move:['Y', 'y', 'o', 'B', 'R', 'T', 't'] },
-      lavalamp: {type:'drift', move:['R', 'o', 'O', 'Y', 'r'] },
+      lavalamp: {type:'drift', move:['R', 'o', 'O', 'Y', 'r'], bg:'G' },
       laserpost: {type:'blink', move:['R', 'r', 'L', 'P', 'Y'] },
       waterfountain: {type:'drift', move:['A', 'a', 'H', 'h'] },
       recordplayer: {type:'spin', move:['R', 'r'] },
       terrarium: {type:'sway', move:['L', 'l', 'D', 'f', 'F'] },
       ballpit: {type:'drift', move:['R', 'r', 'Y', 'y', 'G', 'g', 'P', 'p', 'B', 'b'] },
-      grandfaclock: {type:'swing', move:['O', 'o', 'K'] },
+      grandfaclock: {type:'swing', move:['O', 'o', 'K'], bg:'G' },
       crystalfountain: {type:'drift', move:['A', 'a', 'H', 'h', 's', 'K', 'C', 'c', 'B'] },
       cuckooclock: {type:'swing', move:['O', 'o', 'Y', 'k', 'K'] },
-      balltrack: {type:'spin', move:['R', 'r', 'Y', 'G'] },
+      balltrack: {type:'spin', move:['R', 'r', 'Y', 'G'], bg:'w' },
       teetertoy: {type:'swing', move:['R', 'r', 'B', 'b', 'H'] },
       bubblemachine: {type:'drift', move:['B', 'b', 'L'] },
       bonsai: {type:'sway', move:['G', 'L', 'l', 'I', 'f'] },
       globe: {type:'spin', move:['A', 'a', 'G', 'g', 'L'] },
-      snowglobe: {type:'drift', move:['S', 's', 'H'] },
+      snowglobe: {type:'drift', move:['S', 's'], bg:'G' },
       campfire: {type:'flicker', move:['f', 'F', 'r', 'o'] },
-      gramophone: {type:'spin', move:['R'] },
-      arcademachine: {type:'blink', move:['S', 'R', 'Y', 'B', 'L'] },
-      jukebox: {type:'blink', move:['R', 'B', 'Y', 'G'] },
+      gramophone: {type:'spin', move:['R'], bg:'d' },
+      arcademachine: {type:'blink', move:['S', 'R', 'Y', 'B', 'L'], bg:'D' },
+      jukebox: {type:'blink', move:['R', 'B', 'Y', 'G'], bg:'K' },
       crystalcluster: {type:'sway', move:['h', 'H', 'P', 'C', 'W'] },
-      hourglass: {type:'drift', move:['S', 'y'] },
+      hourglass: {type:'drift', move:['S', 'y'], bg:'G' },
       wallvines: {type:'sway', move:['L', 'l', 'I', 'f', 'F'] },
       pennant: {type:'sway', move:['R', 'B', 'Y', 'G', 'W'] },
       stringlights: {type:'blink', move:['R', 'Y', 'G', 'B', 'P', 'H'] },
@@ -2114,19 +2114,33 @@
       tetherpole: {type:'swing', move:['R', 'r', 'o'] },
       windmilltoy: {type:'spin', move:['R', 'B', 'Y', 'G', 'o'] },
       crinklebag: {type:'sway', move:['H', 'W'] },
-      koipond: {type:'drift', move:['L', 'W', 'P', 'p', 'o', 'r'] },
+      koipond: {type:'drift', move:['L', 'W', 'P', 'p', 'o', 'r'], bg:'B' },
       woodstove: {type:'flicker', move:['f', 'F', 'r', 'o'] },
       mushroomlamp: {type:'flicker', move:['L', 'o', 'H'] },
       crystaltree: {type:'sway', move:['b', 'H', 'p', 'P', 'C', 'c'] },
+      // 🧸 배치3 재디자인 연출(2026-07): 쿠션 태슬·왕좌 보석(bg=금장)·캐노피 커튼·동굴 이끼·간식단지 과자 반짝(bg=유리)
+      cushion: {type:'sway', move:['t','s'] },
+      throne: {type:'blink', move:['j'], bg:'W' },
+      canopybed: {type:'sway', move:['P','p'] },
+      cavebed: {type:'sway', move:['G','g'] },
+      treatjar: {type:'blink', move:['f'], bg:'W' },
+      // 🧸 배치2 재디자인 연출(2026-07): 선반 화분 잎 살랑, 벽나비 날개 가장자리 살랑(sway 언더레이)
+      shelf: {type:'sway', move:['L','l'] },
+      wallbutterfly: {type:'sway', move:['o','y'] },
+      // 🧸 배치1 재디자인 연출(2026-07): 태엽쥐 키·꼬리, 간식 반짝(bg=웰 어둠), 캣닢 향기잎(공기), 픽어박스 눈 반짝(bg=구멍 어둠)
+      mousetoy: [ {type:'swing', move:['w','k'], cls:'mtkey'}, {type:'sway', move:['T'], cls:'mttail'} ],
+      puzzlefeeder: {type:'blink', move:['Y','o','K'], bg:'D' },
+      catnippillow: {type:'drift', move:['i'], cls:'cnleaf' },
+      peekbox: {type:'blink', move:['e'], bg:'D' },
       // 🏃 액티브 플레이 10종 — 다층·위상 어긋. 이동(drift·다트)은 공기 영역, 회전은 원형 대칭, 채운 면은 blink LED만(구멍 금지 규칙)
-      treadmill: [ {type:'swing', move:['F','f'], cls:'tmfeather'}, {type:'blink', move:['L','G'], cls:'tmled'}, {type:'drift', move:['s'], cls:'tmwind'} ],
+      treadmill: [ {type:'swing', move:['F','f'], cls:'tmfeather'}, {type:'blink', move:['L','G'], cls:'tmled', bg:'P'}, {type:'drift', move:['s'], cls:'tmwind'} ],
       laserbot: [ {type:'drift', move:['R','r'], cls:'lbdot'}, {type:'blink', move:['L','e'], cls:'lbled'}, {type:'swing', move:['A'], cls:'lbant'} ],
-      rcmouse: [ {type:'drift', move:['G','g','H','P','t'], cls:'rcdart'}, {type:'blink', move:['L'], cls:'rcled'}, {type:'swing', move:['A'], cls:'rcant'} ],
+      rcmouse: [ {type:'drift', move:['G','g','H','P','t'], cls:'rcdart'}, {type:'blink', move:['L'], cls:'rcled', bg:'C'}, {type:'swing', move:['A'], cls:'rcant'} ],
       slalom: [ {type:'swing', move:['R'], cls:'slflagR'}, {type:'swing', move:['B'], cls:'slflagB'}, {type:'swing', move:['Y'], cls:'slflagY'}, {type:'swing', move:['G'], cls:'slflagG'} ],
       sprinttrack: {type:'sway', move:['O','o'] },
       cucumber: {type:'sway', move:['G','g','I','f'] },
       milkbar: {type:'drift', move:['S'] },
-      dispenser: [ {type:'drift', move:['F'], cls:'dpfall'}, {type:'blink', move:['L','P'], cls:'dpled'} ],
+      dispenser: [ {type:'drift', move:['F'], cls:'dpfall'}, {type:'blink', move:['L','P'], cls:'dpled', bg:'K'} ],
       birdfeeder: [ {type:'drift', move:['A','a'], cls:'bfbird1'}, {type:'drift', move:['C','c'], cls:'bfbird2'} ],
       hamstercage: [ {type:'spin', move:['T','t'], cls:'hcwheel'}, {type:'flicker', move:['G','g','h','P'], cls:'hcham'}, {type:'swing', move:['B','b'], cls:'hcbottle'} ],
     };
@@ -2137,11 +2151,19 @@
     //    투명(공백)이 아니라 자기 색(정지 실루엣)으로 메워 '공중부양/구멍'을 막는다. 회전각이 작아(±4.5°) 잔상 대신
     //    '밑동이 도톰해 보이는' 자연스러운 채움이 된다. spin(제자리 전회전)·drift(옆이동)는 정지 언더레이가
     //    잔상(고스트)으로 보이므로 종전대로 base에서 제외한다.
+    // 🕳️ 연출 base 매트릭스 — 움직이는(move) 글자 자리를 layer.bg(배경 글자)로 치환해, base에서 부품이 빠져 생기던 '빈 구멍'을
+    //    그 부품 '뒤' 배경색(물고기→물 A, 추→유리 G, 구름→하늘 S, 전구→패널 K…)으로 채운다. sway는 언더레이 유지라 대상 아님.
+    //    dock(furnLiveSvg)·비디오 PiP(baseSvg)가 공유하는 단일 소스 — 새 FURN_ANIM에서 채워진 면 위를 움직여야 하면 반드시 bg를 지정한다.
+    function furnBaseMatrix(id){ const a=FURN_ANIM[id], M=furnMatrix(id); if(!a) return M;
+      const layers=Array.isArray(a)?a:[a]; const map={};
+      layers.forEach(function(l){ if(l.bg && l.type!=='sway') l.move.forEach(function(ch){ map[ch]=l.bg; }); });
+      if(!Object.keys(map).length) return M;
+      return M.map(function(r){ let o=''; for(let i=0;i<r.length;i++){ const ch=r[i]; o+=(map[ch]||ch); } return o; }); }
     function furnLiveSvg(id, opt){ const a=FURN_ANIM[id]; if(!a) return furnSvg(id, opt);
       const M=furnMatrix(id), pal=FURN_PALS[id];
       const layers = Array.isArray(a) ? a : [a];
       let excludeMove=[]; layers.forEach(function(l){ if(l.type!=='sway') excludeMove=excludeMove.concat(l.move); });   // sway 글자는 base에 유지(언더레이), 그 외만 제외
-      const base=pxSvg(M, palPick(pal, excludeMove, false), opt);
+      const base=pxSvg(furnBaseMatrix(id), palPick(pal, excludeMove, false), opt);   // 🕳️ bg 치환 매트릭스로 구멍 채움
       let fx=''; layers.forEach(function(l){ fx += '<span class="ffx ffx-'+l.type+' ffx-'+(l.cls||id)+'">'+pxSvg(M, palPick(pal, l.move, true), {fit:true})+'</span>'; });
       return '<span class="fwrap">'+base+fx+'</span>'; }
     // 방(홈·dock)용 — 채움 상태 반영: 밥그릇=빈/사료, 물그릇=빈(회색)/물.
@@ -2196,7 +2218,7 @@
       if(right===GRID_N && c!==1) return 'right';
       return 'center'; }
     // 가구 그래픽 가로세로비(cols/rows) — 그래픽 폭 = fh*aspect. 캠 중심 x 계산(buildActors)에 사용.
-    const FURN_ASPECT = { pond:1.722, tower:0.64, scratcher:0.842, pethouse:0.895, catwheel:1.0, plant:0.727, litterbox:1.286, cushion:1.2, bowl:1.333, waterbowl:1.333, rug:2.154, window:0.875, fishtank:1.067, fireplace:1.067, fan:0.8, hammock:0.941, teaser:0.842, wallclock:0.889, hangplant:1.0, mobile:1.333, chandelier:1.333, jingleball:1.067, frame:1.077, shelf:1.6, mirror:1.0, neon:1.143, sconce:1.143, garland:3.286, poster:1.0, tapestry:0.923, cactus:0.615, yarnbasket:0.9, floorlamp:0.64, beanbag:1.059, groomstation:0.762, springtoy:0.762, tunnel:1.421, teepee:0.8, bookshelf:0.615, birdcage:0.667, lavalamp:0.696, laserpost:0.762, waterfountain:0.762, sofa:1.688, recordplayer:0.941, terrarium:0.941, ballpit:1.867, grandfaclock:0.571, bunkbed:0.727, crystalfountain:1.368, dartboard:1.0, cuckooclock:0.762, roundbed:1.385, donutbed:1.385, cavebed:1.067, canopybed:1.067, throne:1.067, mousetoy:1.333, catnippillow:1.417, puzzlefeeder:1.333, balltrack:2.083, teetertoy:1.143, bubblemachine:1.067, bonsai:0.889, globe:1.0, snowglobe:1.067, campfire:1.067, gramophone:1.0, arcademachine:1.0, jukebox:1.067, crystalcluster:1.143, easel:1.067, floorvase:1.067, suitofarmor:1.0, hourglass:1.067, telescope:1.0, gumballmachine:1.067, wallvines:1.308, pennant:1.75, wallmask:0.923, barometer:0.857, stringlights:3.143, wallbutterfly:1.091, cornershelf:1.333, wallsun:1.0, treatjar:0.786, catgrass:1.143, groomarch:1.143, heatpad:1.231, peekbox:1.333, tetherpole:1.067, windmilltoy:1.067, crinklebag:1.231, roundrug:1.556, runner:2.286, koipond:1.778, displaycase:1.143, woodstove:1.067, mushroomlamp:1.143, statuecat:1.067, teacart:1.231, crystaltree:1.067, treadmill:1.286, laserbot:1.444, rcmouse:2.188, slalom:1.417, sprinttrack:3.5, cucumber:1.25, milkbar:0.818, dispenser:0.643, birdfeeder:0.688, hamstercage:0.833 };
+    const FURN_ASPECT = { pond:1.722, tower:0.64, scratcher:0.842, pethouse:0.895, catwheel:1.0, plant:0.727, litterbox:1.222, cushion:1.222, bowl:1.375, waterbowl:1.375, rug:2.154, window:0.875, fishtank:1.111, fireplace:1.067, fan:0.8, hammock:0.941, teaser:0.842, wallclock:0.889, hangplant:1.0, mobile:1.333, chandelier:1.333, jingleball:1.0, frame:1.077, shelf:1.571, mirror:1.0, neon:1.143, sconce:1.143, garland:3.333, poster:1.0, tapestry:0.923, cactus:0.615, yarnbasket:0.9, floorlamp:0.64, beanbag:1.059, groomstation:0.762, springtoy:0.762, tunnel:1.421, teepee:0.8, bookshelf:0.615, birdcage:0.667, lavalamp:0.696, laserpost:0.762, waterfountain:0.762, sofa:1.688, recordplayer:0.941, terrarium:0.941, ballpit:1.867, grandfaclock:0.571, bunkbed:0.727, crystalfountain:1.368, dartboard:1.0, cuckooclock:0.762, roundbed:1.385, donutbed:1.385, cavebed:1.111, canopybed:0.947, throne:0.9, mousetoy:1.25, catnippillow:1.25, puzzlefeeder:1.25, balltrack:2.083, teetertoy:1.25, bubblemachine:1.067, bonsai:0.889, globe:1.0, snowglobe:1.067, campfire:1.067, gramophone:1.0, arcademachine:1.0, jukebox:1.067, crystalcluster:1.143, easel:1.067, floorvase:1.067, suitofarmor:1.0, hourglass:1.067, telescope:1.0, gumballmachine:1.067, wallvines:1.308, pennant:1.75, wallmask:0.923, barometer:0.857, stringlights:3.167, wallbutterfly:1.062, cornershelf:1.333, wallsun:1.0, treatjar:0.875, catgrass:1.143, groomarch:1.143, heatpad:1.25, peekbox:1.25, tetherpole:1.067, windmilltoy:1.067, crinklebag:1.125, roundrug:1.583, runner:2.3, koipond:1.75, displaycase:1.143, woodstove:1.067, mushroomlamp:1.143, statuecat:1.067, teacart:1.231, crystaltree:1.067, treadmill:1.286, laserbot:1.444, rcmouse:2.188, slalom:1.417, sprinttrack:3.5, cucumber:1.25, milkbar:0.818, dispenser:0.643, birdfeeder:0.688, hamstercage:0.833 };
     function furnAspect(id){ return FURN_ASPECT[id]||1; }
     function furnRoomH(id, isDock, depth){
       const mult = ROOM_H[id] || 1;

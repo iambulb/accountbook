@@ -381,7 +381,8 @@
       sprinttrack:{dur:2.0}, cucumber:{org:[0.5,0.88],dur:1.4}, milkbar:{dur:2.6},
       dpfall:{dur:0.8}, dpled:{dur:1.4},
       bfbird1:{kf:'fish',dur:2.6}, bfbird2:{kf:'pondfish',dur:2.2},
-      hcwheel:{org:[0.5,0.29],dur:0.9}, hcham:{org:[0.3,0.62],dur:0.55}, hcbottle:{org:[0.22,0.27],dur:2.2}
+      hcwheel:{org:[0.5,0.29],dur:0.9}, hcham:{org:[0.3,0.62],dur:0.55}, hcbottle:{org:[0.22,0.27],dur:2.2},
+      mtkey:{org:[0.5,0.28],dur:1.0}, mttail:{org:[0.65,0.84],dur:1.6}, cnleaf:{dur:2.6}, shelf:{dur:2.6}, wallbutterfly:{dur:1.8}, cushion:{dur:2.8}, canopybed:{dur:5.2}, cavebed:{dur:3.2}
     };
     function _vpipFxMeta(type, key){ const t=_VPIP_FX_TYPE[type]||{kf:type,dur:4}; const o=_VPIP_FX_ID[key]||{};
       return { kf:o.kf||t.kf, dur:o.dur||t.dur, org:o.org||t.org||[0.5,0.5] }; }
@@ -405,7 +406,7 @@
         layers.forEach(function(l){ const meta=_vpipFxMeta(l.type, l.cls||id);
           fx.push({ url:_svgUri(pxSvg(M, palPick(pal, l.move, true), {h:fh})), x:xx, y:yy, w:gw, h:fh, flip:!!flip, fr:fr,
             kf:meta.kf, dur:meta.dur, ox:meta.org[0], oy:meta.org[1], ph:Math.random() }); });
-        return pxSvg(M, palPick(pal, excl, false), {h:fh});
+        return pxSvg(furnBaseMatrix(id), palPick(pal, excl, false), {h:fh});   // 🕳️ bg 치환(furnBaseMatrix 단일 소스) — dock와 동일하게 구멍 채움
       }
       list.forEach(function(p){ const foot=itemFoot(p.itemId), fr=p.r+foot.h-1, depth=camDepth(fr);
         const fh=furnRoomH(p.itemId,true,depth), gw=fh*furnAspect(p.itemId);
@@ -1153,22 +1154,22 @@
     function furnSpot(a, goal){
       const it=goal.itemId, fh=goal.fh||a.hh;
       // 가구 상호작용 머무는 시간을 10배로(캣타워 26~62초 등) — 오래 자리 잡고 쉼
-      if(it==='tower'){ const floor=(a.resFloor!=null?a.resFloor:Math.floor(Math.random()*3)); const frac=[0.30,0.62,0.92][floor];   // 예약된 층(각 층 1마리)
+      if(it==='tower'){ const floor=Math.min((a.resFloor!=null?a.resFloor:Math.floor(Math.random()*2)),1); const frac=[0.24,0.72][floor];   // 🪜 맨 아래·맨 위 2자리만(2026-07 사용자 지시 — 구 3층). 발판 상면 실측: 아래층=row19/25 → 0.24, 꼭대기=row7/25 → 0.72(발이 발판 위에 정확히 얹힘)
         // 캣타워는 일반 상호작용(기본 22~48초)의 5배 오래 머무름(약 1.8~4분)
         return { lift:Math.round(fh*frac), face:'south', dx:0, pose:'sit', dur:110000+Math.random()*130000 }; }
       // 펫하우스: 출입구 안(정중앙)에 들어가 정면(south)을 보며 앉아 아늑하게 오래 쉼(약 50초~2분).
       if(it==='pethouse') return { lift:Math.round(fh*0.06), face:'south', dx:0, pose:'sit', dur:50000+Math.random()*70000 };
-      if(it==='cushion') return { lift:Math.round(fh*0.4), face:'south', dx:0, pose:'loaf', dur:20000+Math.random()*30000 };
+      if(it==='cushion') return { lift:Math.round(fh*0.28), face:'south', dx:0, pose:'loaf', dur:20000+Math.random()*30000 };
       if(it==='bowl')    return { lift:Math.round(fh*0.15), face:'south', dx:0, pose:'sit', dur:20000+Math.random()*26000 };
       // 물그릇: 밥그릇과 동일하게 뒤에서 앉아 물 마시기(비대칭이던 default 식빵 → 전용 케이스).
       if(it==='waterbowl') return { lift:Math.round(fh*0.15), face:'south', dx:0, pose:'sit', dur:14000+Math.random()*18000 };
       if(it==='scratcher') return { lift:0, face:(Math.random()<0.5?'east':'west'), dx:Math.round(a.sw*0.6)*(Math.random()<0.5?1:-1), pose:'sit', dur:18000+Math.random()*28000 };
       // 캣휠: 링 안쪽 바닥(정중앙)에 들어가 옆(east/west)을 보며 '달리기'(걷기 필름 빠르게·제자리)로 오래 머무름. run=true → enterInteract가 달리기 비주얼.
-      if(it==='catwheel') return { lift:Math.round(fh*0.12), face:(Math.random()<0.5?'east':'west'), dx:0, pose:'sit', run:true, dur:30000+Math.random()*45000 };
+      if(it==='catwheel') return { lift:Math.round(fh*0.34), face:(Math.random()<0.5?'east':'west'), dx:0, pose:'sit', run:true, dur:30000+Math.random()*45000 };   // 🎡 lift=링 안바닥 실측(row13/20=0.34) — 바닥에서 타는 듯 보이던 것 수정
       // 🏃 액티브 플레이 10종(2026-07) — 질주(run=캣휠 메커니즘 재사용)·리액션·관람
-      if(it==='treadmill') return { lift:Math.round(fh*0.26), face:(Math.random()<0.5?'east':'west'), dx:0, pose:'sit', run:true, dur:30000+Math.random()*45000 };
+      if(it==='treadmill') return { lift:Math.round(fh*0.46), face:(Math.random()<0.5?'east':'west'), dx:0, pose:'sit', run:true, dur:30000+Math.random()*45000 };   // 🏃 lift=벨트 데크 상면 실측(row15/28=0.46)
       if(it==='laserbot') return { lift:0, face:'east', dx:Math.round(fh*0.15), pose:'sit', run:true, dur:20000+Math.random()*25000 };   // 레이저 점(우측 바닥)을 쫓아 질주
-      if(it==='rcmouse') return { lift:Math.round(fh*0.18), face:(Math.random()<0.5?'east':'west'), dx:0, pose:'sit', run:true, dur:20000+Math.random()*25000 };   // 매트 위 추격
+      if(it==='rcmouse') return { lift:Math.round(fh*0.34), face:(Math.random()<0.5?'east':'west'), dx:0, pose:'sit', run:true, dur:20000+Math.random()*25000 };   // 매트 위 추격
       if(it==='slalom') return { lift:0, face:(Math.random()<0.5?'east':'west'), dx:0, pose:'sit', run:true, dur:22000+Math.random()*30000 };
       if(it==='sprinttrack') return { lift:0, face:(Math.random()<0.5?'east':'west'), dx:0, pose:'sit', run:true, dur:22000+Math.random()*35000 };
       if(it==='cucumber') return { lift:0, face:'south', dx:0, pose:'sit', dur:2600+Math.random()*1800 };   // 🥒 화들짝 — 짧게 하악질(angry 원샷·홀드)하고 떠남
@@ -1189,7 +1190,7 @@
       // 방울공: 옆에서 앉아 공을 굴리며 놈(약 10~24초).
       if(it==='jingleball') return { lift:0, face:'south', dx:Math.round(a.sw*0.3), pose:'sit', dur:10000+Math.random()*14000 };
       if(it==='yarnbasket') return { lift:0, face:'south', dx:Math.round(a.sw*0.35)*(Math.random()<0.5?1:-1), pose:'sit', dur:12000+Math.random()*14000 };
-      if(it==='beanbag') return { lift:Math.round(fh*0.30), face:'south', dx:0, pose:'loaf', dur:30000+Math.random()*40000 };
+      if(it==='beanbag') return { lift:Math.round(fh*0.38), face:'south', dx:0, pose:'loaf', dur:30000+Math.random()*40000 };
       if(it==='groomstation') return { lift:0, face:(Math.random()<0.5?'east':'west'), dx:Math.round(a.sw*0.5)*(Math.random()<0.5?1:-1), pose:'sit', dur:16000+Math.random()*20000 };
       if(it==='springtoy') return { lift:0, face:'south', dx:Math.round(a.sw*0.35)*(Math.random()<0.5?1:-1), pose:'sit', dur:10000+Math.random()*14000 };
       if(it==='tunnel') return { lift:0, face:(Math.random()<0.5?'east':'west'), dx:0, pose:'loaf', dur:24000+Math.random()*30000 };
@@ -1197,14 +1198,14 @@
       if(it==='laserpost'){ if(Math.random()<0.6) return { lift:0, face:(Math.random()<0.5?'east':'west'), dx:0, pose:'sit', run:true, dur:14000+Math.random()*18000 };   // 🏃 레이저 쫓아 질주(60%)
         return { lift:0, face:'south', dx:Math.round(a.sw*0.4)*(Math.random()<0.5?1:-1), pose:'sit', dur:10000+Math.random()*14000 }; }
       if(it==='waterfountain') return { lift:Math.round(fh*0.12), face:'south', dx:0, pose:'sit', dur:12000+Math.random()*16000 };
-      if(it==='sofa') return { lift:Math.round(fh*0.34), face:'south', dx:Math.round(a.sw*0.5)*(Math.random()<0.5?1:-1), pose:'loaf', dur:30000+Math.random()*40000 };
+      if(it==='sofa') return { lift:Math.round(fh*0.44), face:'south', dx:Math.round(a.sw*0.5)*(Math.random()<0.5?1:-1), pose:'loaf', dur:30000+Math.random()*40000 };
       if(it==='ballpit') return { lift:Math.round(fh*0.16), face:'south', dx:0, pose:'sit', dur:24000+Math.random()*30000 };
-      if(it==='bunkbed') return { lift:Math.round(fh*0.5), face:(Math.random()<0.5?'east':'west'), dx:0, pose:'loaf', dur:40000+Math.random()*50000 };
+      if(it==='bunkbed') return { lift:Math.round(fh*0.45), face:(Math.random()<0.5?'east':'west'), dx:0, pose:'loaf', dur:40000+Math.random()*50000 };
       if(it==='roundbed') return { lift:Math.round(fh*0.24), face:'south', dx:0, pose:'loaf', dur:28000+Math.random()*36000 };
       if(it==='donutbed') return { lift:Math.round(fh*0.26), face:'south', dx:0, pose:'loaf', dur:28000+Math.random()*36000 };
-      if(it==='cavebed') return { lift:Math.round(fh*0.1), face:'south', dx:0, pose:'sit', dur:45000+Math.random()*55000 };
-      if(it==='canopybed') return { lift:Math.round(fh*0.42), face:'south', dx:0, pose:'loaf', dur:40000+Math.random()*50000 };
-      if(it==='throne') return { lift:Math.round(fh*0.3), face:'south', dx:0, pose:'sit', dur:35000+Math.random()*45000 };
+      if(it==='cavebed') return { lift:Math.round(fh*0.22), face:'south', dx:0, pose:'sit', dur:45000+Math.random()*55000 };
+      if(it==='canopybed') return { lift:Math.round(fh*0.47), face:'south', dx:0, pose:'loaf', dur:40000+Math.random()*50000 };
+      if(it==='throne') return { lift:Math.round(fh*0.40), face:'south', dx:0, pose:'sit', dur:35000+Math.random()*45000 };
       if(it==='mousetoy'){ if(Math.random()<0.45) return { lift:0, face:(Math.random()<0.5?'east':'west'), dx:0, pose:'sit', run:true, dur:12000+Math.random()*14000 };   // 🏃 쥐 쫓아 질주(45%)
         return { lift:0, face:'south', dx:Math.round(a.sw*0.4)*(Math.random()<0.5?1:-1), pose:'sit', dur:10000+Math.random()*12000 }; }   // paw(south) 재생 위해 정면(2026-07, 구 east/west)
       if(it==='catnippillow') return { lift:Math.round(fh*0.2), face:'south', dx:0, pose:'loaf', dur:14000+Math.random()*16000 };
@@ -1213,7 +1214,7 @@
         return { lift:0, face:'south', dx:Math.round(a.sw*0.4)*(Math.random()<0.5?1:-1), pose:'sit', dur:12000+Math.random()*16000 }; }
       if(it==='teetertoy') return { lift:0, face:'south', dx:Math.round(a.sw*0.35)*(Math.random()<0.5?1:-1), pose:'sit', dur:10000+Math.random()*12000 };
       if(it==='groomarch') return { lift:0, face:'east', dx:0, pose:'sit', dur:12000+Math.random()*14000 };
-      if(it==='heatpad') return { lift:0, face:'south', dx:0, pose:'loaf', dur:20000+Math.random()*20000 };
+      if(it==='heatpad') return { lift:Math.round(fh*0.25), face:'south', dx:0, pose:'loaf', dur:20000+Math.random()*20000 };
       if(it==='peekbox') return { lift:0, face:'south', dx:Math.round(a.sw*0.3)*(Math.random()<0.5?1:-1), pose:'sit', dur:13000+Math.random()*15000 };
       if(it==='crinklebag') return { lift:0, face:'south', dx:0, pose:'loaf', dur:14000+Math.random()*16000 };
       // 🆕 2026-07 상호작용화 5종 — 간식단지·캣그라스=먹기(eat), 테더볼=톡톡(paw), 바람개비·버블머신=물끄러미(eyetrack). 전부 정면(south) 자리.
@@ -1343,9 +1344,9 @@
         }
         // 가구로 이동 결정(가구 있을 때, 쿨다운 후)
         if(a.mode==='roam' && a.props.length && a.cool<=0 && Math.random()<a.seek*pr){
-          const avail=a.props.filter(p=>INTERACTIVE_FURN[p.itemId] && occupantsOf(p.key,a,actors).n < (p.itemId==='tower'?3:1));   // 상호작용 가구(화이트리스트) 중 빈 것만(캣타워는 남은 층 있으면). 바닥 아이템(러그·연못)·배경 가구(화장실·화분)는 목록에 없어 자동 제외
+          const avail=a.props.filter(p=>INTERACTIVE_FURN[p.itemId] && occupantsOf(p.key,a,actors).n < (p.itemId==='tower'?2:1));   // 상호작용 가구(화이트리스트) 중 빈 것만(캣타워는 남은 층 있으면). 바닥 아이템(러그·연못)·배경 가구(화장실·화분)는 목록에 없어 자동 제외
           if(avail.length){ const g=avail[Math.floor(Math.random()*avail.length)]; a.resKey=g.key;
-            if(g.itemId==='tower'){ const used=occupantsOf(g.key,a,actors).floors; a.resFloor=[0,1,2].find(f=>!used[f]); if(a.resFloor==null) a.resFloor=0; } else a.resFloor=null;
+            if(g.itemId==='tower'){ const used=occupantsOf(g.key,a,actors).floors; a.resFloor=[0,1].find(f=>!used[f]); if(a.resFloor==null) a.resFloor=0; } else a.resFloor=null;   // 🪜 캣타워=맨아래·맨위 2자리
             a.goal=g; a.mode='goal'; } }
         // 가구 도착: "고양이 중심"(a.x+sw/2) 기준으로 가구 중앙(goal.x)에 섬. 깊이도 가구 쪽으로 맞춰 걸어감.
         // ⚠️ x에 다 왔는데 깊이 수렴을 기다리며 방향이 매 프레임 뒤집혀 "제자리 좌우 춤"추던 버그 → x 도착 시 위치를 스냅하고 방향을 고정한 채 대기.
