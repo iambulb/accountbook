@@ -756,18 +756,18 @@
     //   ⚠️ OS 'prefers-reduced-motion'(접근성=전면 정적)과는 분리 — 라이트는 걷기·탭 같은 '기능성' 모션은 유지한다.
     function liteMode(){ try{ return localStorage.getItem('liteMode')==='1'; }catch(e){ return false; } }
     function reducedMotion(){ try{ return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } }
-    // 🔋 기기 성능 등급(high/mid/low) — 부팅 1회 산출·메모이즈. 저사양/모바일이면 자동으로 부하를 낮춘다(씬 개수 감축·프레임예산·걷기 duration). localStorage 'perfTier'로 강제 오버라이드(개발/QA).
+    // 🔋 기기 성능 등급(high/mid/low) — 부팅 1회 산출·메모이즈. 사용자 지침: "모바일만 최적화, 데스크톱 성능저하 금지" → 데스크톱은 기본 high(무감축=원본 그대로), 모바일만 감축한다. localStorage 'perfTier'로 강제 오버라이드(개발/QA).
     let _perfTier=null;
     function perfTier(){ if(_perfTier) return _perfTier;
       try{ const o=localStorage.getItem('perfTier'); if(o==='low'||o==='mid'||o==='high'){ _perfTier=o; return o; } }catch(e){}
-      let t='high';
-      try{ const hc=navigator.hardwareConcurrency||0, dm=navigator.deviceMemory||0, ua=navigator.userAgent||'';
+      let t='high';   // 🖥️ 기본 high=무감축(원본과 100% 동일 연출·fps) — 데스크톱은 어지간하면 여기 머문다
+      try{ const hc=navigator.hardwareConcurrency||0, ua=navigator.userAgent||'';
         let coarse=false; try{ coarse=window.matchMedia('(pointer:coarse)').matches; }catch(_e){}
         const mobile = coarse || /android|iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua) && (navigator.maxTouchPoints||0)>1);
-        if((hc>0&&hc<=4)||(dm>0&&dm<=4)) t='low';                    // 코어4↓/메모리4GB↓ = 저사양
-        else if(mobile && (hc===0||hc<=6)) t='low';                 // 모바일 중저사양(코어 미보고 포함)
-        else if(mobile || (hc>0&&hc<=6) || (dm>0&&dm<=6)) t='mid';  // 모바일·중간사양
-      }catch(e){ t='mid'; }
+        if(mobile) t = (hc>0 && hc<=4) ? 'low' : 'mid';   // 📱 모바일만 감축 — 저사양 모바일=low(자동 lite), 그 외 모바일=mid(GPU 레이어만 회수)
+        else if(hc>0 && hc<=2) t='low';                    // 🖥️ 2코어 이하 초저사양 데스크톱만 low(사실상 드묾)
+        // ⚠️ deviceMemory는 쓰지 않는다 — Chrome이 프라이버시로 8에 캡·4로 흔히 보고해(16GB 데스크톱도 8, 4~8GB는 4) '멀쩡한 데스크톱이 low로 오판→불필요한 자동 lite로 연출이 달라 보이던' 회귀의 원인. 코어수도 데스크톱은 ≤2만 저사양으로 본다.
+      }catch(e){ t='high'; }   // 감지 실패 시 안전하게 무감축(원본 유지)
       _perfTier=t; return t; }
     // 🔋 유효 등급 — OS 모션축소=reduced(전면 정적), 사용자 lite 또는 저사양기기=low, 그 외 mid/high. 사용자 수동 lite 토글은 독립(자동은 제약을 더할 뿐 끄지 않음).
     function effTier(){ if(reducedMotion()) return 'reduced'; const b=perfTier(); return (liteMode()||b==='low')?'low':b; }

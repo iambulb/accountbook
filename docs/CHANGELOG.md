@@ -8,6 +8,10 @@
 
 > 새 변경 사항은 여기에 추가하세요. 릴리스할 때 버전 번호와 날짜를 붙여 아래로 내립니다.
 
+### 수정 — 🔋 적응형 성능 등급 오판 회귀(데스크톱 연출이 달라 보이던 문제)
+- `perfTier` 감지에서 **`deviceMemory`를 제거**하고 **데스크톱은 기본 `high`(무감축=원본과 100% 동일)** 로 고정. Chrome이 `deviceMemory`를 프라이버시로 8에 캡·**4로 흔히 보고**(16GB 데스크톱=8, 4~8GB=4)해 **멀쩡한 데스크톱이 `low`로 오판→불필요한 자동 lite→"연출이 전과 다르게" 보이던 회귀** 수정. 이제 **모바일만 감축**(저사양 모바일=low·그 외 모바일=mid), 데스크톱은 코어 ≤2일 때만 low(사실상 드묾). 감지 실패 시에도 `high`(무감축).
+- `bgfxOverlayHtml`(cats.js)의 크로스파일 `perfCountMul` 호출에 **`typeof` 가드** 추가 — 서비스워커 스큐(구 `cats.engine.js` 캐시)로 함수 미로드 시 ReferenceError로 방 렌더가 깨지지 않게 무감축 폴백. `CACHE_VERSION`↑(전 클라이언트 앱셸 강제 재취득으로 스큐 해소).
+
 ### 추가 — 🔋 펫캠 적응형 성능 스로틀 + 저사양/모바일 자동 부하감축
 - **기기 성능 등급 자동 감지**(`perfTier`, `cats.engine.js` — `navigator.hardwareConcurrency`/`deviceMemory` + 모바일 판별) → `high`/`mid`/`low`. **저사양·모바일은 부팅 시 자동으로 가벼운 모드(`body.lite`)** 진입(별도 나그 없음 — `maybeSuggestLite`는 이제 저사양에서 무동작), 중간사양은 `body.perfmid`(가장 무거운 움직이는 레이어의 GPU `will-change` 회수 + 반딧불 블러 filter 컷, 움직임은 유지), 고사양은 무감축.
 - **씬/파티클 개수 감축을 등급별로**(`perfCountMul`: high 1·mid 0.7·low 0.45) — `pkCount`/`fxCount`/배경효과 `Nc`·`N`(dock·홈·친구·PiP 워커 미러 모두). 동시 합성 레이어 수를 줄이는 게 연속 CSS 애니 발열의 실효 대책(‘느리게’는 매 리프레시 재합성이라 무효).
