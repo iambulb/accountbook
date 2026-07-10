@@ -121,7 +121,7 @@
       if(isEggKind(_fx.kind)){
         const ddLike=_fx.kind==='ddeul'||_fx.v2egg;   // 🎨 v2 펫알(배너관리 미리보기)도 뜰알식(균열 없음·새싹 팔랑·무지개=새싹 커짐+무지개색)
         if(_fx.stage===2 && !_fx.rainbow && !ddLike) maybeRainbowUpgrade();   // 2번째 탭 직후: 특별↑이면 확률로 무지개알 승급(뜰알·v2 펫알은 제외 — 꽃/새싹 무지개 전용 연출)
-        if(_fx.stage===2 && _fx.kind==='ddeul') ddeulPickupFx(it.closest('.fx-stage'));   // 🌈 뜰알 무지개+나비 = 무조건(뜰알의 시그니처 — 2026-07-10 사용자 지침으로 조건부(e2f07f7) 원복)
+        if(_fx.stage===2 && _fx.kind==='ddeul' && (_fx.res.tier==='exclusive' || Math.random()<rbUpgradeChance(_fx.res.tier))) ddeulPickupFx(it.closest('.fx-stage'));   // 🌈 뜰알 무지개+나비 = 조건부(한정=항상·특별50%·전설/신화100% — 2026-07-10 사용자 재확정, 배경 무지개 픽업씬은 유지)
         if(_fx.stage===2 && _fx.v2egg && !_fx.rainbow && Math.random()<rbUpgradeChance(_fx.res.tier)) ddeulPickupFx(it.closest('.fx-stage'));   // 🌱 v2 펫알: 뜰알 꽃과 같은 조건 — 새싹이 커지며 무지개색(ddeulFlowerRb가 fx-ddspr 감지)
         if(_fx.stage===2 && _fx.kind!=='ddeul' && _fx.rainbow) ddeulPickupFx(it.closest('.fx-stage'));   // 펫알(무지개알로 승급) · 무지개알(원래부터)도 뜰알과 동일한 무지개+나비 연출 — 승급 조건과 같은 타이밍/조건
         it.innerHTML = _fx.kind==='ddeul' ? ddeulFxHtml(_fx._flwRb?DDEUL_FLW_RB:undefined)
