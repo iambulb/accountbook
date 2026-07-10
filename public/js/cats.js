@@ -2107,7 +2107,7 @@
       wallvines: {type:'sway', move:['L', 'l', 'I', 'f', 'F'] },
       pennant: {type:'sway', move:['R', 'B', 'Y', 'G', 'W'] },
       stringlights: {type:'blink', move:['R', 'Y', 'G', 'B', 'P', 'H'] },
-      wallsun: {type:'spin', move:['o', 'O', 'H'] },
+      wallsun: {type:'spin', move:['o', 'O'] },
       catgrass: {type:'sway', move:['L', 'l', 'I'] },
       groomarch: {type:'sway', move:['i', 'I'] },
       heatpad: {type:'flicker', move:['L', 'H', 'o'] },
@@ -2115,9 +2115,15 @@
       windmilltoy: {type:'spin', move:['R', 'B', 'Y', 'G', 'o'] },
       crinklebag: {type:'sway', move:['H', 'W'] },
       koipond: {type:'drift', move:['L', 'W', 'P', 'p', 'o', 'r'], bg:'B' },
-      woodstove: {type:'flicker', move:['f', 'F', 'r', 'o'] },
+      woodstove: {type:'flicker', move:['f', 'F', 'r', 'o'], bg:'D' },
       mushroomlamp: {type:'flicker', move:['L', 'o', 'H'] },
       crystaltree: {type:'sway', move:['b', 'H', 'p', 'P', 'C', 'c'] },
+      // 🧸 배치5 재디자인 연출(2026-07): 화병 꽃 살랑(상부 공기·언더레이)
+      floorvase: {type:'sway', move:['R','Y','P','F'] },
+      // 🧸 배치4 재디자인 연출(2026-07): 태피스트리 술 살랑·청우계 바늘 흔들(bg=문자판)·코너선반 화분 잎 살랑
+      tapestry: {type:'sway', move:['f'] },
+      barometer: {type:'swing', move:['N'], bg:'L' },
+      cornershelf: {type:'sway', move:['L','l'] },
       // 🧸 배치3 재디자인 연출(2026-07): 쿠션 태슬·왕좌 보석(bg=금장)·캐노피 커튼·동굴 이끼·간식단지 과자 반짝(bg=유리)
       cushion: {type:'sway', move:['t','s'] },
       throne: {type:'blink', move:['j'], bg:'W' },
@@ -2218,7 +2224,7 @@
       if(right===GRID_N && c!==1) return 'right';
       return 'center'; }
     // 가구 그래픽 가로세로비(cols/rows) — 그래픽 폭 = fh*aspect. 캠 중심 x 계산(buildActors)에 사용.
-    const FURN_ASPECT = { pond:1.722, tower:0.64, scratcher:0.842, pethouse:0.895, catwheel:1.0, plant:0.727, litterbox:1.222, cushion:1.222, bowl:1.375, waterbowl:1.375, rug:2.154, window:0.875, fishtank:1.111, fireplace:1.067, fan:0.8, hammock:0.941, teaser:0.842, wallclock:0.889, hangplant:1.0, mobile:1.333, chandelier:1.333, jingleball:1.0, frame:1.077, shelf:1.571, mirror:1.0, neon:1.143, sconce:1.143, garland:3.333, poster:1.0, tapestry:0.923, cactus:0.615, yarnbasket:0.9, floorlamp:0.64, beanbag:1.059, groomstation:0.762, springtoy:0.762, tunnel:1.421, teepee:0.8, bookshelf:0.615, birdcage:0.667, lavalamp:0.696, laserpost:0.762, waterfountain:0.762, sofa:1.688, recordplayer:0.941, terrarium:0.941, ballpit:1.867, grandfaclock:0.571, bunkbed:0.727, crystalfountain:1.368, dartboard:1.0, cuckooclock:0.762, roundbed:1.385, donutbed:1.385, cavebed:1.111, canopybed:0.947, throne:0.9, mousetoy:1.25, catnippillow:1.25, puzzlefeeder:1.25, balltrack:2.083, teetertoy:1.25, bubblemachine:1.067, bonsai:0.889, globe:1.0, snowglobe:1.067, campfire:1.067, gramophone:1.0, arcademachine:1.0, jukebox:1.067, crystalcluster:1.143, easel:1.067, floorvase:1.067, suitofarmor:1.0, hourglass:1.067, telescope:1.0, gumballmachine:1.067, wallvines:1.308, pennant:1.75, wallmask:0.923, barometer:0.857, stringlights:3.167, wallbutterfly:1.062, cornershelf:1.333, wallsun:1.0, treatjar:0.875, catgrass:1.143, groomarch:1.143, heatpad:1.25, peekbox:1.25, tetherpole:1.067, windmilltoy:1.067, crinklebag:1.125, roundrug:1.583, runner:2.3, koipond:1.75, displaycase:1.143, woodstove:1.067, mushroomlamp:1.143, statuecat:1.067, teacart:1.231, crystaltree:1.067, treadmill:1.286, laserbot:1.444, rcmouse:2.188, slalom:1.417, sprinttrack:3.5, cucumber:1.25, milkbar:0.818, dispenser:0.643, birdfeeder:0.688, hamstercage:0.833 };
+    const FURN_ASPECT = { pond:1.722, tower:0.64, scratcher:0.842, pethouse:0.895, catwheel:1.0, plant:0.727, litterbox:1.222, cushion:1.222, bowl:1.375, waterbowl:1.375, rug:2.154, window:0.875, fishtank:1.111, fireplace:1.067, fan:0.8, hammock:0.941, teaser:0.842, wallclock:0.889, hangplant:1.0, mobile:1.333, chandelier:1.333, jingleball:1.0, frame:0.938, shelf:1.571, mirror:0.875, neon:1.143, sconce:1.143, garland:3.333, poster:0.812, tapestry:0.722, cactus:0.615, yarnbasket:0.9, floorlamp:0.64, beanbag:1.059, groomstation:0.762, springtoy:0.762, tunnel:1.421, teepee:0.8, bookshelf:0.615, birdcage:0.667, lavalamp:0.696, laserpost:0.762, waterfountain:0.762, sofa:1.688, recordplayer:0.941, terrarium:0.941, ballpit:1.867, grandfaclock:0.571, bunkbed:0.727, crystalfountain:1.368, dartboard:1.0, cuckooclock:0.762, roundbed:1.385, donutbed:1.385, cavebed:1.111, canopybed:0.947, throne:0.9, mousetoy:1.25, catnippillow:1.25, puzzlefeeder:1.25, balltrack:2.083, teetertoy:1.25, bubblemachine:1.067, bonsai:0.889, globe:1.0, snowglobe:0.889, campfire:1.111, gramophone:1.0, arcademachine:1.0, jukebox:0.8, crystalcluster:1.143, easel:0.9, floorvase:0.7, suitofarmor:1.0, hourglass:0.778, telescope:1.0, gumballmachine:1.067, wallvines:1.308, pennant:1.75, wallmask:0.765, barometer:0.765, stringlights:3.167, wallbutterfly:1.062, cornershelf:1.125, wallsun:1.0, treatjar:0.875, catgrass:1.143, groomarch:1.143, heatpad:1.25, peekbox:1.25, tetherpole:1.067, windmilltoy:1.067, crinklebag:1.125, roundrug:1.583, runner:2.3, koipond:1.75, displaycase:1.143, woodstove:0.947, mushroomlamp:1.143, statuecat:0.737, teacart:1.231, crystaltree:1.067, treadmill:1.286, laserbot:1.444, rcmouse:2.188, slalom:1.417, sprinttrack:3.5, cucumber:1.25, milkbar:0.818, dispenser:0.643, birdfeeder:0.688, hamstercage:0.833 };
     function furnAspect(id){ return FURN_ASPECT[id]||1; }
     function furnRoomH(id, isDock, depth){
       const mult = ROOM_H[id] || 1;

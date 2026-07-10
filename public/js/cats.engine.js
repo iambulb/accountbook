@@ -382,7 +382,7 @@
       dpfall:{dur:0.8}, dpled:{dur:1.4},
       bfbird1:{kf:'fish',dur:2.6}, bfbird2:{kf:'pondfish',dur:2.2},
       hcwheel:{org:[0.5,0.29],dur:0.9}, hcham:{org:[0.3,0.62],dur:0.55}, hcbottle:{org:[0.22,0.27],dur:2.2},
-      mtkey:{org:[0.5,0.28],dur:1.0}, mttail:{org:[0.65,0.84],dur:1.6}, cnleaf:{dur:2.6}, shelf:{dur:2.6}, wallbutterfly:{dur:1.8}, cushion:{dur:2.8}, canopybed:{dur:5.2}, cavebed:{dur:3.2}
+      mtkey:{org:[0.5,0.28],dur:1.0}, mttail:{org:[0.65,0.84],dur:1.6}, cnleaf:{dur:2.6}, shelf:{dur:2.6}, wallbutterfly:{dur:1.8}, cushion:{dur:2.8}, canopybed:{dur:5.2}, cavebed:{dur:3.2}, tapestry:{org:[0.5,0.06],dur:2.2}, barometer:{org:[0.5,0.5],dur:2.4}, cornershelf:{dur:2.4}, floorvase:{org:[0.5,0.4],dur:2.6}
     };
     function _vpipFxMeta(type, key){ const t=_VPIP_FX_TYPE[type]||{kf:type,dur:4}; const o=_VPIP_FX_ID[key]||{};
       return { kf:o.kf||t.kf, dur:o.dur||t.dur, org:o.org||t.org||[0.5,0.5] }; }
