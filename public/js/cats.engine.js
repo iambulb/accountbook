@@ -757,20 +757,22 @@
     //   ⚠️ OS 'prefers-reduced-motion'(접근성=전면 정적)과는 분리 — 라이트는 걷기·탭 같은 '기능성' 모션은 유지한다.
     function liteMode(){ try{ return localStorage.getItem('liteMode')==='1'; }catch(e){ return false; } }
     function reducedMotion(){ try{ return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } }
-    // 🔋 기기 성능 등급(high/mid/low) — 부팅 1회 산출·메모이즈. 사용자 지침: "모바일만 최적화, 데스크톱 성능저하 금지" → 데스크톱은 기본 high(무감축=원본 그대로), 모바일만 감축한다. localStorage 'perfTier'로 강제 오버라이드(개발/QA).
+    // 🔋 기기 성능 등급(high/mid) — 부팅 1회 산출·메모이즈. 사용자 지침: "모바일만 최적화, 데스크톱 성능저하 금지" → 데스크톱=항상 high(무감축), 모바일=mid(움직임 유지 감축). localStorage 'perfTier'로 강제 오버라이드(개발/QA — 'low' 테스트는 이 경로만).
+    // 🚨 자동 등급은 절대 'low'(=body.lite 전면 정지)를 내지 않는다 (2026-07-10 사용자 지침·실제 장애):
+    //    아이폰 사파리가 hardwareConcurrency를 낮게(≤4) 보고해 정상 아이폰이 low로 오판 → 설정 저사양 OFF인데도
+    //    배너·캠·뽑기 연출이 전부 정지돼 보였다. body.lite는 오직 ①사용자 수동 토글(liteMode) ②perfTier 수동 오버라이드로만.
     let _perfTier=null;
     function perfTier(){ if(_perfTier) return _perfTier;
       try{ const o=localStorage.getItem('perfTier'); if(o==='low'||o==='mid'||o==='high'){ _perfTier=o; return o; } }catch(e){}
-      let t='high';   // 🖥️ 기본 high=무감축(원본과 100% 동일 연출·fps) — 데스크톱은 어지간하면 여기 머문다
-      try{ const hc=navigator.hardwareConcurrency||0, ua=navigator.userAgent||'';
+      let t='high';   // 🖥️ 기본 high=무감축(원본과 100% 동일 연출·fps) — 데스크톱은 항상 여기
+      try{ const ua=navigator.userAgent||'';
         let coarse=false; try{ coarse=window.matchMedia('(pointer:coarse)').matches; }catch(_e){}
         const mobile = coarse || /android|iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua) && (navigator.maxTouchPoints||0)>1);
-        if(mobile) t = (hc>0 && hc<=4) ? 'low' : 'mid';   // 📱 모바일만 감축 — 저사양 모바일=low(자동 lite), 그 외 모바일=mid(GPU 레이어만 회수)
-        else if(hc>0 && hc<=2) t='low';                    // 🖥️ 2코어 이하 초저사양 데스크톱만 low(사실상 드묾)
-        // ⚠️ deviceMemory는 쓰지 않는다 — Chrome이 프라이버시로 8에 캡·4로 흔히 보고해(16GB 데스크톱도 8, 4~8GB는 4) '멀쩡한 데스크톱이 low로 오판→불필요한 자동 lite로 연출이 달라 보이던' 회귀의 원인. 코어수도 데스크톱은 ≤2만 저사양으로 본다.
+        if(mobile) t='mid';   // 📱 모바일=mid 고정 — GPU 힌트 회수·데코 개수 ×0.7·걷기 프레임예산만(움직임은 전부 유지). 코어 수 기반 low 강등 금지(위 지침).
+        // ⚠️ deviceMemory·hardwareConcurrency로 low 판정하지 않는다 — Chrome deviceMemory 8캡/4보고, 사파리 hc 저보고로 멀쩡한 기기가 low 오판(데스크톱·아이폰 두 번 재발).
       }catch(e){ t='high'; }   // 감지 실패 시 안전하게 무감축(원본 유지)
       _perfTier=t; return t; }
-    // 🔋 유효 등급 — OS 모션축소=reduced(전면 정적), 사용자 lite 또는 저사양기기=low, 그 외 mid/high. 사용자 수동 lite 토글은 독립(자동은 제약을 더할 뿐 끄지 않음).
+    // 🔋 유효 등급 — OS 모션축소=reduced(전면 정적), 사용자 수동 lite(또는 perfTier 수동 오버라이드 'low')=low, 그 외 mid/high. 자동 감지는 low를 못 낸다(위 지침).
     function effTier(){ if(reducedMotion()) return 'reduced'; const b=perfTier(); return (liteMode()||b==='low')?'low':b; }
     // 🔋 씬/파티클 노드 감축 배수(등급별) — 동시 합성 레이어 수를 줄이는 핵심 손잡이. high=1(무감축).
     function perfCountMul(){ const t=effTier(); return (t==='low'||t==='reduced')?0.45:(t==='mid'?0.7:1); }
@@ -790,7 +792,7 @@
     // 🔋 저사양 기기 1회 안내 — 코어4↓ 또는 메모리4GB↓면 최초 1회만 가벼운 모드 권유(기본 동작은 안 바꿈, 사용자가 선택). liteSuggested로 다시 안 뜸.
     function maybeSuggestLite(){ try{
       if(liteMode()) return;                                       // 이미 켜짐
-      if(effTier()==='low') return;                                // 🔋 저사양은 부팅 시 자동 perf 모드(body.lite) 진입 — 별도 나그 없음(사용자 지침)
+      if(effTier()==='low'||effTier()==='reduced') return;         // 이미 저사양 표시 중(수동 lite/오버라이드)·모션축소면 권유 불필요 — 자동 lite는 폐지(2026-07-10)라 저사양 추정 기기엔 이 권유가 유일한 안내(opt-in)
       if(localStorage.getItem('liteSuggested')==='1') return;      // 이미 안내함(선택 무관 1회)
       if($('sheet') && $('sheet').classList.contains('on')) return;   // 다른 시트 열려 있으면 다음 기회에
       const hc=navigator.hardwareConcurrency, dm=navigator.deviceMemory;
