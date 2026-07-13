@@ -428,7 +428,7 @@
       else if(it && _fx10 && _fx10.v2 && it.kind==='egg' && _fx10.theme!=='night'){ it._sprRb=true;   // 🌱 v2 펫알: 새싹이 커지며 무지개색(뜰알 꽃과 동일 조건·타이밍, 오픈까지 it._sprRb로 유지). 밤(무지개알)은 이미 무지개 꽃이라 제외.
         const fl=eggEl.querySelector('.fx-ddflower'); if(fl){ fl.innerHTML=egg2SprRbSvg(); fl.classList.add('ddflw-rb','ddflw-big'); } }
     }
-    // 카메오 펫 선정: 🌈 무지개 10연(rb·미리보기 night 테마)=한정 펫 랜덤(무조건), 한정(뜰알)=픽업 펫(삵·표범), 그 외 전설↑=전설/신화 스프라이트 랜덤
+    // 카메오 펫 선정: 🌈 무지개 10연(rb·미리보기 night 테마)=한정 펫 랜덤(무조건), 한정(뜰알)=픽업 펫(흑표범·퓨마), 그 외 전설↑=전설/신화 스프라이트 랜덤
     function tenCameoPet(it){
       if(_fx10 && (_fx10.rb || _fx10.theme==='night')){ const ex=exCameoPool(); if(ex.length) return ex[Math.floor(Math.random()*ex.length)]; }
       if(it.tier==='exclusive'){ const pk=pickupMember(); if(pk) return pk; }
@@ -676,7 +676,7 @@
       const previewTiers=TIERS.filter(t=>t.id!=='exclusive');
       h+='<div class="tx-sub" style="margin:0 2px 6px;">펫알</div><div class="chip-row">'+previewTiers.map(t=>'<button class="chip" '+App.view.act('devPreview','egg',t.id)+'><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
       h+='<div class="tx-sub" style="margin:8px 2px 6px;">랜덤박스</div><div class="chip-row">'+previewTiers.map(t=>'<button class="chip" '+App.view.act('devPreview','box',t.id)+'><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
-      // 🌱 뜰알(한정 픽업) — 뜰알 기준 연출 미리보기. 한정은 뜰알에서만 나오므로 '한정' 연출은 여기서 확인(뜰+하늘+무지개, 픽업 펫=삵·표범).
+      // 🌱 뜰알(한정 픽업) — 뜰알 기준 연출 미리보기. 한정은 뜰알에서만 나오므로 '한정' 연출은 여기서 확인(뜰+하늘+무지개, 픽업 펫=흑표범·퓨마).
       h+='<div class="tx-sub" style="margin:8px 2px 6px;">🌱 뜰알(한정 픽업)</div><div class="chip-row">'+TIERS.map(t=>'<button class="chip" '+App.view.act('devPreview','ddeul',t.id)+'><b class="tier-'+t.id+'">'+t.name+'</b></button>').join('')+'</div>';
       // 🥚×10 10연차 연출 확인(개발자 미리보기 전용) — 시나리오별 강제 결과로 연출만 재생. 한정(exclusive)은 뜰알에서만.
       h+='<div class="tx-sub" style="margin:12px 2px 6px;">🥚×10 10연차(펫알)</div><div class="chip-row">'+
@@ -734,7 +734,7 @@
     function devPreview(kind, tierId, forceId, rainbow){
       const map = isEggKind(kind)? effCatTier() : effItemTier();   // 뜰알(ddeul)도 펫알과 동일하게 펫 등급 맵 사용
       let id = forceId || Object.keys(map).find(k=>map[k]===tierId);
-      if(kind==='ddeul' && tierId==='exclusive'){ const pk=(typeof LIMITED_PICKUP!=='undefined') && pickupMember(); if(pk) id=pk; }   // 한정 = 픽업 펫(삵·표범)으로 연출
+      if(kind==='ddeul' && tierId==='exclusive'){ const pk=(typeof LIMITED_PICKUP!=='undefined') && pickupMember(); if(pk) id=pk; }   // 한정 = 픽업 펫(흑표범·퓨마)으로 연출
       if(!id) id = isEggKind(kind) ? (Object.keys(map)[0]||'cat_mackerel') : (Object.keys(map)[0]||'cushion');
       closeSheet(); _fx=null; runGachaFx(kind, { id, tier:tierId }, false, 0, !!rainbow, true);   // 미리보기는 NEW 배지도 함께 표시
     }

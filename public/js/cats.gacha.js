@@ -9,7 +9,7 @@
       { id:'limited',  name:'신화', p:0.8, color:'#ff5fa2' },   // 신화(구 '한정') — 핑크 텍스트·연출. id는 하위호환 위해 'limited' 유지. 2026-07: 1→0.8
       { id:'exclusive',name:'한정', p:0.2, color:'#F2C84B' }    // 한정(최상위·무지개) — 2026-07: 펫알·랜덤박스에도 0.2%(펫=활성 한정만·아이템=한정 포함 boxPool). 미공개 한정 전체는 무지개알/박스(신화80·한정20)에서
     ];
-    // 🌱 뜰알(한정 픽업 뽑기) 전용 확률표 — 기본과 같지만 신화 1→0.5, 한정 0.5 추가(활성 한정 펫=삵·표범만 풀에). 합 100.
+    // 🌱 뜰알(한정 픽업 뽑기) 전용 확률표 — 기본과 같지만 신화 1→0.5, 한정 0.5 추가(활성 한정 펫=흑표범·퓨마만 풀에). 합 100.
     const DDEUL_TIERS=[{id:'normal',p:45},{id:'uncommon',p:30},{id:'rare',p:15},{id:'epic',p:6},{id:'legend',p:3},{id:'limited',p:0.5},{id:'exclusive',p:0.5}];
     // (구) NO_GACHA_TIERS 제거 — 한정 펫은 펫알에선 exActive(활성)만 선별 포함, 무지개알은 전체(rainbowCatTierMap). 한정 아이템은 boxPool에 포함(기본 박스 0.2%·무지개박스 50% — 2026-07 개편).
     const TIER_ORDER = TIERS.map(t=>t.id);   // 높은 등급이 비면 한 단계씩 낮춰 대체할 때 사용
@@ -20,7 +20,7 @@
       if(t==='exclusive') return '<span class="tier-rainbow">'+n+'</span>';   // 한정 = 무지개
       return '<span style="color:'+catTierColor(id)+'">'+n+'</span>'; }   // 신화=핑크(#ff5fa2) 등 등급색
     // 🌈 한정 픽업(가챠 배너): [펫1(왼쪽), 펫2(오른쪽)]. 픽업 대상을 바꾸려면 이 배열만 수정. 존재하는 펫만 배너에 뜬다.
-    const LIMITED_PICKUP = ['cat_leopardcat','cat_leopard'];   // 첫 한정 픽업: 펫1=삵 · 펫2=표범
+    const LIMITED_PICKUP = ['cat_blackpanther','cat_puma'];   // 한정 픽업: 펫1=흑표범 · 펫2=퓨마
     // 🌙 개발자 배너 미리보기 전용 픽업 오버라이드(밤=흑표범·카라칼). 라이브 LIMITED_PICKUP/exActive는 안 건드림 — FX 닫힐 때 해제.
     const DEV_NIGHT_PICKUP=['cat_blackpanther','cat_caracal'];
     let _devPickupOverride=null;
