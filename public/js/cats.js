@@ -3029,7 +3029,7 @@
     // ⏱️ ms→"Nh Mm"/"Mm" 간단 표기(부스트 남은시간·소비템)
     function fmtDur(ms){ ms=Math.max(0,Number(ms)||0); const mm=Math.round(ms/60000), h=Math.floor(mm/60), m=mm%60; return h>0?(h+'시간'+(m?' '+m+'분':'')):(m+'분'); }
     // 🎨 염색 색상 카탈로그(2026-07 대확장) — 색 정체성(이름·색상환)은 그대로. 각 색의 `_p`(h/s/b 또는 achroma b)로 "대표 색상(hue)"을 뽑는다.
-    //    ⚠️ 렌더는 "2색 캔버스 베이크"(아래 dyedUrl/_bakeRecolor, 2026-07 전면 개편) — 몸 바탕=염색1·얼룩/눈=염색2를 픽셀 분할 재색.
+    //    ⚠️ 렌더는 "2색 캔버스 베이크"(아래 dyedUrl/_bakeRecolor, 2026-07 전면 개편) — 몸 바탕=염색1·얼룩=염색2. 눈코입·테두리는 원본 유지(재색 안 함).
     //    ⚠️ legacy 하위호환: 구 저장 숫자값(hue 40~320)은 이제 미염색 처리(2색 개편으로 폐지). owned.cats[id].dye/dye2 문자열 색 id만 유효.
     const LEGACY_DYE_HUES=[40,80,120,160,200,240,280,320];   // (참고용 상수 — 렌더에서 미사용, 구 데이터 인지용)
     const DYE_CATALOG=(function(){ const out=[];
@@ -3131,10 +3131,10 @@
       const arr=(byT[tier]&&byT[tier].length)?byT[tier]:avail;
       return arr[Math.floor(Math.random()*arr.length)];
     }
-    // ── 🎨 2색 염색 — 펫별 색분할(마스크) + 캔버스 베이크 (2026-07 전면 개편, 사용자 지침) ──
-    //   몸 바탕=염색1(owned.cats[id].dye) · 얼룩·눈=염색2(owned.cats[id].dye2). 두 영역을 CSS/SVG 필터로는 못 나눠(루미넌스 LUT 한계)
-    //   → 캔버스 getImageData로 픽셀을 아웃라인/몸/얼룩 3영역 분할 후 재색, dataURL로 스왑(dyedUrl 단일 소스). 색상(hue)은 기존 파라미터에서 산출해 "색종류 유지".
-    //   세그: 아웃라인=아주 어둡고 저채도 · 몸=대표색(south 최빈 비외곽색) 근처 · 얼룩=나머지. 한쪽만 지정 시 그 영역만 재색(원본 얼룩/눈 유지). 어두운 펫도 몸이 물듦.
+    // ── 🎨 2색 염색 — 펫별 색분할(마스크) + 캔버스 베이크 (2026-07 재설계, 사용자 지침 "눈코입 안 건드림·검은펫도 염색·자연 구분") ──
+    //   몸 바탕=염색1(owned.cats[id].dye) · 얼룩=염색2(owned.cats[id].dye2). 필터로는 두 영역을 못 나눠 캔버스 getImageData로 4영역 분할 후 재색, dataURL 스왑(dyedUrl 단일 소스).
+    //   ⭐ 4영역: ①테두리(L<0.09 아주 어두움)·②눈코입(작고 채도 높은 이질색)=원본 유지(재색 안 함) · ③몸=대표색(어두운 몸도 최빈이라 잡힘 → 검은/회색 펫도 물듦)=염색1 · ④얼룩(몸보다 훨씬 어둡거나 이질 채색 패치)=염색2.
+    //   눈코입·테두리를 절대 안 건드려 자연스럽고, 어두운 몸도 물든다(구 버전=검은펫 미염색·눈 염색되던 어색함 해소). 한쪽 색만 지정 시 그 영역만 재색.
     //   Playwright 실브라우저 + PIL 프로토타입으로 라이트/다크 검수 확정(scratchpad bake_engine.js / twotone.py).
     function _mMul(a,b){ const r=new Array(9); for(let i=0;i<3;i++)for(let j=0;j<3;j++){ let s=0; for(let k=0;k<3;k++) s+=a[i*3+k]*b[k*3+j]; r[i*3+j]=s; } return r; }
     function _mVec(m,v){ return [ m[0]*v[0]+m[1]*v[1]+m[2]*v[2], m[3]*v[0]+m[4]*v[1]+m[5]*v[2], m[6]*v[0]+m[7]*v[1]+m[8]*v[2] ]; }
@@ -3161,38 +3161,51 @@
     // 염색색 id → 영역 목표 HSL(리치). 없으면 null. 유채=대표 hue/채도/몸밝기, 무채=회색(밝기=ld).
     function dyeZoneHSL(colorId){ if(!colorId) return null; const d=DYE_MAP[colorId]; if(!d) return null; const rc=dyeRcOf(d);
       return rc.ach ? {h:0,s:0,l:rc.ld} : {h:rc.hd,s:rc.sb,l:rc.lb}; }
-    function _lumU(r,g,b){ return (0.2126*r+0.7152*g+0.0722*b)/255; }
+    function _lumU(r,g,b){ return (0.299*r+0.587*g+0.114*b)/255; }   // Rec601(프로토타입과 동일)
     function _satU(r,g,b){ const mx=Math.max(r,g,b),mn=Math.min(r,g,b); return mx>0?(mx-mn)/mx:0; }
-    // 🧩 펫별 세그 프로파일 = 몸 대표색(south 스틸의 최빈 '비외곽' 색). 펫당 1회 산출·캐시. 몸/얼룩 분할 기준.
+    function _hueU(r,g,b){ const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn; if(d<1e-6) return 0;
+      let h; if(mx===r) h=((g-b)/d)%6; else if(mx===g) h=(b-r)/d+2; else h=(r-g)/d+4; h*=60; return h<0?h+360:h; }
+    function _hueDiff(a,b){ let d=Math.abs(a-b)%360; return d>180?360-d:d; }
+    const _OUTL=0.09;   // 아웃라인(실루엣 테두리) 판정 밝기 — 이하=원본 유지(어두운 몸과 구분: 몸은 대개 L>0.10, 테두리는 L≈0.02)
+    // 🧩 펫별 세그 프로파일 = 몸 '대표색'(최빈 색, 어두운 몸도 포함해서 뽑음 → 검은/회색 펫도 몸으로 인식). 펫당 1회 산출·캐시.
     const _segProf={}, _segPend={};
-    function _segFromData(d){ const cnt={};
+    function _segFromData(d){ const cnt={};   // 비외곽(L≥_OUTL) 픽셀 최빈 양자화 색 = 몸 대표
       for(let i=0;i<d.length;i+=4){ const a=d[i+3]; if(a<128) continue; const r=d[i],g=d[i+1],b=d[i+2];
-        const L=_lumU(r,g,b), S=_satU(r,g,b); if(L<0.16 && S<0.45) continue;   // 아웃라인 제외
+        if(_lumU(r,g,b)<_OUTL) continue;   // 테두리(아주 어두움)만 제외 — 어두운 몸은 포함
         const q=((r/43)|0)*49+((g/43)|0)*7+((b/43)|0); const e=cnt[q]||(cnt[q]=[0,0,0,0]); e[0]++; e[1]+=r; e[2]+=g; e[3]+=b; }
       let best=null; for(const k in cnt){ if(!best||cnt[k][0]>best[0]) best=cnt[k]; }
-      return best?[best[1]/best[0],best[2]/best[0],best[3]/best[0]]:[128,128,128]; }
+      const bc=best?[best[1]/best[0],best[2]/best[0],best[3]/best[0]]:[128,128,128];
+      return { bc:bc, bl:_lumU(bc[0],bc[1],bc[2]), bs:_satU(bc[0],bc[1],bc[2]), bh:_hueU(bc[0],bc[1],bc[2]) }; }
     function ensureSegProfile(id, cb){ if(_segProf[id]){ cb(_segProf[id]); return; }
       const arr=_segPend[id]||(_segPend[id]=[]); arr.push(cb); if(arr.length>1) return;
       const im=new Image(); im.crossOrigin='anonymous';
-      const done=function(prof){ _segProf[id]=prof||[128,128,128]; const cbs=_segPend[id]||[]; delete _segPend[id]; cbs.forEach(function(f){ f(_segProf[id]); }); };
+      const done=function(prof){ _segProf[id]=prof||{bc:[128,128,128],bl:0.5,bs:0,bh:0}; const cbs=_segPend[id]||[]; delete _segPend[id]; cbs.forEach(function(f){ f(_segProf[id]); }); };
       im.onload=function(){ try{ const w=im.naturalWidth||im.width, h=im.naturalHeight||im.height;
         const c=document.createElement('canvas'); c.width=w; c.height=h; const x=c.getContext('2d'); x.imageSmoothingEnabled=false; x.drawImage(im,0,0);
         done(_segFromData(x.getImageData(0,0,w,h).data)); }catch(e){ done(null); } };
       im.onerror=function(){ done(null); }; im.src=sprStill(id,'south'); }
-    const _DYE_THRESH2=0.22*0.22*255*255;   // 몸 색거리^2(RGB 0..255) — 이 안이면 몸, 밖이면 얼룩
-    // 픽셀 재색(제자리): 아웃라인=중립검정→dye2 딥·몸=dye1·얼룩(눈 포함)=dye2. 색 미지정 영역은 원본 유지(자연 얼룩/눈).
-    function _bakeRecolor(d, bm, t1, t2){ const n=d.length>>2, cls=new Uint8Array(n);
-      let bl=0,bn=0,al=0,an=0;
-      for(let i=0,p=0;i<d.length;i+=4,p++){ const a=d[i+3]; if(a<128){ cls[p]=0; continue; } const r=d[i],g=d[i+1],b=d[i+2];
-        const L=_lumU(r,g,b), S=_satU(r,g,b);
-        if(L<0.16 && S<0.45){ cls[p]=1; continue; }                                  // 아웃라인
-        const dr=r-bm[0],dg=g-bm[1],db=b-bm[2], dist=dr*dr+dg*dg+db*db;
-        if(dist<_DYE_THRESH2){ cls[p]=2; bl+=L; bn++; } else { cls[p]=3; al+=L; an++; } }
-      const bmL=bn?bl/bn:0.55, amL=an?al/an:0.3;
-      for(let i=0,p=0;i<d.length;i+=4,p++){ const k=cls[p]; if(!k) continue; const L=_lumU(d[i],d[i+1],d[i+2]); let c=null;
-        if(k===2){ if(t1){ const lp=Math.max(0.10,Math.min(0.97,t1.l+(L-bmL)*0.7)); c=_hslToRgb(t1.h,t1.s,lp); } }        // 몸=염색1
-        else if(k===3){ if(t2){ const lp=Math.max(0.10,Math.min(0.97,t2.l+(L-amL)*0.7)); c=_hslToRgb(t2.h,t2.s,lp); } }  // 얼룩·눈=염색2
-        else { if(t2){ c=_hslToRgb(t2.h,Math.min(0.5,t2.s),0.09); } }                                                    // 아웃라인=염색2 딥(없으면 원본)
+    // 픽셀 재색(제자리) — 4영역 분할: ①테두리(어두움)·②눈코입(작고 채도 높은 이질색)=원본 유지 · ③몸=dye1 · ④얼룩(몸보다 훨씬 어둡거나 이질 채색 패치)=dye2.
+    //   어두운 몸도 몸으로 인식(대표색 기준) → 검은 펫도 물듦. 눈코입은 절대 안 건드림(사용자 지침). 색 미지정 영역(t1/t2 null)은 그 영역 원본 유지.
+    function _bakeRecolor(d, prof, t1, t2){ const n=d.length>>2, cls=new Uint8Array(n);   // 0 body,1 marking,2 keep(feature),3 outline,255 skip
+      const bl_=prof.bl, bs_=prof.bs, bh_=prof.bh, achro=bs_<0.22;
+      // pass1: 양자화 클러스터 면적(눈코입 판정용)
+      const area={}; let tot=0;
+      for(let i=0;i<d.length;i+=4){ if(d[i+3]<128) continue; tot++; const q=((d[i]/32)|0)*81+((d[i+1]/32)|0)*9+((d[i+2]/32)|0); area[q]=(area[q]||0)+1; }
+      let bl=0,bn=0,ml=0,mn=0;
+      for(let i=0,p=0;i<d.length;i+=4,p++){ const a=d[i+3]; if(a<128){ cls[p]=255; continue; } const r=d[i],g=d[i+1],b=d[i+2];
+        const L=_lumU(r,g,b);
+        if(L<_OUTL){ cls[p]=3; continue; }                                            // 테두리=원본 유지
+        const S=_satU(r,g,b), q=((r/32)|0)*81+((g/32)|0)*9+((b/32)|0), af=(area[q]||0)/tot;
+        // 눈코입(작고 채도 높은 이질색) → 원본 유지. 무채색 몸이면 hue 비교 무의미 → 채도만으로 판정.
+        if((af<0.05 && S>0.46 && (achro || _hueDiff(_hueU(r,g,b),bh_)>40)) || (af<0.03 && S>0.60)){ cls[p]=2; continue; }
+        if(L < bl_-0.20){ cls[p]=1; ml+=L; mn++; }                                     // 몸보다 훨씬 어두움 = 얼룩
+        else if(_hueDiff(_hueU(r,g,b),bh_)>55 && S>0.32 && af>0.03){ cls[p]=1; ml+=L; mn++; }   // 이질 채색 패치(삼색 등) = 얼룩
+        else { cls[p]=0; bl+=L; bn++; } }                                             // 나머지 = 몸
+      const bmL=bn?bl/bn:bl_, amL=mn?ml/mn:bl_;
+      for(let i=0,p=0;i<d.length;i+=4,p++){ const k=cls[p]; if(k>=2) continue;         // 2(눈코입)·3(테두리)·255(투명)=원본 유지
+        const L=_lumU(d[i],d[i+1],d[i+2]); let c=null;
+        if(k===0){ if(t1){ const lp=Math.max(0.10,Math.min(0.97,t1.l+(L-bmL)*0.85)); c=_hslToRgb(t1.h,t1.s,lp); } }        // 몸=염색1(상대 명암 보존)
+        else { if(t2){ const lp=Math.max(0.08,Math.min(0.9,t2.l+(L-amL)*0.75)); c=_hslToRgb(t2.h,t2.s,lp); } }             // 얼룩=염색2
         if(c){ d[i]=c[0]*255; d[i+1]=c[1]*255; d[i+2]=c[2]*255; } } }
     // 베이크 캐시 & 지연 베이크(사용된 url·색조합만 굽는다). 완료 시 캠 재빌드(디바운스)로 스왑 + 대기 콜백(PiP 등) 통지.
     const _dyeBaked={}, _dyeBakeCbs={};
