@@ -147,7 +147,7 @@
     // 타일 콘텐츠 시그니처 — 상태(방)·현재방·애정레벨·이름이 바뀐 타일만 다시 그린다.
     function petTileSig(id){ const ro=petRoomIndex(id); const here=ro===roomIdx(); const rooms=homeH().rooms||[];
       const rnm=(ro>=0&&!here)?((rooms[ro]&&rooms[ro].name)||('방 '+(ro+1))):'';   // elsewhere일 때만 방이름 뱃지 표시 → 시그니처에 포함(방 전환/이름변경 시 필요한 타일만 갱신)
-      const lv=affectionLevel((ownedCatsMap()[id]||{}).affection, CAT_TIER[id]||'normal').level; return (here?'H':ro)+'|'+rnm+'|'+lv+'|'+catName(id)+'|'+(CAT_TIER[id]||'normal')+'|'+((ownedCatsMap()[id]||{}).fav?'F':'')+'|'+petDyeOf(id)+'|'+petDye2Of(id)+'|'+(dyeBakedFor(id)?'B':'0'); }   // tier·2색 염색(몸+얼룩)+베이크 완료 여부 포함 → 염색·베이크 완료 시 그 타일만 실시간 갱신
+      const lv=affectionLevel((ownedCatsMap()[id]||{}).affection, CAT_TIER[id]||'normal').level; return (here?'H':ro)+'|'+rnm+'|'+lv+'|'+catName(id)+'|'+(CAT_TIER[id]||'normal')+'|'+((ownedCatsMap()[id]||{}).fav?'F':'')+'|'+petDyeOf(id)+'|'+petDye2Of(id)+'|'+petTintOf(id)+'|'+(dyeBakedFor(id)?'B':'0'); }   // tier·염색(몸+얼룩)+틴트+베이크 완료 여부 포함 → 염색/틴트·베이크 완료 시 그 타일만 실시간 갱신
     // 등급 배지(색약 접근성): 색이 아니라 '글자'로 등급 식별. 한정=무지개, 일반은 생략(기본), 그 외 등급색.
     function tierBadgeHtml(tier){ if(!tier || tier==='normal') return '';
       const ti=tierInfo(tier); const nm=escapeHtml(ti.name);
@@ -280,7 +280,7 @@
       stage.dataset.hh=64;
       const pm=(fg&&fg.petsMeta&&typeof fg.petsMeta==='object')?fg.petsMeta:{};   // 💗 homeCam 스냅샷의 펫 메타(애정 레벨·코스메틱·염색) — 친구 캠 과시 요소
       state._frPetLv={}; list.forEach(function(id){ const m=pm[id]; state._frPetLv[id]=(m&&m.lv!=null)?(Number(m.lv)||0):null; });   // 💗 친구 펫 애정 레벨 → 모션 게이트가 친구 기준으로 판정(clipAffLocked)
-      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); const meta=pm[id]||{lv:0}; return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+(hasSprite(id)?'<span class="cd-shadow">'+shadowSvg({h:Math.max(6,Math.round(s*0.16))})+'</span>'+actorCosmHtml(id,s,meta):'')+catActorHTML(id,s,{d1:(meta.dye||0),d2:(meta.dye2||0)})+'</div>'; }).join('');   // 🎨 친구 캠도 스냅샷 2색 페어로 염색
+      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); const meta=pm[id]||{lv:0}; return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+(hasSprite(id)?'<span class="cd-shadow">'+shadowSvg({h:Math.max(6,Math.round(s*0.16))})+'</span>'+actorCosmHtml(id,s,meta):'')+catActorHTML(id,s,{d1:(meta.dye||0),d2:(meta.dye2||0),tint:(meta.tint||0)})+'</div>'; }).join('');   // 🎨 친구 캠도 스냅샷 페어(몸·얼룩·틴트)로 염색
       markCatDirty();
     }
     let _shopSub='event';   // 알뜰샵 진입 시 기본=가챠 탭(맨 왼쪽)

@@ -540,11 +540,11 @@
         if(hasSprite(id)){ const spr=PET_SPRITES[id]; if(spr.runtime&&!spr.urls) return Promise.resolve(null);   // 아트 로딩 전 — 도착 시 _petArtRerenderNow가 재동기화
           const fw=!!spr.frontWalk;
           const cosm=petCosm(id);   // 💗 코스메틱(모자·버디)도 워커에 전사 — dock와 동일하게 보이게(가구 연출 _VPIP_FX_* 선례)
-          // 🎨 2색 염색은 dyedUrlAsync로 '베이크된 dataURL'을 받아 그 비트맵을 그린다(dock와 동일, 필터 미사용). 모자·버디는 미염색.
-          const d1=petDyeOf(id), d2=petDye2Of(id);
-          const wP=dyedUrlAsync(id, sprWalkUrl(spr), d1, d2).then(function(u){ return _vpipBmp(u); });
-          const sP=dyedUrlAsync(id, sprStill(id,'south'), d1, d2).then(function(u){ return _vpipBmp(u); });
-          const eP=fw?dyedUrlAsync(id, sprStill(id,'east'), d1, d2).then(function(u){ return _vpipBmp(u); }):Promise.resolve(null);
+          // 🎨 염색(몸·얼룩)+틴트는 dyedUrlAsync로 '베이크된 dataURL'을 받아 그 비트맵을 그린다(dock와 동일, 필터 미사용). 모자·버디는 미염색.
+          const d1=petDyeOf(id), d2=petDye2Of(id), tnt=(typeof petTintOf==='function'?petTintOf(id):0);
+          const wP=dyedUrlAsync(id, sprWalkUrl(spr), d1, d2, tnt).then(function(u){ return _vpipBmp(u); });
+          const sP=dyedUrlAsync(id, sprStill(id,'south'), d1, d2, tnt).then(function(u){ return _vpipBmp(u); });
+          const eP=fw?dyedUrlAsync(id, sprStill(id,'east'), d1, d2, tnt).then(function(u){ return _vpipBmp(u); }):Promise.resolve(null);
           const hatP=(cosm.hat&&HAT_M[cosm.hat])?_vpipBmp('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(hatSvg(cosm.hat,{h:60}))).catch(function(){ return null; }):Promise.resolve(null);
           const budP=BUDDY_CATALOG[cosm.buddy]?_vpipBmp('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(buddySvgOf(cosm.buddy,{h:30}))).catch(function(){ return null; }):Promise.resolve(null);   // 코스메틱 로드 실패가 펫 본체를 드랍시키지 않게 개별 폴백
           const headP=new Promise(function(res){ try{ measureHeadPad(id,res); }catch(e){ res(0.2); } });
@@ -923,8 +923,8 @@
     // once 클립 홀드 프리즈 해제 — 원샷 종료 시 건 인라인(animation:none + transform)을 걷어내 다음 필름이 정상 재생되게. 모든 상태 전환이 거친다.
     function _csprUnfreeze(f){ if(!f) return; f.onanimationend=null; if(f.style.animation) f.style.animation=''; if(f.style.transform) f.style.transform=''; }
     // 🎨 2색 염색 — .cspr에 실린 data-d1/d2(catActorHTML)로 원본 url을 '베이크된 dataURL'로 치환. 미염색이면 원본 그대로(무비용). 친구 캠은 스냅샷 페어라 자동 반영.
-    function _dyeU(s, id, url){ if(!s||typeof dyedUrl!=='function') return url; const d1=s.dataset&&s.dataset.d1, d2=s.dataset&&s.dataset.d2;
-      return (d1||d2) ? dyedUrl(id, url, d1||0, d2||0) : url; }
+    function _dyeU(s, id, url){ if(!s||typeof dyedUrl!=='function') return url; const d1=s.dataset&&s.dataset.d1, d2=s.dataset&&s.dataset.d2, tint=s.dataset&&s.dataset.tint;
+      return (d1||d2||tint) ? dyedUrl(id, url, d1||0, d2||0, tint||0) : url; }
     function _csprClip(s, a, r){
       // 🖼️ 디코드 가드: 미로드 클립 시트를 즉시 장착하면 디코드까지 펫이 투명(once 클립은 재생 전체가 빈칸 — '간헐적 사라짐').
       //   이전 비주얼(걷기 필름/스틸)을 유지한 채 로드 후 장착. 그 사이 다른 전환(_swapTok 증가·소유 액터 교체)이 오면 낡은 장착을 버린다.
