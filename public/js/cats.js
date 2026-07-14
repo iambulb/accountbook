@@ -3263,6 +3263,14 @@
     }
     // 🎨 염색약(2색): 펫 탭 → 어느 영역(바탕색/얼룩·눈)을 염색할지 고른 뒤 그 영역만 랜덤 색(rollDye, 현재 색 제외). 염색약 1개=한 영역.
     function useDye(){ openPetUseSheet('dye'); }
+    // 🎨 염색 적용/제거 직후 UI 갱신 — 히어로·썸네일이 '베이크된 색'으로 즉시 보이도록 south·walk를 선베이크한 뒤 시트/펫정보 재렌더(안 하면 첫 렌더가 미베이크라 원본=미염색으로 보이던 버그).
+    function _dyeApplied(id){
+      const done=function(){ try{ if(state._sheetRefresh) state._sheetRefresh(); }catch(e){} try{ if($('petInfo') && typeof openPetInfo==='function') openPetInfo(id); }catch(e){} };
+      if(!hasSprite(id) || !petHasDye(id)){ done(); return; }
+      const p=petDyePair(id), sp=PET_SPRITES[id];
+      const jobs=[dyedUrlAsync(id, sprStill(id,'south'), p.d1, p.d2)]; if(sp) jobs.push(dyedUrlAsync(id, sprWalkUrl(sp), p.d1, p.d2));
+      Promise.all(jobs).then(done, done);
+    }
     function applyDye(id){   // 펫 선택 → 영역 선택 화면(시트 안에서 전환)
       if(!id||!ownsCat(id)){ toast('펫을 찾을 수 없어요', true); return; }
       if(consumQty('dye')<=0){ toast('염색약이 없어요', true); return; }
@@ -3282,7 +3290,7 @@
         if((Number(g.consum.dye)||0)<1) return;
         const c=g.owned.cats[id]; if(!c) return;
         g.consum.dye-=1; c[field]=pick.id; return g;
-      }).then(r=>{ if(r&&r.committed){ toast('🎨 '+catName(id)+' '+(zone==='accent'?'얼룩·눈':'바탕색')+' → '+pick.name+'!'); if(state._sheetRefresh) state._sheetRefresh(); if($('petInfo')) openPetInfo(id); } });
+      }).then(r=>{ if(r&&r.committed){ toast('🎨 '+catName(id)+' '+(zone==='accent'?'얼룩·눈':'바탕색')+' → '+pick.name+'!'); _dyeApplied(id); } });
     }
     // 🧴 염색 리무버: 리무버 1개=한 영역만 복원(바탕/얼룩 중 선택). 둘 다 염색됐으면 영역 선택, 한쪽만이면 바로 그 영역 제거.
     function useDyeRemover(){ openPetUseSheet('dye_remover'); }
@@ -3305,7 +3313,7 @@
         if((Number(g.consum.dye_remover)||0)<1) return;
         const c=g.owned.cats[id]; if(!c||!c[field]) return;
         g.consum.dye_remover-=1; delete c[field]; return g;
-      }).then(r=>{ if(r&&r.committed){ toast(catName(id)+' '+(zone==='accent'?'얼룩·눈':'바탕색')+' 염색을 지웠어요'); if(state._sheetRefresh) state._sheetRefresh(); if($('petInfo')) openPetInfo(id); } });
+      }).then(r=>{ if(r&&r.committed){ toast(catName(id)+' '+(zone==='accent'?'얼룩·눈':'바탕색')+' 염색을 지웠어요'); _dyeApplied(id); } });
     }
     // 🍡 츄르: 펫 그리드에서 탭 → applyTreat(id)로 애정 상승(쿨다운 무시)
     function useTreat(){ openPetUseSheet('treat'); }
@@ -3556,7 +3564,11 @@
       if(typeof vpipOpen==='function' && vpipOpen()){ _vpip.sigCats=''; try{ _vpipSync(); }catch(e){} }   // 🎬 비디오 PiP도 런타임 펫 아트 도착 시 재동기화
       if(typeof renderDockCats==='function') renderDockCats();
       if(typeof mountRoomWalk==='function') mountRoomWalk();
-      if(state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh(); }
+      if(state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh();
+      // 🎨 열려 있는 펫 정보 히어로 이미지를 '베이크된 염색 색'으로 힐(첫 열람 시 미베이크→원본으로 보이던 것 교체). 전체 재렌더 대신 img src만 스왑(포커스·입력 보존).
+      try{ const pe=$('petInfo'), pid=pe&&pe.dataset&&pe.dataset.pet;
+        if(pid && hasSprite(pid)){ const img=document.getElementById('piPetImg'); if(img){ const p=petDyePair(pid), u=dyedUrl(pid, sprStill(pid,'south'), p.d1, p.d2);
+          if(u && img.getAttribute('src')!==u){ img.src=u; if(typeof _piFitPet==='function') _piFitPet(pid); } } } }catch(e){} }
     // 모든 펫(활성+삭제) — dev 관리 화면용. {id,name,species,tier,deleted}
     function allPetsForDev(){ const out=PET_CATALOG.map(c=>({ id:c.id, name:c.name, species:c.species, tier:CAT_TIER[c.id]||'normal', runtime:!!c.runtime, deleted:false }));
       Object.keys(_deletedPets).forEach(id=>{ const d=_deletedPets[id]; out.push({ id, name:d.name, species:d.species, tier:d.tier||'normal', runtime:!!d.runtime, deleted:true }); });

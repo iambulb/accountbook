@@ -412,6 +412,7 @@
       let wrap=$('petInfo');
       if(!wrap){ wrap=document.createElement('div'); wrap.id='petInfo'; wrap.className='gimenu-scrim';
         wrap.onclick=function(e){ if(e.target===wrap) closePetInfo(); }; document.body.appendChild(wrap); }
+      wrap.dataset.pet=id;   // 🎨 염색 베이크 완료 시 히어로 이미지 힐(_petArtRerenderNow)에서 현재 펫 식별
       wrap.innerHTML='<div class="gimenu petinfo">'+petInfoBody(id)+'</div>';
       _piFitPet(id); }   // 🖼️ 히어로 펫 여백 크롭 배치(bbox 측정 후)
     function closePetInfo(){ const m=$('petInfo'); if(m) m.remove(); }
