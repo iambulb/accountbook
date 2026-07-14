@@ -151,7 +151,7 @@
       stage.dataset.sig=sig;
       if(!list.length){ stage.innerHTML='<span class="cd-empty">고양이를 입양해 보세요</span>'; markCatDirty(); return; }
       stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+(hasSprite(id)?'<span class="cd-shadow">'+shadowSvg({h:Math.max(6,Math.round(s*0.16))})+'</span>'+actorCosmHtml(id,s):'')+catActorHTML(id,s)+'</div>'; }).join('');
-      markCatDirty();
+      placeActorsNow(stage);   // 🩹 격자 초기좌표가 한 프레임 보이던 순간이동 방지(지금 프레임에 지속좌표로 배치)
     }
     // ================= 🖥️ 펫캠 PiP — Document Picture-in-Picture (데스크톱 크롬·엣지 116+ 전용) =================
     // 캠 방을 '항상 위(always-on-top)' 미니 창으로 미러링(스팀 오버레이처럼 다른 작업 중에도 떠 있음). 시청 전용 —
@@ -1034,6 +1034,14 @@
     // 여러 무대를 '동시에' 애니메이션한다: groups=[{stage, actors}]. 예) 친구 집 방문 중에도 하단 dock 캠은 계속 로밍.
     const _eng={ raf:0, groups:[], last:0, dirty:false };
     function markCatDirty(){ _eng.dirty=true; if(typeof startCatLoop==='function') startCatLoop(); }
+    // 🩹 새로 그린 액터 innerHTML을 '이 프레임에 즉시' 지속좌표(_petX)로 배치 — 재빌드가 다음 rAF(+프레임예산)로 미뤄지는 사이
+    //    innerHTML의 격자 초기좌표(left:20+i*64)가 한 프레임 그려졌다가 buildActors가 옮기며 "펫이 사라졌다 다른 위치에 잠깐 보이는" 순간이동이 났다.
+    //    markCatDirty로 루프 정합(무대 추가/제거)은 유지하되, 이 무대 그룹이 이미 있으면 지금 프레임에 buildActors로 배치해 중간 페인트를 없앤다(다음 rAF 재빌드는 같은 자리라 무깜빡).
+    function placeActorsNow(stage){ if(!stage) return;
+      const g=_eng.groups&&_eng.groups.find(x=>x.stage===stage);
+      if(g){ try{ g.actors=buildActors(stage); if(typeof startCatLoop==='function') startCatLoop(); return; }catch(e){} }   // 그룹이 있으면 지금 프레임에 배치·교체(dirty 안 세워 다음 rAF 이중빌드/잔상 콜백 방지 — 무대 집합 변경은 catLoop가 별도로 정합)
+      markCatDirty();   // 그룹이 아직 없으면(비활성/최초 진입) 루프에 맡겨 다음 프레임에 빌드
+    }
     // 리사이즈·기기 회전 시 무대 폭이 바뀌므로 재빌드(디바운스) — 안 하면 펫이 옛 폭으로 클램프돼 화면 밖/좌측 몰림
     if(typeof window!=='undefined'){ let _rzT=0; const _catResize=()=>{ clearTimeout(_rzT); _rzT=setTimeout(function(){ if(typeof markCatDirty==='function') markCatDirty(); }, 200); };
       window.addEventListener('resize', _catResize); window.addEventListener('orientationchange', _catResize); }
