@@ -3167,6 +3167,7 @@
       let h; if(mx===r) h=((g-b)/d)%6; else if(mx===g) h=(b-r)/d+2; else h=(r-g)/d+4; h*=60; return h<0?h+360:h; }
     function _hueDiff(a,b){ let d=Math.abs(a-b)%360; return d>180?360-d:d; }
     const _OUTL=0.09;   // 아웃라인(실루엣 테두리) 판정 밝기 — 이하=원본 유지(어두운 몸과 구분: 몸은 대개 L>0.10, 테두리는 L≈0.02)
+    const _EYE_TINT=0.22;   // 👁️ 눈코입 살짝 틴트 강도(0=원본 유지·1=완전 염색). 원본 눈색을 유지하되 몸색 쪽으로 살짝만 색감(사용자 지침). 실루엣 테두리는 여전히 0(원본).
     // 🧩 펫별 세그 프로파일 = 몸 '대표색'(최빈 색, 어두운 몸도 포함해서 뽑음 → 검은/회색 펫도 몸으로 인식). 펫당 1회 산출·캐시.
     const _segProf={}, _segPend={};
     function _segFromData(d){ const cnt={};   // 비외곽(L≥_OUTL) 픽셀 최빈 양자화 색 = 몸 대표
@@ -3204,8 +3205,12 @@
         else if(_hueDiff(_hueU(r,g,b),bh_)>55 && S>0.32 && af>0.03){ cls[p]=1; ml+=L; mn++; }   // 이질 채색 패치(삼색 등) = 얼룩
         else { cls[p]=0; bl+=L; bn++; } }                                             // 나머지 = 몸
       const bmL=bn?bl/bn:bl_, amL=mn?ml/mn:bl_;
-      for(let p=0;p<n;p++){ const k=cls[p]; if(k>=2) continue;                         // 2(눈코입)·3(실루엣)·255(투명)=원본 유지
-        const i=p*4, L=_lumU(d[i],d[i+1],d[i+2]); let c=null;
+      const eyeTint=t1||t2;   // 👁️ 눈코입 틴트 대상(몸색 우선, 없으면 얼룩색)
+      for(let p=0;p<n;p++){ const k=cls[p]; if(k===3||k===255) continue;               // 3(실루엣 테두리)·255(투명)=완전 원본 유지
+        const i=p*4, L=_lumU(d[i],d[i+1],d[i+2]);
+        if(k===2){ if(eyeTint && _EYE_TINT>0){ const tc=_hslToRgb(eyeTint.h, eyeTint.s*0.85, L), m=_EYE_TINT;   // 👁️ 눈코입 = 원본 밝기 유지 + 몸색 쪽으로 살짝만 색감(틴트)
+          d[i]=Math.round(d[i]*(1-m)+tc[0]*255*m); d[i+1]=Math.round(d[i+1]*(1-m)+tc[1]*255*m); d[i+2]=Math.round(d[i+2]*(1-m)+tc[2]*255*m); } continue; }
+        let c=null;
         if(k===0){ if(t1){ const lp=Math.max(0.10,Math.min(0.97,t1.l+(L-bmL)*0.85)); c=_hslToRgb(t1.h,t1.s,lp); } }        // 몸=염색1(상대 명암 보존)
         else { if(t2){ const lp=Math.max(0.08,Math.min(0.9,t2.l+(L-amL)*0.75)); c=_hslToRgb(t2.h,t2.s,lp); } }             // 얼룩=염색2
         if(c){ d[i]=c[0]*255; d[i+1]=c[1]*255; d[i+2]=c[2]*255; } } }
