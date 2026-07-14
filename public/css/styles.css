@@ -666,7 +666,8 @@
     /* ===== 🥚 뽑기 오픈 연출 (#catFx) ===== */
     .fx { position:fixed; inset:0; z-index:80; display:none; }
     .fx.on { display:block; }
-    .fx-scrim { position:absolute; inset:0; background:rgba(10,10,18,.72); animation:fxfade .25s ease; }
+    /* 뒷 배경을 완전히 가리는 검은 벽이 아니라, 앱이 흐릿하게 비치는 반투명 프로스티드 배경(불투명 블랙 화면 방지). */
+    .fx-scrim { position:absolute; inset:0; background:rgba(12,12,20,.5); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); animation:fxfade .25s ease; }
     .fx-stage, .fx-reveal { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:24px; }
     .fx-item { position:relative; z-index:2; cursor:pointer; filter:drop-shadow(0 12px 24px rgba(0,0,0,.4)); }
     .fx-item .px { width:auto; height:150px; }

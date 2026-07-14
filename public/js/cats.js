@@ -1326,7 +1326,10 @@
     let _fx=null;
     function itemName(kind,id){ return kind==='egg'?catName(id):((ITEM_CATALOG.find(x=>x.id===id)||{}).name||id); }
     function fxParticles(n,cls){ let s=''; for(let i=0;i<(n||14);i++){ const a=(i/(n||14))*360+Math.random()*30, d=60+Math.random()*90; const dx=Math.round(Math.cos(a*Math.PI/180)*d), dy=Math.round(Math.sin(a*Math.PI/180)*d); const del=(Math.random()*0.12).toFixed(2); s+='<span class="'+(cls||'fx-particle')+'" style="--dx:'+dx+'px;--dy:'+dy+'px;animation-delay:'+del+'s"></span>'; } return s; }
-    function fxConfetti(){ const cols=['#F04452','#F0883C','#F2C84B','#2FAE7A','#3182F6','#9B6FC8']; let s=''; for(let i=0;i<24;i++){ const x=Math.round(Math.random()*100), r=Math.round(Math.random()*360), del=(Math.random()*0.5).toFixed(2), dur=(1+Math.random()*0.8).toFixed(2); s+='<span class="fx-conf" style="left:'+x+'%;background:'+cols[i%6]+';--r:'+r+'deg;animation-delay:'+del+'s;animation-duration:'+dur+'s"></span>'; } return s; }
+    // 무지개(6색) 컨페티는 "한정(limited)" 등급에서만 — 그 외 등급은 등급색+흰색 컨페티(무지개 연출은 특정 조건에서만 나오게).
+    function fxConfetti(tier){ const rainbow=['#F04452','#F0883C','#F2C84B','#2FAE7A','#3182F6','#9B6FC8'];
+      const cols = tier==='limited' ? rainbow : [tierInfo(tier).color, '#ffffff'];
+      let s=''; for(let i=0;i<24;i++){ const x=Math.round(Math.random()*100), r=Math.round(Math.random()*360), del=(Math.random()*0.5).toFixed(2), dur=(1+Math.random()*0.8).toFixed(2); s+='<span class="fx-conf" style="left:'+x+'%;background:'+cols[i%cols.length]+';--r:'+r+'deg;animation-delay:'+del+'s;animation-duration:'+dur+'s"></span>'; } return s; }
     function runGachaFx(kind, res, dup){
       const fx=$('catFx'); if(!fx){ toast((kind==='egg'?'펫알':'랜덤박스')+' 획득!'); return; }
       _fx={ kind, res, dup, stage:0 };
@@ -1403,7 +1406,7 @@
         '<div class="fx-reward"><span class="rw"><span class="ci">'+goldSvg({h:18})+'</span>+1 금화</span>'+
           (_fx.dup?'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>+'+DUP_REFUND+' 은화 (중복)</span>':'')+'</div>'+
         '<button class="btn" onclick="closeFx()">확인</button>'+
-        '<div class="fx-confetti">'+fxConfetti()+'</div></div>';
+        '<div class="fx-confetti">'+fxConfetti(_fx.res.tier)+'</div></div>';
       fx.className='fx on reveal';
     }
     function closeFx(){ const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx=null; }
