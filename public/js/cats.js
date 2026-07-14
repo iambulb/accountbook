@@ -3225,6 +3225,9 @@
     function petDye2Of(id){ const d=(ownedCatsMap()[id]||{}).dye2; return (typeof d==='string' && DYE_MAP[d])?d:0; }
     function petDyePair(id){ return { d1:petDyeOf(id), d2:petDye2Of(id) }; }
     function petHasDye(id){ return !!(petDyeOf(id)||petDye2Of(id)); }
+    // 이 펫의 현재 2색 염색(south 스틸)이 이미 베이크됐나 — 그리드/도감 타일 시그니처에 넣어 "베이크 완료 시점"에 타일이 갱신되게(미염색=true, 굽는 중=false).
+    function dyeBakedFor(id){ const d1=petDyeOf(id), d2=petDye2Of(id); if(!d1&&!d2) return true;
+      try{ return !!_dyeBaked[_dyeKey(sprStill(id,'south'), d1, d2)]; }catch(e){ return true; } }
     // 염색색 id → UI 스와치 CSS 색(대표 색). 없으면 기본 톤(연회색). 펫 정보 염색 영역 선택칩에 사용.
     function dyeSwatchCss(colorId){ const z=dyeZoneHSL(colorId); if(!z) return 'var(--line,#d9d4c8)';
       const rgb=_hslToRgb(z.h,z.s,z.l); return 'rgb('+Math.round(rgb[0]*255)+','+Math.round(rgb[1]*255)+','+Math.round(rgb[2]*255)+')'; }
@@ -3564,6 +3567,7 @@
       if(typeof vpipOpen==='function' && vpipOpen()){ _vpip.sigCats=''; try{ _vpipSync(); }catch(e){} }   // 🎬 비디오 PiP도 런타임 펫 아트 도착 시 재동기화
       if(typeof renderDockCats==='function') renderDockCats();
       if(typeof mountRoomWalk==='function') mountRoomWalk();
+      if(typeof renderPetGrid==='function' && $('petGrid')) renderPetGrid();   // 🎨 염색 베이크 완료 → 펫 탭 그리드 타일 실시간 갱신(시그니처에 베이크 여부 포함)
       if(state._sheetRefresh && $('sheet') && $('sheet').classList.contains('on')) state._sheetRefresh();
       // 🎨 열려 있는 펫 정보 히어로 이미지를 '베이크된 염색 색'으로 힐(첫 열람 시 미베이크→원본으로 보이던 것 교체). 전체 재렌더 대신 img src만 스왑(포커스·입력 보존).
       try{ const pe=$('petInfo'), pid=pe&&pe.dataset&&pe.dataset.pet;
