@@ -3225,6 +3225,9 @@
     function petDye2Of(id){ const d=(ownedCatsMap()[id]||{}).dye2; return (typeof d==='string' && DYE_MAP[d])?d:0; }
     function petDyePair(id){ return { d1:petDyeOf(id), d2:petDye2Of(id) }; }
     function petHasDye(id){ return !!(petDyeOf(id)||petDye2Of(id)); }
+    // 염색색 id → UI 스와치 CSS 색(대표 색). 없으면 기본 톤(연회색). 펫 정보 염색 영역 선택칩에 사용.
+    function dyeSwatchCss(colorId){ const z=dyeZoneHSL(colorId); if(!z) return 'var(--line,#d9d4c8)';
+      const rgb=_hslToRgb(z.h,z.s,z.l); return 'rgb('+Math.round(rgb[0]*255)+','+Math.round(rgb[1]*255)+','+Math.round(rgb[2]*255)+')'; }
     // 🧺 펫 대상 소비템 공용 사용 시트(2026-07 개편, 사용자 확정 UX) — 가방 '사용' → 펫 인벤토리 그리드 → 펫 탭 즉시 적용.
     //    적용 후에도 시트를 유지한 채 그 펫 썸네일(catFace, dye 반영)이 결과로 갱신돼 바로 확인. 수량 0이 돼도 결과 확인용으로 시트 유지(셀만 비활성).
     const PET_USE_META={
@@ -3281,16 +3284,28 @@
         g.consum.dye-=1; c[field]=pick.id; return g;
       }).then(r=>{ if(r&&r.committed){ toast('🎨 '+catName(id)+' '+(zone==='accent'?'얼룩·눈':'바탕색')+' → '+pick.name+'!'); if(state._sheetRefresh) state._sheetRefresh(); if($('petInfo')) openPetInfo(id); } });
     }
-    // 🧴 염색 리무버: 염색된 펫만 그리드에 표시 → 1개 소모해 바탕·얼룩 모두 원래 톤 복원(무료 지우기 없음 — 알뜰샵 소비 탭 금화200 판매 + 이벤트·쿠폰·선물).
+    // 🧴 염색 리무버: 리무버 1개=한 영역만 복원(바탕/얼룩 중 선택). 둘 다 염색됐으면 영역 선택, 한쪽만이면 바로 그 영역 제거.
     function useDyeRemover(){ openPetUseSheet('dye_remover'); }
     function applyDyeRemover(id){
       if(!id||!ownsCat(id)||!petHasDye(id)){ toast('염색된 펫이 아니에요', true); return; }
       if(consumQty('dye_remover')<=0){ toast('염색 리무버가 없어요', true); return; }
+      const d1=petDyeOf(id), d2=petDye2Of(id), b=$('sheetBody');
+      if(!b || (!!d1 !== !!d2)){ applyDyeZoneRemove(id, (d2&&!d1)?'accent':'body'); return; }   // 한 영역만이면 바로 제거
+      const zbtn=function(zone,label,cur){ return '<button class="btn" style="width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;" onclick="applyDyeZoneRemove(\''+id+'\',\''+zone+'\')"><span>'+label+' 지우기</span><span class="pu-chip">🎨 '+escapeHtml(dyeNameOf(cur))+'</span></button>'; };
+      b.innerHTML='<div class="note" style="margin-bottom:10px;display:flex;align-items:center;gap:8px;"><span style="display:inline-flex;flex:none;">'+catFace(id,{h:40})+'</span><span style="flex:1;"><b>'+escapeHtml(catName(id))+'</b> — 어느 염색을 지울까요?<br><span class="s">리무버 1개로 고른 영역만 원래 톤으로 복원돼요</span></span><b style="flex:none;">보유 '+consumQty('dye_remover')+'</b></div>'
+        +'<div style="display:flex;flex-direction:column;gap:8px;">'+zbtn('body','바탕색(몸)',d1)+zbtn('accent','얼룩·눈',d2)
+        +'<button class="btn" style="width:100%;opacity:.75;" onclick="useDyeRemover()">← 펫 목록으로</button></div>';
+    }
+    function applyDyeZoneRemove(id, zone){   // 고른 영역만 복원(body→dye·accent→dye2)
+      if(!id||!ownsCat(id)){ toast('펫을 찾을 수 없어요', true); return; }
+      if(consumQty('dye_remover')<=0){ toast('염색 리무버가 없어요', true); return; }
+      const field = zone==='accent' ? 'dye2' : 'dye';
+      if(!(zone==='accent'?petDye2Of(id):petDyeOf(id))){ toast('그 부분은 염색돼 있지 않아요', true); return; }
       gameRef().transaction(g=>{ g=normalizeGame(g);
         if((Number(g.consum.dye_remover)||0)<1) return;
-        const c=g.owned.cats[id]; if(!c||(!c.dye&&!c.dye2)) return;
-        g.consum.dye_remover-=1; delete c.dye; delete c.dye2; return g;
-      }).then(r=>{ if(r&&r.committed){ toast(catName(id)+' 염색을 지웠어요 — 원래 톤으로'); if(state._sheetRefresh) state._sheetRefresh(); if($('petInfo')) openPetInfo(id); } });
+        const c=g.owned.cats[id]; if(!c||!c[field]) return;
+        g.consum.dye_remover-=1; delete c[field]; return g;
+      }).then(r=>{ if(r&&r.committed){ toast(catName(id)+' '+(zone==='accent'?'얼룩·눈':'바탕색')+' 염색을 지웠어요'); if(state._sheetRefresh) state._sheetRefresh(); if($('petInfo')) openPetInfo(id); } });
     }
     // 🍡 츄르: 펫 그리드에서 탭 → applyTreat(id)로 애정 상승(쿨다운 무시)
     function useTreat(){ openPetUseSheet('treat'); }
