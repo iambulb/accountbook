@@ -280,7 +280,7 @@
       stage.dataset.hh=64;
       const pm=(fg&&fg.petsMeta&&typeof fg.petsMeta==='object')?fg.petsMeta:{};   // 💗 homeCam 스냅샷의 펫 메타(애정 레벨·코스메틱·염색) — 친구 캠 과시 요소
       state._frPetLv={}; list.forEach(function(id){ const m=pm[id]; state._frPetLv[id]=(m&&m.lv!=null)?(Number(m.lv)||0):null; });   // 💗 친구 펫 애정 레벨 → 모션 게이트가 친구 기준으로 판정(clipAffLocked)
-      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); const meta=pm[id]||{lv:0}; return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+(hasSprite(id)?'<span class="cd-shadow">'+shadowSvg({h:Math.max(6,Math.round(s*0.16))})+'</span>'+actorCosmHtml(id,s,meta):'')+catActorHTML(id,s,(meta.dye!=null?meta.dye:0))+'</div>'; }).join('');
+      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); const meta=pm[id]||{lv:0}; return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+(hasSprite(id)?'<span class="cd-shadow">'+shadowSvg({h:Math.max(6,Math.round(s*0.16))})+'</span>'+actorCosmHtml(id,s,meta):'')+catActorHTML(id,s,{d1:(meta.dye||0),d2:(meta.dye2||0)})+'</div>'; }).join('');   // 🎨 친구 캠도 스냅샷 2색 페어로 염색
       markCatDirty();
     }
     let _shopSub='event';   // 알뜰샵 진입 시 기본=가챠 탭(맨 왼쪽)

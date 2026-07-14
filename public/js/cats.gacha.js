@@ -378,10 +378,10 @@
     const PI_PET_BOX=76;   // 펫 정보 히어로 박스 px(CSS .pi-pet과 동기)
     // 히어로 펫 마크업 — 스프라이트=원본 img(로드 후 _piFitPet이 bbox 크롭 배치), 런타임 로딩 전·SVG 폴백은 크롭 없이 크게.
     function piPetHtml(id){
-      const df=dyeFilterCss(petDyeOf(id));
+      const pr=(typeof petDyePair==='function')?petDyePair(id):{d1:0,d2:0};   // 🎨 2색 염색 베이크 반영
       if(hasSprite(id)){ const sp=PET_SPRITES[id];
         if(sp.runtime && !sp.urls) return '<div class="pi-pet pi-pet-svg">'+catFace(id,{h:PI_PET_BOX-10})+'</div>';   // 아트 로딩 전 폴백
-        return '<div class="pi-pet"><img class="pi-petimg" id="piPetImg" src="'+sprStill(id,'south')+'" alt=""'+(df?' style="filter:'+df+'"':'')+'></div>';
+        return '<div class="pi-pet"><img class="pi-petimg" id="piPetImg" src="'+dyedUrl(id,sprStill(id,'south'),pr.d1,pr.d2)+'" alt=""></div>';
       }
       return '<div class="pi-pet pi-pet-svg">'+catFace(id,{h:PI_PET_BOX-12})+'</div>';   // SVG 폴백 펫
     }
@@ -500,7 +500,7 @@
         '<div class="pi-aff"><div class="pi-afftop"><span class="clv-h">'+heartSvg({h:11})+'</span>애정 Lv.'+al.level+'<span class="s">'+(al.next!=null?aff+' / '+al.next:'만렙 ★')+'</span></div><div class="bar"><i style="width:'+al.pct+'%"></i></div></div>'+
         petAffLadderHtml(id, al.level)+   // 💗 펫별 동적 모션 해금 안내(2026-07-10 가변 모션 — 이 펫이 실제 가진 클립만 petClipAff 레벨로 그룹 표기)
         (hasSprite(id)?piCosmBtn(id,'hat',al.level)+piCosmBtn(id,'buddy',al.level):'')+   // 💗 펫장비(모자 Lv5)·펫효과(버디 Lv3) — 스프라이트 펫만. 잠금/해제는 애정 레벨, 탭하면 보유 인벤토리 피커
-        (petDyeOf(id)?'<div class="pi-cosm"><span class="s">염색</span><span class="chip on">'+consumSvg('dye',{h:12})+' '+escapeHtml(dyeNameOf(petDyeOf(id)))+'</span>'+(consumQty('dye_remover')>0?'<button class="chip" '+App.view.act('applyDyeRemover',id)+'>'+consumSvg('dye_remover',{h:12})+' 리무버로 지우기</button>':'<span class="s" style="min-width:0">리무버(알뜰샵 소비 탭·이벤트)로 제거 가능</span>')+'</div>':'')+   // 🎨 염색 상태 — 제거는 리무버 소모(무료 지우기 없음)
+        (petHasDye(id)?'<div class="pi-cosm"><span class="s">염색</span>'+(petDyeOf(id)?'<span class="chip on">'+consumSvg('dye',{h:12})+' 몸 '+escapeHtml(dyeNameOf(petDyeOf(id)))+'</span>':'')+(petDye2Of(id)?'<span class="chip on">🐾 얼룩 '+escapeHtml(dyeNameOf(petDye2Of(id)))+'</span>':'')+(consumQty('dye_remover')>0?'<button class="chip" '+App.view.act('applyDyeRemover',id)+'>'+consumSvg('dye_remover',{h:12})+' 리무버로 지우기</button>':'<span class="s" style="min-width:0">리무버(알뜰샵 소비 탭·이벤트)로 제거 가능</span>')+'</div>':'')+   // 🎨 2색 염색 상태(몸·얼룩) — 제거는 리무버 소모(무료 지우기 없음)
         // 🧺 소비템 — 탭하면 보유 소비템 인벤토리 피커(츄르·염색약·리무버)를 열어 이 펫에게 사용(2026-07 사용자 지시로 인벤토리 방식 개편).
         piConsumBtn(id)+
         (canPet?'<button class="gib sell" onclick="petFromInfo(\''+id+'\',event)">'+heartSvg({h:13})+' 쓰다듬기 · 애정+1 · 은화+'+PET_PET_REWARD+'</button>'

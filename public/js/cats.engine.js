@@ -540,12 +540,16 @@
         if(hasSprite(id)){ const spr=PET_SPRITES[id]; if(spr.runtime&&!spr.urls) return Promise.resolve(null);   // 아트 로딩 전 — 도착 시 _petArtRerenderNow가 재동기화
           const fw=!!spr.frontWalk;
           const cosm=petCosm(id);   // 💗 코스메틱(모자·버디)도 워커에 전사 — dock와 동일하게 보이게(가구 연출 _VPIP_FX_* 선례)
-          const dyeF=dyeFilterCss(petDyeOf(id));   // 🎨 염색은 시트/스틸 비트맵에 베이크(_vpipBmp filt — 워커 ctx.filter 미의존). 모자·버디는 미염색(dock 동일).
+          // 🎨 2색 염색은 dyedUrlAsync로 '베이크된 dataURL'을 받아 그 비트맵을 그린다(dock와 동일, 필터 미사용). 모자·버디는 미염색.
+          const d1=petDyeOf(id), d2=petDye2Of(id);
+          const wP=dyedUrlAsync(id, sprWalkUrl(spr), d1, d2).then(function(u){ return _vpipBmp(u); });
+          const sP=dyedUrlAsync(id, sprStill(id,'south'), d1, d2).then(function(u){ return _vpipBmp(u); });
+          const eP=fw?dyedUrlAsync(id, sprStill(id,'east'), d1, d2).then(function(u){ return _vpipBmp(u); }):Promise.resolve(null);
           const hatP=(cosm.hat&&HAT_M[cosm.hat])?_vpipBmp('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(hatSvg(cosm.hat,{h:60}))).catch(function(){ return null; }):Promise.resolve(null);
           const budP=BUDDY_CATALOG[cosm.buddy]?_vpipBmp('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(buddySvgOf(cosm.buddy,{h:30}))).catch(function(){ return null; }):Promise.resolve(null);   // 코스메틱 로드 실패가 펫 본체를 드랍시키지 않게 개별 폴백
           const headP=new Promise(function(res){ try{ measureHeadPad(id,res); }catch(e){ res(0.2); } });
           const footP=new Promise(function(res){ try{ measureFootPad(id,res); }catch(e){ res(null); } });   // 🐾 발밑 여백 실측 — 워커 고정 0.16 가정은 신화·한정(실측 ~0.30)에서 발이 떠 벽지를 걷는 버그
-          return Promise.all([_vpipBmp(sprWalkUrl(spr), dyeF), _vpipBmp(sprStill(id,'south'), dyeF), fw?_vpipBmp(sprStill(id,'east'), dyeF):Promise.resolve(null), hatP, budP, headP, footP])
+          return Promise.all([wP, sP, eP, hatP, budP, headP, footP])
             .then(function(bs){ return { hh:hh, frames:spr.frames||6, frontWalk:fw, sheet:bs[0], south:bs[1], east:bs[2]||null, hat:bs[3]||null, buddy:bs[4]||null, btype:cosm.buddy||'', headF:(bs[5]==null?0.2:bs[5]), fp:(bs[6]==null?0.16:bs[6]) }; })
             .catch(function(){ return null; });
         }
@@ -918,13 +922,16 @@
     // 물리 레이어(내부 전용 — 밖에선 부르지 말 것): _csprClip=클립 필름 장착, _csprStill=정지 스틸.
     // once 클립 홀드 프리즈 해제 — 원샷 종료 시 건 인라인(animation:none + transform)을 걷어내 다음 필름이 정상 재생되게. 모든 상태 전환이 거친다.
     function _csprUnfreeze(f){ if(!f) return; f.onanimationend=null; if(f.style.animation) f.style.animation=''; if(f.style.transform) f.style.transform=''; }
+    // 🎨 2색 염색 — .cspr에 실린 data-d1/d2(catActorHTML)로 원본 url을 '베이크된 dataURL'로 치환. 미염색이면 원본 그대로(무비용). 친구 캠은 스냅샷 페어라 자동 반영.
+    function _dyeU(s, id, url){ if(!s||typeof dyedUrl!=='function') return url; const d1=s.dataset&&s.dataset.d1, d2=s.dataset&&s.dataset.d2;
+      return (d1||d2) ? dyedUrl(id, url, d1||0, d2||0) : url; }
     function _csprClip(s, a, r){
       // 🖼️ 디코드 가드: 미로드 클립 시트를 즉시 장착하면 디코드까지 펫이 투명(once 클립은 재생 전체가 빈칸 — '간헐적 사라짐').
       //   이전 비주얼(걷기 필름/스틸)을 유지한 채 로드 후 장착. 그 사이 다른 전환(_swapTok 증가·소유 액터 교체)이 오면 낡은 장착을 버린다.
-      const tok=a._swapTok=(a._swapTok||0)+1;
-      if(!_sheetReady(r.url)){
+      const tok=a._swapTok=(a._swapTok||0)+1; const u=_dyeU(s, a.id, r.url);   // 염색 반영 url(캐시 히트=dataURL, 아니면 원본+지연 베이크)
+      if(!_sheetReady(u)){
         a._clip=r.key;   // 상태 마킹은 즉시 — actorOnce의 복귀 검사(a._clip)·중복 장착 방지와 일치
-        _warmUrl(r.url, function(){ if(a._swapTok!==tok || a._clip!==r.key || !s.isConnected) return;
+        _warmUrl(u, function(){ if(a._swapTok!==tok || a._clip!==r.key || !s.isConnected) return;
           if(a.el && a.el._eggActor && a.el._eggActor!==a) return;   // 재빌드로 액터 교체 → 낡은 장착 금지
           _csprClipMount(s, a, r); });
         return; }
@@ -932,7 +939,7 @@
     }
     function _csprClipMount(s, a, r){
       const cell=parseFloat(s.style.width)||Math.round(a.hh)||48;   // .cspr 창=1칸 정사각(catActorHTML이 width=렌더높이로 생성)
-      s.style.setProperty('--sheet','url('+r.url+')');
+      s.style.setProperty('--sheet','url('+_dyeU(s, a.id, r.url)+')');
       s.style.setProperty('--fw',(cell*r.frames)+'px');
       s.style.setProperty('--wdur', r.dur.toFixed(2)+'s');
       const f=s.querySelector('.csprf');
@@ -948,7 +955,7 @@
       a._clip=r.key;
     }
     function _csprStill(s, a, face){ _csprUnfreeze(s.querySelector('.csprf'));
-      const tok=a._swapTok=(a._swapTok||0)+1, u=sprStill(a.id,face);
+      const tok=a._swapTok=(a._swapTok||0)+1, u=_dyeU(s, a.id, sprStill(a.id,face));
       s.classList.remove('once'); s.classList.add('idle'); a._clip=null;
       if(_sheetReady(u)){ s.style.setProperty('--idle','url('+u+')'); return; }
       // 🖼️ 디코드 가드: 미로드 방향 스틸(첫 east/west/north)은 이전 --idle(스폰 south 등 로드된 것)을 유지한 채 로드 후 교체 — 투명 빈칸 방지
@@ -966,7 +973,7 @@
       setHatDx(a, HAT_SIDE_DX);   // 이동=옆모습(east 시트/east 정지스틸, 로컬 머리 오른쪽) → 앞으로. west는 액터 flip이 반전
       const tok=a._swapTok=(a._swapTok||0)+1;   // 🖼️ 진행 중이던 지연 시트 스왑 무효화 — 걷기로 전환된 뒤 늦게 도착한 클립/스틸이 덮어쓰는 것 방지
       _csprUnfreeze(s.querySelector('.csprf'));   // once 홀드 프리즈 해제 — 안 하면 인라인 animation:none이 걷기 필름을 막아 정지 이미지로 미끄러진다
-      if(a.frontWalk){ const u=sprStill(a.id,'east');   // east 걷기 없음 → 옆 정지스틸(정면 금지)
+      if(a.frontWalk){ const u=_dyeU(s, a.id, sprStill(a.id,'east'));   // east 걷기 없음 → 옆 정지스틸(정면 금지)
         s.classList.add('idle');
         if(_sheetReady(u)) s.style.setProperty('--idle','url('+u+')');
         else _warmUrl(u, function(){ if(a._swapTok!==tok || !s.isConnected) return;
@@ -975,7 +982,7 @@
         return; }
       // 클립 재생이 --sheet/--fw/steps를 바꿨을 수 있어 걷기 시트로 '무조건' 복원(재빌드 DOM 재사용 잔재 포함 — 안 하면 먹기 시트로 걷는 버그)
       const sp=PET_SPRITES[a.id]||{}, cell=parseFloat(s.style.width)||Math.round(a.hh)||48, nf=sp.frames||6;
-      s.style.setProperty('--sheet','url('+sprWalkUrl(sp)+')'); s.style.setProperty('--fw',(cell*nf)+'px');
+      s.style.setProperty('--sheet','url('+_dyeU(s, a.id, sprWalkUrl(sp))+')'); s.style.setProperty('--fw',(cell*nf)+'px');
       const f=s.querySelector('.csprf'); if(f) f.style.animationTimingFunction='steps('+nf+')';
       s.classList.remove('idle'); }   // .idle 제거 → CSS 걷기 필름(csprFilm) 재생
     function actorShowStill(a, face, clip){ if(!a.spr) return; const s=a.el.querySelector('.cspr'); if(!s) return;
