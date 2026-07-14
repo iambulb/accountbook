@@ -1527,6 +1527,9 @@
     .fx-scenebg { position:absolute; inset:0; overflow:hidden; z-index:0; pointer-events:none; animation:fxfade .25s ease; }
     .fx-scenebg .pkscene, .fx-scenebg .pkstage { position:absolute; inset:0; width:100%; height:100%; }
     .fx-scenebg::after { content:''; position:absolute; inset:0; background:rgba(10,10,18,.38); }   /* 씬 위 어둡기 — 알·결과가 도드라지게 */
+    /* 🎬 저등급 1뽑 = 화려한 씬 없이 불투명 기본 배경(메인 화면 비침만 차단). 은은한 세로 그라디언트. */
+    .fx-scenebg.fx-plainbg { background:linear-gradient(180deg,#191a24 0%,#0c0d15 100%); }
+    .fx-scenebg.fx-plainbg::after { display:none; }
     /* 🎬 연출 중(body.fx-open) 뒤에 깔린 가챠 배너 씬 애니 정지 — FX가 화면을 덮어 IO(pk-idle)가 못 잡는 이중 구동 방지 */
     body.fx-open #sheet .pkscene, body.fx-open #sheet .pkscene * { animation-play-state:paused !important; }
     .fx-stage, .fx-reveal { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:24px; z-index:1; }
