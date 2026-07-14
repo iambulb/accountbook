@@ -3184,17 +3184,19 @@
         const c=document.createElement('canvas'); c.width=w; c.height=h; const x=c.getContext('2d'); x.imageSmoothingEnabled=false; x.drawImage(im,0,0);
         done(_segFromData(x.getImageData(0,0,w,h).data)); }catch(e){ done(null); } };
       im.onerror=function(){ done(null); }; im.src=sprStill(id,'south'); }
-    // 픽셀 재색(제자리) — 4영역 분할: ①테두리(어두움)·②눈코입(작고 채도 높은 이질색)=원본 유지 · ③몸=dye1 · ④얼룩(몸보다 훨씬 어둡거나 이질 채색 패치)=dye2.
-    //   어두운 몸도 몸으로 인식(대표색 기준) → 검은 펫도 물듦. 눈코입은 절대 안 건드림(사용자 지침). 색 미지정 영역(t1/t2 null)은 그 영역 원본 유지.
-    function _bakeRecolor(d, prof, t1, t2){ const n=d.length>>2, cls=new Uint8Array(n);   // 0 body,1 marking,2 keep(feature),3 outline,255 skip
-      const bl_=prof.bl, bs_=prof.bs, bh_=prof.bh, achro=bs_<0.22;
+    // 픽셀 재색(제자리) — 4영역 분할: ①실루엣(투명 인접 테두리·어두운 내부선)·②눈코입(작고 채도 높은 이질색)=원본 유지 · ③몸=dye1 · ④얼룩=dye2.
+    //   ⭐ 실루엣(테두리)은 "투명에 인접한 어두운 픽셀"로 잡아 절대 재색 안 함(사용자 지침 — 염색해도 실루엣은 원본 유지). 어두운 몸도 몸으로 인식 → 검은 펫도 물듦. 색 미지정(t1/t2 null)=그 영역 원본.
+    function _bakeRecolor(d, w, h, prof, t1, t2){ const n=d.length>>2, cls=new Uint8Array(n);   // 0 body,1 marking,2 keep(feature),3 outline,255 skip
+      const bl_=prof.bl, bs_=prof.bs, bh_=prof.bh, achro=bs_<0.22, outlTh=Math.max(0.12, bl_*0.72);
+      const opq=function(x,y){ return x>=0&&y>=0&&x<w&&y<h && d[(y*w+x)*4+3]>=128; };
       // pass1: 양자화 클러스터 면적(눈코입 판정용)
       const area={}; let tot=0;
       for(let i=0;i<d.length;i+=4){ if(d[i+3]<128) continue; tot++; const q=((d[i]/32)|0)*81+((d[i+1]/32)|0)*9+((d[i+2]/32)|0); area[q]=(area[q]||0)+1; }
       let bl=0,bn=0,ml=0,mn=0;
-      for(let i=0,p=0;i<d.length;i+=4,p++){ const a=d[i+3]; if(a<128){ cls[p]=255; continue; } const r=d[i],g=d[i+1],b=d[i+2];
-        const L=_lumU(r,g,b);
-        if(L<_OUTL){ cls[p]=3; continue; }                                            // 테두리=원본 유지
+      for(let p=0;p<n;p++){ const i=p*4; if(d[i+3]<128){ cls[p]=255; continue; } const r=d[i],g=d[i+1],b=d[i+2];
+        const L=_lumU(r,g,b), x=p%w, y=(p/w)|0;
+        const border = !opq(x-1,y)||!opq(x+1,y)||!opq(x,y-1)||!opq(x,y+1);   // 실루엣 가장자리(투명 인접)
+        if((border && L<outlTh) || L<_OUTL){ cls[p]=3; continue; }                     // 실루엣 테두리·아주 어두운 내부선 = 원본 유지
         const S=_satU(r,g,b), q=((r/32)|0)*81+((g/32)|0)*9+((b/32)|0), af=(area[q]||0)/tot;
         // 눈코입(작고 채도 높은 이질색) → 원본 유지. 무채색 몸이면 hue 비교 무의미 → 채도만으로 판정.
         if((af<0.05 && S>0.46 && (achro || _hueDiff(_hueU(r,g,b),bh_)>40)) || (af<0.03 && S>0.60)){ cls[p]=2; continue; }
@@ -3202,8 +3204,8 @@
         else if(_hueDiff(_hueU(r,g,b),bh_)>55 && S>0.32 && af>0.03){ cls[p]=1; ml+=L; mn++; }   // 이질 채색 패치(삼색 등) = 얼룩
         else { cls[p]=0; bl+=L; bn++; } }                                             // 나머지 = 몸
       const bmL=bn?bl/bn:bl_, amL=mn?ml/mn:bl_;
-      for(let i=0,p=0;i<d.length;i+=4,p++){ const k=cls[p]; if(k>=2) continue;         // 2(눈코입)·3(테두리)·255(투명)=원본 유지
-        const L=_lumU(d[i],d[i+1],d[i+2]); let c=null;
+      for(let p=0;p<n;p++){ const k=cls[p]; if(k>=2) continue;                         // 2(눈코입)·3(실루엣)·255(투명)=원본 유지
+        const i=p*4, L=_lumU(d[i],d[i+1],d[i+2]); let c=null;
         if(k===0){ if(t1){ const lp=Math.max(0.10,Math.min(0.97,t1.l+(L-bmL)*0.85)); c=_hslToRgb(t1.h,t1.s,lp); } }        // 몸=염색1(상대 명암 보존)
         else { if(t2){ const lp=Math.max(0.08,Math.min(0.9,t2.l+(L-amL)*0.75)); c=_hslToRgb(t2.h,t2.s,lp); } }             // 얼룩=염색2
         if(c){ d[i]=c[0]*255; d[i+1]=c[1]*255; d[i+2]=c[2]*255; } } }
@@ -3219,7 +3221,7 @@
           if(u && typeof _petArtRerender==='function') _petArtRerender(); cbs.forEach(function(f){ try{ f(out); }catch(e){} }); };
         im.onload=function(){ try{ const w=im.naturalWidth||im.width, h=im.naturalHeight||im.height;
           const c=document.createElement('canvas'); c.width=w; c.height=h; const x=c.getContext('2d'); x.imageSmoothingEnabled=false; x.drawImage(im,0,0);
-          const g=x.getImageData(0,0,w,h); _bakeRecolor(g.data, prof, t1, t2); x.putImageData(g,0,0); fin(c.toDataURL('image/png'));
+          const g=x.getImageData(0,0,w,h); _bakeRecolor(g.data, w, h, prof, t1, t2); x.putImageData(g,0,0); fin(c.toDataURL('image/png'));
         }catch(e){ fin(null); } };
         im.onerror=function(){ fin(null); }; im.src=url; }); }
     // 🎨 url을 펫 2색 염색으로 치환(단일 소스 — catActorHTML·catFace·엔진 스왑·PiP·친구캠 공유). 캐시 히트=베이크된 dataURL, 아니면 원본 반환+지연 베이크(완료 시 캠 재빌드로 스왑).
