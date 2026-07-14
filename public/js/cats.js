@@ -646,6 +646,11 @@
       reconcilePets();   // 캠 화면에서도 3시간 만료→똥 정산
       // 원근: 뒤(행 큰 값)일수록 위로·작게, 앞(행 작은 값)일수록 아래로·크게. 앞 가구가 뒤 가구를 덮도록 뒤부터.
       const list=placedList().sort((a,b)=>a.r-b.r); distributePoops(list);
+      // 가구·채움·똥이 실제로 바뀌었을 때만 innerHTML 교체 — 관계없는 게임 쓰기마다 방을 다시 그려(액터 합성 레이어 리페인트) 깜빡이던 것 방지.
+      const placed=(state.game&&state.game.home.placed)||{};
+      const sig='p:'+list.map(p=>p.key+':'+p.itemId+':'+((placed[p.key]&&placed[p.key].filledAt)||0)).join('|')+'#'+((state.game&&state.game.home.poops)||0);
+      if(box.dataset.sig===sig) return;
+      box.dataset.sig=sig;
       box.innerHTML=list.map(p=>propMarkup(p,true)).join('');
     }
     // 활성 고양이를 dock 무대에 액터로 배치(없으면 안내)
@@ -798,7 +803,18 @@
         return h;
       };
       openSheet('알뜰샵', build());
-      state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const st=b.scrollTop; b.innerHTML=build(); b.scrollTop=st; if(_catTab==='home') mountRoomWalk(); };
+      state._sheetRefresh=()=>{ const b=$('sheetBody'); if(!b) return; const st=b.scrollTop;
+        // ⚠️ 홈 탭의 걷는 액터 무대(#crStage)는 innerHTML을 다시 만들면 스프라이트가 리로드되며 "펫 전체가 깜빡"인다.
+        // 활성 펫 구성이 같으면 기존 무대 노드를 그대로 이식(재생성 없이) → 깜빡임 방지. 같은 노드라 엔진 무대 참조·애니메이션도 끊기지 않는다.
+        const keep=(_catTab==='home')?b.querySelector('#crStage'):null;
+        const keepOk=!!(keep && keep.querySelector('.cd-actor'));
+        b.innerHTML=build(); b.scrollTop=st;
+        if(_catTab==='home'){
+          const sig='c:'+activeCats().slice(0,slotCount()).join(','); const fresh=b.querySelector('#crStage');
+          if(fresh && keepOk && keep.dataset.sig===sig) fresh.replaceWith(keep);   // 기존 액터 유지(깜빡임 없음)
+          else mountRoomWalk();
+        }
+      };
       if(_catTab==='home') setTimeout(mountRoomWalk, 30);
     }
     function catHomeHtml(){

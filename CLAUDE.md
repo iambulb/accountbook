@@ -24,6 +24,7 @@
 - **Firebase compat SDK 필수**: `firebase-*-compat.js` 빌드를 사용합니다(모듈형 SDK 아님).
 - **RTDB 규칙은 순수 JSON**: `database.rules.json` 에는 주석·추가 키를 넣지 마세요. 멤버십(`workspaces` 쓰기)이 먼저 커밋된 뒤에야 `ws` 쓰기가 통과하므로, 합류·생성은 2단계로 처리합니다.
 - **단방향 렌더**: RTDB 리스너가 데이터를 받을 때마다 `rerender()` 로 현재 화면을 다시 그립니다. 상태는 전역 `state` 객체에 모읍니다.
+- **⚠️ 걷는 액터 무대는 데이터 갱신 때 재생성 금지**: 스프라이트 액터가 든 무대(`#crStage`·`#cdStage`)를 게임 데이터 쓰기마다 `innerHTML`로 다시 만들면 **배경 이미지가 리로드되며 펫 전체가 깜빡**인다. 재렌더 시엔 **활성 펫 시그니처(`'c:'+ids`)가 같으면 기존 무대 노드를 유지**한다 — dock은 `renderDockCats` 시그 가드로, 시트 홈은 `_sheetRefresh`가 `#crStage`를 그대로 이식(transplant)해서. 방 배경(`#cdProps` 등)도 실제 변경(가구·채움·똥) 시그니처가 바뀔 때만 다시 그린다. 새 무대/미리보기를 추가할 때도 같은 원칙(시그 가드 또는 노드 유지)을 지킨다.
 - **XSS 방지**: 사용자 입력은 `escapeHtml()` 후 `innerHTML` 에 넣습니다.
 - **접근성(A11y)**: `public/js/main.js` 의 `a11yDecorate`(+MutationObserver)가 재렌더 시 자동으로 `.switch`→`role=switch`, `onclick` 달린 `div`→`role=button`+`tabindex`, `.field` 라벨↔입력을 연결하고, 전역 키보드 핸들러가 Enter/Space 활성화·Esc 닫기·포커스 트랩을 처리합니다. 새 UI를 만들 때: 가능하면 `<button>` 사용, 아이콘만 있는 버튼엔 `aria-label` 추가, 폼 입력엔 `id` 부여(라벨 자동 연결). 시트는 `openSheet/closeSheet`(포커스 이동/복원 내장)로 엽니다.
 - **언어/스타일**: 주석·UI 라벨·토스트·커밋 메시지는 **한국어**. 들여쓰기·압축 헬퍼 스타일은 기존 파일 관례를 따릅니다.
