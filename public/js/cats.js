@@ -3024,14 +3024,15 @@
       else if(use==='dye_remover') useDyeRemover(); }
     // ⏱️ ms→"Nh Mm"/"Mm" 간단 표기(부스트 남은시간·소비템)
     function fmtDur(ms){ ms=Math.max(0,Number(ms)||0); const mm=Math.round(ms/60000), h=Math.floor(mm/60), m=mm%60; return h>0?(h+'시간'+(m?' '+m+'분':'')):(m+'분'); }
-    // 🎨 염색 색상 카탈로그(2026-07 대확장) — 절대색(전신 틴트) 45색: 어떤 펫이든 지정 색으로 일관 염색(이름 표기 가능, 흑·백·회·브라운 포함).
-    //    유채·브라운 = grayscale(1) sepia(1) saturate(S) hue-rotate(Hdeg) brightness(B) — sepia 기준색(≈골드브라운)에서 회전, 명암·외곽선(루미넌스) 보존.
-    //    무채 = grayscale(1) brightness(B). 파라미터는 CSS 필터 행렬을 파이썬으로 재현한 스와치 시트로 검수 후 확정(2026-07-09).
-    //    ⚠️ legacy 하위호환: 구 저장값(숫자 hue 40~320)은 dyeFilterCss가 hue-rotate로 계속 해석(LEGACY_DYE_HUES 화이트리스트).
+    // 🎨 염색 색상 카탈로그(2026-07 대확장) — 색 정체성(이름·색상환)은 그대로. 각 색의 `_p`(h/s/b 또는 achroma b)로 "대표 색상(hue)"을 뽑는다.
+    //    ⚠️ 렌더는 더 이상 전신 CSS 필터가 아니라 "루미넌스 그라디언트맵"(dyeFilterCss → SVG feComponentTransfer, 2026-07 전면 개편):
+    //      · 펫 몸 바탕(중간~밝은 루미넌스)만 해당 색으로 리치하게 칠하고, 외곽선·눈·기본 얼룩(어두운 루미넌스)은 "중립 진한색(검정/회색)"으로 유지 → 전신이 한 톤으로 뭉개지던 어색함 제거.
+      // · 흰색계열(achroma 밝음)=몸이 흰색, 검정/회색계열=어둡게. 실제 그라디언트맵 LUT는 _dyeRamp/_dyeLut, 필터 주입은 ensureDyeFilter.
+    //    ⚠️ legacy 하위호환: 구 저장값(숫자 hue 40~320)은 dyeFilterCss가 예전처럼 hue-rotate로 해석(LEGACY_DYE_HUES 화이트리스트).
     const LEGACY_DYE_HUES=[40,80,120,160,200,240,280,320];
     const DYE_CATALOG=(function(){ const out=[];
-      const C=function(id,name,g,h,s,b){ out.push({ id:id, name:name, g:g, css:'grayscale(1) sepia(1) saturate('+s+') hue-rotate('+h+'deg) brightness('+b+')' }); };
-      const A=function(id,name,b){ out.push({ id:id, name:name, g:'무채', css:'grayscale(1) brightness('+b+')' }); };
+      const C=function(id,name,g,h,s,b){ out.push({ id:id, name:name, g:g, css:'grayscale(1) sepia(1) saturate('+s+') hue-rotate('+h+'deg) brightness('+b+')', _p:{h:h,s:s,b:b} }); };
+      const A=function(id,name,b){ out.push({ id:id, name:name, g:'무채', css:'grayscale(1) brightness('+b+')', _p:{ach:true,b:b} }); };
       C('cherry','체리','레드',-40,2.6,0.9);      C('scarlet','스칼렛','레드',-30,2.4,1.0);   C('crimson','크림슨','레드',-45,2.0,0.82);
       C('wine','와인','레드',-55,1.6,0.66);       C('rose','로즈','레드',-50,1.4,1.05);
       C('babypink','베이비핑크','핑크',-70,1.0,1.28); C('pink','핑크','핑크',-75,1.5,1.12);   C('hotpink','핫핑크','핑크',290,2.4,1.05);
@@ -3128,9 +3129,61 @@
       const arr=(byT[tier]&&byT[tier].length)?byT[tier]:avail;
       return arr[Math.floor(Math.random()*arr.length)];
     }
-    // 염색값 → CSS filter 문자열(단일 소스 — catActorHTML·catFace·비디오 PiP 워커·친구 캠이 공유). 무효값=''(미염색).
+    // ── 🎨 염색 그라디언트맵(2026-07 전면 개편) — 몸 바탕색만 리치하게, 어두운 부위(외곽선·눈·얼룩)는 중립 진한색 유지 ──
+    //   구현: 스프라이트를 루미넌스로 환원(feColorMatrix grayscale) → 루미넌스 LUT(feComponentTransfer 테이블)로 R/G/B 재매핑.
+    //   LUT 램프: 어두움(u<0.30)=중립 검정~진회색(색상 제거) → 전이(0.30~0.46) → 몸(u≥0.46)=대표 색상(hue)로 리치하게. achroma=회색 램프(흰색/검정/회색).
+    //   PIL 프로토타입(scratchpad dye_proto2.py)으로 라이트/다크 검수 후 확정. 색 정체성(hue)은 기존 CSS 필터 파라미터에서 산출해 "색종류 유지".
+    function _mMul(a,b){ const r=new Array(9); for(let i=0;i<3;i++)for(let j=0;j<3;j++){ let s=0; for(let k=0;k<3;k++) s+=a[i*3+k]*b[k*3+j]; r[i*3+j]=s; } return r; }
+    function _mVec(m,v){ return [ m[0]*v[0]+m[1]*v[1]+m[2]*v[2], m[3]*v[0]+m[4]*v[1]+m[5]*v[2], m[6]*v[0]+m[7]*v[1]+m[8]*v[2] ]; }
+    const _DGRAY=[0.2126,0.7152,0.0722, 0.2126,0.7152,0.0722, 0.2126,0.7152,0.0722];
+    const _DSEPIA=[0.393,0.769,0.189, 0.349,0.686,0.168, 0.272,0.534,0.131];
+    function _mSat(s){ return [0.213+0.787*s,0.715-0.715*s,0.072-0.072*s, 0.213-0.213*s,0.715+0.285*s,0.072-0.072*s, 0.213-0.213*s,0.715-0.715*s,0.072+0.928*s]; }
+    function _mHueRot(deg){ const a=deg*Math.PI/180,c=Math.cos(a),n=Math.sin(a);
+      return [0.213+c*0.787-n*0.213,0.715-c*0.715-n*0.715,0.072-c*0.072+n*0.928,
+              0.213-c*0.213+n*0.143,0.715+c*0.285+n*0.140,0.072-c*0.072-n*0.283,
+              0.213-c*0.213-n*0.787,0.715-c*0.715+n*0.715,0.072+c*0.928+n*0.072]; }
+    function _clamp01(x){ return x<0?0:x>1?1:x; }
+    function _hue2rgb(p,q,t){ if(t<0)t+=1; if(t>1)t-=1; if(t<1/6)return p+(q-p)*6*t; if(t<1/2)return q; if(t<2/3)return p+(q-p)*(2/3-t)*6; return p; }
+    function _hslToRgb(h,s,l){ if(s===0) return [l,l,l]; const q=l<0.5?l*(1+s):l+s-l*s, p=2*l-q; return [_hue2rgb(p,q,h+1/3),_hue2rgb(p,q,h),_hue2rgb(p,q,h-1/3)]; }
+    function _rgbToHsl(r,g,b){ const mx=Math.max(r,g,b),mn=Math.min(r,g,b); let h=0,s=0; const l=(mx+mn)/2;
+      if(mx!==mn){ const d=mx-mn; s=l>0.5?d/(2-mx-mn):d/(mx+mn);
+        if(mx===r)h=(g-b)/d+(g<b?6:0); else if(mx===g)h=(b-r)/d+2; else h=(r-g)/d+4; h/=6; } return {h:h,s:s,l:l}; }
+    // 대표 색상 파라미터 산출(색당 1회, 사용 시 캐시): 유채=대표 hue/채도, 무채=몸 밝기.
+    function _dyeRcCompute(p){ if(!p||p.ach) return { ach:true, ld:_clamp01((p&&p.b||1)*0.62) };
+      const M=_mMul(_mHueRot(p.h),_mMul(_mSat(p.s),_mMul(_DSEPIA,_DGRAY)));
+      const v=_mVec(M,[0.5,0.5,0.5]).map(function(x){ return _clamp01(x*p.b); });
+      const hsl=_rgbToHsl(v[0],v[1],v[2]);
+      return { ach:false, hd:hsl.h, sb:Math.min(1,hsl.s*1.45+0.15), lb:0.52 }; }
+    function dyeRcOf(d){ if(!d.rc) d.rc=_dyeRcCompute(d._p); return d.rc; }
+    // 루미넌스 u(0..1) → [r,g,b](0..1). 어두움=중립 진한색, 몸=대표 색상. (PIL 프로토타입과 동일 램프)
+    function _dyeRamp(u, rc){ const tD=0.30, tB=0.46;
+      if(u<tD){ const v=0.02+(u/tD)*0.14; return [v,v,v]; }                         // 외곽선·눈·진한 얼룩 = 중립 검정~진회색
+      if(u<tB){ const f=(u-tD)/(tB-tD); let r,g,b;                                    // 전이대
+        if(rc.ach){ const lo=rc.ld*0.7; r=g=b=lo; } else { const c=_hslToRgb(rc.hd,rc.sb,Math.max(0,rc.lb-0.14)); r=c[0];g=c[1];b=c[2]; }
+        const base=0.16; return [base+(r-base)*f, base+(g-base)*f, base+(b-base)*f]; }
+      if(rc.ach){ const lp=_clamp01(rc.ld+(u-0.72)*0.7); return [lp,lp,lp]; }         // 무채 몸(흰색/회색/검정)
+      const lp=Math.max(0.12,Math.min(0.97, rc.lb+(u-0.68)*0.55)); return _hslToRgb(rc.hd,rc.sb,lp); }   // 유채 몸 = 대표 색상, 명암은 루미넌스로
+    function _dyeLut(rc){ const N=33, r=[],g=[],b=[]; for(let i=0;i<N;i++){ const c=_dyeRamp(i/(N-1), rc);
+      r.push(c[0].toFixed(4)); g.push(c[1].toFixed(4)); b.push(c[2].toFixed(4)); } return { r:r.join(' '), g:g.join(' '), b:b.join(' ') }; }
+    // 필터 정의를 문서에 1회 주입(사용된 색만 지연 생성). CSS filter:url(#…)·PiP ctx.filter 모두 이 문서 필터를 참조.
+    const _NSVG='http://www.w3.org/2000/svg'; let _dyeDefsEl=null; const _dyeMade={};
+    function _dyeDefs(){ if(!_dyeDefsEl){ _dyeDefsEl=document.createElementNS(_NSVG,'svg');
+        _dyeDefsEl.setAttribute('aria-hidden','true'); _dyeDefsEl.setAttribute('width','0'); _dyeDefsEl.setAttribute('height','0');
+        _dyeDefsEl.style.cssText='position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;';
+        (document.body||document.documentElement).appendChild(_dyeDefsEl); } return _dyeDefsEl; }
+    function ensureDyeFilter(id, rc){ if(_dyeMade[id]) return; _dyeMade[id]=1;
+      const lut=_dyeLut(rc), f=document.createElementNS(_NSVG,'filter');
+      f.setAttribute('id','dyef_'+id); f.setAttribute('color-interpolation-filters','sRGB');
+      const cm=document.createElementNS(_NSVG,'feColorMatrix'); cm.setAttribute('type','matrix');
+      cm.setAttribute('values','0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0 0 0 1 0'); f.appendChild(cm);
+      const ct=document.createElementNS(_NSVG,'feComponentTransfer');
+      [['R',lut.r],['G',lut.g],['B',lut.b]].forEach(function(p){ const fn=document.createElementNS(_NSVG,'feFunc'+p[0]);
+        fn.setAttribute('type','table'); fn.setAttribute('tableValues',p[1]); ct.appendChild(fn); });
+      f.appendChild(ct); _dyeDefs().appendChild(f); }
+    // 염색값 → CSS filter 문자열(단일 소스 — catActorHTML·catFace·비디오 PiP·친구 캠 공유). 카탈로그 id=그라디언트맵 url(), legacy 숫자=hue-rotate, 무효=''.
     function dyeFilterCss(v){ if(!v) return '';
-      if(typeof v==='string' && DYE_MAP[v]) return DYE_MAP[v].css;
+      if(typeof v==='string' && DYE_MAP[v]){ const d=DYE_MAP[v], rc=dyeRcOf(d);
+        try{ ensureDyeFilter(v, rc); }catch(e){ return ''; } return 'url(#dyef_'+v+')'; }
       const n=Number(v)||0; return LEGACY_DYE_HUES.indexOf(n)>=0?('hue-rotate('+n+'deg)'):''; }
     function dyeNameOf(v){ return (typeof v==='string' && DYE_MAP[v])?DYE_MAP[v].name:(v?'커스텀 톤':''); }
     // 펫의 유효 염색값(카탈로그 id 문자열 | legacy 숫자 | 0=미염색) — 진리값 판정은 !!petDyeOf(id) (문자열 id는 >0 비교 불가)
