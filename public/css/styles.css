@@ -964,20 +964,21 @@
     .cr-drop-rb .drop-tw { color:#c77dd8; animation:dropfxtw .8s steps(3) infinite, rbhue 3s linear infinite; }
     @keyframes rbhue { 0%{ filter:hue-rotate(0deg); } 100%{ filter:hue-rotate(360deg); } }
     /* 🎁 수확 결과 "작은 창" — 캠 안 요약 팝업(무엇을 얼마나 수확했는지 + [줍기] 버튼). z=LIVE/지갑 배지(45/46) 위. */
-    .cr-harvest-pop { position:absolute; left:50%; top:11%; transform:translateX(-50%); z-index:60; min-width:152px; max-width:88%; text-align:left;
+    .cr-harvest-pop { position:absolute; left:50%; top:8%; transform:translateX(-50%); z-index:60; min-width:152px; max-width:88%; text-align:left;
+      max-height:86%; display:flex; flex-direction:column; /* 방(overflow:hidden) 밖으로 잘려 [줍기]를 못 누르던 버그 — 팝업을 방 안에 가두고 목록만 스크롤 */
       background:var(--card); color:var(--text); border:1px solid var(--line); border-radius:12px; padding:10px 12px 11px; box-shadow:0 8px 24px rgba(0,0,0,.28); animation:chppop .22s cubic-bezier(.2,1.3,.5,1) both; }
     .cr-harvest-pop.rb { border:2px solid transparent; background:linear-gradient(var(--card),var(--card)) padding-box, linear-gradient(90deg,#e57584,#e5a06c,#dfc06e,#5fbf94,#6ba3ef,#af8dd6,#e57584) border-box; background-size:auto,200% 100%; animation:chppop .22s cubic-bezier(.2,1.3,.5,1) both, rainbow 4s linear infinite; }
     @keyframes chppop { 0%{ opacity:0; transform:translateX(-50%) scale(.9) translateY(-6px); } 100%{ opacity:1; transform:translateX(-50%) scale(1) translateY(0); } }
-    .chp-title { font-size:12px; font-weight:900; text-align:center; margin-bottom:7px; }
-    .chp-list { display:flex; flex-direction:column; gap:5px; }
+    .chp-title { flex:none; font-size:12px; font-weight:900; text-align:center; margin-bottom:7px; }
+    .chp-list { display:flex; flex-direction:column; gap:5px; min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
     .chp-row { display:flex; flex-wrap:wrap; align-items:center; gap:7px; font-size:12px; }
     .chp-row .chp-ic { flex:none; display:inline-flex; line-height:0; }
     .chp-row .chp-ic .px { display:block; image-rendering:pixelated; }
     .chp-row .chp-nm { flex:1; font-weight:700; }
     .chp-row .chp-n { font-weight:900; font-variant-numeric:tabular-nums; color:var(--income,#2FAE7A); }
     .chp-row .chp-note { flex-basis:100%; margin:-3px 0 0 25px; font-size:10px; font-weight:700; color:var(--sub); }
-    .chp-foot { margin-top:7px; font-size:10.5px; color:var(--sub); text-align:center; }
-    .chp-btn { margin-top:9px; width:100%; padding:7px 0; border:0; border-radius:9px; background:var(--primary); color:var(--card); font-size:12.5px; font-weight:900; cursor:pointer; }
+    .chp-foot { flex:none; margin-top:7px; font-size:10.5px; color:var(--sub); text-align:center; }
+    .chp-btn { flex:none; margin-top:9px; width:100%; padding:7px 0; border:0; border-radius:9px; background:var(--primary); color:var(--card); font-size:12.5px; font-weight:900; cursor:pointer; }
     .chp-btn:active { transform:scale(.96); }
     body.lite .cr-harvest-pop, body.lite .cr-harvest-pop.rb, body.lite .cr-drop-rb .drop-tw { animation:none !important; }
     @media (prefers-reduced-motion: reduce){ .cr-harvest-pop, .cr-harvest-pop.rb, .cr-drop-rb .drop-tw { animation:none; } }
