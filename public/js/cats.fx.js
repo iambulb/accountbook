@@ -28,17 +28,31 @@
       return s; }
     // 🌆 1뽑 탭 단계 배너 기반 배경(2026-07) — 메인 화면이 비치지 않게 kind별 배너 씬을 불투명 레이어로 깐다(펫 배회 없는 씬만).
     //    egg=노을 · box=보물 금고 · ddeul=픽업 낮 · 무지개(rainbow)=밤. 절전(lite)·reduced-motion은 씬 내부 규칙이 처리.
+    // 🎬 1뽑 배경 씬 '모드' 단일 판정 — 리빌과 동일 게이트: 무지개=밤 · 뜰알=픽업 · 그 외 화려 씬(노을/보석)은 특별(epic)↑에서만 · 결과 등급 미상(대기)·저등급=불투명 기본.
+    function fxSceneMode(kind, rainbow){
+      if(rainbow) return 'night';
+      if(kind==='ddeul') return 'pickup';   // 🌱 뜰알=무지개 픽업씬(항상, 배너와 동일 정체성)
+      const tier=(_fx&&_fx.res&&_fx.res.tier)||'';
+      const gate = tier ? (TIER_ORDER.indexOf(tier)>=Math.max(0,TIER_ORDER.indexOf('epic'))) : false;   // 대기(등급 미상)=화려 씬 보류(불투명 기본) → 특별↑ 확정 시 탭에서 씬으로 승격
+      if(!gate) return 'plain';             // 특별 미만·등급 미상=화려 씬 없음
+      return kind==='box' ? 'treasure' : 'sunset';
+    }
     function fxSceneBg(kind, rainbow){ try{
-        let sc='';
-        // 🎬 리빌과 동일 게이트: 뜰알=항상 무지개 픽업씬 · 그 외 화려 씬(노을/보석)은 특별(epic)↑에서만. 결과 등급 미상(대기)이면 씬 표시. 저등급=불투명 기본 배경.
-        const tier=(_fx&&_fx.res&&_fx.res.tier)||'', gate = tier ? (TIER_ORDER.indexOf(tier)>=Math.max(0,TIER_ORDER.indexOf('epic'))) : false;   // 대기(등급 미상)=화려 씬 보류(불투명 기본) → 특별↑ 확정 시 탭에서 씬으로 승격(다운그레이드 깜빡임 방지)
-        if(rainbow) sc=nightSceneHtml();
-        else if(kind==='ddeul') sc=pickupSceneHtml('reveal');   // 🌱 뜰알=무지개 픽업씬(항상, 배너와 동일 정체성)
-        else if(!gate) sc='';                                    // 특별 미만=화려 씬 없음
-        else if(kind==='box') sc=(typeof treasureSceneHtml==='function')?treasureSceneHtml('banner'):sunsetSceneHtml('banner','box');
-        else sc=sunsetSceneHtml();
-        return sc?'<div class="fx-scenebg" aria-hidden="true">'+sc+'</div>':'<div class="fx-scenebg fx-plainbg" aria-hidden="true"></div>';   // 씬 없으면 불투명 기본(메인 비침 차단)
+        const mode=fxSceneMode(kind, rainbow); let sc='';
+        if(mode==='night') sc=nightSceneHtml();
+        else if(mode==='pickup') sc=pickupSceneHtml('reveal');
+        else if(mode==='treasure') sc=(typeof treasureSceneHtml==='function')?treasureSceneHtml('banner'):sunsetSceneHtml('banner','box');
+        else if(mode==='sunset') sc=sunsetSceneHtml();
+        return sc?'<div class="fx-scenebg" data-mode="'+mode+'" aria-hidden="true">'+sc+'</div>':'<div class="fx-scenebg fx-plainbg" data-mode="plain" aria-hidden="true"></div>';   // 씬 없으면 불투명 기본(메인 비침 차단)
       }catch(e){ return ''; } }
+    // 🎬 배경 씬을 현재 _fx 상태(등급 확정·무지개 승급)에 맞게 다시 깐다 — 대기(등급 미상) 후 커밋이나 탭 도중 무지개 승급으로 씬이 바뀔 때
+    //    '.fx-scenebg' 레이어만 교체(알·상자·hint DOM은 그대로 유지 → 등장 팝 애니 재생 없음). 같은 모드면 유지해 불필요한 재렌더·깜빡임 방지.
+    function fxSwapSceneBg(){ const fx=$('catFx'); if(!fx||!_fx) return;
+      const old=fx.querySelector('.fx-scenebg'); if(!old) return;
+      const mode=fxSceneMode(_fx.kind, _fx.rainbow); if(old.dataset.mode===mode) return;
+      const tmp=document.createElement('div'); tmp.innerHTML=fxSceneBg(_fx.kind, _fx.rainbow);
+      const neo=tmp.firstElementChild; if(neo) old.replaceWith(neo);
+    }
     // 💗 가챠 중복 펫 애정 레벨업 연출 — 리빌 펫 위로 픽셀 하트 6개가 부채꼴로 '뿅뿅' + UP! 배지(affLevelFx 톤).
     function fxAffLvUpHtml(){
       let hearts='';
@@ -68,6 +82,7 @@
         it0.id='fxItem'; it0.setAttribute('role','button'); it0.setAttribute('aria-label',hint); it0.setAttribute('onclick','fxTap()');
         h0.id='fxHint'; h0.classList.remove('fx-hint-wait'); h0.textContent=hint;
         if(rainbow && !st0.querySelector('.fx-spark')) st0.insertAdjacentHTML('afterbegin', fxSparkles(16));
+        fxSwapSceneBg();   // 🎬 등급 확정 → 대기 때 보류했던 배경 씬을 지금 등급에 맞게 승격(특별↑=노을/보석). pendingMatch로 씬이 기본으로 굳던 버그 수정.
         return;
       }
       const v2e=_fx.v2egg;   // 🎨 v2 펫알: 뜰알식 분리 렌더(새싹+몸통) — 크기·흔들림 CSS는 .fx-ddeulegg 공유. 무지개알/무지개박스 '사용'은 기존(v1) 아트.
@@ -148,6 +163,7 @@
       const tier=_fx.res.tier; const chance=rbUpgradeChance(tier);   // 신화 텍스트색은 핑크지만 알 열 때 무지개알 승급 유지
       if(chance<=0 || Math.random()>=chance) return;
       _fx.rainbow=true; _fx.rbUpgrade=true;
+      fxSwapSceneBg();   // 🌈 무지개 승급 → 배경 씬도 밤 씬으로 승격(탭 도중 노을→밤). 안 하면 리빌 전까지 씬이 안 바뀜.
       const it=$('fxItem'), st=$('catFx')&&$('catFx').querySelector('.fx-stage');
       if(it) it.classList.add('fx-rainbow');
       if(st){ st.classList.add('fx-rb'); st.insertAdjacentHTML('beforeend', fxSparkles(14));
