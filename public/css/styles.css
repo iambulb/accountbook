@@ -1528,6 +1528,8 @@
     .fx-scenebg { position:absolute; inset:0; overflow:hidden; z-index:0; pointer-events:none; animation:fxfade .25s ease; }
     .fx-scenebg .pkscene, .fx-scenebg .pkstage { position:absolute; inset:0; width:100%; height:100%; }
     .fx-scenebg::after { content:''; position:absolute; inset:0; background:rgba(10,10,18,.38); }   /* 씬 위 어둡기 — 알·결과가 도드라지게 */
+    .fx-scenebg.fx-scene-full { z-index:0; }
+    .fx-scenebg.fx-scene-full::after { display:none; }   /* pk-reveal 전체화면 씬은 자체 어둡기 오버레이가 있어 중복 방지(노을·보석·픽업) */
     /* 🎬 저등급 1뽑 = 화려한 씬 없이 불투명 기본 배경(메인 화면 비침만 차단). 은은한 세로 그라디언트. */
     .fx-scenebg.fx-plainbg { background:linear-gradient(180deg,#191a24 0%,#0c0d15 100%); }
     .fx-scenebg.fx-plainbg::after { display:none; }

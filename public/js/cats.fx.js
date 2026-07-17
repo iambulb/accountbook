@@ -28,22 +28,21 @@
       return s; }
     // 🌆 1뽑 탭 단계 배너 기반 배경(2026-07) — 메인 화면이 비치지 않게 kind별 배너 씬을 불투명 레이어로 깐다(펫 배회 없는 씬만).
     //    egg=노을 · box=보물 금고 · ddeul=픽업 낮 · 무지개(rainbow)=밤. 절전(lite)·reduced-motion은 씬 내부 규칙이 처리.
-    // 🎬 1뽑 배경 씬 '모드' 단일 판정 — 리빌과 동일 게이트: 무지개=밤 · 뜰알=픽업 · 그 외 화려 씬(노을/보석)은 특별(epic)↑에서만 · 결과 등급 미상(대기)·저등급=불투명 기본.
+    // 🎬 1뽑 배경 씬 '모드' 단일 판정 — 무지개=밤 · 뜰알=픽업 · 랜덤박스=보석 · 그 외 펫알=노을. **모든 등급에 씬 표시**(2026-07 사용자 지침).
+    //    등급별 차이는 씬 유무가 아니라 '센터피스'(특별↑만 노을 해가 스르르 떠오르고·랜덤박스 커다란 보석이 스르르 등장 — fxReveal의 tenSkyRiseSun/Dia).
     function fxSceneMode(kind, rainbow){
       if(rainbow) return 'night';
       if(kind==='ddeul') return 'pickup';   // 🌱 뜰알=무지개 픽업씬(항상, 배너와 동일 정체성)
-      const tier=(_fx&&_fx.res&&_fx.res.tier)||'';
-      const gate = tier ? (TIER_ORDER.indexOf(tier)>=Math.max(0,TIER_ORDER.indexOf('epic'))) : false;   // 대기(등급 미상)=화려 씬 보류(불투명 기본) → 특별↑ 확정 시 탭에서 씬으로 승격
-      if(!gate) return 'plain';             // 특별 미만·등급 미상=화려 씬 없음
-      return kind==='box' ? 'treasure' : 'sunset';
+      return kind==='box' ? 'treasure' : 'sunset';   // 랜덤박스=보석 · 펫알=노을(등급 무관)
     }
+    // 씬 HTML은 '센터피스 미표시'(reveal 모드 — 노을 해·보석 다이아 숨김)로 깐다. 특별↑ 센터피스는 fxReveal이 tenSkyRiseSun/Dia로 얹는다(모든 등급 공통 배경 + 특별↑만 연출 추가).
     function fxSceneBg(kind, rainbow){ try{
-        const mode=fxSceneMode(kind, rainbow); let sc='';
-        if(mode==='night') sc=nightSceneHtml();
-        else if(mode==='pickup') sc=pickupSceneHtml('reveal');
-        else if(mode==='treasure') sc=(typeof treasureSceneHtml==='function')?treasureSceneHtml('banner'):sunsetSceneHtml('banner','box');
-        else if(mode==='sunset') sc=sunsetSceneHtml();
-        return sc?'<div class="fx-scenebg" data-mode="'+mode+'" aria-hidden="true">'+sc+'</div>':'<div class="fx-scenebg fx-plainbg" data-mode="plain" aria-hidden="true"></div>';   // 씬 없으면 불투명 기본(메인 비침 차단)
+        const mode=fxSceneMode(kind, rainbow); let sc='', full=false;
+        if(mode==='night') sc=nightSceneHtml();                                                                                    // 밤(무지개)=배너 하늘 배경
+        else if(mode==='pickup'){ sc=pickupSceneHtml('reveal'); full=true; }                                                       // 뜰알·신화/한정 펫알=픽업(전체화면)
+        else if(mode==='treasure'){ sc=(typeof treasureSceneHtml==='function')?treasureSceneHtml('reveal'):sunsetSceneHtml('reveal','box'); full=true; }   // 랜덤박스=보석(센터 다이아 미표시)
+        else if(mode==='sunset'){ sc=sunsetSceneHtml('reveal'); full=true; }                                                       // 펫알=노을(해 미표시)
+        return sc?'<div class="fx-scenebg'+(full?' fx-scene-full':'')+'" data-mode="'+mode+'" aria-hidden="true">'+sc+'</div>':'<div class="fx-scenebg fx-plainbg" data-mode="plain" aria-hidden="true"></div>';   // full=pk-reveal 전체화면 씬(자체 어둡기 오버레이 있어 scenebg::after 중복 방지)
       }catch(e){ return ''; } }
     // 🎬 배경 씬을 현재 _fx 상태(등급 확정·무지개 승급)에 맞게 다시 깐다 — 대기(등급 미상) 후 커밋이나 탭 도중 무지개 승급으로 씬이 바뀔 때
     //    '.fx-scenebg' 레이어만 교체(알·상자·hint DOM은 그대로 유지 → 등장 팝 애니 재생 없음). 같은 모드면 유지해 불필요한 재렌더·깜빡임 방지.
@@ -311,19 +310,14 @@
       const conf=rb?32:(rank<=0?0:rank<=1?10:rank<=2?16:20+(rank-2)*8);   // 등급↑ 컨페티 더 많이(일반=없음)
       const tw=5+rank*3;                                                  // 트윙클 수(등급↑ 많이)
       const art=isEggKind(_fx.kind)?catFace(_fx.res.id,{h:118,eager:true}):rewardBoxArt(_fx.res);   // eager: 등장 즉시 표시(lazy면 ~1초 늦게 뜸)
-      // 🎬 리빌 씬 게이트(2026-07 사용자 지침 — "무조건 씬" 폐지): 뜰알=항상 무지개 픽업씬 · 펫알 신화/한정=픽업씬 · 그 외는 특별(epic)↑에서만 노을(펫알)/보석(박스) · 그 미만=불투명 기본 배경.
-      //   전설↑은 rbUpgradeChance로 사실상 무지개(밤)로 승급하므로, 노을/보석이 실제로 뜨는 지점은 특별(승급 안 된 epic)·한정 박스뿐 → 낮은 등급 뽑기엔 화려한 씬을 안 띄운다.
+      // 🎬 씬은 모든 1뽑에 표시(2026-07 사용자 지침): 판정은 fxSceneMode 단일 소스(대기·탭·리빌 동일) — 무지개=밤·뜰알/신화/한정 펫알=픽업·랜덤박스=보석·그 외 펫알=노을.
+      //   ⭐ 특별(epic)↑에서만 '센터피스'가 스르르 등장: 노을=지는 해가 서서히 떠오름 · 보석=커다란 무지개 다이아가 제자리 스르르(아래 tenSkyRiseSun/Dia).
       const isDd=_fx.kind==='ddeul';
-      const sceneGate = rank >= Math.max(0, TIER_ORDER.indexOf('epic'));   // 특별(epic)↑
-      const pickupCase = isDd || (isEggKind(_fx.kind) && (_fx.res.tier==='limited' || _fx.res.tier==='exclusive'));   // 뜰알 항상 · 펫알 신화/한정 = 픽업 씬
-      const boxScene = (_fx.kind==='box') && sceneGate;   // 💎 랜덤박스 보석 금고 = 특별↑만
-      const sunsetCase = isEggKind(_fx.kind) && !isDd && !pickupCase && sceneGate;   // 🌅 펫알 노을 = 특별↑만(신화/한정=픽업 제외)
-      const skyLayer = rb ? '<div class="fx-scenebg" aria-hidden="true">'+nightSceneHtml()+'</div>'   // 🌈 무지개(승급·무지개알/박스)=밤 씬
-        : pickupCase ? pickupSceneHtml('reveal')                                                      // 🌈 뜰알·신화/한정 펫알=무지개 픽업 씬
-        : boxScene ? treasureSceneHtml('reveal')                                                      // 💎 특별↑ 박스=보석 씬
-        : sunsetCase ? '<div class="fx-scenebg" aria-hidden="true">'+sunsetSceneHtml()+'</div>'       // 🌅 특별↑ 펫알=노을 씬
-        : '<div class="fx-scenebg fx-plainbg" aria-hidden="true"></div>';                             // 그 미만=불투명 기본 배경(메인 비침만 차단, 화려한 씬 없음)
-      fx.innerHTML='<div class="fx-scrim"></div>'+skyLayer+'<div class="fx-reveal tier-'+t.id+' rank-'+rank+((rb||ex)?' rev-rb':'')+((pickupCase||boxScene)?' rev-scene':'')+'">'+   // 한정도 rev-rb(무지개 프레임=박스)
+      const sceneGate = rank >= Math.max(0, TIER_ORDER.indexOf('epic'));   // 특별(epic)↑ = 센터피스 등장 조건(씬 유무 아님)
+      const pickupCase = isDd || (isEggKind(_fx.kind) && (_fx.res.tier==='limited' || _fx.res.tier==='exclusive'));   // 뜰알 항상 · 펫알 신화/한정 = 픽업 씬(해/다이아 없음)
+      const usesPkReveal = !rb;   // 무지개(밤)만 배너 하늘 배경, 그 외(픽업/보석/노을)는 pk-reveal 전체화면 → 펫·텍스트를 rev-scene으로 그 위에
+      const skyLayer = fxSceneBg(_fx.kind, _fx.rainbow);   // 씬 HTML 단일 소스(대기/탭 배경과 동일 — 모든 등급 표시, 센터피스 미포함)
+      fx.innerHTML='<div class="fx-scrim"></div>'+skyLayer+'<div class="fx-reveal tier-'+t.id+' rank-'+rank+((rb||ex)?' rev-rb':'')+(usesPkReveal?' rev-scene':'')+'">'+   // 한정도 rev-rb(무지개 프레임=박스)
         '<div class="fx-art pop">'+
           '<span class="fx-aurawrap">'+lightLayers({aura:210, rays:250, rainbow:ex})+'</span>'+   // 펫 뒤 픽셀 오오라(한정=무지개 빛). 특별↑은 발산 광선까지 CSS로 표시
           '<span class="fx-ring"></span>'+                                            // 전설↑/무지개: 픽셀 링 충격파(CSS)
@@ -343,7 +337,12 @@
               :'<span class="rw"><span class="ci">'+coinSvg({h:18})+'</span>+'+_fx.refund+' 은화 (중복)</span>')):'')+'</div>'+
         '<button class="btn" '+App.view.act('closeFx')+'>확인</button>'+
         '<div class="fx-confetti">'+(conf?fxConfetti(conf):'')+'</div></div>';
-      if(_fx.kind==='box' && rb){ const sc=fx.querySelector('.pkscene'); if(sc) tenSkyRiseDia(sc); }   // 💎 1뽑: 무지개 승급(밤 씬)일 때 다이아 스르르
+      // 🎬 특별↑ 센터피스 스르르 등장(사용자 지침): 펫알=노을 해가 서서히 떠오름 · 랜덤박스=커다란 보석이 제자리 스르르. 무지개(밤)는 기존대로 박스만 다이아.
+      const _scEl=fx.querySelector('.pkscene');
+      if(_scEl){
+        if(_fx.kind==='box'){ if(rb || sceneGate) tenSkyRiseDia(_scEl); }                              // 💎 랜덤박스: 특별↑ 또는 무지개=커다란 보석
+        else if(isEggKind(_fx.kind) && !isDd && !pickupCase && sceneGate) tenSkyRiseSun(_scEl);        // 🌅 펫알(노을): 특별↑=해 떠오름(신화/한정=픽업·무지개=밤이라 제외)
+      }
       fx.className='fx on reveal';
     }
     function closeFx(){ _fxClear(); const fx=$('catFx'); if(fx){ fx.className='fx'; fx.innerHTML=''; } _fx=null; _devPickupOverride=null; try{ document.body.classList.remove('fx-open'); }catch(e){} pullEnd(); }   // (_pkV2는 이제 상시 true — 리셋 안 함)
