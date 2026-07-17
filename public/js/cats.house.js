@@ -1179,12 +1179,12 @@
           if(typeof yieldFloatFx==='function') yieldFloatFx(x, y-22, gained, goldBonus); }
         if(anyItemDrop || goldBonus>0){   // 💰 금화 수확이 있으면(아이템 없어도) 요약 팝업으로 은화·금화·아이템을 함께 보여준다(사용자 지침)
           // 🎁 작은 창 요약(줍기 버튼) — 어떤 템을 수확했고 재화를 얼마나 받았는지
-          // 🪙 순서(사용자 지침): 알·박스 등 아이템을 위에(좁은 창에 먼저 보이게), 은화·금화는 맨 아래로(은화 → 그 아래 금화). 매번 상단을 차지하던 재화를 밑으로 내림.
+          // 🪙 순서(사용자 지침): 알·박스 등 아이템을 위에(좁은 창에 먼저 보이게), 은화·금화는 맨 아래로(금화가 은화보다 위 → 은화가 가장 아래). 매번 상단을 차지하던 재화를 밑으로 내림.
           const rows=[];
           DROP_ORDER.forEach(k=>{ const c=dropCounts[k]||0; if(c<=0) return; const disp=dropDisplay(k);
             rows.push({ ic:disp.ic, nm:disp.nm, n:c, note:(k==='rainbow_egg'||k==='rainbow_box')?('🌈동전 +'+(c*RB_EGG_BOX_RBC)):'' }); });
-          if(gained>0)    rows.push({ ic:coinSvg({h:16}), nm:'은화', n:gained });     // 맨 밑부분
-          if(goldBonus>0) rows.push({ ic:goldSvg({h:16}), nm:'금화', n:goldBonus });   // 그 다음 밑(가장 아래)
+          if(goldBonus>0) rows.push({ ic:goldSvg({h:16}), nm:'금화', n:goldBonus });   // 재화는 아래로 · 금화가 은화보다 위
+          if(gained>0)    rows.push({ ic:coinSvg({h:16}), nm:'은화', n:gained });     // 가장 아래(맨 밑)
           const foot=(filledN>0?'밥·물 '+filledN+'칸 채움':'')+((filledN>0&&short)?' · ':'')+(short?short+' 부족(일부 미충전)':'');
           showHarvestPopup(harvestPopHost(btnEl), rows, hasRb, foot);
         }
