@@ -210,6 +210,8 @@
     .lgi .ln { flex:1; font-weight:600; color:var(--text2); }
     .lgi .lp { font-weight:800; color:var(--sub); }
     .lgi .lv { font-weight:800; color:var(--text2); display:none; white-space:nowrap; }   /* 금액 표시(토글) */
+    .lgi { cursor:pointer; border-radius:8px; }   /* 탭 → 카테고리 내역 시트(openRepCatTx) */
+    .lgi .lgo { color:var(--sub); font-weight:700; opacity:.55; flex:none; margin-left:-2px; }
     .legend.amt .lp { display:none; }
     .legend.amt .lv { display:inline; }
     /* 리포트 카테고리 값 표시 토글(% ↔ 금액) */

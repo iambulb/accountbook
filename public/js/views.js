@@ -560,12 +560,67 @@
       const res=buildTx(readTxForm());   // 순수 조립·검증(ledger-calc.js)
       if(res.error){ toast(res.error, true); return; }
       const tx=res.tx;
+      const ac=sheetTx?null:autoChargeCheck(tx);   // ⚡ 새 거래가 선불·포인트 잔액을 마이너스로 만들면 자동충전 흐름(저장 전 잔액 기준으로 판정)
       if(sheetTx){
         db.ref(wp('transactions/'+sheetTx.ownerUid+'/'+sheetTx.id)).set(tx).catch(_saveErr); toast('수정되었습니다');
       } else {
         db.ref(wp('transactions/'+state.uid+'/'+Date.now())).set(tx).catch(_saveErr); toast('저장되었습니다'); budgetPreWarn(tx);
         if(tx.category && tx.memo && typeof grantQualityBonus==='function') grantQualityBonus();   // ✍️ 카테고리+메모 채운 새 거래 → 성실 기록 보너스(하루 3건 캡)
       }
+      closeSheet();
+      if(ac) handleAutoCharge(ac);
+    }
+    // ===== ⚡ 자동충전(선불·포인트) — 간편계좌(쿠팡·카카오페이·네이버페이 등) 잔액이 마이너스가 되면 충전 거래를 이어서 기록 =====
+    //  ① 계좌·금액 모두 설정(자동충전 설정) → 부족분을 덮는 설정 금액의 배수로 충전 거래 자동 기록
+    //  ② 계좌만 설정 → 충전 시트(출금 계좌 프리셋, 금액=부족분)  ③ 미설정 → 충전 시트(계좌·금액 입력, '설정으로 저장' 스위치)
+    //  판정: 저장 전 잔액(accountBalance) − 이번 거래 금액 < 0. 예정(미래) 거래는 현재 잔액에 안 잡히므로 제외, 수정 거래도 제외(변경 전후 잔액 재계산 모호).
+    function autoChargeCheck(tx){
+      const e=TX_EFFECT[tx.type]||{}; if(!e.debit || tx.type==='prepaid_charge') return null;   // 충전 거래 자신은 트리거 안 함(연쇄 방지)
+      const id=tx[e.debit], a=getAcct(id);
+      if(!a || !PREPAID_TYPES.includes(a.type)) return null;
+      if((tx.date||'').slice(0,10) > todayStr()) return null;
+      const after=accountBalance(id)-(Number(tx.amount)||0);
+      return after<0 ? { acctId:id, deficit:-after, date:(tx.date||'').slice(0,10) } : null;
+    }
+    function handleAutoCharge(ac){
+      const a=getAcct(ac.acctId); if(!a) return;
+      const from=(a.autoChargeFrom&&getAcct(a.autoChargeFrom))?a.autoChargeFrom:'';
+      const unit=Number(a.autoChargeAmount)||0;
+      if(from && unit>0) insertChargeTx(ac.acctId, from, Math.ceil(ac.deficit/unit)*unit, ac.date, true);   // 설정 금액의 배수로 부족분 커버(실서비스 자동충전 방식)
+      else setTimeout(()=>openAutoChargeSheet(ac.acctId, ac.deficit, ac.date), 260);   // 거래 시트 닫힘 후 입력창
+    }
+    // 충전 거래 삽입 — buildTx의 prepaid_charge 결과와 같은 필드 구성(잔액·카드실적·표시 정합). autoCharge:true 마커.
+    function insertChargeTx(toId, fromId, amt, date, auto){
+      const uidSel=defaultOwnerUid(), mem=(state.wsMeta&&state.wsMeta.members)||{};
+      const tx={ type:'prepaid_charge', date:isoAtNoon(date||todayStr()), amount:amt,
+        user:resolveOwnerName(uidSel), desc:(auto?'자동충전':'충전')+' · '+acctName(toId),
+        isActualExpense:false, from:fromId, to:toId, autoCharge:true };
+      if(mem[uidSel]||uidSel===state.uid) tx.userUid=uidSel;
+      const card=getCard(fromId);
+      if(card){ const inc=defaultCardIncluded(card,'prepaid_charge'); tx.cardPerformanceIncluded=!!inc; tx.cardPerformanceAmount=inc?amt:0; tx.cardPerformanceExcludedReason=''; }
+      db.ref(wp('transactions/'+state.uid+'/'+(Date.now()+1))).set(tx).catch(_saveErr);   // +1: 직전 거래(Date.now() 키)와 같은 ms 충돌 방지
+      toast('⚡ '+acctName(toId)+' 충전 +'+fmtComma(amt)+'원 ('+acctName(fromId)+')');
+    }
+    function openAutoChargeSheet(acctId, deficit, date){
+      const a=getAcct(acctId); if(!a) return;
+      const from=(a.autoChargeFrom&&getAcct(a.autoChargeFrom))?a.autoChargeFrom:'';
+      const unit=Number(a.autoChargeAmount)||0;
+      const pre=unit>0?Math.ceil(deficit/unit)*unit:deficit;
+      const srcs=state.accounts.filter(x=>x.id!==acctId&&!PREPAID_TYPES.includes(x.type));
+      let h='<p class="muted" style="margin:2px 2px 14px;line-height:1.55;">'+escapeHtml(a.name)+' 잔액이 <b style="color:var(--expense)">'+fmtComma(deficit)+'원 부족</b>해요. 어느 계좌에서 얼마를 충전(이체)했는지 기록할까요?</p>';
+      h+='<div class="field"><label>출금 계좌</label><select class="input" id="acFrom">'+(from?'':'<option value="" selected disabled>계좌 선택</option>')+srcs.map(x=>'<option value="'+x.id+'"'+(x.id===from?' selected':'')+'>'+escapeHtml(x.name)+' ('+(ACCT_TYPE_LABEL[x.type]||x.type)+')</option>').join('')+'</select></div>';
+      h+='<div class="field"><label>충전 금액</label><input class="input" id="acAmt" inputmode="numeric" value="'+pre.toLocaleString()+'" oninput="this.value=fmtComma(this.value)"></div>';
+      h+='<div class="menu-item" style="padding:6px 0 10px;"><span>이 계좌·금액을 자동충전 설정으로 저장</span><div class="switch" id="acSaveCfg" '+App.view.act('toggleSwitch')+'><i></i></div></div>';
+      h+='<button class="btn" '+App.view.act('saveAutoCharge',acctId,date)+'>충전 기록</button>';
+      h+='<button class="btn ghost" style="margin-top:8px;" '+App.view.act('closeSheet')+'>건너뛰기 (마이너스 유지)</button>';
+      openSheet('⚡ '+a.name+' 충전', h);
+    }
+    function saveAutoCharge(acctId, date){
+      const from=val('acFrom'), amt=parseAmount(val('acAmt'));
+      if(!from){ toast('출금 계좌를 선택하세요', true); return; }
+      if(!(amt>0)){ toast('충전 금액을 입력하세요', true); return; }
+      if($('acSaveCfg')&&$('acSaveCfg').classList.contains('on')) db.ref(wp('accounts/'+acctId)).update({ autoChargeFrom:from, autoChargeAmount:amt }).catch(()=>{});   // 다음부터 전자동
+      insertChargeTx(acctId, from, amt, date, false);
       closeSheet();
     }
     // 예산 사전 경고: 이 지출로 관련 예산이 임계(alertThreshold) 또는 100%를 처음 넘으면 비차단 토스트(저장은 그대로).
@@ -1253,6 +1308,23 @@
       document.querySelectorAll('.legend').forEach(el=>el.classList.toggle('amt', !!amt));
       document.querySelectorAll('.repvalseg').forEach(seg=>{ const b=seg.querySelectorAll('button'); if(b[0])b[0].classList.toggle('on', !amt); if(b[1])b[1].classList.toggle('on', !!amt); });
     }
+    // 리포트 카테고리 내역 시트 — 범례 항목 탭 시 그 달·그 카테고리의 실지출 거래 목록. etc=1이면 도넛 '기타' 묶음(상위 5개 밖 전체) — 렌더와 같은 기준으로 재계산해 목록을 맞춘다.
+    function openRepCatTx(m, name, etc){
+      const list=monthTx(m).filter(t=>isActual(t)&&t.category);
+      let rows, title=name;
+      if(etc){
+        const cd={}; list.forEach(t=>{ cd[t.category]=(cd[t.category]||0)+(Number(t.amount)||0); });
+        const cats=Object.keys(cd).sort((a,b)=>cd[b]-cd[a]);
+        const etcSet=new Set(cats.length>6?cats.slice(5):[]);   // 도넛과 동일: 카테고리 7개↑일 때만 상위 5개 밖을 '기타'로 묶음
+        rows=list.filter(t=>etcSet.has(t.category));
+        title='기타 (묶음)';
+      } else rows=list.filter(t=>t.category===name);
+      rows=rows.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+      const tot=rows.reduce((s,t)=>s+(Number(t.amount)||0),0);
+      let h='<div class="row" style="margin-bottom:14px;"><div class="muted">'+(+m.split('-')[1])+'월 · '+rows.length+'건'+(etc?' · 상위 5개 밖 카테고리 묶음':'')+'</div><div class="red" style="font-weight:700;">-'+fmtComma(tot)+'</div></div>';
+      h+='<div class="card" style="padding:6px 10px;">'+(rows.length?rows.map(txRowHtml).join(''):'<div class="empty">이 달 해당 카테고리 지출이 없습니다</div>')+'</div>';
+      openSheet((etc?'':catIcon(name)+' ')+title, h);   // 시트 제목은 textContent 삽입이라 escape 불필요
+    }
     function renderStats(){
       if(typeof markReportSeen==='function') markReportSeen();   // 🐱 주간 미션: 리포트 확인
       const m=state.month, list=monthTx(m);
@@ -1286,7 +1358,7 @@
         let segs = cats.length>6 ? cats.slice(0,5).concat([{name:'기타',val:cats.slice(5).reduce((s,c)=>s+c.val,0),etc:true}]) : cats;
         let acc=0; const stops=segs.map(s=>{ const p0=acc/totCat*100, p1=(acc+s.val)/totCat*100; const col=s.etc?'var(--soft2)':catColor(s.name); acc+=s.val; return col+' '+p0.toFixed(2)+'% '+p1.toFixed(2)+'%'; });
         h+='<div class="donut-wrap"><div class="donut" style="background:conic-gradient('+stops.join(',')+')"><div class="ic"><b>'+shortAmt(totCat)+'</b><span>총지출</span></div></div>'+
-          '<div class="legend'+(state._repShowAmt?' amt':'')+'">'+segs.map(s=>'<div class="lgi"><i style="background:'+(s.etc?'var(--soft2)':catColor(s.name))+'"></i><span class="ln">'+escapeHtml(s.name)+'</span><span class="lp">'+Math.round(s.val/totCat*100)+'%</span><span class="lv">'+won(s.val)+'</span></div>').join('')+'</div></div>';
+          '<div class="legend'+(state._repShowAmt?' amt':'')+'">'+segs.map(s=>'<div class="lgi" '+App.view.act('openRepCatTx',m,s.name,s.etc?1:0)+' aria-label="'+escapeHtml(s.name)+' 내역 보기"><i style="background:'+(s.etc?'var(--soft2)':catColor(s.name))+'"></i><span class="ln">'+escapeHtml(s.name)+'</span><span class="lp">'+Math.round(s.val/totCat*100)+'%</span><span class="lv">'+won(s.val)+'</span><span class="lgo">›</span></div>').join('')+'</div></div>';
       } else h+='<div class="empty" style="padding:24px;">이 달 지출 데이터가 없습니다</div>';
       // 💡 인사이트: 전월 대비 가장 크게 늘어난 카테고리(의미 있는 금액만)
       const pcd={}; monthTx(shiftMonth(m,-1)).filter(t=>isActual(t)&&t.category).forEach(t=>{ pcd[t.category]=(pcd[t.category]||0)+(Number(t.amount)||0); });
@@ -1433,6 +1505,7 @@
       h+='<div class="field"><label>현재(초기) 잔액</label><input class="input" id="aInit" inputmode="text" value="'+(a?Number(a.initialBalance||0).toLocaleString():'')+'" placeholder="0 (부채는 -100,000)" oninput="this.value=fmtCommaSigned(this.value)"></div>';
       h+='<div class="field"><label>메모 (선택)</label><input class="input" id="aMemo" value="'+escapeHtml(a?(a.memo||''):'')+'" placeholder="메모"></div>';
       h+='<div id="aCardCfg" style="'+(curType==='credit_card'?'':'display:none;')+'">'+(curType==='credit_card'?cardCfgHtml(card):'')+'</div>';
+      h+='<div id="aPrepaidCfg" style="'+(PREPAID_TYPES.includes(curType)?'':'display:none;')+'">'+(PREPAID_TYPES.includes(curType)?prepaidCfgHtml(a):'')+'</div>';
       h+='<button class="btn" '+App.view.act('saveAcct', id?id:null)+'>'+(a?'수정':'추가')+'</button>';
       if(a) h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deleteAcct',id)+'>삭제</button>';
       openSheet(a?'결제수단 수정':'결제수단 추가', h);
@@ -1446,7 +1519,18 @@
         '<div class="menu-item" style="padding:6px 0;"><span>선불충전 실적 포함</span><div class="switch '+(card&&card.includePrepaidCharge?'on':'')+'" id="cIncPrepaid" '+App.view.act('toggleSwitch')+'><i></i></div></div>'+
         '<div class="field"><label>실적 제외 카테고리 (쉼표 구분)</label><input class="input" id="cExclCats" value="'+escapeHtml(card&&card.excludedCategories?card.excludedCategories.join(', '):'')+'" placeholder="예: 교통, 보험"></div></div>';
     }
-    function onAcctTypeChange(){ const t=val('aType'); const box=$('aCardCfg'); if(!box) return; if(t==='credit_card'){ box.style.display=''; if(!box.innerHTML.trim()) box.innerHTML=cardCfgHtml(null); } else box.style.display='none'; }
+    // ⚡ 선불·포인트 자동충전 설정 카드 — 간편계좌(쿠팡·네이버페이 등) 상세 설정. 잔액이 마이너스가 되면 이 설정대로 충전 거래를 자동/반자동 기록.
+    function prepaidCfgHtml(a){
+      const from=(a&&a.autoChargeFrom)||'', amt=(a&&Number(a.autoChargeAmount))||0;
+      const srcs=state.accounts.filter(x=>(!a||x.id!==a.id)&&!PREPAID_TYPES.includes(x.type));   // 출금원은 비선불 계좌만(선불→선불 연쇄 충전 방지)
+      return '<div class="card" style="padding:14px;margin:4px 0 14px;"><div class="sec-title" style="margin:0 0 10px;">⚡ 자동충전 설정</div>'+
+        '<div class="field"><label>출금 계좌</label><select class="input" id="aAcFrom"><option value="">설정 안 함</option>'+srcs.map(x=>'<option value="'+x.id+'"'+(x.id===from?' selected':'')+'>'+escapeHtml(x.name)+' ('+(ACCT_TYPE_LABEL[x.type]||x.type)+')</option>').join('')+'</select></div>'+
+        '<div class="field"><label>충전 금액 (선택)</label><input class="input" id="aAcAmt" inputmode="numeric" value="'+(amt?amt.toLocaleString():'')+'" placeholder="예: 10,000" oninput="this.value=fmtComma(this.value)"></div>'+
+        '<p class="muted" style="margin:2px 0 0;font-size:12px;line-height:1.55;">잔액이 <b>마이너스</b>가 되면 — 계좌·금액이 모두 설정돼 있으면 <b>충전 거래를 자동 기록</b>(부족분을 덮을 때까지 설정 금액의 배수), 계좌만 있으면 금액만 물어보고, 둘 다 없으면 어디서 얼마 충전할지 입력창이 떠요.</p></div>';
+    }
+    function onAcctTypeChange(){ const t=val('aType');
+      const box=$('aCardCfg'); if(box){ if(t==='credit_card'){ box.style.display=''; if(!box.innerHTML.trim()) box.innerHTML=cardCfgHtml(null); } else box.style.display='none'; }
+      const pbox=$('aPrepaidCfg'); if(pbox){ if(PREPAID_TYPES.includes(t)){ pbox.style.display=''; if(!pbox.innerHTML.trim()) pbox.innerHTML=prepaidCfgHtml(null); } else pbox.style.display='none'; } }
     function onCardPeriodChange(){ const w=$('cStartWrap'); if(w) w.style.display=(val('cPeriod')==='custom')?'':'none'; }
     function saveAcct(id){
       const name=val('aName').trim(); if(!name){ toast('이름을 입력하세요', true); return; }
@@ -1458,6 +1542,10 @@
         initialBalance:parseAmountSigned(val('aInit')), memo:val('aMemo').trim(),   // 음수(부채 계좌) 허용
         color:(getAcct(id)||{}).color||colorMap[owner]||'#3182f6', order:(getAcct(id)||{}).order||state.accounts.length+1 };
       if(_amem[_osel]||_osel===state.uid) data.ownerUid=_osel;   // 멤버 소유자는 uid 병행 저장(동명이인·개명 견고)
+      if(PREPAID_TYPES.includes(type)){   // ⚡ 자동충전 설정(선불류만) — set 전체 교체라 폼 미렌더 시 기존값 유지
+        data.autoChargeFrom=$('aAcFrom')?val('aAcFrom'):(((getAcct(id)||{}).autoChargeFrom)||'');
+        data.autoChargeAmount=$('aAcAmt')?parseAmount(val('aAcAmt')):(Number((getAcct(id)||{}).autoChargeAmount)||0);
+      }
       const updates={}; updates['accounts/'+key]=data;
       if(type==='credit_card'){
         updates['creditCards/'+key]={ cardName:name, cardCompany:val('cCompany').trim(),
