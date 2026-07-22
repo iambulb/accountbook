@@ -9,7 +9,7 @@
       { id:'limited',  name:'신화', p:0.8, color:'#ff5fa2' },   // 신화(구 '한정') — 핑크 텍스트·연출. id는 하위호환 위해 'limited' 유지. 2026-07: 1→0.8
       { id:'exclusive',name:'한정', p:0.2, color:'#F2C84B' }    // 한정(최상위·무지개) — 2026-07: 펫알·랜덤박스에도 0.2%(펫=활성 한정만·아이템=한정 포함 boxPool). 미공개 한정 전체는 무지개알/박스(신화80·한정20)에서
     ];
-    // 🌱 뜰알(한정 픽업 뽑기) 전용 확률표 — 기본과 같지만 신화 1→0.5, 한정 0.5 추가(활성 한정 펫=흑표범·퓨마만 풀에). 합 100.
+    // 🌱 뜰알(한정 픽업 뽑기) 전용 확률표 — 기본과 같지만 신화 1→0.5, 한정 0.5 추가(활성 한정 펫=삵·표범만 풀에). 합 100.
     const DDEUL_TIERS=[{id:'normal',p:45},{id:'uncommon',p:30},{id:'rare',p:15},{id:'epic',p:6},{id:'legend',p:3},{id:'limited',p:0.5},{id:'exclusive',p:0.5}];
     // (구) NO_GACHA_TIERS 제거 — 한정 펫은 펫알에선 exActive(활성)만 선별 포함, 무지개알은 전체(rainbowCatTierMap). 한정 아이템은 boxPool에 포함(기본 박스 0.2%·무지개박스 50% — 2026-07 개편).
     const TIER_ORDER = TIERS.map(t=>t.id);   // 높은 등급이 비면 한 단계씩 낮춰 대체할 때 사용
@@ -20,7 +20,7 @@
       if(t==='exclusive') return '<span class="tier-rainbow">'+n+'</span>';   // 한정 = 무지개
       return '<span style="color:'+catTierColor(id)+'">'+n+'</span>'; }   // 신화=핑크(#ff5fa2) 등 등급색
     // 🌈 한정 픽업(가챠 배너): [펫1(왼쪽), 펫2(오른쪽)]. 픽업 대상을 바꾸려면 이 배열만 수정. 존재하는 펫만 배너에 뜬다.
-    const LIMITED_PICKUP = ['cat_blackpanther','cat_puma'];   // 한정 픽업: 펫1=흑표범 · 펫2=퓨마
+    const LIMITED_PICKUP = ['cat_leopardcat','cat_leopard'];   // 첫 한정 픽업: 펫1=삵 · 펫2=표범
     // 🌙 개발자 배너 미리보기 전용 픽업 오버라이드(밤=흑표범·카라칼). 라이브 LIMITED_PICKUP/exActive는 안 건드림 — FX 닫힐 때 해제.
     const DEV_NIGHT_PICKUP=['cat_blackpanther','cat_caracal'];
     let _devPickupOverride=null;
@@ -378,10 +378,10 @@
     const PI_PET_BOX=76;   // 펫 정보 히어로 박스 px(CSS .pi-pet과 동기)
     // 히어로 펫 마크업 — 스프라이트=원본 img(로드 후 _piFitPet이 bbox 크롭 배치), 런타임 로딩 전·SVG 폴백은 크롭 없이 크게.
     function piPetHtml(id){
-      const pr=(typeof petDyePair==='function')?petDyePair(id):{d1:0,d2:0,tint:0};   // 🎨 염색+틴트 베이크 반영
+      const df=dyeFilterCss(petDyeOf(id));
       if(hasSprite(id)){ const sp=PET_SPRITES[id];
         if(sp.runtime && !sp.urls) return '<div class="pi-pet pi-pet-svg">'+catFace(id,{h:PI_PET_BOX-10})+'</div>';   // 아트 로딩 전 폴백
-        return '<div class="pi-pet"><img class="pi-petimg" id="piPetImg" src="'+dyedUrl(id,sprStill(id,'south'),pr.d1,pr.d2,pr.tint)+'" alt=""></div>';
+        return '<div class="pi-pet"><img class="pi-petimg" id="piPetImg" src="'+sprStill(id,'south')+'" alt=""'+(df?' style="filter:'+df+'"':'')+'></div>';
       }
       return '<div class="pi-pet pi-pet-svg">'+catFace(id,{h:PI_PET_BOX-12})+'</div>';   // SVG 폴백 펫
     }
@@ -412,7 +412,6 @@
       let wrap=$('petInfo');
       if(!wrap){ wrap=document.createElement('div'); wrap.id='petInfo'; wrap.className='gimenu-scrim';
         wrap.onclick=function(e){ if(e.target===wrap) closePetInfo(); }; document.body.appendChild(wrap); }
-      wrap.dataset.pet=id;   // 🎨 염색 베이크 완료 시 히어로 이미지 힐(_petArtRerenderNow)에서 현재 펫 식별
       wrap.innerHTML='<div class="gimenu petinfo">'+petInfoBody(id)+'</div>';
       _piFitPet(id); }   // 🖼️ 히어로 펫 여백 크롭 배치(bbox 측정 후)
     function closePetInfo(){ const m=$('petInfo'); if(m) m.remove(); }
@@ -469,30 +468,11 @@
       if(kind==='consum'){
         const items=[];
         if(consumQty('treat')>0) items.push({k:'treat',n:'츄르',d:'애정 +1',q:consumQty('treat')});
-        if(consumQty('dye')>0)   items.push({k:'dye',n:'염색약',d:'몸·얼룩 랜덤',q:consumQty('dye')});
-        if(consumQty('tint')>0)  items.push({k:'tint',n:'틴트',d:'눈코입 살짝',q:consumQty('tint')});
-        if(petHasDye(id)&&consumQty('dye_remover')>0) items.push({k:'dye_remover',n:'염색 리무버',d:'골라서 복원',q:consumQty('dye_remover')});
+        if(consumQty('dye')>0)   items.push({k:'dye',n:'염색약',d:'랜덤 '+DYE_CATALOG.length+'색',q:consumQty('dye')});
+        if(petDyeOf(id)&&consumQty('dye_remover')>0) items.push({k:'dye_remover',n:'염색 리무버',d:'원래 톤 복원',q:consumQty('dye_remover')});
         const cells=items.map(function(it){ return '<button class="pp-cell" onclick="pickConsum(\''+id+'\',\''+it.k+'\')"><span class="pp-art">'+consumSvg(it.k,{h:26})+'</span><span class="pp-nm">'+it.n+'</span><span class="pp-sub">'+it.d+'</span><span class="pp-qty">보유 '+it.q.toLocaleString()+'</span></button>'; }).join('');
-        const empty = items.length?'':'<div class="pp-empty">이 펫에게 쓸 소비템이 없어요<br><span>츄르·염색약·틴트를 알뜰샵·이벤트로 얻어요</span></div>';
+        const empty = items.length?'':'<div class="pp-empty">이 펫에게 쓸 소비템이 없어요<br><span>츄르·염색약을 알뜰샵·이벤트로 얻어요</span></div>';
         return '<div class="gih pp-h"><b>소비템 사용</b>'+closeBtn+'</div><div class="pp-grid">'+cells+'</div>'+empty;
-      }
-      if(kind==='dyezone'){   // 🎨 2색 염색 영역 선택 — 펫 정보 위 피커 안에서 바탕색(몸)/얼룩을 고른다(각각 현재 색 스와치 표시).
-        const d1=petDyeOf(id), d2=petDye2Of(id), q=consumQty('dye');
-        const sw=function(cur){ return '<span class="pp-art pp-dye" style="background:'+dyeSwatchCss(cur)+';"></span>'; };
-        const zc=function(zone,label,cur){ return '<button class="pp-cell'+(q<=0?' dis':'')+'"'+(q>0?' onclick="pickDyeZone(\''+id+'\',\''+zone+'\')"':' disabled')+'>'+sw(cur)+'<span class="pp-nm">'+label+'</span><span class="pp-sub">'+(cur?escapeHtml(dyeNameOf(cur)):'기본 톤')+'</span></button>'; };
-        const back='<button class="pp-cell pp-back" onclick="openPetPicker(\''+id+'\',\'consum\')"><span class="pp-art pp-none">'+piNoneSvg()+'</span><span class="pp-nm">← 뒤로</span></button>';
-        return '<div class="gih pp-h"><b>어디를 염색할까요?</b>'+closeBtn+'</div>'+
-          '<div class="pp-note">염색약 1개로 고른 영역만 <b>랜덤 색</b>이 돼요 · 보유 '+q.toLocaleString()+'</div>'+
-          '<div class="pp-grid">'+zc('body','바탕색 (몸)',d1)+zc('accent','얼룩',d2)+back+'</div>';
-      }
-      if(kind==='dyezone_rm'){   // 🧴 지우기 영역 선택 — 리무버 1개=한 영역(몸·얼룩·틴트). 적용된 영역만 활성.
-        const q=consumQty('dye_remover'), Z=[['body','바탕색 (몸)','🎨',petDyeOf(id)],['accent','얼룩','🎨',petDye2Of(id)],['tint','틴트 (눈코입)','👁️',petTintOf(id)]];
-        const sw=function(cur){ return '<span class="pp-art pp-dye" style="background:'+dyeSwatchCss(cur)+';"></span>'; };
-        const zc=function(zone,label,ic,cur){ const on=!!cur, ok=on&&q>0; return '<button class="pp-cell'+(ok?'':' dis')+'"'+(ok?' onclick="pickDyeZoneRemove(\''+id+'\',\''+zone+'\')"':' disabled')+'>'+sw(cur)+'<span class="pp-nm">'+label+'</span><span class="pp-sub">'+(on?ic+' '+escapeHtml(dyeNameOf(cur)):'미적용')+'</span></button>'; };
-        const back='<button class="pp-cell pp-back" onclick="openPetPicker(\''+id+'\',\'consum\')"><span class="pp-art pp-none">'+piNoneSvg()+'</span><span class="pp-nm">← 뒤로</span></button>';
-        return '<div class="gih pp-h"><b>무엇을 지울까요?</b>'+closeBtn+'</div>'+
-          '<div class="pp-note">리무버 1개로 고른 것만 <b>원래대로</b> 복원 · 보유 '+q.toLocaleString()+'</div>'+
-          '<div class="pp-grid">'+Z.map(function(z){ return zc(z[0],z[1],z[2],z[3]); }).join('')+back+'</div>';
       }
       const slot=kind, CAT=slot==='hat'?HAT_CATALOG:BUDDY_CATALOG, cosm=petCosm(id), cur=cosm[slot];
       const owns=function(k){ return cosmOwns(slot,k); };
@@ -504,11 +484,7 @@
       return '<div class="gih pp-h"><b>'+(slot==='hat'?'펫장비 선택':'펫효과 선택')+'</b>'+closeBtn+'</div><div class="pp-grid">'+cells+'</div>'+empty;
     }
     function pickCosm(id, slot, val){ closePetPicker(); setPetCosm(id, slot, val||null); }   // setPetCosm이 커밋 후 openPetInfo 재렌더
-    function pickConsum(id, item){ if(item==='dye'){ openPetPicker(id,'dyezone'); return; }   // 🎨 염색약=피커 안에서 영역(바탕/얼룩) 선택 단계로 전환(닫지 않음)
-      if(item==='dye_remover'){ openPetPicker(id,'dyezone_rm'); return; }   // 🧴 리무버=지울 영역 선택 단계로 전환
-      closePetPicker(); if(item==='treat') applyTreat(id); else if(item==='tint') applyTint(id); }   // 👁️ 틴트=눈코입에 살짝 색감
-    function pickDyeZone(id, zone){ closePetPicker(); applyDyeZone(id, zone); }   // 영역 확정 → 그 영역만 랜덤 염색(applyDyeZone), 커밋 후 펫 정보 재렌더
-    function pickDyeZoneRemove(id, zone){ closePetPicker(); applyDyeZoneRemove(id, zone); }   // 영역 확정 → 그 영역만 복원(applyDyeZoneRemove)
+    function pickConsum(id, item){ closePetPicker(); if(item==='treat') applyTreat(id); else if(item==='dye') applyDye(id); else if(item==='dye_remover') applyDyeRemover(id); }
     function petInfoBody(id){
       const c=ownedCatsMap()[id]||{}, tier=CAT_TIER[id]||'normal';
       const aff=Number(c.affection)||0, al=affectionLevel(aff, tier);   // 💗 등급별 애정 계단(높은 등급=임계 큼)
@@ -524,7 +500,7 @@
         '<div class="pi-aff"><div class="pi-afftop"><span class="clv-h">'+heartSvg({h:11})+'</span>애정 Lv.'+al.level+'<span class="s">'+(al.next!=null?aff+' / '+al.next:'만렙 ★')+'</span></div><div class="bar"><i style="width:'+al.pct+'%"></i></div></div>'+
         petAffLadderHtml(id, al.level)+   // 💗 펫별 동적 모션 해금 안내(2026-07-10 가변 모션 — 이 펫이 실제 가진 클립만 petClipAff 레벨로 그룹 표기)
         (hasSprite(id)?piCosmBtn(id,'hat',al.level)+piCosmBtn(id,'buddy',al.level):'')+   // 💗 펫장비(모자 Lv5)·펫효과(버디 Lv3) — 스프라이트 펫만. 잠금/해제는 애정 레벨, 탭하면 보유 인벤토리 피커
-        (petHasDye(id)?'<div class="pi-cosm"><span class="s">염색</span>'+(petDyeOf(id)?'<span class="chip on">'+consumSvg('dye',{h:12})+' 몸 '+escapeHtml(dyeNameOf(petDyeOf(id)))+'</span>':'')+(petDye2Of(id)?'<span class="chip on">🐾 얼룩 '+escapeHtml(dyeNameOf(petDye2Of(id)))+'</span>':'')+(petTintOf(id)?'<span class="chip on">👁️ 틴트 '+escapeHtml(dyeNameOf(petTintOf(id)))+'</span>':'')+(consumQty('dye_remover')>0?'<button class="chip" '+App.view.act('openPetPicker',id,'dyezone_rm')+'>'+consumSvg('dye_remover',{h:12})+' 리무버로 지우기</button>':'<span class="s" style="min-width:0">리무버(알뜰샵 소비 탭·이벤트)로 제거 가능</span>')+'</div>':'')+   // 🎨 2색 염색+틴트 상태(몸·얼룩·눈코입) — 제거는 리무버 소모(무료 지우기 없음)
+        (petDyeOf(id)?'<div class="pi-cosm"><span class="s">염색</span><span class="chip on">'+consumSvg('dye',{h:12})+' '+escapeHtml(dyeNameOf(petDyeOf(id)))+'</span>'+(consumQty('dye_remover')>0?'<button class="chip" '+App.view.act('applyDyeRemover',id)+'>'+consumSvg('dye_remover',{h:12})+' 리무버로 지우기</button>':'<span class="s" style="min-width:0">리무버(알뜰샵 소비 탭·이벤트)로 제거 가능</span>')+'</div>':'')+   // 🎨 염색 상태 — 제거는 리무버 소모(무료 지우기 없음)
         // 🧺 소비템 — 탭하면 보유 소비템 인벤토리 피커(츄르·염색약·리무버)를 열어 이 펫에게 사용(2026-07 사용자 지시로 인벤토리 방식 개편).
         piConsumBtn(id)+
         (canPet?'<button class="gib sell" onclick="petFromInfo(\''+id+'\',event)">'+heartSvg({h:13})+' 쓰다듬기 · 애정+1 · 은화+'+PET_PET_REWARD+'</button>'

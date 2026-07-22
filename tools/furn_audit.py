@@ -31,29 +31,39 @@ fm = re.search(r'function furnMatrix\(id\)\{ return \{([^}]*)\}\[id\]', C).group
 id2m = dict((kv.split(':')[0].strip(), kv.split(':')[1].strip()) for kv in fm.split(','))
 
 def get_mat(mname):
-    m = re.search(r'const ' + mname + r'\s*=\s*\[([\s\S]*?)\];', A)
+    m = re.search(r'const ' + mname + r'\s*=\s*\[([\s\S]*?)\];', A) or re.search(r'const ' + mname + r'\s*=\s*\[([\s\S]*?)\];', C)
     if not m: return None
     rows = re.findall(r'"([^"]*)"', m.group(1)) or re.findall(r"'([^']*)'", m.group(1))
     w = max(len(r) for r in rows)
     return [r.ljust(w, '.') for r in rows]
 
-ab = C[C.index('const FURN_ANIM'):]
-ab = ab[:ab.index('\n    };') + 7]
-anims = {}
-for m in re.finditer(r'^\s{6}([a-zA-Z0-9_]+):\s*(\[[\s\S]*?\](?=\s*,?\s*(?://|\n))|\{[^}]*\})', ab, re.M):
-    iid = m.group(1); body = m.group(2)
-    layers = []
-    for lm in re.finditer(r"\{\s*type:'(\w+)'\s*,\s*move:\[([^\]]*)\]\s*(?:,\s*cls:'(\w+)')?(?:\s*,\s*bg:'(.)')?", body):
-        mv = [x.strip().strip("'") for x in lm.group(2).split(',') if x.strip()]
-        layers.append((lm.group(1), mv, lm.group(3), lm.group(4)))
-    if layers: anims[iid] = layers
+def parse_anims(src_const):
+    ab = C[C.index('const ' + src_const):]
+    ab = ab[:ab.index('\n    };') + 7]
+    out = {}
+    for m in re.finditer(r'^\s{6}([a-zA-Z0-9_]+):\s*(\[[\s\S]*?\](?=\s*,?\s*(?://|\n))|\{[^}]*\})', ab, re.M):
+        iid = m.group(1); body = m.group(2)
+        layers = []
+        for lm in re.finditer(r"\{\s*type:'(\w+)'\s*,\s*move:\[([^\]]*)\]\s*(?:,\s*cls:'(\w+)')?(?:\s*,\s*bg:'(.)')?", body):
+            mv = [x.strip().strip("'") for x in lm.group(2).split(',') if x.strip()]
+            layers.append((lm.group(1), mv, lm.group(3), lm.group(4)))
+        if layers: out[iid] = layers
+    return out
 
-def hole_layers(iid):
-    M = get_mat(id2m.get(iid, '')) if iid in id2m else None
+anims = parse_anims('FURN_ANIM')
+# 🎩 모자 연출(HAT_ANIM·HAT_M — cats.js)도 같은 구멍 규칙으로 감사
+hat_anims = parse_anims('HAT_ANIM')
+hm = re.search(r'const HAT_M=\{([^}]*)\}', C).group(1)
+hat_id2m = dict((kv.split(':')[0].strip(), kv.split(':')[1].strip()) for kv in hm.split(','))
+
+def hole_layers(iid, mat_map=None, anim_map=None):
+    mat_map = mat_map if mat_map is not None else id2m
+    anim_map = anim_map if anim_map is not None else anims
+    M = get_mat(mat_map.get(iid, '')) if iid in mat_map else None
     if not M: return []
     rows, cols = len(M), len(M[0])
     out = []
-    for t, mv, cls, bg in anims.get(iid, []):
+    for t, mv, cls, bg in anim_map.get(iid, []):
         if t == 'sway' or bg: continue
         key = cls or iid
         if key in ALLOW: continue
@@ -81,6 +91,10 @@ def main():
         for t, key, total, internal in hole_layers(iid):
             viol += 1
             print(f'  위반 {iid:16s} {t:8s} cls={key:14s} move={total} 내부={internal} → 공기영역 이동 또는 bg 지정')
+    for iid in sorted(hat_id2m):   # 🎩 모자(HAT_ANIM)
+        for t, key, total, internal in hole_layers(iid, hat_id2m, hat_anims):
+            viol += 1
+            print(f'  위반 hat:{iid:12s} {t:8s} cls={key:14s} move={total} 내부={internal} → 공기영역 이동 또는 bg 지정')
     print(f'위반 {viol}건' + (' — CLAUDE.md 🕳️ 규칙 참조' if viol else ' ✓'))
     if holes_only: sys.exit(1 if viol else 0)
     print()

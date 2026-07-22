@@ -151,7 +151,7 @@
       stage.dataset.sig=sig;
       if(!list.length){ stage.innerHTML='<span class="cd-empty">고양이를 입양해 보세요</span>'; markCatDirty(); return; }
       stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+(hasSprite(id)?'<span class="cd-shadow">'+shadowSvg({h:Math.max(6,Math.round(s*0.16))})+'</span>'+actorCosmHtml(id,s):'')+catActorHTML(id,s)+'</div>'; }).join('');
-      placeActorsNow(stage);   // 🩹 격자 초기좌표가 한 프레임 보이던 순간이동 방지(지금 프레임에 지속좌표로 배치)
+      markCatDirty();
     }
     // ================= 🖥️ 펫캠 PiP — Document Picture-in-Picture (데스크톱 크롬·엣지 116+ 전용) =================
     // 캠 방을 '항상 위(always-on-top)' 미니 창으로 미러링(스팀 오버레이처럼 다른 작업 중에도 떠 있음). 시청 전용 —
@@ -480,12 +480,25 @@
           parts.push(Object.assign({ k:'flit', url:_svgUri(dragonflySvg({h:hh})), x:W*o.x/100, y:H-(H*persB(o.yy)/100)-hh, h:hh, d:dur, del:del, tilt:1, layer:'over', frozen:frozen }, _vpipFlitPts(rnd))); } };
         const fire=function(n){ const P=pkSlots(n,170); for(let i=0;i<n;i++){ const o=P[i], hh=Math.round((9+pkRand(i,63)*4)*persS(o.yy)), dur=5+pkRand(i,64)*5, bd=1+pkRand(i,65)*1.4, del=-pkRand(i,66)*6; let _s=70; const rnd=function(){ return pkRand(i,_s++); };
           parts.push(Object.assign({ k:'flit', url:_svgUri(fireflySvg({h:hh})), x:W*o.x/100, y:H-(H*persB(o.yy)/100)-hh, h:hh, d:dur, del:del, bd:bd, layer:'over', frozen:frozen }, _vpipFlitPts(rnd))); } };
+        const bee=function(n){ const P=pkSlots(n,200); for(let i=0;i<n;i++){ const o=P[i], hh=Math.round((9+pkRand(i,83)*4)*persS(o.yy)), dur=5+pkRand(i,84)*4, fd=0.16+pkRand(i,85)*0.10, del=-pkRand(i,86)*7; let _s=90; const rnd=function(){ return pkRand(i,_s++); };   // 🐝 DOM bee()와 동일 슬롯·난수 스트림
+          parts.push(Object.assign({ k:'flit', url:_svgUri(beeSvg({h:hh})), x:W*o.x/100, y:H-(H*persB(o.yy)/100)-hh, h:hh, d:dur, del:del, fd:fd, layer:'over', frozen:frozen }, _vpipFlitPts(rnd))); } };
+        const dseed=function(n){ const P=pkSlots(n,230); for(let i=0;i<n;i++){ const o=P[i], hh=Math.round((10+pkRand(i,93)*4)*persS(o.yy)), dur=9+pkRand(i,94)*6, del=-pkRand(i,95)*9; let _s=100; const rnd=function(){ return pkRand(i,_s++); };   // 🌼 DOM dseed()와 동일(기울임=tilt)
+          parts.push(Object.assign({ k:'flit', url:_svgUri(dandelionSvg({h:hh})), x:W*o.x/100, y:H-(H*persB(o.yy)/100)-hh, h:hh, d:dur, del:del, tilt:1, layer:'over', frozen:frozen }, _vpipFlitPts(rnd))); } };
+        const bub=function(n){ const P=pkSlots(n,260); for(let i=0;i<n;i++){ const o=P[i], hh=Math.round((8+pkRand(i,103)*5)*persS(o.yy)), dur=7+pkRand(i,104)*5, bd=2.0+pkRand(i,105)*1.4, del=-pkRand(i,106)*8; let _s=110; const rnd=function(){ return pkRand(i,_s++); };   // 🫧 몽글 펄스는 워커 blink(bd)로 근사
+          parts.push(Object.assign({ k:'flit', url:_svgUri(bubbleSvg({h:hh})), x:W*o.x/100, y:H-(H*persB(o.yy)/100)-hh, h:hh, d:dur, del:del, bd:bd, layer:'over', frozen:frozen }, _vpipFlitPts(rnd))); } };
+        const sparkle=function(n){ const P=pkSlots(n,290); for(let i=0;i<n;i++){ const o=P[i], hh=Math.round((7+pkRand(i,113)*4)*persS(o.yy)), dur=10+pkRand(i,114)*6, bd=1.8+pkRand(i,115)*1.4, del=-pkRand(i,116)*8; const cc=['#ffd84a','#ffe9a8','#fff6d0'][i%3]; let _s=120; const rnd=function(){ return pkRand(i,_s++); };   // ✨ 트윙클=blink(bd)
+          parts.push(Object.assign({ k:'flit', url:_svgUri(spark4Svg(cc,{h:hh})), x:W*o.x/100, y:H-(H*persB(o.yy)/100)-hh, h:hh, d:dur, del:del, bd:bd, layer:'over', frozen:frozen }, _vpipFlitPts(rnd))); } };
         if(gid==='butterflies') bfly(Nc(7),['o','b','p','y']);
         else if(gid==='rainbowflutter') bfly(Nc(10),['o','b','p','y','o','p']);
         else if(gid==='mapleleaves') leaf(Nc(10),function(i,hh){ return mapleLeafSvg({h:hh}, LEAF_COLS[Math.floor(pkRand(i,207)*LEAF_COLS.length)]); });
         else if(gid==='sakura') leaf(Nc(10),function(i,hh){ return petalSvg({h:hh}); });
         else if(gid==='dragonflies') dfly(Nc(5));
         else if(gid==='fireflies') fire(Nc(8));
+        else if(gid==='snowflakes') leaf(Nc(12),function(i,hh){ return snowflakeSvg({h:Math.round(hh*0.8)}); });
+        else if(gid==='dandelion') dseed(Nc(7));
+        else if(gid==='bubbles') bub(Nc(8));
+        else if(gid==='starlight') sparkle(Nc(10));
+        else if(gid==='bees') bee(Nc(6));
       }
     }
     // 씬 키트 = { back(벽·바닥·씬 정적), furn(가구·똥, 투명), fx(가구 연출 레이어+bmp), parts(파티클+bmp) } — 전부 origin-clean 비트맵.
@@ -540,16 +553,12 @@
         if(hasSprite(id)){ const spr=PET_SPRITES[id]; if(spr.runtime&&!spr.urls) return Promise.resolve(null);   // 아트 로딩 전 — 도착 시 _petArtRerenderNow가 재동기화
           const fw=!!spr.frontWalk;
           const cosm=petCosm(id);   // 💗 코스메틱(모자·버디)도 워커에 전사 — dock와 동일하게 보이게(가구 연출 _VPIP_FX_* 선례)
-          // 🎨 염색(몸·얼룩)+틴트는 dyedUrlAsync로 '베이크된 dataURL'을 받아 그 비트맵을 그린다(dock와 동일, 필터 미사용). 모자·버디는 미염색.
-          const d1=petDyeOf(id), d2=petDye2Of(id), tnt=(typeof petTintOf==='function'?petTintOf(id):0);
-          const wP=dyedUrlAsync(id, sprWalkUrl(spr), d1, d2, tnt).then(function(u){ return _vpipBmp(u); });
-          const sP=dyedUrlAsync(id, sprStill(id,'south'), d1, d2, tnt).then(function(u){ return _vpipBmp(u); });
-          const eP=fw?dyedUrlAsync(id, sprStill(id,'east'), d1, d2, tnt).then(function(u){ return _vpipBmp(u); }):Promise.resolve(null);
-          const hatP=(cosm.hat&&HAT_M[cosm.hat])?_vpipBmp('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(hatSvg(cosm.hat,{h:60}))).catch(function(){ return null; }):Promise.resolve(null);
+          const dyeF=dyeFilterCss(petDyeOf(id));   // 🎨 염색은 시트/스틸 비트맵에 베이크(_vpipBmp filt — 워커 ctx.filter 미의존). 모자·버디는 미염색(dock 동일).
+          const hatP=(cosm.hat&&HAT_M[cosm.hat])?_vpipBmp('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(hatSvg(cosm.hat,{h:60}))).catch(function(){ return null; }):Promise.resolve(null);   // 🎩 PiP 모자 = 정적 hatSvg(전체 아트) 고정 — HAT_ANIM 캠 연출(hatLiveSvg)은 dock·홈 전용(문서화된 예외, 프로펠러 회전각 전사는 후속 검토)
           const budP=BUDDY_CATALOG[cosm.buddy]?_vpipBmp('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(buddySvgOf(cosm.buddy,{h:30}))).catch(function(){ return null; }):Promise.resolve(null);   // 코스메틱 로드 실패가 펫 본체를 드랍시키지 않게 개별 폴백
           const headP=new Promise(function(res){ try{ measureHeadPad(id,res); }catch(e){ res(0.2); } });
           const footP=new Promise(function(res){ try{ measureFootPad(id,res); }catch(e){ res(null); } });   // 🐾 발밑 여백 실측 — 워커 고정 0.16 가정은 신화·한정(실측 ~0.30)에서 발이 떠 벽지를 걷는 버그
-          return Promise.all([wP, sP, eP, hatP, budP, headP, footP])
+          return Promise.all([_vpipBmp(sprWalkUrl(spr), dyeF), _vpipBmp(sprStill(id,'south'), dyeF), fw?_vpipBmp(sprStill(id,'east'), dyeF):Promise.resolve(null), hatP, budP, headP, footP])
             .then(function(bs){ return { hh:hh, frames:spr.frames||6, frontWalk:fw, sheet:bs[0], south:bs[1], east:bs[2]||null, hat:bs[3]||null, buddy:bs[4]||null, btype:cosm.buddy||'', headF:(bs[5]==null?0.2:bs[5]), fp:(bs[6]==null?0.16:bs[6]) }; })
             .catch(function(){ return null; });
         }
@@ -648,13 +657,17 @@
                 "    if(a.hat){ var hh3=w*0.11, hw2=hh3*(a.hat.width/a.hat.height), hdx=(moving?0.13*w:0), hdy=(moving?0.05*h:0); ctx.drawImage(a.hat, w/2-hw2/2+hdx, y+h*(a.headF||0.2)-hh3*0.40+hdy, hw2, hh3); }",   // 💗 모자 — dock .cd-hat(0.11 크기·-40%·옆모습 hatdx=0.13w·hatdy=0.05h) 전사. moving=옆모습(east 로컬 머리 오른쪽 → +hdx, 추가 하강 +hdy), flip이 west 반전. 정지=south 정면(hdx/hdy 0)
         "  }catch(e){}",
         "  ctx.restore();",
-        "  if(a.buddy){ try{ var t2=now/1000, bw=(a.btype==='firefly'?7:8)*ds, bh2=bw*(a.buddy.height/a.buddy.width);",   // 💗 동행 버디 — 경로(느린 궤도)+날갯짓/발광 다층. ✨ 크기 고정(firefly7·기타8×ds 깊이원근만, 펫 스케일 무관 — DOM actorCosmHtml과 동일)
+        "  if(a.buddy){ try{ var t2=now/1000, bw=((a.btype==='firefly'||a.btype==='snowflake'||a.btype==='starbit')?7:8)*ds, bh2=bw*(a.buddy.height/a.buddy.width);",   // 💗 동행 버디 — 경로(느린 궤도)+날갯짓/발광 다층. ✨ 크기 고정(firefly7·기타8×ds 깊이원근만, 펫 스케일 무관 — DOM actorCosmHtml과 동일)
         "    var bx=a.x+w/2+Math.sin(t2*0.84+a.seed)*bw*2+Math.sin(t2*0.31+a.seed*2)*bw*0.5;",   // 중심=펫중앙(w/2), 궤도 진폭은 버디 크기 기준(펫 스케일 무관, DOM cbpath ~0.5×ref 대응)
         "    var by=y+h*(a.headF||0.2)+Math.cos(t2*1.17+a.seed)*7-6;",
         "    ctx.save(); ctx.translate(bx,by);",
         "    if(a.btype==='firefly'){ ctx.globalAlpha=0.4+0.6*(0.5+0.5*Math.sin(t2*2.7+a.seed)); }",
         "    else if(a.btype==='butterfly'){ ctx.scale(0.62+0.38*Math.abs(Math.sin(t2*5.5+a.seed)),1); }",
-        "    else { ctx.rotate((Math.sin(t2*1.9+a.seed)*11)*Math.PI/180); }",   // 🌈 무지개꽃 등: 빙글 트월(dock cbtwirl 미러)
+        "    else if(a.btype==='starbit'){ var ss=0.7+0.45*(0.5+0.5*Math.sin(t2*3.3+a.seed)); ctx.globalAlpha=0.45+0.55*(0.5+0.5*Math.sin(t2*3.3+a.seed)); ctx.scale(ss,ss); }",   // ⭐ 트윙클(dock cbstar 미러)
+        "    else if(a.btype==='bubble'){ var bs=0.92+0.16*(0.5+0.5*Math.sin(t2*2.9+a.seed)); ctx.globalAlpha=0.85+0.15*(0.5+0.5*Math.sin(t2*2.9+a.seed)); ctx.scale(bs,bs); }",   // 🫧 몽글 펄스(dock cbbub 미러)
+        "    else if(a.btype==='snowflake'){ ctx.rotate((t2*60+a.seed*57)%360*Math.PI/180); }",   // ❄️ 천천히 빙글(dock cbsnow 미러)
+        "    else if(a.btype==='mapleleaf'||a.btype==='sakurapetal'){ ctx.rotate((Math.sin(t2*2.4+a.seed)*24)*Math.PI/180); }",   // 🍁🌸 팔랑 뒤집힘(dock cbleaf 미러)
+        "    else { ctx.rotate((Math.sin(t2*1.9+a.seed)*11)*Math.PI/180); }",   // 🌈 무지개꽃·잠자리 등: 기울임/트월(dock cbtwirl·cbtilt 미러)
         "    ctx.drawImage(a.buddy,-bw/2,-bh2/2,bw,bh2); ctx.restore(); }catch(e){} } }",
         "function draw(now){ if(!ctx) return; var t=now/1000; ctx.setTransform(SC,0,0,SC,0,0); ctx.imageSmoothingEnabled=false;",
         "  ctx.clearRect(0,0,W,H); if(back) ctx.drawImage(back,0,0,W,H);",
@@ -922,16 +935,13 @@
     // 물리 레이어(내부 전용 — 밖에선 부르지 말 것): _csprClip=클립 필름 장착, _csprStill=정지 스틸.
     // once 클립 홀드 프리즈 해제 — 원샷 종료 시 건 인라인(animation:none + transform)을 걷어내 다음 필름이 정상 재생되게. 모든 상태 전환이 거친다.
     function _csprUnfreeze(f){ if(!f) return; f.onanimationend=null; if(f.style.animation) f.style.animation=''; if(f.style.transform) f.style.transform=''; }
-    // 🎨 2색 염색 — .cspr에 실린 data-d1/d2(catActorHTML)로 원본 url을 '베이크된 dataURL'로 치환. 미염색이면 원본 그대로(무비용). 친구 캠은 스냅샷 페어라 자동 반영.
-    function _dyeU(s, id, url){ if(!s||typeof dyedUrl!=='function') return url; const d1=s.dataset&&s.dataset.d1, d2=s.dataset&&s.dataset.d2, tint=s.dataset&&s.dataset.tint;
-      return (d1||d2||tint) ? dyedUrl(id, url, d1||0, d2||0, tint||0) : url; }
     function _csprClip(s, a, r){
       // 🖼️ 디코드 가드: 미로드 클립 시트를 즉시 장착하면 디코드까지 펫이 투명(once 클립은 재생 전체가 빈칸 — '간헐적 사라짐').
       //   이전 비주얼(걷기 필름/스틸)을 유지한 채 로드 후 장착. 그 사이 다른 전환(_swapTok 증가·소유 액터 교체)이 오면 낡은 장착을 버린다.
-      const tok=a._swapTok=(a._swapTok||0)+1; const u=_dyeU(s, a.id, r.url);   // 염색 반영 url(캐시 히트=dataURL, 아니면 원본+지연 베이크)
-      if(!_sheetReady(u)){
+      const tok=a._swapTok=(a._swapTok||0)+1;
+      if(!_sheetReady(r.url)){
         a._clip=r.key;   // 상태 마킹은 즉시 — actorOnce의 복귀 검사(a._clip)·중복 장착 방지와 일치
-        _warmUrl(u, function(){ if(a._swapTok!==tok || a._clip!==r.key || !s.isConnected) return;
+        _warmUrl(r.url, function(){ if(a._swapTok!==tok || a._clip!==r.key || !s.isConnected) return;
           if(a.el && a.el._eggActor && a.el._eggActor!==a) return;   // 재빌드로 액터 교체 → 낡은 장착 금지
           _csprClipMount(s, a, r); });
         return; }
@@ -939,7 +949,7 @@
     }
     function _csprClipMount(s, a, r){
       const cell=parseFloat(s.style.width)||Math.round(a.hh)||48;   // .cspr 창=1칸 정사각(catActorHTML이 width=렌더높이로 생성)
-      s.style.setProperty('--sheet','url('+_dyeU(s, a.id, r.url)+')');
+      s.style.setProperty('--sheet','url('+r.url+')');
       s.style.setProperty('--fw',(cell*r.frames)+'px');
       s.style.setProperty('--wdur', r.dur.toFixed(2)+'s');
       const f=s.querySelector('.csprf');
@@ -955,7 +965,7 @@
       a._clip=r.key;
     }
     function _csprStill(s, a, face){ _csprUnfreeze(s.querySelector('.csprf'));
-      const tok=a._swapTok=(a._swapTok||0)+1, u=_dyeU(s, a.id, sprStill(a.id,face));
+      const tok=a._swapTok=(a._swapTok||0)+1, u=sprStill(a.id,face);
       s.classList.remove('once'); s.classList.add('idle'); a._clip=null;
       if(_sheetReady(u)){ s.style.setProperty('--idle','url('+u+')'); return; }
       // 🖼️ 디코드 가드: 미로드 방향 스틸(첫 east/west/north)은 이전 --idle(스폰 south 등 로드된 것)을 유지한 채 로드 후 교체 — 투명 빈칸 방지
@@ -973,7 +983,7 @@
       setHatDx(a, HAT_SIDE_DX);   // 이동=옆모습(east 시트/east 정지스틸, 로컬 머리 오른쪽) → 앞으로. west는 액터 flip이 반전
       const tok=a._swapTok=(a._swapTok||0)+1;   // 🖼️ 진행 중이던 지연 시트 스왑 무효화 — 걷기로 전환된 뒤 늦게 도착한 클립/스틸이 덮어쓰는 것 방지
       _csprUnfreeze(s.querySelector('.csprf'));   // once 홀드 프리즈 해제 — 안 하면 인라인 animation:none이 걷기 필름을 막아 정지 이미지로 미끄러진다
-      if(a.frontWalk){ const u=_dyeU(s, a.id, sprStill(a.id,'east'));   // east 걷기 없음 → 옆 정지스틸(정면 금지)
+      if(a.frontWalk){ const u=sprStill(a.id,'east');   // east 걷기 없음 → 옆 정지스틸(정면 금지)
         s.classList.add('idle');
         if(_sheetReady(u)) s.style.setProperty('--idle','url('+u+')');
         else _warmUrl(u, function(){ if(a._swapTok!==tok || !s.isConnected) return;
@@ -982,7 +992,7 @@
         return; }
       // 클립 재생이 --sheet/--fw/steps를 바꿨을 수 있어 걷기 시트로 '무조건' 복원(재빌드 DOM 재사용 잔재 포함 — 안 하면 먹기 시트로 걷는 버그)
       const sp=PET_SPRITES[a.id]||{}, cell=parseFloat(s.style.width)||Math.round(a.hh)||48, nf=sp.frames||6;
-      s.style.setProperty('--sheet','url('+_dyeU(s, a.id, sprWalkUrl(sp))+')'); s.style.setProperty('--fw',(cell*nf)+'px');
+      s.style.setProperty('--sheet','url('+sprWalkUrl(sp)+')'); s.style.setProperty('--fw',(cell*nf)+'px');
       const f=s.querySelector('.csprf'); if(f) f.style.animationTimingFunction='steps('+nf+')';
       s.classList.remove('idle'); }   // .idle 제거 → CSS 걷기 필름(csprFilm) 재생
     function actorShowStill(a, face, clip){ if(!a.spr) return; const s=a.el.querySelector('.cspr'); if(!s) return;
@@ -1034,14 +1044,6 @@
     // 여러 무대를 '동시에' 애니메이션한다: groups=[{stage, actors}]. 예) 친구 집 방문 중에도 하단 dock 캠은 계속 로밍.
     const _eng={ raf:0, groups:[], last:0, dirty:false };
     function markCatDirty(){ _eng.dirty=true; if(typeof startCatLoop==='function') startCatLoop(); }
-    // 🩹 새로 그린 액터 innerHTML을 '이 프레임에 즉시' 지속좌표(_petX)로 배치 — 재빌드가 다음 rAF(+프레임예산)로 미뤄지는 사이
-    //    innerHTML의 격자 초기좌표(left:20+i*64)가 한 프레임 그려졌다가 buildActors가 옮기며 "펫이 사라졌다 다른 위치에 잠깐 보이는" 순간이동이 났다.
-    //    markCatDirty로 루프 정합(무대 추가/제거)은 유지하되, 이 무대 그룹이 이미 있으면 지금 프레임에 buildActors로 배치해 중간 페인트를 없앤다(다음 rAF 재빌드는 같은 자리라 무깜빡).
-    function placeActorsNow(stage){ if(!stage) return;
-      const g=_eng.groups&&_eng.groups.find(x=>x.stage===stage);
-      if(g){ try{ g.actors=buildActors(stage); if(typeof startCatLoop==='function') startCatLoop(); return; }catch(e){} }   // 그룹이 있으면 지금 프레임에 배치·교체(dirty 안 세워 다음 rAF 이중빌드/잔상 콜백 방지 — 무대 집합 변경은 catLoop가 별도로 정합)
-      markCatDirty();   // 그룹이 아직 없으면(비활성/최초 진입) 루프에 맡겨 다음 프레임에 빌드
-    }
     // 리사이즈·기기 회전 시 무대 폭이 바뀌므로 재빌드(디바운스) — 안 하면 펫이 옛 폭으로 클램프돼 화면 밖/좌측 몰림
     if(typeof window!=='undefined'){ let _rzT=0; const _catResize=()=>{ clearTimeout(_rzT); _rzT=setTimeout(function(){ if(typeof markCatDirty==='function') markCatDirty(); }, 200); };
       window.addEventListener('resize', _catResize); window.addEventListener('orientationchange', _catResize); }

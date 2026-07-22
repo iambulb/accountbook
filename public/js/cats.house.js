@@ -61,14 +61,12 @@
         const pal=b.querySelector('.palette'); const palL=pal?pal.scrollLeft:0;   // 배치 팔레트(가로 스크롤) 위치 보존 — 스크롤해 아이템 선택 시 처음으로 안 튀게(우리집 펫은 세로 그리드라 세로 scrollTop만 보존)
         const rms=b.querySelector('.rmstrip'); const rmsL=rms?rms.scrollLeft:0;   // 룸 스위처 가로 스크롤 위치 보존(뒤쪽 방 탭 시 맨 앞으로 안 튀게)
         const keepGrid=(_catTab==='pet')?b.querySelector('#petGrid'):null;   // 펫 탭: 기존 펫 그리드 노드 보존(빈 placeholder로 되붙여 수백 타일 재파싱·이미지 리로드 회피)
-        const keepRoom=(_catTab==='home')?b.querySelector('#catRoom'):null;   // 🩹 알뜰홈 캠 노드 보존 — 매 game 틱 innerHTML 재생성으로 씬·가구·펫이 리셋(순간이동·깜빡)되던 것 차단(그리드와 동일 전략)
         b.innerHTML=build();
         if(_catTab==='pet'){ const ph=b.querySelector('#petGrid'); if(keepGrid && ph) ph.replaceWith(keepGrid); renderPetGrid(); }   // 되살린 그리드에 바뀐 타일만 갱신(없으면 채움)
-        if(_catTab==='home'){ const pr=b.querySelector('#catRoom'); if(keepRoom && pr){ pr.replaceWith(keepRoom); patchHomeRoom(); } else mountRoomWalk(); }   // 보존한 캠 노드로 되돌리고 바뀐 부분만 라이브 패치(없으면 신규 마운트)
         b.scrollTop=st;
         const npal=b.querySelector('.palette'); if(npal) npal.scrollLeft=palL;
         const nrms=b.querySelector('.rmstrip'); if(nrms) nrms.scrollLeft=rmsL;
-        pkObserveScenes(); updateShopHeadWallet(); };   // A4: 재빌드된 씬 재관찰 + 알뜰샵 잔액(구매 후) 갱신
+        if(_catTab==='home') mountRoomWalk(); pkObserveScenes(); updateShopHeadWallet(); };   // A4: 재빌드된 씬 재관찰 + 알뜰샵 잔액(구매 후) 갱신
       if(_catTab==='home') setTimeout(mountRoomWalk, 30);
       if(_catTab==='pet') renderPetGrid();
     }
@@ -149,7 +147,7 @@
     // 타일 콘텐츠 시그니처 — 상태(방)·현재방·애정레벨·이름이 바뀐 타일만 다시 그린다.
     function petTileSig(id){ const ro=petRoomIndex(id); const here=ro===roomIdx(); const rooms=homeH().rooms||[];
       const rnm=(ro>=0&&!here)?((rooms[ro]&&rooms[ro].name)||('방 '+(ro+1))):'';   // elsewhere일 때만 방이름 뱃지 표시 → 시그니처에 포함(방 전환/이름변경 시 필요한 타일만 갱신)
-      const lv=affectionLevel((ownedCatsMap()[id]||{}).affection, CAT_TIER[id]||'normal').level; return (here?'H':ro)+'|'+rnm+'|'+lv+'|'+catName(id)+'|'+(CAT_TIER[id]||'normal')+'|'+((ownedCatsMap()[id]||{}).fav?'F':'')+'|'+petDyeOf(id)+'|'+petDye2Of(id)+'|'+petTintOf(id)+'|'+(dyeBakedFor(id)?'B':'0'); }   // tier·염색(몸+얼룩)+틴트+베이크 완료 여부 포함 → 염색/틴트·베이크 완료 시 그 타일만 실시간 갱신
+      const lv=affectionLevel((ownedCatsMap()[id]||{}).affection, CAT_TIER[id]||'normal').level; return (here?'H':ro)+'|'+rnm+'|'+lv+'|'+catName(id)+'|'+(CAT_TIER[id]||'normal')+'|'+((ownedCatsMap()[id]||{}).fav?'F':'')+'|'+petDyeOf(id); }   // tier·염색 포함(이름색·등급 연출·초상 톤이 의존 → 바뀌면 그 타일만 갱신)
     // 등급 배지(색약 접근성): 색이 아니라 '글자'로 등급 식별. 한정=무지개, 일반은 생략(기본), 그 외 등급색.
     function tierBadgeHtml(tier){ if(!tier || tier==='normal') return '';
       const ti=tierInfo(tier); const nm=escapeHtml(ti.name);
@@ -203,19 +201,16 @@
       const padY=(parseFloat(cs.paddingTop)||0)+(parseFloat(cs.paddingBottom)||0)+(parseFloat(cs.borderTopWidth)||0)+(parseFloat(cs.borderBottomWidth)||0);
       const ch=first.offsetHeight; if(ch>0) el.style.maxHeight=(ch*rows4+gap*(rows4-1)+padY+2)+'px';
     }
-    // 🏠 알뜰홈 캠의 가구(+드랍) — 서명·HTML을 단일 소스로(catHomeHtml 최초 생성 + patchHomeRoom 라이브 패치가 공유).
-    function roomPropsSig(){ const r=room(); return 'p:'+curRoomId()+'|'+JSON.stringify(r.placed||{})+'|'+JSON.stringify(r.wallPlaced||{})+'|'+(Number(r.poops)||0)+'|d:'+dropsSig(r); }
-    function roomPropsHtml(){ const list=placedList().sort((a,b)=>a.r-b.r); distributePoops(list);
-      const spH=splitProps(list, p=>propMarkup(p,false,false,true));   // 바닥 아이템(러그·연못) 먼저 → 맨 아래
-      return spH.floor+wallPlacedList().map(p=>wallPropMarkup(p,false,true)).join('')+spH.other+dropsHtml(room(), curRoomId()); }   // 바닥 아이템 → 벽 가구(뒤) + 일반 가구 + 🎁드랍. live=true → 홈 LIVE 캠 연출
     function catHomeHtml(){
       reconcilePets();   // 지속시간 지난 그릇 비우고 똥 정산(멱등)
       const cats=activeCats();
       // 배치된 가구를 방 바닥에 매핑. 그릇=탭 급여·채움 반영, 화장실=똥 수거(공용 헬퍼).
       const list=placedList().sort((a,b)=>a.r-b.r); distributePoops(list);
       const litters=list.filter(p=>p.itemId==='litterbox');
+      const spH=splitProps(list, p=>propMarkup(p,false,false,true));   // 바닥 아이템(러그·연못) 먼저 → 맨 아래
+      const props=spH.floor+wallPlacedList().map(p=>wallPropMarkup(p,false,true)).join('')+spH.other+dropsHtml(room(), curRoomId());   // 바닥 아이템 → 벽 가구(뒤) + 일반 가구 + 🎁드랍. live=true → 홈 LIVE 캠 연출
       const roomName=(room().name)||'우리집';
-      let h='<div class="catroom" id="catRoom">'+roomShellBase(currentWall(), currentFloor())+'<span class="cr-cam"><i></i>LIVE · '+escapeHtml(roomName)+'</span>'+batchBtnHtml()+'<div class="cr-props" data-sig="'+escapeHtml(roomPropsSig())+'">'+roomPropsHtml()+'</div><div class="cr-stage" id="crStage"></div>'+roomOverlay(currentBgfx())+'</div>';
+      let h='<div class="catroom" id="catRoom">'+roomShellBase(currentWall(), currentFloor())+'<span class="cr-cam"><i></i>LIVE · '+escapeHtml(roomName)+'</span>'+batchBtnHtml()+'<div class="cr-props">'+props+'</div><div class="cr-stage" id="crStage"></div>'+roomOverlay(currentBgfx())+'</div>';
       // 빈 방(가구·펫 없음) 안내 — 방 확장 직후 '사라진 것처럼' 보이는 혼동 방지
       if(!list.length && !cats.length) h+='<div class="hintline" style="margin:8px 0 0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>새 방이에요! <b>펫</b> 탭에서 <b>펫을 이 방으로 데려오고</b>, <b>배치</b> 탭에서 가구를 놓아보세요. (다른 방과 따로 저장돼요)</div>';
       // 안내: 그릇 채우기 / 똥 수거 — 완전 빈 새 방(가구·펫 없음)에선 위 '새 방' 안내만 두고 생략(힌트 3장 적층 방지, 채울 그릇도 없음)
@@ -260,20 +255,7 @@
       if(stage.dataset.sig===sig && stage.querySelector('.cd-actor')) return;
       stage.dataset.sig=sig;
       stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+(hasSprite(id)?'<span class="cd-shadow">'+shadowSvg({h:Math.max(6,Math.round(s*0.16))})+'</span>'+actorCosmHtml(id,s):'')+catActorHTML(id,s)+'</div>'; }).join('');
-      placeActorsNow(stage);   // 🩹 격자 초기좌표 순간이동 방지(지금 프레임에 지속좌표로 배치) — 통합 엔진이 시트 방 무대를 이어서 애니메이션
-    }
-    // 🩹 알뜰홈 캠 라이브 패치 — 시트 새로고침(_sheetRefresh)이 방 전체를 innerHTML로 재생성하면 ① 움직이는 벽지/바닥 씬 리셋
-    //    ② 가구 CSS 연출 리셋 ③ crStage 액터 재생성("펫이 사라졌다 다른 위치에 잠깐")이 매 game 틱마다 났다. dock(onGameChange)과 똑같이
-    //    '바뀐 부분만' 패치해 캠 DOM을 보존한다(전부 서명 가드 → 변화 없으면 무비용·무깜빡). _sheetRefresh가 #catRoom 노드를 보존한 뒤 호출.
-    function patchHomeRoom(){
-      const rootEl=$('catRoom'); if(!rootEl) return;
-      const wall=rootEl.querySelector('.cr-wall'), ws=currentWall(); if(wall && wall.dataset.scenesig!==ws){ wall.style.background=wallCss(ws); wall.innerHTML=wallSceneHtml(ws); wall.dataset.scenesig=ws; }   // 움직이는 벽지 씬 — id 변경 시에만
-      const fl=rootEl.querySelector('.cr-floor'), fs=currentFloor(); if(fl && fl.dataset.scenesig!==fs){ fl.style.background=floorCss(fs); fl.innerHTML=floorSceneHtml(fs); fl.dataset.scenesig=fs; }   // 움직이는 바닥 씬
-      const ov=rootEl.querySelector('.cr-overlay'), os=currentBgfx(); if(ov && ov.dataset.scenesig!==os){ ov.innerHTML=bgfxOverlayHtml(os); ov.dataset.scenesig=os; }   // 배경효과 오버레이
-      const box=rootEl.querySelector('.cr-props'), psig=roomPropsSig(); if(box && box.dataset.sig!==psig){ box.dataset.sig=psig; box.innerHTML=roomPropsHtml(); }   // 가구(+드랍) — 배치·그릇·똥·드랍 그대로면 스킵
-      const cam=rootEl.querySelector('.cr-cam'); if(cam){ const nm=(room().name)||'우리집'; if(cam.dataset.nm!==nm){ cam.dataset.nm=nm; cam.innerHTML='<i></i>LIVE · '+escapeHtml(nm); } }   // LIVE 배지 방 이름(변경 시에만 — 블링크 <i> 애니 리셋 방지)
-      const tr=rootEl.querySelector('.cr-topright'); if(tr) tr.outerHTML=batchBtnHtml();   // 수확칩·행복도 하트 라이브 반영
-      mountRoomWalk();   // 액터(서명 가드) — 구성·코스메틱 그대로면 스킵(순간이동 없음), 바뀌었으면 placeActorsNow로 즉시 배치
+      markCatDirty();   // 통합 엔진이 시트 방 무대를 자동으로 잡아 애니메이션
     }
     // ===== 친구 집(펫캠) — 남의 game으로 읽기전용 방 렌더 + 로밍(엔진 재사용) =====
     // 친구 game에서 활성 펫/가구 목록 도출(내 state.game 비참조). 친구의 '현재 방'을 본다(레거시 flat 폴백).
@@ -298,8 +280,8 @@
       stage.dataset.hh=64;
       const pm=(fg&&fg.petsMeta&&typeof fg.petsMeta==='object')?fg.petsMeta:{};   // 💗 homeCam 스냅샷의 펫 메타(애정 레벨·코스메틱·염색) — 친구 캠 과시 요소
       state._frPetLv={}; list.forEach(function(id){ const m=pm[id]; state._frPetLv[id]=(m&&m.lv!=null)?(Number(m.lv)||0):null; });   // 💗 친구 펫 애정 레벨 → 모션 게이트가 친구 기준으로 판정(clipAffLocked)
-      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); const meta=pm[id]||{lv:0}; return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+(hasSprite(id)?'<span class="cd-shadow">'+shadowSvg({h:Math.max(6,Math.round(s*0.16))})+'</span>'+actorCosmHtml(id,s,meta):'')+catActorHTML(id,s,{d1:(meta.dye||0),d2:(meta.dye2||0),tint:(meta.tint||0)})+'</div>'; }).join('');   // 🎨 친구 캠도 스냅샷 페어(몸·얼룩·틴트)로 염색
-      placeActorsNow(stage);   // 🩹 격자 초기좌표 순간이동 방지(지금 프레임에 지속좌표로 배치)
+      stage.innerHTML=list.map((id,i)=>{ const s=petActorPx(id,32,200); const meta=pm[id]||{lv:0}; return '<div class="cd-actor" data-cat="'+id+'" data-hh="'+s+'" style="left:'+(20+i*64)+'px;">'+(hasSprite(id)?'<span class="cd-shadow">'+shadowSvg({h:Math.max(6,Math.round(s*0.16))})+'</span>'+actorCosmHtml(id,s,meta):'')+catActorHTML(id,s,(meta.dye!=null?meta.dye:0))+'</div>'; }).join('');
+      markCatDirty();
     }
     let _shopSub='event';   // 알뜰샵 진입 시 기본=가챠 탭(맨 왼쪽)
     function setShopSub(s){ if(['event','egg','box','rainbow','consum'].indexOf(s)<0) s='event'; _shopSub=s; _shopSelCat=null; renderCatHouse(); }   // 🚧 은화 구매 탭 제거 중 — 이벤트/펫알/랜덤박스/무지개/소비만 허용
@@ -561,7 +543,7 @@
           if(isFurn && !capped) cntItem[res.id]=(cntItem[res.id]||0)+1;
           const dupIt=(isSkin&&owned)||capped;
           const rbcIt=dupIt?dupRbcOf(res.tier):0;   // 🌈 신화↑ 중복=무지개동전 표기(한정+2·신화+1, 실지급은 grantBoxReward)
-          list.push({ id:res.id, tier:res.tier, type:res.type, kind:'box', rainbow:(isRb ? true : (Math.random()<rbUpgradeChance(res.tier))), dup:dupIt, refund:(dupIt&&!rbcIt)?dupRefundOf(res.tier):0, rbc:rbcIt, isNew:!owned });   // 🌈 무지개 10연=전부 무지개박스로 배치
+          list.push({ id:res.id, tier:res.tier, type:res.type, kind:'box', rainbow:(Math.random()<rbUpgradeChance(res.tier)), dup:dupIt, refund:(dupIt&&!rbcIt)?dupRefundOf(res.tier):0, rbc:rbcIt, isNew:!owned });
           pity=pityNext(pity, isRb?(res.tier==='exclusive'):isTopTier(res.tier));   // 무지개=한정만 리셋
         } else {
           let res = forced ? pickTierMember(map, forced) : (ddeulTiers?rollFromPool(map, ddeulTiers):rollFromPool(map));
@@ -573,7 +555,7 @@
             rbcP=dupRbcOf(tr);   // 🌈 신화↑ 중복 = 무지개동전(한정+2·신화+1, 은화 폴백 없음)
             if(affectionLevel(base, tr).level>=5){ if(!isTopTier(tr)) rfd=petDupRefund(res.id); }
             else { dupAff=dupAffOf(tr); lvUp=affectionLevel(base+dupAff, tr).level>affectionLevel(base, tr).level; affAcc[res.id]=(affAcc[res.id]||0)+dupAff; } }   // 이번 중복으로 레벨 상승 여부(카드 표기)
-          list.push({ id:res.id, tier:res.tier, kind:rollKind, rainbow:(isRb ? true : (rollKind==='egg' && Math.random()<rbUpgradeChance(res.tier))), dup:owned, refund:rfd, dupAff:dupAff, lvUp:lvUp, rbc:rbcP, isNew:!owned });   // 🌈 무지개 10연=전부 무지개알로 배치
+          list.push({ id:res.id, tier:res.tier, kind:rollKind, rainbow:(rollKind==='egg' && Math.random()<rbUpgradeChance(res.tier)), dup:owned, refund:rfd, dupAff:dupAff, lvUp:lvUp, rbc:rbcP, isNew:!owned });
           pity=pityNext(pity, isRb?(res.tier==='exclusive'):isTopTier(res.tier));   // 무지개=한정만 리셋
         }
       }
@@ -1179,12 +1161,11 @@
           if(typeof yieldFloatFx==='function') yieldFloatFx(x, y-22, gained, goldBonus); }
         if(anyItemDrop || goldBonus>0){   // 💰 금화 수확이 있으면(아이템 없어도) 요약 팝업으로 은화·금화·아이템을 함께 보여준다(사용자 지침)
           // 🎁 작은 창 요약(줍기 버튼) — 어떤 템을 수확했고 재화를 얼마나 받았는지
-          // 🪙 순서(사용자 지침): 알·박스 등 아이템을 위에(좁은 창에 먼저 보이게), 은화·금화는 맨 아래로(금화가 은화보다 위 → 은화가 가장 아래). 매번 상단을 차지하던 재화를 밑으로 내림.
           const rows=[];
+          if(gained>0)    rows.push({ ic:coinSvg({h:16}), nm:'은화', n:gained });
+          if(goldBonus>0) rows.push({ ic:goldSvg({h:16}), nm:'금화', n:goldBonus });
           DROP_ORDER.forEach(k=>{ const c=dropCounts[k]||0; if(c<=0) return; const disp=dropDisplay(k);
             rows.push({ ic:disp.ic, nm:disp.nm, n:c, note:(k==='rainbow_egg'||k==='rainbow_box')?('🌈동전 +'+(c*RB_EGG_BOX_RBC)):'' }); });
-          if(goldBonus>0) rows.push({ ic:goldSvg({h:16}), nm:'금화', n:goldBonus });   // 재화는 아래로 · 금화가 은화보다 위
-          if(gained>0)    rows.push({ ic:coinSvg({h:16}), nm:'은화', n:gained });     // 가장 아래(맨 밑)
           const foot=(filledN>0?'밥·물 '+filledN+'칸 채움':'')+((filledN>0&&short)?' · ':'')+(short?short+' 부족(일부 미충전)':'');
           showHarvestPopup(harvestPopHost(btnEl), rows, hasRb, foot);
         }
