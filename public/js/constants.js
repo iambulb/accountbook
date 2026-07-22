@@ -63,3 +63,11 @@
       '곗돈':{type:'transfer',icon:'🤝',color:'#4C7FE0'}
     };
     function buildDefaultCategories(){ const o={}; let i=0; for(const n of Object.keys(DEFAULT_CATEGORY_DEFS)){ const d=DEFAULT_CATEGORY_DEFS[n]; o[n]={ name:n, type:d.type, icon:d.icon, color:d.color, sortOrder:++i, isDefault:true, isActive:true, visibility:'full', owner:'공동' }; } return o; }
+
+    // ===== 할일(투두) 카테고리 =====
+    // 기본 세트 [id, 이름, 색]. 워크스페이스 첫 진입 때 ws/{wsId}/todoCats 로 시드되고, 이후엔 가계부 카테고리처럼 사용자가 직접 추가·수정·삭제한다.
+    // ⚠️ id 는 구버전 고정 세트(TODO_CATS)와 같은 값 — 기존 할일의 category 필드가 그대로 매칭되도록 유지할 것.
+    const TODO_CAT_DEFAULTS = [['work','업무','#5B8DEF'],['study','공부','#9B7BF3'],['home','집안일','#F09B3C'],['health','건강','#3FBF77'],['promise','약속','#FF7BA9'],['shopping','쇼핑','#29B6C5'],['etc','기타','#8B95A1']];
+    // 할일 카테고리 색 팔레트(가계부 CAT_FALLBACK 과 별개 — 할일 기본색 톤을 앞에 두고 보조색을 덧댐)
+    const TODO_CAT_PALETTE = ['#5B8DEF','#9B7BF3','#F09B3C','#3FBF77','#FF7BA9','#29B6C5','#E06A6A','#D8A93A','#7A8B2E','#4C7FE0','#CC68A4','#43AEB3','#9C7558','#8B95A1'];
+    function buildDefaultTodoCats(){ const o={}; TODO_CAT_DEFAULTS.forEach(function(c,i){ o[c[0]]={ id:c[0], name:c[1], color:c[2], sortOrder:i+1, isActive:true, isDefault:true }; }); return o; }

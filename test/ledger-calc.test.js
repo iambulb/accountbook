@@ -183,3 +183,54 @@ test('buildTx — 비멤버 소비대상은 userUid 미저장', () => {
   const tx = buildTx(tx0({ consumerIsMember: false })).tx;
   assert.ok(!('userUid' in tx));
 });
+
+// ===== 💳+✨ 함께결제(포인트·선불 일부 + 나머지 카드/계좌) =====
+test('buildTx — 함께결제: 총액을 본 거래(나머지)와 보조 거래(포인트)로 분리', () => {
+  const r = buildTx(tx0({ from: '신한카드', coAmount: 3000, coAcct: '네이버포인트', coTxType: 'point_spend' }));
+  assert.ok(!r.error);
+  assert.strictEqual(r.tx.amount, 7000);              // 총액 10000 − 포인트 3000
+  assert.strictEqual(r.tx.coPayAmount, 3000);
+  assert.strictEqual(r.tx.coPayAcct, '네이버포인트');
+  assert.ok(r.subTx);
+  assert.strictEqual(r.subTx.type, 'point_spend');
+  assert.strictEqual(r.subTx.amount, 3000);
+  assert.strictEqual(r.subTx.from, '네이버포인트');
+  assert.strictEqual(r.subTx.isActualExpense, true);   // 둘 다 실지출 → 합치면 총액이 통계에 그대로
+  assert.strictEqual(r.subTx.category, '식비');        // 카테고리·설명·소비대상 승계
+  assert.strictEqual(r.subTx.desc, '식비');
+  assert.strictEqual(r.subTx.userUid, 'u1');
+});
+
+test('buildTx — 함께결제: 카드 실적 기본액은 카드로 낸 금액(총액−포인트)', () => {
+  const tx = buildTx(tx0({ hasCard: true, cardIncluded: true, cardPerfAmount: 0, coAmount: 4000, coAcct: 'P', coTxType: 'point_spend' })).tx;
+  assert.strictEqual(tx.cardPerformanceAmount, 6000);
+});
+
+test('buildTx — 함께결제: 선불류(포인트 아님)는 prepaid_spend 로', () => {
+  const r = buildTx(tx0({ coAmount: 1000, coAcct: '쿠팡캐시', coTxType: 'prepaid_spend' }));
+  assert.strictEqual(r.subTx.type, 'prepaid_spend');
+});
+
+test('buildTx — 함께결제 검증(유형·통화·수단·금액)', () => {
+  assert.deepStrictEqual(buildTx(tx0({ type: 'income', effect: { credit: true }, coAmount: 1000, coAcct: 'P' })), { error: '함께결제는 지출에서만 쓸 수 있어요' });
+  assert.deepStrictEqual(buildTx(tx0({ curCode: 'USD', rate: 1300, coAmount: 1000, coAcct: 'P' })), { error: '함께결제는 원화 거래에서만 쓸 수 있어요' });
+  assert.deepStrictEqual(buildTx(tx0({ coAmount: 1000, coAcct: '' })), { error: '함께 쓸 포인트·선불 수단을 고르세요' });
+  assert.deepStrictEqual(buildTx(tx0({ coAmount: 1000, coAcct: '현금' })), { error: '결제 수단과 포인트·선불 수단이 같아요' });
+  assert.deepStrictEqual(buildTx(tx0({ coAmount: 10000, coAcct: 'P' })), { error: '포인트·선불 사용액은 총액보다 작아야 해요' });
+});
+
+test('buildTx — 함께결제 없음(coAmount 0)이면 subTx=null·금액 그대로', () => {
+  const r = buildTx(tx0());
+  assert.strictEqual(r.subTx, null);
+  assert.strictEqual(r.tx.amount, 10000);
+  assert.ok(!('coPayAmount' in r.tx));
+});
+
+test('buildTx — 함께결제 + 목적별: 보조 거래는 정산 제외(이중 계산 방지)', () => {
+  const r = buildTx(tx0({ pb: 'pb1', pbName: '여행', settle: { inc: true, payer: '나', splitType: 'equal', participants: ['나', '너'], amounts: null, memo: '' },
+    coAmount: 2000, coAcct: 'P', coTxType: 'point_spend' }));
+  assert.strictEqual(r.tx.settlementIncluded, true);
+  assert.strictEqual(r.subTx.purposeBookId, 'pb1');
+  assert.strictEqual(r.subTx.settlementIncluded, false);
+  assert.strictEqual(r.subTx.settlementStatus, 'none');
+});

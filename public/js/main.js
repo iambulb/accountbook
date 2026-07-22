@@ -109,6 +109,36 @@
         if((role==='button'||role==='switch') && t.tagName!=='BUTTON'){ e.preventDefault(); t.click(); }
       }
     });
+    // ===== 🖱️ 데스크톱(웹) 가로 스크롤 보조 — 카테고리 칩 줄이 '슬라이드'가 안 되던 문제 =====
+    //  모바일은 네이티브 스와이프로 잘 밀리지만, 마우스 환경엔 가로 스크롤 수단이 없어 칩 줄이 잘린 채 고정돼 보였다.
+    //   ① 세로 휠 → 가로 스크롤 매핑(트랙패드 가로 제스처는 네이티브로 통과, 끝에 닿으면 페이지 스크롤로 넘김)
+    //   ② 마우스 드래그로 밀기(1:1) — 5px 이상 끌면 직후 click 1회를 캡처 단계에서 삼켜 칩이 잘못 눌리지 않게
+    //  터치(pointerType==='touch')는 손대지 않는다.
+    const HSCROLL_SEL='.chips, .chip-row, .subseg, .mrow, .rmstrip, .tdfr-scroll';
+    function hscrollBox(t){ const el=(t&&t.closest)?t.closest(HSCROLL_SEL):null; return (el && el.scrollWidth>el.clientWidth+1)?el:null; }
+    document.addEventListener('wheel', e=>{
+      const el=hscrollBox(e.target); if(!el) return;
+      if(!e.deltaY || Math.abs(e.deltaX)>Math.abs(e.deltaY)) return;   // 가로 제스처는 그대로
+      const before=el.scrollLeft; el.scrollLeft=before+e.deltaY;
+      if(el.scrollLeft!==before) e.preventDefault();                   // 실제로 밀렸을 때만 세로 스크롤 차단
+    }, { passive:false });
+    let _hdrag=null, _hdSwallow=false;
+    document.addEventListener('pointerdown', e=>{
+      _hdSwallow=false;
+      if(e.pointerType==='touch' || (e.button!=null && e.button!==0)) return;
+      const el=hscrollBox(e.target); if(!el) return;
+      _hdrag={ el:el, x:e.clientX, y:e.clientY, sl:el.scrollLeft, moved:false };
+    });
+    document.addEventListener('pointermove', e=>{
+      if(!_hdrag) return; const dx=e.clientX-_hdrag.x;
+      if(!_hdrag.moved){ if(Math.abs(dx)<5 || Math.abs(dx)<=Math.abs(e.clientY-_hdrag.y)) return; _hdrag.moved=true; _hdrag.el.classList.add('hdragging'); }
+      _hdrag.el.scrollLeft=_hdrag.sl-dx; e.preventDefault();
+    });
+    function _hdragEnd(){ if(!_hdrag) return; const d=_hdrag; _hdrag=null; d.el.classList.remove('hdragging'); if(d.moved) _hdSwallow=true; }
+    document.addEventListener('pointerup', _hdragEnd);
+    document.addEventListener('pointercancel', _hdragEnd);
+    document.addEventListener('click', e=>{ if(_hdSwallow){ _hdSwallow=false; e.stopPropagation(); e.preventDefault(); } }, true);
+
     function trapFocus(e, container){
       const f=container.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"]),[role=button],[role=switch]');
       const list=[...f].filter(el=>el.offsetParent!==null || el===container);

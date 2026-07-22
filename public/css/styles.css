@@ -286,6 +286,8 @@
     .perftop b { font-size:14px; font-weight:700; }
     .perftop .pct { font-size:12.5px; font-weight:800; }
     .perfsub { font-size:11.5px; color:var(--sub); font-weight:500; }
+    .perfrow[data-action] { cursor:pointer; }                                    /* 💳 리포트 카드별 = 탭하면 그 달 결제 내역 */
+    .perftop .pfgo { color:var(--sub); font-weight:700; opacity:.55; margin-left:5px; }
     .prog { height:8px; background:var(--soft2); border-radius:5px; overflow:hidden; margin:8px 0 6px; }
     .prog .f { height:100%; border-radius:5px; background:var(--primary); }
     .bgrow { padding:13px 0; }
@@ -476,6 +478,14 @@
     .chips { display:flex; gap:8px; overflow-x:auto; padding:2px 0 6px; }
     .chips::-webkit-scrollbar { display:none; }
     .chips .chip { flex:none; }
+    /* 🖱️ 데스크톱(마우스) 가로 스크롤 — 휠·드래그 밀기(main.js) + 얇은 스크롤바로 '더 있음'을 알림. 터치 환경은 그대로. */
+    @media (pointer:fine){
+      .chips, .chip-row { scrollbar-width:thin; scrollbar-color:var(--line) transparent; }
+      .chips::-webkit-scrollbar, .chip-row::-webkit-scrollbar { display:block; height:6px; }
+      .chips::-webkit-scrollbar-thumb, .chip-row::-webkit-scrollbar-thumb { background:var(--line); border-radius:3px; }
+      .chips::-webkit-scrollbar-track, .chip-row::-webkit-scrollbar-track { background:transparent; }
+    }
+    .hdragging { cursor:grabbing; user-select:none; scroll-behavior:auto; }
     .catdot { width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:6px; vertical-align:middle; flex:none; }
     .mtile { width:32px; height:32px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; flex:none; }
     .mtile svg { width:18px; height:18px; }
@@ -494,6 +504,14 @@
     .txfield .txsel, .txfield .txin { border:none; background:transparent; font-size:16px; font-weight:700; color:var(--text); text-align:right; flex:1; min-width:0; font-family:inherit; padding:0; }
     .txfield select.txsel { -webkit-appearance:none; appearance:none; }
     .txfield .txin:focus, .txfield .txsel:focus { outline:none; }
+    /* 💳+✨ 함께결제(포인트·선불 일부 + 나머지 카드/계좌) — 분배 안내줄 · 포인트쪽 거래 안내 배너 */
+    .copay-note { font-size:11.5px; line-height:1.5; color:var(--sub); padding:6px 2px 2px; }
+    .copay-note b { color:var(--text); font-weight:800; }
+    .copay-note.warn { color:var(--expense); }
+    .copay-note.warn b { color:var(--expense); }
+    .copay-banner { display:flex; align-items:center; flex-wrap:wrap; gap:4px; font-size:12px; line-height:1.5; color:var(--primary);
+      background:var(--primary-weak); border-radius:12px; padding:10px 12px; margin:0 0 12px; }
+    .copay-banner b { font-weight:800; }
     .kp { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:2px; margin:8px 0 4px; }
     .kp button { padding:11px 0; font-size:21px; font-weight:700; color:var(--text); border-radius:12px; touch-action:manipulation; -webkit-user-select:none; user-select:none; }
     .kp button:active { background:var(--soft); }
@@ -569,7 +587,16 @@
     .tdprio { flex:none; font-size:9px; line-height:1; margin-right:5px; vertical-align:middle; }
     .tdprio.high { color:var(--expense); }
     .tdprio.low { color:var(--sub); opacity:.65; }
-    .tdcat { flex:none; width:9px; height:9px; border-radius:50%; }   /* 할일 카테고리 색 점(TODO_CATS) — 목록에서 색 구분 */
+    .tdcat { flex:none; width:9px; height:9px; border-radius:50%; }   /* 할일 카테고리 색 점(todoCats) — 목록에서 색 구분 */
+    /* 할일 편집 시트: '＋ 새 카테고리' 칩 + 시트 안에서 바로 만드는 인라인 폼 */
+    .chip.tdcat-add { border-style:dashed; color:var(--sub); font-weight:700; }
+    .tdcat-new { margin-top:10px; padding:12px; border:1px solid var(--line); border-radius:12px; background:var(--soft); }
+    .tdcat-new .swatch-grid { margin:8px 0 0; }
+    .tdcat-new .btn { margin-top:10px; }
+    /* 완료 탭 날짜 고르기 — ‹ › 하루 이동(.monthlbl) 아래 날짜 입력 + '오늘' 되돌리기 칩 */
+    .donepick { display:flex; align-items:center; gap:8px; margin:0 0 12px; }
+    .donepick .input { flex:1; min-width:0; }
+    .donepick .chip { flex:none; }
     .tdtag { font-size:10px; background:var(--soft2); color:var(--sub); padding:1px 6px; border-radius:6px; margin-left:4px; font-weight:600; white-space:nowrap; }
     .pill.tdsub { cursor:pointer; }
     .pill.tdsub.all { color:var(--income); }

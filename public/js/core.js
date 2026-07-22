@@ -19,6 +19,7 @@
       mode: (localStorage.getItem('mode')==='todo' ? 'todo' : 'ledger'),   // 가계부(ledger) / 할일(todo) 모드
       view: 'mode',     // 캘린더(탭)를 홈처럼 사용 — '오늘 홈' 랜딩 폐지(브랜드 아이콘=소식). 구 'home' 뷰 로직은 미사용
       todos:[], todoShare:{},   // 그룹 할일 목록(ws/{wsId}/todos) / (레거시) 멤버별 공유 플래그
+      todoCats:[],   // 할일 카테고리(ws/{wsId}/todoCats) — 워크스페이스별 사용자 정의 세트(가계부 categories 와 같은 패턴)
       myTodos:[],   // 내 개인 할일(user-global: users/{uid}/todos) — 워크스페이스 무관
       friends:{}, friendReqs:{}, todoPublic:false, friendCode:'', friendPub:{},   // 친구 관계·받은 요청·내 공개 플래그·내 코드·친구별 공개여부(users/{uid}/…)
       todoShare:{},   // 🔐 친구별 할일 공유 토글(users/{uid}/todoShare/{fuid}=true|false) — 미설정 친구는 todoPublic(기본값) 폴백. OFF면 그 친구와 서로의 할일이 안 보임
@@ -31,7 +32,7 @@
       _todoFriend: null   // 개인 프로필에서 보고 있는 친구 uid(null/내 uid=나)
     };
     let listenersAttached = false;
-    let seededAcc = false, seededCat = false, booted = false, migratedAcc = false, migratedCat = false, migratedBudget = false, migratedRec = false;
+    let seededAcc = false, seededCat = false, seededTodoCat = false, booted = false, migratedAcc = false, migratedCat = false, migratedBudget = false, migratedRec = false;
     let recurringLogKeys = new Set();
     const recv = { tx:false, acc:false, cat:false, rec:false, log:false };
     let deferredPrompt=null;
@@ -675,9 +676,9 @@
 
     function resetWorkspaceState(){
       Object.assign(state, { transactions:[], accounts:[], categories:[], savings:[], recurring:[],
-        creditCards:[], subscriptions:[], purposeBooks:[], people:[], giftEvents:[], plannedGiftEvents:[], settlementPayments:[], loans:[], loanPayments:[], wsSettings:{}, budgets:[] });
+        creditCards:[], subscriptions:[], purposeBooks:[], people:[], giftEvents:[], plannedGiftEvents:[], settlementPayments:[], loans:[], loanPayments:[], wsSettings:{}, budgets:[], todoCats:[] });
       state.memberFilter='';
-      seededAcc=seededCat=booted=migratedAcc=migratedCat=migratedBudget=migratedRec=false;
+      seededAcc=seededCat=seededTodoCat=booted=migratedAcc=migratedCat=migratedBudget=migratedRec=false;
       recurringLogKeys=new Set();
       recv.tx=recv.acc=recv.cat=recv.rec=recv.log=false;
     }
@@ -828,6 +829,13 @@
         const o=s.val()||{}; state.todos=Object.keys(o).map(k=>Object.assign({id:k},o[k])); App.store.emit('todo');
       });
       attach('todoShare', s=>{ state.todoShare=s.val()||{}; App.store.emit('todo'); });   // 멤버별 개인 할일 공유 on/off
+      // 🎨 할일 카테고리 — 없으면 기본 세트 1회 시드(가계부 categories 와 동일 패턴). 워크스페이스 멤버가 공유한다.
+      attach('todoCats', s=>{
+        if(!s.exists() && !seededTodoCat){ seededTodoCat=true; db.ref(wp('todoCats')).set(buildDefaultTodoCats()); return; }
+        const o=s.val()||{};
+        state.todoCats=Object.keys(o).filter(k=>o[k]&&typeof o[k]==='object').map(k=>Object.assign({id:k},o[k])).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+        App.store.emit('todo');
+      });
       attach('people', s=>{
         const o=s.val()||{}; state.people=Object.keys(o).map(k=>Object.assign({id:k},o[k])); App.store.emit();
       });
@@ -1137,8 +1145,9 @@
       const end=new Date(start.getFullYear(),start.getMonth()+1,S-1);
       return { start, end };
     }
-    function cardPerformance(card){
-      const acctId=card.id; const p=cardPeriod(card);
+    // ref = 실적 기간 기준일(없으면 오늘). 리포트에서 지난달 실적을 보려고 그 달의 기준일을 넘긴다.
+    function cardPerformance(card, ref){
+      const acctId=card.id; const p=cardPeriod(card, ref);
       let sum=0; const excluded=[];
       state.transactions.forEach(t=>{
         if(t.from!==acctId) return;

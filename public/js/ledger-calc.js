@@ -43,17 +43,28 @@
     return out;
   }
 
-  // 폼에서 읽은 원시 입력(inp) → 거래 객체 { tx } 또는 검증 실패 { error }. DOM/state/RTDB 미접근(순수).
+  // 폼에서 읽은 원시 입력(inp) → 거래 객체 { tx }(+ 함께결제 보조거래 { subTx }) 또는 검증 실패 { error }. DOM/state/RTDB 미접근(순수).
   // views.js saveTx의 조립·검증부를 그대로 추출 — DOM 읽기는 readTxForm(비순수)이, 쓰기·보상은 saveTx가 담당.
   // inp: { type,curCode,foreign,rate,rawAmount,date,iso,desc,memo,effect,hasCat,cat,typeLabel,isActualDefault,
-  //        consumer,consumerUid,consumerIsMember,fxSource,from,to,adjSign,hasCard,cardIncluded,cardPerfAmount,cardPerfReason,pb,pbName,settle,oldTx }
+  //        consumer,consumerUid,consumerIsMember,fxSource,from,to,adjSign,hasCard,cardIncluded,cardPerfAmount,cardPerfReason,pb,pbName,settle,oldTx,
+  //        coAmount,coAcct,coTxType }   ← 💳+✨ 함께결제(포인트·선불 일부 + 나머지는 카드/계좌)
   function buildTx(inp) {
     if (!inp.foreign) return { error: '금액을 입력하세요' };
     if (inp.curCode !== 'KRW' && !(inp.rate > 0)) return { error: '환율을 입력하세요' };
     if (!inp.rawAmount) return { error: '환산 금액이 0이에요' };
     const e = inp.effect || {}, type = inp.type;
+    // 💳+✨ 함께결제 검증 — 총액(rawAmount) 중 coAmount 만큼을 포인트·선불로, 나머지를 원래 결제 수단으로 나눠 기록한다.
+    const coAmt = Math.round(Number(inp.coAmount) || 0);
+    if (coAmt > 0) {
+      if (type !== 'expense') return { error: '함께결제는 지출에서만 쓸 수 있어요' };
+      if (inp.curCode !== 'KRW') return { error: '함께결제는 원화 거래에서만 쓸 수 있어요' };
+      if (!inp.coAcct) return { error: '함께 쓸 포인트·선불 수단을 고르세요' };
+      if (inp.coAcct === inp.from) return { error: '결제 수단과 포인트·선불 수단이 같아요' };
+      if (coAmt >= inp.rawAmount) return { error: '포인트·선불 사용액은 총액보다 작아야 해요' };
+    }
+    const mainAmount = inp.rawAmount - (coAmt > 0 ? coAmt : 0);
     const tx = {
-      type: type, date: inp.iso, user: inp.consumer, amount: inp.rawAmount,
+      type: type, date: inp.iso, user: inp.consumer, amount: mainAmount,
       desc: inp.desc || (inp.hasCat ? (inp.cat || inp.typeLabel) : inp.typeLabel),
       isActualExpense: !!inp.isActualDefault
     };
@@ -66,7 +77,7 @@
     if ((type === 'transfer' || type === 'prepaid_charge') && tx.from === tx.to) return { error: '출금/입금 계정이 같습니다' };
     if (inp.hasCard && (type === 'expense' || type === 'prepaid_charge')) {
       tx.cardPerformanceIncluded = inp.cardIncluded;
-      tx.cardPerformanceAmount = inp.cardIncluded ? (inp.cardPerfAmount || inp.rawAmount) : 0;
+      tx.cardPerformanceAmount = inp.cardIncluded ? (inp.cardPerfAmount || mainAmount) : 0;   // 함께결제면 카드로 실제 결제한 금액(=총액−포인트분)이 기본
       tx.cardPerformanceExcludedReason = inp.cardIncluded ? '' : (inp.cardPerfReason || '');
     }
     if (inp.pb) {
@@ -86,7 +97,20 @@
       if (old.recurringId) tx.recurringId = old.recurringId;
       ['giftEventId', 'loanId', 'linkedTransactionId'].forEach(k => { if (old[k] != null && old[k] !== '') tx[k] = old[k]; });
     }
-    return { tx: tx };
+    // 💳+✨ 함께결제 보조 거래 — 포인트 계좌면 point_spend, 그 외 선불류면 prepaid_spend. 둘 다 실지출이라 합치면 총액이 그대로 통계에 잡힌다.
+    //  정산(splitParticipants 등)은 본 거래에만 두어 이중 계산을 막는다(포인트분은 개인 부담으로 간주).
+    let subTx = null;
+    if (coAmt > 0) {
+      tx.coPayAmount = coAmt; tx.coPayAcct = inp.coAcct;
+      subTx = { type: inp.coTxType || 'point_spend', date: inp.iso, user: tx.user, amount: coAmt,
+        desc: tx.desc, isActualExpense: true, from: inp.coAcct, coPayMain: true };
+      if (tx.userUid) subTx.userUid = tx.userUid;
+      if (tx.category) subTx.category = tx.category;
+      if (tx.memo) subTx.memo = tx.memo;
+      if (tx.purposeBookId) { subTx.purposeBookId = tx.purposeBookId; subTx.purposeBookName = tx.purposeBookName || '';
+        subTx.settlementIncluded = false; subTx.payer = tx.user; subTx.splitType = 'none'; subTx.settlementStatus = 'none'; }
+    }
+    return { tx: tx, subTx: subTx };
   }
 
   var api = { settlementSplit: settlementSplit, greedySettle: greedySettle, buildTx: buildTx };

@@ -7,7 +7,7 @@
 ```
 users/{uid}            : { name, email, photo(프로필 사진 base64 data URL), createdAt, activeWs, recentWs:{ ledger, todo },  // 🔀 모드별 최근 컨텍스트 wsId(가계부/할일 각각 마지막 사용처 — 개인 프로필=ws_{uid} 또는 그룹). 모드 토글 시 각자 복원. activeWs=마지막 활성(하위호환)
                            welcomeGift(true=회원가입 축하선물 지급 완료·1회 멱등), profilePublic(기본 true·false면 랭킹·비친구에 은화+'알뜰' 익명), ws:{ {wsId}:true },
-                           todos:{ {id}:{ title, note, dueDate, category, done, doneAt, repeat, purposeBookId?, rewardClaimed, sortOrder, createdAt, updatedAt } },  // ✅ 개인 할일(user-global — 워크스페이스 무관·항상 동일). 소유자=uid 암묵. category=할일 카테고리 id(TODO_CATS: work·study·home·health·promise·shopping·etc, ''=없음)
+                           todos:{ {id}:{ title, note, dueDate, category, done, doneAt, repeat, purposeBookId?, rewardClaimed, sortOrder, createdAt, updatedAt } },  // ✅ 개인 할일(user-global — 워크스페이스 무관·항상 동일). 소유자=uid 암묵. category=할일 카테고리 id(+ catName·catColor 스냅샷) — 목록은 ws/{wsId}/todoCats(사용자 정의), ''=없음
                            onboarded: true,                        // 🧭 첫 사용자 온보딩 1회 표시 완료 플래그
                            push:{ token, at, ua },                 // 🔔 웹 푸시(FCM) 토큰 — 본인만 쓰기·발송기(admin)만 읽음. 알림 끄면 삭제. tools/send_reminders.mjs가 사용
                            pushMeta:{ lastGiftNotify },            // 🎁 친구선물 푸시 중복방지 워터마크(발송기 admin이 쓰기) — 이 시각 이후 선물만 알림. gift-notify 크론이 사용
@@ -82,6 +82,7 @@ ws/{wsId}/             : 가계부 데이터 (아래 노드들)
   ├─ loanPayments/{id}           // 대출 상환 기록
   ├─ todos/{id}                  // 할일(개인/그룹 — scope 필드로 구분)
   ├─ todoShare/{uid}             // 개인 할일 공유 on/off(멤버별)
+  ├─ todoCats/{id}               // 🎨 할일 카테고리(사용자 정의 — 이름·색·순서·활성). 첫 진입 시 기본 7종 시드
   ├─ settings                    // 워크스페이스 공동 설정(기본 공개범위/소유자)
   ├─ catDeleted/{name}           // 삭제한 기본 카테고리 툼스톤(재시딩 방지)
   ├─ transactions/{uid}/{id}     // 사용자별로 분리 저장
@@ -121,7 +122,7 @@ erDiagram
 ## 핵심 엔티티 필드
 
 ### transactions/{uid}/{id}
-`type`, `date`(ISO), `amount`, `desc`, `category`, `from`(차감 계좌), `to`(가산 계좌), `user`(**소비 대상** — 지출/선불결제/포인트사용 시 입력 시트에서 선택한 멤버명 또는 `공동`. 출금 수단(`from`)과 분리. 그 외 유형·기본값은 본인명), `memo`, `isActualExpense`(통계 포함 여부), `recurringId`, `cardPerformanceIncluded`·`cardPerformanceAmount`·`cardPerformanceExcludedReason`, `purposeBookId`·`purposeBookName`. **정산(Step 9, 활성)**: `settlementIncluded`(bool), `payer`, `splitType`(none/equal/custom/payer_only), `splitParticipants`[], `splitAmounts`{이름:금액}, `settlementStatus`(none/unsettled/partially_settled/settled), `settlementMemo`. **경조사비**: `giftEventId`. **대출**: `loanId`(연결된 대출의 이자 거래). **자동충전**: `autoCharge:true`(선불류 잔액 마이너스로 자동/반자동 기록된 `prepaid_charge` 마커). **해외통화(여행)**: `currency`(예: USD)·`foreignAmount`(외화 원금)·`fxRate`(원화 per 1단위)·`fxSource`(live/manual)·`fxDate` — 없으면 원화. `amount`는 항상 **원화 환산액**이라 통계·잔액·예산은 그대로. **`userUid`**(소비 대상이 멤버일 때 그 멤버 uid를 병행 저장 — 리포트 개인별 집계를 uid로 해 **동명이인·개명에 견고**. `user`는 표시용 이름으로 계속 저장, 공동/레거시 거래는 uid 없음). (리스너가 `ownerUid`·`id` 부착)
+`type`, `date`(ISO), `amount`, `desc`, `category`, `from`(차감 계좌), `to`(가산 계좌), `user`(**소비 대상** — 지출/선불결제/포인트사용 시 입력 시트에서 선택한 멤버명 또는 `공동`. 출금 수단(`from`)과 분리. 그 외 유형·기본값은 본인명), `memo`, `isActualExpense`(통계 포함 여부), `recurringId`, `cardPerformanceIncluded`·`cardPerformanceAmount`·`cardPerformanceExcludedReason`, `purposeBookId`·`purposeBookName`. **정산(Step 9, 활성)**: `settlementIncluded`(bool), `payer`, `splitType`(none/equal/custom/payer_only), `splitParticipants`[], `splitAmounts`{이름:금액}, `settlementStatus`(none/unsettled/partially_settled/settled), `settlementMemo`. **경조사비**: `giftEventId`. **대출**: `loanId`(연결된 대출의 이자 거래). **자동충전**: `autoCharge:true`(선불류 잔액 마이너스로 자동/반자동 기록된 `prepaid_charge` 마커). **💳+✨ 함께결제(포인트·선불 일부 + 나머지 카드/계좌)**: 본 거래(`expense`)에 `coPayTxId`(짝인 보조 거래 키·같은 uid 노드)·`coPayAmount`(포인트로 낸 금액)·`coPayAcct`(포인트·선불 계좌 id), 보조 거래(`point_spend`/`prepaid_spend`)에 `coPayMainId`·`coPayMain:true`. **`amount`는 각자 실제로 낸 금액**(본=총액−포인트분)이라 둘 다 실지출로 합치면 총액이 된다. 두 건은 한 번의 다중경로 `update()`로 함께 쓰고, 본 거래를 지우면 짝도 삭제된다(보조만 지우면 본 거래의 `coPay*` 연결만 해제). **해외통화(여행)**: `currency`(예: USD)·`foreignAmount`(외화 원금)·`fxRate`(원화 per 1단위)·`fxSource`(live/manual)·`fxDate` — 없으면 원화. `amount`는 항상 **원화 환산액**이라 통계·잔액·예산은 그대로. **`userUid`**(소비 대상이 멤버일 때 그 멤버 uid를 병행 저장 — 리포트 개인별 집계를 uid로 해 **동명이인·개명에 견고**. `user`는 표시용 이름으로 계속 저장, 공동/레거시 거래는 uid 없음). (리스너가 `ownerUid`·`id` 부착)
 
 ### 경조사비 (people / giftEvents / plannedGiftEvents)  — 모두 flat `ws/{wsId}/...`
 - **people/{id}**: `name`, `relation`(REL_TYPES), `memo`, `createdAt`·`updatedAt`. 경조사비 기록 시 상대 이름으로 자동 등록.
@@ -149,8 +150,9 @@ erDiagram
 `cardName`, `cardCompany`, `monthlyPerformanceTarget`, `performancePeriodType`(calendar_month/custom), `performanceStartDay`, `includePrepaidCharge`, `excludedCategories[]`, `defaultIncluded`, `visibility`, `memo`.
 
 ### 할일 — 개인(user-global) vs 그룹(ws)
-- **개인 할일 `users/{uid}/todos/{id}`**(user-global): `title, note, dueDate, category, done, doneAt, repeat, purposeBookId?, rewardClaimed, sortOrder, createdAt, updatedAt`. `category`=할일 카테고리 id(`TODO_CATS` 고정 세트: work·study·home·health·promise·shopping·etc, ''=없음 — 캘린더·목록 색 점). **워크스페이스와 무관**하게 내 프로필에 귀속(그룹을 바꿔도 동일). 쓰기는 본인만(`users/$uid` 규칙), **읽기는 로그인 유저 전역**(`users .read`)이라 친구가 열람 가능(앱은 `todoPublic`인 친구만 노출). 기존 `ws`의 `scope=personal` 할일은 `migratePersonalTodos()`로 1회 이전.
+- **개인 할일 `users/{uid}/todos/{id}`**(user-global): `title, note, dueDate, category, done, doneAt, repeat, purposeBookId?, rewardClaimed, sortOrder, createdAt, updatedAt`. `category`=할일 카테고리 id(''=없음 — 캘린더·목록 색 점) + **이름·색 스냅샷 `catName`/`catColor`**(다른 ws의 친구 할일·삭제된 카테고리도 색이 남게 — `todoCatOf` 폴백). **워크스페이스와 무관**하게 내 프로필에 귀속(그룹을 바꿔도 동일). 쓰기는 본인만(`users/$uid` 규칙), **읽기는 로그인 유저 전역**(`users .read`)이라 친구가 열람 가능(앱은 `todoPublic`인 친구만 노출). 기존 `ws`의 `scope=personal` 할일은 `migratePersonalTodos()`로 1회 이전.
 - **그룹 할일 `ws/{wsId}/todos/{id}`**: `scope`(group — 누락 시 group), `title, note, assignedUid`(담당 멤버)·`assignedName, dueDate, category, done/doneAt/doneByUid, repeat, purposeBookId, rewardClaimed, createdByUid, sortOrder, createdAt, updatedAt`. 워크스페이스 멤버 공동 편집.
+- **할일 카테고리 `ws/{wsId}/todoCats/{id}`**: `{ id, name, color, sortOrder, isActive, isDefault, createdAt, updatedAt }` — **사용자 정의 세트**(가계부 `categories`와 같은 패턴, 그룹은 멤버 공용). 노드가 없으면 첫 리스너에서 **기본 7종**(`buildDefaultTodoCats`, id=work·study·home·health·promise·shopping·etc — 구버전 고정 세트와 같은 id라 기존 할일이 그대로 매칭)을 1회 시드. 개인 프로필도 자기 ws 노드에 저장되며, 친구 할일은 스코프가 달라 위 `catName`/`catColor` 스냅샷으로 색을 낸다. 별도 규칙 불필요(`ws/$wsId` 멤버 read/write).
 
 ### 친구 (users/{uid}/friends · friendReqs · friendCode · todoPublic · friendCodes)
 - **friendCode**(6자) + 인덱스 **`friendCodes/{CODE}=uid`**: 코드로 상대를 찾음(`ensureFriendCode` 백필).
