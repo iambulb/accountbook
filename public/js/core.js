@@ -189,6 +189,7 @@
     function openSheet(title, html){
       const sh=$('sheet');
       state._sheetRefresh=null;   // 새 시트 열 때 이전 시트의 실시간 갱신 훅 해제(stale 방지)
+      state._sheetReopen=null;    // ↩️ '나를 다시 여는 법' 등록 해제 — 리스트 시트만 openSheet 직후 스스로 재등록(아래 closeSheet 복귀 참조)
       // 드래그로 닫혔을 때 남은 인라인 스타일 초기화(다시 정상 위치에서 올라오도록)
       sh.style.transition=''; sh.style.transform=''; { const ov=$('overlay'); if(ov) ov.style.opacity=''; }
       setupSheetDrag();
@@ -225,8 +226,13 @@
       }));
     }
     function closeSheet(){
+      // ↩️ 시트 복귀: 거래 수정 시트가 리스트 시트(일자·카드내역·카테고리/개인별 드릴다운 등) 위에서 열렸으면(openTxSheet가 arm),
+      //    닫을 때 전체를 닫는 대신 이전 리스트 시트를 다시 연다(재호출이라 수정·삭제가 반영된 최신 목록). 실패 시 일반 닫기로 폴백.
+      const bk=state._sheetBackFn; state._sheetBackFn=null;
+      if(bk){ try{ bk(); return; }catch(e){} }
       const sh=$('sheet');
       state._sheetRefresh=null;
+      state._sheetReopen=null;
       if(typeof cancelCatDrags==='function') cancelCatDrags();   // 드래그 도중 시트가 닫혀도 드래그 상태·스크롤 잠금(_tmBlock) 완전 해제
       document.body.classList.remove('dragging');
       $('overlay').classList.remove('on');

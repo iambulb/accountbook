@@ -183,7 +183,7 @@
       let sub;
       const _cat=escapeHtml(t.category||''), _afrom=escapeHtml(acctName(t.from)), _ato=escapeHtml(acctName(t.to));   // 🔒 사용자 문자열(카테고리·계좌명)은 innerHTML 삽입 전 escape — 저장형 XSS 방지
       if(e.debit&&e.credit) sub=(t.category&&t.category!=='기타'?_cat+' · ':'')+_afrom+' → '+_ato;
-      else if(t.type==='expense'||t.type==='income') sub=(t.category?_cat:TYPE_LABEL[t.type]);   // 시안: 카테고리 · 기록자 (계좌는 상세에서)
+      else if(t.type==='expense'||t.type==='income'){ const _a=(t.type==='expense'?_afrom:_ato); sub=(t.category?_cat:TYPE_LABEL[t.type])+(_a?' · '+_a:''); }   // 카테고리 · 결제/입금 수단 — 어떤 수단으로 냈는지 목록에서 바로 보이게(사용자 요청, 구 '계좌는 상세에서' 폐기)
       else if(e.credit&&!e.debit) sub=_ato;
       else sub=(t.category?_cat+' · ':'')+_afrom;
       if(!['expense','income','transfer'].includes(t.type)) sub=TYPE_LABEL[t.type]+' · '+sub;
@@ -230,10 +230,14 @@
       h+='<div class="card" style="padding:6px 10px;">'+(rows.length?rows.map(txRowHtml).join(''):'<div class="empty">이 날 거래가 없습니다</div>')+'</div>';
       h+='<button class="btn" '+App.view.act('openTxSheet',null,null,ds)+'>+ 이 날짜에 추가</button>';
       openSheet(pad2(dt.getMonth()+1)+'월 '+pad2(dt.getDate())+'일', h);
+      state._sheetReopen=()=>openDaySheet(ds);   // ↩️ 거래 수정 시트 닫으면 이 일자 시트로 복귀
     }
 
     // ===== 거래 입력/수정 시트 =====
     function openTxSheet(ownerUid, id, presetDate, presetPb){
+      // ↩️ 리스트 시트(일자·카드내역·드릴다운 등 _sheetReopen 등록 시트) 위에서 열리면, 닫을 때 그 리스트로 복귀하게 캡처(아래에서 arm).
+      //    이미 arm된 상태에서 수정 시트가 다시 열려도(재렌더) 기존 복귀 대상을 유지한다.
+      const _backSheet = document.body.classList.contains('sheet-open') ? (state._sheetReopen||state._sheetBackFn||null) : null;
       let t=null;
       if(ownerUid && id) t=state.transactions.find(x=>x.ownerUid===ownerUid&&x.id===id);
       sheetTx = t?{ownerUid:t.ownerUid,id:t.id}:null;
@@ -287,6 +291,7 @@
       if(t) h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deleteTx')+'>삭제</button>';
 
       openSheet(t?'거래 수정':'거래 입력', h);
+      state._sheetBackFn=_backSheet;   // ↩️ 닫을 때 이전 리스트 시트로 복귀(리스트 위에서 안 열렸으면 null=일반 닫기)
       const sh=$('sheet');
       sh._from = t?(t.from||''):(state.accounts[0]?state.accounts[0].id:'');
       sh._to   = t?(t.to||''):(state.accounts[1]?state.accounts[1].id:(state.accounts[0]?state.accounts[0].id:''));
@@ -1289,7 +1294,7 @@
       const base=scopedTodos();
       let open=base.filter(t=>!t.done);
       if(_todoFilter==='mine') open=open.filter(t=>t.assignedUid===meUid || (!t.assignedUid && t.assignedName && t.assignedName===state.userName));   // uid 없이 이름으로만 배정된 내 할일도 포함
-      else if(_todoFilter==='today') open=open.filter(t=>!t.dueDate||t.dueDate<=today);   // 마감 없는(언제든) 할일도 포함 — 빈 상태 오인 방지
+      else if(_todoFilter==='today') open=open.filter(t=>!t.dueDate||t.dueDate===today);   // 오늘 마감 + 마감 없는(언제든) 할일만 — 지난 미완료를 자동으로 '오늘'에 끌어오지 않음(사용자 지침: 이월은 🕘 버튼으로 명시적으로)
       else if(_todoFilter==='week') open=open.filter(t=>!t.dueDate||t.dueDate<=weekEnd);
       const _pv=p=>(p==='high'?0:p==='low'?2:1);   // 우선순위 정렬키(높음 먼저)
       open.sort((a,b)=>{ const ad=a.dueDate||'9999-99', bd=b.dueDate||'9999-99'; if(ad!==bd) return ad<bd?-1:1; const pa=_pv(a.priority),pb=_pv(b.priority); if(pa!==pb) return pa-pb; return (a.sortOrder||0)-(b.sortOrder||0); });
@@ -1327,7 +1332,8 @@
       h+='<div class="calwrap"><div class="cal-head">'+HEAD.map(function(w,i){ return '<div class="'+(i===5?'sat':i===6?'sun':'')+'">'+w+'</div>'; }).join('')+'</div><div class="cal-grid">';
       for(let i=0;i<first;i++) h+='<div class="cal-cell dim"></div>';
       for(let d=1;d<=days;d++){ const ds=y+'-'+pad2(mo)+'-'+pad2(d); const wd=new Date(y,mo-1,d).getDay(); const dcls='d'+(wd===0?' sun':(wd===6?' sat':''));
-        const b=byDay[ds]; const cls='cal-cell'+(ds===todayS?' today':'')+(ds===sel?' sel':'');
+        const b=byDay[ds]; const od=!!(b&&b.o.length&&ds<todayS);   // ⏰ 기한 지난 미완료가 남은 날 — '!' 배지로 따로 표시(탭하면 '오늘로' 버튼)
+        const cls='cal-cell'+(ds===todayS?' today':'')+(ds===sel?' sel':'')+(od?' od':'');
         let dot=''; if(b && (b.o.length||b.dn.length)){ const dn=b.dn.slice(0, Math.max(0,4-b.o.length));   // 한 칸 최대 4점(미완료 우선, 완료 점은 남는 자리에)
           dot='<span class="dotrow">'+b.o.map(c=>'<i style="background:'+c+'"></i>').join('')+dn.map(c=>'<i class="dn" style="background:'+c+'"></i>').join('')+'</span>'; }
         h+='<div class="'+cls+'" '+App.view.act('todoSelDay',ds)+'><div class="'+dcls+'">'+d+'</div>'+dot+'</div>';
@@ -1336,8 +1342,25 @@
       const ro=todoReadOnly();
       const dayT=base.filter(t=>t.dueDate===sel || todoDoneDay(t)===sel).sort((a,b)=>(a.done?1:0)-(b.done?1:0));   // 그날 마감 + 그날 완료한 할일(완료 점과 목록 일치)
       h+='<div class="sech"><span class="l">'+(+sel.split('-')[1])+'월 '+(+sel.split('-')[2])+'일</span><span class="s">'+dayT.length+'개</span></div>';
+      // 🕘 이 날짜의 미완료만 오늘로 — 자동 이월 없이, 미완료가 남은 날짜에서 명시적으로 옮긴다(사용자 지침)
+      { const selOpen=dayT.filter(t=>!t.done && t.dueDate===sel);
+        if(!ro && sel!==todayS && selOpen.length) h+='<button class="td-carry" '+App.view.act('carryDayToToday',sel)+'>🕘 이 날 미완료 '+selOpen.length+'개 → 오늘로</button>'; }
       h+='<div class="card" style="padding:4px 12px;">'+(dayT.length?dayT.map(t=>todoRow(t,ro)).join(''):'<div class="empty" style="padding:22px 6px;">이 날 할일이 없어요</div>')+'</div>';
       return h;
+    }
+    // 🕘 특정 날짜의 미완료 할일만 오늘로 이동(캘린더 날짜별 버튼) — carryOverdueToToday와 같은 fan-out update(원자), 그 날짜분만.
+    function carryDayToToday(ds){
+      const today=todayKst(); if(ds===today) return;
+      if(state._todoFriend && state._todoFriend!==state.uid) return;   // 친구 열람(읽기전용)은 이동 불가
+      const ids=scopedTodos().filter(t=>!t.done && t.dueDate===ds).map(t=>t.id); if(!ids.length) return;
+      const p=ds.split('-');
+      confirmSheet((+p[1])+'월 '+(+p[2])+'일 미완료 '+ids.length+'개를 오늘로 옮길까요?', function(){
+        const base=isPersonalWs()?db.ref('users/'+state.uid+'/todos'):db.ref(wp('todos'));
+        const now=new Date().toISOString(); const upd={};
+        ids.forEach(function(x){ upd[x+'/dueDate']=today; upd[x+'/updatedAt']=now; });
+        base.update(upd); closeSheet(); toast('오늘로 옮겼어요');
+        _todoSel=today; renderTodoCalendar();   // 옮긴 결과가 보이게 오늘 날짜로 이동
+      }, { okLabel:'오늘로 옮기기', danger:false });
     }
     function renderTodoDone(){ $('content').innerHTML=todoDoneHtml(); }
     // 할일 완료 화면 프로듀서 — App.view.components.todoDone
@@ -1555,6 +1578,8 @@
       if(card) h+='<div style="display:flex;justify-content:center;margin:0 0 10px;"><span class="repvalseg"><button class="'+(byPeriod?'':'on')+'" '+App.view.act('openCardTxSheet',cardId,m,'month')+' aria-label="달력 월 기준으로 보기">달력 월</button><button class="'+(byPeriod?'on':'')+'" '+App.view.act('openCardTxSheet',cardId,m,'period')+' aria-label="실적 기간 기준으로 보기">실적 기간</button></span></div>';
       h+='<div class="card" style="margin-bottom:12px;"><div class="row"><span class="muted">'+(byPeriod?'이 기간 결제':'이 달 결제')+'</span><b>'+won(used)+'</b></div>'+
         '<div class="row" style="margin-top:4px;"><span class="muted">건수</span><b>'+rows.length+'건</b></div>';
+      { const sp=personSplit(rows);   // 👥 누가 얼마나 썼는지(소비 대상별 분담)
+        if(sp.length) h+='<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px;">'+sp.map(x=>'<div class="row" style="font-size:13px;padding:2px 0;"><span class="muted">'+escapeHtml(x.label)+'</span><b>'+won(x.amt)+'</b></div>').join('')+'</div>'; }
       if(card){
         const pf=cardPerformance(card, monthRefDate(m)), col=pf.pct>=100?'var(--income)':'var(--primary)';
         h+='<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px;">'+
@@ -1564,9 +1589,10 @@
           '<div class="tx-sub" style="margin-top:'+(pf.target?'2px':'6px')+';">실적 기간 '+ymd(pf.start)+' ~ '+ymd(pf.end)+(pf.excluded.length?(' · 제외 '+pf.excluded.length+'건'):'')+'</div></div>';
       }
       h+='</div>';
-      h+='<div class="sech"><span class="l">결제 내역</span><span class="s">'+(byPeriod?'실적 기간':((+p[1])+'월'))+'</span></div>';
-      h+='<div class="card" style="padding:6px 10px;">'+(rows.length?rows.map(txRowHtml).join(''):'<div class="empty" style="padding:22px 6px;">'+(byPeriod?'이 기간':'이 달')+' 이 카드로 결제한 내역이 없어요</div>')+'</div>';
+      h+='<div class="sech"><span class="l">결제 내역</span><span style="display:flex;align-items:center;gap:8px;">'+(rows.length?txListSegHtml():'')+'<span class="s">'+(byPeriod?'실적 기간':((+p[1])+'월'))+'</span></span></div>';
+      h+=txListHtml(rows, (byPeriod?'이 기간':'이 달')+' 이 카드로 결제한 내역이 없어요');
       openSheet((card&&card.cardName)||acct.name||'카드 내역', h);
+      state._sheetReopen=()=>openCardTxSheet(cardId,m,mode);   // ↩️ 거래 수정 시트 닫으면 이 카드 내역으로 복귀
     }
     // 🏦 리포트 카테고리 집계(도넛·범례·'기타' 묶음 공용) — 실지출 카테고리 합에 대출 원금 상환(실지출 통계 제외 거래)을 얹어
     // '대출·이자' 한 항목으로 병합해 보여준다. 총지출 카드·예산·인사이트는 종전대로 이자만(실지출) — 카테고리 그림에서만 합산.
@@ -1604,16 +1630,54 @@
       let h='<div class="row" style="margin-bottom:14px;"><div class="muted">'+sub+'</div><div class="red" style="font-weight:700;">-'+fmtComma(tot)+'</div></div>';
       h+='<div class="card" style="padding:6px 10px;">'+(rows.length?rows.map(txRowHtml).join(''):'<div class="empty">이 달 해당 카테고리 지출이 없습니다</div>')+'</div>';
       openSheet((etc?'':(name===LOAN_CAT_MERGED?'🏦':catIcon(name))+' ')+title, h);   // 시트 제목은 textContent 삽입이라 escape 불필요
+      state._sheetReopen=()=>openRepCatTx(m,name,etc);   // ↩️ 거래 수정 시트 닫으면 이 드릴다운으로 복귀
     }
-    // 👤 개인별/공동 지출 드릴다운 — 리포트 막대를 탭하면 그 달 그 소비 대상의 실지출 내역 시트(집계는 도넛과 동일한 personKey 기준)
+    // 👤 소비 대상 정규화 키 — personKey는 userUid(있으면)·아니면 이름이라, 같은 사람이 uid 거래와 이름만 저장된 거래(정기 생성분 등)로
+    //    두 막대로 갈라지던 버그 방지: 이름이 멤버 이름과 일치하면 그 멤버 uid로 합친다(멤버 아닌 레거시 이름은 그대로).
+    function repPersonKey(t){
+      const k=personKey(t);
+      if(k==='공동') return k;
+      const mem=(state.wsMeta&&state.wsMeta.members)||{};
+      if(mem[k]) return k;   // 이미 멤버 uid
+      for(const u in mem){ if((mem[u].name||'')===k) return u; }   // 이름 → 그 이름의 멤버 uid
+      return k;
+    }
+    // 💳 거래 묶음의 소비 대상별(공동·멤버) 분담 합계 — 카드 내역·리포트 카드별에서 '공동 얼마 · 현경 얼마' 표시용(금액순)
+    function personSplit(rows){
+      const o={}; rows.forEach(t=>{ const k=repPersonKey(t); o[k]=(o[k]||0)+(Number(t.amount)||0); });
+      const mem=(state.wsMeta&&state.wsMeta.members)||{};
+      return Object.keys(o).sort((a,b)=>o[b]-o[a]).map(k=>({ k, label:(k==='공동')?'🤝 공동':((mem[k]&&mem[k].name)||k), amt:o[k] }));
+    }
+    // 📚 내역 시트 거래 목록 공용 — [카테고리 | 시간순] 토글. 카테고리 모드(기본)는 카테고리별 카드로 묶어 소계·건수를 보여주고(그룹=금액순, 그룹 안=최신순),
+    //    시간순 모드는 기존 한 카드 목록. 토글 시 현재 시트를 다시 그린다(_sheetReopen 재사용 — 내역 시트들이 이미 등록).
+    let _txListMode='cat';
+    function setTxListMode(mode){ _txListMode=mode; if(state._sheetReopen) state._sheetReopen(); }
+    function txListSegHtml(){
+      return '<span class="repvalseg"><button class="'+(_txListMode==='cat'?'on':'')+'" '+App.view.act('setTxListMode','cat')+' aria-label="카테고리별 묶어 보기">카테고리</button>'+
+        '<button class="'+(_txListMode==='cat'?'':'on')+'" '+App.view.act('setTxListMode','time')+' aria-label="시간순으로 보기">시간순</button></span>';
+    }
+    function txListHtml(rows, emptyMsg){
+      if(!rows.length) return '<div class="card" style="padding:6px 10px;"><div class="empty">'+emptyMsg+'</div></div>';
+      if(_txListMode!=='cat') return '<div class="card" style="padding:6px 10px;">'+rows.map(txRowHtml).join('')+'</div>';
+      const g={}; rows.forEach(t=>{ const k=t.category||TYPE_LABEL[t.type]||'기타'; (g[k]=g[k]||[]).push(t); });
+      const sum=a=>a.reduce((s,t)=>s+(Number(t.amount)||0),0);
+      return Object.keys(g).sort((a,b)=>sum(g[b])-sum(g[a])).map(k=>
+        '<div class="card" style="padding:6px 10px;margin-bottom:10px;">'+
+        '<div class="row" style="padding:8px 2px 6px;border-bottom:1px solid var(--line);"><span style="display:flex;align-items:center;gap:8px;font-weight:800;">'+catTileMini(k)+escapeHtml(k)+'<span class="tx-sub" style="font-weight:700;">'+g[k].length+'건</span></span><b>'+won(sum(g[k]))+'</b></div>'+
+        g[k].map(txRowHtml).join('')+'</div>'
+      ).join('');
+    }
+    // 👤 개인별/공동 지출 드릴다운 — 리포트 막대를 탭하면 그 달 그 소비 대상의 실지출 내역 시트(집계는 막대와 동일한 repPersonKey 기준)
     function openRepPersonTx(m, pk){
-      const rows=monthTx(m).filter(t=>isActual(t)&&personKey(t)===pk).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+      const rows=monthTx(m).filter(t=>isActual(t)&&repPersonKey(t)===pk).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
       const tot=rows.reduce((s,t)=>s+(Number(t.amount)||0),0);
       const _pm=(state.wsMeta&&state.wsMeta.members)||{};
       const nm=(pk==='공동')?'🤝 공동':((_pm[pk]&&_pm[pk].name)||ownerName(pk)||pk);   // uid 키면 멤버 이름으로 해석(uid 노출 방지)
       let h='<div class="row" style="margin-bottom:14px;"><div class="muted">'+(+m.split('-')[1])+'월 · '+rows.length+'건</div><div class="red" style="font-weight:700;">-'+fmtComma(tot)+'</div></div>';
-      h+='<div class="card" style="padding:6px 10px;">'+(rows.length?rows.map(txRowHtml).join(''):'<div class="empty">이 달 지출이 없습니다</div>')+'</div>';
+      if(rows.length) h+='<div style="display:flex;justify-content:flex-end;margin:-6px 0 8px;">'+txListSegHtml()+'</div>';
+      h+=txListHtml(rows, '이 달 지출이 없습니다');
       openSheet(nm+' 지출', h);   // 시트 제목은 textContent 삽입이라 escape 불필요
+      state._sheetReopen=()=>openRepPersonTx(m,pk);   // ↩️ 거래 수정 시트 닫으면 이 드릴다운으로 복귀
     }
     function renderStats(){
       if(typeof markReportSeen==='function') markReportSeen();   // 🐱 주간 미션: 리포트 확인
@@ -1645,7 +1709,7 @@
       const totCat=cats.reduce((s,c)=>s+c.val,0);
       h+='<div class="sech"><span class="l">카테고리별</span><span style="display:flex;align-items:center;gap:8px;">'+(totCat>0?'<span class="repvalseg"><button class="'+(!state._repShowAmt?'on':'')+'" '+App.view.act('setRepVal',0)+' aria-label="비율(%)로 보기">%</button><button class="'+(state._repShowAmt?'on':'')+'" '+App.view.act('setRepVal',1)+' aria-label="금액으로 보기">금액</button></span>':'')+'<span class="s">'+(+mo)+'월</span></span></div>';
       if(totCat>0){
-        let segs = cats.length>6 ? cats.slice(0,5).concat([{name:'기타',val:cats.slice(5).reduce((s,c)=>s+c.val,0),etc:true}]) : cats;
+        let segs = cats;   // 금액 작은 카테고리도 묶지 않고 전부 개별 표시(구 '기타(상위 5개 밖 묶음)' 폐기 — 사용자 요청)
         let acc=0; const stops=segs.map(s=>{ const p0=acc/totCat*100, p1=(acc+s.val)/totCat*100; const col=s.etc?'var(--soft2)':catColor(s.name); acc+=s.val; return col+' '+p0.toFixed(2)+'% '+p1.toFixed(2)+'%'; });
         h+='<div class="donut-wrap"><div class="donut" style="background:conic-gradient('+stops.join(',')+')"><div class="ic"><b>'+shortAmt(totCat)+'</b><span>총지출</span></div></div>'+
           '<div class="legend'+(state._repShowAmt?' amt':'')+'">'+segs.map(s=>'<div class="lgi" '+App.view.act('openRepCatTx',m,s.name,s.etc?1:0)+' aria-label="'+escapeHtml(s.name)+' 내역 보기"><i style="background:'+(s.etc?'var(--soft2)':catColor(s.name))+'"></i><span class="ln">'+escapeHtml(s.name)+'</span><span class="lp">'+Math.round(s.val/totCat*100)+'%</span><span class="lv">'+won(s.val)+'</span><span class="lgo">›</span></div>').join('')+'</div></div>';
@@ -1667,7 +1731,7 @@
       }
       // 💳 카드별 — 선택한 달 기준(월 네비를 따라감). 탭하면 그 달 카드 결제 내역 시트(시트 안에서도 달 이동 가능).
       { const cardAccts=cardAccounts();
-        const cardRows=cardAccts.map(function(a){ const tl=cardMonthTx(a.id,m); return { a:a, used:tl.reduce((s,t)=>s+(Number(t.amount)||0),0), n:tl.length }; })
+        const cardRows=cardAccts.map(function(a){ const tl=cardMonthTx(a.id,m); return { a:a, tl:tl, used:tl.reduce((s,t)=>s+(Number(t.amount)||0),0), n:tl.length }; })
           .filter(r=>r.n>0).sort((x,y)=>y.used-x.used);
         if(cardRows.length){
           const mref=monthRefDate(m);
@@ -1675,11 +1739,13 @@
           h+=cardRows.map(function(r){
             const cf=getCard(r.a.id); const pf=cf?cardPerformance(cf, mref):null;
             const col=(pf&&pf.pct>=100)?'var(--income)':'var(--primary)';
+            const sp=personSplit(r.tl);   // 👥 이 카드 결제의 소비 대상별 분담(공동 X · 현경 Y …)
             return '<div class="perfrow" '+App.view.act('openCardTxSheet',r.a.id,m)+' aria-label="'+escapeHtml(r.a.name)+' 내역 보기"><div class="perftop"><b>'+escapeHtml((cf&&cf.cardName)||r.a.name)+'</b>'+
               '<span class="pct">'+won(r.used)+'<span class="pfgo">›</span></span></div>'+
               ((pf&&pf.target)?('<div class="prog"><div class="f" style="width:'+Math.min(pf.pct,100)+'%;background:'+col+'"></div></div>'+
                 '<div class="perfsub">실적 '+won(pf.sum)+' / '+won(pf.target)+' · '+pf.pct+'%'+(pf.remain>0?(' · '+won(pf.remain)+' 남음'):' · 달성 ✅')+'</div>')
-                :('<div class="perfsub">'+r.n+'건 결제'+(cf?' · 실적 목표 미설정':'')+'</div>'))+'</div>';
+                :('<div class="perfsub">'+r.n+'건 결제'+(cf?' · 실적 목표 미설정':'')+'</div>'))+
+              (sp.length?('<div class="perfsub" style="margin-top:2px;">'+sp.map(x=>escapeHtml(x.label)+' '+won(x.amt)).join(' · ')+'</div>'):'')+'</div>';
           }).join('');
         }
       }
@@ -1689,8 +1755,8 @@
       const mxB=Math.max(1,...keys.map(k=>md[k]||0));
       h+='<div class="sech"><span class="l">최근 6개월 추이</span></div><div class="bars6">'+
         keys.map(k=>'<div class="b"><div class="bar'+(k===m?' on':'')+'" style="height:'+Math.round((md[k]||0)/mxB*100)+'%"></div><div class="bl">'+(+k.split('-')[1])+'월</div></div>').join('')+'</div>';
-      // 소비 대상별 지출 — 개인별(용돈 등)과 공동 지출(집세 등)을 분리해서 표시
-      const ue={}; list.filter(isActual).forEach(t=>{ const k=personKey(t); ue[k]=(ue[k]||0)+(Number(t.amount)||0); });
+      // 소비 대상별 지출 — 개인별(용돈 등)과 공동 지출(집세 등)을 분리해서 표시. 키는 repPersonKey(uid·이름 이중 저장 병합 — 같은 사람 두 막대 방지)
+      const ue={}; list.filter(isActual).forEach(t=>{ const k=repPersonKey(t); ue[k]=(ue[k]||0)+(Number(t.amount)||0); });
       const shared=ue['공동']||0;
       const _pm=(state.wsMeta&&state.wsMeta.members)||{};
       const pKeys=Object.keys(ue).filter(k=>k!=='공동'&&(ue[k]||0)>0).sort((a,b)=>(ue[b]||0)-(ue[a]||0));
@@ -1893,6 +1959,7 @@
         h+='</div>';
       });
       openSheet('카드 실적', h);
+      state._sheetReopen=()=>openCardList();   // ↩️ 거래 수정 시트(실적 제외 건) 닫으면 이 목록으로 복귀
     }
 
     // 적금 납입 실적 — 자동기록 연결이면 실제 생성된 거래(recurringId) 집계, 미연결이면 스케줄상 경과 회차로 추정.
@@ -2503,6 +2570,7 @@
       h+='<div class="sec-title" style="margin-left:2px;">포함된 거래 ('+txs.length+'건)</div>';
       h+='<div class="card" style="padding:6px 10px;">'+(txs.length?txs.map(txRowHtml).join(''):'<div class="empty">거래 없음</div>')+'</div>';
       openSheet(budgetTitle(b)+' 상세', h);
+      state._sheetReopen=()=>openBudgetDetail(id);   // ↩️ 거래 수정 시트 닫으면 이 예산 상세로 복귀
     }
     function openBudgetEdit(id){
       const b=id?state.budgets.find(x=>x.id===id):null;
@@ -2669,6 +2737,7 @@
     function viewRecurringTxs(ruleId){
       const txs=state.transactions.filter(t=>t.recurringId===ruleId).sort((a,b)=>new Date(b.date)-new Date(a.date));
       openSheet('생성된 거래 ('+txs.length+')', '<div class="card" style="padding:6px 10px;">'+(txs.length?txs.map(txRowHtml).join(''):'<div class="empty">생성된 거래가 없습니다</div>')+'</div>');
+      state._sheetReopen=()=>viewRecurringTxs(ruleId);   // ↩️ 거래 수정 시트 닫으면 이 목록으로 복귀
     }
     function pauseRecurring(o,id){ db.ref(wp('recurring/'+o+'/'+id+'/status')).set('paused'); toast('일시정지'); openRecurringList(); }
     function resumeRecurring(o,id){ db.ref(wp('recurring/'+o+'/'+id)).update({status:'active'}); toast('재개'); setTimeout(runRecurring,400); openRecurringList(); }
@@ -2844,6 +2913,7 @@
       h+='<button class="btn ghost" '+App.view.act('openSubEdit',s.id)+'>수정</button>';
       h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deleteSub',s.id)+'>삭제</button>';
       openSheet(s.name||'구독', h);
+      state._sheetReopen=()=>openSubDetail(id);   // ↩️ 거래 수정 시트 닫으면 이 구독 상세로 복귀
     }
     function setSubStatus(id,st){ db.ref(wp('subscriptions/'+id)).update({status:st, updatedAt:new Date().toISOString()}); toast('상태: '+SUB_STATUS_LABEL[st]); openSubDetail(id); }
     function openSubEdit(id){
@@ -2999,6 +3069,7 @@
       if(pbDetailTab!=='settle') h+=pbTodoSummaryHtml(p.id);   // 연결된 할일(여행 준비물 등)
       h+='<button class="btn ghost" '+App.view.act('openPbEdit',p.id)+'>설정 수정</button>';
       openSheet(p.name, h);
+      state._sheetReopen=()=>openPbDetail(id);   // ↩️ 거래 수정 시트 닫으면 이 목적별 상세로 복귀(탭은 pbDetailTab 유지)
     }
     function setPbDetailTab(id,tab){ pbDetailTab=tab; openPbDetail(id,tab); }
     // 여행 PB: 통화별 지출 요약(외화가 있을 때만). 원통화 원금 + 원화 환산 병기.
