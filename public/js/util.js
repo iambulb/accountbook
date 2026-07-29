@@ -504,6 +504,25 @@
     for (var i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) >>> 0; }
     return ids[h % ids.length];
   }
+  // 적금 계산(월 정액 납입·단리) — 월 납입액·연이율(%)·기간(개월)·시작일·매달 납입일 → 납입 스케줄·만기일·예상 이자(세전/세후 15.4%).
+  // 회차별 예치 개월 합 = n(n+1)/2 이라 세전이자 = 월납입 × (연이율/12) × n(n+1)/2 (한국 은행 적금 단리 공식).
+  // 입력이 부족하면(월납입·기간 없음) null. 뷰 미리보기·자산 목록·정기규칙 생성이 공용으로 쓴다.
+  function savingsPlan(monthly, rate, months, startDate, day) {
+    var m = Math.floor(Number(monthly)) || 0, n = Math.floor(Number(months)) || 0, r = Number(rate) || 0;
+    if (m <= 0 || n < 1) return null;
+    var sp = String(startDate || '').split('T')[0].split('-'), y = Number(sp[0]), mo0 = (Number(sp[1]) || 1) - 1, sd = Number(sp[2]) || 1;
+    if (!y) { var now = new Date(); y = now.getFullYear(); mo0 = now.getMonth(); sd = now.getDate(); }
+    var dom = Math.min(Math.max(1, Math.floor(Number(day)) || sd), 31);
+    function occAt(yy, mm0) { var last = new Date(yy, mm0 + 1, 0).getDate(); return new Date(yy, mm0, Math.min(dom, last)); }   // 말일 짧은 달은 말일로 클램프
+    function addM(base, k) { var yy = base.getFullYear(), mm = base.getMonth() + k; yy += Math.floor(mm / 12); mm = ((mm % 12) + 12) % 12; return occAt(yy, mm); }
+    var first = occAt(y, mo0);
+    if (first < new Date(y, mo0, sd)) first = addM(first, 1);   // 시작일 이전이면 다음 달 납입일이 1회차
+    var principal = m * n;
+    var interest = Math.round(m * (r / 100) * (n * (n + 1) / 2) / 12);
+    var tax = Math.floor(interest * 0.154);
+    return { first: first, last: addM(first, n - 1), maturity: addM(first, n), count: n,
+      principal: principal, interest: interest, tax: tax, afterTax: interest - tax, total: principal + interest - tax };
+  }
   function applyTodoTabDot(doc, todos) {
     if (!doc) return; var tt = doc.querySelector('.tabbar .tab[data-tab="todo"]'); if (!tt) return;
     var dot = tt.querySelector('.tabdot');
@@ -511,7 +530,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CAM: CAM, camDepth: camDepth, camFurnBottom: camFurnBottom, camZ: camZ, CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, fmtCommaSigned: fmtCommaSigned, parseAmount: parseAmount, parseAmountSigned: parseAmountSigned, todayKst: todayKst, isoAtNoon: isoAtNoon, jsAttr: jsAttr, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, clampYmd: clampYmd, effNextBilling: effNextBilling, todoScope: todoScope, overdueTodoIds: overdueTodoIds, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, affTiers: affTiers, dupAffOf: dupAffOf, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, dropMoodFactor: dropMoodFactor, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift };
+  var api = { CAM: CAM, camDepth: camDepth, camFurnBottom: camFurnBottom, camZ: camZ, CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, fmtCommaSigned: fmtCommaSigned, parseAmount: parseAmount, parseAmountSigned: parseAmountSigned, todayKst: todayKst, isoAtNoon: isoAtNoon, jsAttr: jsAttr, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, clampYmd: clampYmd, effNextBilling: effNextBilling, todoScope: todoScope, overdueTodoIds: overdueTodoIds, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, affTiers: affTiers, dupAffOf: dupAffOf, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, dropMoodFactor: dropMoodFactor, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift, savingsPlan: savingsPlan };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);

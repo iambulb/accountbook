@@ -177,7 +177,7 @@ erDiagram
 `name`, `type`(PB_TYPES), `customTypeName`, `icon`, `status`(active/completed/archived), `budgetAmount`, `startDate`, `endDate`, `settlementEnabled`, `visibility`, `owner`.
 
 ### savings/{uid}/{id}
-`name`, `goal`, `current`, `user`.
+`name`, `monthly`(월 납입액), `rate`(연 이율 %), `months`(기간 개월), `startDate`, `day`(매달 납입일), `from`(출금 계좌 id, ''=자동기록 안 함), `to`(입금 적금 계좌 id, 선택), `recurringId`(연결 정기거래 `sv_{id}`, 자동기록 시), `user`, `createdAt`, `updatedAt`. 만기일·예상이자는 저장하지 않고 `savingsPlan`(util.js)으로 매번 계산. *(구버전: `goal`·`current` 목표형 — 저장 시 월 납입식으로 전환)*
 
 ## 거래 타입 → 잔액효과
 

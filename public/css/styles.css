@@ -223,8 +223,9 @@
     .bars6 .bar { width:60%; background:var(--soft2); border-radius:6px 6px 3px 3px; min-height:3px; }
     .bars6 .bar.on { background:var(--primary); }
     .bars6 .bl { font-size:10px; font-weight:700; color:var(--sub); }
-    .mbar { display:flex; flex-direction:column; gap:5px; padding:9px 2px; }
+    .mbar { display:flex; flex-direction:column; gap:5px; padding:9px 2px; cursor:pointer; }
     .mbar .top { display:flex; justify-content:space-between; font-size:12.5px; font-weight:700; }
+    .mbar .mgo { color:var(--sub); font-weight:700; opacity:.55; margin-left:5px; }   /* 내역 보기 ›(카드별 pfgo와 동일 톤) */
     .mbar .track { height:9px; background:var(--soft2); border-radius:6px; overflow:hidden; }
     .mbar .fill { height:100%; border-radius:6px; }
 

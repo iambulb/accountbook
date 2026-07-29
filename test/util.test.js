@@ -692,3 +692,39 @@ test('CAM: 캠 원근 한 묶음 불변식(단일 소스 잠금)', () => {
   assert.ok(css.includes('--cam-wall: ' + U.CAM.WALL + '%'), 'CSS --cam-wall가 CAM.WALL와 다름');
   assert.ok(css.includes('--cam-stage: ' + U.CAM.STAGE + '%'), 'CSS --cam-stage가 CAM.STAGE와 다름');
 });
+
+// ── 적금 계산(savingsPlan): 단리 이자·만기일·납입 스케줄 ──
+test('savingsPlan: 월 30만·연 3.5%·12개월 단리 이자/세후/만기', () => {
+  const p = U.savingsPlan(300000, 3.5, 12, '2026-08-01', 1);
+  assert.ok(p);
+  assert.strictEqual(p.count, 12);
+  assert.strictEqual(p.principal, 3600000);
+  // 세전이자 = 300000 × 3.5%/12 × 12·13/2 = 68,250
+  assert.strictEqual(p.interest, 68250);
+  assert.strictEqual(p.tax, Math.floor(68250 * 0.154));            // 10,510
+  assert.strictEqual(p.afterTax, 68250 - p.tax);
+  assert.strictEqual(p.total, 3600000 + p.afterTax);
+  assert.strictEqual(p.first.getFullYear() + '-' + (p.first.getMonth() + 1) + '-' + p.first.getDate(), '2026-8-1');
+  assert.strictEqual(p.last.getFullYear() + '-' + (p.last.getMonth() + 1) + '-' + p.last.getDate(), '2027-7-1');
+  assert.strictEqual(p.maturity.getFullYear() + '-' + (p.maturity.getMonth() + 1) + '-' + p.maturity.getDate(), '2027-8-1');
+});
+
+test('savingsPlan: 납입일이 시작일 이전이면 다음 달이 1회차', () => {
+  const p = U.savingsPlan(100000, 3, 6, '2026-07-20', 10);   // 7/10은 이미 지남 → 8/10부터
+  assert.strictEqual(p.first.getMonth() + 1, 8);
+  assert.strictEqual(p.first.getDate(), 10);
+  assert.strictEqual(p.last.getMonth() + 1, 1);              // 8,9,10,11,12,1월 = 6회
+  assert.strictEqual(p.last.getFullYear(), 2027);
+});
+
+test('savingsPlan: 31일 납입은 짧은 달에 말일로 클램프', () => {
+  const p = U.savingsPlan(50000, 2, 3, '2026-01-31', 31);
+  assert.strictEqual(p.first.getDate(), 31);                 // 1/31 (2회차 2/28로 클램프)
+  assert.strictEqual(p.last.getMonth() + 1, 3);
+  assert.strictEqual(p.last.getDate(), 31);                  // 3/31
+});
+
+test('savingsPlan: 입력 부족(월납입·기간 없음)이면 null', () => {
+  assert.strictEqual(U.savingsPlan(0, 3, 12, '2026-01-01', 1), null);
+  assert.strictEqual(U.savingsPlan(100000, 3, 0, '2026-01-01', 1), null);
+});
