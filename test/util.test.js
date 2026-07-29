@@ -728,3 +728,16 @@ test('savingsPlan: 입력 부족(월납입·기간 없음)이면 null', () => {
   assert.strictEqual(U.savingsPlan(0, 3, 12, '2026-01-01', 1), null);
   assert.strictEqual(U.savingsPlan(100000, 3, 0, '2026-01-01', 1), null);
 });
+
+// ── nextDue: 매주 요일 지정(repeatDays) ──
+test('nextDue: 매주 요일 지정 — 다음 날부터 가장 가까운 선택 요일', () => {
+  // 2026-07-27은 월요일. 월·수·금 반복이면 월 완료 → 수(7/29), 수 → 금(7/31), 금 → 다음주 월(8/3)
+  assert.strictEqual(U.nextDue('2026-07-27', 'weekly', [1, 3, 5]), '2026-07-29');
+  assert.strictEqual(U.nextDue('2026-07-29', 'weekly', [1, 3, 5]), '2026-07-31');
+  assert.strictEqual(U.nextDue('2026-07-31', 'weekly', [1, 3, 5]), '2026-08-03');
+  // 단일 요일이면 사실상 +7일
+  assert.strictEqual(U.nextDue('2026-07-27', 'weekly', [1]), '2026-08-03');
+  // 빈 배열·미전달이면 종전 +7일 폴백
+  assert.strictEqual(U.nextDue('2026-07-27', 'weekly', []), '2026-08-03');
+  assert.strictEqual(U.nextDue('2026-07-27', 'weekly'), '2026-08-03');
+});

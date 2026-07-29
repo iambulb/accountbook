@@ -76,7 +76,7 @@
   function personKey(tx) { return (tx && tx.userUid && tx.userUid !== '공동') ? tx.userUid : ((tx && tx.user) || '미지정'); }
   // 날짜 헬퍼(할일 반복·마감 계산) — 자기완결(외부 의존 없음).
   function addDays(ds, n) { const p = String(ds).split('-'); const d = new Date(+p[0], (+p[1] || 1) - 1, (+p[2] || 1) + (Number(n) || 0)); const z = function (x) { return (x < 10 ? '0' : '') + x; }; return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()); }
-  function nextDue(ds, rep) {
+  function nextDue(ds, rep, days) {
     if (rep === 'monthly') {   // 같은 날 다음 달. '말일'이면 다음 달도 말일로(1/31→2/28→3/31) — 28일 고정 드리프트 방지.
       const p = String(ds).split('-'), y = +p[0], m = (+p[1] || 1), d = (+p[2] || 1);
       const curLast = new Date(y, m, 0).getDate();   // 이번 달 말일
@@ -85,7 +85,12 @@
       const day = (d >= curLast) ? last : Math.min(d, last);   // 원래가 말일이었으면 다음 달 말일로 복원
       return ny + '-' + z(nm) + '-' + z(day);
     }
-    return addDays(ds, rep === 'weekly' ? 7 : 1);   // weekly=+7, 그 외(레거시 daily 포함)=+1
+    if (rep === 'weekly' && Array.isArray(days) && days.length) {   // 📅 요일 지정 매주(예: 월·수·금) — ds 다음 날부터 가장 가까운 선택 요일
+      const set = {}; days.forEach(function (d) { set[((Number(d) % 7) + 7) % 7] = 1; });
+      let cur = addDays(ds, 1);
+      for (let i = 0; i < 7; i++) { if (set[new Date(cur + 'T00:00:00').getDay()]) return cur; cur = addDays(cur, 1); }
+    }
+    return addDays(ds, rep === 'weekly' ? 7 : 1);   // weekly(요일 미지정)=+7, 그 외(레거시 daily 포함)=+1
   }
   function dueDiffDays(dueYmd, todayYmd) { const a = new Date(dueYmd + 'T00:00:00'), b = new Date(todayYmd + 'T00:00:00'); return Math.round((a - b) / 86400000); }
   // Y-M-D의 day를 해당 월 말일로 클램프(31일 항목이 짧은 달에서 안 넘치게). anchorDay를 유지하며 굴리면 31→28→31 복원.

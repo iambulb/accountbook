@@ -1399,11 +1399,11 @@
       const ref=todoDbRef(t);
       const firstReward=!t.rewardClaimed;   // 할일당 은화 1회(멱등)
       if(!t.done && t.repeat && t.repeat!=='none' && t.dueDate){
-        let _nd=nextDue(t.dueDate,t.repeat); const _t=todayKst(); let _g=0; while(_nd<=_t && _g++<400) _nd=nextDue(_nd,t.repeat);   // 밀린 회차 catch-up: 다음 예정을 오늘(KST) 이후로 — 오래 밀려도 한 번 완료로 미래 회차가 됨(즉시 재-지남 방지)
+        let _nd=nextDue(t.dueDate,t.repeat,t.repeatDays); const _t=todayKst(); let _g=0; while(_nd<=_t && _g++<400) _nd=nextDue(_nd,t.repeat,t.repeatDays);   // 밀린 회차 catch-up: 다음 예정을 오늘(KST) 이후로 — 오래 밀려도 한 번 완료로 미래 회차가 됨(즉시 재-지남 방지). 매주 요일 지정(repeatDays)도 반영.
         const upd={ dueDate:_nd, doneByUid:(state.uid||''), lastDoneAt:now, doneCount:(Number(t.doneCount)||0)+1, updatedAt:now };   // 반복 완료 횟수 누적(완료 이력·리포트 반영)
         if(firstReward) upd.rewardClaimed=true;
         ref.update(upd);
-        const nxt='다음 '+(t.repeat==='weekly'?'주':'일')+'로 넘겼어요';
+        const _np=_nd.split('-'); const nxt=(+_np[1])+'월 '+(+_np[2])+'일('+WEEK[new Date(_nd+'T00:00:00').getDay()]+')로 넘겼어요';   // 요일 지정 매주는 같은 주 다음 요일일 수 있어 실제 날짜로 안내
         if(firstReward && typeof grantTodoCoins==='function'){ grantTodoCoins(function(paid){ toast(paid>0?('완료! +'+paid+' 은화 · '+nxt):('완료! '+nxt)); }); } else toast('완료! '+nxt);
       } else {
         const done=!t.done; const upd={ done:done, doneAt:done?now:'', doneByUid:done?(state.uid||''):'', updatedAt:now };
@@ -1440,9 +1440,16 @@
         base.update(upd); closeSheet(); toast('지난 할일 '+ids.length+'개를 오늘로 옮겼어요');
       }, { okLabel:'오늘로 옮기기', danger:false });
     }
+    // 📅 매주 반복 요일 선택(여러 개 가능) — _tdWd=선택된 요일(0=일~6=토). 미선택이면 마감일 요일 기준 +7일(종전 동작).
+    let _tdWd=[];
+    function tdWdChipsHtml(){ return [1,2,3,4,5,6,0].map(function(i){ return '<button type="button" class="chip'+(_tdWd.indexOf(i)>=0?' on':'')+'" '+App.view.act('toggleTdWd',i)+' aria-label="'+WEEK[i]+'요일 반복">'+WEEK[i]+'</button>'; }).join(''); }
+    function toggleTdWd(i){ i=Number(i); const j=_tdWd.indexOf(i); if(j>=0) _tdWd.splice(j,1); else _tdWd.push(i);
+      const w=$('tdWdChips'); if(w) w.innerHTML=tdWdChipsHtml(); }
+    function onTdRepeatChange(){ const w=$('tdWdWrap'); if(w) w.style.display=(val('tdRepeat')==='weekly')?'':'none'; }
     function openTodoEdit(id, presetPb){
       if(!id) state._todoFriend=null;   // 새 할일은 항상 내 목록으로(친구 읽기전용 뷰였어도)
       const t=id?allTodos().find(x=>x.id===id):null;
+      _tdWd=(t&&Array.isArray(t.repeatDays))?t.repeatDays.map(Number).filter(function(n){ return n>=0&&n<=6; }):[];
       const defDue=t?(t.dueDate||''):(_todoSel||todayKst());   // 신규 할일 마감일 기본값 = 달력에서 선택한 날(없으면 오늘=KST). 마감 판정과 같은 경계.
       // 스코프: 편집=기존 할일 값, 신규=현재 세그먼트. 개인은 담당자 없음(소유자=나), 그룹은 담당배정.
       const scope=t?todoScope(t):(isPersonalWs()?'personal':'group');
@@ -1459,8 +1466,10 @@
         '<div class="field"><label>마감일</label><input type="date" class="input" id="tdDue" value="'+defDue+'"></div></div>';
       else h+='<div class="field"><label>마감일</label><input type="date" class="input" id="tdDue" value="'+defDue+'"></div>';
       var repOpts=[['none','반복 없음'],['weekly','매주'],['monthly','매월']]; if(rep==='daily') repOpts.splice(1,0,['daily','매일(기존)']);   // 매일은 신규 제외(습관=내 미션), 레거시 값은 보존
-      h+='<div class="form-2"><div class="field"><label>반복</label><select class="input" id="tdRepeat">'+repOpts.map(function(o){ return '<option value="'+o[0]+'"'+(rep===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
+      h+='<div class="form-2"><div class="field"><label>반복</label><select class="input" id="tdRepeat" '+App.view.chg('onTdRepeatChange')+'>'+repOpts.map(function(o){ return '<option value="'+o[0]+'"'+(rep===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
         '<div class="field"><label>가계부 연결</label><select class="input" id="tdPb"><option value="">연결 안 함</option>'+pbs.map(function(p){ return '<option value="'+p.id+'"'+(pbSel===p.id?' selected':'')+'>'+(p.icon||'📒')+' '+escapeHtml(p.name)+'</option>'; }).join('')+'</select></div></div>';
+      h+='<div class="field" id="tdWdWrap" style="'+(rep==='weekly'?'':'display:none;')+'"><label>반복 요일 (여러 개 선택 가능)</label><div class="chip-row" id="tdWdChips" style="margin:2px 0 0;">'+tdWdChipsHtml()+'</div>'+
+        '<p class="muted" style="font-size:11.5px;margin:6px 2px 0;">선택하지 않으면 마감일 요일에 매주 반복돼요.</p></div>';
       h+='<p class="muted" style="font-size:11.5px;margin:-4px 2px 10px;">매일 하는 습관은 <b>미션 탭 · 내 미션</b>에서 스트릭으로 관리해요.</p>';
       h+='<div class="form-2"><div class="field"><label>우선순위</label><select class="input" id="tdPrio">'+[['high','🔴 높음'],['normal','보통'],['low','🔵 낮음']].map(function(o){ return '<option value="'+o[0]+'"'+(prio===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
         '<div class="field"><label>태그 (선택)</label><input class="input" id="tdTags" value="'+escapeHtml(tdtags)+'" placeholder="쉼표로 구분: 집안일, 급함"></div></div>';
@@ -1500,10 +1509,14 @@
       // 카테고리 + 이름·색 스냅샷(친구 열람·카테고리 삭제 후에도 색이 남게 — todoCatOf 폴백)
       const _catObj=todoCat(_tdCat), _catSel=_catObj?_tdCat:'';
       const _catSnap={ name:_catObj?(_catObj.name||''):'', color:_catObj?(_catObj.color||''):'' };
-      const data={ title:title, note:val('tdNote').trim(), dueDate:val('tdDue')||'',
+      // 📅 매주 요일 지정: 선택 요일 저장 + 마감일이 선택 요일이 아니면 가장 가까운 선택 요일로 스냅(첫 회차부터 요일 일치)
+      const _repDays=(_rep==='weekly')?_tdWd.slice().sort(function(a,b){ return a-b; }):[];
+      let _due=val('tdDue')||'';
+      if(_rep==='weekly' && _repDays.length && _due){ let g=0; while(_repDays.indexOf(new Date(_due+'T00:00:00').getDay())<0 && g++<7) _due=addDays(_due,1); }
+      const data={ title:title, note:val('tdNote').trim(), dueDate:_due,
         scope:scope, ownerUid:ownerUid,
         assignedUid:assignedUid, assignedName:assignedName,
-        repeat:($('tdRepeat')?val('tdRepeat'):'none')||'none', purposeBookId:($('tdPb')?val('tdPb'):'')||'',
+        repeat:($('tdRepeat')?val('tdRepeat'):'none')||'none', repeatDays:_repDays, purposeBookId:($('tdPb')?val('tdPb'):'')||'',
         priority:_prio, category:_catSel, catName:_catSnap.name, catColor:_catSnap.color, tags:_tags, subtasks:_subs,
         createdByUid:t?(t.createdByUid||state.uid||''):(state.uid||''), createdAt:t?(t.createdAt||now):now, updatedAt:now,
         sortOrder:t?(t.sortOrder!=null?t.sortOrder:Date.now()):Date.now() };
