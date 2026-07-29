@@ -1200,9 +1200,10 @@
       const today=todayKst();
       const diff=dueDiffDays(t.dueDate, today);
       let txt,cls; if(diff<0){ txt=(-diff)+'일 지남'; cls='over'; } else if(diff===0){ txt='오늘'; cls='today'; } else if(diff===1){ txt='내일'; cls='soon'; } else { txt='D-'+diff; cls=diff<=3?'soon':''; }
-      return editable
+      const tt=t.dueTime?'<span class="tdue ttime">'+escapeHtml(t.dueTime)+'</span>':'';   // ⏰ 마감 시간 태그 — '오늘' 배지 옆에 함께 표시
+      return (editable
         ? '<button class="tdue tap '+cls+'" '+App.view.act('openTodoReschedule',t.id)+' aria-label="날짜 옮기기">'+txt+'</button>'
-        : '<span class="tdue '+cls+'">'+txt+'</span>'; }
+        : '<span class="tdue '+cls+'">'+txt+'</span>')+tt; }
     function todoRow(t, ro){
       // 담당자 표시: 현재 멤버면 최신 이름(개명 반영)+아바타, 탈퇴 등 미상이면 저장된 이름 텍스트(uid 노출 방지)
       const _tmem=(state.wsMeta&&state.wsMeta.members)||{}, _isMem=t.assignedUid&&_tmem[t.assignedUid];
@@ -1299,7 +1300,7 @@
       else if(_todoFilter==='today') open=open.filter(t=>!t.dueDate||t.dueDate===today);   // 오늘 마감 + 마감 없는(언제든) 할일만 — 지난 미완료를 자동으로 '오늘'에 끌어오지 않음(사용자 지침: 이월은 🕘 버튼으로 명시적으로)
       else if(_todoFilter==='week') open=open.filter(t=>!t.dueDate||t.dueDate<=weekEnd);
       const _pv=p=>(p==='high'?0:p==='low'?2:1);   // 우선순위 정렬키(높음 먼저)
-      open.sort((a,b)=>{ const ad=a.dueDate||'9999-99', bd=b.dueDate||'9999-99'; if(ad!==bd) return ad<bd?-1:1; const pa=_pv(a.priority),pb=_pv(b.priority); if(pa!==pb) return pa-pb; return (a.sortOrder||0)-(b.sortOrder||0); });
+      open.sort((a,b)=>{ const ad=(a.dueDate||'9999-99')+'T'+(a.dueTime||'23:59'), bd=(b.dueDate||'9999-99')+'T'+(b.dueTime||'23:59'); if(ad!==bd) return ad<bd?-1:1; const pa=_pv(a.priority),pb=_pv(b.priority); if(pa!==pb) return pa-pb; return (a.sortOrder||0)-(b.sortOrder||0); });   // 같은 날은 시간 지정이 먼저(미지정=23:59 취급)
       // ✅ 완료 섹션은 '하루치'만 — 오늘 완료한 것만(다른 날은 완료 탭에서 날짜를 골라서 본다). 예전엔 전 기간 완료가 목록 밑에 계속 쌓였다.
       //   날짜 판정은 완료일(doneAt·KST)=todoDoneDay 기준이라 캘린더의 완료 점과 같은 날 경계.
       let done=base.filter(t=>t.done && todoDoneDay(t)===today);
@@ -1462,9 +1463,9 @@
       const pbs=(state.purposeBooks||[]).filter(p=>(p.status||'active')!=='archived');
       let h='<input type="hidden" id="tdScope" value="'+scope+'">';
       h+='<div class="field"><label>할 일</label><input class="input" id="tdTitle" value="'+escapeHtml(t?(t.title||''):'')+'" placeholder="예: 장보기, 항공권 예약"></div>';
-      if(scope==='group') h+='<div class="form-2"><div class="field"><label>담당자</label><select class="input" id="tdAssign">'+ownerOptions(asel, t?(t.assignedName||''):'')+'</select></div>'+
-        '<div class="field"><label>마감일</label><input type="date" class="input" id="tdDue" value="'+defDue+'"></div></div>';
-      else h+='<div class="field"><label>마감일</label><input type="date" class="input" id="tdDue" value="'+defDue+'"></div>';
+      if(scope==='group') h+='<div class="field"><label>담당자</label><select class="input" id="tdAssign">'+ownerOptions(asel, t?(t.assignedName||''):'')+'</select></div>';
+      h+='<div class="form-2"><div class="field"><label>마감일</label><input type="date" class="input" id="tdDue" value="'+defDue+'"></div>'+
+        '<div class="field"><label>마감 시간 (선택)</label><input type="time" class="input" id="tdTime" value="'+escapeHtml(t&&t.dueTime?t.dueTime:'')+'"></div></div>';
       var repOpts=[['none','반복 없음'],['weekly','매주'],['monthly','매월']]; if(rep==='daily') repOpts.splice(1,0,['daily','매일(기존)']);   // 매일은 신규 제외(습관=내 미션), 레거시 값은 보존
       h+='<div class="form-2"><div class="field"><label>반복</label><select class="input" id="tdRepeat" '+App.view.chg('onTdRepeatChange')+'>'+repOpts.map(function(o){ return '<option value="'+o[0]+'"'+(rep===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
         '<div class="field"><label>가계부 연결</label><select class="input" id="tdPb"><option value="">연결 안 함</option>'+pbs.map(function(p){ return '<option value="'+p.id+'"'+(pbSel===p.id?' selected':'')+'>'+(p.icon||'📒')+' '+escapeHtml(p.name)+'</option>'; }).join('')+'</select></div></div>';
@@ -1514,6 +1515,7 @@
       let _due=val('tdDue')||'';
       if(_rep==='weekly' && _repDays.length && _due){ let g=0; while(_repDays.indexOf(new Date(_due+'T00:00:00').getDay())<0 && g++<7) _due=addDays(_due,1); }
       const data={ title:title, note:val('tdNote').trim(), dueDate:_due,
+        dueTime:_due?(($('tdTime')?val('tdTime'):'')||''):'',   // ⏰ 마감 시간(선택, HH:MM) — 마감일 없으면 비움
         scope:scope, ownerUid:ownerUid,
         assignedUid:assignedUid, assignedName:assignedName,
         repeat:($('tdRepeat')?val('tdRepeat'):'none')||'none', repeatDays:_repDays, purposeBookId:($('tdPb')?val('tdPb'):'')||'',
