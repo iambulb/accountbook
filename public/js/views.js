@@ -750,7 +750,9 @@
     function signComma(v){ return (v<0?'−':'+')+fmtComma(Math.abs(v)); }
     // ===== 할일(투두) 모드 화면 =====
     let _todoFilter='all', _todoSel=null, _doneDay=null;   // _doneDay = 완료 탭에서 보고 있는 '하루'(YYYY-MM-DD·KST, null=오늘)
+    let _todoGroup='cat';   // 할일 목록 보기: 'cat'=카테고리별 묶음(기본, 사용자 요청) | 'due'=마감순 한 목록
     function setTodoFilter(f){ _todoFilter=f; renderTodoList(); }
+    function setTodoGroup(m){ _todoGroup=m; renderTodoList(); }
     function setDoneDay(ds){ _doneDay=ds||todayKst(); renderTodoDone(); }
     function moveDoneDay(d){ _doneDay=addDays(_doneDay||todayKst(), d); renderTodoDone(); }
     function onDoneDayChange(){ if(this && this.value) setDoneDay(this.value); }   // <input type=date> 직접 선택(data-change)
@@ -1305,11 +1307,24 @@
       done.sort((a,b)=>(b.doneAt||'').localeCompare(a.doneAt||''));
       const chips=isGroup?[['all','전체'],['mine','내 담당'],['today','오늘'],['week','이번주']]:[['all','전체'],['today','오늘'],['week','이번주']];
       let h=todoScopeSeg();   // 개인 탭 = 내 할일만(친구는 '친구들' 탭 피드로 일원화)
-      h+='<div class="chip-row" style="margin:6px 0 12px;">'+chips.map(c=>'<button class="chip'+(_todoFilter===c[0]?' on':'')+'" '+App.view.act('setTodoFilter',c[0])+'>'+c[1]+'</button>').join('')+'<button class="chip srch" '+App.view.act('openTodoSearch')+' aria-label="할일 검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>검색</button></div>';
+      h+='<div class="chip-row" style="margin:6px 0 12px;">'+chips.map(c=>'<button class="chip'+(_todoFilter===c[0]?' on':'')+'" '+App.view.act('setTodoFilter',c[0])+'>'+c[1]+'</button>').join('')+'<button class="chip srch" '+App.view.act('openTodoSearch')+' aria-label="할일 검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>검색</button>'+
+        '<span class="repvalseg" style="margin-left:auto;"><button class="'+(_todoGroup==='cat'?'on':'')+'" '+App.view.act('setTodoGroup','cat')+' aria-label="카테고리별 묶어 보기">카테고리</button><button class="'+(_todoGroup==='cat'?'':'on')+'" '+App.view.act('setTodoGroup','due')+' aria-label="마감순으로 보기">마감순</button></span></div>';
       const roList=!!(state._todoFriend && state._todoFriend!==state.uid);   // 친구 열람=읽기전용(배지 탭·일괄 이동 숨김)
       if(!roList){ const odIds=overdueTodoIds(base, today); if(odIds.length) h+='<button class="td-carry" '+App.view.act('carryOverdueToToday')+'>🕘 지난 미완료 '+odIds.length+'개 → 오늘로</button>'; }
       const emptyMsg=isGroup?'그룹 할일이 없어요 — 아래 ＋ 로 담당을 나눠보세요':'개인 할일이 없어요 — 아래 ＋ 로 추가하세요';
-      h+='<div class="card" style="padding:4px 12px;">'+(open.length?open.map(t=>todoRow(t, roList)).join(''):'<div class="empty" style="padding:26px 6px;">'+emptyMsg+'</div>')+'</div>';
+      if(_todoGroup==='cat' && open.length){
+        // 📚 카테고리별 묶음(기본) — 카테고리 색점+이름+개수 헤더 카드로 묶고, 그룹 순서=카테고리 관리 정의 순(미분류 마지막). 그룹 안은 마감·우선순위 정렬 유지.
+        const g={}, order=[];
+        open.forEach(t=>{ const c=todoCatOf(t); const k=c?('c_'+c.id):'_none'; if(!g[k]){ g[k]={c:c,list:[]}; order.push(k); } g[k].list.push(t); });
+        const catIdx={}; (state.todoCats||[]).forEach((c,i)=>{ catIdx['c_'+c.id]=i; });
+        order.sort((a,b)=>(a==='_none'?9e9:(catIdx[a]!==undefined?catIdx[a]:8e8))-(b==='_none'?9e9:(catIdx[b]!==undefined?catIdx[b]:8e8)));
+        h+=order.map(k=>{ const gr=g[k], nm=gr.c?(gr.c.name||''):'미분류', col=gr.c?(gr.c.color||'#8B95A1'):'var(--sub)';
+          return '<div class="sech"><span class="l" style="display:flex;align-items:center;gap:7px;"><span class="catdot" style="background:'+escapeHtml(col)+'"></span>'+escapeHtml(nm)+'</span><span class="s">'+gr.list.length+'개</span></div>'+
+            '<div class="card" style="padding:4px 12px;">'+gr.list.map(t=>todoRow(t, roList)).join('')+'</div>';
+        }).join('');
+      } else {
+        h+='<div class="card" style="padding:4px 12px;">'+(open.length?open.map(t=>todoRow(t, roList)).join(''):'<div class="empty" style="padding:26px 6px;">'+emptyMsg+'</div>')+'</div>';
+      }
       if(done.length){ const _dc=done.slice(0,20); const _dl='오늘 '+done.length+'개'+(done.length>_dc.length?(' · '+_dc.length+' 표시'):'');
         h+='<div class="sech"><span class="l">완료</span><span class="s">'+_dl+'</span></div><div class="card" style="padding:4px 12px;">'+_dc.map(t=>todoRow(t, roList)).join('')+'</div>'; }
       return h;
