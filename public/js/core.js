@@ -510,7 +510,9 @@
     async function migrateLegacyIfNeeded(){
       const flag=await db.ref('migrationV3').once('value');
       if(flag.exists()) return;
-      const accSnap=await db.ref('accounts').once('value');     // 루트 전역 계좌 = 레거시 데이터 신호
+      let accSnap=null;
+      try{ accSnap=await db.ref('accounts').once('value'); }     // 루트 전역 계좌 = 레거시 데이터 신호
+      catch(e){ return; }                                        // 규칙에서 레거시 루트 노드가 제거돼 read가 거부되면 = 레거시 없음(신규 DB 부팅 보호)
       if(!accSnap.exists()) return;                              // 신규 환경 → 이전 불필요
       const claim=await db.ref('migrationV3').transaction(cur=> cur? undefined : { by:state.uid, at:new Date().toISOString() });
       if(!claim.committed) return;                               // 다른 클라이언트가 이미 처리 중/완료

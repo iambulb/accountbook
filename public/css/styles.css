@@ -611,6 +611,14 @@
     /* 🔍 거래 검색 일괄 선택 모드 — 선택된 행 강조 */
     .txsel { border-radius:10px; cursor:pointer; }
     .txsel.on { background:var(--soft); box-shadow:inset 0 0 0 2px var(--primary); }
+    /* 🌱 완료 잔디 히트맵(완료 탭) — 열=주(15), 행=요일(7). 열 우선 채움이라 한 열이 한 주 */
+    .hmgrid { display:grid; grid-auto-flow:column; grid-template-rows:repeat(7, 11px); grid-template-columns:repeat(15, 1fr); gap:3px; }
+    .hmgrid .hm { width:100%; height:11px; border-radius:2.5px; background:var(--soft2); }
+    .hmgrid .hm.x { opacity:0; }
+    .hmgrid .hm.l1 { background:#a7e3b8; } .hmgrid .hm.l2 { background:#5fc27e; }
+    .hmgrid .hm.l3 { background:#2f9e58; } .hmgrid .hm.l4 { background:#1c7a40; }
+    [data-theme="dark"] .hmgrid .hm.l1 { background:#1f4a2e; } [data-theme="dark"] .hmgrid .hm.l2 { background:#2c6e42; }
+    [data-theme="dark"] .hmgrid .hm.l3 { background:#3c9a5c; } [data-theme="dark"] .hmgrid .hm.l4 { background:#55c97d; }
     /* ↕️ 할일 수동 정렬 핸들(마감순 보기) — touch-action:none으로 터치 드래그 허용 */
     .tddrag { flex:none; color:var(--sub); opacity:.45; padding:4px 2px 4px 10px; cursor:grab; touch-action:none; font-size:15px; user-select:none; -webkit-user-select:none; }
     .tdrow.dragging { opacity:.88; position:relative; z-index:5; background:var(--card); border-radius:10px; box-shadow:0 4px 14px rgba(0,0,0,.14); }

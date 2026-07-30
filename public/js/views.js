@@ -1604,6 +1604,26 @@
         _todoSel=today; renderTodoCalendar();   // 옮긴 결과가 보이게 오늘 날짜로 이동
       }, { okLabel:'오늘로 옮기기', danger:false });
     }
+    // 🌱 완료 잔디 히트맵(최근 15주) — 비반복=완료일(todoDoneDay), 반복=doneLog 날짜키 합산. 열=주(과거→현재), 행=월~일.
+    function todoHeatHtml(){
+      const today=todayKst();
+      const cnt={};
+      scopedTodos().forEach(function(t){
+        if(t.done){ const d=todoDoneDay(t); if(d) cnt[d]=(cnt[d]||0)+1; }
+        const lg=t.doneLog||{}; Object.keys(lg).forEach(function(d){ if(lg[d]) cnt[d]=(cnt[d]||0)+1; });
+      });
+      const dow=(new Date(today+'T00:00:00').getDay()+6)%7;   // 월=0
+      const start=addDays(today, -(dow+14*7));                // 이번 주 포함 15주
+      let cells='', tot=0;
+      for(let w=0; w<15; w++){ for(let d=0; d<7; d++){ const ds=addDays(start, w*7+d);
+        if(ds>today){ cells+='<i class="hm x"></i>'; continue; }
+        const n=cnt[ds]||0; tot+=n;
+        const lv=n>=4?4:(n>=3?3:(n>=2?2:(n>=1?1:0)));
+        cells+='<i class="hm l'+lv+'" title="'+ds+' · '+n+'개"></i>'; } }
+      return '<div class="card" style="padding:12px 14px;"><div class="row" style="margin-bottom:8px;"><b>🌱 완료 잔디</b><span class="tx-sub">최근 15주 · '+tot+'개 완료</span></div>'+
+        '<div class="hmgrid">'+cells+'</div>'+
+        '<div class="tx-sub" style="margin-top:8px;">진할수록 그날 완료가 많아요 — 반복 할일 완료도 오늘부터 매일 쌓여요.</div></div>';
+    }
     function renderTodoDone(){ $('content').innerHTML=todoDoneHtml(); }
     // 할일 완료 화면 프로듀서 — App.view.components.todoDone
     function todoDoneHtml(){ const ro=todoReadOnly(); const today=todayKst();
@@ -1614,6 +1634,7 @@
       h+='<div class="monthlbl"><button '+App.view.act('moveDoneDay',-1)+' aria-label="이전 날">‹</button><b>'+(+p[1])+'월 '+(+p[2])+'일'+(sel===today?' · 오늘':'')+'</b><button '+App.view.act('moveDoneDay',1)+' aria-label="다음 날">›</button></div>';
       h+='<div class="donepick"><input type="date" class="input" id="tdDoneDay" value="'+sel+'" '+App.view.chg('onDoneDayChange')+' aria-label="완료 날짜 선택">'+
         (sel!==today?('<button class="chip" '+App.view.act('setDoneDay',today)+'>오늘</button>'):'')+'</div>';
+      h+=todoHeatHtml();   // 🌱 완료 잔디(최근 15주 히트맵)
       h+='<div class="sech"><span class="l">완료</span><span class="s">'+done.length+'개</span></div>';
       h+='<div class="card" style="padding:4px 12px;">'+(done.length?done.map(t=>todoRow(t,ro)).join(''):'<div class="empty" style="padding:26px 6px;">이 날 완료한 할일이 없어요</div>')+'</div>';
       return h; }
@@ -1628,6 +1649,7 @@
       if(!t.done && t.repeat && t.repeat!=='none' && t.dueDate){
         let _nd=nextDue(t.dueDate,t.repeat,t.repeatDays); const _t=todayKst(); let _g=0; while(_nd<=_t && _g++<400) _nd=nextDue(_nd,t.repeat,t.repeatDays);   // 밀린 회차 catch-up: 다음 예정을 오늘(KST) 이후로 — 오래 밀려도 한 번 완료로 미래 회차가 됨(즉시 재-지남 방지). 매주 요일 지정(repeatDays)도 반영.
         const upd={ dueDate:_nd, doneByUid:(state.uid||''), lastDoneAt:now, doneCount:(Number(t.doneCount)||0)+1, updatedAt:now };   // 반복 완료 횟수 누적(완료 이력·리포트 반영)
+        upd['doneLog/'+_t]=true;   // 🌱 반복 완료 날짜 로그(완료 잔디 히트맵 재료 — 비반복은 doneAt이 이력이지만 반복은 lastDoneAt만 남아 날짜키로 축적)
         if(firstReward) upd.rewardClaimed=true;
         ref.update(upd);
         const _np=_nd.split('-'); const nxt=(+_np[1])+'월 '+(+_np[2])+'일('+WEEK[new Date(_nd+'T00:00:00').getDay()]+')로 넘겼어요';   // 요일 지정 매주는 같은 주 다음 요일일 수 있어 실제 날짜로 안내
@@ -2046,8 +2068,43 @@
       });
       state._sheetBackFn=()=>openTxSearch();   // ↩️ 확인/취소 후 검색 시트로 복귀
     }
+    // 📅 리포트 [월간 | 연간] 토글 — 연간 뷰는 연 총계·12개월 막대·카테고리 연간 합(월 막대 탭=그 달 월간 뷰로)
+    let _repRange='month';
+    function setRepRange(r){ _repRange=r; renderStats(); }
+    function repRangeSegHtml(){ return '<div style="display:flex;justify-content:center;padding:6px 0 0;"><span class="repvalseg"><button class="'+(_repRange==='year'?'':'on')+'" '+App.view.act('setRepRange','month')+'>월간</button><button class="'+(_repRange==='year'?'on':'')+'" '+App.view.act('setRepRange','year')+'>연간</button></span></div>'; }
+    function statsYearMove(d){ state._repYear=(state._repYear||+todayStr().slice(0,4))+d; renderStats(); }
+    function yearBarTap(mm){ _repRange='month'; state.month=mm; renderStats(); }
+    function yearStatsHtml(){
+      const y=state._repYear||(+todayStr().slice(0,4));
+      const curY=+todayStr().slice(0,4), curM=+todayStr().slice(5,7);
+      let h=repRangeSegHtml();
+      h+='<div class="monthlbl"><button '+App.view.act('statsYearMove',-1)+' aria-label="이전 해">‹</button><b>'+y+'년</b><button '+App.view.act('statsYearMove',1)+' aria-label="다음 해">›</button></div>';
+      const months=[]; for(let i=1;i<=12;i++) months.push(y+'-'+pad2(i));
+      const perM=months.map(mm=>{ const l=monthTx(mm); return { m:mm, exp:actualSpend(l), inc:sumBy(l.filter(t=>t.isActualExpense!==false),'income') }; });
+      const totExp=perM.reduce((s,x)=>s+x.exp,0), totInc=perM.reduce((s,x)=>s+x.inc,0);
+      const nMon=(y===curY)?Math.max(1,curM):12;   // 올해는 경과 개월 기준 월평균
+      h+='<div class="card" style="margin-bottom:6px"><div style="font-size:12px;color:var(--sub);font-weight:700;margin-bottom:6px">'+y+'년 총지출</div>'+
+        '<div class="bigexp">₩ '+fmtComma(totExp)+'</div>'+
+        '<div class="statrow">'+
+          '<div><div class="k">수입</div><div class="v" style="color:var(--income)">'+signComma(totInc)+'</div></div>'+
+          '<div><div class="k">잔액</div><div class="v">'+signComma(totInc-totExp)+'</div></div>'+
+          '<div style="margin-left:auto"><div class="k">월평균 지출</div><div class="v">'+won(Math.round(totExp/nMon))+'</div></div>'+
+        '</div></div>';
+      const mx=Math.max(1,...perM.map(x=>x.exp));
+      h+='<div class="sech"><span class="l">월별 지출</span><span class="s">탭=그 달 리포트</span></div><div class="bars6">'+
+        perM.map(x=>'<div class="b" '+App.view.act('yearBarTap',x.m)+' role="button" tabindex="0" aria-label="'+x.m+' 월간 리포트 보기"><div class="bar'+(x.m===todayStr().slice(0,7)?' on':'')+'" style="height:'+Math.round(x.exp/mx*100)+'%"></div><div class="bl">'+(+x.m.split('-')[1])+'</div></div>').join('')+'</div>';
+      const cd={}; state.transactions.forEach(t=>{ if(!isActual(t)||!t.category) return; if((t.date||'').slice(0,4)!==String(y)) return; cd[t.category]=(cd[t.category]||0)+(Number(t.amount)||0); });
+      const keys=Object.keys(cd).sort((a,b)=>cd[b]-cd[a]);
+      if(keys.length){ const tot=keys.reduce((s,k)=>s+cd[k],0)||1;
+        h+='<div class="sech"><span class="l">카테고리별 (연간)</span><span class="s">'+keys.length+'개</span></div><div class="card">'+
+          keys.slice(0,12).map(k=>'<div style="margin:9px 0;"><div class="row" style="font-size:13px;"><span style="display:flex;align-items:center;gap:7px;"><span class="catdot" style="background:'+catColor(k)+'"></span>'+escapeHtml(k)+'</span><span><b>'+won(cd[k])+'</b> <span class="tx-sub">'+Math.round(cd[k]/tot*100)+'%</span></span></div><div class="bar"><i style="width:'+Math.round(cd[k]/tot*100)+'%;background:'+catColor(k)+'"></i></div></div>').join('')+
+          (keys.length>12?'<div class="tx-sub" style="margin-top:6px;">외 '+(keys.length-12)+'개 카테고리</div>':'')+'</div>';
+      } else h+='<div class="empty" style="padding:24px;">'+y+'년 지출 데이터가 없습니다</div>';
+      return h;
+    }
     function renderStats(){
       if(typeof markReportSeen==='function') markReportSeen();   // 🐱 주간 미션: 리포트 확인
+      if(_repRange==='year'){ $('content').innerHTML=yearStatsHtml(); return; }   // 📅 연간 뷰
       const m=state.month, list=monthTx(m);
       const actual=actualSpend(list), inc=sumBy(list.filter(t=>t.isActualExpense!==false),'income');   // 원금회수 등 isActualExpense:false 수입은 '실수입' 아님(부채·자산 이동) → 리포트 수입에서 제외(수입 부풀림 방지)
       const refundTot=list.filter(t=>t.type==='refund').reduce((s,t)=>s+(Number(t.amount)||0),0);   // 💸 환불 합계 — 잔액에 반영(이전엔 수입·지출 어디에도 안 잡혀 잔액이 실제와 어긋났음)
@@ -2055,8 +2112,8 @@
       const [yy,mo]=m.split('-');
       const _curM=(typeof todayStr==='function'?todayStr():'').slice(0,7);
       const budgetRef=(m===_curM)?new Date():new Date(+yy,+mo-1,15);   // 📅 예산 기준일=보는 달(이번 달이면 오늘 → 주간예산=이번주 유지, 과거/미래 달이면 그 달)
-      // 월 네비
-      let h='<div class="monthlbl" style="padding-top:6px"><button '+App.view.act('statsMonth',-1)+' aria-label="이전 달">‹</button><b>'+yy+'년 '+(+mo)+'월</b><button '+App.view.act('statsMonth',1)+' aria-label="다음 달">›</button></div>';
+      // 월 네비 (+ [월간|연간] 토글)
+      let h=repRangeSegHtml()+'<div class="monthlbl"><button '+App.view.act('statsMonth',-1)+' aria-label="이전 달">‹</button><b>'+yy+'년 '+(+mo)+'월</b><button '+App.view.act('statsMonth',1)+' aria-label="다음 달">›</button></div>';
       // 총지출 카드 + 수입/잔액/전월 대비
       const pActual=actualSpend(monthTx(shiftMonth(m,-1)));
       let momHtml;
@@ -2086,6 +2143,19 @@
       const pcd={}; monthTx(shiftMonth(m,-1)).filter(t=>isActual(t)&&t.category).forEach(t=>{ pcd[t.category]=(pcd[t.category]||0)+(Number(t.amount)||0); });
       let topInc=null; cats.forEach(c=>{ const prev=pcd[c.name]||0; if(prev>=10000){ const d=(c.val-prev)/prev; if(d>=0.3 && (!topInc||d>topInc.d)) topInc={name:c.name,d:d}; } });
       if(topInc) h+='<div class="tx-sub" style="margin:2px 2px 10px;">💡 이번 달 <b>'+escapeHtml(topInc.name)+'</b> 지출이 지난달보다 <b>'+Math.round(topInc.d*100)+'%</b> 늘었어요.</div>';
+      // 📊 전월 비교 — 카테고리별 지난달 → 이번달 증감(상위 8, 대출 병합 등 도넛과 동일 집계 repCatSums)
+      { const pm=shiftMonth(m,-1); const prevCd=repCatSums(pm).cd;
+        if(totCat>0 && Object.keys(prevCd).length){
+          const names={}; cats.forEach(c=>{ names[c.name]=1; }); Object.keys(prevCd).forEach(k=>{ names[k]=1; });
+          const rows=Object.keys(names).map(k=>({ name:k, cur:cd[k]||0, prev:prevCd[k]||0 }))
+            .sort((a,b)=>Math.max(b.cur,b.prev)-Math.max(a.cur,a.prev)).slice(0,8);
+          h+='<div class="sech"><span class="l">전월 비교</span><span class="s">'+(+pm.split('-')[1])+'월 → '+(+mo)+'월</span></div>';
+          h+='<div class="card">'+rows.map(r=>{ const d=r.cur-r.prev;
+            const dTxt=d===0?'<span class="tx-sub">—</span>':('<span style="font-weight:700;font-size:12px;color:'+(d>0?'var(--expense)':'var(--income)')+'">'+(d>0?'▲':'▼')+fmtComma(Math.abs(d))+'</span>');
+            return '<div class="row" style="padding:6px 0;font-size:13px;"><span style="display:flex;align-items:center;gap:7px;min-width:0;"><span class="catdot" style="background:'+catColor(r.name)+'"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(r.name)+'</span></span>'+
+              '<span style="display:flex;align-items:center;gap:8px;flex:none;"><span class="tx-sub">'+fmtComma(r.prev)+'</span><span class="tx-sub">→</span><b>'+fmtComma(r.cur)+'</b>'+dTxt+'</span></div>';
+          }).join('')+'</div>';
+        } }
       // 통화별(해외통화 있을 때만) — 이번 달 실지출을 통화로 그룹(sumByCurrency 재사용)
       const byCur=sumByCurrency(list.filter(isActual)); const curCodes=Object.keys(byCur);
       if(curCodes.some(c=>c!=='KRW')){

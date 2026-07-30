@@ -5,6 +5,24 @@
 
 **이번 세션 결정: 코드 변경 없음 — 아래는 순차 진행용 로드맵.** 각 항목은 항목별 지시가 오면 착수.
 
+## ✅ 진행 현황 (2026-07-30 전수 점검)
+
+권장 실행 순서의 **실행 항목은 모두 구현 완료**로 확인됨(각 항목 본문은 사료로 유지):
+
+| 항목 | 상태 | 확인 근거 |
+|---|---|---|
+| E1 문서 드리프트 · E2 gitignore · D4 죽은코드 | ✅ 완료 | CLAUDE.md에 "구 NO_GACHA_TIERS 제거" 반영, .gitignore에 프리뷰/캐시(+`_zips/`) 등록, M_DDEUL_FLOOR류 미존재 |
+| A1·A2 픽업/리빌 씬 메모이즈 | ✅ 완료 | `_pkSceneCache`/`_sunsetCache`/`_nightCache`(cats.gacha.js) + `invalidateSceneCaches` |
+| A4 오프스크린 씬 정지 | ✅ 완료 | `pkObserveScenes`(cats.house.js) — 시트 오픈·리프레시마다 재관찰 |
+| B1 앱 셸 버전 내 cache-first · B2 install 견고화 | ✅ 완료 | sw.js — 동일출처 셸 cache-first(버전 원자 갱신), CORE_SHELL `addAll`+EXTRA_SHELL `Promise.allSettled` |
+| C1 config 리스너 누수 | ✅ 완료 | `initCatGame`의 `_cfgListenersInit` 세션 1회 가드 + `loadBroadcasts`/`loadMyAdminGifts` off-후-재구독 |
+| C2 레거시 루트 금융 노드 · C3 codes squat | ✅ 완료 | database.rules.json에서 레거시 노드 제거, codes/friendCodes `!data.exists()` 가드. + 신규 DB 부팅 보호(`migrateLegacyIfNeeded` 루트 accounts 프로브 try/catch) |
+| C4 트랜잭션 중단 무반응 | ✅ 완료 | openGacha 3경로 abort 시 `closeFx()`+토스트, 배치 레이스는 재렌더 원위치 |
+| C5 랜덤박스 가구 중복 표시 | ✅ 완료 | 가구 캡 초과 dup 판정 + `dupPay`(무지개동전/은화 환급 표기) |
+| D1 ASSET_TYPES 팩토리 · D2 관리핸들러 통합 · D3 catShopHtml 축소 | ✅ 완료 | `ASSET_TYPES`+`effAssetTier`/`assetBuyPrice`(별칭 유지), `setAssetTier` 통합, `surfaceShopGrid` 분리(144→~119줄) |
+
+**의도적 보류(로드맵 자체 판정 유지)**: A3 `_sheetRefresh` 도메인 스코핑(A1 씬 캐시가 비용 대부분 흡수 — 잔여 이득 대비 매핑 위험 중간), A5 pxSvg 소형 memo(A1로 흡수), C6 구매 경로 재검증(발생확률 극히 낮음·완결성 메모), D5 아이콘 레지스트리·D6 거대 함수 분해(후순위·기회성 — 해당 구역을 실제로 고칠 때 함께).
+
 **핵심 결론 3줄**
 - 엔진·타이머·리스너·트랜잭션(경제)·XSS 방어는 대체로 **양호**(감사가 정상 확인). 큰 리라이트 불필요.
 - **최대 렉 원인은 하나**: 픽업 배너 씬(`pickupSceneHtml`)이 RTDB 업데이트마다 ~255KB/~4,000노드로 통째 재생성됨 → 메모이즈 한 방으로 해소.

@@ -17,5 +17,8 @@ design_sample/
 # 파이썬 캐시
 __pycache__/
 
+# 펫 에셋 zip 투입함(tools/build_pets.py 입력) — 원본 zip은 커밋하지 않음
+_zips/
+
 # claude 임시 패치 파일
 .cl.patch
