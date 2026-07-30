@@ -1,0 +1,30 @@
+name: harvest-notify
+
+# 🌾 수확 리마인더 — 알뜰홈 유휴 수확이 20시간 이상 쌓인(24h 캡 임박) 사용자에게 하루 1회 푸시.
+# 12:00 KST(=03:00 UTC) 매일. 중복은 pushMeta.lastHarvestNotify(일자)로 방지.
+# 활성 조건: Secret FIREBASE_SERVICE_ACCOUNT(서비스계정 JSON). 없으면 스크립트가 no-op.
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # 매일 03:00 UTC = 12:00 KST
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: 'dry run(발송 안 함, 대상만 출력)'
+        type: boolean
+        default: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: install firebase-admin
+        run: npm i --no-save firebase-admin@12
+      - name: send harvest reminders
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node tools/send_reminders.mjs --type=harvest ${{ (github.event_name == 'workflow_dispatch' && inputs.dry) && '--dry' || '' }}

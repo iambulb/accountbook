@@ -1,0 +1,31 @@
+name: todo-time-reminders
+
+# ⏰ 할일 마감 시간 리마인더 — dueTime이 있는 오늘 할일이 곧(≤35분) 마감이면 푸시.
+# 30분 간격 크론(KST 07:00~23:59만 — UTC 22,23시 + 0~14시). GitHub Actions 스케줄은 best-effort라 수 분 지연 가능.
+# 중복은 pushMeta.lastTodoTimeNotify(알린 마지막 마감시각 ISO) 워터마크로 방지.
+# 활성 조건: Secret FIREBASE_SERVICE_ACCOUNT(서비스계정 JSON). 없으면 스크립트가 no-op.
+
+on:
+  schedule:
+    - cron: '*/30 0-14,22,23 * * *'   # UTC 22:00~다음날 14:59 = KST 07:00~23:59, 30분 간격
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: 'dry run(발송 안 함, 대상만 출력)'
+        type: boolean
+        default: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: install firebase-admin
+        run: npm i --no-save firebase-admin@12
+      - name: send due-time reminders
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node tools/send_reminders.mjs --type=todotime ${{ (github.event_name == 'workflow_dispatch' && inputs.dry) && '--dry' || '' }}

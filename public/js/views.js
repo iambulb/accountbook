@@ -1338,7 +1338,7 @@
       return (editable
         ? '<button class="tdue tap '+cls+'" '+App.view.act('openTodoReschedule',t.id)+' aria-label="날짜 옮기기">'+txt+'</button>'
         : '<span class="tdue '+cls+'">'+txt+'</span>')+tt; }
-    function todoRow(t, ro){
+    function todoRow(t, ro, drag){
       // 담당자 표시: 현재 멤버면 최신 이름(개명 반영)+아바타, 탈퇴 등 미상이면 저장된 이름 텍스트(uid 노출 방지)
       const _tmem=(state.wsMeta&&state.wsMeta.members)||{}, _isMem=t.assignedUid&&_tmem[t.assignedUid];
       const _anm=_isMem?(_tmem[t.assignedUid].name||''):(t.assignedName||'');
@@ -1359,9 +1359,55 @@
       const titleTag=ro
         ? '<span class="tdtitle'+(t.done?' done':'')+'">'
         : '<span class="tdtitle'+(t.done?' done':'')+'" '+App.view.act('openTodoEdit',t.id)+'>';
-      return '<div class="tdrow">'+chk+prioDot+catDot+
+      const dragH=(drag&&!ro)?'<span class="tddrag" onpointerdown="tdDragDown(event,\''+escapeHtml(t.id)+'\')" title="끌어서 순서 변경" aria-label="순서 변경">≡</span>':'';   // ↕️ 수동 정렬 핸들(마감순 보기)
+      return '<div class="tdrow" data-tdid="'+escapeHtml(t.id)+'">'+chk+prioDot+catDot+
         titleTag+escapeHtml(t.title||'')+repPill+subBadge+tagHtml+(t.purposeBookId?' <span class="pill">📍</span>':'')+'</span>'+
-        todoDueBadge(t, ro)+who+'</div>';
+        todoDueBadge(t, ro)+who+dragH+'</div>';
+    }
+    // ↕️ 할일 수동 정렬(마감순 보기 전용) — ≡ 핸들을 끌어 놓으면 '같은 마감일·우선순위 묶음 안'에서 sortOrder를 바꾼다
+    //  (목록 1차 정렬이 마감일·우선순위라 묶음 밖으로는 못 나감 — 밖에 놓으면 그 묶음의 끝으로 클램프됨).
+    let _tdDrag=null;
+    function tdDragDown(e, id){
+      e.preventDefault(); e.stopPropagation();
+      const row=e.target&&e.target.closest?e.target.closest('.tdrow'):null; if(!row||!row.parentElement) return;
+      _tdDrag={ id:id, row:row, card:row.parentElement, startY:e.clientY, after:undefined };
+      row.classList.add('dragging');
+      document.addEventListener('pointermove', tdDragMove);
+      document.addEventListener('pointerup', tdDragUp);
+      document.addEventListener('pointercancel', tdDragUp);
+    }
+    function tdDragMove(e){ const d=_tdDrag; if(!d) return;
+      d.row.style.transform='translateY('+(e.clientY-d.startY)+'px)';
+      const sibs=Array.prototype.filter.call(d.card.children, function(el){ return el.classList&&el.classList.contains('tdrow')&&el!==d.row; });
+      let after=null; sibs.forEach(function(s){ const r=s.getBoundingClientRect(); if(e.clientY > r.top + r.height/2) after=s; });
+      d.after=after;
+    }
+    function tdDragUp(){ const d=_tdDrag; _tdDrag=null; if(!d) return;
+      document.removeEventListener('pointermove', tdDragMove);
+      document.removeEventListener('pointerup', tdDragUp);
+      document.removeEventListener('pointercancel', tdDragUp);
+      d.row.classList.remove('dragging'); d.row.style.transform='';
+      if(d.after===undefined) return;   // 움직이지 않음
+      const byId={}; scopedTodos().forEach(function(x){ byId[x.id]=x; });
+      const t=byId[d.id]; if(!t) return;
+      // 새 시각 순서(id 배열): 남은 행 순서에 드래그 행을 after 뒤(또는 맨 앞)로 삽입
+      const others=Array.prototype.filter.call(d.card.children, function(el){ return el.classList&&el.classList.contains('tdrow')&&el!==d.row; })
+        .map(function(el){ return el.getAttribute('data-tdid'); });
+      const idx=d.after?(others.indexOf(d.after.getAttribute('data-tdid'))+1):0;
+      others.splice(idx,0,d.id);
+      // 같은 (마감일|우선순위) 묶음 안에서의 상대 순서만 반영 — sortOrder를 이웃 사이 값으로
+      const keyOf=function(x){ return (x.dueDate||'')+'|'+(x.priority||'normal'); };
+      const grp=others.filter(function(i2){ const x=byId[i2]; return x&&keyOf(x)===keyOf(t); });
+      const pos=grp.indexOf(d.id);
+      const so=function(i2){ const x=byId[i2]; return (x&&x.sortOrder!=null)?Number(x.sortOrder):0; };
+      let ns;
+      if(pos<0) return;
+      else if(grp.length===1) return;   // 묶음에 혼자면 의미 없음
+      else if(pos===0) ns=so(grp[1])-1000;
+      else if(pos===grp.length-1) ns=so(grp[pos-1])+1000;
+      else ns=(so(grp[pos-1])+so(grp[pos+1]))/2;
+      todoDbRef(t).update({ sortOrder:ns, updatedAt:new Date().toISOString() }).catch(_saveErr);
+      renderTodoList();
     }
     // ☑ 하위 작업 시트 — 항목별 완료 토글(추가·삭제·수정은 할일 편집에서). 토글 시 시트만 갱신(_sheetRefresh).
     function openTodoSubtasks(id){
@@ -1458,7 +1504,7 @@
             '<div class="card" style="padding:4px 12px;">'+gr.list.map(t=>todoRow(t, roList)).join('')+'</div>';
         }).join('');
       } else {
-        h+='<div class="card" style="padding:4px 12px;">'+(open.length?open.map(t=>todoRow(t, roList)).join(''):'<div class="empty" style="padding:26px 6px;">'+emptyMsg+'</div>')+'</div>';
+        h+='<div class="card" style="padding:4px 12px;">'+(open.length?open.map(t=>todoRow(t, roList, true)).join(''):'<div class="empty" style="padding:26px 6px;">'+emptyMsg+'</div>')+'</div>';   // 마감순 보기=수동 정렬 핸들(≡) 표시
       }
       if(done.length){ const _dc=done.slice(0,20); const _dl='오늘 '+done.length+'개'+(done.length>_dc.length?(' · '+_dc.length+' 표시'):'');
         h+='<div class="sech"><span class="l">완료</span><span class="s">'+_dl+'</span></div><div class="card" style="padding:4px 12px;">'+_dc.map(t=>todoRow(t, roList)).join('')+'</div>'; }
@@ -1497,6 +1543,52 @@
         if(!ro && sel!==todayS && selOpen.length) h+='<button class="td-carry" '+App.view.act('carryDayToToday',sel)+'>🕘 이 날 미완료 '+selOpen.length+'개 → 오늘로</button>'; }
       h+='<div class="card" style="padding:4px 12px;">'+(dayT.length?dayT.map(t=>todoRow(t,ro)).join(''):'<div class="empty" style="padding:22px 6px;">이 날 할일이 없어요</div>')+'</div>';
       return h;
+    }
+    // ===== 📋 할일 템플릿(체크리스트 세트) — 여행 준비물·장보기 등 자주 쓰는 할일 묶음을 저장해 두고 원탭으로 통째로 추가 =====
+    //  저장: users/{uid}/todoTpls/{id} = { name, lines:[제목…], createdAt } — 개인 전역(어느 그룹에서든 적용 가능, 쓰기=본인).
+    function openTodoTpls(){
+      openSheet('할일 템플릿', '<div class="empty" style="padding:30px;">불러오는 중…</div>');
+      db.ref('users/'+state.uid+'/todoTpls').once('value').then(function(s){
+        if(!($('sheet')&&$('sheet').classList.contains('on'))) return;
+        const o=s.val()||{}; const list=Object.keys(o).map(function(k){ return Object.assign({id:k}, o[k]); }).sort(function(a,b){ return (b.createdAt||'').localeCompare(a.createdAt||''); });
+        let h='<p class="muted" style="font-size:12.5px;margin:2px 2px 12px;line-height:1.55;">자주 쓰는 할일 묶음을 저장해 두고 <b>적용</b> 한 번으로 지금 목록('+(isPersonalWs()?'내 할일':'그룹 할일')+')에 통째로 추가해요.</p>';
+        list.forEach(function(t){ const n=(t.lines||[]).length;
+          h+='<div class="card" style="padding:12px 14px;"><div class="row"><b>'+escapeHtml(t.name||'템플릿')+' <span class="pill">'+n+'개</span></b>'+
+            '<span style="display:flex;gap:6px;"><button class="chip" '+App.view.act('applyTodoTpl',t.id)+'>적용</button><button class="chip" '+App.view.act('deleteTodoTpl',t.id)+'>삭제</button></span></div>'+
+            '<div class="tx-sub" style="margin-top:6px;">'+escapeHtml((t.lines||[]).slice(0,4).join(' · '))+(n>4?' …':'')+'</div></div>';
+        });
+        if(!list.length) h+='<div class="empty" style="padding:18px;">저장된 템플릿이 없어요</div>';
+        h+='<div class="card" style="padding:14px;"><div class="sec-title" style="margin:0 0 8px;">＋ 새 템플릿</div>'+
+          '<div class="field"><label>이름</label><input class="input" id="tplName" placeholder="예: 여행 준비물"></div>'+
+          '<div class="field"><label>할일 목록 (한 줄에 하나)</label><textarea class="input" id="tplLines" rows="5" placeholder="여권 챙기기&#10;환전하기&#10;로밍 신청"></textarea></div>'+
+          '<button class="btn" '+App.view.act('saveTodoTpl')+'>템플릿 저장</button></div>';
+        const b=$('sheetBody'); if(b) b.innerHTML=h;
+        state._sheetReopen=function(){ openTodoTpls(); };
+      });
+    }
+    function saveTodoTpl(){
+      const name=(val('tplName')||'').trim(); const lines=(val('tplLines')||'').split('\n').map(function(s){ return s.trim(); }).filter(Boolean).slice(0,30);
+      if(!name||!lines.length){ toast('이름과 할일을 입력하세요', true); return; }
+      db.ref('users/'+state.uid+'/todoTpls/'+Date.now()).set({ name:name, lines:lines, createdAt:new Date().toISOString() }).catch(_saveErr);
+      toast('템플릿을 저장했어요'); setTimeout(openTodoTpls, 150);
+    }
+    function deleteTodoTpl(id){ confirmSheet('이 템플릿을 삭제할까요?', function(){ db.ref('users/'+state.uid+'/todoTpls/'+id).remove(); toast('삭제되었습니다'); setTimeout(openTodoTpls,150); }); }
+    function applyTodoTpl(id){
+      db.ref('users/'+state.uid+'/todoTpls/'+id).once('value').then(function(s){
+        const t=s.val(); if(!t||!(t.lines||[]).length){ toast('템플릿이 비어 있어요', true); return; }
+        const scope=isPersonalWs()?'personal':'group';
+        const today=todayKst(), now=new Date().toISOString(), base=Date.now();
+        const upd={};
+        t.lines.forEach(function(title,i){ upd['todo_'+(base+i)]={ title:title, note:'', dueDate:today, dueTime:'', scope:scope,
+          ownerUid:scope==='personal'?(state.uid||''):'', assignedUid:'', assignedName:'', repeat:'none', repeatDays:[], purposeBookId:'',
+          priority:'normal', category:'', catName:'', catColor:'', tags:[], subtasks:[],
+          done:false, doneAt:'', doneByUid:'', rewardClaimed:false,
+          createdByUid:state.uid||'', createdAt:now, updatedAt:now, sortOrder:base+i }; });
+        const ref=scope==='personal'?db.ref('users/'+state.uid+'/todos'):db.ref(wp('todos'));
+        ref.update(upd).catch(_saveErr);
+        toast('\''+(t.name||'템플릿')+'\' '+t.lines.length+'개를 오늘 할일로 추가했어요');
+        closeSheet(); if(state.tab==='todo') renderTodoList();
+      });
     }
     // 🕘 특정 날짜의 미완료 할일만 오늘로 이동(캘린더 날짜별 버튼) — carryOverdueToToday와 같은 fan-out update(원자), 그 날짜분만.
     function carryDayToToday(ds){
@@ -1540,11 +1632,31 @@
         ref.update(upd);
         const _np=_nd.split('-'); const nxt=(+_np[1])+'월 '+(+_np[2])+'일('+WEEK[new Date(_nd+'T00:00:00').getDay()]+')로 넘겼어요';   // 요일 지정 매주는 같은 주 다음 요일일 수 있어 실제 날짜로 안내
         if(firstReward && typeof grantTodoCoins==='function'){ grantTodoCoins(function(paid){ toast(paid>0?('완료! +'+paid+' 은화 · '+nxt):('완료! '+nxt)); }); } else toast('완료! '+nxt);
+        maybeSuggestTxFromTodo(t);
       } else {
         const done=!t.done; const upd={ done:done, doneAt:done?now:'', doneByUid:done?(state.uid||''):'', updatedAt:now };
         if(done && firstReward){ upd.rewardClaimed=true; ref.update(upd); if(typeof grantTodoCoins==='function'){ grantTodoCoins(function(paid){ toast(paid>0?('완료! +'+paid+' 은화 🐾'):'완료! 🐾'); }); } else toast('완료! 🐾'); }
         else { ref.update(upd); if(done) toast('다시 완료했어요'); }   // 이 분기의 done=재완료(이미 보상받음) → 첫 완료와 구분(허위 보상 문구 방지)
+        if(done) maybeSuggestTxFromTodo(t);
       }
+    }
+    // 💸 구매성 할일 완료 → 지출 기록 제안 — 제목에 구매 키워드가 있거나 목적별 가계부에 연결된 할일만, 할일당 1회(localStorage).
+    //    수락하면 거래 입력 시트가 열리고 설명=할일 제목·목적별 연결이 프리필된다(완료 토스트를 먼저 보여주고 잠깐 뒤 제안).
+    const TODO_BUY_RE=/(사기|사오|구매|구입|결제|쇼핑|주문|예약|장보|납부|충전|택배|선물)/;
+    function maybeSuggestTxFromTodo(t){
+      try{
+        if(!(TODO_BUY_RE.test(t.title||'') || t.purposeBookId)) return;
+        const key='todotx:'+(state.uid||'');
+        let seen={}; try{ seen=JSON.parse(localStorage.getItem(key)||'{}')||{}; }catch(e){}
+        if(seen[t.id]) return; seen[t.id]=1; try{ localStorage.setItem(key, JSON.stringify(seen)); }catch(e){}
+        const title=t.title||'', pb=t.purposeBookId||'';
+        setTimeout(function(){
+          confirmSheet('\''+title+'\' 완료! 관련 지출도 기록할까요?', function(){
+            openTxSheet(null, null, null, pb||null);
+            setTimeout(function(){ const d=$('sDesc'); if(d && !d.value) d.value=title; }, 60);
+          }, { okLabel:'지출 기록', danger:false, title:'💸 지출 기록' });
+        }, 400);
+      }catch(e){}
     }
     // 📅 미완료 할일을 다른 날짜로 옮기기(리스케줄) — 마감일 배지 탭으로 진입. dueDate만 갱신(노드 경로·키 불변).
     function openTodoReschedule(id){ const t=allTodos().find(x=>x.id===id); if(!t) return;
@@ -1843,6 +1955,97 @@
       openSheet(nm+' 지출', h);   // 시트 제목은 textContent 삽입이라 escape 불필요
       state._sheetReopen=()=>openRepPersonTx(m,pk);   // ↩️ 거래 수정 시트 닫으면 이 드릴다운으로 복귀
     }
+    // ===== 🔍 거래 검색 + ☑️ 일괄 편집 =====
+    //  순수 매칭 txMatches(util.js)를 UI로 — 키워드(설명·메모·카테고리)·기간·금액범위·유형 필터, 결과 최신순(100건 표시).
+    //  '선택' 모드: 행 탭=선택 토글 → 카테고리·소비대상 일괄 변경(즉시)·일괄 삭제(확인, coPay 짝·정기 멱등로그 정리 포함).
+    let _txsT=0;
+    function openTxSearch(){
+      const q=state._txSearch||(state._txSearch={});
+      state._txsSel=false; state._txsSet={};   // 열 때 선택 모드 초기화
+      let h='<div class="field"><label for="txsKw">키워드(설명·메모·카테고리)</label><input class="input" id="txsKw" value="'+escapeHtml(q.keyword||'')+'" oninput="txsSet(\'keyword\',this.value)" placeholder="예: 병원, 스타벅스"></div>';
+      h+='<div class="form-2"><div class="field"><label>시작일</label><input type="date" class="input" id="txsFrom" value="'+(q.dateFrom||'')+'" '+App.view.chg('txsChg')+'></div>'+
+        '<div class="field"><label>종료일</label><input type="date" class="input" id="txsTo" value="'+(q.dateTo||'')+'" '+App.view.chg('txsChg')+'></div></div>';
+      h+='<div class="form-2"><div class="field"><label>최소 금액</label><input class="input" id="txsMin" inputmode="numeric" value="'+(q.amountMin?Number(q.amountMin).toLocaleString():'')+'" oninput="this.value=fmtComma(this.value);txsChg()"></div>'+
+        '<div class="field"><label>최대 금액</label><input class="input" id="txsMax" inputmode="numeric" value="'+(q.amountMax?Number(q.amountMax).toLocaleString():'')+'" oninput="this.value=fmtComma(this.value);txsChg()"></div></div>';
+      h+='<div class="field"><label>유형</label><select class="input" id="txsType" '+App.view.chg('txsChg')+'><option value="">전체</option>'+Object.keys(TYPE_LABEL).map(tp=>'<option value="'+tp+'"'+(q.type===tp?' selected':'')+'>'+TYPE_LABEL[tp]+'</option>').join('')+'</select></div>';
+      h+='<div id="txsResults"></div>';
+      openSheet('거래 검색', h);
+      state._sheetReopen=()=>openTxSearch();     // ↩️ 결과에서 거래 수정 후 검색으로 복귀(조건 유지)
+      state._sheetRefresh=_txsRender;            // 데이터 갱신(일괄 변경 반영) 시 결과만 다시 그림(입력 포커스 유지)
+      _txsRender();
+    }
+    function txsSet(k,v){ (state._txSearch||(state._txSearch={}))[k]=v; clearTimeout(_txsT); _txsT=setTimeout(_txsRender,180); }
+    function txsChg(){ const q=state._txSearch||(state._txSearch={});
+      q.dateFrom=$('txsFrom')?val('txsFrom'):''; q.dateTo=$('txsTo')?val('txsTo'):'';
+      q.amountMin=$('txsMin')?(parseAmount(val('txsMin'))||''):''; q.amountMax=$('txsMax')?(parseAmount(val('txsMax'))||''):'';
+      q.type=$('txsType')?val('txsType'):'';
+      clearTimeout(_txsT); _txsT=setTimeout(_txsRender,120);
+    }
+    function _txsList(){
+      const q=Object.assign({}, state._txSearch||{});
+      if(q.dateTo) q.dateTo=q.dateTo+'~';   // tx.date는 ISO(날짜+시각)라 그날 끝까지 포함('~' > 'T')
+      return state.transactions.filter(t=>txMatches(t,q)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    }
+    function _txsRender(){
+      const r=$('txsResults'); if(!r) return;
+      const rows=_txsList(), shown=rows.slice(0,100);
+      const tot=rows.reduce((s,t)=>s+(Number(t.amount)||0),0);
+      const selMode=!!state._txsSel, set=state._txsSet||{};
+      const nSel=Object.keys(set).filter(k=>set[k]).length;
+      let h='<div class="sech"><span class="l">결과</span><span style="display:flex;align-items:center;gap:8px;">'+
+        (rows.length?'<button class="chip'+(selMode?' on':'')+'" '+App.view.act('txsToggleMode')+'>'+(selMode?'선택 끝':'선택')+'</button>':'')+
+        '<span class="s">'+rows.length+'건 · '+won(tot)+(rows.length>100?' · 100 표시':'')+'</span></span></div>';
+      if(selMode){
+        const cats=state.categories.filter(c=>c.isActive!==false).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+        h+='<div class="card" style="padding:10px 12px;margin-bottom:10px;">'+
+          '<div class="tx-sub" style="margin-bottom:8px;"><b>'+nSel+'건 선택</b> — 아래 목록의 행을 탭해 선택/해제</div>'+
+          '<div class="form-2"><select class="input" id="txsCat">'+cats.map(c=>'<option value="'+escapeHtml(c.name)+'">'+escapeHtml(c.name)+'</option>').join('')+'</select><button class="btn ghost" '+App.view.act('txsBulkCat')+'>카테고리 변경</button></div>'+
+          '<div class="form-2" style="margin-top:8px;"><select class="input" id="txsWho">'+ownerOptions(defaultOwnerUid())+'</select><button class="btn ghost" '+App.view.act('txsBulkWho')+'>소비대상 변경</button></div>'+
+          '<button class="btn danger" style="margin-top:8px;" '+App.view.act('txsBulkDel')+'>선택 삭제</button></div>';
+      }
+      h+='<div class="card" style="padding:6px 10px;">'+(shown.length?shown.map(t=>{
+        const key=t.ownerUid+'|'+t.id;
+        let row=txRowHtml(t);
+        if(selMode){ row=row.replace('data-action="openTxSheet"','');   // 선택 모드: 행의 수정 열림 비활성(래퍼가 토글 담당)
+          row='<div class="txsel'+(set[key]?' on':'')+'" '+App.view.act('txsToggleSel',key)+'>'+row+'</div>'; }
+        return row;
+      }).join(''):'<div class="empty" style="padding:22px 6px;">검색 결과가 없어요</div>')+'</div>';
+      r.innerHTML=h;
+    }
+    function txsToggleMode(){ state._txsSel=!state._txsSel; if(!state._txsSel) state._txsSet={}; _txsRender(); }
+    function txsToggleSel(key){ const set=state._txsSet||(state._txsSet={}); set[key]=!set[key]; _txsRender(); }
+    function _txsSelTx(){ const set=state._txsSet||{}; return state.transactions.filter(t=>set[t.ownerUid+'|'+t.id]); }
+    function txsBulkCat(){
+      const cat=$('txsCat')?val('txsCat'):''; const list=_txsSelTx();
+      if(!cat){ toast('카테고리를 고르세요', true); return; } if(!list.length){ toast('행을 탭해 거래를 선택하세요', true); return; }
+      const upd={}; list.forEach(t=>{ upd[t.ownerUid+'/'+t.id+'/category']=cat; });
+      db.ref(wp('transactions')).update(upd).catch(_saveErr);
+      toast(list.length+'건의 카테고리를 변경했습니다');
+    }
+    function txsBulkWho(){
+      const sel=$('txsWho')?val('txsWho'):''; const list=_txsSelTx();
+      if(!list.length){ toast('행을 탭해 거래를 선택하세요', true); return; }
+      const name=resolveOwnerName(sel), mem=(state.wsMeta&&state.wsMeta.members)||{};
+      const upd={}; list.forEach(t=>{ upd[t.ownerUid+'/'+t.id+'/user']=name; upd[t.ownerUid+'/'+t.id+'/userUid']=mem[sel]?sel:null; });
+      db.ref(wp('transactions')).update(upd).catch(_saveErr);
+      toast(list.length+'건의 소비대상을 \''+name+'\'(으)로 변경했습니다');
+    }
+    function txsBulkDel(){
+      const list=_txsSelTx(); if(!list.length){ toast('행을 탭해 거래를 선택하세요', true); return; }
+      const hasCo=list.some(t=>t.coPayTxId);
+      confirmSheet('선택한 '+list.length+'건을 삭제할까요?'+(hasCo?' (함께결제 짝 거래도 함께 삭제)':''), ()=>{
+        const upd={};
+        list.forEach(t=>{ upd[t.ownerUid+'/'+t.id]=null;
+          if(t.coPayTxId) upd[t.ownerUid+'/'+t.coPayTxId]=null;   // 본 거래 삭제 → 포인트 짝도 삭제
+          if(t.coPayMainId){ upd[t.ownerUid+'/'+t.coPayMainId+'/coPayTxId']=null; upd[t.ownerUid+'/'+t.coPayMainId+'/coPayAmount']=null; upd[t.ownerUid+'/'+t.coPayMainId+'/coPayAcct']=null; }   // 포인트 쪽 삭제 → 본 거래 연결 해제
+          if(typeof removeRecurringLog==='function'){ removeRecurringLog(t.ownerUid, t.id); if(t.coPayTxId) removeRecurringLog(t.ownerUid, t.coPayTxId); }
+        });
+        db.ref(wp('transactions')).update(upd).catch(_saveErr);
+        state._txsSet={};
+        toast(list.length+'건을 삭제했습니다');
+      });
+      state._sheetBackFn=()=>openTxSearch();   // ↩️ 확인/취소 후 검색 시트로 복귀
+    }
     function renderStats(){
       if(typeof markReportSeen==='function') markReportSeen();   // 🐱 주간 미션: 리포트 확인
       const m=state.month, list=monthTx(m);
@@ -1936,7 +2139,16 @@
       const bgs=visibleBudgets();
       if(bgs.length){
         h+='<div class="card"><div class="row" style="margin-bottom:4px;"><div class="sec-title" style="margin:0;">예산</div><button class="link" '+App.view.act('openBudgetSheet')+'>관리</button></div>'+
-          bgs.map(b=>{ const u=budgetUsage(b, budgetRef), c=budgetColor(u.pct); return '<div style="margin:10px 0;"><div class="row" style="font-size:13px;"><span>'+(b.categoryName?'<span class="catdot" style="background:'+catColor(b.categoryName)+'"></span>':'')+budgetTitle(b)+'</span><span style="color:'+c+';font-weight:700;">'+u.pct+'%'+(u.pct>=100?' 초과':(b.alertEnabled!==false&&u.pct>=(b.alertThreshold||80)?' ⚠️':''))+'</span></div><div class="bar"><i style="width:'+Math.min(u.pct,100)+'%;background:'+c+'"></i></div><div class="tx-sub" style="margin-top:4px;">'+won(u.used)+' / '+won(u.amount)+'</div></div>'; }).join('')+'</div>';
+          bgs.map(b=>{ const u=budgetUsage(b, budgetRef), c=budgetColor(u.pct);
+            // 📈 소진 속도(페이스) 예측 — 이번 달을 보는 중이고 기간이 15~95% 경과했을 때, 이 속도면 얼마나 쓸지 예측(초과 예상만 경고)
+            let pace='';
+            if(m===_curM && u.amount>0 && u.pct<100){
+              const now=parseDate(todayStr());
+              const span=(u.end-u.start)/86400000+1, gone=Math.min(span,(now-u.start)/86400000+1), frac=gone/span;
+              if(frac>=0.15 && frac<=0.95){ const projPct=Math.round(u.pct/frac);
+                if(projPct>=105) pace='<div class="tx-sub" style="margin-top:3px;color:#E0883C;">📈 이 속도면 예산의 ~'+projPct+'%까지 쓸 것 같아요</div>'; }
+            }
+            return '<div style="margin:10px 0;"><div class="row" style="font-size:13px;"><span>'+(b.categoryName?'<span class="catdot" style="background:'+catColor(b.categoryName)+'"></span>':'')+budgetTitle(b)+'</span><span style="color:'+c+';font-weight:700;">'+u.pct+'%'+(u.pct>=100?' 초과':(b.alertEnabled!==false&&u.pct>=(b.alertThreshold||80)?' ⚠️':''))+'</span></div><div class="bar"><i style="width:'+Math.min(u.pct,100)+'%;background:'+c+'"></i></div><div class="tx-sub" style="margin-top:4px;">'+won(u.used)+' / '+won(u.amount)+'</div>'+pace+'</div>'; }).join('')+'</div>';
       }
       const pbsR=visiblePBs().filter(p=>(p.status||'active')==='active');
       if(pbsR.length){
@@ -1971,6 +2183,16 @@
         '<div style="margin-left:auto;display:flex;align-items:flex-end"><span class="pill" style="margin-left:0;">계좌 '+accs.length+'개</span></div></div></div>';
       // 📅 예정(미래) 거래 안내 — 현재 잔액에 미반영
       { const _sc=(typeof scheduledTxs==='function')?scheduledTxs():[]; if(_sc.length) h+='<div class="tx-sub" style="margin:-4px 2px 10px;">📅 <b>예정 거래 '+_sc.length+'건</b> — 현재 잔액엔 아직 반영 안 됐어요(날짜가 되면 자동 반영).</div>'; }
+      // 📌 이번 달 고정지출 미리보기(정기·구독·적금) — "월급 들어와도 이만큼은 나갈 돈"
+      { const fc=monthFixedCosts();
+        if(fc.total>0){
+          h+='<div class="card" style="margin-bottom:10px;"><div class="row"><b>📌 이번 달 고정지출</b><b>'+won(fc.total)+'</b></div>'+
+            (fc.rec.sum>0?('<div class="row" style="margin-top:6px;font-size:13px;" '+App.view.act('openRecurringList')+' role="button" tabindex="0"><span class="muted">정기결제 '+fc.rec.n+'건 ›</span><span>'+won(fc.rec.sum)+'</span></div>'):'')+
+            (fc.sub.sum>0?('<div class="row" style="margin-top:4px;font-size:13px;" '+App.view.act('openSubscriptions')+' role="button" tabindex="0"><span class="muted">구독 '+fc.sub.n+'건 ›</span><span>'+won(fc.sub.sum)+'</span></div>'):'')+
+            (fc.sav.sum>0?('<div class="row" style="margin-top:4px;font-size:13px;"><span class="muted">적금 납입 '+fc.sav.n+'건</span><span>'+won(fc.sav.sum)+'</span></div>'):'')+
+            (fc.remain>0?('<div class="tx-sub" style="margin-top:8px;">오늘 이후 남은 예정 <b>'+won(fc.remain)+'</b></div>'):'<div class="tx-sub" style="margin-top:8px;">이번 달 예정분은 모두 지나갔어요</div>')+
+          '</div>';
+        } }
 
       // 입출금 · 현금
       h+=sechHtml('입출금 · 현금','openAcctSheet()');
@@ -2017,6 +2239,26 @@
 
       $('content').innerHTML=h;
     }
+    // 📌 이번 달 고정지출 집계(자산 카드) — 정기(지출성)·구독(정기 미연결만, 이중집계 방지)·적금 납입(savingsId 규칙)을 나눠 합산.
+    //    remain=오늘 이후 남은 예정액. 이번 달 발생 회차는 occurrencesV2(정기 엔진과 동일 계산)로 센다.
+    function monthFixedCosts(){
+      const mm=todayStr().slice(0,7), today=parseDate(todayStr());
+      const mStart=parseDate(mm+'-01'), mEnd=new Date(mStart.getFullYear(), mStart.getMonth()+1, 0);
+      const EXPT={expense:1,prepaid_spend:1,point_spend:1};
+      const rec={n:0,sum:0,remain:0}, sub={n:0,sum:0,remain:0}, sav={n:0,sum:0,remain:0};
+      state.recurring.filter(r=>canSee(r)&&ruleStatus(r)==='active').forEach(r=>{
+        const bucket=r.savingsId?sav:(EXPT[r.type]?rec:null); if(!bucket) return;
+        let occ=occurrencesV2(r, mStart, mEnd);
+        if(r.endDate){ const ed=parseDate(r.endDate); occ=occ.filter(o=>o<=ed); }
+        const amt=Number(r.amount)||0;
+        occ.forEach(o=>{ bucket.n++; bucket.sum+=amt; if(o>today) bucket.remain+=amt; });
+      });
+      (state.subscriptions||[]).filter(s=>(s.status||'active')==='active'&&!s.recurringId).forEach(s=>{
+        const nb=subNextBilling(s); if(!nb||String(nb).slice(0,7)!==mm) return;
+        const amt=Number(s.amount)||0; sub.n++; sub.sum+=amt; if(parseDate(nb)>today) sub.remain+=amt;
+      });
+      return { rec, sub, sav, total:rec.sum+sub.sum+sav.sum, remain:rec.remain+sub.remain+sav.remain };
+    }
     // 계좌 유형별 라인 아이콘(시안) — 색은 a.color 유지
     function acctIcon(type){
       const P={
@@ -2055,6 +2297,12 @@
       h+='<div class="field"><label>메모 (선택)</label><input class="input" id="aMemo" value="'+escapeHtml(a?(a.memo||''):'')+'" placeholder="메모"></div>';
       h+='<div id="aCardCfg" style="'+(curType==='credit_card'?'':'display:none;')+'">'+(curType==='credit_card'?cardCfgHtml(card):'')+'</div>';
       h+='<div id="aPrepaidCfg" style="'+(PREPAID_TYPES.includes(curType)?'':'display:none;')+'">'+(PREPAID_TYPES.includes(curType)?prepaidCfgHtml(a):'')+'</div>';
+      // 🧮 실제 잔액 맞추기(기존 계좌만) — 실잔액 입력 → 차액만큼 잔액조정 거래 자동 생성(직접 계산 불필요)
+      if(a){ const _bal=accountBalance(id);
+        h+='<div class="card" style="padding:14px;margin:4px 0 14px;"><div class="sec-title" style="margin:0 0 8px;">🧮 실제 잔액 맞추기</div>'+
+          '<div class="tx-sub" style="margin-bottom:8px;">앱 잔액 <b>'+won(_bal)+'</b> — 실제 잔액을 입력하면 차액만큼 <b>잔액조정 거래</b>를 만들어 맞춰드려요(실소비 통계 미포함).</div>'+
+          '<div class="form-2"><input class="input" id="aReal" inputmode="text" placeholder="실제 잔액" oninput="this.value=fmtCommaSigned(this.value)"><button class="btn ghost" '+App.view.act('adjustAcctBalance',id)+'>맞추기</button></div></div>';
+      }
       h+='<button class="btn" '+App.view.act('saveAcct', id?id:null)+'>'+(a?'수정':'추가')+'</button>';
       if(a) h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deleteAcct',id)+'>삭제</button>';
       openSheet(a?'결제수단 수정':'결제수단 추가', h);
@@ -2105,6 +2353,17 @@
           defaultIncluded:true, visibility:val('aVis'), memo:val('aMemo').trim() };
       } else if(getCard(key)){ updates['creditCards/'+key]=null; }
       db.ref(wsRoot()).update(updates); toast(id?'수정되었습니다':'추가되었습니다'); closeSheet();
+    }
+    // 🧮 실제 잔액 입력 → 차액만큼 잔액조정 거래 자동 생성 — 잔액 어긋남을 원클릭으로 보정
+    function adjustAcctBalance(id){
+      const a=getAcct(id); if(!a) return;
+      const raw=($('aReal')?val('aReal'):'').trim(); if(!raw){ toast('실제 잔액을 입력하세요', true); return; }
+      const target=parseAmountSigned(raw), cur=accountBalance(id), diff=target-cur;
+      if(!diff){ toast('이미 잔액이 일치해요'); return; }
+      const tx={ type:'balance_adjustment', date:new Date().toISOString(), user:state.userName||'', amount:diff,
+        to:id, desc:(a.name||'계좌')+' 잔액 맞추기', isActualExpense:false, memo:'실제 잔액 '+won(target)+'에 맞춤' };
+      db.ref(wp('transactions/'+state.uid+'/'+Date.now())).set(tx).catch(_saveErr);
+      toast('잔액조정 '+signComma(diff)+' 기록 — '+won(target)+'으로 맞췄어요'); closeSheet();
     }
     function deleteAcct(id){
       const used=state.transactions.some(t=>t.from===id||t.to===id);
@@ -2229,6 +2488,32 @@
       if(typeof reducedMotion==='function' && reducedMotion()) return false;
       var k=todayKst(); if(state._homeDoneCelebrated===k) return false; state._homeDoneCelebrated=k; return true;
     }
+    // 🧾 월말 결산 카드(오늘 홈, 매월 1~7일) — 지난달 총지출·수입·전월비·최다 카테고리 요약. 닫으면 그 달은 다시 안 뜸(localStorage recap:{wsId}:{월}).
+    function monthlyRecapHtml(){
+      try{
+        const today=todayKst(); if(+today.slice(8,10)>7) return '';
+        const lastM=shiftMonth(today.slice(0,7),-1);
+        if(localStorage.getItem('recap:'+(state.wsId||'')+':'+lastM)) return '';
+        const list=monthTx(lastM); if(!list.length) return '';
+        const actual=actualSpend(list); if(!actual) return '';
+        const inc=sumBy(list.filter(t=>t.isActualExpense!==false),'income');
+        const cd={}; list.filter(t=>isActual(t)&&t.category).forEach(t=>{ cd[t.category]=(cd[t.category]||0)+(Number(t.amount)||0); });
+        const top=Object.keys(cd).sort((a,b)=>cd[b]-cd[a])[0]||'';
+        const prev=actualSpend(monthTx(shiftMonth(lastM,-1)));
+        const mom=prev>0?Math.round((actual-prev)/prev*100):null;
+        const p=lastM.split('-');
+        return '<div class="card"><div class="row"><b>🧾 '+(+p[1])+'월 결산</b><button class="link" '+App.view.act('dismissRecap',lastM)+' aria-label="결산 카드 닫기">닫기</button></div>'+
+          '<div class="statrow" style="margin-top:8px;">'+
+            '<div><div class="k">총지출</div><div class="v" style="color:var(--expense)">'+won(actual)+'</div></div>'+
+            '<div><div class="k">수입</div><div class="v" style="color:var(--income)">'+won(inc)+'</div></div>'+
+            (mom!=null?('<div><div class="k">전월 대비</div><div class="v" style="color:'+(mom>=0?'var(--expense)':'var(--income)')+'">'+(mom>=0?'▲':'▼')+' '+Math.abs(mom)+'%</div></div>'):'')+
+          '</div>'+
+          (top?('<div class="tx-sub" style="margin-top:6px;">가장 많이 쓴 카테고리: <b>'+escapeHtml(top)+'</b> '+won(cd[top])+'</div>'):'')+
+          '<button class="btn ghost" style="margin-top:10px;" '+App.view.act('openRecapReport',lastM)+'>리포트에서 자세히 보기</button></div>';
+      }catch(e){ return ''; }
+    }
+    function dismissRecap(m){ try{ localStorage.setItem('recap:'+(state.wsId||'')+':'+m,'1'); }catch(e){} renderHome(); }
+    function openRecapReport(m){ try{ localStorage.setItem('recap:'+(state.wsId||'')+':'+m,'1'); }catch(e){} state.month=m; goto('ledger','stats'); }
     function renderHome(){
       const c=$('content'); if(!c) return;
       const daily=(typeof dailyMissionsToday==='function')?dailyMissionsToday():((typeof DAILY_MISSIONS!=='undefined')?DAILY_MISSIONS:[]);
@@ -2243,6 +2528,7 @@
       const kind = homeCardKind(p);   // 'sections' | 'done' | 'empty' (순수 결정, util)
 
       let h='<div class="homewrap">';
+      h+=monthlyRecapHtml();   // 🧾 월초(1~7일)엔 지난달 결산 카드(닫기 가능)
       // 인사·미션 요약·지출 카드는 제거(미션은 더보기 '미션'으로 일원화, 지출은 캘린더/자산에서). 오늘 홈 랜딩 자체는 폐지(브랜드=소식).
       if(kind==='done'){
         const cid=(typeof activeCats==='function'&&activeCats()[0])||(typeof ownedCatList==='function'&&ownedCatList()[0])||null;
@@ -2535,6 +2821,7 @@
         h+=gcell(MORE_ICON.report,'완료 리포트','openTodoReport()');
         h+=gcell(MORE_ICON.repeat,'반복 할일','openRepeatTodos()');
         h+=gcell(MORE_ICON.category,'카테고리','openTodoCatSheet()');
+        h+=gcell('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>','할일 템플릿','openTodoTpls()');
         // 목적별(가계부)은 할일 모드 더보기에서 숨김 — 가계부 모드에서만 노출
       } else {
         const activeSubs=(state.subscriptions||[]).filter(s=>s.status==='active').length;
@@ -2546,6 +2833,7 @@
         h+=gcell(MORE_ICON.gift,'경조사비','openGiftBook()');
         h+=gcell(MORE_ICON.loan,'대출/이자','openLoanBook()');
         h+=gcell(MORE_ICON.category,'카테고리','openCategorySheet()');
+        h+=gcell('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>','거래 검색','openTxSearch()');
       }
       h+='</div>';   // 모드 전용 그리드 닫기
       // 공통(모드 무관) 아이콘 — 가운데 '공통' 라벨 구분선으로 분리
@@ -2601,6 +2889,8 @@
       let h='<div class="lst">';
       if(isGroup) h+=lrow(MORE_ICON.members,'멤버 · 권한 관리',"openGroupManageSheet('"+state.wsId+"')", memCount+'명');
       h+=lrow(MORE_ICON.download,'CSV 내보내기','exportCSV()');
+      h+=lrow(MORE_ICON.download,'데이터 백업(JSON)','exportBackup()','전체');
+      h+=lrow('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V6M8 10l4-4 4 4"/><path d="M5 21h14"/></svg>','백업 복원','importBackup()');
       h+=lrowToggle(MORE_ICON.moon,'다크 모드','toggleTheme();openSettingsSheet()', state.theme==='dark');
       h+=lrowToggle(MORE_ICON.cam,'펫캠','toggleDockHidden();openSettingsSheet()', (typeof dockMode==='function'&&dockMode()!=='hidden'));
       // 🖥️ 펫캠 PiP 방식(비디오/창) — 지원 브라우저에서만 노출(iOS·미지원 환경엔 행 자체가 없음), 기본=비디오
@@ -3718,6 +4008,37 @@
       });
     }
 
+    // ===== 💾 데이터 백업(JSON) =====
+    //  내보내기 = 현재 가계부(ws 전체 스냅샷) + 내 개인 할일을 JSON 파일로. 게임(users/{uid}/game)은 제외(재화 조작 방지 — 서버가 소스).
+    //  복원 = 백업의 각 최상위 항목을 현재 가계부에 통째 교체(update — 백업에 없는 항목은 유지). 되돌릴 수 없어 확인 2중.
+    function exportBackup(){
+      toast('백업 만드는 중…');
+      Promise.all([ db.ref(wsRoot()).once('value'), db.ref('users/'+state.uid+'/todos').once('value') ]).then(function(rs){
+        const data={ app:'eggarden', ver:1, exportedAt:new Date().toISOString(), wsId:state.wsId, wsName:(state.wsMeta&&state.wsMeta.name)||'', ws:rs[0].val()||{}, myTodos:rs[1].val()||{} };
+        const blob=new Blob([JSON.stringify(data)],{type:'application/json'});
+        const url=URL.createObjectURL(blob); const a=document.createElement('a');
+        a.href=url; a.download='알뜰백업_'+((state.wsMeta&&state.wsMeta.name)||'가계부')+'_'+todayStr()+'.json';
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+        toast('백업 파일을 내려받았어요');
+      }).catch(function(){ toast('백업에 실패했어요', true); });
+    }
+    function importBackup(){
+      const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json,.json';
+      inp.onchange=function(){ const f=inp.files&&inp.files[0]; if(!f) return;
+        const rd=new FileReader();
+        rd.onload=function(){ let data=null; try{ data=JSON.parse(rd.result); }catch(e){}
+          if(!data||data.app!=='eggarden'||!data.ws){ toast('알뜰 백업 파일이 아니에요', true); return; }
+          const keys=Object.keys(data.ws);
+          confirmSheet('백업 \''+(data.wsName||data.wsId||'')+'\' ('+String(data.exportedAt||'').slice(0,10)+')의 항목 '+keys.length+'개를 현재 가계부에 덮어쓸까요? 같은 항목의 현재 데이터는 백업 내용으로 교체되며 되돌릴 수 없어요.', function(){
+            db.ref(wsRoot()).update(data.ws).then(function(){
+              if(data.myTodos && Object.keys(data.myTodos).length) return db.ref('users/'+state.uid+'/todos').update(data.myTodos);
+            }).then(function(){ toast('복원했습니다'); }).catch(function(){ toast('복원 중 오류가 났어요', true); });
+          }, { okLabel:'덮어쓰기', danger:true, title:'💾 백업 복원' });
+        };
+        rd.readAsText(f);
+      };
+      inp.click();
+    }
     // ===== CSV =====
     function exportCSV(){
       const rows=monthTx(state.month).sort((a,b)=>new Date(a.date)-new Date(b.date));

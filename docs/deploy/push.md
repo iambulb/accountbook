@@ -5,7 +5,7 @@
 ## 구성 요소(이미 코드에 포함)
 - **클라이언트**: `public/js/push.js`(권한 요청·토큰 저장·포그라운드 수신) + `public/firebase-messaging-sw.js`(백그라운드 알림 표시·클릭 시 앱 열기). 설정 시트에 **알림 토글**(FCM 설정·지원 기기에서만 노출).
 - **토큰 저장**: `users/{uid}/push = { token, at, ua }`(본인만 쓰기·admin만 읽음).
-- **발송기**: `tools/send_reminders.mjs`(firebase-admin으로 RTDB 읽어 대상 선정 → FCM 데이터 메시지). `--type=daily`(오늘 미기록 넛지)·`--type=gift`(친구 선물 도착).
+- **발송기**: `tools/send_reminders.mjs`(firebase-admin으로 RTDB 읽어 대상 선정 → FCM 데이터 메시지). `--type=daily`(오늘 미기록 넛지, 20:00 KST)·`--type=gift`(친구 선물 도착, 매시)·`--type=todo`(🌅 아침 브리핑 — 미완료 할일+오늘·내일 구독 결제+오늘 적금 납입, 08:00)·`--type=todotime`(⏰ 마감 시간 리마인더 — 35분 안 마감, 30분 크론 `todo-time.yml`)·`--type=harvest`(🌾 수확 20h+ 방치, 12:00 `harvest-notify.yml`).
 - **스케줄**:
   - `.github/workflows/reminders.yml` — **일일 넛지**(`--type=daily`, 매일 20:00 KST = 11:00 UTC).
   - `.github/workflows/gift-notify.yml` — **친구 선물 도착**(`--type=gift`, 매시 정각). mailbox에 미수령 선물이 있으면 푸시. 실시간이 아니라 **최대 ~1시간 지연**(스케줄 best-effort). 중복은 `users/{uid}/pushMeta/lastGiftNotify` 워터마크로 방지(발송기 admin이 갱신). 둘 다 수동 실행(dry-run) 가능.

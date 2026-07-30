@@ -608,6 +608,12 @@
     button.tdue { -webkit-appearance:none; appearance:none; border:none; background:transparent; padding:0; cursor:pointer; font-family:inherit; }   /* 마감일 배지 = 탭하면 날짜 옮기기 */
     .tdue.tap { padding:3px 8px; border-radius:9px; background:var(--soft); line-height:1.15; transition:transform .08s; }
     .tdue.ttime { padding:3px 7px; border-radius:9px; background:var(--soft); color:var(--sub); font-weight:700; margin-left:4px; }   /* ⏰ 마감 시간 태그(배지 옆) */
+    /* 🔍 거래 검색 일괄 선택 모드 — 선택된 행 강조 */
+    .txsel { border-radius:10px; cursor:pointer; }
+    .txsel.on { background:var(--soft); box-shadow:inset 0 0 0 2px var(--primary); }
+    /* ↕️ 할일 수동 정렬 핸들(마감순 보기) — touch-action:none으로 터치 드래그 허용 */
+    .tddrag { flex:none; color:var(--sub); opacity:.45; padding:4px 2px 4px 10px; cursor:grab; touch-action:none; font-size:15px; user-select:none; -webkit-user-select:none; }
+    .tdrow.dragging { opacity:.88; position:relative; z-index:5; background:var(--card); border-radius:10px; box-shadow:0 4px 14px rgba(0,0,0,.14); }
     .tdue.tap:active { transform:scale(.94); }
     .td-carry { display:block; width:100%; text-align:left; margin:0 0 12px; padding:11px 14px; -webkit-appearance:none; appearance:none; border:none; border-radius:13px; background:color-mix(in srgb,var(--expense) 12%,var(--card)); color:var(--expense); font-size:13px; font-weight:800; font-family:inherit; cursor:pointer; transition:transform .08s; }   /* 지난 미완료 → 오늘로 일괄 이동 배너 */
     .td-carry:active { transform:scale(.99); }

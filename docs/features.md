@@ -97,7 +97,7 @@
 - **PWA**: 홈 화면 추가 배너(`beforeinstallprompt` → `installApp`), 오프라인 앱 셸 캐시(`sw.js`). 펫캠 dock 토글(`toggleDockHidden`).
 - **접근성(A11y)**: `a11yDecorate`(+MutationObserver)가 재렌더 시 role/포커스/라벨을 자동 보강, 전역 키보드 핸들러(Enter/Space·Esc·포커스 트랩).
 - **토스트 알림**: 모든 사용자 동작 피드백(`toast`).
-- **🔔 푸시 알림(FCM, 서버리스)**: 설정 → 알림 토글로 켜면 **리마인더 푸시**(오늘 미기록 넛지 등)를 받음. 발송은 **GitHub Actions 스케줄 크론**(Blaze 불필요) + FCM. 토큰 `users/{uid}/push`, 클라 `js/push.js`+`firebase-messaging-sw.js`. iOS는 홈화면 설치 PWA(16.4+)에서만 동작. 설정·활성화는 [docs/deploy/push.md](deploy/push.md).
+- **🔔 푸시 알림(FCM, 서버리스)**: 설정 → 알림 토글로 켜면 **리마인더 푸시**를 받음 — ① 20:00 미기록 넛지(daily) ② 친구 선물 도착(gift, 매시) ③ **🌅 아침 브리핑**(todo, 08:00 — 오늘/지난 미완료 할일 + 오늘·내일 구독 결제 + 오늘 적금 납입 한 줄 요약) ④ **⏰ 마감 시간 리마인더**(todotime, 30분 크론 KST 07~24시 — dueTime 지정 할일이 35분 안 마감이면, 워터마크 `lastTodoTimeNotify`) ⑤ **🌾 수확 알림**(harvest, 12:00 — 유휴 수확 20h+ 방치 시 하루 1회). 발송은 **GitHub Actions 스케줄 크론**(Blaze 불필요) + FCM. 토큰 `users/{uid}/push`, 클라 `js/push.js`+`firebase-messaging-sw.js`. iOS는 홈화면 설치 PWA(16.4+)에서만 동작. 설정·활성화는 [docs/deploy/push.md](deploy/push.md).
 - **온보딩**: 첫 사용자 진입 시 **3스텝 안내 시트**(기록·친구·알뜰홈, `maybeOnboard`/`openOnboarding`, `users/{uid}/onboarded` 1회 멱등, 스킵 가능).
 
 > ✅ 로드맵 기능이 모두 구현되었습니다(가계부 정산·경조사비·대출·권한/공동 설정 + 할일 개인/그룹·공유). 더보기 메뉴에 남은 "예정" 항목 없음.
