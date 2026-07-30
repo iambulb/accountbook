@@ -456,6 +456,23 @@
       .slice(0, limit || 6);
   }
 
+  // 🔁 정기거래 후보 감지(순수) — 같은 설명·같은 유형·비슷한 금액(±15%)이 이 거래의 달 포함 3개월 이상 '연속' 기록되면 후보 {months}.
+  function recurringCandidate(txs, tx) {
+    if (!tx || !tx.desc || !(Number(tx.amount) > 0)) return null;
+    var desc = String(tx.desc).trim(); if (!desc) return null;
+    var amt = Number(tx.amount), mset = {};
+    (txs || []).forEach(function (t) {
+      if (!t || t.type !== tx.type) return;
+      if (String(t.desc || '').trim() !== desc) return;
+      var a = Number(t.amount) || 0; if (!a || Math.abs(a - amt) / amt > 0.15) return;
+      var m = String(t.date || '').slice(0, 7); if (m) mset[m] = 1;
+    });
+    var base = String(tx.date || '').slice(0, 7); if (!base) return null;
+    function prevM(m, k) { var p = m.split('-'); var y = +p[0], mm = +p[1] - k; while (mm <= 0) { mm += 12; y--; } return y + '-' + (mm < 10 ? '0' : '') + mm; }
+    var run = 0; for (var k = 0; k < 12; k++) { if (mset[prevM(base, k)]) run++; else break; }
+    return run >= 3 ? { months: run } : null;
+  }
+
   // 거래 검색 매칭(순수). q={keyword,dateFrom,dateTo,amountMin,amountMax,type}. keyword는 desc+memo+category 부분일치(소문자).
   function txMatches(tx, q) {
     if (!tx) return false; q = q || {};
@@ -535,7 +552,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CAM: CAM, camDepth: camDepth, camFurnBottom: camFurnBottom, camZ: camZ, CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, fmtCommaSigned: fmtCommaSigned, parseAmount: parseAmount, parseAmountSigned: parseAmountSigned, todayKst: todayKst, isoAtNoon: isoAtNoon, jsAttr: jsAttr, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, clampYmd: clampYmd, effNextBilling: effNextBilling, todoScope: todoScope, overdueTodoIds: overdueTodoIds, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, affTiers: affTiers, dupAffOf: dupAffOf, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, dropMoodFactor: dropMoodFactor, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift, savingsPlan: savingsPlan };
+  var api = { CAM: CAM, camDepth: camDepth, camFurnBottom: camFurnBottom, camZ: camZ, CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, fmtCommaSigned: fmtCommaSigned, parseAmount: parseAmount, parseAmountSigned: parseAmountSigned, todayKst: todayKst, isoAtNoon: isoAtNoon, jsAttr: jsAttr, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, clampYmd: clampYmd, effNextBilling: effNextBilling, todoScope: todoScope, overdueTodoIds: overdueTodoIds, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, affTiers: affTiers, dupAffOf: dupAffOf, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, dropMoodFactor: dropMoodFactor, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, recurringCandidate: recurringCandidate, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift, savingsPlan: savingsPlan };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);

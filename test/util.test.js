@@ -741,3 +741,32 @@ test('nextDue: 매주 요일 지정 — 다음 날부터 가장 가까운 선택
   assert.strictEqual(U.nextDue('2026-07-27', 'weekly', []), '2026-08-03');
   assert.strictEqual(U.nextDue('2026-07-27', 'weekly'), '2026-08-03');
 });
+
+// ── recurringCandidate: 정기거래 후보 감지 ──
+test('recurringCandidate: 같은 설명·유형·±15% 금액이 3개월 연속이면 후보', () => {
+  const tx = { type: 'expense', desc: '넷플릭스', amount: 17000, date: '2026-07-25' };
+  const hist = [
+    { type: 'expense', desc: '넷플릭스', amount: 17000, date: '2026-05-25' },
+    { type: 'expense', desc: '넷플릭스', amount: 17500, date: '2026-06-25' },   // ±15% 안
+    tx,
+  ];
+  assert.deepStrictEqual(U.recurringCandidate(hist, tx), { months: 3 });
+  // 2개월이면 null
+  assert.strictEqual(U.recurringCandidate(hist.slice(1), tx), null);
+  // 연속이 끊기면(4·6·7월) 이번 달부터 2개월 → null
+  const gap = [
+    { type: 'expense', desc: '넷플릭스', amount: 17000, date: '2026-04-25' },
+    { type: 'expense', desc: '넷플릭스', amount: 17000, date: '2026-06-25' },
+    tx,
+  ];
+  assert.strictEqual(U.recurringCandidate(gap, tx), null);
+  // 금액 차이 크면 미포함(15% 초과)
+  const far = [
+    { type: 'expense', desc: '넷플릭스', amount: 9000, date: '2026-05-25' },
+    { type: 'expense', desc: '넷플릭스', amount: 17000, date: '2026-06-25' },
+    tx,
+  ];
+  assert.strictEqual(U.recurringCandidate(far, tx), null);
+  // 설명 없는 거래는 null
+  assert.strictEqual(U.recurringCandidate(hist, { type: 'expense', desc: '', amount: 1, date: '2026-07-01' }), null);
+});

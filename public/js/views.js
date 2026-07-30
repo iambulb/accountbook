@@ -234,6 +234,82 @@
     }
 
     // ===== 거래 입력/수정 시트 =====
+    // 🧠 최근 선택 기억 — 새 거래의 결제수단(from/to)·소비대상을 사용자·워크스페이스별로 기억해 기본값으로 채운다(변경은 기존처럼 셀렉트에서).
+    //    저장소: localStorage 'txlast:{wsId}:{uid}' = { [거래유형]: {from,to,user} } — 이 기기·이 사용자 한정, 새 거래 저장 시 갱신(수정은 제외).
+    function txLastKey(){ return 'txlast:'+(state.wsId||'')+':'+(state.uid||''); }
+    function txLastOf(type){
+      let v={}; try{ v=(JSON.parse(localStorage.getItem(txLastKey())||'{}')||{})[type]||{}; }catch(e){}
+      const mem=(state.wsMeta&&state.wsMeta.members)||{};
+      return { from:(v.from&&getAcct(v.from))?v.from:'', to:(v.to&&getAcct(v.to))?v.to:'',   // 삭제된 계좌 방어
+        user:(v.user==='공동'||mem[v.user])?v.user:'' };                                      // 탈퇴 멤버 방어(uid 노출 방지)
+    }
+    function txLastRemember(tx){
+      try{ const m=JSON.parse(localStorage.getItem(txLastKey())||'{}')||{};
+        m[tx.type]={ from:tx.from||'', to:tx.to||'', user:tx.userUid||(tx.user==='공동'?'공동':'') };
+        localStorage.setItem(txLastKey(), JSON.stringify(m)); }catch(e){}
+    }
+    // 유형 전환 시(새 거래만) 그 유형의 최근 선택을 '아직 손대지 않은' 필드에만 적용 — 사용자가 고른 값은 유지
+    function applyTxLastFor(type){
+      if(sheetTx) return; const sh=$('sheet'); if(!sh||!sh._touched) return;
+      const l=txLastOf(type);
+      if(!sh._touched.from && l.from) sh._from=l.from;
+      if(!sh._touched.to && l.to) sh._to=l.to;
+      if(!sh._touched.user && l.user) sh._consumer=l.user;
+    }
+    // ⚡ 자주 쓰는 거래 원탭 — openTxSheet(새 거래)가 채운 후보(_txTpl)를 탭하면 유형·금액·설명·카테고리 + 최근 같은 거래의 수단·소비대상까지 프리필
+    let _txTpl=[];
+    function applyTxTemplate(i){
+      const s=_txTpl[Number(i)]; if(!s) return; const sh=$('sheet'); if(!sh) return;
+      sheetType=s.type; if(s.category) sheetCat=s.category;
+      const src=state.transactions.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''))
+        .find(t=>t.type===s.type && (t.desc||'').trim()===s.desc && (Number(t.amount)||0)===s.amount);
+      if(src){
+        if(src.from&&getAcct(src.from)){ sh._from=src.from; sh._touched.from=true; }
+        const mem=(state.wsMeta&&state.wsMeta.members)||{};
+        const cu=src.userUid||(src.user==='공동'?'공동':'');
+        if(cu&&(cu==='공동'||mem[cu])){ sh._consumer=cu; sh._touched.user=true; }
+      }
+      if(sh._cur==='KRW'){ const a=$('sAmount'); if(a) a.value=s.amount?Number(s.amount).toLocaleString():''; }
+      const d=$('sDesc'); if(d) d.value=s.desc;
+      const sug=$('sDescSug'); if(sug) sug.innerHTML='';
+      highlightTypeSeg(); renderTxDyn(); updateCoPayNote();
+    }
+    // ✍️ 설명 자동완성(새 거래만) — 입력 중 과거 거래에서 같은 설명을 찾아 칩으로 제안, 탭하면 카테고리·수단·(빈 경우)금액까지 유추 채움
+    let _descSugT=0;
+    function onDescInput(){ clearTimeout(_descSugT); _descSugT=setTimeout(renderDescSug, 150); }
+    function renderDescSug(){
+      const box=$('sDescSug'); if(!box) return; const sh=$('sheet');
+      const kw=(val('sDesc')||'').trim().toLowerCase();
+      if(!kw){ box.innerHTML=''; sh._descSug=null; return; }
+      const fam=catTypeFor(sheetType);
+      const seen={}, out=[];
+      const list=state.transactions.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+      for(let k=0;k<list.length && out.length<3;k++){ const t=list[k];
+        if(catTypeFor(t.type)!==fam) continue;   // 같은 성격(지출/수입)만 제안
+        const dd=(t.desc||'').trim(); if(!dd || seen[dd]) continue;
+        if(dd.toLowerCase().indexOf(kw)<0) continue;
+        seen[dd]=1;
+        out.push({ desc:dd, type:t.type, category:t.category||'', from:t.from||'', to:t.to||'', amount:Number(t.amount)||0 });
+      }
+      sh._descSug=out;
+      box.innerHTML=out.length?out.map((s,i)=>'<button class="chip" '+App.view.act('applyDescSug',i)+'>'+escapeHtml(s.desc)+(s.category?' <span class="tx-sub">'+escapeHtml(s.category)+'</span>':'')+'</button>').join(''):'';
+    }
+    function applyDescSug(i){
+      const sh=$('sheet'); const s=sh._descSug&&sh._descSug[Number(i)]; if(!s) return;
+      const el=$('sDesc'); if(el) el.value=s.desc;
+      if(s.category) sheetCat=s.category;
+      if(s.from&&getAcct(s.from)){ sh._from=s.from; sh._touched.from=true; }
+      if(s.to&&getAcct(s.to)){ sh._to=s.to; sh._touched.to=true; }
+      if(sh._cur==='KRW' && !parseAmount(val('sAmount')) && s.amount){ const a=$('sAmount'); if(a) a.value=Number(s.amount).toLocaleString(); }
+      const box=$('sDescSug'); if(box) box.innerHTML=''; sh._descSug=null;
+      renderTxDyn(); updateCoPayNote();
+    }
+    // 계좌/소비대상 셀렉트 변경 훅 — 선택을 sheet 상태에 동기화(유형 전환에도 유지)하고 '손댐' 표시
+    function onTxAcctChange(){ const sh=$('sheet'); if(!sh) return;
+      if($('sFrom')) sh._from=val('sFrom'); if($('sTo')) sh._to=val('sTo');
+      if(this&&this.id==='sFrom') sh._touched.from=true; if(this&&this.id==='sTo') sh._touched.to=true;
+      renderCardPerfBlock(); }
+    function onTxConsumerChange(){ const sh=$('sheet'); if(!sh) return; sh._consumer=val('sConsumer'); sh._touched.user=true; }
     function openTxSheet(ownerUid, id, presetDate, presetPb){
       // ↩️ 리스트 시트(일자·카드내역·드릴다운 등 _sheetReopen 등록 시트) 위에서 열리면, 닫을 때 그 리스트로 복귀하게 캡처(아래에서 arm).
       //    이미 arm된 상태에서 수정 시트가 다시 열려도(재렌더) 기존 복귀 대상을 유지한다.
@@ -259,6 +335,9 @@
       if(t && t.coPayMainId){ const _mn=state.transactions.find(x=>x.ownerUid===t.ownerUid && x.id===t.coPayMainId);
         h+='<div class="copay-banner">✨ 함께결제로 기록된 <b>포인트·선불 사용분</b>이에요.'+
           (_mn?(' 총액·나머지 결제분은 <b>본 거래</b>에서 함께 고칠 수 있어요.<button class="chip" style="margin-left:6px;" '+App.view.act('openTxSheet',_mn.ownerUid,_mn.id)+'>본 거래 열기</button>'):'')+'</div>'; }
+      // ⚡ 자주 쓰는 거래 원탭(새 거래만) — (설명·카테고리·금액) 빈도 상위 후보 칩, 탭하면 폼 전체 프리필(frequentTxTemplates 재사용)
+      _txTpl = t?[]:frequentTxTemplates(state.transactions, 3).filter(x=>x.count>=2);
+      if(_txTpl.length) h+='<div class="chips" style="margin:0 0 8px;">'+_txTpl.map((s,i)=>'<button class="chip" '+App.view.act('applyTxTemplate',i)+' aria-label="빠른 입력: '+escapeHtml(s.desc)+'">⚡ '+escapeHtml(s.desc)+' <span class="tx-sub">'+won(s.amount)+'</span></button>').join('')+'</div>';
       h+='<div class="type-seg" id="sTypeSeg">'+
         '<button data-tp="expense" '+App.view.act('setSheetType','expense')+'>지출</button>'+
         '<button data-tp="income" '+App.view.act('setSheetType','income')+'>수입</button>'+
@@ -271,7 +350,8 @@
       h+='<div id="sCatChips"></div>';   // 카테고리 칩(유형별)
       h+='<div id="sDyn"></div>';        // 계좌/이체 행
       h+='<div class="txfield"><span class="k">날짜</span><input type="date" class="txin" id="sDate" value="'+date+'" '+App.view.chg('onDateChange')+'></div>';
-      h+='<div class="txfield"><span class="k">설명</span><input type="text" class="txin" id="sDesc" placeholder="내용" value="'+escapeHtml(desc)+'"></div>';
+      h+='<div class="txfield"><span class="k">설명</span><input type="text" class="txin" id="sDesc" placeholder="내용" value="'+escapeHtml(desc)+'"'+(t?'':' oninput="onDescInput()"')+'></div>';
+      if(!t) h+='<div id="sDescSug" class="chips" style="margin:2px 0 6px;"></div>';   // ✍️ 설명 자동완성 제안 칩(새 거래만)
       // 숫자 키패드
       h+='<div class="kp">'+
         [1,2,3,4,5,6,7,8,9].map(n=>'<button '+App.view.act('kpPress',String(n))+'>'+n+'</button>').join('')+
@@ -287,20 +367,23 @@
       h+='<div id="sCardPerf"></div>';   // 카드 실적 포함
       h+='<div class="txfield"><span class="k">메모</span><input type="text" class="txin" id="sMemo" placeholder="메모" value="'+escapeHtml(memo)+'"></div>';
       h+='</details>';
-      h+='<button class="btn" '+App.view.act('saveTx')+'>'+(t?'수정':'저장')+'</button>';
-      if(t) h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deleteTx')+'>삭제</button>';
+      if(t){ h+='<button class="btn" '+App.view.act('saveTx')+'>수정</button>';
+        h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deleteTx')+'>삭제</button>'; }
+      else h+='<div class="form-2"><button class="btn" '+App.view.act('saveTx')+'>저장</button><button class="btn ghost" '+App.view.act('saveTxAgain')+'>저장 후 계속</button></div>';   // ➕ 연속 입력(여행 정산 등 몰아서 넣기)
 
       openSheet(t?'거래 수정':'거래 입력', h);
       state._sheetBackFn=_backSheet;   // ↩️ 닫을 때 이전 리스트 시트로 복귀(리스트 위에서 안 열렸으면 null=일반 닫기)
       const sh=$('sheet');
-      sh._from = t?(t.from||''):(state.accounts[0]?state.accounts[0].id:'');
-      sh._to   = t?(t.to||''):(state.accounts[1]?state.accounts[1].id:(state.accounts[0]?state.accounts[0].id:''));
+      sh._touched={from:false,to:false,user:false};   // 🧠 최근값 기본 채움 후 사용자가 직접 고른 필드 추적(유형 전환 시 그 값 유지)
+      const _lastNew = t?null:txLastOf(sheetType);
+      sh._from = t?(t.from||''):(_lastNew.from||(state.accounts[0]?state.accounts[0].id:''));
+      sh._to   = t?(t.to||''):(_lastNew.to||(state.accounts[1]?state.accounts[1].id:(state.accounts[0]?state.accounts[0].id:'')));
       sh._copay = coPart ? { on:true, acct:coPart.from||'', amt:Math.abs(Number(coPart.amount)||0), txId:coPart.id } : { on:false, acct:'', amt:0, txId:'' };
       sh._cpi  = t?t.cardPerformanceIncluded:undefined;
       sh._cpa  = t?t.cardPerformanceAmount:undefined;
       sh._cpr  = t?(t.cardPerformanceExcludedReason||''):'';
       sh._adjSign = (t&&t.type==='balance_adjustment'&&Number(t.amount)<0)?'-':'+';
-      sh._consumer = t?(t.userUid||t.user||'공동'):defaultOwnerUid();
+      sh._consumer = t?(t.userUid||t.user||'공동'):(_lastNew.user||defaultOwnerUid());
       sh._settle = t ? { inc:t.settlementIncluded===true, payer:t.payer||'', splitType:t.splitType||'equal',
         participants:Array.isArray(t.splitParticipants)?t.splitParticipants.slice():null, amounts:t.splitAmounts||null, memo:t.settlementMemo||'' } : null;
       highlightTypeSeg(); renderTxDyn(); renderSettleBlock();
@@ -312,9 +395,10 @@
     function setSheetType(tp){
       if(tp==='__ext__'){ if(!EXT_TYPES.includes(sheetType)) sheetType='prepaid_spend'; }
       else sheetType=tp;
+      applyTxLastFor(sheetType);   // 🧠 새 거래면 그 유형의 최근 선택을 미변경 필드에 채움
       highlightTypeSeg(); renderTxDyn();
     }
-    function setExtType(tp){ sheetType=tp; highlightTypeSeg(); renderTxDyn(); }
+    function setExtType(tp){ sheetType=tp; applyTxLastFor(sheetType); highlightTypeSeg(); renderTxDyn(); }
     function highlightTypeSeg(){
       const seg=$('sTypeSeg'); if(!seg) return;
       const ext=EXT_TYPES.includes(sheetType);
@@ -325,12 +409,18 @@
       });
     }
     function acctOptsHtml(sel){ return state.accounts.map(a=>'<option value="'+a.id+'"'+(a.id===sel?' selected':'')+'>'+escapeHtml(a.name)+' ('+(ACCT_TYPE_LABEL[a.type]||a.type)+')</option>').join(''); }
-    function acctField(label,id,sel){ return '<div class="txfield"><span class="k">'+label+'</span><select class="txsel" id="'+id+'" '+App.view.chg('renderCardPerfBlock')+'>'+acctOptsHtml(sel)+'</select></div>'; }
+    function acctField(label,id,sel){ return '<div class="txfield"><span class="k">'+label+'</span><select class="txsel" id="'+id+'" '+App.view.chg('onTxAcctChange')+'>'+acctOptsHtml(sel)+'</select></div>'; }   // 변경 훅이 동기화+손댐 표시 후 renderCardPerfBlock 호출
     // 소비 대상(누구의 소비인가) — 출금 수단과 분리. 멤버 + '공동'(집세 등 공동 비용) 선택.
-    function consumerField(sel){ return '<div class="txfield"><span class="k">소비 대상</span><select class="txsel" id="sConsumer">'+ownerOptions(sel||'공동')+'</select></div>'; }
+    function consumerField(sel){ return '<div class="txfield"><span class="k">소비 대상</span><select class="txsel" id="sConsumer" '+App.view.chg('onTxConsumerChange')+'>'+ownerOptions(sel||'공동')+'</select></div>'; }
+    // 🔝 최근 90일 사용 빈도순 정렬(동률=기존 sortOrder 유지, stable sort) — 자주 쓰는 카테고리가 칩 앞줄로
+    function catsByUsage(cats){
+      const cut=addDays(todayStr(),-90);
+      const cnt={}; state.transactions.forEach(t=>{ if(t.category && (t.date||'').slice(0,10)>=cut) cnt[t.category]=(cnt[t.category]||0)+1; });
+      return cats.slice().sort((a,b)=>(cnt[b.name]||0)-(cnt[a.name]||0));
+    }
     // 시안: 카테고리 가로 칩(이름 + 카테고리 색 점)
     function catChipsHtml(){
-      let cats=pickableCats(catTypeFor(sheetType));
+      let cats=catsByUsage(pickableCats(catTypeFor(sheetType)));
       if(sheetCat && !cats.some(c=>c.name===sheetCat)){ const cur=getCat(sheetCat)||{name:sheetCat,color:'#8b95a1'}; cats=[cur,...cats]; }
       else if(!sheetCat && cats[0]) sheetCat=cats[0].name;
       return '<div class="chips">'+cats.map(c=>'<button class="chip'+(c.name===sheetCat?' on':'')+'" '+App.view.act('pickCat',c.name)+'><span class="catdot" style="background:'+(c.color||'#8b95a1')+'"></span>'+escapeHtml(c.name)+'</button>').join('')+'</div>';
@@ -618,7 +708,8 @@
         coAmount:_co.amt, coAcct:_co.acct, coTxType:_co.txType
       };
     }
-    function saveTx(){
+    function saveTxAgain(){ saveTx(true); }   // ➕ 저장 후 계속(연속 입력) — 시트 유지, 금액·설명·메모만 비움
+    function saveTx(keepOpen){
       const res=buildTx(readTxForm());   // 순수 조립·검증(ledger-calc.js)
       if(res.error){ toast(res.error, true); return; }
       const tx=res.tx, subTx=res.subTx;
@@ -637,13 +728,56 @@
         if(prevCoId) upd[prevCoId]=null;   // 함께결제를 끈 경우 짝 거래 제거
       }
       db.ref(wp('transactions/'+ownerUid)).update(upd).catch(_saveErr);
+      if(!sheetTx) txLastRemember(tx);   // 🧠 새 거래의 결제수단·소비대상을 다음 입력 기본값으로 기억(수정은 제외)
       if(sheetTx) toast(subTx?'수정되었습니다 (거래 2건)':'수정되었습니다');
       else {
         toast(subTx?'저장되었습니다 (거래 2건)':'저장되었습니다'); budgetPreWarn(tx);
         if(tx.category && tx.memo && typeof grantQualityBonus==='function') grantQualityBonus();   // ✍️ 카테고리+메모 채운 새 거래 → 성실 기록 보너스(하루 3건 캡)
       }
+      // ➕ 연속 입력: 시트를 닫지 않고 금액·설명·메모만 비움(날짜·유형·수단·소비대상 유지 — 자동충전이 끼면 그 흐름 우선)
+      if(keepOpen===true && !sheetTx && !ac){
+        const _sh=$('sheet'); if(_sh) _sh._copay={ on:false, acct:'', amt:0, txId:'' };
+        const a=$('sAmount'); if(a) a.value='';
+        const d=$('sDesc'); if(d) d.value='';
+        const mm=$('sMemo'); if(mm) mm.value='';
+        const sug=$('sDescSug'); if(sug) sug.innerHTML='';
+        renderTxDyn(); updateCoPayNote();
+        return;
+      }
       closeSheet();
       if(ac) handleAutoCharge(ac);
+      else if(!sheetTx) maybeSuggestRecurring(tx);   // 🔁 3개월 연속 같은 거래면 정기거래 등록 제안
+    }
+    // 🔁 정기거래 자동 제안 — 같은 설명·유형·비슷한 금액이 3개월 연속(recurringCandidate, util.js)이면 매월 그 날짜 정기거래 등록을 1회 제안.
+    //    같은 설명은 수락·거절 무관 다시 묻지 않음(localStorage recsug), 이미 같은 설명의 활성 규칙이 있으면 스킵.
+    function maybeSuggestRecurring(tx){
+      try{
+        if(!tx || tx.recurringId || tx.coPayMainId || tx.autoCharge) return;
+        if(!(tx.type==='expense'||tx.type==='income')) return;
+        const cand=recurringCandidate(state.transactions.concat([tx]), tx); if(!cand) return;
+        const dk=String(tx.desc).trim();
+        const key='recsug:'+(state.wsId||'')+':'+(state.uid||'');
+        let seen={}; try{ seen=JSON.parse(localStorage.getItem(key)||'{}')||{}; }catch(e){}
+        if(seen[dk]) return;
+        if(state.recurring.some(r=>r.ownerUid===state.uid && String(r.desc||'').trim()===dk && ruleStatus(r)!=='ended')) return;
+        seen[dk]=1; try{ localStorage.setItem(key, JSON.stringify(seen)); }catch(e){}
+        const d=parseDate(tx.date);
+        const back=state._sheetReopen||null;   // 리스트 시트 위 흐름이었으면 제안 닫은 뒤에도 리스트로 복귀
+        confirmSheet('\''+dk+'\' 거래가 '+cand.months+'개월 연속 기록됐어요.\n매월 '+d.getDate()+'일 정기거래로 등록해 자동 기록할까요?', function(){
+          const e=TX_EFFECT[tx.type]||{};
+          const rule={ type:tx.type, desc:dk, amount:Number(tx.amount)||0, freq:'monthly', interval:1,
+            startDate:ymd(d), endDate:null, day:d.getDate(), weekday:0,
+            user:tx.user||state.userName, autoCreate:true, status:'active', visibility:defaultVisibility(), memo:'',
+            lastPosted:ymd(d), notifyBeforeCreate:false,   // 이번 회차는 방금 손으로 기록했으니 다음 달부터 생성
+            createdAt:new Date().toISOString(), updatedAt:new Date().toISOString() };
+          if(e.debit) rule.from=tx.from||''; if(e.credit) rule.to=tx.to||'';
+          if(catTypeFor(tx.type)) rule.category=tx.category||'기타';
+          const nr=nextRunOf(rule); rule.nextRunDate=nr?ymd(nr):null;
+          db.ref(wp('recurring/'+state.uid+'/'+Date.now())).set(rule);
+          toast('🔁 정기거래로 등록했어요 — 다음 달부터 자동 기록됩니다');
+        }, { okLabel:'등록하기', danger:false, title:'🔁 정기거래 제안' });
+        if(back) state._sheetBackFn=back;
+      }catch(e){}
     }
     // ===== ⚡ 자동충전(선불·포인트) — 간편계좌(쿠팡·카카오페이·네이버페이 등) 잔액이 마이너스가 되면 충전 거래를 이어서 기록 =====
     //  ① 계좌·금액 모두 설정(자동충전 설정) → 부족분을 덮는 설정 금액의 배수로 충전 거래 자동 기록
