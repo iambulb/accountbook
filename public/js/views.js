@@ -1344,7 +1344,7 @@
       const _anm=_isMem?(_tmem[t.assignedUid].name||''):(t.assignedName||'');
       const who=_isMem?('<span class="tdwho">'+avatarHtml(t.assignedUid,_anm,20)+'</span>')
         :(_anm?('<span class="tdwho"><span class="tdname">'+escapeHtml(_anm)+'</span></span>'):'');
-      const _rep=t.repeat&&t.repeat!=='none'; const _dc=Number(t.doneCount)||0;
+      const _rep=(t.repeat&&t.repeat!=='none')||!!t.repeatSrcId; const _dc=Number(t.doneCount)||0;   // repeatSrcId=반복 완료 스냅샷도 🔁 표시
       const repPill=_rep?(' <span class="pill">🔁'+(_dc>0?' '+_dc+'회':'')+'</span>'):'';   // 반복 완료 횟수(있으면) — 반복 완료 이력 가시화
       const prioDot=(t.priority==='high')?'<span class="tdprio high" title="높음" aria-label="우선순위 높음">●</span>':((t.priority==='low')?'<span class="tdprio low" title="낮음" aria-label="우선순위 낮음">●</span>':'');
       const _tc=todoCatOf(t); const catDot=_tc?'<span class="tdcat" style="background:'+escapeHtml(_tc.color||'')+'" title="'+escapeHtml(_tc.name||'')+'" aria-label="카테고리 '+escapeHtml(_tc.name||'')+'"></span>':'';   // 카테고리 색 점(todoCats)
@@ -1649,9 +1649,22 @@
       if(!t.done && t.repeat && t.repeat!=='none' && t.dueDate){
         let _nd=nextDue(t.dueDate,t.repeat,t.repeatDays); const _t=todayKst(); let _g=0; while(_nd<=_t && _g++<400) _nd=nextDue(_nd,t.repeat,t.repeatDays);   // 밀린 회차 catch-up: 다음 예정을 오늘(KST) 이후로 — 오래 밀려도 한 번 완료로 미래 회차가 됨(즉시 재-지남 방지). 매주 요일 지정(repeatDays)도 반영.
         const upd={ dueDate:_nd, doneByUid:(state.uid||''), lastDoneAt:now, doneCount:(Number(t.doneCount)||0)+1, updatedAt:now };   // 반복 완료 횟수 누적(완료 이력·리포트 반영)
-        upd['doneLog/'+_t]=true;   // 🌱 반복 완료 날짜 로그(완료 잔디 히트맵 재료 — 비반복은 doneAt이 이력이지만 반복은 lastDoneAt만 남아 날짜키로 축적)
         if(firstReward) upd.rewardClaimed=true;
         ref.update(upd);
+        // 🧾 완료 스냅샷(사용자 요청): 반복 원본은 위처럼 다음 회차로 굴리고, '이 회차 완료' 1회성 항목을 따로 남겨
+        //    오늘 완료 목록·완료 탭·잔디에 완료된 것처럼 보이게 한다(🔁 표시, rewardClaimed=true라 은화 재지급 없음).
+        //    (구 doneLog 날짜키 기록은 스냅샷이 이력 자체가 되므로 중단 — 잔디는 스냅샷 doneAt으로 집계, 기존 doneLog는 하위호환 합산 유지)
+        { const _sc=todoScope(t), copyId='todo_'+Date.now();
+          const copy={ title:t.title||'', note:t.note||'', dueDate:t.dueDate||_t, dueTime:t.dueTime||'', scope:_sc,
+            ownerUid:_sc==='personal'?(t.ownerUid||state.uid||''):'',
+            assignedUid:t.assignedUid||'', assignedName:t.assignedName||'',
+            repeat:'none', repeatDays:[], repeatSrcId:t.id, purposeBookId:t.purposeBookId||'',
+            priority:t.priority||'normal', category:t.category||'', catName:t.catName||'', catColor:t.catColor||'', tags:t.tags||[], subtasks:t.subtasks||[],
+            done:true, doneAt:now, doneByUid:state.uid||'', rewardClaimed:true,
+            createdByUid:state.uid||'', createdAt:now, updatedAt:now, sortOrder:Date.now() };
+          const base=_sc==='personal'?db.ref('users/'+state.uid+'/todos'):db.ref(wp('todos'));
+          base.child(copyId).set(copy).catch(_saveErr);
+        }
         const _np=_nd.split('-'); const nxt=(+_np[1])+'월 '+(+_np[2])+'일('+WEEK[new Date(_nd+'T00:00:00').getDay()]+')로 넘겼어요';   // 요일 지정 매주는 같은 주 다음 요일일 수 있어 실제 날짜로 안내
         if(firstReward && typeof grantTodoCoins==='function'){ grantTodoCoins(function(paid){ toast(paid>0?('완료! +'+paid+' 은화 · '+nxt):('완료! '+nxt)); }); } else toast('완료! '+nxt);
         maybeSuggestTxFromTodo(t);
