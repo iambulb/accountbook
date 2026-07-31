@@ -456,6 +456,33 @@
       .slice(0, limit || 6);
   }
 
+  // 🏦 대출 회차 계산(순수) — type: 'amortized'(원리금균등)|'equal_principal'(원금균등)|'bullet'(원금만기·매월 이자만).
+  //  P=원금, annualPct=연이율(%), n=총 회차(개월, bullet은 0 허용=만기 미정), k=회차(1-based).
+  //  반환 {pay(납입액), prin(원금), int(이자), remain(회차 후 잔액)} — 원 단위 반올림, 마지막 회차는 잔여 원금 정산(반올림 오차 흡수). 무효 입력·기간 초과면 null.
+  function loanInstallment(P, annualPct, n, type, k) {
+    P = Number(P) || 0; const i = (Number(annualPct) || 0) / 100 / 12;
+    n = Math.floor(Number(n) || 0); k = Math.floor(Number(k) || 0);
+    if (P <= 0 || k < 1) return null;
+    if (type === 'bullet') {   // 만기 일시상환: 매월 이자만, 만기 회차(k===n)에 원금 전액
+      if (n > 0 && k > n) return null;
+      const it = Math.round(P * i), last = (n > 0 && k === n);
+      return { pay: it + (last ? P : 0), prin: last ? P : 0, int: it, remain: last ? 0 : P };
+    }
+    if (n < 1 || k > n) return null;
+    if (type === 'equal_principal') {   // 원금균등: 매월 원금 P/n + 잔액 이자(납입액 체감)
+      const prinF = P / n, remBefore = P - prinF * (k - 1);
+      const it = Math.round(remBefore * i), prin = Math.round(k === n ? remBefore : prinF);
+      return { pay: prin + it, prin: prin, int: it, remain: Math.round(Math.max(0, remBefore - prinF)) };
+    }
+    // amortized(원리금균등): 월 납입 M 고정 = P·i·(1+i)^n / ((1+i)^n − 1), 무이자(i=0)면 P/n
+    let M; if (i > 0) { const f = Math.pow(1 + i, n); M = P * i * f / (f - 1); } else { M = P / n; }
+    let rem = P; for (let j = 1; j < k; j++) rem -= (M - rem * i);
+    const it = Math.round(rem * i);
+    let prin = Math.round(M - rem * i), pay = Math.round(M);
+    if (k === n) { prin = Math.round(rem); pay = prin + it; }
+    return { pay: pay, prin: prin, int: it, remain: Math.round(Math.max(0, rem - (M - rem * i))) };
+  }
+
   // 🔁 정기거래 후보 감지(순수) — 같은 설명·같은 유형·비슷한 금액(±15%)이 이 거래의 달 포함 3개월 이상 '연속' 기록되면 후보 {months}.
   function recurringCandidate(txs, tx) {
     if (!tx || !tx.desc || !(Number(tx.amount) > 0)) return null;
@@ -552,7 +579,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CAM: CAM, camDepth: camDepth, camFurnBottom: camFurnBottom, camZ: camZ, CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, fmtCommaSigned: fmtCommaSigned, parseAmount: parseAmount, parseAmountSigned: parseAmountSigned, todayKst: todayKst, isoAtNoon: isoAtNoon, jsAttr: jsAttr, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, clampYmd: clampYmd, effNextBilling: effNextBilling, todoScope: todoScope, overdueTodoIds: overdueTodoIds, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, affTiers: affTiers, dupAffOf: dupAffOf, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, dropMoodFactor: dropMoodFactor, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, recurringCandidate: recurringCandidate, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift, savingsPlan: savingsPlan };
+  var api = { CAM: CAM, camDepth: camDepth, camFurnBottom: camFurnBottom, camZ: camZ, CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, fmtCommaSigned: fmtCommaSigned, parseAmount: parseAmount, parseAmountSigned: parseAmountSigned, todayKst: todayKst, isoAtNoon: isoAtNoon, jsAttr: jsAttr, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, clampYmd: clampYmd, effNextBilling: effNextBilling, todoScope: todoScope, overdueTodoIds: overdueTodoIds, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, affTiers: affTiers, dupAffOf: dupAffOf, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, dropMoodFactor: dropMoodFactor, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, recurringCandidate: recurringCandidate, loanInstallment: loanInstallment, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift, savingsPlan: savingsPlan };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);

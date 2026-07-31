@@ -770,3 +770,43 @@ test('recurringCandidate: 같은 설명·유형·±15% 금액이 3개월 연속�
   // 설명 없는 거래는 null
   assert.strictEqual(U.recurringCandidate(hist, { type: 'expense', desc: '', amount: 1, date: '2026-07-01' }), null);
 });
+
+// ── loanInstallment: 대출 상환 방식별 회차 계산 ──
+test('loanInstallment: 원리금균등 — 매월 납입 동일, 회차 갈수록 원금↑·이자↓', () => {
+  const P = 1200000, r = 12, n = 12;   // 월이율 1%
+  const k1 = U.loanInstallment(P, r, n, 'amortized', 1);
+  const k2 = U.loanInstallment(P, r, n, 'amortized', 2);
+  const kN = U.loanInstallment(P, r, n, 'amortized', 12);
+  assert.strictEqual(k1.int, 12000);                  // 1회차 이자 = P×1%
+  assert.strictEqual(k1.pay, k2.pay);                 // 납입액 고정
+  assert.ok(k2.prin > k1.prin && k2.int < k1.int);    // 원금↑ 이자↓
+  assert.strictEqual(kN.remain, 0);                   // 마지막 회차 후 잔액 0(정산)
+});
+
+test('loanInstallment: 원금균등 — 원금 고정, 납입액 체감', () => {
+  const k1 = U.loanInstallment(1200000, 12, 12, 'equal_principal', 1);
+  const k6 = U.loanInstallment(1200000, 12, 12, 'equal_principal', 6);
+  assert.strictEqual(k1.prin, 100000);
+  assert.strictEqual(k1.int, 12000);                  // 1회차 이자 = 전액×1%
+  assert.strictEqual(k6.prin, 100000);
+  assert.strictEqual(k6.int, 7000);                   // 잔액 70만×1%
+  assert.ok(k6.pay < k1.pay);
+});
+
+test('loanInstallment: 원금만기 — 매월 이자만, 만기 회차에 원금 전액', () => {
+  const mid = U.loanInstallment(1200000, 12, 12, 'bullet', 5);
+  const last = U.loanInstallment(1200000, 12, 12, 'bullet', 12);
+  const open = U.loanInstallment(1200000, 12, 0, 'bullet', 30);   // 만기 미정=계속 이자만
+  assert.deepStrictEqual(mid, { pay: 12000, prin: 0, int: 12000, remain: 1200000 });
+  assert.strictEqual(last.prin, 1200000);
+  assert.strictEqual(last.pay, 1212000);
+  assert.strictEqual(open.int, 12000);
+});
+
+test('loanInstallment: 무이자·무효 입력 방어', () => {
+  const z = U.loanInstallment(1200000, 0, 12, 'amortized', 3);
+  assert.strictEqual(z.pay, 100000); assert.strictEqual(z.int, 0);   // 무이자=P/n
+  assert.strictEqual(U.loanInstallment(0, 5, 12, 'amortized', 1), null);
+  assert.strictEqual(U.loanInstallment(100, 5, 12, 'amortized', 13), null);   // 기간 초과
+  assert.strictEqual(U.loanInstallment(100, 5, 0, 'amortized', 1), null);     // 만기 미정은 균등 불가
+});

@@ -35,6 +35,7 @@
     const GIFT_EVENT_ICON = { wedding:'💍', funeral:'🕯️', first_birthday:'🎂', birthday:'🎈', holiday:'🎁', graduation:'🎓', birth:'👶', hospital_visit:'🏥', housewarming:'🏠', exam:'✏️', other:'🎀' };
     // 대출: 방향(빌림=내 빚 / 빌려줌=받을 돈) · 상태
     const LOAN_DIR_LABEL = { borrowed:'빌림(대출)', lent:'빌려줌' };
+    const LOAN_REPAY_LABEL = { bullet:'원금만기', amortized:'원리금균등', equal_principal:'원금균등' };   // 상환 방식(미지정=bullet 하위호환)
     const LOAN_STATUS_LABEL = { active:'상환중', paid:'완료', overdue:'연체' };
     const PLANNED_STATUS_LABEL = { planned:'예정', completed:'완료', cancelled:'취소' };
     // 정산(Step 9): 분담 방식 / 거래 정산 상태 / 송금 기록 상태

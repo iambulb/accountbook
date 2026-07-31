@@ -2275,6 +2275,7 @@
             (fc.rec.sum>0?('<div class="row" style="margin-top:6px;font-size:13px;" '+App.view.act('openRecurringList')+' role="button" tabindex="0"><span class="muted">정기결제 '+fc.rec.n+'건 ›</span><span>'+won(fc.rec.sum)+'</span></div>'):'')+
             (fc.sub.sum>0?('<div class="row" style="margin-top:4px;font-size:13px;" '+App.view.act('openSubscriptions')+' role="button" tabindex="0"><span class="muted">구독 '+fc.sub.n+'건 ›</span><span>'+won(fc.sub.sum)+'</span></div>'):'')+
             (fc.sav.sum>0?('<div class="row" style="margin-top:4px;font-size:13px;"><span class="muted">적금 납입 '+fc.sav.n+'건</span><span>'+won(fc.sav.sum)+'</span></div>'):'')+
+            (fc.loan&&fc.loan.sum>0?('<div class="row" style="margin-top:4px;font-size:13px;" '+App.view.act('openLoanBook')+' role="button" tabindex="0"><span class="muted">대출 상환 '+fc.loan.n+'건 ›</span><span>'+won(fc.loan.sum)+'</span></div>'):'')+
             (fc.remain>0?('<div class="tx-sub" style="margin-top:8px;">오늘 이후 남은 예정 <b>'+won(fc.remain)+'</b></div>'):'<div class="tx-sub" style="margin-top:8px;">이번 달 예정분은 모두 지나갔어요</div>')+
           '</div>';
         } }
@@ -2342,7 +2343,12 @@
         const nb=subNextBilling(s); if(!nb||String(nb).slice(0,7)!==mm) return;
         const amt=Number(s.amount)||0; sub.n++; sub.sum+=amt; if(parseDate(nb)>today) sub.remain+=amt;
       });
-      return { rec, sub, sav, total:rec.sum+sub.sum+sav.sum, remain:rec.remain+sub.remain+sav.remain };
+      // 🏦 대출 상환(빌림·활성·잔액 있음) — 상환 방식 스케줄의 이번 달 회차 납입액(loanMonthPlan)
+      const loan={n:0,sum:0,remain:0};
+      visibleLoans().forEach(l=>{ if(l.direction==='lent') return; if(loanCalc(l).balance<=0) return;
+        const mp=loanMonthPlan(l, mm); if(!mp||!mp.inst) return;
+        loan.n++; loan.sum+=mp.inst.pay; if(mp.day>+todayStr().slice(8,10)) loan.remain+=mp.inst.pay; });
+      return { rec, sub, sav, loan, total:rec.sum+sub.sum+sav.sum+loan.sum, remain:rec.remain+sub.remain+sav.remain+loan.remain };
     }
     // 계좌 유형별 라인 아이콘(시안) — 색은 a.color 유지
     function acctIcon(type){
@@ -3959,16 +3965,45 @@
         '<div class="bar" style="margin-top:8px;"><i style="width:'+pct+'%;background:'+col+'"></i></div>'+
         '<div class="row" style="margin-top:6px;"><span class="tx-sub">잔액 '+won(c.balance)+' / '+won(c.principal)+'</span><span class="tx-sub" style="color:'+col+'">'+pct+'% 상환</span></div></div>';
     }
+    // 🏦 이번 달 상환 예정(계획 스케줄) — 회차 k=시작월부터 경과 개월(시작 다음 달=1회차), n=시작~만기 개월, 상환일=시작일의 일자(말일 클램프).
+    //  반환: { k, n, type, day, inst(loanInstallment) } | { none:'first'(아직 1회차 전)|'noterm'(만기 미설정)|'ended'(만기 지남) } | null(비활성·원금 없음).
+    function loanMonthPlan(l, ym){
+      if((l.status||'active')!=='active') return null;
+      const P=Number(l.principal)||0, sd=l.startDate||''; if(!P||!sd) return null;
+      const k=(+ym.slice(0,4)-+sd.slice(0,4))*12 + (+ym.slice(5,7)-+sd.slice(5,7));
+      const n=l.dueDate?((+l.dueDate.slice(0,4)-+sd.slice(0,4))*12 + (+l.dueDate.slice(5,7)-+sd.slice(5,7))):0;
+      if(k<1) return { none:'first' };
+      const type=l.repayType||'bullet';
+      const inst=loanInstallment(P, l.interestRate, n, type, k);
+      if(!inst) return { none:(n>0&&k>n)?'ended':'noterm' };
+      const day=Math.min(+sd.slice(8,10)||1, new Date(+ym.slice(0,4), +ym.slice(5,7), 0).getDate());
+      return { k, n, type, day, inst };
+    }
     function openLoanDetail(id){
       const l=state.loans.find(x=>x.id===id); if(!l) return;
       const c=loanCalc(l);
       let h='<div class="card"><div class="row"><b style="font-size:18px;">🏦 '+escapeHtml(l.name||'대출')+'</b><span class="pill">'+(LOAN_DIR_LABEL[l.direction]||l.direction)+'</span></div>'+
-        '<div class="tx-sub" style="margin-top:6px;">'+escapeHtml(l.counterparty||'')+(l.startDate?(' · '+l.startDate):'')+(l.dueDate?(' ~ '+l.dueDate):'')+'</div>'+
+        '<div class="tx-sub" style="margin-top:6px;">'+escapeHtml(l.counterparty||'')+(l.startDate?(' · '+l.startDate):'')+(l.dueDate?(' ~ '+l.dueDate):'')+' · '+(LOAN_REPAY_LABEL[l.repayType||'bullet']||'')+'</div>'+
         '<div class="summary" style="margin-top:12px;">'+
           '<div><div class="s-label">잔액</div><div class="s-val">'+won(c.balance)+'</div></div>'+
           '<div><div class="s-label">원금</div><div class="s-val">'+won(c.principal)+'</div></div>'+
           '<div><div class="s-label">누적 이자</div><div class="s-val">'+won(c.paidInterest)+'</div></div></div>'+
         (l.interestRate?('<div class="tx-sub" style="margin-top:8px;">연 '+l.interestRate+'% · 월 예상 이자 약 '+won(c.monthlyInterest)+' (잔액 기준 단리)</div>'):'')+'</div>';
+      // 📅 이번 달 상환 예정 — 상환 방식(repayType) 계획 스케줄 기준 원금·이자·납입액
+      { const mp=(c.balance>0)?loanMonthPlan(l, todayStr().slice(0,7)):null;
+        if(mp){
+          let inner='';
+          if(mp.inst){
+            inner='<div class="row"><span class="muted">'+(mp.n?mp.k+'/'+mp.n+'회차':mp.k+'회차')+' · '+(LOAN_REPAY_LABEL[mp.type]||'')+'</span><b>'+won(mp.inst.pay)+'</b></div>'+
+              '<div class="tx-sub" style="margin-top:6px;">원금 '+won(mp.inst.prin)+' + 이자 '+won(mp.inst.int)+' · 매월 '+mp.day+'일'+
+              ((mp.type==='bullet'&&!mp.inst.prin)?(' · 원금은 만기'+(l.dueDate?'('+l.dueDate+')':'')+' 일시상환'):'')+'</div>'+
+              ((mp.type==='amortized')?'<div class="tx-sub" style="margin-top:2px;">매월 납입액이 같아요(회차가 갈수록 원금↑·이자↓)</div>':'');
+          }
+          else if(mp.none==='noterm') inner='<div class="tx-sub">만기일을 설정하면 회차별 원금·이자가 자동 계산돼요 — 아래 <b>설정 수정</b>에서 만기일을 넣어주세요.</div>';
+          else if(mp.none==='first') inner='<div class="tx-sub">상환은 시작 다음 달부터예요 — 이번 달 예정 없음.</div>';
+          else inner='<div class="tx-sub">계획상 만기가 지났어요 — 남은 잔액 '+won(c.balance)+'을 정리해 주세요.</div>';
+          h+='<div class="card" style="padding:12px 14px;"><div class="sec-title" style="margin:0 0 8px;">📅 이번 달 상환 예정</div>'+inner+'</div>';
+        } }
       h+='<div class="chip-row">'+['active','paid','overdue'].map(st=>'<button class="chip '+((l.status||'active')===st?'on':'')+'" '+App.view.act('setLoanStatus',l.id,st)+'>'+LOAN_STATUS_LABEL[st]+'</button>').join('')+'</div>';
       h+='<button class="btn" '+App.view.act('openLoanPayment',l.id)+'>+ 상환 기록</button>';
       h+='<div class="sec-title" style="margin-left:2px;">상환 내역 ('+c.payments.length+')</div>';
@@ -3997,6 +4032,12 @@
         '<div class="field"><label>연이율(%)</label><input class="input" id="lRate" inputmode="decimal" value="'+(l&&l.interestRate!=null?l.interestRate:'')+'" placeholder="예: 4.5"></div></div>';
       h+='<div class="form-2"><div class="field"><label>시작일</label><input type="date" class="input" id="lStart" value="'+(l&&l.startDate?l.startDate:todayStr())+'"></div>'+
         '<div class="field"><label>만기일(선택)</label><input type="date" class="input" id="lDue" value="'+(l&&l.dueDate?l.dueDate:'')+'"></div></div>';
+      // 🏦 상환 방식 — 회차별 원금·이자 자동 계산(원리금균등·원금균등은 만기일 필요, 상환일=매월 시작일의 일자)
+      { const rt=l?(l.repayType||'bullet'):'bullet';
+        h+='<div class="field"><label>상환 방식</label><select class="input" id="lRepay">'+
+          [['bullet','원금만기 — 매월 이자만, 만기에 원금 일시상환'],['amortized','원리금균등 — 매월 같은 금액(원금+이자)'],['equal_principal','원금균등 — 매월 같은 원금 + 줄어드는 이자']]
+            .map(o=>'<option value="'+o[0]+'"'+(rt===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+
+          '<p class="muted" style="font-size:11.5px;margin:6px 2px 0;">원리금균등·원금균등은 <b>만기일</b>을 넣어야 회차 금액이 계산돼요. 상환일은 매월 시작일의 일자.</p></div>'; }
       h+='<details class="adv"><summary>상세 설정</summary>';
       h+='<div class="field"><label>기본 상환 계좌</label><select class="input" id="lAcct">'+acctOptsHtml((l&&l.account)||(state.accounts[0]?state.accounts[0].id:''))+'</select></div>';
       // 원금을 계좌 잔액에 반영(신규 대출만) — 빌림=입금·빌려줌=출금 거래를 만들어 잔액이 실제와 맞게. 실소비 통계엔 제외(isActualExpense:false).
@@ -4015,6 +4056,7 @@
       const l=id?state.loans.find(x=>x.id===id):null, now=new Date().toISOString(), vis=val('lVis')||'full';
       const data={ name, direction:window._loanDir||'borrowed', counterparty:val('lParty').trim(),
         principal, interestRate:parseFloat(val('lRate'))||0, startDate:val('lStart')||todayStr(), dueDate:val('lDue')||null,
+        repayType:($('lRepay')?val('lRepay'):(l&&l.repayType))||'bullet',
         account: $('lAcct')?val('lAcct'):'', memo:val('lMemo').trim(), status:l?(l.status||'active'):'active',
         visibility:vis, owner:l?(l.owner||state.userName):state.userName, createdAt:l?(l.createdAt||now):now, updatedAt:now };
       const key=id||('loan_'+Date.now());
@@ -4044,8 +4086,12 @@
       const interestLabel = l.direction==='lent'?'이자(수입)':'이자(지출)';
       let h='<div class="card" style="padding:12px;"><div class="row"><span class="tx-sub">'+escapeHtml(l.name||'')+' 잔액</span><b>'+won(c.balance)+'</b></div>'+
         (l.interestRate?('<div class="row" style="margin-top:4px;"><span class="tx-sub">월 예상 이자</span><b>'+won(c.monthlyInterest)+'</b></div>'):'')+'</div>';
-      h+='<div class="form-2"><div class="field"><label>원금 상환</label><input class="input" id="lpPrincipal" inputmode="numeric" value="'+(p&&p.principalAmount?Number(p.principalAmount).toLocaleString():'')+'" placeholder="0" oninput="this.value=fmtComma(this.value)"></div>'+
-        '<div class="field"><label>'+interestLabel+'</label><input class="input" id="lpInterest" inputmode="numeric" value="'+(p&&p.interestAmount?Number(p.interestAmount).toLocaleString():(c.monthlyInterest?c.monthlyInterest.toLocaleString():''))+'" placeholder="0" oninput="this.value=fmtComma(this.value)"></div></div>';
+      // 🏦 신규 기록엔 이번 달 계획 회차(상환 방식 스케줄)의 원금·이자를 프리필 — 없으면 종전대로 이자만(잔액 단리)
+      const _mp=(!p)?loanMonthPlan(l, todayStr().slice(0,7)):null;
+      const _preP=(_mp&&_mp.inst)?_mp.inst.prin:0, _preI=(_mp&&_mp.inst)?_mp.inst.int:(c.monthlyInterest||0);
+      h+='<div class="form-2"><div class="field"><label>원금 상환</label><input class="input" id="lpPrincipal" inputmode="numeric" value="'+(p&&p.principalAmount?Number(p.principalAmount).toLocaleString():(_preP?_preP.toLocaleString():''))+'" placeholder="0" oninput="this.value=fmtComma(this.value)"></div>'+
+        '<div class="field"><label>'+interestLabel+'</label><input class="input" id="lpInterest" inputmode="numeric" value="'+(p&&p.interestAmount?Number(p.interestAmount).toLocaleString():(_preI?_preI.toLocaleString():''))+'" placeholder="0" oninput="this.value=fmtComma(this.value)"></div></div>';
+      if(_mp&&_mp.inst) h+='<p class="muted" style="font-size:11.5px;margin:-6px 2px 10px;">'+(_mp.n?_mp.k+'/'+_mp.n+'회차':_mp.k+'회차')+' 계획값('+(LOAN_REPAY_LABEL[_mp.type]||'')+')을 채워뒀어요 — 실제 낸 금액으로 고쳐도 돼요.</p>';
       h+='<div class="field"><label>날짜</label><input type="date" class="input" id="lpDate" value="'+(p&&p.date?p.date:todayStr())+'"></div>';
       h+='<div class="menu-item" style="padding:8px 2px;"><span>🧾 원금·이자를 가계부 거래로 기록</span><div class="switch '+(txOn?'on':'')+'" id="lpTx" '+App.view.act('toggleSwitch','toggleLoanPayAcct')+'><i></i></div></div>';
       h+='<div id="lpAcctWrap" style="'+(txOn?'':'display:none;')+'"><div class="field"><label>계좌</label><select class="input" id="lpAcct">'+acctOptsHtml((p&&p.account)||l.account||(state.accounts[0]?state.accounts[0].id:''))+'</select></div>'+
