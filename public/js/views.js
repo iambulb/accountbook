@@ -1536,7 +1536,9 @@
       }
       h+='</div></div>';
       const ro=todoReadOnly();
-      const dayT=base.filter(t=>t.dueDate===sel || todoDoneDay(t)===sel).sort((a,b)=>(a.done?1:0)-(b.done?1:0));   // 그날 마감 + 그날 완료한 할일(완료 점과 목록 일치)
+      // 미완료=마감일에만, 완료=완료한 날에만 표시 — 예전 'dueDate OR 완료일' 필터는 마감일을 옮긴 뒤 완료하면
+      // 옛/새 마감일과 완료일 양쪽에 완료 항목이 중복돼 보이던 버그(완료 점은 완료일에만 찍혀 목록과도 불일치).
+      const dayT=base.filter(t=> t.done ? (todoDoneDay(t)===sel) : (t.dueDate===sel)).sort((a,b)=>(a.done?1:0)-(b.done?1:0));
       h+='<div class="sech"><span class="l">'+(+sel.split('-')[1])+'월 '+(+sel.split('-')[2])+'일</span><span class="s">'+dayT.length+'개</span></div>';
       // 🕘 이 날짜의 미완료만 오늘로 — 자동 이월 없이, 미완료가 남은 날짜에서 명시적으로 옮긴다(사용자 지침)
       { const selOpen=dayT.filter(t=>!t.done && t.dueDate===sel);
