@@ -66,7 +66,9 @@
     const tx = {
       type: type, date: inp.iso, user: inp.consumer, amount: mainAmount,
       desc: inp.desc || (inp.hasCat ? (inp.cat || inp.typeLabel) : inp.typeLabel),
-      isActualExpense: !!inp.isActualDefault
+      // 수입은 기본 '실수입'(true) — ACTUAL_DEFAULT(소비 기본값 테이블)에 income이 없어 false로 저장되면
+      // 리포트·달력의 수입 집계(원금회수 등 isActualExpense:false 제외 필터)에서 일반 수입까지 통째로 빠지는 버그(실사례).
+      isActualExpense: type === 'income' ? true : !!inp.isActualDefault
     };
     if (inp.consumerIsMember) tx.userUid = inp.consumerUid;
     if (inp.curCode !== 'KRW') { tx.currency = inp.curCode; tx.foreignAmount = inp.foreign; tx.fxRate = inp.rate; tx.fxSource = inp.fxSource || 'manual'; tx.fxDate = inp.date; }

@@ -234,3 +234,17 @@ test('buildTx — 함께결제 + 목적별: 보조 거래는 정산 제외(이�
   assert.strictEqual(r.subTx.settlementIncluded, false);
   assert.strictEqual(r.subTx.settlementStatus, 'none');
 });
+
+// 💰 수입 실수입 기본값 — ACTUAL_DEFAULT에 income이 없어 false로 저장되면 리포트 수입 집계에서 빠지던 버그 방지(2026-07-31)
+test('buildTx: 수입은 isActualExpense=true(실수입) 기본', () => {
+  const r = buildTx({ type: 'income', iso: '2026-07-31T12:00:00.000Z', date: '2026-07-31', consumer: '현경',
+    rawAmount: 500000, foreign: 500000, curCode: 'KRW', effect: { credit: 'to' }, to: 'acc1', hasCat: true, cat: '월급',
+    typeLabel: '수입', isActualDefault: undefined });
+  assert.strictEqual(r.error, undefined);
+  assert.strictEqual(r.tx.isActualExpense, true);
+  // 지출은 종전대로 ACTUAL_DEFAULT를 따름
+  const e = buildTx({ type: 'expense', iso: '2026-07-31T12:00:00.000Z', date: '2026-07-31', consumer: '현경',
+    rawAmount: 1000, foreign: 1000, curCode: 'KRW', effect: { debit: 'from' }, from: 'acc1', hasCat: true, cat: '식비',
+    typeLabel: '지출', isActualDefault: true });
+  assert.strictEqual(e.tx.isActualExpense, true);
+});

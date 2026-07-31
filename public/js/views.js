@@ -1,8 +1,12 @@
 // ===== 홈(달력/목록) =====
+    // 💰 실수입 필터(수입 집계 공용) — '부채/자산 이동' 수입(대출 수령·원금회수: loanId + isActualExpense:false)만 제외한다.
+    //  isActualExpense만으로 거르면 안 됨: 과거 buildTx가 ACTUAL_DEFAULT 미정의로 일반 수입도 전부 false로 저장하던 버그가 있어
+    //  (2026-07-31 수정) 기존 데이터의 일반 수입까지 리포트에서 통째로 빠진다 — loanId 동반 여부로 판정해 과거 데이터도 복구.
+    function realIncome(list){ return list.filter(t=>!(t.isActualExpense===false && t.loanId)); }
     function renderCalendar(){
       const m=state.month, allList=monthTx(m);
       const list = state.memberFilter ? allList.filter(t=>t.ownerUid===state.memberFilter) : allList;   // 멤버 칩 = '기록자(ownerUid)'별 필터(문서 features-ledger.md 기준) — 공동/수입 거래도 기록한 멤버 칩에 잡힘(예전 소비대상 t.user 기준이라 공동·수입이 어떤 칩에도 안 잡히던 버그 수정)
-      const inc=sumBy(list.filter(t=>t.isActualExpense!==false),'income');   // 원금회수 등 비실수입 제외(리포트와 동일)
+      const inc=sumBy(realIncome(list),'income');   // 원금회수 등 비실수입 제외(리포트와 동일)
       const actual=actualSpend(list);
       const refundTot=list.filter(t=>t.type==='refund').reduce((s,t)=>s+(Number(t.amount)||0),0);   // 💸 환불 — 합계에 반영(리포트 잔액과 동일 기준)
       const charge=sumBy(list,'prepaid_charge');
@@ -261,13 +265,16 @@
     function applyTxTemplate(i){
       const s=_txTpl[Number(i)]; if(!s) return; const sh=$('sheet'); if(!sh) return;
       sheetType=s.type; if(s.category) sheetCat=s.category;
+      // 🔒 결제수단·소비대상 우선순위: 직접 고른 값(touched) > 🧠 최근 기억(txlast) > 과거 거래 복원 —
+      //  예전엔 과거 거래 값이 최근 기억을 덮어써, 옛날에 다른 계좌로 내던 가게를 탭하면 그 옛 계좌로 저장되던 버그(실사례: 구근 카드 대신 현경 계좌).
+      const last=txLastOf(s.type);
       const src=state.transactions.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''))
         .find(t=>t.type===s.type && (t.desc||'').trim()===s.desc && (Number(t.amount)||0)===s.amount);
-      if(src){
-        if(src.from&&getAcct(src.from)){ sh._from=src.from; sh._touched.from=true; }
+      if(!sh._touched.from){ if(last.from) sh._from=last.from; else if(src&&src.from&&getAcct(src.from)) sh._from=src.from; }
+      if(!sh._touched.user){
         const mem=(state.wsMeta&&state.wsMeta.members)||{};
-        const cu=src.userUid||(src.user==='공동'?'공동':'');
-        if(cu&&(cu==='공동'||mem[cu])){ sh._consumer=cu; sh._touched.user=true; }
+        const cu=src?(src.userUid||(src.user==='공동'?'공동':'')):'';
+        if(last.user) sh._consumer=last.user; else if(cu&&(cu==='공동'||mem[cu])) sh._consumer=cu;
       }
       if(sh._cur==='KRW'){ const a=$('sAmount'); if(a) a.value=s.amount?Number(s.amount).toLocaleString():''; }
       const d=$('sDesc'); if(d) d.value=s.desc;
@@ -298,8 +305,10 @@
       const sh=$('sheet'); const s=sh._descSug&&sh._descSug[Number(i)]; if(!s) return;
       const el=$('sDesc'); if(el) el.value=s.desc;
       if(s.category) sheetCat=s.category;
-      if(s.from&&getAcct(s.from)){ sh._from=s.from; sh._touched.from=true; }
-      if(s.to&&getAcct(s.to)){ sh._to=s.to; sh._touched.to=true; }
+      // 🔒 결제수단은 직접 고른 값 > 🧠 최근 기억 > 과거 거래 값 순 — 과거 값이 최근 기억을 덮지 않게(템플릿과 동일 수정)
+      const last=txLastOf(sheetType);
+      if(!sh._touched.from){ if(last.from) sh._from=last.from; else if(s.from&&getAcct(s.from)) sh._from=s.from; }
+      if(!sh._touched.to){ if(last.to) sh._to=last.to; else if(s.to&&getAcct(s.to)) sh._to=s.to; }
       if(sh._cur==='KRW' && !parseAmount(val('sAmount')) && s.amount){ const a=$('sAmount'); if(a) a.value=Number(s.amount).toLocaleString(); }
       const box=$('sDescSug'); if(box) box.innerHTML=''; sh._descSug=null;
       renderTxDyn(); updateCoPayNote();
@@ -2095,7 +2104,7 @@
       let h=repRangeSegHtml();
       h+='<div class="monthlbl"><button '+App.view.act('statsYearMove',-1)+' aria-label="이전 해">‹</button><b>'+y+'년</b><button '+App.view.act('statsYearMove',1)+' aria-label="다음 해">›</button></div>';
       const months=[]; for(let i=1;i<=12;i++) months.push(y+'-'+pad2(i));
-      const perM=months.map(mm=>{ const l=monthTx(mm); return { m:mm, exp:actualSpend(l), inc:sumBy(l.filter(t=>t.isActualExpense!==false),'income') }; });
+      const perM=months.map(mm=>{ const l=monthTx(mm); return { m:mm, exp:actualSpend(l), inc:sumBy(realIncome(l),'income') }; });
       const totExp=perM.reduce((s,x)=>s+x.exp,0), totInc=perM.reduce((s,x)=>s+x.inc,0);
       const nMon=(y===curY)?Math.max(1,curM):12;   // 올해는 경과 개월 기준 월평균
       h+='<div class="card" style="margin-bottom:6px"><div style="font-size:12px;color:var(--sub);font-weight:700;margin-bottom:6px">'+y+'년 총지출</div>'+
@@ -2121,7 +2130,7 @@
       if(typeof markReportSeen==='function') markReportSeen();   // 🐱 주간 미션: 리포트 확인
       if(_repRange==='year'){ $('content').innerHTML=yearStatsHtml(); return; }   // 📅 연간 뷰
       const m=state.month, list=monthTx(m);
-      const actual=actualSpend(list), inc=sumBy(list.filter(t=>t.isActualExpense!==false),'income');   // 원금회수 등 isActualExpense:false 수입은 '실수입' 아님(부채·자산 이동) → 리포트 수입에서 제외(수입 부풀림 방지)
+      const actual=actualSpend(list), inc=sumBy(realIncome(list),'income');   // 원금회수 등 isActualExpense:false 수입은 '실수입' 아님(부채·자산 이동) → 리포트 수입에서 제외(수입 부풀림 방지)
       const refundTot=list.filter(t=>t.type==='refund').reduce((s,t)=>s+(Number(t.amount)||0),0);   // 💸 환불 합계 — 잔액에 반영(이전엔 수입·지출 어디에도 안 잡혀 잔액이 실제와 어긋났음)
       const bal=inc-actual+refundTot;
       const [yy,mo]=m.split('-');
@@ -2275,7 +2284,8 @@
             (fc.rec.sum>0?('<div class="row" style="margin-top:6px;font-size:13px;" '+App.view.act('openRecurringList')+' role="button" tabindex="0"><span class="muted">정기결제 '+fc.rec.n+'건 ›</span><span>'+won(fc.rec.sum)+'</span></div>'):'')+
             (fc.sub.sum>0?('<div class="row" style="margin-top:4px;font-size:13px;" '+App.view.act('openSubscriptions')+' role="button" tabindex="0"><span class="muted">구독 '+fc.sub.n+'건 ›</span><span>'+won(fc.sub.sum)+'</span></div>'):'')+
             (fc.sav.sum>0?('<div class="row" style="margin-top:4px;font-size:13px;"><span class="muted">적금 납입 '+fc.sav.n+'건</span><span>'+won(fc.sav.sum)+'</span></div>'):'')+
-            (fc.loan&&fc.loan.sum>0?('<div class="row" style="margin-top:4px;font-size:13px;" '+App.view.act('openLoanBook')+' role="button" tabindex="0"><span class="muted">대출 상환 '+fc.loan.n+'건 ›</span><span>'+won(fc.loan.sum)+'</span></div>'):'')+
+            (fc.loan&&fc.loan.sum>0?('<div class="row" style="margin-top:4px;font-size:13px;" '+App.view.act('openLoanBook')+' role="button" tabindex="0"><span class="muted">대출 상환 '+fc.loan.n+'건 ›</span><span>'+won(fc.loan.sum)+'</span></div>'+
+              '<div class="tx-sub" style="margin:2px 0 0 8px;">원금 '+won(fc.loan.prin)+' + 이자 '+won(fc.loan.int)+(fc.loan.prin===0?' · 원금만기 방식은 원금을 만기에 일시상환해요 — 매월 원금을 갚는 대출이면 대출 설정에서 <b>원리금균등·원금균등</b>으로 바꿔주세요':'')+'</div>'):'')+
             (fc.remain>0?('<div class="tx-sub" style="margin-top:8px;">오늘 이후 남은 예정 <b>'+won(fc.remain)+'</b></div>'):'<div class="tx-sub" style="margin-top:8px;">이번 달 예정분은 모두 지나갔어요</div>')+
           '</div>';
         } }
@@ -2343,11 +2353,12 @@
         const nb=subNextBilling(s); if(!nb||String(nb).slice(0,7)!==mm) return;
         const amt=Number(s.amount)||0; sub.n++; sub.sum+=amt; if(parseDate(nb)>today) sub.remain+=amt;
       });
-      // 🏦 대출 상환(빌림·활성·잔액 있음) — 상환 방식 스케줄의 이번 달 회차 납입액(loanMonthPlan)
-      const loan={n:0,sum:0,remain:0};
+      // 🏦 대출 상환(빌림·활성·잔액 있음) — 상환 방식 스케줄의 이번 달 회차 납입액(loanMonthPlan). pay=원금+이자(원금만기 방식은 정의상 매월 원금 0 — 만기 달엔 원금 포함)
+      const loan={n:0,sum:0,remain:0,prin:0,int:0};
       visibleLoans().forEach(l=>{ if(l.direction==='lent') return; if(loanCalc(l).balance<=0) return;
         const mp=loanMonthPlan(l, mm); if(!mp||!mp.inst) return;
-        loan.n++; loan.sum+=mp.inst.pay; if(mp.day>+todayStr().slice(8,10)) loan.remain+=mp.inst.pay; });
+        loan.n++; loan.sum+=mp.inst.pay; loan.prin+=mp.inst.prin; loan.int+=mp.inst.int;
+        if(mp.day>+todayStr().slice(8,10)) loan.remain+=mp.inst.pay; });
       return { rec, sub, sav, loan, total:rec.sum+sub.sum+sav.sum+loan.sum, remain:rec.remain+sub.remain+sav.remain+loan.remain };
     }
     // 계좌 유형별 라인 아이콘(시안) — 색은 a.color 유지
@@ -2502,8 +2513,11 @@
       h+='<div id="svCalc"></div>';
       h+='<div class="card" style="padding:14px;margin:4px 0 14px;"><div class="sec-title" style="margin:0 0 10px;">🏦 매달 자동 기록</div>'+
         '<div class="field"><label>출금 계좌</label><select class="input" id="vFrom"><option value="">자동 기록 안 함</option>'+acctOptsHtml(sv?(sv.from||''):'')+'</select></div>'+
-        '<div class="field"><label>입금(적금) 계좌 — 선택</label><select class="input" id="vTo"><option value="">선택 안 함 (출금만 기록)</option>'+acctOptsHtml(sv?(sv.to||''):'')+'</select></div>'+
-        '<p class="muted" style="margin:2px 0 0;font-size:12px;line-height:1.55;">출금 계좌를 고르면 매달 납입일에 <b>이체 거래가 자동 기록</b>돼요(정기결제 목록에서도 관리·만기까지). 적금 통장을 앱에 계좌로 등록해 입금 계좌로 고르면 그 잔액도 함께 쌓여요.</p></div>';
+        '<div class="field"><label>입금(적금) 계좌</label><select class="input" id="vTo">'+
+          '<option value="__auto__"'+(!(sv&&sv.to)?' selected':'')+'>✨ 자동 — 적금명으로 새 계좌 만들기</option>'+
+          acctOptsHtml(sv?(sv.to||''):'')+
+          '<option value="__none__">계좌 없이 (출금만 기록)</option>'+'</select></div>'+
+        '<p class="muted" style="margin:2px 0 0;font-size:12px;line-height:1.55;">저장하면 <b>적금명으로 계좌가 자동 생성</b>돼 납입액이 그 잔액으로 쌓여요(이미 쓰는 적금 통장 계좌가 있으면 목록에서 선택). 출금 계좌를 고르면 매달 납입일에 <b>이체 거래가 자동 기록</b>됩니다(정기결제 목록에서도 관리·만기까지).</p></div>';
       h+='<button class="btn" '+App.view.act('saveSavings', sv?ownerUid:null, sv?id:null)+'>'+(sv?'수정':'추가')+'</button>';
       if(sv) h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deleteSavings',ownerUid,id)+'>삭제</button>';
       openSheet(sv?'적금 수정':'적금 추가', h);
@@ -2524,11 +2538,21 @@
     }
     function saveSavings(ownerUid,id){
       const name=val('vName').trim(), monthly=parseAmount(val('vMonthly')), rate=parseFloat(val('vRate'))||0, months=Math.floor(Number(val('vMonths')))||0;
-      const day=Number(val('vDay'))||1, startDate=val('vStart')||todayStr(), fromV=val('vFrom'), toV=val('vTo');
+      const day=Number(val('vDay'))||1, startDate=val('vStart')||todayStr(), fromV=val('vFrom');
       if(!name){ toast('적금명을 입력하세요', true); return; }
       const plan=savingsPlan(monthly, rate, months, startDate, day);
       if(!plan){ toast('월 납입액과 기간(개월)을 입력하세요', true); return; }
       const owner=ownerUid||state.uid, key=id||String(Date.now());
+      // ✨ 입금(적금) 계좌 — '자동'이면 적금명으로 계좌를 만들어(acc_sv_{key}, 재저장 시 재사용·이름 동기화) 납입액이 잔액으로 쌓이게 한다(사용자 요청)
+      let toV=val('vTo');
+      if(toV==='__none__') toV='';
+      else if(toV==='__auto__'){
+        const acctId='acc_sv_'+key;
+        if(getAcct(acctId)){ db.ref(wp('accounts/'+acctId+'/name')).set(name); }   // 적금명 변경 시 계좌 이름도 따라감
+        else db.ref(wp('accounts/'+acctId)).set({ name:name, type:'bank', provider:'manual', owner:state.userName||'', ownerUid:state.uid||'',
+          visibility:defaultVisibility(), initialBalance:0, memo:'적금 계좌 (자동 생성)', color:'#5C6BE0', order:state.accounts.length+1, savingsId:key });
+        toV=acctId;
+      }
       const prev=(ownerUid&&id)?state.savings.find(x=>x.ownerUid===ownerUid&&x.id===id):null;
       const rid=(prev&&prev.recurringId)||('sv_'+key);
       const data={ name, monthly, rate, months, startDate, day, from:fromV||'', to:toV||'',
@@ -2587,7 +2611,7 @@
         if(localStorage.getItem('recap:'+(state.wsId||'')+':'+lastM)) return '';
         const list=monthTx(lastM); if(!list.length) return '';
         const actual=actualSpend(list); if(!actual) return '';
-        const inc=sumBy(list.filter(t=>t.isActualExpense!==false),'income');
+        const inc=sumBy(realIncome(list),'income');
         const cd={}; list.filter(t=>isActual(t)&&t.category).forEach(t=>{ cd[t.category]=(cd[t.category]||0)+(Number(t.amount)||0); });
         const top=Object.keys(cd).sort((a,b)=>cd[b]-cd[a])[0]||'';
         const prev=actualSpend(monthTx(shiftMonth(lastM,-1)));

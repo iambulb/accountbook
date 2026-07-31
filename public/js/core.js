@@ -1001,7 +1001,7 @@
       const tx={ type, date:new Date(occ.getFullYear(),occ.getMonth(),occ.getDate(),12,0,0).toISOString(),
         user:rule.user||state.userName, amount:Number(rule.amount)||0,
         desc: rule.desc||TYPE_LABEL[type]||'정기',
-        isActualExpense: !!ACTUAL_DEFAULT[type],
+        isActualExpense: type==='income' ? true : !!ACTUAL_DEFAULT[type],   // 수입은 실수입(false면 리포트 수입 집계에서 빠짐 — buildTx와 동일 수정)
         recurringId:rule.id, recurringTitle:rule.desc||'', scheduledDate:ymd(occ), generatedBy:'recurring' };
       if(rule.memo) tx.memo=rule.memo;
       const e=TX_EFFECT[type]||{};
