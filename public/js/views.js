@@ -1654,12 +1654,16 @@
     App.view.define('todoList', { render:function(){ return todoListHtml(); } });
     App.view.define('todoCalendar', { render:function(){ return todoCalendarHtml(); } });
     App.view.define('todoDone', { render:function(){ return todoDoneHtml(); } });
-    function toggleTodo(id){ const t=allTodos().find(x=>x.id===id); if(!t) return; const now=new Date().toISOString();
+    // 📅 완료 처리 기준일 — 할일 캘린더에서 '오늘이 아닌 날짜'를 보고 있으면 그 날짜로 완료 기록(사용자 요청).
+    //  완료 목록·완료 탭·캘린더 점·잔디가 모두 doneAt(=todoDoneDay)을 보므로, 보고 있던 날짜에 그대로 완료로 남는다. 그 외 화면은 오늘(now).
+    function todoDoneCtxDay(){ const td=todayKst(); return (state.tab==='todocal' && _todoSel && _todoSel!==td) ? _todoSel : ''; }
+    function toggleTodo(id){ const t=allTodos().find(x=>x.id===id); if(!t) return;
+      const _ctx=todoDoneCtxDay(), now=_ctx?isoAtNoon(_ctx):new Date().toISOString(), _upAt=new Date().toISOString();   // now=완료 시각(선택 날짜면 그날 정오), _upAt=실제 수정 시각
       const ref=todoDbRef(t);
       const firstReward=!t.rewardClaimed;   // 할일당 은화 1회(멱등)
       if(!t.done && t.repeat && t.repeat!=='none' && t.dueDate){
         let _nd=nextDue(t.dueDate,t.repeat,t.repeatDays); const _t=todayKst(); let _g=0; while(_nd<=_t && _g++<400) _nd=nextDue(_nd,t.repeat,t.repeatDays);   // 밀린 회차 catch-up: 다음 예정을 오늘(KST) 이후로 — 오래 밀려도 한 번 완료로 미래 회차가 됨(즉시 재-지남 방지). 매주 요일 지정(repeatDays)도 반영.
-        const upd={ dueDate:_nd, doneByUid:(state.uid||''), lastDoneAt:now, doneCount:(Number(t.doneCount)||0)+1, updatedAt:now };   // 반복 완료 횟수 누적(완료 이력·리포트 반영)
+        const upd={ dueDate:_nd, doneByUid:(state.uid||''), lastDoneAt:now, doneCount:(Number(t.doneCount)||0)+1, updatedAt:_upAt };   // 반복 완료 횟수 누적(완료 이력·리포트 반영)
         if(firstReward) upd.rewardClaimed=true;
         ref.update(upd);
         // 🧾 완료 스냅샷(사용자 요청): 반복 원본은 위처럼 다음 회차로 굴리고, '이 회차 완료' 1회성 항목을 따로 남겨
@@ -1671,18 +1675,20 @@
             assignedUid:t.assignedUid||'', assignedName:t.assignedName||'',
             repeat:'none', repeatDays:[], repeatSrcId:t.id, purposeBookId:t.purposeBookId||'',
             priority:t.priority||'normal', category:t.category||'', catName:t.catName||'', catColor:t.catColor||'', tags:t.tags||[], subtasks:t.subtasks||[],
-            done:true, doneAt:now, doneByUid:state.uid||'', rewardClaimed:true,
-            createdByUid:state.uid||'', createdAt:now, updatedAt:now, sortOrder:Date.now() };
+            done:true, doneAt:now, doneByUid:state.uid||'', rewardClaimed:true,   // doneAt=완료 기준일(캘린더에서 고른 날짜면 그날) → 그 날짜 완료 목록·잔디에 잡힘
+            createdByUid:state.uid||'', createdAt:_upAt, updatedAt:_upAt, sortOrder:Date.now() };
           const base=_sc==='personal'?db.ref('users/'+state.uid+'/todos'):db.ref(wp('todos'));
           base.child(copyId).set(copy).catch(_saveErr);
         }
         const _np=_nd.split('-'); const nxt=(+_np[1])+'월 '+(+_np[2])+'일('+WEEK[new Date(_nd+'T00:00:00').getDay()]+')로 넘겼어요';   // 요일 지정 매주는 같은 주 다음 요일일 수 있어 실제 날짜로 안내
-        if(firstReward && typeof grantTodoCoins==='function'){ grantTodoCoins(function(paid){ toast(paid>0?('완료! +'+paid+' 은화 · '+nxt):('완료! '+nxt)); }); } else toast('완료! '+nxt);
+        const _dn=_ctx?((+_ctx.slice(5,7))+'월 '+(+_ctx.slice(8,10))+'일 완료 · '):'';   // 선택 날짜로 완료한 경우 명시
+        if(firstReward && typeof grantTodoCoins==='function'){ grantTodoCoins(function(paid){ toast(paid>0?(_dn+'+'+paid+' 은화 · '+nxt):(_dn+'완료! '+nxt)); }); } else toast(_dn+'완료! '+nxt);
         maybeSuggestTxFromTodo(t);
       } else {
-        const done=!t.done; const upd={ done:done, doneAt:done?now:'', doneByUid:done?(state.uid||''):'', updatedAt:now };
-        if(done && firstReward){ upd.rewardClaimed=true; ref.update(upd); if(typeof grantTodoCoins==='function'){ grantTodoCoins(function(paid){ toast(paid>0?('완료! +'+paid+' 은화 🐾'):'완료! 🐾'); }); } else toast('완료! 🐾'); }
-        else { ref.update(upd); if(done) toast('다시 완료했어요'); }   // 이 분기의 done=재완료(이미 보상받음) → 첫 완료와 구분(허위 보상 문구 방지)
+        const done=!t.done; const upd={ done:done, doneAt:done?now:'', doneByUid:done?(state.uid||''):'', updatedAt:_upAt };
+        const _dn=(done&&_ctx)?((+_ctx.slice(5,7))+'월 '+(+_ctx.slice(8,10))+'일로 완료했어요'):'';
+        if(done && firstReward){ upd.rewardClaimed=true; ref.update(upd); if(typeof grantTodoCoins==='function'){ grantTodoCoins(function(paid){ toast(_dn?(_dn+(paid>0?(' +'+paid+' 은화'):'')):(paid>0?('완료! +'+paid+' 은화 🐾'):'완료! 🐾')); }); } else toast(_dn||'완료! 🐾'); }
+        else { ref.update(upd); if(done) toast(_dn||'다시 완료했어요'); }   // 이 분기의 done=재완료(이미 보상받음) → 첫 완료와 구분(허위 보상 문구 방지)
         if(done) maybeSuggestTxFromTodo(t);
       }
     }
@@ -1978,9 +1984,9 @@
       return '<span class="repvalseg"><button class="'+(_txListMode==='cat'?'on':'')+'" '+App.view.act('setTxListMode','cat')+' aria-label="카테고리별 묶어 보기">카테고리</button>'+
         '<button class="'+(_txListMode==='cat'?'':'on')+'" '+App.view.act('setTxListMode','time')+' aria-label="시간순으로 보기">시간순</button></span>';
     }
-    function txListHtml(rows, emptyMsg){
+    function txListHtml(rows, emptyMsg, forceMode){   // forceMode='cat'|'time' — 지정 시 전역 토글(_txListMode) 대신 그 모드로(계좌 통장 시트의 '카테고리' 탭 등)
       if(!rows.length) return '<div class="card" style="padding:6px 10px;"><div class="empty">'+emptyMsg+'</div></div>';
-      if(_txListMode!=='cat') return '<div class="card" style="padding:6px 10px;">'+rows.map(txRowHtml).join('')+'</div>';
+      if((forceMode||_txListMode)!=='cat') return '<div class="card" style="padding:6px 10px;">'+rows.map(txRowHtml).join('')+'</div>';
       const g={}; rows.forEach(t=>{ const k=t.category||TYPE_LABEL[t.type]||'기타'; (g[k]=g[k]||[]).push(t); });
       const sum=a=>a.reduce((s,t)=>s+(Number(t.amount)||0),0);
       return Object.keys(g).sort((a,b)=>sum(g[b])-sum(g[a])).map(k=>
@@ -2251,7 +2257,7 @@
           ranked.map(r=>{ const c=budgetColor(r.u.pct); return '<div style="margin:10px 0;"><div class="row" style="font-size:13px;"><span>'+(r.p.icon||'📒')+' '+escapeHtml(r.p.name)+'</span><span>'+won(r.u.used)+(r.p.budgetAmount?(' / '+won(r.u.amount)):'')+'</span></div>'+(r.p.budgetAmount?('<div class="bar"><i style="width:'+Math.min(r.u.pct,100)+'%;background:'+c+'"></i></div>'):'')+'</div>'; }).join('')+'</div>';
       }
       const pa=prepaidAccounts().filter(canSee);
-      if(pa.length) h+='<div class="card" style="margin-top:34px;"><div class="sec-title" style="margin:0 0 8px;">선불·포인트 잔액</div>'+pa.map(a=>'<div class="row" style="padding:7px 2px;"><span>'+((a.provider&&a.provider!=='manual')?PROVIDER_LABEL[a.provider]+' · ':'')+escapeHtml(a.name)+'</span><b class="blue">'+won(accountBalance(a.id))+'</b></div>').join('')+'</div>';
+      if(pa.length) h+='<div class="card" style="margin-top:34px;"><div class="sec-title" style="margin:0 0 8px;">선불·포인트 잔액</div>'+pa.map(a=>'<div class="row" style="padding:7px 2px;" '+App.view.act('openAcctDetail',a.id,m)+' role="button" tabindex="0" aria-label="'+escapeHtml(a.name)+' 거래내역 보기"><span>'+((a.provider&&a.provider!=='manual')?PROVIDER_LABEL[a.provider]+' · ':'')+escapeHtml(a.name)+'</span><b class="blue">'+won(accountBalance(a.id))+'<span class="pfgo">›</span></b></div>').join('')+'</div>';   // 탭=그 달 통장 내역
       $('content').innerHTML=h;
     }
 
@@ -2300,7 +2306,7 @@
         h+=sechHtml('카드 실적', null, (new Date().getMonth()+1)+'월');
         cards.forEach(c=>{
           const pf=cardPerformance(c), col=pf.pct>=100?'var(--income)':'var(--primary)';
-          h+='<div class="perfrow" '+App.view.act('openAcctSheet',c.id)+'><div class="perftop"><b>'+escapeHtml(c.cardName||acctName(c.id))+'</b>'+
+          h+='<div class="perfrow" '+App.view.act('openAcctDetail',c.id)+' aria-label="'+escapeHtml(c.cardName||acctName(c.id))+' 거래내역 보기"><div class="perftop"><b>'+escapeHtml(c.cardName||acctName(c.id))+'</b>'+
             '<span class="pct" style="color:'+col+'">'+(pf.target?pf.pct+'%':'목표 미설정')+'</span></div>'+
             (pf.target?'<div class="prog"><div class="f" style="width:'+Math.min(pf.pct,100)+'%;background:'+col+'"></div></div>'+
               '<div class="perfsub">'+won(pf.sum)+' / '+won(pf.target)+(pf.remain>0?' · '+won(pf.remain)+' 더 쓰면 실적 달성':' · 이번 달 실적 충족')+'</div>':'')+'</div>';
@@ -2381,9 +2387,95 @@
       const prov=(a.provider&&a.provider!=='manual')?'<span class="pill">'+(PROVIDER_LABEL[a.provider]||a.provider)+'</span>':'';
       const vis=(a.visibility&&a.visibility!=='full')?'<span class="pill">'+(a.visibility==='private'?'개인':'잔액만')+'</span>':'';
       const sub=(ACCT_TYPE_LABEL[a.type]||a.type)+(a.owner?' · '+escapeHtml(ownerName(a.owner)):'');   // owner는 멤버 uid로 저장될 수 있어 반드시 ownerName으로 이름 해석(uid 그대로 노출 방지)
-      return '<div class="acct" '+App.view.act('openAcctSheet',a.id)+'><div class="acct-dot">'+acctIcon(a.type)+'</div>'+
+      return '<div class="acct" '+App.view.act('openAcctDetail',a.id)+' aria-label="'+escapeHtml(a.name)+' 거래내역 보기"><div class="acct-dot">'+acctIcon(a.type)+'</div>'+
         '<div style="min-width:0;" class="acct-nm"><b>'+escapeHtml(a.name)+prov+vis+'</b><span>'+sub+'</span></div>'+
-        '<div class="acct-bal '+(bal<0?'red':'')+'">'+won(bal)+'</div></div>';
+        '<div class="acct-bal '+(bal<0?'red':'')+'">'+won(bal)+'<span class="pfgo">›</span></div></div>';
+    }
+
+    // ===== 🏦 계좌 거래내역(통장) — 계좌·카드·선불·포인트 공통 =====
+    //  계좌 '관점'의 증감: 그 계좌가 출금측(debit)이면 −, 입금측(credit)이면 + (이체·충전은 양쪽 계좌에 각각 반대 부호로 잡힘).
+    //  잔액 계산(accountBalance)과 같은 TX_EFFECT 규칙을 쓰므로 잔액·내역이 항상 일치한다.
+    function acctDelta(t, id){
+      const e=TX_EFFECT[t.type]||{}; const amt=Number(t.amount)||0; let d=0;
+      if(e.debit && t[e.debit]===id) d-=amt;
+      if(e.credit && t[e.credit]===id) d+=amt;
+      return d;
+    }
+    function txTouchesAcct(t, id){ const e=TX_EFFECT[t.type]||{}; return !!((e.debit && t[e.debit]===id) || (e.credit && t[e.credit]===id)); }
+    // 그 달 이 계좌 거래 + 잔액 추이(통장 정리). 잔액은 '초기잔액 + 이전 모든 거래'에서 시작해 시간순으로 누적(미래=예정 거래도 포함해 예상 잔액을 보여줌).
+    function acctMonthRows(id, m){
+      const a=getAcct(id)||{};
+      const all=state.transactions.filter(t=>txTouchesAcct(t,id)).sort((x,y)=>(x.date||'').localeCompare(y.date||''));
+      let bal=Number(a.initialBalance||0); const rows=[]; let inSum=0, outSum=0;
+      all.forEach(t=>{ const d=acctDelta(t,id); bal+=d;
+        if((t.date||'').slice(0,7)===m){ rows.push({ t:t, d:d, bal:bal }); if(d>=0) inSum+=d; else outSum+=-d; } });
+      const startBal=rows.length?(rows[0].bal-rows[0].d):bal;   // 이 달 첫 거래 직전 잔액(거래 없으면 현재까지 누적치)
+      return { rows:rows.reverse(), inSum, outSum, startBal, endBal:rows.length?rows[0].bal:startBal };   // 표시는 최신순
+    }
+    // 통장식 거래 행 — 계좌 관점 부호(+입금/−출금)와 그 거래 직후 잔액을 함께. 탭=거래 수정(닫으면 이 시트로 복귀).
+    function acctTxRowHtml(o, id){
+      const t=o.t, d=o.d;
+      let tileStyle='', tileInner;
+      if(t.category && (getCat(t.category)||CAT_META[t.category])){ tileStyle=catTileStyle(t.category); tileInner=catSvgIcon(t.category); }
+      else { tileInner=svgWrap(CAT_SVG[TX_SVG_KEY[t.type]||'tag']); }
+      const e=TX_EFFECT[t.type]||{};
+      const otherId=(e.debit&&t[e.debit]===id)?t.to:((e.credit&&t[e.credit]===id)?t.from:'');   // 이체·충전의 상대 계좌
+      const dd=(t.date||'').slice(5,10).replace('-','/');
+      const parts=[dd];
+      if(t.category) parts.push(escapeHtml(t.category)); else parts.push(TYPE_LABEL[t.type]||'');
+      if(otherId&&getAcct(otherId)) parts.push((d<0?'→ ':'← ')+escapeHtml(acctName(otherId)));
+      if(t.user) parts.push(escapeHtml(ownerName(t.user)));
+      const sched=((t.date||'').slice(0,10)>todayStr())?'<span class="pill" style="color:var(--primary);border-color:var(--primary);">📅 예정</span>':'';
+      const rec=t.recurringId?'<span class="pill">🔁</span>':'';
+      return '<div class="tx'+(sched?' tx-sched':'')+'" '+App.view.act('openTxSheet',t.ownerUid,t.id)+'>'+
+        '<div class="tx-ic" style="'+tileStyle+'">'+tileInner+'</div>'+
+        '<div class="tx-main"><div class="tx-title">'+escapeHtml(t.desc||TYPE_LABEL[t.type]||'')+sched+rec+'</div>'+
+        '<div class="tx-sub">'+parts.join(' · ')+'</div></div>'+
+        '<div class="tx-amt '+(d<0?'red':(d>0?'green':'muted'))+'" style="text-align:right;">'+(d>0?'+':(d<0?'-':''))+'₩'+Math.abs(d).toLocaleString()+
+        '<span class="acct-run">'+won(o.bal)+'</span></div></div>';
+    }
+    // 계좌 상세(통장) 시트 — 월 네비 + 잔액 요약 + [통장 | 카테고리별] 보기 + 이 계좌로 거래 추가 + 설정 수정.
+    function openAcctDetail(id, m, mode){
+      const a=getAcct(id); if(!a) return;
+      m=m||state.month; mode=mode||'book';
+      const card=getCard(id);
+      const R=acctMonthRows(id, m), p=m.split('-');
+      const cur=accountBalance(id);
+      let h='<div class="monthlbl" style="padding-top:0;"><button '+App.view.act('openAcctDetail',id,shiftMonth(m,-1),mode)+' aria-label="이전 달">‹</button><b>'+p[0]+'년 '+(+p[1])+'월</b><button '+App.view.act('openAcctDetail',id,shiftMonth(m,1),mode)+' aria-label="다음 달">›</button></div>';
+      // 잔액 요약 — 현재 잔액(오늘까지·목록과 동일 기준) + 이 달 입금/출금/순변동 + 월말 잔액
+      const net=R.inSum-R.outSum;
+      h+='<div class="card" style="margin-bottom:12px;"><div class="row"><span class="muted">'+(ACCT_TYPE_LABEL[a.type]||a.type)+' 현재 잔액</span><b class="'+(cur<0?'red':'')+'" style="font-size:17px;">'+won(cur)+'</b></div>'+
+        '<div class="statrow" style="margin-top:10px;">'+
+          '<div><div class="k">입금</div><div class="v" style="color:var(--income)">+'+fmtComma(R.inSum)+'</div></div>'+
+          '<div><div class="k">출금</div><div class="v" style="color:var(--expense)">-'+fmtComma(R.outSum)+'</div></div>'+
+          '<div><div class="k">순변동</div><div class="v">'+signComma(net)+'</div></div>'+
+          '<div style="margin-left:auto"><div class="k">'+(+p[1])+'월 말 잔액</div><div class="v">'+won(R.endBal)+'</div></div>'+
+        '</div>';
+      if(card){ const pf=cardPerformance(card, monthRefDate(m));
+        h+='<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px;"><div class="row" style="font-size:13px;"><span class="muted">💳 카드 실적</span><span>'+(pf.target?(won(pf.sum)+' / '+won(pf.target)+' · '+pf.pct+'%'):'목표 미설정')+'</span></div>'+
+          '<button class="chip" style="margin-top:8px;" '+App.view.act('openCardTxSheet',id,m,'period')+'>실적 기간으로 보기 ›</button></div>'; }
+      h+='</div>';
+      h+='<div class="sech"><span class="l">거래내역</span><span style="display:flex;align-items:center;gap:8px;">'+
+        (R.rows.length?('<span class="repvalseg"><button class="'+(mode==='book'?'on':'')+'" '+App.view.act('openAcctDetail',id,m,'book')+' aria-label="통장식으로 보기">통장</button><button class="'+(mode==='book'?'':'on')+'" '+App.view.act('openAcctDetail',id,m,'cat')+' aria-label="카테고리별로 보기">카테고리</button></span>'):'')+
+        '<span class="s">'+R.rows.length+'건</span></span></div>';
+      if(!R.rows.length) h+='<div class="card" style="padding:6px 10px;"><div class="empty" style="padding:22px 6px;">이 달 이 '+(card?'카드':'계좌')+'의 거래가 없어요</div></div>';
+      else if(mode==='book') h+='<div class="card" style="padding:6px 10px;">'+R.rows.map(o=>acctTxRowHtml(o,id)).join('')+'</div>';
+      else h+=txListHtml(R.rows.map(o=>o.t), '이 달 거래가 없어요', 'cat');   // 카테고리 묶음(소계·건수) — 내역 시트 공용
+      h+='<button class="btn" style="margin-top:14px;" '+App.view.act('addTxForAcct',id)+'>+ 이 '+(card?'카드로':'계좌로')+' 거래 추가</button>';
+      h+='<button class="btn ghost" style="margin-top:8px;" '+App.view.act('openAcctSheet',id)+'>설정 수정</button>';
+      openSheet(a.name||'계좌', h);
+      state._sheetReopen=()=>openAcctDetail(id,m,mode);   // ↩️ 거래 수정 시트 닫으면 이 통장으로 복귀
+    }
+    // 이 계좌를 결제·출금 수단으로 프리셋한 거래 입력 — 포인트·선불 계좌는 그에 맞는 유형으로 자동 전환
+    function addTxForAcct(id){
+      const a=getAcct(id); if(!a) return;
+      openTxSheet();
+      const sh=$('sheet'); if(!sh) return;
+      if(a.type==='point') sheetType='point_spend';
+      else if(PREPAID_TYPES.includes(a.type)) sheetType='prepaid_spend';
+      else sheetType='expense';
+      sh._from=id; if(sh._touched) sh._touched.from=true;
+      highlightTypeSeg(); renderTxDyn();
     }
 
     function openAcctSheet(id, presetType){
@@ -2478,7 +2570,7 @@
       const cards=state.creditCards.filter(c=>canSee(getAcct(c.id)||{owner:''}));
       if(!cards.length) h+='<div class="empty">등록된 신용카드가 없습니다.<br>결제수단을 \'신용카드\' 유형으로 추가하세요.</div>';
       cards.forEach(c=>{ const pf=cardPerformance(c), col=pf.pct>=100?'var(--income)':(pf.pct>=70?'var(--primary)':'#f5a623');
-        h+='<div class="card"><div class="row" '+App.view.act('openAcctSheet',c.id)+'><b>'+escapeHtml(c.cardName||acctName(c.id))+(c.cardCompany?' <span class="pill">'+escapeHtml(c.cardCompany)+'</span>':'')+'</b><span style="color:'+col+';font-weight:800;">'+(pf.target?pf.pct+'%':'목표X')+'</span></div>';
+        h+='<div class="card"><div class="row" '+App.view.act('openAcctDetail',c.id)+' role="button" tabindex="0" aria-label="'+escapeHtml(c.cardName||acctName(c.id))+' 거래내역 보기"><b>'+escapeHtml(c.cardName||acctName(c.id))+(c.cardCompany?' <span class="pill">'+escapeHtml(c.cardCompany)+'</span>':'')+'</b><span style="color:'+col+';font-weight:800;">'+(pf.target?pf.pct+'%':'목표X')+'<span class="pfgo">›</span></span></div>';
         if(pf.target) h+='<div class="bar"><i style="width:'+Math.min(pf.pct,100)+'%;background:'+col+'"></i></div><div class="tx-sub" style="margin-top:8px;">'+won(pf.sum)+' / '+won(pf.target)+(pf.remain>0?' · 남은 실적 '+won(pf.remain):' · 달성 ✅')+'<br>기간 '+ymd(pf.start)+' ~ '+ymd(pf.end)+'</div>';
         if(pf.excluded.length) h+='<div class="tx-sub" style="margin-top:10px;font-weight:700;color:var(--sub);">🚫 실적 제외 '+pf.excluded.length+'건</div><div class="card" style="padding:2px 8px;margin-top:6px;box-shadow:none;border:1px solid var(--line);">'+pf.excluded.slice(0,8).map(txRowHtml).join('')+'</div>';
         h+='</div>';
