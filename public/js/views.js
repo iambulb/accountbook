@@ -1527,11 +1527,12 @@
     function todoCalendarHtml(){
       const m=state.month, parts=m.split('-'), y=+parts[0], mo=+parts[1];
       const base=scopedTodos();
-      // 일별 점 버킷 — 미완료=마감일 기준(카테고리 색), 완료=완료한 날(doneAt/lastDoneAt·KST) 기준(같은 색·옅게). 가계부 달력처럼 색 중복 제거·색당 1점.
+      // 일별 점 버킷 — 미완료·완료 모두 **그 할일의 날짜(마감일) 칸**에 표시(완료=같은 색·옅게). 옛날에 등록한 할일을 오늘 완료해도
+      // 등록된 날짜 칸에 완료로 남는다(사용자 지침 — '언제 했나'가 아니라 '그 날의 일이었다'가 앵커). 마감일 없는 할일만 완료한 날로 폴백.
       const byDay={}; const _bk=function(ds){ return byDay[ds]=byDay[ds]||{o:[],dn:[]}; };
       base.forEach(t=>{ const col=todoCatColor(t)||'var(--primary)';
         if(!t.done && t.dueDate && t.dueDate.slice(0,7)===m){ const b=_bk(t.dueDate); if(b.o.indexOf(col)<0 && b.o.length<3) b.o.push(col); }
-        const dd=todoDoneDay(t); if(dd && dd.slice(0,7)===m){ const b=_bk(dd); if(b.dn.indexOf(col)<0 && b.dn.length<3) b.dn.push(col); } });
+        if(t.done){ const anchor=t.dueDate||todoDoneDay(t); if(anchor && anchor.slice(0,7)===m){ const b=_bk(anchor); if(b.dn.indexOf(col)<0 && b.dn.length<3) b.dn.push(col); } } });
       const HEAD=['월','화','수','목','금','토','일']; const first=(new Date(y,mo-1,1).getDay()+6)%7; const days=new Date(y,mo,0).getDate(); const todayS=todayKst(); const sel=_todoSel||todayS;
       let h=todoScopeSeg();
       h+='<div class="monthlbl"><button '+App.view.act('todoMoveMonth',-1)+' aria-label="이전 달">‹</button><b>'+y+'년 '+mo+'월</b><button '+App.view.act('todoMoveMonth',1)+' aria-label="다음 달">›</button></div>';
@@ -1546,15 +1547,14 @@
       }
       h+='</div></div>';
       const ro=todoReadOnly();
-      // 미완료=마감일에만, 완료=완료한 날에만 표시 — 예전 'dueDate OR 완료일' 필터는 마감일을 옮긴 뒤 완료하면
-      // 옛/새 마감일과 완료일 양쪽에 완료 항목이 중복돼 보이던 버그(완료 점은 완료일에만 찍혀 목록과도 불일치).
-      const dayT=base.filter(t=> t.done ? (todoDoneDay(t)===sel) : (t.dueDate===sel)).sort((a,b)=>(a.done?1:0)-(b.done?1:0));
+      // 📌 날짜 목록 = '그 할일의 날짜(마감일)' 단일 앵커 — 미완료든 완료든 그 날짜 칸에만 표시(위 완료 점과 동일 기준).
+      //  옛날 할일을 오늘 완료해도 등록된 날짜에 완료로 남고, 마감일을 옮기면 새 날짜 한 곳에만 보인다(30·31 중복 표시 버그의 최종 해법 — 사용자 지침).
+      //  마감일 없는 할일만 완료한 날(todoDoneDay)로 폴백. '언제 완료했나'는 완료 탭(완료한 날 기준)에서 본다.
+      const dayT=base.filter(t=> t.dueDate ? (t.dueDate===sel) : (t.done && todoDoneDay(t)===sel)).sort((a,b)=>(a.done?1:0)-(b.done?1:0));
       h+='<div class="sech"><span class="l">'+(+sel.split('-')[1])+'월 '+(+sel.split('-')[2])+'일</span><span class="s">'+dayT.length+'개</span></div>';
       // 🕘 이 날짜의 미완료만 오늘로 — 자동 이월 없이, 미완료가 남은 날짜에서 명시적으로 옮긴다(사용자 지침)
       { const selOpen=dayT.filter(t=>!t.done && t.dueDate===sel);
-        if(!ro && sel!==todayS && selOpen.length){
-          if(sel<todayS) h+='<div class="tx-sub" style="margin:2px 2px 8px;">📅 여기서 완료하면 <b>'+(+sel.split('-')[1])+'월 '+(+sel.split('-')[2])+'일</b>로 기록돼요.</div>';   // 완료 기준일 안내(지난 날짜)
-          h+='<button class="td-carry" '+App.view.act('carryDayToToday',sel)+'>🕘 이 날 미완료 '+selOpen.length+'개 → 오늘로</button>'; } }
+        if(!ro && sel!==todayS && selOpen.length) h+='<button class="td-carry" '+App.view.act('carryDayToToday',sel)+'>🕘 이 날 미완료 '+selOpen.length+'개 → 오늘로</button>'; }
       // ⬇️ 행에 '이 날짜'를 실어 보냄(todoRow 4번째 인자) → 완료 시 오늘이 아니라 이 날짜로 기록(toggleTodo ctxDay)
       h+='<div class="card" style="padding:4px 12px;">'+(dayT.length?dayT.map(t=>todoRow(t,ro,false,sel)).join(''):'<div class="empty" style="padding:22px 6px;">이 날 할일이 없어요</div>')+'</div>';
       return h;
