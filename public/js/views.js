@@ -2744,6 +2744,17 @@
         const nr=nextRunOf(rule); rule.nextRunDate=nr?ymd(nr):null;
         db.ref(wp('recurring/'+owner+'/'+rid)).set(rule);
         if(owner===state.uid) setTimeout(runRecurring,400);
+        // 💰 시작일(가입일)의 '일'과 납입일이 다르면 — 첫 납입을 시작일에 바로 기록할지 제안(신규만).
+        //  은행 적금처럼 가입 당일 1회 납입 후 매달 납입일에 이어가는 패턴. postOccurrence 재사용(멱등 로그·정기 생성분과 동일 형태 rec_sv_*).
+        if(!prev && +startDate.slice(8,10)!==day){
+          const _sd=startDate, _ruleRef=Object.assign({ ownerUid:owner, id:rid }, rule);
+          setTimeout(function(){
+            confirmSheet('시작일('+(+_sd.slice(5,7))+'월 '+(+_sd.slice(8,10))+'일)과 납입일('+day+'일)이 달라요.\n시작일에 첫 납입 '+won(monthly)+'을 바로 기록할까요? (다음부턴 매달 '+day+'일 자동 기록)', function(){
+              if(postOccurrence(_ruleRef, parseDate(_sd))) toast('첫 납입을 기록했어요 — 다음은 매달 '+day+'일');
+              else toast('이미 기록되어 있어요', true);
+            }, { okLabel:'첫 납입 기록', danger:false, title:'💰 첫 납입' });
+          }, 500);
+        }
       } else if(prevRule){ db.ref(wp('recurring/'+owner+'/'+rid)).remove(); }   // 자동 기록 해제 시 연결 규칙 제거(기록된 거래는 유지)
       toast(prev?'수정되었습니다':'추가되었습니다'); closeSheet();
     }

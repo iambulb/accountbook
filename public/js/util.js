@@ -574,10 +574,14 @@
     function addM(base, k) { var yy = base.getFullYear(), mm = base.getMonth() + k; yy += Math.floor(mm / 12); mm = ((mm % 12) + 12) % 12; return occAt(yy, mm); }
     var first = occAt(y, mo0);
     if (first < new Date(y, mo0, sd)) first = addM(first, 1);   // 시작일 이전이면 다음 달 납입일이 1회차
+    // 📅 만기일 = '시작일 + n개월'(시작일의 일자 기준, 말일 클램프) — 납입일 기준이 아니라 가입일 기준(사용자 지침).
+    var _mm = mo0 + n, _my = y + Math.floor(_mm / 12); _mm = ((_mm % 12) + 12) % 12;
+    var _mlast = new Date(_my, _mm + 1, 0).getDate();
+    var maturity = new Date(_my, _mm, Math.min(sd, _mlast));
     var principal = m * n;
     var interest = Math.round(m * (r / 100) * (n * (n + 1) / 2) / 12);
     var tax = Math.floor(interest * 0.154);
-    return { first: first, last: addM(first, n - 1), maturity: addM(first, n), count: n,
+    return { first: first, last: addM(first, n - 1), maturity: maturity, count: n,
       principal: principal, interest: interest, tax: tax, afterTax: interest - tax, total: principal + interest - tax };
   }
   function applyTodoTabDot(doc, todos) {

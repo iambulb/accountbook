@@ -715,6 +715,8 @@ test('savingsPlan: 납입일이 시작일 이전이면 다음 달이 1회차', (
   assert.strictEqual(p.first.getDate(), 10);
   assert.strictEqual(p.last.getMonth() + 1, 1);              // 8,9,10,11,12,1월 = 6회
   assert.strictEqual(p.last.getFullYear(), 2027);
+  // 📅 만기일은 납입일이 아니라 '시작일 + n개월'(시작일의 일자) 기준 — 2026-07-20 + 6개월 = 2027-01-20
+  assert.strictEqual(p.maturity.getFullYear() + '-' + (p.maturity.getMonth() + 1) + '-' + p.maturity.getDate(), '2027-1-20');
 });
 
 test('savingsPlan: 31일 납입은 짧은 달에 말일로 클램프', () => {
