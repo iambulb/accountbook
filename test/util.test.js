@@ -810,3 +810,15 @@ test('loanInstallment: 무이자·무효 입력 방어', () => {
   assert.strictEqual(U.loanInstallment(100, 5, 12, 'amortized', 13), null);   // 기간 초과
   assert.strictEqual(U.loanInstallment(100, 5, 0, 'amortized', 1), null);     // 만기 미정은 균등 불가
 });
+
+// ── doneDayFor: 할일 완료 기준일(캘린더에서 보던 날짜로 완료) ──
+test('doneDayFor: 지난 날짜만 그 날짜로, 오늘·미래·빈값은 오늘(=빈 문자열)', () => {
+  const today = '2026-08-05';
+  assert.strictEqual(U.doneDayFor('2026-08-01', today), '2026-08-01');   // 지난 날짜 → 그 날짜로 완료
+  assert.strictEqual(U.doneDayFor('2026-07-31', today), '2026-07-31');   // 달 경계
+  assert.strictEqual(U.doneDayFor(today, today), '');                    // 오늘 → 현재 시각
+  assert.strictEqual(U.doneDayFor('2026-08-10', today), '');             // 미래 → 현재 시각(완료가 미래일 수 없음)
+  assert.strictEqual(U.doneDayFor('', today), '');
+  assert.strictEqual(U.doneDayFor(null, today), '');
+  assert.strictEqual(U.doneDayFor('2026-8-1', today), '');               // 형식 오류 방어
+});

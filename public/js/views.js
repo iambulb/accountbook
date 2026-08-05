@@ -1347,7 +1347,8 @@
       return (editable
         ? '<button class="tdue tap '+cls+'" '+App.view.act('openTodoReschedule',t.id)+' aria-label="날짜 옮기기">'+txt+'</button>'
         : '<span class="tdue '+cls+'">'+txt+'</span>')+tt; }
-    function todoRow(t, ro, drag){
+    // ctxDay: 이 행이 '어느 날짜 화면'에서 그려졌는지(YYYY-MM-DD) — 캘린더 날짜 목록이 넘겨주며, 완료 시 그 날짜로 기록된다(toggleTodo 2번째 인자).
+    function todoRow(t, ro, drag, ctxDay){
       // 담당자 표시: 현재 멤버면 최신 이름(개명 반영)+아바타, 탈퇴 등 미상이면 저장된 이름 텍스트(uid 노출 방지)
       const _tmem=(state.wsMeta&&state.wsMeta.members)||{}, _isMem=t.assignedUid&&_tmem[t.assignedUid];
       const _anm=_isMem?(_tmem[t.assignedUid].name||''):(t.assignedName||'');
@@ -1364,7 +1365,7 @@
       const chkSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg>';
       const chk=ro
         ? '<span class="tdchk'+(t.done?' on':'')+'" aria-hidden="true">'+chkSvg+'</span>'
-        : '<button class="tdchk'+(t.done?' on':'')+'" '+App.view.act('toggleTodo',t.id)+' aria-label="'+(t.done?'완료 취소':'완료 처리')+'">'+chkSvg+'</button>';
+        : '<button class="tdchk'+(t.done?' on':'')+'" '+App.view.act('toggleTodo',t.id,ctxDay||'')+' aria-label="'+(t.done?'완료 취소':'완료 처리')+'">'+chkSvg+'</button>';
       const titleTag=ro
         ? '<span class="tdtitle'+(t.done?' done':'')+'">'
         : '<span class="tdtitle'+(t.done?' done':'')+'" '+App.view.act('openTodoEdit',t.id)+'>';
@@ -1551,8 +1552,11 @@
       h+='<div class="sech"><span class="l">'+(+sel.split('-')[1])+'월 '+(+sel.split('-')[2])+'일</span><span class="s">'+dayT.length+'개</span></div>';
       // 🕘 이 날짜의 미완료만 오늘로 — 자동 이월 없이, 미완료가 남은 날짜에서 명시적으로 옮긴다(사용자 지침)
       { const selOpen=dayT.filter(t=>!t.done && t.dueDate===sel);
-        if(!ro && sel!==todayS && selOpen.length) h+='<button class="td-carry" '+App.view.act('carryDayToToday',sel)+'>🕘 이 날 미완료 '+selOpen.length+'개 → 오늘로</button>'; }
-      h+='<div class="card" style="padding:4px 12px;">'+(dayT.length?dayT.map(t=>todoRow(t,ro)).join(''):'<div class="empty" style="padding:22px 6px;">이 날 할일이 없어요</div>')+'</div>';
+        if(!ro && sel!==todayS && selOpen.length){
+          if(sel<todayS) h+='<div class="tx-sub" style="margin:2px 2px 8px;">📅 여기서 완료하면 <b>'+(+sel.split('-')[1])+'월 '+(+sel.split('-')[2])+'일</b>로 기록돼요.</div>';   // 완료 기준일 안내(지난 날짜)
+          h+='<button class="td-carry" '+App.view.act('carryDayToToday',sel)+'>🕘 이 날 미완료 '+selOpen.length+'개 → 오늘로</button>'; } }
+      // ⬇️ 행에 '이 날짜'를 실어 보냄(todoRow 4번째 인자) → 완료 시 오늘이 아니라 이 날짜로 기록(toggleTodo ctxDay)
+      h+='<div class="card" style="padding:4px 12px;">'+(dayT.length?dayT.map(t=>todoRow(t,ro,false,sel)).join(''):'<div class="empty" style="padding:22px 6px;">이 날 할일이 없어요</div>')+'</div>';
       return h;
     }
     // ===== 📋 할일 템플릿(체크리스트 세트) — 여행 준비물·장보기 등 자주 쓰는 할일 묶음을 저장해 두고 원탭으로 통째로 추가 =====
@@ -1654,11 +1658,18 @@
     App.view.define('todoList', { render:function(){ return todoListHtml(); } });
     App.view.define('todoCalendar', { render:function(){ return todoCalendarHtml(); } });
     App.view.define('todoDone', { render:function(){ return todoDoneHtml(); } });
-    // 📅 완료 처리 기준일 — 할일 캘린더에서 '오늘이 아닌 날짜'를 보고 있으면 그 날짜로 완료 기록(사용자 요청).
-    //  완료 목록·완료 탭·캘린더 점·잔디가 모두 doneAt(=todoDoneDay)을 보므로, 보고 있던 날짜에 그대로 완료로 남는다. 그 외 화면은 오늘(now).
-    function todoDoneCtxDay(){ const td=todayKst(); return (state.tab==='todocal' && _todoSel && _todoSel!==td) ? _todoSel : ''; }
-    function toggleTodo(id){ const t=allTodos().find(x=>x.id===id); if(!t) return;
-      const _ctx=todoDoneCtxDay(), now=_ctx?isoAtNoon(_ctx):new Date().toISOString(), _upAt=new Date().toISOString();   // now=완료 시각(선택 날짜면 그날 정오), _upAt=실제 수정 시각
+    // 📅 완료 처리 기준일 — 캘린더 날짜 목록에서 완료하면 '보고 있던 그 날짜'로 완료 기록(사용자 요청).
+    //  ① 1차: 행이 직접 실어 보낸 ctxDay(todoRow 4번째 인자 → toggleTodo 2번째 인자) — 시트·재렌더 어디서 그려져도 확실.
+    //  ② 2차(폴백): 캘린더 탭에서 고른 날짜(_todoSel). 미래 날짜는 오늘로 클램프(완료 시각이 미래일 수는 없음).
+    //  완료 목록·완료 탭·캘린더 완료 점·완료 잔디가 모두 doneAt(=todoDoneDay)을 보므로 그 날짜에 그대로 남는다.
+    function todoDoneCtxDay(arg){
+      const td=todayKst();
+      const d=(typeof arg==='string' && /^\d{4}-\d{2}-\d{2}$/.test(arg)) ? arg
+        : ((state.tab==='todocal' && _todoSel) ? _todoSel : '');
+      return doneDayFor(d, td);   // 순수 판정(util.js) — 지난 날짜만 채택, 오늘·미래·빈값은 ''(=오늘)
+    }
+    function toggleTodo(id, ctxDay){ const t=allTodos().find(x=>x.id===id); if(!t) return;
+      const _ctx=todoDoneCtxDay(ctxDay), now=_ctx?isoAtNoon(_ctx):new Date().toISOString(), _upAt=new Date().toISOString();   // now=완료 시각(선택 날짜면 그날 정오), _upAt=실제 수정 시각
       const ref=todoDbRef(t);
       const firstReward=!t.rewardClaimed;   // 할일당 은화 1회(멱등)
       if(!t.done && t.repeat && t.repeat!=='none' && t.dueDate){
