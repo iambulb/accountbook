@@ -611,6 +611,14 @@
     button.tdue { -webkit-appearance:none; appearance:none; border:none; background:transparent; padding:0; cursor:pointer; font-family:inherit; }   /* 마감일 배지 = 탭하면 날짜 옮기기 */
     .tdue.tap { padding:3px 8px; border-radius:9px; background:var(--soft); line-height:1.15; transition:transform .08s; }
     .tdue.ttime { padding:3px 7px; border-radius:9px; background:var(--soft); color:var(--sub); font-weight:700; margin-left:4px; }   /* ⏰ 마감 시간 태그(배지 옆) */
+    /* 🎛️ 셀렉트 공통 다듬기 — 네이티브 화살표 대신 픽셀 셰브런, 여백·정렬 정돈(결제수단 콤보 등) */
+    select.txsel, select.input, select.amt-cur {
+      appearance:none; -webkit-appearance:none; -moz-appearance:none;
+      background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%238B95A1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 10px center; padding-right:30px;
+      text-overflow:ellipsis; cursor:pointer;
+    }
+    select.txsel::-ms-expand, select.input::-ms-expand { display:none; }
     /* 🔍 거래 검색 일괄 선택 모드 — 선택된 행 강조 */
     .txsel { border-radius:10px; cursor:pointer; }
     .txsel.on { background:var(--soft); box-shadow:inset 0 0 0 2px var(--primary); }

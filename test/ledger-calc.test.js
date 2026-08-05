@@ -248,3 +248,16 @@ test('buildTx: 수입은 isActualExpense=true(실수입) 기본', () => {
     typeLabel: '지출', isActualDefault: true });
   assert.strictEqual(e.tx.isActualExpense, true);
 });
+
+// 📊 실소비 토글(isActualSet) — 카드 대금 등 비소비 지출을 통계에서 제외(잔액만 반영), 함께결제 보조 거래도 따라감
+test('buildTx: isActualSet 토글이 기본값을 덮는다(함께결제 subTx 동조)', () => {
+  const base={ type:'expense', iso:'2026-08-05T12:00:00.000Z', date:'2026-08-05', consumer:'현경',
+    rawAmount:50000, foreign:50000, curCode:'KRW', effect:{debit:'from'}, from:'acc1', hasCat:true, cat:'카드 대금',
+    typeLabel:'지출', isActualDefault:true };
+  assert.strictEqual(buildTx(Object.assign({},base,{isActualSet:false})).tx.isActualExpense, false);   // 토글 OFF → 통계 제외
+  assert.strictEqual(buildTx(Object.assign({},base,{isActualSet:true})).tx.isActualExpense, true);
+  assert.strictEqual(buildTx(base).tx.isActualExpense, true);                                          // 미지정 → 기본값
+  const co=buildTx(Object.assign({},base,{isActualSet:false, coAmount:10000, coAcct:'P', coTxType:'point_spend'}));
+  assert.strictEqual(co.tx.isActualExpense, false);
+  assert.strictEqual(co.subTx.isActualExpense, false);   // 같은 결제의 일부 — 본 거래를 따라감
+});

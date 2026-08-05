@@ -319,6 +319,23 @@
       if(this&&this.id==='sFrom') sh._touched.from=true; if(this&&this.id==='sTo') sh._touched.to=true;
       renderCardPerfBlock(); }
     function onTxConsumerChange(){ const sh=$('sheet'); if(!sh) return; sh._consumer=val('sConsumer'); sh._touched.user=true; }
+    function onTxActualChange(){ const sh=$('sheet'); if(!sh) return; sh._actual=!!($('sActual')&&$('sActual').classList.contains('on')); }   // 📊 실소비 토글 → 시트 상태 동기화(유형 전환에도 유지)
+    // 💐 경조사 카테고리(type 'event') 지출 저장 → 경조사비 장부 기록 제안 — 금액·날짜 프리필, '가계부 거래로도 기록' 스위치는 꺼서 중복 방지(거래는 방금 저장됨)
+    function maybeSuggestGiftEvent(tx){
+      try{
+        if(!tx || tx.giftEventId) return false;
+        if(catTypeFor(tx.type)!=='expense') return false;
+        const c=tx.category?getCat(tx.category):null; if(!c||c.type!=='event') return false;
+        const amt=Number(tx.amount)||0, date=(tx.date||'').slice(0,10);
+        const back=state._sheetReopen||null;
+        confirmSheet('💐 경조사 지출을 저장했어요. 경조사비 장부에도 기록할까요? (상대·경조사 유형을 이어서 입력)', function(){
+          openGiftEdit(null, { amount:amt, date:date });
+          setTimeout(function(){ const sw=$('gTx'); if(sw&&sw.classList.contains('on')){ sw.classList.remove('on'); toggleGiftAcct(); } }, 60);
+        }, { okLabel:'장부에 기록', danger:false, title:'💐 경조사비' });
+        if(back) state._sheetBackFn=back;
+        return true;
+      }catch(e){ return false; }
+    }
     function openTxSheet(ownerUid, id, presetDate, presetPb){
       // ↩️ 리스트 시트(일자·카드내역·드릴다운 등 _sheetReopen 등록 시트) 위에서 열리면, 닫을 때 그 리스트로 복귀하게 캡처(아래에서 arm).
       //    이미 arm된 상태에서 수정 시트가 다시 열려도(재렌더) 기존 복귀 대상을 유지한다.
@@ -392,6 +409,7 @@
       sh._cpa  = t?t.cardPerformanceAmount:undefined;
       sh._cpr  = t?(t.cardPerformanceExcludedReason||''):'';
       sh._adjSign = (t&&t.type==='balance_adjustment'&&Number(t.amount)<0)?'-':'+';
+      sh._actual = t ? (t.isActualExpense!==false) : undefined;   // 📊 실소비 토글 상태(수정=저장값, 신규=기본값) — 유형 전환에도 유지
       sh._consumer = t?(t.userUid||t.user||'공동'):(_lastNew.user||defaultOwnerUid());
       sh._settle = t ? { inc:t.settlementIncluded===true, payer:t.payer||'', splitType:t.splitType||'equal',
         participants:Array.isArray(t.splitParticipants)?t.splitParticipants.slice():null, amounts:t.splitAmounts||null, memo:t.settlementMemo||'' } : null;
@@ -417,8 +435,21 @@
         b.className = on ? ('on '+(tp==='expense'?'exp':tp==='income'?'inc':tp==='transfer'?'trf':'ext')) : '';
       });
     }
-    function acctOptsHtml(sel){ return state.accounts.map(a=>'<option value="'+a.id+'"'+(a.id===sel?' selected':'')+'>'+escapeHtml(a.name)+' ('+(ACCT_TYPE_LABEL[a.type]||a.type)+')</option>').join(''); }
-    function acctField(label,id,sel){ return '<div class="txfield"><span class="k">'+label+'</span><select class="txsel" id="'+id+'" '+App.view.chg('onTxAcctChange')+'>'+acctOptsHtml(sel)+'</select></div>'; }   // 변경 훅이 동기화+손댐 표시 후 renderCardPerfBlock 호출
+    // 결제수단 옵션 — 유형군별 <optgroup>(입출금·현금/카드/선불·간편결제/포인트/기타)로 묶고 소유자를 함께 표기(전부 섞여 찾기 어렵던 문제 해소).
+    //  types: 허용 유형 배열(선불결제=선불류만, 포인트사용=포인트만 등 필터) — 생략 시 전체. 모든 계좌 셀렉트(거래·정기·구독·적금·대출·경조사)가 공유.
+    const ACCT_GROUPS=[['입출금 · 현금',['bank','cash']],['카드',['credit_card','debit_card']],['선불 · 간편결제',['prepaid','e_wallet','gift_card']],['포인트',['point']],['기타',['other']]];
+    function acctOptsHtml(sel, types){
+      const list=state.accounts.filter(a=>!types||types.includes(a.type));
+      const opt=a=>{ const ow=a.owner?ownerName(a.owner):''; return '<option value="'+a.id+'"'+(a.id===sel?' selected':'')+'>'+escapeHtml(a.name)+(ow?(' · '+escapeHtml(ow)):'')+'</option>'; };
+      let h=''; const seen={};
+      ACCT_GROUPS.forEach(g=>{ const arr=list.filter(a=>g[1].includes(a.type)); if(!arr.length) return;
+        arr.forEach(a=>{ seen[a.id]=1; });
+        h+='<optgroup label="'+g[0]+'">'+arr.map(opt).join('')+'</optgroup>'; });
+      const rest=list.filter(a=>!seen[a.id]);   // 미지정/신규 유형 방어
+      if(rest.length) h+='<optgroup label="기타">'+rest.map(opt).join('')+'</optgroup>';
+      return h;
+    }
+    function acctField(label,id,sel,types){ return '<div class="txfield"><span class="k">'+label+'</span><select class="txsel" id="'+id+'" '+App.view.chg('onTxAcctChange')+'>'+acctOptsHtml(sel,types)+'</select></div>'; }   // 변경 훅이 동기화+손댐 표시 후 renderCardPerfBlock 호출
     // 소비 대상(누구의 소비인가) — 출금 수단과 분리. 멤버 + '공동'(집세 등 공동 비용) 선택.
     function consumerField(sel){ return '<div class="txfield"><span class="k">소비 대상</span><select class="txsel" id="sConsumer" '+App.view.chg('onTxConsumerChange')+'>'+ownerOptions(sel||'공동')+'</select></div>'; }
     // 🔝 최근 90일 사용 빈도순 정렬(동률=기존 sortOrder 유지, stable sort) — 자주 쓰는 카테고리가 칩 앞줄로
@@ -557,22 +588,32 @@
       else if(sheetType==='point_earn') h+=guideNote(false,'포인트 적립은 실제 소비가 아닙니다.');
       else if(sheetType==='balance_adjustment') h+=guideNote(false,'실제 잔액에 맞추는 보정 거래입니다. 실제 소비에 포함되지 않습니다.');
 
+      // 🎯 유형별 계좌 필터 — 선불결제=선불류만·포인트=포인트 계정만·충전 수단=비선불만(콤보에 무관한 계좌가 섞이지 않게)
+      const PREPAY=['prepaid','e_wallet','gift_card'], NONPRE=['bank','cash','credit_card','debit_card','other'];
       if(sheetType==='expense'){ h+=acctField('출금/결제 수단','sFrom',fromV)+coPayBlockHtml()+consumerField(sh._consumer); }   // 💳+✨ 결제 수단 바로 아래에 '포인트·선불 함께' 블록
       else if(sheetType==='income'){ h+=acctField('입금 대상','sTo',toV); }
       else if(sheetType==='refund'){ h+=acctField('환불 받는 계정','sTo',toV); }
-      else if(sheetType==='point_earn'){ h+=acctField('적립 포인트 계정','sTo',toV); }
+      else if(sheetType==='point_earn'){ h+=acctField('적립 포인트 계정','sTo',toV,['point']); }
       else if(sheetType==='transfer'||sheetType==='prepaid_charge'){
         const l1=sheetType==='prepaid_charge'?'충전 수단(카드/계좌)':'출금';
         const l2=sheetType==='prepaid_charge'?'충전 대상(선불/포인트)':'입금';
-        h+=acctField(l1,'sFrom',fromV)+acctField(l2,'sTo',toV);
+        h+=acctField(l1,'sFrom',fromV,sheetType==='prepaid_charge'?NONPRE:null)+acctField(l2,'sTo',toV,sheetType==='prepaid_charge'?PREPAY.concat(['point']):null);
       }
       else if(sheetType==='prepaid_spend'||sheetType==='point_spend'){
-        h+=acctField(sheetType==='point_spend'?'사용 포인트 계정':'결제 선불수단','sFrom',fromV)+consumerField(sh._consumer);
+        h+=acctField(sheetType==='point_spend'?'사용 포인트 계정':'결제 선불수단','sFrom',fromV,sheetType==='point_spend'?['point']:PREPAY)+consumerField(sh._consumer);
       }
       else if(sheetType==='balance_adjustment'){
         h+=acctField('대상 계정','sTo',toV);
         h+='<div class="txfield"><span class="k">조정 방향</span><select class="txsel" id="sAdjSign"><option value="+"'+(sh._adjSign!=='-'?' selected':'')+'>증가(+)</option><option value="-"'+(sh._adjSign==='-'?' selected':'')+'>감소(-)</option></select></div>';
       }
+      // 📊 실제 소비 포함 토글(소비성 유형만) — 카드 대금 이체·대납처럼 '돈은 나가지만 소비 아님' 기록을 통계·예산에서 뺄 수 있게(잔액엔 반영).
+      if(ACTUAL_DEFAULT[sheetType]){
+        const actOn=(sh._actual!==undefined&&sh._actual!==null)?!!sh._actual:true;
+        h+='<div class="menu-item" style="padding:6px 2px;"><span>📊 실제 소비에 포함 <span class="muted" style="font-size:11px;">(끄면 통계·예산 제외, 잔액만 반영 — 카드 대금 등)</span></span><div class="switch'+(actOn?' on':'')+'" id="sActual" '+App.view.act('toggleSwitch','onTxActualChange')+'><i></i></div></div>';
+      }
+      // 💐 경조사 카테고리 안내 — 저장하면 경조사비 장부 기록으로 이어지게 제안(아래 maybeSuggestGiftEvent)
+      { const _c=sheetCat?getCat(sheetCat):null;
+        if(_c&&_c.type==='event'&&catTypeFor(sheetType)==='expense') h+='<div class="tx-sub" style="margin:4px 2px 8px;">💐 경조사 지출이네요 — 저장하면 <b>경조사비 장부</b> 기록을 이어서 도와드려요.</div>'; }
       $('sDyn').innerHTML=h;
       if(catBox) pickCat(sheetCat,true);
       renderCardPerfBlock(); updateCoPayNote();
@@ -709,6 +750,7 @@
         type:sheetType, curCode:curCode, foreign:foreign, rate:rate, rawAmount:rawAmount,
         date:date, iso:isoAtNoon(date), desc:val('sDesc').trim(), memo:val('sMemo').trim(),
         effect:e, hasCat:hasCat, cat:cat, typeLabel:TYPE_LABEL[sheetType], isActualDefault:ACTUAL_DEFAULT[sheetType],
+        isActualSet:(ACTUAL_DEFAULT[sheetType]&&$('sActual'))?$('sActual').classList.contains('on'):undefined,   // 📊 실소비 토글(소비성 유형만 노출) — undefined=기본값 사용
         consumer:resolveOwnerName(_csel), consumerUid:_csel, consumerIsMember:!!(_cmem[_csel]||_csel===state.uid),
         fxSource:($('sheet')._fxSource||'manual'),
         from:from, to:to, adjSign:val('sAdjSign'),
@@ -755,7 +797,7 @@
       }
       closeSheet();
       if(ac) handleAutoCharge(ac);
-      else if(!sheetTx) maybeSuggestRecurring(tx);   // 🔁 3개월 연속 같은 거래면 정기거래 등록 제안
+      else if(!sheetTx){ if(!maybeSuggestGiftEvent(tx)) maybeSuggestRecurring(tx); }   // 💐 경조사 카테고리면 장부 기록 제안(우선), 아니면 🔁 정기 제안
     }
     // 🔁 정기거래 자동 제안 — 같은 설명·유형·비슷한 금액이 3개월 연속(recurringCandidate, util.js)이면 매월 그 날짜 정기거래 등록을 1회 제안.
     //    같은 설명은 수락·거절 무관 다시 묻지 않음(localStorage recsug), 이미 같은 설명의 활성 규칙이 있으면 스킵.
@@ -2306,6 +2348,13 @@
             (fc.remain>0?('<div class="tx-sub" style="margin-top:8px;">오늘 이후 남은 예정 <b>'+won(fc.remain)+'</b></div>'):'<div class="tx-sub" style="margin-top:8px;">이번 달 예정분은 모두 지나갔어요</div>')+
           '</div>';
         } }
+      // 💡 계좌별 이번 달 필요액 — 월급날 어느 계좌에 얼마 넣어둘지(자동 기록 출금 기준, 적금 이체 포함)
+      { const needs=monthAcctNeeds();
+        if(needs.length){
+          h+='<div class="card" style="margin-bottom:10px;"><div class="row"><b>💡 계좌별 이번 달 필요액</b><span class="tx-sub">정기 · 구독 · 적금 · 대출</span></div>'+
+            needs.map(n=>'<div class="row" style="margin-top:6px;font-size:13px;" '+App.view.act('openAcctDetail',n.id)+' role="button" tabindex="0" aria-label="'+escapeHtml(n.name)+' 거래내역 보기"><span class="muted">'+escapeHtml(n.name)+' ›</span><span><b>'+won(n.sum)+'</b>'+(n.remain>0&&n.remain!==n.sum?(' <span class="tx-sub">남은 '+won(n.remain)+'</span>'):'')+'</span></div>').join('')+
+            '<div class="tx-sub" style="margin-top:8px;">월급이 들어오면 각 계좌에 이만큼 옮겨두세요 — 자동 기록이 부족 없이 돌아가요.</div></div>';
+        } }
 
       // 입출금 · 현금
       h+=sechHtml('입출금 · 현금','openAcctSheet()');
@@ -2377,6 +2426,26 @@
         loan.n++; loan.sum+=mp.inst.pay; loan.prin+=mp.inst.prin; loan.int+=mp.inst.int;
         if(mp.day>+todayStr().slice(8,10)) loan.remain+=mp.inst.pay; });
       return { rec, sub, sav, loan, total:rec.sum+sub.sum+sav.sum+loan.sum, remain:rec.remain+sub.remain+sav.remain+loan.remain };
+    }
+    // 💡 계좌별 이번 달 필요액 — 이 계좌에서 자동으로 '나갈' 돈(정기 debit측 전부=적금 이체 포함 + 구독 결제수단 + 대출 상환계좌)을 계좌별 합산.
+    //  "월급날 각 계좌에 얼마씩 넣어둘까"용 — 고정지출 카드(지출성만)와 달리 이체·적금도 출금 계좌 기준으로 포함한다.
+    function monthAcctNeeds(){
+      const mm=todayStr().slice(0,7), today=parseDate(todayStr());
+      const mStart=parseDate(mm+'-01'), mEnd=new Date(mStart.getFullYear(), mStart.getMonth()+1, 0);
+      const need={}; const add=(acct,amt,d)=>{ if(!acct||!getAcct(acct)||!(amt>0)) return; const e=need[acct]=need[acct]||{sum:0,remain:0}; e.sum+=amt; if(d>today) e.remain+=amt; };
+      state.recurring.filter(r=>canSee(r)&&ruleStatus(r)==='active').forEach(r=>{
+        const e=TX_EFFECT[r.type]||{}; if(!e.debit||!r.from) return;
+        let occ=occurrencesV2(r, mStart, mEnd);
+        if(r.endDate){ const ed=parseDate(r.endDate); occ=occ.filter(o=>o<=ed); }
+        occ.forEach(o=>add(r.from, Number(r.amount)||0, o));
+      });
+      (state.subscriptions||[]).filter(s=>(s.status||'active')==='active'&&!s.recurringId&&s.paymentAccountId).forEach(s=>{
+        const nb=subNextBilling(s); if(nb&&String(nb).slice(0,7)===mm) add(s.paymentAccountId, Number(s.amount)||0, parseDate(nb));
+      });
+      visibleLoans().forEach(l=>{ if(l.direction==='lent'||!l.account) return; if(loanCalc(l).balance<=0) return;
+        const mp=loanMonthPlan(l, mm); if(mp&&mp.inst) add(l.account, mp.inst.pay, parseDate(mm+'-'+pad2(mp.day)));
+      });
+      return Object.keys(need).map(id=>({ id, name:acctName(id), sum:need[id].sum, remain:need[id].remain })).sort((a,b)=>b.sum-a.sum);
     }
     // 계좌 유형별 라인 아이콘(시안) — 색은 a.color 유지
     function acctIcon(type){
@@ -3450,7 +3519,7 @@
       renderRecAccts(); toggleRFreq();
     }
     function onRecTypeChange(){ renderRecAccts(); }
-    function recAcctField(label,id,sel){ return '<div class="field"><label>'+label+'</label><select class="input" id="'+id+'" '+App.view.chg('renderRecCardPerf')+'>'+acctOptsHtml(sel)+'</select></div>'; }
+    function recAcctField(label,id,sel,types){ return '<div class="field"><label>'+label+'</label><select class="input" id="'+id+'" '+App.view.chg('renderRecCardPerf')+'>'+acctOptsHtml(sel,types)+'</select></div>'; }
     function recConsumerField(sel){ return '<div class="field"><label>소비 대상</label><select class="input" id="rConsumer">'+ownerOptions(sel||'공동')+'</select></div>'; }
     function recCatField(wantType, sel){
       const cats=state.categories.filter(c=>c.isActive!==false && (c.type===wantType||c.type==='other')).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
@@ -3461,12 +3530,13 @@
       const fromV=r?(r.from||''):(state.accounts[0]?state.accounts[0].id:''), toV=r?(r.to||''):(state.accounts[1]?state.accounts[1].id:(state.accounts[0]?state.accounts[0].id:'')), catV=r?(r.category||''):'';
       const consV=r?(r.user||state.userName||'공동'):(state.userName||'공동');
       let h='';
+      const PREPAY=['prepaid','e_wallet','gift_card'], NONPRE=['bank','cash','credit_card','debit_card','other'];   // 거래 시트와 동일한 유형 필터
       if(t==='expense'){ h+=recAcctField('출금/결제 수단','rFrom',fromV)+recConsumerField(consV)+recCatField('expense',catV); }
       else if(t==='income'){ h+=recAcctField('입금 대상','rTo',toV)+recCatField('income',catV); }
       else if(t==='refund'){ h+=recAcctField('환불 받는 계정','rTo',toV)+recCatField('income',catV); }
-      else if(t==='point_earn'){ h+=recAcctField('적립 포인트 계정','rTo',toV); }
-      else if(t==='transfer'||t==='prepaid_charge'){ const l1=t==='prepaid_charge'?'충전 수단(카드/계좌)':'출금', l2=t==='prepaid_charge'?'충전 대상(선불/포인트)':'입금'; h+='<div class="form-2">'+recAcctField(l1,'rFrom',fromV)+recAcctField(l2,'rTo',toV)+'</div>'; }
-      else if(t==='prepaid_spend'||t==='point_spend'){ h+=recAcctField(t==='point_spend'?'사용 포인트 계정':'결제 선불수단','rFrom',fromV)+recConsumerField(consV)+(catTypeFor(t)?recCatField('expense',catV):''); }
+      else if(t==='point_earn'){ h+=recAcctField('적립 포인트 계정','rTo',toV,['point']); }
+      else if(t==='transfer'||t==='prepaid_charge'){ const l1=t==='prepaid_charge'?'충전 수단(카드/계좌)':'출금', l2=t==='prepaid_charge'?'충전 대상(선불/포인트)':'입금'; h+='<div class="form-2">'+recAcctField(l1,'rFrom',fromV,t==='prepaid_charge'?NONPRE:null)+recAcctField(l2,'rTo',toV,t==='prepaid_charge'?PREPAY.concat(['point']):null)+'</div>'; }
+      else if(t==='prepaid_spend'||t==='point_spend'){ h+=recAcctField(t==='point_spend'?'사용 포인트 계정':'결제 선불수단','rFrom',fromV,t==='point_spend'?['point']:PREPAY)+recConsumerField(consV)+(catTypeFor(t)?recCatField('expense',catV):''); }
       else if(t==='balance_adjustment'){ h+=recAcctField('대상 계정','rTo',toV); }
       $('rAccts').innerHTML=h; renderRecCardPerf();
     }

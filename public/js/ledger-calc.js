@@ -68,7 +68,8 @@
       desc: inp.desc || (inp.hasCat ? (inp.cat || inp.typeLabel) : inp.typeLabel),
       // 수입은 기본 '실수입'(true) — ACTUAL_DEFAULT(소비 기본값 테이블)에 income이 없어 false로 저장되면
       // 리포트·달력의 수입 집계(원금회수 등 isActualExpense:false 제외 필터)에서 일반 수입까지 통째로 빠지는 버그(실사례).
-      isActualExpense: type === 'income' ? true : !!inp.isActualDefault
+      // 📊 isActualSet: 시트의 '실제 소비에 포함' 토글(소비성 유형) — 카드 대금 이체·대납 등 비소비 지출을 통계·예산에서 제외(잔액만 반영).
+      isActualExpense: type === 'income' ? true : ((inp.isActualSet !== undefined && inp.isActualSet !== null) ? !!inp.isActualSet : !!inp.isActualDefault)
     };
     if (inp.consumerIsMember) tx.userUid = inp.consumerUid;
     if (inp.curCode !== 'KRW') { tx.currency = inp.curCode; tx.foreignAmount = inp.foreign; tx.fxRate = inp.rate; tx.fxSource = inp.fxSource || 'manual'; tx.fxDate = inp.date; }
@@ -105,7 +106,7 @@
     if (coAmt > 0) {
       tx.coPayAmount = coAmt; tx.coPayAcct = inp.coAcct;
       subTx = { type: inp.coTxType || 'point_spend', date: inp.iso, user: tx.user, amount: coAmt,
-        desc: tx.desc, isActualExpense: true, from: inp.coAcct, coPayMain: true };
+        desc: tx.desc, isActualExpense: tx.isActualExpense, from: inp.coAcct, coPayMain: true };   // 같은 결제의 일부 — 본 거래의 실소비 여부를 따라감
       if (tx.userUid) subTx.userUid = tx.userUid;
       if (tx.category) subTx.category = tx.category;
       if (tx.memo) subTx.memo = tx.memo;
