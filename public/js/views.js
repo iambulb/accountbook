@@ -320,12 +320,14 @@
       renderCardPerfBlock(); }
     function onTxConsumerChange(){ const sh=$('sheet'); if(!sh) return; sh._consumer=val('sConsumer'); sh._touched.user=true; }
     function onTxActualChange(){ const sh=$('sheet'); if(!sh) return; sh._actual=!!($('sActual')&&$('sActual').classList.contains('on')); }   // 📊 실소비 토글 → 시트 상태 동기화(유형 전환에도 유지)
-    // 💐 경조사 카테고리(type 'event') 지출 저장 → 경조사비 장부 기록 제안 — 금액·날짜 프리필, '가계부 거래로도 기록' 스위치는 꺼서 중복 방지(거래는 방금 저장됨)
+    // 💐 경조사 카테고리 판정 — 기본 '경조사' 카테고리는 type이 'expense'(event 아님)라 이름으로도 본다(type 검사만으론 제안이 안 뜨던 버그).
+    function isGiftCat(c){ return !!(c && (c.type==='event' || String(c.name||'').indexOf('경조사')>=0)); }
+    // 💐 경조사 카테고리 지출 저장 → 경조사비 장부 기록 제안 — 금액·날짜 프리필, '가계부 거래로도 기록' 스위치는 꺼서 중복 방지(거래는 방금 저장됨)
     function maybeSuggestGiftEvent(tx){
       try{
         if(!tx || tx.giftEventId) return false;
         if(catTypeFor(tx.type)!=='expense') return false;
-        const c=tx.category?getCat(tx.category):null; if(!c||c.type!=='event') return false;
+        const c=tx.category?getCat(tx.category):null; if(!isGiftCat(c)) return false;
         const amt=Number(tx.amount)||0, date=(tx.date||'').slice(0,10);
         const back=state._sheetReopen||null;
         confirmSheet('💐 경조사 지출을 저장했어요. 경조사비 장부에도 기록할까요? (상대·경조사 유형을 이어서 입력)', function(){
@@ -613,7 +615,7 @@
       }
       // 💐 경조사 카테고리 안내 — 저장하면 경조사비 장부 기록으로 이어지게 제안(아래 maybeSuggestGiftEvent)
       { const _c=sheetCat?getCat(sheetCat):null;
-        if(_c&&_c.type==='event'&&catTypeFor(sheetType)==='expense') h+='<div class="tx-sub" style="margin:4px 2px 8px;">💐 경조사 지출이네요 — 저장하면 <b>경조사비 장부</b> 기록을 이어서 도와드려요.</div>'; }
+        if(isGiftCat(_c)&&catTypeFor(sheetType)==='expense') h+='<div class="tx-sub" style="margin:4px 2px 8px;">💐 경조사 지출이네요 — 저장하면 <b>경조사비 장부</b> 기록을 이어서 도와드려요.</div>'; }
       $('sDyn').innerHTML=h;
       if(catBox) pickCat(sheetCat,true);
       renderCardPerfBlock(); updateCoPayNote();

@@ -34,7 +34,7 @@
 
 - **실소비 여부**(`isActualExpense`)는 거래별로 override 가능 — 리포트 통계 포함을 제어. 기본값은 `ACTUAL_DEFAULT`, **거래 시트의 '📊 실제 소비에 포함' 토글**(소비성 유형만 노출, `sActual`→`isActualSet`→buildTx)로 끄면 통계·예산 제외+잔액만 반영(카드 대금 이체·대납 등 — 함께결제 subTx도 본 거래를 따라감).
 - **결제수단 콤보 공통 규칙**(`acctOptsHtml(sel, types)`): 유형군 `<optgroup>`(입출금·현금/카드/선불·간편결제/포인트/기타, `ACCT_GROUPS`)+소유자 표기. 거래·정기 시트는 **유형별 필터** — 선불결제=선불류만·포인트 사용/적립=포인트만·충전=수단 비선불/대상 선불·포인트(`renderTxDyn`/`renderRecAccts`의 PREPAY/NONPRE).
-- **💐 경조사 연결**(`maybeSuggestGiftEvent`): 경조사형(type 'event') 카테고리 지출을 저장하면 **경조사비 장부 기록 제안** — 수락 시 `openGiftEdit` 프리필(금액·날짜)로 열리고 '가계부 거래로도 기록' 스위치를 꺼서 중복 방지(카테고리 선택 시 시트에 안내 문구).
+- **💐 경조사 연결**(`maybeSuggestGiftEvent`/`isGiftCat`): 경조사 카테고리(판정=`type==='event'` **또는 이름에 '경조사' 포함** — 기본 '경조사' 카테고리는 type이 expense라 이름 판정 필수) 지출을 저장하면 **경조사비 장부 기록 제안** — 수락 시 `openGiftEdit` 프리필(금액·날짜)로 열리고 '가계부 거래로도 기록' 스위치를 꺼서 중복 방지(카테고리 선택 시 시트에 안내 문구).
 - **💡 계좌별 이번 달 필요액**(자산 카드, `monthAcctNeeds`): 정기(debit측 전부 — 적금 이체 포함)·구독(결제수단)·대출(상환계좌)을 **출금 계좌별 합산**해 "월급날 각 계좌에 얼마 넣을지" 표시(남은 예정 병기, 행 탭=계좌 통장).
 - 거래에는 카테고리·계좌(from/to)·날짜·설명·메모·**소비 대상(user)**·목적별 가계부 연결·카드실적 포함 여부 등이 붙습니다.
 - **🧠 최근 선택 기본값**(`txLastOf`/`txLastRemember`/`applyTxLastFor`): 새 거래 시트는 **마지막 저장 때 고른 결제수단(from/to)·소비 대상을 유형별로 기억해 미리 선택**한다(localStorage `txlast:{wsId}:{uid}`, 이 기기·사용자·워크스페이스별). 유형 전환 시 그 유형의 최근값을 **사용자가 아직 손대지 않은 필드에만** 채움(`_touched` 추적 — `onTxAcctChange`/`onTxConsumerChange`가 선택 동기화+손댐 표시). 새 거래 저장 시에만 갱신(수정 제외), 삭제된 계좌·탈퇴 멤버는 무시.
