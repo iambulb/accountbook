@@ -1548,21 +1548,25 @@
       if(!roList){ const odIds=overdueTodoIds(base, today); if(odIds.length) h+='<button class="td-carry" '+App.view.act('carryOverdueToToday')+'>🕘 지난 미완료 '+odIds.length+'개 → 오늘로</button>'; }
       const emptyMsg=isGroup?'그룹 할일이 없어요 — 아래 ＋ 로 담당을 나눠보세요':'개인 할일이 없어요 — 아래 ＋ 로 추가하세요';
       if(_todoGroup==='cat' && open.length){
-        // 📚 카테고리별 묶음(기본) — 카테고리 색점+이름+개수 헤더 카드로 묶고, 그룹 순서=카테고리 관리 정의 순(미분류 마지막). 그룹 안은 마감·우선순위 정렬 유지.
-        const g={}, order=[];
-        open.forEach(t=>{ const c=todoCatOf(t); const k=c?('c_'+c.id):'_none'; if(!g[k]){ g[k]={c:c,list:[]}; order.push(k); } g[k].list.push(t); });
-        const catIdx={}; (state.todoCats||[]).forEach((c,i)=>{ catIdx['c_'+c.id]=i; });
-        order.sort((a,b)=>(a==='_none'?9e9:(catIdx[a]!==undefined?catIdx[a]:8e8))-(b==='_none'?9e9:(catIdx[b]!==undefined?catIdx[b]:8e8)));
-        h+=order.map(k=>{ const gr=g[k], nm=gr.c?(gr.c.name||''):'미분류', col=gr.c?(gr.c.color||'#8B95A1'):'var(--sub)';
-          return '<div class="sech"><span class="l" style="display:flex;align-items:center;gap:7px;"><span class="catdot" style="background:'+escapeHtml(col)+'"></span>'+escapeHtml(nm)+'</span><span class="s">'+gr.list.length+'개</span></div>'+
-            '<div class="card" style="padding:4px 12px;">'+gr.list.map(t=>todoRow(t, roList)).join('')+'</div>';
-        }).join('');
+        h+=todoGroupedHtml(open, roList);   // 📚 카테고리별 묶음(기본) — 캘린더 날짜 목록과 공용 렌더
       } else {
         h+='<div class="card" style="padding:4px 12px;">'+(open.length?open.map(t=>todoRow(t, roList, true)).join(''):'<div class="empty" style="padding:26px 6px;">'+emptyMsg+'</div>')+'</div>';   // 마감순 보기=수동 정렬 핸들(≡) 표시
       }
       if(done.length){ const _dc=done.slice(0,20); const _dl='오늘 '+done.length+'개'+(done.length>_dc.length?(' · '+_dc.length+' 표시'):'');
         h+='<div class="sech"><span class="l">완료</span><span class="s">'+_dl+'</span></div><div class="card" style="padding:4px 12px;">'+_dc.map(t=>todoRow(t, roList)).join('')+'</div>'; }
       return h;
+    }
+    // 📚 카테고리별 묶음 렌더 공용(할일 목록·캘린더 날짜 목록) — 색점+이름+개수 헤더 카드, 그룹 순서=카테고리 관리 정의 순(미분류 마지막).
+    //  ctxDay=캘린더 완료 기준일(todoRow 4번째 인자로 전달 — 그 날짜로 완료 기록).
+    function todoGroupedHtml(list, ro, ctxDay){
+      const g={}, order=[];
+      list.forEach(t=>{ const c=todoCatOf(t); const k=c?('c_'+c.id):'_none'; if(!g[k]){ g[k]={c:c,list:[]}; order.push(k); } g[k].list.push(t); });
+      const catIdx={}; (state.todoCats||[]).forEach((c,i)=>{ catIdx['c_'+c.id]=i; });
+      order.sort((a,b)=>(a==='_none'?9e9:(catIdx[a]!==undefined?catIdx[a]:8e8))-(b==='_none'?9e9:(catIdx[b]!==undefined?catIdx[b]:8e8)));
+      return order.map(k=>{ const gr=g[k], nm=gr.c?(gr.c.name||''):'미분류', col=gr.c?(gr.c.color||'#8B95A1'):'var(--sub)';
+        return '<div class="sech"><span class="l" style="display:flex;align-items:center;gap:7px;"><span class="catdot" style="background:'+escapeHtml(col)+'"></span>'+escapeHtml(nm)+'</span><span class="s">'+gr.list.length+'개</span></div>'+
+          '<div class="card" style="padding:4px 12px;">'+gr.list.map(t=>todoRow(t, ro, false, ctxDay)).join('')+'</div>';
+      }).join('');
     }
     function todoMoveMonth(d){ state.month=shiftMonth(state.month,d); renderTodoCalendar(); }
     function todoSelDay(ds){ _todoSel=ds; renderTodoCalendar(); }
@@ -1599,8 +1603,11 @@
       // 🕘 이 날짜의 미완료만 오늘로 — 자동 이월 없이, 미완료가 남은 날짜에서 명시적으로 옮긴다(사용자 지침)
       { const selOpen=dayT.filter(t=>!t.done && t.dueDate===sel);
         if(!ro && sel!==todayS && selOpen.length) h+='<button class="td-carry" '+App.view.act('carryDayToToday',sel)+'>🕘 이 날 미완료 '+selOpen.length+'개 → 오늘로</button>'; }
-      // ⬇️ 행에 '이 날짜'를 실어 보냄(todoRow 4번째 인자) → 완료 시 오늘이 아니라 이 날짜로 기록(toggleTodo ctxDay)
-      h+='<div class="card" style="padding:4px 12px;">'+(dayT.length?dayT.map(t=>todoRow(t,ro,false,sel)).join(''):'<div class="empty" style="padding:22px 6px;">이 날 할일이 없어요</div>')+'</div>';
+      // ⬇️ 행에 '이 날짜'를 실어 보냄(todoRow 4번째 인자) → 완료 시 오늘이 아니라 이 날짜로 기록(toggleTodo ctxDay).
+      //  📚 목록 탭의 [카테고리|마감순] 토글(_todoGroup)을 따라 카테고리 묶음으로도 표시(공용 todoGroupedHtml).
+      if(!dayT.length) h+='<div class="card" style="padding:4px 12px;"><div class="empty" style="padding:22px 6px;">이 날 할일이 없어요</div></div>';
+      else if(_todoGroup==='cat') h+=todoGroupedHtml(dayT, ro, sel);
+      else h+='<div class="card" style="padding:4px 12px;">'+dayT.map(t=>todoRow(t,ro,false,sel)).join('')+'</div>';
       return h;
     }
     // ===== 📋 할일 템플릿(체크리스트 세트) — 여행 준비물·장보기 등 자주 쓰는 할일 묶음을 저장해 두고 원탭으로 통째로 추가 =====
