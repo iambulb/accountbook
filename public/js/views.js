@@ -88,6 +88,15 @@
     function clearMemberFilter(){ state.memberFilter=''; renderCalendar(); }
     function setMemberFilterByUid(uid){ state.memberFilter=(state.memberFilter===uid&&uid)?'':uid; renderCalendar(); }   // 기록자 uid로 필터(토글) — uid 저장이라 개명·동명이인에 견고
 
+    // 📅 달력 시작 요일(기기 설정, localStorage) — 기본 'mon'(월화수…일), 'sun'이면 일월화…토. 가계부·할일 캘린더 공용.
+    function weekStartSun(){ try{ return localStorage.getItem('calWeekStart')==='sun'; }catch(e){ return false; } }
+    function toggleWeekStart(){ try{ localStorage.setItem('calWeekStart', weekStartSun()?'mon':'sun'); }catch(e){} if(typeof rerender==='function') rerender(); }
+    // 캘린더 요일 헤더 + 1일 오프셋 — 시작 요일 설정을 반영해 두 캘린더가 공유
+    function calHeadHtml(){
+      const sun=weekStartSun(); const HEAD=sun?['일','월','화','수','목','금','토']:['월','화','수','목','금','토','일'];
+      return '<div class="cal-head">'+HEAD.map(function(w,i){ const wd=(i+(sun?0:1))%7; return '<div class="'+(wd===0?'sun':wd===6?'sat':'')+'">'+w+'</div>'; }).join('')+'</div>';
+    }
+    function calFirstOffset(y,mo){ return (new Date(y,mo-1,1).getDay()+(weekStartSun()?0:6))%7; }
     function calendarGridHtml(y,mo,list){
       // 일별 카테고리 색 점(시안풍) — 최대 3색
       const buckets={};
@@ -98,12 +107,11 @@
         else col='var(--transfer)';
         if(col && b.colors.indexOf(col)<0 && b.colors.length<3) b.colors.push(col);
       });
-      // 월요일 시작(시안 1:1). WEEK 상수(getDay 인덱스)는 그대로 두고 헤더만 월~일로.
-      const HEAD=['월','화','수','목','금','토','일'];
-      const first=(new Date(y,mo-1,1).getDay()+6)%7;   // 월=0 오프셋
+      // 시작 요일은 설정(달력 시작 요일)을 따름 — 기본 월요일 시작(시안 1:1). WEEK 상수(getDay 인덱스)는 그대로.
+      const first=calFirstOffset(y,mo);
       const days=new Date(y,mo,0).getDate();
       const todayS=todayStr();
-      let h='<div class="calwrap"><div class="cal-head">'+HEAD.map((w,i)=>'<div class="'+(i===5?'sat':i===6?'sun':'')+'">'+w+'</div>').join('')+'</div><div class="cal-grid">';
+      let h='<div class="calwrap">'+calHeadHtml()+'<div class="cal-grid">';
       for(let i=0;i<first;i++) h+='<div class="cal-cell dim"></div>';
       for(let d=1;d<=days;d++){
         const ds=y+'-'+pad2(mo)+'-'+pad2(d);
@@ -1581,10 +1589,10 @@
       base.forEach(t=>{ const col=todoCatColor(t)||'var(--primary)';
         if(!t.done && t.dueDate && t.dueDate.slice(0,7)===m){ const b=_bk(t.dueDate); if(b.o.indexOf(col)<0 && b.o.length<3) b.o.push(col); }
         if(t.done){ const anchor=t.dueDate||todoDoneDay(t); if(anchor && anchor.slice(0,7)===m){ const b=_bk(anchor); if(b.dn.indexOf(col)<0 && b.dn.length<3) b.dn.push(col); } } });
-      const HEAD=['월','화','수','목','금','토','일']; const first=(new Date(y,mo-1,1).getDay()+6)%7; const days=new Date(y,mo,0).getDate(); const todayS=todayKst(); const sel=_todoSel||todayS;
+      const first=calFirstOffset(y,mo); const days=new Date(y,mo,0).getDate(); const todayS=todayKst(); const sel=_todoSel||todayS;   // 시작 요일은 설정 공용(calHeadHtml/calFirstOffset)
       let h=todoScopeSeg();
       h+='<div class="monthlbl"><button '+App.view.act('todoMoveMonth',-1)+' aria-label="이전 달">‹</button><b>'+y+'년 '+mo+'월</b><button '+App.view.act('todoMoveMonth',1)+' aria-label="다음 달">›</button></div>';
-      h+='<div class="calwrap"><div class="cal-head">'+HEAD.map(function(w,i){ return '<div class="'+(i===5?'sat':i===6?'sun':'')+'">'+w+'</div>'; }).join('')+'</div><div class="cal-grid">';
+      h+='<div class="calwrap">'+calHeadHtml()+'<div class="cal-grid">';
       for(let i=0;i<first;i++) h+='<div class="cal-cell dim"></div>';
       for(let d=1;d<=days;d++){ const ds=y+'-'+pad2(mo)+'-'+pad2(d); const wd=new Date(y,mo-1,d).getDay(); const dcls='d'+(wd===0?' sun':(wd===6?' sat':''));
         const b=byDay[ds]; const od=!!(b&&b.o.length&&ds<todayS);   // ⏰ 기한 지난 미완료가 남은 날 — '!' 배지로 따로 표시(탭하면 '오늘로' 버튼)
@@ -2436,14 +2444,17 @@
         if(mp.day>+todayStr().slice(8,10)) loan.remain+=mp.inst.pay; });
       return { rec, sub, sav, loan, total:rec.sum+sub.sum+sav.sum+loan.sum, remain:rec.remain+sub.remain+sav.remain+loan.remain };
     }
-    // 💡 계좌별 이번 달 필요액 — 이 계좌에서 자동으로 '나갈' 돈(정기 debit측 전부=적금 이체 포함 + 구독 결제수단 + 대출 상환계좌)을 계좌별 합산.
-    //  "월급날 각 계좌에 얼마씩 넣어둘까"용 — 고정지출 카드(지출성만)와 달리 이체·적금도 출금 계좌 기준으로 포함한다.
+    // 💡 계좌별 이번 달 필요액 — 이 계좌에서 자동으로 '나갈' 돈(적금 이체(savingsId) + 지출성 정기 + 구독 결제수단 + 대출 상환계좌)을 계좌별 합산.
+    //  "월급날 각 계좌에 얼마씩 넣어둘까"용 — 카드 라벨(정기·구독·적금·대출) 그대로, 일반 이체·충전(계좌 간 돈 옮기기·입금성 정기)은 제외한다
+    //  (예전엔 debit측 정기 전부를 합산해 월급 이체·파킹 이체 같은 입금 내역까지 필요액에 섞이던 문제 — 사용자 보고로 한정).
     function monthAcctNeeds(){
       const mm=todayStr().slice(0,7), today=parseDate(todayStr());
       const mStart=parseDate(mm+'-01'), mEnd=new Date(mStart.getFullYear(), mStart.getMonth()+1, 0);
+      const EXPT={expense:1,prepaid_spend:1,point_spend:1};   // 지출성 정기(monthFixedCosts와 동일 기준)
       const need={}; const add=(acct,amt,d)=>{ if(!acct||!getAcct(acct)||!(amt>0)) return; const e=need[acct]=need[acct]||{sum:0,remain:0}; e.sum+=amt; if(d>today) e.remain+=amt; };
       state.recurring.filter(r=>canSee(r)&&ruleStatus(r)==='active').forEach(r=>{
         const e=TX_EFFECT[r.type]||{}; if(!e.debit||!r.from) return;
+        if(!r.savingsId && !EXPT[r.type]) return;   // 적금 이체 외 일반 이체·충전 정기는 필요액에서 제외
         let occ=occurrencesV2(r, mStart, mEnd);
         if(r.endDate){ const ed=parseDate(r.endDate); occ=occ.filter(o=>o<=ed); }
         occ.forEach(o=>add(r.from, Number(r.amount)||0, o));
@@ -3199,6 +3210,8 @@
       h+=lrow(MORE_ICON.download,'데이터 백업(JSON)','exportBackup()','전체');
       h+=lrow('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V6M8 10l4-4 4 4"/><path d="M5 21h14"/></svg>','백업 복원','importBackup()');
       h+=lrowToggle(MORE_ICON.moon,'다크 모드','toggleTheme();openSettingsSheet()', state.theme==='dark');
+      // 📅 달력 시작 요일 — 월요일 시작(월화수…일) ↔ 일요일 시작(일월화…토). 가계부·할일 캘린더 공용(기기 설정).
+      h+=lrow('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>','달력 시작 요일','toggleWeekStart();openSettingsSheet()', weekStartSun()?'일요일':'월요일');
       h+=lrowToggle(MORE_ICON.cam,'펫캠','toggleDockHidden();openSettingsSheet()', (typeof dockMode==='function'&&dockMode()!=='hidden'));
       // 🖥️ 펫캠 PiP 방식(비디오/창) — 지원 브라우저에서만 노출(iOS·미지원 환경엔 행 자체가 없음), 기본=비디오
       if(typeof pipSupported==='function' && pipSupported())
