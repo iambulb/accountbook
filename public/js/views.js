@@ -603,7 +603,7 @@
       if(sheetType==='expense'){ h+=acctField('출금/결제 수단','sFrom',fromV)+coPayBlockHtml()+consumerField(sh._consumer); }   // 💳+✨ 결제 수단 바로 아래에 '포인트·선불 함께' 블록
       else if(sheetType==='income'){ h+=acctField('입금 대상','sTo',toV); }
       else if(sheetType==='refund'){ h+=acctField('환불 받는 계정','sTo',toV); }
-      else if(sheetType==='point_earn'){ h+=acctField('적립 포인트 계정','sTo',toV,['point']); }
+      else if(sheetType==='point_earn'){ h+=acctField('적립 대상(포인트·간편결제)','sTo',toV,['point','e_wallet']); }   // 네이버페이 등 간편결제 지갑에 쌓이는 포인트도 적립 가능(사용자 보고 — 포인트 계정만 떠서 간편결제가 안 보였음)
       else if(sheetType==='transfer'||sheetType==='prepaid_charge'){
         const l1=sheetType==='prepaid_charge'?'충전 수단(카드/계좌)':'출금';
         const l2=sheetType==='prepaid_charge'?'충전 대상(선불/포인트)':'입금';
@@ -3679,7 +3679,7 @@
       if(t==='expense'){ h+=recAcctField('출금/결제 수단','rFrom',fromV)+recConsumerField(consV)+recCatField('expense',catV); }
       else if(t==='income'){ h+=recAcctField('입금 대상','rTo',toV)+recCatField('income',catV); }
       else if(t==='refund'){ h+=recAcctField('환불 받는 계정','rTo',toV)+recCatField('income',catV); }
-      else if(t==='point_earn'){ h+=recAcctField('적립 포인트 계정','rTo',toV,['point']); }
+      else if(t==='point_earn'){ h+=recAcctField('적립 대상(포인트·간편결제)','rTo',toV,['point','e_wallet']); }   // 거래 시트와 동일 — 간편결제 지갑 적립 허용
       else if(t==='transfer'||t==='prepaid_charge'){ const l1=t==='prepaid_charge'?'충전 수단(카드/계좌)':'출금', l2=t==='prepaid_charge'?'충전 대상(선불/포인트)':'입금'; h+='<div class="form-2">'+recAcctField(l1,'rFrom',fromV,t==='prepaid_charge'?NONPRE:null)+recAcctField(l2,'rTo',toV,t==='prepaid_charge'?PREPAY.concat(['point']):null)+'</div>'; }
       else if(t==='prepaid_spend'||t==='point_spend'){ h+=recAcctField(t==='point_spend'?'사용 포인트 계정':'결제 선불수단','rFrom',fromV,t==='point_spend'?['point']:PREPAY)+recConsumerField(consV)+(catTypeFor(t)?recCatField('expense',catV):''); }
       else if(t==='balance_adjustment'){ h+=recAcctField('대상 계정','rTo',toV); }
