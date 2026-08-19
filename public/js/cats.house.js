@@ -365,7 +365,7 @@
     // 한정 픽업 확률(%) — DDEUL_TIERS의 exclusive p를 읽어 표기(하드코딩 불일치 방지, 확률 조정 시 자동 반영).
     function ddeulExPct(){ const t=(typeof DDEUL_TIERS!=='undefined')?DDEUL_TIERS.find(function(x){ return x.id==='exclusive'; }):null; return t?t.p:0.5; }
     function ddeulPickupShowcase(){
-      const pets=LIMITED_PICKUP.filter(pickupExists);
+      const pets=activePickup().filter(pickupExists);   // 🔄 이번 주 픽업 2마리(매주 월요일 KST 자동 교체)
       const spot=(id)=> id ? '<div class="gb-spot" role="button" tabindex="0" aria-label="'+escapeHtml(catName(id))+' 미리보기" '+App.view.act('openPickupPeek',id)+'>'+
           '<span class="gb-spot-beam"></span>'+                                                       // 🔦 무대 조명 빔(위→아래)
           '<span class="gb-spot-badge">'+starSvg({h:14})+'</span>'+
@@ -403,7 +403,7 @@
         // 🌱 배너 이미지 아래 — 뜰알 이미지·설명·소모재화(한정 강조)
         '<div class="gb-item gb-ddeul-item"><div class="gb-item-ic">'+ddeulEggSvg({h:52})+'</div>'+
           '<div class="gb-item-meta"><b class="tier-rainbow">뜰알 <span class="tagmini tier-rainbow">한정 픽업</span></b>'+
-          '<div class="gb-item-desc">한정 펫은 <b class="tier-rainbow">오직 뜰알에서만</b> · 한정 '+ddeulExPct()+'% 픽업!</div>'+
+          '<div class="gb-item-desc">한정 펫은 <b class="tier-rainbow">오직 뜰알에서만</b> · 한정 '+ddeulExPct()+'% 픽업! · 픽업 펫은 <b>매주 월요일</b> 교체</div>'+
           '<div class="gb-item-cost">1뽑당 소모 '+gachaCostHtml(DDEUL_PRICE,DDEUL_GOLD,1)+'</div></div></div>'+
         gbPullActions('ddeul', DDEUL_PRICE, DDEUL_GOLD, null, 'ddeul', live)+gbPityHtml('ddeul')+'</div>';
     }

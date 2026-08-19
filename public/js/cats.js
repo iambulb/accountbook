@@ -3537,9 +3537,13 @@
     const STATIC_CATALOG=[], STATIC_SPRITES={}, STATIC_TIER={}, STATIC_SPECIES={}; let _staticCaptured=false;
     let _deletedPets={};   // 소프트 삭제된 펫 {id:{id,name,species,tier,...}} — dev 관리 화면 표시용
     let _petGachaOnly={};   // 펫 가챠전용 전역 오버라이드 {id:true|false} — catalogPets/{id}.gachaOnly 에서 채움. 미설정=등급 기반 기본값
-    let _petExActive={};    // 한정(exclusive) 펫 '가챠 등장' 전역 오버라이드 {id:true|false} — catalogPets/{id}.exActive. 미설정=EX_ACTIVE_DEFAULT
-    const EX_ACTIVE_DEFAULT={ cat_leopardcat:true, cat_leopard:true };   // 지금은 삵·표범만 한정 가챠에 등장(나머지 한정 펫은 비활성). 개발자 토글로 변경 가능
-    function isExGachaActive(id){ return _petExActive[id]!=null ? _petExActive[id] : !!EX_ACTIVE_DEFAULT[id]; }   // 한정 펫이 가챠 한정 리스트에 들어가는지
+    // 🔄 주간 픽업 로테이션(2026-08): 활성 한정 = 이번 주 픽업 2마리(weeklyPickup, cats.gacha.js — 매주 월요일 KST 자동 교체).
+    //    구 catalogPets/{id}.exActive 수동 오버라이드(개발자 '가챠 등장' 토글)는 2026-08 완전 제거(사용자 지침 — 로테이션 단일 소스,
+    //    RTDB에 남은 옛 exActive 값도 무시). EX_ACTIVE_DEFAULT는 로드순서 안전 폴백(weeklyPickup 미로드 시)일 뿐, 평상시엔 쓰이지 않는다.
+    const EX_ACTIVE_DEFAULT={ cat_leopardcat:true, cat_leopard:true };
+    function isExGachaActive(id){
+      if(typeof weeklyPickup==='function') return weeklyPickup().indexOf(id)>=0;   // 이번 주 픽업(배너와 뽑기 풀이 항상 일치)
+      return !!EX_ACTIVE_DEFAULT[id]; }   // 한정 펫이 가챠 한정 리스트에 들어가는지
     // 펫알 가챠용 등급맵 = effCatTier()에서 '비활성 한정 펫'을 뺀 것(활성 한정만 풀·확률에 포함). 그 외 등급은 그대로.
     function gachaCatTierMap(){ const src=effCatTier(), r={}; Object.keys(src).forEach(function(k){ if(src[k]==='exclusive' && !isExGachaActive(k)) return; r[k]=src[k]; }); return r; }
     function catalogRef(){ return db.ref('catalogPets'); }
@@ -3555,7 +3559,7 @@
       Object.keys(PET_SPRITES).forEach(k=>delete PET_SPRITES[k]); Object.keys(STATIC_SPRITES).forEach(k=>PET_SPRITES[k]=Object.assign({},STATIC_SPRITES[k]));
       Object.keys(CAT_TIER).forEach(k=>delete CAT_TIER[k]); Object.keys(STATIC_TIER).forEach(k=>CAT_TIER[k]=STATIC_TIER[k]);
       Object.keys(SPECIES_LABEL).forEach(k=>delete SPECIES_LABEL[k]); Object.keys(STATIC_SPECIES).forEach(k=>SPECIES_LABEL[k]=STATIC_SPECIES[k]);
-      _deletedPets={}; _petGachaOnly={}; _petExActive={};
+      _deletedPets={}; _petGachaOnly={};
       // 2) catalog 레코드 적용(신규/오버라이드/삭제)
       Object.keys(recs).forEach(id=>{ const r=recs[id]||{}; const isNew=isRuntimePet(id);
         const hasArt=!!(r.walk || r.hasArt);   // 인라인 이미지(구 레코드) 또는 분리 노드 catalogPetArt(신)
@@ -3572,7 +3576,7 @@
         PET_SPRITES[id]=sp;
         const tier = r.tier || CAT_TIER[id] || 'normal'; CAT_TIER[id]=tier;
         if(r.gachaOnly!=null) _petGachaOnly[id]=!!r.gachaOnly;   // 가챠전용 전역 오버라이드(true=판매목록 숨김, false=등급 무관 판매 허용)
-        if(r.exActive!=null) _petExActive[id]=!!r.exActive;      // 한정 가챠 등장 전역 오버라이드
+        // (구 r.exActive 수동 핀은 2026-08 제거 — 한정 활성은 주간 픽업 로테이션 단일 소스, 옛 RTDB 값 무시)
         const ci=PET_CATALOG.findIndex(x=>x.id===id);
         const base = ci>=0 ? PET_CATALOG[ci] : { id, species:'cat', name:id, desc:'' };
         if(r.speciesLabel && (r.species||base.species)) SPECIES_LABEL[r.species||base.species]=r.speciesLabel;
@@ -3894,9 +3898,7 @@
       const tierSel='<select class="input fm-tier" onchange="setPetTier(\''+p.id+'\',this.value)" aria-label="'+escapeHtml(p.name||p.id)+' 등급">'+
         TIERS.map(function(t){ return '<option value="'+t.id+'"'+(t.id===ft?' selected':'')+'>'+t.name+'</option>'; }).join('')+'</select>';
       const gachaTog='<label class="fm-gacha"><span>가챠전용</span><span class="switch'+(gacha?' on':'')+'" role="switch" aria-checked="'+gacha+'" tabindex="0" '+App.view.act('setPetGacha',p.id)+' aria-label="'+escapeHtml(p.name||p.id)+' 가챠전용"><i></i></span></label>';
-      // 한정(exclusive) 등급 펫만: '가챠 등장' 토글(ON=가챠 한정 리스트·확률에 포함). 다른 등급엔 표시 안 함.
-      const exOn=isExGachaActive(p.id);
-      const exTog=(ft==='exclusive')?'<label class="fm-gacha"><span>가챠 등장</span><span class="switch'+(exOn?' on':'')+'" role="switch" aria-checked="'+exOn+'" tabindex="0" '+App.view.act('setPetExActive',p.id)+' aria-label="'+escapeHtml(p.name||p.id)+' 가챠 등장"><i></i></span></label>':'';
+      // (구 한정 '가챠 등장' 토글은 2026-08 제거 — 한정 활성은 주간 픽업 로테이션(weeklyPickup) 단일 소스, 수동 핀 없음)
       const badge=gacha?'<div class="pm-pv-badge"><span class="fm-badge tier-rainbow">'+boxSvg({h:13})+' 랜덤박스 전용</span></div>':'';
       const dr = p.deleted ? '<button class="btn" '+App.view.act('restorePet',p.id)+'>복구</button>'
         : '<button class="btn danger" '+App.view.act('deletePetSoft',p.id)+'>삭제</button>';
@@ -3907,7 +3909,7 @@
             '<div class="pm-pv-nm">'+catNameSpan(p.id, p.name||p.id)+'</div>'+
             '<div class="pm-pv-meta">'+escapeHtml(tag)+(p.runtime?' · 런타임':'')+(p.deleted?' · 삭제됨':'')+'</div>'+
             badge+
-            '<div class="pm-cfgctl">'+tierSel+gachaTog+exTog+'</div>'+
+            '<div class="pm-cfgctl">'+tierSel+gachaTog+'</div>'+
           '</div>'+
         '</div>'+
         '<div class="petmg-btns"><button class="btn ghost" '+App.view.act('openDevPetAdd')+'>추가</button>'+
@@ -4037,9 +4039,7 @@
       db.ref('catalogPets/'+id+'/tier').set(tier).then(function(){ toast((catName(id)||id)+' 등급 = '+tierInfo(tier).name); }).catch(_cfgWriteErr); }
     function setPetGacha(id){ if(!(typeof isDev==='function'&&isDev())) return; const on=!isGachaOnlyCat(id);
       db.ref('catalogPets/'+id+'/gachaOnly').set(on).then(function(){ toast((catName(id)||id)+(on?' 가챠전용 ON(펫알 전용·판매 숨김)':' 가챠전용 OFF(은화 판매 허용)')); }).catch(_cfgWriteErr); }
-    // 한정 펫 '가챠 등장' 토글 — ON=가챠 한정 리스트·확률에 포함, OFF=제외. catalogPets/{id}.exActive 전역 저장.
-    function setPetExActive(id){ if(!(typeof isDev==='function'&&isDev())) return; const on=!isExGachaActive(id);
-      db.ref('catalogPets/'+id+'/exActive').set(on).then(function(){ toast((catName(id)||id)+(on?' 가챠 등장 ON(한정 리스트 포함)':' 가챠 등장 OFF(가챠 제외)')); }).catch(_cfgWriteErr); }
+    // (구 setPetExActive '가챠 등장' 토글은 2026-08 제거 — 한정 활성은 주간 픽업 로테이션 단일 소스)
 
     // 개발자 데이터 정리: 런타임 펫 정적 승격(내보내기) + 구 인라인 아트 1회 분리 이전.
     function openDevDataTools(){ if(!(typeof isDev==='function'&&isDev())){ toast('개발자 전용'); return; }

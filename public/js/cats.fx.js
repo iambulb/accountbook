@@ -734,7 +734,7 @@
     function devPreview(kind, tierId, forceId, rainbow){
       const map = isEggKind(kind)? effCatTier() : effItemTier();   // 뜰알(ddeul)도 펫알과 동일하게 펫 등급 맵 사용
       let id = forceId || Object.keys(map).find(k=>map[k]===tierId);
-      if(kind==='ddeul' && tierId==='exclusive'){ const pk=(typeof LIMITED_PICKUP!=='undefined') && pickupMember(); if(pk) id=pk; }   // 한정 = 픽업 펫(삵·표범)으로 연출
+      if(kind==='ddeul' && tierId==='exclusive'){ const pk=(typeof pickupMember==='function') && pickupMember(); if(pk) id=pk; }   // 한정 = 이번 주 픽업 펫으로 연출
       if(!id) id = isEggKind(kind) ? (Object.keys(map)[0]||'cat_mackerel') : (Object.keys(map)[0]||'cushion');
       closeSheet(); _fx=null; runGachaFx(kind, { id, tier:tierId }, false, 0, !!rainbow, true);   // 미리보기는 NEW 배지도 함께 표시
     }

@@ -9,7 +9,7 @@
       { id:'limited',  name:'신화', p:0.8, color:'#ff5fa2' },   // 신화(구 '한정') — 핑크 텍스트·연출. id는 하위호환 위해 'limited' 유지. 2026-07: 1→0.8
       { id:'exclusive',name:'한정', p:0.2, color:'#F2C84B' }    // 한정(최상위·무지개) — 2026-07: 펫알·랜덤박스에도 0.2%(펫=활성 한정만·아이템=한정 포함 boxPool). 미공개 한정 전체는 무지개알/박스(신화80·한정20)에서
     ];
-    // 🌱 뜰알(한정 픽업 뽑기) 전용 확률표 — 기본과 같지만 신화 1→0.5, 한정 0.5 추가(활성 한정 펫=삵·표범만 풀에). 합 100.
+    // 🌱 뜰알(한정 픽업 뽑기) 전용 확률표 — 기본과 같지만 신화 1→0.5, 한정 0.5 추가(활성 한정 펫=이번 주 픽업 2마리만 풀에). 합 100.
     const DDEUL_TIERS=[{id:'normal',p:45},{id:'uncommon',p:30},{id:'rare',p:15},{id:'epic',p:6},{id:'legend',p:3},{id:'limited',p:0.5},{id:'exclusive',p:0.5}];
     // (구) NO_GACHA_TIERS 제거 — 한정 펫은 펫알에선 exActive(활성)만 선별 포함, 무지개알은 전체(rainbowCatTierMap). 한정 아이템은 boxPool에 포함(기본 박스 0.2%·무지개박스 50% — 2026-07 개편).
     const TIER_ORDER = TIERS.map(t=>t.id);   // 높은 등급이 비면 한 단계씩 낮춰 대체할 때 사용
@@ -19,12 +19,33 @@
     function catNameSpan(id, name){ const t=CAT_TIER[id]||'normal'; const n=escapeHtml(name);
       if(t==='exclusive') return '<span class="tier-rainbow">'+n+'</span>';   // 한정 = 무지개
       return '<span style="color:'+catTierColor(id)+'">'+n+'</span>'; }   // 신화=핑크(#ff5fa2) 등 등급색
-    // 🌈 한정 픽업(가챠 배너): [펫1(왼쪽), 펫2(오른쪽)]. 픽업 대상을 바꾸려면 이 배열만 수정. 존재하는 펫만 배너에 뜬다.
-    const LIMITED_PICKUP = ['cat_leopardcat','cat_leopard'];   // 첫 한정 픽업: 펫1=삵 · 펫2=표범
-    // 🌙 개발자 배너 미리보기 전용 픽업 오버라이드(밤=흑표범·카라칼). 라이브 LIMITED_PICKUP/exActive는 안 건드림 — FX 닫힐 때 해제.
+    // 🔄 주간 픽업 로테이션(2026-08 개편, 구 고정 LIMITED_PICKUP=['cat_leopardcat','cat_leopard'] 대체):
+    //    매주 월요일(KST) 기준으로 한정(exclusive) 펫 전체에서 2마리를 결정적 해시로 선정 — 모든 사용자 동일·배포/설정 없이 자동 교체
+    //    (이달의 펫 featuredPetOfMonth와 같은 해시 관례). 배너(쇼케이스·배회 씬·태그)와 실제 뽑기 풀(isExGachaActive 기본값, cats.js)이 함께 따라간다.
+    //    ⚠️ 천장(game.pity.ddeul 등)은 "가챠 종류별" 카운터라 픽업 펫이 바뀌어도 그대로 유지된다(이 개편에서 pity는 일절 건드리지 않음).
+    function pickupWeekKey(){   // 이번 주 월요일(KST)의 'YYYY-MM-DD' — KST 날짜키에서 요일만큼 되돌림(픽업 전용 기준, 달력 주 시작 설정과 무관)
+      const s=(typeof kstDayKey==='function')?kstDayKey():new Date().toISOString().slice(0,10);
+      const p=s.split('-'), dt=new Date(+p[0], +p[1]-1, +p[2]);
+      dt.setDate(dt.getDate()-((dt.getDay()+6)%7));
+      const m2=n=>(n<10?'0':'')+n;
+      return dt.getFullYear()+'-'+m2(dt.getMonth()+1)+'-'+m2(dt.getDate());
+    }
+    function pickupHash(s){ let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return h; }   // featuredPetOfMonth와 동일 해시
+    let _weeklyPickupMemo=null;   // {wk, ids} — 렌더·씬 캐시키에서 반복 호출돼 주 단위 메모(주가 바뀌면 자동 재계산)
+    function weeklyPickup(){
+      const wk=pickupWeekKey();
+      if(_weeklyPickupMemo && _weeklyPickupMemo.wk===wk) return _weeklyPickupMemo.ids;
+      const pool=PET_CATALOG.map(c=>c.id).filter(id=>(CAT_TIER[id]||'')==='exclusive').sort();   // 한정 펫 전체(id 정렬 = 카탈로그 순서 무관 결정성)
+      let ids;
+      if(pool.length<=2) ids=pool;
+      else { const arr=pool.slice(); ids=[ arr.splice(pickupHash(wk+'|pickup1')%arr.length,1)[0], arr.splice(pickupHash(wk+'|pickup2')%arr.length,1)[0] ]; }
+      _weeklyPickupMemo={ wk, ids };
+      return ids;
+    }
+    // 🌙 개발자 배너 미리보기 전용 픽업 오버라이드(밤=흑표범·카라칼). 라이브 주간 픽업/exActive는 안 건드림 — FX 닫힐 때 해제.
     const DEV_NIGHT_PICKUP=['cat_blackpanther','cat_caracal'];
     let _devPickupOverride=null;
-    function activePickup(){ return _devPickupOverride||LIMITED_PICKUP; }
+    function activePickup(){ return _devPickupOverride||weeklyPickup(); }
     function pickupMember(){ const pp=activePickup().filter(pickupExists); return pp.length?pp[Math.floor(Math.random()*pp.length)]:null; }
     // 배너 배회 무대(#pkStage)에 픽업 펫 2마리 — 개발자 밤 배너에서 흑표범·카라칼 배회 미리보기.
     function devPickupStageHtml(ids){ const H=92, actor=function(id,lx){ return (pickupExists(id)&&hasSprite(id)) ? '<div class="cd-actor" data-cat="'+id+'" data-hh="'+H+'" style="left:'+lx+'px;"><span class="cd-shadow">'+shadowSvg({h:9})+'</span>'+catActorHTML(id,H)+'</div>' : ''; };
@@ -38,12 +59,12 @@
         a.push({ x:+(((cx+0.18+jx*0.64)/cols)*100).toFixed(1), yy:(rows<=1?0.5:(cy+0.16+jy*0.68)/rows) }); } return a; }
     // 가챠 탭 상단 한정 픽업 배너 — 하늘(흐르는 구름 다수)+넓고 연한 무지개(1초 뒤 사르르)+뜰(흙·풀·꽃·원근 나무를 필드 전체에 원근 분포, 바람에 살랑) 가운데 로그인 알, 픽업 펫 둘은 캠 엔진(#pkStage)으로 걸어와 자유 배회.
     //  · 깊이 d(0=앞·크게·아래 ~ 1=뒤·작게·위): bottom%=d*범위, 크기=1-d*0.5. 나무는 뒤쪽(d 큼)만 → 펫 안 가림+하늘 안 침범.
-    let _pkSceneCache={};   // 픽업 씬 메모 — 씬은 pkRand(결정적 시드)+상수 LIMITED_PICKUP에만 의존해 완전 결정적. (mode,픽업펫)로 1회만 생성하고, RTDB 틱마다 _sheetRefresh가 255KB/~4천 rect를 재생성하던 것을 제거. 픽업펫이 바뀌면 키가 달라져 자동 무효화.
+    let _pkSceneCache={};   // 픽업 씬 메모 — 씬은 pkRand(결정적 시드)+이번 주 픽업(activePickup)에만 의존해 완전 결정적. (mode,픽업펫)로 1회만 생성하고, RTDB 틱마다 _sheetRefresh가 255KB/~4천 rect를 재생성하던 것을 제거. 주간 픽업이 바뀌면 키가 달라져 자동 무효화.
     function pickupSceneHtml(mode){
-      const _pkKey = (_pkV2?'v2|':'') + mode + '|' + LIMITED_PICKUP.map(function(id){ return pickupExists(id)?id:'-'; }).join(',');   // v2(개발자 미리보기)는 캐시 키 분리 — 라이브 v1 캐시와 안 섞임
+      const _pkKey = (_pkV2?'v2|':'') + mode + '|' + activePickup().map(function(id){ return pickupExists(id)?id:'-'; }).join(',');   // v2(개발자 미리보기)는 캐시 키 분리 — 라이브 v1 캐시와 안 섞임
       if(_pkSceneCache[_pkKey]) return _pkSceneCache[_pkKey];
       const reveal = mode==='reveal', sz = reveal?1.85:1, S = h=>Math.max(1,Math.round(h*sz));   // 리빌은 전체화면 배경 → 데코 크게
-      const p1=LIMITED_PICKUP[0], p2=LIMITED_PICKUP[1], H=92;   // 펫 렌더 기준 높이(원근 앞배율 1.5=~138 → 기본(≈48)의 약 3배)
+      const _pk=activePickup(), p1=_pk[0], p2=_pk[1], H=92;   // 펫 렌더 기준 높이(원근 앞배율 1.5=~138 → 기본(≈48)의 약 3배)
       // ☁️ 하늘: 흐르는 구름 15개(제각각 높이·모양·색·속도·위상)
       let clouds=''; for(let i=0;i<pkCount(15);i++){ const y=(2+pkRand(i,1)*30).toFixed(1), h=Math.round(11+pkRand(i,2)*17),
         w=Math.floor(pkRand(i,3)*3), tn=['w','p','b'][Math.floor(pkRand(i,4)*3)], dur=(26+pkRand(i,5)*44).toFixed(1);
@@ -108,7 +129,7 @@
       _pkSceneCache[_pkKey]=_pkHtml; return _pkHtml; }
     // 가챠 탭 상단 한정 픽업 배너 = 헤더 + 픽업 씬(배너 모드).
     function limitedPickupBanner(){
-      const p1=LIMITED_PICKUP[0], p2=LIMITED_PICKUP[1];
+      const _pk=activePickup(), p1=_pk[0], p2=_pk[1];
       if(!pickupExists(p1) && !pickupExists(p2)) return '';
       const tag=(id)=> pickupExists(id) ? '<span class="pk-tag">'+catNameSpan(id,catName(id))+'</span>' : '';
       const sep=(pickupExists(p1)&&pickupExists(p2))?'<span class="pk-tag" style="opacity:.5;">·</span>':'';
@@ -768,7 +789,7 @@
       } else if(tab==='box'){
         body=boxSec();
       } else if(tab==='ddeul'){   // 🌱 이벤트(뜰알·한정 픽업) — DDEUL_TIERS. 한정(exclusive)은 활성 픽업 펫이 있을 때만.
-        const rows=DDEUL_TIERS.map(dt=>{ if(dt.id==='exclusive' && !LIMITED_PICKUP.some(pickupExists)) return ''; const ti=tierInfo(dt.id);
+        const rows=DDEUL_TIERS.map(dt=>{ if(dt.id==='exclusive' && !activePickup().some(pickupExists)) return ''; const ti=tierInfo(dt.id);
           return '<div class="gi-row"><b class="tier-'+dt.id+'">'+ti.name+'</b><span class="gi-p">'+dt.p+'%</span></div>'; }).join('');
         body=sec('🌱 뜰알 · 한정 픽업', rows);
       } else if(tab==='rainbow'){   // 🌈 무지개 — RAINBOW_TIERS(신화80·한정20·5뽑 한정 천장), 무지개동전 5개/뽑(신화 중복 +1·한정 중복 +2)
