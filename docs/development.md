@@ -72,10 +72,13 @@ CLI로 자동화되지 않는 항목입니다(Identity Platform 설정).
 
 코드만으론 동작하지 않습니다. console.cloud.google.com(프로젝트 **money-bb658**)에서:
 
+> OAuth 동의 화면 관련 메뉴는 콘솔 개편으로 전부 **"Google 인증 플랫폼"(Google Auth Platform)** 아래에 있다(구 "API 및 서비스 → OAuth 동의 화면"). **확인 센터(Verification Center)는 프로덕션 게시 심사용이라 건드릴 필요 없음**(테스트 모드로 운영).
+
 - [ ] **API 및 서비스 → 라이브러리 → Google Calendar API 사용 설정**
-- [ ] **OAuth 동의 화면**: User Type=외부, 앱 이름 "알뜰", 지원 이메일 입력. **게시 상태=테스트 유지** + **테스트 사용자**에 실제 사용자(가족) 구글 계정 등록(최대 100명 — 게시하려면 민감 스코프 검증 심사가 필요하므로 소수 사용자면 테스트 모드로 충분. 앱은 액세스 토큰만 쓰므로 테스트 모드의 리프레시 토큰 7일 제한과 무관)
-- [ ] 동의 화면 스코프에 `https://www.googleapis.com/auth/calendar.app.created` 추가
-- [ ] **사용자 인증 정보 → OAuth 클라이언트 ID(웹 애플리케이션)** 생성 — 승인된 자바스크립트 원본: Netlify 배포 도메인 + `http://localhost:3000`(로컬 `npx serve public`). 리디렉션 URI는 불필요(GIS 토큰 클라이언트는 팝업 방식)
+- [ ] **Google 인증 플랫폼 → 시작하기**(최초 구성): 앱 이름 "알뜰"·지원 이메일 입력, **대상(Audience)=외부(External)**
+- [ ] **Google 인증 플랫폼 → 대상(Audience)**: **게시 상태=테스트 유지** + **테스트 사용자**에 실제 사용자(가족) 구글 계정 등록(최대 100명 — 여기 등록된 계정만 연결 가능. 게시하려면 민감 스코프 검증 심사가 필요하므로 소수 사용자면 테스트 모드로 충분. 앱은 액세스 토큰만 쓰므로 테스트 모드의 리프레시 토큰 7일 제한과 무관)
+- [ ] **Google 인증 플랫폼 → 데이터 액세스(Data Access)**: "범위 추가 또는 삭제"에서 `https://www.googleapis.com/auth/calendar.app.created` 추가 → 업데이트 → 저장
+- [ ] **Google 인증 플랫폼 → 클라이언트(Clients) → + 클라이언트 만들기 → 웹 애플리케이션** — 승인된 자바스크립트 원본: Netlify 배포 도메인 + `http://localhost:3000`(로컬 `npx serve public`). 리디렉션 URI는 불필요(GIS 토큰 클라이언트는 팝업 방식)
 - [ ] 발급된 클라이언트 ID를 `public/js/firebase.js`의 **`GCAL_CLIENT_ID`** 에 기입(비어 있으면 연동 UI·동기화 전체 자동 비활성)
 
 ## 배포 후 갱신 흐름

@@ -21,4 +21,4 @@
     // 📅 구글캘린더 연동(할일 단방향 동기화) OAuth 웹 클라이언트 ID — console.cloud.google.com(프로젝트 money-bb658) →
     // OAuth 동의 화면(테스트 모드+테스트 사용자) + Calendar API 활성화 + 클라이언트 ID(웹, 승인된 JS 원본=배포 도메인·localhost) 발급.
     // 공개 가능한 값. 비어 있으면 연동 기능(더보기 셀·동기화)이 통째로 비활성 — 절차는 docs/development.md 체크리스트.
-    const GCAL_CLIENT_ID = "";
+    const GCAL_CLIENT_ID = "21675556596-n5g2iuue9qq0hvk531mqdfvvij8c4sl0.apps.googleusercontent.com";
