@@ -172,10 +172,10 @@ erDiagram
 `type`, `amount`, `desc`, `from`, `to`, `category`, `freq`(daily/weekly/monthly/yearly/custom), `interval`, `day`, `weekday`, `startDate`, `endDate`, `lastPosted`, `nextRunDate`, `status`(active/paused/ended), `autoCreate`, `user`, `visibility`, 카드실적 필드.
 
 ### subscriptions/{id}
-`name`, `type`(SUB_TYPES), `status`(active/paused/cancelled/expired), `amount`, `billingCycle`, `billingInterval`, `nextBillingDate`, `expirationDate`, `autoRenew`, `isTrial`, `trialEndDate`, `visibility`, `owner`.
+`name`, `type`(SUB_TYPES), `status`(active/paused/cancelled/expired), `amount`(**항상 원화** — 외화 구독은 환산값), `currency`(기본 KRW), `foreignAmount`·`fxRate`(비KRW만 — 원통화 금액·저장 시점 환율), `billingCycle`, `billingInterval`, `nextBillingDate`, `expirationDate`, `autoRenew`, `isTrial`, `trialEndDate`, `visibility`, `owner`.
 
 ### purposeBooks/{id}
-`name`, `type`(PB_TYPES), `customTypeName`, `icon`, `status`(active/completed/archived), `budgetAmount`, `startDate`, `endDate`, `settlementEnabled`, `visibility`, `owner`.
+`name`, `type`(PB_TYPES), `customTypeName`, `icon`, `status`(active/completed/archived), `budgetAmount`, `startDate`, `endDate`, `settlementEnabled`, `accountId`(전용 계좌 — '자동'이면 `acc_pb_{id}` 생성, 계좌엔 `purposeBookId` 역링크), `visibility`, `owner`.
 
 ### savings/{uid}/{id}
 `name`, `monthly`(월 납입액), `rate`(연 이율 %), `months`(기간 개월), `startDate`, `day`(매달 납입일), `from`(출금 계좌 id, ''=자동기록 안 함), `to`(입금 적금 계좌 id, 선택), `recurringId`(연결 정기거래 `sv_{id}`, 자동기록 시), `user`, `createdAt`, `updatedAt`. 만기일·예상이자는 저장하지 않고 `savingsPlan`(util.js)으로 매번 계산. *(구버전: `goal`·`current` 목표형 — 저장 시 월 납입식으로 전환)*

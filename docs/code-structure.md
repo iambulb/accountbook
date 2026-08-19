@@ -77,8 +77,8 @@ firebase.js → constants.js → util.js → ledger-calc.js → core.js → app.
 | 예산 | `openBudgetSheet`·`openBudgetDetail`·`openBudgetEdit` |
 | 카테고리 | `openCategorySheet`·`renderCatManage`(실시간 갱신 훅 등록)·`catManageRow`·`moveCat`/`toggleCatActive`·`openCatEdit`(아이콘 그리드+색 스와치)·`pickCatIcon`/`pickCatColor`·`saveCat`(iconKey 저장)·`CAT_PALETTE` |
 | 정기결제 | `openRecurringList`·`viewRecurringTxs`·`openRecurringEdit`·`renderRecAccts`·`recConsumerField`(소비 대상)·`renderRecCardPerf` |
-| 구독 | `openSubscriptions`·`renderSubs`·`openSubDetail`·`openSubEdit` |
-| 목적별 | `openPurposeBooks`·`renderPBs`·`pbCard`·`openPbDetail`(탭)·`renderPbTxTab`·`openPbEdit` |
+| 구독 | `openSubscriptions`·`renderSubs`·`openSubDetail`·`openSubEdit`·**💵 외화 입력**(`onSubCurChange` 통화 변경 시 오늘 환율 자동 조회(fetchFxRate)·`updateSubFxNote` 환산 노트·`subAmtHtml` 외화 병기 표시 — amount는 항상 원화 저장) |
+| 목적별 | `openPurposeBooks`·`renderPBs`·`pbCard`·`openPbDetail`(탭 + **전용 계좌 카드** — 잔액·탭=계좌 통장)·`renderPbTxTab`·`openPbEdit`(**전용 계좌 셀렉트** — 자동 생성 `acc_pb_{id}`/기존 연결/안 함, `savePb`가 적금 패턴으로 생성·이름 동기화) |
 | 정산(Step 9) | 거래시트 `renderSettleBlock`·`setSplitType`·`collectSettle`, 상세 `renderPbSettleTab`·`pbSettleBadge`, 송금 `openSettlePay`·`saveSettlementPayment`·`cancelSettlementPayment`, `openSettlementOverview` |
 | 경조사비 | `openGiftBook`·`setGiftTab`·`renderGiftLog/Planned/People`, 기록 `openGiftEdit`·`saveGiftEvent`(거래연결)·`deleteGiftEvent`, 예정 `openPlannedEdit`·`savePlanned`·`completePlanned`, 인맥 `openPersonEdit`·`savePerson`, 합계 `giftSummary`·`personGiftTotals` |
 | 대출/이자 | `openLoanBook`·`loanCard`·`openLoanDetail`·`openLoanEdit`·`saveLoan`·`deleteLoan`·`setLoanStatus`, 상환 `openLoanPayment`·`saveLoanPayment`(이자 거래연결)·`deleteLoanPayment` |

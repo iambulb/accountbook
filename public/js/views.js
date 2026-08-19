@@ -610,7 +610,7 @@
         h+=acctField(l1,'sFrom',fromV,sheetType==='prepaid_charge'?NONPRE:null)+acctField(l2,'sTo',toV,sheetType==='prepaid_charge'?PREPAY.concat(['point']):null);
       }
       else if(sheetType==='prepaid_spend'||sheetType==='point_spend'){
-        h+=acctField(sheetType==='point_spend'?'사용 포인트 계정':'결제 선불수단','sFrom',fromV,sheetType==='point_spend'?['point']:PREPAY)+consumerField(sh._consumer);
+        h+=acctField(sheetType==='point_spend'?'사용 포인트·간편결제':'결제 선불수단','sFrom',fromV,sheetType==='point_spend'?['point','e_wallet']:PREPAY)+consumerField(sh._consumer);   // 적립과 짝: 간편결제 지갑 포인트 사용도 허용(사용자 보고)
       }
       else if(sheetType==='balance_adjustment'){
         h+=acctField('대상 계정','sTo',toV);
@@ -2396,11 +2396,14 @@
           '</div>';
         } }
       // 💡 계좌별 이번 달 필요액 — 월급날 어느 계좌에 얼마 넣어둘지(자동 기록 출금 기준, 적금 이체 포함)
+      //  + 💳 카드대금(사용자 요청 2026-08): 신용카드 사용 잔액(음수)을 갚아야 할 금액으로 함께 표시 — 고정지출과 별도 행(카드대금 pill).
       { const needs=monthAcctNeeds();
-        if(needs.length){
-          h+='<div class="card" style="margin-bottom:10px;"><div class="row"><b>💡 계좌별 이번 달 필요액</b><span class="tx-sub">정기 · 구독 · 적금 · 대출</span></div>'+
+        const cardNeeds=accs.filter(a=>a.type==='credit_card').map(a=>{ const cf=getCard(a.id); return { id:a.id, name:(cf&&cf.cardName)||a.name, sum:-accountBalance(a.id) }; }).filter(x=>x.sum>0).sort((a,b)=>b.sum-a.sum);
+        if(needs.length||cardNeeds.length){
+          h+='<div class="card" style="margin-bottom:10px;"><div class="row"><b>💡 계좌별 이번 달 필요액</b><span class="tx-sub">정기 · 구독 · 적금 · 대출 · 카드대금</span></div>'+
             needs.map(n=>'<div class="row" style="margin-top:6px;font-size:13px;" '+App.view.act('openAcctDetail',n.id)+' role="button" tabindex="0" aria-label="'+escapeHtml(n.name)+' 거래내역 보기"><span class="muted">'+escapeHtml(n.name)+' ›</span><span><b>'+won(n.sum)+'</b>'+(n.remain>0&&n.remain!==n.sum?(' <span class="tx-sub">남은 '+won(n.remain)+'</span>'):'')+'</span></div>').join('')+
-            '<div class="tx-sub" style="margin-top:8px;">월급이 들어오면 각 계좌에 이만큼 옮겨두세요 — 자동 기록이 부족 없이 돌아가요.</div></div>';
+            cardNeeds.map(n=>'<div class="row" style="margin-top:6px;font-size:13px;" '+App.view.act('openAcctDetail',n.id)+' role="button" tabindex="0" aria-label="'+escapeHtml(n.name)+' 거래내역 보기"><span class="muted">'+escapeHtml(n.name)+' <span class="pill">카드대금</span> ›</span><b>'+won(n.sum)+'</b></div>').join('')+
+            '<div class="tx-sub" style="margin-top:8px;">월급이 들어오면 각 계좌에 이만큼 옮겨두세요 — 자동 기록이 부족 없이 돌아가요.'+(cardNeeds.length?' 카드대금은 지금까지 쓴 카드 사용액이에요.':'')+'</div></div>';
         } }
 
       // 입출금 · 현금
@@ -3681,7 +3684,7 @@
       else if(t==='refund'){ h+=recAcctField('환불 받는 계정','rTo',toV)+recCatField('income',catV); }
       else if(t==='point_earn'){ h+=recAcctField('적립 대상(포인트·간편결제)','rTo',toV,['point','e_wallet']); }   // 거래 시트와 동일 — 간편결제 지갑 적립 허용
       else if(t==='transfer'||t==='prepaid_charge'){ const l1=t==='prepaid_charge'?'충전 수단(카드/계좌)':'출금', l2=t==='prepaid_charge'?'충전 대상(선불/포인트)':'입금'; h+='<div class="form-2">'+recAcctField(l1,'rFrom',fromV,t==='prepaid_charge'?NONPRE:null)+recAcctField(l2,'rTo',toV,t==='prepaid_charge'?PREPAY.concat(['point']):null)+'</div>'; }
-      else if(t==='prepaid_spend'||t==='point_spend'){ h+=recAcctField(t==='point_spend'?'사용 포인트 계정':'결제 선불수단','rFrom',fromV,t==='point_spend'?['point']:PREPAY)+recConsumerField(consV)+(catTypeFor(t)?recCatField('expense',catV):''); }
+      else if(t==='prepaid_spend'||t==='point_spend'){ h+=recAcctField(t==='point_spend'?'사용 포인트·간편결제':'결제 선불수단','rFrom',fromV,t==='point_spend'?['point','e_wallet']:PREPAY)+recConsumerField(consV)+(catTypeFor(t)?recCatField('expense',catV):''); }   // 거래 시트와 동일 — 간편결제 지갑 포인트 사용 허용
       else if(t==='balance_adjustment'){ h+=recAcctField('대상 계정','rTo',toV); }
       $('rAccts').innerHTML=h; renderRecCardPerf();
     }
@@ -3778,7 +3781,7 @@
     function subCard(s){
       const badges=subBadges(s).map(b=>'<span class="pill" style="background:'+b[1]+'22;color:'+b[1]+'">'+b[0]+'</span>').join('');
       const linked=s.recurringId?'<span class="pill">정기연결</span>':'';
-      return '<div class="card" '+App.view.act('openSubDetail',s.id)+'><div class="row"><b>'+escapeHtml(s.name||'구독')+' '+linked+'</b><span style="font-weight:800;">'+won(s.amount)+'</span></div>'+
+      return '<div class="card" '+App.view.act('openSubDetail',s.id)+'><div class="row"><b>'+escapeHtml(s.name||'구독')+' '+linked+'</b><span style="font-weight:800;">'+subAmtHtml(s)+'</span></div>'+
         '<div class="tx-sub" style="margin-top:6px;">'+(BILLING_LABEL[s.billingCycle]||s.billingCycle)+(s.nextBillingDate?(' · 다음 '+subNextBilling(s)):'')+(s.paymentAccountId?(' · '+escapeHtml(acctName(s.paymentAccountId))):'')+'</div>'+
         (badges?('<div style="margin-top:8px;">'+badges+'</div>'):'')+'</div>';
     }
@@ -3786,7 +3789,7 @@
       const s=state.subscriptions.find(x=>x.id===id); if(!s) return;
       const txs=s.recurringId? state.transactions.filter(t=>t.recurringId===s.recurringId).sort((a,b)=>new Date(b.date)-new Date(a.date)) : [];
       const me=monthlyEquiv(s);
-      let h='<div class="card"><div class="row"><b style="font-size:18px;">'+escapeHtml(s.name)+'</b><span style="font-weight:800;">'+won(s.amount)+'</span></div>'+
+      let h='<div class="card"><div class="row"><b style="font-size:18px;">'+escapeHtml(s.name)+'</b><span style="font-weight:800;">'+subAmtHtml(s)+'</span></div>'+
         '<div class="tx-sub" style="margin-top:6px;">'+(SUB_TYPE_LABEL[s.subscriptionType]||'')+' · '+(BILLING_LABEL[s.billingCycle]||'')+'</div>'+
         '<div style="margin-top:8px;">'+subBadges(s).map(b=>'<span class="pill" style="background:'+b[1]+'22;color:'+b[1]+'">'+b[0]+'</span>').join('')+'</div></div>';
       const row=(k,v)=>'<div class="row" style="padding:5px 0;"><span class="muted">'+k+'</span><b>'+v+'</b></div>';
@@ -3808,7 +3811,13 @@
       const cats=state.categories.filter(c=>c.isActive!==false&&(c.type==='expense'||c.type==='other')).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
       const recRules=state.recurring.filter(r=>r.ownerUid===state.uid);
       let h='<div class="field"><label>구독명</label><input class="input" id="subName" value="'+escapeHtml(s?s.name:'')+'" placeholder="예: 넷플릭스"></div>';
-      h+='<div class="field"><label>금액</label><input class="input" id="subAmount" inputmode="numeric" value="'+(s?Number(s.amount).toLocaleString():'')+'" oninput="this.value=fmtComma(this.value)"></div>';
+      // 💵 외화 구독(달러 등) — 통화를 고르면 오늘 환율을 자동 조회해 원화 환산액으로 저장(집계·정기결제는 원화 기준, 원통화 금액·환율은 병행 저장)
+      const scur=(s&&s.currency)||'KRW';
+      const amtV=s?(scur==='KRW'?Number(s.amount).toLocaleString():fmtAmt(String(s.foreignAmount!=null?s.foreignAmount:''))):'';
+      h+='<div class="form-2"><div class="field"><label>금액</label><input class="input" id="subAmount" inputmode="decimal" value="'+amtV+'" placeholder="예: 17,000 / 13.99" oninput="this.value=fmtAmt(this.value);updateSubFxNote()"></div>'+
+        '<div class="field"><label>통화</label><select class="input" id="subCurr" '+App.view.chg('onSubCurChange')+'>'+curOptions(scur)+'</select></div></div>';
+      h+='<div class="field" id="subFxWrap" style="'+(scur==='KRW'?'display:none;':'')+'"><label id="subFxLabel">환율(원/1'+scur+')</label><input class="input" id="subFx" inputmode="decimal" value="'+(s&&s.fxRate!=null?s.fxRate:'')+'" placeholder="자동 조회 중…" oninput="updateSubFxNote()"></div>';
+      h+='<div class="tx-sub" id="subFxNote" style="margin:-4px 2px 10px;"></div>';
       h+='<div class="form-2"><div class="field"><label>결제 주기</label><select class="input" id="subCycle">'+BILLING.map(b=>'<option value="'+b[0]+'"'+(((s&&s.billingCycle===b[0])||(!s&&b[0]==='monthly'))?' selected':'')+'>'+b[1]+'</option>').join('')+'</select></div>'+
         '<div class="field"><label>다음 결제일</label><input type="date" class="input" id="subNext" value="'+(s&&s.nextBillingDate?s.nextBillingDate:todayStr())+'"></div></div>';
       h+='<div class="form-2"><div class="field"><label>결제수단</label><select class="input" id="subAcct">'+acctOptsHtml(s?s.paymentAccountId:(state.accounts[0]?state.accounts[0].id:''))+'</select></div>'+
@@ -3830,11 +3839,42 @@
       h+='</details>';
       h+='<button class="btn" '+App.view.act('saveSub', id?id:null)+'>'+(s?'수정':'추가')+'</button>';
       openSheet(s?'구독 수정':'구독 추가', h);
+      updateSubFxNote();   // 💵 외화 구독 수정 시 저장된 환율로 환산 노트 즉시 표시
     }
     function onSubRecModeChange(){ const w=$('subRecExistingWrap'); if(w) w.style.display=(val('subRecMode')==='existing')?'':'none'; }
+    // 💵 구독 통화 변경 — 환율 필드 표시 전환 + 그날(오늘) 환율 자동 조회(거래 시트와 같은 fetchFxRate 소스, 실패 시 수동 입력)
+    function onSubCurChange(){
+      const cur=val('subCurr')||'KRW'; const w=$('subFxWrap'); if(w) w.style.display=(cur==='KRW')?'none':'';
+      const lb=$('subFxLabel'); if(lb) lb.textContent='환율(원/1'+cur+')';
+      updateSubFxNote();
+      if(cur!=='KRW') fetchFxRate(cur, todayStr()).then(function(rate){
+        if(!$('subFx')||val('subCurr')!==cur) return;   // 시트가 닫혔거나 통화를 또 바꿈 — 낡은 응답 무시
+        if(rate>0){ $('subFx').value=String(rate); updateSubFxNote(); }
+        else { const n=$('subFxNote'); if(n) n.textContent='환율 자동 조회 실패 — 환율을 직접 입력해 주세요.'; }
+      });
+    }
+    function updateSubFxNote(){
+      const n=$('subFxNote'); if(!n) return; const cur=val('subCurr')||'KRW';
+      if(cur==='KRW'){ n.textContent=''; return; }
+      const amt=parseFloat(String(val('subAmount')||'').replace(/,/g,''))||0, rate=parseFloat(String(val('subFx')||'').replace(/,/g,''))||0;
+      n.innerHTML=(amt>0&&rate>0)?('≈ <b>'+won(Math.round(amt*rate))+'</b> · 환율 '+rate.toLocaleString()+'원 — 저장하면 이 원화 금액으로 집계·자동 기록돼요.'):'금액과 환율을 입력하면 원화 환산액을 보여드려요.';
+    }
+    // 💵 구독 금액 겸용 표시 — 외화면 "원통화 (원화)" 병기(목록·상세 공용)
+    function subAmtHtml(s){ return (s.currency&&s.currency!=='KRW')?(escapeHtml(fmtForeign(s.foreignAmount,s.currency))+' <span class="tx-sub" style="font-weight:600;">'+won(s.amount)+'</span>'):won(s.amount); }
     function saveSub(id){
       const name=val('subName').trim(); if(!name){ toast('구독명을 입력하세요', true); return; }
-      const amount=parseAmount(val('subAmount')); if(!amount){ toast('금액을 입력하세요', true); return; }
+      // 💵 외화면 원화 환산해 amount(원화)로 저장 — 월/연 환산·이번달 예정·필요액·정기결제가 전부 원화 기준으로 그대로 동작
+      const curCode=($('subCurr')?val('subCurr'):'KRW')||'KRW';
+      let amount, foreignAmt=0, subFxRate=0;
+      if(curCode==='KRW'){ amount=parseAmount(val('subAmount')); }
+      else {
+        foreignAmt=parseFloat(String(val('subAmount')||'').replace(/,/g,''))||0;
+        subFxRate=parseFloat(String(val('subFx')||'').replace(/,/g,''))||0;
+        if(!foreignAmt){ toast('금액을 입력하세요', true); return; }
+        if(!(subFxRate>0)){ toast('환율을 입력하세요 (자동 조회 실패 시 직접 입력)', true); return; }
+        amount=Math.round(foreignAmt*subFxRate);
+      }
+      if(!amount){ toast('금액을 입력하세요', true); return; }
       const s=id?state.subscriptions.find(x=>x.id===id):null;
       const cycle=val('subCycle'), next=val('subNext')||todayStr(), acct=val('subAcct'), cat=val('subCat'), vis=val('subVis')||'full';
       const trialOn=$('subTrial')&&$('subTrial').classList.contains('on');
@@ -3856,6 +3896,7 @@
         db.ref(wp('recurring/'+state.uid+'/'+ruleId)).set(rule); recurringId=ruleId;
       }
       const data={ name, serviceName:name, subscriptionType:val('subType'), amount, billingCycle:cycle, billingInterval:Math.max(1,Number(val('subInterval'))||1),
+        currency:curCode, foreignAmount:curCode==='KRW'?null:foreignAmt, fxRate:curCode==='KRW'?null:subFxRate,   // 💵 외화 구독 원본(표시용) — 집계는 amount(원화)
         paymentAccountId:acct, categoryName:cat, nextBillingDate:next, expirationDate:val('subExp')||null,
         autoRenew: $('subRenew')?$('subRenew').classList.contains('on'):true, isTrial:!!trialOn, trialEndDate: trialOn?(val('subTrialEnd')||null):null,
         recurringId, status: s?(s.status||'active'):'active', visibility:vis,
@@ -3949,6 +3990,10 @@
       let h='<div class="card"><div class="row"><b style="font-size:18px;">'+(p.icon||'📒')+' '+escapeHtml(p.name)+'</b><span class="pill">'+pbTypeText(p)+'</span></div>'+
         '<div class="tx-sub" style="margin-top:6px;">'+((p.startDate||'')+(p.endDate?(' ~ '+p.endDate):''))+(p.participants&&p.participants.length?(' · '+escapeHtml(p.participants.join(', '))):'')+'</div>'+
         (p.budgetAmount?('<div class="bar" style="margin-top:10px;"><i style="width:'+Math.min(u.pct,100)+'%;background:'+c+'"></i></div><div class="row" style="margin-top:6px;"><span class="tx-sub">'+won(u.used)+' / '+won(u.amount)+'</span><span class="tx-sub" style="color:'+c+'">남음 '+won(u.remain)+'</span></div>'):('<div class="tx-sub" style="margin-top:8px;">사용 '+won(u.used)+'</div>'))+'</div>';
+      // 💼 전용 계좌 카드 — 잔액 + 통장 보기(그 계좌만의 지출·수입·거래내역·월 요약)
+      { const pa=p.accountId?getAcct(p.accountId):null;
+        if(pa) h+='<div class="card" '+App.view.act('openAcctDetail',pa.id)+' role="button" tabindex="0" aria-label="'+escapeHtml(pa.name)+' 통장 보기"><div class="row"><b>💼 전용 계좌 · '+escapeHtml(pa.name)+'</b><b class="blue">'+won(accountBalance(pa.id))+'<span class="pfgo">›</span></b></div>'+
+          '<div class="tx-sub" style="margin-top:4px;">탭하면 이 계좌만의 지출·수입·거래내역(통장)을 볼 수 있어요.</div></div>'; }
       if(settleOn){
         h+='<div class="chip-row">'+[['tx','거래'],['settle','정산']].map(o=>'<button class="chip '+(pbDetailTab===o[0]?'on':'')+'" '+App.view.act('setPbDetailTab',p.id,o[0])+'>'+o[1]+'</button>').join('')+'</div>';
       }
@@ -4066,6 +4111,12 @@
       h+='<div class="field"><label>참여자 (쉼표로 구분)</label><input class="input" id="pbParticipants" value="'+escapeHtml(p&&p.participants?p.participants.join(', '):state.userName)+'" placeholder="예: 나, 친구1, 친구2"></div>';
       h+='<div class="form-2"><div class="field"><label>예산(선택)</label><input class="input" id="pbBudget" inputmode="numeric" value="'+(p&&p.budgetAmount?Number(p.budgetAmount).toLocaleString():'')+'" placeholder="0" oninput="this.value=fmtComma(this.value)"></div>'+
         '<div class="field"><label>아이콘</label><input class="input" id="pbIcon" maxlength="2" value="'+escapeHtml(p?(p.icon||''):'')+'" placeholder="📒"></div></div>';
+      // 💼 전용 계좌 — 이름 그대로 계좌를 만들어(적금 계좌 자동 생성과 동일 패턴) 이 목적의 지출·수입·거래내역을 그 계좌 통장으로 따로 본다(사용자 요청 2026-08).
+      h+='<div class="field"><label>전용 계좌</label><select class="input" id="pbAcct">'+
+        '<option value="__auto__"'+(!p?' selected':'')+'>✨ 자동 — 이 이름으로 새 계좌 만들기</option>'+   // 신규 기본값=자동 생성(사용자 요청), 기존은 저장된 연결 유지
+        '<option value=""'+((p&&!p.accountId)?' selected':'')+'>연결 안 함</option>'+
+        acctOptsHtml(p?(p.accountId||''):'')+'</select>'+
+        '<p class="muted" style="font-size:11.5px;margin:6px 2px 0;">전용 계좌를 연결하면 이 목적의 돈을 그 계좌로 옮겨 쓰고, <b>계좌 통장에서 지출·수입·거래내역을 따로</b> 볼 수 있어요.</p></div>';
       h+='<div class="form-2"><div class="field"><label>시작일</label><input type="date" class="input" id="pbStart" value="'+(p&&p.startDate?p.startDate:todayStr())+'"></div>'+
         '<div class="field"><label>종료일(선택)</label><input type="date" class="input" id="pbEnd" value="'+(p&&p.endDate?p.endDate:'')+'"></div></div>';
       h+='<details class="adv"><summary>상세 설정</summary>';
@@ -4085,7 +4136,17 @@
       const p=id?state.purposeBooks.find(x=>x.id===id):null;
       const vis=val('pbVis')||'full', now=new Date().toISOString();
       const participants=val('pbParticipants').split(',').map(s=>s.trim()).filter(Boolean);
-      const data={ name, type:val('pbType'), customTypeName: val('pbType')==='custom'?(val('pbCustomName').trim()||'기타'):'',
+      const key=id||('pb_'+Date.now());
+      // 💼 전용 계좌 — '자동'이면 목적별 이름으로 계좌 생성(acc_pb_{key}, 재저장 시 재사용·이름 동기화 — 적금 acc_sv_* 패턴)
+      let acctV=$('pbAcct')?val('pbAcct'):((p&&p.accountId)||'');
+      if(acctV==='__auto__'){
+        const acctId='acc_pb_'+key;
+        if(getAcct(acctId)){ db.ref(wp('accounts/'+acctId+'/name')).set(name); }   // 이름 변경 시 계좌 이름도 따라감
+        else db.ref(wp('accounts/'+acctId)).set({ name:name, type:'bank', provider:'manual', owner:defaultOwnerName()||state.userName||'', ownerUid:state.uid||'',
+          visibility:vis, initialBalance:0, memo:'목적별 가계부 전용 계좌 (자동 생성)', color:window._pbColor||'#3182f6', order:state.accounts.length+1, purposeBookId:key });
+        acctV=acctId;
+      }
+      const data={ name, type:val('pbType'), customTypeName: val('pbType')==='custom'?(val('pbCustomName').trim()||'기타'):'', accountId:acctV||'',
         participants, budgetAmount:parseAmount(val('pbBudget')), baseCurrency:val('pbCurrency')||'KRW',
         themeColor:window._pbColor||'#3182f6', icon:val('pbIcon').trim()||'📒', coverImageUrl:val('pbCover').trim()||'',
         startDate:val('pbStart')||todayStr(), endDate:val('pbEnd')||null,
@@ -4093,10 +4154,9 @@
         visibility:vis, status: p?(p.status||'active'):'active',
         owner: p?(p.owner||(vis==='private'?state.userName:defaultOwnerName())):(vis==='private'?state.userName:defaultOwnerName()),
         memo:val('pbMemo').trim(), createdAt: p?(p.createdAt||now):now, updatedAt:now };
-      const key=id||('pb_'+Date.now());
       db.ref(wp('purposeBooks/'+key)).set(data).catch(_saveErr); toast(p?'수정되었습니다':'추가되었습니다'); openPurposeBooks();
     }
-    function deletePb(id){ confirmSheet('이 목적별 가계부를 삭제할까요? (연결된 거래는 유지됩니다)', ()=>{ db.ref(wp('purposeBooks/'+id)).remove(); toast('삭제되었습니다'); openPurposeBooks(); }); }
+    function deletePb(id){ confirmSheet('이 목적별 가계부를 삭제할까요? (연결된 거래와 전용 계좌는 유지됩니다)', ()=>{ db.ref(wp('purposeBooks/'+id)).remove(); toast('삭제되었습니다'); openPurposeBooks(); }); }
 
     // ===== 경조사비 (Gift / 경조사) =====
     // people: 인맥 명부 / giftEvents: 주고받은 기록 / plannedGiftEvents: 예정.
