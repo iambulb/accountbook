@@ -824,3 +824,25 @@ test('doneDayFor: 지난 날짜만 그 날짜로, 오늘·미래·빈값은 오�
   assert.strictEqual(U.doneDayFor(null, today), '');
   assert.strictEqual(U.doneDayFor('2026-8-1', today), '');               // 형식 오류 방어
 });
+
+// ── 📈 stockCalc — 주식 평가(매수금액·평가금액·손익·수익률, 해외주식 환율 환산) ──
+test('stockCalc: 원화 종목 — 손익·수익률', () => {
+  const r = U.stockCalc({ qty: 10, avgPrice: 70000, curPrice: 77000, currency: 'KRW' });
+  assert.deepStrictEqual(r, { cost: 700000, value: 770000, gain: 70000, ratePct: 10 });
+});
+test('stockCalc: 손실·수익률 소수 1자리', () => {
+  const r = U.stockCalc({ qty: 3, avgPrice: 100000, curPrice: 98500 });   // currency 미지정=KRW
+  assert.strictEqual(r.gain, -4500);
+  assert.strictEqual(r.ratePct, -1.5);
+});
+test('stockCalc: 해외 주식 — 환율 원화 환산, 소수 수량', () => {
+  const r = U.stockCalc({ qty: 2.5, avgPrice: 200, curPrice: 210, currency: 'USD', fxRate: 1380 });
+  assert.strictEqual(r.cost, 690000);      // 2.5×200×1380
+  assert.strictEqual(r.value, 724500);     // 2.5×210×1380
+  assert.strictEqual(r.gain, 34500);
+  assert.strictEqual(r.ratePct, 5);
+});
+test('stockCalc: 환율 미입력 해외 종목은 0(순자산 부풀림 방지) · 빈 입력 방어', () => {
+  assert.deepStrictEqual(U.stockCalc({ qty: 1, avgPrice: 100, curPrice: 100, currency: 'USD' }), { cost: 0, value: 0, gain: 0, ratePct: 0 });
+  assert.deepStrictEqual(U.stockCalc(null), { cost: 0, value: 0, gain: 0, ratePct: 0 });
+});

@@ -87,12 +87,13 @@ ws/{wsId}/             : 가계부 데이터 (아래 노드들)
   ├─ catDeleted/{name}           // 삭제한 기본 카테고리 툼스톤(재시딩 방지)
   ├─ transactions/{uid}/{id}     // 사용자별로 분리 저장
   ├─ savings/{uid}/{id}
+  ├─ stocks/{uid}/{id}         // 📈 주식 보유 종목
   ├─ recurring/{uid}/{id}
   ├─ recurringLogs/{uid}/{key}   // 반복거래 멱등 로그
   └─ settlementPayments/{uid}/{id}   // 정산 송금 완료/취소 기록(Step 9)
 ```
 
-> `transactions`/`savings`/`recurring`/`recurringLogs` 는 `{uid}` 하위로 한 단계 더 나뉘어 누가 기록했는지 보존합니다. 앱은 리스너에서 `ownerUid` 를 붙여 평탄화합니다(`setupListeners` in `core.js`).
+> `transactions`/`savings`/`stocks`/`recurring`/`recurringLogs` 는 `{uid}` 하위로 한 단계 더 나뉘어 누가 기록했는지 보존합니다. 앱은 리스너에서 `ownerUid` 를 붙여 평탄화합니다(`setupListeners` in `core.js`).
 
 ## ERD (엔티티 관계)
 
@@ -178,6 +179,9 @@ erDiagram
 
 ### savings/{uid}/{id}
 `name`, `monthly`(월 납입액), `rate`(연 이율 %), `months`(기간 개월), `startDate`, `day`(매달 납입일), `from`(출금 계좌 id, ''=자동기록 안 함), `to`(입금 적금 계좌 id, 선택), `recurringId`(연결 정기거래 `sv_{id}`, 자동기록 시), `user`, `createdAt`, `updatedAt`. 만기일·예상이자는 저장하지 않고 `savingsPlan`(util.js)으로 매번 계산. *(구버전: `goal`·`current` 목표형 — 저장 시 월 납입식으로 전환)*
+
+### stocks/{uid}/{id}
+`name`(종목명), `qty`(수량 — 소수 허용), `avgPrice`(매수 평단가), `curPrice`(현재가 — 수동 갱신), `currency`(기본 `KRW`), `fxRate`(비KRW만 — 원/1통화), `memo`, `user`, `createdAt`, `updatedAt`. 평가금액·손익·수익률은 저장하지 않고 `stockCalc`(util.js)로 매번 계산 — 평가액은 자산 탭 순자산에 포함.
 
 ## 거래 타입 → 잔액효과
 

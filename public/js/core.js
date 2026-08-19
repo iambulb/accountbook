@@ -2,7 +2,7 @@
     const state = {
       uid:null, userName:'', userEmail:'',
       wsId:null, wsMeta:null, memberships:[],   // 현재 워크스페이스, 메타, 내 워크스페이스 목록
-      transactions:[], accounts:[], categories:[], savings:[], recurring:[], creditCards:[], subscriptions:[], purposeBooks:[],
+      transactions:[], accounts:[], categories:[], savings:[], stocks:[], recurring:[], creditCards:[], subscriptions:[], purposeBooks:[],
       people:[], giftEvents:[], plannedGiftEvents:[],
       settlementPayments:[],   // 정산 송금 완료/취소 기록(Step 9) — per-uid
       loans:[], loanPayments:[],   // 대출/이자 관리 — flat
@@ -683,7 +683,7 @@
       const c=g[h%g.length]; return 'linear-gradient(135deg,'+c[0]+','+c[1]+')'; }
 
     function resetWorkspaceState(){
-      Object.assign(state, { transactions:[], accounts:[], categories:[], savings:[], recurring:[],
+      Object.assign(state, { transactions:[], accounts:[], categories:[], savings:[], stocks:[], recurring:[],
         creditCards:[], subscriptions:[], purposeBooks:[], people:[], giftEvents:[], plannedGiftEvents:[], settlementPayments:[], loans:[], loanPayments:[], wsSettings:{}, budgets:[], todoCats:[] });
       state.memberFilter='';
       seededAcc=seededCat=seededTodoCat=booted=migratedAcc=migratedCat=migratedBudget=migratedRec=false;
@@ -818,6 +818,10 @@
       attach('savings', s=>{
         const arr=[]; s.forEach(us=>{ us.forEach(vs=>{ arr.push(Object.assign({ownerUid:us.key,id:vs.key},vs.val())); }); });
         state.savings=arr; App.store.emit();
+      });
+      attach('stocks', s=>{   // 📈 주식 보유 종목(ws/{wsId}/stocks/{uid}/{id}) — savings와 같은 per-uid 평탄화
+        const arr=[]; s.forEach(us=>{ us.forEach(vs=>{ arr.push(Object.assign({ownerUid:us.key,id:vs.key},vs.val())); }); });
+        state.stocks=arr; App.store.emit();
       });
       attach('recurring', s=>{
         const arr=[]; s.forEach(us=>{ us.forEach(rs=>{ arr.push(Object.assign({ownerUid:us.key,id:rs.key},rs.val())); }); });
@@ -1073,8 +1077,8 @@
     function sumBy(list,type){ return list.filter(t=>t.type===type).reduce((s,t)=>s+(Number(t.amount)||0),0); }
 
     // 실제 소비 / 선불·포인트 / 권한
-    function isActual(t){ return t.isActualExpense!==undefined ? !!t.isActualExpense : !!ACTUAL_DEFAULT[t.type]; }
-    function actualSpend(list){ return list.filter(isActual).reduce((s,t)=>s+(Number(t.amount)||0),0); }
+    // 📊 isActual·actualSpend 는 ledger-calc.js 로 이전(순수·테스트 대상) — 소비성 유형(expense·prepaid_spend·point_spend)만 실소비.
+    //    (예전 이곳 구현이 타입을 안 보고 isActualExpense 플래그만 봐서, buildTx 가 true 로 저장하는 '수입'까지 총지출·예산에 섞이던 버그 — 재정의 금지.)
 
     // ===== 정산 계산 (Step 9) — 순수 함수 settlementSplit·greedySettle 은 public/js/ledger-calc.js 로 추출됨(테스트 대상, 전역으로 노출돼 아래에서 그대로 호출). =====
     // 목적별 가계부 정산 요약. settlementIncluded 거래 + 기록된 송금(paid)을 반영.

@@ -261,3 +261,34 @@ test('buildTx: isActualSet 토글이 기본값을 덮는다(함께결제 subTx �
   assert.strictEqual(co.tx.isActualExpense, false);
   assert.strictEqual(co.subTx.isActualExpense, false);   // 같은 결제의 일부 — 본 거래를 따라감
 });
+
+// ── isActual / actualSpend — 소비성 유형 타입 게이트(총지출에 수입이 섞이던 버그 방지) ──
+const { isActual, actualSpend } = require('../public/js/ledger-calc.js');
+
+test('isActual — 소비성 유형(expense·prepaid_spend·point_spend)만 실소비', () => {
+  assert.strictEqual(isActual({ type: 'expense' }), true);                            // 미지정 → 기본 포함
+  assert.strictEqual(isActual({ type: 'prepaid_spend' }), true);
+  assert.strictEqual(isActual({ type: 'point_spend', isActualExpense: true }), true);
+  assert.strictEqual(isActual({ type: 'expense', isActualExpense: false }), false);   // 실소비 토글 OFF(카드 대금 등)
+});
+
+test('isActual — 수입·이체·충전은 isActualExpense:true여도 지출 아님(치명 버그 회귀 방지)', () => {
+  assert.strictEqual(isActual({ type: 'income', isActualExpense: true }), false);     // buildTx가 수입에 true 저장(실수입 마커) — 지출 집계 제외
+  assert.strictEqual(isActual({ type: 'transfer', isActualExpense: true }), false);
+  assert.strictEqual(isActual({ type: 'prepaid_charge' }), false);
+  assert.strictEqual(isActual({ type: 'refund' }), false);
+  assert.strictEqual(isActual({ type: 'balance_adjustment' }), false);
+});
+
+test('actualSpend — 실소비 합계(월급 등 수입 미포함)', () => {
+  const list = [
+    { type: 'expense', amount: 10000 },
+    { type: 'income', amount: 3000000, isActualExpense: true },   // 월급 — 총지출에 섞이면 안 됨
+    { type: 'point_spend', amount: 500 },
+    { type: 'expense', amount: 99999, isActualExpense: false },   // 카드 대금(실소비 제외)
+    { type: 'transfer', amount: 70000 }
+  ];
+  assert.strictEqual(actualSpend(list), 10500);
+  assert.strictEqual(actualSpend([]), 0);
+  assert.strictEqual(actualSpend(null), 0);
+});

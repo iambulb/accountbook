@@ -5,6 +5,14 @@
 (function (root) {
   'use strict';
 
+  // 📊 실제 소비 판정(단일 소스, core.js에서 이전) — "소비성 유형(expense·prepaid_spend·point_spend)"만 실소비가 될 수 있다(타입 게이트).
+  //  ⚠️ 수입(income)은 buildTx가 isActualExpense:true 로 저장하지만(실수입 마커 — realIncome 필터용) 지출 집계에 절대 섞이면 안 된다
+  //  — 예전 isActual 이 타입을 안 보고 플래그만 봐서 '총지출 = 지출 + 월급'으로 부풀고 예산·달력 실제소비까지 오염되던 치명 버그(사용자 보고, 2026-08).
+  //  ACTUAL_TYPES 는 constants.js 의 ACTUAL_DEFAULT 와 동일 집합(Node 테스트에서도 쓰도록 자체 정의 — 소비성 유형을 추가하면 두 곳을 같이 갱신).
+  var ACTUAL_TYPES = { expense: 1, prepaid_spend: 1, point_spend: 1 };
+  function isActual(t) { return !!(t && ACTUAL_TYPES[t.type]) && t.isActualExpense !== false; }
+  function actualSpend(list) { return (list || []).filter(isActual).reduce(function (s, t) { return s + (Number(t.amount) || 0); }, 0); }
+
   // 거래 1건의 분담 결과: { payer, participants:[이름], amounts:{이름:금액} }. 합계 = |amount| 보정.
   function settlementSplit(t) {
     const amount = Math.abs(Number(t.amount) || 0);
@@ -116,7 +124,7 @@
     return { tx: tx, subTx: subTx };
   }
 
-  var api = { settlementSplit: settlementSplit, greedySettle: greedySettle, buildTx: buildTx };
+  var api = { settlementSplit: settlementSplit, greedySettle: greedySettle, buildTx: buildTx, isActual: isActual, actualSpend: actualSpend };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(core.js가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);

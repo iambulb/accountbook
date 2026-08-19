@@ -8,7 +8,7 @@
       refund:{credit:'to'}, point_earn:{credit:'to'}, point_spend:{debit:'from'},
       balance_adjustment:{credit:'to'}
     };
-    // 실제 소비(통계 포함) 기본값 — 거래별로 override 가능
+    // 실제 소비(통계 포함) 기본값 — 거래별로 override 가능. ⚠️ ledger-calc.js 의 ACTUAL_TYPES(isActual 타입 게이트)와 동일 집합 유지.
     const ACTUAL_DEFAULT = { expense:true, prepaid_spend:true, point_spend:true };
     const EXT_TYPES = ['prepaid_charge','prepaid_spend','refund','point_earn','point_spend','balance_adjustment'];
     const ACCT_TYPES = [['cash','현금'],['bank','은행계좌'],['credit_card','신용카드'],['debit_card','체크카드'],['prepaid','선불충전금'],['point','포인트'],['e_wallet','간편결제'],['gift_card','상품권'],['other','기타']];

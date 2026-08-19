@@ -1995,6 +1995,21 @@
     // 🏦 리포트 카테고리 집계(도넛·범례·'기타' 묶음 공용) — 실지출 카테고리 합에 대출 원금 상환(실지출 통계 제외 거래)을 얹어
     // '대출·이자' 한 항목으로 병합해 보여준다. 총지출 카드·예산·인사이트는 종전대로 이자만(실지출) — 카테고리 그림에서만 합산.
     const LOAN_CAT_MERGED='대출·이자';
+    // 💰 리포트 카테고리 [지출 | 수입] 토글 — 도넛·범례·전월 비교·연간 카테고리가 이 모드를 공유(월간·연간 공용).
+    let _repCatKind='exp';
+    function setRepCatKind(k){ _repCatKind=k; renderStats(); }
+    function repCatKindSegHtml(){
+      const inc=_repCatKind==='inc';
+      return '<span class="repvalseg"><button class="'+(inc?'':'on')+'" '+App.view.act('setRepCatKind','exp')+' aria-label="지출 카테고리 보기">지출</button>'+
+        '<button class="'+(inc?'on':'')+'" '+App.view.act('setRepCatKind','inc')+' aria-label="수입 카테고리 보기">수입</button></span>';
+    }
+    // 실수입 거래 판정 — 대출 원금 수령·원금 회수(isActualExpense:false + loanId)는 부채·자산 이동이라 수입 집계에서 제외(realIncome·리포트 수입 카드와 동일 기준)
+    function isRealIncomeTx(t){ return t.type==='income' && !(t.isActualExpense===false && t.loanId); }
+    // 💚 수입 카테고리 합계 — repCatSums(지출)의 수입 짝. 반환 형태를 맞춰(cd/loanPrin) 도넛·전월 비교가 같은 코드를 탄다.
+    function repIncSums(m){
+      const cd={}; monthTx(m).filter(t=>isRealIncomeTx(t)&&t.category).forEach(t=>{ cd[t.category]=(cd[t.category]||0)+(Number(t.amount)||0); });
+      return { cd, loanPrin:0 };
+    }
     function repCatSums(m){
       const list=monthTx(m);
       const cd={}; list.filter(t=>isActual(t)&&t.category).forEach(t=>{ cd[t.category]=(cd[t.category]||0)+(Number(t.amount)||0); });
@@ -2006,10 +2021,12 @@
       return { cd, loanPrin };
     }
     function loanRepRows(m){ return monthTx(m).filter(t=>t.type==='expense'&&(t.category==='대출이자'||t.category==='대출상환')); }
-    function openRepCatTx(m, name, etc){
-      const list=monthTx(m).filter(t=>isActual(t)&&t.category);
+    function openRepCatTx(m, name, etc, kind){
+      const isInc=kind==='inc';   // 💚 수입 모드 — 실수입 거래만(대출 병합·'기타' 묶음은 지출 전용이라 미적용)
+      const list=isInc? monthTx(m).filter(t=>isRealIncomeTx(t)&&t.category) : monthTx(m).filter(t=>isActual(t)&&t.category);
       let rows, title=name;
-      if(etc){
+      if(isInc){ rows=list.filter(t=>t.category===name); }
+      else if(etc){
         const cd=repCatSums(m).cd;   // 도넛과 동일 집계(대출 병합 포함)로 '기타' 경계를 맞춤
         const cats=Object.keys(cd).sort((a,b)=>cd[b]-cd[a]);
         const etcSet=new Set(cats.length>6?cats.slice(5):[]);   // 도넛과 동일: 카테고리 7개↑일 때만 상위 5개 밖을 '기타'로 묶음
@@ -2025,10 +2042,10 @@
         const it=rows.filter(t=>t.category==='대출이자').reduce((s,t)=>s+(Number(t.amount)||0),0);
         sub+=' · 이자 '+fmtComma(it)+' + 원금 '+fmtComma(tot-it);
       }
-      let h='<div class="row" style="margin-bottom:14px;"><div class="muted">'+sub+'</div><div class="red" style="font-weight:700;">-'+fmtComma(tot)+'</div></div>';
-      h+='<div class="card" style="padding:6px 10px;">'+(rows.length?rows.map(txRowHtml).join(''):'<div class="empty">이 달 해당 카테고리 지출이 없습니다</div>')+'</div>';
+      let h='<div class="row" style="margin-bottom:14px;"><div class="muted">'+sub+'</div><div class="'+(isInc?'green':'red')+'" style="font-weight:700;">'+(isInc?'+':'-')+fmtComma(tot)+'</div></div>';
+      h+='<div class="card" style="padding:6px 10px;">'+(rows.length?rows.map(txRowHtml).join(''):'<div class="empty">이 달 해당 카테고리 '+(isInc?'수입':'지출')+'이 없습니다</div>')+'</div>';
       openSheet((etc?'':(name===LOAN_CAT_MERGED?'🏦':catIcon(name))+' ')+title, h);   // 시트 제목은 textContent 삽입이라 escape 불필요
-      state._sheetReopen=()=>openRepCatTx(m,name,etc);   // ↩️ 거래 수정 시트 닫으면 이 드릴다운으로 복귀
+      state._sheetReopen=()=>openRepCatTx(m,name,etc,kind);   // ↩️ 거래 수정 시트 닫으면 이 드릴다운으로 복귀
     }
     // 👤 소비 대상 정규화 키 — personKey는 userUid(있으면)·아니면 이름이라, 같은 사람이 uid 거래와 이름만 저장된 거래(정기 생성분 등)로
     //    두 막대로 갈라지던 버그 방지: 이름이 멤버 이름과 일치하면 그 멤버 uid로 합친다(멤버 아닌 레거시 이름은 그대로).
@@ -2193,13 +2210,18 @@
       const mx=Math.max(1,...perM.map(x=>x.exp));
       h+='<div class="sech"><span class="l">월별 지출</span><span class="s">탭=그 달 리포트</span></div><div class="bars6">'+
         perM.map(x=>'<div class="b" '+App.view.act('yearBarTap',x.m)+' role="button" tabindex="0" aria-label="'+x.m+' 월간 리포트 보기"><div class="bar'+(x.m===todayStr().slice(0,7)?' on':'')+'" style="height:'+Math.round(x.exp/mx*100)+'%"></div><div class="bl">'+(+x.m.split('-')[1])+'</div></div>').join('')+'</div>';
-      const cd={}; state.transactions.forEach(t=>{ if(!isActual(t)||!t.category) return; if((t.date||'').slice(0,4)!==String(y)) return; cd[t.category]=(cd[t.category]||0)+(Number(t.amount)||0); });
+      // 카테고리별 연간 합 — 월간 리포트와 같은 [지출|수입] 토글(_repCatKind) 공유. 수입=실수입만(isRealIncomeTx)
+      const isIncCat=_repCatKind==='inc';
+      const cd={}; state.transactions.forEach(t=>{ if((t.date||'').slice(0,4)!==String(y)) return; if(!t.category) return;
+        if(isIncCat){ if(!isRealIncomeTx(t)) return; } else if(!isActual(t)) return;
+        cd[t.category]=(cd[t.category]||0)+(Number(t.amount)||0); });
       const keys=Object.keys(cd).sort((a,b)=>cd[b]-cd[a]);
+      h+='<div class="sech"><span class="l">카테고리별 (연간)</span><span style="display:flex;align-items:center;gap:8px;">'+repCatKindSegHtml()+'<span class="s">'+keys.length+'개</span></span></div>';
       if(keys.length){ const tot=keys.reduce((s,k)=>s+cd[k],0)||1;
-        h+='<div class="sech"><span class="l">카테고리별 (연간)</span><span class="s">'+keys.length+'개</span></div><div class="card">'+
+        h+='<div class="card">'+
           keys.slice(0,12).map(k=>'<div style="margin:9px 0;"><div class="row" style="font-size:13px;"><span style="display:flex;align-items:center;gap:7px;"><span class="catdot" style="background:'+catColor(k)+'"></span>'+escapeHtml(k)+'</span><span><b>'+won(cd[k])+'</b> <span class="tx-sub">'+Math.round(cd[k]/tot*100)+'%</span></span></div><div class="bar"><i style="width:'+Math.round(cd[k]/tot*100)+'%;background:'+catColor(k)+'"></i></div></div>').join('')+
           (keys.length>12?'<div class="tx-sub" style="margin-top:6px;">외 '+(keys.length-12)+'개 카테고리</div>':'')+'</div>';
-      } else h+='<div class="empty" style="padding:24px;">'+y+'년 지출 데이터가 없습니다</div>';
+      } else h+='<div class="empty" style="padding:24px;">'+y+'년 '+(isIncCat?'수입':'지출')+' 데이터가 없습니다</div>';
       return h;
     }
     function renderStats(){
@@ -2227,31 +2249,35 @@
           '<div><div class="k">잔액</div><div class="v">'+signComma(bal)+'</div></div>'+
           '<div style="margin-left:auto"><div class="k">전월 대비</div><div class="v">'+momHtml+'</div></div>'+
         '</div></div>';
-      // 카테고리별 CSS 도넛 + 범례 — 🏦 대출은 이자+원금 상환을 '대출·이자' 한 항목으로 병합(repCatSums)
-      const _rc=repCatSums(m), cd=_rc.cd, loanPrin=_rc.loanPrin;
+      // 카테고리별 CSS 도넛 + 범례 — [지출|수입] 토글(_repCatKind). 지출=repCatSums(🏦 대출은 이자+원금을 '대출·이자'로 병합), 수입=repIncSums(실수입만)
+      const isIncCat=_repCatKind==='inc';
+      const _rc=isIncCat?repIncSums(m):repCatSums(m), cd=_rc.cd, loanPrin=_rc.loanPrin;
       let cats=Object.keys(cd).map(k=>({name:k,val:cd[k]})).sort((a,b)=>b.val-a.val);
       const totCat=cats.reduce((s,c)=>s+c.val,0);
-      h+='<div class="sech"><span class="l">카테고리별</span><span style="display:flex;align-items:center;gap:8px;">'+(totCat>0?'<span class="repvalseg"><button class="'+(!state._repShowAmt?'on':'')+'" '+App.view.act('setRepVal',0)+' aria-label="비율(%)로 보기">%</button><button class="'+(state._repShowAmt?'on':'')+'" '+App.view.act('setRepVal',1)+' aria-label="금액으로 보기">금액</button></span>':'')+'<span class="s">'+(+mo)+'월</span></span></div>';
+      h+='<div class="sech"><span class="l">카테고리별</span><span style="display:flex;align-items:center;gap:8px;">'+repCatKindSegHtml()+(totCat>0?'<span class="repvalseg"><button class="'+(!state._repShowAmt?'on':'')+'" '+App.view.act('setRepVal',0)+' aria-label="비율(%)로 보기">%</button><button class="'+(state._repShowAmt?'on':'')+'" '+App.view.act('setRepVal',1)+' aria-label="금액으로 보기">금액</button></span>':'')+'<span class="s">'+(+mo)+'월</span></span></div>';
       if(totCat>0){
         let segs = cats;   // 금액 작은 카테고리도 묶지 않고 전부 개별 표시(구 '기타(상위 5개 밖 묶음)' 폐기 — 사용자 요청)
         let acc=0; const stops=segs.map(s=>{ const p0=acc/totCat*100, p1=(acc+s.val)/totCat*100; const col=s.etc?'var(--soft2)':catColor(s.name); acc+=s.val; return col+' '+p0.toFixed(2)+'% '+p1.toFixed(2)+'%'; });
-        h+='<div class="donut-wrap"><div class="donut" style="background:conic-gradient('+stops.join(',')+')"><div class="ic"><b>'+shortAmt(totCat)+'</b><span>총지출</span></div></div>'+
-          '<div class="legend'+(state._repShowAmt?' amt':'')+'">'+segs.map(s=>'<div class="lgi" '+App.view.act('openRepCatTx',m,s.name,s.etc?1:0)+' aria-label="'+escapeHtml(s.name)+' 내역 보기"><i style="background:'+(s.etc?'var(--soft2)':catColor(s.name))+'"></i><span class="ln">'+escapeHtml(s.name)+'</span><span class="lp">'+Math.round(s.val/totCat*100)+'%</span><span class="lv">'+won(s.val)+'</span><span class="lgo">›</span></div>').join('')+'</div></div>';
-      } else h+='<div class="empty" style="padding:24px;">이 달 지출 데이터가 없습니다</div>';
+        h+='<div class="donut-wrap"><div class="donut" style="background:conic-gradient('+stops.join(',')+')"><div class="ic"><b>'+shortAmt(totCat)+'</b><span>'+(isIncCat?'총수입':'총지출')+'</span></div></div>'+
+          '<div class="legend'+(state._repShowAmt?' amt':'')+'">'+segs.map(s=>'<div class="lgi" '+App.view.act('openRepCatTx',m,s.name,s.etc?1:0,_repCatKind)+' aria-label="'+escapeHtml(s.name)+' 내역 보기"><i style="background:'+(s.etc?'var(--soft2)':catColor(s.name))+'"></i><span class="ln">'+escapeHtml(s.name)+'</span><span class="lp">'+Math.round(s.val/totCat*100)+'%</span><span class="lv">'+won(s.val)+'</span><span class="lgo">›</span></div>').join('')+'</div></div>';
+      } else h+='<div class="empty" style="padding:24px;">이 달 '+(isIncCat?'수입':'지출')+' 데이터가 없습니다</div>';
       if(totCat>0 && loanPrin>0) h+='<div class="tx-sub" style="margin:2px 2px 10px;">🏦 \''+LOAN_CAT_MERGED+'\'엔 원금 상환 '+won(loanPrin)+'이 포함돼 있어요 — 총지출·예산엔 이자만 잡혀요.</div>';
-      // 💡 인사이트: 전월 대비 가장 크게 늘어난 카테고리(의미 있는 금액만)
-      const pcd={}; monthTx(shiftMonth(m,-1)).filter(t=>isActual(t)&&t.category).forEach(t=>{ pcd[t.category]=(pcd[t.category]||0)+(Number(t.amount)||0); });
-      let topInc=null; cats.forEach(c=>{ const prev=pcd[c.name]||0; if(prev>=10000){ const d=(c.val-prev)/prev; if(d>=0.3 && (!topInc||d>topInc.d)) topInc={name:c.name,d:d}; } });
-      if(topInc) h+='<div class="tx-sub" style="margin:2px 2px 10px;">💡 이번 달 <b>'+escapeHtml(topInc.name)+'</b> 지출이 지난달보다 <b>'+Math.round(topInc.d*100)+'%</b> 늘었어요.</div>';
-      // 📊 전월 비교 — 카테고리별 지난달 → 이번달 증감(상위 8, 대출 병합 등 도넛과 동일 집계 repCatSums)
-      { const pm=shiftMonth(m,-1); const prevCd=repCatSums(pm).cd;
+      // 💡 인사이트: 전월 대비 가장 크게 늘어난 카테고리(의미 있는 금액만 — 지출 모드 전용)
+      if(!isIncCat){
+        const pcd={}; monthTx(shiftMonth(m,-1)).filter(t=>isActual(t)&&t.category).forEach(t=>{ pcd[t.category]=(pcd[t.category]||0)+(Number(t.amount)||0); });
+        let topInc=null; cats.forEach(c=>{ const prev=pcd[c.name]||0; if(prev>=10000){ const d=(c.val-prev)/prev; if(d>=0.3 && (!topInc||d>topInc.d)) topInc={name:c.name,d:d}; } });
+        if(topInc) h+='<div class="tx-sub" style="margin:2px 2px 10px;">💡 이번 달 <b>'+escapeHtml(topInc.name)+'</b> 지출이 지난달보다 <b>'+Math.round(topInc.d*100)+'%</b> 늘었어요.</div>';
+      }
+      // 📊 전월 비교 — 카테고리별 지난달 → 이번달 증감(상위 8, 도넛과 동일 집계 — 지출=repCatSums(대출 병합 포함)·수입=repIncSums)
+      { const pm=shiftMonth(m,-1); const prevCd=(isIncCat?repIncSums(pm):repCatSums(pm)).cd;
         if(totCat>0 && Object.keys(prevCd).length){
           const names={}; cats.forEach(c=>{ names[c.name]=1; }); Object.keys(prevCd).forEach(k=>{ names[k]=1; });
           const rows=Object.keys(names).map(k=>({ name:k, cur:cd[k]||0, prev:prevCd[k]||0 }))
             .sort((a,b)=>Math.max(b.cur,b.prev)-Math.max(a.cur,a.prev)).slice(0,8);
-          h+='<div class="sech"><span class="l">전월 비교</span><span class="s">'+(+pm.split('-')[1])+'월 → '+(+mo)+'월</span></div>';
+          h+='<div class="sech"><span class="l">전월 비교'+(isIncCat?' (수입)':'')+'</span><span class="s">'+(+pm.split('-')[1])+'월 → '+(+mo)+'월</span></div>';
           h+='<div class="card">'+rows.map(r=>{ const d=r.cur-r.prev;
-            const dTxt=d===0?'<span class="tx-sub">—</span>':('<span style="font-weight:700;font-size:12px;color:'+(d>0?'var(--expense)':'var(--income)')+'">'+(d>0?'▲':'▼')+fmtComma(Math.abs(d))+'</span>');
+            const up=isIncCat?d<0:d>0;   // 지출은 증가=빨강, 수입은 감소=빨강(나쁜 방향 강조)
+            const dTxt=d===0?'<span class="tx-sub">—</span>':('<span style="font-weight:700;font-size:12px;color:'+(up?'var(--expense)':'var(--income)')+'">'+(d>0?'▲':'▼')+fmtComma(Math.abs(d))+'</span>');
             return '<div class="row" style="padding:6px 0;font-size:13px;"><span style="display:flex;align-items:center;gap:7px;min-width:0;"><span class="catdot" style="background:'+catColor(r.name)+'"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(r.name)+'</span></span>'+
               '<span style="display:flex;align-items:center;gap:8px;flex:none;"><span class="tx-sub">'+fmtComma(r.prev)+'</span><span class="tx-sub">→</span><b>'+fmtComma(r.cur)+'</b>'+dTxt+'</span></div>';
           }).join('')+'</div>';
@@ -2344,11 +2370,15 @@
       const prepaid=accs.filter(a=>PREPAID_TYPES.includes(a.type));
       const others=accs.filter(a=>a.type==='other');
       const cardDebt=accs.filter(a=>a.type==='credit_card').reduce((s,a)=>s+accountBalance(a.id),0); // 보통 음수
-      const net=totalAssets(), gross=net-cardDebt;
+      // 📈 주식 평가액(stockCalc, 원화 환산) — 순자산·총자산에 포함
+      const stocks=state.stocks||[];
+      const stockVal=stocks.reduce((s,v)=>s+stockCalc(v).value,0);
+      const net=totalAssets()+stockVal, gross=net-cardDebt;
 
       // 순자산 hero
       let h='<div class="assethero"><div class="k">순자산</div><div class="v">'+won(net)+'</div>'+
         '<div class="sp"><div><div class="kk">총자산</div><div class="vv">'+won(gross)+'</div></div>'+
+        (stockVal>0?'<div><div class="kk">주식</div><div class="vv">'+won(stockVal)+'</div></div>':'')+
         '<div><div class="kk">카드대금</div><div class="vv'+(cardDebt<0?' red':'')+'">'+won(cardDebt)+'</div></div>'+
         '<div style="margin-left:auto;display:flex;align-items:flex-end"><span class="pill" style="margin-left:0;">계좌 '+accs.length+'개</span></div></div></div>';
       // 📅 예정(미래) 거래 안내 — 현재 잔액에 미반영
@@ -2416,8 +2446,31 @@
           '<div class="perfsub" style="margin-top:2px">만기 '+ymd(plan.maturity)+' · 예상 수령 '+won(plan.total)+' (세후이자 '+won(plan.afterTax)+')</div></div>';
       }).join(''):'<div class="empty" style="padding:20px;">등록된 적금이 없습니다</div>';
 
+      // 📈 주식 — 종목·수량·평단가·현재가(수동 갱신)로 평가금액·손익·수익률. 평가액은 위 순자산에 포함(stockCalc, 해외주식은 환율로 원화 환산).
+      h+=sechHtml('주식','openStockSheet()');
+      if(stocks.length){
+        const tot=stocks.reduce((o,v)=>{ const c=stockCalc(v); o.cost+=c.cost; o.value+=c.value; return o; },{cost:0,value:0});
+        const g=tot.value-tot.cost, gr=tot.cost>0?Math.round(g/tot.cost*1000)/10:0;
+        h+='<div class="card" style="margin-bottom:10px;"><div class="row"><b>평가금액</b><b>'+won(tot.value)+'</b></div>'+
+          '<div class="row" style="margin-top:4px;font-size:13px;"><span class="muted">매수금액</span><span>'+won(tot.cost)+'</span></div>'+
+          '<div class="row" style="margin-top:4px;font-size:13px;"><span class="muted">평가손익</span><span style="font-weight:700;color:'+stockGainColor(g)+'">'+(g>0?'+':'')+fmtCommaSigned(g)+' ('+(g>0?'+':'')+gr+'%)</span></div></div>';
+        h+=stocks.slice().sort((a,b)=>stockCalc(b).value-stockCalc(a).value).map((sv,i)=>{
+          const c=stockCalc(sv), col=SVC[(i+2)%SVC.length], ch=escapeHtml((sv.name||'·').charAt(0));
+          const cur=sv.currency||'KRW', isF=cur!=='KRW';
+          const px=(n)=>isF?fmtForeign(n,cur):won(n);   // 평단·현재가는 원통화로, 평가금액은 원화로
+          return '<div class="bgrow" '+App.view.act('openStockSheet',sv.ownerUid,sv.id)+'><div class="bgtop"><span class="ci" style="background:'+col+'">'+ch+'</span>'+
+            '<span class="bn">'+escapeHtml(sv.name)+(isF?' <span class="pill">'+escapeHtml(cur)+'</span>':'')+'</span><span class="ba">'+won(c.value)+'</span></div>'+
+            '<div class="perfsub" style="margin-top:6px">'+fmtQty(sv.qty)+'주 · 평단 '+px(sv.avgPrice)+' · 현재가 '+px(sv.curPrice)+'</div>'+
+            '<div class="perfsub" style="margin-top:2px;color:'+stockGainColor(c.gain)+'">'+(c.gain>0?'▲ +':(c.gain<0?'▼ -':''))+fmtComma(Math.abs(c.gain))+' ('+(c.gain>0?'+':'')+c.ratePct+'%)'+(isF?' · 환율 '+fmtQty(sv.fxRate)+'원':'')+'</div></div>';
+        }).join('');
+      } else h+='<div class="empty" style="padding:20px;">등록된 주식이 없습니다</div>';
+
       $('content').innerHTML=h;
     }
+    // 📈 주식 손익 색 — 국내 관례(수익=빨강·손실=파랑·0=중립)
+    function stockGainColor(g){ return g>0?'var(--expense)':(g<0?'var(--primary)':'var(--sub)'); }
+    // 수량 표시 — 소수점 매수(해외주식) 허용, 불필요한 0은 제거(최대 소수 4자리)
+    function fmtQty(q){ const n=Number(q)||0; return n.toLocaleString(undefined,{maximumFractionDigits:4}); }
     // 📌 이번 달 고정지출 집계(자산 카드) — 정기(지출성)·구독(정기 미연결만, 이중집계 방지)·적금 납입(savingsId 규칙)을 나눠 합산.
     //    remain=오늘 이후 남은 예정액. 이번 달 발생 회차는 occurrencesV2(정기 엔진과 동일 계산)로 센다.
     function monthFixedCosts(){
@@ -2447,11 +2500,15 @@
     // 💡 계좌별 이번 달 필요액 — 이 계좌에서 자동으로 '나갈' 돈(적금 이체(savingsId) + 지출성 정기 + 구독 결제수단 + 대출 상환계좌)을 계좌별 합산.
     //  "월급날 각 계좌에 얼마씩 넣어둘까"용 — 카드 라벨(정기·구독·적금·대출) 그대로, 일반 이체·충전(계좌 간 돈 옮기기·입금성 정기)은 제외한다
     //  (예전엔 debit측 정기 전부를 합산해 월급 이체·파킹 이체 같은 입금 내역까지 필요액에 섞이던 문제 — 사용자 보고로 한정).
+    //  💳 선불·포인트류 계좌 행도 제외(사용자 보고 2026-08) — 이 계좌들은 '이체로 채우는' 게 아니라 충전으로 채우는 수단이라,
+    //  "월급이 들어오면 옮겨두세요" 필요액에 포인트 충전 안내처럼 섞여 보였음. 정기결제·적금·대출 출금 계좌(은행·현금 등)만 남긴다.
     function monthAcctNeeds(){
       const mm=todayStr().slice(0,7), today=parseDate(todayStr());
       const mStart=parseDate(mm+'-01'), mEnd=new Date(mStart.getFullYear(), mStart.getMonth()+1, 0);
       const EXPT={expense:1,prepaid_spend:1,point_spend:1};   // 지출성 정기(monthFixedCosts와 동일 기준)
-      const need={}; const add=(acct,amt,d)=>{ if(!acct||!getAcct(acct)||!(amt>0)) return; const e=need[acct]=need[acct]||{sum:0,remain:0}; e.sum+=amt; if(d>today) e.remain+=amt; };
+      const need={}; const add=(acct,amt,d)=>{ const a=acct?getAcct(acct):null; if(!a||!(amt>0)) return;
+        if(PREPAID_TYPES.includes(a.type)) return;   // 선불·포인트 계좌는 충전으로 채움 — 필요액(이체 안내) 대상 아님
+        const e=need[acct]=need[acct]||{sum:0,remain:0}; e.sum+=amt; if(d>today) e.remain+=amt; };
       state.recurring.filter(r=>canSee(r)&&ruleStatus(r)==='active').forEach(r=>{
         const e=TX_EFFECT[r.type]||{}; if(!e.debit||!r.from) return;
         if(!r.savingsId && !EXPT[r.type]) return;   // 적금 이체 외 일반 이체·충전 정기는 필요액에서 제외
@@ -2784,6 +2841,61 @@
       confirmSheet('이 적금을 삭제할까요?'+(hasRule?' (자동 기록 정기거래도 함께 삭제되고, 기록된 거래는 유지됩니다)':''), ()=>{
         if(hasRule) db.ref(wp('recurring/'+ownerUid+'/'+sv.recurringId)).remove();
         db.ref(wp('savings/'+ownerUid+'/'+id)).remove(); toast('삭제되었습니다'); });
+    }
+
+    // ===== 📈 주식(보유 종목) — 자산 탭 =====
+    //  ws/{wsId}/stocks/{uid}/{id} = { name, qty, avgPrice, curPrice, currency, fxRate, memo, user, createdAt, updatedAt }
+    //  평가·손익 계산은 순수 stockCalc(util.js, 테스트 대상). 현재가는 수동 입력(시트에서 갱신) — 외부 시세 API 없음(무빌드·오프라인 PWA 원칙).
+    function stkNum(id){ return parseFloat(String(val(id)||'').replace(/,/g,''))||0; }   // 소수 허용 파서(수량·해외주식 가격 — fmtComma는 정수 전용이라 미사용)
+    function stkStock(){ return { qty:stkNum('stQty'), avgPrice:stkNum('stAvg'), curPrice:stkNum('stCur')||stkNum('stAvg'), currency:val('stCurr')||'KRW', fxRate:stkNum('stFx') }; }
+    function openStockSheet(ownerUid,id){
+      const sv=(ownerUid&&id)?state.stocks.find(x=>x.ownerUid===ownerUid&&x.id===id):null;
+      const cur=(sv&&sv.currency)||'KRW';
+      let h='<div class="field"><label>종목명</label><input class="input" id="stName" value="'+escapeHtml(sv?(sv.name||''):'')+'" placeholder="예: 삼성전자, 애플"></div>';
+      h+='<div class="form-2"><div class="field"><label>수량(주)</label><input class="input" id="stQty" inputmode="decimal" value="'+(sv&&sv.qty!=null?sv.qty:'')+'" placeholder="예: 10" oninput="stkPreview()"></div>'+
+        '<div class="field"><label>통화</label><select class="input" id="stCurr" '+App.view.chg('stkOnCur')+'>'+CURRENCIES.map(c=>'<option value="'+c.code+'"'+(c.code===cur?' selected':'')+'>'+c.code+' '+escapeHtml(c.name)+'</option>').join('')+'</select></div></div>';
+      h+='<div class="form-2"><div class="field"><label>매수 평단가</label><input class="input" id="stAvg" inputmode="decimal" value="'+(sv&&sv.avgPrice!=null?sv.avgPrice:'')+'" placeholder="예: 71,000" oninput="stkPreview()"></div>'+
+        '<div class="field"><label>현재가</label><input class="input" id="stCur" inputmode="decimal" value="'+(sv&&sv.curPrice!=null?sv.curPrice:'')+'" placeholder="비우면 평단가" oninput="stkPreview()"></div></div>';
+      h+='<div class="field" id="stFxWrap" style="'+(cur==='KRW'?'display:none;':'')+'"><label id="stFxLabel">환율(원/1'+cur+')</label><input class="input" id="stFx" inputmode="decimal" value="'+(sv&&sv.fxRate!=null?sv.fxRate:'')+'" placeholder="예: 1,380" oninput="stkPreview()"></div>';
+      h+='<div id="stCalc"></div>';
+      h+='<div class="field"><label>메모(선택)</label><input class="input" id="stMemo" value="'+escapeHtml(sv?(sv.memo||''):'')+'" placeholder="예: 키움증권 계좌"></div>';
+      h+='<p class="muted" style="font-size:11.5px;margin:2px 2px 12px;">현재가는 직접 입력해요 — 가끔 열어 갱신하면 평가금액·수익률과 순자산에 바로 반영됩니다.</p>';
+      h+='<button class="btn" '+App.view.act('saveStock', sv?ownerUid:null, sv?id:null)+'>'+(sv?'수정':'추가')+'</button>';
+      if(sv) h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deleteStock',ownerUid,id)+'>삭제</button>';
+      openSheet(sv?'주식 수정':'주식 추가', h);
+      stkPreview();
+    }
+    function stkOnCur(){ const c=val('stCurr'); const w=$('stFxWrap'); if(w) w.style.display=(c==='KRW')?'none':''; const lb=$('stFxLabel'); if(lb) lb.textContent='환율(원/1'+c+')'; stkPreview(); }
+    // 입력할 때마다 매수금액·평가금액·손익·수익률 즉시 미리보기(원화 환산)
+    function stkPreview(){
+      const box=$('stCalc'); if(!box) return;
+      const c=stkStock();
+      if(!(c.qty>0)||!(c.avgPrice>0)){ box.innerHTML=''; return; }
+      if(c.currency!=='KRW'&&!(c.fxRate>0)){ box.innerHTML='<div class="tx-sub" style="margin:2px 2px 12px;">환율을 입력하면 원화 평가금액을 계산해 드려요.</div>'; return; }
+      const r=stockCalc(c);
+      const row=(k,v)=>'<div class="row" style="padding:3px 0;"><span class="muted">'+k+'</span><b>'+v+'</b></div>';
+      box.innerHTML='<div class="card" style="padding:14px;margin:4px 0 14px;"><div class="sec-title" style="margin:0 0 10px;">📈 평가 미리보기</div>'+
+        row('매수금액', won(r.cost))+
+        row('평가금액', won(r.value))+
+        '<div class="row" style="border-top:1px solid var(--line);margin-top:8px;padding-top:10px;"><b>평가손익</b><b style="color:'+stockGainColor(r.gain)+'">'+(r.gain>0?'+':'')+fmtCommaSigned(r.gain)+' ('+(r.gain>0?'+':'')+r.ratePct+'%)</b></div></div>';
+    }
+    function saveStock(ownerUid,id){
+      const name=val('stName').trim();
+      if(!name){ toast('종목명을 입력하세요', true); return; }
+      const c=stkStock();
+      if(!(c.qty>0)||!(c.avgPrice>0)){ toast('수량과 매수 평단가를 입력하세요', true); return; }
+      if(c.currency!=='KRW'&&!(c.fxRate>0)){ toast('해외 주식은 환율을 입력하세요', true); return; }
+      const owner=ownerUid||state.uid, key=id||String(Date.now());
+      const prev=(ownerUid&&id)?state.stocks.find(x=>x.ownerUid===ownerUid&&x.id===id):null;
+      const now=new Date().toISOString();
+      db.ref(wp('stocks/'+owner+'/'+key)).set({ name, qty:c.qty, avgPrice:c.avgPrice, curPrice:c.curPrice, currency:c.currency,
+        fxRate:c.currency==='KRW'?null:c.fxRate, memo:val('stMemo').trim(),
+        user:prev?(prev.user||state.userName):state.userName,
+        createdAt:prev?(prev.createdAt||now):now, updatedAt:now }).catch(_saveErr);
+      toast(prev?'수정되었습니다':'추가되었습니다'); closeSheet();
+    }
+    function deleteStock(ownerUid,id){
+      confirmSheet('이 주식을 삭제할까요?', ()=>{ db.ref(wp('stocks/'+ownerUid+'/'+id)).remove(); toast('삭제되었습니다'); });
     }
 
     // ===== 더보기 =====
