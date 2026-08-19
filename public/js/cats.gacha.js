@@ -408,13 +408,37 @@
       const parts=lvs.map(lv=>'Lv'+lv+' '+byLv[lv].map(k=>CLIP_KO[k]||k).join('·')+(myLv>=lv?'(해금)':'(잠김)'));
       return '<div class="pi-cd">모션 해금 — '+parts.join(' · ')+'</div>';
     }
-    function openPetInfo(id){ if(!ownsCat(id)) return;
+    // 🐾 펫 정보 좌우 넘김(2026-08) — 우리집 그리드와 같은 정렬·필터 순서로 옆 펫 이동(‹ › 버튼·스와이프). slide=+1(오른쪽에서 들어옴)/-1(왼쪽에서).
+    let _piCurId=null;   // 현재 표시 중인 펫(쓰다듬기 자동 넘김의 레이스 가드 — 그 사이 사용자가 넘겼으면 자동 전환 안 함)
+    function openPetInfo(id, slide){ if(!ownsCat(id)) return;
       let wrap=$('petInfo');
       if(!wrap){ wrap=document.createElement('div'); wrap.id='petInfo'; wrap.className='gimenu-scrim';
         wrap.onclick=function(e){ if(e.target===wrap) closePetInfo(); }; document.body.appendChild(wrap); }
-      wrap.innerHTML='<div class="gimenu petinfo">'+petInfoBody(id)+'</div>';
+      const anim=slide && !(typeof reducedMotion==='function'&&reducedMotion());
+      _piCurId=id;
+      wrap.innerHTML='<div class="gimenu petinfo'+(anim?(slide>0?' pi-in-r':' pi-in-l'):'')+'">'+petInfoBody(id)+'</div>';
+      piBindSwipe(wrap.firstChild, id);
       _piFitPet(id); }   // 🖼️ 히어로 펫 여백 크롭 배치(bbox 측정 후)
-    function closePetInfo(){ const m=$('petInfo'); if(m) m.remove(); }
+    function closePetInfo(){ const m=$('petInfo'); if(m) m.remove(); _piCurId=null; }
+    // 넘김 순서 = 우리집 펫 그리드와 동일(현재 종류 탭·등급 필터·검색·정렬 반영) — 그리드에서 보던 순서 그대로 옆으로.
+    function piNavIds(){ try{ if(typeof homeFilteredPets==='function'&&typeof sortOwnedPets==='function') return sortOwnedPets(homeFilteredPets()); }catch(e){}
+      return (typeof ownedCatList==='function')?ownedCatList():[]; }
+    function piNavGo(id, dir){ const ids=piNavIds(); if(ids.length<2) return;
+      let i=ids.indexOf(id); if(i<0) i=0;
+      openPetInfo(ids[(i+dir+ids.length)%ids.length], dir); }
+    // 다음 "아직 안 쓰다듬은" 펫(넘김 순서로 순환 탐색) — 없으면 null
+    function piNextPettable(id){ const ids=piNavIds(); if(ids.length<2) return null;
+      let i=ids.indexOf(id); if(i<0) i=0; const now=Date.now(), map=ownedCatsMap();
+      for(let k=1;k<ids.length;k++){ const cid=ids[(i+k)%ids.length];
+        if(cid!==id && now-(Number((map[cid]||{}).pettedAt)||0)>=PET_COOLDOWN_MS) return cid; }
+      return null; }
+    // 👉 카드 좌우 스와이프 = 옆 펫(세로 스크롤과 충돌 안 나게 가로 우세·56px 임계, passive라 스크롤 방해 없음)
+    function piBindSwipe(card, id){ if(!card) return; let sx=0, sy=0, on=false;
+      card.addEventListener('touchstart',function(e){ if(e.touches.length!==1){ on=false; return; } on=true; sx=e.touches[0].clientX; sy=e.touches[0].clientY; },{passive:true});
+      card.addEventListener('touchend',function(e){ if(!on) return; on=false;
+        const t=e.changedTouches&&e.changedTouches[0]; if(!t) return;
+        const dx=t.clientX-sx, dy=t.clientY-sy;
+        if(Math.abs(dx)>=56 && Math.abs(dx)>Math.abs(dy)*1.4) piNavGo(id, dx<0?1:-1); },{passive:true}); }
     // 💗 코스메틱 장착/해제 — 펫별 슬롯이 애정 레벨로 열리고(effects=Lv3·hat=Lv5, 레벨 파생 — 별도 저장 없음),
     //    장착하려면 그 아이템을 "보유"해야 한다(owned.hats/petfx — 이벤트·쿠폰·선물함·뽑기 획득). 레벨만으론 아무것도 못 씀(사용자 지침).
     function cosmNeedLv(slot){ return slot==='hat'?5:3; }
@@ -493,9 +517,13 @@
       const roomTxt=here?'이 방':(roomOf>=0?roomNm:'대기 중');
       const now=Date.now(), last=Number(c.pettedAt)||0, rem=PET_COOLDOWN_MS-(now-last), canPet=rem<=0, hh=Math.ceil(Math.max(0,rem)/3600000);
       const got=c.boughtAt?fmtDate(c.boughtAt):'';
+      const nids=piNavIds(), ni=nids.indexOf(id);   // 🐾 좌우 넘김 내비(그리드 순서) — 2마리 이상일 때만 표시
       return '<div class="gih pi-h">'+piPetHtml(id)+'<b>'+catNameSpan(id,catName(id))+'</b>'+
           '<button class="cn-edit pi-rename" aria-label="이름 짓기" '+App.view.act('openRenameCat',id)+'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>'+
           '<button class="cn-edit pi-close" aria-label="닫기" '+App.view.act('closePetInfo')+'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'+
+        (nids.length>1?('<div class="pi-nav"><button class="pn-btn" aria-label="이전 펫" onclick="piNavGo(\''+id+'\',-1)">‹</button>'+
+          '<span class="pn-ct">'+(ni>=0?((ni+1)+' / '+nids.length):(nids.length+'마리'))+'<span class="pn-hint">카드를 옆으로 밀어도 넘어가요</span></span>'+
+          '<button class="pn-btn" aria-label="다음 펫" onclick="piNavGo(\''+id+'\',1)">›</button></div>'):'')+
         '<div class="pi-meta"><span class="pi-tier">'+tierLabelHtml(tier)+'</span><span class="s">'+escapeHtml(speciesLabel(id))+(got?' · 획득 '+got:'')+' · '+escapeHtml(roomTxt)+'</span></div>'+
         '<div class="pi-aff"><div class="pi-afftop"><span class="clv-h">'+heartSvg({h:11})+'</span>애정 Lv.'+al.level+'<span class="s">'+(al.next!=null?aff+' / '+al.next:'만렙 ★')+'</span></div><div class="bar"><i style="width:'+al.pct+'%"></i></div></div>'+
         petAffLadderHtml(id, al.level)+   // 💗 펫별 동적 모션 해금 안내(2026-07-10 가변 모션 — 이 펫이 실제 가진 클립만 petClipAff 레벨로 그룹 표기)
@@ -511,7 +539,14 @@
     function petFromInfo(id, ev){ const t=ev&&ev.currentTarget, b=t&&t.getBoundingClientRect?t.getBoundingClientRect():null;
       const x=b?b.left+b.width/2:innerWidth/2, y=b?b.top:innerHeight/2;
       bumpAffection(id, x, y);   // 하트·"UP!"·은화 지갑 연출 그대로
-      setTimeout(function(){ if($('petInfo')) openPetInfo(id); }, 650); }   // 커밋·리스너 반영 후 상세 갱신(애정·쿨다운)
+      setTimeout(function(){ if($('petInfo')&&_piCurId===id) openPetInfo(id); }, 650);   // 커밋·리스너 반영 후 상세 갱신(애정·쿨다운) — 그 사이 넘겼으면 유지
+      // 💨 쓰다듬기 완료 후 "아직 안 쓰다듬은" 다음 펫으로 자동 슬라이드(사용자 요청 — 매번 닫고 새로 클릭하던 수고 제거).
+      //    실제 커밋됐을 때만(쿨다운 레이스면 pettedAt 안 바뀜) · 사용자가 그 사이 다른 펫으로 넘겼으면 자동 전환 안 함.
+      setTimeout(function(){ if(!$('petInfo')||_piCurId!==id) return;
+        const cc=ownedCatsMap()[id]||{};
+        if(Date.now()-(Number(cc.pettedAt)||0)>60000) return;   // 방금 쓰다듬어진 게 맞을 때만
+        const nid=piNextPettable(id); if(nid) openPetInfo(nid, 1);
+      }, 1400); }
     function roomFromInfo(id){ toggleActiveCat(id); setTimeout(function(){ if($('petInfo')) openPetInfo(id); }, 400); }
     // 테스트 배정(등급당 1) — 펫알=고양이 / 랜덤박스=가구
     // @gen:pet-tier — 자동생성(tools/build_pets.py). tools/pets.json 의 tier 편집 후 재실행.

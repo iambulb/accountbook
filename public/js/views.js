@@ -2236,6 +2236,8 @@
       const budgetRef=(m===_curM)?new Date():new Date(+yy,+mo-1,15);   // 📅 예산 기준일=보는 달(이번 달이면 오늘 → 주간예산=이번주 유지, 과거/미래 달이면 그 달)
       // 월 네비 (+ [월간|연간] 토글)
       let h=repRangeSegHtml()+'<div class="monthlbl"><button '+App.view.act('statsMonth',-1)+' aria-label="이전 달">‹</button><b>'+yy+'년 '+(+mo)+'월</b><button '+App.view.act('statsMonth',1)+' aria-label="다음 달">›</button></div>';
+      // ✨ AI 월간 브리핑 진입 — 예산 대비·카테고리 적정금액·맞춤 제안을 자동 분석(openAiBrief)
+      h+='<button class="aib-open" '+App.view.act('openAiBrief',m)+'>'+aibSparkIc(13)+(+mo)+'월 AI 브리핑 받기<span class="pfgo">›</span></button>';
       // 총지출 카드 + 수입/잔액/전월 대비
       const pActual=actualSpend(monthTx(shiftMonth(m,-1)));
       let momHtml;
@@ -2942,11 +2944,112 @@
             (mom!=null?('<div><div class="k">전월 대비</div><div class="v" style="color:'+(mom>=0?'var(--expense)':'var(--income)')+'">'+(mom>=0?'▲':'▼')+' '+Math.abs(mom)+'%</div></div>'):'')+
           '</div>'+
           (top?('<div class="tx-sub" style="margin-top:6px;">가장 많이 쓴 카테고리: <b>'+escapeHtml(top)+'</b> '+won(cd[top])+'</div>'):'')+
-          '<button class="btn ghost" style="margin-top:10px;" '+App.view.act('openRecapReport',lastM)+'>리포트에서 자세히 보기</button></div>';
+          '<div class="form-2" style="margin-top:10px;"><button class="btn" '+App.view.act('openAiBrief',lastM)+'>'+aibSparkIc(13)+' AI 브리핑</button><button class="btn ghost" '+App.view.act('openRecapReport',lastM)+'>리포트 열기</button></div></div>';
       }catch(e){ return ''; }
     }
     function dismissRecap(m){ try{ localStorage.setItem('recap:'+(state.wsId||'')+':'+m,'1'); }catch(e){} renderHome(); }
     function openRecapReport(m){ try{ localStorage.setItem('recap:'+(state.wsId||'')+':'+m,'1'); }catch(e){} state.month=m; goto('ledger','stats'); }
+
+    // ===== ✨ AI 월간 브리핑 — 규칙 기반 자동 분석 리포트(예산 대비 사용·카테고리별 적정금액·맞춤 제안) =====
+    // 적정금액 = 예산 × (그 카테고리 사용 비중) — "지금 소비 구성 그대로 예산에 맞추면 카테고리별 얼마"인 가이드(사용자 정의 공식, 100원 단위).
+    // 온디바이스 규칙 생성(외부 AI 호출 없음) — 데이터 수집(aiBriefData)·문장 생성(aiBriefTalk/aiBriefTips)·렌더(openAiBrief) 분리.
+    function aibSparkIc(h){ return (typeof sparkSvg==='function')?('<span class="aib-ic-inline">'+sparkSvg({h:h||14})+'</span>'):'✨'; }   // 픽셀 트윙클(브랜드 규칙 — 이모지 폴백만)
+    function aiBriefData(m){
+      const list=monthTx(m), spent=actualSpend(list), inc=sumBy(realIncome(list),'income');
+      const txN=list.filter(isActual).length;
+      const cd=repCatSums(m).cd;
+      const cats=Object.keys(cd).map(k=>({name:k,val:cd[k]})).sort((a,b)=>b.val-a.val);
+      const ref=monthRefDate(m);   // 지난달 브리핑이면 그 달 중순 기준으로 예산 기간 산정
+      const tb=totalMonthlyBudget(); let budget=0;
+      if(tb) budget=budgetUsage(tb,ref).amount;
+      else{ const bs=visibleBudgets().filter(b=>b.categoryName&&(b.periodType||'monthly')==='monthly');
+        if(bs.length) budget=bs.reduce((s,b)=>s+budgetUsage(b,ref).amount,0); }   // 총예산 없으면 카테고리 월예산 합으로 대체
+      const pct=budget>0?Math.round(spent/budget*100):0, over=Math.max(0,spent-budget);
+      const rows=cats.map(c=>{ const share=spent>0?c.val/spent:0;
+        return { name:c.name, val:c.val, share, guide: budget>0?Math.round(budget*share/100)*100:0 }; });
+      const prevSpent=actualSpend(monthTx(shiftMonth(m,-1)));
+      const mom=prevSpent>0?Math.round((spent-prevSpent)/prevSpent*100):null;
+      // 전월 대비 최대 급증 카테고리(리포트 인사이트와 동일 기준 — 전월 1만원↑·+30%↑)
+      const pcd=repCatSums(shiftMonth(m,-1)).cd;
+      let momCat=null; cats.forEach(c=>{ const prev=pcd[c.name]||0; if(prev>=10000){ const d=(c.val-prev)/prev; if(d>=0.3&&(!momCat||d>momCat.d)) momCat={name:c.name,d,prev,cur:c.val}; } });
+      // 최대 단일 지출
+      let bigTx=null; list.filter(isActual).forEach(t=>{ const a=Number(t.amount)||0; if(!bigTx||a>bigTx.amt) bigTx={amt:a,desc:t.description||t.category||'지출',date:t.date||''}; });
+      // 무지출일 — 이번 달이면 오늘까지, 지난달은 말일까지
+      const p=m.split('-'), lastD=new Date(+p[0],+p[1],0).getDate();
+      const today=todayStr(), upto=(m===today.slice(0,7))?Math.min(lastD,+today.slice(8,10)):lastD;
+      const spendDays={}; list.filter(isActual).forEach(t=>{ const d=+(t.date||'').slice(8,10); if(d) spendDays[d]=1; });
+      let zeroDays=0; for(let d=1;d<=upto;d++) if(!spendDays[d]) zeroDays++;
+      const subSum=Math.round(visibleSubs().filter(subActive).reduce((s,x)=>s+(monthlyEquiv(x)||0),0));   // 활성 구독 월환산 합
+      return { m, spent, inc, txN, budget, pct, over, rows, mom, momCat, bigTx, zeroDays, subSum };
+    }
+    // 💬 요약 코멘트 — 상태(초과/근접/여유·전월비·최대 지출처)에 따라 문장을 조합
+    function aiBriefTalk(d){
+      const mo=+d.m.split('-')[1], s=[];
+      if(!d.spent) return mo+'월엔 기록된 지출이 없어요. 거래를 기록하면 다음 브리핑에서 자세히 분석해드릴게요.';
+      if(d.budget>0){
+        if(d.pct>100) s.push(mo+'월엔 설정 예산 <b>'+won(d.budget)+'</b>의 <b>'+d.pct+'%</b>인 <b>'+won(d.spent)+'</b>을 썼어요. <b class="bad">'+won(d.over)+' 초과</b>했어요.');
+        else if(d.pct>=90) s.push(mo+'월엔 예산 '+won(d.budget)+'의 <b>'+d.pct+'%</b>('+won(d.spent)+')를 써서 아슬아슬하게 지켰어요.');
+        else s.push(mo+'월엔 예산 '+won(d.budget)+' 중 <b>'+won(d.spent)+'</b>('+d.pct+'%)만 써서 <b class="good">'+won(d.budget-d.spent)+'을 남겼어요</b>.');
+      } else s.push(mo+'월 총지출은 <b>'+won(d.spent)+'</b>이에요.');
+      if(d.mom!=null) s.push(d.mom>=0?('지난달보다 <b>'+d.mom+'%</b> 늘었어요'+(d.mom>=20?' — 조금 주의가 필요해요.':'.')):('지난달보다 <b>'+Math.abs(d.mom)+'%</b> 줄었어요.'));
+      if(d.rows[0]) s.push('가장 큰 지출처는 <b>'+escapeHtml(d.rows[0].name)+'</b>('+won(d.rows[0].val)+' · '+Math.round(d.rows[0].share*100)+'%)예요.');
+      return s.join(' ');
+    }
+    // 💡 AI 제안 — 조건에 맞는 것만 골라 최대 5개
+    function aiBriefTips(d){
+      const tips=[];
+      if(d.budget>0 && d.spent>d.budget){
+        const worst=d.rows.slice().sort((a,b)=>(b.val-b.guide)-(a.val-a.guide))[0];
+        if(worst&&worst.val>worst.guide) tips.push('다음 달 <b>'+escapeHtml(worst.name)+'</b>은 <b>'+won(worst.guide)+'</b> 안쪽을 목표로 해보세요 — 이번보다 '+won(worst.val-worst.guide)+'만 줄이면 적정 배분에 맞아요.');
+      }
+      if(d.momCat) tips.push('<b>'+escapeHtml(d.momCat.name)+'</b> 지출이 지난달 '+won(d.momCat.prev)+' → '+won(d.momCat.cur)+'로 <b>'+Math.round(d.momCat.d*100)+'%</b> 늘었어요. 늘어난 이유를 한번 살펴보세요.');
+      if(d.bigTx&&d.spent>0&&d.bigTx.amt>=d.spent*0.15){ const nm=d.bigTx.desc.length>16?d.bigTx.desc.slice(0,16)+'…':d.bigTx.desc;
+        tips.push('가장 큰 단일 지출은 '+(+d.bigTx.date.slice(8,10)||'')+'일 <b>'+escapeHtml(nm)+'</b> '+won(d.bigTx.amt)+' — 총지출의 '+Math.round(d.bigTx.amt/d.spent*100)+'%예요.'); }
+      if(d.subSum>0) tips.push('매달 나가는 구독이 <b>'+won(d.subSum)+'</b>'+(d.budget>0?' — 예산의 '+Math.round(d.subSum/d.budget*100)+'%를 고정으로 차지해요.':' 있어요.'));
+      if(d.zeroDays>0) tips.push('지출 없는 날이 <b>'+d.zeroDays+'일</b> 있었어요.'+(d.zeroDays>=8?' 훌륭해요!':''));
+      if(d.inc>0){ const r=Math.round((d.inc-d.spent)/d.inc*100);
+        tips.push(r>=0?('수입의 <b>'+(100-r)+'%</b>를 쓰고 <b>'+r+'%</b>를 남겼어요.'):('수입보다 <b>'+won(d.spent-d.inc)+'</b> 더 썼어요.')); }
+      if(d.budget<=0) tips.push('예산을 설정하면 카테고리별 <b>적정금액</b>(예산×사용 비중)을 계산해드려요. 아래에서 바로 만들 수 있어요.');
+      return tips.slice(0,5);
+    }
+    function openAiBrief(m){
+      const d=aiBriefData(m), mo=+m.split('-')[1];
+      let si=0; const sec=html=>{ const s='<div class="aib-sec" style="animation-delay:'+(si*0.09).toFixed(2)+'s">'+html+'</div>'; si++; return s; };
+      let h='<div class="aibrief">';
+      h+=sec('<div class="aib-hero"><span class="aib-ic">'+aibSparkIc(16)+'</span><div><b>'+mo+'월 지출 브리핑</b><div class="s">실지출 '+d.txN+'건 분석 · 알뜰 AI</div></div></div>');
+      h+=sec('<div class="aib-talk">'+aiBriefTalk(d)+'</div>');
+      // 예산 게이지 — 초과면 빨강 채움 + 예산 위치 눈금(|)
+      if(d.budget>0&&d.spent>0){
+        const fillPct=Math.min(100,d.pct), mark=d.pct>100?Math.max(4,Math.min(96,Math.round(d.budget/d.spent*100))):null;
+        h+=sec('<div class="card aib-gauge"><div class="statrow" style="margin:0 0 8px;">'
+          +'<div><div class="k">설정 예산</div><div class="v">'+won(d.budget)+'</div></div>'
+          +'<div><div class="k">사용 금액</div><div class="v"'+(d.pct>100?' style="color:var(--expense)"':'')+'>'+won(d.spent)+'</div></div>'
+          +'<div style="margin-left:auto"><div class="k">사용률</div><div class="v" style="color:'+budgetColor(d.pct)+'">'+d.pct+'%</div></div></div>'
+          +'<div class="aib-bar'+(d.pct>100?' over':'')+'"><i style="width:'+fillPct+'%"></i>'+(mark!=null?'<u style="left:'+mark+'%"></u>':'')+'</div>'
+          +'<div class="tx-sub" style="margin-top:5px;">'+(d.pct>100?('눈금(|)까지가 예산 — 오른쪽이 초과분 '+won(d.over)+'이에요.'):(won(d.budget-d.spent)+' 남았어요.'))+'</div></div>');
+      }
+      // 카테고리별 사용 vs 적정 — 막대(사용) + 눈금(적정 위치)
+      if(d.rows.length&&d.spent>0){
+        const top=d.rows.slice(0,8), rest=d.rows.slice(8);
+        const mx=Math.max(1,...top.map(r=>Math.max(r.val,r.guide)));
+        h+=sec('<div class="sech" style="margin-top:2px;"><span class="l">카테고리별 사용 vs 적정</span><span class="s">'+(d.budget>0?'적정 = 예산 × 사용 비중':'예산 미설정')+'</span></div>'
+          +'<div class="card">'+top.map(r=>{
+            const overAmt=r.val-r.guide;
+            const judge=d.budget>0?(overAmt>0?'<span class="bad">▲ '+won(overAmt)+' 초과</span>':'<span class="good">여유 '+won(-overAmt)+'</span>'):'';
+            return '<div class="aib-row"><div class="row" style="font-size:13px;"><span style="display:flex;align-items:center;gap:7px;min-width:0;"><span class="catdot" style="background:'+catColor(r.name)+'"></span><span class="aib-nm">'+escapeHtml(r.name)+'</span></span>'
+              +'<span class="aib-amt"><b>'+won(r.val)+'</b>'+(d.budget>0?('<span class="ar">→</span>적정 <b>'+won(r.guide)+'</b>'):('<span class="tx-sub">'+Math.round(r.share*100)+'%</span>'))+'</span></div>'
+              +'<div class="aib-track"><i style="width:'+Math.round(r.val/mx*100)+'%;background:'+catColor(r.name)+'"></i>'+(d.budget>0?'<u style="left:'+Math.min(98,Math.round(r.guide/mx*100))+'%"></u>':'')+'</div>'
+              +(judge?'<div class="aib-sub">지출의 '+Math.round(r.share*100)+'% · '+judge+'</div>':'')+'</div>';
+          }).join('')
+          +(rest.length?('<div class="tx-sub" style="margin-top:6px;">외 '+rest.length+'개 카테고리 '+won(rest.reduce((s,r)=>s+r.val,0))+(d.budget>0?' · 적정 '+won(rest.reduce((s,r)=>s+r.guide,0)):'')+'</div>'):'')+'</div>');
+      }
+      const tips=aiBriefTips(d);
+      if(tips.length) h+=sec('<div class="sech"><span class="l">AI 제안</span><span class="s">자동 분석</span></div><div class="card aib-tips">'+tips.map(t=>'<div class="aib-tip"><span class="dot">'+aibSparkIc(12)+'</span><span>'+t+'</span></div>').join('')+'</div>');
+      if(d.budget<=0) h+=sec('<button class="btn" '+App.view.act('openBudgetSheet')+'>예산 만들고 적정금액 받기</button>');
+      h+='</div>';
+      openSheet('AI 월간 브리핑', h);
+      state._sheetReopen=()=>openAiBrief(m);   // ↩️ 위에 다른 시트를 열었다 닫으면 브리핑으로 복귀
+    }
     function renderHome(){
       const c=$('content'); if(!c) return;
       const daily=(typeof dailyMissionsToday==='function')?dailyMissionsToday():((typeof DAILY_MISSIONS!=='undefined')?DAILY_MISSIONS:[]);
