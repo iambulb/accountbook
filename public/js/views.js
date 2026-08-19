@@ -2403,7 +2403,7 @@
         const cardNeeds=accs.filter(a=>a.type==='credit_card').map(a=>{ const cf=getCard(a.id); return { id:a.id, name:(cf&&cf.cardName)||a.name, sum:-accountBalance(a.id) }; }).filter(x=>x.sum>0).sort((a,b)=>b.sum-a.sum);
         if(needs.length||cardNeeds.length){
           h+='<div class="card" style="margin-bottom:10px;"><div class="row"><b>💡 계좌별 이번 달 필요액</b><span class="tx-sub">정기 · 구독 · 적금 · 대출 · 카드대금</span></div>'+
-            needs.map(n=>'<div class="row" style="margin-top:6px;font-size:13px;" '+App.view.act('openAcctDetail',n.id)+' role="button" tabindex="0" aria-label="'+escapeHtml(n.name)+' 거래내역 보기"><span class="muted">'+escapeHtml(n.name)+' ›</span><span><b>'+won(n.sum)+'</b>'+(n.remain>0&&n.remain!==n.sum?(' <span class="tx-sub">남은 '+won(n.remain)+'</span>'):'')+'</span></div>').join('')+
+            needs.map(n=>'<div class="row" style="margin-top:6px;font-size:13px;" '+App.view.act('openAcctNeedSheet',n.id)+' role="button" tabindex="0" aria-label="'+escapeHtml(n.name)+' 필요액 구성 항목 보기"><span class="muted">'+escapeHtml(n.name)+' ›</span><span><b>'+won(n.sum)+'</b>'+(n.remain>0&&n.remain!==n.sum?(' <span class="tx-sub">남은 '+won(n.remain)+'</span>'):'')+'</span></div>').join('')+
             cardNeeds.map(n=>'<div class="row" style="margin-top:6px;font-size:13px;" '+App.view.act('openAcctDetail',n.id)+' role="button" tabindex="0" aria-label="'+escapeHtml(n.name)+' 거래내역 보기"><span class="muted">'+escapeHtml(n.name)+' <span class="pill">카드대금</span> ›</span><b>'+won(n.sum)+'</b></div>').join('')+
             '<div class="tx-sub" style="margin-top:8px;">월급이 들어오면 각 계좌에 이만큼 옮겨두세요 — 자동 기록이 부족 없이 돌아가요.'+(cardNeeds.length?' 카드대금은 지금까지 쓴 카드 사용액이에요.':'')+'</div></div>';
         } }
@@ -2511,23 +2511,42 @@
       const mm=todayStr().slice(0,7), today=parseDate(todayStr());
       const mStart=parseDate(mm+'-01'), mEnd=new Date(mStart.getFullYear(), mStart.getMonth()+1, 0);
       const EXPT={expense:1,prepaid_spend:1,point_spend:1};   // 지출성 정기(monthFixedCosts와 동일 기준)
-      const need={}; const add=(acct,amt,d)=>{ const a=acct?getAcct(acct):null; if(!a||!(amt>0)) return;
+      const need={}; const add=(acct,amt,d,kind,label)=>{ const a=acct?getAcct(acct):null; if(!a||!(amt>0)) return;
         if(PREPAID_TYPES.includes(a.type)) return;   // 선불·포인트 계좌는 충전으로 채움 — 필요액(이체 안내) 대상 아님
-        const e=need[acct]=need[acct]||{sum:0,remain:0}; e.sum+=amt; if(d>today) e.remain+=amt; };
+        const e=need[acct]=need[acct]||{sum:0,remain:0,items:[]}; e.sum+=amt; if(d>today) e.remain+=amt;
+        e.items.push({ kind, label:label||'', amt, d }); };   // 🔍 구성 항목(어떤 정기·구독·적금·대출인지) — 계좌 탭 드릴다운(openAcctNeedSheet)용
       state.recurring.filter(r=>canSee(r)&&ruleStatus(r)==='active').forEach(r=>{
         const e=TX_EFFECT[r.type]||{}; if(!e.debit||!r.from) return;
         if(!r.savingsId && !EXPT[r.type]) return;   // 적금 이체 외 일반 이체·충전 정기는 필요액에서 제외
         let occ=occurrencesV2(r, mStart, mEnd);
         if(r.endDate){ const ed=parseDate(r.endDate); occ=occ.filter(o=>o<=ed); }
-        occ.forEach(o=>add(r.from, Number(r.amount)||0, o));
+        occ.forEach(o=>add(r.from, Number(r.amount)||0, o, r.savingsId?'적금':'정기', r.desc||TYPE_LABEL[r.type]||'정기거래'));
       });
       (state.subscriptions||[]).filter(s=>(s.status||'active')==='active'&&!s.recurringId&&s.paymentAccountId).forEach(s=>{
-        const nb=subNextBilling(s); if(nb&&String(nb).slice(0,7)===mm) add(s.paymentAccountId, Number(s.amount)||0, parseDate(nb));
+        const nb=subNextBilling(s); if(nb&&String(nb).slice(0,7)===mm) add(s.paymentAccountId, Number(s.amount)||0, parseDate(nb), '구독', s.name||'구독');
       });
       visibleLoans().forEach(l=>{ if(l.direction==='lent'||!l.account) return; if(loanCalc(l).balance<=0) return;
-        const mp=loanMonthPlan(l, mm); if(mp&&mp.inst) add(l.account, mp.inst.pay, parseDate(mm+'-'+pad2(mp.day)));
+        const mp=loanMonthPlan(l, mm); if(mp&&mp.inst) add(l.account, mp.inst.pay, parseDate(mm+'-'+pad2(mp.day)), '대출', l.name||'대출 상환');
       });
-      return Object.keys(need).map(id=>({ id, name:acctName(id), sum:need[id].sum, remain:need[id].remain })).sort((a,b)=>b.sum-a.sum);
+      return Object.keys(need).map(id=>({ id, name:acctName(id), sum:need[id].sum, remain:need[id].remain, items:need[id].items })).sort((a,b)=>b.sum-a.sum);
+    }
+    // 💡 필요액 구성 항목 시트 — 자산의 '계좌별 이번 달 필요액' 행을 탭하면 그 계좌 필요액이 어떤 항목(정기·구독·적금·대출)으로 이뤄졌는지 날짜순으로 보여준다(지난 회차는 흐리게).
+    function openAcctNeedSheet(id){
+      const n=monthAcctNeeds().find(x=>x.id===id);
+      if(!n){ openAcctDetail(id); return; }   // 필요액이 사라졌으면(규칙 변경 등) 통장 내역으로 폴백
+      const today=parseDate(todayStr()), mo=+todayStr().slice(5,7);
+      const KC={ '정기':'#3182f6', '구독':'#7c3aed', '적금':'#1b9e5f', '대출':'#f04452' };
+      const items=n.items.slice().sort((a,b)=>a.d-b.d);
+      let h='<div class="row" style="margin-bottom:10px;"><span class="muted">'+mo+'월 · '+items.length+'건</span><b>'+won(n.sum)+'</b></div>';
+      h+='<div class="card" style="padding:6px 12px;">'+items.map(it=>{
+        const passed=it.d<=today;
+        return '<div class="row" style="padding:8px 0;font-size:13px;'+(passed?'opacity:.55;':'')+'"><span style="display:flex;align-items:center;gap:7px;min-width:0;"><span class="pill" style="flex:none;color:'+(KC[it.kind]||'var(--sub)')+';font-weight:800;">'+it.kind+'</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(it.label)+'</span></span>'+
+          '<span style="flex:none;display:flex;align-items:center;gap:8px;"><span class="tx-sub">'+(it.d.getMonth()+1)+'/'+it.d.getDate()+(passed?' 지남':'')+'</span><b>'+won(it.amt)+'</b></span></div>';
+      }).join('')+'</div>';
+      h+='<div class="tx-sub" style="margin-top:10px;">'+(n.remain>0?('오늘 이후 남은 예정 <b>'+won(n.remain)+'</b> — '):'')+'월급이 들어오면 이 계좌에 <b>'+won(n.sum)+'</b>을 옮겨두면 자동 기록이 부족 없이 돌아가요.</div>';
+      h+='<button class="btn ghost" style="margin-top:12px;" '+App.view.act('openAcctDetail',id)+'>'+escapeHtml(n.name)+' 거래내역 보기</button>';
+      openSheet('💡 '+n.name+' 필요액', h);
+      state._sheetReopen=()=>openAcctNeedSheet(id);   // ↩️ 통장 내역 갔다 닫으면 이 시트로 복귀
     }
     // 계좌 유형별 라인 아이콘(시안) — 색은 a.color 유지
     function acctIcon(type){
@@ -2748,11 +2767,12 @@
         return { count:Math.min(txs.length,plan.count), amount:txs.reduce((s,t)=>s+(Number(t.amount)||0),0) };
       }
       const today=parseDate(todayStr());
-      if(today<plan.first) return { count:0, amount:0 };
+      const bonus=sv.firstPaid?1:0;   // 💰 시작일 첫 납입(등록 시 체크) — 스케줄 회차와 별개로 +1(만기 회차수 상한 클램프)
+      if(today<plan.first) return { count:Math.min(bonus,plan.count), amount:Math.min(bonus,plan.count)*(Number(sv.monthly)||0) };
       let c=(today.getFullYear()-plan.first.getFullYear())*12+(today.getMonth()-plan.first.getMonth());
       const lastDom=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
       if(today.getDate()>=Math.min(Number(sv.day)||plan.first.getDate(),lastDom)) c+=1;   // 이번 달 납입일이 지났으면 이번 회차 포함
-      c=Math.max(0,Math.min(c,plan.count));
+      c=Math.max(0,Math.min(c+bonus,plan.count));
       return { count:c, amount:c*(Number(sv.monthly)||0) };
     }
     function openSavingsSheet(ownerUid,id){
@@ -2765,6 +2785,7 @@
         '<div class="field"><label>매달 납입일</label><select class="input" id="vDay" '+App.view.chg('svPreview')+'>'+Array.from({length:31},(_,i)=>'<option value="'+(i+1)+'"'+(((sv&&Number(sv.day)===i+1)||(!sv&&i===0))?' selected':'')+'>'+(i+1)+'일</option>').join('')+'</select></div></div>';
       h+='<div class="field"><label>시작일</label><input type="date" class="input" id="vStart" value="'+(sv&&sv.startDate?sv.startDate:todayStr())+'" '+App.view.chg('svPreview')+'></div>';
       h+='<div id="svCalc"></div>';
+      if(!sv) h+='<div id="svFirstPay"></div>';   // 💰 시작일 첫 납입 스위치(신규 등록 전용) — 시작일의 '일'≠납입일일 때만 svFirstPayRow가 채움
       h+='<div class="card" style="padding:14px;margin:4px 0 14px;"><div class="sec-title" style="margin:0 0 10px;">🏦 매달 자동 기록</div>'+
         '<div class="field"><label>출금 계좌</label><select class="input" id="vFrom"><option value="">자동 기록 안 함</option>'+acctOptsHtml(sv?(sv.from||''):'')+'</select></div>'+
         '<div class="field"><label>입금(적금) 계좌</label><select class="input" id="vTo">'+
@@ -2780,6 +2801,7 @@
     // 입력할 때마다 만기일·원금·이자(세전/세후 15.4%)를 즉시 계산해 보여주는 미리보기
     function svPreview(){
       const box=$('svCalc'); if(!box) return;
+      svFirstPayRow();   // 💰 시작일·납입일 불일치 스위치 — 만기 계산과 무관하게 항상 재판정
       const plan=savingsPlan(parseAmount(val('vMonthly')), parseFloat(val('vRate'))||0, Number(val('vMonths')), val('vStart'), Number(val('vDay')));
       if(!plan){ box.innerHTML=''; return; }
       const row=(k,v)=>'<div class="row" style="padding:3px 0;"><span class="muted">'+k+'</span><b>'+v+'</b></div>';
@@ -2789,6 +2811,17 @@
         row('세전 이자', won(plan.interest))+
         row('이자소득세(15.4%)', '-'+won(plan.tax))+
         '<div class="row" style="border-top:1px solid var(--line);margin-top:8px;padding-top:10px;"><b>만기 수령액(세후)</b><b style="color:var(--primary)">'+won(plan.total)+'</b></div></div>';
+    }
+    // 💰 시작일 첫 납입 스위치(신규 적금 전용) — 시작일의 '일'과 납입일이 다를 때만 노출. 은행 적금처럼 가입 당일 1회 납입 후 매달 납입일에 이어가는 패턴.
+    //  체크하고 저장하면: 납입 1회가 바로 기록돼 횟수 +1 + 계좌 잔액 반영(출금 계좌 있음=postOccurrence 이체, 없음=적금 계좌 입금 기록 + firstPaid 마커로 횟수 추정에 +1).
+    function svFirstPayRow(){
+      const box=$('svFirstPay'); if(!box) return;   // 수정 모드엔 컨테이너 자체가 없음(등록 전용)
+      const sd=val('vStart')||todayStr(), day=Number(val('vDay'))||1;
+      if((+sd.slice(8,10))===day){ box.innerHTML=''; return; }
+      const wasOn=$('vFirstPay')?$('vFirstPay').classList.contains('on'):false;   // 다른 입력 변경으로 재렌더돼도 체크 상태 유지
+      box.innerHTML='<div class="card" style="padding:12px 14px;margin:4px 0 14px;"><div class="menu-item" style="padding:0;align-items:center;">'+
+        '<span style="min-width:0;">💰 시작일('+(+sd.slice(5,7))+'/'+(+sd.slice(8,10))+')에 첫 납입 했어요<br><span class="tx-sub">체크하면 첫 납입이 바로 기록돼 납입 횟수 +1 · 계좌 잔액에도 반영돼요 (다음부턴 매달 '+day+'일)</span></span>'+
+        '<div class="switch'+(wasOn?' on':'')+'" id="vFirstPay" '+App.view.act('toggleSwitch')+'><i></i></div></div></div>';
     }
     function saveSavings(ownerUid,id){
       const name=val('vName').trim(), monthly=parseAmount(val('vMonthly')), rate=parseFloat(val('vRate'))||0, months=Math.floor(Number(val('vMonths')))||0;
@@ -2809,9 +2842,12 @@
       }
       const prev=(ownerUid&&id)?state.savings.find(x=>x.ownerUid===ownerUid&&x.id===id):null;
       const rid=(prev&&prev.recurringId)||('sv_'+key);
+      // 💰 시작일 첫 납입 스위치(svFirstPayRow, 신규만) — 체크 시 시작일에 납입 1회를 바로 기록(횟수 +1 · 계좌 잔액 반영)
+      const firstPay=!prev && $('vFirstPay') && $('vFirstPay').classList.contains('on') && (+startDate.slice(8,10))!==day;
       const data={ name, monthly, rate, months, startDate, day, from:fromV||'', to:toV||'',
         user:prev?(prev.user||state.userName):state.userName,
         recurringId: fromV?rid:null,
+        firstPaid: prev?!!prev.firstPaid:firstPay,   // 출금 계좌 없이도 납입 횟수 추정(savingsPaid)에 +1 반영하는 마커 — 수정 시 보존
         createdAt:prev?(prev.createdAt||new Date().toISOString()):new Date().toISOString(), updatedAt:new Date().toISOString() };
       db.ref(wp('savings/'+owner+'/'+key)).set(data);
       // 출금 계좌가 있으면 정기거래(이체) 규칙을 만들어 매달 자동 기록 — 만기(마지막 회차)까지, 정기결제 목록과 엔진(runRecurring) 공용.
@@ -2826,18 +2862,19 @@
         const nr=nextRunOf(rule); rule.nextRunDate=nr?ymd(nr):null;
         db.ref(wp('recurring/'+owner+'/'+rid)).set(rule);
         if(owner===state.uid) setTimeout(runRecurring,400);
-        // 💰 시작일(가입일)의 '일'과 납입일이 다르면 — 첫 납입을 시작일에 바로 기록할지 제안(신규만).
-        //  은행 적금처럼 가입 당일 1회 납입 후 매달 납입일에 이어가는 패턴. postOccurrence 재사용(멱등 로그·정기 생성분과 동일 형태 rec_sv_*).
-        if(!prev && +startDate.slice(8,10)!==day){
-          const _sd=startDate, _ruleRef=Object.assign({ ownerUid:owner, id:rid }, rule);
-          setTimeout(function(){
-            confirmSheet('시작일('+(+_sd.slice(5,7))+'월 '+(+_sd.slice(8,10))+'일)과 납입일('+day+'일)이 달라요.\n시작일에 첫 납입 '+won(monthly)+'을 바로 기록할까요? (다음부턴 매달 '+day+'일 자동 기록)', function(){
-              if(postOccurrence(_ruleRef, parseDate(_sd))) toast('첫 납입을 기록했어요 — 다음은 매달 '+day+'일');
-              else toast('이미 기록되어 있어요', true);
-            }, { okLabel:'첫 납입 기록', danger:false, title:'💰 첫 납입' });
-          }, 500);
+        // 💰 첫 납입 체크됨 — 시작일 회차를 바로 기록(postOccurrence 재사용: 멱등 로그·정기 생성분과 동일 형태 rec_sv_*의 이체 거래 → 출금·적금 계좌 잔액 모두 반영, savingsPaid가 자동 +1 집계).
+        if(firstPay){
+          if(postOccurrence(Object.assign({ ownerUid:owner, id:rid }, rule), parseDate(startDate))) toast('💰 첫 납입 '+won(monthly)+' 기록 — 다음은 매달 '+day+'일');
         }
-      } else if(prevRule){ db.ref(wp('recurring/'+owner+'/'+rid)).remove(); }   // 자동 기록 해제 시 연결 규칙 제거(기록된 거래는 유지)
+      } else {
+        if(prevRule) db.ref(wp('recurring/'+owner+'/'+rid)).remove();   // 자동 기록 해제 시 연결 규칙 제거(기록된 거래는 유지)
+        // 💰 첫 납입 체크됐지만 출금 계좌가 없음 — 적금 계좌가 있으면 입금 기록(잔액조정, 통계 비포함)으로 잔액을 채우고, 횟수는 firstPaid 마커로 +1(추정 집계 savingsPaid).
+        if(firstPay && toV){
+          db.ref(wp('transactions/'+state.uid+'/sv1_'+key)).set({ type:'balance_adjustment', date:startDate, user:data.user||'', amount:monthly,
+            to:toV, desc:name+' 첫 납입', isActualExpense:false, memo:'적금 시작일 첫 납입 (등록 시 체크)' }).catch(_saveErr);
+          toast('💰 첫 납입 '+won(monthly)+' 기록 — 적금 계좌 잔액에 반영');
+        }
+      }
       toast(prev?'수정되었습니다':'추가되었습니다'); closeSheet();
     }
     function deleteSavings(ownerUid,id){

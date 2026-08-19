@@ -178,7 +178,7 @@ erDiagram
 `name`, `type`(PB_TYPES), `customTypeName`, `icon`, `status`(active/completed/archived), `budgetAmount`, `startDate`, `endDate`, `settlementEnabled`, `accountId`(전용 계좌 — '자동'이면 `acc_pb_{id}` 생성, 계좌엔 `purposeBookId` 역링크), `visibility`, `owner`.
 
 ### savings/{uid}/{id}
-`name`, `monthly`(월 납입액), `rate`(연 이율 %), `months`(기간 개월), `startDate`, `day`(매달 납입일), `from`(출금 계좌 id, ''=자동기록 안 함), `to`(입금 적금 계좌 id, 선택), `recurringId`(연결 정기거래 `sv_{id}`, 자동기록 시), `user`, `createdAt`, `updatedAt`. 만기일·예상이자는 저장하지 않고 `savingsPlan`(util.js)으로 매번 계산. *(구버전: `goal`·`current` 목표형 — 저장 시 월 납입식으로 전환)*
+`name`, `monthly`(월 납입액), `rate`(연 이율 %), `months`(기간 개월), `startDate`, `day`(매달 납입일), `from`(출금 계좌 id, ''=자동기록 안 함), `to`(입금 적금 계좌 id, 선택), `recurringId`(연결 정기거래 `sv_{id}`, 자동기록 시), `firstPaid`(bool — 등록 시 '시작일 첫 납입' 체크 마커: 출금 계좌 없을 때 납입 횟수 추정(`savingsPaid`)에 +1, 입금 기록은 거래 `sv1_{id}` balance_adjustment), `user`, `createdAt`, `updatedAt`. 만기일·예상이자는 저장하지 않고 `savingsPlan`(util.js)으로 매번 계산. *(구버전: `goal`·`current` 목표형 — 저장 시 월 납입식으로 전환)*
 
 ### stocks/{uid}/{id}
 `name`(종목명), `qty`(수량 — 소수 허용), `avgPrice`(매수 평단가), `curPrice`(현재가 — 수동 갱신), `currency`(기본 `KRW`), `fxRate`(비KRW만 — 원/1통화), `memo`, `user`, `createdAt`, `updatedAt`. 평가금액·손익·수익률은 저장하지 않고 `stockCalc`(util.js)로 매번 계산 — 평가액은 자산 탭 순자산에 포함.
