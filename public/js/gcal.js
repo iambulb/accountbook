@@ -123,9 +123,10 @@
     if(!gcalConnected()){ if(manual) toast('먼저 구글 계정을 연결해 주세요', true); return; }
     if(_busy){ _again=true; return; }
     _busy=true; _refreshSheet();
+    let holdsLock=false;   // 🔒 내가 락을 실제로 잡았을 때만 finally에서 해제 — 안 그러면 획득 실패 시 다른 기기가 잡은 락을 지워 동시 동기화·중복 이벤트가 생김
     try{
       if(!await _token(!!manual)){ if(manual) toast('구글 재연결이 필요해요 — 다시 연결을 눌러 주세요', true); return; }
-      if(!await _lock()) return;   // 다른 기기가 동기화 중
+      holdsLock=await _lock(); if(!holdsLock) return;   // 다른 기기가 동기화 중
       const g=(await _gref().once('value')).val()||{};   // 리스너 지연과 무관하게 서버 값 기준으로 diff(경합 축소)
       const cal=await _ensureCalendar(g);
       const map=g.map||{}, tg=_targets();
@@ -159,7 +160,7 @@
       else if(e && e.code===403){ if(manual) toast('구글캘린더 권한이 없어요 — 연동을 해제하고 다시 연결해 주세요', true); }
       else if(manual) toast('동기화 실패: '+((e&&e.message)||e), true);
     }finally{
-      try{ _gref('lock').remove(); }catch(e){}
+      if(holdsLock){ try{ _gref('lock').remove(); }catch(e){} }   // 내가 잡은 락만 해제(남의 락 삭제 금지)
       _busy=false;
       if(_again){ _again=false; gcalKick(); }
       _refreshSheet();

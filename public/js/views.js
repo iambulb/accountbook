@@ -1900,7 +1900,7 @@
     function pbTodoSummaryHtml(pbId){ const list=allTodos().filter(t=>t.purposeBookId===pbId); if(!list.length && true){ /* 없으면 추가 버튼만 */ }
       const doneN=list.filter(t=>t.done).length;
       let h='<div class="sech"><span class="l">할일</span><span class="s">'+(list.length?(doneN+' / '+list.length+' 완료'):'')+'</span></div>';
-      h+='<div class="card" style="padding:4px 12px;">'+(list.length?list.slice().sort((a,b)=>(a.done?1:0)-(b.done?1:0)).map(todoRow).join(''):'<div class="empty" style="padding:18px 6px;">연결된 할일이 없어요</div>')+'</div>';
+      h+='<div class="card" style="padding:4px 12px;">'+(list.length?list.slice().sort((a,b)=>(a.done?1:0)-(b.done?1:0)).map(t=>todoRow(t)).join(''):'<div class="empty" style="padding:18px 6px;">연결된 할일이 없어요</div>')+'</div>';   // .map(todoRow)는 index/array가 todoRow의 ro/drag 인자로 새어 첫 행만 편집되던 버그 — t만 넘긴다
       h+='<button class="btn ghost" style="margin-top:8px;" '+App.view.act('openTodoEdit',null,pbId)+'>＋ 이 여행에 할일 추가</button>';
       return h; }
     // 완료 리포트(할일 모드 더보기) — 전체 완료율 + 스코프별 + 멤버별 완료 기여

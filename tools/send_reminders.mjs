@@ -222,7 +222,9 @@ async function main() {
       if (TYPE === 'harvest') { try { await admin.database().ref('/users/' + t.uid + '/pushMeta/lastHarvestNotify').set(today); } catch (_) {} }   // 하루 1회
     } catch (e) {
       const code = (e && e.errorInfo && e.errorInfo.code) || (e && e.code) || '';
-      if (/registration-token-not-registered|invalid-argument|invalid-registration-token/.test(code)) {
+      // ⚠️ 'invalid-argument'는 토큰이 아니라 메시지 페이로드가 잘못돼도 반환된다(payload는 대상 전원 공유) → 이걸로 토큰을 지우면
+      //   한 번의 페이로드 실수로 전 사용자의 푸시 토큰이 삭제될 수 있다. 진짜 만료 토큰 코드 두 개만 정리 대상으로 둔다.
+      if (/registration-token-not-registered|invalid-registration-token/.test(code)) {
         try { await admin.database().ref('/users/' + t.uid + '/push').remove(); removed++; } catch (_) {}   // 만료 토큰 정리
       } else { console.warn('  ! ' + t.uid + ': ' + code); }
     }

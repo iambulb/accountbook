@@ -18,7 +18,7 @@
       tab:'calendar',
       mode: (localStorage.getItem('mode')==='todo' ? 'todo' : 'ledger'),   // 가계부(ledger) / 할일(todo) 모드
       view: 'mode',     // 캘린더(탭)를 홈처럼 사용 — '오늘 홈' 랜딩 폐지(브랜드 아이콘=소식). 구 'home' 뷰 로직은 미사용
-      todos:[], todoShare:{},   // 그룹 할일 목록(ws/{wsId}/todos) / (레거시) 멤버별 공유 플래그
+      todos:[],   // 그룹 할일 목록(ws/{wsId}/todos). (구 레거시 ws todoShare 키는 제거 — 아래 25행 친구별 todoShare와 이름이 겹쳐 공유 OFF가 되돌아가던 버그)
       todoCats:[],   // 할일 카테고리(ws/{wsId}/todoCats) — 워크스페이스별 사용자 정의 세트(가계부 categories 와 같은 패턴)
       myTodos:[],   // 내 개인 할일(user-global: users/{uid}/todos) — 워크스페이스 무관
       friends:{}, friendReqs:{}, todoPublic:false, friendCode:'', friendPub:{},   // 친구 관계·받은 요청·내 공개 플래그·내 코드·친구별 공개여부(users/{uid}/…)
@@ -690,7 +690,8 @@
 
     function resetWorkspaceState(){
       Object.assign(state, { transactions:[], accounts:[], categories:[], savings:[], stocks:[], recurring:[],
-        creditCards:[], subscriptions:[], purposeBooks:[], people:[], giftEvents:[], plannedGiftEvents:[], settlementPayments:[], loans:[], loanPayments:[], wsSettings:{}, budgets:[], todoCats:[] });
+        creditCards:[], subscriptions:[], purposeBooks:[], people:[], giftEvents:[], plannedGiftEvents:[], settlementPayments:[], loans:[], loanPayments:[], wsSettings:{}, budgets:[], todos:[], todoCats:[] });   // todos 포함 — 그룹 전환 직후 이전 그룹 할일이 남아 새 ws에 유령 할일이 생기던 격리 위반 방지
+      state._balCache=null;   // 계좌 잔액 캐시 무효화(워크스페이스 전환)
       state.memberFilter='';
       seededAcc=seededCat=seededTodoCat=booted=migratedAcc=migratedCat=migratedBudget=migratedRec=false;
       recurringLogKeys=new Set();
@@ -819,7 +820,7 @@
       });
       attach('transactions', s=>{
         const arr=[]; s.forEach(us=>{ us.forEach(ts=>{ arr.push(Object.assign({ownerUid:us.key,id:ts.key},ts.val())); }); });
-        state.transactions=arr; recv.tx=true; App.store.emit(); maybeBoot();
+        state.transactions=arr; state._balCache=null; recv.tx=true; App.store.emit(); maybeBoot();   // 거래 변경 시 잔액 캐시 무효화(다음 accountBalance 호출에서 1회 재계산)
       });
       attach('savings', s=>{
         const arr=[]; s.forEach(us=>{ us.forEach(vs=>{ arr.push(Object.assign({ownerUid:us.key,id:vs.key},vs.val())); }); });
@@ -847,7 +848,8 @@
         const o=s.val()||{}; state.todos=Object.keys(o).map(k=>Object.assign({id:k},o[k])); App.store.emit('todo');
         if(typeof gcalKick==='function') gcalKick();   // 📅 그룹 할일 변경(다른 멤버 수정·담당자 변경 포함) → 구글캘린더 동기화 킥(연동 시)
       });
-      attach('todoShare', s=>{ state.todoShare=s.val()||{}; App.store.emit('todo'); });   // 멤버별 개인 할일 공유 on/off
+      // (구 attach('todoShare') 레거시 리스너 제거 — ws/{wsId}/todoShare가 users/{uid}/todoShare(친구별 토글, add() 리스너)와 같은 state 키를 {}로 덮어써
+      //  워크스페이스 전환·재로그인 시 친구별 공유 OFF가 조용히 되돌아가던 버그. 친구별 토글은 core.js:441 add('todoShare')가 단일 소스.)
       // 🎨 할일 카테고리 — 없으면 기본 세트 1회 시드(가계부 categories 와 동일 패턴). 워크스페이스 멤버가 공유한다.
       attach('todoCats', s=>{
         if(!s.exists() && !seededTodoCat){ seededTodoCat=true; db.ref(wp('todoCats')).set(buildDefaultTodoCats()); return; }
@@ -1065,17 +1067,24 @@
     }
 
     // ===== 파생 계산 =====
-    function accountBalance(id){
-      const a=getAcct(id); let bal=a?Number(a.initialBalance||0):0;
-      const today=todayStr();   // 📅 오늘까지만 현재 잔액에 반영 — 미래 날짜 거래는 '예정'이라 아직 잔액에 안 잡힘(은행 대기거래처럼)
+    // 🚀 계좌별 잔액 델타 맵을 전체 거래 1회 순회로 계산해 캐시(state._balCache) — accountBalance가 계좌마다 전체 거래를 재순회하던 O(계좌수×거래수)를 O(거래수)로.
+    //   무효화: 거래 리스너(attach transactions)·워크스페이스 전환에서 _balCache=null. 날짜(오늘)가 바뀌면 예정거래 경계가 달라지므로 _balCacheDay로 자동 재빌드.
+    //   결과는 기존 accountBalance와 완전 동일(같은 TX_EFFECT·미래 제외 규칙을 맵으로 옮긴 것).
+    function rebuildBalCache(){
+      const m={}, today=todayStr();
       state.transactions.forEach(t=>{
-        if((t.date||'').slice(0,10) > today) return;   // 예정(미래) 거래 제외
+        if((t.date||'').slice(0,10) > today) return;   // 예정(미래) 거래 제외 — 기존 규칙 그대로
         const e=TX_EFFECT[t.type]; if(!e) return;
         const amt=Number(t.amount)||0;
-        if(e.debit && t[e.debit]===id) bal-=amt;
-        if(e.credit && t[e.credit]===id) bal+=amt;
+        if(e.debit && t[e.debit]) m[t[e.debit]]=(m[t[e.debit]]||0)-amt;
+        if(e.credit && t[e.credit]) m[t[e.credit]]=(m[t[e.credit]]||0)+amt;
       });
-      return bal;
+      state._balCache=m; state._balCacheDay=today;
+    }
+    function accountBalance(id){
+      if(!state._balCache || state._balCacheDay!==todayStr()) rebuildBalCache();
+      const a=getAcct(id);
+      return (a?Number(a.initialBalance||0):0) + (state._balCache[id]||0);
     }
     // 📅 예정(미래 날짜) 거래 목록 — 오늘 이후 날짜, 최근(가까운) 순.
     function scheduledTxs(){ const today=todayStr(); return state.transactions.filter(function(t){ return (t.date||'').slice(0,10) > today; }).sort(function(a,b){ return (a.date||'')<(b.date||'')?-1:1; }); }
