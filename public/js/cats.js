@@ -1700,6 +1700,27 @@
     ];
     const GEAR_PAL={G:'#7c8698',H:'#aeb6c4',S:'#5f6875'};
     function gearSvg(opt){ return pxSvg(M_GEAR, GEAR_PAL, opt); }
+    // 📅 구글캘린더 연동 아이콘 — 링 2개 달린 달력 + 파랑 헤더(하이라이트) + 구글 4색 날짜 타일(18×16, 4톤+외곽선). PIL 라이트/다크/소형 검수 완료. 더보기(할일) 셀·연동 시트용.
+    const M_GCAL=[
+      '..................',
+      '....KK......KK....',
+      '....KK......KK....',
+      '.KKKKKKKKKKKKKKKK.',
+      '.KbbKKbbbbbbKKbbK.',
+      '.KBBBBBBBBBBBBBBK.',
+      '.KKKKKKKKKKKKKKKK.',
+      '.KWWWWWWWWWWWWWWK.',
+      '.KWUUWWRRWWDDWWWK.',
+      '.KWUUWWRRWWDDWWWK.',
+      '.KWWWWWWWWWWWWWWK.',
+      '.KWYYWWGGWWDDWWWK.',
+      '.KWYYWWGGWWDDWWWK.',
+      '.KWWWWWWWWWWWWWWK.',
+      '.KSSSSSSSSSSSSSSK.',
+      '.KKKKKKKKKKKKKKKK.'
+    ];
+    const GCAL_PAL={K:'#3d4654',b:'#8ab5f8',B:'#3182f6',W:'#f5f7fa',S:'#d8dde6',U:'#4285f4',R:'#ea4335',Y:'#f9ab00',G:'#34a853',D:'#c4cbd6'};
+    function gcalSvg(opt){ return pxSvg(M_GCAL, GCAL_PAL, opt); }
     // 🖥️ PiP(항상 위 미니 창) 아이콘 — 모니터 프레임 + 우하단으로 겹친 밝은 작은 창(16×14, 3~4톤 음영+외곽선). PIL 라이트/다크 검수 완료. dock 캠 PiP 버튼용.
     const M_PIP = [
       '................',

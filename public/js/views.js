@@ -3395,6 +3395,7 @@
         h+=gcell(MORE_ICON.repeat,'반복 할일','openRepeatTodos()');
         h+=gcell(MORE_ICON.category,'카테고리','openTodoCatSheet()');
         h+=gcell('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>','할일 템플릿','openTodoTpls()');
+        if(typeof gcalConfigured==='function' && gcalConfigured()) h+=gcell((typeof gcalSvg==='function'?gcalSvg({h:26}):'📅'),'구글캘린더','openGcalSheet()');   // 📅 할일→구글캘린더 단방향 동기화(GCAL_CLIENT_ID 설정 시에만 노출)
         // 목적별(가계부)은 할일 모드 더보기에서 숨김 — 가계부 모드에서만 노출
       } else {
         const activeSubs=(state.subscriptions||[]).filter(s=>s.status==='active').length;

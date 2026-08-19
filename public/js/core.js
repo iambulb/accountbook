@@ -419,6 +419,7 @@
         if(justSignedUp){ justSignedUp=false; try{ if(typeof grantWelcomeGift==='function') setTimeout(grantWelcomeGift, 900); }catch(e){ console.warn('welcome gift', e); } }   // 🎉 신규 가입 축하 선물(멱등)
         try{ if(typeof maybeOnboard==='function') setTimeout(maybeOnboard, 1300); }catch(e){}   // 🧭 첫 사용자 온보딩(users/{uid}/onboarded 1회)
         try{ if(typeof initPush==='function') setTimeout(initPush, 1600); }catch(e){}   // 🔔 알림 토큰 조용히 갱신(권한 이미 허용 시)
+        try{ if(typeof initGcal==='function') setTimeout(initGcal, 2200); }catch(e){}   // 📅 구글캘린더 연동돼 있으면 부팅 1회 동기화 킥(gcal.js)
       }catch(e){ clearTimeout(_slowBoot); toast(e.message||'로그인 처리 중 오류', true); }
     }
 
@@ -429,7 +430,8 @@
       _userRefs.forEach(r=>{ try{ r.off(); }catch(e){} }); _userRefs=[];
       Object.keys(_friendTodoRefs).forEach(u=>{ try{ _friendTodoRefs[u].off(); }catch(e){} }); _friendTodoRefs={}; state.friendTodosByUid={};   // 친구 할일 리스너 초기화
       const add=(path,cb)=>{ const r=db.ref('users/'+state.uid+'/'+path); r.on('value',cb); _userRefs.push(r); };
-      add('todos', s=>{ const o=s.val()||{}; state.myTodos=Object.keys(o).map(k=>Object.assign({id:k,scope:'personal',ownerUid:state.uid},o[k])); rerender('todo'); });
+      add('todos', s=>{ const o=s.val()||{}; state.myTodos=Object.keys(o).map(k=>Object.assign({id:k,scope:'personal',ownerUid:state.uid},o[k])); rerender('todo'); if(typeof gcalKick==='function') gcalKick(); });   // 📅 내 할일 변경 → 구글캘린더 동기화 킥(연동 시)
+      add('gcal', s=>{ state.gcal=s.val()||null; if(typeof onGcalData==='function') onGcalData(); });   // 📅 구글캘린더 연동 상태·매핑(users/{uid}/gcal — 본인 전용)
       add('friends', s=>{ state.friends=s.val()||{}; loadFriendPublics(); rerender('social'); });
       add('friendReqs', s=>{ state.friendReqs=s.val()||{}; rerender('social'); });
       add('todoPublic', s=>{ state.todoPublic=!!s.val(); syncFriendTodoWatch(); rerender('todo'); });   // 기본값 변경도 워치 게이트(myShareTo 폴백)에 반영
@@ -839,6 +841,7 @@
       });
       attach('todos', s=>{
         const o=s.val()||{}; state.todos=Object.keys(o).map(k=>Object.assign({id:k},o[k])); App.store.emit('todo');
+        if(typeof gcalKick==='function') gcalKick();   // 📅 그룹 할일 변경(다른 멤버 수정·담당자 변경 포함) → 구글캘린더 동기화 킥(연동 시)
       });
       attach('todoShare', s=>{ state.todoShare=s.val()||{}; App.store.emit('todo'); });   // 멤버별 개인 할일 공유 on/off
       // 🎨 할일 카테고리 — 없으면 기본 세트 1회 시드(가계부 categories 와 동일 패턴). 워크스페이스 멤버가 공유한다.

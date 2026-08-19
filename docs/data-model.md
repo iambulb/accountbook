@@ -12,6 +12,9 @@ users/{uid}            : { name, email, photo(프로필 사진 base64 data URL),
                            push:{ token, at, ua },                 // 🔔 웹 푸시(FCM) 토큰 — 본인만 쓰기·발송기(admin)만 읽음. 알림 끄면 삭제. tools/send_reminders.mjs가 사용
                            pushMeta:{ lastGiftNotify },            // 🎁 친구선물 푸시 중복방지 워터마크(발송기 admin이 쓰기) — 이 시각 이후 선물만 알림. gift-notify 크론이 사용
                            todosMigrated: true,                    // 개인 할일 ws→user 1회 이전 완료 플래그
+                           gcal:{ meta:{ calendarId, connectedAt, lastSyncAt },   // 📅 구글캘린더 단방향 동기화 상태(본인 전용 — 공개 하위노드 아님)
+                                  map:{ {키}:{ e:eventId, s:sig, w:''|wsId } },   //   키='개인 todoId'|'wsId_todoId', s=변경감지 해시, w=스코프 태그(타 ws 오삭제 방지)
+                                  lock:{ at, by } },                              //   다중 기기 동기화 락(60초 스테일 탈취)
                            todoPublic: true|false,                 // 할일 공유 '기본값'(친구별 todoShare 미설정 친구에게 적용)
                            todoShare:{ {friendUid}: true|false },  // 🔐 친구별 할일 공유 토글 — 명시값이 todoPublic보다 우선. OFF면 그 친구와 서로의 할일이 안 보임(양방향, UI 게이트)
                            friendCode: "ABC123",                   // 내 친구 코드(friendCodes 인덱스와 짝)
