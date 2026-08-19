@@ -2590,7 +2590,8 @@
       rbcoinTotal: Math.max(0, Math.floor(Number(g.rbcoinTotal)||0)),   // 🌈 누적 획득(감소 없음 — grantRbcoin만 올림)
       rbcoinSpent: Math.max(0, Math.floor(Number(g.rbcoinSpent)||0)),   // 🌈 누적 소비(감소 없음 — spendRbcoin만 올림). 잔액=획득−소비 재구성 축
       rbcoinSpentV: Math.max(0, Math.floor(Number(g.rbcoinSpentV)||0)),   // 🌈 소비카운터 시드 마커(1=시드 완료 → 자가복구 활성)
-      rbMigV: Math.max(0, Math.floor(Number(g.rbMigV)||0))   // 🌈 무지개 경제 개편 마이그레이션 마커(1=완료, migrateRbEconomyIfNeeded)
+      rbMigV: Math.max(0, Math.floor(Number(g.rbMigV)||0)),   // 🌈 무지개 경제 개편 마이그레이션 마커(1=완료, migrateRbEconomyIfNeeded)
+      newsSeenAt: (typeof g.newsSeenAt==='string')?g.newsSeenAt:''   // 📰 소식 '봤음' 워터마크 — normalizeGame이 통째 재생성하므로 여기 없으면 다음 트랜잭션에 영구 삭제(기기 간 공지 배지 동기화가 깨지던 버그)
     }); }
     // 선물함 목록을 항상 배열로 정규화(RTDB가 객체로 돌려줄 수 있어 방어)
     function normalizeGifts(x){ if(Array.isArray(x)) return x.filter(Boolean); if(x&&typeof x==='object') return Object.keys(x).map(k=>x[k]).filter(Boolean); return []; }

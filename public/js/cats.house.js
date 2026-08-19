@@ -956,8 +956,9 @@
       gameRef().transaction(g=>{ g=normalizeGame(g); got=null;   // 재시도마다 리셋 → 커밋된 실행값만 남음
         const R=gRoomById(g, rid); if(!R) return;
         const i=(R.drops||[]).findIndex(d=>d&&d.id===dropId); if(i<0) return;   // 이미 수집됨(다른 기기/중복 탭) → abort
-        const d=R.drops[i]; R.drops.splice(i,1);
-        got={ kind:d.kind, n:creditDropKind(g, d.kind) }; return g;
+        const d=R.drops[i]; const n=creditDropKind(g, d.kind);
+        if(n>0) R.drops.splice(i,1);   // 🛟 보관 한도 도달(n=0)이면 드랍을 남겨 다음에 다시 시도 가능(예전엔 splice 먼저 해서 캡에 걸린 드랍이 지급 없이 소멸)
+        got={ kind:d.kind, n }; return g;
       }).then(r=>{ if(!(r&&r.committed&&got)) return;
         if(got.n<=0){ toast('보관 한도가 가득해요', true); return; }   // MAX_CONSUM/MAX_GOLD/MAX_RBCOIN 캡 절단
         const disp=dropDisplay(got.kind), rbBoxEgg=(got.kind==='rainbow_egg'||got.kind==='rainbow_box');
@@ -1136,8 +1137,11 @@
         //   📦 랜덤박스는 봉인 그대로 가방(consum.box) · 🌈 무지개동전/무지개알/무지개박스는 g.rbcoin 적립(2026-07: 박스 즉석 개봉 폐지). creditDropKind가 종류별 적립.
         { const g0=g.gold||0;
           rooms.forEach(R=>{ if(!R||!(R.drops||[]).length) return;
-            R.drops.forEach(d=>{ if(!d) return; creditDropKind(g, d.kind); dropCounts[d.kind]=(dropCounts[d.kind]||0)+1; });
-            R.drops=[]; });
+            const keep=[];
+            R.drops.forEach(d=>{ if(!d) return; const n=creditDropKind(g, d.kind);
+              if(n>0) dropCounts[d.kind]=(dropCounts[d.kind]||0)+1;   // 실제 적립된 드랍만 집계(개수 기준 — 팝업 표기 그대로)
+              else keep.push(d); });   // 🛟 보관 한도 도달로 못 받은 드랍은 남겨 다음 수확에 재시도(예전엔 전부 비워 소멸 + 팝업엔 받은 것처럼 표기)
+            R.drops=keep; });
           const pg=Math.max(0, Math.floor(Number(g.pendingGold)||0));   // 💰 그동안 모인 금화(reconcileDrops 누적)를 수확 시 지갑으로 → goldBonus에 포함돼 팝업·토스트에 '금화 +N' 표기
           if(pg>0){ g.gold=clampGold((g.gold||0)+pg); g.pendingGold=0; }
           goldBonus=(g.gold||0)-g0;

@@ -31,8 +31,8 @@ users/{uid}/{friends,friendReqs} : 친구 관계·요청   // 당사자 두 명�
 | `presence/{uid}` | **개발자 이메일만** — 🟢 접속 상태(개발자 '사용자 현황' 접속중 표시) | **본인만**(`auth.uid === $uid`) |
 | `rankings/{uid}` | 로그인 | **본인만**(`auth.uid === $uid`) — 공개 랭킹 경량 인덱스(name/likes/private) |
 | `config/notices` | 로그인(전역) | **개발자 이메일만**(`auth.token.email`) — 📢 소식 공지. 배포 없이 Firebase 콘솔/개발자 계정에서 편집(`loadNotices`가 구독) |
-| `codes/*`·`friendCodes/*` | 로그인 | 로그인이되 **생성·삭제만**(`!data.exists() \|\| !newData.exists()`) — 기존 코드 **덮어쓰기 금지**(스쿼팅/하이재킹 방어) |
-| `workspaces/{wsId}` | 로그인(코드로 그룹 조회) | 멤버 또는 **본인을 멤버로 추가**할 때 |
+| `codes/{CODE}`·`friendCodes/{CODE}` | 로그인 — **단건 조회만**(루트 목록 read 제거 → 전체 코드 덤프 차단, 2026-08 보안) | `codes`=생성(누구나) + **삭제는 그 코드의 그룹 소유자만**. `friendCodes`=**생성만**(덮어쓰기·삭제 금지). — 예전 `!newData.exists()`로 아무나 삭제하던 그리핑 차단 |
+| `workspaces/{wsId}` | 로그인 — **단건 조회만**(`$wsId`에 read, 루트 read 제거 → 워크스페이스·초대코드 전체 덤프 차단, 2026-08 보안) | 멤버 또는 새 생성. **본인 셀프 합류는 `members/{uid}` 하위 규칙**에서 `viaCode`(합류에 쓴 코드)가 `ws.code`·`codes` 인덱스와 일치할 때만 — 코드를 모르면 임의 그룹 자가삽입 불가 |
 | `ws/{wsId}/**` | 그 워크스페이스 **멤버만** | 그 워크스페이스 **멤버만** |
 | 레거시 루트(`accounts`·`transactions` 등) | **제거됨(전면 차단)** | **제거됨** — 마이그레이션(`migrationV3`) 완료로 아무 클라이언트도 접근 안 함 → 규칙에서 삭제해 노출 차단 |
 
@@ -57,8 +57,11 @@ users/{uid}/{friends,friendReqs} : 친구 관계·요청   // 당사자 두 명�
 |---|---|
 | 멤버 uid → `ws/{wsId}/accounts` 읽기/쓰기 | 허용 |
 | 비멤버 uid → `ws/{wsId}/**` 읽기/쓰기 | 거부 |
-| 누구나 → `codes/{CODE}` 읽기(그룹 합류용) | 허용 |
-| uidA → `workspaces/{wsId}/members/uidA` 추가 | 허용(셀프 합류) |
+| 누구나 → `codes/{CODE}` **단건** 읽기(그룹 합류용) | 허용 |
+| 누구나 → `codes`/`workspaces` **전체 목록** 읽기(덤프) | 거부(루트 read 없음) |
+| uidA → `workspaces/{wsId}/members/uidA`(`viaCode` 일치) 추가 | 허용(코드 아는 셀프 합류) |
+| uidA → `workspaces/{wsId}/members/uidA`(`viaCode` 없음/불일치) 추가 | 거부(임의 그룹 자가삽입 차단) |
+| uidB → `codes/{CODE}` 삭제(그룹 소유자 아님) | 거부 |
 | uidA → `users/uidB` 쓰기(친구 하위 제외) | 거부 |
 | uidA → `users/uidB/todos` 읽기(친구 공개 할일) | 허용(전역 read) |
 | uidA → `users/uidB/friendReqs/uidA` 쓰기(친구 요청) | 허용(당사자) |

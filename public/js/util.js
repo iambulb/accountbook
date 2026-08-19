@@ -95,6 +95,30 @@
   function dueDiffDays(dueYmd, todayYmd) { const a = new Date(dueYmd + 'T00:00:00'), b = new Date(todayYmd + 'T00:00:00'); return Math.round((a - b) / 86400000); }
   // Y-M-D의 day를 해당 월 말일로 클램프(31일 항목이 짧은 달에서 안 넘치게). anchorDay를 유지하며 굴리면 31→28→31 복원.
   function clampYmd(y, m, day) { var last = new Date(y, m, 0).getDate(), dd = Math.min(day, last), z = function (x) { return (x < 10 ? '0' : '') + x; }; return y + '-' + z(m) + '-' + z(dd); }
+  // 구독이 지정한 달(mm='YYYY-MM')에 결제되는가 — 결제되면 그 달 결제일('YYYY-MM-DD'), 아니면 null. 순수·과거/미래 양방향.
+  //  effNextBilling은 '오늘 이후 다음 결제일'만 줘서, 이번 달 결제일이 이미 지난 구독이 고정지출·계좌 필요액·이번달예정에서 통째로 누락되던 버그를 위한 별도 판정.
+  //  cycle: monthly(기본·custom 포함)/yearly/weekly. anchor=nextBillingDate(과거/미래 무관), interval 주기 정합을 모듈로로 확인.
+  function subChargeDayInMonth(nextDate, cycle, interval, mm) {
+    var d = String(nextDate || '').slice(0, 10); if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return null;
+    if (!/^\d{4}-\d{2}$/.test(String(mm || ''))) return null;
+    interval = Math.max(1, Math.floor(Number(interval) || 1));
+    var ay = +d.slice(0, 4), am = +d.slice(5, 7), aDay = +d.slice(8, 10);
+    var my = +mm.slice(0, 4), mo = +mm.slice(5, 7);
+    if (cycle === 'weekly') {
+      var mStart = mm + '-01', mLast = clampYmd(my, mo, 31), x = d, g = 0;
+      while (x >= mStart && g++ < 600) x = addDays(x, -7 * interval);
+      g = 0; while (x < mStart && g++ < 600) x = addDays(x, 7 * interval);
+      return (x >= mStart && x <= mLast) ? x : null;
+    }
+    if (cycle === 'yearly') {
+      if (mo !== am) return null;
+      if ((((my - ay) % interval) + interval) % interval !== 0) return null;
+      return clampYmd(my, mo, aDay);
+    }
+    var diff = (my - ay) * 12 + (mo - am);
+    if ((((diff % interval) + interval) % interval) !== 0) return null;
+    return clampYmd(my, mo, aDay);
+  }
   // 구독 '다음 결제일'을 오늘 이후로 굴린다(저장값이 과거면 billingCycle×interval만큼 전진 — 표시·알림용, RTDB 저장 안 함·순수).
   //  구독의 nextBillingDate는 저장 폼에서만 설정돼 첫 주기 뒤 과거로 고정 → 결제 D-day·이번달예정·7일내 알림이 조용히 정지하던 버그 해소. cycle: monthly/yearly/weekly.
   function effNextBilling(nextDate, cycle, interval, today) {
@@ -603,7 +627,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CAM: CAM, camDepth: camDepth, camFurnBottom: camFurnBottom, camZ: camZ, CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, fmtCommaSigned: fmtCommaSigned, parseAmount: parseAmount, parseAmountSigned: parseAmountSigned, todayKst: todayKst, isoAtNoon: isoAtNoon, jsAttr: jsAttr, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, clampYmd: clampYmd, effNextBilling: effNextBilling, todoScope: todoScope, overdueTodoIds: overdueTodoIds, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, affTiers: affTiers, dupAffOf: dupAffOf, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, dropMoodFactor: dropMoodFactor, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, recurringCandidate: recurringCandidate, loanInstallment: loanInstallment, doneDayFor: doneDayFor, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift, savingsPlan: savingsPlan, stockCalc: stockCalc };
+  var api = { CAM: CAM, camDepth: camDepth, camFurnBottom: camFurnBottom, camZ: camZ, CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, fmtCommaSigned: fmtCommaSigned, parseAmount: parseAmount, parseAmountSigned: parseAmountSigned, todayKst: todayKst, isoAtNoon: isoAtNoon, jsAttr: jsAttr, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, clampYmd: clampYmd, effNextBilling: effNextBilling, subChargeDayInMonth: subChargeDayInMonth, todoScope: todoScope, overdueTodoIds: overdueTodoIds, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, affTiers: affTiers, dupAffOf: dupAffOf, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, dropMoodFactor: dropMoodFactor, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, recurringCandidate: recurringCandidate, loanInstallment: loanInstallment, doneDayFor: doneDayFor, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift, savingsPlan: savingsPlan, stockCalc: stockCalc };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);

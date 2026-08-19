@@ -2491,7 +2491,7 @@
         occ.forEach(o=>{ bucket.n++; bucket.sum+=amt; if(o>today) bucket.remain+=amt; });
       });
       (state.subscriptions||[]).filter(s=>(s.status||'active')==='active'&&!s.recurringId).forEach(s=>{
-        const nb=subNextBilling(s); if(!nb||String(nb).slice(0,7)!==mm) return;
+        const nb=subChargeDayInMonth(s.nextBillingDate, s.billingCycle, s.billingInterval, mm); if(!nb) return;   // 이번 달 결제일이 지났어도 그 달 회차를 잡는다(구 subNextBilling은 결제 후 다음달로 굴려 누락)
         const amt=Number(s.amount)||0; sub.n++; sub.sum+=amt; if(parseDate(nb)>today) sub.remain+=amt;
       });
       // 🏦 대출 상환(빌림·활성·잔액 있음) — 상환 방식 스케줄의 이번 달 회차 납입액(loanMonthPlan). pay=원금+이자(원금만기 방식은 정의상 매월 원금 0 — 만기 달엔 원금 포함)
@@ -2523,7 +2523,7 @@
         occ.forEach(o=>add(r.from, Number(r.amount)||0, o, r.savingsId?'적금':'정기', r.desc||TYPE_LABEL[r.type]||'정기거래'));
       });
       (state.subscriptions||[]).filter(s=>(s.status||'active')==='active'&&!s.recurringId&&s.paymentAccountId).forEach(s=>{
-        const nb=subNextBilling(s); if(nb&&String(nb).slice(0,7)===mm) add(s.paymentAccountId, Number(s.amount)||0, parseDate(nb), '구독', s.name||'구독');
+        const nb=subChargeDayInMonth(s.nextBillingDate, s.billingCycle, s.billingInterval, mm); if(nb) add(s.paymentAccountId, Number(s.amount)||0, parseDate(nb), '구독', s.name||'구독');   // 결제 지난 구독도 그 달 필요액에 포함
       });
       visibleLoans().forEach(l=>{ if(l.direction==='lent'||!l.account) return; if(loanCalc(l).balance<=0) return;
         const mp=loanMonthPlan(l, mm); if(mp&&mp.inst) add(l.account, mp.inst.pay, parseDate(mm+'-'+pad2(mp.day)), '대출', l.name||'대출 상환');
@@ -2846,20 +2846,23 @@
       }
       const prev=(ownerUid&&id)?state.savings.find(x=>x.ownerUid===ownerUid&&x.id===id):null;
       const rid=(prev&&prev.recurringId)||('sv_'+key);
-      // 💰 시작일 첫 납입 스위치(svFirstPayRow, 신규만) — 체크 시 시작일에 납입 1회를 바로 기록(횟수 +1 · 계좌 잔액 반영)
+      // 💰 시작일 첫 납입 스위치(svFirstPayRow, 신규 등록 시에만 체크 가능) — 체크 시 시작일에 납입 1회를 바로 기록(횟수 +1 · 계좌 잔액 반영)
+      //  ⚠️ 두 값을 구분: firstPay=이번 저장에서 첫 납입을 "새로 기록"할지(신규만) · effFP=이 적금의 최종 첫납입 상태(수정 시 기존 마커 보존).
+      //     endDate 보정(정기 n−1회)은 반드시 effFP 기준이어야 한다 — firstPay만 보면 수정 시 endDate가 만기로 되돌아가 정기 n회+마커 1회=n+1회로 늘어나는 회귀 발생(실제 버그).
       const firstPay=!prev && $('vFirstPay') && $('vFirstPay').classList.contains('on') && (+startDate.slice(8,10))!==day;
+      const effFP=prev?!!prev.firstPaid:firstPay;
       const data={ name, monthly, rate, months, startDate, day, from:fromV||'', to:toV||'',
         user:prev?(prev.user||state.userName):state.userName,
         recurringId: fromV?rid:null,
-        firstPaid: prev?!!prev.firstPaid:firstPay,   // 출금 계좌 없이도 납입 횟수 추정(savingsPaid)에 +1 반영하는 마커 — 수정 시 보존
+        firstPaid: effFP,   // 출금 계좌 없이도 납입 횟수 추정(savingsPaid)에 +1 반영하는 마커 — 수정 시 보존
         createdAt:prev?(prev.createdAt||new Date().toISOString()):new Date().toISOString(), updatedAt:new Date().toISOString() };
       db.ref(wp('savings/'+owner+'/'+key)).set(data);
       // 출금 계좌가 있으면 정기거래(이체) 규칙을 만들어 매달 자동 기록 — 만기(마지막 회차)까지, 정기결제 목록과 엔진(runRecurring) 공용.
       const prevRule=state.recurring.find(r=>r.ownerUid===owner&&r.id===rid);
       let fpMsg='';   // 💰 첫 납입 안내(최종 토스트에 병기 — 토스트 덮어쓰기 방지)
       if(fromV){
-        // ⚖️ 첫 납입 체크 시 마지막 정기 회차를 한 달 앞당김(첫 납입=1회차 → 정기 n−1회, 총 납입=기간 n회 유지. n=1이면 정기 0회 — 규칙은 이력용으로만 남고 실행 안 됨)
-        const endD=firstPay?svShiftM(plan.last, -1, day):plan.last;
+        // ⚖️ 첫 납입이면 마지막 정기 회차를 한 달 앞당김(첫 납입=1회차 → 정기 n−1회, 총 납입=기간 n회 유지. n=1이면 정기 0회 — 규칙은 이력용). effFP 기준이라 수정 저장에도 보정이 유지된다.
+        const endD=effFP?svShiftM(plan.last, -1, day):plan.last;
         const rule={ type:'transfer', desc:name+' 적금', amount:monthly, freq:'monthly', interval:1,
           startDate, endDate:ymd(endD), day, weekday:0,
           user:data.user, autoCreate:true, status:'active', visibility:defaultVisibility(), memo:'',
@@ -3232,7 +3235,7 @@
     // 아바타: 사진 있으면 <img>, 없으면 이니셜 폴백. photoOverride 주면 캐시 대신 그 값 사용(미리보기용)
     function avatarHtml(uid, name, size, photoOverride){
       size=size||38;
-      const photo = photoOverride!==undefined ? photoOverride : (state.userPhotos&&state.userPhotos[uid]);
+      const photo = safeImgSrc(photoOverride!==undefined ? photoOverride : (state.userPhotos&&state.userPhotos[uid]));   // 🛡️ data:image만 허용(저장형 XSS 차단)
       if(photo) return '<img class="avatar" src="'+photo+'" alt="" style="width:'+size+'px;height:'+size+'px;">';
       // 기본(사진 없음) 아바타 = 은화 픽셀 아이콘(전역 통일)
       return '<div class="avatar avatar-coin" style="width:'+size+'px;height:'+size+'px;">'+(typeof coinSvg==='function'?coinSvg({h:Math.round(size*0.72)}):'')+'</div>';
@@ -3312,7 +3315,7 @@
     // 사진 있으면 <img>, 없으면 기본=금화 픽셀 아이콘(그룹/가계부). photoOverride: 미리보기용
     function wsAvatarHtml(name, photo, size, photoOverride){
       size=size||52;
-      const p = photoOverride!==undefined ? photoOverride : photo;
+      const p = safeImgSrc(photoOverride!==undefined ? photoOverride : photo);   // 🛡️ data:image만 허용(저장형 XSS 차단)
       if(p) return '<img class="avatar" src="'+p+'" alt="" style="width:'+size+'px;height:'+size+'px;">';
       return '<div class="avatar avatar-gold" style="width:'+size+'px;height:'+size+'px;">'+(typeof goldSvg==='function'?goldSvg({h:Math.round(size*0.72)}):'')+'</div>';
     }
@@ -3884,6 +3887,9 @@
         data.cardPerformanceAmount= inc ? (parseAmount(val('rCpa'))||amount) : 0;
         data.cardPerformanceExcludedReason= inc ? '' : (val('rCpr')||'');
       }
+      // 🔗 연결 필드 보존 — set()이 노드를 통째 교체하므로, 적금(savingsId) 등 다른 화면이 만든 링크를 명시 복원한다.
+      //    (안 하면 적금 자동이체 규칙을 정기거래 목록에서 수정 시 savingsId가 소실 → 고정지출·계좌 필요액에서 적금이 통째로 누락되는 버그)
+      if(r&&r.savingsId) data.savingsId=r.savingsId;
       const nr=nextRunOf(data); data.nextRunDate = nr?ymd(nr):null;
       const key=id||String(Date.now());
       db.ref(wp('recurring/'+(ownerUid||state.uid)+'/'+key)).set(data);
@@ -3902,7 +3908,7 @@
       const totalM=act.reduce((s,x)=>s+(monthlyEquiv(x)||0),0);
       const totalY=act.reduce((s,x)=>s+(yearlyEquiv(x)||0),0);
       const cm=monthStr(new Date());
-      const thisMonthDue=act.filter(x=>{ const nb=subNextBilling(x); return nb&&nb.startsWith(cm); }).reduce((s,x)=>s+(Number(x.amount)||0),0);
+      const thisMonthDue=act.filter(x=>subChargeDayInMonth(x.nextBillingDate, x.billingCycle, x.billingInterval, cm)).reduce((s,x)=>s+(Number(x.amount)||0),0);   // 결제 지난 구독도 이번 달 예정에 포함
       const soon=act.filter(x=>{ const d=daysUntil(subNextBilling(x)); return d!=null&&d>=0&&d<=7; }).length;
       const expSoon=act.filter(x=>{ const d=daysUntil(x.expirationDate); return d!=null&&d>=0&&d<=7; }).length;
       let h='<div class="card"><div class="summary">'+
@@ -4672,7 +4678,8 @@
         if(existingId){ db.ref(wp('transactions/'+state.uid+'/'+existingId)).remove(); }
         return null;
       }
-      const linkedTransactionId  = upsertLoanTx(p?(p.linkedTransactionId||null):null,  interestAmount,  borrowed?'대출이자':'이자',   '이자', borrowed, 'lpi_'+key);
+      // 이자는 빌림=실지출·빌려줌=실수입으로 "항상 실거래"(actual=true) — 예전 actual=borrowed는 빌려준 돈의 이자 수입을 실수입에서 제외해 리포트 수입에 안 잡히던 버그(원금 회수/상환만 actual=false).
+      const linkedTransactionId  = upsertLoanTx(p?(p.linkedTransactionId||null):null,  interestAmount,  borrowed?'대출이자':'이자',   '이자', true, 'lpi_'+key);
       const linkedPrincipalTxId  = upsertLoanTx(p?(p.linkedPrincipalTxId||null):null, principalAmount, borrowed?'대출상환':'원금회수', '원금', false,    'lpp_'+key);
       const data={ id:key, loanId, date, principalAmount, interestAmount, account:acct||'', memo,
         linkedTransactionId, linkedPrincipalTxId, createdAt:p?(p.createdAt||now):now, updatedAt:now };

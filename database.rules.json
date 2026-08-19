@@ -36,13 +36,17 @@
     },
 
     "codes": {
-      ".read": "auth != null",
-      "$code": { ".write": "auth != null && (!data.exists() || !newData.exists())" }
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && ((!data.exists() && newData.exists()) || (data.exists() && !newData.exists() && root.child('workspaces').child(data.val()).child('members').child(auth.uid).child('role').val() === 'owner'))"
+      }
     },
 
     "friendCodes": {
-      ".read": "auth != null",
-      "$code": { ".write": "auth != null && (!data.exists() || !newData.exists())" }
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && !data.exists() && newData.exists()"
+      }
     },
 
     "migrationV3": {
@@ -71,9 +75,14 @@
     },
 
     "workspaces": {
-      ".read": "auth != null",
       "$wsId": {
-        ".write": "auth != null && (!data.exists() || data.child('members').child(auth.uid).exists() || newData.child('members').child(auth.uid).exists())"
+        ".read": "auth != null",
+        ".write": "auth != null && (!data.exists() || data.child('members').child(auth.uid).exists())",
+        "members": {
+          "$mid": {
+            ".write": "auth != null && $mid === auth.uid && (!newData.exists() || (!data.exists() && newData.child('viaCode').val() === data.parent().parent().child('code').val() && root.child('codes').child(newData.child('viaCode').val()).val() === $wsId))"
+          }
+        }
       }
     },
 

@@ -56,6 +56,9 @@
       return fetch(url).then(r=>r.ok?r.json():null).then(j=>{ const rate=j&&j.rates&&j.rates.KRW; if(rate>0){ const rr=Math.round(rate*100)/100; fxCacheSet(d,cur,rr); return rr; } return null; }).catch(()=>null); }
     // sumByCurrency는 js/util.js로 이동(순수함수·단위 테스트).
     function escapeHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+    // 🛡️ 아바타 사진 src 안전화(저장형 XSS 차단) — 사진 값은 users/{uid}/photo·workspaces/{ws}/photo(전역 읽기·소유자 임의 쓰기)에서 오므로
+    //   data:image base64만 허용하고, 그 외(속성 탈출 페이로드 등)는 빈 문자열로 떨궈 <img>가 생성되지 않게 한다. 정상 경로(resizeImageFile)는 항상 data:image URL.
+    function safeImgSrc(v){ v=String(v==null?'':v); return /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=\s]+$/.test(v) ? v : ''; }
     function pad2(n){ return String(n).padStart(2,'0'); }
     function monthStr(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1); }
     function ymd(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
@@ -593,7 +596,8 @@
       if(ws.members && ws.members[state.uid]){ toast('이미 참여 중인 그룹이에요'); await loadMyWorkspaces(); await switchWorkspace(wsId); return true; }
       const now=new Date().toISOString();
       const upd={};
-      upd['workspaces/'+wsId+'/members/'+state.uid]={ name:state.userName, role:'member', joinedAt:now };
+      // viaCode=합류에 쓴 초대코드 — RTDB 규칙이 이 값을 ws.code·codes 인덱스와 대조해 '코드를 아는 사람만 자기를 멤버로 추가'하도록 강제(임의 그룹 자가삽입 차단).
+      upd['workspaces/'+wsId+'/members/'+state.uid]={ name:state.userName, role:'member', joinedAt:now, viaCode:code };
       upd['users/'+state.uid+'/ws/'+wsId]=true;
       await db.ref().update(upd);
       toast('"'+(ws.name||'그룹')+'"에 참여했어요');
@@ -701,7 +705,7 @@
         ? (typeof avatarHtml==='function' ? avatarHtml(state.uid, state.userName||'', 20) : '<span class="dotk"></span>')
         : ((typeof wsAvatarHtml==='function')
             ? wsAvatarHtml(state.wsMeta.name, state.wsMeta.photo, 20)
-            : (state.wsMeta.photo ? '<img src="'+state.wsMeta.photo+'" alt="" style="width:20px;height:20px;border-radius:50%;object-fit:cover;flex:none;">' : '<span class="dotk"></span>'));
+            : (safeImgSrc(state.wsMeta.photo) ? '<img src="'+safeImgSrc(state.wsMeta.photo)+'" alt="" style="width:20px;height:20px;border-radius:50%;object-fit:cover;flex:none;">' : '<span class="dotk"></span>'));
       el.innerHTML = badge+escapeHtml(personal ? '개인 프로필' : (state.wsMeta.name||'가계부'));
     }
 

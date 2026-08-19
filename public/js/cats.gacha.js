@@ -626,8 +626,10 @@
     const DUP_REFUND_RATE=0.1;
     function dupRefundOf(tier){ return Math.max(1, Math.round((TIER_PRICE[tier]||0)*DUP_REFUND_RATE)); }
     // 🌈 신화↑ 등급 중복 = 은화 대신 무지개동전(무지개알/박스 5개=1뽑 재화). 트랜잭션 안에서 호출.
-    function grantRbcoin(g, n){ n=Math.max(1, Math.floor(Number(n)||1)); g.rbcoin=clampRbcoin((Number(g.rbcoin)||0)+n);
-      g.rbcoinTotal=Math.max(0, Math.floor(Number(g.rbcoinTotal)||0))+n; }   // 누적 획득 카운터(획득 이력 최소 추적)
+    function grantRbcoin(g, n){ n=Math.max(0, Math.floor(Number(n)||0)); if(n<=0) return;   // n=0/음수는 무동작(구 Math.max(1,…)은 0 요청에 1을 무상 지급하던 버그)
+      const b=Number(g.rbcoin)||0, after=clampRbcoin(b+n), gained=after-b;   // 🛟 상한 절단분은 누적에서도 빼야 자가복구 축(잔액=누적획득−누적소비)이 안 깨진다(캡 부근 무한 재화 방지)
+      g.rbcoin=after;
+      g.rbcoinTotal=Math.max(0, Math.floor(Number(g.rbcoinTotal)||0))+gained; }   // 실제 늘어난 만큼만 누적 획득
     // 🌈 등급별 중복 무지개동전 지급량(단일 소스): 한정(exclusive)=2 · 신화(limited)=1 · 그 외=0. 전 지급/미러 접점이 이 헬퍼를 공유한다.
     function dupRbcOf(tier){ return tier==='exclusive' ? 2 : tier==='limited' ? 1 : 0; }
     // 🌈🛟 무지개동전 소비 — 반드시 이 함수로만 차감한다(잔액↓ + 누적소비 rbcoinSpent↑ 동시). normalizeGame 자가복구 바닥(잔액=누적획득−누적소비)의 정합을 유지하는 단일 소비 접점.

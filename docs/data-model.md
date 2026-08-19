@@ -54,7 +54,7 @@ users/{uid}            : { name, email, photo(프로필 사진 base64 data URL),
                              rbMigV                             // 🌈 무지개동전 개편(2026-07) 마이그레이션 마커(1=완료) — migrateRbEconomyIfNeeded가 가방의 무지개알/박스 회수 + 가구 보유·배치를 itemCapOf 상한(케어 5·기타 1)으로 클램프
                            } }
 workspaces/{wsId}      : { name, photo(가계부 사진 base64 data URL, 선택), type:'personal'|'group', code(그룹), ownerUid, createdAt,
-                           members:{ {uid}:{ name, role:'owner'|'member', joinedAt } } }
+                           members:{ {uid}:{ name, role:'owner'|'member', joinedAt, viaCode?('member' 셀프 합류에 쓴 초대코드 — RTDB 규칙이 ws.code·codes 인덱스와 대조해 코드를 아는 경우만 삽입 허용) } } }
 codes/{CODE}           : wsId            // 그룹 6자리 코드 → 워크스페이스 조회 인덱스
 friendCodes/{CODE}      : uid            // 친구 6자리 코드 → 사용자 uid 조회 인덱스
 migrationV3            : { by, at }      // v2→v3 데이터 1회 이전 잠금 플래그
@@ -208,8 +208,8 @@ erDiagram
 |---|---|---|
 | `users/{uid}` | 로그인(전역) | 본인 uid 만 |
 | `users/{uid}/friends/{fid}`·`friendReqs/{fid}` | 로그인 | **당사자 두 명만**($uid 또는 $fid) — 친구 요청/수락 |
-| `codes/*`·`friendCodes/*` | 로그인 | 로그인(코드 등록/조회) |
-| `workspaces/{wsId}` | 로그인 | 멤버 또는 **본인을 멤버로 추가(셀프 합류)** 시 |
+| `codes/{CODE}`·`friendCodes/{CODE}` | 로그인 — **단건만**(전체 덤프 차단, 2026-08) | codes=생성+소유자 삭제 / friendCodes=생성만 |
+| `workspaces/{wsId}` | 로그인 — **단건만**(전체 덤프 차단, 2026-08) | 멤버·새 생성. 셀프 합류는 `viaCode` 코드 검증 통과 시만 |
 | `ws/{wsId}/**` | 그 워크스페이스 **멤버만** | 그 워크스페이스 **멤버만** |
 | 레거시 루트(`accounts` 등) | 로그인 | 로그인 — 이전용 백업 |
 
