@@ -2812,17 +2812,21 @@
         row('이자소득세(15.4%)', '-'+won(plan.tax))+
         '<div class="row" style="border-top:1px solid var(--line);margin-top:8px;padding-top:10px;"><b>만기 수령액(세후)</b><b style="color:var(--primary)">'+won(plan.total)+'</b></div></div>';
     }
-    // 💰 시작일 첫 납입 스위치(신규 적금 전용) — 시작일의 '일'과 납입일이 다를 때만 노출. 은행 적금처럼 가입 당일 1회 납입 후 매달 납입일에 이어가는 패턴.
-    //  체크하고 저장하면: 납입 1회가 바로 기록돼 횟수 +1 + 계좌 잔액 반영(출금 계좌 있음=postOccurrence 이체, 없음=적금 계좌 입금 기록 + firstPaid 마커로 횟수 추정에 +1).
+    // 💰 시작일 첫 납입 스위치(신규 적금 전용) — 시작일의 '일'과 납입일이 다를 때만 노출. 은행 적금처럼 가입 당일 1회차 납입 후 매달 납입일에 이어가는 패턴.
+    //  체크하고 저장하면: 시작일 납입이 "1회차"로 바로 기록돼 횟수 +1 + 계좌 잔액 반영(출금 계좌 있음=postOccurrence 이체, 없음=적금 계좌 입금 기록 + firstPaid 마커로 횟수 추정에 +1).
+    //  ⚖️ 회차 보정: 첫 납입이 1회차가 되므로 정기 스케줄의 마지막 회차를 한 달 앞당겨(endDate −1개월, svShiftM) 총 납입 = 기간(n)회를 유지한다(n+1회 이중 납입 방지).
     function svFirstPayRow(){
       const box=$('svFirstPay'); if(!box) return;   // 수정 모드엔 컨테이너 자체가 없음(등록 전용)
       const sd=val('vStart')||todayStr(), day=Number(val('vDay'))||1;
       if((+sd.slice(8,10))===day){ box.innerHTML=''; return; }
       const wasOn=$('vFirstPay')?$('vFirstPay').classList.contains('on'):false;   // 다른 입력 변경으로 재렌더돼도 체크 상태 유지
       box.innerHTML='<div class="card" style="padding:12px 14px;margin:4px 0 14px;"><div class="menu-item" style="padding:0;align-items:center;">'+
-        '<span style="min-width:0;">💰 시작일('+(+sd.slice(5,7))+'/'+(+sd.slice(8,10))+')에 첫 납입 했어요<br><span class="tx-sub">체크하면 첫 납입이 바로 기록돼 납입 횟수 +1 · 계좌 잔액에도 반영돼요 (다음부턴 매달 '+day+'일)</span></span>'+
+        '<span style="min-width:0;">💰 시작일('+(+sd.slice(5,7))+'/'+(+sd.slice(8,10))+')에 첫 납입 했어요<br><span class="tx-sub">체크하면 시작일 납입이 <b>1회차</b>로 기록돼요(납입 횟수 +1 · 계좌 잔액 반영) — 이후 매달 '+day+'일, 총 납입 횟수는 기간 그대로</span></span>'+
         '<div class="switch'+(wasOn?' on':'')+'" id="vFirstPay" '+App.view.act('toggleSwitch')+'><i></i></div></div></div>';
     }
+    // 달 이동 헬퍼(납입일 기준, 짧은 달은 말일 클램프) — savingsPlan의 addM/occAt과 동일 규칙(views 쪽 미니 복제)
+    function svShiftM(base, k, dom){ const y=base.getFullYear(), m=base.getMonth()+k, yy=y+Math.floor(m/12), mm=((m%12)+12)%12;
+      const last=new Date(yy, mm+1, 0).getDate(); return new Date(yy, mm, Math.min(Math.max(1, Math.floor(Number(dom))||base.getDate()), last)); }
     function saveSavings(ownerUid,id){
       const name=val('vName').trim(), monthly=parseAmount(val('vMonthly')), rate=parseFloat(val('vRate'))||0, months=Math.floor(Number(val('vMonths')))||0;
       const day=Number(val('vDay'))||1, startDate=val('vStart')||todayStr(), fromV=val('vFrom');
@@ -2852,9 +2856,12 @@
       db.ref(wp('savings/'+owner+'/'+key)).set(data);
       // 출금 계좌가 있으면 정기거래(이체) 규칙을 만들어 매달 자동 기록 — 만기(마지막 회차)까지, 정기결제 목록과 엔진(runRecurring) 공용.
       const prevRule=state.recurring.find(r=>r.ownerUid===owner&&r.id===rid);
+      let fpMsg='';   // 💰 첫 납입 안내(최종 토스트에 병기 — 토스트 덮어쓰기 방지)
       if(fromV){
+        // ⚖️ 첫 납입 체크 시 마지막 정기 회차를 한 달 앞당김(첫 납입=1회차 → 정기 n−1회, 총 납입=기간 n회 유지. n=1이면 정기 0회 — 규칙은 이력용으로만 남고 실행 안 됨)
+        const endD=firstPay?svShiftM(plan.last, -1, day):plan.last;
         const rule={ type:'transfer', desc:name+' 적금', amount:monthly, freq:'monthly', interval:1,
-          startDate, endDate:ymd(plan.last), day, weekday:0,
+          startDate, endDate:ymd(endD), day, weekday:0,
           user:data.user, autoCreate:true, status:'active', visibility:defaultVisibility(), memo:'',
           from:fromV, to:toV||'', savingsId:key,
           lastPosted:prevRule?(prevRule.lastPosted||''):'', notifyBeforeCreate:false,
@@ -2862,20 +2869,19 @@
         const nr=nextRunOf(rule); rule.nextRunDate=nr?ymd(nr):null;
         db.ref(wp('recurring/'+owner+'/'+rid)).set(rule);
         if(owner===state.uid) setTimeout(runRecurring,400);
-        // 💰 첫 납입 체크됨 — 시작일 회차를 바로 기록(postOccurrence 재사용: 멱등 로그·정기 생성분과 동일 형태 rec_sv_*의 이체 거래 → 출금·적금 계좌 잔액 모두 반영, savingsPaid가 자동 +1 집계).
-        if(firstPay){
-          if(postOccurrence(Object.assign({ ownerUid:owner, id:rid }, rule), parseDate(startDate))) toast('💰 첫 납입 '+won(monthly)+' 기록 — 다음은 매달 '+day+'일');
-        }
+        // 💰 첫 납입 체크됨 — 시작일 회차(1회차)를 바로 기록(postOccurrence 재사용: 멱등 로그·정기 생성분과 동일 형태 rec_sv_*의 이체 거래 → 출금·적금 계좌 잔액 모두 반영, savingsPaid가 자동 +1 집계).
+        if(firstPay && postOccurrence(Object.assign({ ownerUid:owner, id:rid }, rule), parseDate(startDate)))
+          fpMsg=' · 💰 첫 납입 '+won(monthly)+' 기록(다음은 매달 '+day+'일)';
       } else {
         if(prevRule) db.ref(wp('recurring/'+owner+'/'+rid)).remove();   // 자동 기록 해제 시 연결 규칙 제거(기록된 거래는 유지)
         // 💰 첫 납입 체크됐지만 출금 계좌가 없음 — 적금 계좌가 있으면 입금 기록(잔액조정, 통계 비포함)으로 잔액을 채우고, 횟수는 firstPaid 마커로 +1(추정 집계 savingsPaid).
         if(firstPay && toV){
           db.ref(wp('transactions/'+state.uid+'/sv1_'+key)).set({ type:'balance_adjustment', date:startDate, user:data.user||'', amount:monthly,
             to:toV, desc:name+' 첫 납입', isActualExpense:false, memo:'적금 시작일 첫 납입 (등록 시 체크)' }).catch(_saveErr);
-          toast('💰 첫 납입 '+won(monthly)+' 기록 — 적금 계좌 잔액에 반영');
+          fpMsg=' · 💰 첫 납입 '+won(monthly)+' 적금 계좌 반영';
         }
       }
-      toast(prev?'수정되었습니다':'추가되었습니다'); closeSheet();
+      toast((prev?'수정되었습니다':'추가되었습니다')+fpMsg); closeSheet();
     }
     function deleteSavings(ownerUid,id){
       const sv=state.savings.find(x=>x.ownerUid===ownerUid&&x.id===id);
