@@ -1939,8 +1939,9 @@
     }
     // 리포트 카테고리 내역 시트 — 범례 항목 탭 시 그 달·그 카테고리의 실지출 거래 목록. etc=1이면 도넛 '기타' 묶음(상위 5개 밖 전체) — 렌더와 같은 기준으로 재계산해 목록을 맞춘다.
     // ===== 💳 카드 내역(리포트 · 월 이동) =====
-    // 📅 그 달의 기준일 — 이번 달이면 오늘, 지난/다음 달이면 그 달 15일(예산 기준일 budgetRef와 같은 관례).
-    //   카드 실적 기간(cardPeriod)이 '매월 N일 시작' 커스텀일 수 있어 기준일을 넘겨 그 달의 기간을 잡는다.
+    // 📅 그 달의 기준일 — 이번 달이면 오늘, 지난/다음 달이면 그 달 15일(예산 기준일 budgetRef와 같은 관례). 예산 브리핑용.
+    //   ⚠️ 카드 실적/이용 기간의 월 이동 기준일로는 쓰지 말 것 — 시작일이 15일과 어긋나는 커스텀 카드에서 기간을 건너뛰거나(한 달 붕 뜸)
+    //   중복해 보이던 버그가 있어 카드 경로는 전부 cardMonthRef(core.js, 오늘의 위상을 모든 달에 적용)를 쓴다.
     function monthRefDate(m){
       const cur=(typeof todayStr==='function'?todayStr():'').slice(0,7);
       if(m===cur) return new Date();
@@ -1960,26 +1961,42 @@
         const d=parseDate(t.date); return d>=per.start && d<=per.end;
       }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
     }
-    // 카드 내역 시트 — 시트 안에서 ‹ › 로 이동. [달력 월 | 실적 기간] 토글(mode) — 실적 기간 모드는 커스텀 실적 기간(예: 15일~다음달 14일) 단위로 내역·합계를 본다.
-    function openCardTxSheet(cardId, m, mode){
-      m=m||state.month;
+    // 카드 내역 시트 — 시트 안에서 ‹ › 로 이동. [달력 월 | 실적 기간 | 이용 기간] 토글(mode) — 기간 모드는 커스텀 기간(예: 15일~다음달 14일) 단위로 내역·합계를 본다.
+    //   '이용 기간'(usage)은 결제일에 청구되는 거래일 범위 — 실적 기간과 따로 설정한 카드(usageSameAsPerf=false)에만 탭이 뜬다(같으면 실적 기간과 동일해 중복).
+    //   pk = 소비 대상 필터('공동'·멤버 uid, repPersonKey 기준) — 분담 칩을 탭하면 그 대상 결제만 분리해서 본다(합계·건수·목록 반영, 월 이동·모드 전환에도 유지).
+    function openCardTxSheet(cardId, m, mode, pk){
+      m=m||state.month; pk=pk||null;
       const acct=getAcct(cardId); if(!acct) return;
       const card=getCard(cardId);
-      const byPeriod = mode==='period' && !!card;   // 카드 설정이 없으면 실적 기간 개념이 없어 달력 월만
-      const per = card ? cardPeriod(card, monthRefDate(m)) : null;   // ‹ ›로 m을 옮기면 그 달 기준일의 실적 기간으로 함께 이동
+      const hasUsage = !!card && card.usageSameAsPerf===false;   // 이용 기간을 따로 설정한 카드만 별도 탭
+      const byUsage = mode==='usage' && hasUsage;
+      const byPeriod = (mode==='period' && !!card) || byUsage;   // 카드 설정이 없으면 기간 개념이 없어 달력 월만
+      // ‹ ›로 m을 옮기면 그 달의 기간으로 함께 이동 — cardMonthRef가 '오늘'과 같은 위상을 모든 달에 적용해 한 달 이동=정확히 한 기간 이동(건너뜀/중복 없음)
+      const per = card ? (byUsage ? cardUsagePeriod(card, cardMonthRef(card, m, 'usage')) : cardPeriod(card, cardMonthRef(card, m))) : null;
       const rows = byPeriod ? cardPeriodTx(cardId, per) : cardMonthTx(cardId, m);
-      const used=rows.reduce((s,t)=>s+(Number(t.amount)||0),0);
+      const fRows = pk ? rows.filter(t=>repPersonKey(t)===pk) : rows;   // 👤 소비 대상 필터 적용분(요약·목록)
+      const used=fRows.reduce((s,t)=>s+(Number(t.amount)||0),0);
+      const total=rows.reduce((s,t)=>s+(Number(t.amount)||0),0);
+      const pLabel = pk ? repPersonLabel(pk) : '';
       const p=m.split('-');
       const fmtMD=d=>(d.getMonth()+1)+'.'+d.getDate();
       const title = byPeriod ? (per.start.getFullYear()===per.end.getFullYear()? per.start.getFullYear()+'년 '+fmtMD(per.start)+' ~ '+fmtMD(per.end) : ymd(per.start)+' ~ '+ymd(per.end)) : p[0]+'년 '+(+p[1])+'월';
-      let h='<div class="monthlbl" style="padding-top:0;"><button '+App.view.act('openCardTxSheet',cardId,shiftMonth(m,-1),mode||'month')+' aria-label="이전">‹</button><b style="font-size:'+(byPeriod?'15px':'inherit')+'">'+title+'</b><button '+App.view.act('openCardTxSheet',cardId,shiftMonth(m,1),mode||'month')+' aria-label="다음">›</button></div>';
-      if(card) h+='<div style="display:flex;justify-content:center;margin:0 0 10px;"><span class="repvalseg"><button class="'+(byPeriod?'':'on')+'" '+App.view.act('openCardTxSheet',cardId,m,'month')+' aria-label="달력 월 기준으로 보기">달력 월</button><button class="'+(byPeriod?'on':'')+'" '+App.view.act('openCardTxSheet',cardId,m,'period')+' aria-label="실적 기간 기준으로 보기">실적 기간</button></span></div>';
-      h+='<div class="card" style="margin-bottom:12px;"><div class="row"><span class="muted">'+(byPeriod?'이 기간 결제':'이 달 결제')+'</span><b>'+won(used)+'</b></div>'+
-        '<div class="row" style="margin-top:4px;"><span class="muted">건수</span><b>'+rows.length+'건</b></div>';
-      { const sp=personSplit(rows);   // 👥 누가 얼마나 썼는지(소비 대상별 분담)
-        if(sp.length) h+='<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px;">'+sp.map(x=>'<div class="row" style="font-size:13px;padding:2px 0;"><span class="muted">'+escapeHtml(x.label)+'</span><b>'+won(x.amt)+'</b></div>').join('')+'</div>'; }
+      let h='<div class="monthlbl" style="padding-top:0;"><button '+App.view.act('openCardTxSheet',cardId,shiftMonth(m,-1),mode||'month',pk)+' aria-label="이전">‹</button><b style="font-size:'+(byPeriod?'15px':'inherit')+'">'+title+'</b><button '+App.view.act('openCardTxSheet',cardId,shiftMonth(m,1),mode||'month',pk)+' aria-label="다음">›</button></div>';
+      if(card) h+='<div style="display:flex;justify-content:center;margin:0 0 10px;"><span class="repvalseg"><button class="'+(byPeriod?'':'on')+'" '+App.view.act('openCardTxSheet',cardId,m,'month',pk)+' aria-label="달력 월 기준으로 보기">달력 월</button><button class="'+((byPeriod&&!byUsage)?'on':'')+'" '+App.view.act('openCardTxSheet',cardId,m,'period',pk)+' aria-label="실적 기간 기준으로 보기">실적 기간</button>'+
+        (hasUsage?('<button class="'+(byUsage?'on':'')+'" '+App.view.act('openCardTxSheet',cardId,m,'usage',pk)+' aria-label="이용(청구) 기간 기준으로 보기">이용 기간</button>'):'')+'</span></div>';
+      h+='<div class="card" style="margin-bottom:12px;"><div class="row"><span class="muted">'+(byUsage?'이 기간 결제(청구 예정)':(byPeriod?'이 기간 결제':'이 달 결제'))+(pk?' · '+escapeHtml(pLabel):'')+'</span><b>'+won(used)+'</b></div>'+
+        '<div class="row" style="margin-top:4px;"><span class="muted">건수</span><b>'+fRows.length+'건'+(pk?' <span class="tx-sub">/ 전체 '+rows.length+'건</span>':'')+'</b></div>';
+      { const sp=personSplit(rows);   // 👥 누가 얼마나 썼는지(소비 대상별 분담) — 칩을 탭하면 공동/개인 분리해서 보기(다시 '전체'로 해제)
+        if(pk && !sp.some(x=>x.k===pk)) sp.push({ k:pk, label:pLabel, amt:0 });   // 월 이동으로 이 기간엔 0원인 필터 대상도 칩 유지(해제 가능하게)
+        if(sp.length>1 || pk){
+          h+='<div class="chip-row" style="margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line);">'+
+            '<button class="chip'+(pk?'':' on')+'" '+App.view.act('openCardTxSheet',cardId,m,mode||'month',null)+' aria-label="전체 보기">전체 '+won(total)+'</button>'+
+            sp.map(x=>'<button class="chip'+(pk===x.k?' on':'')+'" '+App.view.act('openCardTxSheet',cardId,m,mode||'month',(pk===x.k?null:x.k))+' aria-label="'+escapeHtml(x.label)+' 결제만 보기">'+escapeHtml(x.label)+' '+won(x.amt)+'</button>').join('')+'</div>';
+        } else if(sp.length===1){
+          h+='<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px;"><div class="row" style="font-size:13px;padding:2px 0;"><span class="muted">'+escapeHtml(sp[0].label)+'</span><b>'+won(sp[0].amt)+'</b></div></div>';
+        } }
       if(card){
-        const pf=cardPerformance(card, monthRefDate(m)), col=pf.pct>=100?'var(--income)':'var(--primary)';
+        const pf=cardPerformance(card, cardMonthRef(card, m)), col=pf.pct>=100?'var(--income)':'var(--primary)';
         h+='<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px;">'+
           '<div class="row" style="font-size:13px;"><span class="muted">실적</span><span style="color:'+col+';font-weight:800;">'+(pf.target?pf.pct+'%':'목표 미설정')+'</span></div>'+
           (pf.target?('<div class="bar"><i style="width:'+Math.min(pf.pct,100)+'%;background:'+col+'"></i></div>'+
@@ -1987,10 +2004,10 @@
           '<div class="tx-sub" style="margin-top:'+(pf.target?'2px':'6px')+';">실적 기간 '+ymd(pf.start)+' ~ '+ymd(pf.end)+(pf.excluded.length?(' · 제외 '+pf.excluded.length+'건'):'')+'</div></div>';
       }
       h+='</div>';
-      h+='<div class="sech"><span class="l">결제 내역</span><span style="display:flex;align-items:center;gap:8px;">'+(rows.length?txListSegHtml():'')+'<span class="s">'+(byPeriod?'실적 기간':((+p[1])+'월'))+'</span></span></div>';
-      h+=txListHtml(rows, (byPeriod?'이 기간':'이 달')+' 이 카드로 결제한 내역이 없어요');
+      h+='<div class="sech"><span class="l">결제 내역'+(pk?' · '+escapeHtml(pLabel):'')+'</span><span style="display:flex;align-items:center;gap:8px;">'+(fRows.length?txListSegHtml():'')+'<span class="s">'+(byUsage?'이용 기간':(byPeriod?'실적 기간':((+p[1])+'월')))+'</span></span></div>';
+      h+=txListHtml(fRows, (byPeriod?'이 기간':'이 달')+(pk?' '+escapeHtml(pLabel)+'(으)로 잡힌':' 이 카드로 결제한')+' 내역이 없어요');
       openSheet((card&&card.cardName)||acct.name||'카드 내역', h);
-      state._sheetReopen=()=>openCardTxSheet(cardId,m,mode);   // ↩️ 거래 수정 시트 닫으면 이 카드 내역으로 복귀
+      state._sheetReopen=()=>openCardTxSheet(cardId,m,mode,pk);   // ↩️ 거래 수정 시트 닫으면 이 카드 내역(필터 포함)으로 복귀
     }
     // 🏦 리포트 카테고리 집계(도넛·범례·'기타' 묶음 공용) — 실지출 카테고리 합에 대출 원금 상환(실지출 통계 제외 거래)을 얹어
     // '대출·이자' 한 항목으로 병합해 보여준다. 총지출 카드·예산·인사이트는 종전대로 이자만(실지출) — 카테고리 그림에서만 합산.
@@ -2057,11 +2074,16 @@
       for(const u in mem){ if((mem[u].name||'')===k) return u; }   // 이름 → 그 이름의 멤버 uid
       return k;
     }
+    // 👤 repPersonKey 표시 이름 — uid 키면 멤버 이름으로 해석(uid 노출 방지), '공동'은 🤝 공동 (카드 내역 필터 칩·개인별 드릴다운 공용)
+    function repPersonLabel(pk){
+      if(pk==='공동') return '🤝 공동';
+      const mem=(state.wsMeta&&state.wsMeta.members)||{};
+      return (mem[pk]&&mem[pk].name)||ownerName(pk)||pk;
+    }
     // 💳 거래 묶음의 소비 대상별(공동·멤버) 분담 합계 — 카드 내역·리포트 카드별에서 '공동 얼마 · 현경 얼마' 표시용(금액순)
     function personSplit(rows){
       const o={}; rows.forEach(t=>{ const k=repPersonKey(t); o[k]=(o[k]||0)+(Number(t.amount)||0); });
-      const mem=(state.wsMeta&&state.wsMeta.members)||{};
-      return Object.keys(o).sort((a,b)=>o[b]-o[a]).map(k=>({ k, label:(k==='공동')?'🤝 공동':((mem[k]&&mem[k].name)||k), amt:o[k] }));
+      return Object.keys(o).sort((a,b)=>o[b]-o[a]).map(k=>({ k, label:repPersonLabel(k), amt:o[k] }));
     }
     // 📚 내역 시트 거래 목록 공용 — [카테고리 | 시간순] 토글. 카테고리 모드(기본)는 카테고리별 카드로 묶어 소계·건수를 보여주고(그룹=금액순, 그룹 안=최신순),
     //    시간순 모드는 기존 한 카드 목록. 토글 시 현재 시트를 다시 그린다(_sheetReopen 재사용 — 내역 시트들이 이미 등록).
@@ -2086,8 +2108,7 @@
     function openRepPersonTx(m, pk){
       const rows=monthTx(m).filter(t=>isActual(t)&&repPersonKey(t)===pk).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
       const tot=rows.reduce((s,t)=>s+(Number(t.amount)||0),0);
-      const _pm=(state.wsMeta&&state.wsMeta.members)||{};
-      const nm=(pk==='공동')?'🤝 공동':((_pm[pk]&&_pm[pk].name)||ownerName(pk)||pk);   // uid 키면 멤버 이름으로 해석(uid 노출 방지)
+      const nm=repPersonLabel(pk);
       let h='<div class="row" style="margin-bottom:14px;"><div class="muted">'+(+m.split('-')[1])+'월 · '+rows.length+'건</div><div class="red" style="font-weight:700;">-'+fmtComma(tot)+'</div></div>';
       if(rows.length) h+='<div style="display:flex;justify-content:flex-end;margin:-6px 0 8px;">'+txListSegHtml()+'</div>';
       h+=txListHtml(rows, '이 달 지출이 없습니다');
@@ -2299,10 +2320,9 @@
         const cardRows=cardAccts.map(function(a){ const tl=cardMonthTx(a.id,m); return { a:a, tl:tl, used:tl.reduce((s,t)=>s+(Number(t.amount)||0),0), n:tl.length }; })
           .filter(r=>r.n>0).sort((x,y)=>y.used-x.used);
         if(cardRows.length){
-          const mref=monthRefDate(m);
           h+='<div class="sech"><span class="l">카드별</span><span class="s">'+(+mo)+'월</span></div>';
           h+=cardRows.map(function(r){
-            const cf=getCard(r.a.id); const pf=cf?cardPerformance(cf, mref):null;
+            const cf=getCard(r.a.id); const pf=cf?cardPerformance(cf, cardMonthRef(cf, m)):null;   // 카드별 커스텀 시작일에 맞는 그 달의 실적 기간
             const col=(pf&&pf.pct>=100)?'var(--income)':'var(--primary)';
             const sp=personSplit(r.tl);   // 👥 이 카드 결제의 소비 대상별 분담(공동 X · 현경 Y …)
             return '<div class="perfrow" '+App.view.act('openCardTxSheet',r.a.id,m)+' aria-label="'+escapeHtml(r.a.name)+' 내역 보기"><div class="perftop"><b>'+escapeHtml((cf&&cf.cardName)||r.a.name)+'</b>'+
@@ -2632,9 +2652,10 @@
           '<div><div class="k">순변동</div><div class="v">'+signComma(net)+'</div></div>'+
           '<div style="margin-left:auto"><div class="k">'+(+p[1])+'월 말 잔액</div><div class="v">'+won(R.endBal)+'</div></div>'+
         '</div>';
-      if(card){ const pf=cardPerformance(card, monthRefDate(m));
+      if(card){ const pf=cardPerformance(card, cardMonthRef(card, m));
         h+='<div style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px;"><div class="row" style="font-size:13px;"><span class="muted">💳 카드 실적</span><span>'+(pf.target?(won(pf.sum)+' / '+won(pf.target)+' · '+pf.pct+'%'):'목표 미설정')+'</span></div>'+
-          '<button class="chip" style="margin-top:8px;" '+App.view.act('openCardTxSheet',id,m,'period')+'>실적 기간으로 보기 ›</button></div>'; }
+          '<button class="chip" style="margin-top:8px;" '+App.view.act('openCardTxSheet',id,m,'period')+'>실적 기간으로 보기 ›</button>'+
+          (card.usageSameAsPerf===false?('<button class="chip" style="margin-top:8px;margin-left:6px;" '+App.view.act('openCardTxSheet',id,m,'usage')+'>이용 기간으로 보기 ›</button>'):'')+'</div>'; }
       h+='</div>';
       h+='<div class="sech"><span class="l">거래내역</span><span style="display:flex;align-items:center;gap:8px;">'+
         (R.rows.length?('<span class="repvalseg"><button class="'+(mode==='book'?'on':'')+'" '+App.view.act('openAcctDetail',id,m,'book')+' aria-label="통장식으로 보기">통장</button><button class="'+(mode==='book'?'':'on')+'" '+App.view.act('openAcctDetail',id,m,'cat')+' aria-label="카테고리별로 보기">카테고리</button></span>'):'')+
@@ -2688,6 +2709,13 @@
         '<div class="field"><label>월 실적 기준 금액</label><input class="input" id="cTarget" inputmode="numeric" value="'+(card&&card.monthlyPerformanceTarget?Number(card.monthlyPerformanceTarget).toLocaleString():'')+'" placeholder="예: 300,000" oninput="this.value=fmtComma(this.value)"></div>'+
         '<div class="form-2"><div class="field"><label>실적 기간</label><select class="input" id="cPeriod" '+App.view.chg('onCardPeriodChange')+'><option value="calendar_month"'+(!card||card.performancePeriodType!=='custom'?' selected':'')+'>매월 1일~말일</option><option value="custom"'+(card&&card.performancePeriodType==='custom'?' selected':'')+'>사용자 지정</option></select></div>'+
         '<div class="field" id="cStartWrap" style="'+(card&&card.performancePeriodType==='custom'?'':'display:none;')+'"><label>시작일</label><input class="input" id="cStartDay" inputmode="numeric" value="'+(card&&card.performanceStartDay?card.performanceStartDay:'')+'" placeholder="예: 15"></div></div>'+
+        // 💳 이용(청구) 기간 — 결제일에 청구되는 거래일 범위. 기본은 실적 기간과 동일(스위치 on), 끄면 별도 기간 입력이 열린다.
+        '<div class="menu-item" style="padding:6px 0;"><span>이용(청구) 기간을 실적 기간과 동일하게</span><div class="switch '+(!card||card.usageSameAsPerf!==false?'on':'')+'" id="cUsageSame" '+App.view.act('toggleSwitch','onCardUsageSameChange')+'><i></i></div></div>'+
+        '<div id="cUsageWrap" style="'+(card&&card.usageSameAsPerf===false?'':'display:none;')+'">'+
+          '<div class="form-2"><div class="field"><label>이용(청구) 기간</label><select class="input" id="cUPeriod" '+App.view.chg('onCardUsagePeriodChange')+'><option value="calendar_month"'+(!card||card.usagePeriodType!=='custom'?' selected':'')+'>매월 1일~말일</option><option value="custom"'+(card&&card.usagePeriodType==='custom'?' selected':'')+'>사용자 지정</option></select></div>'+
+          '<div class="field" id="cUStartWrap" style="'+(card&&card.usagePeriodType==='custom'?'':'display:none;')+'"><label>시작일</label><input class="input" id="cUStartDay" inputmode="numeric" value="'+(card&&card.usageStartDay?card.usageStartDay:'')+'" placeholder="예: 15"></div></div>'+
+          '<p class="muted" style="margin:2px 0 8px;font-size:12px;line-height:1.55;">결제일에 청구되는 <b>거래일 기준 기간</b>이에요. 카드 내역에서 <b>이용 기간</b> 탭으로 이 기간에 얼마 나오는지 볼 수 있어요.</p>'+
+        '</div>'+
         '<div class="menu-item" style="padding:6px 0;"><span>선불충전 실적 포함</span><div class="switch '+(card&&card.includePrepaidCharge?'on':'')+'" id="cIncPrepaid" '+App.view.act('toggleSwitch')+'><i></i></div></div>'+
         '<div class="field"><label>실적 제외 카테고리 (쉼표 구분)</label><input class="input" id="cExclCats" value="'+escapeHtml(card&&card.excludedCategories?card.excludedCategories.join(', '):'')+'" placeholder="예: 교통, 보험"></div></div>';
     }
@@ -2704,6 +2732,9 @@
       const box=$('aCardCfg'); if(box){ if(t==='credit_card'){ box.style.display=''; if(!box.innerHTML.trim()) box.innerHTML=cardCfgHtml(null); } else box.style.display='none'; }
       const pbox=$('aPrepaidCfg'); if(pbox){ if(PREPAID_TYPES.includes(t)){ pbox.style.display=''; if(!pbox.innerHTML.trim()) pbox.innerHTML=prepaidCfgHtml(null); } else pbox.style.display='none'; } }
     function onCardPeriodChange(){ const w=$('cStartWrap'); if(w) w.style.display=(val('cPeriod')==='custom')?'':'none'; }
+    function onCardUsagePeriodChange(){ const w=$('cUStartWrap'); if(w) w.style.display=(val('cUPeriod')==='custom')?'':'none'; }
+    // '실적 기간과 동일' 스위치(toggleSwitch follow) — 끄면 이용(청구) 기간 입력을 펼친다
+    function onCardUsageSameChange(){ const w=$('cUsageWrap'), s=$('cUsageSame'); if(w&&s) w.style.display=s.classList.contains('on')?'none':''; }
     function saveAcct(id){
       const name=val('aName').trim(); if(!name){ toast('이름을 입력하세요', true); return; }
       const _osel=val('aOwner'), owner=resolveOwnerName(_osel), type=val('aType');   // owner는 이름으로 정규화 저장(uid 원문 저장 방지 — tx.user와 동일 패턴)
@@ -2723,6 +2754,9 @@
         updates['creditCards/'+key]={ cardName:name, cardCompany:val('cCompany').trim(),
           monthlyPerformanceTarget:parseAmount(val('cTarget')),
           performancePeriodType:val('cPeriod'), performanceStartDay:Number(val('cStartDay'))||1,
+          // 이용(청구) 기간 — usageSameAsPerf(기본 true)면 실적 기간과 동일하게 동작(cardUsagePeriod)
+          usageSameAsPerf:$('cUsageSame')?$('cUsageSame').classList.contains('on'):true,
+          usagePeriodType:$('cUPeriod')?val('cUPeriod'):'calendar_month', usageStartDay:$('cUStartDay')?(Number(val('cUStartDay'))||1):1,
           includePrepaidCharge:$('cIncPrepaid')?$('cIncPrepaid').classList.contains('on'):false,
           excludedCategories:val('cExclCats').split(',').map(s=>s.trim()).filter(Boolean),
           defaultIncluded:true, visibility:val('aVis'), memo:val('aMemo').trim() };

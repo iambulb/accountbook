@@ -124,7 +124,31 @@
     return { tx: tx, subTx: subTx };
   }
 
-  var api = { settlementSplit: settlementSplit, greedySettle: greedySettle, buildTx: buildTx, isActual: isActual, actualSpend: actualSpend };
+  // 💳 카드 기간 계산(순수) — core.js의 cardPeriod/cardUsagePeriod/cardMonthRef가 래핑해 쓴다.
+  // 기간 규칙: type='calendar_month'(매월 1일~말일) | 'custom'(매월 S일 ~ 다음달 S-1일). ref가 속한 기간을 돌려준다.
+  function periodFromRule(type, startDay, ref) {
+    ref = ref || new Date();
+    if (type !== 'custom') {
+      return { start: new Date(ref.getFullYear(), ref.getMonth(), 1), end: new Date(ref.getFullYear(), ref.getMonth() + 1, 0) };
+    }
+    var S = Number(startDay) || 1;
+    var start = new Date(ref.getFullYear(), ref.getMonth(), S);
+    if (ref < start) start = new Date(ref.getFullYear(), ref.getMonth() - 1, S);
+    return { start: start, end: new Date(start.getFullYear(), start.getMonth() + 1, S - 1) };
+  }
+  // 📅 m('YYYY-MM')월의 기간 기준일 — ‹ › 월 이동이 기간을 정확히 한 개씩 움직이게, today의 위상(시작일 도달 전/후)을 모든 달에 동일 적용.
+  //   (구버전 버그: 현재 달=오늘·다른 달=15일 고정 기준일이라 시작일이 15일보다 늦으면 지난달로 갈 때 한 기간을 건너뛰고(한 달이 붕 뜸),
+  //    시작일이 15일보다 이르고 오늘이 시작일 전이면 같은 기간이 두 달에 겹쳐 보였다. test/ledger-calc.test.js 회귀 테스트.)
+  function monthPhaseRef(type, startDay, m, today) {
+    var p = String(m || '').split('-'), y = +p[0] || 1970, mo = (+p[1] || 1) - 1;
+    if (type !== 'custom') return new Date(y, mo, 15);
+    var S = Number(startDay) || 1;
+    today = today || new Date();
+    var off = today.getDate() >= S ? 0 : -1;   // 오늘이 이번달 시작일 이후면 'm월 시작 기간', 이전이면 '전달 시작 기간' — 전 달에 같은 위상
+    return new Date(y, mo + off, S);   // 그 기간의 시작일 자체를 기준일로 → periodFromRule이 정확히 그 기간을 돌려준다
+  }
+
+  var api = { settlementSplit: settlementSplit, greedySettle: greedySettle, buildTx: buildTx, isActual: isActual, actualSpend: actualSpend, periodFromRule: periodFromRule, monthPhaseRef: monthPhaseRef };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(core.js가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);

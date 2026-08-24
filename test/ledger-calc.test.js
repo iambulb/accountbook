@@ -292,3 +292,36 @@ test('actualSpend — 실소비 합계(월급 등 수입 미포함)', () => {
   assert.strictEqual(actualSpend([]), 0);
   assert.strictEqual(actualSpend(null), 0);
 });
+
+// ===== 💳 카드 기간 계산 — periodFromRule · monthPhaseRef =====
+const { periodFromRule, monthPhaseRef } = require('../public/js/ledger-calc.js');
+const _ymd = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+
+test('periodFromRule — 달력 월 / 커스텀(S일~다음달 S-1일)', () => {
+  const cal = periodFromRule('calendar_month', 1, new Date(2026, 7, 24));
+  assert.strictEqual(_ymd(cal.start), '2026-08-01'); assert.strictEqual(_ymd(cal.end), '2026-08-31');
+  const c1 = periodFromRule('custom', 20, new Date(2026, 7, 24));   // 8/24, 시작일 20 → 8/20~9/19
+  assert.strictEqual(_ymd(c1.start), '2026-08-20'); assert.strictEqual(_ymd(c1.end), '2026-09-19');
+  const c2 = periodFromRule('custom', 20, new Date(2026, 7, 5));    // 8/5 → 7/20~8/19
+  assert.strictEqual(_ymd(c2.start), '2026-07-20'); assert.strictEqual(_ymd(c2.end), '2026-08-19');
+});
+
+test('monthPhaseRef — 월 이동=정확히 한 기간 이동(한 달 붕 뜨던 버그 회귀 방지)', () => {
+  // 실제 버그 시나리오: 시작일 20, 오늘 8/24 — 구버전은 8월(8/20~9/19)에서 지난달로 가면 6/20~7/19로 건너뛰어 7/20~8/19가 사라졌다.
+  const today = new Date(2026, 7, 24);
+  const per = m => periodFromRule('custom', 20, monthPhaseRef('custom', 20, m, today));
+  assert.strictEqual(_ymd(per('2026-08').start), '2026-08-20');   // 현재 달 = 오늘 포함 기간
+  assert.strictEqual(_ymd(per('2026-07').start), '2026-07-20');   // 한 달 뒤로 = 정확히 직전 기간(스킵 없음)
+  assert.strictEqual(_ymd(per('2026-06').start), '2026-06-20');
+  // 반대 케이스: 시작일 10, 오늘 8/5(시작일 전) — 구버전은 7월과 8월이 같은 기간(7/10~8/9)으로 중복됐다.
+  const today2 = new Date(2026, 7, 5);
+  const per2 = m => periodFromRule('custom', 10, monthPhaseRef('custom', 10, m, today2));
+  assert.strictEqual(_ymd(per2('2026-08').start), '2026-07-10');   // 현재 달 = 오늘 포함(진행 중) 기간
+  assert.strictEqual(_ymd(per2('2026-07').start), '2026-06-10');   // 중복 없이 직전 기간
+  // 연속성: 이전 달 기간의 끝 + 1일 = 다음 달 기간의 시작
+  const a = per('2026-07'), b = per('2026-08');
+  const next = new Date(a.end); next.setDate(next.getDate() + 1);
+  assert.strictEqual(_ymd(next), _ymd(b.start));
+  // 달력 월 규칙은 15일 고정 기준(그 달 자체)
+  assert.strictEqual(_ymd(monthPhaseRef('calendar_month', 1, '2026-07', today)), '2026-07-15');
+});

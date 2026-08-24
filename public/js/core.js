@@ -1162,16 +1162,21 @@
       if(category && (card.excludedCategories||[]).includes(category)) return false;
       return card.defaultIncluded!==false;
     }
-    function cardPeriod(card, ref){
-      ref = ref || new Date();
-      if(card.performancePeriodType!=='custom'){
-        return { start:new Date(ref.getFullYear(),ref.getMonth(),1), end:new Date(ref.getFullYear(),ref.getMonth()+1,0) };
-      }
-      const S=Number(card.performanceStartDay)||1;
-      let start=new Date(ref.getFullYear(),ref.getMonth(),S);
-      if(ref<start) start=new Date(ref.getFullYear(),ref.getMonth()-1,S);
-      const end=new Date(start.getFullYear(),start.getMonth()+1,S-1);
-      return { start, end };
+    // 기간 계산은 순수 함수 periodFromRule/monthPhaseRef(ledger-calc.js, Node 테스트 대상)를 래핑한다.
+    // 카드의 기간 규칙(kind='perf' 실적 | 'usage' 이용) — usage인데 '실적 기간과 동일'이면 실적 규칙으로 폴백
+    function cardPeriodRule(card, kind){
+      if(kind==='usage' && card && card.usageSameAsPerf===false) return { type:card.usagePeriodType, S:card.usageStartDay };
+      return { type:card&&card.performancePeriodType, S:card&&card.performanceStartDay };
+    }
+    // 실적 기간(카드 혜택 실적 산정 범위)
+    function cardPeriod(card, ref){ return periodFromRule(card.performancePeriodType, card.performanceStartDay, ref); }
+    // 💳 이용(청구) 기간 — 결제일에 청구되는 거래(거래일) 범위. usageSameAsPerf(기본 true·미설정 포함)면 실적 기간과 동일.
+    function cardUsagePeriod(card, ref){
+      const r=cardPeriodRule(card, 'usage'); return periodFromRule(r.type, r.S, ref);
+    }
+    // 📅 m('YYYY-MM')월의 카드 기간 기준일 — ‹ › 월 이동=정확히 한 기간 이동(건너뜀/중복 없음, monthPhaseRef 참고)
+    function cardMonthRef(card, m, kind){
+      const r=cardPeriodRule(card, kind); return monthPhaseRef(r.type, r.S, m);
     }
     // ref = 실적 기간 기준일(없으면 오늘). 리포트에서 지난달 실적을 보려고 그 달의 기준일을 넘긴다.
     function cardPerformance(card, ref){
