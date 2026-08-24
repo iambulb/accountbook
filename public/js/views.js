@@ -2418,14 +2418,24 @@
           '</div>';
         } }
       // 💡 계좌별 이번 달 필요액 — 월급날 어느 계좌에 얼마 넣어둘지(자동 기록 출금 기준, 적금 이체 포함)
-      //  + 💳 카드대금(사용자 요청 2026-08): 신용카드 사용 잔액(음수)을 갚아야 할 금액으로 함께 표시 — 고정지출과 별도 행(카드대금 pill).
+      //  + 💳 카드대금(사용자 요청 2026-08): 이번 결제일에 청구될 금액 = **직전에 마감된 청구(이용) 기간의 카드 사용액**(cardUsagePeriod 기준, 사용자 정정 2026-08 —
+      //    예전 '카드 사용 잔액(음수)' 방식은 청구기간과 무관한 누적/이번달 사용액이라 실제 빠질 카드값과 어긋났음). 탭=그 청구 기간의 카드 내역 시트.
       { const needs=monthAcctNeeds();
-        const cardNeeds=accs.filter(a=>a.type==='credit_card').map(a=>{ const cf=getCard(a.id); return { id:a.id, name:(cf&&cf.cardName)||a.name, sum:-accountBalance(a.id) }; }).filter(x=>x.sum>0).sort((a,b)=>b.sum-a.sum);
+        const mmNow=todayStr().slice(0,7), fmtMD=d=>(d.getMonth()+1)+'.'+d.getDate();
+        const cardNeeds=accs.filter(a=>a.type==='credit_card').map(a=>{ const cf=getCard(a.id);
+          const cur=cardUsagePeriod(cf, new Date());   // 진행 중 청구 기간(오늘 포함)
+          const prev=cardUsagePeriod(cf, new Date(cur.start.getFullYear(), cur.start.getMonth(), cur.start.getDate()-1));   // 직전 마감 기간 = 이번 결제분
+          const sum=cardPeriodTx(a.id, prev).reduce((s,t)=>s+(Number(t.amount)||0),0);
+          // 탭 시 그 기간이 그대로 보이는 모드 — 이용 기간 따로 설정=usage, 카드 설정 있음=period(청구=실적 기간), 설정 없음=달력 월. m은 한 달 전(=직전 기간, cardMonthRef 위상 매핑)
+          const mode=cf?(cf.usageSameAsPerf===false?'usage':'period'):'month';
+          const paid=state.transactions.some(t=>t.cardBillKey && t.to===a.id && t.billPeriodEnd===ymd(prev.end));   // 이 청구분이 이미 자동 기록됨(runCardBills)
+          return { id:a.id, name:(cf&&cf.cardName)||a.name, sum, per:prev, mode, paid, day:(cf&&Number(cf.billingDay))||0 };
+        }).filter(x=>x.sum>0).sort((a,b)=>b.sum-a.sum);
         if(needs.length||cardNeeds.length){
           h+='<div class="card" style="margin-bottom:10px;"><div class="row"><b>💡 계좌별 이번 달 필요액</b><span class="tx-sub">정기 · 구독 · 적금 · 대출 · 카드대금</span></div>'+
             needs.map(n=>'<div class="row" style="margin-top:6px;font-size:13px;" '+App.view.act('openAcctNeedSheet',n.id)+' role="button" tabindex="0" aria-label="'+escapeHtml(n.name)+' 필요액 구성 항목 보기"><span class="muted">'+escapeHtml(n.name)+' ›</span><span><b>'+won(n.sum)+'</b>'+(n.remain>0&&n.remain!==n.sum?(' <span class="tx-sub">남은 '+won(n.remain)+'</span>'):'')+'</span></div>').join('')+
-            cardNeeds.map(n=>'<div class="row" style="margin-top:6px;font-size:13px;" '+App.view.act('openAcctDetail',n.id)+' role="button" tabindex="0" aria-label="'+escapeHtml(n.name)+' 거래내역 보기"><span class="muted">'+escapeHtml(n.name)+' <span class="pill">카드대금</span> ›</span><b>'+won(n.sum)+'</b></div>').join('')+
-            '<div class="tx-sub" style="margin-top:8px;">월급이 들어오면 각 계좌에 이만큼 옮겨두세요 — 자동 기록이 부족 없이 돌아가요.'+(cardNeeds.length?' 카드대금은 지금까지 쓴 카드 사용액이에요.':'')+'</div></div>';
+            cardNeeds.map(n=>'<div class="row" style="margin-top:6px;font-size:13px;'+(n.paid?'opacity:.55;':'')+'" '+App.view.act('openCardTxSheet',n.id,shiftMonth(mmNow,-1),n.mode)+' role="button" tabindex="0" aria-label="'+escapeHtml(n.name)+' 청구 기간 카드 내역 보기"><span class="muted">'+escapeHtml(n.name)+' <span class="pill">카드대금</span> ›</span><span><span class="tx-sub">'+fmtMD(n.per.start)+'~'+fmtMD(n.per.end)+(n.day?' · '+n.day+'일 결제':'')+(n.paid?' · 기록됨 ✅':'')+'</span> <b>'+won(n.sum)+'</b></span></div>').join('')+
+            '<div class="tx-sub" style="margin-top:8px;">월급이 들어오면 각 계좌에 이만큼 옮겨두세요 — 자동 기록이 부족 없이 돌아가요.'+(cardNeeds.length?' 카드대금은 직전 청구(이용) 기간에 쓴 금액 — 이번 결제일에 나올 카드값이에요.':'')+'</div></div>';
         } }
 
       // 입출금 · 현금
@@ -2716,6 +2726,11 @@
           '<div class="field" id="cUStartWrap" style="'+(card&&card.usagePeriodType==='custom'?'':'display:none;')+'"><label>시작일</label><input class="input" id="cUStartDay" inputmode="numeric" value="'+(card&&card.usageStartDay?card.usageStartDay:'')+'" placeholder="예: 15"></div></div>'+
           '<p class="muted" style="margin:2px 0 8px;font-size:12px;line-height:1.55;">결제일에 청구되는 <b>거래일 기준 기간</b>이에요. 카드 내역에서 <b>이용 기간</b> 탭으로 이 기간에 얼마 나오는지 볼 수 있어요.</p>'+
         '</div>'+
+        // 💳 카드 대금 자동 기록 — 결제일+출금 계좌를 모두 설정하면 결제일에 직전 청구 기간 사용액을 [출금 계좌→카드] 이체로 자동 기록(runCardBills)
+        (function(){ const bsrcs=state.accounts.filter(x=>!PREPAID_TYPES.includes(x.type)&&!CARD_TYPES.includes(x.type));   // 출금원은 은행·현금류만(카드로 카드값·선불 제외)
+          return '<div class="form-2"><div class="field"><label>결제일 (선택)</label><input class="input" id="cBillDay" inputmode="numeric" value="'+(card&&card.billingDay?card.billingDay:'')+'" placeholder="예: 25"></div>'+
+          '<div class="field"><label>대금 출금 계좌</label><select class="input" id="cBillAcct"><option value="">자동 기록 안 함</option>'+bsrcs.map(x=>'<option value="'+x.id+'"'+((card&&card.billingAccountId===x.id)?' selected':'')+'>'+escapeHtml(x.name)+'</option>').join('')+'</select></div></div>'+
+          '<p class="muted" style="margin:2px 0 8px;font-size:12px;line-height:1.55;">둘 다 설정하면 <b>결제일마다 직전 청구 기간 사용액</b>이 [출금 계좌 → 카드] 이체로 <b>자동 기록</b>돼요(카드값 납부 — 카드 사용 때 이미 지출로 집계돼 실소비 통계엔 안 잡혀요). 설정한 날 이후 도래하는 결제일부터 기록해요.</p>'; })()+
         '<div class="menu-item" style="padding:6px 0;"><span>선불충전 실적 포함</span><div class="switch '+(card&&card.includePrepaidCharge?'on':'')+'" id="cIncPrepaid" '+App.view.act('toggleSwitch')+'><i></i></div></div>'+
         '<div class="field"><label>실적 제외 카테고리 (쉼표 구분)</label><input class="input" id="cExclCats" value="'+escapeHtml(card&&card.excludedCategories?card.excludedCategories.join(', '):'')+'" placeholder="예: 교통, 보험"></div></div>';
     }
@@ -2750,18 +2765,28 @@
         data.autoChargeAmount=$('aAcAmt')?parseAmount(val('aAcAmt')):(Number((getAcct(id)||{}).autoChargeAmount)||0);
       }
       const updates={}; updates['accounts/'+key]=data;
+      let _billOn=false;
       if(type==='credit_card'){
+        const _pc=getCard(key)||{};   // set 전체 교체라 폼에 없는 러너 마커(lastBilled 등)는 기존값 보존 필수
+        let _bd=$('cBillDay')?(Number(val('cBillDay'))||0):(Number(_pc.billingDay)||0); if(_bd<0)_bd=0; if(_bd>31)_bd=31;
+        const _ba=$('cBillAcct')?val('cBillAcct'):(_pc.billingAccountId||'');
+        _billOn=!!(_bd&&_ba);
         updates['creditCards/'+key]={ cardName:name, cardCompany:val('cCompany').trim(),
           monthlyPerformanceTarget:parseAmount(val('cTarget')),
           performancePeriodType:val('cPeriod'), performanceStartDay:Number(val('cStartDay'))||1,
           // 이용(청구) 기간 — usageSameAsPerf(기본 true)면 실적 기간과 동일하게 동작(cardUsagePeriod)
           usageSameAsPerf:$('cUsageSame')?$('cUsageSame').classList.contains('on'):true,
           usagePeriodType:$('cUPeriod')?val('cUPeriod'):'calendar_month', usageStartDay:$('cUStartDay')?(Number(val('cUStartDay'))||1):1,
+          // 💳 카드 대금 자동 기록(runCardBills) — billingAutoSince=자동 기록 켠 날(그 이전 결제일 소급 금지), lastBilled=마지막 기록 회차(멱등 마커, 보존)
+          billingDay:_bd||null, billingAccountId:_ba||null,
+          billingAutoSince:_billOn?((_pc.billingDay&&_pc.billingAccountId&&_pc.billingAutoSince)?_pc.billingAutoSince:todayStr()):null,
+          lastBilled:_pc.lastBilled||null,
           includePrepaidCharge:$('cIncPrepaid')?$('cIncPrepaid').classList.contains('on'):false,
           excludedCategories:val('cExclCats').split(',').map(s=>s.trim()).filter(Boolean),
           defaultIncluded:true, visibility:val('aVis'), memo:val('aMemo').trim() };
       } else if(getCard(key)){ updates['creditCards/'+key]=null; }
       db.ref(wsRoot()).update(updates); toast(id?'수정되었습니다':'추가되었습니다'); closeSheet();
+      if(_billOn) setTimeout(()=>{ if(typeof runCardBills==='function') runCardBills(); }, 500);   // 설정한 날이 결제일 당일이면 바로 이번 회차 기록
     }
     // 🧮 실제 잔액 입력 → 차액만큼 잔액조정 거래 자동 생성 — 잔액 어긋남을 원클릭으로 보정
     function adjustAcctBalance(id){

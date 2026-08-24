@@ -695,7 +695,7 @@
       state.memberFilter='';
       seededAcc=seededCat=seededTodoCat=booted=migratedAcc=migratedCat=migratedBudget=migratedRec=false;
       recurringLogKeys=new Set();
-      recv.tx=recv.acc=recv.cat=recv.rec=recv.log=false;
+      recv.tx=recv.acc=recv.cat=recv.rec=recv.log=recv.card=false;
     }
 
     function updateWorkspaceChip(){
@@ -803,7 +803,8 @@
         recv.acc=true; App.store.emit(); maybeBoot();
       });
       attach('creditCards', s=>{
-        const o=s.val()||{}; state.creditCards=Object.keys(o).map(k=>Object.assign({id:k},o[k])); App.store.emit();
+        const o=s.val()||{}; state.creditCards=Object.keys(o).map(k=>Object.assign({id:k},o[k]));
+        recv.card=true; App.store.emit(); maybeBoot();   // 카드 대금 자동 기록(runCardBills)이 카드 설정을 기다리게 부팅 게이트에 포함(value는 빈 노드도 1회 발화)
       });
       attach('categories', s=>{
         if(!s.exists() && !seededCat){ seededCat=true; db.ref(wp('categories')).set(buildDefaultCategories()); return; }
@@ -957,7 +958,7 @@
 
     function maybeBoot(){
       if(booted) return;
-      if(recv.tx && recv.acc && recv.rec && recv.log){ booted=true; setTimeout(runRecurring, 300); }
+      if(recv.tx && recv.acc && recv.rec && recv.log && recv.card){ booted=true; setTimeout(()=>{ runRecurring(); runCardBills(); }, 300); }
     }
 
     // 기존 recurring 규칙에 신규 필드 보강(status/interval/autoCreate/visibility) — 1회, 본인 uid만
@@ -1063,6 +1064,52 @@
         const nr=nextRunOf(Object.assign({}, rule, { lastPosted: last||rule.lastPosted }));
         if(nr) upd.nextRunDate=ymd(nr); else { upd.nextRunDate=null; if(endD) upd.status='ended'; }
         if(Object.keys(upd).length) db.ref(wp('recurring/'+state.uid+'/'+rule.id)).update(upd);
+      });
+    }
+
+    // ===== 💳 카드 대금 자동 기록 =====
+    // 카드 설정에 결제일(billingDay)+대금 출금 계좌(billingAccountId)가 모두 있으면, 결제일에 "직전에 마감된 청구(이용) 기간" 사용액을
+    // [출금 계좌 → 카드] 이체(transfer)로 자동 기록한다 — 출금 계좌 잔액이 줄고 카드 부채(음수 잔액)가 청산돼 실제 카드값 납부와 정합.
+    // · transfer라 실소비 통계엔 원래 안 잡힌다(카드 사용 시 이미 지출로 집계 — isActualExpense:false도 명시).
+    // · 회차 판정: 오늘 이하 가장 최근 결제일 1건만 — 여러 달 미접속 소급 생성 금지(지난 카드값은 수동 기록과 충돌 위험).
+    // · 멱등 마커: creditCards/{id}.lastBilled(마지막 기록 회차 날짜) — 사용자가 생성분을 지워도 재생성하지 않는다
+    //   (정기거래의 "삭제=재생성"과 다른 정책: 카드값은 수동 이체 기록으로 대체하는 경우가 흔해 되살리면 이중 기록).
+    // · 시작 가드: billingAutoSince(설정 켠 날) 이전 회차는 건너뜀 — 설정 직후 지난 결제일이 소급 기록되는 것 방지.
+    // 멤버별 중복 생성 방지 — 이 카드의 청구를 기록할 담당 1명 판정(계좌 ownerUid 본인 → 소유자 이름 일치 → 공동이면 멤버 uid 사전순 첫 번째)
+    function cardBillOwner(a){
+      if(a.ownerUid) return a.ownerUid===state.uid;
+      if(a.owner && a.owner!=='공동') return a.owner===(state.userName||'');
+      const ms=Object.keys((state.wsMeta&&state.wsMeta.members)||{}).sort();
+      return ms.length? ms[0]===state.uid : true;
+    }
+    function runCardBills(){
+      const today=parseDate(todayStr());
+      state.creditCards.forEach(card=>{
+        const day=Number(card.billingDay)||0, from=card.billingAccountId;
+        const a=getAcct(card.id);
+        if(!day || !from || !a || !getAcct(from) || !cardBillOwner(a)) return;
+        const bill=(y,mo)=>new Date(y,mo,Math.min(day,new Date(y,mo+1,0).getDate()));   // 말일(28~31일)보다 큰 결제일은 그 달 말일로
+        let b=bill(today.getFullYear(),today.getMonth());
+        if(b>today) b=bill(today.getFullYear(),today.getMonth()-1);   // 이번 달 결제일이 아직 안 왔으면 지난 달 회차
+        const bs=ymd(b);
+        if(card.billingAutoSince && bs<card.billingAutoSince) return;
+        if(card.lastBilled && bs<=card.lastBilled) return;
+        const cur=cardUsagePeriod(card, b);   // 결제일이 속한(진행 중) 청구 기간
+        const per=cardUsagePeriod(card, new Date(cur.start.getFullYear(),cur.start.getMonth(),cur.start.getDate()-1));   // 직전 마감 기간 = 이번 청구분
+        const sum=state.transactions.reduce((s,t)=>{
+          if(t.from!==card.id || !(t.type==='expense'||t.type==='prepaid_charge')) return s;
+          const d=parseDate(t.date); return (d>=per.start&&d<=per.end)? s+(Number(t.amount)||0) : s;
+        },0);
+        const upd={}; upd['creditCards/'+card.id+'/lastBilled']=bs;   // 0원 회차도 소진해 다음 결제일로 넘어간다
+        if(sum>0){
+          const txKey='cardbill_'+card.id+'_'+bs;   // 고정 키 — 같은 회차 이중 생성 방지(멱등)
+          upd['transactions/'+state.uid+'/'+txKey]={ type:'transfer', date:isoAtNoon(bs), amount:sum,
+            user:state.userName||'', from:from, to:card.id, desc:(card.cardName||acctName(card.id))+' 카드대금',
+            isActualExpense:false, cardBillKey:txKey, billPeriodEnd:ymd(per.end),
+            memo:'청구 기간 '+ymd(per.start)+' ~ '+ymd(per.end)+' 자동 기록' };
+        }
+        db.ref(wsRoot()).update(upd).then(()=>{ if(sum>0) toast('💳 '+(card.cardName||acctName(card.id))+' 카드대금 '+won(sum)+' 자동 기록'); })
+          .catch(e=>console.warn('카드대금 자동 기록 실패', e));
       });
     }
 

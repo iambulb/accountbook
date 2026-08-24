@@ -59,6 +59,7 @@ firebase.js → constants.js → util.js → ledger-calc.js → core.js → app.
 | 리스너/시딩 | `setupListeners`·`attach`·`detachListeners`, `buildDefaultAccounts`, `maybeBoot`/`rerender` |
 | 실제소비/정산 | **정산(Step 9)** `pbSettleSummary`(순수). `isActual`·`actualSpend`·`settlementSplit`·`greedySettle`는 **`js/ledger-calc.js`로 이동**(듀얼 익스포트·단위테스트 — isActual은 소비성 유형 타입 게이트) |
 | 카드 기간 | 순수부 `periodFromRule`(달력월/커스텀 S일~다음달 S-1일)·`monthPhaseRef`(m월의 기준일 — 오늘의 위상을 모든 달에 적용해 월 이동=한 기간, 스킵/중복 버그 회귀 테스트)는 **`js/ledger-calc.js`**; core.js 래퍼 `cardPeriod`(실적)·`cardUsagePeriod`(이용/청구 — `usageSameAsPerf` 기본 동일)·`cardPeriodRule`·`cardMonthRef`·`cardPerformance` |
+| 카드 대금 자동 기록 | `runCardBills`(부팅 시 `runRecurring`과 함께 — 결제일 `billingDay`+출금 계좌 `billingAccountId` 설정 카드의 직전 마감 청구 기간 사용액을 `[출금→카드]` transfer로 기록, 키 `cardbill_{cardId}_{결제일}`·마커 `cardBillKey`/`billPeriodEnd`, 멱등 `lastBilled`·시작 가드 `billingAutoSince`)·`cardBillOwner`(멤버 중복 생성 방지 — 담당 1명 판정). 부팅 게이트 `recv.card`(creditCards 수신) 포함 |
 | 대출 계산 | `loanCalc`(잔액·이자·월예상이자)·`loanSummary`·`loanPaymentsOf`·`visibleLoans` |
 
 > **경로 헬퍼 `wp(path)`** 가 핵심입니다 — `wp('transactions')` → `ws/{현재wsId}/transactions`. RTDB에 접근할 때는 항상 `wp()` 로 현재 워크스페이스에 네임스페이스를 거는 것이 규칙입니다.
