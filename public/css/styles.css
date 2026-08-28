@@ -666,6 +666,9 @@
     /* ↕️ 할일 수동 정렬 핸들(마감순 보기) — touch-action:none으로 터치 드래그 허용 */
     .tddrag { flex:none; color:var(--sub); opacity:.45; padding:4px 2px 4px 10px; cursor:grab; touch-action:none; font-size:15px; user-select:none; -webkit-user-select:none; }
     .tdrow.dragging { opacity:.88; position:relative; z-index:5; background:var(--card); border-radius:10px; box-shadow:0 4px 14px rgba(0,0,0,.14); }
+    /* ↕️ 계좌 수동 정렬(자산 '내 순서' 보기) — 할일 드래그와 동일 스타일 */
+    .acdrag { flex:none; color:var(--sub); opacity:.45; padding:4px 0 4px 10px; cursor:grab; touch-action:none; font-size:15px; user-select:none; -webkit-user-select:none; }
+    .acct.dragging { opacity:.88; position:relative; z-index:5; background:var(--card); border-radius:10px; box-shadow:0 4px 14px rgba(0,0,0,.14); }
     .tdue.tap:active { transform:scale(.94); }
     .td-carry { display:block; width:100%; text-align:left; margin:0 0 12px; padding:11px 14px; -webkit-appearance:none; appearance:none; border:none; border-radius:13px; background:color-mix(in srgb,var(--expense) 12%,var(--card)); color:var(--expense); font-size:13px; font-weight:800; font-family:inherit; cursor:pointer; transition:transform .08s; }   /* 지난 미완료 → 오늘로 일괄 이동 배너 */
     .td-carry:active { transform:scale(.99); }
