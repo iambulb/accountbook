@@ -3672,6 +3672,7 @@
       h+=lrow(MORE_ICON.download,'CSV 내보내기','exportCSV()');
       h+=lrow(MORE_ICON.download,'데이터 백업(JSON)','exportBackup()','전체');
       h+=lrow('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V6M8 10l4-4 4 4"/><path d="M5 21h14"/></svg>','백업 복원','importBackup()');
+      h+=lrow('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3.5 19c.8-3 2.9-4.5 5.5-4.5s4.7 1.5 5.5 4.5"/><path d="M15 8h6M19 5.5L21.5 8 19 10.5"/></svg>','옛 이름 데이터 정리','openNameCleanup()');   // 🧹 개명 후 데이터에 남은 옛 이름 일괄 변경
       h+=lrowToggle(MORE_ICON.moon,'다크 모드','toggleTheme();openSettingsSheet()', state.theme==='dark');
       // 📅 달력 시작 요일 — 월요일 시작(월화수…일) ↔ 일요일 시작(일월화…토). 가계부·할일 캘린더 공용(기기 설정).
       h+=lrow('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>','달력 시작 요일','toggleWeekStart();openSettingsSheet()', weekStartSun()?'일요일':'월요일');
@@ -4068,6 +4069,7 @@
         day: (freq==='monthly')?Number(val('rDay')||1):(freq==='yearly'?(parseDate(val('rStart')||todayStr()).getDate()):((r&&r.day)||1)),   // 연간=시작일의 '일'에 매년(예전 day=1 고정으로 매년 1일에 발생하던 버그 방지)
         weekday: (freq==='weekly')?Number(val('rWeekday')||0):((r&&r.weekday)||0),
         user: resolveOwnerName($('rConsumer')?(val('rConsumer')||state.userName):(r?(r.user||state.userName):state.userName)),   // 정기결제 소비대상도 이름으로 정규화 저장
+        userUid: (function(){ const mem=(state.wsMeta&&state.wsMeta.members)||{}; const sel=$('rConsumer')?val('rConsumer'):((r&&r.userUid)||''); return mem[sel]?sel:null; })(),   // 👤 uid 병행(개명 견고 — 생성 거래 buildRecurringTx가 물려받음)
         autoCreate: $('rAuto')?$('rAuto').classList.contains('on'):true,
         status: r?(ruleStatus(r)==='ended'?'active':ruleStatus(r)):'active',
         visibility: val('rVis'), memo: val('rMemo').trim(),
@@ -4893,6 +4895,45 @@
       });
     }
 
+    // ===== 🧹 옛 이름 데이터 정리 (설정) =====
+    //  개명하면 멤버 명단 이름만 바뀌고, 거래 user·계좌 owner·정기 user 등 "이름 문자열로 저장된" 데이터엔 옛 이름이 남는다.
+    //  이 도구는 현재 멤버와 매칭되지 않는 이름(unknownPersonNames, util.js 순수)을 찾아 사용자가 멤버(또는 공동)로 지정하면
+    //  sweepRenamedNames(core.js)로 일괄 치환 + uid 백필한다. 외부인 이름(목적별 참여자 등)이 섞일 수 있어 기본값은 '변경 안 함'.
+    //  나로 매핑한 이름은 prevNames 이력에도 기록 → 내 다른 워크스페이스도 접속 시 자동 정리(sweepMyPrevNames).
+    function openNameCleanup(){
+      const mem=(state.wsMeta&&state.wsMeta.members)||{};
+      const found=unknownPersonNames({ transactions:state.transactions, recurring:state.recurring, accounts:state.accounts,
+        budgets:state.budgets, loans:state.loans, subscriptions:state.subscriptions, todos:state.todos,
+        purposeBooks:state.purposeBooks }, Object.keys(mem).map(u=>mem[u].name||''), Object.keys(mem));
+      const keys=Object.keys(found).sort((a,b)=>found[b]-found[a]);
+      let h='<p class="muted" style="margin:2px 2px 12px;line-height:1.5;">별명을 바꾸면 예전 이름으로 저장된 거래·계좌·정기 데이터가 남아요. 아래 이름이 <b>누구인지 지정</b>하면 일괄 변경돼요. 멤버가 아닌 외부인 이름(정산 참여자 등)은 <b>변경 안 함</b>으로 두세요.</p>';
+      if(!keys.length){
+        h+='<div class="empty" style="padding:24px;">정리할 옛 이름이 없어요 — 모든 데이터가 현재 멤버와 일치해요 ✅</div>';
+        openSheet('🧹 옛 이름 정리', h); return;
+      }
+      h+='<div class="card" style="padding:8px 12px;">'+keys.map((n,i)=>'<div class="row" style="padding:7px 0;gap:10px;"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><b>'+escapeHtml(n)+'</b> <span class="tx-sub">'+found[n]+'건</span></span>'+
+        '<select class="input" id="ncSel'+i+'" style="width:auto;flex:none;" aria-label="'+escapeHtml(n)+'을(를) 누구로 변경할지 선택"><option value="">변경 안 함</option>'+Object.keys(mem).map(u=>'<option value="'+u+'"'+(u===state.uid?' selected':'')+'>'+escapeHtml(mem[u].name||'멤버')+'</option>').join('')+'<option value="공동">공동</option></select></div>').join('')+'</div>';
+      h+='<p class="muted" style="font-size:11.5px;margin:8px 2px 0;">거래 소비대상·정산 참여자·계좌/예산/대출 소유자·정기결제·할일 담당·목적별 참여자에 일괄 반영돼요(멤버로 지정하면 이후 개명에도 견고하게 연결).</p>';
+      h+='<button class="btn" style="margin-top:12px;" '+App.view.act('applyNameCleanup')+'>일괄 변경</button>';
+      openSheet('🧹 옛 이름 정리', h);
+      $('sheet')._ncNames=keys;   // 적용 시 셀렉트 인덱스 ↔ 이름 매핑용
+    }
+    function applyNameCleanup(){
+      const keys=($('sheet')&&$('sheet')._ncNames)||[];
+      const mem=(state.wsMeta&&state.wsMeta.members)||{};
+      const nameMap={};
+      keys.forEach((n,i)=>{ const sel=$('ncSel'+i)?val('ncSel'+i):''; if(!sel) return;
+        if(sel==='공동'){ nameMap[n]={ uid:'', name:'공동' }; }
+        else if(mem[sel]&&(mem[sel].name||'')){ nameMap[n]={ uid:sel, name:mem[sel].name }; } });
+      const picked=Object.keys(nameMap);
+      if(!picked.length){ toast('변경할 이름을 지정해 주세요', true); return; }
+      confirmSheet('옛 이름 '+picked.length+'개를 지정한 대상으로 일괄 변경할까요? 되돌리기 어려워요.', function(){
+        sweepRenamedNames(nameMap).then(function(n){
+          picked.forEach(function(nm){ if(nameMap[nm].uid===state.uid){ try{ db.ref('users/'+state.uid+'/prevNames').push({ name:nm, at:new Date().toISOString() }); }catch(e){} } });   // 내 옛 이름은 이력에 기록 → 다른 ws 자동 정리
+          toast('🧹 레코드 '+n+'건을 정리했어요'); closeSheet();
+        }).catch(function(){ toast('정리 실패 — 네트워크·권한을 확인하세요', true); });
+      }, { okLabel:'일괄 변경', danger:false, title:'🧹 옛 이름 정리' });
+    }
     // ===== 💾 데이터 백업(JSON) =====
     //  내보내기 = 현재 가계부(ws 전체 스냅샷) + 내 개인 할일을 JSON 파일로. 게임(users/{uid}/game)은 제외(재화 조작 방지 — 서버가 소스).
     //  복원 = 백업의 각 최상위 항목을 현재 가계부에 통째 교체(update — 백업에 없는 항목은 유지). 되돌릴 수 없어 확인 2중.

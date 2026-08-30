@@ -664,6 +664,7 @@
     // 프로필 저장: 사진(photoChange: undefined=유지 / ''=삭제 / dataURL=교체) + 이름(별명) + 공개여부(isPublic: undefined=유지)
     async function saveProfile(name, photoChange, isPublic){
       name=(name||'').trim()||state.userName;
+      const oldName=state.userName;   // 🧹 개명 전파용 — 데이터에 이름 문자열로 저장된 소비대상/소유자를 새 이름으로 옮긴다
       const upd={ name };
       if(photoChange!==undefined) upd.photo=photoChange||null;   // ''/null → 삭제
       if(isPublic!==undefined) upd.profilePublic=!!isPublic;
@@ -675,6 +676,16 @@
       });
       if(state.wsMeta&&state.wsMeta.members&&state.wsMeta.members[state.uid]) state.wsMeta.members[state.uid].name=name;
       state.userName=name;
+      // 🧹 개명 전파: 옛 이름으로 저장된 거래 user·계좌 owner·정기 user 등을 새 이름으로(현재 ws 즉시 스윕).
+      //   다른 워크스페이스는 prevNames 이력에 기록해 두면 그 ws 접속 시 sweepMyPrevNames가 자동 정리(멤버 명단만 바꾸고
+      //   데이터 속 이름은 안 바뀌어 리포트에 옛 이름이 별도 인물로 남던 문제 — 사용자 보고 2026-08 '구공→구근').
+      if(oldName && name && oldName!==name){
+        try{ db.ref('users/'+state.uid+'/prevNames').push({ name:oldName, at:new Date().toISOString() }); }catch(e){}
+        const mm=(state.wsMeta&&state.wsMeta.members)||{};
+        const others=Object.keys(mm).filter(u=>u!==state.uid).map(u=>(mm[u]||{}).name||'');
+        if(others.indexOf(oldName)<0)   // 동명이인 보호 — 옛 이름이 다른 멤버의 현재 이름이면 데이터는 건드리지 않음
+          sweepRenamedNames({ [oldName]:{ uid:state.uid, name } }).catch(()=>{});
+      }
       if(photoChange!==undefined) state.userPhotos[state.uid]=photoChange||'';
       if(isPublic!==undefined) state.profilePublic=!!isPublic;
       if(typeof writeMyRanking==='function') writeMyRanking();   // 랭킹 엔트리(이름·공개여부) 갱신
@@ -694,6 +705,7 @@
       state._balCache=null;   // 계좌 잔액 캐시 무효화(워크스페이스 전환)
       state.memberFilter='';
       seededAcc=seededCat=seededTodoCat=booted=migratedAcc=migratedCat=migratedBudget=migratedRec=false;
+      sweptPrevNames=false;   // 🧹 ws 전환 시 옛 이름 자동 정리도 다시 1회 허용
       recurringLogKeys=new Set();
       recv.tx=recv.acc=recv.cat=recv.rec=recv.log=recv.card=false;
     }
@@ -716,6 +728,8 @@
     //    따라서 화면에 owner/t.user를 표시하거나 비교할 땐 **반드시 ownerName()으로 이름 해석**한다(uid 원문 노출 방지 — 예: 자산 계좌 옆 uid가 뜨던 버그).
     // 소유자 → 표시 이름: 멤버면 이름, 아니면(공동·레거시 이름·미상 uid) 값 그대로.
     function ownerName(uid){ const m=(state.wsMeta&&state.wsMeta.members)||{}; return (m[uid]&&m[uid].name)||uid; }
+    // 이름 → 멤버 uid(현재 워크스페이스, 일치 없으면 '') — 이름만 저장된 레코드에 uid를 백필할 때 사용(개명 견고)
+    function memberUidByName(name){ if(!name||name==='공동') return ''; const m=(state.wsMeta&&state.wsMeta.members)||{}; for(const u in m){ if((m[u].name||'')===name) return u; } return ''; }
     // ⭐ ownerOptions 선택값(uid|'공동'|레거시 이름)을 **저장용 이름**으로 정규화 — owner/소비대상은 이름으로 저장한다(거래 tx.user와 동일 패턴).
     //    새 저장 경로(계좌·정기 등)는 반드시 이걸 거쳐, uid가 데이터에 그대로 박히지 않게 한다. (표시 방어는 ownerName, 저장 방어는 이 함수.)
     function resolveOwnerName(sel){ const m=(state.wsMeta&&state.wsMeta.members)||{};
@@ -919,6 +933,31 @@
       if(Object.keys(upd).length) db.ref(wsRoot()).update(upd);
     }
 
+    // 🧹 이름 스윕 실행 — 현재 ws에 로드된 데이터로 치환 계획(buildRenameSweep, util.js 순수)을 만들어 다중경로 update 1회.
+    //  nameMap = { 옛이름: { uid, name } }. 손댄 레코드 수를 resolve하는 Promise 반환(0=할 일 없음, 쓰기 생략).
+    function sweepRenamedNames(nameMap){
+      const plan=buildRenameSweep({ transactions:state.transactions, recurring:state.recurring, accounts:state.accounts,
+        budgets:state.budgets, loans:state.loans, subscriptions:state.subscriptions, todos:state.todos,
+        purposeBooks:state.purposeBooks, settlementPayments:state.settlementPayments }, nameMap);
+      if(!plan.count) return Promise.resolve(0);
+      return db.ref(wsRoot()).update(plan.upd).then(()=>plan.count);
+    }
+    // 🧹 접속 시 내 옛 이름 자동 정리 — 개명 이력(users/{uid}/prevNames)의 이름이 이 ws 데이터에 남아 있으면 현재 이름으로 스윕.
+    //  ws당 세션 1회(sweptPrevNames, 전환 시 리셋). 다른 멤버의 '현재' 이름과 같은 옛 이름은 건드리지 않음(동명이인 보호).
+    //  멱등 — 치환이 끝난 뒤엔 매칭이 없어 쓰기가 발생하지 않는다. saveProfile(현재 ws 즉시 전파)의 "다른 워크스페이스" 짝.
+    let sweptPrevNames=false;
+    function sweepMyPrevNames(){
+      if(sweptPrevNames || !state.uid) return; sweptPrevNames=true;
+      db.ref('users/'+state.uid+'/prevNames').once('value').then(s=>{
+        const o=s.val()||{}; const cur=state.userName||''; if(!cur) return;
+        const mm=(state.wsMeta&&state.wsMeta.members)||{};
+        const others=Object.keys(mm).filter(u=>u!==state.uid).map(u=>(mm[u]||{}).name||'');
+        const nameMap={};
+        Object.keys(o).forEach(k=>{ const n=(o[k]&&o[k].name)||''; if(n && n!==cur && others.indexOf(n)<0) nameMap[n]={ uid:state.uid, name:cur }; });
+        if(Object.keys(nameMap).length) return sweepRenamedNames(nameMap);
+      }).catch(()=>{});
+    }
+
     // 카테고리 확장 마이그레이션: 기존(이름만/일부필드) → 풀 필드, 누락 기본 카테고리 시드 (1회, 멱등)
     function migrateCategories(o){
       if(migratedCat) return; migratedCat=true;
@@ -958,7 +997,8 @@
 
     function maybeBoot(){
       if(booted) return;
-      if(recv.tx && recv.acc && recv.rec && recv.log && recv.card){ booted=true; setTimeout(()=>{ runRecurring(); runCardBills(); }, 300); }
+      if(recv.tx && recv.acc && recv.rec && recv.log && recv.card){ booted=true; setTimeout(()=>{ runRecurring(); runCardBills(); }, 300);
+        setTimeout(sweepMyPrevNames, 2500); }   // 🧹 개명 이력 자동 정리 — 부팅 게이트 밖 노드(목적별·할일 등)도 도착한 뒤 1회
     }
 
     // 기존 recurring 규칙에 신규 필드 보강(status/interval/autoCreate/visibility) — 1회, 본인 uid만
@@ -1017,6 +1057,9 @@
         desc: rule.desc||TYPE_LABEL[type]||'정기',
         isActualExpense: type==='income' ? true : !!ACTUAL_DEFAULT[type],   // 수입은 실수입(false면 리포트 수입 집계에서 빠짐 — buildTx와 동일 수정)
         recurringId:rule.id, recurringTitle:rule.desc||'', scheduledDate:ymd(occ), generatedBy:'recurring' };
+      // 👤 소비대상 uid 병행 저장(개명 견고) — 규칙의 userUid 우선, 없으면 이름→멤버 uid 역해석. 예전엔 이름만 저장돼
+      //   개명 후 리포트에서 옛 이름이 별도 인물로 갈라졌다(사용자 보고 2026-08).
+      { const _muid=rule.userUid||memberUidByName(tx.user); if(_muid) tx.userUid=_muid; }
       if(rule.memo) tx.memo=rule.memo;
       const e=TX_EFFECT[type]||{};
       if(type==='balance_adjustment'){ tx.to=rule.to||rule.from; }
@@ -1104,7 +1147,7 @@
         if(sum>0){
           const txKey='cardbill_'+card.id+'_'+bs;   // 고정 키 — 같은 회차 이중 생성 방지(멱등)
           upd['transactions/'+state.uid+'/'+txKey]={ type:'transfer', date:isoAtNoon(bs), amount:sum,
-            user:state.userName||'', from:from, to:card.id, desc:(card.cardName||acctName(card.id))+' 카드대금',
+            user:state.userName||'', userUid:state.uid, from:from, to:card.id, desc:(card.cardName||acctName(card.id))+' 카드대금',
             isActualExpense:false, cardBillKey:txKey, billPeriodEnd:ymd(per.end),
             memo:'청구 기간 '+ymd(per.start)+' ~ '+ymd(per.end)+' 자동 기록' };
         }

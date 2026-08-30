@@ -620,6 +620,81 @@
     var ratePct = cost > 0 ? Math.round(gain / cost * 1000) / 10 : 0;
     return { cost: cost, value: value, gain: gain, ratePct: ratePct };
   }
+  // 🧹 개명 전파(이름 스윕) 계획 빌더(순수) — 워크스페이스 데이터에서 "옛 이름"으로 저장된 소비대상/소유자를 새 이름으로 치환하는
+  //  다중경로 update 객체를 만든다. nameMap = { 옛이름: { uid, name } }(uid=''는 '공동' 매핑처럼 uid 없는 대상).
+  //  · uid 병행 필드(user↔userUid, owner↔ownerUid, assignedName↔assignedUid)는 **uid가 비었거나 매핑 uid와 같은 레코드만** 치환하고
+  //    (다른 멤버 uid가 박힌 레코드는 보호), uid가 비어 있으면 백필한다(다음 개명부턴 uid로 견고).
+  //  · 순수 이름 필드(정산 payer·splitParticipants·splitAmounts 키·settlementPayments의 owner/fromPerson/toPerson·목적별 participants)는
+  //    매칭되면 그대로 치환(정산 계산이 이름 키 기반이라 참여자·금액 키를 함께 바꿔야 정합).
+  //  반환 { upd: {ws 상대경로: 값}, count: 손댄 레코드 수 }. 멱등 — 치환 후엔 매칭이 없어 빈 계획이 나온다.
+  function buildRenameSweep(data, nameMap) {
+    data = data || {}; nameMap = nameMap || {};
+    var upd = {}, touched = {};
+    function mapOf(n) { return (n && Object.prototype.hasOwnProperty.call(nameMap, n)) ? nameMap[n] : null; }
+    function pair(base, rec, nameField, uidField) {   // 이름+uid 병행 필드
+      var m = mapOf(rec[nameField]); if (!m || !m.name) return;
+      if (rec[uidField] && rec[uidField] !== m.uid) return;   // 다른 멤버 uid 보호
+      var hit = false;
+      if (rec[nameField] !== m.name) { upd[base + '/' + nameField] = m.name; hit = true; }
+      if (!rec[uidField] && m.uid) { upd[base + '/' + uidField] = m.uid; hit = true; }
+      if (hit) touched[base] = 1;
+    }
+    function nameOnly(base, rec, field) {
+      var m = mapOf(rec[field]); if (!m || !m.name || rec[field] === m.name) return;
+      upd[base + '/' + field] = m.name; touched[base] = 1;
+    }
+    function arrRepl(base, rec, field) {
+      var a = rec[field]; if (!Array.isArray(a)) return;
+      var hit = false;
+      var na = a.map(function (n) { var m = mapOf(n); if (m && m.name && n !== m.name) { hit = true; return m.name; } return n; });
+      if (hit) { upd[base + '/' + field] = na; touched[base] = 1; }
+    }
+    (data.transactions || []).forEach(function (t) {
+      var base = 'transactions/' + t.ownerUid + '/' + t.id;
+      pair(base, t, 'user', 'userUid');
+      nameOnly(base, t, 'payer');
+      arrRepl(base, t, 'splitParticipants');
+      if (t.splitAmounts && typeof t.splitAmounts === 'object') {
+        var hit = false, no = {};
+        Object.keys(t.splitAmounts).forEach(function (n) { var m = mapOf(n); if (m && m.name && n !== m.name) hit = true; no[(m && m.name) || n] = t.splitAmounts[n]; });
+        if (hit) { upd[base + '/splitAmounts'] = no; touched[base] = 1; }
+      }
+    });
+    (data.recurring || []).forEach(function (r) {
+      var base = 'recurring/' + r.ownerUid + '/' + r.id;
+      pair(base, r, 'user', 'userUid');
+      pair(base, r, 'owner', 'ownerUid');
+    });
+    (data.accounts || []).forEach(function (a) { pair('accounts/' + a.id, a, 'owner', 'ownerUid'); });
+    (data.budgets || []).forEach(function (b) { pair('budgets/' + b.id, b, 'owner', 'ownerUid'); });
+    (data.loans || []).forEach(function (l) { pair('loans/' + l.id, l, 'owner', 'ownerUid'); });
+    (data.subscriptions || []).forEach(function (s) { pair('subscriptions/' + s.id, s, 'owner', 'ownerUid'); });
+    (data.todos || []).forEach(function (t) { pair('todos/' + t.id, t, 'assignedName', 'assignedUid'); });
+    (data.purposeBooks || []).forEach(function (p) { arrRepl('purposeBooks/' + p.id, p, 'participants'); });
+    (data.settlementPayments || []).forEach(function (s) {
+      var base = 'settlementPayments/' + s.ownerUid + '/' + s.id;
+      nameOnly(base, s, 'owner'); nameOnly(base, s, 'fromPerson'); nameOnly(base, s, 'toPerson');
+    });
+    return { upd: upd, count: Object.keys(touched).length };
+  }
+  // 🧹 미상 이름 수집(순수) — 소비대상/소유자/담당/참여자 필드에서 현재 멤버 이름·'공동'·빈값·멤버 uid가 아닌 값을 {이름: 건수}로.
+  //  개명으로 남은 옛 이름 후보 목록(외부인 이름도 섞일 수 있어 사용자가 매핑을 '선택'하는 UI 전제 — 자동 치환 금지).
+  function unknownPersonNames(data, memberNames, memberUids) {
+    data = data || {};
+    var known = {}; (memberNames || []).forEach(function (n) { if (n) known[n] = 1; });
+    var uidSet = {}; (memberUids || []).forEach(function (u) { if (u) uidSet[u] = 1; });
+    var out = {};
+    function see(n) { if (!n || typeof n !== 'string' || n === '공동' || known[n] || uidSet[n]) return; out[n] = (out[n] || 0) + 1; }
+    (data.transactions || []).forEach(function (t) { see(t.user); see(t.payer); (Array.isArray(t.splitParticipants) ? t.splitParticipants : []).forEach(function (n) { see(n); }); });
+    (data.recurring || []).forEach(function (r) { see(r.user); see(r.owner); });
+    (data.accounts || []).forEach(function (a) { see(a.owner); });
+    (data.budgets || []).forEach(function (b) { see(b.owner); });
+    (data.loans || []).forEach(function (l) { see(l.owner); });
+    (data.subscriptions || []).forEach(function (s) { see(s.owner); });
+    (data.todos || []).forEach(function (t) { see(t.assignedName); });
+    (data.purposeBooks || []).forEach(function (p) { (Array.isArray(p.participants) ? p.participants : []).forEach(function (n) { see(n); }); });
+    return out;
+  }
   function applyTodoTabDot(doc, todos) {
     if (!doc) return; var tt = doc.querySelector('.tabbar .tab[data-tab="todo"]'); if (!tt) return;
     var dot = tt.querySelector('.tabdot');
@@ -627,7 +702,7 @@
     else if (dot) { dot.remove(); }
   }
 
-  var api = { CAM: CAM, camDepth: camDepth, camFurnBottom: camFurnBottom, camZ: camZ, CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, fmtCommaSigned: fmtCommaSigned, parseAmount: parseAmount, parseAmountSigned: parseAmountSigned, todayKst: todayKst, isoAtNoon: isoAtNoon, jsAttr: jsAttr, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, clampYmd: clampYmd, effNextBilling: effNextBilling, subChargeDayInMonth: subChargeDayInMonth, todoScope: todoScope, overdueTodoIds: overdueTodoIds, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, affTiers: affTiers, dupAffOf: dupAffOf, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, dropMoodFactor: dropMoodFactor, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, recurringCandidate: recurringCandidate, loanInstallment: loanInstallment, doneDayFor: doneDayFor, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift, savingsPlan: savingsPlan, stockCalc: stockCalc };
+  var api = { CAM: CAM, camDepth: camDepth, camFurnBottom: camFurnBottom, camZ: camZ, CURRENCIES: CURRENCIES, won: won, fmtComma: fmtComma, fmtCommaSigned: fmtCommaSigned, parseAmount: parseAmount, parseAmountSigned: parseAmountSigned, todayKst: todayKst, isoAtNoon: isoAtNoon, jsAttr: jsAttr, curInfo: curInfo, fmtForeign: fmtForeign, krwFromForeign: krwFromForeign, sumByCurrency: sumByCurrency, computeSettleAmounts: computeSettleAmounts, personKey: personKey, addDays: addDays, nextDue: nextDue, dueDiffDays: dueDiffDays, clampYmd: clampYmd, effNextBilling: effNextBilling, subChargeDayInMonth: subChargeDayInMonth, todoScope: todoScope, overdueTodoIds: overdueTodoIds, friendTodoOrder: friendTodoOrder, friendFeedOrder: friendFeedOrder, storyRing: storyRing, relTime: relTime, missionStreak: missionStreak, weekDotsData: weekDotsData, todayMissionState: todayMissionState, customMissionMilestone: customMissionMilestone, normalizeHome: normalizeHome, toRoomsArray: toRoomsArray, sumPlacedItem: sumPlacedItem, wallOccupiedCellsPure: wallOccupiedCellsPure, wallAreaFreePure: wallAreaFreePure, wallSnapRowPure: wallSnapRowPure, loginStreakReward: loginStreakReward, dexProgress: dexProgress, affectionLevel: affectionLevel, affTiers: affTiers, dupAffOf: dupAffOf, PITY_N: PITY_N, pityForced: pityForced, pityNext: pityNext, pityRemain: pityRemain, roomYield: roomYield, roomYieldCapH: roomYieldCapH, roomMood: roomMood, dropMoodFactor: dropMoodFactor, yieldMultiplier: yieldMultiplier, totalAffectionLv: totalAffectionLv, affLevelReward: affLevelReward, frequentTxTemplates: frequentTxTemplates, txMatches: txMatches, recurringCandidate: recurringCandidate, loanInstallment: loanInstallment, doneDayFor: doneDayFor, todayPending: todayPending, homeBadgeShow: homeBadgeShow, homeCardKind: homeCardKind, applyHomeBadge: applyHomeBadge, applyTodoTabDot: applyTodoTabDot, featuredPetOfMonth: featuredPetOfMonth, FREE_GIFT_TABLE: FREE_GIFT_TABLE, rollFreeGift: rollFreeGift, savingsPlan: savingsPlan, stockCalc: stockCalc, buildRenameSweep: buildRenameSweep, unknownPersonNames: unknownPersonNames };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   for (var k in api) { root[k] = api[k]; }   // 브라우저 전역 노출(기존 코드가 전역으로 참조)
 })(typeof window !== 'undefined' ? window : globalThis);

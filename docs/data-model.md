@@ -172,7 +172,13 @@ erDiagram
 `categoryName`(null=총예산), `amount`, `periodType`(monthly/weekly/yearly/custom), `scope`(group/personal), `owner`, `alertEnabled`, `alertThreshold`, `visibility`, `purposeBookId`, `createdAt`, `updatedAt`.
 
 ### recurring/{uid}/{id}
-`type`, `amount`, `desc`, `from`, `to`, `category`, `freq`(daily/weekly/monthly/yearly/custom), `interval`, `day`, `weekday`, `startDate`, `endDate`, `lastPosted`, `nextRunDate`, `status`(active/paused/ended), `autoCreate`, `user`, `visibility`, 카드실적 필드.
+`type`, `amount`, `desc`, `from`, `to`, `category`, `freq`(daily/weekly/monthly/yearly/custom), `interval`, `day`, `weekday`, `startDate`, `endDate`, `lastPosted`, `nextRunDate`, `status`(active/paused/ended), `autoCreate`, `user`, `userUid`(소비 대상이 멤버면 uid 병행 — 개명 견고, 2026-08. 생성 거래 `buildRecurringTx`가 물려받고 규칙에 없으면 이름→멤버 uid 역해석 백필), `visibility`, 카드실적 필드.
+
+### 🧹 개명 전파 (users/{uid}/prevNames + 이름 스윕)
+- **문제**: 소비 대상·소유자는 이름 문자열로 비정규화 저장되므로, 별명을 바꾸면(members 명단만 갱신) 데이터 속 옛 이름이 그대로 남아 거래 목록·리포트에 옛 이름이 계속 보이고, uid가 없는 레코드는 리포트에서 별도 인물로 갈라진다.
+- **`users/{uid}/prevNames`**(push key): `{ name:옛이름, at:ISO }` — 내 개명 이력(본인만 read/write, 규칙 변경 불필요). `saveProfile`이 개명 시 기록.
+- **스윕**: `buildRenameSweep(data, nameMap)`(util.js 순수 — 단위테스트) → `sweepRenamedNames`(core.js)가 ws 다중경로 update 1회. 대상 필드: 거래 `user`(+`userUid` 백필)·`payer`·`splitParticipants`·`splitAmounts` 키, 정기 `user`/`owner`, 계좌·예산·대출·구독 `owner`(+`ownerUid` 백필), 그룹 할일 `assignedName`(+`assignedUid` 백필), 목적별 `participants`, `settlementPayments`의 `owner`/`fromPerson`/`toPerson`. **uid 병행 필드는 uid가 비었거나 매핑 uid와 같은 레코드만** 치환(다른 멤버 보호), 옛 이름이 다른 멤버의 현재 이름이면 스킵(동명이인 보호).
+- **실행 경로 3곳**: ① `saveProfile` 개명 시 현재 ws 즉시 스윕 + prevNames 기록 ② 부팅 시 `sweepMyPrevNames`(ws당 세션 1회·멱등)가 prevNames 기준 자동 정리 — 내 다른 워크스페이스도 접속하면 정리됨 ③ 설정 → **옛 이름 데이터 정리**(`openNameCleanup`, views.js) — 이력 없이 남은 옛 이름(과거 개명분)을 `unknownPersonNames`(util.js)로 찾아 사용자가 멤버/공동으로 지정해 일괄 변경(외부인 이름은 '변경 안 함').
 
 ### subscriptions/{id}
 `name`, `type`(SUB_TYPES), `status`(active/paused/cancelled/expired), `amount`(**항상 원화** — 외화 구독은 환산값), `currency`(기본 KRW), `foreignAmount`·`fxRate`(비KRW만 — 원통화 금액·저장 시점 환율), `billingCycle`, `billingInterval`, `nextBillingDate`, `expirationDate`, `autoRenew`, `isTrial`, `trialEndDate`, `visibility`, `owner`.
