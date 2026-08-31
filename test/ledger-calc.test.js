@@ -235,6 +235,67 @@ test('buildTx — 함께결제 + 목적별: 보조 거래는 정산 제외(이�
   assert.strictEqual(r.subTx.settlementStatus, 'none');
 });
 
+// ===== 🔗 그룹 간 이체(연동) — 반쪽 두 건(내 ws=from만·상대 ws=to만) + link* 필드 =====
+const XWS = { wsId: 'wsB', wsName: '계모임', acctId: 'accB1', acctName: '계좌B', dir: 'out', myWsId: 'wsA', myWsName: '우리집', myAcctName: '내통장' };
+function xfer0(over) { return tx0(Object.assign({ type: 'transfer', effect: { debit: true, credit: true }, from: 'A', to: 'B', hasCat: false }, over)); }
+
+test('buildTx — 크로스 이체: 내 반쪽은 from만 + link* 5종, xTx는 to만 + 역방향 링크', () => {
+  const r = buildTx(xfer0({ xws: XWS }));
+  assert.ok(!r.error);
+  assert.strictEqual(r.tx.from, 'A');                     // xfer0의 출금 계좌
+  assert.ok(!('to' in r.tx));                             // 상대 계좌는 to에 싣지 않음(잔액 캐시 오염 차단)
+  assert.strictEqual(r.tx.linkWsId, 'wsB');
+  assert.strictEqual(r.tx.linkDir, 'out');
+  assert.strictEqual(r.tx.linkAcctId, 'accB1');
+  assert.strictEqual(r.tx.linkAcctName, '계좌B');
+  assert.strictEqual(r.tx.linkWsName, '계모임');
+  assert.ok(r.xTx);
+  assert.strictEqual(r.xTx.type, 'transfer');
+  assert.strictEqual(r.xTx.to, 'accB1');
+  assert.ok(!('from' in r.xTx));
+  assert.strictEqual(r.xTx.amount, r.tx.amount);
+  assert.strictEqual(r.xTx.linkWsId, 'wsA');
+  assert.strictEqual(r.xTx.linkDir, 'in');
+  assert.strictEqual(r.xTx.linkAcctId, 'A');              // 내 출금 계좌 역참조
+  assert.strictEqual(r.xTx.linkAcctName, '내통장');
+  assert.strictEqual(r.xTx.linkWsName, '우리집');
+  assert.strictEqual(r.xTx.isActualExpense, r.tx.isActualExpense);
+});
+
+test('buildTx — 크로스 이체: dir=in(받은 반쪽 수정)은 to만 + xTx는 from만', () => {
+  const r = buildTx(xfer0({ xws: Object.assign({}, XWS, { dir: 'in' }), to: 'myB' }));
+  assert.ok(!r.error);
+  assert.strictEqual(r.tx.to, 'myB');
+  assert.ok(!('from' in r.tx));
+  assert.strictEqual(r.tx.linkDir, 'in');
+  assert.strictEqual(r.xTx.from, 'accB1');
+  assert.ok(!('to' in r.xTx));
+  assert.strictEqual(r.xTx.linkDir, 'out');
+  assert.strictEqual(r.xTx.linkAcctId, 'myB');            // 내 입금 계좌 역참조
+});
+
+test('buildTx — 크로스 이체 검증(그룹·계좌 미선택) · transfer 외 유형은 xws 무시', () => {
+  assert.deepStrictEqual(buildTx(xfer0({ xws: Object.assign({}, XWS, { wsId: '' }) })), { error: '받는 그룹을 선택하세요' });
+  assert.deepStrictEqual(buildTx(xfer0({ xws: Object.assign({}, XWS, { acctId: '' }) })), { error: '받는 그룹의 계좌를 선택하세요' });
+  const e = buildTx(tx0({ xws: XWS }));   // expense — xws 무시
+  assert.ok(!e.error); assert.strictEqual(e.xTx, null); assert.ok(!('linkWsId' in e.tx));
+});
+
+test('buildTx — 크로스 이체: 목적별 연결은 내 반쪽에만(상대 ws엔 그 PB가 없음)', () => {
+  const r = buildTx(xfer0({ xws: XWS, pb: 'pb1', pbName: '계', settle: { inc: false } }));
+  assert.strictEqual(r.tx.purposeBookId, 'pb1');
+  assert.ok(!('purposeBookId' in r.xTx));
+});
+
+test('buildTx — 연동 해제 편집: oldTx의 link*가 화이트리스트로 부활하지 않음(원격 반쪽 고아 방지)', () => {
+  const old = { linkWsId: 'wsB', linkTxId: '123', linkDir: 'out', linkAcctId: 'accB1', linkAcctName: '계좌B', linkWsName: '계모임', recurringId: 'r1' };
+  const r = buildTx(xfer0({ oldTx: old }));   // xws 없음 = 연동 끔
+  assert.ok(!r.error);
+  assert.strictEqual(r.xTx, null);
+  ['linkWsId', 'linkTxId', 'linkDir', 'linkAcctId', 'linkAcctName', 'linkWsName'].forEach(k => assert.ok(!(k in r.tx), k + ' 부활 금지'));
+  assert.strictEqual(r.tx.recurringId, 'r1');   // 기존 백링크 보존은 그대로
+});
+
 // 💰 수입 실수입 기본값 — ACTUAL_DEFAULT에 income이 없어 false로 저장되면 리포트 수입 집계에서 빠지던 버그 방지(2026-07-31)
 test('buildTx: 수입은 isActualExpense=true(실수입) 기본', () => {
   const r = buildTx({ type: 'income', iso: '2026-07-31T12:00:00.000Z', date: '2026-07-31', consumer: '현경',

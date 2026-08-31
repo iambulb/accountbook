@@ -55,12 +55,20 @@
   // views.js saveTx의 조립·검증부를 그대로 추출 — DOM 읽기는 readTxForm(비순수)이, 쓰기·보상은 saveTx가 담당.
   // inp: { type,curCode,foreign,rate,rawAmount,date,iso,desc,memo,effect,hasCat,cat,typeLabel,isActualDefault,
   //        consumer,consumerUid,consumerIsMember,fxSource,from,to,adjSign,hasCard,cardIncluded,cardPerfAmount,cardPerfReason,pb,pbName,settle,oldTx,
-  //        coAmount,coAcct,coTxType }   ← 💳+✨ 함께결제(포인트·선불 일부 + 나머지는 카드/계좌)
+  //        coAmount,coAcct,coTxType,   ← 💳+✨ 함께결제(포인트·선불 일부 + 나머지는 카드/계좌)
+  //        xws }   ← 🔗 그룹 간 이체(연동): { wsId,wsName,acctId,acctName,dir:'out'|'in', myWsId,myWsName,myAcctName }
+  //                    transfer 전용. 내 쪽 반쪽엔 link* 필드만 싣고(out=to 미설정·in=from 미설정 — 잔액 캐시가 없는 계좌 id를 안 건드리게),
+  //                    상대 ws에 쓸 반쪽 xTx를 함께 반환한다. linkTxId(같은 키)는 saveTx가 채운다(coPay 관례).
+  //                    ⚠️ link* 필드는 oldTx 보존 배열에 넣지 않는다 — 연동 해제 시 옛 링크가 부활하면 원격 반쪽만 지워지고 링크가 남는 모순(xws 분기가 명시 재생성).
   function buildTx(inp) {
     if (!inp.foreign) return { error: '금액을 입력하세요' };
     if (inp.curCode !== 'KRW' && !(inp.rate > 0)) return { error: '환율을 입력하세요' };
     if (!inp.rawAmount) return { error: '환산 금액이 0이에요' };
     const e = inp.effect || {}, type = inp.type;
+    // 🔗 그룹 간 이체(연동) 검증 — transfer 전용, 받는(상대) ws·계좌 필수
+    const xws = (inp.xws && type === 'transfer') ? inp.xws : null;
+    if (xws && !xws.wsId) return { error: '받는 그룹을 선택하세요' };
+    if (xws && !xws.acctId) return { error: '받는 그룹의 계좌를 선택하세요' };
     // 💳+✨ 함께결제 검증 — 총액(rawAmount) 중 coAmount 만큼을 포인트·선불로, 나머지를 원래 결제 수단으로 나눠 기록한다.
     const coAmt = Math.round(Number(inp.coAmount) || 0);
     if (coAmt > 0) {
@@ -83,6 +91,13 @@
     if (inp.curCode !== 'KRW') { tx.currency = inp.curCode; tx.foreignAmount = inp.foreign; tx.fxRate = inp.rate; tx.fxSource = inp.fxSource || 'manual'; tx.fxDate = inp.date; }
     if (inp.memo) tx.memo = inp.memo;
     if (type === 'balance_adjustment') { tx.to = inp.to; if (inp.adjSign === '-') tx.amount = -inp.rawAmount; }
+    else if (xws) {
+      // 🔗 연동 이체 반쪽 — 내 쪽 계좌만 싣는다(out=출금 from만·in=입금 to만). 상대 계좌는 link*에만 보관해
+      //    rebuildBalCache가 이 ws에 없는 계좌 id에 델타를 쌓거나(만에 하나 id 충돌 시 오염) 하는 일을 원천 차단.
+      tx.linkWsId = xws.wsId; tx.linkDir = (xws.dir === 'in') ? 'in' : 'out';
+      tx.linkAcctId = xws.acctId; tx.linkAcctName = xws.acctName || ''; tx.linkWsName = xws.wsName || '';
+      if (tx.linkDir === 'in') tx.to = inp.to; else tx.from = inp.from;
+    }
     else { if (e.debit) tx.from = inp.from; if (e.credit) tx.to = inp.to; }
     if (inp.hasCat) tx.category = inp.cat || '기타';
     if ((type === 'transfer' || type === 'prepaid_charge') && tx.from === tx.to) return { error: '출금/입금 계정이 같습니다' };
@@ -121,7 +136,20 @@
       if (tx.purposeBookId) { subTx.purposeBookId = tx.purposeBookId; subTx.purposeBookName = tx.purposeBookName || '';
         subTx.settlementIncluded = false; subTx.payer = tx.user; subTx.splitType = 'none'; subTx.settlementStatus = 'none'; }
     }
-    return { tx: tx, subTx: subTx };
+    // 🔗 연동 이체 상대 반쪽 — 상대 ws에 저장될 대칭 거래(입금측이면 to만, 출금측이면 from만). linkTxId는 saveTx가 채움.
+    //    목적별(purposeBookId)은 내 ws 소속 데이터라 상대 반쪽엔 싣지 않는다.
+    let xTx = null;
+    if (xws) {
+      xTx = { type: 'transfer', date: inp.iso, user: tx.user, amount: tx.amount, desc: tx.desc, isActualExpense: tx.isActualExpense,
+        linkWsId: xws.myWsId || '', linkDir: (tx.linkDir === 'out') ? 'in' : 'out',
+        linkAcctId: (tx.linkDir === 'out') ? (inp.from || '') : (inp.to || ''),
+        linkAcctName: xws.myAcctName || '', linkWsName: xws.myWsName || '' };
+      if (tx.linkDir === 'out') xTx.to = xws.acctId; else xTx.from = xws.acctId;
+      if (tx.userUid) xTx.userUid = tx.userUid;
+      if (tx.memo) xTx.memo = tx.memo;
+      if (inp.curCode !== 'KRW') { xTx.currency = inp.curCode; xTx.foreignAmount = inp.foreign; xTx.fxRate = inp.rate; xTx.fxSource = inp.fxSource || 'manual'; xTx.fxDate = inp.date; }
+    }
+    return { tx: tx, subTx: subTx, xTx: xTx };
   }
 
   // 💳 카드 기간 계산(순수) — core.js의 cardPeriod/cardUsagePeriod/cardMonthRef가 래핑해 쓴다.

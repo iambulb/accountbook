@@ -194,7 +194,8 @@
       else { tileInner=svgWrap(CAT_SVG[TX_SVG_KEY[t.type]||'tag']); }
       let sub;
       const _cat=escapeHtml(t.category||''), _afrom=escapeHtml(acctName(t.from)), _ato=escapeHtml(acctName(t.to));   // 🔒 사용자 문자열(카테고리·계좌명)은 innerHTML 삽입 전 escape — 저장형 XSS 방지
-      if(e.debit&&e.credit) sub=(t.category&&t.category!=='기타'?_cat+' · ':'')+_afrom+' → '+_ato;
+      const _lnk=t.linkWsId?escapeHtml(t.linkAcctName||'다른 그룹 계좌'):'';   // 🔗 연동 이체 반쪽은 상대 계좌가 이 ws에 없어 스냅샷 이름으로 폴백('(삭제된 계좌)' 노출 방지)
+      if(e.debit&&e.credit) sub=(t.category&&t.category!=='기타'?_cat+' · ':'')+(_afrom||_lnk)+' → '+(_ato||_lnk);
       else if(t.type==='expense'||t.type==='income'){ const _a=(t.type==='expense'?_afrom:_ato); sub=(t.category?_cat:TYPE_LABEL[t.type])+(_a?' · '+_a:''); }   // 카테고리 · 결제/입금 수단 — 어떤 수단으로 냈는지 목록에서 바로 보이게(사용자 요청, 구 '계좌는 상세에서' 폐기)
       else if(e.credit&&!e.debit) sub=_ato;
       else sub=(t.category?_cat+' · ':'')+_afrom;
@@ -206,11 +207,12 @@
       const giftPill=t.giftEventId?'<span class="pill">🎁 경조사</span>':'';
       const loanPill=t.loanId?'<span class="pill">🏦 대출</span>':'';
       const coPill=(t.coPayTxId||t.coPayMainId)?'<span class="pill">✨ 함께결제</span>':'';   // 💳+✨ 포인트·선불과 나눠 낸 거래(양쪽 행 모두 표시)
+      const xwsPill=t.linkWsId?'<span class="pill">🔗 '+escapeHtml(t.linkWsName||'연동')+'</span>':'';   // 🔗 그룹 간 연동 이체(양쪽 반쪽 모두 표시)
       const schedPill=((t.date||'').slice(0,10) > todayStr())?'<span class="pill" style="color:var(--primary);border-color:var(--primary);">📅 예정</span>':'';   // 미래 날짜 = 예정(현재 잔액 미반영)
       const amtNum=Math.abs(Number(t.amount)||0).toLocaleString();
       return '<div class="tx'+(schedPill?' tx-sched':'')+'" '+App.view.act('openTxSheet',t.ownerUid,t.id)+'>'+
         '<div class="tx-ic" style="'+tileStyle+'">'+tileInner+'</div>'+
-        '<div class="tx-main"><div class="tx-title">'+escapeHtml(t.desc||'')+schedPill+rec+cardPill+pbPill+giftPill+loanPill+coPill+'</div><div class="tx-sub">'+sub+'</div></div>'+
+        '<div class="tx-main"><div class="tx-title">'+escapeHtml(t.desc||'')+schedPill+rec+cardPill+pbPill+giftPill+loanPill+coPill+xwsPill+'</div><div class="tx-sub">'+sub+'</div></div>'+
         '<div class="tx-amt '+cls+'">'+sign+'₩'+amtNum+((t.currency&&t.currency!=='KRW')?'<span class="tx-fx">'+escapeHtml(fmtForeign(t.foreignAmount,t.currency))+'</span>':'')+'</div></div>';
     }
 
@@ -362,7 +364,7 @@
       const amount = t?(Math.abs(Number(t.amount)||0)+(coPart?Math.abs(Number(coPart.amount)||0):0)):'';
       const desc = t?(t.desc||''):'';
       const memo = t?(t.memo||''):'';
-      const pbId = t?(t.purposeBookId||''):(presetPb||'');
+      const pbId = t?(t.purposeBookId||''):((presetPb && !pbClosedById(presetPb))?presetPb:'');   // 🔒 닫힌 PB 프리필 차단(어떤 경로로 들어와도)
       const settleInc = t?(t.settlementIncluded===true):false;
       const activePbs = state.purposeBooks.filter(p=>canSee(p) && (p.status||'active')==='active');
 
@@ -371,6 +373,10 @@
       if(t && t.coPayMainId){ const _mn=state.transactions.find(x=>x.ownerUid===t.ownerUid && x.id===t.coPayMainId);
         h+='<div class="copay-banner">✨ 함께결제로 기록된 <b>포인트·선불 사용분</b>이에요.'+
           (_mn?(' 총액·나머지 결제분은 <b>본 거래</b>에서 함께 고칠 수 있어요.<button class="chip" style="margin-left:6px;" '+App.view.act('openTxSheet',_mn.ownerUid,_mn.id)+'>본 거래 열기</button>'):'')+'</div>'; }
+      // 🔗 그룹 간 연동 이체 배너 — 수정·삭제가 상대 그룹의 짝 기록에도 반영됨을 안내(coPay 배너 관례)
+      if(t && t.linkWsId){
+        h+='<div class="copay-banner">🔗 <b>'+escapeHtml(t.linkWsName||'다른 그룹')+'</b>'+(t.linkDir==='in'?'에서 받은':'(으)로 보낸')+' <b>연동 이체</b>예요. 수정·삭제하면 상대 그룹의 기록도 함께 바뀝니다.'+
+          (t.linkDir==='in'?('<button class="chip" style="margin-left:6px;" '+App.view.act('xwsGoOrigin',t.linkWsId,t.ownerUid,t.linkTxId||t.id)+'>보낸 그룹으로 이동</button>'):'')+'</div>'; }
       // ⚡ 자주 쓰는 거래 원탭(새 거래만) — (설명·카테고리·금액) 빈도 상위 후보 칩, 탭하면 폼 전체 프리필(frequentTxTemplates 재사용)
       _txTpl = t?[]:frequentTxTemplates(state.transactions, 3).filter(x=>x.count>=2);
       if(_txTpl.length) h+='<div class="chips" style="margin:0 0 8px;">'+_txTpl.map((s,i)=>'<button class="chip" '+App.view.act('applyTxTemplate',i)+' aria-label="빠른 입력: '+escapeHtml(s.desc)+'">⚡ '+escapeHtml(s.desc)+' <span class="tx-sub">'+won(s.amount)+'</span></button>').join('')+'</div>';
@@ -397,7 +403,7 @@
       h+='<div class="txfield"><span class="k">목적별 가계부</span><select class="txsel" id="sPb" '+App.view.chg('onPbChange')+'>'+
         '<option value="">연결 안 함</option>'+
         activePbs.map(p=>'<option value="'+p.id+'"'+(p.id===pbId?' selected':'')+'>'+(p.icon||'📒')+' '+escapeHtml(p.name)+'</option>').join('')+
-        ((pbId && !activePbs.some(p=>p.id===pbId))?('<option value="'+pbId+'" selected>'+escapeHtml((t&&t.purposeBookName)||pbId)+' (비활성)</option>'):'')+
+        ((pbId && !activePbs.some(p=>p.id===pbId))?('<option value="'+pbId+'" selected disabled>'+escapeHtml((t&&t.purposeBookName)||pbId)+' (닫힘 — 열람만)</option>'):'')+   // 🔒 기존 연결은 유지 표시하되 재선택 불가(해제 후 되돌릴 수 없음)
         '</select></div>';
       h+='<div id="sSettleBlock"></div>';
       h+='<div id="sCardPerf"></div>';   // 카드 실적 포함
@@ -423,6 +429,10 @@
       sh._consumer = t?(t.userUid||t.user||'공동'):(_lastNew.user||defaultOwnerUid());
       sh._settle = t ? { inc:t.settlementIncluded===true, payer:t.payer||'', splitType:t.splitType||'equal',
         participants:Array.isArray(t.splitParticipants)?t.splitParticipants.slice():null, amounts:t.splitAmounts||null, memo:t.settlementMemo||'' } : null;
+      // 🔗 그룹 간 이체(연동) 상태 — 수정 시 저장된 링크로 시드(스냅샷 이름 포함), 신규는 off
+      sh._xws = (t&&t.linkWsId) ? { on:true, wsId:t.linkWsId, acctId:t.linkAcctId||'', acctName:t.linkAcctName||'', wsName:t.linkWsName||'', dir:(t.linkDir==='in'?'in':'out') } : { on:false, wsId:'', acctId:'', acctName:'', wsName:'', dir:'out' };
+      sh._xwsCache={};
+      if(sh._xws.on && sh._xws.dir!=='in') xwsLoadAccts(sh._xws.wsId);   // 보낸 쪽 반쪽 수정 → 상대 계좌 목록 예열
       highlightTypeSeg(); renderTxDyn(); renderSettleBlock();
       sh._cur=(t&&t.currency)?t.currency:'KRW'; sh._rate=(t&&t.fxRate)?t.fxRate:(sh._cur==='KRW'?1:''); sh._fxSource=(t&&t.fxSource)||'manual'; sh._curUserSet=false; renderFxRow(); if(!t) applyPbCurrency();
       if(t&&t.currency&&t.currency!=='KRW') setFxStat((t.fxSource==='live'?'실시간':'직접입력')+(t.fxDate?' · '+t.fxDate:''));
@@ -516,6 +526,67 @@
     // 저장된 함께결제 짝 거래 찾기(본 거래 → 보조 거래)
     function coPayPartner(t){ if(!t||!t.coPayTxId) return null; return state.transactions.find(x=>x.ownerUid===t.ownerUid && x.id===t.coPayTxId)||null; }
 
+    // ===== 🔗 그룹 간 이체(연동) — 내가 멤버인 다른 ws의 계좌로 보내는 이체를 "양쪽 ws에 반쪽 거래 1건씩" 기록 =====
+    //  RTDB 규칙이 멤버십 기준이라(ws/$wsId — workspaces/$wsId/members/{uid}) 두 그룹 멤버면 루트 다중경로 update로 원자 저장 가능.
+    //  상태는 시트에 보관: sheet._xws = { on, wsId, acctId, acctName, wsName, dir }(dir 'in'=상대가 보낸 반쪽을 내 ws에서 여는 중),
+    //  상대 계좌 목록은 sheet._xwsCache[wsId](배열 | 'error') — 시트 열 때마다 초기화(다른 세션의 계좌 변경 반영).
+    function xwsState(){ const sh=$('sheet'); return (sh&&sh._xws)||{ on:false, wsId:'', acctId:'', acctName:'', wsName:'', dir:'out' }; }
+    function xwsOtherWss(){ return (state.memberships||[]).filter(w=>w.id!==state.wsId); }
+    function xwsWsName(wsId){ const w=(state.memberships||[]).find(x=>x.id===wsId); return w?(w.name||'그룹'):''; }
+    function xwsLoadAccts(wsId){
+      const sh=$('sheet'); if(!sh||!wsId) return;
+      sh._xwsCache=sh._xwsCache||{};
+      if(sh._xwsCache[wsId] && sh._xwsCache[wsId]!=='error') return;
+      db.ref(wpOf(wsId,'accounts')).once('value').then(s=>{
+        if(!$('sheet')) return;
+        const o=s.val()||{};
+        sh._xwsCache[wsId]=Object.keys(o).map(k=>Object.assign({id:k},o[k]));
+        if(xwsState().on && xwsState().wsId===wsId) renderTxDyn();
+      }).catch(()=>{ if($('sheet')){ sh._xwsCache[wsId]='error'; if(xwsState().on && xwsState().wsId===wsId) renderTxDyn(); } });
+    }
+    function xwsFieldsHtml(xw){
+      const sh=$('sheet'), wss=xwsOtherWss();
+      let h='<div class="txfield"><span class="k">받는 그룹</span><select class="txsel" id="sXwsWs" '+App.view.chg('onXwsWsChange')+'>'+
+        '<option value=""'+(xw.wsId?'':' selected')+'>선택하세요</option>'+
+        wss.map(w=>'<option value="'+w.id+'"'+(w.id===xw.wsId?' selected':'')+'>'+escapeHtml(w.name||'그룹')+(w.type==='personal'?' (개인)':'')+'</option>').join('')+'</select></div>';
+      if(xw.wsId){
+        const cache=(sh._xwsCache||{})[xw.wsId];
+        if(cache==='error'){
+          // 오프라인 등 로드 실패 — 저장된 계좌(수정)면 스냅샷 옵션으로 금액·날짜 수정은 가능하게, 신규면 재시도 안내
+          if(xw.acctId) h+='<div class="txfield"><span class="k">받는 계좌</span><select class="txsel" id="sXwsTo"><option value="'+escapeHtml(xw.acctId)+'" selected>'+escapeHtml(xw.acctName||'저장된 계좌')+'</option></select></div>';
+          else h+='<div class="txfield"><span class="k">받는 계좌</span><span class="tx-sub">불러오지 못했어요 (오프라인?) <button type="button" class="chip" '+App.view.act('xwsRetryAccts')+'>재시도</button></span></div>';
+        }
+        else if(!cache) h+='<div class="txfield"><span class="k">받는 계좌</span><select class="txsel" disabled><option>불러오는 중…</option></select></div>';
+        else {
+          // acctOptsHtml은 state.accounts(현재 ws) 고정이라 크로스 전용 소형 빌더 — 저장된 계좌가 상대 ws에서 사라졌으면 스냅샷 옵션으로 보존
+          let opts=cache.map(a=>'<option value="'+a.id+'"'+(a.id===xw.acctId?' selected':'')+'>'+escapeHtml(a.name||'계좌')+((ACCT_TYPE_LABEL&&ACCT_TYPE_LABEL[a.type])?(' ('+ACCT_TYPE_LABEL[a.type]+')'):'')+'</option>').join('');
+          if(xw.acctId && !cache.some(a=>a.id===xw.acctId)) opts='<option value="'+escapeHtml(xw.acctId)+'" selected>'+escapeHtml(xw.acctName||'저장된 계좌')+' (원래 연결)</option>'+opts;
+          if(!opts) opts='<option value="">계좌가 없어요</option>';
+          h+='<div class="txfield"><span class="k">받는 계좌</span><select class="txsel" id="sXwsTo" '+App.view.chg('onXwsAcctChange')+'>'+opts+'</select></div>';
+        }
+        h+='<div class="tx-sub" style="margin:2px 2px 8px;">🔗 상대 그룹에도 같은 이체가 함께 기록돼요(수정·삭제도 함께 반영).</div>';
+      }
+      return h;
+    }
+    function toggleXws(){ const sh=$('sheet'); const xw=xwsState();
+      if($('sFrom')) sh._from=val('sFrom'); if($('sTo')) sh._to=val('sTo');   // #sDyn 재생성 전 선택 보존
+      sh._xws=Object.assign({}, xw, { on:!xw.on });
+      if(sh._xws.on){ const wss=xwsOtherWss();
+        if(!sh._xws.wsId && wss.length===1) sh._xws.wsId=wss[0].id;   // 다른 ws가 하나뿐이면 자동 선택
+        if(sh._xws.wsId) xwsLoadAccts(sh._xws.wsId); }
+      renderTxDyn(); }
+    function onXwsWsChange(){ const sh=$('sheet');
+      if($('sFrom')) sh._from=val('sFrom');
+      sh._xws=Object.assign({}, xwsState(), { wsId:val('sXwsWs'), acctId:'', acctName:'' });
+      if(sh._xws.wsId) xwsLoadAccts(sh._xws.wsId);
+      renderTxDyn(); }
+    function onXwsAcctChange(){ const sh=$('sheet'); const xw=xwsState(); const id=val('sXwsTo');
+      const c=(sh._xwsCache||{})[xw.wsId]; const a=Array.isArray(c)?c.find(x=>x.id===id):null;
+      sh._xws=Object.assign({}, xw, { acctId:id, acctName:a?(a.name||''):xw.acctName }); }
+    function xwsRetryAccts(){ const sh=$('sheet'); const xw=xwsState(); if(sh&&sh._xwsCache) delete sh._xwsCache[xw.wsId]; xwsLoadAccts(xw.wsId); renderTxDyn(); }
+    // 받은 쪽 반쪽에서 "보낸 그룹으로 이동" — ws 전환 후 원본 반쪽 시트를 best-effort로 다시 연다(core.js 거래 리스너가 _pendingOpenTx 소비).
+    function xwsGoOrigin(wsId, ownerUid, txId){ closeSheet(); state._pendingOpenTx={ ownerUid:ownerUid, id:txId, at:Date.now() }; switchWorkspace(wsId); }
+
     // ===== 금액 입력(통화 인식) — 외화 선택 시 소수점 허용·원화 환산 =====
     function curOptions(sel){ return CURRENCIES.map(c=>'<option value="'+c.code+'"'+(c.code===sel?' selected':'')+'>'+c.sym+' '+c.code+'</option>').join(''); }
     function sheetCur(){ const sh=$('sheet'); return (sh&&sh._cur)||'KRW'; }
@@ -575,7 +646,14 @@
         else setFxStat('자동 조회 실패 — 환율을 직접 입력하세요'); }); }
     function onDateChange(){ if(sheetCur()!=='KRW') autoFetchRate(); }
     // 목적별 가계부(여행 등) 선택 시, 그 PB의 기준 통화를 거래 통화 기본값으로 적용(사용자가 직접 고른 통화는 존중).
-    function onPbChange(){ renderSettleBlock(); applyPbCurrency(); }
+    function onPbChange(){
+      // 🔒 닫힌 PB 연결을 해제(다른 값 선택)하면 되돌릴 수 없음을 1회 안내(닫힘 옵션은 disabled라 재선택 불가)
+      const sh=$('sheet');
+      if(sh && !sh._pbClosedWarned && sheetTx){
+        const cur=state.transactions.find(x=>x.ownerUid===sheetTx.ownerUid&&x.id===sheetTx.id);
+        if(cur && cur.purposeBookId && pbClosedById(cur.purposeBookId) && val('sPb')!==cur.purposeBookId){
+          sh._pbClosedWarned=true; toast('닫힌 가계부 연결을 해제합니다 — 저장 후 되돌릴 수 없어요'); } }
+      renderSettleBlock(); applyPbCurrency(); }
     function applyPbCurrency(){ const sh=$('sheet'); if(!sh||sh._curUserSet) return; const pbId=$('sPb')?val('sPb'):''; if(!pbId) return;
       const pb=state.purposeBooks.find(x=>x.id===pbId); if(!pb) return; const bc=pb.baseCurrency||'KRW';
       if(bc==='KRW'||sheetCur()===bc) return; const sel=$('sCur'); if(!sel) return;
@@ -607,7 +685,19 @@
       else if(sheetType==='transfer'||sheetType==='prepaid_charge'){
         const l1=sheetType==='prepaid_charge'?'충전 수단(카드/계좌)':'출금';
         const l2=sheetType==='prepaid_charge'?'충전 대상(선불/포인트)':'입금';
-        h+=acctField(l1,'sFrom',fromV,sheetType==='prepaid_charge'?NONPRE:null)+acctField(l2,'sTo',toV,sheetType==='prepaid_charge'?PREPAY.concat(['point']):null);
+        // 🔗 그룹 간 이체(연동) — transfer 전용. 토글을 켜면 '입금' 로컬 셀렉트 대신 받는 그룹·계좌 셀렉트.
+        const xw=(sheetType==='transfer')?xwsState():{on:false};
+        const xwAvail=(sheetType==='transfer')&&xwsOtherWss().length>0;
+        if(xw.on && xw.dir==='in'){
+          // 받은 쪽 반쪽 — 보낸 계좌는 상대 ws 소관이라 읽기 전용 표시, 입금 계좌만 수정
+          h+='<div class="txfield"><span class="k">보낸 계좌</span><span class="tx-sub" style="padding:6px 0;">'+escapeHtml(xw.acctName||'다른 그룹 계좌')+' · '+escapeHtml(xw.wsName||xwsWsName(xw.wsId)||'다른 그룹')+'</span></div>';
+          h+=acctField('입금','sTo',toV);
+        } else {
+          h+=acctField(l1,'sFrom',fromV,sheetType==='prepaid_charge'?NONPRE:null);
+          if(xwAvail) h+='<div class="txfield"><span class="k">다른 그룹으로</span><div class="switch'+(xw.on?' on':'')+'" id="sXws" '+App.view.act('toggleXws')+' aria-label="다른 그룹 계좌로 보내기"><i></i></div></div>';
+          if(xw.on) h+=xwsFieldsHtml(xw);
+          else h+=acctField(l2,'sTo',toV,sheetType==='prepaid_charge'?PREPAY.concat(['point']):null);
+        }
       }
       else if(sheetType==='prepaid_spend'||sheetType==='point_spend'){
         h+=acctField(sheetType==='point_spend'?'사용 포인트·간편결제':'결제 선불수단','sFrom',fromV,sheetType==='point_spend'?['point','e_wallet']:PREPAY)+consumerField(sh._consumer);   // 적립과 짝: 간편결제 지갑 포인트 사용도 허용(사용자 보고)
@@ -756,6 +846,19 @@
         settle=(pbo&&pbo.settlementEnabled)?collectSettle():{inc:false};
       }
       const oldTx=sheetTx?(state.transactions.find(x=>x.ownerUid===sheetTx.ownerUid&&x.id===sheetTx.id)||null):null;
+      // 🔗 그룹 간 이체(연동) — 이체 유형 + 토글 on일 때만 수집. buildTx가 검증·반쪽(xTx) 조립.
+      const _xw=(function(){
+        if(sheetType!=='transfer') return null;
+        const xw=($('sheet')&&$('sheet')._xws)||null; if(!xw||!xw.on) return null;
+        const my=(state.memberships||[]).find(w=>w.id===state.wsId)||{};
+        if(xw.dir==='in')   // 받은 반쪽 수정 — 보낸(상대) 정보는 저장된 링크 그대로, 내 쪽은 입금 계좌
+          return { wsId:xw.wsId, wsName:xw.wsName||xwsWsName(xw.wsId), acctId:xw.acctId, acctName:xw.acctName||'', dir:'in',
+            myWsId:state.wsId, myWsName:my.name||'', myAcctName:acctName(to)||'' };
+        const acctId=$('sXwsTo')?val('sXwsTo'):(xw.acctId||'');
+        const c=(($('sheet')&&$('sheet')._xwsCache)||{})[xw.wsId]; const ca=Array.isArray(c)?c.find(a=>a.id===acctId):null;
+        return { wsId:xw.wsId, wsName:xwsWsName(xw.wsId)||xw.wsName||'', acctId:acctId, acctName:ca?(ca.name||''):(xw.acctName||''), dir:'out',
+          myWsId:state.wsId, myWsName:my.name||'', myAcctName:acctName(from)||'' };
+      })();
       return {
         type:sheetType, curCode:curCode, foreign:foreign, rate:rate, rawAmount:rawAmount,
         date:date, iso:isoAtNoon(date), desc:val('sDesc').trim(), memo:val('sMemo').trim(),
@@ -766,48 +869,79 @@
         from:from, to:to, adjSign:val('sAdjSign'),
         hasCard:!!card, cardIncluded:cardIncluded, cardPerfAmount:cardPerfAmount, cardPerfReason:cardPerfReason,
         pb:pb, pbName:pbName, settle:settle, oldTx:oldTx,
-        coAmount:_co.amt, coAcct:_co.acct, coTxType:_co.txType
+        coAmount:_co.amt, coAcct:_co.acct, coTxType:_co.txType,
+        xws:_xw
       };
     }
     function saveTxAgain(){ saveTx(true); }   // ➕ 저장 후 계속(연속 입력) — 시트 유지, 금액·설명·메모만 비움
     function saveTx(keepOpen){
       const res=buildTx(readTxForm());   // 순수 조립·검증(ledger-calc.js)
       if(res.error){ toast(res.error, true); return; }
-      const tx=res.tx, subTx=res.subTx;
+      const tx=res.tx, subTx=res.subTx, xTx=res.xTx||null;
       const ac=sheetTx?null:(autoChargeCheck(tx)||(subTx?autoChargeCheck(subTx):null));   // ⚡ 새 거래(함께결제면 포인트 쪽 포함)가 선불·포인트 잔액을 마이너스로 만들면 자동충전 흐름
       // 💳+✨ 함께결제: 본 거래 + 보조(포인트) 거래를 같은 사용자 노드에 다중경로 update로 함께 쓴다(한쪽만 저장되는 일 없게).
+      // 🔗 그룹 간 이체(연동): 반쪽 두 건이 서로 다른 ws에 걸치므로 루트 절대경로 다중경로 update 1회(원자 — 규칙이 멤버십 기준이라 통과).
       const ownerUid=sheetTx?sheetTx.ownerUid:state.uid;
       const mainKey=sheetTx?sheetTx.id:String(Date.now());
       const prevTx=sheetTx?(state.transactions.find(x=>x.ownerUid===ownerUid && x.id===sheetTx.id)||{}):{};
       const prevCoId=prevTx.coPayTxId||'';
-      const upd={};
-      if(subTx){ const subKey=prevCoId||String(Date.now()+1);
-        tx.coPayTxId=subKey; subTx.coPayMainId=mainKey;
-        upd[mainKey]=tx; upd[subKey]=subTx;
-      } else {
-        upd[mainKey]=tx;
-        if(prevCoId) upd[prevCoId]=null;   // 함께결제를 끈 경우 짝 거래 제거
-      }
-      db.ref(wp('transactions/'+ownerUid)).update(upd).catch(_saveErr);
-      if(!sheetTx) txLastRemember(tx);   // 🧠 새 거래의 결제수단·소비대상을 다음 입력 기본값으로 기억(수정은 제외)
-      if(sheetTx) toast(subTx?'수정되었습니다 (거래 2건)':'수정되었습니다');
-      else {
-        toast(subTx?'저장되었습니다 (거래 2건)':'저장되었습니다'); budgetPreWarn(tx);
-        if(tx.category && tx.memo && typeof grantQualityBonus==='function') grantQualityBonus();   // ✍️ 카테고리+메모 채운 새 거래 → 성실 기록 보너스(하루 3건 캡)
-      }
-      // ➕ 연속 입력: 시트를 닫지 않고 금액·설명·메모만 비움(날짜·유형·수단·소비대상 유지 — 자동충전이 끼면 그 흐름 우선)
-      if(keepOpen===true && !sheetTx && !ac){
-        const _sh=$('sheet'); if(_sh) _sh._copay={ on:false, acct:'', amt:0, txId:'' };
-        const a=$('sAmount'); if(a) a.value='';
-        const d=$('sDesc'); if(d) d.value='';
-        const mm=$('sMemo'); if(mm) mm.value='';
-        const sug=$('sDescSug'); if(sug) sug.innerHTML='';
-        renderTxDyn(); updateCoPayNote();
+      const crossPrev=!!prevTx.linkWsId;
+      const doWrite=()=>{
+        if(xTx||crossPrev){
+          const base='ws/'+state.wsId+'/transactions/'+ownerUid+'/';
+          const upd={};
+          if(xTx){
+            tx.linkTxId=sheetTx?(prevTx.linkTxId||mainKey):mainKey; xTx.linkTxId=mainKey;
+            upd[base+mainKey]=tx;
+            const rPath='ws/'+tx.linkWsId+'/transactions/'+ownerUid+'/'+tx.linkTxId;
+            if(sheetTx && crossPrev && prevTx.linkWsId===tx.linkWsId){
+              // 기존 연동 수정 — 상대 반쪽은 통째 교체 대신 공유 필드만 패치(상대 ws 쪽에서 붙인 목적별 연결 등 보존)
+              ['date','amount','desc','memo','currency','foreignAmount','fxRate','fxSource','fxDate','user','userUid','from','to','linkAcctId','linkAcctName','linkWsName'].forEach(k=>{
+                upd[rPath+'/'+k]=(xTx[k]!==undefined)?xTx[k]:null; });
+            } else upd[rPath]=xTx;
+          } else upd[base+mainKey]=tx;
+          if(subTx){ const subKey=prevCoId||String(Date.now()+1); tx.coPayTxId=subKey; subTx.coPayMainId=mainKey; upd[base+subKey]=subTx; }
+          else if(prevCoId) upd[base+prevCoId]=null;   // 함께결제를 끈 경우 짝 거래 제거
+          // 편집 중 연동 해제·받는 그룹 변경 → 이전 원격 반쪽 정리
+          if(crossPrev && (!xTx || prevTx.linkWsId!==tx.linkWsId)) upd['ws/'+prevTx.linkWsId+'/transactions/'+ownerUid+'/'+(prevTx.linkTxId||mainKey)]=null;
+          db.ref().update(upd).catch(err=>{ toast('저장 실패 — 상대 그룹에 접근할 수 없어요(멤버 여부·연결 확인)', true); if(typeof console!=='undefined') console.error(err); });
+        } else {
+          const upd={};
+          if(subTx){ const subKey=prevCoId||String(Date.now()+1);
+            tx.coPayTxId=subKey; subTx.coPayMainId=mainKey;
+            upd[mainKey]=tx; upd[subKey]=subTx;
+          } else {
+            upd[mainKey]=tx;
+            if(prevCoId) upd[prevCoId]=null;   // 함께결제를 끈 경우 짝 거래 제거
+          }
+          db.ref(wp('transactions/'+ownerUid)).update(upd).catch(_saveErr);
+        }
+        if(!sheetTx) txLastRemember(tx);   // 🧠 새 거래의 결제수단·소비대상을 다음 입력 기본값으로 기억(수정은 제외)
+        if(sheetTx) toast(xTx?'수정되었습니다 (상대 그룹에도 반영)':(subTx?'수정되었습니다 (거래 2건)':'수정되었습니다'));
+        else {
+          toast(xTx?('저장되었습니다 — '+(tx.linkWsName||'상대 그룹')+'에도 함께 기록'):(subTx?'저장되었습니다 (거래 2건)':'저장되었습니다')); budgetPreWarn(tx);
+          if(tx.category && tx.memo && typeof grantQualityBonus==='function') grantQualityBonus();   // ✍️ 카테고리+메모 채운 새 거래 → 성실 기록 보너스(하루 3건 캡)
+        }
+        // ➕ 연속 입력: 시트를 닫지 않고 금액·설명·메모만 비움(날짜·유형·수단·소비대상 유지 — 자동충전이 끼면 그 흐름 우선)
+        if(keepOpen===true && !sheetTx && !ac){
+          const _sh=$('sheet'); if(_sh) _sh._copay={ on:false, acct:'', amt:0, txId:'' };
+          const a=$('sAmount'); if(a) a.value='';
+          const d=$('sDesc'); if(d) d.value='';
+          const mm=$('sMemo'); if(mm) mm.value='';
+          const sug=$('sDescSug'); if(sug) sug.innerHTML='';
+          renderTxDyn(); updateCoPayNote();
+          return;
+        }
+        closeSheet();
+        if(ac) handleAutoCharge(ac);
+        else if(!sheetTx){ if(!maybeSuggestGiftEvent(tx)) maybeSuggestRecurring(tx); }   // 💐 경조사 카테고리면 장부 기록 제안(우선), 아니면 🔁 정기 제안
+      };
+      // 🔗 편집 중 연동을 끄면(또는 이체가 아닌 유형으로 바꾸면) 상대 그룹의 반쪽이 삭제됨 — 1회 확인
+      if(sheetTx && crossPrev && !xTx){
+        confirmSheet('연동 이체를 해제합니다.\n\''+(prevTx.linkWsName||'상대 그룹')+'\'의 연동 기록도 함께 삭제돼요. 계속할까요?', doWrite, { okLabel:'해제하고 저장', danger:true, title:'🔗 연동 해제' });
         return;
       }
-      closeSheet();
-      if(ac) handleAutoCharge(ac);
-      else if(!sheetTx){ if(!maybeSuggestGiftEvent(tx)) maybeSuggestRecurring(tx); }   // 💐 경조사 카테고리면 장부 기록 제안(우선), 아니면 🔁 정기 제안
+      doWrite();
     }
     // 🔁 정기거래 자동 제안 — 같은 설명·유형·비슷한 금액이 3개월 연속(recurringCandidate, util.js)이면 매월 그 날짜 정기거래 등록을 1회 제안.
     //    같은 설명은 수락·거절 무관 다시 묻지 않음(localStorage recsug), 이미 같은 설명의 활성 규칙이 있으면 스킵.
@@ -911,14 +1045,31 @@
       const ref=sheetTx;
       const cur=state.transactions.find(x=>x.ownerUid===ref.ownerUid && x.id===ref.id)||{};
       // 💳+✨ 함께결제 짝: 본 거래를 지우면 포인트 거래도 함께 삭제, 포인트 거래를 지우면 본 거래의 연결만 끊는다.
-      const coId=cur.coPayTxId||'', mainId=cur.coPayMainId||'';
-      const msg=coId?'이 거래를 삭제할까요? 함께결제로 기록된 포인트 거래도 같이 지워집니다.':'이 거래를 삭제할까요?';
+      // 🔗 그룹 간 연동 이체: 어느 쪽을 지워도 상대 ws의 반쪽도 함께 삭제(대칭 — 잔액 정합 유지, 사용자 확정 정책). 루트 절대경로 다중경로 update.
+      const coId=cur.coPayTxId||'', mainId=cur.coPayMainId||'', linkWs=cur.linkWsId||'';
+      const msg=linkWs?('이 거래를 삭제할까요? \''+(cur.linkWsName||'상대 그룹')+'\'에 연동된 이체 기록도 함께 삭제됩니다.')
+        :(coId?'이 거래를 삭제할까요? 함께결제로 기록된 포인트 거래도 같이 지워집니다.':'이 거래를 삭제할까요?');
       confirmSheet(msg, ()=>{
-        const upd={}; upd[ref.id]=null; if(coId) upd[coId]=null;
-        if(mainId) { upd[mainId+'/coPayTxId']=null; upd[mainId+'/coPayAmount']=null; upd[mainId+'/coPayAcct']=null; }
-        db.ref(wp('transactions/'+ref.ownerUid)).update(upd).catch(_saveErr);
+        if(linkWs){
+          const base='ws/'+state.wsId+'/transactions/'+ref.ownerUid+'/';
+          const upd={}; upd[base+ref.id]=null;
+          upd['ws/'+linkWs+'/transactions/'+ref.ownerUid+'/'+(cur.linkTxId||ref.id)]=null;
+          if(coId) upd[base+coId]=null;
+          if(mainId){ upd[base+mainId+'/coPayTxId']=null; upd[base+mainId+'/coPayAmount']=null; upd[base+mainId+'/coPayAcct']=null; }
+          db.ref().update(upd).catch(err=>{
+            // 상대 ws 접근 불가(탈퇴 등) — 원자 거부되므로 내 쪽만 지우는 폴백 제안
+            confirmSheet('상대 그룹에 접근할 수 없어 함께 삭제하지 못했어요.\n연동을 무시하고 이 그룹의 기록만 삭제할까요?', ()=>{
+              const u2={}; u2[ref.id]=null; if(coId) u2[coId]=null;
+              db.ref(wp('transactions/'+ref.ownerUid)).update(u2).catch(_saveErr); toast('내 기록만 삭제했습니다');
+            }, { okLabel:'내 기록만 삭제', danger:true });
+          });
+        } else {
+          const upd={}; upd[ref.id]=null; if(coId) upd[coId]=null;
+          if(mainId) { upd[mainId+'/coPayTxId']=null; upd[mainId+'/coPayAmount']=null; upd[mainId+'/coPayAcct']=null; }
+          db.ref(wp('transactions/'+ref.ownerUid)).update(upd).catch(_saveErr);
+        }
         if(typeof removeRecurringLog==='function'){ removeRecurringLog(ref.ownerUid, ref.id); if(coId) removeRecurringLog(ref.ownerUid, coId); }
-        toast(coId?'삭제되었습니다 (거래 2건)':'삭제되었습니다');
+        toast(linkWs?'삭제되었습니다 (연동 기록 포함)':(coId?'삭제되었습니다 (거래 2건)':'삭제되었습니다'));
       });
     }
 
@@ -1795,7 +1946,7 @@
         const key='todotx:'+(state.uid||'');
         let seen={}; try{ seen=JSON.parse(localStorage.getItem(key)||'{}')||{}; }catch(e){}
         if(seen[t.id]) return; seen[t.id]=1; try{ localStorage.setItem(key, JSON.stringify(seen)); }catch(e){}
-        const title=t.title||'', pb=t.purposeBookId||'';
+        const title=t.title||'', pb=(t.purposeBookId && !pbClosedById(t.purposeBookId))?t.purposeBookId:'';   // 🔒 닫힌 PB면 연결 없이 지출만 제안
         setTimeout(function(){
           confirmSheet('\''+title+'\' 완료! 관련 지출도 기록할까요?', function(){
             openTxSheet(null, null, null, pb||null);
@@ -1849,11 +2000,12 @@
       const scope=t?todoScope(t):(isPersonalWs()?'personal':'group');
       const asel=t?(t.assignedUid||'공동'):(state.uid||'공동');
       const rep=t?(t.repeat||'none'):'none';
-      const pbSel=t?(t.purposeBookId||''):(presetPb||'');
+      const pbSel=t?(t.purposeBookId||''):((presetPb && !pbClosedById(presetPb))?presetPb:'');   // 🔒 닫힌 PB 프리필 차단
       const prio=t?(t.priority||'normal'):'normal';   // 우선순위: high/normal/low
       const tdtags=t?((t.tags||[]).join(', ')):'';     // 태그(쉼표 구분 표시)
       const subText=(t&&Array.isArray(t.subtasks))?t.subtasks.map(function(s){ return s.text||''; }).join('\n'):'';   // 하위작업(한 줄에 하나)
-      const pbs=(state.purposeBooks||[]).filter(p=>(p.status||'active')!=='archived');
+      const pbs=(state.purposeBooks||[]).filter(p=>!pbClosed(p));   // 🔒 닫힌(완료/보관) PB는 새 연결 후보에서 제외(구 archived만 제외 → completed도 차단)
+      const pbHeld=pbSel?state.purposeBooks.find(p=>p.id===pbSel):null;   // 기존 연결이 닫힌 PB면 disabled 옵션으로 유지 표시(연결 유실 방지)
       let h='<input type="hidden" id="tdScope" value="'+scope+'">';
       h+='<div class="field"><label>할 일</label><input class="input" id="tdTitle" value="'+escapeHtml(t?(t.title||''):'')+'" placeholder="예: 장보기, 항공권 예약"></div>';
       if(scope==='group') h+='<div class="field"><label>담당자</label><select class="input" id="tdAssign">'+ownerOptions(asel, t?(t.assignedName||''):'')+'</select></div>';
@@ -1861,7 +2013,8 @@
         '<div class="field"><label>마감 시간 (선택)</label><input type="time" class="input" id="tdTime" value="'+escapeHtml(t&&t.dueTime?t.dueTime:'')+'"></div></div>';
       var repOpts=[['none','반복 없음'],['weekly','매주'],['monthly','매월']]; if(rep==='daily') repOpts.splice(1,0,['daily','매일(기존)']);   // 매일은 신규 제외(습관=내 미션), 레거시 값은 보존
       h+='<div class="form-2"><div class="field"><label>반복</label><select class="input" id="tdRepeat" '+App.view.chg('onTdRepeatChange')+'>'+repOpts.map(function(o){ return '<option value="'+o[0]+'"'+(rep===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>'+
-        '<div class="field"><label>가계부 연결</label><select class="input" id="tdPb"><option value="">연결 안 함</option>'+pbs.map(function(p){ return '<option value="'+p.id+'"'+(pbSel===p.id?' selected':'')+'>'+(p.icon||'📒')+' '+escapeHtml(p.name)+'</option>'; }).join('')+'</select></div></div>';
+        '<div class="field"><label>가계부 연결</label><select class="input" id="tdPb"><option value="">연결 안 함</option>'+pbs.map(function(p){ return '<option value="'+p.id+'"'+(pbSel===p.id?' selected':'')+'>'+(p.icon||'📒')+' '+escapeHtml(p.name)+'</option>'; }).join('')+
+        ((pbHeld&&pbClosed(pbHeld))?('<option value="'+pbSel+'" selected disabled>'+(pbHeld.icon||'📒')+' '+escapeHtml(pbHeld.name)+' (닫힘)</option>'):'')+'</select></div></div>';
       h+='<div class="field" id="tdWdWrap" style="'+(rep==='weekly'?'':'display:none;')+'"><label>반복 요일 (여러 개 선택 가능)</label><div class="chip-row" id="tdWdChips" style="margin:2px 0 0;">'+tdWdChipsHtml()+'</div>'+
         '<p class="muted" style="font-size:11.5px;margin:6px 2px 0;">선택하지 않으면 마감일 요일에 매주 반복돼요.</p></div>';
       h+='<div class="field" id="tdRepUntilWrap" style="'+(rep!=='none'?'':'display:none;')+'"><label>반복 종료일 (선택)</label><input type="date" class="input" id="tdRepUntil" value="'+escapeHtml(t&&t.repeatUntil?t.repeatUntil:'')+'">'+
@@ -1942,7 +2095,7 @@
       const doneN=list.filter(t=>t.done).length;
       let h='<div class="sech"><span class="l">할일</span><span class="s">'+(list.length?(doneN+' / '+list.length+' 완료'):'')+'</span></div>';
       h+='<div class="card" style="padding:4px 12px;">'+(list.length?list.slice().sort((a,b)=>(a.done?1:0)-(b.done?1:0)).map(t=>todoRow(t)).join(''):'<div class="empty" style="padding:18px 6px;">연결된 할일이 없어요</div>')+'</div>';   // .map(todoRow)는 index/array가 todoRow의 ro/drag 인자로 새어 첫 행만 편집되던 버그 — t만 넘긴다
-      h+='<button class="btn ghost" style="margin-top:8px;" '+App.view.act('openTodoEdit',null,pbId)+'>＋ 이 여행에 할일 추가</button>';
+      if(!pbClosedById(pbId)) h+='<button class="btn ghost" style="margin-top:8px;" '+App.view.act('openTodoEdit',null,pbId)+'>＋ 이 여행에 할일 추가</button>';   // 🔒 닫힌 PB엔 새 할일 연결 불가
       return h; }
     // 완료 리포트(할일 모드 더보기) — 전체 완료율 + 스코프별 + 멤버별 완료 기여
     function openTodoReport(){
@@ -2250,15 +2403,18 @@
     }
     function txsBulkDel(){
       const list=_txsSelTx(); if(!list.length){ toast('행을 탭해 거래를 선택하세요', true); return; }
-      const hasCo=list.some(t=>t.coPayTxId);
-      confirmSheet('선택한 '+list.length+'건을 삭제할까요?'+(hasCo?' (함께결제 짝 거래도 함께 삭제)':''), ()=>{
+      const hasCo=list.some(t=>t.coPayTxId), hasXws=list.some(t=>t.linkWsId);
+      confirmSheet('선택한 '+list.length+'건을 삭제할까요?'+(hasCo?' (함께결제 짝 거래도 함께 삭제)':'')+(hasXws?' (연동 이체는 상대 그룹 기록도 함께 삭제)':''), ()=>{
+        // 🔗 연동 이체가 섞이면 다른 ws 경로가 필요해 루트 절대경로로 조립(아니면 종전대로 현재 ws 노드 상대경로)
+        const pre=hasXws?('ws/'+state.wsId+'/transactions/'):'';
         const upd={};
-        list.forEach(t=>{ upd[t.ownerUid+'/'+t.id]=null;
-          if(t.coPayTxId) upd[t.ownerUid+'/'+t.coPayTxId]=null;   // 본 거래 삭제 → 포인트 짝도 삭제
-          if(t.coPayMainId){ upd[t.ownerUid+'/'+t.coPayMainId+'/coPayTxId']=null; upd[t.ownerUid+'/'+t.coPayMainId+'/coPayAmount']=null; upd[t.ownerUid+'/'+t.coPayMainId+'/coPayAcct']=null; }   // 포인트 쪽 삭제 → 본 거래 연결 해제
+        list.forEach(t=>{ upd[pre+t.ownerUid+'/'+t.id]=null;
+          if(t.linkWsId) upd['ws/'+t.linkWsId+'/transactions/'+t.ownerUid+'/'+(t.linkTxId||t.id)]=null;   // 연동 반쪽도 함께 삭제(대칭)
+          if(t.coPayTxId) upd[pre+t.ownerUid+'/'+t.coPayTxId]=null;   // 본 거래 삭제 → 포인트 짝도 삭제
+          if(t.coPayMainId){ upd[pre+t.ownerUid+'/'+t.coPayMainId+'/coPayTxId']=null; upd[pre+t.ownerUid+'/'+t.coPayMainId+'/coPayAmount']=null; upd[pre+t.ownerUid+'/'+t.coPayMainId+'/coPayAcct']=null; }   // 포인트 쪽 삭제 → 본 거래 연결 해제
           if(typeof removeRecurringLog==='function'){ removeRecurringLog(t.ownerUid, t.id); if(t.coPayTxId) removeRecurringLog(t.ownerUid, t.coPayTxId); }
         });
-        db.ref(wp('transactions')).update(upd).catch(_saveErr);
+        (hasXws?db.ref():db.ref(wp('transactions'))).update(upd).catch(_saveErr);
         state._txsSet={};
         toast(list.length+'건을 삭제했습니다');
       });
@@ -2774,6 +2930,7 @@
       const parts=[dd];
       if(t.category) parts.push(escapeHtml(t.category)); else parts.push(TYPE_LABEL[t.type]||'');
       if(otherId&&getAcct(otherId)) parts.push((d<0?'→ ':'← ')+escapeHtml(acctName(otherId)));
+      else if(t.linkWsId) parts.push((d<0?'→ ':'← ')+escapeHtml(t.linkAcctName||'다른 그룹 계좌')+(t.linkWsName?(' · '+escapeHtml(t.linkWsName)):''));   // 🔗 연동 이체 — 상대 그룹 계좌 스냅샷
       if(t.user) parts.push(escapeHtml(ownerName(t.user)));
       const sched=((t.date||'').slice(0,10)>todayStr())?'<span class="pill" style="color:var(--primary);border-color:var(--primary);">📅 예정</span>':'';
       const rec=t.recurringId?'<span class="pill">🔁</span>':'';
@@ -4263,6 +4420,9 @@
     // ===== 목적별 가계부 (PurposeBook) =====
     let pbTab='all';
     function visiblePBs(){ return state.purposeBooks.filter(canSee); }
+    // 🔒 닫힌(완료/보관) 목적별 가계부 = 읽기 전용 — 새 거래·할일 연결을 막고 로그 열람만 허용(정산 마무리는 예외, 사용자 확정 정책 2026-08).
+    function pbClosed(p){ return !!p && (p.status||'active')!=='active'; }
+    function pbClosedById(id){ return pbClosed(state.purposeBooks.find(x=>x.id===id)); }
     function pbTypeText(p){ return p.type==='custom'?(p.customTypeName||'기타'):(PB_TYPE_LABEL[p.type]||p.type); }
     function pbTxs(p){ return state.transactions.filter(t=>t.purposeBookId===p.id); }
     // 목적별 사용액: purposeBookId 일치 + isActual + 기간(시작~종료) 이내 (충전/이체/조정 등은 isActual=false라 제외)
@@ -4372,7 +4532,8 @@
       let h=currencySummaryHtml(u.txs);
       if(catKeys.length) h+='<div class="card"><div class="sec-title" style="margin:0 0 8px;">카테고리별</div>'+catKeys.map(k=>'<div class="row" style="padding:5px 0;"><span>'+catIcon(k)+' '+escapeHtml(k)+'</span><b>'+won(byCat[k])+'</b></div>').join('')+'</div>';
       h+='<div class="chip-row">'+['active','completed','archived'].map(st=>'<button class="chip '+((p.status||'active')===st?'on':'')+'" '+App.view.act('setPbStatus',p.id,st)+'>'+PB_STATUS_LABEL[st]+'</button>').join('')+'</div>';
-      h+='<button class="btn" '+App.view.act('openTxSheet',null,null,null,p.id)+'>+ 이 가계부에 지출 추가</button>';
+      h+=pbClosed(p)?'<div class="tx-sub" style="margin:8px 2px;">🔒 닫힌 가계부예요 — 기록 열람만 가능해요. 새 거래를 연결하려면 <b>진행중</b>으로 되돌리세요.</div>'
+        :'<button class="btn" '+App.view.act('openTxSheet',null,null,null,p.id)+'>+ 이 가계부에 지출 추가</button>';
       h+='<div class="sec-title" style="margin-left:2px;">거래 ('+allTx.length+')</div>';
       h+='<div class="card" style="padding:6px 10px;">'+(allTx.length?allTx.map(txRowHtml).join(''):'<div class="empty">연결된 거래 없음</div>')+'</div>';
       return h;
@@ -4408,7 +4569,8 @@
       }
       h+='<div class="sec-title" style="margin-left:2px;">정산 대상 거래 ('+s.txCount+')</div>';
       h+='<div class="card" style="padding:6px 10px;">'+(s.txs.length?s.txs.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).map(txRowHtml).join(''):'<div class="empty">정산 포함 거래 없음</div>')+'</div>';
-      h+='<button class="btn" '+App.view.act('openTxSheet',null,null,null,p.id)+'>+ 이 가계부에 지출 추가</button>';
+      h+=pbClosed(p)?'<div class="tx-sub" style="margin:8px 2px;">🔒 닫힌 가계부예요 — 새 지출 연결은 안 되지만 <b>정산 완료 처리</b>는 계속 할 수 있어요.</div>'
+        :'<button class="btn" '+App.view.act('openTxSheet',null,null,null,p.id)+'>+ 이 가계부에 지출 추가</button>';
       return h;
     }
     // 송금 완료 입력 시트
@@ -4452,7 +4614,18 @@
     function cancelSettlementPayment(ownerUid, id, pbId){
       confirmSheet('이 정산 완료 기록을 취소할까요?', ()=>{ db.ref(wp('settlementPayments/'+ownerUid+'/'+id)).remove(); toast('취소했어요'); openPbDetail(pbId,'settle'); });
     }
-    function setPbStatus(id,st){ db.ref(wp('purposeBooks/'+id)).update({status:st, updatedAt:new Date().toISOString()}); toast(PB_STATUS_LABEL[st]); openPbDetail(id); }
+    // 🔒 상태 변경 — 진행중→닫힘(완료/보관)은 확인 시트(+미정산 경고). 되돌리기(→진행중)·닫힘 간 전환은 무경고.
+    function setPbStatus(id,st){
+      const p=state.purposeBooks.find(x=>x.id===id); if(!p) return;
+      const cur=p.status||'active';
+      if(cur===st) return;
+      const doIt=()=>{ db.ref(wp('purposeBooks/'+id)).update({status:st, updatedAt:new Date().toISOString()}); toast(PB_STATUS_LABEL[st]); openPbDetail(id); };
+      if(cur!=='active' || st==='active'){ doIt(); return; }
+      let msg='\''+p.name+'\'을(를) '+PB_STATUS_LABEL[st]+' 처리할까요?\n닫으면 새 거래·할일 연결이 막히고 기록 열람만 가능해요.';
+      if(p.settlementEnabled){ const s=pbSettleSummary(p);
+        if(s.unsettledAmount>0) msg+='\n⚠️ 미정산 '+won(s.unsettledAmount)+'이 남아 있어요 — 정산 완료 처리는 닫은 뒤에도 할 수 있어요.'; }
+      confirmSheet(msg, doIt, { okLabel:PB_STATUS_LABEL[st]+' 처리', danger:false, title:'📕 가계부 닫기' });
+    }
     function onPbTypeChange(){ const w=$('pbCustomWrap'); if(w) w.style.display=(val('pbType')==='custom')?'':'none'; }
     function pickPbColor(el){ el=el||this; window._pbColor=el.dataset.color; document.querySelectorAll('#pbColors button').forEach(b=>b.style.border='2px solid transparent'); el.style.border='2px solid var(--text)'; }
     function openPbEdit(id){
@@ -4461,7 +4634,14 @@
       let h='<div class="field"><label>이름</label><input class="input" id="pbName" value="'+escapeHtml(p?p.name:'')+'" placeholder="예: 일본여행, 친구 계모임"></div>';
       h+='<div class="field"><label>유형</label><select class="input" id="pbType" '+App.view.chg('onPbTypeChange')+'>'+PB_TYPES.map(t=>'<option value="'+t[0]+'"'+(((p&&p.type===t[0])||(!p&&t[0]==='travel'))?' selected':'')+'>'+t[1]+'</option>').join('')+'</select></div>';
       h+='<div class="field" id="pbCustomWrap" style="'+((p&&p.type==='custom')?'':'display:none;')+'"><label>유형명 직접 입력</label><input class="input" id="pbCustomName" value="'+escapeHtml(p?(p.customTypeName||''):'')+'" placeholder="예: 제주살이"></div>';
-      h+='<div class="field"><label>참여자 (쉼표로 구분)</label><input class="input" id="pbParticipants" value="'+escapeHtml(p&&p.participants?p.participants.join(', '):state.userName)+'" placeholder="예: 나, 친구1, 친구2"></div>';
+      // 👥 참여자 = 이름 직접 타이핑 대신 나·그룹 멤버·친구 목록에서 칩으로 선택(2026-08 사용자 요청). 저장 형식은 종전과 동일한 이름 배열(정산·개명 스윕 호환).
+      //    풀은 시트 열 때 고정(_pbPartPool): 나 + ws 멤버 + 친구 + 기존 저장 참여자(외부인·옛 이름 보존 — 해제해도 칩이 남아 재선택 가능). 목록에 없는 외부인은 ＋ 직접 입력.
+      window._pbParts=(p&&Array.isArray(p.participants)&&p.participants.length)?p.participants.slice():[state.userName];
+      window._pbPartPool=(function(){ const names=[]; const add=n=>{ n=String(n||'').trim(); if(n&&names.indexOf(n)<0) names.push(n); };
+        add(state.userName); wsMemberNames().forEach(add); Object.keys(state.friends||{}).forEach(u=>add(friendDisplayName(u))); (window._pbParts||[]).forEach(add); return names; })();
+      h+='<div class="field"><label>참여자</label><div class="chip-row" id="pbPartsWrap" style="margin:6px 0 0;"></div>'+
+        '<div id="pbPartAddWrap" style="display:none;margin-top:8px;"><div style="display:flex;gap:8px;align-items:center;"><input class="input" id="pbPartName" placeholder="이름 (목록에 없는 사람)" style="flex:1;"><button type="button" class="chip on" '+App.view.act('addPbPartConfirm')+'>추가</button></div></div>'+
+        '<p class="muted" style="font-size:11.5px;margin:6px 2px 0;">나·그룹 멤버·친구 중에서 탭해 선택해요. 목록에 없는 사람은 ＋ 직접 입력으로 추가할 수 있어요.</p></div>';
       h+='<div class="form-2"><div class="field"><label>예산(선택)</label><input class="input" id="pbBudget" inputmode="numeric" value="'+(p&&p.budgetAmount?Number(p.budgetAmount).toLocaleString():'')+'" placeholder="0" oninput="this.value=fmtComma(this.value)"></div>'+
         '<div class="field"><label>아이콘</label><input class="input" id="pbIcon" maxlength="2" value="'+escapeHtml(p?(p.icon||''):'')+'" placeholder="📒"></div></div>';
       // 💼 전용 계좌 — 이름 그대로 계좌를 만들어(적금 계좌 자동 생성과 동일 패턴) 이 목적의 지출·수입·거래내역을 그 계좌 통장으로 따로 본다(사용자 요청 2026-08).
@@ -4483,12 +4663,29 @@
       h+='<button class="btn" '+App.view.act('savePb', id?id:null)+'>'+(p?'수정':'추가')+'</button>';
       if(p) h+='<button class="btn danger" style="margin-top:8px;" '+App.view.act('deletePb',id)+'>삭제</button>';
       openSheet(p?'목적별 가계부 수정':'목적별 가계부 추가', h);
+      renderPbParts();
+    }
+    // 👥 목적별 참여자 칩 렌더 — 풀(_pbPartPool)은 시트 열 때 고정, 선택 상태만 _pbParts(이름 배열)로 토글.
+    function renderPbParts(){
+      const box=$('pbPartsWrap'); if(!box) return;
+      const sel=window._pbParts||[], pool=window._pbPartPool||[];
+      box.innerHTML=pool.map(n=>'<button type="button" class="chip '+(sel.indexOf(n)>=0?'on':'')+'" '+App.view.act('togglePbPart',n)+'>'+escapeHtml(n)+'</button>').join('')+
+        '<button type="button" class="chip" '+App.view.act('showPbPartAdd')+'>＋ 직접 입력</button>';
+    }
+    function togglePbPart(n){ const a=(window._pbParts||[]).slice(); const i=a.indexOf(n); if(i>=0) a.splice(i,1); else a.push(n); window._pbParts=a; renderPbParts(); }
+    function showPbPartAdd(){ const w=$('pbPartAddWrap'); if(!w) return; const show=w.style.display==='none'; w.style.display=show?'':'none'; if(show&&$('pbPartName')) $('pbPartName').focus(); }
+    function addPbPartConfirm(){
+      const n=($('pbPartName')?val('pbPartName'):'').trim(); if(!n){ toast('이름을 입력하세요', true); return; }
+      const pool=(window._pbPartPool||[]).slice(); if(pool.indexOf(n)<0) pool.push(n); window._pbPartPool=pool;
+      const a=(window._pbParts||[]).slice(); if(a.indexOf(n)<0) a.push(n); window._pbParts=a;
+      if($('pbPartName')) $('pbPartName').value='';
+      renderPbParts();
     }
     function savePb(id){
       const name=val('pbName').trim(); if(!name){ toast('이름을 입력하세요', true); return; }
       const p=id?state.purposeBooks.find(x=>x.id===id):null;
       const vis=val('pbVis')||'full', now=new Date().toISOString();
-      const participants=val('pbParticipants').split(',').map(s=>s.trim()).filter(Boolean);
+      const participants=(window._pbParts||[]).map(s=>String(s).trim()).filter(Boolean).filter((n,i,a)=>a.indexOf(n)===i);   // 칩 선택 결과 — 저장 형식은 종전과 동일한 이름 배열(정산·개명 스윕 호환)
       const key=id||('pb_'+Date.now());
       // 💼 전용 계좌 — '자동'이면 목적별 이름으로 계좌 생성(acc_pb_{key}, 재저장 시 재사용·이름 동기화 — 적금 acc_sv_* 패턴)
       let acctV=$('pbAcct')?val('pbAcct'):((p&&p.accountId)||'');

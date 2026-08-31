@@ -71,6 +71,8 @@
     // 모든 가계부 데이터는 ws/{wsId}/ 아래에 네임스페이스로 분리된다.
     function wsRoot(){ return 'ws/'+state.wsId; }
     function wp(path){ return 'ws/'+state.wsId+'/'+path; }
+    // 🔗 다른 워크스페이스 경로 — 그룹 간 이체(연동 이체)처럼 내가 멤버인 "다른" ws에 쓸 때만 사용(규칙이 멤버십 기준이라 통과).
+    function wpOf(wsId,path){ return 'ws/'+wsId+'/'+path; }
     function randCode(n){ const ch='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<(n||6);i++) s+=ch[Math.floor(Math.random()*ch.length)]; return s; }
     function budgetColor(p){ return p>=100?'var(--expense)':(p>=90?'#f76707':(p>=80?'#f5a623':'var(--primary)')); }
     function getCat(name){ return state.categories.find(c=>c.name===name); }
@@ -836,6 +838,12 @@
       attach('transactions', s=>{
         const arr=[]; s.forEach(us=>{ us.forEach(ts=>{ arr.push(Object.assign({ownerUid:us.key,id:ts.key},ts.val())); }); });
         state.transactions=arr; state._balCache=null; recv.tx=true; App.store.emit(); maybeBoot();   // 거래 변경 시 잔액 캐시 무효화(다음 accountBalance 호출에서 1회 재계산)
+        // 🔗 연동 이체 "보낸 그룹으로 이동" — ws 전환 직후 심어둔 원본 반쪽을 거래 수신 시점에 1회 열어준다(best-effort, views.js xwsGoOrigin)
+        if(state._pendingOpenTx){ const p=state._pendingOpenTx;
+          if(Date.now()-(p.at||0)>30000) state._pendingOpenTx=null;   // 30초 지나면 폐기(전환 실패·원본 삭제 등 — 나중에 엉뚱하게 열리지 않게)
+          else if(arr.some(x=>x.ownerUid===p.ownerUid && x.id===p.id)){ state._pendingOpenTx=null;
+            if(typeof openTxSheet==='function') setTimeout(()=>{ try{ openTxSheet(p.ownerUid, p.id); }catch(e){} }, 0); }
+        }
       });
       attach('savings', s=>{
         const arr=[]; s.forEach(us=>{ us.forEach(vs=>{ arr.push(Object.assign({ownerUid:us.key,id:vs.key},vs.val())); }); });
