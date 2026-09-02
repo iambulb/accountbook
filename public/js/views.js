@@ -2642,32 +2642,20 @@
           '</div>';
         } }
       // 💡 계좌별 필요액 — 월급날 어느 계좌에 얼마 넣어둘지(자동 기록 출금 기준, 적금 이체 포함). [이번 달|다음 달] 토글(_needNext)로 다음 달 예정을 미리 본다(사용자 요청 2026-08).
-      //  + 💳 카드대금(사용자 요청 2026-08): 이번 결제일에 청구될 금액 = **직전에 마감된 청구(이용) 기간의 카드 사용액**(cardUsagePeriod 기준, 사용자 정정 2026-08 —
-      //    예전 '카드 사용 잔액(음수)' 방식은 청구기간과 무관한 누적/이번달 사용액이라 실제 빠질 카드값과 어긋났음). 탭=그 청구 기간의 카드 내역 시트.
-      //    다음 달 보기의 카드대금 = '진행 중' 청구 기간의 현재까지 사용액(다음 결제일 청구 예정) — 아직 집계 중이라 더 늘 수 있음('집계 중' 표기).
-      { const mmNow=todayStr().slice(0,7), mmSel=_needNext?shiftMonth(mmNow,1):mmNow, fmtMD=d=>(d.getMonth()+1)+'.'+d.getDate();
+      //  💳 카드대금 행은 제거(사용자 요청 2026-09) — 필요액엔 '옮겨둘 이체' 안내만 남긴다(카드값은 카드 실적·통장 내역에서 확인).
+      //  🔁 '필요액 포함'을 켠 이체 정기(r.needInc — 곗돈·회비 등)도 합산된다(monthAcctNeeds).
+      { const mmNow=todayStr().slice(0,7), mmSel=_needNext?shiftMonth(mmNow,1):mmNow;
         const needs=monthAcctNeeds(mmSel);
-        const cardNeeds=accs.filter(a=>a.type==='credit_card').map(a=>{ const cf=getCard(a.id);
-          const cur=cardUsagePeriod(cf, new Date());   // 진행 중 청구 기간(오늘 포함)
-          const prev=cardUsagePeriod(cf, new Date(cur.start.getFullYear(), cur.start.getMonth(), cur.start.getDate()-1));   // 직전 마감 기간 = 이번 결제분
-          const per=_needNext?cur:prev;   // 다음 달 보기=진행 중 기간(다음 결제분)
-          const sum=cardPeriodTx(a.id, per).reduce((s,t)=>s+(Number(t.amount)||0),0);
-          // 탭 시 그 기간이 그대로 보이는 모드 — 이용 기간 따로 설정=usage, 카드 설정 있음=period(청구=실적 기간), 설정 없음=달력 월. m은 한 달 전(=직전 기간)·다음 달 보기는 이번 달(=진행 중 기간, cardMonthRef 위상 매핑)
-          const mode=cf?(cf.usageSameAsPerf===false?'usage':'period'):'month';
-          const paid=!_needNext && state.transactions.some(t=>t.cardBillKey && t.to===a.id && t.billPeriodEnd===ymd(per.end));   // 이 청구분이 이미 자동 기록됨(runCardBills) — 진행 중 기간은 아직 미기록
-          return { id:a.id, name:(cf&&cf.cardName)||a.name, sum, per, mode, paid, day:(cf&&Number(cf.billingDay))||0 };
-        }).filter(x=>x.sum>0).sort((a,b)=>b.sum-a.sum);
         const hasOther=(_needNext?monthAcctNeeds(mmNow):monthAcctNeeds(shiftMonth(mmNow,1))).length>0;   // 반대쪽 달에 내용이 있으면 토글이 계속 보이게 카드 유지
-        if(needs.length||cardNeeds.length||hasOther){
+        if(needs.length||hasOther){
           const seg='<span class="repvalseg"><button class="'+(_needNext?'':'on')+'" '+App.view.act('setNeedNext',0)+' aria-label="이번 달 필요액 보기">이번 달</button><button class="'+(_needNext?'on':'')+'" '+App.view.act('setNeedNext',1)+' aria-label="다음 달 필요액 미리 보기">다음 달</button></span>';
           h+='<div class="card" style="margin-bottom:10px;"><div class="row"><b>💡 계좌별 필요액 · '+(+mmSel.slice(5,7))+'월</b>'+seg+'</div>'+
-            '<div class="tx-sub" style="margin-top:2px;">정기 · 구독 · 적금 · 대출 · 카드대금</div>'+
-            ((needs.length||cardNeeds.length)?'':'<div class="empty" style="padding:14px 4px;">'+(+mmSel.slice(5,7))+'월 예정 필요액이 없어요</div>')+
+            '<div class="tx-sub" style="margin-top:2px;">정기 · 구독 · 적금 · 대출 · 이체</div>'+
+            (needs.length?'':'<div class="empty" style="padding:14px 4px;">'+(+mmSel.slice(5,7))+'월 예정 필요액이 없어요</div>')+
             needs.map(n=>'<div class="row" style="margin-top:6px;font-size:13px;" '+App.view.act('openAcctNeedSheet',n.id,mmSel)+' role="button" tabindex="0" aria-label="'+escapeHtml(n.name)+' 필요액 구성 항목 보기"><span class="muted">'+escapeHtml(n.name)+' ›</span><span><b>'+won(n.sum)+'</b>'+(n.remain>0&&n.remain!==n.sum?(' <span class="tx-sub">남은 '+won(n.remain)+'</span>'):'')+'</span></div>').join('')+
-            cardNeeds.map(n=>'<div class="row" style="margin-top:6px;font-size:13px;'+(n.paid?'opacity:.55;':'')+'" '+App.view.act('openCardTxSheet',n.id,(_needNext?mmNow:shiftMonth(mmNow,-1)),n.mode)+' role="button" tabindex="0" aria-label="'+escapeHtml(n.name)+' 청구 기간 카드 내역 보기"><span class="muted">'+escapeHtml(n.name)+' <span class="pill">카드대금</span> ›</span><span><span class="tx-sub">'+fmtMD(n.per.start)+'~'+fmtMD(n.per.end)+(n.day?' · '+n.day+'일 결제':'')+(_needNext?' · 집계 중':'')+(n.paid?' · 기록됨 ✅':'')+'</span> <b>'+won(n.sum)+'</b></span></div>').join('')+
             '<div class="tx-sub" style="margin-top:8px;">'+(_needNext
-              ?'다음 달 예정 필요액이에요 — 카드대금은 지금 쓰는 청구 기간의 현재까지 금액이라 더 늘어날 수 있어요.'
-              :('월급이 들어오면 각 계좌에 이만큼 옮겨두세요 — 자동 기록이 부족 없이 돌아가요.'+(cardNeeds.length?' 카드대금은 직전 청구(이용) 기간에 쓴 금액 — 이번 결제일에 나올 카드값이에요.':'')))+'</div></div>';
+              ?'다음 달 예정 필요액이에요 — 월급날 미리 준비해 두세요.'
+              :'월급이 들어오면 각 계좌에 이만큼 옮겨두세요 — 자동 기록이 부족 없이 돌아가요.')+'</div></div>';
         } }
 
       // 입출금 · 현금 — [내 순서|유형별|소유자별] 보기(_acctView, 사용자 요청 2026-08). 내 순서=≡ 핸들 드래그로 순서 변경(accounts/{id}/order).
@@ -2787,8 +2775,9 @@
       return { rec, sub, sav, loan, total:rec.sum+sub.sum+sav.sum+loan.sum, remain:rec.remain+sub.remain+sav.remain+loan.remain };
     }
     // 💡 계좌별 이번 달 필요액 — 이 계좌에서 자동으로 '나갈' 돈(적금 이체(savingsId) + 지출성 정기 + 구독 결제수단 + 대출 상환계좌)을 계좌별 합산.
-    //  "월급날 각 계좌에 얼마씩 넣어둘까"용 — 카드 라벨(정기·구독·적금·대출) 그대로, 일반 이체·충전(계좌 간 돈 옮기기·입금성 정기)은 제외한다
+    //  "월급날 각 계좌에 얼마씩 넣어둘까"용 — 카드 라벨(정기·구독·적금·대출·이체) 그대로, 일반 이체·충전(계좌 간 돈 옮기기·입금성 정기)은 제외한다
     //  (예전엔 debit측 정기 전부를 합산해 월급 이체·파킹 이체 같은 입금 내역까지 필요액에 섞이던 문제 — 사용자 보고로 한정).
+    //  🔁 예외 — '계좌별 필요액에 포함' 스위치를 켠 이체 정기(r.needInc, 곗돈·회비 등)는 출금 계좌 필요액에 '이체'로 합산한다(사용자 요청 2026-09).
     //  💳 선불·포인트류 계좌 행도 제외(사용자 보고 2026-08) — 이 계좌들은 '이체로 채우는' 게 아니라 충전으로 채우는 수단이라,
     //  "월급이 들어오면 옮겨두세요" 필요액에 포인트 충전 안내처럼 섞여 보였음. 정기결제·적금·대출 출금 계좌(은행·현금 등)만 남긴다.
     function monthAcctNeeds(mm){
@@ -2802,10 +2791,10 @@
         e.items.push({ kind, label:label||'', amt, d }); };   // 🔍 구성 항목(어떤 정기·구독·적금·대출인지) — 계좌 탭 드릴다운(openAcctNeedSheet)용
       state.recurring.filter(r=>canSee(r)&&ruleStatus(r)==='active').forEach(r=>{
         const e=TX_EFFECT[r.type]||{}; if(!e.debit||!r.from) return;
-        if(!r.savingsId && !EXPT[r.type]) return;   // 적금 이체 외 일반 이체·충전 정기는 필요액에서 제외
+        if(!r.savingsId && !EXPT[r.type] && !r.needInc) return;   // 적금·'필요액 포함' 이체(needInc) 외 일반 이체·충전 정기는 필요액에서 제외
         let occ=occurrencesV2(r, mStart, mEnd);
         if(r.endDate){ const ed=parseDate(r.endDate); occ=occ.filter(o=>o<=ed); }
-        occ.forEach(o=>add(r.from, Number(r.amount)||0, o, r.savingsId?'적금':'정기', r.desc||TYPE_LABEL[r.type]||'정기거래'));
+        occ.forEach(o=>add(r.from, Number(r.amount)||0, o, r.savingsId?'적금':(EXPT[r.type]?'정기':'이체'), r.desc||TYPE_LABEL[r.type]||'정기거래'));
       });
       (state.subscriptions||[]).filter(s=>(s.status||'active')==='active'&&!s.recurringId&&s.paymentAccountId).forEach(s=>{
         const nb=subChargeDayInMonth(s.nextBillingDate, s.billingCycle, s.billingInterval, mm); if(nb) add(s.paymentAccountId, Number(s.amount)||0, parseDate(nb), '구독', s.name||'구독');   // 결제 지난 구독도 그 달 필요액에 포함
@@ -2821,7 +2810,7 @@
       const n=monthAcctNeeds(mm).find(x=>x.id===id);
       if(!n){ openAcctDetail(id); return; }   // 필요액이 사라졌으면(규칙 변경 등) 통장 내역으로 폴백
       const today=parseDate(todayStr()), mo=+mm.slice(5,7);
-      const KC={ '정기':'#3182f6', '구독':'#7c3aed', '적금':'#1b9e5f', '대출':'#f04452' };
+      const KC={ '정기':'#3182f6', '구독':'#7c3aed', '적금':'#1b9e5f', '대출':'#f04452', '이체':'#f5a623' };   // 이체=needInc 켠 이체 정기(곗돈 등)
       const items=n.items.slice().sort((a,b)=>a.d-b.d);
       let h='<div class="row" style="margin-bottom:10px;"><span class="muted">'+mo+'월 · '+items.length+'건</span><b>'+won(n.sum)+'</b></div>';
       h+='<div class="card" style="padding:6px 12px;">'+items.map(it=>{
@@ -4021,6 +4010,7 @@
         const filters=[['all','전체'],['expense','지출'],['income','수입'],['other','기타']];
         let h='<div class="chip-row" style="margin-bottom:12px;">'+filters.map(f=>'<button class="chip '+(catFilter===f[0]?'on':'')+'" '+App.view.act('setCatFilter',f[0])+'>'+f[1]+'</button>').join('')+'</div>';
         h+='<button class="btn" '+App.view.act('openCatEdit')+'>+ 카테고리 추가</button>';
+        h+='<button class="btn ghost" style="margin-top:8px;" '+App.view.act('openCatMerge')+'>카테고리 합치기</button>';
         const cats=state.categories.filter(canSee).filter(c=> catFilter==='all'?true:(catFilter==='other'?!['expense','income'].includes(c.type):c.type===catFilter)).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
         h+='<div class="card" style="margin-top:12px;padding:6px 8px;">'+(cats.length?cats.map(catManageRow).join(''):'<div class="empty">카테고리가 없습니다</div>')+'</div>';
         return h;
@@ -4094,6 +4084,75 @@
       const used=state.transactions.filter(t=>t.category===name).length;
       const msg = used? ('이 카테고리를 쓴 거래가 '+used+'건 있습니다. 삭제해도 거래의 카테고리명은 남지만 비활성화를 권장합니다. 그래도 삭제할까요?') : '이 카테고리를 삭제할까요?';
       confirmSheet(msg, ()=>{ const upd={}; upd['categories/'+name]=null; if(c.isDefault) upd['catDeleted/'+name]=true; db.ref(wsRoot()).update(upd); toast('삭제되었습니다'); openCategorySheet(); });
+    }
+
+    // ===== 카테고리 합치기 (사용자 요청 2026-09) =====
+    //  여러 카테고리를 하나로 병합: ① 같은 유형끼리 2개 이상 선택 ② '남길 카테고리'(이름·아이콘·색 유지)를 지정
+    //  ③ 나머지는 삭제(기본 카테고리는 catDeleted 마킹 — 재시드 방지, deleteCat과 동일)
+    //  ④ 정기·구독·예산은 앞으로의 자동 기록이 깨지지 않게 '항상' 남는 카테고리로 이관, 기존 거래는 스위치로 선택(기본 켬).
+    //  전부 wsRoot() 멀티패스 update 1회로 원자 반영.
+    let _mg={sel:[],keep:'',tx:true};
+    function openCatMerge(){ _mg={sel:[],keep:'',tx:true}; renderCatMerge(); }
+    function renderCatMerge(){ openSheet('카테고리 합치기', _mgBuild()); state._sheetRefresh=_mgRefresh; }
+    function _mgRefresh(){ const b=$('sheetBody'); if(!b) return; const st=b.scrollTop; b.innerHTML=_mgBuild(); b.scrollTop=st; }
+    function _mgTxList(){ return state.transactions.filter(t=>_mg.sel.includes(t.category)&&t.category!==_mg.keep); }   // 합쳐져 사라질 카테고리를 쓴 기존 거래
+    function _mgBuild(){
+      _mg.sel=_mg.sel.filter(n=>getCat(n)); if(_mg.keep&&!_mg.sel.includes(_mg.keep)) _mg.keep=_mg.sel[0]||'';   // 다른 기기에서 삭제된 카테고리 방어
+      const selType=_mg.sel.length?((getCat(_mg.sel[0])||{}).type||''):null;
+      const cats=state.categories.filter(canSee).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+      let h='<p class="muted" style="font-size:12.5px;margin:0 2px 10px;">합칠 카테고리를 <b>2개 이상</b> 고르세요. 같은 유형끼리만 합칠 수 있어요.</p>';
+      h+='<div class="chip-row">'+cats.map(c=>{
+        const on=_mg.sel.includes(c.name), dis=!on&&selType!==null&&(c.type||'')!==selType;
+        return '<button type="button" class="chip'+(on?' on':'')+'"'+(dis?' disabled style="opacity:.35;"':'')+' '+App.view.act('mgToggleCat',c.name)+'>'+escapeHtml(c.name)+'</button>';
+      }).join('')+'</div>';
+      if(_mg.sel.length>=2){
+        h+='<div class="sech" style="margin-top:16px;"><span class="l">남길 카테고리 (이름·아이콘·색 유지)</span></div>';
+        h+='<div class="card" style="padding:6px 8px;">'+_mg.sel.map(n=>{ const c=getCat(n)||{}, keep=_mg.keep===n;
+          return '<div class="acct" '+App.view.act('mgKeep',n)+' role="button" tabindex="0" aria-label="\''+escapeHtml(n)+'\' 이름으로 남기기">'+
+            '<div class="acct-dot" style="'+catTileStyle(n)+'">'+catSvgIcon(n)+'</div>'+
+            '<div style="flex:1;min-width:0;"><div class="acct-name">'+escapeHtml(n)+(c.isDefault?'<span class="pill">기본</span>':'')+'</div></div>'+
+            '<span class="pill" style="flex:none;'+(keep?'color:var(--primary);font-weight:800;':'opacity:.45;')+'">'+(keep?'이 이름으로 남김':'삭제됨')+'</span></div>';
+        }).join('')+'</div>';
+        const merged=_mg.sel.filter(n=>n!==_mg.keep), txN=_mgTxList().length;
+        h+='<div class="menu-item" style="padding:12px 2px 4px;"><span>기존 거래 '+txN+'건도 \''+escapeHtml(_mg.keep)+'\'(으)로 변경</span><div class="switch '+(_mg.tx?'on':'')+'" '+App.view.act('mgToggleTx')+'><i></i></div></div>';
+        h+='<p class="muted" style="font-size:11.5px;margin:2px 2px 12px;">끄면 기존 거래엔 옛 카테고리 이름이 그대로 남아요(리포트에선 별도 항목으로 집계). 정기·구독·예산은 자동 기록이 끊기지 않게 항상 \''+escapeHtml(_mg.keep)+'\'(으)로 이어져요.</p>';
+        h+='<button class="btn" '+App.view.act('doCatMerge')+'>\''+escapeHtml(_mg.keep)+'\'(으)로 '+merged.length+'개 합치기</button>';
+      }
+      return h;
+    }
+    function mgToggleCat(name){
+      const i=_mg.sel.indexOf(name);
+      if(i>=0){ _mg.sel.splice(i,1); if(_mg.keep===name) _mg.keep=_mg.sel[0]||''; }
+      else{
+        const c=getCat(name); if(!c) return;
+        if(_mg.sel.length&&((getCat(_mg.sel[0])||{}).type||'')!==(c.type||'')){ toast('같은 유형의 카테고리끼리만 합칠 수 있어요', true); return; }
+        _mg.sel.push(name); if(!_mg.keep) _mg.keep=name;
+      }
+      _mgRefresh();
+    }
+    function mgKeep(name){ if(_mg.sel.includes(name)){ _mg.keep=name; _mgRefresh(); } }
+    function mgToggleTx(){ _mg.tx=!_mg.tx; _mgRefresh(); }
+    function doCatMerge(){
+      const keep=_mg.keep, merged=_mg.sel.filter(n=>n!==keep&&getCat(n));
+      if(_mg.sel.length<2||!merged.length){ toast('합칠 카테고리를 2개 이상 고르세요', true); return; }
+      if(!keep||!getCat(keep)){ toast('남길 카테고리를 고르세요', true); return; }
+      const set=new Set(merged), txs=_mgTxList(), doTx=_mg.tx;
+      confirmSheet('\''+merged.join('\', \'')+'\' → \''+keep+'\'(으)로 합칠까요? 합쳐진 카테고리는 삭제되고'+(doTx?(' 기존 거래 '+txs.length+'건도 함께 변경돼요.'):' 기존 거래의 카테고리 이름은 그대로 남아요.')+' 되돌릴 수 없어요.', ()=>{
+        const upd={};
+        merged.forEach(n=>{ const c=getCat(n); upd['categories/'+n]=null; if(c&&c.isDefault) upd['catDeleted/'+n]=true; });
+        // 🔁 정기·구독은 항상 이관 — 안 하면 다음 자동 생성 거래부터 삭제된 카테고리 이름으로 기록된다
+        state.recurring.forEach(r=>{ if(set.has(r.category)) upd['recurring/'+r.ownerUid+'/'+r.id+'/category']=keep; });
+        (state.subscriptions||[]).forEach(s=>{ if(set.has(s.categoryName)) upd['subscriptions/'+s.id+'/categoryName']=keep; });
+        // 💰 예산 이관 — 남는 카테고리에 같은 주기 예산이 이미 있으면(중복) 합쳐진 쪽 예산은 삭제(카테고리가 사라져 의미 없음), 없으면 이름만 이관
+        const dupPt={}; (state.budgets||[]).forEach(b=>{ if(b.categoryName===keep) dupPt[b.periodType||'monthly']=1; });
+        (state.budgets||[]).forEach(b=>{ if(!set.has(b.categoryName)) return; const pt=b.periodType||'monthly';
+          if(dupPt[pt]) upd['budgets/'+b.id]=null; else{ dupPt[pt]=1; upd['budgets/'+b.id+'/categoryName']=keep; } });
+        if(doTx) txs.forEach(t=>{ upd['transactions/'+t.ownerUid+'/'+t.id+'/category']=keep; });
+        db.ref(wsRoot()).update(upd).catch(_saveErr);
+        toast('\''+keep+'\'(으)로 '+merged.length+'개 카테고리를 합쳤어요'+(doTx&&txs.length?(' · 거래 '+txs.length+'건 변경'):''));
+        openCategorySheet();
+      }, { okLabel:'합치기', danger:true, title:'카테고리 합치기' });
+      state._sheetBackFn=()=>renderCatMerge();   // ↩️ 취소하면 선택 상태 그대로 합치기 시트로 복귀
     }
 
     // ===== 정기결제 =====
@@ -4189,7 +4248,9 @@
       else if(t==='income'){ h+=recAcctField('입금 대상','rTo',toV)+recCatField('income',catV); }
       else if(t==='refund'){ h+=recAcctField('환불 받는 계정','rTo',toV)+recCatField('income',catV); }
       else if(t==='point_earn'){ h+=recAcctField('적립 대상(포인트·간편결제)','rTo',toV,['point','e_wallet']); }   // 거래 시트와 동일 — 간편결제 지갑 적립 허용
-      else if(t==='transfer'||t==='prepaid_charge'){ const l1=t==='prepaid_charge'?'충전 수단(카드/계좌)':'출금', l2=t==='prepaid_charge'?'충전 대상(선불/포인트)':'입금'; h+='<div class="form-2">'+recAcctField(l1,'rFrom',fromV,t==='prepaid_charge'?NONPRE:null)+recAcctField(l2,'rTo',toV,t==='prepaid_charge'?PREPAY.concat(['point']):null)+'</div>'; }
+      else if(t==='transfer'||t==='prepaid_charge'){ const l1=t==='prepaid_charge'?'충전 수단(카드/계좌)':'출금', l2=t==='prepaid_charge'?'충전 대상(선불/포인트)':'입금'; h+='<div class="form-2">'+recAcctField(l1,'rFrom',fromV,t==='prepaid_charge'?NONPRE:null)+recAcctField(l2,'rTo',toV,t==='prepaid_charge'?PREPAY.concat(['point']):null)+'</div>';
+        // 💡 이체 정기 '계좌별 필요액에 포함'(needInc, 사용자 요청 2026-09) — 곗돈·회비처럼 월급날 미리 옮겨둘 이체를 자산 필요액 카드에 합산. 적금 자동이체(savingsId)는 이미 '적금'으로 포함되므로 스위치 숨김.
+        if(t==='transfer' && !(r&&r.savingsId)) h+='<div class="menu-item" style="padding:8px 2px;"><span>💡 계좌별 필요액에 포함 <span class="muted" style="font-size:11px;">(곗돈·회비 등 월급날 옮겨둘 이체)</span></span><div class="switch '+((r&&r.needInc)?'on':'')+'" id="rNeedInc" '+App.view.act('toggleSwitch')+'><i></i></div></div>'; }
       else if(t==='prepaid_spend'||t==='point_spend'){ h+=recAcctField(t==='point_spend'?'사용 포인트·간편결제':'결제 선불수단','rFrom',fromV,t==='point_spend'?['point','e_wallet']:PREPAY)+recConsumerField(consV)+(catTypeFor(t)?recCatField('expense',catV):''); }   // 거래 시트와 동일 — 간편결제 지갑 포인트 사용 허용
       else if(t==='balance_adjustment'){ h+=recAcctField('대상 계정','rTo',toV); }
       $('rAccts').innerHTML=h; renderRecCardPerf();
@@ -4237,6 +4298,7 @@
       if(type==='balance_adjustment'){ data.to=val('rTo'); }
       else { if(e.debit) data.from=val('rFrom'); if(e.credit) data.to=val('rTo'); }
       if(catTypeFor(type) && $('rCat')) data.category=val('rCat');
+      if(type==='transfer') data.needInc = $('rNeedInc')?$('rNeedInc').classList.contains('on'):!!(r&&r.needInc);   // 💡 이체 '계좌별 필요액에 포함'(곗돈 등) — 스위치가 없으면(적금 연결 등) 기존 값 보존
       const card=getCard(data.from);
       if(card && (type==='expense'||type==='prepaid_charge')){
         const inc=$('rCpi')?$('rCpi').classList.contains('on'):defaultCardIncluded(card,type,data.category);

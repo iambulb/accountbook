@@ -172,7 +172,7 @@ erDiagram
 `categoryName`(null=총예산), `amount`, `periodType`(monthly/weekly/yearly/custom), `scope`(group/personal), `owner`, `alertEnabled`, `alertThreshold`, `visibility`, `purposeBookId`, `createdAt`, `updatedAt`.
 
 ### recurring/{uid}/{id}
-`type`, `amount`, `desc`, `from`, `to`, `category`, `freq`(daily/weekly/monthly/yearly/custom), `interval`, `day`, `weekday`, `startDate`, `endDate`, `lastPosted`, `nextRunDate`, `status`(active/paused/ended), `autoCreate`, `user`, `userUid`(소비 대상이 멤버면 uid 병행 — 개명 견고, 2026-08. 생성 거래 `buildRecurringTx`가 물려받고 규칙에 없으면 이름→멤버 uid 역해석 백필), `visibility`, 카드실적 필드.
+`type`, `amount`, `desc`, `from`, `to`, `category`, `freq`(daily/weekly/monthly/yearly/custom), `interval`, `day`, `weekday`, `startDate`, `endDate`, `lastPosted`, `nextRunDate`, `status`(active/paused/ended), `autoCreate`, `user`, `userUid`(소비 대상이 멤버면 uid 병행 — 개명 견고, 2026-08. 생성 거래 `buildRecurringTx`가 물려받고 규칙에 없으면 이름→멤버 uid 역해석 백필), `visibility`, 카드실적 필드, `needInc`(이체(transfer) 유형 전용 — true면 곗돈·회비처럼 자산 '계좌별 필요액'에 '이체'로 합산, 2026-09).
 
 ### 🧹 개명 전파 (users/{uid}/prevNames + 이름 스윕)
 - **문제**: 소비 대상·소유자는 이름 문자열로 비정규화 저장되므로, 별명을 바꾸면(members 명단만 갱신) 데이터 속 옛 이름이 그대로 남아 거래 목록·리포트에 옛 이름이 계속 보이고, uid가 없는 레코드는 리포트에서 별도 인물로 갈라진다.

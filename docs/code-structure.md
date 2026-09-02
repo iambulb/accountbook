@@ -78,7 +78,7 @@ firebase.js → constants.js → util.js → ledger-calc.js → core.js → app.
 | 워크스페이스 | `openWorkspaceSheet`(개인 프로필 + 그룹 목록)·`openCreateGroupSheet`·`openJoinGroupSheet`·`openGroupManageSheet`·`memberAvatarStack`(탭→`openWsMembersSheet` 멤버목록→멤버 탭 시 `openFriendHome` 방문). 소유자=픽셀 왕관 `crownSvg`(`M_CROWN`). 설정 타일 `gearSvg`(`M_GEAR` 8이빨), 가방 `bagSvg`(`M_BAG` 아치 손잡이) |
 | 더보기 | `renderMore`(시안: `.prow`+`.grid4`+`.lst`)·`gcell`/`lrow`(그리드·리스트 행 헬퍼)·`MORE_ICON`(SVG 아이콘 맵)·`goHome` |
 | 예산 | `openBudgetSheet`·`openBudgetDetail`·`openBudgetEdit` |
-| 카테고리 | `openCategorySheet`·`renderCatManage`(실시간 갱신 훅 등록)·`catManageRow`·`moveCat`/`toggleCatActive`·`openCatEdit`(아이콘 그리드+색 스와치)·`pickCatIcon`/`pickCatColor`·`saveCat`(iconKey 저장)·`CAT_PALETTE` |
+| 카테고리 | `openCategorySheet`·`renderCatManage`(실시간 갱신 훅 등록)·`catManageRow`·`moveCat`/`toggleCatActive`·`openCatEdit`(아이콘 그리드+색 스와치)·`pickCatIcon`/`pickCatColor`·`saveCat`(iconKey 저장)·`CAT_PALETTE`·**🔀 카테고리 합치기** `openCatMerge`/`_mgBuild`/`mgToggleCat`/`mgKeep`/`mgToggleTx`/`doCatMerge`(같은 유형 2개↑ 선택→남길 이름 지정→정기·구독·예산 항상 이관+기존 거래는 스위치 선택, wsRoot 멀티패스 update 1회) |
 | 정기결제 | `openRecurringList`·`viewRecurringTxs`·`openRecurringEdit`·`renderRecAccts`·`recConsumerField`(소비 대상)·`renderRecCardPerf` |
 | 구독 | `openSubscriptions`·`renderSubs`·`openSubDetail`·`openSubEdit`·**💵 외화 입력**(`onSubCurChange` 통화 변경 시 오늘 환율 자동 조회(fetchFxRate)·`updateSubFxNote` 환산 노트·`subAmtHtml` 외화 병기 표시 — amount는 항상 원화 저장) |
 | 목적별 | `openPurposeBooks`·`renderPBs`·`pbCard`·`openPbDetail`(탭 + **전용 계좌 카드** — 잔액·탭=계좌 통장)·`renderPbTxTab`·`openPbEdit`(**전용 계좌 셀렉트** — 자동 생성 `acc_pb_{id}`/기존 연결/안 함, `savePb`가 적금 패턴으로 생성·이름 동기화) |
